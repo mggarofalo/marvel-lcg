@@ -1,5 +1,6 @@
 using Marvel.Content.Behavior;
 using Marvel.Content.Setup;
+using Marvel.Content.Tests.Cards;
 using Marvel.Rules.State;
 using Marvel.Tests;
 using Xunit;
@@ -28,12 +29,9 @@ public sealed class CanonicalCoreSceneTests
         Assert.Equal(first.World.Digest().Fingerprint(), second.World.Digest().Fingerprint());
     }
 
-    [Rule("rr:player-deck.2")]
     [Fact]
     public void OneCardBoundaryAccountsForEveryOtherDeckCardInALegalZone()
     {
-        // "the player continues to draw cards up to the number specified";
-        // the boundary is a one-card deck, not an invented one-card game.
         var scene = OneCardDeck();
         Seat player = scene.World.Seats[0];
 
@@ -69,6 +67,21 @@ public sealed class CanonicalCoreSceneTests
 
         Assert.Equal("01149", scene.World.AreaOf(DeckType.EncounterDeck).Cards[^1].FaceId);
         Assert.Equal(World.Scenario, scene.Find(new SceneCard("01149")).Owner);
+        Assert.Equal(DeckType.EnvironmentArea, scene.Find(new SceneCard("01140")).Area.Type);
+        Assert.Contains(scene.World.Cards, FacedownDrones.Is);
+    }
+
+    [Fact]
+    public void ACompleteAbilityInterpreterIsRequiredForSetup()
+    {
+        var request = new CoreSceneRequest(
+            "behavior:setup:campaign:ultron:scenario-setup",
+            "ultron",
+            ["spider_man"],
+            Seed: 302);
+
+        Assert.Throws<ArgumentNullException>(() =>
+            CanonicalCoreScene.Deal(request, Setup, Cards, null!));
     }
 
     [Fact]
@@ -110,15 +123,31 @@ public sealed class CanonicalCoreSceneTests
     public void OnlyRegisteredTokenPoolsCanBeArranged()
     {
         var scene = Deal(
-            "behavior:card:01007:deal-8-damage-to-an-enemy",
+            "behavior:rr:threat.1:scheme-only",
             "rhino",
             ["spider_man"]);
 
         var thrown = Assert.Throws<CoreSceneConstructionException>(() => scene.Apply(
-            new SetSceneTokens(new SceneCard("01007"), "k_threat", 1)));
+            new SetSceneCounters(new SceneCard("01094"), "threat", 1)));
 
-        Assert.Equal("set-tokens", thrown.Operation);
-        Assert.Contains("does not register", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal("set-counters", thrown.Operation);
+        Assert.Contains("does not print threat counters", thrown.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void PrintedAllPurposeCounterTypesCanBeArranged()
+    {
+        var scene = Deal(
+            "behavior:card:01018:energy-counter-below-cap",
+            "rhino",
+            ["captain_marvel"]);
+        scene.Apply(new MoveSceneCard(
+            new SceneCard("01018"),
+            new SceneDestination(SceneZone.Upgrade, Seat: 0)));
+
+        scene.Apply(new SetSceneCounters(new SceneCard("01018"), "energy", 4));
+
+        Assert.Equal(4, scene.Find(new SceneCard("01018")).Tokens["c_energy"]);
     }
 
     [Fact]
@@ -196,6 +225,7 @@ public sealed class CanonicalCoreSceneTests
             new SceneCard("01084", Copy: 0),
             new SceneDestination(SceneZone.Ally, Seat: first.Owner)));
         Area before = second.Area;
+        int areaCount = scene.World.Areas.Count;
 
         var thrown = Assert.Throws<CoreSceneConstructionException>(() => scene.Apply(
             new MoveSceneCard(
@@ -205,6 +235,129 @@ public sealed class CanonicalCoreSceneTests
         Assert.Contains("already in play", thrown.Message, StringComparison.Ordinal);
         Assert.Same(before, second.Area);
         Assert.Contains(second, before.Cards);
+        Assert.Equal(areaCount, scene.World.Areas.Count);
+    }
+
+    [Fact]
+    public void InPlayEntryUsesTheRulesLifecycleForStartingState()
+    {
+        var scene = Deal(
+            "behavior:card:01149:printed-starting-threat",
+            "ultron",
+            ["spider_man"]);
+
+        scene.Apply(new MoveSceneCard(
+            new SceneCard("01149"),
+            new SceneDestination(SceneZone.SideScheme)));
+        scene.Apply(new MoveSceneCard(
+            new SceneCard("01008"),
+            new SceneDestination(SceneZone.Upgrade, Seat: 0)));
+
+        Assert.Equal(3, scene.Find(new SceneCard("01149")).Tokens["k_threat"]);
+        Assert.Equal(3, scene.Find(new SceneCard("01008")).Tokens["c_web"]);
+        Assert.Equal(
+            scene.World.Seats[0].IdentityCard.ObjectId,
+            scene.Find(new SceneCard("01008")).Area.Host);
+    }
+
+    [Fact]
+    public void PrintedAttachmentTargetIsRequired()
+    {
+        var scene = Deal(
+            "behavior:card:01009:attach-to-an-enemy",
+            "rhino",
+            ["spider_man"]);
+        scene.Apply(new MoveSceneCard(
+            new SceneCard("01006"),
+            new SceneDestination(SceneZone.Support, Seat: 0)));
+        Card auntMay = scene.Find(new SceneCard("01006"));
+        Area before = scene.Find(new SceneCard("01009")).Area;
+
+        var thrown = Assert.Throws<CoreSceneConstructionException>(() => scene.Apply(
+            new MoveSceneCard(
+                new SceneCard("01009"),
+                new SceneDestination(SceneZone.Upgrade, Seat: 0, Host: auntMay.ObjectId))));
+
+        Assert.Contains("not a legal printed host", thrown.Message, StringComparison.Ordinal);
+        Assert.Same(before, scene.Find(new SceneCard("01009")).Area);
+    }
+
+    [Fact]
+    public void PrintedPerHostAttachmentMaximumIsRequired()
+    {
+        var scene = Deal(
+            "behavior:card:01009:max-one-per-enemy",
+            "rhino",
+            ["spider_man"]);
+        Card rhino = scene.Find(new SceneCard("01094"));
+        scene.Apply(new MoveSceneCard(
+            new SceneCard("01009", Copy: 0),
+            new SceneDestination(SceneZone.Upgrade, Seat: 0, Host: rhino.ObjectId)));
+        Area before = scene.Find(new SceneCard("01009", Copy: 1)).Area;
+
+        var thrown = Assert.Throws<CoreSceneConstructionException>(() => scene.Apply(
+            new MoveSceneCard(
+                new SceneCard("01009", Copy: 1),
+                new SceneDestination(SceneZone.Upgrade, Seat: 0, Host: rhino.ObjectId))));
+
+        Assert.Contains("not a legal printed host", thrown.Message, StringComparison.Ordinal);
+        Assert.Same(before, scene.Find(new SceneCard("01009", Copy: 1)).Area);
+    }
+
+    [Fact]
+    public void AHostCannotLeavePlayWhileItsHostedCardsRemain()
+    {
+        var scene = Deal(
+            "behavior:rr:leaves-play.1:hosted-cards-leave-play",
+            "rhino",
+            ["spider_man"]);
+        Card nick = scene.Find(new SceneCard("01084"));
+        scene.Apply(new MoveSceneCard(
+            new SceneCard("01084"),
+            new SceneDestination(SceneZone.Ally, Seat: 0)));
+        scene.Apply(new GiveSceneStatus(new SceneCard("01084"), Statuses.Tough));
+        Area before = nick.Area;
+
+        var thrown = Assert.Throws<CoreSceneConstructionException>(() => scene.Apply(
+            new StackPlayerDeck(0, [new SceneCard("01084")])));
+
+        Assert.Contains("still holds a hosted card", thrown.Message, StringComparison.Ordinal);
+        Assert.Same(before, nick.Area);
+        Assert.Equal(1, Statuses.Count(scene.World, nick, Statuses.Tough));
+    }
+
+    [Fact]
+    public void SetAsideCannotMoveAnOwnedCardAcrossSeats()
+    {
+        var scene = Deal(
+            "behavior:setup:hero:spider_man:hero-deck",
+            "rhino",
+            ["spider_man", "iron_man"]);
+
+        var thrown = Assert.Throws<CoreSceneConstructionException>(() => scene.Apply(
+            new MoveSceneCard(
+                new SceneCard("01006"),
+                new SceneDestination(SceneZone.SetAside, Seat: 1))));
+
+        Assert.Contains("owned by 0, not seat 1", thrown.Message, StringComparison.Ordinal);
+    }
+
+    [Rule("rr:player-deck.1")]
+    [Fact]
+    public void ConstructorCannotStopAtAnEmptyPlayerDeckWithADiscardPile()
+    {
+        // "immediately shuffle the discard pile to create a new player deck";
+        // a transcript reaches that transition by drawing the last card.
+        var scene = Deal(
+            "behavior:rr:player-deck.1:empty-with-discard",
+            "rhino",
+            ["spider_man"]);
+
+        var thrown = Assert.Throws<CoreSceneConstructionException>(() => scene.Apply(
+            new StackPlayerDeck(0, [], DiscardOthers: true)));
+
+        Assert.Contains("leave at least one card", thrown.Message, StringComparison.Ordinal);
+        Assert.NotEmpty(scene.World.Seats[0].Deck.Cards);
     }
 
     private static CanonicalCoreScene OneCardDeck() => Deal(
@@ -221,5 +374,6 @@ public sealed class CanonicalCoreSceneTests
         CanonicalCoreScene.Deal(
             new CoreSceneRequest(authority, campaign, heroes, Seed: 302),
             Setup,
-            Cards);
+            Cards,
+            AuthoredCards.Runner());
 }

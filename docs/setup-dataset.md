@@ -32,6 +32,14 @@ insert names the sets it always uses and the modular sets it draws from, and
 those are different questions — resolving them into one list would make a
 scenario played with chosen modulars inexpressible. `Dealer` does the join.
 
+Scenario setup instructions printed on main scheme 1A are card abilities, not
+scenario-list metadata. They are authored as typed `Setup` abilities in
+`datasets/abilities/abilities.json` and resolved at
+`rr:appendix-ii-setup.step.12.a`. Thus Klaw's Defense Network belongs to the
+encounter deck until its printed search reveals it, while Ultron Drones belongs
+to `set_aside` until The Crimson Cowl puts it into play. The setup dataset does
+not encode either effect a second time.
+
 ## The order a board is dealt in
 
 `Marvel.Content.Setup.Dealer`. This is a separate contract from the dataset and

@@ -410,11 +410,22 @@ public static class WorldSetup
     {
         foreach (var moved in happened.Skip(cursor).OfType<Events.CardsMoved>())
         {
+            // A reveal procedure resolves its own When Revealed ability, and a
+            // card explicitly put into play does not trigger one —
+            // rr:when-revealed-abilities.2. This queue is only for setup entry
+            // that has not already taken either of those two paths.
+            if (moved.From.Zone == DeckType.RevealingArea.ToString()
+                || moved.Verb == "Put_Into_Play")
+            {
+                continue;
+            }
+
             foreach (var landing in moved.Cards)
             {
                 var card = world.Cards[landing.Card];
                 var address = (card.ObjectId, card.Incarnation);
-                if (DeckTypes.IsInPlay(card.Area.Type)
+                if (moved.To.Zone == card.Area.Type.ToString()
+                    && DeckTypes.IsInPlay(card.Area.Type)
                     && IsDeferredSetupEncounterCard(facts, card)
                     && seen.Add(address))
                 {

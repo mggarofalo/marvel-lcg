@@ -150,6 +150,9 @@ public sealed class CardCatalog : ICardFacts
     public IReadOnlyDictionary<string, string> Attributes(string faceId) => Find(faceId).Attributes;
 
     /// <inheritdoc />
+    public IReadOnlyList<string> CounterTypes(string faceId) => Find(faceId).CounterTypes;
+
+    /// <inheritdoc />
     /// <remarks>
     /// <para>
     /// <b>The <c>*</c> means two different things and the card kind is what
@@ -348,7 +351,44 @@ public sealed class CardCatalog : ICardFacts
             ? textBox.GetString() ?? string.Empty
             : string.Empty;
 
-        return new Entry(kind, set, traits, attributes, title, subtitle, printed);
+        return new Entry(
+            kind, set, traits, attributes, title, subtitle, printed,
+            CounterTypesOf(printed, attributes));
+    }
+
+    private static List<string> CounterTypesOf(
+        string printed, Dictionary<string, string> attributes)
+    {
+        var found = new HashSet<string>(StringComparer.Ordinal);
+        if (attributes.TryGetValue("Uses", out string? uses))
+        {
+            string[] parts = uses.Split(',');
+            if (parts.Length == 2 && parts[1].Length > 0)
+            {
+                found.Add(parts[1].ToLowerInvariant());
+            }
+        }
+
+        string[] words = printed.Split(
+            [' ', '\n', '\r', '\t'], StringSplitOptions.RemoveEmptyEntries);
+        for (int index = 1; index < words.Length; index++)
+        {
+            string word = words[index].Trim('(', ')', '.', ',', ':', ';').ToLowerInvariant();
+            if (word is not ("counter" or "counters"))
+            {
+                continue;
+            }
+
+            string type = words[index - 1]
+                .Trim('(', ')', '.', ',', ':', ';')
+                .ToLowerInvariant();
+            if (type.Length > 0 && type.All(letter => char.IsLetter(letter) || letter == '-'))
+            {
+                found.Add(type);
+            }
+        }
+
+        return found.Order(StringComparer.Ordinal).ToList();
     }
 
     /// <summary>
@@ -467,5 +507,6 @@ public sealed class CardCatalog : ICardFacts
         IReadOnlyDictionary<string, string> Attributes,
         string Title,
         string Subtitle,
-        string Text);
+        string Text,
+        IReadOnlyList<string> CounterTypes);
 }

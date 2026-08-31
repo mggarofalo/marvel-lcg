@@ -1115,6 +1115,24 @@ public sealed partial class AbilityRunner
                 $"'{cast.Source.FaceId}' would put a card into play that is not there");
 
         string where = Word(node.Require("where"));
+        if (string.Equals(where, "printedDestination", StringComparison.Ordinal))
+        {
+            // This spelling is the engine's typed DSL choice; the rulebook
+            // decides the destination from the card type. Passing no reveal
+            // occurrence is load-bearing: rr:when-revealed-abilities.2 says a
+            // card put into play without being revealed does not trigger that
+            // ability, while Reveal.Resolve still applies enters-play rules.
+            Reveal.Resolve(
+                cast.World,
+                cast.World.Facts,
+                card,
+                cast.World.FirstPlayer,
+                cast.Events,
+                verb: "Put_Into_Play");
+            cast.ResolveEffect();
+            return;
+        }
+
         if (!string.Equals(where, "engagedWithYou", StringComparison.Ordinal))
         {
             throw new RulesNotImplementedException(

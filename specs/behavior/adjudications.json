@@ -66327,7 +66327,7 @@
     },
     {
       "id": "setup:campaign:klaw",
-      "fingerprint": "sha256:bb811826ece78daf0aadd2387c23af28e2a0e0c864618d2f26493a1ebf37a88b",
+      "fingerprint": "sha256:21fa72e52f4ebbcf9339ded71facc7876ba59a321cce82b82d1d8a538a99e2ec",
       "obligations": [
         {
           "key": "setup-campaign-log",
@@ -66367,7 +66367,7 @@
         },
         {
           "key": "setup-encounters",
-          "summary": "encounters: [\"01118\",\"01119\",\"01120\",\"01120\",\"01120\",\"01121\",\"01121\",\"01122\",\"01122\",\"01123\",\"01123\",\"01124\",\"01124\",\"01126\",\"01127\"]",
+          "summary": "encounters: [\"01118\",\"01119\",\"01120\",\"01120\",\"01120\",\"01121\",\"01121\",\"01122\",\"01122\",\"01123\",\"01123\",\"01124\",\"01124\",\"01125\",\"01126\",\"01127\"]",
           "disposition": "executable",
           "reason": null,
           "target": null,
@@ -66427,7 +66427,7 @@
         },
         {
           "key": "setup-set-aside",
-          "summary": "set_aside: [\"01125\"]",
+          "summary": "set_aside: []",
           "disposition": "executable",
           "reason": null,
           "target": null,
@@ -66453,7 +66453,7 @@
     },
     {
       "id": "setup:campaign:klaw_expert",
-      "fingerprint": "sha256:66a6393e757f22f4282004df4ebd9e8f2fc61b18cd29ebbf389206540a55e013",
+      "fingerprint": "sha256:c77eaa56fd49662cb34d625cbf91adaebeb657c4a40913d69adfa3399a6137a8",
       "obligations": [
         {
           "key": "setup-campaign-log",
@@ -66493,7 +66493,7 @@
         },
         {
           "key": "setup-encounters",
-          "summary": "encounters: [\"01118\",\"01119\",\"01120\",\"01120\",\"01120\",\"01121\",\"01121\",\"01122\",\"01122\",\"01123\",\"01123\",\"01124\",\"01124\",\"01126\",\"01127\"]",
+          "summary": "encounters: [\"01118\",\"01119\",\"01120\",\"01120\",\"01120\",\"01121\",\"01121\",\"01122\",\"01122\",\"01123\",\"01123\",\"01124\",\"01124\",\"01125\",\"01126\",\"01127\"]",
           "disposition": "executable",
           "reason": null,
           "target": null,
@@ -66553,7 +66553,7 @@
         },
         {
           "key": "setup-set-aside",
-          "summary": "set_aside: [\"01125\"]",
+          "summary": "set_aside: []",
           "disposition": "executable",
           "reason": null,
           "target": null,

@@ -26,6 +26,14 @@ public sealed class CardCatalogTests
     private static readonly CardCatalog Cards =
         CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
 
+    [Fact]
+    public void CounterTypesComeFromPrintedCardTextAndUses()
+    {
+        Assert.Equal(["web"], Cards.CounterTypes("01008"));
+        Assert.Equal(["energy"], Cards.CounterTypes("01018"));
+        Assert.Empty(Cards.CounterTypes("01094"));
+    }
+
     [Theory]
     // Already upper-case in the engine's data, so nothing to resolve.
     [InlineData("CRIMINAL", "CRIMINAL")]

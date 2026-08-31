@@ -8,8 +8,9 @@ the legal state used by executable behavioral transcripts.
 A scene begins with `Dealer.DealOrder`, `Blueprints.From` and `WorldSetup.Deal`.
 Those existing components remain the authority for starter-deck membership,
 signature sets, copy limits, encounter composition, setup order and seeded
-shuffles. The scene constructor does not have another card factory or a smaller
-deck format.
+shuffles. A complete card-ability interpreter is required, so mandatory Core
+scenario setup cannot silently become a no-op. The scene constructor does not
+have another card factory or a smaller deck format.
 
 An arrangement selects a physical card by printed face id plus zero-based copy
 number. Selection is stable by `object_id`, independent of the card's current
@@ -19,7 +20,7 @@ zone. The typed operations can:
   current draw pile to their discard pile;
 - move an existing card to a legal player, encounter or in-play area;
 - attach player upgrades and encounter attachments to an in-play host;
-- set legal damage, registered token pools, form and readiness;
+- set legal damage, scheme threat, printed counter types, form and readiness;
 - create a tough, stunned or confused status through the rules' status-card
   operation.
 
@@ -28,6 +29,9 @@ Every dealt card, and every status card explicitly created by an operation, must
 occur in exactly one area. Object ids remain contiguous, ownership remains what
 the legal deal assigned, and matching unique cards cannot both be in play.
 Zone-specific operations additionally check printed kind, owner, seat and host.
+Cards entering play use the engine's ordinary entry lifecycle, including
+starting threat, Uses counters and Toughness. Upgrade and attachment hosts are
+checked against printed targeting and maximums before any area is created.
 
 The constructor chooses this small operation vocabulary. The Rules Reference
 does not define a test-fixture API. What the rules do decide is whether the

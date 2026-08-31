@@ -209,17 +209,10 @@ public sealed class CoreSetupTests
 
     [Rule("rr:appendix-ii-setup.step.15")]
     [Theory]
-    [InlineData("rhino", "Learn to Play, page 23, Rhino (pack:mvc01:rhino)")]
-    [InlineData(
-        "rhino_expert",
-        "Learn to Play, page 23, Rhino; Rules Reference 1.8, Modes of Play.2")]
+    [MemberData(nameof(CoreScenarioModes))]
     public void EverySupportedCoreScenarioModeReachesTheFirstDecision(
         string campaign, string source)
     {
-        // Klaw and Ultron are held structurally above. Their printed setup
-        // abilities are core cards and become supported with MARVEL-68; a
-        // silent interpreter would make them appear to reach the mulligan on
-        // boards missing Defense Network or Ultron Drones.
         var order = Dealer.DealOrder(Setup, campaign, ["spider_man"]);
         var runner = AuthoredCards.Runner();
         var world = WorldSetup.Deal(
@@ -234,7 +227,32 @@ public sealed class CoreSetupTests
         Assert.True(
             AtMulligan(game),
             $"{source}; rr:appendix-ii-setup.step.15: {campaign} reaches the mulligan");
+
+        if (campaign.StartsWith("klaw", StringComparison.Ordinal))
+        {
+            Card defenseNetwork = Assert.Single(
+                world.Cards, card => card.FaceId == "01125");
+            Assert.Equal(DeckType.SideSchemesArea, defenseNetwork.Area.Type);
+            Assert.Equal(3, defenseNetwork.Tokens["k_threat"]);
+        }
+        else if (campaign.StartsWith("ultron", StringComparison.Ordinal))
+        {
+            Assert.Equal(
+                DeckType.EnvironmentArea,
+                Assert.Single(world.Cards, card => card.FaceId == "01140").Area.Type);
+            Assert.Contains(world.Cards, FacedownDrones.Is);
+        }
     }
+
+    public static TheoryData<string, string> CoreScenarioModes => new()
+    {
+        { "rhino", Scenarios["rhino"].Source },
+        { "rhino_expert", Scenarios["rhino_expert"].Source },
+        { "klaw", Scenarios["klaw"].Source },
+        { "klaw_expert", Scenarios["klaw_expert"].Source },
+        { "ultron", Scenarios["ultron"].Source },
+        { "ultron_expert", Scenarios["ultron_expert"].Source },
+    };
 
     [Fact]
     public void TheFiveCoreModularSetsAreThePrintedLists()
@@ -412,7 +430,7 @@ public sealed class CoreSetupTests
                 ["01156", "01157", "01158", "01159", "01159"]),
         };
 
-    private static readonly IReadOnlyDictionary<string, ScenarioAuthority> Scenarios =
+    private static readonly Dictionary<string, ScenarioAuthority> Scenarios =
         new Dictionary<string, ScenarioAuthority>(StringComparer.Ordinal)
         {
             ["rhino"] = new(
@@ -428,13 +446,13 @@ public sealed class CoreSetupTests
             ["klaw"] = new(
                 "Learn to Play, page 23, Klaw (pack:mvc01:klaw)", false,
                 ["01113", "01114"], ["01116a,01116b", "01117a,01117b"],
-                ["01118", "01119", "01120", "01120", "01120", "01121", "01121", "01122", "01122", "01123", "01123", "01124", "01124", "01126", "01127"],
-                ["standard"], ["masters_of_evil"], ["01125"]),
+                ["01118", "01119", "01120", "01120", "01120", "01121", "01121", "01122", "01122", "01123", "01123", "01124", "01124", "01125", "01126", "01127"],
+                ["standard"], ["masters_of_evil"], []),
             ["klaw_expert"] = new(
                 "Learn to Play, page 23, Klaw; Rules Reference 1.8, Modes of Play.2", true,
                 ["01114", "01115"], ["01116a,01116b", "01117a,01117b"],
-                ["01118", "01119", "01120", "01120", "01120", "01121", "01121", "01122", "01122", "01123", "01123", "01124", "01124", "01126", "01127"],
-                ["standard", "expert"], ["masters_of_evil"], ["01125"]),
+                ["01118", "01119", "01120", "01120", "01120", "01121", "01121", "01122", "01122", "01123", "01123", "01124", "01124", "01125", "01126", "01127"],
+                ["standard", "expert"], ["masters_of_evil"], []),
             ["ultron"] = new(
                 "Learn to Play, page 23, Ultron (pack:mvc01:ultron)", false,
                 ["01134", "01135"], ["01137a,01137b", "01138a,01138b", "01139a,01139b"],

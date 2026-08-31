@@ -77,12 +77,12 @@ public sealed record SetSceneDamage(SceneCard Card, long Damage)
     public override string Name => "set-damage";
 }
 
-/// <summary>Sets a registered token pool on a card to an exact value.</summary>
-public sealed record SetSceneTokens(SceneCard Card, string Kind, long Count)
+/// <summary>Sets scheme threat or one printed all-purpose counter type to an exact value.</summary>
+public sealed record SetSceneCounters(SceneCard Card, string Type, long Count)
     : CoreSceneOperation
 {
     /// <inheritdoc />
-    public override string Name => "set-tokens";
+    public override string Name => "set-counters";
 }
 
 /// <summary>Shows one of the selected player's two printed identity faces.</summary>
@@ -145,11 +145,12 @@ public sealed class CanonicalCoreScene
         CoreSceneRequest request,
         Setup.SetupCatalog setup,
         ICardFacts facts,
-        ICardAbilities? abilities = null)
+        ICardAbilities abilities)
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(setup);
         ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(abilities);
         ArgumentNullException.ThrowIfNull(request.Heroes);
         if (string.IsNullOrWhiteSpace(request.Authority))
         {
@@ -193,8 +194,8 @@ public sealed class CanonicalCoreScene
                 case SetSceneDamage damage:
                     Damage(Find(damage.Card), damage.Damage);
                     break;
-                case SetSceneTokens tokens:
-                    Tokens(Find(tokens.Card), tokens.Kind, tokens.Count);
+                case SetSceneCounters counters:
+                    Counters(Find(counters.Card), counters.Type, counters.Count);
                     break;
                 case SetSceneForm form:
                     Form(form);
@@ -246,11 +247,18 @@ public sealed class CanonicalCoreScene
     private void StackPlayer(StackPlayerDeck operation)
     {
         Seat seat = Player(operation.Seat);
+        if (operation.TopFirst.Count == 0)
+        {
+            throw new ArgumentException(
+                "a canonical player-deck boundary must leave at least one card to draw");
+        }
+
         var selected = Distinct(operation.TopFirst);
         foreach (var card in selected)
         {
             RequireOwner(card, operation.Seat);
             RequirePlayerDeckCard(card);
+            RequireHostCanMove(card, PlayArea.Of(operation.Seat), destinationInPlay: false);
         }
 
         if (operation.DiscardOthers)
@@ -259,6 +267,7 @@ public sealed class CanonicalCoreScene
                 DeckType.DiscardPile, PlayArea.Of(operation.Seat), cardOwner: operation.Seat);
             foreach (var card in seat.Deck.Cards.Where(card => !selected.Contains(card)).ToList())
             {
+                RequireHostCanMove(card, PlayArea.Of(operation.Seat), destinationInPlay: false);
                 World.MoveToTop(card, discard);
             }
         }
@@ -275,6 +284,7 @@ public sealed class CanonicalCoreScene
         foreach (var card in selected)
         {
             RequireEncounterCard(card);
+            RequireHostCanMove(card, PlayArea.Villains, destinationInPlay: false);
         }
 
         Area deck = World.AreaOf(DeckType.EncounterDeck);
@@ -299,16 +309,46 @@ public sealed class CanonicalCoreScene
     private void Move(Card card, SceneDestination destination)
     {
         ArgumentNullException.ThrowIfNull(destination);
-        Area area = Destination(card, destination);
-        if (DeckTypes.IsInPlay(area.Type)
+        var (playArea, inPlay) = ProjectedDestination(card, destination);
+        RequireHostCanMove(card, playArea, inPlay);
+        RequireEntryLimits(card, playArea, inPlay);
+        if (inPlay
             && !DeckTypes.IsInPlay(card.Area.Type)
-            && Uniqueness.IsBlocked(World, World.Facts, card, area.PlayArea))
+            && Uniqueness.IsBlocked(World, World.Facts, card, playArea))
         {
             throw new InvalidOperationException(
                 $"matching unique '{World.Facts.Title(card.FaceId)}' is already in play");
         }
 
+        Area area = Destination(card, destination);
+        bool entersPlay = inPlay && !DeckTypes.IsInPlay(card.Area.Type);
         World.MoveToTop(card, area);
+        if (entersPlay)
+        {
+            Reveal.EnterPlay(World, World.Facts, card, [], abilities: World.Abilities);
+            AccountCreatedCards();
+        }
+    }
+
+    private (PlayArea PlayArea, bool InPlay) ProjectedDestination(
+        Card card, SceneDestination destination)
+    {
+        int seat = destination.Seat;
+        return destination.Zone switch
+        {
+            SceneZone.PlayerDeck or SceneZone.PlayerHand or SceneZone.PlayerDiscard =>
+                (PlayArea.Of(Player(seat).Index), false),
+            SceneZone.Ally or SceneZone.Support or SceneZone.Obligation or
+                SceneZone.EngagedMinion => (PlayArea.Of(Player(seat).Index), true),
+            SceneZone.Upgrade =>
+                (UpgradeHost(card, seat, destination.Host).Area.PlayArea, true),
+            SceneZone.Attachment =>
+                (AttachmentHost(card, destination.Host).Area.PlayArea, true),
+            SceneZone.EncounterDeck or SceneZone.EncounterDiscard or SceneZone.SetAside =>
+                (seat == World.Scenario ? PlayArea.Villains : PlayArea.Of(Player(seat).Index), false),
+            SceneZone.SideScheme or SceneZone.Environment => (PlayArea.Villains, true),
+            _ => throw new ArgumentOutOfRangeException(nameof(destination)),
+        };
     }
 
     private Area Destination(Card card, SceneDestination destination)
@@ -337,16 +377,15 @@ public sealed class CanonicalCoreScene
                 return World.AreaOf(DeckType.SupportsArea, PlayArea.Of(seat), cardOwner: seat);
             case SceneZone.Upgrade:
                 RequirePlayerKind(card, seat, CardKind.Upgrade);
-                Card? upgradeHost = Host(destination.Host);
+                Card upgradeHost = UpgradeHost(card, seat, destination.Host);
                 return World.AreaOf(
                     DeckType.UpgradesArea,
-                    upgradeHost?.Area.PlayArea ?? PlayArea.Of(seat),
-                    destination.Host,
+                    upgradeHost.Area.PlayArea,
+                    upgradeHost.ObjectId,
                     cardOwner: seat);
             case SceneZone.Attachment:
                 RequireScenarioKind(card, kind, CardKind.Attachment);
-                Card attachmentHost = Host(destination.Host)
-                    ?? throw new ArgumentException("an encounter attachment requires a host");
+                Card attachmentHost = AttachmentHost(card, destination.Host);
                 return World.AreaOf(
                     DeckType.UpgradesArea,
                     attachmentHost.Area.PlayArea,
@@ -379,9 +418,15 @@ public sealed class CanonicalCoreScene
                 RequireScenarioKind(card, kind, CardKind.Environment);
                 return World.AreaOf(DeckType.EnvironmentArea);
             case SceneZone.SetAside:
-                return seat == World.Scenario
-                    ? World.AreaOf(DeckType.AsideDeck)
-                    : Player(seat).SetAside;
+                if (seat == World.Scenario)
+                {
+                    RequireOwner(card, World.Scenario);
+                    return World.AreaOf(DeckType.AsideDeck);
+                }
+
+                Player(seat);
+                RequireOwner(card, seat);
+                return World.Seats[seat].SetAside;
             default:
                 throw new ArgumentOutOfRangeException(nameof(destination));
         }
@@ -410,28 +455,37 @@ public sealed class CanonicalCoreScene
         card.TakeDamage(damage - card.Damage);
     }
 
-    private void Tokens(Card card, string kind, long count)
+    private void Counters(Card card, string type, long count)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(kind);
-        if (!kind.StartsWith("k_", StringComparison.Ordinal))
-        {
-            throw new ArgumentException("a token pool must use its canonical k_ key", nameof(kind));
-        }
+        ArgumentException.ThrowIfNullOrWhiteSpace(type);
+        string normalized = type.ToLowerInvariant();
 
         if (count < 0)
         {
             throw new ArgumentOutOfRangeException(nameof(count), "token count must not be negative");
         }
 
-        var record = World.Digest().Cards.Single(candidate => candidate.Id == card.ObjectId);
-        if (!record.Fields.ContainsKey(kind))
+        string key;
+        CardKind cardKind = World.Facts.Kind(card.FaceId);
+        if (normalized == "threat"
+            && cardKind is CardKind.MainScheme or CardKind.EncounterSideScheme
+                or CardKind.PlayerSideScheme)
+        {
+            key = "k_threat";
+        }
+        else if (World.Facts.CounterTypes(card.FaceId).Contains(
+                     normalized, StringComparer.Ordinal))
+        {
+            key = "c_" + normalized;
+        }
+        else
         {
             throw new InvalidOperationException(
-                $"'{card.FaceId}' does not register token pool '{kind}' in {card.Area.Type}");
+                $"'{card.FaceId}' does not print {normalized} counters");
         }
 
-        long held = card.Tokens.GetValueOrDefault(kind, 0);
-        card.PlaceTokens(kind, count - held);
+        long held = card.Tokens.GetValueOrDefault(key, 0);
+        card.PlaceTokens(key, count - held);
     }
 
     private void Form(SetSceneForm operation)
@@ -486,6 +540,14 @@ public sealed class CanonicalCoreScene
         accountedOwners.Add(created.ObjectId, created.Owner);
     }
 
+    private void AccountCreatedCards()
+    {
+        foreach (var created in World.Cards.Where(card => !accountedOwners.ContainsKey(card.ObjectId)))
+        {
+            accountedOwners.Add(created.ObjectId, created.Owner);
+        }
+    }
+
     private void ValidateWorld()
     {
         if (World.Cards.Count != accountedOwners.Count)
@@ -497,6 +559,22 @@ public sealed class CanonicalCoreScene
         var membership = new int[World.Cards.Count];
         foreach (var area in World.Areas.OrderBy(area => area.Id))
         {
+            if (area.Host >= 0 && (area.Cards.Count > 0 || area.Removed.Count > 0))
+            {
+                if (area.Host >= World.Cards.Count)
+                {
+                    throw new InvalidOperationException(
+                        $"hosted area {area.Id} names missing card {area.Host}");
+                }
+
+                Card host = World.Cards[area.Host];
+                if (!DeckTypes.IsInPlay(host.Area.Type) || host.Area.PlayArea != area.PlayArea)
+                {
+                    throw new InvalidOperationException(
+                        $"hosted area {area.Id} does not share an in-play host's play area");
+                }
+            }
+
             foreach (var card in area.Cards.Concat(area.Removed))
             {
                 if (card.ObjectId < 0 || card.ObjectId >= membership.Length)
@@ -553,15 +631,9 @@ public sealed class CanonicalCoreScene
         ? World.Seats[seat]
         : throw new ArgumentOutOfRangeException(nameof(seat), $"there is no player seat {seat}");
 
-    private Card? Host(int host)
+    private Card Host(int host)
     {
-        ArgumentOutOfRangeException.ThrowIfLessThan(host, -1);
-        if (host == -1)
-        {
-            return null;
-        }
-
-        if (host >= World.Cards.Count)
+        if (host < 0 || host >= World.Cards.Count)
         {
             throw new ArgumentOutOfRangeException(nameof(host), $"there is no card {host}");
         }
@@ -573,6 +645,107 @@ public sealed class CanonicalCoreScene
         }
 
         return card;
+    }
+
+    private Card UpgradeHost(Card card, int player, int requested)
+    {
+        Seat seat = Player(player);
+        var eligible = CardPlay.LegalAttachmentTargets(
+            World, World.Facts, seat, card, World.Abilities);
+        if (eligible is null)
+        {
+            int identity = seat.IdentityCard.ObjectId;
+            if (requested is not (-1) && requested != identity)
+            {
+                throw new InvalidOperationException(
+                    $"'{card.FaceId}' is an ordinary upgrade and must attach to identity {identity}");
+            }
+
+            return seat.IdentityCard;
+        }
+
+        if (requested < 0 || !eligible.Contains(requested))
+        {
+            throw new InvalidOperationException(
+                $"card {requested} is not a legal printed host for '{card.FaceId}'");
+        }
+
+        return Host(requested);
+    }
+
+    private Card AttachmentHost(Card card, int requested)
+    {
+        Card host = Host(requested);
+        int? required = World.Abilities.AttachesTo(World, card);
+        if (required is null || required != host.ObjectId)
+        {
+            throw new InvalidOperationException(
+                $"card {requested} is not the printed attach-to host for '{card.FaceId}'");
+        }
+
+        return host;
+    }
+
+    private void RequireHostCanMove(
+        Card card, PlayArea destination, bool destinationInPlay)
+    {
+        var hosted = World.Areas
+            .Where(area => area.Host == card.ObjectId && area.Cards.Count > 0)
+            .OrderBy(area => area.Id)
+            .FirstOrDefault();
+        if (hosted is null)
+        {
+            return;
+        }
+
+        if (!destinationInPlay || hosted.PlayArea != destination)
+        {
+            throw new InvalidOperationException(
+                $"card {card.ObjectId} cannot move while area {hosted.Id} still holds a hosted card");
+        }
+    }
+
+    private void RequireEntryLimits(Card card, PlayArea destination, bool destinationInPlay)
+    {
+        if (!destinationInPlay || DeckTypes.IsInPlay(card.Area.Type))
+        {
+            return;
+        }
+
+        if (World.Facts.Kind(card.FaceId) == CardKind.Ally && destination.IsPlayers)
+        {
+            int player = destination.Player;
+            long limit = StateFields.Modified(
+                World,
+                World.Seats[player].IdentityCard,
+                "ally_limit",
+                World.Facts,
+                World.Players);
+            int held = World.Areas
+                .Where(area => area.Type == DeckType.AlliesArea
+                    && area.PlayArea == destination)
+                .Sum(area => area.Cards.Count);
+            if (held >= limit)
+            {
+                throw new InvalidOperationException(
+                    $"seat {player} already controls its ally limit of {limit}");
+            }
+        }
+
+        if (StateFields.Modified(
+                World, card, "restricted", World.Facts, World.Players) > 0)
+        {
+            int held = World.Cards.Count(candidate =>
+                DeckTypes.IsInPlay(candidate.Area.Type)
+                && candidate.Owner == card.Owner
+                && StateFields.Modified(
+                    World, candidate, "restricted", World.Facts, World.Players) > 0);
+            if (held >= StateFields.RestrictedLimit)
+            {
+                throw new InvalidOperationException(
+                    $"seat {card.Owner} already controls {held} restricted cards");
+            }
+        }
     }
 
     private static void RequireOwner(Card card, int owner)

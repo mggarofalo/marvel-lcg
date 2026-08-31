@@ -717,7 +717,8 @@ public sealed partial class AbilityRunner
             "putIntoPlay" => SelectedCardMoves(
                 effect.Require("card"),
                 DeckType.AlliesArea, DeckType.SupportsArea, DeckType.UpgradesArea,
-                DeckType.EngagedEnemiesArea, DeckType.SideSchemesArea),
+                DeckType.EngagedEnemiesArea, DeckType.SideSchemesArea,
+                DeckType.EnvironmentArea, DeckType.ObligationsArea),
             "search" => SearchAreaTypes(effect, cast).Any(queried.Contains)
                 || queried.Contains(DeckType.RevealingArea),
             "shuffleInto" => Includes(
