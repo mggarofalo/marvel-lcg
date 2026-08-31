@@ -21,9 +21,8 @@
 # Marvel's printed ATK 2 defeats him, the villain advances, and stage II's When
 # Revealed runs as part of that advance.
 #
-# The side scheme is named "01127" rather than by name throughout: its printed
-# name The "Immortal" Klaw carries double quotes, which a card reference in
-# this format has no way to spell.
+# The side scheme's printed name carries double quotes. Inside a quoted card
+# argument those marks are escaped: `"The \"Immortal\" Klaw"`.
 
 Feature: Klaw (II)
 
@@ -39,14 +38,14 @@ Feature: Klaw (II)
     # something and revealed it rather than merely discarding it.
     Given I am in hero form
     And "Klaw" has 11 damage
-    And the encounter deck is "01127", "Armored Guard"
+    And the encounter deck is "The \"Immortal\" Klaw", "Armored Guard"
 
     When I attack "Klaw"
     Then "Klaw" has 2 "printed_stage"
     And "Klaw" has 1 "attack"
     And "Klaw" has 2 "scheme"
-    And "01127" is in the "SideSchemesArea"
-    And "01127" has 3 threat
+    And "The \"Immortal\" Klaw" is in the "SideSchemesArea"
+    And "The \"Immortal\" Klaw" has 3 threat
     And "Klaw" has 28 health
 
   @card:01114
@@ -57,12 +56,12 @@ Feature: Klaw (II)
     # the game is the one already in the discard pile.
     Given I am in hero form
     And "Klaw" has 11 damage
-    And the encounter discard pile is "01127"
+    And the encounter discard pile is "The \"Immortal\" Klaw"
     And the encounter deck is "Armored Guard", "Armored Guard"
 
     When I attack "Klaw"
-    Then "01127" is in the "SideSchemesArea"
-    And "01127" has 3 threat
+    Then "The \"Immortal\" Klaw" is in the "SideSchemesArea"
+    And "The \"Immortal\" Klaw" has 3 threat
     And "Klaw" has 28 health
 
   @card:01114
