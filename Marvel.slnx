@@ -13,6 +13,8 @@
     <Project Path="tools/Marvel.Cards.Extract/Marvel.Cards.Extract.csproj" />
     <Project Path="tools/Marvel.Rules.Harvest/Marvel.Rules.Harvest.csproj" />
     <Project Path="tools/Marvel.Rulings.Harvest/Marvel.Rulings.Harvest.csproj" />
+    <Project Path="tools/Marvel.Rules.Packs.Harvest/Marvel.Rules.Packs.Harvest.csproj" />
+    <Project Path="tools/Marvel.MarvelCdb.Harvest/Marvel.MarvelCdb.Harvest.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Marvel.Core.Tests/Marvel.Core.Tests.csproj" />

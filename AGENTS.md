@@ -11,7 +11,7 @@ the Plane project `MARVEL` — see [docs/plane.md](docs/plane.md).
 ```
 src/        the engine — `Marvel.Core`, `Marvel.Rules`, `Marvel.Cards`, `Marvel.Content`
 tests/      the test suite, plus `godot-wall/` (projects that must fail to build)
-tools/      repo-level scripts, and the three that read a dataset in or out
+tools/      repo-level scripts, and the six that read a dataset in or out
 datasets/   the rules, the cards, and what a scenario is dealt from
 specs/      Gherkin scenarios written from printed card text — all drafts
 docs/       design documents and wire-format specifications
@@ -93,7 +93,7 @@ as important.
 
 ## The tools
 
-Four, all run by hand and none on any path a game takes.
+Six, all run by hand and none on any path a game takes.
 
 | | |
 |---|---|
@@ -101,6 +101,8 @@ Four, all run by hand and none on any path a game takes.
 | `tools/Marvel.Rules.Harvest` | reads the Rules Reference PDF into `datasets/rules-reference/`. Not a gate: the document is copyrighted and CI has no copy. |
 | `tools/Marvel.Rules.Index` | asks the rules corpus questions — `refs` walks the citation graph both ways, `citations` reports what the suite holds the engine to. |
 | `tools/Marvel.Rulings.Harvest` | acquires Hall of Heroes pages into a local cache, then builds and checks the vendored rulings index offline. |
+| `tools/Marvel.Rules.Packs.Harvest` | reads local expansion PDFs into `datasets/rules-packs/`; its source manifest checks the local PDFs and committed snapshot offline. |
+| `tools/Marvel.MarvelCdb.Harvest` | acquires MarvelCDB FAQ entries into a complete local candidate, then writes and checks `datasets/marvelcdb-faq/` offline. |
 
 ## Before you touch X, read Y
 
