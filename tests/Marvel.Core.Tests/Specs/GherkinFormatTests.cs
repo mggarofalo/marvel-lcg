@@ -128,17 +128,15 @@ public sealed class GherkinFormatTests
         // Gherkin treats a step as opaque text. The repository chooses the
         // backslash spelling, and future bindings decode it after this parse.
         var parser = new Parser();
-        string path = Path.Combine(
-            RepositoryPaths.Root,
-            "specs", "cards", "core", "01127-the-immortal-klaw.feature");
-
-        var document = parser.Parse(path);
-        var stepTexts = (document.Feature?.Children ?? [])
+        var stepTexts = FeatureFiles
+            .Select(parser.Parse)
+            .SelectMany(document => document.Feature?.Children ?? [])
             .OfType<Gherkin.Ast.Scenario>()
             .SelectMany(scenario => scenario.Steps)
             .Select(step => step.Text)
             .ToList();
 
+        Assert.Contains("\"\\\"I'm Tough\\\"\" is revealed", stepTexts);
         Assert.Contains(
             "\"The \\\"Immortal\\\" Klaw\" is in the \"SideSchemesArea\"",
             stepTexts);
