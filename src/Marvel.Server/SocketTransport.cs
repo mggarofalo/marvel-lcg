@@ -133,6 +133,7 @@ public sealed class SocketEngineServer(IEngineEndpoint endpoint, IPAddress addre
                 Capability: null,
                 Prompt: null,
                 Events: [],
+                World: null,
                 Error: new EngineError("invalid_frame", failure.Message));
         }
 
@@ -160,6 +161,7 @@ public sealed class SocketEngineServer(IEngineEndpoint endpoint, IPAddress addre
                 Capability: null,
                 Prompt: null,
                 Events: [],
+                World: null,
                 Error: new EngineError(
                     "response_failed",
                     "the engine response could not be represented on the wire"));

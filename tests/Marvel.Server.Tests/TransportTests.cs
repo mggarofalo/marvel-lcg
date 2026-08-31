@@ -6,6 +6,7 @@ using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.Timing;
+using Marvel.View;
 using Xunit;
 
 namespace Marvel.Server.Tests;
@@ -90,6 +91,28 @@ public sealed class TransportTests
             """);
 
         Assert.Throws<JsonException>(() => EngineJson.ReadRequest(request));
+    }
+
+    [Fact]
+    public void TheWireCarriesAFilteredWorldAndNeverAStateDigest()
+    {
+        var response = new EngineResponse(
+            EngineProtocol.Version,
+            "request",
+            "game",
+            Capability: null,
+            Prompt: null,
+            Events: [],
+            World: new WorldDescriptor([], [], [], Outcome.Unfinished));
+
+        string json = Encoding.UTF8.GetString(EngineJson.Write(response));
+
+        Assert.Contains("\"world\"", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("digest", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("audience", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("StateDigest", ResponseTypeNames(), StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "Marvel.Rules.State.World", ResponseTypeNames(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -302,4 +325,9 @@ public sealed class TransportTests
         public OpenedGame Create(GameSpecification specification) =>
             throw new InvalidOperationException("should not be called");
     }
+
+    private static string ResponseTypeNames() => string.Join(
+        ",",
+        typeof(EngineResponse).GetProperties().Select(property =>
+            property.PropertyType.FullName));
 }

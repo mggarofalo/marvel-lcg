@@ -445,7 +445,7 @@ blocks the client loop; the in-process implementation calls the host
 synchronously before returning its completed value, so neither transport
 creates an async or concurrent path into game state.
 
-The socket protocol is version 1, source-generated JSON in a four-byte
+The socket protocol is version 2, source-generated JSON in a four-byte
 big-endian length frame, with a 4 MiB maximum. One connection carries one
 request and one response. `open`, `resolve`, and `close` are the three
 operations; game ids and request correlation ids are opaque strings chosen by
@@ -463,18 +463,23 @@ capability. Capability randomness is transport/security state above the engine
 wall: it never enters `World`, the seeded MT19937 stream, a prompt, or an event,
 so it cannot change the game named by a seed.
 
+Version 2 adds the filtered `world` descriptor and the opening request's
+`viewer` claim. There is deliberately no compatibility reading of version 1:
+its response had no board snapshot, and treating that smaller response as a
+visibility-safe bootstrap would leave the client to recover state from some
+other, unowned channel.
+
 Cancellation has one explicit boundary. It may cancel DNS/connect and the
 request write. Once the complete request frame has been sent, the server may
 have committed the decision, so the response read no longer observes caller
 cancellation: the prompt and event list are the authoritative result and cannot
 be discarded without an idempotent retry protocol. There is no such retry
-protocol in version 1.
+protocol in version 2.
 
-The response deliberately contains a prompt and events, never `World` or its
-digest. A fresh client's visible board projection is separate work for
-`Marvel.View` and the visibility owner below; making the digest a bootstrap
-shortcut would expose hidden state and turn an internal truth format into a
-client API.
+The response deliberately contains a prompt, events and a filtered
+`WorldDescriptor`, never the engine's `World` or its digest. Making the digest
+a bootstrap shortcut would expose hidden state and turn an internal truth
+format into a client API.
 
 ### Affordances and events have to be wire types
 
@@ -487,16 +492,51 @@ The digest is the counter-example that proves the rule: it records hidden state
 truthfully and must never reach a client. With a real server that stops being a
 convention and becomes something the wire format enforces.
 
-### Visibility becomes a real requirement again
+### Visibility is enforced before the wire
 
-`migration.md` records the forward-looking rule in prose: the server decides what
-each seat sees, and the client's assertion is an input to that decision rather
-than the decision itself. That was filed away as untracked because nothing was
-being served.
+Implemented by MARVEL-168. `Marvel.View` owns a normalized descriptor graph:
+one `WorldDescriptor` contains every runtime `Area`, and each area contains its
+ordinary and removed card lists. The projection walks `World.Areas`; it does not
+keep a list of zone names. An area created during a game is therefore described
+and filtered in the first response that contains it.
 
-Something is being served now. The rule needs an owner on the C# side. This is a
-cooperative game, so a permissive policy is legitimate — it still has to be
-chosen rather than arrived at by nobody checking.
+Readable faces carry printed identity and live fields. A hidden card keeps only
+what the table physically exposes: its back, ready state, face-up state and
+attachment. Its face is null. A card concealed in a pile also has a null object
+id, which is load-bearing: an id seen before a shuffle cannot be followed
+through the hidden deck's new order. A face-down card physically in play keeps
+its id so it remains clickable, without gaining a readable face. The digest is
+not a descriptor field and is not a source-generated response type; it never
+reaches either transport.
+
+The response is filtered as one unit. A prompt is returned only to a scope that
+contains the player being asked. Search targets become visible to that player
+because `TargetRequest.IsSearch` says the player is looking at them. Events are
+kept only for cards visible after the decision: hidden creations, moves,
+reorders, flips and field changes are omitted, while the snapshot still carries
+the resulting pile height. This prevents the event stream from reintroducing a
+face or stable id the descriptor removed.
+
+The client may assert one `seat`, `hot_seat`, or `watch` mode on `open`. The
+capability is then bound to the server's decision for the lifetime of the
+session; `resolve` and `close` cannot replace it. Two policies make the choice
+explicit:
+
+- `cooperative` is the default. A seat claim sees that seat's private cards;
+  `hot_seat`, `watch`, or an omitted claim may see every seat's private cards.
+- `restricted` requires a server command-line `--seat N`. A claim for another
+  seat gets no private seat, while `hot_seat` and `watch` cannot widen the one
+  the server configured. This is the non-cooperative proof that the assertion
+  is input rather than authority.
+
+Face-up cards remain public under both policies. Face-down hands belong to their
+seat. Other face-down cards are visible to nobody unless the prompt is an
+authorized search. These are presentation/wire choices; the Rules Reference
+does not define network viewers.
+
+The standalone process still exposes exactly `open`, `resolve`, and `close`.
+There is no path-bearing request field, `read_file` operation, or cheat command,
+and unknown JSON members fail closed before the engine is called.
 
 ## How cards are drawn
 

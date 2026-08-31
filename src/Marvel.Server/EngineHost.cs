@@ -6,6 +6,7 @@ using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
+using Marvel.View;
 using System.Security.Cryptography;
 
 namespace Marvel.Server;
@@ -54,15 +55,18 @@ public sealed class EngineHost : IEngineEndpoint
 {
     private readonly IGameFactory factory;
     private readonly ISessionCapabilityIssuer capabilities;
+    private readonly IVisibilityPolicy visibility;
     private readonly Dictionary<string, Session> sessions = new(StringComparer.Ordinal);
 
     /// <summary>Creates an engine host with cryptographically random session capabilities.</summary>
     public EngineHost(
         IGameFactory factory,
-        ISessionCapabilityIssuer? capabilities = null)
+        ISessionCapabilityIssuer? capabilities = null,
+        IVisibilityPolicy? visibility = null)
     {
         this.factory = factory ?? throw new ArgumentNullException(nameof(factory));
         this.capabilities = capabilities ?? new CryptographicCapabilityIssuer();
+        this.visibility = visibility ?? new PermissiveVisibilityPolicy();
     }
 
     /// <inheritdoc />
@@ -74,13 +78,16 @@ public sealed class EngineHost : IEngineEndpoint
         {
             return Handle(request);
         }
-        catch (Exception failure)
+        catch (Exception)
         {
             // A socket cannot throw a domain exception into its caller. The
             // same conversion happens here, before either transport, so local
             // play and hosted play have the same observable failure path. A
             // stack trace is server state and never crosses the boundary.
-            return Failed(request, "engine_error", failure.Message);
+            return Failed(
+                request,
+                "engine_error",
+                "the engine request failed without changing an existing session");
         }
     }
 
@@ -153,16 +160,27 @@ public sealed class EngineHost : IEngineEndpoint
             return Failed(request, "invalid_request", "a game requires at least one hero");
         }
 
+        ViewScope scope;
+        try
+        {
+            scope = visibility.Authorize(request.Viewer, request.Game.Heroes.Count);
+        }
+        catch (Exception failure) when (failure is ArgumentException or InvalidOperationException)
+        {
+            return Failed(request, "invalid_request", failure.Message);
+        }
+
         var opened = factory.Create(request.Game);
         string capability = IssueCapability();
-        sessions.Add(capability, new Session(request.GameId, opened.Game));
-        return Succeeded(
-            request, opened.Game.Pending, opened.SetupEvents, capability);
+        EngineResponse response = Succeeded(
+            request, opened.Game, opened.Game.Pending, opened.SetupEvents, scope, capability);
+        sessions.Add(capability, new Session(request.GameId, opened.Game, scope));
+        return response;
     }
 
     private EngineResponse Resolve(EngineRequest request)
     {
-        if (request.Decision is null || request.Game is not null)
+        if (request.Decision is null || request.Game is not null || request.Viewer is not null)
         {
             return Failed(
                 request, "invalid_request",
@@ -182,9 +200,10 @@ public sealed class EngineHost : IEngineEndpoint
         try
         {
             var resolved = session.Game.Resolve(request.Decision.ToDomain());
-            return Succeeded(request, resolved.Prompt, resolved.Events);
+            return Succeeded(
+                request, session.Game, resolved.Prompt, resolved.Events, session.Scope);
         }
-        catch (Exception failure)
+        catch (Exception)
         {
             // The rules promise their named unimplemented boundaries throw
             // before mutation, but an unexpected failure has no such contract.
@@ -192,13 +211,16 @@ public sealed class EngineHost : IEngineEndpoint
             // partial resolve is removed rather than serving a plausible wrong
             // board on the next request.
             sessions.Remove(capability);
-            return Failed(request, "game_aborted", failure.Message);
+            return Failed(
+                request,
+                "game_aborted",
+                "the game was aborted after an engine failure");
         }
     }
 
     private EngineResponse Close(EngineRequest request)
     {
-        if (request.Game is not null || request.Decision is not null)
+        if (request.Game is not null || request.Decision is not null || request.Viewer is not null)
         {
             return Failed(
                 request, "invalid_request",
@@ -211,7 +233,7 @@ public sealed class EngineHost : IEngineEndpoint
         }
 
         sessions.Remove(capability);
-        return Succeeded(request, prompt: null, events: []);
+        return Succeeded(request);
     }
 
     private bool TrySession(
@@ -247,12 +269,33 @@ public sealed class EngineHost : IEngineEndpoint
 
     private static EngineResponse Succeeded(
         EngineRequest request,
+        Game? game = null,
+        Prompt? prompt = null,
+        IReadOnlyList<GameEvent>? events = null,
+        ViewScope? scope = null,
+        string? capability = null) =>
+        Projected(request, game, prompt, events ?? [], scope, capability);
+
+    private static EngineResponse Projected(
+        EngineRequest request,
+        Game? game,
         Prompt? prompt,
         IReadOnlyList<GameEvent> events,
-        string? capability = null) =>
-        new(
+        ViewScope? scope,
+        string? capability)
+    {
+        if (game is null || scope is null)
+        {
+            return new EngineResponse(
+                EngineProtocol.Version, request.RequestId, request.GameId,
+                capability, Prompt: null, Events: []);
+        }
+
+        VisibleResult visible = WorldProjection.For(game.State, prompt, events, scope);
+        return new EngineResponse(
             EngineProtocol.Version, request.RequestId, request.GameId,
-            capability, prompt, events);
+            capability, visible.Prompt, visible.Events, visible.World);
+    }
 
     private static EngineResponse Failed(
         EngineRequest request, string code, string message) =>
@@ -263,6 +306,7 @@ public sealed class EngineHost : IEngineEndpoint
             Capability: null,
             Prompt: null,
             Events: [],
+            World: null,
             Error: new EngineError(
                 Bounded(code, EngineProtocol.MaximumIdentifierLength),
                 Bounded(message, EngineProtocol.MaximumErrorLength)));
@@ -274,7 +318,7 @@ public sealed class EngineHost : IEngineEndpoint
         _ => value[..maximum],
     };
 
-    private sealed record Session(string GameId, Game Game);
+    private sealed record Session(string GameId, Game Game, ViewScope Scope);
 
     private sealed class CryptographicCapabilityIssuer : ISessionCapabilityIssuer
     {

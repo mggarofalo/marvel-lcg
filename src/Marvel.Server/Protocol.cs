@@ -1,6 +1,7 @@
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
+using Marvel.View;
 
 namespace Marvel.Server;
 
@@ -8,7 +9,7 @@ namespace Marvel.Server;
 public static class EngineProtocol
 {
     /// <summary>The only protocol version this host accepts.</summary>
-    public const int Version = 1;
+    public const int Version = 2;
 
     /// <summary>The largest request or game id accepted or echoed.</summary>
     public const int MaximumIdentifierLength = 256;
@@ -68,6 +69,10 @@ public sealed record EngineDecision(
 /// <param name="Capability">The server-issued session capability; absent only for <c>open</c>.</param>
 /// <param name="Game">Present only for <c>open</c>.</param>
 /// <param name="Decision">Present only for <c>resolve</c>.</param>
+/// <param name="Viewer">
+/// What the opening client says it displays. The server's visibility policy is
+/// the authority; this assertion can never widen it.
+/// </param>
 public sealed record EngineRequest(
     int Version,
     string RequestId,
@@ -75,12 +80,18 @@ public sealed record EngineRequest(
     string GameId,
     string? Capability = null,
     GameSpecification? Game = null,
-    EngineDecision? Decision = null)
+    EngineDecision? Decision = null,
+    ViewerClaim? Viewer = null)
 {
     /// <summary>Builds an open-game request for the current protocol.</summary>
     public static EngineRequest OpenGame(
-        string requestId, string gameId, GameSpecification game) =>
-        new(EngineProtocol.Version, requestId, EngineProtocol.Open, gameId, Game: game);
+        string requestId,
+        string gameId,
+        GameSpecification game,
+        ViewerClaim? viewer = null) =>
+        new(
+            EngineProtocol.Version, requestId, EngineProtocol.Open, gameId,
+            Game: game, Viewer: viewer);
 
     /// <summary>Builds a resolve request for the current protocol.</summary>
     public static EngineRequest ResolveGame(
@@ -106,6 +117,7 @@ public sealed record EngineError(string Code, string Message);
 /// <param name="Capability">The new session capability on <c>open</c>; otherwise null.</param>
 /// <param name="Prompt">The next question, or null when the game is over or failed.</param>
 /// <param name="Events">Setup or resolution events, in engine order.</param>
+/// <param name="World">The client-safe table snapshot, or null on close/failure.</param>
 /// <param name="Error">Why the request failed, or null on success.</param>
 public sealed record EngineResponse(
     int Version,
@@ -114,4 +126,5 @@ public sealed record EngineResponse(
     string? Capability,
     Prompt? Prompt,
     IReadOnlyList<GameEvent> Events,
+    WorldDescriptor? World = null,
     EngineError? Error = null);
