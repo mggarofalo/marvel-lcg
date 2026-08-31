@@ -112,6 +112,7 @@ Six, all run by hand and none on any path a game takes.
 | `World.Digest()`, `StateFields`, zone flags, card id allocation | [state-digest-v2.md](docs/state-digest-v2.md) |
 | refreshing a vendored snapshot, a new RR version, a new pack | [rules-provenance.md](docs/rules-provenance.md) |
 | citing a rule from a test, `[Rule]`, what nothing is held to | [rules-citations.md](docs/rules-citations.md) |
+| behavioral obligations, legal Gherkin scenes, executable spec coverage | [behavioral-specification.md](docs/behavioral-specification.md) |
 | ability timing, interrupt and response windows, continuous effects | [timing.md](docs/timing.md) |
 | `datasets/cards/` | [card-dataset.md](docs/card-dataset.md) |
 | `datasets/setup/`, scenario or starter-deck data, setup order | [setup-dataset.md](docs/setup-dataset.md) |
