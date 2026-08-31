@@ -26,12 +26,14 @@ public sealed class MarvelCdbHarvestTests
     }
 
     [Fact]
-    public void TheCommittedQueryUniverseMatchesItsIndependentPin()
+    public void TheCommittedAcquisitionMatchesItsIndependentPin()
     {
-        Snapshot snapshot = Snapshot.Read(File.ReadAllText(
-            RepositoryPaths.Dataset("marvelcdb-faq", "faq.json")));
+        byte[] acquisition = File.ReadAllBytes(
+            RepositoryPaths.Dataset("marvelcdb-faq", "acquisition.json"));
+        Snapshot snapshot = Snapshot.Read(Encoding.UTF8.GetString(acquisition));
         using var manifest = JsonDocument.Parse(File.ReadAllBytes(
-            RepositoryPaths.Dataset("marvelcdb-faq", "query.manifest.json")));
+            RepositoryPaths.Dataset("marvelcdb-faq", "acquisition.manifest.json")));
+        JsonElement query = manifest.RootElement.GetProperty("query");
         using var digest = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
         Span<byte> length = stackalloc byte[sizeof(long)];
         foreach (string code in snapshot.Queried.Order(StringComparer.Ordinal))
@@ -43,12 +45,19 @@ public sealed class MarvelCdbHarvestTests
         }
 
         Assert.Equal(1, manifest.RootElement.GetProperty("version").GetInt32());
+        Assert.Equal("marvelcdb-faq-candidate-v1",
+            manifest.RootElement.GetProperty("format").GetString());
+        Assert.Equal(acquisition.LongLength, manifest.RootElement.GetProperty("bytes").GetInt64());
+        Assert.Equal(
+            "sha256:" + Convert.ToHexString(SHA256.HashData(acquisition)).ToLowerInvariant(),
+            manifest.RootElement.GetProperty("hash").GetString());
         Assert.Equal("sha256-length-prefixed-utf8",
-            manifest.RootElement.GetProperty("algorithm").GetString());
-        Assert.Equal(snapshot.Queried.Count, manifest.RootElement.GetProperty("count").GetInt32());
+            query.GetProperty("algorithm").GetString());
+        Assert.Equal(snapshot.Queried.Count, query.GetProperty("count").GetInt32());
         Assert.Equal(
             "sha256:" + Convert.ToHexString(digest.GetHashAndReset()).ToLowerInvariant(),
-            manifest.RootElement.GetProperty("hash").GetString());
+            query.GetProperty("hash").GetString());
+        snapshot.VerifyPublishable();
     }
 
     [Fact]
@@ -68,11 +77,33 @@ public sealed class MarvelCdbHarvestTests
                 committed.Queried,
                 [],
                 CandidateComplete: true,
-                Outcomes: []);
+                Outcomes: committed.Queried.Select(code => new QueryOutcome(code, "none")).ToList());
             File.WriteAllText(candidate, forged.CandidateJson());
 
             Assert.Equal(1, RunTool("write", candidate, output));
             Assert.False(File.Exists(Path.Combine(output, "faq.json")));
+        }
+        finally
+        {
+            if (Directory.Exists(temporary))
+            {
+                Directory.Delete(temporary, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void TheExactPinnedAcquisitionWritesAndChecksOffline()
+    {
+        string temporary = Path.Combine(Path.GetTempPath(), $"marvel-faq-pinned-{Guid.NewGuid():N}");
+        string acquisition = RepositoryPaths.Dataset("marvelcdb-faq", "acquisition.json");
+        try
+        {
+            Assert.Equal(0, RunTool("write", acquisition, temporary));
+            Assert.Equal(
+                File.ReadAllText(RepositoryPaths.Dataset("marvelcdb-faq", "faq.json")),
+                File.ReadAllText(Path.Combine(temporary, "faq.json")));
+            Assert.Equal(0, RunTool("check", acquisition));
         }
         finally
         {

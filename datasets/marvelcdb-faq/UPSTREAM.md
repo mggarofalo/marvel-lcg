@@ -31,9 +31,10 @@ else in this repository can tell an author that.
 `../marvelsdb/` pins a git SHA because upstream is a git repository. MarvelCDB is
 a website. It publishes no version identifier, no changelog and no content hash
 for FAQ entries, so the harvest date records when the observation ran. The
-separate `query.manifest.json` pins the exact set of card codes a reviewed full
-harvest queried. This prevents a candidate from declaring itself complete while
-silently omitting most of the card catalog.
+separate `acquisition.manifest.json` pins the raw bytes and format of the
+reviewed acquisition candidate, plus the exact set of card codes it queried.
+This prevents a candidate from declaring itself complete while silently
+omitting results or inventing no-entry outcomes.
 
 Individual entries carry their own `updated` timestamp, which is upstream's and
 is recorded verbatim. That dates the *ruling*; it does not date the *snapshot*,
@@ -56,7 +57,8 @@ holds the snapshot's accounting and canonical wire format offline.
 
 ```
 faq.json    every FAQ entry MarvelCDB served, verbatim
-query.manifest.json    count and hash of the reviewed complete query universe
+acquisition.json    the complete reviewed acquisition evidence used to build faq.json
+acquisition.manifest.json    raw-byte, format, and query-universe pin for that evidence
 ```
 
 ```json
@@ -76,11 +78,18 @@ was *never asked*. Without it those two are indistinguishable, and the second
 silently masquerading as the first is how a card with a ruling gets a spec
 written against the printed words instead.
 
-The external candidate also records one acquisition outcome for every queried
+The acquisition candidate also records one acquisition outcome for every queried
 code: either `entry` or the CLI's explicit `none`. Those outcomes are removed
 from the vendored wire format after `write`; they are evidence that every
 absence came from the acquisition command rather than from `candidate_complete`
-asserting that a truncated result was whole.
+asserting that a truncated result was whole. Its tracked manifest pins the
+entire candidate byte for byte; editing outcomes makes `write` and `check` fail.
+
+The current `acquisition.json` is the one-time canonical migration of the
+2026-08-22 snapshot. That snapshot already defined `queried` as every code the
+command asked about and absence from `entries` as an explicit no-ruling result.
+Keeping the migrated evidence makes the vendored snapshot deterministically
+regenerable offline under the stricter contract.
 
 Entries are stored raw. HTML, markdown, smart quotes and upstream's `updated`
 shape are all untouched, so a transcription problem is distinguishable from a
@@ -137,11 +146,13 @@ dotnet run --project tools/Marvel.MarvelCdb.Harvest -- write [candidate] [candid
 Omit `limit` for a publishable observation. A limited run records itself as
 partial and `write`/`check` refuse it, so a wiring test cannot masquerade as a
 complete harvest. Both commands require exactly one consistent acquisition
-outcome per queried code and require those codes to match the offline pin. If a
-reviewed full refresh intentionally changes that universe,
-run `pin [candidate]` and review the manifest diff before `write`. Review the
-resulting `faq.json` diff, including its harvest date and CLI version, before
-writing it into this directory.
+outcome per queried code and require the candidate's raw bytes, format, and
+query universe to match the offline acquisition pin. A refresh is deliberately
+two-step: inspect the fetched candidate, copy that reviewed file byte-for-byte
+to `acquisition.json`, then run `pin acquisition.json` and review both tracked
+diffs. `fetch` never updates the trusted manifest. Only after that review should
+`write acquisition.json` replace `faq.json`; inspect its harvest date, CLI
+version, and ruling diff too.
 
 ## Provenance and licence
 

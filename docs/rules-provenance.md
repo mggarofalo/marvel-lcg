@@ -206,9 +206,11 @@ Pack rules use the same separation for copyrighted local inputs:
 the complete committed tree, using length-prefixed paths and contents.
 MarvelCDB has no downloadable source document to vendor, so its `fetch` step
 records an explicit entry-or-none acquisition outcome for every queried code in
-a local candidate. The offline
-`query.manifest.json` also pins the exact reviewed query universe; only a
-candidate matching that pin can reach `write` or `check`.
+a local candidate. The offline `acquisition.manifest.json` separately pins the
+reviewed candidate's raw bytes, format, and exact query universe, while
+`acquisition.json` retains that evidence for deterministic offline regeneration.
+`fetch` cannot update either trust anchor; only an explicit reviewed `pin` step
+can admit a new candidate to `write` or `check`.
 
 A refresh is a reviewable act. `datasets/marvelsdb/UPSTREAM.md` is already
 explicit that refreshing changes printed text and therefore every spec authored

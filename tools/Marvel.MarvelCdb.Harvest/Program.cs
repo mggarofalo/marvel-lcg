@@ -31,10 +31,11 @@ try
             string into = args.Length > 2 ? args[2] : RepositoryPaths.Dataset("marvelcdb-faq");
             string pinPath = args.Length > 3
                 ? args[3]
-                : RepositoryPaths.Dataset("marvelcdb-faq", "query.manifest.json");
-            Snapshot snapshot = Snapshot.Read(File.ReadAllText(cache));
+                : RepositoryPaths.Dataset("marvelcdb-faq", "acquisition.manifest.json");
+            byte[] candidateBytes = File.ReadAllBytes(cache);
+            Snapshot snapshot = Snapshot.Read(Encoding.UTF8.GetString(candidateBytes));
+            AcquisitionPin.Read(pinPath).Verify(candidateBytes, snapshot);
             snapshot.VerifyPublishable();
-            QueryPin.Read(pinPath).Verify(snapshot.Queried);
             Directory.CreateDirectory(into);
             string target = Path.Combine(into, "faq.json");
             File.WriteAllText(target, snapshot.Json(), new UTF8Encoding(false));
@@ -46,10 +47,11 @@ try
         {
             string pinPath = args.Length > 2
                 ? args[2]
-                : RepositoryPaths.Dataset("marvelcdb-faq", "query.manifest.json");
-            Snapshot candidate = Snapshot.Read(File.ReadAllText(cache));
+                : RepositoryPaths.Dataset("marvelcdb-faq", "acquisition.manifest.json");
+            byte[] candidateBytes = File.ReadAllBytes(cache);
+            Snapshot candidate = Snapshot.Read(Encoding.UTF8.GetString(candidateBytes));
+            AcquisitionPin.Read(pinPath).Verify(candidateBytes, candidate);
             candidate.VerifyPublishable();
-            QueryPin.Read(pinPath).Verify(candidate.Queried);
             string target = RepositoryPaths.Dataset("marvelcdb-faq", "faq.json");
             string built = candidate.Json();
             string committed = File.ReadAllText(target);
@@ -67,12 +69,15 @@ try
         {
             string into = args.Length > 2
                 ? args[2]
-                : RepositoryPaths.Dataset("marvelcdb-faq", "query.manifest.json");
-            Snapshot candidate = Snapshot.Read(File.ReadAllText(cache));
-            candidate.VerifyPublishable();
+                : RepositoryPaths.Dataset("marvelcdb-faq", "acquisition.manifest.json");
+            byte[] candidateBytes = File.ReadAllBytes(cache);
+            Snapshot candidate = Snapshot.Read(Encoding.UTF8.GetString(candidateBytes));
 
-            File.WriteAllText(into, QueryPin.Create(candidate.Queried).Json(), new UTF8Encoding(false));
-            Console.Error.WriteLine($"pinned {candidate.Queried.Count} queried codes in {into}");
+            File.WriteAllText(
+                into,
+                AcquisitionPin.Create(candidateBytes, candidate).Json(),
+                new UTF8Encoding(false));
+            Console.Error.WriteLine($"pinned reviewed acquisition bytes in {into}");
             return 0;
         }
 
@@ -84,7 +89,7 @@ try
                   fetch [cache] [limit] [date]   query MarvelCDB and write a complete local candidate
                   write [cache] [into] [pin]    build faq.json from a pinned candidate offline
                   check [cache] [pin]           compare a pinned candidate with the committed snapshot
-                  pin [cache] [into]            approve a reviewed full query universe
+                  pin [cache] [into]            pin the reviewed candidate bytes and query universe
 
                 The default cache is outside the repository. `limit` is only for testing the wiring;
                 never write a limited candidate into datasets/marvelcdb-faq/.
