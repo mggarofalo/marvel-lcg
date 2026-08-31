@@ -81,7 +81,7 @@ public sealed class CoreRuleTranscriptTests
             "228ad5267ebe07ec00349ff20b304812ecdf680ab264bfbf98f77c49dde400d3",
             results["behavior:rr:end-of-player-phase.step.1:mandatory-above-limit"].Digest);
         Assert.Equal(
-            "c817ffe9c015a6603b0c931b70160c0f82738530c93c80f976412e1fd5140479",
+            "ba21ebd4d8f01244d40f9dbe5d30c095ea72fdd748ad123d726cdb1596ce45d6",
             results["behavior:rr:end-of-player-phase.step.2:below-limit"].Digest);
         Assert.Equal(
             "ba21ebd4d8f01244d40f9dbe5d30c095ea72fdd748ad123d726cdb1596ce45d6",

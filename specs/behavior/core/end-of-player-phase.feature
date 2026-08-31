@@ -45,7 +45,10 @@ Feature: End-of-player-phase hand and ready steps
   @behavior:rr:end-of-player-phase.step.2:below-limit
   @covers:behavior:rr:hand-size:below-limit
   @covers:behavior:rr:hand-size.1:one-at-a-time
+  @covers:behavior:rr:draw-drawing-cards:published-result
+  @covers:behavior:rr:draw-drawing-cards.1:published-result
   @rr:end-of-player-phase.step.2 @rr:hand-size @rr:hand-size.1
+  @rr:draw-drawing-cards @rr:draw-drawing-cards.1
   Scenario: A hand below its limit draws up to its current size
     # "Each player simultaneously draws up to their hand size."
     # "When drawing up to their hand size, a player draws cards one at a time,
@@ -55,9 +58,19 @@ Feature: End-of-player-phase hand and ready steps
       | 01002 | 0    |
       | 01003 | 0    |
       | 01004 | 0    |
+    And these cards are next on seat 1's player deck
+      | next card | copy |
+      | 01005     | 0    |
+      | 01006     | 0    |
+      | 01007     | 0    |
     When the end-of-player-phase draw step resolves
     Then seat 1 has 6 cards in hand
     And 3 Draw events were emitted
+    And the Draw events moved these cards in order
+      | card  | copy |
+      | 01005 | 0    |
+      | 01006 | 0    |
+      | 01007 | 0    |
 
   @behavior:rr:end-of-player-phase.step.2:at-limit
   @covers:behavior:rr:hand-size:at-limit

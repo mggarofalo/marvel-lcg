@@ -7971,11 +7971,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/end-of-player-phase.feature::A hand below its limit draws up to its current size"
+          ],
+          "mutation": "CoreRuleTranscriptTests.EndOfPlayerPhaseBranchesHavePinnedOutcomes distinguishes the top three cards moving one at a time in printed draw order."
         }
       ]
     },
@@ -7993,11 +7995,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/end-of-player-phase.feature::A hand below its limit draws up to its current size"
+          ],
+          "mutation": "CoreRuleTranscriptTests.EndOfPlayerPhaseBranchesHavePinnedOutcomes distinguishes each drawn card landing in the player's hand."
         }
       ]
     },
@@ -8007,15 +8011,15 @@
       "title": "DRAW, DRAWING CARDS",
       "fingerprint": "sha256:1ef6520b778a03b26cd889631d567cd179fe690473c6019c62206c52e83c0c5e",
       "scope": "Rules Reference v1.8",
-      "disposition": "executable",
+      "disposition": "narrower",
       "obligations": [
         {
           "id": "behavior:rr:draw-drawing-cards.2:published-result",
           "summary": "Each player’s hand size is checked at the end of the player phase.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+          "disposition": "narrower",
+          "reason": "The hand-size obligation states the same end-of-player-phase limit and mandatory discard more precisely.",
+          "target": "behavior:rr:hand-size:above-limit",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],

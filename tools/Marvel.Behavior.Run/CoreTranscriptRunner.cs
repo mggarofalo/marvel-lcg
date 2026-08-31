@@ -310,6 +310,9 @@ internal sealed class CoreTranscriptRunner
         Bind("player-discard-order", TranscriptStepKind.Then,
             @"seat (?<seat>\d+)'s discard pile has these cards from top to bottom",
             PlayerDiscardOrder),
+        Bind("event-card-order", TranscriptStepKind.Then,
+            @"the (?<verb>[A-Za-z_]+) events moved these cards in order",
+            EventCardOrder),
         Bind("not-eliminated", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) is not eliminated", NotEliminated),
         Bind("game-unfinished", TranscriptStepKind.Then,
@@ -792,6 +795,25 @@ internal sealed class CoreTranscriptRunner
         {
             throw new TranscriptAssertionException(
                 $"{step.Location}: expected discard top order "
+                + $"{string.Join(',', expected)}; was {string.Join(',', actual)}");
+        }
+    }
+
+    private static void EventCardOrder(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        TranscriptTable table = Table(step, "card", "copy");
+        int[] expected = [.. table.Rows.Select(row => context.SceneRequired(step).Find(
+            new SceneCard(row["card"], TableNumber(row, "copy", step))).ObjectId)];
+        int[] actual = [.. context.Events
+            .OfType<CardsMoved>()
+            .Where(moved => moved.Verb == match.Groups["verb"].Value)
+            .SelectMany(moved => moved.Cards)
+            .Select(landing => landing.Card)];
+        if (!actual.SequenceEqual(expected))
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected {match.Groups["verb"].Value} card order "
                 + $"{string.Join(',', expected)}; was {string.Join(',', actual)}");
         }
     }
