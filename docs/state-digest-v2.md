@@ -163,17 +163,21 @@ digest describes areas rather than identifying them**.
 
 ### The boundary is deliberate
 
-Digest v2 remains unchanged. Place is validated by the narrow, rule-cited tests
-in `PlacesTests`, not by the differential corpus. A future behavioral spec for
-either affected scenario must assert placement directly rather than treating a
-matching digest as evidence of it.
+Digest v2 remains unchanged. Its canonical spelling is a wire format pinned by
+`StateDigestTests`; changing that spelling while continuing to call it version 2
+would make the version label lie. Place is validated by the narrow, rule-cited
+tests in `PlacesTests`, not by the digest. A future behavioral spec for either
+affected scenario must assert placement directly rather than treating a matching
+digest as evidence of it.
 
-A per-step side channel would not add an independent oracle: none of the legacy
-corpus reaches a second game area, and the legacy engine does not implement Fear
-No Evil. Such a field would therefore be empty on every recorded step or repeat
-the implementation under test. A v3 digest may carry play-area identity only as
-part of a separately justified corpus migration, with a new pinned format and a
-regenerated corpus. `CARD_KEYS` stays the v2 wire format.
+A side channel would not add an independent oracle: the Python fixtures and the
+engine that produced them are gone, and a value computed from the C# state would
+only repeat the implementation under test. If a later digest version needs to
+cover place, it must serialize both levels of topology: which play area holds a
+card, and which game area contains each play area. The second is world state,
+not a card field — `World.Join` changes it without moving any card between play
+areas. That requires a new pinned top-level shape rather than another key in the
+v2 card record. The eight-key card record remains the version 2 wire format.
 
 This is the decision recorded by **MARVEL-174**. The state model is MARVEL-175,
 and [event-stream.md](event-stream.md#play-areas-and-game-areas) sets out what
