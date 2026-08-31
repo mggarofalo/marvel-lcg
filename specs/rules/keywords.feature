@@ -493,14 +493,14 @@ Feature: Keywords
     When I thwart "Keep Them Busy"
     Then "Keep Them Busy" has 1 threat
 
-  @card:01109
+  @card:40018
   @rr:thwart.1
-  Scenario: a basic thwart against a scheme without assault uses THW
-    Given "Bomb Scare" is in play
-    And "Bomb Scare" has 3 threat
+  Scenario: a basic thwart against a player side scheme without assault uses THW
+    Given "Call for Backup" is in play
+    And "Call for Backup" has 3 threat
 
-    When I thwart "Bomb Scare"
-    Then "Bomb Scare" has 2 threat
+    When I thwart "Call for Backup"
+    Then "Call for Backup" has 2 threat
 
   # --------------------------------------------------------------------------
   # Amplify icon
@@ -525,6 +525,7 @@ Feature: Keywords
     Given the hero is "iron_man"
     And my deck is "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts"
     And the encounter deck is "Hydra Mercenary", "Hydra Mercenary", "Hydra Mercenary"
+    And "Bomb Scare" is in play
 
     When I pass
     When I pass
@@ -565,11 +566,12 @@ Feature: Keywords
     Then the main scheme has 2 threat
 
   @rr:acceleration-icon
-  Scenario: with no additional icon only the main scheme's printed acceleration applies
+  Scenario: a side scheme without acceleration adds no threat in the villain phase
     Given the hero is "iron_man"
     And I am in hero form
     And my deck is "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts", "Pepper Potts"
     And the encounter deck is "Hydra Mercenary", "Hydra Mercenary", "Hydra Mercenary"
+    And "Vendetta" is in play
 
     When I pass
     When I pass
