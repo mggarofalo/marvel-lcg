@@ -770,11 +770,57 @@ internal sealed class CoreTranscriptSuite
     private CatalogObligation ValidateAuthority(
         TranscriptScenario scenario, bool requireCompletionEvidence)
     {
+        CatalogObligation obligation = ValidateNamedAuthority(
+            scenario, scenario.Obligation, requireCompletionEvidence, "primary");
+        foreach (string covered in scenario.CoveredObligations)
+        {
+            CatalogObligation secondary = ValidateNamedAuthority(
+                scenario, covered, requireCompletionEvidence, "covered");
+            if (!string.Equals(
+                    secondary.Implementation, obligation.Implementation,
+                    StringComparison.Ordinal))
+            {
+                throw new TranscriptException(
+                    $"{scenario.Location}: covered obligation '{covered}' is "
+                    + $"{secondary.Implementation}, but the primary obligation is "
+                    + $"{obligation.Implementation}");
+            }
+        }
+
+        if (requireCompletionEvidence)
+        {
+            string reference = Reference(scenario);
+            var declared = scenario.CoveredObligations
+                .Prepend(scenario.Obligation)
+                .ToHashSet(StringComparer.Ordinal);
+            var linked = catalog.Obligations.Values
+                .Where(candidate => candidate.Scenarios.Contains(
+                    reference, StringComparer.Ordinal))
+                .Select(candidate => candidate.Id)
+                .ToHashSet(StringComparer.Ordinal);
+            if (!declared.SetEquals(linked))
+            {
+                throw new TranscriptException(
+                    $"{scenario.Location}: catalog coverage differs from declared coverage; "
+                    + $"declared [{string.Join(", ", declared.Order())}], linked "
+                    + $"[{string.Join(", ", linked.Order())}]");
+            }
+        }
+
+        return obligation;
+    }
+
+    private CatalogObligation ValidateNamedAuthority(
+        TranscriptScenario scenario,
+        string obligationId,
+        bool requireCompletionEvidence,
+        string role)
+    {
         if (!catalog.Obligations.TryGetValue(
-                scenario.Obligation, out CatalogObligation? obligation))
+                obligationId, out CatalogObligation? obligation))
         {
             throw new TranscriptException(
-                $"{scenario.Location}: stale or missing obligation '{scenario.Obligation}'");
+                $"{scenario.Location}: stale or missing {role} obligation '{obligationId}'");
         }
 
         if (scenario.Authorities.Count == 0)
@@ -807,7 +853,7 @@ internal sealed class CoreTranscriptSuite
         if (!scenario.Authorities.Contains(obligation.Source, StringComparer.Ordinal))
         {
             throw new TranscriptException(
-                $"{scenario.Location}: primary obligation derives from '{obligation.Source}', "
+                $"{scenario.Location}: {role} obligation derives from '{obligation.Source}', "
                 + "which is not a direct authority tag");
         }
 
@@ -815,7 +861,7 @@ internal sealed class CoreTranscriptSuite
             || obligation.Implementation is not ("supported" or "unimplemented"))
         {
             throw new TranscriptException(
-                $"{scenario.Location}: '{scenario.Obligation}' is "
+                $"{scenario.Location}: '{obligationId}' is "
                 + $"{obligation.Disposition}/{obligation.Implementation ?? "(none)"}, "
                 + "not executable with a completed implementation status");
         }
@@ -835,14 +881,14 @@ internal sealed class CoreTranscriptSuite
         if (string.IsNullOrWhiteSpace(obligation.Mutation))
         {
             throw new TranscriptException(
-                $"{scenario.Location}: '{scenario.Obligation}' has no mutation evidence");
+                $"{scenario.Location}: '{obligationId}' has no mutation evidence");
         }
 
         if (obligation.Implementation == "unimplemented"
             && string.IsNullOrWhiteSpace(obligation.Exception))
         {
             throw new TranscriptException(
-                $"{scenario.Location}: '{scenario.Obligation}' names no expected exception");
+                $"{scenario.Location}: '{obligationId}' names no expected exception");
         }
 
         return obligation;
@@ -894,11 +940,7 @@ internal sealed class CoreTranscriptSuite
 
             foreach (string reference in obligation.Scenarios)
             {
-                if (!references.Add(reference))
-                {
-                    throw new TranscriptException(
-                        $"scenario '{reference}' is linked more than once in the catalog");
-                }
+                _ = references.Add(reference);
             }
         }
 

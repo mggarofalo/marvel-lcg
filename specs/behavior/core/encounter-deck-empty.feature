@@ -8,7 +8,8 @@ Feature: The encounter deck empties
       | campaign | heroes     | seed |
       | rhino    | spider_man | 305  |
 
-  @behavior:rr:encounter-deck.1:empty-with-discard @rr:encounter-deck.1 @rr:acceleration-token.1
+  @behavior:rr:encounter-deck.1:empty-with-discard @covers:behavior:rr:acceleration-token.1:published-result
+  @rr:encounter-deck.1 @rr:acceleration-token.1
   Scenario: Emptying the encounter deck immediately resets it and accelerates the scheme
     # "The encounter discard pile is immediately shuffled to create a new
     # encounter deck. When this occurs, place an acceleration token."

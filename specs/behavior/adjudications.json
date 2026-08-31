@@ -623,11 +623,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-deck-empty.feature::Emptying the encounter deck immediately resets it and accelerates the scheme"
+          ],
+          "mutation": "CoreRuleTranscriptTests.EncounterDeckBranchesHavePinnedOutcomes distinguishes the acceleration token from an empty-deck reset without one."
         }
       ]
     },
