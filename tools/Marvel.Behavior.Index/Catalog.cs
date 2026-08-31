@@ -11,6 +11,7 @@ internal sealed record AdjudicationFile(
 
 internal sealed record Adjudication(
     [property: JsonPropertyName("id")] string Id,
+    [property: JsonPropertyName("fingerprint")] string Fingerprint,
     [property: JsonPropertyName("obligations")] IReadOnlyList<Obligation> Obligations);
 
 internal sealed record Obligation(
@@ -68,6 +69,7 @@ internal static class Catalog
         "no-independent-behavior",
         "not-representable",
         "outside-core",
+        "superseded",
     };
 
     private static readonly HashSet<string> Implementations = new(StringComparer.Ordinal)
@@ -129,6 +131,7 @@ internal static class Catalog
             2,
             [.. AuthoritySources.Read().Select(source => new Adjudication(
                 source.Id,
+                source.Fingerprint,
                 [new Obligation(
                     "unreviewed",
                     "This source has not been adjudicated.",
@@ -211,17 +214,44 @@ internal static class Catalog
                 + (extra is null ? "" : $"; extra {extra}"));
         }
 
+        var fingerprints = authorities.ToDictionary(
+            source => source.Id,
+            source => source.Fingerprint,
+            StringComparer.Ordinal);
+        foreach (var item in file.Sources)
+        {
+            EnsureReviewedFingerprint(item.Id, item.Fingerprint, fingerprints[item.Id]);
+        }
+
         var known = file.Sources
-            .SelectMany(item => item.Obligations.Select(obligation =>
-                $"behavior:{item.Id}:{obligation.Key}"))
-            .ToHashSet(StringComparer.Ordinal);
+            .SelectMany(item => item.Obligations.Select(obligation => new
+            {
+                Id = $"behavior:{item.Id}:{obligation.Key}",
+                obligation.Disposition,
+            }))
+            .ToDictionary(item => item.Id, item => item.Disposition, StringComparer.Ordinal);
         foreach (var item in file.Sources)
         {
             Validate(item, known);
         }
     }
 
-    private static void Validate(Adjudication item, HashSet<string> known)
+    internal static void EnsureReviewedFingerprint(
+        string id,
+        string reviewed,
+        string current)
+    {
+        if (!string.Equals(reviewed, current, StringComparison.Ordinal))
+        {
+            throw new InvalidDataException(
+                $"{id} changed from reviewed fingerprint {reviewed} "
+                + $"to {current}; re-adjudicate that source");
+        }
+    }
+
+    private static void Validate(
+        Adjudication item,
+        IReadOnlyDictionary<string, string> known)
     {
         if (item.Obligations.Count == 0)
         {
@@ -243,7 +273,10 @@ internal static class Catalog
         }
     }
 
-    private static void Validate(string sourceId, Obligation item, HashSet<string> known)
+    private static void Validate(
+        string sourceId,
+        Obligation item,
+        IReadOnlyDictionary<string, string> known)
     {
         string id = $"behavior:{sourceId}:{item.Key}";
         if (!IsBranchKey(item.Key) || string.IsNullOrWhiteSpace(item.Summary))
@@ -294,12 +327,14 @@ internal static class Catalog
             }
         }
 
-        if (item.Disposition == "narrower")
+        if (item.Disposition is "narrower" or "superseded")
         {
-            if (item.Target is null || !known.Contains(item.Target))
+            if (item.Target is null
+                || !known.TryGetValue(item.Target, out string? targetDisposition)
+                || targetDisposition != "executable")
             {
                 throw new InvalidDataException(
-                    $"{id} names unknown narrower target {item.Target ?? "(none)"}");
+                    $"{id} names no executable target {item.Target ?? "(none)"}");
             }
         }
         else if (item.Target is not null)

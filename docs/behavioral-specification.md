@@ -153,9 +153,10 @@ individual obligations remain the reviewable claims:
 | `no-independent-behavior` | It is a heading, summary, example or definition with no separate result. |
 | `not-representable` | It governs physical, social, hidden-to-engine or interpretive procedure rather than engine state. |
 | `outside-core` | It requires a component or mode absent from the supported Core Set product. |
+| `superseded` | A named later authority obligation replaces this historical answer. |
 
-Every disposition except `executable` names its reason. `narrower` names the
-target obligation. `outside-core` names the missing product surface. A source
+Every disposition except `executable` names its reason. `narrower` and
+`superseded` name the target obligation. `outside-core` names the missing product surface. A source
 unit cannot disappear because no code cites it or no scenario was convenient
 to write.
 

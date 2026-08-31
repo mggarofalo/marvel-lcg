@@ -75,10 +75,10 @@ public sealed class BehaviorAuthorityTests
 
         Assert.Equal(2, catalog.Version);
         Assert.Equal(2608, catalog.Sources.Count);
-        Assert.Equal(4318, catalog.Sources.Sum(source => source.Obligations.Count));
+        Assert.Equal(4326, catalog.Sources.Sum(source => source.Obligations.Count));
         Assert.All(catalog.Sources, source => Assert.NotEmpty(source.Obligations));
         Assert.Equal(
-            4318,
+            4326,
             catalog.Sources.SelectMany(source => source.Obligations)
                 .Select(obligation => obligation.Id)
                 .Distinct(StringComparer.Ordinal)
@@ -187,6 +187,118 @@ public sealed class BehaviorAuthorityTests
             .ToList();
 
         Assert.Empty(missing);
+    }
+
+    [Fact]
+    public void AuthorityChangesCannotRebindOldAdjudications()
+    {
+        var thrown = Assert.Throws<InvalidDataException>(() =>
+            Catalog.EnsureReviewedFingerprint(
+                "card:01149",
+                "sha256:reviewed",
+                "sha256:changed"));
+
+        Assert.Contains("re-adjudicate", thrown.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ChoiceAndMaximumBranchesAreIndependentObligations()
+    {
+        var catalog = Catalog.Build();
+        var vision = Assert.Single(catalog.Sources, source => source.Id == "card:01068");
+        Assert.Contains(
+            vision.Obligations,
+            obligation => obligation.Id.EndsWith(
+                ":choose-thw-plus-two-until-end-phase",
+                StringComparison.Ordinal));
+        Assert.Contains(
+            vision.Obligations,
+            obligation => obligation.Id.EndsWith(
+                ":choose-atk-plus-two-until-end-phase",
+                StringComparison.Ordinal));
+
+        var energyChannel = Assert.Single(
+            catalog.Sources,
+            source => source.Id == "card:01018");
+        Assert.Contains(
+            energyChannel.Obligations,
+            obligation => obligation.Id.EndsWith(":below-damage-cap", StringComparison.Ordinal));
+        Assert.Contains(
+            energyChannel.Obligations,
+            obligation => obligation.Id.EndsWith(":at-damage-cap", StringComparison.Ordinal));
+        Assert.Contains(
+            energyChannel.Obligations,
+            obligation => obligation.Id.EndsWith(":above-damage-cap", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void IndependentFaqAnswersAndMixedScopeRemainSeparate()
+    {
+        var catalog = Catalog.Build();
+        var webbedUp = Assert.Single(catalog.Sources, source => source.Id == "faq:01009");
+        Assert.Equal(2, webbedUp.Obligations.Count);
+        Assert.Contains(
+            webbedUp.Obligations,
+            obligation => obligation.Id.EndsWith(":prevents-two-attacks", StringComparison.Ordinal));
+        Assert.Contains(
+            webbedUp.Obligations,
+            obligation => obligation.Id.EndsWith(
+                ":replaced-attack-does-not-trigger-spider-sense",
+                StringComparison.Ordinal));
+
+        var makeTheCall = Assert.Single(catalog.Sources, source => source.Id == "faq:01071");
+        Assert.Equal("mixed", makeTheCall.Disposition);
+        Assert.Contains(
+            makeTheCall.Obligations,
+            obligation => obligation.Disposition == "executable");
+        Assert.Contains(
+            makeTheCall.Obligations,
+            obligation => obligation.Disposition == "outside-core");
+    }
+
+    [Fact]
+    public void ConflictingHistoricalAnswersNameTheirCurrentReplacement()
+    {
+        var catalog = Catalog.Build();
+        var historicalUltron = Assert.Single(
+            catalog.Sources,
+            source => source.Id == "ruling:5afa90a922165fcc");
+        Assert.Contains(
+            historicalUltron.Obligations,
+            obligation => obligation.Disposition == "superseded"
+                && obligation.Target ==
+                    "behavior:ruling:3db19283592b0b90:original-target-receives-drone");
+
+        var historicalStrength = Assert.Single(
+            catalog.Sources,
+            source => source.Id == "faq:01028");
+        Assert.Contains(
+            historicalStrength.Obligations,
+            obligation => obligation.Disposition == "superseded"
+                && obligation.Target ==
+                    "behavior:ruling:7f35317bac86b8c4:already-stunned-enemy");
+    }
+
+    [Fact]
+    public void CoreReachabilityAndEffectiveRuleOverlaysAreAdjudicatedPerBranch()
+    {
+        var catalog = Catalog.Build();
+        var rhino = Assert.Single(
+            catalog.Sources,
+            source => source.Id == "ruling:074448583686e795");
+        Assert.Equal("executable", rhino.Disposition);
+
+        var reveal = Assert.Single(catalog.Sources, source => source.Id == "rr:reveal.1");
+        Assert.Equal("mixed", reveal.Disposition);
+        Assert.Contains(reveal.Obligations, obligation => obligation.Disposition == "executable");
+        Assert.Contains(reveal.Obligations, obligation => obligation.Disposition == "outside-core");
+
+        var forEach = catalog.Sources
+            .Where(source => source.Id == "rr:for-each"
+                || source.Id.StartsWith("rr:for-each.", StringComparison.Ordinal))
+            .SelectMany(source => source.Obligations)
+            .Where(obligation => obligation.Disposition == "executable");
+        Assert.DoesNotContain(forEach, obligation => obligation.Implementation == "unimplemented");
     }
 
     private static JsonDocument Read(params string[] parts) =>
