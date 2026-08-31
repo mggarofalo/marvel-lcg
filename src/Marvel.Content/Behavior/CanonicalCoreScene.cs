@@ -518,6 +518,14 @@ public sealed class CanonicalCoreScene
                             + $"{normalized} uses");
             }
 
+            if (World.Facts.CounterMaximum(card.FaceId, normalized) is { } maximum
+                && count > maximum)
+            {
+                throw new InvalidOperationException(
+                    $"'{card.FaceId}' cannot hold more than its printed {maximum} "
+                    + $"{normalized} counters");
+            }
+
             key = "c_" + normalized;
         }
         else

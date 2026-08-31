@@ -187,6 +187,24 @@ public sealed class CanonicalCoreSceneTests
     }
 
     [Fact]
+    public void APrintedNonUsesEntryPoolCannotExceedItsReachableMaximum()
+    {
+        var scene = Deal(
+            "behavior:card:01066:four-arrow-counters",
+            "rhino",
+            ["captain_marvel"]);
+        scene.Apply(new MoveSceneCard(
+            new SceneCard("01066"),
+            new SceneDestination(SceneZone.Ally, Seat: 0)));
+
+        var thrown = Assert.Throws<CoreSceneConstructionException>(() => scene.Apply(
+            new SetSceneCounters(new SceneCard("01066"), "arrow", 5)));
+
+        Assert.Contains("printed 4 arrow", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(4, scene.Find(new SceneCard("01066")).Tokens["c_arrow"]);
+    }
+
+    [Fact]
     public void SchemeThreatCannotBypassDefeatOrAdvance()
     {
         var scene = Deal(

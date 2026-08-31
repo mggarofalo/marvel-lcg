@@ -153,6 +153,15 @@ public sealed class CardCatalog : ICardFacts
     public IReadOnlyList<string> CounterTypes(string faceId) => Find(faceId).CounterTypes;
 
     /// <inheritdoc />
+    public long? CounterMaximum(string faceId, string type)
+    {
+        var maxima = Find(faceId).CounterMaximums;
+        return maxima.TryGetValue(type.ToLowerInvariant(), out long maximum)
+            ? maximum
+            : null;
+    }
+
+    /// <inheritdoc />
     /// <remarks>
     /// <para>
     /// <b>The <c>*</c> means two different things and the card kind is what
@@ -353,7 +362,7 @@ public sealed class CardCatalog : ICardFacts
 
         return new Entry(
             kind, set, traits, attributes, title, subtitle, printed,
-            CounterTypesOf(printed, attributes));
+            CounterTypesOf(printed, attributes), CounterMaximumsOf(printed));
     }
 
     private static List<string> CounterTypesOf(
@@ -389,6 +398,32 @@ public sealed class CardCatalog : ICardFacts
         }
 
         return found.Order(StringComparer.Ordinal).ToList();
+    }
+
+    private static Dictionary<string, long> CounterMaximumsOf(string printed)
+    {
+        var found = new Dictionary<string, long>(StringComparer.Ordinal);
+        string[] words = printed.Split(
+            [' ', '\n', '\r', '\t'], StringSplitOptions.RemoveEmptyEntries);
+        for (int index = 6; index < words.Length; index++)
+        {
+            string counter = words[index].Trim('(', ')', '.', ',', ':', ';');
+            if (counter is not ("counter" or "counters")
+                || !string.Equals(words[index - 5], "enters", StringComparison.OrdinalIgnoreCase)
+                || !string.Equals(words[index - 4], "play", StringComparison.OrdinalIgnoreCase)
+                || !string.Equals(words[index - 3], "with", StringComparison.OrdinalIgnoreCase)
+                || !long.TryParse(words[index - 2], out long maximum))
+            {
+                continue;
+            }
+
+            string type = words[index - 1]
+                .Trim('(', ')', '.', ',', ':', ';')
+                .ToLowerInvariant();
+            found[type] = maximum;
+        }
+
+        return found;
     }
 
     /// <summary>
@@ -508,5 +543,6 @@ public sealed class CardCatalog : ICardFacts
         string Title,
         string Subtitle,
         string Text,
-        IReadOnlyList<string> CounterTypes);
+        IReadOnlyList<string> CounterTypes,
+        IReadOnlyDictionary<string, long> CounterMaximums);
 }

@@ -32,6 +32,8 @@ public sealed class CardCatalogTests
         Assert.Equal(["web"], Cards.CounterTypes("01008"));
         Assert.Equal(["energy"], Cards.CounterTypes("01018"));
         Assert.Empty(Cards.CounterTypes("01094"));
+        Assert.Equal(4, Cards.CounterMaximum("01066", "arrow"));
+        Assert.Null(Cards.CounterMaximum("01018", "energy"));
     }
 
     [Theory]

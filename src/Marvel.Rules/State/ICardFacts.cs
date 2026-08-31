@@ -122,6 +122,12 @@ public interface ICardFacts
     IReadOnlyList<string> CounterTypes(string faceId) => [];
 
     /// <summary>
+    /// A fixed maximum printed by an “enters play with X counters” instruction,
+    /// or null when the printed pool grows dynamically.
+    /// </summary>
+    long? CounterMaximum(string faceId, string type) => null;
+
+    /// <summary>
     /// One printed attribute as a number, or <paramref name="fallback"/> when it
     /// is absent or not numeric.
     /// </summary>
