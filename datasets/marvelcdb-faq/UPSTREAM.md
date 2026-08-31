@@ -76,6 +76,12 @@ was *never asked*. Without it those two are indistinguishable, and the second
 silently masquerading as the first is how a card with a ruling gets a spec
 written against the printed words instead.
 
+The external candidate also records one acquisition outcome for every queried
+code: either `entry` or the CLI's explicit `none`. Those outcomes are removed
+from the vendored wire format after `write`; they are evidence that every
+absence came from the acquisition command rather than from `candidate_complete`
+asserting that a truncated result was whole.
+
 Entries are stored raw. HTML, markdown, smart quotes and upstream's `updated`
 shape are all untouched, so a transcription problem is distinguishable from a
 harvest problem. One entry per line, sorted by code, so `git diff` on a refresh
@@ -130,8 +136,9 @@ dotnet run --project tools/Marvel.MarvelCdb.Harvest -- write [candidate] [candid
 
 Omit `limit` for a publishable observation. A limited run records itself as
 partial and `write`/`check` refuse it, so a wiring test cannot masquerade as a
-complete harvest. Both commands also require its queried codes to match the
-offline pin. If a reviewed full refresh intentionally changes that universe,
+complete harvest. Both commands require exactly one consistent acquisition
+outcome per queried code and require those codes to match the offline pin. If a
+reviewed full refresh intentionally changes that universe,
 run `pin [candidate]` and review the manifest diff before `write`. Review the
 resulting `faq.json` diff, including its harvest date and CLI version, before
 writing it into this directory.

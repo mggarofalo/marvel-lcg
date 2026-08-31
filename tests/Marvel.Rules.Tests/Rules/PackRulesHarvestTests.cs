@@ -87,6 +87,40 @@ public sealed class PackRulesHarvestTests
         }
     }
 
+    [Fact]
+    public void AGeneratedDestinationCannotTraverseAnExistingSymbolicLink()
+    {
+        string temporary = Path.Combine(Path.GetTempPath(), $"marvel-pack-link-{Guid.NewGuid():N}");
+        string root = Path.Combine(temporary, "snapshot");
+        string outside = Path.Combine(temporary, "outside");
+        try
+        {
+            Directory.CreateDirectory(root);
+            Directory.CreateDirectory(outside);
+            try
+            {
+                Directory.CreateSymbolicLink(Path.Combine(root, "mc09"), outside);
+            }
+            catch (Exception exception) when (exception is UnauthorizedAccessException
+                or PlatformNotSupportedException)
+            {
+                return;
+            }
+
+            Assert.Throws<InvalidDataException>(() => Emit.Write(
+                new Dictionary<string, string> { ["mc09/rules.md"] = "unsafe" },
+                root));
+            Assert.False(File.Exists(Path.Combine(outside, "rules.md")));
+        }
+        finally
+        {
+            if (Directory.Exists(temporary))
+            {
+                Directory.Delete(temporary, recursive: true);
+            }
+        }
+    }
+
     [Theory]
     [InlineData("HHEERROO PPAACCKK", "hero-pack")]
     [InlineData("When the Villain Changes Form", "when-the-villain-changes-form")]

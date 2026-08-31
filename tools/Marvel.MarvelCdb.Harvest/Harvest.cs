@@ -41,6 +41,10 @@ public static partial class Harvest
 
     public static IReadOnlyList<JsonElement> Batch(
         ICommandRunner runner,
+        IReadOnlyList<string> codes) => ObserveBatch(runner, codes).Entries;
+
+    public static BatchResult ObserveBatch(
+        ICommandRunner runner,
         IReadOnlyList<string> codes)
     {
         var arguments = new List<string> { "faq" };
@@ -70,8 +74,18 @@ public static partial class Harvest
                 + string.Join(", ", unexpected));
         }
 
-        var answered = entries.Select(entry => entry.GetProperty("code").GetString()!)
-            .Concat(EmptyCodes(result.Error)).ToHashSet(StringComparer.Ordinal);
+        var entryCodes = entries.Select(entry => entry.GetProperty("code").GetString()!)
+            .ToHashSet(StringComparer.Ordinal);
+        var emptyCodes = EmptyCodes(result.Error).ToHashSet(StringComparer.Ordinal);
+        var conflicted = entryCodes.Intersect(emptyCodes, StringComparer.Ordinal).ToList();
+        if (conflicted.Count > 0)
+        {
+            throw new InvalidDataException(
+                "marvelcdb reported both an entry and no entry for: "
+                + string.Join(", ", conflicted));
+        }
+
+        var answered = entryCodes.Concat(emptyCodes).ToHashSet(StringComparer.Ordinal);
         var missing = codes.Where(code => !answered.Contains(code)).ToList();
         if (missing.Count > 0)
         {
@@ -81,7 +95,10 @@ public static partial class Harvest
                 + (missing.Count > 10 ? " ..." : string.Empty));
         }
 
-        return entries;
+        var outcomes = entryCodes.Select(code => new QueryOutcome(code, "entry"))
+            .Concat(emptyCodes.Select(code => new QueryOutcome(code, "none")))
+            .OrderBy(outcome => outcome.Code, StringComparer.Ordinal).ToList();
+        return new BatchResult(entries, outcomes);
     }
 
     public static Snapshot All(
@@ -98,14 +115,17 @@ public static partial class Harvest
         }
 
         var entries = new List<JsonElement>();
+        var outcomes = new List<QueryOutcome>();
         for (int start = 0; start < codes.Count; start += BatchSize)
         {
             var batch = codes.Skip(start).Take(BatchSize).ToList();
-            entries.AddRange(Batch(runner, batch));
+            BatchResult observed = ObserveBatch(runner, batch);
+            entries.AddRange(observed.Entries);
+            outcomes.AddRange(observed.Outcomes);
             progress?.Invoke(Math.Min(start + BatchSize, codes.Count), codes.Count, entries.Count);
         }
 
-        return new Snapshot(harvested, version, codes, entries, limit == 0);
+        return new Snapshot(harvested, version, codes, entries, limit == 0, outcomes);
     }
 
     public static IReadOnlyList<JsonElement> ParseEntries(string output)
@@ -136,3 +156,7 @@ public static partial class Harvest
     [GeneratedRegex("^no FAQ entries for (\\S+)$", RegexOptions.CultureInvariant)]
     private static partial Regex NoEntries();
 }
+
+public sealed record BatchResult(
+    IReadOnlyList<JsonElement> Entries,
+    IReadOnlyList<QueryOutcome> Outcomes);

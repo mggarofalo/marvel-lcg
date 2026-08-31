@@ -10,7 +10,8 @@ public sealed record Snapshot(
     string Harvester,
     IReadOnlyList<string> Queried,
     IReadOnlyList<JsonElement> Entries,
-    bool CandidateComplete = false)
+    bool CandidateComplete = false,
+    IReadOnlyList<QueryOutcome>? Outcomes = null)
 {
     private static readonly string[] FaceSuffixes = ["a", "b", "c"];
 
@@ -46,6 +47,13 @@ public sealed record Snapshot(
             }
         }
 
+        IReadOnlyList<QueryOutcome>? outcomes = root.TryGetProperty("outcomes", out JsonElement observed)
+            ? observed.EnumerateArray().Select(outcome => new QueryOutcome(
+                outcome.GetProperty("code").GetString()
+                    ?? throw new InvalidDataException("an outcome has no card code"),
+                outcome.GetProperty("result").GetString()
+                    ?? throw new InvalidDataException("an outcome has no result"))).ToList()
+            : null;
         return new Snapshot(
             root.GetProperty("harvested").GetString()
                 ?? throw new InvalidDataException("the harvest date is missing"),
@@ -54,12 +62,53 @@ public sealed record Snapshot(
             queried,
             entries,
             root.TryGetProperty("candidate_complete", out JsonElement complete)
-                && complete.ValueKind == JsonValueKind.True);
+                && complete.ValueKind == JsonValueKind.True,
+            outcomes);
     }
 
     public string Json() => Render(candidate: false);
 
     public string CandidateJson() => Render(candidate: true);
+
+    public void VerifyPublishable()
+    {
+        if (!CandidateComplete)
+        {
+            throw new InvalidDataException(
+                "the candidate is partial or lacks completion accounting; run a full `fetch`");
+        }
+
+        if (Outcomes is null)
+        {
+            throw new InvalidDataException("the candidate has no per-code acquisition outcomes");
+        }
+
+        if (Outcomes.Select(outcome => outcome.Code).Distinct(StringComparer.Ordinal).Count()
+            != Outcomes.Count)
+        {
+            throw new InvalidDataException("candidate outcomes contain a repeated card code");
+        }
+
+        var outcomes = Outcomes.ToDictionary(outcome => outcome.Code, StringComparer.Ordinal);
+        if (!outcomes.Keys.ToHashSet(StringComparer.Ordinal)
+                .SetEquals(Queried))
+        {
+            throw new InvalidDataException(
+                "candidate outcomes must account exactly once for every queried code");
+        }
+
+        var entryCodes = Entries.Select(EntryCode).ToHashSet(StringComparer.Ordinal);
+        foreach ((string code, QueryOutcome outcome) in outcomes)
+        {
+            bool hasEntry = entryCodes.Contains(code);
+            if (outcome.Result is not ("entry" or "none")
+                || (outcome.Result == "entry") != hasEntry)
+            {
+                throw new InvalidDataException(
+                    $"candidate outcome for {code} does not match its FAQ entries");
+            }
+        }
+    }
 
     public IReadOnlyDictionary<string, JsonElement> FirstEntries(out IReadOnlyList<string> duplicates)
     {
@@ -137,6 +186,12 @@ public sealed record Snapshot(
         if (candidate)
         {
             lines.Add($"\"candidate_complete\": {(CandidateComplete ? "true" : "false")},");
+            lines.Add("\"outcomes\": [");
+            var outcomes = (Outcomes ?? []).OrderBy(outcome => outcome.Code, StringComparer.Ordinal).ToList();
+            lines.AddRange(outcomes.Select((outcome, index) =>
+                $"{{\"code\":{CanonicalJson.String(outcome.Code)},\"result\":{CanonicalJson.String(outcome.Result)}}}"
+                + (index + 1 < outcomes.Count ? "," : string.Empty)));
+            lines.Add("],");
         }
 
         lines.Add($"\"harvested\": {CanonicalJson.String(Harvested)},");
@@ -162,6 +217,8 @@ public sealed record Snapshot(
     private static string EntryCode(JsonElement entry) =>
         entry.GetProperty("code").GetString() ?? string.Empty;
 }
+
+public sealed record QueryOutcome(string Code, string Result);
 
 internal static partial class CanonicalJson
 {

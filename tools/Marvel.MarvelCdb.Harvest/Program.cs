@@ -33,11 +33,7 @@ try
                 ? args[3]
                 : RepositoryPaths.Dataset("marvelcdb-faq", "query.manifest.json");
             Snapshot snapshot = Snapshot.Read(File.ReadAllText(cache));
-            if (!snapshot.CandidateComplete)
-            {
-                throw new InvalidDataException(
-                    "the candidate is partial or lacks completion accounting; run a full `fetch`");
-            }
+            snapshot.VerifyPublishable();
             QueryPin.Read(pinPath).Verify(snapshot.Queried);
             Directory.CreateDirectory(into);
             string target = Path.Combine(into, "faq.json");
@@ -52,11 +48,7 @@ try
                 ? args[2]
                 : RepositoryPaths.Dataset("marvelcdb-faq", "query.manifest.json");
             Snapshot candidate = Snapshot.Read(File.ReadAllText(cache));
-            if (!candidate.CandidateComplete)
-            {
-                throw new InvalidDataException(
-                    "the candidate is partial or lacks completion accounting; run a full `fetch`");
-            }
+            candidate.VerifyPublishable();
             QueryPin.Read(pinPath).Verify(candidate.Queried);
             string target = RepositoryPaths.Dataset("marvelcdb-faq", "faq.json");
             string built = candidate.Json();
@@ -77,11 +69,7 @@ try
                 ? args[2]
                 : RepositoryPaths.Dataset("marvelcdb-faq", "query.manifest.json");
             Snapshot candidate = Snapshot.Read(File.ReadAllText(cache));
-            if (!candidate.CandidateComplete)
-            {
-                throw new InvalidDataException(
-                    "only a fully accounted candidate can become the query-universe pin");
-            }
+            candidate.VerifyPublishable();
 
             File.WriteAllText(into, QueryPin.Create(candidate.Queried).Json(), new UTF8Encoding(false));
             Console.Error.WriteLine($"pinned {candidate.Queried.Count} queried codes in {into}");

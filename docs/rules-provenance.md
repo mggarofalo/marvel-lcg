@@ -205,7 +205,8 @@ Pack rules use the same separation for copyrighted local inputs:
 `sources.manifest.json` pins all 61 PDF bytes and the raw bytes of every file in
 the complete committed tree, using length-prefixed paths and contents.
 MarvelCDB has no downloadable source document to vendor, so its `fetch` step
-accounts for every queried code in a local candidate. The offline
+records an explicit entry-or-none acquisition outcome for every queried code in
+a local candidate. The offline
 `query.manifest.json` also pins the exact reviewed query universe; only a
 candidate matching that pin can reach `write` or `check`.
 

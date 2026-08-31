@@ -52,7 +52,7 @@ public sealed class MarvelCdbHarvestTests
     }
 
     [Fact]
-    public void WriteRejectsAForgedCompleteCandidateOutsideThePinnedQueryUniverse()
+    public void WriteRejectsThePinnedQueryUniverseWithoutAcquisitionOutcomes()
     {
         string temporary = Path.Combine(Path.GetTempPath(), $"marvel-faq-write-{Guid.NewGuid():N}");
         string candidate = Path.Combine(temporary, "candidate.json");
@@ -60,17 +60,16 @@ public sealed class MarvelCdbHarvestTests
         try
         {
             Directory.CreateDirectory(temporary);
-            File.WriteAllText(candidate,
-                """
-                {
-                  "version": 1,
-                  "candidate_complete": true,
-                  "harvested": "2026-08-31",
-                  "harvester": "forged",
-                  "queried": ["01001a"],
-                  "entries": []
-                }
-                """);
+            Snapshot committed = Snapshot.Read(File.ReadAllText(
+                RepositoryPaths.Dataset("marvelcdb-faq", "faq.json")));
+            var forged = new Snapshot(
+                "2026-08-31",
+                "forged",
+                committed.Queried,
+                [],
+                CandidateComplete: true,
+                Outcomes: []);
+            File.WriteAllText(candidate, forged.CandidateJson());
 
             Assert.Equal(1, RunTool("write", candidate, output));
             Assert.False(File.Exists(Path.Combine(output, "faq.json")));
@@ -147,8 +146,12 @@ public sealed class MarvelCdbHarvestTests
             "{\"code\":\"01001a\"}",
             "no FAQ entries for 01050\n"));
 
-        JsonElement entry = Assert.Single(FaqHarvest.Batch(runner, ["01001a", "01050"]));
+        BatchResult observed = FaqHarvest.ObserveBatch(runner, ["01001a", "01050"]);
+        JsonElement entry = Assert.Single(observed.Entries);
         Assert.Equal("01001a", entry.GetProperty("code").GetString());
+        Assert.Equal(
+            [new QueryOutcome("01001a", "entry"), new QueryOutcome("01050", "none")],
+            observed.Outcomes);
         Assert.DoesNotContain("-q", runner.Arguments);
     }
 

@@ -265,7 +265,19 @@ public static partial class Emit
         var destinations = tree.OrderBy(pair => pair.Key, StringComparer.Ordinal)
             .Select(pair => (Path: Destination(root, pair.Key), Contents: pair.Value))
             .ToList();
-        Directory.CreateDirectory(Path.GetFullPath(root));
+        string fullRoot = Path.GetFullPath(root);
+        EnsurePathHasNoReparsePoints(fullRoot);
+        if (Directory.Exists(fullRoot))
+        {
+            EnsureTreeHasNoReparsePoints(fullRoot);
+        }
+
+        foreach (var destination in destinations)
+        {
+            EnsurePathHasNoReparsePoints(destination.Path);
+        }
+
+        Directory.CreateDirectory(fullRoot);
         foreach (string path in Directory.EnumerateFiles(root, "*.md", SearchOption.AllDirectories)
             .Where(path => !string.Equals(Path.GetFileName(path), "UPSTREAM.md", StringComparison.Ordinal)))
         {
@@ -301,6 +313,56 @@ public static partial class Emit
         }
 
         return candidate;
+    }
+
+    private static void EnsurePathHasNoReparsePoints(string path)
+    {
+        string full = Path.GetFullPath(path);
+        string root = Path.GetPathRoot(full)
+            ?? throw new InvalidDataException($"snapshot path has no filesystem root: {path}");
+        string current = root;
+        foreach (string component in full[root.Length..].Split(
+            [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar],
+            StringSplitOptions.RemoveEmptyEntries))
+        {
+            current = Path.Combine(current, component);
+            EnsureNotReparsePoint(current);
+        }
+    }
+
+    private static void EnsureTreeHasNoReparsePoints(string root)
+    {
+        var pending = new Stack<string>();
+        pending.Push(root);
+        while (pending.Count > 0)
+        {
+            string directory = pending.Pop();
+            foreach (string entry in Directory.EnumerateFileSystemEntries(directory))
+            {
+                EnsureNotReparsePoint(entry);
+                if (Directory.Exists(entry))
+                {
+                    pending.Push(entry);
+                }
+            }
+        }
+    }
+
+    private static void EnsureNotReparsePoint(string path)
+    {
+        var directory = new DirectoryInfo(path);
+        var file = new FileInfo(path);
+        bool linked = directory.LinkTarget is not null || file.LinkTarget is not null;
+        if (!linked && (Directory.Exists(path) || File.Exists(path)))
+        {
+            linked = (File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0;
+        }
+
+        if (linked)
+        {
+            throw new InvalidDataException(
+                $"snapshot output contains a symbolic link or reparse point: {path}");
+        }
     }
 
     public static string Hash(string text)
