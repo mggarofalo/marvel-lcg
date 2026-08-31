@@ -113,6 +113,20 @@ public interface ICardFacts
     /// <param name="faceId">A printed card id.</param>
     IReadOnlyDictionary<string, string> Attributes(string faceId);
 
+    /// <summary>The lower-case names of counter types printed by this face.</summary>
+    /// <remarks>
+    /// Counter types are open-ended card data: Energy Channel names energy
+    /// counters and Web-Shooter names web counters. A state constructor must
+    /// not infer permission from an arbitrary digest key.
+    /// </remarks>
+    IReadOnlyList<string> CounterTypes(string faceId) => [];
+
+    /// <summary>
+    /// A fixed maximum printed by an “enters play with X counters” instruction,
+    /// or null when the printed pool grows dynamically.
+    /// </summary>
+    long? CounterMaximum(string faceId, string type) => null;
+
     /// <summary>
     /// One printed attribute as a number, or <paramref name="fallback"/> when it
     /// is absent or not numeric.

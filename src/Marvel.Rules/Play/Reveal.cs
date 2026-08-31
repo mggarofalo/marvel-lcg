@@ -287,10 +287,14 @@ public static class Reveal
     /// The player named by a setup card's control instruction, or null when
     /// ordinary reveal placement applies.
     /// </param>
+    /// <param name="verb">
+    /// The event-stream spelling for the move. The engine chooses this wire
+    /// vocabulary; callers use <c>Put_Into_Play</c> when no reveal occurred.
+    /// </param>
     public static void Resolve(
         World world, ICardFacts facts, Card card, int player, List<GameEvent> events,
         Occurrence? occurrence = null, int? attachmentTarget = null,
-        int? setupController = null)
+        int? setupController = null, string verb = "Reveal")
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -378,7 +382,7 @@ public static class Reveal
             Places.Reference(from), Places.Reference(into),
             [new Landing(card.ObjectId, into.Cards.Count - 1)])
         {
-            Trigger = "villain phase", Verb = "Reveal",
+            Trigger = "villain phase", Verb = verb,
         });
 
         EnterPlay(world, facts, card, events, occurrence);

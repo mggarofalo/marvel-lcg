@@ -2117,8 +2117,13 @@
     {
       "card": "01116a",
       "name": "Underground Distribution",
-      "note": "Its contents, setup search, and advance instruction are scenario setup data and the generic main-scheme setup step, not an ability this face resolves after setup.",
-      "abilities": []
+      "note": "Setup searches the encounter deck for Defense Network and reveals it. The search primitive shuffles the searched encounter deck under rr:search.3. The contents list is scenario setup data, and rr:appendix-ii-setup.step.12.b performs the printed advance to 1B.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Setup", "subject": "this" },
+          "effect": { "search": { "in": [ { "encounterDeck": 1 } ], "for": "01125" } }
+        }
+      ]
     },
     {
       "card": "01116b",
@@ -2173,8 +2178,16 @@
     {
       "card": "01137a",
       "name": "The Crimson Cowl",
-      "note": "Its contents, setup instruction, and advance instruction are scenario setup data and the generic main-scheme setup step, not an ability this face resolves after setup.",
-      "abilities": []
+      "note": "Setup puts the set-aside Ultron Drones environment into its printed in-play destination without revealing it, then performs the printed encounter-deck shuffle. The contents list is scenario setup data, and rr:appendix-ii-setup.step.12.b performs the printed advance to 1B.",
+      "abilities": [
+        {
+          "trigger": { "timing": "Setup", "subject": "this" },
+          "effect": { "seq": [
+            { "putIntoPlay": { "card": { "cardsIn": { "area": "scenarioSetAside", "title": "Ultron Drones" } }, "where": "printedDestination" } },
+            { "shuffle": "encounterDeck" }
+          ] }
+        }
+      ]
     },
     {
       "card": "01178",

@@ -746,13 +746,17 @@ public sealed partial class AbilityRunner
             Trigger = cast.Trigger,
             Verb = "Reveal",
         });
+        // Scenario setup has no active player's ability to inherit. The first
+        // player resolves cards revealed by that mandatory setup instruction;
+        // ordinary in-game abilities retain their occurrence's player.
+        int revealingPlayer = cast.Player >= 0 ? cast.Player : cast.World.FirstPlayer;
         cast.World.Agenda.Then(new PhaseStep(
             Steps.RevealEncounterCard,
             cast.World.Agenda.Current?.Round ?? 0,
             4,
-            Index: cast.Player,
+            Index: revealingPlayer,
             Subject: card.ObjectId,
-            Seat: cast.Player));
+            Seat: revealingPlayer));
         return true;
     }
 
@@ -867,6 +871,7 @@ public sealed partial class AbilityRunner
     {
         "encounterDeck" => cast.World.AreaOf(DeckType.EncounterDeck),
         "encounterDiscardPile" => cast.World.AreaOf(DeckType.EncounterDiscardPile),
+        "scenarioSetAside" => cast.World.AreaOf(DeckType.AsideDeck),
         "yourDeck" => cast.World.Seats[cast.Player].Deck,
         _ => throw new RulesNotImplementedException(
             $"'{cast.Source.FaceId}' searches '{where}', which is not implemented"),

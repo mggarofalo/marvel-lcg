@@ -196,7 +196,9 @@ case while keeping the shared edge case executable.
 
 Every executable obligation begins with a supported game dealt from
 `datasets/setup/setup.json`. A scene constructor may then arrange that game for
-the decision under test, subject to these invariants:
+the decision under test, subject to these invariants. The concrete typed
+vocabulary and failure contract are documented in
+[`core-scenes.md`](core-scenes.md).
 
 - every printed component is accounted for exactly once unless a rule creates
   or removes it;

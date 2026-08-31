@@ -117,6 +117,7 @@ Seven, all run by hand and none on any path a game takes.
 | ability timing, interrupt and response windows, continuous effects | [timing.md](docs/timing.md) |
 | `datasets/cards/` | [card-dataset.md](docs/card-dataset.md) |
 | `datasets/setup/`, scenario or starter-deck data, setup order | [setup-dataset.md](docs/setup-dataset.md) |
+| `Marvel.Content.Behavior`, canonical behavioral game states | [core-scenes.md](docs/core-scenes.md) |
 | play areas, game areas, anything resolving by *where a card is* | [places.md](docs/places.md) |
 | `Marvel.Rules.Play`, the villain phase, what a revealed card does | [villain-phase.md](docs/villain-phase.md) |
 | the player phase, hand size, readying, a player deck running out | [player-phase.md](docs/player-phase.md) |

@@ -806,7 +806,7 @@ public static class CardPlay
     }
 
     /// <summary>Checks a printed “Max N per player” against the destination controller.</summary>
-    private static bool WithinPerPlayerLimit(
+    public static bool WithinPerPlayerLimit(
         World world, ICardFacts facts, Seat seat, Card card, IReadOnlyList<int>? targets,
         ICardAbilities abilities)
     {
