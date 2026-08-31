@@ -73,7 +73,7 @@ as important.
    - *Vendored* — copied once from a pinned upstream and read as-is, with an
      `UPSTREAM.md` recording the pin. `datasets/marvelsdb/`,
      `datasets/rules-reference/`, `datasets/rules-packs/`,
-     `datasets/marvelcdb-faq/`.
+     `datasets/marvelcdb-faq/`, `datasets/rulings/`.
    - *Authored* — written here because nothing else records it.
      `datasets/setup/` is the only one: what a scenario is dealt from is
      printed in rules inserts, not on cards, so there is nothing to generate it
@@ -93,13 +93,14 @@ as important.
 
 ## The tools
 
-Three, all run by hand and none on any path a game takes.
+Four, all run by hand and none on any path a game takes.
 
 | | |
 |---|---|
 | `tools/Marvel.Cards.Extract` | builds `datasets/cards/` from the vendored MarvelSDB snapshot. `-- check` is a CI gate. |
 | `tools/Marvel.Rules.Harvest` | reads the Rules Reference PDF into `datasets/rules-reference/`. Not a gate: the document is copyrighted and CI has no copy. |
 | `tools/Marvel.Rules.Index` | asks the rules corpus questions — `refs` walks the citation graph both ways, `citations` reports what the suite holds the engine to. |
+| `tools/Marvel.Rulings.Harvest` | acquires Hall of Heroes pages into a local cache, then builds and checks the vendored rulings index offline. |
 
 ## Before you touch X, read Y
 

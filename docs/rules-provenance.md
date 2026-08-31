@@ -31,11 +31,16 @@ sources. Each is vendored as a snapshot, each is diffable, and each can move.
 |---|---|---|---|
 | **Rules Reference** (FFG/Asmodee) | `datasets/rules-reference/` | rule entry | a new RR version is published |
 | **Printed card text** (MarvelSDB) | `datasets/marvelsdb/` → `datasets/cards/` | card code | a new pack ships |
-| **Official rulings** (MarvelCDB FAQ) | `datasets/marvelcdb-faq/` | ruling per card | rulings are added or revised |
+| **Card rulings** (MarvelCDB FAQ) | `datasets/marvelcdb-faq/` | ruling per card | rulings are added or revised |
+| **Rules rulings** (Hall of Heroes) | `datasets/rulings/` | ruling per question | rulings are added or revised |
 
-All three now exist. The Rules Reference was the missing one until MARVEL-154; see [`datasets/rules-reference/UPSTREAM.md`](../datasets/rules-reference/UPSTREAM.md).
+All four now exist. The Rules Reference was the missing one until MARVEL-154;
+see [`datasets/rules-reference/UPSTREAM.md`](../datasets/rules-reference/UPSTREAM.md).
+Hall of Heroes supplies the complementary ruling tier MarvelCDB cannot: a
+question need not cite a card at all. Its four-page snapshot and content hashes
+are described in [`datasets/rulings/UPSTREAM.md`](../datasets/rulings/UPSTREAM.md).
 
-All three obey the existing rule: **nothing under `datasets/` may require the
+All four obey the existing rule: **nothing under `datasets/` may require the
 network to regenerate.** Each is *vendored* — harvested once, pinned, read
 offline.
 
@@ -131,6 +136,9 @@ dotnet run --project tools/Marvel.Rules.Harvest -- check [pdf]
 
 # Is the card dataset what its generator produces?
 dotnet run --project tools/Marvel.Cards.Extract -- check
+
+# Do the vendored Hall of Heroes pages still produce the pinned ruling index?
+dotnet run --project tools/Marvel.Rulings.Harvest -- check
 ```
 
 A refresh is a reviewable act. `datasets/marvelsdb/UPSTREAM.md` is already

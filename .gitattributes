@@ -28,3 +28,7 @@
 *.woff binary
 *.eot  binary
 *.zip  binary
+
+# Vendored HTML is an upstream byte capture. Preserve its incidental trailing
+# whitespace without teaching `git diff --check` that authored files may do so.
+datasets/rulings/pages/*.html whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab
