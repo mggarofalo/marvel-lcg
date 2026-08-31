@@ -38,6 +38,60 @@ public sealed class CoreEncounterSearchTests
         Assert.Empty(world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)).Cards);
     }
 
+    [Rule("rr:unique-icon.4")]
+    [Rule("rr:unique-icon.4.2")]
+    [Fact]
+    public void KlawsDiscardedMatchingUniqueMinionDoesNotEnterPlay()
+    {
+        // A matching non-villain encounter card “cannot enter play” and “is
+        // discarded and any effects of it entering play are ignored.” Secret
+        // Rendezvous puts the minion into play without revealing it, so the
+        // facedown replacement that .4.2 requires for a reveal is not dealt.
+        var world = Board(players: 1);
+        world.CreateCard(
+            "01059", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var deck = EmptyEncounterDeck(world);
+        var below = world.CreateCard("01131", deck);
+        var jessica = world.CreateCard("56185", deck);
+        var scheme = world.CreateCard("01117a", world.AreaOf(DeckType.MainSchemesArea));
+
+        AuthoredCards.Runner().WhenRevealed(world, scheme, player: 0);
+
+        Assert.Equal([below], deck.Cards);
+        Assert.Contains(jessica, world.AreaOf(DeckType.EncounterDiscardPile).Cards);
+        Assert.Empty(world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)).Cards);
+        Assert.Empty(world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)).Cards);
+    }
+
+    [Rule("rr:unique-icon.4")]
+    [Rule("rr:unique-icon.4.2")]
+    [Fact]
+    public void KlawsDiscardedMinionChecksTheGameAreaItWouldEnter()
+    {
+        // The encounter discard pile is shared between game areas, but Secret
+        // Rendezvous would put the minion into the first player's area. A
+        // matching unique ally in that destination therefore blocks entry.
+        var world = Board(players: 2);
+        world.FirstPlayer = 1;
+        for (int player = 0; player < 2; player++)
+        {
+            world.Join(PlayArea.Of(player), world.CreateGameArea(), "test", []);
+        }
+        world.CreateCard(
+            "01059", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(1), cardOwner: 1));
+        var deck = EmptyEncounterDeck(world);
+        var below = world.CreateCard("01131", deck);
+        var jessica = world.CreateCard("56185", deck);
+        var scheme = world.CreateCard("01117a", world.AreaOf(DeckType.MainSchemesArea));
+
+        AuthoredCards.Runner().WhenRevealed(world, scheme, player: 0);
+
+        Assert.Equal([below], deck.Cards);
+        Assert.Contains(jessica, world.AreaOf(DeckType.EncounterDiscardPile).Cards);
+        Assert.Empty(world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(1)).Cards);
+        Assert.Empty(world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(1)).Cards);
+    }
+
     [Rule("rr:discard.4")]
     [Rule("rr:ability")]
     [Fact]

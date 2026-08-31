@@ -1128,6 +1128,20 @@ public sealed partial class AbilityRunner
     /// <summary>Puts one exact minion into play engaged with a named player.</summary>
     private static void PutIntoPlay(Card card, int player, Cast cast)
     {
+        if (Uniqueness.IsBlocked(
+                cast.World, cast.World.Facts, card, PlayArea.Of(player)))
+        {
+            // `rr:unique-icon.4.2`: a matching non-villain encounter card is
+            // discarded and does not enter play. This path is put into play,
+            // not reveal, so it deals no facedown replacement encounter card.
+            if (card.Area.Type != DeckType.EncounterDiscardPile)
+            {
+                Marvel.Rules.Play.Discard.Card(
+                    cast.World, card, cast.Trigger, cast.Events);
+            }
+            return;
+        }
+
         var into = cast.World.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(player));
         var from = card.Area;
 

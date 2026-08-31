@@ -16,16 +16,26 @@ public static class Uniqueness
 
     /// <summary>Whether a card is prevented from entering play by a matching card.</summary>
     public static bool IsBlocked(World world, ICardFacts facts, Card entering)
+        => IsBlocked(world, facts, entering, entering.Area.PlayArea);
+
+    /// <summary>
+    /// Whether a card is prevented from entering play in a named play area.
+    /// </summary>
+    public static bool IsBlocked(
+        World world, ICardFacts facts, Card entering, PlayArea destination)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(entering);
 
+        var destinationArea = world.GameAreaOf(destination);
         return world.Areas
             .Where(area => DeckTypes.IsInPlay(area.Type))
             .SelectMany(area => area.Cards)
             .Any(inPlay => !ReferenceEquals(inPlay, entering)
-                && Places.CanAffect(world, entering, inPlay)
+                && (destinationArea is null
+                    || Places.GameAreaOf(world, inPlay) is not { } blockerArea
+                    || ReferenceEquals(destinationArea, blockerArea))
                 && Matches(facts, entering, inPlay));
     }
 
