@@ -53,8 +53,21 @@ public sealed record MoveSceneCard(SceneCard Card, SceneDestination Destination)
     public override string Name => "move-card";
 }
 
+/// <summary>Where unselected draw-pile cards go while arranging a deck boundary.</summary>
+public enum PlayerDeckRemainder
+{
+#pragma warning disable CS1591, SA1602
+    Leave,
+    Discard,
+    Hand,
+#pragma warning restore CS1591, SA1602
+}
+
 /// <summary>Stacks selected cards on a player's deck; the first id is the next card drawn.</summary>
-public sealed record StackPlayerDeck(int Seat, IReadOnlyList<SceneCard> TopFirst, bool DiscardOthers = false)
+public sealed record StackPlayerDeck(
+    int Seat,
+    IReadOnlyList<SceneCard> TopFirst,
+    PlayerDeckRemainder Remainder = PlayerDeckRemainder.Leave)
     : CoreSceneOperation
 {
     /// <inheritdoc />
@@ -62,7 +75,20 @@ public sealed record StackPlayerDeck(int Seat, IReadOnlyList<SceneCard> TopFirst
 }
 
 /// <summary>Stacks selected encounter cards; the first id is the next card drawn.</summary>
-public sealed record StackEncounterDeck(IReadOnlyList<SceneCard> TopFirst)
+public enum EncounterDeckRemainder
+{
+#pragma warning disable CS1591, SA1602
+    Leave,
+    Discard,
+    Dealt,
+#pragma warning restore CS1591, SA1602
+}
+
+/// <summary>Stacks selected encounter cards; the first id is the next card drawn.</summary>
+public sealed record StackEncounterDeck(
+    IReadOnlyList<SceneCard> TopFirst,
+    EncounterDeckRemainder Remainder = EncounterDeckRemainder.Leave,
+    int Seat = 0)
     : CoreSceneOperation
 {
     /// <inheritdoc />
@@ -261,14 +287,21 @@ public sealed class CanonicalCoreScene
             RequireHostCanMove(card, PlayArea.Of(operation.Seat), destinationInPlay: false);
         }
 
-        if (operation.DiscardOthers)
+        if (operation.Remainder is not PlayerDeckRemainder.Leave)
         {
-            Area discard = World.AreaOf(
-                DeckType.DiscardPile, PlayArea.Of(operation.Seat), cardOwner: operation.Seat);
+            Area remainder = operation.Remainder switch
+            {
+                PlayerDeckRemainder.Discard => World.AreaOf(
+                    DeckType.DiscardPile,
+                    PlayArea.Of(operation.Seat),
+                    cardOwner: operation.Seat),
+                PlayerDeckRemainder.Hand => seat.Hand,
+                _ => throw new ArgumentOutOfRangeException(nameof(operation)),
+            };
             foreach (var card in seat.Deck.Cards.Where(card => !selected.Contains(card)).ToList())
             {
                 RequireHostCanMove(card, PlayArea.Of(operation.Seat), destinationInPlay: false);
-                World.MoveToTop(card, discard);
+                World.MoveToTop(card, remainder);
             }
         }
 
@@ -288,6 +321,24 @@ public sealed class CanonicalCoreScene
         }
 
         Area deck = World.AreaOf(DeckType.EncounterDeck);
+        if (operation.Remainder is not EncounterDeckRemainder.Leave)
+        {
+            Area remainder = operation.Remainder switch
+            {
+                EncounterDeckRemainder.Discard =>
+                    World.AreaOf(DeckType.EncounterDiscardPile),
+                EncounterDeckRemainder.Dealt => World.AreaOf(
+                    DeckType.DealtEncounterCardsDeck,
+                    PlayArea.Of(Player(operation.Seat).Index)),
+                _ => throw new ArgumentOutOfRangeException(nameof(operation)),
+            };
+            foreach (var card in deck.Cards.Where(card => !selected.Contains(card)).ToList())
+            {
+                RequireHostCanMove(card, PlayArea.Villains, destinationInPlay: false);
+                World.MoveToTop(card, remainder);
+            }
+        }
+
         foreach (var card in selected.AsEnumerable().Reverse())
         {
             World.MoveToTop(card, deck);

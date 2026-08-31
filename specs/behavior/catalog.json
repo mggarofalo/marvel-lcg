@@ -8249,6 +8249,20 @@
           "exception": null,
           "scenarios": [],
           "mutation": null
+        },
+        {
+          "id": "behavior:rr:encounter-deck.1:empty-with-discard",
+          "summary": "When the encounter deck empties with cards in its discard pile, that pile is immediately shuffled into a new deck and one acceleration token is placed next to the main scheme deck.",
+          "disposition": "executable",
+          "reason": null,
+          "target": null,
+          "implementation": "supported",
+          "work_item": null,
+          "exception": null,
+          "scenarios": [
+            "specs/behavior/core/encounter-deck-empty.feature::Emptying the encounter deck immediately resets it and accelerates the scheme"
+          ],
+          "mutation": "CoreRuleTranscriptTests.EncounterDeckBranchesHavePinnedOutcomes distinguishes the immediate reset, shuffle event, and acceleration token."
         }
       ]
     },
@@ -8262,15 +8276,17 @@
       "obligations": [
         {
           "id": "behavior:rr:encounter-deck.2:published-result",
-          "summary": "If a card ability discards a specified number of cards from the encounter deck or until a card with specific criteria is discarded, discard cards from the encounter deck until the discard condition is met or the encounter deck is empty.",
+          "summary": "A specified or discard-until effect stops when its condition is met or the original encounter deck empties; emptying the deck fulfills the effect and it does not continue into the reset deck.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-deck-empty.feature::A specified discard stops when the original encounter deck empties"
+          ],
+          "mutation": "CoreRuleTranscriptTests.EncounterDeckBranchesHavePinnedOutcomes distinguishes the original-deck boundary from continuing to discard the replacement deck."
         }
       ]
     },
@@ -8288,11 +8304,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-deck-empty.feature::Dealing the final encounter card finishes after the reset"
+          ],
+          "mutation": "CoreRuleTranscriptTests.EncounterDeckBranchesHavePinnedOutcomes pins the dealt card and reset-before-deal event order."
         }
       ]
     },
@@ -8306,15 +8324,17 @@
       "obligations": [
         {
           "id": "behavior:rr:encounter-deck.4:published-result",
-          "summary": "If there are no cards in both the encounter deck and the encounter discard pile simultaneously (such as all cards from the encounter deck being in play), an infinite loop occurs with an infinite number of acceleration tokens being placed next to the main scheme deck.",
+          "summary": "If the encounter deck and encounter discard pile are both empty simultaneously, the resulting infinite acceleration loop makes the players lose.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-deck-empty.feature::Empty encounter draw and discard piles make the players lose"
+          ],
+          "mutation": "CoreRuleTranscriptTests.EncounterDeckBranchesHavePinnedOutcomes distinguishes the terminal empty-pair result from a quiet no-op or ordinary reset."
         }
       ]
     },
@@ -17489,6 +17509,20 @@
           "exception": null,
           "scenarios": [],
           "mutation": null
+        },
+        {
+          "id": "behavior:rr:player-deck.1:empty-with-discard",
+          "summary": "When a player deck empties with cards in its discard pile, that pile is immediately shuffled into a new deck and the player is dealt one facedown encounter card.",
+          "disposition": "executable",
+          "reason": null,
+          "target": null,
+          "implementation": "supported",
+          "work_item": null,
+          "exception": null,
+          "scenarios": [
+            "specs/behavior/core/player-deck-empty.feature::The final draw immediately rebuilds a player deck and deals an encounter card"
+          ],
+          "mutation": "CoreRuleTranscriptTests.PlayerDeckBranchesHavePinnedOutcomes distinguishes immediate reset, shuffle, encounter-card cost, and survival."
         }
       ]
     },
@@ -17530,11 +17564,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-deck-empty.feature::Discarding from a deck stops at the reset boundary"
+          ],
+          "mutation": "CoreRuleTranscriptTests.PlayerDeckBranchesHavePinnedOutcomes distinguishes stopping at the original deck boundary from discarding the rebuilt deck."
         }
       ]
     },
@@ -17552,11 +17588,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-deck-empty.feature::An empty deck waits for the first discarded card before resetting"
+          ],
+          "mutation": "CoreRuleTranscriptTests.PlayerDeckBranchesHavePinnedOutcomes distinguishes the stable empty state from the reset triggered by the first discard."
         }
       ]
     },

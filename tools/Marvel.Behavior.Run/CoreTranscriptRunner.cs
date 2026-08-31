@@ -214,18 +214,54 @@ internal sealed class CoreTranscriptRunner
             "a canonical Core scene is dealt", DealScene),
         Bind("stack-player-deck", TranscriptStepKind.Given,
             @"seat (?<seat>\d+)'s player deck contains only these next cards", StackPlayerDeck),
+        Bind("stack-player-deck-empty-discard", TranscriptStepKind.Given,
+            @"seat (?<seat>\d+)'s player deck contains only these next cards with all other deck cards in hand",
+            StackPlayerDeckWithEmptyDiscard),
+        Bind("stack-encounter-deck-discard", TranscriptStepKind.Given,
+            "the encounter deck contains only these next cards with all other deck cards in the encounter discard pile",
+            StackEncounterDeckWithDiscard),
+        Bind("stack-encounter-deck-dealt", TranscriptStepKind.Given,
+            @"the encounter deck contains only these next cards with all other deck cards dealt facedown to seat (?<seat>\d+)",
+            StackEncounterDeckWithDealtCards),
         Bind("draw-cards", TranscriptStepKind.When,
             @"seat (?<seat>\d+) draws (?<count>\d+) cards?", DrawCards),
+        Bind("discard-player-deck", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) discards the top (?<count>\d+) cards? of their player deck",
+            DiscardPlayerDeck),
+        Bind("discard-from-hand", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) discards card (?<face>\d+[a-z]?) copy (?<copy>\d+) from hand",
+            DiscardFromHand),
+        Bind("deal-encounter-cards", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) is dealt (?<count>\d+) encounter cards?",
+            DealEncounterCards),
+        Bind("discard-encounter-deck", TranscriptStepKind.When,
+            @"the top (?<count>\d+) cards? of the encounter deck (?:is|are) discarded",
+            DiscardEncounterDeck),
         Bind("hand-count", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) has (?<count>\d+) cards? in hand", HandCount),
         Bind("player-deck-count", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) has (?<count>\d+) cards? in their player deck", PlayerDeckCount),
+        Bind("player-discard-count", TranscriptStepKind.Then,
+            @"seat (?<seat>\d+) has (?<count>\d+) cards? in their discard pile", PlayerDiscardCount),
         Bind("encounter-queue-count", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) has (?<count>\d+) facedown encounter cards?", EncounterCount),
+        Bind("encounter-deck-count", TranscriptStepKind.Then,
+            @"the encounter deck has (?<count>\d+) cards?", EncounterDeckCount),
+        Bind("encounter-discard-count", TranscriptStepKind.Then,
+            @"the encounter discard pile has (?<count>\d+) cards?", EncounterDiscardCount),
+        Bind("acceleration-token-count", TranscriptStepKind.Then,
+            @"the main scheme has (?<count>\d+) acceleration tokens?", AccelerationTokenCount),
         Bind("not-eliminated", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) is not eliminated", NotEliminated),
         Bind("game-unfinished", TranscriptStepKind.Then,
             "the game is unfinished", GameUnfinished),
+        Bind("event-emitted", TranscriptStepKind.Then,
+            @"a (?<verb>[A-Za-z_]+) event with trigger (?<trigger>.+) was emitted", EventEmitted),
+        Bind("event-order", TranscriptStepKind.Then,
+            @"a (?<first>[A-Za-z_]+) event was emitted before a (?<second>[A-Za-z_]+) event",
+            EventOrder),
+        Bind("players-lose", TranscriptStepKind.Then,
+            "the players lose the game", PlayersLose),
         Bind("cataloged-exception", TranscriptStepKind.Then,
             "the engine raises the cataloged unimplemented rule exception", CatalogedException),
     ];
@@ -269,6 +305,17 @@ internal sealed class CoreTranscriptRunner
 
     private static void StackPlayerDeck(
         TranscriptContext context, TranscriptStep step, Match match)
+        => StackPlayerDeck(context, step, match, PlayerDeckRemainder.Discard);
+
+    private static void StackPlayerDeckWithEmptyDiscard(
+        TranscriptContext context, TranscriptStep step, Match match)
+        => StackPlayerDeck(context, step, match, PlayerDeckRemainder.Hand);
+
+    private static void StackPlayerDeck(
+        TranscriptContext context,
+        TranscriptStep step,
+        Match match,
+        PlayerDeckRemainder remainder)
     {
         int seat = Seat(match, step);
         TranscriptTable table = Table(step, "next card", "copy");
@@ -276,7 +323,37 @@ internal sealed class CoreTranscriptRunner
             seat,
             [.. table.Rows.Select(row => new SceneCard(
                 row["next card"], TableNumber(row, "copy", step)))],
-            DiscardOthers: true));
+            remainder));
+    }
+
+    private static void StackEncounterDeckWithDiscard(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        _ = match;
+        StackEncounterDeck(
+            context, step, EncounterDeckRemainder.Discard, seat: 0);
+    }
+
+    private static void StackEncounterDeckWithDealtCards(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        StackEncounterDeck(
+            context,
+            step,
+            EncounterDeckRemainder.Dealt,
+            Seat(match, step));
+
+    private static void StackEncounterDeck(
+        TranscriptContext context,
+        TranscriptStep step,
+        EncounterDeckRemainder remainder,
+        int seat)
+    {
+        TranscriptTable table = Table(step, "next card", "copy");
+        context.SceneRequired(step).Apply(new StackEncounterDeck(
+            [.. table.Rows.Select(row => new SceneCard(
+                row["next card"], TableNumber(row, "copy", step)))],
+            remainder,
+            seat));
     }
 
     private static void DrawCards(
@@ -287,6 +364,61 @@ internal sealed class CoreTranscriptRunner
         context.Events.Clear();
         context.CurrentPrompt = "<none>";
         Draw.Cards(context.World, seat, count, "behavioral transcript", context.Events);
+    }
+
+    private static void DiscardPlayerDeck(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        int count = Number(match, "count", step);
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        _ = PlayerDeck.DiscardTop(
+            context.World, seat, count, "behavioral transcript", context.Events);
+    }
+
+    private static void DiscardFromHand(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        var reference = new SceneCard(
+            match.Groups["face"].Value, Number(match, "copy", step));
+        Card card = context.SceneRequired(step).Find(reference);
+        if (!ReferenceEquals(card.Area, context.World.Seats[seat].Hand))
+        {
+            throw new TranscriptException(
+                $"{step.Location}: card {card.ObjectId} is not in seat {seat + 1}'s hand");
+        }
+
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        Discard.Card(context.World, card, "behavioral transcript", context.Events);
+    }
+
+    private static void DealEncounterCards(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        int count = Number(match, "count", step);
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        for (int index = 0; index < count; index++)
+        {
+            _ = Deal.EncounterCard(
+                context.World, seat, "behavioral transcript", context.Events);
+        }
+    }
+
+    private static void DiscardEncounterDeck(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        _ = EncounterDeck.DiscardTop(
+            context.World,
+            Number(match, "count", step),
+            "behavioral transcript",
+            context.Events);
     }
 
     private static void HandCount(
@@ -301,6 +433,18 @@ internal sealed class CoreTranscriptRunner
             context.World.Seats[Seat(match, step)].Deck.Cards.Count,
             "cards in the player deck", step);
 
+    private static void PlayerDiscardCount(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        Equal(Number(match, "count", step),
+            context.World.AreaOf(
+                DeckType.DiscardPile,
+                PlayArea.Of(seat),
+                cardOwner: seat).Cards.Count,
+            "cards in the discard pile", step);
+    }
+
     private static void EncounterCount(
         TranscriptContext context, TranscriptStep step, Match match) =>
         Equal(Number(match, "count", step),
@@ -308,6 +452,28 @@ internal sealed class CoreTranscriptRunner
                 DeckType.DealtEncounterCardsDeck,
                 PlayArea.Of(Seat(match, step))).Cards.Count,
             "facedown encounter cards", step);
+
+    private static void EncounterDeckCount(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        Equal(Number(match, "count", step),
+            context.World.AreaOf(DeckType.EncounterDeck).Cards.Count,
+            "cards in the encounter deck", step);
+
+    private static void EncounterDiscardCount(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        Equal(Number(match, "count", step),
+            context.World.AreaOf(DeckType.EncounterDiscardPile).Cards.Count,
+            "cards in the encounter discard pile", step);
+
+    private static void AccelerationTokenCount(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Card scheme = context.World.TheCardIn(DeckType.MainSchemesArea)
+            ?? throw new TranscriptException($"{step.Location}: no main scheme is in play");
+        long actual = scheme.Tokens.GetValueOrDefault(EncounterDeck.AccelerationToken);
+        Equal(Number(match, "count", step), checked((int)actual),
+            "acceleration tokens on the main scheme", step);
+    }
 
     private static void NotEliminated(
         TranscriptContext context, TranscriptStep step, Match match)
@@ -351,6 +517,45 @@ internal sealed class CoreTranscriptRunner
         }
 
         context.ExceptionObserved = true;
+    }
+
+    private static void EventEmitted(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        string verb = match.Groups["verb"].Value;
+        string trigger = match.Groups["trigger"].Value;
+        if (!context.Events.Any(gameEvent =>
+                gameEvent.Verb == verb && gameEvent.Trigger == trigger))
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: no {verb} event with trigger {trigger} was emitted");
+        }
+    }
+
+    private static void EventOrder(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int first = context.Events.FindIndex(gameEvent =>
+            gameEvent.Verb == match.Groups["first"].Value);
+        int second = context.Events.FindIndex(gameEvent =>
+            gameEvent.Verb == match.Groups["second"].Value);
+        if (first < 0 || second <= first)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected {match.Groups["first"].Value} before "
+                + match.Groups["second"].Value);
+        }
+    }
+
+    private static void PlayersLose(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        _ = match;
+        if (context.World.Result is not Outcome.PlayersLose)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected PlayersLose; was {context.World.Result}");
+        }
     }
 
     private static void Equal(int expected, int actual, string observation, TranscriptStep step)
