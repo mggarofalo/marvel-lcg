@@ -180,6 +180,33 @@ public sealed class CanonicalCoreSceneTests
         Assert.Equal("give-status", thrown.Operation);
     }
 
+    [Rule("rr:unique-icon.1")]
+    [Fact]
+    public void RejectedUniquePlacementDoesNotPartiallyMoveTheCard()
+    {
+        // "A player cannot bring into play a unique card if a copy of that card
+        // is already in play in their game area."
+        var scene = Deal(
+            "behavior:rr:unique-icon.1:matching-unique-in-play",
+            "rhino",
+            ["spider_man", "iron_man"]);
+        Card first = scene.Find(new SceneCard("01084", Copy: 0));
+        Card second = scene.Find(new SceneCard("01084", Copy: 1));
+        scene.Apply(new MoveSceneCard(
+            new SceneCard("01084", Copy: 0),
+            new SceneDestination(SceneZone.Ally, Seat: first.Owner)));
+        Area before = second.Area;
+
+        var thrown = Assert.Throws<CoreSceneConstructionException>(() => scene.Apply(
+            new MoveSceneCard(
+                new SceneCard("01084", Copy: 1),
+                new SceneDestination(SceneZone.Ally, Seat: second.Owner))));
+
+        Assert.Contains("already in play", thrown.Message, StringComparison.Ordinal);
+        Assert.Same(before, second.Area);
+        Assert.Contains(second, before.Cards);
+    }
+
     private static CanonicalCoreScene OneCardDeck() => Deal(
             PlayerDeckAuthority,
             "rhino",

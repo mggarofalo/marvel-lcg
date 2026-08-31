@@ -300,6 +300,14 @@ public sealed class CanonicalCoreScene
     {
         ArgumentNullException.ThrowIfNull(destination);
         Area area = Destination(card, destination);
+        if (DeckTypes.IsInPlay(area.Type)
+            && !DeckTypes.IsInPlay(card.Area.Type)
+            && Uniqueness.IsBlocked(World, World.Facts, card, area.PlayArea))
+        {
+            throw new InvalidOperationException(
+                $"matching unique '{World.Facts.Title(card.FaceId)}' is already in play");
+        }
+
         World.MoveToTop(card, area);
     }
 
