@@ -45,17 +45,13 @@ public static class Resources
     /// <summary>The four types, in the order the card data lists them.</summary>
     /// <remarks>
     /// <para>
-    /// Measured rather than assigned. Across the 1,717 single-type cards that
-    /// carry both the engine's <c>RES</c> letter and MarvelSDB's resource stat,
-    /// the mapping agrees on all but three: <c>B</c> is mental on 519 cards,
-    /// <c>Y</c> energy on 501, <c>R</c> physical on 458 and <c>G</c> wild on
-    /// 236.
+    /// The letters are the engine's wire-format spelling. The generated card
+    /// dataset maps MarvelSDB's structured mental, energy, physical and wild
+    /// resource flags to <c>B</c>, <c>Y</c>, <c>R</c> and <c>G</c>, respectively.
     /// </para>
     /// <para>
-    /// The three exceptions are <c>20028</c> Shake it Off, <c>36012</c> Flash
-    /// Freeze and <c>41024</c> Telepathy, where the two sources disagree about
-    /// the printed card. Resources are not in the state digest, so no fixture
-    /// settles it; the engine reads its own letter, as it reads its own traits.
+    /// This mapping is chosen by the engine rather than named by the rulebook;
+    /// the rulebook names the resource types, not their serialized letters.
     /// </para>
     /// </remarks>
     public static IReadOnlyList<char> Types { get; } = [Mental, Energy, Physical, Wild];

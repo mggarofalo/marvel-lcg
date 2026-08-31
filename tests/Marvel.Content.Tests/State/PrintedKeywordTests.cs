@@ -249,7 +249,7 @@ public sealed class PrintedKeywordTests
             }
         }
 
-        Assert.Equal(640, agree);
+        Assert.Equal(663, agree);
         Assert.Equal(4, differ);
     }
 
