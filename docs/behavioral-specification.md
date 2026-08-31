@@ -142,8 +142,9 @@ Generated reports and skeletons use only that order.
 
 ### Dispositions
 
-Every source unit and every derived obligation has exactly one semantic
-disposition:
+Every derived obligation has exactly one semantic disposition. A source unit
+whose obligations have different dispositions is summarized as `mixed`; the
+individual obligations remain the reviewable claims:
 
 | Disposition | Meaning |
 |---|---|
@@ -152,9 +153,10 @@ disposition:
 | `no-independent-behavior` | It is a heading, summary, example or definition with no separate result. |
 | `not-representable` | It governs physical, social, hidden-to-engine or interpretive procedure rather than engine state. |
 | `outside-core` | It requires a component or mode absent from the supported Core Set product. |
+| `superseded` | A named later authority obligation replaces this historical answer. |
 
-Every disposition except `executable` names its reason. `narrower` names the
-target obligation. `outside-core` names the missing product surface. A source
+Every disposition except `executable` names its reason. `narrower` and
+`superseded` name the target obligation. `outside-core` names the missing product surface. A source
 unit cannot disappear because no code cites it or no scenario was convenient
 to write.
 
@@ -163,6 +165,7 @@ obligation has one implementation status:
 
 | Status | Required transcript result |
 |---|---|
+| `unverified` | No implementation claim has been admitted yet. This is allowed while deriving the catalog, but the completed executable corpus rejects it. |
 | `supported` | The transcript reaches and observes the published result. |
 | `unimplemented` | A negative transcript reaches the branch and observes the exact named `RulesNotImplementedException`. |
 

@@ -40,6 +40,9 @@
          regression independent of whether the tool or the suite has built. -->
     <Compile Include="../../tools/Marvel.Rules.Index/Citations.cs" Link="Citations.cs" />
     <Compile Include="../../tools/Marvel.Rules.Index/Corpus.cs" Link="Corpus.cs" />
+    <Compile Include="../../tools/Marvel.Behavior.Index/CanonicalJson.cs" Link="Behavior/CanonicalJson.cs" />
+    <Compile Include="../../tools/Marvel.Behavior.Index/AuthoritySources.cs" Link="Behavior/AuthoritySources.cs" />
+    <Compile Include="../../tools/Marvel.Behavior.Index/Catalog.cs" Link="Behavior/Catalog.cs" />
   </ItemGroup>
 
 </Project>
