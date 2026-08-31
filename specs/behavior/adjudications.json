@@ -9554,16 +9554,18 @@
       "fingerprint": "sha256:0642c8230f4074188bee3ef5771305ca3f54e3fdc74f1db2ea9d0a5a4d2d489c",
       "obligations": [
         {
-          "key": "published-result",
+          "key": "starts-alter-ego",
           "summary": "Each player begins the game in alter-ego form.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/form-change.feature::Flipping an identity changes only its form"
+          ],
+          "mutation": "CoreRuleTranscriptTests.FormChangeBranchesHavePinnedOutcomes distinguishes the initial alter-ego face as the source of the first transition."
         }
       ]
     },

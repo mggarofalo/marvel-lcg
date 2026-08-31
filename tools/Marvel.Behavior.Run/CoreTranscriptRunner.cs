@@ -65,6 +65,8 @@ internal sealed class TranscriptContext
 
     public bool ExceptionObserved { get; set; }
 
+    public (int Seat, string From, string To)? LastFormChange { get; set; }
+
     public World World => Scene?.World
         ?? throw new TranscriptException("a canonical Core scene has not been constructed");
 }
@@ -329,6 +331,9 @@ internal sealed class CoreTranscriptRunner
             CardEventOrder),
         Bind("seat-form", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) is in (?<form>hero|alter-ego) form", SeatForm),
+        Bind("form-transition", TranscriptStepKind.Then,
+            @"seat (?<seat>\d+) changed from (?<from>hero|alter-ego) to (?<to>hero|alter-ego) form",
+            FormTransition),
         Bind("card-status", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) has a (?<status>stunned|confused|tough) status card",
             CardStatus),
@@ -623,8 +628,12 @@ internal sealed class CoreTranscriptRunner
     {
         context.Events.Clear();
         context.CurrentPrompt = "<none>";
-        Seat seat = context.World.Seats[Seat(match, step)];
+        int seatIndex = Seat(match, step);
+        Seat seat = context.World.Seats[seatIndex];
+        string from = FormName(Forms.Of(context.World, seat, context.Cards));
         _ = Forms.Change(seat, context.Cards);
+        string to = FormName(Forms.Of(context.World, seat, context.Cards));
+        context.LastFormChange = (seatIndex, from, to);
     }
 
     private static void HandCount(
@@ -907,6 +916,27 @@ internal sealed class CoreTranscriptRunner
                 $"{step.Location}: expected seat {seat + 1} in {expected} form");
         }
     }
+
+    private static void FormTransition(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        string expectedFrom = match.Groups["from"].Value;
+        string expectedTo = match.Groups["to"].Value;
+        var expected = (Seat(match, step), expectedFrom, expectedTo);
+        if (context.LastFormChange != expected)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected form transition {expected}; was "
+                + (context.LastFormChange?.ToString() ?? "<none>"));
+        }
+    }
+
+    private static string FormName(IReadOnlySet<string> forms) => forms.Single() switch
+    {
+        Forms.AlterEgo => "alter-ego",
+        Forms.Hero => "hero",
+        string form => form,
+    };
 
     private static void CardStatus(
         TranscriptContext context, TranscriptStep step, Match match)
