@@ -30,7 +30,13 @@ public interface IVisibilityPolicy
 {
     /// <summary>Authorizes a client assertion against server-owned policy.</summary>
     ViewScope Authorize(ViewerClaim? claim, int players);
+
+    /// <summary>Returns separately scoped seats that the opener may invite.</summary>
+    IReadOnlyList<SeatScope> AdditionalScopes(ViewerClaim? claim, int players);
 }
+
+/// <summary>A server-authorized seat and its private-information scope.</summary>
+public sealed record SeatScope(int Seat, ViewScope Scope);
 
 /// <summary>
 /// Cooperative-table policy: a claimed seat sees itself, while hot-seat and
@@ -55,6 +61,13 @@ public sealed class PermissiveVisibilityPolicy : IVisibilityPolicy
         }
 
         return claim.Seat is int seat ? new ViewScope([seat]) : ViewScope.None;
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyList<SeatScope> AdditionalScopes(ViewerClaim? claim, int players)
+    {
+        ValidateClaim(claim, players);
+        return [];
     }
 
     internal static void ValidateClaim(ViewerClaim? claim, int players)
@@ -106,5 +119,20 @@ public sealed class RestrictedVisibilityPolicy(int authorizedSeat) : IVisibility
         }
 
         return new ViewScope([authorizedSeat]);
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyList<SeatScope> AdditionalScopes(ViewerClaim? claim, int players)
+    {
+        _ = Authorize(claim, players);
+        if (claim is not null && claim.Seat != authorizedSeat)
+        {
+            return [];
+        }
+
+        return Enumerable.Range(0, players)
+            .Where(seat => seat != authorizedSeat)
+            .Select(seat => new SeatScope(seat, new ViewScope([seat])))
+            .ToList();
     }
 }

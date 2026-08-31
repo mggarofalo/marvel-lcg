@@ -56,7 +56,8 @@ public sealed class EngineHost : IEngineEndpoint
     private readonly IGameFactory factory;
     private readonly ISessionCapabilityIssuer capabilities;
     private readonly IVisibilityPolicy visibility;
-    private readonly Dictionary<string, Session> sessions = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, SessionAccess> sessions = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, PendingInvitation> invitations = new(StringComparer.Ordinal);
 
     /// <summary>Creates an engine host with cryptographically random session capabilities.</summary>
     public EngineHost(
@@ -127,6 +128,8 @@ public sealed class EngineHost : IEngineEndpoint
         return request.Operation switch
         {
             EngineProtocol.Open => Open(request),
+            EngineProtocol.Attach => Attach(request),
+            EngineProtocol.Sync => Sync(request),
             EngineProtocol.Resolve => Resolve(request),
             EngineProtocol.Close => Close(request),
             _ => Failed(
@@ -161,9 +164,12 @@ public sealed class EngineHost : IEngineEndpoint
         }
 
         ViewScope scope;
+        IReadOnlyList<SeatScope> additionalScopes;
         try
         {
             scope = visibility.Authorize(request.Viewer, request.Game.Heroes.Count);
+            additionalScopes = visibility.AdditionalScopes(
+                request.Viewer, request.Game.Heroes.Count);
         }
         catch (Exception failure) when (failure is ArgumentException or InvalidOperationException)
         {
@@ -171,11 +177,85 @@ public sealed class EngineHost : IEngineEndpoint
         }
 
         var opened = factory.Create(request.Game);
+        var session = new HostedSession(request.GameId, opened.Game);
+        string capability = IssueCapability();
+        var reserved = new HashSet<string>(StringComparer.Ordinal) { capability };
+        var issuedInvitations = additionalScopes
+            .Select(grant =>
+            {
+                string token = IssueCapability(reserved);
+                reserved.Add(token);
+                return (grant, token);
+            })
+            .ToList();
+        EngineResponse response = Succeeded(
+            request,
+            opened.Game,
+            opened.Game.Pending,
+            opened.SetupEvents,
+            scope,
+            capability,
+            issuedInvitations.Select(pair =>
+                new SeatInvitation(pair.grant.Seat, pair.token)).ToList());
+        sessions.Add(capability, new SessionAccess(session, scope, Owner: true));
+        foreach (var (grant, token) in issuedInvitations)
+        {
+            invitations.Add(token, new PendingInvitation(session, grant.Scope));
+        }
+
+        return response;
+    }
+
+    private EngineResponse Attach(EngineRequest request)
+    {
+        if (request.Game is not null || request.Decision is not null || request.Viewer is not null)
+        {
+            return Failed(
+                request, "invalid_request",
+                "attach accepts only a server-issued invitation");
+        }
+
+        string invitation = request.Capability ?? string.Empty;
+        if (invitation.Length is <= 0 or > EngineProtocol.MaximumIdentifierLength
+            || !invitations.TryGetValue(invitation, out PendingInvitation? pending)
+            || !string.Equals(
+                pending.Session.GameId, request.GameId, StringComparison.Ordinal))
+        {
+            return Failed(request, "session_not_found", "the seat invitation is not valid");
+        }
+
         string capability = IssueCapability();
         EngineResponse response = Succeeded(
-            request, opened.Game, opened.Game.Pending, opened.SetupEvents, scope, capability);
-        sessions.Add(capability, new Session(request.GameId, opened.Game, scope));
+            request,
+            pending.Session.Game,
+            pending.Session.Game.Pending,
+            [],
+            pending.Scope,
+            capability);
+        invitations.Remove(invitation);
+        sessions.Add(
+            capability, new SessionAccess(pending.Session, pending.Scope, Owner: false));
         return response;
+    }
+
+    private EngineResponse Sync(EngineRequest request)
+    {
+        if (request.Game is not null || request.Decision is not null || request.Viewer is not null)
+        {
+            return Failed(request, "invalid_request", "sync accepts only a session capability");
+        }
+
+        if (!TrySession(request, out _, out var access))
+        {
+            return Failed(request, "session_not_found", "the session capability is not valid");
+        }
+
+        return Succeeded(
+            request,
+            access.Session.Game,
+            access.Session.Game.Pending,
+            [],
+            access.Scope);
     }
 
     private EngineResponse Resolve(EngineRequest request)
@@ -187,9 +267,15 @@ public sealed class EngineHost : IEngineEndpoint
                 "resolve requires decision and does not accept game");
         }
 
-        if (!TrySession(request, out string capability, out var session))
+        if (!TrySession(request, out _, out var access))
         {
             return Failed(request, "session_not_found", "the session capability is not valid");
+        }
+
+        if (access.Session.Game.Pending is not { } pending
+            || !access.Scope.Includes(pending.Player))
+        {
+            return Failed(request, "not_your_turn", "this capability cannot answer the pending prompt");
         }
 
         if (request.Decision.Targets is null)
@@ -199,9 +285,13 @@ public sealed class EngineHost : IEngineEndpoint
 
         try
         {
-            var resolved = session.Game.Resolve(request.Decision.ToDomain());
+            var resolved = access.Session.Game.Resolve(request.Decision.ToDomain());
             return Succeeded(
-                request, session.Game, resolved.Prompt, resolved.Events, session.Scope);
+                request,
+                access.Session.Game,
+                resolved.Prompt,
+                resolved.Events,
+                access.Scope);
         }
         catch (Exception)
         {
@@ -210,7 +300,7 @@ public sealed class EngineHost : IEngineEndpoint
             // The host chooses to fail closed: a session that might now hold a
             // partial resolve is removed rather than serving a plausible wrong
             // board on the next request.
-            sessions.Remove(capability);
+            Remove(access.Session);
             return Failed(
                 request,
                 "game_aborted",
@@ -227,23 +317,31 @@ public sealed class EngineHost : IEngineEndpoint
                 "close does not accept game or decision");
         }
 
-        if (!TrySession(request, out string capability, out _))
+        if (!TrySession(request, out string capability, out var access))
         {
             return Failed(request, "session_not_found", "the session capability is not valid");
         }
 
-        sessions.Remove(capability);
+        if (access.Owner)
+        {
+            Remove(access.Session);
+        }
+        else
+        {
+            sessions.Remove(capability);
+        }
+
         return Succeeded(request);
     }
 
     private bool TrySession(
-        EngineRequest request, out string capability, out Session session)
+        EngineRequest request, out string capability, out SessionAccess session)
     {
         capability = request.Capability ?? string.Empty;
         session = null!;
         if (capability.Length is <= 0 or > EngineProtocol.MaximumIdentifierLength
-            || !sessions.TryGetValue(capability, out Session? found)
-            || !string.Equals(found.GameId, request.GameId, StringComparison.Ordinal))
+            || !sessions.TryGetValue(capability, out SessionAccess? found)
+            || !string.Equals(found.Session.GameId, request.GameId, StringComparison.Ordinal))
         {
             return false;
         }
@@ -252,13 +350,15 @@ public sealed class EngineHost : IEngineEndpoint
         return true;
     }
 
-    private string IssueCapability()
+    private string IssueCapability(HashSet<string>? reserved = null)
     {
         for (int attempt = 0; attempt < 16; attempt++)
         {
             string capability = capabilities.Issue();
             if (capability.Length is > 0 and <= EngineProtocol.MaximumIdentifierLength
-                && !sessions.ContainsKey(capability))
+                && !sessions.ContainsKey(capability)
+                && !invitations.ContainsKey(capability)
+                && !(reserved?.Contains(capability) ?? false))
             {
                 return capability;
             }
@@ -267,14 +367,35 @@ public sealed class EngineHost : IEngineEndpoint
         throw new InvalidOperationException("could not issue a unique session capability");
     }
 
+    private void Remove(HostedSession session)
+    {
+        foreach (string capability in sessions
+                     .Where(pair => ReferenceEquals(pair.Value.Session, session))
+                     .Select(pair => pair.Key)
+                     .ToList())
+        {
+            sessions.Remove(capability);
+        }
+
+        foreach (string invitation in invitations
+                     .Where(pair => ReferenceEquals(pair.Value.Session, session))
+                     .Select(pair => pair.Key)
+                     .ToList())
+        {
+            invitations.Remove(invitation);
+        }
+    }
+
     private static EngineResponse Succeeded(
         EngineRequest request,
         Game? game = null,
         Prompt? prompt = null,
         IReadOnlyList<GameEvent>? events = null,
         ViewScope? scope = null,
-        string? capability = null) =>
-        Projected(request, game, prompt, events ?? [], scope, capability);
+        string? capability = null,
+        IReadOnlyList<SeatInvitation>? invitations = null) =>
+        Projected(
+            request, game, prompt, events ?? [], scope, capability, invitations);
 
     private static EngineResponse Projected(
         EngineRequest request,
@@ -282,19 +403,24 @@ public sealed class EngineHost : IEngineEndpoint
         Prompt? prompt,
         IReadOnlyList<GameEvent> events,
         ViewScope? scope,
-        string? capability)
+        string? capability,
+        IReadOnlyList<SeatInvitation>? invitations)
     {
         if (game is null || scope is null)
         {
             return new EngineResponse(
                 EngineProtocol.Version, request.RequestId, request.GameId,
-                capability, Prompt: null, Events: []);
+                capability, Prompt: null, Events: [], Invitations: invitations);
         }
 
         VisibleResult visible = WorldProjection.For(game.State, prompt, events, scope);
         return new EngineResponse(
             EngineProtocol.Version, request.RequestId, request.GameId,
-            capability, visible.Prompt, visible.Events, visible.World);
+            capability,
+            visible.Prompt,
+            visible.Events,
+            visible.World,
+            Invitations: invitations);
     }
 
     private static EngineResponse Failed(
@@ -318,7 +444,11 @@ public sealed class EngineHost : IEngineEndpoint
         _ => value[..maximum],
     };
 
-    private sealed record Session(string GameId, Game Game, ViewScope Scope);
+    private sealed record HostedSession(string GameId, Game Game);
+
+    private sealed record SessionAccess(HostedSession Session, ViewScope Scope, bool Owner);
+
+    private sealed record PendingInvitation(HostedSession Session, ViewScope Scope);
 
     private sealed class CryptographicCapabilityIssuer : ISessionCapabilityIssuer
     {

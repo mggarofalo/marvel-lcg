@@ -260,6 +260,71 @@ public sealed class TransportTests
         Assert.Null(resolveFirst.Error);
     }
 
+    [Fact]
+    public async Task RestrictedSeatsAdvanceOneSharedGameWithIndependentCapabilities()
+    {
+        var host = new EngineHost(
+            DatasetGameFactory.Load(Marvel.Tests.RepositoryPaths.Root),
+            new SequenceCapabilities("seat-zero", "invite-one", "seat-one"),
+            new RestrictedVisibilityPolicy(0));
+        var server = new SocketEngineServer(host, IPAddress.Loopback, port: 0);
+        var specification = new GameSpecification(
+            "rhino", ["spider_man", "captain_marvel"], ModularSets: [], Seed: 7);
+
+        EngineResponse opened = await ExchangeOverSocket(
+            server, EngineRequest.OpenGame("open", "shared", specification));
+        SeatInvitation invitation = Assert.Single(opened.Invitations!);
+        EngineResponse attached = await ExchangeOverSocket(
+            server,
+            EngineRequest.AttachGame("attach", "shared", invitation.Invitation));
+
+        Assert.Equal(1, invitation.Seat);
+        Assert.Equal("seat-zero", opened.Capability);
+        Assert.Equal("seat-one", attached.Capability);
+        Assert.Equal(0, opened.Prompt?.Player);
+        Assert.Null(attached.Prompt);
+        Assert.All(Hand(attached, 0), card => Assert.Null(card.Face));
+        Assert.All(Hand(attached, 1), card => Assert.NotNull(card.Face));
+
+        EngineResponse forZero = await ExchangeOverSocket(
+            server,
+            EngineRequest.ResolveGame(
+                "zero-mulligan", "shared", opened.Capability!, EngineDecision.Decline));
+        Assert.Null(forZero.Error);
+        Assert.Null(forZero.Prompt);
+
+        EngineResponse forbidden = await ExchangeOverSocket(
+            server,
+            EngineRequest.ResolveGame(
+                "steal-one", "shared", opened.Capability!, EngineDecision.Decline));
+        Assert.Equal("not_your_turn", forbidden.Error?.Code);
+
+        EngineResponse forOne = await ExchangeOverSocket(
+            server, EngineRequest.SyncGame("sync-one", "shared", attached.Capability!));
+        Assert.Equal(1, forOne.Prompt?.Player);
+        EngineResponse replay = await ExchangeOverSocket(
+            server,
+            EngineRequest.AttachGame("replay", "shared", invitation.Invitation));
+        Assert.Equal("session_not_found", replay.Error?.Code);
+
+        EngineResponse afterOne = await ExchangeOverSocket(
+            server,
+            EngineRequest.ResolveGame(
+                "one-mulligan", "shared", attached.Capability!, EngineDecision.Decline));
+        Assert.Null(afterOne.Error);
+        Assert.Null(afterOne.Prompt);
+        EngineResponse resumedZero = await ExchangeOverSocket(
+            server, EngineRequest.SyncGame("sync-zero", "shared", opened.Capability!));
+        Assert.Equal(0, resumedZero.Prompt?.Player);
+
+        Assert.Null((await ExchangeOverSocket(
+            server,
+            EngineRequest.CloseGame("close", "shared", opened.Capability!))).Error);
+        EngineResponse afterClose = await ExchangeOverSocket(
+            server, EngineRequest.SyncGame("after-close", "shared", attached.Capability!));
+        Assert.Equal("session_not_found", afterClose.Error?.Code);
+    }
+
     private static async Task<EngineResponse> ExchangeOverSocket(
         SocketEngineServer server, EngineRequest request)
     {
@@ -278,6 +343,12 @@ public sealed class TransportTests
         await serving;
         return response;
     }
+
+    private static IReadOnlyList<Marvel.View.CardDescriptor> Hand(
+        EngineResponse response, int seat) =>
+        Assert.Single(
+            Assert.IsType<WorldDescriptor>(response.World).Areas,
+            area => area.Zone == "HandsArea" && area.Owner == seat).Cards;
 
     private sealed class EchoEndpoint(
         EngineRequest expectedRequest,

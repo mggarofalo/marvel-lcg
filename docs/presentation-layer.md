@@ -445,10 +445,10 @@ blocks the client loop; the in-process implementation calls the host
 synchronously before returning its completed value, so neither transport
 creates an async or concurrent path into game state.
 
-The socket protocol is version 2, source-generated JSON in a four-byte
+The socket protocol is version 3, source-generated JSON in a four-byte
 big-endian length frame, with a 4 MiB maximum. One connection carries one
-request and one response. `open`, `resolve`, and `close` are the three
-operations; game ids and request correlation ids are opaque strings chosen by
+request and one response. `open`, `attach`, `sync`, `resolve`, and `close` are
+the operations; game ids and request correlation ids are opaque strings chosen by
 the client and limited to 256 characters. Diagnostics are limited to 1,024
 characters, and a response that still cannot be represented becomes a compact
 `response_failed` rather than escaping the connection handler. These spellings,
@@ -463,18 +463,18 @@ capability. Capability randomness is transport/security state above the engine
 wall: it never enters `World`, the seeded MT19937 stream, a prompt, or an event,
 so it cannot change the game named by a seed.
 
-Version 2 adds the filtered `world` descriptor and the opening request's
-`viewer` claim. There is deliberately no compatibility reading of version 1:
-its response had no board snapshot, and treating that smaller response as a
-visibility-safe bootstrap would leave the client to recover state from some
-other, unowned channel.
+Version 2 added the filtered `world` descriptor and the opening request's
+`viewer` claim. Version 3 adds independently scoped seat attachment and
+read-only synchronization. There is deliberately no compatibility reading of
+an earlier version: treating a smaller response as a visibility-safe bootstrap
+would leave the client to recover state from some other, unowned channel.
 
 Cancellation has one explicit boundary. It may cancel DNS/connect and the
 request write. Once the complete request frame has been sent, the server may
 have committed the decision, so the response read no longer observes caller
 cancellation: the prompt and event list are the authoritative result and cannot
 be discarded without an idempotent retry protocol. There is no such retry
-protocol in version 2.
+protocol in version 3.
 
 The response deliberately contains a prompt, events and a filtered
 `WorldDescriptor`, never the engine's `World` or its digest. Making the digest
@@ -500,14 +500,14 @@ ordinary and removed card lists. The projection walks `World.Areas`; it does not
 keep a list of zone names. An area created during a game is therefore described
 and filtered in the first response that contains it.
 
-Readable faces carry printed identity and live fields. A hidden card keeps only
-what the table physically exposes: its back, ready state, face-up state and
-attachment. Its face is null. A card concealed in a pile also has a null object
-id, which is load-bearing: an id seen before a shuffle cannot be followed
-through the hidden deck's new order. A face-down card physically in play keeps
-its id so it remains clickable, without gaining a readable face. The digest is
-not a descriptor field and is not a source-generated response type; it never
-reaches either transport.
+Readable faces carry printed identity and live fields. A face-down card
+physically in play keeps what the table exposes: its back, object id, ready
+state and public attachment, so it remains clickable without gaining a
+readable face. A card concealed in a pile instead has a null object id and
+normalized ready, face-up and attachment fields. That normalization is
+load-bearing: neither an id seen before a shuffle nor mutable hidden state can
+be followed through the deck's new order. The digest is not a descriptor field
+and is not a source-generated response type; it never reaches either transport.
 
 The response is filtered as one unit. A prompt is returned only to a scope that
 contains the player being asked. Search targets become visible to that player
@@ -528,6 +528,23 @@ explicit:
   seat gets no private seat, while `hot_seat` and `watch` cannot widen the one
   the server configured. This is the non-cooperative proof that the assertion
   is input rather than authority.
+
+A restricted multiplayer `open` returns one active capability for the
+configured seat and one opaque, one-time invitation for each other seat. The
+opener is the session coordinator and delivers each bearer invitation to its
+named seat out of band. `attach` consumes one invitation and returns a new
+capability bound by the server to that invitation's seat; neither a client seat
+claim nor an existing seat capability can choose another scope. A replayed or
+wrong-game invitation is rejected. The coordinator capability owns `close`;
+closing an attached capability detaches only that seat.
+
+`sync` returns the current filtered snapshot and the pending prompt only when
+that prompt belongs to the capability's scope. It does not mutate the game and
+returns no historical events. Before `resolve`, the host likewise verifies
+that the pending prompt belongs to the capability's scope. A different seat's
+answer is rejected without calling the engine, mutating state, or aborting the
+session. This authorization check is separate from projection: hiding a prompt
+does not by itself make an attempted answer safe.
 
 Face-up cards remain public under both policies. Face-down hands belong to their
 seat. Other face-down cards are visible to nobody unless the prompt is an

@@ -43,6 +43,25 @@ public sealed class VisibilityTests
     }
 
     [Fact]
+    public void RestrictedSeatInvitationsReceiveIndependentServerOwnedScopes()
+    {
+        var policy = new RestrictedVisibilityPolicy(0);
+
+        IReadOnlyList<SeatScope> grants = policy.AdditionalScopes(
+            new ViewerClaim(Seat: 0), players: 3);
+        IReadOnlyList<SeatScope> denied = policy.AdditionalScopes(
+            new ViewerClaim(Seat: 1), players: 3);
+
+        Assert.Equal([1, 2], grants.Select(grant => grant.Seat));
+        Assert.All(grants, grant =>
+        {
+            Assert.True(grant.Scope.Includes(grant.Seat));
+            Assert.False(grant.Scope.Includes(0));
+        });
+        Assert.Empty(denied);
+    }
+
+    [Fact]
     public void CooperativePolicyExplicitlyAllowsAWholeTableView()
     {
         var board = Board();
