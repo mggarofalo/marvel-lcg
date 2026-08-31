@@ -11,8 +11,8 @@ Feature: A player deck empties while cards are being drawn
   @behavior:rr:player-deck.2:published-result @rr:player-deck.1 @rr:player-deck.2 @rr:player-elimination
   Scenario: Drawing continues through the player-deck reset
     Given seat 1's player deck contains only these next cards
-      | next card |
-      | 01006     |
+      | next card | copy |
+      | 01006     | 0    |
     When seat 1 draws 2 cards
     Then seat 1 has 7 cards in hand
     And seat 1 has 33 cards in their player deck

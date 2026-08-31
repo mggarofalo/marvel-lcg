@@ -19,7 +19,8 @@ internal static class TranscriptParser
         }
         catch (Exception error) when (error is CompositeParserException or ParserException)
         {
-            throw new TranscriptException($"{relative}: {error.Message}", error);
+            throw new TranscriptException(
+                TranscriptFailureKind.Validation, $"{relative}: {error.Message}", error);
         }
 
         Feature feature = document.Feature
@@ -82,6 +83,7 @@ internal static class TranscriptParser
         var parsed = new List<TranscriptStep>();
         TranscriptStepKind? preceding = null;
         bool hasDecision = false;
+        bool decisionObserved = true;
         foreach (Step step in source)
         {
             string keyword = step.Keyword.Trim();
@@ -109,7 +111,19 @@ internal static class TranscriptParser
 
             if (kind == TranscriptStepKind.When)
             {
+                if (!decisionObserved)
+                {
+                    throw At(path, step.Location,
+                        "When cannot follow an unobserved decision; add a Then first");
+                }
+
                 hasDecision = true;
+                decisionObserved = false;
+            }
+
+            if (kind == TranscriptStepKind.Then)
+            {
+                decisionObserved = true;
             }
 
             if (step.Argument is DocString)
@@ -121,6 +135,22 @@ internal static class TranscriptParser
             parsed.Add(new TranscriptStep(
                 kind, step.Text, ParseTable(path, step), Locate(path, step.Location)));
             preceding = kind;
+        }
+
+        if (hasDecision && !decisionObserved)
+        {
+            TranscriptLocation location = parsed[^1].Location;
+            throw new TranscriptException(
+                $"{location}: the final When has no observable Then");
+        }
+
+        if (!hasDecision)
+        {
+            TranscriptLocation location = parsed.Count == 0
+                ? new TranscriptLocation(path, 1, 1)
+                : parsed[^1].Location;
+            throw new TranscriptException(
+                $"{location}: an executable scenario requires a When decision");
         }
 
         return parsed;

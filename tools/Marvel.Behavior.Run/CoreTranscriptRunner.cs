@@ -98,20 +98,30 @@ internal sealed class CoreTranscriptRunner
                     ? $"unknown {step.Kind} step '{step.Text}'"
                     : $"ambiguous {step.Kind} step '{step.Text}'; matched "
                       + string.Join(", ", matches.Select(candidate => candidate.Binding.Name));
-                throw Failure(context, scenario, step, reason, null);
+                TranscriptFailureKind kind = matches.Count == 0
+                    ? TranscriptFailureKind.UnknownStep
+                    : TranscriptFailureKind.AmbiguousStep;
+                throw Failure(context, scenario, step, kind, reason, null);
             }
 
             try
             {
                 matches[0].Binding.Execute(context, step, matches[0].Match);
             }
+            catch (TranscriptAssertionException error)
+            {
+                throw Failure(context, scenario, step,
+                    TranscriptFailureKind.Assertion, error.Message, error);
+            }
             catch (TranscriptException error)
             {
-                throw Failure(context, scenario, step, error.Message, error);
+                throw Failure(context, scenario, step,
+                    TranscriptFailureKind.Execution, error.Message, error);
             }
             catch (Exception error)
             {
                 throw Failure(context, scenario, step,
+                    TranscriptFailureKind.Execution,
                     $"{error.GetType().Name}: {error.Message}", error);
             }
         }
@@ -189,10 +199,11 @@ internal sealed class CoreTranscriptRunner
         TranscriptContext context, TranscriptStep step, Match match)
     {
         int seat = Seat(match, step);
-        TranscriptTable table = Table(step, "next card");
+        TranscriptTable table = Table(step, "next card", "copy");
         context.SceneRequired(step).Apply(new StackPlayerDeck(
             seat,
-            [.. table.Rows.Select(row => new SceneCard(row["next card"]))],
+            [.. table.Rows.Select(row => new SceneCard(
+                row["next card"], TableNumber(row, "copy", step)))],
             DiscardOthers: true));
     }
 
@@ -232,7 +243,8 @@ internal sealed class CoreTranscriptRunner
         int seat = Seat(match, step);
         if (context.World.Seats[seat].Eliminated)
         {
-            throw new TranscriptException($"{step.Location}: expected seat {seat + 1} not to be eliminated");
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected seat {seat + 1} not to be eliminated");
         }
     }
 
@@ -242,7 +254,7 @@ internal sealed class CoreTranscriptRunner
         _ = match;
         if (context.World.Result is not Outcome.Unfinished)
         {
-            throw new TranscriptException(
+            throw new TranscriptAssertionException(
                 $"{step.Location}: expected an unfinished game; was {context.World.Result}");
         }
     }
@@ -251,7 +263,7 @@ internal sealed class CoreTranscriptRunner
     {
         if (actual != expected)
         {
-            throw new TranscriptException(
+            throw new TranscriptAssertionException(
                 $"{step.Location}: expected {expected} {observation}; was {actual}");
         }
     }
@@ -277,6 +289,19 @@ internal sealed class CoreTranscriptRunner
         {
             throw new TranscriptException(
                 $"{step.Location}: '{match.Groups[group].Value}' is not a {group}");
+        }
+
+        return value;
+    }
+
+    private static int TableNumber(
+        IReadOnlyDictionary<string, string> row, string column, TranscriptStep step)
+    {
+        if (!int.TryParse(
+                row[column], NumberStyles.None, CultureInfo.InvariantCulture, out int value))
+        {
+            throw new TranscriptException(
+                $"{step.Location}: '{row[column]}' is not a non-negative {column}");
         }
 
         return value;
@@ -318,6 +343,7 @@ internal sealed class CoreTranscriptRunner
         TranscriptContext context,
         TranscriptScenario scenario,
         TranscriptStep step,
+        TranscriptFailureKind kind,
         string reason,
         Exception? inner)
     {
@@ -340,9 +366,7 @@ internal sealed class CoreTranscriptRunner
             recent-events:
             {recent}
             """;
-        return inner is null
-            ? new TranscriptException(message)
-            : new TranscriptException(message, inner);
+        return new TranscriptException(kind, message, inner);
     }
 }
 
@@ -357,7 +381,7 @@ internal static class TranscriptContextExtensions
 internal sealed class CoreTranscriptSuite
 {
     private readonly string root;
-    private readonly HashSet<string> obligations;
+    private readonly CatalogEvidence catalog;
     private readonly CoreTranscriptRunner runner;
 
     public CoreTranscriptSuite(string root)
@@ -365,7 +389,7 @@ internal sealed class CoreTranscriptSuite
         ArgumentException.ThrowIfNullOrWhiteSpace(root);
         this.root = Path.GetFullPath(root);
         runner = new CoreTranscriptRunner(this.root);
-        obligations = ReadObligations(Path.Combine(
+        catalog = ReadCatalog(Path.Combine(
             this.root, "specs", "behavior", "catalog.json"));
     }
 
@@ -386,7 +410,7 @@ internal sealed class CoreTranscriptSuite
             TranscriptFeature feature = TranscriptParser.Parse(root, path);
             foreach (TranscriptScenario scenario in feature.Scenarios)
             {
-                ValidateAuthority(scenario);
+                ValidateAuthority(scenario, requireCompletionEvidence: true);
                 results.Add(runner.Execute(scenario));
             }
         }
@@ -403,22 +427,35 @@ internal sealed class CoreTranscriptSuite
         {
             foreach (TranscriptScenario scenario in feature.Scenarios)
             {
-                ValidateAuthority(scenario);
+                ValidateAuthority(scenario, requireCompletionEvidence: false);
                 _ = runner.Execute(scenario);
             }
         }
         catch (TranscriptException expected)
+            when (expected.Kind == TranscriptFailureKind.Assertion)
         {
             return expected;
+        }
+        catch (TranscriptException wrongFailure)
+        {
+            throw new TranscriptException(
+                TranscriptFailureKind.Validation,
+                "quarantine did not reach its deliberately false assertion",
+                wrongFailure);
         }
 
         throw new TranscriptException(
             "specs/self-test/quarantine.feature passed; its false assertion no longer proves the runner");
     }
 
-    private void ValidateAuthority(TranscriptScenario scenario)
+    internal void ValidateForPassing(TranscriptScenario scenario) =>
+        ValidateAuthority(scenario, requireCompletionEvidence: true);
+
+    private void ValidateAuthority(
+        TranscriptScenario scenario, bool requireCompletionEvidence)
     {
-        if (!obligations.Contains(scenario.Obligation))
+        if (!catalog.Obligations.TryGetValue(
+                scenario.Obligation, out CatalogObligation? obligation))
         {
             throw new TranscriptException(
                 $"{scenario.Location}: stale or missing obligation '{scenario.Obligation}'");
@@ -429,14 +466,85 @@ internal sealed class CoreTranscriptSuite
             throw new TranscriptException(
                 $"{scenario.Location}: scenario has no direct authority tags");
         }
+
+        var missing = scenario.Authorities
+            .Where(authority => !catalog.Sources.Contains(authority))
+            .ToList();
+        if (missing.Count > 0)
+        {
+            throw new TranscriptException(
+                $"{scenario.Location}: missing direct authorities: {string.Join(", ", missing)}");
+        }
+
+        if (!scenario.Authorities.Contains(obligation.Source, StringComparer.Ordinal))
+        {
+            throw new TranscriptException(
+                $"{scenario.Location}: primary obligation derives from '{obligation.Source}', "
+                + "which is not a direct authority tag");
+        }
+
+        if (!string.Equals(obligation.Disposition, "executable", StringComparison.Ordinal)
+            || !string.Equals(obligation.Implementation, "supported", StringComparison.Ordinal))
+        {
+            throw new TranscriptException(
+                $"{scenario.Location}: '{scenario.Obligation}' is "
+                + $"{obligation.Disposition}/{obligation.Implementation ?? "(none)"}, not executable/supported");
+        }
+
+        if (!requireCompletionEvidence)
+        {
+            return;
+        }
+
+        string reference = $"{scenario.Location.Path}::{scenario.Name}";
+        if (!obligation.Scenarios.Contains(reference, StringComparer.Ordinal))
+        {
+            throw new TranscriptException(
+                $"{scenario.Location}: catalog does not link scenario '{reference}'");
+        }
+
+        if (string.IsNullOrWhiteSpace(obligation.Mutation))
+        {
+            throw new TranscriptException(
+                $"{scenario.Location}: '{scenario.Obligation}' has no mutation evidence");
+        }
     }
 
-    private static HashSet<string> ReadObligations(string path)
+    private static CatalogEvidence ReadCatalog(string path)
     {
         using JsonDocument document = JsonDocument.Parse(File.ReadAllText(path));
-        return document.RootElement.GetProperty("sources").EnumerateArray()
-            .SelectMany(source => source.GetProperty("obligations").EnumerateArray())
-            .Select(obligation => obligation.GetProperty("id").GetString()!)
-            .ToHashSet(StringComparer.Ordinal);
+        var sources = new HashSet<string>(StringComparer.Ordinal);
+        var obligations = new Dictionary<string, CatalogObligation>(StringComparer.Ordinal);
+        foreach (JsonElement source in document.RootElement
+                     .GetProperty("sources").EnumerateArray())
+        {
+            string sourceId = source.GetProperty("id").GetString()!;
+            sources.Add(sourceId);
+            foreach (JsonElement obligation in source
+                         .GetProperty("obligations").EnumerateArray())
+            {
+                string id = obligation.GetProperty("id").GetString()!;
+                obligations.Add(id, new CatalogObligation(
+                    sourceId,
+                    obligation.GetProperty("disposition").GetString()!,
+                    obligation.GetProperty("implementation").GetString(),
+                    [.. obligation.GetProperty("scenarios").EnumerateArray()
+                        .Select(item => item.GetString()!)],
+                    obligation.GetProperty("mutation").GetString()));
+            }
+        }
+
+        return new CatalogEvidence(sources, obligations);
     }
 }
+
+internal sealed record CatalogObligation(
+    string Source,
+    string Disposition,
+    string? Implementation,
+    IReadOnlyList<string> Scenarios,
+    string? Mutation);
+
+internal sealed record CatalogEvidence(
+    IReadOnlySet<string> Sources,
+    IReadOnlyDictionary<string, CatalogObligation> Obligations);

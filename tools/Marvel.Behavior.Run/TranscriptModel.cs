@@ -34,15 +34,38 @@ internal sealed record TranscriptFeature(
     IReadOnlyList<TranscriptScenario> Scenarios,
     TranscriptLocation Location);
 
+internal enum TranscriptFailureKind
+{
+    Validation,
+    UnknownStep,
+    AmbiguousStep,
+    Assertion,
+    Execution,
+}
+
 internal sealed class TranscriptException : Exception
 {
     public TranscriptException(string message)
-        : base(message)
+        : this(TranscriptFailureKind.Validation, message)
     {
     }
 
-    public TranscriptException(string message, Exception innerException)
+    public TranscriptException(
+        TranscriptFailureKind kind,
+        string message,
+        Exception? innerException = null)
         : base(message, innerException)
+    {
+        Kind = kind;
+    }
+
+    public TranscriptFailureKind Kind { get; }
+}
+
+internal sealed class TranscriptAssertionException : Exception
+{
+    public TranscriptAssertionException(string message)
+        : base(message)
     {
     }
 }

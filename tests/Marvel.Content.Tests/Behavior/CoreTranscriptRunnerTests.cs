@@ -12,7 +12,10 @@ public sealed class CoreTranscriptRunnerTests
     {
         var suite = new CoreTranscriptSuite(RepositoryPaths.Root);
 
-        TranscriptResult result = Assert.Single(suite.RunPassingCorpus());
+        TranscriptResult result = Assert.Single(
+            suite.RunPassingCorpus(),
+            candidate => candidate.Obligation
+                == "behavior:rr:player-deck.2:published-result");
 
         Assert.Equal("behavior:rr:player-deck.2:published-result", result.Obligation);
         Assert.Contains(result.Events, gameEvent =>
@@ -31,6 +34,7 @@ public sealed class CoreTranscriptRunnerTests
 
         TranscriptException failure = suite.RunQuarantine();
 
+        Assert.Equal(TranscriptFailureKind.Assertion, failure.Kind);
         Assert.Contains("expected 99 cards in hand; was 7", failure.Message,
             StringComparison.Ordinal);
         Assert.Contains("obligation: behavior:rr:player-deck.2:published-result",
@@ -51,8 +55,8 @@ public sealed class CoreTranscriptRunnerTests
                   | campaign | heroes     | seed |
                   | rhino    | spider_man | 303  |
                 And seat 1's player deck contains only these next cards
-                  | next card |
-                  | 01006     |
+                  | next card | copy |
+                  | 01006     | 0    |
                 When seat 1 draws 2 cards
                 Then seat 1 has 7 cards in hand
                 And the game is unfinished
@@ -127,6 +131,85 @@ public sealed class CoreTranscriptRunnerTests
             () => runner.Execute(scenario));
 
         Assert.Contains("unused columns: ignored", failure.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AStackCanSelectDistinctCopiesOfTheSamePrintedCard()
+    {
+        using var feature = TemporaryFeature.Create("""
+            Feature: Select physical copies
+              @behavior:rr:player-deck.2:published-result @rr:player-deck.2
+              Scenario: one scenario
+                Given a canonical Core scene is dealt
+                  | campaign | heroes         | seed |
+                  | rhino    | captain_marvel | 303  |
+                And seat 1's player deck contains only these next cards
+                  | next card | copy |
+                  | 01012     | 0    |
+                  | 01012     | 1    |
+                When seat 1 draws 2 cards
+                Then the game is unfinished
+            """);
+        TranscriptScenario scenario = Assert.Single(
+            TranscriptParser.Parse(feature.Root, feature.Path).Scenarios);
+        var runner = new CoreTranscriptRunner(RepositoryPaths.Root);
+
+        TranscriptResult result = runner.Execute(scenario);
+
+        Assert.NotEmpty(result.Digest);
+    }
+
+    [Fact]
+    public void ADecisionWithoutAnObservationIsRejected()
+    {
+        using var feature = TemporaryFeature.Create("""
+            Feature: Reject assertion-free behavior
+              @behavior:rr:player-deck.2:published-result @rr:player-deck.2
+              Scenario: one scenario
+                Given a canonical Core scene is dealt
+                  | campaign | heroes     | seed |
+                  | rhino    | spider_man | 303  |
+                When seat 1 draws 1 card
+            """);
+
+        TranscriptException failure = Assert.Throws<TranscriptException>(
+            () => TranscriptParser.Parse(feature.Root, feature.Path));
+
+        Assert.Contains("final When has no observable Then", failure.Message,
+            StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(
+        "@behavior:rr:player-deck.2:published-result @rr:does-not-exist",
+        "missing direct authorities: rr:does-not-exist")]
+    [InlineData(
+        "@behavior:rr:player-deck.2:published-result @rr:draw-drawing-cards",
+        "primary obligation derives from 'rr:player-deck.2'")]
+    [InlineData(
+        "@behavior:rr:player-deck.3:published-result @rr:player-deck.3",
+        "executable/unverified, not executable/supported")]
+    public void PassingAuthorityTagsAndCatalogEvidenceAreValidated(
+        string tags, string expected)
+    {
+        using var feature = TemporaryFeature.Create($$"""
+            Feature: Reject false authority
+              {{tags}}
+              Scenario: one scenario
+                Given a canonical Core scene is dealt
+                  | campaign | heroes     | seed |
+                  | rhino    | spider_man | 303  |
+                When seat 1 draws 1 card
+                Then the game is unfinished
+            """);
+        TranscriptScenario scenario = Assert.Single(
+            TranscriptParser.Parse(feature.Root, feature.Path).Scenarios);
+        var suite = new CoreTranscriptSuite(RepositoryPaths.Root);
+
+        TranscriptException failure = Assert.Throws<TranscriptException>(
+            () => suite.ValidateForPassing(scenario));
+
+        Assert.Contains(expected, failure.Message, StringComparison.Ordinal);
     }
 
     [Theory]
