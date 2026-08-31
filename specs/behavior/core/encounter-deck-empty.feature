@@ -33,7 +33,9 @@ Feature: The encounter deck empties
     And the main scheme has 1 acceleration token
     And the game is unfinished
 
-  @behavior:rr:encounter-deck.3:published-result @rr:encounter-deck.3 @rr:deal-deal-an-encounter-card
+  @behavior:rr:encounter-deck.3:published-result
+  @covers:behavior:rr:deal-deal-an-encounter-card:ability-deal-facedown-queued
+  @rr:encounter-deck.3 @rr:deal-deal-an-encounter-card
   Scenario: Dealing the final encounter card finishes after the reset
     # "That effect finishes resolving after the encounter deck has been reset."
     Given the encounter deck contains only these next cards with all other deck cards in the encounter discard pile
@@ -41,6 +43,7 @@ Feature: The encounter deck empties
       | 01186     | 0    |
     When seat 1 is dealt 1 encounter card
     Then seat 1 has 1 facedown encounter card
+    And card 01186 copy 0 is facedown in seat 1's encounter queue
     And the encounter discard pile has 0 cards
     And the main scheme has 1 acceleration token
     And a Reset event was emitted before a Deal event

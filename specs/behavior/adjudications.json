@@ -5534,7 +5534,7 @@
       "fingerprint": "sha256:a387f61f3bc87486085ace58d089fcc1bba4faf8789822670365c011368abfeb",
       "obligations": [
         {
-          "key": "published-result",
+          "key": "villain-phase-step-three",
           "summary": "During step three of the villain phase, each player is dealt one facedown encounter card.",
           "disposition": "executable",
           "reason": null,
@@ -5544,6 +5544,20 @@
           "exception": null,
           "scenarios": [],
           "mutation": null
+        },
+        {
+          "key": "ability-deal-facedown-queued",
+          "summary": "When a card ability deals a player an encounter card, the top encounter card is placed facedown in front of that player without being revealed and joins their villain-phase queue.",
+          "disposition": "executable",
+          "reason": null,
+          "target": null,
+          "implementation": "supported",
+          "work_item": null,
+          "exception": null,
+          "scenarios": [
+            "specs/behavior/core/encounter-deck-empty.feature::Dealing the final encounter card finishes after the reset"
+          ],
+          "mutation": "CoreRuleTranscriptTests.EncounterDeckBranchesHavePinnedOutcomes distinguishes the top card entering the named player's queue facedown without reveal."
         }
       ]
     },

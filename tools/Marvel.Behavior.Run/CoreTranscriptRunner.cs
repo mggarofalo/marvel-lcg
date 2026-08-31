@@ -289,6 +289,9 @@ internal sealed class CoreTranscriptRunner
             @"seat (?<seat>\d+) has (?<count>\d+) cards? in their discard pile", PlayerDiscardCount),
         Bind("encounter-queue-count", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) has (?<count>\d+) facedown encounter cards?", EncounterCount),
+        Bind("facedown-encounter-queue-card", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is facedown in seat (?<seat>\d+)'s encounter queue",
+            FacedownEncounterQueueCard),
         Bind("encounter-deck-count", TranscriptStepKind.Then,
             @"the encounter deck has (?<count>\d+) cards?", EncounterDeckCount),
         Bind("encounter-discard-count", TranscriptStepKind.Then,
@@ -696,6 +699,21 @@ internal sealed class CoreTranscriptRunner
                 DeckType.DealtEncounterCardsDeck,
                 PlayArea.Of(Seat(match, step))).Cards.Count,
             "facedown encounter cards", step);
+
+    private static void FacedownEncounterQueueCard(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        if (card.FaceUp
+            || card.Area.Type != DeckType.DealtEncounterCardsDeck
+            || card.Area.PlayArea != PlayArea.Of(seat))
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected card {card.ObjectId} facedown in seat "
+                + $"{seat + 1}'s encounter queue; was {card.Area}, faceup={card.FaceUp}");
+        }
+    }
 
     private static void EncounterDeckCount(
         TranscriptContext context, TranscriptStep step, Match match) =>
