@@ -22,6 +22,52 @@ public sealed class MarvelCdbHarvestTests
     }
 
     [Fact]
+    public void DuplicateEntriesKeepTheFirstAndAreReported()
+    {
+        Snapshot snapshot = Snapshot.Read(File.ReadAllText(
+            RepositoryPaths.Dataset("marvelcdb-faq", "faq.json")));
+        IReadOnlyDictionary<string, JsonElement> entries = snapshot.FirstEntries(out var duplicates);
+
+        Assert.Equal(62, entries.Count);
+        Assert.Equal(["05005"], duplicates);
+        Assert.Equal(
+            snapshot.Entries.First(entry => entry.GetProperty("code").GetString() == "05005")
+                .GetProperty("text").GetString(),
+            entries["05005"].GetProperty("text").GetString());
+    }
+
+    [Fact]
+    public void WholeCardCodesFanOutToEveryPrintedFace()
+    {
+        IReadOnlySet<string> cards = new HashSet<string>(
+            ["01001a", "01001b", "01050", "01097a", "01097b", "01144a", "01144b", "01144c"],
+            StringComparer.Ordinal);
+
+        Assert.Equal(["01050"], Snapshot.Faces("01050", cards));
+        Assert.Equal(["01097a", "01097b"], Snapshot.Faces("01097", cards));
+        Assert.Equal(["01144a", "01144b", "01144c"], Snapshot.Faces("01144", cards));
+        Assert.Equal(["01001a"], Snapshot.Faces("01001a", cards));
+        Assert.Empty(Snapshot.Faces("99999", cards));
+    }
+
+    [Fact]
+    public void EveryVendoredRulingMapsToTheGeneratedCardDataset()
+    {
+        Snapshot snapshot = Snapshot.Read(File.ReadAllText(
+            RepositoryPaths.Dataset("marvelcdb-faq", "faq.json")));
+        using var cardsJson = JsonDocument.Parse(File.ReadAllBytes(
+            RepositoryPaths.Dataset("cards", "cards.json")));
+        var cards = cardsJson.RootElement.GetProperty("cards").EnumerateArray()
+            .Select(card => card.GetProperty("card_id").GetString()!)
+            .ToHashSet(StringComparer.Ordinal);
+
+        Assert.Empty(snapshot.Unmapped(cards));
+        Assert.NotEmpty(snapshot.ByCard(cards));
+        Assert.True(snapshot.WasAsked("01097b"));
+        Assert.False(snapshot.WasAsked("99999"));
+    }
+
+    [Fact]
     public void OneResultAndSeveralResultsHaveDifferentAcceptedShapes()
     {
         Assert.Single(FaqHarvest.ParseEntries("{\"code\":\"01001a\"}"));

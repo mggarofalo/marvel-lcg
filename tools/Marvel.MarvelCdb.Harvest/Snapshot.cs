@@ -12,6 +12,8 @@ public sealed record Snapshot(
     IReadOnlyList<JsonElement> Entries,
     bool CandidateComplete = false)
 {
+    private static readonly string[] FaceSuffixes = ["a", "b", "c"];
+
     public static Snapshot Read(string json)
     {
         using var document = JsonDocument.Parse(json);
@@ -58,6 +60,72 @@ public sealed record Snapshot(
     public string Json() => Render(candidate: false);
 
     public string CandidateJson() => Render(candidate: true);
+
+    public IReadOnlyDictionary<string, JsonElement> FirstEntries(out IReadOnlyList<string> duplicates)
+    {
+        var first = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
+        var repeated = new List<string>();
+        foreach (JsonElement entry in Entries)
+        {
+            string code = EntryCode(entry);
+            if (!first.TryAdd(code, entry))
+            {
+                repeated.Add(code);
+            }
+        }
+
+        duplicates = repeated;
+        return first;
+    }
+
+    public static IReadOnlyList<string> Faces(string code, IReadOnlySet<string> cardIds)
+    {
+        if (cardIds.Contains(code))
+        {
+            return [code];
+        }
+
+        return FaceSuffixes.Select(suffix => code + suffix)
+            .Where(cardIds.Contains).ToList();
+    }
+
+    public IReadOnlyDictionary<string, IReadOnlyList<JsonElement>> ByCard(
+        IReadOnlySet<string> cardIds)
+    {
+        IReadOnlyDictionary<string, JsonElement> entries = FirstEntries(out _);
+        var found = new Dictionary<string, List<JsonElement>>(StringComparer.Ordinal);
+        foreach ((string code, JsonElement entry) in entries.OrderBy(pair => pair.Key, StringComparer.Ordinal))
+        {
+            foreach (string cardId in Faces(code, cardIds))
+            {
+                if (!found.TryGetValue(cardId, out List<JsonElement>? rulings))
+                {
+                    rulings = [];
+                    found[cardId] = rulings;
+                }
+
+                rulings.Add(entry);
+            }
+        }
+
+        return found.ToDictionary(
+            pair => pair.Key,
+            pair => (IReadOnlyList<JsonElement>)pair.Value,
+            StringComparer.Ordinal);
+    }
+
+    public IReadOnlyList<string> Unmapped(IReadOnlySet<string> cardIds) =>
+        FirstEntries(out _).Keys.Where(code => Faces(code, cardIds).Count == 0)
+            .Order(StringComparer.Ordinal).ToList();
+
+    public bool WasAsked(string cardId)
+    {
+        var asked = Queried.ToHashSet(StringComparer.Ordinal);
+        return asked.Contains(cardId)
+            || (cardId.Length > 0
+                && cardId[^1] is 'a' or 'b' or 'c'
+                && asked.Contains(cardId[..^1]));
+    }
 
     private string Render(bool candidate)
     {
