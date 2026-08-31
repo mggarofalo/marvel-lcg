@@ -75,10 +75,10 @@ public sealed class BehaviorAuthorityTests
 
         Assert.Equal(2, catalog.Version);
         Assert.Equal(2608, catalog.Sources.Count);
-        Assert.Equal(4333, catalog.Sources.Sum(source => source.Obligations.Count));
+        Assert.Equal(4336, catalog.Sources.Sum(source => source.Obligations.Count));
         Assert.All(catalog.Sources, source => Assert.NotEmpty(source.Obligations));
         Assert.Equal(
-            4333,
+            4336,
             catalog.Sources.SelectMany(source => source.Obligations)
                 .Select(obligation => obligation.Id)
                 .Distinct(StringComparer.Ordinal)
@@ -286,6 +286,8 @@ public sealed class BehaviorAuthorityTests
 
         var focusedRage = Assert.Single(catalog.Sources, source => source.Id == "faq:01027");
         Assert.Equal("outside-core", focusedRage.Disposition);
+        var legalPractice = Assert.Single(catalog.Sources, source => source.Id == "faq:01023");
+        Assert.Equal("narrower", legalPractice.Disposition);
         var nova = Assert.Single(catalog.Sources, source => source.Id == "faq:01135");
         Assert.Contains(
             nova.Obligations,
@@ -362,6 +364,18 @@ public sealed class BehaviorAuthorityTests
         Assert.Contains(
             singleTargets.Obligations,
             obligation => obligation.Id.EndsWith(":energy-channel-one-enemy", StringComparison.Ordinal));
+
+        var splitRulings = new[]
+        {
+            "ruling:2c4a1030e6225759",
+            "ruling:3216d926a2bbbadb",
+            "ruling:82d66e85735baf99",
+        };
+        Assert.All(
+            splitRulings,
+            id => Assert.Equal(
+                2,
+                Assert.Single(catalog.Sources, source => source.Id == id).Obligations.Count));
     }
 
     private static JsonDocument Read(params string[] parts) =>
