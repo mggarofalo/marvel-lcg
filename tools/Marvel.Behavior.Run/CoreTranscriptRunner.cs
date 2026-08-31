@@ -14,6 +14,7 @@ namespace Marvel.Behavior.Run;
 
 internal sealed record TranscriptResult(
     string Obligation,
+    string Scenario,
     string Digest,
     IReadOnlyList<GameEvent> Events);
 
@@ -134,6 +135,7 @@ internal sealed class CoreTranscriptRunner
 
         return new TranscriptResult(
             scenario.Obligation,
+            $"{scenario.Location.Path}::{scenario.Name}",
             context.World.Digest().Fingerprint(),
             [.. context.Events]);
     }
@@ -366,7 +368,7 @@ internal sealed class CoreTranscriptRunner
             recent-events:
             {recent}
             """;
-        return new TranscriptException(kind, message, inner);
+        return new TranscriptException(kind, message, inner, digest);
     }
 }
 
@@ -405,15 +407,28 @@ internal sealed class CoreTranscriptSuite
         }
 
         var results = new List<TranscriptResult>();
+        var executed = new HashSet<string>(StringComparer.Ordinal);
         foreach (string path in paths)
         {
             TranscriptFeature feature = TranscriptParser.Parse(root, path);
             foreach (TranscriptScenario scenario in feature.Scenarios)
             {
-                ValidateAuthority(scenario, requireCompletionEvidence: true);
-                results.Add(runner.Execute(scenario));
+                CatalogObligation obligation = ValidateAuthority(
+                    scenario, requireCompletionEvidence: true);
+                string reference = Reference(scenario);
+                executed.Add(reference);
+                if (obligation.Implementation == "supported")
+                {
+                    results.Add(runner.Execute(scenario));
+                }
+                else
+                {
+                    results.Add(RunUnimplemented(scenario, obligation));
+                }
             }
         }
+
+        ValidateScenarioCompleteness(ExpectedScenarioReferences(), executed);
 
         return results;
     }
@@ -427,7 +442,7 @@ internal sealed class CoreTranscriptSuite
         {
             foreach (TranscriptScenario scenario in feature.Scenarios)
             {
-                ValidateAuthority(scenario, requireCompletionEvidence: false);
+                _ = ValidateAuthority(scenario, requireCompletionEvidence: false);
                 _ = runner.Execute(scenario);
             }
         }
@@ -449,9 +464,9 @@ internal sealed class CoreTranscriptSuite
     }
 
     internal void ValidateForPassing(TranscriptScenario scenario) =>
-        ValidateAuthority(scenario, requireCompletionEvidence: true);
+        _ = ValidateAuthority(scenario, requireCompletionEvidence: true);
 
-    private void ValidateAuthority(
+    private CatalogObligation ValidateAuthority(
         TranscriptScenario scenario, bool requireCompletionEvidence)
     {
         if (!catalog.Obligations.TryGetValue(
@@ -468,12 +483,24 @@ internal sealed class CoreTranscriptSuite
         }
 
         var missing = scenario.Authorities
-            .Where(authority => !catalog.Sources.Contains(authority))
+            .Where(authority => !catalog.Sources.ContainsKey(authority))
             .ToList();
         if (missing.Count > 0)
         {
             throw new TranscriptException(
                 $"{scenario.Location}: missing direct authorities: {string.Join(", ", missing)}");
+        }
+
+        var outsideCore = scenario.Authorities
+            .Where(authority => catalog.Sources.TryGetValue(
+                authority, out CatalogSource? source)
+                && source.Disposition == "outside-core")
+            .ToList();
+        if (outsideCore.Count > 0)
+        {
+            throw new TranscriptException(
+                $"{scenario.Location}: outside-Core direct authorities: "
+                + string.Join(", ", outsideCore));
         }
 
         if (!scenario.Authorities.Contains(obligation.Source, StringComparer.Ordinal))
@@ -484,53 +511,196 @@ internal sealed class CoreTranscriptSuite
         }
 
         if (!string.Equals(obligation.Disposition, "executable", StringComparison.Ordinal)
-            || !string.Equals(obligation.Implementation, "supported", StringComparison.Ordinal))
+            || obligation.Implementation is not ("supported" or "unimplemented"))
         {
             throw new TranscriptException(
                 $"{scenario.Location}: '{scenario.Obligation}' is "
-                + $"{obligation.Disposition}/{obligation.Implementation ?? "(none)"}, not executable/supported");
+                + $"{obligation.Disposition}/{obligation.Implementation ?? "(none)"}, "
+                + "not executable with a completed implementation status");
         }
 
         if (!requireCompletionEvidence)
         {
-            return;
+            return obligation;
         }
 
-        string reference = $"{scenario.Location.Path}::{scenario.Name}";
+        string reference = Reference(scenario);
         if (!obligation.Scenarios.Contains(reference, StringComparer.Ordinal))
         {
             throw new TranscriptException(
                 $"{scenario.Location}: catalog does not link scenario '{reference}'");
         }
 
-        if (string.IsNullOrWhiteSpace(obligation.Mutation))
+        if (obligation.Implementation == "supported"
+            && string.IsNullOrWhiteSpace(obligation.Mutation))
         {
             throw new TranscriptException(
                 $"{scenario.Location}: '{scenario.Obligation}' has no mutation evidence");
         }
+
+        if (obligation.Implementation == "unimplemented"
+            && string.IsNullOrWhiteSpace(obligation.Exception))
+        {
+            throw new TranscriptException(
+                $"{scenario.Location}: '{scenario.Obligation}' names no expected exception");
+        }
+
+        return obligation;
     }
+
+    private TranscriptResult RunUnimplemented(
+        TranscriptScenario scenario, CatalogObligation obligation) =>
+        RequireUnimplemented(scenario, obligation, () => runner.Execute(scenario));
+
+    internal static TranscriptResult RequireUnimplemented(
+        TranscriptScenario scenario,
+        CatalogObligation obligation,
+        Func<TranscriptResult> execute)
+    {
+        try
+        {
+            _ = execute();
+        }
+        catch (TranscriptException failure)
+        {
+            Exception? reached = FindRulesNotImplemented(failure);
+            string actual = reached is null
+                ? "(none)"
+                : $"{reached.GetType().Name}: {reached.Message}";
+            if (string.Equals(actual, obligation.Exception, StringComparison.Ordinal))
+            {
+                return new TranscriptResult(
+                    scenario.Obligation,
+                    Reference(scenario),
+                    failure.WorldDigest ?? "<unavailable>",
+                    []);
+            }
+
+            throw new TranscriptException(
+                TranscriptFailureKind.Validation,
+                $"{scenario.Location}: expected '{obligation.Exception}'; reached '{actual}'",
+                failure,
+                failure.WorldDigest);
+        }
+
+        throw new TranscriptException(
+            $"{scenario.Location}: expected '{obligation.Exception}', but the scenario completed");
+    }
+
+    private IReadOnlySet<string> ExpectedScenarioReferences() =>
+        CompletedScenarioReferences(catalog.Obligations.Values);
+
+    internal static IReadOnlySet<string> CompletedScenarioReferences(
+        IEnumerable<CatalogObligation> obligations)
+    {
+        var references = new HashSet<string>(StringComparer.Ordinal);
+        foreach (CatalogObligation obligation in obligations.Where(obligation =>
+                     obligation.Disposition == "executable"
+                     && obligation.Implementation is "supported" or "unimplemented"))
+        {
+            // During catalog derivation, an unimplemented status names a known
+            // engine gap before its negative transcript is admitted. Once any
+            // scenario is linked, the runner holds that evidence bidirectionally.
+            // MARVEL-307 turns absence itself into the final module gate.
+            if (obligation.Implementation == "unimplemented"
+                && obligation.Scenarios.Count == 0)
+            {
+                continue;
+            }
+
+            if (obligation.Scenarios.Count == 0)
+            {
+                throw new TranscriptException(
+                    $"completed obligation '{obligation.Id}' has no scenarios");
+            }
+
+            if (obligation.Implementation == "supported"
+                && string.IsNullOrWhiteSpace(obligation.Mutation))
+            {
+                throw new TranscriptException(
+                    $"supported obligation '{obligation.Id}' has no mutation evidence");
+            }
+
+            if (obligation.Implementation == "unimplemented"
+                && string.IsNullOrWhiteSpace(obligation.Exception))
+            {
+                throw new TranscriptException(
+                    $"unimplemented obligation '{obligation.Id}' names no expected exception");
+            }
+
+            foreach (string reference in obligation.Scenarios)
+            {
+                if (!references.Add(reference))
+                {
+                    throw new TranscriptException(
+                        $"scenario '{reference}' is linked more than once in the catalog");
+                }
+            }
+        }
+
+        return references;
+    }
+
+    internal static void ValidateScenarioCompleteness(
+        IReadOnlySet<string> expected, IReadOnlySet<string> executed)
+    {
+        var missing = expected.Except(executed, StringComparer.Ordinal).ToList();
+        var unexpected = executed.Except(expected, StringComparer.Ordinal).ToList();
+        if (missing.Count > 0 || unexpected.Count > 0)
+        {
+            string details = string.Join("; ", new[]
+            {
+                missing.Count == 0
+                    ? null
+                    : $"catalog scenarios not executed: {string.Join(", ", missing)}",
+                unexpected.Count == 0
+                    ? null
+                    : $"executed scenarios absent from catalog: {string.Join(", ", unexpected)}",
+            }.Where(value => value is not null));
+            throw new TranscriptException(details);
+        }
+    }
+
+    private static Exception? FindRulesNotImplemented(Exception failure)
+    {
+        for (Exception? current = failure; current is not null; current = current.InnerException)
+        {
+            if (current is RulesNotImplementedException)
+            {
+                return current;
+            }
+        }
+
+        return null;
+    }
+
+    private static string Reference(TranscriptScenario scenario) =>
+        $"{scenario.Location.Path}::{scenario.Name}";
 
     private static CatalogEvidence ReadCatalog(string path)
     {
         using JsonDocument document = JsonDocument.Parse(File.ReadAllText(path));
-        var sources = new HashSet<string>(StringComparer.Ordinal);
+        var sources = new Dictionary<string, CatalogSource>(StringComparer.Ordinal);
         var obligations = new Dictionary<string, CatalogObligation>(StringComparer.Ordinal);
         foreach (JsonElement source in document.RootElement
                      .GetProperty("sources").EnumerateArray())
         {
             string sourceId = source.GetProperty("id").GetString()!;
-            sources.Add(sourceId);
+            sources.Add(sourceId, new CatalogSource(
+                source.GetProperty("disposition").GetString()!));
             foreach (JsonElement obligation in source
                          .GetProperty("obligations").EnumerateArray())
             {
                 string id = obligation.GetProperty("id").GetString()!;
                 obligations.Add(id, new CatalogObligation(
+                    id,
                     sourceId,
                     obligation.GetProperty("disposition").GetString()!,
                     obligation.GetProperty("implementation").GetString(),
                     [.. obligation.GetProperty("scenarios").EnumerateArray()
                         .Select(item => item.GetString()!)],
-                    obligation.GetProperty("mutation").GetString()));
+                    obligation.GetProperty("mutation").GetString(),
+                    obligation.GetProperty("exception").GetString()));
             }
         }
 
@@ -539,12 +709,16 @@ internal sealed class CoreTranscriptSuite
 }
 
 internal sealed record CatalogObligation(
+    string Id,
     string Source,
     string Disposition,
     string? Implementation,
     IReadOnlyList<string> Scenarios,
-    string? Mutation);
+    string? Mutation,
+    string? Exception);
+
+internal sealed record CatalogSource(string Disposition);
 
 internal sealed record CatalogEvidence(
-    IReadOnlySet<string> Sources,
+    IReadOnlyDictionary<string, CatalogSource> Sources,
     IReadOnlyDictionary<string, CatalogObligation> Obligations);

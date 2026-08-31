@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using Marvel.Behavior.Run;
+using Marvel.Rules.Play;
 using Marvel.Tests;
 using Xunit;
 
@@ -14,8 +15,8 @@ public sealed class CoreTranscriptRunnerTests
 
         TranscriptResult result = Assert.Single(
             suite.RunPassingCorpus(),
-            candidate => candidate.Obligation
-                == "behavior:rr:player-deck.2:published-result");
+            candidate => candidate.Scenario
+                == "specs/behavior/core/player-deck-empty.feature::Drawing continues through the player-deck reset");
 
         Assert.Equal("behavior:rr:player-deck.2:published-result", result.Obligation);
         Assert.Contains(result.Events, gameEvent =>
@@ -188,7 +189,10 @@ public sealed class CoreTranscriptRunnerTests
         "primary obligation derives from 'rr:player-deck.2'")]
     [InlineData(
         "@behavior:rr:player-deck.3:published-result @rr:player-deck.3",
-        "executable/unverified, not executable/supported")]
+        "not executable with a completed implementation status")]
+    [InlineData(
+        "@behavior:rr:player-deck.2:published-result @rr:player-deck.2 @rr:campaign-specific-card",
+        "outside-Core direct authorities: rr:campaign-specific-card")]
     public void PassingAuthorityTagsAndCatalogEvidenceAreValidated(
         string tags, string expected)
     {
@@ -210,6 +214,89 @@ public sealed class CoreTranscriptRunnerTests
             () => suite.ValidateForPassing(scenario));
 
         Assert.Contains(expected, failure.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void CompletedCatalogEvidenceIsCheckedInReverse()
+    {
+        var missingScenario = new CatalogObligation(
+            "behavior:rr:test:branch", "rr:test", "executable", "supported",
+            [], "a mutation", null);
+
+        TranscriptException absent = Assert.Throws<TranscriptException>(() =>
+            CoreTranscriptSuite.CompletedScenarioReferences([missingScenario]));
+
+        Assert.Contains("has no scenarios", absent.Message, StringComparison.Ordinal);
+
+        var missingMutation = missingScenario with
+        {
+            Scenarios = ["specs/behavior/core/test.feature::branch"],
+            Mutation = null,
+        };
+        TranscriptException untested = Assert.Throws<TranscriptException>(() =>
+            CoreTranscriptSuite.CompletedScenarioReferences([missingMutation]));
+
+        Assert.Contains("has no mutation evidence", untested.Message,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void CatalogAndExecutedScenarioReferencesMustMatchBothWays()
+    {
+        var expected = new HashSet<string>(["expected"], StringComparer.Ordinal);
+        var executed = new HashSet<string>(["unexpected"], StringComparer.Ordinal);
+
+        TranscriptException failure = Assert.Throws<TranscriptException>(() =>
+            CoreTranscriptSuite.ValidateScenarioCompleteness(expected, executed));
+
+        Assert.Contains("catalog scenarios not executed: expected", failure.Message,
+            StringComparison.Ordinal);
+        Assert.Contains("executed scenarios absent from catalog: unexpected", failure.Message,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AnUnimplementedTranscriptMustReachTheExactCatalogedException()
+    {
+        var scenario = new TranscriptScenario(
+            "negative branch",
+            "behavior:rr:activation.5:published-result",
+            ["rr:activation.5"],
+            [],
+            new TranscriptLocation("specs/behavior/core/negative.feature", 4, 3));
+        var obligation = new CatalogObligation(
+            scenario.Obligation,
+            "rr:activation.5",
+            "executable",
+            "unimplemented",
+            ["specs/behavior/core/negative.feature::negative branch"],
+            null,
+            "RulesNotImplementedException: rr:activation.5");
+        var reached = new TranscriptException(
+            TranscriptFailureKind.Execution,
+            "diagnostic",
+            new RulesNotImplementedException("rr:activation.5"),
+            "digest");
+
+        TranscriptResult result = CoreTranscriptSuite.RequireUnimplemented(
+            scenario, obligation, () => throw reached);
+
+        Assert.Equal("digest", result.Digest);
+
+        TranscriptException mismatch = Assert.Throws<TranscriptException>(() =>
+            CoreTranscriptSuite.RequireUnimplemented(
+                scenario,
+                obligation,
+                () => throw new TranscriptException(
+                    TranscriptFailureKind.Execution,
+                    "diagnostic",
+                    new RulesNotImplementedException("some other rule"),
+                    "digest")));
+
+        Assert.Contains("expected 'RulesNotImplementedException: rr:activation.5'",
+            mismatch.Message, StringComparison.Ordinal);
+        Assert.Contains("reached 'RulesNotImplementedException: some other rule'",
+            mismatch.Message, StringComparison.Ordinal);
     }
 
     [Theory]

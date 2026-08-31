@@ -14,7 +14,7 @@ try
     TranscriptException quarantine = suite.RunQuarantine();
     foreach (TranscriptResult result in results)
     {
-        Console.WriteLine($"PASS {result.Obligation} {result.Digest}");
+        Console.WriteLine($"PASS {result.Obligation} {result.Scenario} {result.Digest}");
     }
 
     Console.WriteLine(

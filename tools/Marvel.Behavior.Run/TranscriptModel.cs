@@ -53,13 +53,17 @@ internal sealed class TranscriptException : Exception
     public TranscriptException(
         TranscriptFailureKind kind,
         string message,
-        Exception? innerException = null)
+        Exception? innerException = null,
+        string? worldDigest = null)
         : base(message, innerException)
     {
         Kind = kind;
+        WorldDigest = worldDigest;
     }
 
     public TranscriptFailureKind Kind { get; }
+
+    public string? WorldDigest { get; }
 }
 
 internal sealed class TranscriptAssertionException : Exception
