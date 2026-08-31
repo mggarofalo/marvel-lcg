@@ -265,7 +265,8 @@ public sealed class TransportTests
     {
         var host = new EngineHost(
             DatasetGameFactory.Load(Marvel.Tests.RepositoryPaths.Root),
-            new SequenceCapabilities("seat-zero", "invite-one", "seat-one"),
+            new SequenceCapabilities(
+                "seat-zero", "seat-zero", "invite-one", "seat-one"),
             new RestrictedVisibilityPolicy(0));
         var server = new SocketEngineServer(host, IPAddress.Loopback, port: 0);
         var specification = new GameSpecification(
@@ -274,10 +275,14 @@ public sealed class TransportTests
         EngineResponse opened = await ExchangeOverSocket(
             server, EngineRequest.OpenGame("open", "shared", specification));
         SeatInvitation invitation = Assert.Single(opened.Invitations!);
+        EngineResponse capabilityCannotAttach = await ExchangeOverSocket(
+            server,
+            EngineRequest.AttachGame("steal-seat", "shared", opened.Capability!));
         EngineResponse attached = await ExchangeOverSocket(
             server,
             EngineRequest.AttachGame("attach", "shared", invitation.Invitation));
 
+        Assert.Equal("session_not_found", capabilityCannotAttach.Error?.Code);
         Assert.Equal(1, invitation.Seat);
         Assert.Equal("seat-zero", opened.Capability);
         Assert.Equal("seat-one", attached.Capability);
