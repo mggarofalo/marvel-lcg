@@ -87,7 +87,7 @@ public sealed class ExpertModeTests
         var world = WorldSetup.Deal(
             Cards,
             Blueprints.From(
-                Dealer.DealOrder(Setup, "unus_expert", ["spider_man", "spider_man"]), Cards),
+                Dealer.DealOrder(Setup, "unus_expert", ["spider_man", "spider_woman"]), Cards),
             ["Spider-Man", "Spider-Woman"],
             Seed,
             AuthoredCards.Runner(),

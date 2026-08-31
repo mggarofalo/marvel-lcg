@@ -18,6 +18,7 @@ public sealed class LeaderSetupTests
     private static readonly CardCatalog Cards =
         CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
 
+    [Rule("rr:leader")]
     [Theory]
     [InlineData("captain_america", "56137", "56138")]
     [InlineData("captain_marvel", "56092", "56093")]
@@ -26,9 +27,10 @@ public sealed class LeaderSetupTests
     public void CivilWarLeaderDealsAsTheActiveVillain(
         string scenario, string firstFace, string secondFace)
     {
-        // `pack:mc56:leaders`: leaders are used in place of villains in Civil
-        // War scenarios and function exactly like villains. The kind remains
-        // Leader while the ordinary villain zones and state fields apply.
+        // `rr:leader`: “The leader card type follows the same rules as the
+        // villain card type for all purposes.” `pack:mc56:leaders` places
+        // leaders in Civil War scenarios. The kind remains Leader while the
+        // ordinary villain zones and state fields apply.
         var world = Deal(scenario);
         var leader = world.TheCardIn(DeckType.VillainArea)!;
         var next = Assert.Single(world.AreaOf(DeckType.VillainDeck).Cards);

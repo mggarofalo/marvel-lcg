@@ -2445,6 +2445,17 @@ public static class VillainPhase
             Trigger = "villain phase", Verb = "Reveal",
         });
 
+        bool uniqueBlocked = facts.Kind(card.FaceId) != CardKind.EncounterVillain
+            && Uniqueness.IsBlocked(world, facts, card);
+        if (uniqueBlocked)
+        {
+            Reveal.Resolve(world, facts, card, player, events, revealOccurrence);
+            // Its own reveal/entry effects are ignored. The reveal occurrence
+            // still reaches its response boundary before the queue continues.
+            world.Agenda.BeforeResponses(revealOccurrence);
+            return;
+        }
+
         if (facts.Kind(card.FaceId) == CardKind.Attachment
             && abilities.AttachmentTargets(world, card) is { Count: > 1 } targets)
         {

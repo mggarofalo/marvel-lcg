@@ -802,7 +802,8 @@ internal static class SimulationHarness
             data.Cards,
             Blueprints.From(
                 Dealer.DealOrder(
-                    data.Setup, CampaignKey(config), config.Heroes, config.ModularSets),
+                    data.Setup, CampaignKey(config), config.Heroes, config.ModularSets,
+                    data.Cards),
                 data.Cards),
             [.. config.Heroes.Select(hero => data.Setup.Hero(hero).Name)],
             seed,

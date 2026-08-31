@@ -170,14 +170,16 @@ MARVEL-174 keeps v2 frozen instead of adding a self-derived side channel. These
 rules are held against the published text, and the tests name the rule each one
 comes from. Nine mutations were watched failing.
 
-**Uniqueness is scoped per game area, and is not implemented.**
+**Uniqueness is scoped per game area.**
 `pack:mc11:rules-clarifications`: *"Can two players control the same unique cards
 while they are in different game areas? A: Yes. […] When players combine game
 areas, they must discard copies of unique cards until only one of each remains in
 that game area. If the players cannot agree which one to discard, the first player
-decides."* That needs a uniqueness concept the engine does not have, and the
-combine case needs a prompt. It is a fourth rule of place and it belongs here when
-uniqueness exists.
+decides."* Play, put-into-play, and reveal restrictions therefore consult
+`Places.CanAffect`: a matching unique card in another game area places no limit.
+The combine case remains outside the supported scenario surface because it needs
+a prompt to choose which copy is discarded; no scenario currently calls
+`World.Join` during play.
 
 **The engine tells a client each topology change once.** `World.Join` and
 `World.Detach` are operations on a play area and emit one `PlayAreaJoined` or

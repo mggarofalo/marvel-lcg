@@ -8,11 +8,11 @@ The audit is a work list, not a generated coverage gate. The source of truth for
 
 | Disposition | Records |
 |---|---:|
-| Executable and cited | 827 |
-| Covered by a narrower rule | 50 |
+| Executable and cited | 867 |
+| Covered by a narrower rule | 55 |
 | Redirect or summary | 122 |
 | Not enforceable by an engine | 46 |
-| Outside the supported product boundary | 135 |
+| Outside the supported product boundary | 90 |
 | Unimplemented behavior | 38 |
 | Total | 1,218 |
 
@@ -29,6 +29,28 @@ MARVEL-268 through MARVEL-293 hold the active coverage batches and the
 implementation work those batches exposed in the Rules Reference Coverage
 module. MARVEL-254 records the one known ordering gap outside those broad work
 items.
+
+### MARVEL-272 product-boundary verification
+
+MARVEL-272 originally held 79 records as one provisional product boundary.
+The engine now supports 45 of them: 40 records are executable and directly
+cited, and five parent records are covered by narrower cited clauses. The
+remaining 34 records stay outside the supported boundary for these concrete
+reasons:
+
+| Unsupported surface | Records | Evidence |
+|---|---:|---|
+| One-aspect deck selection | 1 | `rr:aspect-card.1`; current setup accepts a complete starter product, not a user-selected customizable deck or identity-specific deckbuilding override. |
+| Campaign input and persistence | 4 | `rr:classifications.6`, `rr:campaign-specific-card`, `.2`, and `rr:you-your.17`; `GameSetup` has no campaign state, campaign role, same-product campaign classification, or campaign-card recipient input. |
+| Foldable identity faces | 1 | `rr:flip.1`; supported identities have two engine faces, while foldable three-sided identities have no representation. |
+| Private collection inspection | 5 | `rr:look-looked-at`, `.1`, `.1.1`, `rr:search.4`, and `.4.1`; the engine has no collection area or per-player private-view result. |
+| Later play modes | 11 | `rr:modes-of-play` and `.3`–`.12`; setup persists Standard or Expert only, with no campaign, heroic, skirmish, or mode-combination input. |
+| Player side schemes | 11 | `rr:player-side-scheme.1`–`.5.2` and `rr:player-side-scheme-limit`–`.3`; generated card facts have no player-side-scheme kind and setup has no player-side-scheme deck construction. |
+| Setup step 13 | 1 | `rr:appendix-ii-setup.step.13`; no supported setup product supplies the campaign/setup instructions this step would resolve. |
+
+This split is based on current public setup inputs and generated card facts. It
+does not infer behavior from a later product merely because its rule appears in
+Rules Reference v1.8.
 
 ## Record classifications
 
@@ -131,9 +153,9 @@ items.
 | `rr:and.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:and.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:arrow-icon` | Redirect or summary | — | This record redirects readers to Cost Arrow Icon; the destination carries the rule. |
-| `rr:aspect-card` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
+| `rr:aspect-card` | Covered by a narrower rule | — | The cited child clauses state the supported classification and deck-construction decisions more precisely. |
 | `rr:aspect-card.1` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
-| `rr:aspect-card.2` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
+| `rr:aspect-card.2` | Executable and cited | — | Deck-construction tests accept the five generated aspect classifications and reject non-player classifications. |
 | `rr:assault` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:assault.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:assault.2` | Executable and cited | — | A behavior test directly cites this record. |
@@ -204,10 +226,10 @@ items.
 | `rr:attacks-against-allies.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attacks-against-allies.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:base-value` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:basic-card` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
-| `rr:basic-card.1` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
-| `rr:basic-card.2` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
-| `rr:basic-card.3` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
+| `rr:basic-card` | Covered by a narrower rule | — | The cited child clauses state the supported classification and deck-construction decisions more precisely. |
+| `rr:basic-card.1` | Executable and cited | — | Generated card facts and the complete starter-deck validation hold Basic cards to their printed classification. |
+| `rr:basic-card.2` | Executable and cited | — | Deck-construction tests accept Basic and aspect cards and reject non-player classifications. |
+| `rr:basic-card.3` | Executable and cited | — | Every supported starter deck is validated with Basic cards available to every identity. |
 | `rr:basic-power` | Redirect or summary | — | This entry summarizes the dedicated attack, thwart, defense, recovery, and scheme entries. |
 | `rr:basic-power.1` | Redirect or summary | — | This record lists the five powers stated by the dedicated entries. |
 | `rr:basic-power.1.1` | Redirect or summary | — | The attack ability-type entry states this power more precisely. |
@@ -225,9 +247,9 @@ items.
 | `rr:boost-boost-icon.6.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:campaign-mode` | Redirect or summary | — | This record redirects readers to Modes of Play; the destination carries the rule. |
 | `rr:campaign-specific-card` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
-| `rr:campaign-specific-card.1` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
+| `rr:campaign-specific-card.1` | Executable and cited | — | Deck construction rejects Campaign-class cards from ordinary player-deck customization. |
 | `rr:campaign-specific-card.2` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
-| `rr:campaign-specific-card.3` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
+| `rr:campaign-specific-card.3` | Executable and cited | — | Generated Class facts distinguish Campaign cards from player-deck classifications. |
 | `rr:cancel` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:cancel.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:cancel.2` | Executable and cited | — | A behavior test directly cites this record. |
@@ -260,15 +282,15 @@ items.
 | `rr:choose-option.2.1` | Outside the supported product boundary | MARVEL-264 | No supported card or mode currently reaches this rule; Future Expansions owns it when that product surface opens. |
 | `rr:choose-option.2.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:choose-option.3` | Outside the supported product boundary | MARVEL-264 | No supported card or mode currently reaches this rule; Future Expansions owns it when that product surface opens. |
-| `rr:classifications` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
-| `rr:classifications.1` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
-| `rr:classifications.2` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
-| `rr:classifications.3` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
-| `rr:classifications.4` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
-| `rr:classifications.5` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
-| `rr:classifications.6` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
-| `rr:classifications.7` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
-| `rr:classifications.8` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
+| `rr:classifications` | Covered by a narrower rule | — | The cited child clauses state each supported product classification more precisely. |
+| `rr:classifications.1` | Executable and cited | — | All 63 supported starter products validate identity-specific set membership. |
+| `rr:classifications.2` | Executable and cited | — | All 63 supported starter products validate obligation set membership. |
+| `rr:classifications.3` | Executable and cited | — | All 63 supported starter products validate nemesis set membership. |
+| `rr:classifications.4` | Executable and cited | — | Core setup tests hold fixed scenario-specific sets to their setup source. |
+| `rr:classifications.5` | Executable and cited | — | Core setup tests distinguish selected modular sets from fixed scenario sets. |
+| `rr:classifications.6` | Outside the supported product boundary | MARVEL-272 | Setup has no campaign input or same-product campaign classification with which to enforce this restriction. |
+| `rr:classifications.7` | Executable and cited | — | Setup validation holds the Standard sets to fixed difficulty-set membership. |
+| `rr:classifications.8` | Executable and cited | — | Setup validation holds the Expert sets to fixed difficulty-set membership. |
 | `rr:confuse-confused` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:confuse-confused.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:confuse-confused.2` | Executable and cited | — | A behavior test directly cites this record. |
@@ -286,7 +308,7 @@ items.
 | `rr:consequential-damage.2.2` | Not enforceable by an engine | — | This record is an example, not a separate game-state decision. |
 | `rr:constant-ability` | Redirect or summary | — | This record redirects readers to Ability; the destination carries the rule. |
 | `rr:control` | Redirect or summary | — | This record redirects readers to Ownership and Control; the destination carries the rule. |
-| `rr:copy` | Outside the supported product boundary | MARVEL-272 | Title matching becomes executable when deckbuilding and uniqueness checks cross product boundaries. |
+| `rr:copy` | Executable and cited | — | Deck maximums group copies by both title and subtitle; a differing-subtitle control pins the distinction. |
 | `rr:cost` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:cost.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:cost.1.1` | Executable and cited | — | A behavior test directly cites this record. |
@@ -408,7 +430,7 @@ items.
 | `rr:encounter-discard-pile` | Redirect or summary | — | This record redirects readers to Discard Pile; the destination carries the rule. |
 | `rr:encounter-set` | Not enforceable by an engine | — | This record defines an encounter set as a grouping of encounter cards. |
 | `rr:encounter-set.1` | Redirect or summary | — | The four dedicated encounter-set entries state the rules for each listed type. |
-| `rr:encounter-set.2` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
+| `rr:encounter-set.2` | Executable and cited | — | Modular selection validates the printed set icon of every card rather than a display name. |
 | `rr:end-of-player-phase` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:end-of-player-phase.step.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:end-of-player-phase.step.2` | Executable and cited | — | A behavior test directly cites this record. |
@@ -442,8 +464,8 @@ items.
 | `rr:exhausted.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:expert-mode` | Redirect or summary | — | This record redirects readers to Modes of Play; the destination carries the rule. |
 | `rr:expert-set` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:expert-set.1` | Outside the supported product boundary | MARVEL-272 | Selecting or rejecting fixed encounter sets as modular choices needs product-level set validation. |
-| `rr:expert-set.2` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
+| `rr:expert-set.1` | Executable and cited | — | Explicit modular selection rejects every generated Expert set icon. |
+| `rr:expert-set.2` | Executable and cited | — | Core setup tests distinguish Expert from Standard difficulty setup. |
 | `rr:find` | Outside the supported product boundary | MARVEL-264 | The expansion-only revision batch owns the find instruction. |
 | `rr:find.1` | Not enforceable by an engine | — | This defines the term find. |
 | `rr:find.2` | Outside the supported product boundary | MARVEL-264 | The expansion-only revision batch owns the find instruction. |
@@ -547,10 +569,10 @@ items.
 | `rr:identity.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:identity.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:identity-specific-card` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:identity-specific-card.1` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
-| `rr:identity-specific-card.2` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
+| `rr:identity-specific-card.1` | Executable and cited | — | Every supported starter deck includes its generated identity-specific cards. |
+| `rr:identity-specific-card.2` | Executable and cited | — | Deck construction rejects an identity-specific card with a different printed set icon. |
 | `rr:identity-specific-card.3` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:identity-specific-card.3.1` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
+| `rr:identity-specific-card.3.1` | Executable and cited | — | Exactly one identity creation is required for each dealt player. |
 | `rr:ignore` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:ignore.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:in-play-and-out-of-play` | Executable and cited | — | A behavior test directly cites this record. |
@@ -652,7 +674,7 @@ items.
 | `rr:lasting-effects.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:lasting-effects.5` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:lasting-effects.6` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:leader` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, campaign, or product classification behavior not yet supported. |
+| `rr:leader` | Executable and cited | — | `LeaderSetupTests` directly holds supported Civil War leaders to the villain rules for setup, targeting, state, and defeat. |
 | `rr:leaves-play` | Executable and cited | — | `LifecycleRulesTests` holds an in-play card's move into its out-of-play discard area. |
 | `rr:leaves-play.1` | Executable and cited | — | `LifecycleRulesTests` holds a returning card to a new incarnation without its old state. |
 | `rr:leaves-play.2` | Executable and cited | — | `LifecycleRulesTests` holds the complete non-villain hosted-state cleanup. |
@@ -727,9 +749,9 @@ items.
 | `rr:modifiers.6.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:modifiers.7` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:modular-encounter-set` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:modular-encounter-set.1` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
+| `rr:modular-encounter-set.1` | Executable and cited | — | An explicit modular choice must resolve to one complete generated set icon. |
 | `rr:modular-encounter-set.2` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:modular-encounter-set.3` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
+| `rr:modular-encounter-set.3` | Executable and cited | — | Setup distinguishes modular set choices from fixed scenario and difficulty sets. |
 | `rr:move` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:move.1` | Executable and cited | — | `MoveDamageTests` holds moving to the same entity to no change. |
 | `rr:move.2` | Executable and cited | — | A behavior test directly cites this record. |
@@ -741,8 +763,8 @@ items.
 | `rr:move.6` | Outside the supported product boundary | MARVEL-264 | The expansion-only revision batch owns the revised move instruction. |
 | `rr:move.7` | Outside the supported product boundary | MARVEL-264 | The expansion-only revision batch owns the revised move instruction. |
 | `rr:nemesis-encounter-set` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:nemesis-encounter-set.1` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, campaign, or product classification behavior not yet supported. |
-| `rr:nemesis-encounter-set.2` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, campaign, or product classification behavior not yet supported. |
+| `rr:nemesis-encounter-set.1` | Executable and cited | — | All 63 supported starter products validate one identity-specific nemesis set. |
+| `rr:nemesis-encounter-set.2` | Executable and cited | — | Nemesis set icons are validated against the chosen identity's generated set icon. |
 | `rr:nemesis-encounter-set.3` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:nemesis-encounter-set.3.1` | Outside the supported product boundary | MARVEL-264 | No supported card or mode currently reaches this rule; Future Expansions owns it when that product surface opens. |
 | `rr:nemesis-encounter-set.4` | Executable and cited | — | A behavior test directly cites this record. |
@@ -751,7 +773,7 @@ items.
 | `rr:obligation` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:obligation.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:obligation.2` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:obligation.3` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, campaign, or product classification behavior not yet supported. |
+| `rr:obligation.3` | Executable and cited | — | All 63 supported starter products validate obligations against the chosen identity's set icon. |
 | `rr:obligation.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:obligation.5` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:obligation.6` | Executable and cited | — | A behavior test directly cites this record. |
@@ -792,7 +814,7 @@ items.
 | `rr:permanent` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:permanent.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:permanent.2` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:permanent.3` | Outside the supported product boundary | MARVEL-272 | Deck construction and deck-size validation are product-boundary work. |
+| `rr:permanent.3` | Executable and cited | — | Deck-size validation excludes printed Permanent cards. |
 | `rr:permanent.4` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:permanent.4.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:permanent.5` | Outside the supported product boundary | MARVEL-264 | The expansion-only revision batch owns permanent attachment reattachment. |
@@ -963,10 +985,10 @@ items.
 | `rr:rookie-mode` | Redirect or summary | — | This record redirects readers to Modes of Play; the destination carries the rule. |
 | `rr:round-structure` | Redirect or summary | — | This record redirects readers to Overview - Round Overview, End of the Player Phase,; the destination carries the rule. |
 | `rr:running-out-of-cards` | Redirect or summary | — | This record redirects readers to Encounter Deck, Player Deck; the destination carries the rule. |
-| `rr:scenario-specific-card` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
-| `rr:scenario-specific-card.1` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
-| `rr:scenario-specific-card.2` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
-| `rr:scenario-specific-card.3` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
+| `rr:scenario-specific-card` | Covered by a narrower rule | — | The cited child clauses state the supported setup decisions more precisely. |
+| `rr:scenario-specific-card.1` | Executable and cited | — | Authored setup data includes the required fixed scenario-specific sets. |
+| `rr:scenario-specific-card.2` | Executable and cited | — | Fixed scenario-specific sets are not exposed as modular choices. |
+| `rr:scenario-specific-card.3` | Executable and cited | — | Core setup tests distinguish scenario-specific from modular set sources. |
 | `rr:sch` | Redirect or summary | — | This record redirects readers to Basic Power, Scheme (Enemy Activation); the destination carries the rule. |
 | `rr:scheme-card-type` | Not enforceable by an engine | — | This record classifies the three printed scheme card types; its child clause carries the decision. |
 | `rr:scheme-card-type.1` | Unimplemented behavior | MARVEL-275 | The resumable-choice work item owns selecting which main or side scheme an ability affects. |
@@ -1008,8 +1030,8 @@ items.
 | `rr:stalwart.2` | Unimplemented behavior | MARVEL-287 | The dynamic hit-point and status implementation work item owns this executable rule. |
 | `rr:standard-mode` | Redirect or summary | — | This record redirects readers to Modes of Play; the destination carries the rule. |
 | `rr:standard-set` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:standard-set.1` | Outside the supported product boundary | MARVEL-272 | Selecting or rejecting fixed encounter sets as modular choices needs product-level set validation. |
-| `rr:standard-set.2` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
+| `rr:standard-set.1` | Executable and cited | — | Explicit modular selection rejects every generated Standard set icon. |
+| `rr:standard-set.2` | Executable and cited | — | Core setup tests distinguish Standard from Expert difficulty setup. |
 | `rr:star-icon` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:star-icon.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:star-icon.2` | Executable and cited | — | A behavior test directly cites this record. |
@@ -1077,7 +1099,7 @@ items.
 | `rr:target.6` | Executable and cited | — | A search with a searchable area initiates even when no card matches. |
 | `rr:target-threat` | Not enforceable by an engine | — | This record defines printed anatomy; main-scheme clauses carry the executable threshold behavior. |
 | `rr:team-up` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:team-up.1` | Outside the supported product boundary | MARVEL-272 | The parent citation proves the play restriction; this combined clause also requires deck-building validation. |
+| `rr:team-up.1` | Executable and cited | — | Deck construction rejects a Team-Up card unless its printed names match the chosen identity's forms. |
 | `rr:team-up.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:teamwork` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:teamwork.1` | Redirect or summary | — | This shorter restatement is covered by the cited parent keyword, which retains the word “other.” |
@@ -1128,15 +1150,15 @@ items.
 | `rr:undefended` | Redirect or summary | — | This record redirects readers to Attack (Enemy Activation); the destination carries the rule. |
 | `rr:unique-icon` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
 | `rr:unique-icon.1` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
-| `rr:unique-icon.1.1` | Outside the supported product boundary | MARVEL-272 | The uniqueness work item owns title matching without subtitles or alter-ego titles. |
+| `rr:unique-icon.1.1` | Executable and cited | — | Matching unique cards with bare titles is directly tested. |
 | `rr:unique-icon.1.2` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:unique-icon.2` | Outside the supported product boundary | MARVEL-272 | The uniqueness work item owns matching-card deckbuilding limits. |
-| `rr:unique-icon.2.1` | Outside the supported product boundary | MARVEL-272 | The uniqueness work item owns matching cards added after setup begins. |
-| `rr:unique-icon.3` | Outside the supported product boundary | MARVEL-272 | The uniqueness work item owns identity selection. |
-| `rr:unique-icon.3.1` | Outside the supported product boundary | MARVEL-272 | The uniqueness work item owns the identity and villain exception. |
-| `rr:unique-icon.4` | Outside the supported product boundary | MARVEL-272 | The uniqueness work item owns matching cards entering play. |
-| `rr:unique-icon.4.1` | Outside the supported product boundary | MARVEL-272 | The uniqueness work item owns play and put-into-play checks. |
-| `rr:unique-icon.4.2` | Outside the supported product boundary | MARVEL-272 | The uniqueness work item owns encounter-card reveal handling. |
+| `rr:unique-icon.2` | Executable and cited | — | Deck construction rejects matching unique cards, including a match against the identity. |
+| `rr:unique-icon.2.1` | Executable and cited | — | A direct control permits matching unique cards added after setup begins. |
+| `rr:unique-icon.3` | Executable and cited | — | Setup rejects matching unique identities selected by different players. |
+| `rr:unique-icon.3.1` | Executable and cited | — | A direct control permits a matching identity and villain. |
+| `rr:unique-icon.4` | Covered by a narrower rule | — | The two cited child clauses state the player-card and encounter-card decisions precisely. |
+| `rr:unique-icon.4.1` | Executable and cited | — | Matching player cards cannot be played or put into play. |
+| `rr:unique-icon.4.2` | Executable and cited | — | Matching revealed encounter cards are discarded, ignored, and replaced facedown. |
 | `rr:upgrade` | Not enforceable by an engine | — | This record names a printed card type; its clauses carry the executable upgrade rules. |
 | `rr:upgrade.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:upgrade.2` | Executable and cited | — | A behavior test directly cites this record. |

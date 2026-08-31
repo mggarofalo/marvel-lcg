@@ -30,11 +30,12 @@ namespace Marvel.Content.Tests.Play;
 public sealed class ResourceAbilityTests
 {
     /// <summary>
-    /// `01006` Aunt May — a support costing one. An <i>event</i> would not do:
+    /// `01026` Superhuman Law Division — a non-unique support costing one. An
+    /// <i>event</i> would not do:
     /// `rr:player-turn.2` does not list one, so `CardPlay.Price` refuses to
     /// offer it and there would be no cost to pay.
     /// </summary>
-    private const string Cheap = "01006";
+    private const string Cheap = "01026";
 
     private static readonly SetupCatalog Setup =
         SetupCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("setup", "setup.json")));

@@ -93,6 +93,15 @@ public sealed class CoreSetupTests
 
     [Rule("rr:modes-of-play.2")]
     [Rule("rr:modes-of-play.1")]
+    [Rule("rr:classifications.4")]
+    [Rule("rr:classifications.5")]
+    [Rule("rr:classifications.7")]
+    [Rule("rr:classifications.8")]
+    [Rule("rr:expert-set.2")]
+    [Rule("rr:scenario-specific-card.1")]
+    [Rule("rr:scenario-specific-card.2")]
+    [Rule("rr:scenario-specific-card.3")]
+    [Rule("rr:standard-set.2")]
     [Fact]
     public void TheThreeCoreScenariosAndBothModesAreThePrintedLists()
     {
@@ -237,7 +246,10 @@ public sealed class CoreSetupTests
     }
 
     [Rule("rr:modular-encounter-set")]
+    [Rule("rr:modular-encounter-set.1")]
     [Rule("rr:modular-encounter-set.2")]
+    [Rule("rr:modular-encounter-set.3")]
+    [Rule("rr:encounter-set.2")]
     [Rule("rr:appendix-ii-setup.step.10")]
     [Fact]
     public void EveryCoreModularSetCanReplaceRhinosRecommendation()
@@ -246,7 +258,7 @@ public sealed class CoreSetupTests
         // an entire set." Every printed card in each selected set must appear.
         foreach (var (name, printed) in ModularSets)
         {
-            var order = Dealer.DealOrder(Setup, "rhino", ["spider_man"], [name]);
+            var order = Dealer.DealOrder(Setup, "rhino", ["spider_man"], [name], Cards);
             var chosen = order
                 .Where(creation => creation.Source == CreationSource.EncounterSet)
                 .Select(creation => creation.Spec)
@@ -288,6 +300,23 @@ public sealed class CoreSetupTests
             .Select(creation => creation.Spec);
 
         Same(source, "only the fixed Standard set", Setup.EncounterSet("standard"), chosen);
+    }
+
+    [Rule("rr:standard-set.1")]
+    [Rule("rr:expert-set.1")]
+    [Theory]
+    [InlineData("standard")]
+    [InlineData("expert")]
+    [InlineData("standard_ii")]
+    [InlineData("expert_ii")]
+    public void AFixedDifficultySetCannotBeSelectedAsAModularSet(string set)
+    {
+        // Both rules say the named set “is not a modular encounter set and
+        // cannot be selected” when a scenario asks for a modular set.
+        var refused = Assert.Throws<ArgumentException>(() => Dealer.DealOrder(
+            Setup, "rhino", ["spider_man"], [set], Cards));
+
+        Assert.Contains("not a modular set", refused.Message, StringComparison.Ordinal);
     }
 
     private static World Deal(string campaign, string hero)

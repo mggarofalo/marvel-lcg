@@ -195,6 +195,13 @@ internal static partial class Printed
         Extract.Keywords.Read(text, printed);
         Scheme(card, printed);
 
+        if (card.Flag("is_unique"))
+        {
+            // The star beside the title is upstream's structured `is_unique`
+            // fact. `Unique` is this dataset's spelling for that printed icon.
+            printed["Unique"] = "1";
+        }
+
         if (card.Text("stage") is { Length: > 0 } stage)
         {
             // Upstream writes a villain's stage as a roman numeral and a main

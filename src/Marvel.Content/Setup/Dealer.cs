@@ -1,3 +1,5 @@
+using Marvel.Rules.State;
+
 namespace Marvel.Content.Setup;
 
 /// <summary>
@@ -40,15 +42,23 @@ public static class Dealer
     /// <param name="modularSetNames">
     /// The chosen modular sets, or null to use the scenario's recommended sets.
     /// </param>
+    /// <param name="facts">
+    /// Printed facts used to reject a Standard or Expert set selected as a
+    /// modular set. Null preserves the data-only deal-order operation.
+    /// </param>
     /// <exception cref="KeyNotFoundException">A name the dataset does not hold.</exception>
     public static IReadOnlyList<Creation> DealOrder(
         SetupCatalog catalog, string campaignName, IReadOnlyList<string> heroNames,
-        IReadOnlyList<string>? modularSetNames = null)
+        IReadOnlyList<string>? modularSetNames = null, ICardFacts? facts = null)
     {
         ArgumentNullException.ThrowIfNull(catalog);
         ArgumentNullException.ThrowIfNull(heroNames);
 
         var campaign = catalog.Campaign(campaignName);
+        if (facts is not null && modularSetNames is not null)
+        {
+            ValidateModularSets(catalog, facts, modularSetNames);
+        }
         var dealt = new List<Creation>
         {
             new("rule_a,rule_b", CreationSource.Rules, Creation.Scenario),
@@ -87,6 +97,11 @@ public static class Dealer
             Add(catalog.EncounterSet(setName), CreationSource.EncounterSet, Creation.Scenario);
         }
 
+        if (facts is not null)
+        {
+            DeckConstruction.Validate(dealt, facts);
+        }
+
         return dealt;
 
         void Add(IEnumerable<string> specs, CreationSource source, int player)
@@ -94,6 +109,36 @@ public static class Dealer
             foreach (var spec in specs)
             {
                 dealt.Add(new Creation(spec, source, player));
+            }
+        }
+    }
+
+    private static void ValidateModularSets(
+        SetupCatalog catalog, ICardFacts facts, IReadOnlyList<string> selected)
+    {
+        foreach (string name in selected)
+        {
+            var cards = catalog.EncounterSet(name);
+            var setIcons = cards.SelectMany(spec => spec.Split(','))
+                .Select(facts.EncounterSet)
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
+            if (setIcons.Count != 1)
+            {
+                throw new ArgumentException(
+                    $"encounter set '{name}' contains {setIcons.Count} printed set icons",
+                    nameof(selected));
+            }
+
+            string icon = setIcons[0];
+            if (icon.StartsWith("standard", StringComparison.Ordinal)
+                || icon.StartsWith("expert", StringComparison.Ordinal))
+            {
+                // `rr:standard-set.1` and `rr:expert-set.1`: neither set is a
+                // modular encounter set and neither can be selected as one.
+                throw new ArgumentException(
+                    $"encounter set '{name}' is the printed {icon} set, not a modular set",
+                    nameof(selected));
             }
         }
     }

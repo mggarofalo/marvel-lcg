@@ -482,6 +482,12 @@ public static class CardPlay
                 $"ally {ally.ObjectId} can only be put into play in {form} form");
         }
 
+        if (Uniqueness.IsBlocked(world, facts, ally, PlayArea.Of(controller)))
+        {
+            // `rr:unique-icon.4.1`: an attempted put-into-play has no effect.
+            return;
+        }
+
         var from = ally.Area;
         int previousController = from.PlayArea.IsPlayers
             ? from.PlayArea.Player
@@ -768,6 +774,13 @@ public static class CardPlay
         // unless both of the named friendly characters (identity or ally) are
         // in play".
         if (!TeamedUp(world, facts, card))
+        {
+            return false;
+        }
+
+        // `rr:unique-icon.4.1`: a matching unique player card cannot be
+        // played or put into play while its counterpart is in play.
+        if (Uniqueness.IsBlocked(world, facts, card))
         {
             return false;
         }
