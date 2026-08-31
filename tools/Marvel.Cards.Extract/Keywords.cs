@@ -227,19 +227,28 @@ internal static partial class Keywords
         var kept = new List<string>();
         foreach (string sentence in text.Split(['.', '\n'], StringSplitOptions.TrimEntries))
         {
+            // Expansion inserts use a star to mark a keyword with scenario-
+            // specific rules. `Printed.Plain` spells the icon `star`, which is
+            // not part of the keyword and must not make the lower-case guard
+            // reject the sentence. The rulebook names the star's meaning; the
+            // engine chooses this spelling for upstream's icon token.
+            string candidate = sentence.StartsWith("star ", StringComparison.Ordinal)
+                ? sentence["star ".Length..].TrimStart()
+                : sentence;
+
             // The closing half of a reminder-text parenthesis, left behind
             // because the stop inside it was a split point.
-            if (sentence.Length == 0 || sentence.All(letter => !char.IsLetterOrDigit(letter)))
+            if (candidate.Length == 0 || candidate.All(letter => !char.IsLetterOrDigit(letter)))
             {
                 continue;
             }
 
-            if (!Looks(sentence))
+            if (!Looks(candidate))
             {
                 break;
             }
 
-            kept.Add(sentence);
+            kept.Add(candidate);
         }
 
         return string.Join(". ", kept) + ".";

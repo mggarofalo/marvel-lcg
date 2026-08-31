@@ -75729,7 +75729,8 @@
         "Cost": "2*",
         "MaxPerUnit": "1",
         "MaxPerUnitKind": "player",
-        "RES": "Y"
+        "RES": "Y",
+        "Temporary": "1"
       },
       "text": "[star] Discount 1 ([[Martial Artist]] or [[Spy]]).\nTemporary. Max 1 per player.\n<b>Response</b> <i>(thwart)</i>: After you play a card <i>(including this one)</i>, remove 1 threat from a scheme.",
       "text_plain": "star Discount 1 (Martial Artist or Spy).\nTemporary. Max 1 per player.\nResponse (thwart): After you play a card (including this one), remove 1 threat from a scheme.",
@@ -77007,8 +77008,10 @@
       "attributes": {
         "Class": "Basic",
         "Cost": "0",
+        "Hinder": "1*",
         "RES": "R",
-        "StartingThreat": "3*"
+        "StartingThreat": "3*",
+        "Victory": "0"
       },
       "text": "[star] Hinder 1[per_hero].\nPrerequisite ([[Defender]]). Victory 0.\n<b>When Defeated</b>: Each player may search their deck and discard pile for a Team-Up card and add it to their hand. Until the end of the phase, reduce the cost to play each Team-Up card by 1.",
       "text_plain": "star Hinder 1per_hero.\nPrerequisite (Defender). Victory 0.\nWhen Defeated: Each player may search their deck and discard pile for a Team-Up card and add it to their hand. Until the end of the phase, reduce the cost to play each Team-Up card by 1.",
@@ -77056,6 +77059,7 @@
       "traits": [],
       "attributes": {
         "Boost": "1",
+        "Hinder": "3*",
         "Nemesis": "Jessica Jones",
         "StartingThreat": "2*"
       },
