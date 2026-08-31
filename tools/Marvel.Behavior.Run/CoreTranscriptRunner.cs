@@ -222,6 +222,15 @@ internal sealed class CoreTranscriptRunner
         Bind("set-card-readiness", TranscriptStepKind.Given,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is (?<state>ready|exhausted)",
             SetCardReadiness),
+        Bind("set-card-damage", TranscriptStepKind.Given,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) has (?<count>\d+) damage",
+            SetCardDamage),
+        Bind("place-support", TranscriptStepKind.Given,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is a support controlled by seat (?<seat>\d+)",
+            PlaceSupport),
+        Bind("engage-minion", TranscriptStepKind.Given,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is a minion engaged with seat (?<seat>\d+)",
+            EngageMinion),
         Bind("stack-encounter-deck-discard", TranscriptStepKind.Given,
             "the encounter deck contains only these next cards with all other deck cards in the encounter discard pile",
             StackEncounterDeckWithDiscard),
@@ -252,6 +261,11 @@ internal sealed class CoreTranscriptRunner
             "the end-of-player-phase draw step resolves", PhaseDraw),
         Bind("phase-ready", TranscriptStepKind.When,
             "the end-of-player-phase ready step resolves", PhaseReady),
+        Bind("villain-damages-card", TranscriptStepKind.When,
+            @"the villain deals (?<count>\d+) damage to card (?<face>\d+[a-z]?) copy (?<copy>\d+)",
+            VillainDamagesCard),
+        Bind("identity-defeated", TranscriptStepKind.When,
+            @"seat (?<seat>\d+)'s identity is defeated", IdentityDefeated),
         Bind("hand-count", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) has (?<count>\d+) cards? in hand", HandCount),
         Bind("player-deck-count", TranscriptStepKind.Then,
@@ -285,6 +299,26 @@ internal sealed class CoreTranscriptRunner
             EventOrder),
         Bind("players-lose", TranscriptStepKind.Then,
             "the players lose the game", PlayersLose),
+        Bind("seat-eliminated", TranscriptStepKind.Then,
+            @"seat (?<seat>\d+) is eliminated", SeatEliminated),
+        Bind("first-player", TranscriptStepKind.Then,
+            @"seat (?<seat>\d+) has the first player token", FirstPlayer),
+        Bind("minion-engaged", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is engaged with seat (?<seat>\d+)",
+            MinionEngaged),
+        Bind("card-damage", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) has (?<count>\d+) damage",
+            CardDamage),
+        Bind("card-removed", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is removed from the game",
+            CardRemoved),
+        Bind("player-order", TranscriptStepKind.Then,
+            @"the player order is (?<order>[\d,]+)", PlayerOrder),
+        Bind("per-player-count", TranscriptStepKind.Then,
+            @"the per-player count is (?<count>\d+)", PerPlayerCount),
+        Bind("card-event-order", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) had a (?<first>[A-Za-z_]+) event before an (?<second>[A-Za-z_]+) event",
+            CardEventOrder),
         Bind("cataloged-exception", TranscriptStepKind.Then,
             "the engine raises the cataloged unimplemented rule exception", CatalogedException),
     ];
@@ -364,6 +398,23 @@ internal sealed class CoreTranscriptRunner
         context.SceneRequired(step).Apply(new SetSceneReady(
             SceneCard(match, step),
             string.Equals(match.Groups["state"].Value, "ready", StringComparison.Ordinal)));
+
+    private static void SetCardDamage(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        context.SceneRequired(step).Apply(new SetSceneDamage(
+            SceneCard(match, step), Number(match, "count", step)));
+
+    private static void PlaceSupport(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        context.SceneRequired(step).Apply(new MoveSceneCard(
+            SceneCard(match, step),
+            new SceneDestination(SceneZone.Support, Seat(match, step))));
+
+    private static void EngageMinion(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        context.SceneRequired(step).Apply(new MoveSceneCard(
+            SceneCard(match, step),
+            new SceneDestination(SceneZone.EngagedMinion, Seat(match, step))));
 
     private static void StackEncounterDeckWithDiscard(
         TranscriptContext context, TranscriptStep step, Match match)
@@ -506,6 +557,38 @@ internal sealed class CoreTranscriptRunner
         context.Events.Clear();
         context.CurrentPrompt = "<none>";
         PhaseEnd.ReadyCards(context.World, context.Events);
+    }
+
+    private static void VillainDamagesCard(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Card villain = context.World.TheCardIn(DeckType.VillainArea)
+            ?? throw new TranscriptException($"{step.Location}: no villain is in play");
+        Card target = context.SceneRequired(step).Find(SceneCard(match, step));
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        _ = Damage.Deal(
+            context.World,
+            context.Cards,
+            villain,
+            target,
+            Number(match, "count", step),
+            "behavioral transcript",
+            "Damage",
+            context.Events);
+    }
+
+    private static void IdentityDefeated(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        Elimination.Eliminate(
+            context.World,
+            context.Cards,
+            Seat(match, step),
+            "behavioral transcript",
+            context.Events);
     }
 
     private static void HandCount(
@@ -684,6 +767,96 @@ internal sealed class CoreTranscriptRunner
                 $"{step.Location}: expected PlayersLose; was {context.World.Result}");
         }
     }
+
+    private static void SeatEliminated(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        if (!context.World.Seats[seat].Eliminated)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected seat {seat + 1} to be eliminated");
+        }
+    }
+
+    private static void FirstPlayer(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        Equal(Seat(match, step), context.World.FirstPlayer, "first-player seat", step);
+
+    private static void MinionEngaged(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        if (card.Area.Type != DeckType.EngagedEnemiesArea
+            || card.Area.PlayArea != PlayArea.Of(seat))
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected card {card.ObjectId} engaged with seat "
+                + $"{seat + 1}; was {card.Area}");
+        }
+    }
+
+    private static void CardDamage(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        Equal(
+            Number(match, "count", step),
+            checked((int)context.SceneRequired(step).Find(SceneCard(match, step)).Damage),
+            "damage on the card",
+            step);
+
+    private static void CardRemoved(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        if (card.Area.Type != DeckType.RemovedArea)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected card {card.ObjectId} removed; was {card.Area}");
+        }
+    }
+
+    private static void PlayerOrder(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int[] expected = [.. match.Groups["order"].Value
+            .Split(',')
+            .Select(value => int.Parse(value, CultureInfo.InvariantCulture) - 1)];
+        if (!context.World.PlayerOrder.SequenceEqual(expected))
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected player order "
+                + $"{string.Join(',', expected.Select(seat => seat + 1))}; was "
+                + string.Join(',', context.World.PlayerOrder.Select(seat => seat + 1)));
+        }
+    }
+
+    private static void PerPlayerCount(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        Equal(Number(match, "count", step), context.World.Players,
+            "players counted by the per-player icon", step);
+
+    private static void CardEventOrder(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int card = context.SceneRequired(step).Find(SceneCard(match, step)).ObjectId;
+        int first = context.Events.FindIndex(gameEvent =>
+            gameEvent.Verb == match.Groups["first"].Value
+            && EventLands(gameEvent, card));
+        int second = context.Events.FindIndex(gameEvent =>
+            gameEvent.Verb == match.Groups["second"].Value
+            && EventLands(gameEvent, card));
+        if (first < 0 || second <= first)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected {match.Groups["first"].Value} before "
+                + $"{match.Groups["second"].Value} for card {card}");
+        }
+    }
+
+    private static bool EventLands(GameEvent gameEvent, int card) =>
+        gameEvent is CardsMoved moved
+        && moved.Cards.Any(landing => landing.Card == card);
 
     private static void Equal(int expected, int actual, string observation, TranscriptStep step)
     {

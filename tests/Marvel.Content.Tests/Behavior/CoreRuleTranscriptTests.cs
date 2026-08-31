@@ -7,6 +7,25 @@ namespace Marvel.Content.Tests.Behavior;
 public sealed class CoreRuleTranscriptTests
 {
     [Fact]
+    public void PlayerEliminationBranchesHavePinnedOutcomes()
+    {
+        var suite = new CoreTranscriptSuite(RepositoryPaths.Root);
+        var results = suite.RunPassingCorpus()
+            .Where(result => result.Scenario.StartsWith(
+                "specs/behavior/core/player-elimination.feature::",
+                StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
+
+        Assert.Equal(2, results.Count);
+        Assert.Equal(
+            "738068fc245332178451bfe360292ac3d058c7b1cede5e38abfa090541f59e0f",
+            results["behavior:rr:player-elimination:published-result"].Digest);
+        Assert.Equal(
+            "c838d45bba9a3b039bc03b7084664ed0875d7d19ac9b5c8febff67f0a187569f",
+            results["behavior:rr:player-elimination.4:published-result"].Digest);
+    }
+
+    [Fact]
     public void EndOfPlayerPhaseBranchesHavePinnedOutcomes()
     {
         var suite = new CoreTranscriptSuite(RepositoryPaths.Root);

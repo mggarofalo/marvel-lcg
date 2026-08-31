@@ -5683,11 +5683,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-elimination.feature::A defeated identity is eliminated while the other player continues"
+          ],
+          "mutation": "CoreRuleTranscriptTests.PlayerEliminationBranchesHavePinnedOutcomes distinguishes identity removal."
         }
       ]
     },
@@ -14501,11 +14503,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-elimination.feature::A defeated identity is eliminated while the other player continues"
+          ],
+          "mutation": "CoreRuleTranscriptTests.PlayerEliminationBranchesHavePinnedOutcomes distinguishes identity defeat causing player elimination."
         }
       ]
     },
@@ -14573,11 +14577,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-elimination.feature::Eliminating the last player ends the game in a loss"
+          ],
+          "mutation": "CoreRuleTranscriptTests.PlayerEliminationBranchesHavePinnedOutcomes distinguishes the final elimination ending the game in a loss."
         }
       ]
     },
@@ -14627,11 +14633,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-elimination.feature::A defeated identity is eliminated while the other player continues"
+          ],
+          "mutation": "CoreRuleTranscriptTests.PlayerEliminationBranchesHavePinnedOutcomes distinguishes the eliminated player leaving turn order while remaining in the per-player count."
         }
       ]
     },
@@ -14645,11 +14653,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-elimination.feature::A defeated identity is eliminated while the other player continues"
+          ],
+          "mutation": "CoreRuleTranscriptTests.PlayerEliminationBranchesHavePinnedOutcomes distinguishes the first-player token passing to the next player."
         }
       ]
     },
@@ -14663,11 +14673,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-elimination.feature::A defeated identity is eliminated while the other player continues"
+          ],
+          "mutation": "CoreRuleTranscriptTests.PlayerEliminationBranchesHavePinnedOutcomes distinguishes the engaged minion moving intact to the next player."
         }
       ]
     },
@@ -14699,11 +14711,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-elimination.feature::A defeated identity is eliminated while the other player continues"
+          ],
+          "mutation": "CoreRuleTranscriptTests.PlayerEliminationBranchesHavePinnedOutcomes distinguishes the eliminated player's owned support entering discard before removal."
         }
       ]
     },
@@ -14717,11 +14731,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-elimination.feature::A defeated identity is eliminated while the other player continues"
+          ],
+          "mutation": "CoreRuleTranscriptTests.PlayerEliminationBranchesHavePinnedOutcomes distinguishes the eliminated play area and its contents being removed while another player continues."
         }
       ]
     },
