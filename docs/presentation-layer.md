@@ -436,6 +436,27 @@ in-process for the bundled case, a socket for the container. The engine makes th
 straightforward, because `(state, input) -> (state, affordances, events)` says
 nothing about where the function runs.
 
+**Implemented by MARVEL-167.** `IEngineTransport.Exchange` is that client
+interface. `InProcessTransport` delegates to the host in the bundled case;
+`SocketTransport` sends the same `EngineRequest` and receives the same
+`EngineResponse` in the hosted case. The host itself is one synchronous
+`EngineHost`, so transport I/O never creates an async or concurrent path into
+game state.
+
+The socket protocol is version 1, source-generated JSON in a four-byte
+big-endian length frame, with a 4 MiB maximum. One connection carries one
+request and one response. `open`, `resolve`, and `close` are the three
+operations; game ids and request correlation ids are opaque strings chosen by
+the client. These spellings and framing are **our wire-format choices**, not
+rules of the game. `src/Marvel.Server/Dockerfile` packages the same assembly and
+the three canonical runtime datasets for Linux.
+
+The response deliberately contains a prompt and events, never `World` or its
+digest. A fresh client's visible board projection is separate work for
+`Marvel.View` and the visibility owner below; making the digest a bootstrap
+shortcut would expose hidden state and turn an internal truth format into a
+client API.
+
 ### Affordances and events have to be wire types
 
 This is a new constraint on MARVEL-160 and MARVEL-161, and it is cheap now and

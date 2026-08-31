@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- One engine host, usable in-process by Godot and as a standalone socket
+       process. This is an I/O boundary; none of the projects it references
+       know whether their caller is embedded or remote. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Marvel.Server</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Marvel.Cards/Marvel.Cards.csproj" />
+    <ProjectReference Include="../Marvel.Content/Marvel.Content.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Marvel.Server.Tests" />
+  </ItemGroup>
+
+</Project>

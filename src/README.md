@@ -1,8 +1,9 @@
 # src/ — C# engine
 
-**Contracts first.** `Marvel.Core` holds the cross-engine RNG (MARVEL-8) and
-the state-digest serialiser (MARVEL-9/44). The engine resolve, the card DSL and the corpus replay harness
-are migration phases 4–6 and are not started. See [../docs/migration.md](../docs/migration.md) for the target architecture and [../docs/plane.md](../docs/plane.md) for how work is tracked.
+The engine and its hosts are implemented as plain .NET 8 projects. See
+[migration.md](../docs/migration.md) for the architecture and
+[presentation-layer.md](../docs/presentation-layer.md) for the build-enforced
+Godot wall and server topology.
 
 Current:
 
@@ -10,33 +11,27 @@ Current:
 Directory.Build.props / Directory.Packages.props   central package management
 Marvel.slnx / global.json
 
-src/Marvel.Core          the RNG and digest contracts; no I/O, no UI, no state
-tests/Marvel.Core.Tests  xUnit; the cross-language vectors are the acceptance
+src/Marvel.Core          seeded MT19937 and canonical digest primitives
+src/Marvel.Rules         state, phases, timing, prompts, events, and the fold
+src/Marvel.Cards         authored ability DSL and interpreter
+src/Marvel.Content       printed cards and scenario setup readers
+src/Marvel.Sim           non-Godot headless driver and replay harness
+src/Marvel.Server        engine host; embedded or a standalone socket process
+
+tests/*.Tests            behavioral xUnit suites for the corresponding project
 ```
 
-`Marvel.Core` is the one project name common to both layouts under review in
-MARVEL-159, so what lands there survives that decision. Nothing here depends on
-the presentation-layer question, which is why this could start before it was
-answered.
-
-Planned layout:
+The presentation projects that consume this engine remain planned:
 
 ```
 Directory.Build.props / Directory.Packages.props   central package management
 Marvel.slnx
 
-src/Marvel.Engine        core rules; no I/O, no RNG state
-src/Marvel.Cards         card DSL and card data
-src/Marvel.Server        ASP.NET Core; serves the web client
-
-tests/Marvel.Engine.Tests    xUnit
-tests/Marvel.Specs           Reqnroll behavioral specs
+src/Marvel.View          engine-agnostic visible view model and card layout
+src/Marvel.Godot         macOS and Windows client; the only Godot reference
 ```
 
-**The layout above is under review.** [presentation-layer.md](../docs/presentation-layer.md)
-(MARVEL-159) proposes replacing `Marvel.Server` and the TypeScript client with a
-Godot client, splitting `Marvel.Engine` into `Marvel.Core` / `Marvel.Rules` /
-`Marvel.Cards.*`, and adding an engine-agnostic `Marvel.View` above a build-enforced
-wall. Read that before creating any project here.
-
-The Python reference engine lives in [`../py_src/`](../py_src/) and is the behavioral source of truth this code is validated against.
+`Marvel.Server` is one assembly with two entry points. A bundled client uses
+`InProcessTransport`; a hosted client uses `SocketTransport` against the same
+`EngineHost` running from the executable or its Linux Dockerfile. Client code
+depends only on `IEngineTransport`, never directly on `Game`.
