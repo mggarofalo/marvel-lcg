@@ -1768,42 +1768,6 @@ public sealed partial class ActionAbilityTests
         Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
     }
 
-    [Rule("rr:villain-defeat.3.2")]
-    [Fact]
-    public void CarriedAttachmentTraitsApplyToTheNewVillainStage()
-    {
-        // Attachments and their constant abilities carry to a same-title
-        // stage. Flight therefore still gives Rhino II AERIAL before the
-        // filtered damage resolves, leaving a point for the following move.
-        var runner = RepeatedDynamicTargetRunner(
-            """{ "query": "villain" }""",
-            """{ "withTrait": { "cards": { "query": "villain" }, "trait": "AERIAL" } }""",
-            includeAuthored: true);
-        World? world = null;
-        Card? source = null;
-
-        var thrown = Assert.Throws<RulesNotImplementedException>(() => Playing(
-            board =>
-            {
-                world = board;
-                source = InPlay(board, AuthoredCards.AuntMay);
-                var villain = board.TheCardIn(DeckType.VillainArea)!;
-                board.CreateCard(
-                    "40151",
-                    board.AreaOf(
-                        DeckType.UpgradesArea, villain.Area.PlayArea,
-                        villain.ObjectId));
-                board.Seats[0].IdentityCard.TakeDamage(9);
-            },
-            hero: true,
-            heroes: ["spider_man", "captain_marvel"],
-            abilities: runner));
-
-        Assert.Contains("suspends inside a labelled power", thrown.Message, StringComparison.Ordinal);
-        Assert.True(source!.Ready);
-        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
-    }
-
     [Rule("rr:ability")]
     [Fact]
     public void DiscardedAttachmentStopsGrantingItsTraitDuringTheTrace()

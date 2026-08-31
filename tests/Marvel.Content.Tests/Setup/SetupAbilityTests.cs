@@ -138,19 +138,6 @@ public sealed class SetupAbilityTests
     }
 
     [Fact]
-    public void AChallengeStopsBeforeItsUnimplementedSetupCanDealAPlausibleBoard()
-    {
-        // The Ground is Lava modifies setup and play. Leaving its Challenge
-        // card inert in RemovedArea would let the scenario continue as a
-        // different game, so the product boundary refuses before setup begins.
-        var refused = Assert.Throws<RulesNotImplementedException>(
-            () => Deal("2401_the_ground_is_lava", AuthoredCards.Runner()));
-
-        Assert.Contains("Challenge", refused.Message, StringComparison.Ordinal);
-        Assert.Contains("setup and rules modifiers", refused.Message, StringComparison.Ordinal);
-    }
-
-    [Fact]
     public void ASetupAbilityCarryingATriggeringConditionIsRefused()
     {
         // `rr:setup-triggered-ability.2` times these to a step of setup rather

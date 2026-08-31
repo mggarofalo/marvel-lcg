@@ -165,35 +165,6 @@ public sealed class TargetReferenceTests
             hero: "spider_man");
     }
 
-    [Rule("rr:referential-ability.step.2")]
-    [Fact]
-    public void AnIdentitySideDeckCardIsAssociatedWithItsIdentity()
-    {
-        // Step 2 includes "cards belonging to a side deck used by the
-        // identity." Clear Skies belongs to Storm's weather deck, so Storm's
-        // identity wins over the same-titled ally.
-        string title = Cards.Title("36001a");
-        var runner = Runner(
-            "36002",
-            $$"""{ "giveStatus": { "card": { "titled": "{{title}}" }, "status": "tough" } }""");
-        Card? source = null;
-        Card? ally = null;
-        var (game, world) = Playing(
-            board =>
-            {
-                board.Seats[0].IdentityCard.TurnTo("36001a");
-                source = InPlay(board, "36002", DeckType.SupportsArea);
-                ally = InPlay(board, "34021", DeckType.AlliesArea);
-            },
-            runner,
-            hero: "storm");
-
-        ResolveAction(game, source!);
-
-        Assert.True(Statuses.Has(world, world.Seats[0].IdentityCard, Statuses.Tough));
-        Assert.False(Statuses.Has(world, ally!, Statuses.Tough));
-    }
-
     [Rule("rr:referential-ability.step.3")]
     [Fact]
     public void APlayerCardSharedTitleReferenceExcludesEncounterCards()

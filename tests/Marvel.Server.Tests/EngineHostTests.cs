@@ -6,6 +6,26 @@ namespace Marvel.Server.Tests;
 
 public sealed class EngineHostTests
 {
+    [Theory]
+    [InlineData("unus", "spider_man", null, "no campaign named 'unus'")]
+    [InlineData("rhino", "sp_dr", null, "no hero named 'sp_dr'")]
+    [InlineData("rhino", "spider_man", "sinister_syndicate",
+        "no encounter set named 'sinister_syndicate'")]
+    public void ExpansionProductsAreRejectedAtTheDatasetBoundary(
+        string scenario, string hero, string? modular, string message)
+    {
+        // Product names resolve before WorldSetup creates a board or seeds its
+        // RNG. Keeping the complete printed card catalog therefore cannot make
+        // an unsupported expansion game partly start.
+        var factory = DatasetGameFactory.Load(RepositoryPaths.Root);
+        var specification = new GameSpecification(
+            scenario, [hero], modular is null ? null : [modular], Seed: 7);
+
+        var refused = Assert.Throws<KeyNotFoundException>(() => factory.Create(specification));
+
+        Assert.Contains(message, refused.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void CanonicalContentOpensAndResolvesThroughTheHost()
     {

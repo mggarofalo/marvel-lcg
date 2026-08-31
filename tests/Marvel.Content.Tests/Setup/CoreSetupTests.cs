@@ -307,8 +307,6 @@ public sealed class CoreSetupTests
     [Theory]
     [InlineData("standard")]
     [InlineData("expert")]
-    [InlineData("standard_ii")]
-    [InlineData("expert_ii")]
     public void AFixedDifficultySetCannotBeSelectedAsAModularSet(string set)
     {
         // Both rules say the named set “is not a modular encounter set and

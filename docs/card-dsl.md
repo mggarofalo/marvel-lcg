@@ -560,24 +560,21 @@ it will show.
   45017 also needs a second hook this document's Layer 1 does not name: the
   per-candidate prefilter `check_effect_fn`.
 
-## The dependency that gates all of it
+## The product boundary
 
-**This needs a behavioural oracle before it starts, not after.** Rewriting 3,454
-card scripts without one is how a project introduces silent regressions across an
-entire card pool: the engine keeps running, every game completes, and the cards
-quietly do something slightly different.
+The runtime ability book is intentionally limited to the Core Set. The complete
+card catalog remains in `datasets/cards/` for printed facts and future research,
+but a later card has no executable row until its whole product is ready. This
+keeps a few implemented expansion cards from being mistaken for a supported
+expansion.
 
-The replay corpus is not a substitute. It pins that the engine reproduces
-*itself*, so it would faithfully reproduce a mis-translated card. The oracle is
-the behavioural spec campaign, MARVEL-68 — currently 5 of 3,996 cards.
-
-So: **convert cards that have a scenario; do not convert cards that do not.**
-Then measure the share expressible without an escape hatch per tier, and stop
-widening the DSL rather than widening it to reach the tail.
+The broader card examples in this design size the language against known hard
+cases. They do not state that those cards are executable content.
 
 ## What is implemented
 
-`src/Marvel.Cards`, and 64 card faces in `datasets/abilities/abilities.json` — every card the Rhino scenario reaches, the whole of the Standard set among them.
+`src/Marvel.Cards`, and all 209 Core Set card faces in
+`datasets/abilities/abilities.json`. There are no executable expansion rows.
 
 **Why it exists now rather than after the design settled.** It was standing in
 the way. `Marvel.Content.Cards.CoreSetAbilities` was a compiled class with a
@@ -927,37 +924,21 @@ has been read; one absent from it throws when revealed. Without that, an
 unported encounter card resolves to silence and the board is plausible and
 wrong.
 
-### What is deliberately still missing
+### Fail closed outside the boundary
 
-`gainSurge` used to be the honest example: "I'm Tough" had a surge branch, the
-data said so, and the interpreter threw naming the node. It is written now, and
-the shape it demonstrated is the one every gap should have — the card is
-complete, the engine is not, and the message says which node to write. Growing
-the engine is adding a case; growing the game is adding a row; they are
-different activities and they read differently.
-
-The gaps that have that shape today, from the Rhino scenario's own twenty-four
-cards: an attachment that redirects damage (Armored Rhino Suit), a **Hero
-Action** with a resource cost (Enhanced Ivory Horn), and damage assigned among
-several characters (Explosion). Twenty-one of the twenty-four are written; those
-three are what is left, and beside them the nemesis set's own five.
+Every Core Set face has a row, including explicit empty rows for cards with no
+executable text. A card from a later product has no row and raises by card id if
+runtime code tries to resolve it. Growing the engine and growing the supported
+product catalog remain separate activities.
 
 ### How big the job actually is
 
-Measured across the 135 campaigns in the dataset: **1,477 distinct
-encounter-side cards**. Of those, 61 print no text at all and want a row saying
-"read, does nothing"; the rest have something to say.
+The complete generated catalog contains thousands of later card faces. Those
+records are acquisition data, not a runtime backlog or a support claim.
 
-The distribution is what makes it tractable. The **Standard** sets reach almost
-everything — `01190` Shadow of the Past appears in 132 of the 135 campaigns, and
-`01191` Exhaustion, `01192` Masterplan and `01193` Under Fire in 75 each. No
-other encounter card in the pool comes near, and after them the curve falls away
-to nine scenarios and fewer.
-
-**All ten Standard cards are written.** Advance, Assault, Caught Off Guard,
-Gang-Up, Shadow of the Past, Exhaustion, Masterplan and Under Fire, and the two
-that are read and empty. So the set every scenario is built on resolves, and
-what is left is each scenario's own cards.
+All ten Core Set Standard cards are written: Advance, Assault, Caught Off Guard,
+Gang-Up, Shadow of the Past, Exhaustion, Masterplan and Under Fire, plus the two
+cards whose executable text is empty.
 
 ### One card, two tiers
 
