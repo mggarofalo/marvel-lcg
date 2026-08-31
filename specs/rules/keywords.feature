@@ -265,16 +265,16 @@ Feature: Keywords
   @card:27122
   @rr:steady.1
   Scenario: the first stunned status card does not stun a steady character but the second does
-    # Symbiotic Monstrosity prints Steady. Two copies of Speed Cyclone apply the
-    # same status independently, so the transcript observes both thresholds.
+    # Symbiotic Monstrosity prints Steady. The setup status is the first card;
+    # Speed Cyclone applies the second, so the transcript observes both limits
+    # without depending on how duplicate events in one hand are named.
     Given the hero is "quicksilver"
     And "Symbiotic Monstrosity" is in play
-    And my hand is "Speed Cyclone", "Speed Cyclone", "Always Be Running", "Always Be Running"
-
-    When I choose "Play" on "Speed Cyclone #1" paying 1 resources targeting "Symbiotic Monstrosity"
+    And "Symbiotic Monstrosity" is stunned
+    And my hand is "Speed Cyclone", "Always Be Running"
     Then "Symbiotic Monstrosity" is not stunned
 
-    When I choose "Play" on "Speed Cyclone #2" paying 1 resources targeting "Symbiotic Monstrosity"
+    When I choose "Play" on "Speed Cyclone" paying 1 resources targeting "Symbiotic Monstrosity"
     Then "Symbiotic Monstrosity" is stunned
 
   @card:01101
@@ -299,12 +299,19 @@ Feature: Keywords
   @card:16133
   @rr:stalwart.1
   Scenario: a stalwart character cannot be stunned
+    # A pure stun effect cannot legally choose a character that cannot take the
+    # status. Hydra Mercenary is present as the control target on the same board.
     Given the hero is "quicksilver"
     And "Kree Lieutenant" is in play
+    And "Hydra Mercenary" is in play
     And my hand is "Speed Cyclone", "Always Be Running"
 
-    When I choose "Play" on "Speed Cyclone" paying 1 resources targeting "Kree Lieutenant"
+    Then the legal targets for "Play" on "Speed Cyclone" are
+      | Hydra Mercenary |
+
+    When I choose "Play" on "Speed Cyclone" paying 1 resources targeting "Hydra Mercenary"
     Then "Kree Lieutenant" is not stunned
+    And "Hydra Mercenary" is stunned
     And "Kree Lieutenant" is in play
 
   # --------------------------------------------------------------------------
@@ -341,28 +348,28 @@ Feature: Keywords
   # future binding must expose: whether player 2 may trigger their own card
   # while player 1 resolves the encounter card. Enhanced Spider-Sense is
   # printed as a Hero Interrupt when a treachery is revealed from the encounter
-  # deck; it does not say "you reveal", so player 2 is eligible on the control
-  # and barred only by peril on Blind Side.
+  # deck; it does not say "you reveal", so player 2 can play it on the control
+  # and is barred only by peril on Blind Side.
 
   @card:16145
   @rr:peril
   Scenario: another player cannot trigger an ability while I resolve a peril card
     Given the heroes are "black_widow", "spider_man"
     And player 2 is in hero form
-    And player 2 controls "Enhanced Spider-Sense"
+    And player 2's hand is "Enhanced Spider-Sense"
 
     When "Blind Side" is revealed to me
-    Then player 2 cannot trigger "Enhanced Spider-Sense"
+    Then player 2 cannot play "Enhanced Spider-Sense"
 
   @card:01186
   @rr:interrupt
   Scenario: another player can trigger the same ability while I resolve a card without peril
     Given the heroes are "black_widow", "spider_man"
     And player 2 is in hero form
-    And player 2 controls "Enhanced Spider-Sense"
+    And player 2's hand is "Enhanced Spider-Sense"
 
     When "Advance" is revealed to me
-    Then player 2 can trigger "Enhanced Spider-Sense"
+    Then player 2 can play "Enhanced Spider-Sense"
 
   # --------------------------------------------------------------------------
   # Hinder X
