@@ -154,9 +154,16 @@ public sealed class SetAsideTests
         var order = Dealer.DealOrder(Setup, "rhino", ["spider_man"])
             .Concat([new Creation("43021", CreationSource.PlayerDeck, 0)])
             .ToList();
+        var blueprints = Blueprints.From(order, Cards)
+            // Specialized Training itself is a player side scheme, whose play
+            // surface is outside this placement test. Its linked cards have
+            // already been allocated ahead of it; deal those to isolate which
+            // set-aside pile receives them.
+            .Where(card => card.Spec != "43021")
+            .ToList();
         var world = WorldSetup.Deal(
             Cards,
-            Blueprints.From(order, Cards),
+            blueprints,
             [Setup.Hero("spider_man").Name],
             12345);
         string[] linked = ["43034", "43035", "43036", "43037"];

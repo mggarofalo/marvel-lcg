@@ -9,6 +9,21 @@ namespace Marvel.Rules.Tests.Timing;
 /// <summary>Actor and target roles on source-neutral attack occurrences.</summary>
 public sealed class AttackOccurrenceTests
 {
+    [Fact]
+    public void LeaderParticipantIsAVillainAndAnEnemy()
+    {
+        // `pack:mc56:leaders`: game rules and card abilities that affect or
+        // interact with villains affect leaders in the same way. Occurrences
+        // capture the printed kind, then expose that shared semantic role.
+        var participant = new OccurrenceCard(
+            Card: 7, Kind: CardKind.Leader, Owner: World.Scenario,
+            Controller: World.Scenario);
+
+        Assert.True(participant.IsVillain);
+        Assert.True(participant.IsEnemy);
+        Assert.False(participant.IsFriendly);
+    }
+
     [Rule("rr:attack-enemy-activation.1")]
     [Rule("rr:attack-player-ability-type.4")]
     [Fact]

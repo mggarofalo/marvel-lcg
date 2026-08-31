@@ -12,9 +12,9 @@ namespace Marvel.Content.Tests.Play;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <c>RealCardsGameTests</c> plays these three boards with a policy that
+/// <c>RealCardsGameTests</c> plays these boards with a policy that
 /// declines everything it can, and says out loud what that costs: the villain
-/// deck never advances, because nobody ever attacks. So a hundred and twenty
+/// deck never advances, because nobody ever attacks. So eighty
 /// green games proved that the <i>encounter deck</i> resolves, and nothing at
 /// all about playing a card, paying for it, attacking, thwarting, recovering,
 /// or triggering an action. MARVEL-230.
@@ -58,10 +58,8 @@ public sealed class ActingGameTests
     [Theory]
     [InlineData("rhino", 4)]
     [InlineData("rhino_expert", 4)]
-    [InlineData("2410_need_for_speed", 4)]
     [InlineData("rhino", 1000)]
     [InlineData("rhino_expert", 1000)]
-    [InlineData("2410_need_for_speed", 1000)]
     public void EverySeedPlaysToAnEndingWithAPlayerWhoActs(string campaign, int declineOneIn)
     {
         // Forty seeds each, and every one reaches an ending rather than a card
@@ -125,8 +123,8 @@ public sealed class ActingGameTests
         //
         // `ActingPolicy` checks it on every prompt it is given, so this is the
         // same games as above read for a different property: several thousand
-        // prompts across three boards, rather than one hand-built collision.
-        foreach (string campaign in new[] { "rhino", "rhino_expert", "2410_need_for_speed" })
+        // prompts across two boards, rather than one hand-built collision.
+        foreach (string campaign in new[] { "rhino", "rhino_expert" })
         {
             foreach (int declineOneIn in new[] { 4, 1000 })
             {

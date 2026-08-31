@@ -23,9 +23,9 @@ namespace Marvel.Content.Tests.Play;
 /// the queries here exist for that.
 /// </para>
 /// <para>
-/// It also completes a scenario: <c>2410_need_for_speed</c> is the Rhino board
-/// with this set instead of Bomb Scare, and these seven cards were the last of
-/// its thirty that nobody had read.
+/// <c>2410_need_for_speed</c> uses this set instead of Bomb Scare, and all seven
+/// cards are executable here. That scenario's Challenge modifier is a separate
+/// product surface and setup refuses it until those rules are supported.
 /// </para>
 /// </remarks>
 public sealed class SinisterSyndicateTests

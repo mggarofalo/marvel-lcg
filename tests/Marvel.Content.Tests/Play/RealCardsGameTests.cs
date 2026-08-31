@@ -83,20 +83,16 @@ public sealed class RealCardsGameTests
     }
 
     [Fact]
-    public void EverySeedPlaysNeedForSpeedToAnEnding()
+    public void NeedForSpeedRefusesItsUnsupportedChallengeRules()
     {
-        // The Rhino board with the **Sinister Syndicate** instead of Bomb
-        // Scare, and the first scenario the engine can play that is not the
-        // one it was built on. Its thirty cards are all read, and the seven
-        // that were not are what MARVEL-232 through MARVEL-238 were about.
-        //
-        // Same caveat as the expert deal above: the policy declines what it
-        // can, so this walks the encounter deck rather than the endgame.
-        for (uint seed = 1; seed <= 40; seed++)
-        {
-            string? stopped = Play("2410_need_for_speed", seed);
-            Assert.True(stopped is null, $"seed {seed} stopped: {stopped}");
-        }
+        // Need for Speed carries a Challenge card that changes the game. Its
+        // encounter cards being executable does not make a board with that
+        // modifier silently omitted correct.
+        var refused = Assert.Throws<RulesNotImplementedException>(() =>
+            Play("2410_need_for_speed", seed: 1));
+
+        Assert.Contains("Challenge", refused.Message, StringComparison.Ordinal);
+        Assert.Contains("setup and rules modifiers", refused.Message, StringComparison.Ordinal);
     }
 
     /// <summary>Plays one seed out; answers with the message it stopped on.</summary>

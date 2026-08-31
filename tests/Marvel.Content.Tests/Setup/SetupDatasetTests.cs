@@ -156,25 +156,23 @@ public sealed class SetupDatasetTests
     }
 
     [Fact]
-    public void EveryVillainStageIsAVillainExceptTheCampaignLeaders()
+    public void EveryVillainStageFunctionsAsAVillain()
     {
-        // 243 of the 251 villain faces are villain stages. The eight that are
-        // not are the campaign expansions' `Leader` type -- a hero turned
-        // against the players -- which `CardKind` has no name for, so those
-        // four scenarios cannot currently be dealt at all. MARVEL-257.
+        // `pack:mc56:leaders`: leaders are their own printed card type, are
+        // used in place of villains in Civil War scenarios, and every game
+        // rule and card ability affecting villains affects leaders.
         var leaders = new List<string>();
         foreach (var (name, campaign) in Campaigns())
         {
             foreach (string face in campaign.Villain.SelectMany(Faces))
             {
-                if (Cards.Kind(face) == CardKind.Unknown)
+                if (Cards.Kind(face) == CardKind.Leader)
                 {
                     leaders.Add($"{name}:{face}");
-                    continue;
                 }
 
                 Assert.True(
-                    Cards.Kind(face) == CardKind.EncounterVillain,
+                    CardKinds.IsVillain(Cards.Kind(face)),
                     $"campaigns.{name} lists '{face}' as a villain stage, "
                     + $"and it is a {Cards.Kind(face)}");
             }

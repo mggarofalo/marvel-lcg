@@ -127,8 +127,8 @@ public sealed partial class AbilityRunner
                     .Where(area => area.Type is DeckType.VillainArea
                         or DeckType.EngagedEnemiesArea)
                     .SelectMany(area => area.Cards)
-                    .Where(card => cast.World.Facts.Kind(card.FaceId) is
-                        CardKind.EncounterVillain or CardKind.Minion),
+                    .Where(card => CardKinds.IsEnemy(
+                        cast.World.Facts.Kind(card.FaceId))),
             ];
         }
 
@@ -810,7 +810,7 @@ public sealed partial class AbilityRunner
             {
                 return true;
             }
-            if (kind != CardKind.EncounterVillain)
+            if (!CardKinds.IsVillain(kind))
             {
                 return false;
             }
@@ -911,7 +911,7 @@ public sealed partial class AbilityRunner
             AreaProjectionState state, Card target, long amount,
             long repetitions)
         {
-            if (cast.World.Facts.Kind(target.FaceId) == CardKind.EncounterVillain
+            if (CardKinds.IsVillain(cast.World.Facts.Kind(target.FaceId))
                 && state.ActiveVillain >= 0)
             {
                 target = cast.World.Cards[state.ActiveVillain];
@@ -935,7 +935,7 @@ public sealed partial class AbilityRunner
                 return;
             }
 
-            if (cast.World.Facts.Kind(target.FaceId) == CardKind.EncounterVillain)
+            if (CardKinds.IsVillain(cast.World.Facts.Kind(target.FaceId)))
             {
                 var next = NextVillainStage(state);
                 bool carries = next is not null && string.Equals(
@@ -1553,7 +1553,7 @@ public sealed partial class AbilityRunner
             return true;
         }
 
-        if (kind == CardKind.EncounterVillain)
+        if (CardKinds.IsVillain(kind))
         {
             var villainDeck = cast.World.AreaOf(DeckType.VillainDeck).Cards;
             var next = villainDeck.Count > 0 ? villainDeck[^1] : null;
@@ -1694,8 +1694,8 @@ public sealed partial class AbilityRunner
                 Word(node.Argument), "villain", StringComparison.Ordinal)
             && state.ActiveVillain >= 0)
         {
-            found.RemoveAll(card => cast.World.Facts.Kind(card.FaceId)
-                == CardKind.EncounterVillain);
+            found.RemoveAll(card =>
+                CardKinds.IsVillain(cast.World.Facts.Kind(card.FaceId)));
             found.Add(cast.World.Cards[state.ActiveVillain]);
         }
         else if (node.Kind == "query")
@@ -1727,8 +1727,8 @@ public sealed partial class AbilityRunner
                             && card.Area.PlayArea == PlayArea.Of(Resolver(cast))));
                 if (guard)
                 {
-                    found.RemoveAll(card => cast.World.Facts.Kind(card.FaceId)
-                        == CardKind.EncounterVillain);
+                    found.RemoveAll(card =>
+                        CardKinds.IsVillain(cast.World.Facts.Kind(card.FaceId)));
                 }
             }
             else
@@ -1748,11 +1748,10 @@ public sealed partial class AbilityRunner
                             cast.World.Facts.Kind(card.FaceId) == CardKind.Minion
                             && state.EngagedWith.GetValueOrDefault(
                                 card.ObjectId, -1) == ChosenPlayer(cast).Owner,
-                        "enemies" => cast.World.Facts.Kind(card.FaceId) is
-                            CardKind.Minion or CardKind.EncounterVillain,
-                        "characters" => cast.World.Facts.Kind(card.FaceId) is
-                            CardKind.Minion or CardKind.EncounterVillain
-                                or CardKind.Ally or CardKind.Hero or CardKind.AlterEgo,
+                        "enemies" => CardKinds.IsEnemy(
+                            cast.World.Facts.Kind(card.FaceId)),
+                        "characters" => CardKinds.IsCharacter(
+                            cast.World.Facts.Kind(card.FaceId)),
                         "sideSchemes" or "schemes" or "thwartableSchemes" =>
                             cast.World.Facts.Kind(card.FaceId)
                                 == CardKind.EncounterSideScheme,
@@ -2069,8 +2068,8 @@ public sealed partial class AbilityRunner
                 && Tree(selector) is { Kind: "query" } query
                 && query.Argument is AbilityValue.Word { Value: "villain" })
             {
-                return current.World.Facts.Kind(target.FaceId)
-                    == CardKind.EncounterVillain;
+                return CardKinds.IsVillain(
+                    current.World.Facts.Kind(target.FaceId));
             }
             // Other selectors may change membership with the projected facts.
             // Failing closed is required until that membership is projected.

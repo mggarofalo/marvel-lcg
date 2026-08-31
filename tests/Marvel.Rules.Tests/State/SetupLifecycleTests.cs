@@ -9,6 +9,47 @@ namespace Marvel.Rules.Tests.State;
 /// <summary>Lifecycle work performed while the opening board is dealt.</summary>
 public sealed class SetupLifecycleTests
 {
+    [Fact]
+    public void EvidenceRefusesBeforeAWorldIsDealt()
+    {
+        // `pack:mc50:gathering-evidence`: evidence is stored in hidden
+        // envelopes, is not added to a deck, and supplies setup information in
+        // later scenarios. Treating one as an encounter card would deal a
+        // plausible board that the campaign rules do not describe.
+        var stopped = Assert.Throws<RulesNotImplementedException>(() =>
+            DealUnsupported("evidence", SetupSlot.Encounter));
+
+        Assert.Contains("evidence", stopped.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("campaign evidence envelopes", stopped.Message, StringComparison.Ordinal);
+    }
+
+    [Rule("rr:player-side-scheme")]
+    [Fact]
+    public void PlayerSideSchemeRefusesBeforeAWorldIsDealt()
+    {
+        // A player side scheme is played from a player's hand and placed next
+        // to the main scheme. Setup must not shuffle one into a deck whose play
+        // path has no implementation and then return a game that can strand it.
+        var stopped = Assert.Throws<RulesNotImplementedException>(() =>
+            DealUnsupported("playerSideScheme", SetupSlot.PlayerDeck));
+
+        Assert.Contains("PlayerSideScheme", stopped.Message, StringComparison.Ordinal);
+        Assert.Contains("playing and resolving", stopped.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ChallengeRefusesBeforeAWorldIsDealt()
+    {
+        // A Challenge card modifies setup and play rather than merely sitting
+        // in RemovedArea. The engine has no general challenge interpreter, so
+        // the safe boundary is before setup consumes RNG or returns a board.
+        var stopped = Assert.Throws<RulesNotImplementedException>(() =>
+            DealUnsupported("challenge", SetupSlot.Challenge));
+
+        Assert.Contains("Challenge", stopped.Message, StringComparison.Ordinal);
+        Assert.Contains("setup and rules modifiers", stopped.Message, StringComparison.Ordinal);
+    }
+
     [Rule("rr:when-revealed-abilities.1")]
     [Fact]
     public void EncounterCardsEnteringDuringSetupResolveAfterScenarioSetup()
@@ -35,6 +76,13 @@ public sealed class SetupLifecycleTests
             ["schemeB", "villain", "setupSide", "laterMinion"],
             abilities.Revealed);
     }
+
+    private static World DealUnsupported(string faceId, SetupSlot slot) =>
+        WorldSetup.Deal(
+            new Facts(),
+            [new CardBlueprint(faceId, slot, slot == SetupSlot.PlayerDeck ? 0 : -1)],
+            slot == SetupSlot.PlayerDeck ? ["p0"] : [],
+            seed: 13);
 
     private sealed class RecordingAbilities(Facts facts) : NoCardAbilities
     {
@@ -66,6 +114,9 @@ public sealed class SetupLifecycleTests
             "villain" => CardKind.EncounterVillain,
             "setupSide" => CardKind.EncounterSideScheme,
             "laterMinion" => CardKind.Minion,
+            "evidence" => CardKind.Evidence,
+            "playerSideScheme" => CardKind.PlayerSideScheme,
+            "challenge" => CardKind.Challenge,
             _ => CardKind.Unknown,
         };
 
