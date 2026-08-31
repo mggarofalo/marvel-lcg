@@ -505,12 +505,17 @@ public sealed class CanonicalCoreScene
         else if (World.Facts.CounterTypes(card.FaceId).Contains(
                      normalized, StringComparer.Ordinal))
         {
-            if (count == 0
+            var uses = Reveal.Uses(World.Facts.Attributes(card.FaceId));
+            if (uses.Type.Length > 0
+                && string.Equals(uses.Type, normalized, StringComparison.OrdinalIgnoreCase)
                 && DeckTypes.IsInPlay(card.Area.Type)
-                && World.Facts.Attributes(card.FaceId).ContainsKey("Uses"))
+                && (count == 0 || count > uses.Count))
             {
                 throw new InvalidOperationException(
-                    $"'{card.FaceId}' would be discarded with no {normalized} uses remaining");
+                    count == 0
+                        ? $"'{card.FaceId}' would be discarded with no {normalized} uses remaining"
+                        : $"'{card.FaceId}' cannot hold more than its printed {uses.Count} "
+                            + $"{normalized} uses");
             }
 
             key = "c_" + normalized;
@@ -803,13 +808,14 @@ public sealed class CanonicalCoreScene
         }
     }
 
-    private static void RequireStructuralRoleCanMove(Card card)
+    private void RequireStructuralRoleCanMove(Card card)
     {
-        if (card.Area.Type is DeckType.HeroArea or DeckType.MainSchemesArea
-            or DeckType.VillainArea)
+        CardKind kind = World.Facts.Kind(card.FaceId);
+        if (kind is CardKind.Hero or CardKind.AlterEgo or CardKind.MainScheme
+            or CardKind.EncounterVillain)
         {
             throw new InvalidOperationException(
-                $"active {card.Area.Type} card {card.ObjectId} cannot be rearranged directly");
+                $"structural {kind} card {card.ObjectId} cannot be rearranged directly");
         }
     }
 

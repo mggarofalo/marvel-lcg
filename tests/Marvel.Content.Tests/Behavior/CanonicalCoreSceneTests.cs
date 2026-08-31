@@ -169,6 +169,24 @@ public sealed class CanonicalCoreSceneTests
     }
 
     [Fact]
+    public void AFixedUsesPoolCannotExceedItsPrintedEntryCount()
+    {
+        var scene = Deal(
+            "behavior:rr:uses-x-type.1:printed-count",
+            "rhino",
+            ["spider_man"]);
+        scene.Apply(new MoveSceneCard(
+            new SceneCard("01008"),
+            new SceneDestination(SceneZone.Upgrade, Seat: 0)));
+
+        var thrown = Assert.Throws<CoreSceneConstructionException>(() => scene.Apply(
+            new SetSceneCounters(new SceneCard("01008"), "web", 4)));
+
+        Assert.Contains("printed 3", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(3, scene.Find(new SceneCard("01008")).Tokens["c_web"]);
+    }
+
+    [Fact]
     public void SchemeThreatCannotBypassDefeatOrAdvance()
     {
         var scene = Deal(
@@ -443,6 +461,31 @@ public sealed class CanonicalCoreSceneTests
 
         Assert.Contains("cannot be rearranged", thrown.Message, StringComparison.Ordinal);
         Assert.Equal(DeckType.HeroArea, identity.Area.Type);
+    }
+
+    [Fact]
+    public void FutureScenarioStagesCannotLeaveTheirRequiredDecks()
+    {
+        var scene = Deal(
+            "behavior:setup:campaign:klaw:stage-decks",
+            "klaw",
+            ["spider_man"]);
+        Card futureScheme = scene.Find(new SceneCard("01117a"));
+        Card futureVillain = scene.Find(new SceneCard("01114"));
+
+        var scheme = Assert.Throws<CoreSceneConstructionException>(() => scene.Apply(
+            new MoveSceneCard(
+                new SceneCard("01117a"),
+                new SceneDestination(SceneZone.SetAside))));
+        var villain = Assert.Throws<CoreSceneConstructionException>(() => scene.Apply(
+            new MoveSceneCard(
+                new SceneCard("01114"),
+                new SceneDestination(SceneZone.SetAside))));
+
+        Assert.Contains("structural MainScheme", scheme.Message, StringComparison.Ordinal);
+        Assert.Contains("structural EncounterVillain", villain.Message, StringComparison.Ordinal);
+        Assert.Equal(DeckType.MainSchemesDeck, futureScheme.Area.Type);
+        Assert.Equal(DeckType.VillainDeck, futureVillain.Area.Type);
     }
 
     [Fact]
