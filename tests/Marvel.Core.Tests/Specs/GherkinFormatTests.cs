@@ -121,4 +121,27 @@ public sealed class GherkinFormatTests
         Assert.Contains(tags, tag => tag.StartsWith("@card:", StringComparison.Ordinal));
         Assert.Contains(tags, tag => tag.StartsWith("@rr:", StringComparison.Ordinal));
     }
+
+    [Fact]
+    public void EscapedQuotesInCardNamesSurviveTheParse()
+    {
+        // Gherkin treats a step as opaque text. The repository chooses the
+        // backslash spelling, and future bindings decode it after this parse.
+        var parser = new Parser();
+        var stepTexts = FeatureFiles
+            .Select(parser.Parse)
+            .SelectMany(document => document.Feature?.Children ?? [])
+            .OfType<Gherkin.Ast.Scenario>()
+            .SelectMany(scenario => scenario.Steps)
+            .Select(step => step.Text)
+            .ToList();
+
+        Assert.Contains("\"\\\"I'm Tough\\\"\" is revealed", stepTexts);
+        Assert.Contains(
+            "\"The \\\"Immortal\\\" Klaw\" is in the \"SideSchemesArea\"",
+            stepTexts);
+        Assert.Contains(
+            "I thwart \"The \\\"Immortal\\\" Klaw\"",
+            stepTexts);
+    }
 }

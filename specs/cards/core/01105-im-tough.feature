@@ -4,9 +4,8 @@
 #    status card, this card gains surge."
 #
 # The card is named with its quotation marks printed -- the name is literally
-# `"I'm Tough"` -- so no spelling of it survives a Gherkin card ref, and the
-# harness answers `no card is named "I'm Tough"`. It is referred to by id
-# throughout.
+# `"I'm Tough"`. A quoted argument escapes those printed marks, so the step
+# spelling is `"\"I'm Tough\""`.
 #
 # ---------------------------------------------------------------------------
 # Two branches, decided by one question about the board.
@@ -76,7 +75,7 @@ Feature: "I'm Tough"
     # that set a flag nothing reads.
     Given the hero is "spider_man"
     And I am in hero form
-    And "01105" is revealed
+    And "\"I'm Tough\"" is revealed
 
     Then "Rhino" is tough
 

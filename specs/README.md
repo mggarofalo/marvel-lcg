@@ -34,3 +34,16 @@ standard Gherkin grammar — the parser Reqnroll is built on — and asserts tha
 `@card:` and `@rr:` tags survive. That is a check on the *format*, so the files
 stay loadable by whatever runs them later. Whether the steps can be *bound* is a
 separate question and a later one; see `docs/presentation-layer.md`.
+
+## Quoted arguments
+
+Card and option names are delimited with double quotes in step text. A literal
+double quote inside one of those names is written as `\"`; for example, the
+printed names `"I'm Tough"` and `The "Immortal" Klaw` are written as
+`"\"I'm Tough\""` and `"The \"Immortal\" Klaw"`. A literal backslash is
+written as `\\`.
+
+This escaping is a format chosen by this repository; the Gherkin grammar does
+not assign meaning to quotes or backslashes inside a step. A future step binding
+must decode `\"` and `\\` after Gherkin parses the step text. The format test
+holds the escape markers to the exact spelling that parser preserves.

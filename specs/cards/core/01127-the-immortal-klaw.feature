@@ -24,11 +24,11 @@ Feature: The "Immortal" Klaw
     # Klaw stage I prints 12 per hero, so 22 at one hero is the printed 12 plus
     # this scheme's 10 and nothing else.
     Given I am in hero form
-    And "01127" is in play
+    And "The \"Immortal\" Klaw" is in play
 
-    Then "01127" is in the "SideSchemesArea"
-    And "01127" has 3 threat
-    And "01127" has 1 "acceleration_icon"
+    Then "The \"Immortal\" Klaw" is in the "SideSchemesArea"
+    And "The \"Immortal\" Klaw" has 3 threat
+    And "The \"Immortal\" Klaw" has 1 "acceleration_icon"
     And "Klaw" has 22 "max_health"
     And "Klaw" has 22 health
 
@@ -42,17 +42,17 @@ Feature: The "Immortal" Klaw
     # "is reset", and a scenario on an undamaged villain could not tell them
     # apart.
     Given I am in hero form
-    And "01127" is in play
-    And "01127" has 2 threat
+    And "The \"Immortal\" Klaw" is in play
+    And "The \"Immortal\" Klaw" has 2 threat
     And "Klaw" has 5 damage
 
     Then "Klaw" has 22 "max_health"
     And "Klaw" has 17 health
     And "Klaw" has 5 damage
 
-    When I thwart "01127"
-    Then "01127" is not in play
-    And "01127" is in the "EncounterDiscardPile"
+    When I thwart "The \"Immortal\" Klaw"
+    Then "The \"Immortal\" Klaw" is not in play
+    And "The \"Immortal\" Klaw" is in the "EncounterDiscardPile"
     And "Klaw" has 12 "max_health"
     And "Klaw" has 7 health
     And "Klaw" has 5 damage
@@ -63,7 +63,7 @@ Feature: The "Immortal" Klaw
     # hit points alone -- Klaw stage I is 12 per hero, so 24 plus the same 10.
     Given the heroes are "captain_marvel", "iron_man"
     And I am in hero form
-    And "01127" is in play
+    And "The \"Immortal\" Klaw" is in play
 
-    Then "01127" has 6 threat
+    Then "The \"Immortal\" Klaw" has 6 threat
     And "Klaw" has 34 "max_health"
