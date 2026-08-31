@@ -9,6 +9,7 @@
     <Project Path="src/Marvel.Server/Marvel.Server.csproj" />
   </Folder>
   <Folder Name="/tools/">
+    <Project Path="tools/Marvel.Behavior.Index/Marvel.Behavior.Index.csproj" />
     <Project Path="tools/Marvel.Rules.Index/Marvel.Rules.Index.csproj" />
     <Project Path="tools/Marvel.Cards.Extract/Marvel.Cards.Extract.csproj" />
     <Project Path="tools/Marvel.Rules.Harvest/Marvel.Rules.Harvest.csproj" />

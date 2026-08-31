@@ -93,10 +93,11 @@ as important.
 
 ## The tools
 
-Six, all run by hand and none on any path a game takes.
+Seven, all run by hand and none on any path a game takes.
 
 | | |
 |---|---|
+| `tools/Marvel.Behavior.Index` | builds, checks and reports the authority-derived behavioral obligation catalog under `specs/behavior/`. |
 | `tools/Marvel.Cards.Extract` | builds `datasets/cards/` from the vendored MarvelSDB snapshot. `-- check` is a CI gate. |
 | `tools/Marvel.Rules.Harvest` | reads the Rules Reference PDF into `datasets/rules-reference/`. Not a gate: the document is copyrighted and CI has no copy. |
 | `tools/Marvel.Rules.Index` | asks the rules corpus questions — `refs` walks the citation graph both ways, `citations` reports what the suite holds the engine to. |

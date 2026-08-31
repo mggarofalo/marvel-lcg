@@ -142,8 +142,9 @@ Generated reports and skeletons use only that order.
 
 ### Dispositions
 
-Every source unit and every derived obligation has exactly one semantic
-disposition:
+Every derived obligation has exactly one semantic disposition. A source unit
+whose obligations have different dispositions is summarized as `mixed`; the
+individual obligations remain the reviewable claims:
 
 | Disposition | Meaning |
 |---|---|
@@ -163,6 +164,7 @@ obligation has one implementation status:
 
 | Status | Required transcript result |
 |---|---|
+| `unverified` | No implementation claim has been admitted yet. This is allowed while deriving the catalog, but the completed executable corpus rejects it. |
 | `supported` | The transcript reaches and observes the published result. |
 | `unimplemented` | A negative transcript reaches the branch and observes the exact named `RulesNotImplementedException`. |
 

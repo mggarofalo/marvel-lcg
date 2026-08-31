@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Marvel.Behavior.Index</RootNamespace>
+    <AssemblyName>Marvel.Behavior.Index</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Effective Rules Reference hashes come from the same audited resolver
+         used by Marvel.Rules.Index. Linking keeps one implementation of the
+         rules graph rather than teaching this catalog a second one. -->
+    <Compile Include="../Marvel.Rules.Index/Corpus.cs" Link="RulesCorpus.cs" />
+    <Compile Include="../../tests/Shared/RepositoryPaths.cs" Link="RepositoryPaths.cs" />
+  </ItemGroup>
+
+</Project>
