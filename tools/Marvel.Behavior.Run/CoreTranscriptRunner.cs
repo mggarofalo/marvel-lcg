@@ -219,6 +219,9 @@ internal sealed class CoreTranscriptRunner
         Bind("stack-player-deck-empty-discard", TranscriptStepKind.Given,
             @"seat (?<seat>\d+)'s player deck contains only these next cards with all other deck cards in hand",
             StackPlayerDeckWithEmptyDiscard),
+        Bind("stack-player-deck-leave", TranscriptStepKind.Given,
+            @"these cards are next on seat (?<seat>\d+)'s player deck",
+            StackPlayerDeckLeavingRemainder),
         Bind("set-player-hand", TranscriptStepKind.Given,
             @"seat (?<seat>\d+)'s hand contains exactly these cards", SetPlayerHand),
         Bind("set-card-readiness", TranscriptStepKind.Given,
@@ -245,6 +248,8 @@ internal sealed class CoreTranscriptRunner
         Bind("stack-encounter-deck-dealt", TranscriptStepKind.Given,
             @"the encounter deck contains only these next cards with all other deck cards dealt facedown to seat (?<seat>\d+)",
             StackEncounterDeckWithDealtCards),
+        Bind("stack-encounter-deck-leave", TranscriptStepKind.Given,
+            "these cards are next on the encounter deck", StackEncounterDeckLeavingRemainder),
         Bind("draw-cards", TranscriptStepKind.When,
             @"seat (?<seat>\d+) draws (?<count>\d+) cards?", DrawCards),
         Bind("discard-player-deck", TranscriptStepKind.When,
@@ -296,6 +301,15 @@ internal sealed class CoreTranscriptRunner
         Bind("card-player-discard", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is in seat (?<seat>\d+)'s discard pile",
             CardInPlayerDiscard),
+        Bind("card-top-player-discard", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is faceup on top of seat (?<seat>\d+)'s discard pile",
+            CardOnTopOfPlayerDiscard),
+        Bind("card-top-encounter-discard", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is faceup on top of the encounter discard pile",
+            CardOnTopOfEncounterDiscard),
+        Bind("player-discard-order", TranscriptStepKind.Then,
+            @"seat (?<seat>\d+)'s discard pile has these cards from top to bottom",
+            PlayerDiscardOrder),
         Bind("not-eliminated", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) is not eliminated", NotEliminated),
         Bind("game-unfinished", TranscriptStepKind.Then,
@@ -389,6 +403,10 @@ internal sealed class CoreTranscriptRunner
         TranscriptContext context, TranscriptStep step, Match match)
         => StackPlayerDeck(context, step, match, PlayerDeckRemainder.Hand);
 
+    private static void StackPlayerDeckLeavingRemainder(
+        TranscriptContext context, TranscriptStep step, Match match)
+        => StackPlayerDeck(context, step, match, PlayerDeckRemainder.Leave);
+
     private static void StackPlayerDeck(
         TranscriptContext context,
         TranscriptStep step,
@@ -463,6 +481,14 @@ internal sealed class CoreTranscriptRunner
             step,
             EncounterDeckRemainder.Dealt,
             Seat(match, step));
+
+    private static void StackEncounterDeckLeavingRemainder(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        _ = match;
+        StackEncounterDeck(
+            context, step, EncounterDeckRemainder.Leave, seat: 0);
+    }
 
     private static void StackEncounterDeck(
         TranscriptContext context,
@@ -718,6 +744,55 @@ internal sealed class CoreTranscriptRunner
             throw new TranscriptAssertionException(
                 $"{step.Location}: expected card {card.ObjectId} in seat {seat + 1}'s "
                 + $"discard pile; was {card.Area}");
+        }
+    }
+
+    private static void CardOnTopOfPlayerDiscard(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        AssertFaceupTop(
+            context,
+            step,
+            match,
+            context.World.AreaOf(
+                DeckType.DiscardPile, PlayArea.Of(seat), cardOwner: seat));
+    }
+
+    private static void CardOnTopOfEncounterDiscard(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        AssertFaceupTop(
+            context, step, match, context.World.AreaOf(DeckType.EncounterDiscardPile));
+
+    private static void AssertFaceupTop(
+        TranscriptContext context, TranscriptStep step, Match match, Area area)
+    {
+        Card expected = context.SceneRequired(step).Find(SceneCard(match, step));
+        Card? actual = area.Cards.Count == 0 ? null : area.Cards[^1];
+        if (!ReferenceEquals(actual, expected) || !expected.FaceUp)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected faceup card {expected.ObjectId} on top of "
+                + $"{area}; was {(actual is null ? "<empty>" : actual.ObjectId)}");
+        }
+    }
+
+    private static void PlayerDiscardOrder(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        TranscriptTable table = Table(step, "card", "copy");
+        int[] expected = [.. table.Rows.Select(row => context.SceneRequired(step).Find(
+            new SceneCard(row["card"], TableNumber(row, "copy", step))).ObjectId)];
+        int[] actual = [.. context.World.AreaOf(
+                DeckType.DiscardPile, PlayArea.Of(seat), cardOwner: seat)
+            .Cards.AsEnumerable().Reverse().Take(expected.Length)
+            .Select(card => card.ObjectId)];
+        if (!actual.SequenceEqual(expected))
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected discard top order "
+                + $"{string.Join(',', expected)}; was {string.Join(',', actual)}");
         }
     }
 

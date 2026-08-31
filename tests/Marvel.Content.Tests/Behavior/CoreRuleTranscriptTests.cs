@@ -7,6 +7,28 @@ namespace Marvel.Content.Tests.Behavior;
 public sealed class CoreRuleTranscriptTests
 {
     [Fact]
+    public void DiscardBranchesHavePinnedOutcomes()
+    {
+        var suite = new CoreTranscriptSuite(RepositoryPaths.Root);
+        var results = suite.RunPassingCorpus()
+            .Where(result => result.Scenario.StartsWith(
+                "specs/behavior/core/discard.feature::",
+                StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
+
+        Assert.Equal(3, results.Count);
+        Assert.Equal(
+            "2ba5b4286eab4a1bb821b5d3c4774ee37feab34cd36737774db64c09f513b710",
+            results["behavior:rr:discard.1:published-result"].Digest);
+        Assert.Equal(
+            "a7a02fd9e996eb1681de52ad46f6b97822f4e7ba11c0047f9ce198f87b8eec09",
+            results["behavior:rr:discard.2:published-result"].Digest);
+        Assert.Equal(
+            "2c42f35da3197479de24e5e865d7e98f105812cb26a5ceb96c4dbd525719b56a",
+            results["behavior:rr:discard.4:published-result"].Digest);
+    }
+
+    [Fact]
     public void FormChangeBranchesHavePinnedOutcomes()
     {
         var suite = new CoreTranscriptSuite(RepositoryPaths.Root);

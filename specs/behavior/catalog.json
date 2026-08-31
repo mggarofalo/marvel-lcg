@@ -7654,11 +7654,14 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/discard.feature::A discarded player card goes faceup to its owner's pile",
+            "specs/behavior/core/discard.feature::A discarded encounter card goes faceup to the encounter pile"
+          ],
+          "mutation": "CoreRuleTranscriptTests.DiscardBranchesHavePinnedOutcomes distinguishes the separate player-owned and encounter discard destinations."
         }
       ]
     },
@@ -7742,11 +7745,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/discard.feature::A discarded player card goes faceup to its owner's pile"
+          ],
+          "mutation": "CoreRuleTranscriptTests.DiscardBranchesHavePinnedOutcomes distinguishes the faceup player card landing on top of its owner's discard pile."
         }
       ]
     },
@@ -7764,11 +7769,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/discard.feature::A discarded encounter card goes faceup to the encounter pile"
+          ],
+          "mutation": "CoreRuleTranscriptTests.DiscardBranchesHavePinnedOutcomes distinguishes the faceup encounter card landing on top of the encounter discard pile."
         }
       ]
     },
@@ -7808,11 +7815,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/discard.feature::A singular effect discards deck cards one at a time without reordering them"
+          ],
+          "mutation": "CoreRuleTranscriptTests.DiscardBranchesHavePinnedOutcomes distinguishes the per-card discard events and resulting deck order."
         }
       ]
     },
