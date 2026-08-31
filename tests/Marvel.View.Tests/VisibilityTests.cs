@@ -105,7 +105,29 @@ public sealed class VisibilityTests
                 area => area.Id == engaged.Id).Cards);
 
         Assert.Equal(drone.ObjectId, visible.Id);
+        Assert.Equal(CardBack.Player, visible.Back);
         Assert.Null(visible.Face);
+    }
+
+    [Fact]
+    public void ConcealedPileCardsDoNotExposeMutableState()
+    {
+        var board = Board();
+        Card card = board.AreaOf(DeckType.VillainArea).Cards[0];
+        card.Exhaust();
+        World.MoveToTop(card, board.AreaOf(DeckType.EncounterDeck));
+        ViewScope scope = new RestrictedVisibilityPolicy(0).Authorize(null, board.Players);
+
+        CardDescriptor hidden = Assert.Single(
+            WorldProjection.For(board, null, [], scope).World.Areas
+                .Single(area => area.Zone == nameof(DeckType.EncounterDeck)).Cards,
+            candidate => candidate.Back == CardBack.Encounter);
+
+        Assert.Null(hidden.Id);
+        Assert.Null(hidden.Face);
+        Assert.True(hidden.Ready);
+        Assert.Equal(-1, hidden.Host);
+        Assert.False(hidden.FaceUp);
     }
 
     [Fact]

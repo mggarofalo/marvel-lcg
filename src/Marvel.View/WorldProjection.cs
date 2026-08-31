@@ -48,6 +48,7 @@ public static class WorldProjection
             CardAudience audience = Audience(card, prompt, searchVisible);
             bool inPlay = DeckTypes.IsInPlay(card.Area.Type);
             CardKind kind = FacedownDrones.Kind(card, world.Facts);
+            CardKind printedKind = world.Facts.Kind(card.FaceId);
             var face = new CardFaceDescriptor(
                 card.FaceId,
                 world.Facts.Title(card.FaceId),
@@ -62,7 +63,7 @@ public static class WorldProjection
                 card.ObjectId,
                 new CardDescriptor(
                     card.ObjectId,
-                    Back(kind),
+                    Back(printedKind),
                     card.FaceUp,
                     card.Ready,
                     card.Area.Host,
@@ -124,7 +125,7 @@ public static class WorldProjection
 
     private static WorldDescriptor Filter(WorldDescriptor descriptor, ViewScope scope)
     {
-        var addressable = descriptor.Areas
+        var addressableIds = descriptor.Areas
             .SelectMany(area => area.Cards.Concat(area.Removed))
             .Where(card => card.Audience.IsVisible(scope) || card.Addressable)
             .Select(card => card.Id!.Value)
@@ -133,9 +134,9 @@ public static class WorldProjection
         {
             Areas = descriptor.Areas.Select(area => area with
             {
-                Host = addressable.Contains(area.Host) ? area.Host : -1,
-                Cards = area.Cards.Select(card => Filter(card, scope, addressable)).ToList(),
-                Removed = area.Removed.Select(card => Filter(card, scope, addressable)).ToList(),
+                Host = addressableIds.Contains(area.Host) ? area.Host : -1,
+                Cards = area.Cards.Select(card => Filter(card, scope, addressableIds)).ToList(),
+                Removed = area.Removed.Select(card => Filter(card, scope, addressableIds)).ToList(),
             }).ToList(),
         };
     }
@@ -152,6 +153,9 @@ public static class WorldProjection
             : card with
             {
                 Id = card.Addressable ? card.Id : null,
+                FaceUp = false,
+                Ready = card.Addressable ? card.Ready : true,
+                Host = card.Addressable && visible.Contains(card.Host) ? card.Host : -1,
                 Face = null,
                 Audience = CardAudience.Nobody,
                 Addressable = false,

@@ -46,9 +46,10 @@ public enum CardBack
 
 /// <summary>A card as one authorized client may see it.</summary>
 /// <param name="Id">
-/// The engine object id, or null while the card is hidden. A hidden card has no
-/// stable wire identity, so a card seen before a shuffle cannot be tracked
-/// through its new deck order.
+/// The engine object id, or null while the card is concealed in a pile. A
+/// concealed card has no stable wire identity, so a card seen before a shuffle
+/// cannot be tracked through its new deck order. A physically face-down card
+/// in play keeps its id so the client can still target it.
 /// </param>
 /// <param name="Back">The physical card back.</param>
 /// <param name="FaceUp">Whether the face is physically up.</param>
