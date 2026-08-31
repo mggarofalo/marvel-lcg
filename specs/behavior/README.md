@@ -11,6 +11,13 @@ dotnet run --project tools/Marvel.Behavior.Index -- report
 dotnet run --project tools/Marvel.Behavior.Index -- skeletons
 ```
 
+Admitted Core transcripts are under `core/`. Their read-only engine gate also
+executes the deliberately false quarantine and requires it to fail:
+
+```bash
+dotnet run --project tools/Marvel.Behavior.Run -- check
+```
+
 `check` is read-only. `write` deliberately regenerates `catalog.json` after an
 authority or adjudication change. `scaffold` replaces `adjudications.json` with
 invalid `unreviewed` markers and is only a starting point for a new authority

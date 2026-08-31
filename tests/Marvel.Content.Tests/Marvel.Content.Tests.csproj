@@ -8,6 +8,7 @@
   <ItemGroup>
     <ProjectReference Include="../../src/Marvel.Content/Marvel.Content.csproj" />
     <ProjectReference Include="../../src/Marvel.Cards/Marvel.Cards.csproj" />
+    <ProjectReference Include="../../tools/Marvel.Behavior.Run/Marvel.Behavior.Run.csproj" />
   </ItemGroup>
 
   <ItemGroup>

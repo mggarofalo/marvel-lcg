@@ -5,26 +5,26 @@ using Xunit;
 namespace Marvel.Core.Tests.Specs;
 
 /// <summary>
-/// MARVEL-41: do the spec files parse under the Gherkin the C# side will use?
+/// Do all candidate and admitted specs parse under the Gherkin the C# side uses?
 /// </summary>
 /// <remarks>
 /// <para>
-/// The 112 <c>.feature</c> files under <c>specs/</c> have to stay loadable by
+/// The <c>.feature</c> files under <c>specs/</c> have to stay loadable by
 /// whatever runs them, so this parses every one under the standard grammar. If
 /// they drift from it, every scenario has to be rewritten, and the cheapest
 /// moment to learn that is before the suite grows further.
 /// </para>
 /// <para>
-/// <b>This checks the format and says nothing about the behaviour.</b> Every
-/// scenario in there is a draft, and the Rules Reference decides what the game
-/// does. See <c>specs/README.md</c>.
+/// <b>This checks the format and says nothing about the behaviour.</b> Files
+/// under <c>cards/</c> and <c>rules/</c> remain drafts. This test does not confer
+/// admission; the Rules Reference decides what the game does. See
+/// <c>specs/README.md</c>.
 /// </para>
 /// <para>
 /// This uses the <c>Gherkin</c> package directly, which is the parser Reqnroll
 /// is built on. Referenced instead of the full BDD runner deliberately: the
-/// question is whether the *format* is compatible, and Reqnroll proper would
-/// demand step definitions for an engine that does not exist. Whether the steps
-/// can be *bound* is a separate question and a later one.
+/// question is whether the *format* is compatible. The admitted corpus instead
+/// uses the small typed vocabulary in <c>Marvel.Behavior.Run</c>.
 /// </para>
 /// </remarks>
 public sealed class GherkinFormatTests
