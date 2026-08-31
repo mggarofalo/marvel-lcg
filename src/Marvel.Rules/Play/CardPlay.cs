@@ -482,7 +482,7 @@ public static class CardPlay
                 $"ally {ally.ObjectId} can only be put into play in {form} form");
         }
 
-        if (Uniqueness.IsBlocked(world, facts, ally))
+        if (Uniqueness.IsBlocked(world, facts, ally, PlayArea.Of(controller)))
         {
             // `rr:unique-icon.4.1`: an attempted put-into-play has no effect.
             return;

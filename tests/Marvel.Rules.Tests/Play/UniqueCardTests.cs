@@ -72,15 +72,7 @@ public sealed class UniqueCardTests
         var facts = Cards().Card("identity", CardKind.AlterEgo, "Hero")
                            .Card("present", CardKind.Ally, "Person", unique: true)
                            .Card("waiting", CardKind.Ally, "Person", unique: true);
-        var world = new World(facts, 2);
-        for (int player = 0; player < 2; player++)
-        {
-            world.CreateSeat($"p{player}");
-            world.Seats[player].IdentityCard =
-                world.CreateCard("identity", world.Seats[player].Hero);
-            var ownArea = world.CreateGameArea();
-            world.Join(PlayArea.Of(player), ownArea, "test", []);
-        }
+        var world = SplitBoard(facts);
         world.CreateCard("present", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0)));
         var waiting = world.CreateCard("waiting", world.Seats[1].Deck);
 
@@ -88,6 +80,46 @@ public sealed class UniqueCardTests
 
         Assert.Equal(DeckType.AlliesArea, waiting.Area.Type);
         Assert.Equal(PlayArea.Of(1), waiting.Area.PlayArea);
+    }
+
+    [Rule("rr:unique-icon.4.1")]
+    [Fact]
+    public void CrossControllerAllyIsBlockedInItsDestinationGameArea()
+    {
+        // A matching player card “cannot be played or put into play.” The
+        // relevant game area is the controller's destination, even when an
+        // effect puts another player's ally there.
+        var facts = Cards().Card("identity", CardKind.AlterEgo, "Hero")
+                           .Card("present", CardKind.Ally, "Person", unique: true)
+                           .Card("waiting", CardKind.Ally, "Person", unique: true);
+        var world = SplitBoard(facts);
+        world.CreateCard("present", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(1)));
+        var waiting = world.CreateCard("waiting", world.Seats[0].Deck);
+
+        CardPlay.PutAllyIntoPlay(world, facts, new NoCardAbilities(), waiting, 1, "test", []);
+
+        Assert.Same(world.Seats[0].Deck, waiting.Area);
+    }
+
+    [Rule("rr:unique-icon.4.1")]
+    [Fact]
+    public void CrossControllerAllyIgnoresMatchingCardInAnotherGameArea()
+    {
+        // pack:mc11:rules-clarifications: “Cards in one game area cannot
+        // affect other game areas.” A matching card in the owner's area does
+        // not block the ally from entering another controller's area.
+        var facts = Cards().Card("identity", CardKind.AlterEgo, "Hero")
+                           .Card("present", CardKind.Ally, "Person", unique: true)
+                           .Card("waiting", CardKind.Ally, "Person", unique: true);
+        var world = SplitBoard(facts);
+        world.CreateCard("present", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0)));
+        var waiting = world.CreateCard("waiting", world.Seats[0].Deck);
+
+        CardPlay.PutAllyIntoPlay(world, facts, new NoCardAbilities(), waiting, 1, "test", []);
+
+        Assert.Equal(DeckType.AlliesArea, waiting.Area.Type);
+        Assert.Equal(PlayArea.Of(1), waiting.Area.PlayArea);
+        Assert.Equal(0, waiting.Owner);
     }
 
     [Rule("rr:unique-icon.4.2")]
@@ -138,6 +170,20 @@ public sealed class UniqueCardTests
         var world = new World(facts, 1);
         world.CreateSeat("p0");
         world.Seats[0].IdentityCard = world.CreateCard("identity", world.Seats[0].Hero);
+        return world;
+    }
+
+    private static World SplitBoard(Facts facts)
+    {
+        var world = new World(facts, 2);
+        for (int player = 0; player < 2; player++)
+        {
+            world.CreateSeat($"p{player}");
+            world.Seats[player].IdentityCard =
+                world.CreateCard("identity", world.Seats[player].Hero);
+            var ownArea = world.CreateGameArea();
+            world.Join(PlayArea.Of(player), ownArea, "test", []);
+        }
         return world;
     }
 
