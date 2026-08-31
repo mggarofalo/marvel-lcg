@@ -187,7 +187,7 @@ internal static class AuthoredCards
     /// still missing are what it stops on.
     /// </remarks>
     public static readonly string[] UnusEncounters =
-        ["45063", "45064", "45065", "45068", "45069", "45070", "45072", "45073", "45074"];
+        ["45063", "45064", "45065", "45066", "45068", "45069", "45070", "45072", "45073", "45074"];
 
     /// <summary>The printed id of "Hunted", the scenario's obligation.</summary>
     public const string Hunted = "45072";
@@ -200,6 +200,9 @@ internal static class AuthoredCards
 
     /// <summary>The printed id of "Infinite Hunter", the scenario's other minion.</summary>
     public const string InfiniteHunter = "45065";
+
+    /// <summary>The printed id of "Genetic Experiments".</summary>
+    public const string GeneticExperiments = "45066";
 
     /// <summary>The printed id of "You Dare Oppose Me?".</summary>
     public const string YouDareOpposeMe = "90005";
