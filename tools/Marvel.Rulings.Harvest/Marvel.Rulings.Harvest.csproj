@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Marvel.Rulings.Harvest</RootNamespace>
+    <AssemblyName>Marvel.Rulings.Harvest</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="../../tests/Shared/RepositoryPaths.cs" Link="RepositoryPaths.cs" />
+  </ItemGroup>
+
+</Project>

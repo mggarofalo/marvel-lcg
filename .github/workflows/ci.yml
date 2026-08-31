@@ -74,6 +74,12 @@ jobs:
       - name: The card dataset is what the generator produces
         run: dotnet run --project tools/Marvel.Cards.Extract --no-build --configuration Release -- check
 
+      # Hall of Heroes is acquired only by an explicit harvest. The committed
+      # pages are the vendored authority, and the ruling index must reproduce
+      # from them byte-for-byte without a network connection.
+      - name: The rulings index is what the vendored pages produce
+        run: dotnet run --project tools/Marvel.Rulings.Harvest --no-build --configuration Release -- check
+
       # The wall (MARVEL-162). `Directory.Build.targets` fails any build below
       # `Marvel.Godot` that can see `GodotSharp`, or that targets a framework
       # Godot cannot reference -- so the Build step above is already the

@@ -13,6 +13,7 @@
          are held against the 262 entries the document holds, rather than only
          against whatever page somebody last looked at. -->
     <ProjectReference Include="../../tools/Marvel.Rules.Harvest/Marvel.Rules.Harvest.csproj" />
+    <ProjectReference Include="../../tools/Marvel.Rulings.Harvest/Marvel.Rulings.Harvest.csproj" />
   </ItemGroup>
 
   <ItemGroup>
