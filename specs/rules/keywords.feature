@@ -262,20 +262,35 @@ Feature: Keywords
   # A steady character can hold one extra status card of each type and is not
   # considered stunned or confused until it has two of that type.
 
-  @card:27122
+  @card:27161
   @rr:steady.1
   Scenario: the first stunned status card does not stun a steady character but the second does
-    # Symbiotic Monstrosity prints Steady. The setup status is the first card;
+    # Kraven the Hunter prints Steady. The setup status is the first card;
     # Speed Cyclone applies the second, so the transcript observes both limits
     # without depending on how duplicate events in one hand are named.
     Given the hero is "quicksilver"
-    And "Symbiotic Monstrosity" is in play
-    And "Symbiotic Monstrosity" is stunned
+    And "Kraven the Hunter" is in play
+    And "Kraven the Hunter" is stunned
     And my hand is "Speed Cyclone", "Always Be Running"
-    Then "Symbiotic Monstrosity" is not stunned
+    Then "Kraven the Hunter" is not stunned
 
-    When I choose "Play" on "Speed Cyclone" paying 1 resources targeting "Symbiotic Monstrosity"
-    Then "Symbiotic Monstrosity" is stunned
+    When I choose "Play" on "Speed Cyclone" paying 1 resources targeting "Kraven the Hunter"
+    Then "Kraven the Hunter" is stunned
+
+  @card:27161
+  @rr:steady.1
+  Scenario: the first confused status card does not confuse a steady character but the second does
+    # Concussive Blow is used because its damage clause keeps a status-resistant
+    # enemy legal. The ordinary-enemy control is already the first scenario in
+    # 05031-41014-concussive-blow.feature, where one copy confuses Rhino.
+    Given "Kraven the Hunter" is in play
+    And "Kraven the Hunter" is confused
+    And my hand is "05031", "Backflip", "Backflip", "Backflip"
+    Then "Kraven the Hunter" is not confused
+
+    When I play "05031" targeting "Kraven the Hunter"
+    Then "Kraven the Hunter" is confused
+    And "Kraven the Hunter" has 3 damage
 
   @card:01101
   @rr:stun-stunned
@@ -307,12 +322,25 @@ Feature: Keywords
     And my hand is "Speed Cyclone", "Always Be Running"
 
     Then the legal targets for "Play" on "Speed Cyclone" are
+      | Rhino           |
       | Hydra Mercenary |
 
     When I choose "Play" on "Speed Cyclone" paying 1 resources targeting "Hydra Mercenary"
     Then "Kree Lieutenant" is not stunned
     And "Hydra Mercenary" is stunned
     And "Kree Lieutenant" is in play
+
+  @card:16133
+  @rr:stalwart.1
+  Scenario: a stalwart character cannot be confused
+    # Concussive Blow remains playable because its physical-resource clause
+    # deals damage even though the status cannot be placed.
+    Given "Kree Lieutenant" is in play
+    And my hand is "05031", "Backflip", "Backflip", "Backflip"
+
+    When I play "05031" targeting "Kree Lieutenant"
+    Then "Kree Lieutenant" is not confused
+    And "Kree Lieutenant" has 3 damage
 
   # --------------------------------------------------------------------------
   # Patrol
