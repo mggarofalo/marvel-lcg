@@ -99,14 +99,14 @@ public static class WorldProjection
     private static CardAudience Audience(
         Card card, Prompt? prompt, IReadOnlySet<int> searchVisible)
     {
-        if (card.FaceUp)
-        {
-            return CardAudience.Everyone;
-        }
-
         if (card.Area.Type == DeckType.HandsArea && card.Area.PlayArea.IsPlayers)
         {
             return CardAudience.ForSeat(card.Area.PlayArea.Player);
+        }
+
+        if (card.FaceUp)
+        {
+            return CardAudience.Everyone;
         }
 
         if (prompt is not null && searchVisible.Contains(card.ObjectId))

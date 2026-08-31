@@ -559,8 +559,10 @@ answer is rejected without calling the engine, mutating state, or aborting the
 session. This authorization check is separate from projection: hiding a prompt
 does not by itself make an attempted answer safe.
 
-Face-up cards remain public under both policies. Face-down hands belong to their
-seat. Other face-down cards are visible to nobody unless the prompt is an
+Face-up cards in public areas remain public under both policies. Every card in
+a player's hand belongs to that seat even if an engine effect left its physical
+`FaceUp` flag set; hand ownership takes precedence over general face-up
+visibility. Other face-down cards are visible to nobody unless the prompt is an
 authorized search. These are presentation/wire choices; the Rules Reference
 does not define network viewers.
 

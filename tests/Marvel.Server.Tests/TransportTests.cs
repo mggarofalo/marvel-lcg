@@ -5,6 +5,7 @@ using System.Text.Json;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
+using Marvel.Rules.State;
 using Marvel.Rules.Timing;
 using Marvel.View;
 using Xunit;
@@ -397,6 +398,45 @@ public sealed class TransportTests
         Assert.Null(synced.Error);
     }
 
+    [Fact]
+    public async Task HighwayRobberyReturnsFaceUpCardsOnlyToTheirOwnersView()
+    {
+        var factory = new HighwayRobberyFactory(
+            DatasetGameFactory.Load(Marvel.Tests.RepositoryPaths.Root));
+        var host = new EngineHost(
+            factory,
+            new SequenceCapabilities("seat-zero", "invite-one", "seat-one"),
+            new RestrictedVisibilityPolicy(0));
+        var server = new SocketEngineServer(host, IPAddress.Loopback, port: 0);
+        var specification = new GameSpecification(
+            "rhino", ["spider_man", "she_hulk"], ModularSets: [], Seed: 12345);
+
+        EngineResponse forZero = await ExchangeOverSocket(
+            server, EngineRequest.OpenGame("robbery", "shared", specification));
+        SeatInvitation invitation = Assert.Single(forZero.Invitations!);
+        EngineResponse forOne = await ExchangeOverSocket(
+            server,
+            EngineRequest.AttachGame("owner", "shared", invitation.Invitation));
+
+        Assert.True(factory.ReturnedForSeatOne >= 0);
+        Assert.All(Hand(forZero, 1), card =>
+        {
+            Assert.Null(card.Id);
+            Assert.Null(card.Face);
+        });
+        Assert.DoesNotContain(
+            forZero.Events.OfType<CardsMoved>().SelectMany(moved => moved.Cards),
+            landing => landing.Card == factory.ReturnedForSeatOne);
+        Assert.DoesNotContain(
+            forZero.Events.OfType<CardDetached>(),
+            detached => detached.Card == factory.ReturnedForSeatOne);
+
+        var returned = Assert.Single(
+            Hand(forOne, 1), card => card.Id == factory.ReturnedForSeatOne);
+        Assert.NotNull(returned.Face);
+        Assert.True(returned.FaceUp);
+    }
+
     private static async Task<EngineResponse> ExchangeOverSocket(
         SocketEngineServer server, EngineRequest request)
     {
@@ -481,6 +521,31 @@ public sealed class TransportTests
                 player: 0,
                 trigger: "test",
                 events);
+            return opened with { SetupEvents = events };
+        }
+    }
+
+    private sealed class HighwayRobberyFactory(IGameFactory inner) : IGameFactory
+    {
+        public int ReturnedForSeatOne { get; private set; } = -1;
+
+        public OpenedGame Create(GameSpecification specification)
+        {
+            OpenedGame opened = inner.Create(specification);
+            var world = opened.Game.State;
+            var events = opened.SetupEvents.ToList();
+            Card scheme = world.CreateCard(
+                "01166", world.AreaOf(DeckType.SideSchemesArea));
+            events.AddRange(world.Abilities.WhenRevealed(world, scheme, player: 0));
+            ReturnedForSeatOne = Assert.Single(
+                world.Areas
+                    .Where(area => area.Host == scheme.ObjectId)
+                    .SelectMany(area => area.Cards),
+                card => card.Owner == 1).ObjectId;
+
+            world.Agenda.Add(new PhaseStep(Steps.DealAttackDamage, 1, 4, Plan: true));
+            world.Agenda.Begin(world, world.Facts);
+            Defeat.Scheme(world, world.Facts, scheme, "test", events);
             return opened with { SetupEvents = events };
         }
     }
