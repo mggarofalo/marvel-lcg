@@ -238,7 +238,7 @@ public sealed class PlacesTests
         Split(world);
 
         var central = InPlayArea(world, DeckType.MainSchemesArea, PlayArea.Villains);
-        world.Detach(PlayArea.Villains);
+        world.Detach(PlayArea.Villains, "test", []);
 
         var myHero = InPlayArea(world, DeckType.HeroArea, PlayArea.Of(0));
         var theirHero = InPlayArea(world, DeckType.HeroArea, PlayArea.Of(1));
@@ -265,7 +265,7 @@ public sealed class PlacesTests
         // by one in exactly the case the clarification exists to settle.
         var world = Ordinary(players: 3);
         var mine = world.CreateGameArea();
-        world.Join(PlayArea.Of(0), mine);
+        Join(world, PlayArea.Of(0), mine);
 
         var myHero = InPlayArea(world, DeckType.HeroArea, PlayArea.Of(0));
         Assert.Equal([0], Places.EachPlayer(world, myHero));
@@ -288,11 +288,11 @@ public sealed class PlacesTests
         var groupB = world.CreateGameArea();
         var neutral = world.CreateGameArea();
 
-        world.Join(PlayArea.Of(0), groupA);
-        world.Join(PlayArea.Of(1), groupA);
-        world.Join(PlayArea.Of(2), groupB);
-        world.Join(PlayArea.Of(3), groupB);
-        world.Join(PlayArea.Villains, neutral);
+        Join(world, PlayArea.Of(0), groupA);
+        Join(world, PlayArea.Of(1), groupA);
+        Join(world, PlayArea.Of(2), groupB);
+        Join(world, PlayArea.Of(3), groupB);
+        Join(world, PlayArea.Villains, neutral);
 
         var teammate = InPlayArea(world, DeckType.HeroArea, PlayArea.Of(0));
         Assert.Equal([0, 1], Places.EachPlayer(world, teammate));
@@ -321,10 +321,15 @@ public sealed class PlacesTests
         };
         Assert.All(cards, card => Assert.Same(mine, Places.GameAreaOf(world, card)));
 
-        world.Join(PlayArea.Of(0), theirs);
+        var events = Join(world, PlayArea.Of(0), theirs);
 
         Assert.All(cards, card => Assert.Same(theirs, Places.GameAreaOf(world, card)));
         Assert.False(mine.Contains(PlayArea.Of(0)));
+        var joined = Assert.IsType<PlayAreaJoined>(Assert.Single(events));
+        Assert.Equal(0, joined.PlayArea);
+        Assert.Equal(theirs.Id, joined.GameArea);
+        Assert.Equal("test", joined.Trigger);
+        Assert.Equal("Join", joined.Verb);
     }
 
     [Fact]
@@ -336,7 +341,7 @@ public sealed class PlacesTests
         var world = Ordinary(players: 2);
         var (mine, theirs) = Split(world);
 
-        world.Join(PlayArea.Of(0), theirs);
+        Join(world, PlayArea.Of(0), theirs);
 
         Assert.Equal(1, world.GameAreas.Count(area => area.Contains(PlayArea.Of(0))));
         Assert.False(mine.Contains(PlayArea.Of(0)));
@@ -347,8 +352,68 @@ public sealed class PlacesTests
     {
         var world = Ordinary(players: 1);
         var stranger = Ordinary(players: 1).CreateGameArea();
+        var events = new List<GameEvent>();
 
-        Assert.Throws<ArgumentException>(() => world.Join(PlayArea.Of(0), stranger));
+        Assert.Throws<ArgumentException>(() =>
+            world.Join(PlayArea.Of(0), stranger, "test", events));
+        Assert.Empty(events);
+    }
+
+    [Fact]
+    public void JoiningTheGameAreaYouAreAlreadyInIsSilent()
+    {
+        var world = Ordinary(players: 1);
+        var current = Assert.Single(world.GameAreas);
+
+        var events = Join(world, PlayArea.Of(0), current);
+
+        Assert.Empty(events);
+        Assert.True(current.Contains(PlayArea.Of(0)));
+    }
+
+    [Fact]
+    public void DetachingIsOneOperationAndNamesThePriorGameArea()
+    {
+        var world = Ordinary(players: 1);
+        var prior = Assert.Single(world.GameAreas);
+        var events = new List<GameEvent>();
+
+        world.Detach(PlayArea.Of(0), "test", events);
+
+        Assert.Null(world.GameAreaOf(PlayArea.Of(0)));
+        var detached = Assert.IsType<PlayAreaDetached>(Assert.Single(events));
+        Assert.Equal(0, detached.PlayArea);
+        Assert.Equal(prior.Id, detached.GameArea);
+        Assert.Equal("test", detached.Trigger);
+        Assert.Equal("Detach", detached.Verb);
+    }
+
+    [Fact]
+    public void DetachingAPlayAreaOutsideThisWorldIsSilentAndAtomic()
+    {
+        var world = Ordinary(players: 1);
+        var prior = Assert.Single(world.GameAreas);
+        var before = prior.PlayAreas.ToHashSet();
+        var events = new List<GameEvent>();
+
+        world.Detach(PlayArea.Of(99), "test", events);
+
+        Assert.Empty(events);
+        Assert.Equal(before, prior.PlayAreas.ToHashSet());
+    }
+
+    [Fact]
+    public void DetachingAnAlreadyDetachedPlayAreaIsSilent()
+    {
+        var world = Ordinary(players: 1);
+        var events = new List<GameEvent>();
+
+        world.Detach(PlayArea.Of(0), "test", events);
+        events.Clear();
+        world.Detach(PlayArea.Of(0), "test", events);
+
+        Assert.Empty(events);
+        Assert.Null(world.GameAreaOf(PlayArea.Of(0)));
     }
 
     // ---------------------------------------------------------------- the wire
@@ -428,9 +493,17 @@ public sealed class PlacesTests
     {
         var mine = world.CreateGameArea();
         var theirs = world.CreateGameArea();
-        world.Join(PlayArea.Of(0), mine);
-        world.Join(PlayArea.Of(1), theirs);
+        Join(world, PlayArea.Of(0), mine);
+        Join(world, PlayArea.Of(1), theirs);
         return (mine, theirs);
+    }
+
+    private static List<GameEvent> Join(
+        World world, PlayArea area, GameArea destination)
+    {
+        var events = new List<GameEvent>();
+        world.Join(area, destination, "test", events);
+        return events;
     }
 
     private static Card MainScheme(World world, PlayArea where) =>

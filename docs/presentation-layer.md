@@ -445,7 +445,7 @@ blocks the client loop; the in-process implementation calls the host
 synchronously before returning its completed value, so neither transport
 creates an async or concurrent path into game state.
 
-The socket protocol is version 1, source-generated JSON in a four-byte
+The socket protocol is version 2, source-generated JSON in a four-byte
 big-endian length frame, with a 4 MiB maximum. One connection carries one
 request and one response. `open`, `resolve`, and `close` are the three
 operations; game ids and request correlation ids are opaque strings chosen by
@@ -455,6 +455,11 @@ characters, and a response that still cannot be represented becomes a compact
 limits and framing are **our wire-format choices**, not rules of the game.
 `src/Marvel.Server/Dockerfile` packages the same assembly and the three canonical
 runtime datasets for Linux.
+
+Version 2 adds `PlayAreaJoined` and `PlayAreaDetached` to the polymorphic event
+union. Version 1 clients do not know those discriminators, so the host rejects
+version 1 during request negotiation before it opens or advances a game. A wire
+union cannot grow compatibly merely because its new members are uncommon.
 
 Game ids are labels, not authority, and two clients may choose the same one.
 `open` returns a cryptographically random 256-bit session capability; every
@@ -468,7 +473,7 @@ request write. Once the complete request frame has been sent, the server may
 have committed the decision, so the response read no longer observes caller
 cancellation: the prompt and event list are the authoritative result and cannot
 be discarded without an idempotent retry protocol. There is no such retry
-protocol in version 1.
+protocol in version 2.
 
 The response deliberately contains a prompt and events, never `World` or its
 digest. A fresh client's visible board projection is separate work for

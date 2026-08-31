@@ -26,10 +26,12 @@ namespace Marvel.Rules.Events;
 /// meant to say what moved.
 /// </para>
 /// <para>
-/// The subtype set is closed, and was chosen by measurement rather than by
-/// taste: it is the smallest set that explained every state change across a
-/// 201,870-transition sample of recorded play, with nothing left over and no
-/// member that never fired. Adding a tenth kind needs the same argument.
+/// The derivable subtype set is closed, and was chosen by measurement rather
+/// than by taste: it is the smallest set that explained every state change
+/// across a 201,870-transition sample of recorded play, with nothing left over
+/// and no member that never fired. Emitted-only kinds are held separately:
+/// they describe changes the engine knows happened and the digest cannot see.
+/// <c>EventVocabularyTests</c> keeps both claims distinct.
 /// </para>
 /// </remarks>
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "kind")]
@@ -42,6 +44,8 @@ namespace Marvel.Rules.Events;
 [JsonDerivedType(typeof(CardDetached), nameof(CardDetached))]
 [JsonDerivedType(typeof(ControlChanged), nameof(ControlChanged))]
 [JsonDerivedType(typeof(FieldSet), nameof(FieldSet))]
+[JsonDerivedType(typeof(PlayAreaJoined), nameof(PlayAreaJoined))]
+[JsonDerivedType(typeof(PlayAreaDetached), nameof(PlayAreaDetached))]
 public abstract record GameEvent
 {
     /// <summary>
@@ -155,6 +159,46 @@ public sealed record CardDetached(int Card, int Host) : GameEvent;
 /// <param name="From">The previous controller, or <c>-1</c>.</param>
 /// <param name="To">The new controller, or <c>-1</c>.</param>
 public sealed record ControlChanged(int Card, int From, int To) : GameEvent;
+
+/// <summary>A play area joined a game area.</summary>
+/// <param name="PlayArea">
+/// The player's seat, or <c>-1</c> for the villain's play area.
+/// </param>
+/// <param name="GameArea">The destination game area's identity.</param>
+/// <remarks>
+/// <para>
+/// One event for the play area, not one per card. A game area groups play
+/// areas, so every card in the moving play area follows without moving between
+/// card areas or changing any card field.
+/// </para>
+/// <para>
+/// <b>Emitted-only.</b> A v2 digest cannot see game-area membership, so no
+/// before/after digest comparison can derive this event. The engine can emit it
+/// directly because <c>World.Join</c> performs the operation. The split between
+/// derivable and emitted-only wire kinds is the engine's choice; the published
+/// rule establishes the operation, not its JSON representation.
+/// </para>
+/// </remarks>
+public sealed record PlayAreaJoined(int PlayArea, int GameArea) : GameEvent;
+
+/// <summary>A play area left its game area without joining another.</summary>
+/// <param name="PlayArea">
+/// The player's seat, or <c>-1</c> for the villain's play area.
+/// </param>
+/// <param name="GameArea">The prior game area's identity.</param>
+/// <remarks>
+/// <para>
+/// One event for the play area, not one per card. The prior game area is part
+/// of the payload because the operation removes that membership and leaves no
+/// destination from which a client could infer it.
+/// </para>
+/// <para>
+/// <b>Emitted-only.</b> Like <see cref="PlayAreaJoined"/>, this topology change
+/// is absent from the v2 digest. <c>World.Detach</c> observes the prior
+/// membership before removing it and emits the event directly.
+/// </para>
+/// </remarks>
+public sealed record PlayAreaDetached(int PlayArea, int GameArea) : GameEvent;
 
 
 /// <summary>One named value on a card changed.</summary>

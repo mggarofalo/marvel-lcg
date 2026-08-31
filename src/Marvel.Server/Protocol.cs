@@ -7,8 +7,11 @@ namespace Marvel.Server;
 /// <summary>The versioned request/response protocol shared by both transports.</summary>
 public static class EngineProtocol
 {
-    /// <summary>The only protocol version this host accepts.</summary>
-    public const int Version = 1;
+    /// <summary>
+    /// The only protocol version this host accepts. Version 2 adds the
+    /// emitted-only play-area topology event kinds to the response union.
+    /// </summary>
+    public const int Version = 2;
 
     /// <summary>The largest request or game id accepted or echoed.</summary>
     public const int MaximumIdentifierLength = 256;

@@ -1,5 +1,6 @@
 using Marvel.Core.Digest;
 using Marvel.Core.Random;
+using Marvel.Rules.Events;
 
 namespace Marvel.Rules.State;
 
@@ -404,26 +405,33 @@ public sealed class World
     /// <para>
     /// <b>One operation, not one per card.</b> A play area moves and every card
     /// in it comes along, because a card's game area is looked up through its
-    /// play area rather than stored on the card. PR #115 modelled a Kang split
-    /// as 47 cards changing a tag and was reverted for it.
+    /// play area rather than stored on the card.
     /// </para>
     /// <para>
-    /// <b>The engine cannot yet tell a client this happened.</b> The event
-    /// vocabulary is the set that explained every state change in a large
-    /// sample of recorded play, and a game area is invisible to the digest
-    /// (MARVEL-174) — so a sample drawn from digests could never have contained
-    /// one. This change is emittable but not derivable, and no existing event
-    /// kind covers it. Raised on MARVEL-175 rather than settled here.
+    /// <b>This event is emitted, not derived.</b> A game area is invisible to
+    /// the v2 digest (MARVEL-174), so a before/after comparison can never find
+    /// the change. This method knows it performed the join and emits one
+    /// <see cref="PlayAreaJoined"/> for it.
     /// </para>
     /// </remarks>
     /// <param name="area">The play area that is moving.</param>
     /// <param name="destination">The game area it joins.</param>
-    public void Join(PlayArea area, GameArea destination)
+    /// <param name="trigger">The timing point that caused the join.</param>
+    /// <param name="events">The event stream to append to.</param>
+    public void Join(
+        PlayArea area, GameArea destination, string trigger, List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(destination);
+        ArgumentNullException.ThrowIfNull(trigger);
+        ArgumentNullException.ThrowIfNull(events);
         if (!gameAreas.Contains(destination))
         {
             throw new ArgumentException("that game area is not in this world", nameof(destination));
+        }
+
+        if (destination.Contains(area))
+        {
+            return;
         }
 
         foreach (var existing in gameAreas)
@@ -432,22 +440,50 @@ public sealed class World
         }
 
         destination.Add(area);
+        events.Add(new PlayAreaJoined(area.Player, destination.Id)
+        {
+            Trigger = trigger,
+            Verb = "Join",
+        });
     }
 
-    /// <summary>Takes a play area out of every game area.</summary>
+    /// <summary>Takes a play area out of its game area.</summary>
     /// <remarks>
     /// Kang's stage 2B "remains in play in a central location […] though it is
     /// not part of any other game area", and its text stays active for everyone.
     /// Being in no game area is a real placement with a rules consequence, not
     /// an error state — see <c>Places.CanAffect</c>.
+    /// <para>
+    /// The topology change is invisible to the v2 digest, so this emits one
+    /// <see cref="PlayAreaDetached"/> naming the membership that was removed.
+    /// A play area already outside every game area is unchanged and silent.
+    /// </para>
     /// </remarks>
     /// <param name="area">The play area to detach.</param>
-    public void Detach(PlayArea area)
+    /// <param name="trigger">The timing point that caused the detachment.</param>
+    /// <param name="events">The event stream to append to.</param>
+    public void Detach(PlayArea area, string trigger, List<GameEvent> events)
     {
-        foreach (var existing in gameAreas)
+        ArgumentNullException.ThrowIfNull(trigger);
+        ArgumentNullException.ThrowIfNull(events);
+
+        var existing = GameAreaOf(area);
+        if (existing is null)
         {
-            existing.Remove(area);
+            return;
         }
+
+        if (!existing.Remove(area))
+        {
+            throw new InvalidOperationException(
+                $"play area {area} was not in its resolved game area");
+        }
+
+        events.Add(new PlayAreaDetached(area.Player, existing.Id)
+        {
+            Trigger = trigger,
+            Verb = "Detach",
+        });
     }
 
     /// <summary>Which game area a play area is in, or <c>null</c> when it is in none.</summary>
