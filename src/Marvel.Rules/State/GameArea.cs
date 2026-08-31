@@ -45,11 +45,10 @@ namespace Marvel.Rules.State;
 /// the model cost nothing when unused.
 /// </para>
 /// <para>
-/// <b>Not an event, and not a card tag.</b> The legacy engine tags every card
-/// with <c>card.game_area</c> and keeps one deck per zone regardless; that is an
-/// implementation shortcut rather than the rule. PR #115 modelled a split as 47
-/// cards changing a tag and was reverted: the unit is a player joining a game
-/// area. See <c>docs/event-stream.md</c>, "Play areas and game areas".
+/// <b>Not a card tag.</b> The state unit is a play area, and
+/// <see cref="World.Join"/> emits one event when it joins a game area. Every
+/// card follows through its play area without storing a second placement. See
+/// <c>docs/event-stream.md</c>, "Play areas and game areas".
 /// </para>
 /// </remarks>
 public sealed class GameArea

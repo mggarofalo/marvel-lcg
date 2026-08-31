@@ -179,12 +179,11 @@ decides."* That needs a uniqueness concept the engine does not have, and the
 combine case needs a prompt. It is a fourth rule of place and it belongs here when
 uniqueness exists.
 
-**The engine cannot tell a client a join happened.** `World.Join` is one operation
-on state, which is what MARVEL-175 asks for and what PR #115 got wrong. But no
-event describes it, and adding one is a decision rather than an oversight — see
-below.
+**The engine tells a client a join happened once.** `World.Join` is one
+operation on state and emits one `PlayAreaJoined`; it does not emit one change
+per card.
 
-## The event question
+## The join event
 
 The event vocabulary is a closed set of nine kinds, chosen as *the set that
 explains every state change with nothing left over and no member that never
@@ -194,27 +193,20 @@ fires*. The Python model that first drew the line added:
 > about *state*, not about this list.
 
 A player joining a game area is the first change that is **emittable but not
-derivable**: the engine could announce it, and a reducer over digests can never
-discover it, because the digest cannot see it. So the vocabulary cannot grow this
-member from measurement, which is how every other member got there.
+derivable**: the engine announces it, and a reducer over digests can never
+discover it, because the digest cannot see it.
 
 The physical action the rules describe is *"reorient the cards on the table to
-indicate that you have joined that game area"* — a client plainly needs to be told.
-Three ways out, and it is the same shape of call as MARVEL-174's:
+indicate that you have joined that game area"* — a client plainly needs to be
+told. The contract therefore has two explicit classes: the **derivable** set
+remains the nine corpus-verified kinds, and the **emitted-only** set contains
+`PlayAreaJoined`. `EventVocabularyTests` holds each class independently and
+then holds their union against the serialiser.
 
-1. Leave the vocabulary alone. A client re-reads the grouping from state after
-   every resolve. Cheapest; loses the "one visual beat" property every other event
-   has.
-2. Add a tenth kind and accept that one member is justified by published rules
-   rather than by the corpus. Honest, but it weakens the fixture's stated
-   contract for every other member.
-3. Split the fixture: the **derivable** set (nine, corpus-verified) and an
-   **emitted-only** set. Keeps both claims true and costs a fixture shape change
-   plus the C# test that reads it.
-
-Not taken here, because `model.py` already records the opposite decision and
-overriding it silently inside an unrelated change is how a contract stops meaning
-anything.
+The payload names the play area and destination game area. Those names are the
+engine's wire-format choice; the rulebook establishes the join, not how JSON
+spells it. `World.Join` appends the event after the grouping changes and stays
+silent when the play area is already in that destination.
 
 ## Reproducing
 

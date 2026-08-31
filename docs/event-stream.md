@@ -77,12 +77,18 @@ happened, so it is one event carrying five cards, not five events.
 
 ## The vocabulary
 
-Nine records, defined by `src/Marvel.Rules/Events/GameEvent.cs`.
+Nine derivable records and one emitted-only record, defined by
+`src/Marvel.Rules/Events/GameEvent.cs`.
 
-**The table below is checked, not decorative.** `EventVocabularyTests` parses
-it out of this file and holds it against what the serialiser actually writes —
-kind for kind and key for key. Renaming a field in C# without renaming it here
-fails, and so does the reverse.
+**The tables below are checked, not decorative.** `EventVocabularyTests` parses
+each class out of this file and holds it against what the serialiser actually
+writes — kind for kind and key for key. Renaming a field in C# without renaming
+it here fails, and so does the reverse.
+
+### Derivable events
+
+These are exactly the nine kinds measured from the corpus. A digest transition
+can derive each one, all nine fired, and no observed change needs a tenth.
 
 | event | payload |
 |---|---|
@@ -95,6 +101,16 @@ fails, and so does the reverse.
 | `CardDetached` | `card`, `host` |
 | `ControlChanged` | `card`, `from`, `to` |
 | `FieldSet` | `card`, `field`, `from`, `to` |
+
+### Emitted-only events
+
+This separate class is for a change the engine directly observes and a digest
+cannot represent. It is part of the serialised `GameEvent` union without
+changing the claim that the derivable set is exactly the measured nine.
+
+| event | payload |
+|---|---|
+| `PlayAreaJoined` | `play_area`, `game_area` |
 
 Every event also carries `kind`, plus `trigger` and `verb` — the engine's own
 names for why the transition happened, e.g. `WhenPlayerInTurn` and `Play`. Those
@@ -325,11 +341,11 @@ meaning and a second scenario. God of Lies' Epic Multiplayer Mode
 Loki in a neutral one with nobody in it, which rules out the tempting "one game
 area per player" model that Kang alone would have suggested.
 
-**The event is still open, and it is now precise.** A player joining a game area
-is the first change that is emittable but not derivable — a reducer over digests
-can never discover it, because the digest cannot see it (MARVEL-174). So this
-vocabulary cannot grow the member the way every other member got here. Three
-options and the argument are in [places.md](places.md#the-event-question).
+**The event is emitted-only.** A player joining a game area is the first change
+the engine can announce and a reducer over digests can never discover, because
+the digest cannot see it (MARVEL-174). `PlayAreaJoined` therefore lives in the
+separate emitted-only class above. `World.Join` emits one record for the moving
+play area; no card changes area or carries a game-area tag.
 
 ### The oracle is blind to all of it
 
@@ -401,14 +417,10 @@ about, which is why they run in the fast tier.
 
 ## What is not settled here
 
-- **The stream is derived, not emitted.** MARVEL-163 verified it against engine
-  *state*; the events still come from comparing two snapshots rather than from
-  an interpreter executing effect nodes. That last step lands with the
-  interpreter, and what this proves for it is that the vocabulary and the
-  reducer are not what will be wrong.
-- **How play areas and game areas live in the engine's state**, and what event a
-  player joining a game area produces. MARVEL-175. Not answerable before an
-  engine exists, and not a card property whatever the answer.
+- **The completeness proof is derived.** MARVEL-163 verified the nine measured
+  kinds by comparing engine states. Rule paths now emit events while executing,
+  and `PlayAreaJoined` can only be covered that way; the corpus still cannot
+  prove execution ordering for the stream.
 - **Ordering within a step.** The prototype emits creations, then moves, then
   reorderings, then per-card changes. The interpreter will emit in execution
   order instead, which is more useful and is not checkable until it exists.

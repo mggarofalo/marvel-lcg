@@ -1,5 +1,6 @@
 using Marvel.Core.Digest;
 using Marvel.Core.Random;
+using Marvel.Rules.Events;
 
 namespace Marvel.Rules.State;
 
@@ -404,26 +405,33 @@ public sealed class World
     /// <para>
     /// <b>One operation, not one per card.</b> A play area moves and every card
     /// in it comes along, because a card's game area is looked up through its
-    /// play area rather than stored on the card. PR #115 modelled a Kang split
-    /// as 47 cards changing a tag and was reverted for it.
+    /// play area rather than stored on the card.
     /// </para>
     /// <para>
-    /// <b>The engine cannot yet tell a client this happened.</b> The event
-    /// vocabulary is the set that explained every state change in a large
-    /// sample of recorded play, and a game area is invisible to the digest
-    /// (MARVEL-174) — so a sample drawn from digests could never have contained
-    /// one. This change is emittable but not derivable, and no existing event
-    /// kind covers it. Raised on MARVEL-175 rather than settled here.
+    /// <b>This event is emitted, not derived.</b> A game area is invisible to
+    /// the v2 digest (MARVEL-174), so a before/after comparison can never find
+    /// the change. This method knows it performed the join and emits one
+    /// <see cref="PlayAreaJoined"/> for it.
     /// </para>
     /// </remarks>
     /// <param name="area">The play area that is moving.</param>
     /// <param name="destination">The game area it joins.</param>
-    public void Join(PlayArea area, GameArea destination)
+    /// <param name="trigger">The timing point that caused the join.</param>
+    /// <param name="events">The event stream to append to.</param>
+    public void Join(
+        PlayArea area, GameArea destination, string trigger, List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(destination);
+        ArgumentNullException.ThrowIfNull(trigger);
+        ArgumentNullException.ThrowIfNull(events);
         if (!gameAreas.Contains(destination))
         {
             throw new ArgumentException("that game area is not in this world", nameof(destination));
+        }
+
+        if (destination.Contains(area))
+        {
+            return;
         }
 
         foreach (var existing in gameAreas)
@@ -432,6 +440,11 @@ public sealed class World
         }
 
         destination.Add(area);
+        events.Add(new PlayAreaJoined(area.Player, destination.Id)
+        {
+            Trigger = trigger,
+            Verb = "Join",
+        });
     }
 
     /// <summary>Takes a play area out of every game area.</summary>
