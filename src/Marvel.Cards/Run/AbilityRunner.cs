@@ -807,8 +807,8 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
         var cancellation = world.Effects.Active().FirstOrDefault(effect =>
             string.Equals(effect.Kind, "cancelWhenRevealed", StringComparison.Ordinal)
             && effect.Affects == card.ObjectId);
-        bool mayBeCanceled = world.Facts.Kind(card.FaceId)
-            is not (CardKind.EncounterVillain or CardKind.MainScheme);
+        var kind = world.Facts.Kind(card.FaceId);
+        bool mayBeCanceled = !CardKinds.IsVillain(kind) && kind != CardKind.MainScheme;
         if (!mayBeCanceled || cancellation is null || !world.Effects.Use(cancellation))
         {
             return false;

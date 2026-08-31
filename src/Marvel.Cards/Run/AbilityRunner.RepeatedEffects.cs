@@ -1220,9 +1220,8 @@ public sealed partial class AbilityRunner
                 [
                     .. cast.World.Areas
                         .SelectMany(area => area.Cards)
-                        .Where(card => FacedownDrones.Kind(
-                            card, cast.World.Facts) is
-                            CardKind.EncounterVillain or CardKind.Minion),
+                        .Where(card => CardKinds.IsEnemy(
+                            FacedownDrones.Kind(card, cast.World.Facts))),
                 ];
             }
             if (node.Kind == "query" && node.Argument is AbilityValue.Word

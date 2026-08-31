@@ -94,6 +94,8 @@ public static class WorldSetup
         ArgumentNullException.ThrowIfNull(blueprints);
         ArgumentNullException.ThrowIfNull(seats);
 
+        RefuseUnsupportedKinds(facts, blueprints);
+
         int players = seats.Count;
         var happened = events ?? [];
         int setupEventCursor = happened.Count;
@@ -344,6 +346,36 @@ public static class WorldSetup
         }
 
         return world;
+    }
+
+    private static void RefuseUnsupportedKinds(
+        ICardFacts facts, IReadOnlyList<CardBlueprint> blueprints)
+    {
+        foreach (var blueprint in blueprints)
+        {
+            foreach (string faceId in blueprint.Spec.Split(','))
+            {
+                var kind = facts.Kind(faceId);
+                string missing = kind switch
+                {
+                    CardKind.Evidence =>
+                        "campaign evidence envelopes and their setup abilities",
+                    CardKind.PlayerSideScheme =>
+                        "playing and resolving player side schemes",
+                    CardKind.Challenge =>
+                        "challenge setup and rules modifiers",
+                    _ => string.Empty,
+                };
+                if (missing.Length == 0)
+                {
+                    continue;
+                }
+
+                throw new Play.RulesNotImplementedException(
+                    $"card '{faceId}' is a {kind}, and this engine does not "
+                    + $"yet support {missing}. MARVEL-257");
+            }
+        }
     }
 
     /// <summary>Resolve everything one scenario setup ability scheduled.</summary>
