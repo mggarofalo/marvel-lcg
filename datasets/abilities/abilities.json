@@ -2042,6 +2042,7 @@
               },
               "then": {
                 "chooseCard": {
+                  "chooser": "firstPlayer",
                   "from": {
                     "withTrait": {
                       "cards": { "query": "minions" },

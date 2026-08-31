@@ -796,9 +796,13 @@ Two bounds are charged by name rather than guessed at:
   is refused by name, because the resume point is one index into the top-level
   sequence.
 
-`rr:choose-game-element.1` settles who is asked: the player resolving the
-ability. For a revealed encounter card that is the player it was dealt to — not
-the first player, and not the card's owner, which an encounter card has not got.
+`rr:choose-game-element.1` settles who is asked by default: the player resolving
+the ability. For a revealed encounter card that is the player it was dealt to,
+not the card's owner, which an encounter card has not got. A `chooseCard` may
+carry `chooser: firstPlayer` when a different rule assigns an unspecified
+encounter-card decision to the first player. `chooser` changes prompt ownership
+only; the resolving player remains the meaning of `you` inside the chosen
+effect. The field name is the engine's choice, not Rules Reference vocabulary.
 `rr:choose-option` gives no way out, so the prompt is not cancellable.
 
 **`chooseCard` is the other question, and the rules already knew.**

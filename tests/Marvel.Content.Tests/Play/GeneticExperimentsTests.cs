@@ -156,7 +156,8 @@ public sealed class GeneticExperimentsTests
         // another ability attaches the card. The Boost ability is that other
         // ability, and its singular "an Infinite minion" uses the same stated
         // engine reading for the player's choice.
-        var world = Empty();
+        var world = Empty(players: 2);
+        world.FirstPlayer = 0;
         var chosen = Minion(world, InfiniteSoldier);
         var spared = Minion(world, InfiniteHunter);
         var experiment = world.CreateCard(
@@ -164,16 +165,21 @@ public sealed class GeneticExperimentsTests
             world.AreaOf(DeckType.BoostingArea));
         var runner = Assert.IsType<AbilityRunner>(world.Abilities);
 
-        runner.Boost(world, experiment, 0);
+        // The activating enemy is attacking seat 1, while seat 0 holds the
+        // first-player token. `rr:first-player.2`: "the first player makes all
+        // necessary decisions for encounter card effects that do not specify
+        // which player makes the decision."
+        runner.Boost(world, experiment, 1);
         var waiting = Assert.Single(world.Agenda.Outstanding);
         var asked = Assert.IsType<Prompt>(runner.Choosing(
-            world, experiment, 0, waiting.Index, waiting.Tier));
+            world, experiment, 1, waiting.Index, waiting.Tier));
 
+        Assert.Equal(world.FirstPlayer, asked.Player);
         Assert.Equal(
             [chosen.ObjectId, spared.ObjectId],
             asked.Affordances.Select(option => option.Id));
         runner.Chose(
-            world, experiment, 0, waiting.Index,
+            world, experiment, 1, waiting.Index,
             Decision.Take(chosen.ObjectId), waiting.Tier);
 
         Assert.Equal(DeckType.UpgradesArea, experiment.Area.Type);
@@ -182,10 +188,13 @@ public sealed class GeneticExperimentsTests
         Assert.Equal(4, Damage.Health(world, Cards, spared));
     }
 
-    private static World Empty()
+    private static World Empty(int players = 1)
     {
-        var world = new World(Cards, players: 1);
-        world.CreateSeat("p0");
+        var world = new World(Cards, players);
+        for (int player = 0; player < players; player++)
+        {
+            world.CreateSeat($"p{player}");
+        }
         world.Abilities = AuthoredCards.Runner();
         return world;
     }
