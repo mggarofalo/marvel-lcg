@@ -75,6 +75,24 @@ public sealed class EngineHostTests
             EngineRequest.OpenGame("reopen", "reusable", specification)).Error);
     }
 
+    [Fact]
+    public void AFailedResolveCannotLeaveAPartialGameAvailable()
+    {
+        var host = new EngineHost(DatasetGameFactory.Load(RepositoryPaths.Root));
+        Assert.Null(host.Exchange(EngineRequest.OpenGame(
+            "open",
+            "fail-closed",
+            new GameSpecification("rhino", ["spider_man"], [], Seed: 7))).Error);
+
+        var rejected = host.Exchange(EngineRequest.ResolveGame(
+            "bad", "fail-closed", new EngineDecision(999, [])));
+        var after = host.Exchange(EngineRequest.ResolveGame(
+            "after", "fail-closed", EngineDecision.Decline));
+
+        Assert.Equal("game_aborted", rejected.Error?.Code);
+        Assert.Equal("game_not_found", after.Error?.Code);
+    }
+
     private sealed class UnusedFactory : IGameFactory
     {
         public int Calls { get; private set; }

@@ -146,8 +146,21 @@ public sealed class EngineHost(IGameFactory factory) : IEngineEndpoint
             return Failed(request, "invalid_request", "decision.targets is required");
         }
 
-        var resolved = game.Resolve(request.Decision.ToDomain());
-        return Succeeded(request, resolved.Prompt, resolved.Events);
+        try
+        {
+            var resolved = game.Resolve(request.Decision.ToDomain());
+            return Succeeded(request, resolved.Prompt, resolved.Events);
+        }
+        catch (Exception failure)
+        {
+            // The rules promise their named unimplemented boundaries throw
+            // before mutation, but an unexpected failure has no such contract.
+            // The host chooses to fail closed: a session that might now hold a
+            // partial resolve is removed rather than serving a plausible wrong
+            // board on the next request.
+            games.Remove(request.GameId);
+            return Failed(request, "game_aborted", failure.Message);
+        }
     }
 
     private EngineResponse Close(EngineRequest request)
