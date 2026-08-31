@@ -1,4 +1,5 @@
 using Marvel.Tests;
+using Marvel.View;
 using Xunit;
 
 namespace Marvel.Server.Tests;
@@ -64,10 +65,25 @@ public sealed class EngineHostTests
     }
 
     [Fact]
+    public void EngineFailuresDoNotReturnInternalDiagnostics()
+    {
+        var host = new EngineHost(new FailingFactory("secret-card-identity"));
+
+        EngineResponse failed = host.Exchange(EngineRequest.OpenGame(
+            "open",
+            "game",
+            new GameSpecification("rhino", ["spider_man"], [], Seed: 7)));
+
+        Assert.Equal("engine_error", failed.Error?.Code);
+        Assert.DoesNotContain(
+            "secret-card-identity", failed.Error?.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void VersionOneIsRejectedBeforeItCanOpenAGame()
     {
-        // Version 2 adds play-area topology kinds to the event union. A version
-        // 1 client cannot deserialize those responses, so the old version is
+        // The current protocol adds play-area topology kinds to the event
+        // union. A version 1 client cannot deserialize those responses, so it is
         // rejected before the factory can create mutable game state.
         var factory = new UnusedFactory();
         var host = new EngineHost(factory);
@@ -76,7 +92,7 @@ public sealed class EngineHostTests
             1, "old-client", EngineProtocol.Open, "game",
             Game: new GameSpecification("rhino", ["spider_man"], null, 1)));
 
-        Assert.Equal(2, EngineProtocol.Version);
+        Assert.Equal(3, EngineProtocol.Version);
         Assert.Equal(EngineProtocol.Version, rejected.Version);
         Assert.Equal("unsupported_version", rejected.Error?.Code);
         Assert.Equal(0, factory.Calls);
@@ -119,6 +135,66 @@ public sealed class EngineHostTests
         Assert.Equal("session_not_found", after.Error?.Code);
     }
 
+    [Fact]
+    public void RestrictedHostsDoNotTrustWatchOrHotSeatClaims()
+    {
+        var specification = new GameSpecification(
+            "rhino", ["spider_man", "captain_marvel"], [], Seed: 7);
+        var seatZeroHost = new EngineHost(
+            DatasetGameFactory.Load(RepositoryPaths.Root),
+            visibility: new RestrictedVisibilityPolicy(0));
+        var seatOneHost = new EngineHost(
+            DatasetGameFactory.Load(RepositoryPaths.Root),
+            visibility: new RestrictedVisibilityPolicy(1));
+
+        EngineResponse zero = seatZeroHost.Exchange(EngineRequest.OpenGame(
+            "zero", "game", specification, new ViewerClaim(Watch: true)));
+        EngineResponse one = seatOneHost.Exchange(EngineRequest.OpenGame(
+            "one", "game", specification, new ViewerClaim(HotSeat: true)));
+
+        Assert.Null(zero.Error);
+        Assert.Null(one.Error);
+        Assert.All(Hand(zero, 0), card => Assert.NotNull(card.Face));
+        Assert.All(Hand(zero, 1), card =>
+        {
+            Assert.Null(card.Face);
+            Assert.Null(card.Id);
+        });
+        Assert.All(Hand(one, 0), card =>
+        {
+            Assert.Null(card.Face);
+            Assert.Null(card.Id);
+        });
+        Assert.All(Hand(one, 1), card => Assert.NotNull(card.Face));
+    }
+
+    [Fact]
+    public void FileReadingAndCheatOperationsHaveNoServedSurface()
+    {
+        var factory = new UnusedFactory();
+        var host = new EngineHost(factory);
+
+        EngineResponse read = host.Exchange(new EngineRequest(
+            EngineProtocol.Version, "read", "read_file", "game"));
+        EngineResponse cheat = host.Exchange(new EngineRequest(
+            EngineProtocol.Version, "cheat", "cheat", "game"));
+
+        Assert.Equal("invalid_request", read.Error?.Code);
+        Assert.Equal("invalid_request", cheat.Error?.Code);
+        Assert.Equal(0, factory.Calls);
+        Assert.DoesNotContain(
+            typeof(EngineRequest).GetProperties(),
+            property => property.Name.Contains("File", StringComparison.OrdinalIgnoreCase)
+                        || property.Name.Contains("Path", StringComparison.OrdinalIgnoreCase)
+                        || property.Name.Contains("Cheat", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static IReadOnlyList<Marvel.View.CardDescriptor> Hand(
+        EngineResponse response, int seat) =>
+        Assert.Single(
+            Assert.IsType<WorldDescriptor>(response.World).Areas,
+            area => area.Zone == "HandsArea" && area.Owner == seat).Cards;
+
     private static string RequiredCapability(EngineResponse response) =>
         Assert.IsType<string>(response.Capability);
 
@@ -139,5 +215,11 @@ public sealed class EngineHostTests
         private readonly Queue<string> capabilities = new(capabilities);
 
         public string Issue() => capabilities.Dequeue();
+    }
+
+    private sealed class FailingFactory(string message) : IGameFactory
+    {
+        public OpenedGame Create(GameSpecification specification) =>
+            throw new InvalidOperationException(message);
     }
 }
