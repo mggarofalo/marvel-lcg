@@ -1,0 +1,316 @@
+{
+  "version": 1,
+  "algorithm": "sha256",
+  "files": [
+    {
+      "path": "mc02_green_goblin_rules_insert.pdf",
+      "bytes": 9674646,
+      "hash": "sha256:1fdf68fb6163a77c571765d7948a1999b8ec5b2118c9a1b171ed79a59bcb2cd3"
+    },
+    {
+      "path": "mc03_wrecking_crew_rules_insert-compressed.pdf",
+      "bytes": 861302,
+      "hash": "sha256:443f135a8c5d90a8bfd3719323e6c00501ed166d88f517bec37b59ee9d10124c"
+    },
+    {
+      "path": "mc04_captain_america_rulesheet.pdf",
+      "bytes": 5119527,
+      "hash": "sha256:a8e3bffc7953b7ca0a6182cdcaaaa80f3d79710efc3b0e289c9ff46c0110a87a"
+    },
+    {
+      "path": "mc05_ms_marvel_rulesheet.pdf",
+      "bytes": 4161492,
+      "hash": "sha256:9324b9b206f6bf6a69859c4ae8b7c053230d3453e7c49a77d60b66f2eb5b1a6f"
+    },
+    {
+      "path": "mc06_thor_rulesheet.pdf",
+      "bytes": 4228174,
+      "hash": "sha256:6aab2bec4af9574bcf05ad4a8d026f1367bb2da6ce10bf4de2d77c0171096952"
+    },
+    {
+      "path": "mc07_black_widow_rulesheet.pdf",
+      "bytes": 5088271,
+      "hash": "sha256:8db6ece6795a47b66241b9e694da85098ee096923cecc811afa8d4c23cb23fd7"
+    },
+    {
+      "path": "mc08_doctor_strange_rulesheet.pdf",
+      "bytes": 7181027,
+      "hash": "sha256:15dba31ffeafaedac36cfd81b4f95e635c929d87775f52152595adebcd3a1cb3"
+    },
+    {
+      "path": "mc09_hulk_rulesheet.pdf",
+      "bytes": 5623552,
+      "hash": "sha256:228d253d7d0591e4063f359dc53f0cf067b1298986413bb46c78f59d03d6c03c"
+    },
+    {
+      "path": "mc11_once_and_future_kang_rules_insert-compressed.pdf",
+      "bytes": 598221,
+      "hash": "sha256:a5949b6e63bfcf4999cfa71d2e523831d168fb1610adab02accb98bbb674db08"
+    },
+    {
+      "path": "mc12_ant-man_rulesheet.pdf",
+      "bytes": 3765656,
+      "hash": "sha256:4d06ada5ab22bd496a6f46391682fcefa61b8691840b945e749091924b49aefb"
+    },
+    {
+      "path": "mc13_wasp_rulesheet.pdf",
+      "bytes": 6267326,
+      "hash": "sha256:707832802903d9e03766e6bce24eb5f7dc0a61acbda5b17b6605f4af9d005eb9"
+    },
+    {
+      "path": "mc14_quicksilver_rulesheet.pdf",
+      "bytes": 4880062,
+      "hash": "sha256:52d164d692fd30a587ec270bcaff3f81a48976b7b7cd10ee22672119b081f018"
+    },
+    {
+      "path": "mc15_scarlet_witch_rulesheet.pdf",
+      "bytes": 3841750,
+      "hash": "sha256:46d080ce4a8c4364ab134d27402de05811b0c123085f66be5337cde5af03380a"
+    },
+    {
+      "path": "mc16_galaxys_most_wanted_rules_website-compressed.pdf",
+      "bytes": 3247234,
+      "hash": "sha256:0b2b05f72e2283e0dc6175a3a43f687cb425ce28447977ab7b80d4d291da066a"
+    },
+    {
+      "path": "mc17_star-lord_rulesheet.pdf",
+      "bytes": 3424308,
+      "hash": "sha256:89906810fe466b0c92e9e3a2887911263148b56672dadf213f4761eb0cdcfe99"
+    },
+    {
+      "path": "mc18_gamora_rulesheet.pdf",
+      "bytes": 3893485,
+      "hash": "sha256:1bbff36e4aacf46e0da52338858bc49aeacb13f348622c17419e990a460de6d2"
+    },
+    {
+      "path": "mc19_drax_rulesheet.pdf",
+      "bytes": 3402917,
+      "hash": "sha256:2fc13a51f8343e8e3633b6745c209b3700ea537c2ba7c4926da337103fdbab62"
+    },
+    {
+      "path": "mc20_venom_rulesheet.pdf",
+      "bytes": 4390552,
+      "hash": "sha256:a85a2952ad1f4d7e236b0b8f19850119632a9f978cb2774da8444abff9a14235"
+    },
+    {
+      "path": "mc21_the_mad_titans_shadow_rulebook-compressed.pdf",
+      "bytes": 15508893,
+      "hash": "sha256:72a584920ee8c7f242e7b1fd20599c43027717fefb06ede31b0f8c4e72c6ebc4"
+    },
+    {
+      "path": "mc22_nebula_rulesheet.pdf",
+      "bytes": 6067511,
+      "hash": "sha256:c3cf5e41492b79a404ddefe70106bb0dc2d9fcc7457638216158b1c8042f2b16"
+    },
+    {
+      "path": "mc23_war_machine_rulesheet.pdf",
+      "bytes": 5668138,
+      "hash": "sha256:fa6a07ce326fa74cdbe3d0e77dd3a19126fc0953cb675e0c23f8ce06bbac5705"
+    },
+    {
+      "path": "mc24_the_hood_rules_insert.pdf",
+      "bytes": 5472160,
+      "hash": "sha256:d29b62b6587ccd1302fdd3e5f7e5296a4212537da6fe17e2dfd2075644abce12"
+    },
+    {
+      "path": "mc25_valkyrie_rulesheet.pdf",
+      "bytes": 6097078,
+      "hash": "sha256:9334b3e06e844e6ee47a1141bdafa758bead8aacc9d35592d3595bbe504f1d87"
+    },
+    {
+      "path": "mc26_vision_rulesheet.pdf",
+      "bytes": 6697859,
+      "hash": "sha256:61cc4fc319e2e8004b8ec60310615c995a866f998b430dc8defa253f0564f7ef"
+    },
+    {
+      "path": "mc27_sinister_motives_rules_v5-compressed.pdf",
+      "bytes": 15720680,
+      "hash": "sha256:5dde0115f60819781fb90f8c0ce6743c7e96ce8502b5b783cdac83e8718b53c1"
+    },
+    {
+      "path": "mc28_nova_rulesheet.pdf",
+      "bytes": 3753617,
+      "hash": "sha256:ae57d0882af276ec85bfd42f984abdd59847189ae67489a41a6f56184c172073"
+    },
+    {
+      "path": "mc29_ironheart_rulesheet.pdf",
+      "bytes": 4075236,
+      "hash": "sha256:1953e65a09c2d485aaac8c79f127e86a7a6656d9f090c6589f397421731a426b"
+    },
+    {
+      "path": "mc30_spider-ham_rulesheet.pdf",
+      "bytes": 3461945,
+      "hash": "sha256:886958ab5b32eb163f471f6e826e330933b41d10c924d59fdda4769816ee23e6"
+    },
+    {
+      "path": "mc31_spdr_rulesheet.pdf",
+      "bytes": 2662693,
+      "hash": "sha256:bfab136bfd87f81243bee6913a543a949bd097b16efdd851f9762d2386446afe"
+    },
+    {
+      "path": "mc32_mutant_genesis_rulebook_v5-compressed.pdf",
+      "bytes": 12881849,
+      "hash": "sha256:cf63c61301cdcb44953cbeaa368e4a58e63799d602a7d8bdda96cee5350c375b"
+    },
+    {
+      "path": "mc33_cyclops_rules_insert.pdf",
+      "bytes": 3469488,
+      "hash": "sha256:44a54b473d539c29d187591c2a7ab27147e29cd3cc5f796e26312381b8e8c621"
+    },
+    {
+      "path": "mc34_phoenix_rules_insert.pdf",
+      "bytes": 4040480,
+      "hash": "sha256:4c5413e311e30a5bb7adcb0be2f4394eba847f6c22661c35d69d10f60768c79c"
+    },
+    {
+      "path": "mc35_wolverine_rules_insert.pdf",
+      "bytes": 4144126,
+      "hash": "sha256:be46d6fad62846311020ca9945e7844b3064b8c27adea56662af45869f43f259"
+    },
+    {
+      "path": "mc36_storm_rules_insert.pdf",
+      "bytes": 3974996,
+      "hash": "sha256:f91d1842455c308a713c6de67a6e776849d0a8a85adb2b11d70cb4b6cf7c0a3b"
+    },
+    {
+      "path": "mc37_gambit_rules_insert.pdf",
+      "bytes": 3554960,
+      "hash": "sha256:9a6ab3d66101b35b0afa51c43cc8b8b57d471f0f4fea3906947383386a20e786"
+    },
+    {
+      "path": "mc38_rogue_rules_insert.pdf",
+      "bytes": 4489703,
+      "hash": "sha256:398be154eeb8a649b5590df8792dca53b93d52130be9d134bfb849a1df69d97e"
+    },
+    {
+      "path": "mc39_mojomania_rules_insert-compressed.pdf",
+      "bytes": 2142269,
+      "hash": "sha256:72da694802c7592b262a58620d990778066f020f15ab6c6c2209b3f498193b06"
+    },
+    {
+      "path": "mc40_next_evolution_rulebook-web.pdf",
+      "bytes": 11177039,
+      "hash": "sha256:8793021092c8fb786c00a0f7f752c6f387fa22f16492ccbba380fa87b66715d9"
+    },
+    {
+      "path": "mc41_psylocke_rules_insert-web.pdf",
+      "bytes": 1363688,
+      "hash": "sha256:41133f9c4751d50a412d765296b497b88bbf396a0afabf7f030b37d735385bc7"
+    },
+    {
+      "path": "mc42_angel_rules_insert-web.pdf",
+      "bytes": 3013728,
+      "hash": "sha256:ea866aae7769ab14a0e46c8817ebe4a6270e83336e9773b5347fd9ed9c284f97"
+    },
+    {
+      "path": "mc43_x-23_rules_insert-web.pdf",
+      "bytes": 1134103,
+      "hash": "sha256:a36f2d9907745360da1d80ebb0d3905b3c2fa8c1283776251bcb25fe212feb6b"
+    },
+    {
+      "path": "mc44_deadpool_rules_insert-web.pdf",
+      "bytes": 1757746,
+      "hash": "sha256:ab7cc037ebd176140392563960107fd13ffba594a3fb4c86f627ebfd3821fe1e"
+    },
+    {
+      "path": "mc45_age_of_apocalypse_rulebook.pdf",
+      "bytes": 10861983,
+      "hash": "sha256:b1d6127f02f2841a9f247757b0afaf4649c0ba6fce0000b2c06db571d54b7049"
+    },
+    {
+      "path": "mc46_iceman_rules_insert-web.pdf",
+      "bytes": 459914,
+      "hash": "sha256:e347075ba6fe10c3b86182291a41abfeeba0ac5b49519cf5e09056b296b01d6c"
+    },
+    {
+      "path": "mc47_jubilee_rules_insert-web.pdf",
+      "bytes": 399331,
+      "hash": "sha256:fefde7e89e3c87970b8801dfb9e6ec01fe425fc2d4d2338fe3208d949ab9061a"
+    },
+    {
+      "path": "mc48_nightcrawler_rules_insert.pdf",
+      "bytes": 4813548,
+      "hash": "sha256:de6d360e619cd5e108482679f9aabf517f8ca3838fcd99f09599b7b45206cdcb"
+    },
+    {
+      "path": "mc49_magneto_rules_insert.pdf",
+      "bytes": 5362251,
+      "hash": "sha256:3c39e1fe1002b2139157431fc4927e3ca8fb5a724608e80d9597d997897bcbb4"
+    },
+    {
+      "path": "mc50_rulebook-web.pdf",
+      "bytes": 4953950,
+      "hash": "sha256:3da98ef8258e2c065aa4f1f7d6e357cb2ea6e5ef31a7808886808ecc288820d7"
+    },
+    {
+      "path": "mc51_rulesheet-web.pdf",
+      "bytes": 532912,
+      "hash": "sha256:6e40f32ba496df51fa37d9b884fd5bd017d5ec36096448791f48245c2930dd65"
+    },
+    {
+      "path": "mc52_rulesheet-web.pdf",
+      "bytes": 532963,
+      "hash": "sha256:72723afc903d896f61d61d9c07d2cd2a62d813b9bd1cecc96269c4279bcccc80"
+    },
+    {
+      "path": "mc53_rulesheet-web.pdf",
+      "bytes": 544224,
+      "hash": "sha256:c7af241e196c08ac28f8a6b551cc6acfebcdd5b4f89da922800aae2c374b4381"
+    },
+    {
+      "path": "mc54_rulesheet-web.pdf",
+      "bytes": 536405,
+      "hash": "sha256:1850979a62e20b40f19121692dc01ac7e044cd217f3a116b9736a395035cea1a"
+    },
+    {
+      "path": "mc55_rulebook-web.pdf",
+      "bytes": 660186,
+      "hash": "sha256:df33e41438879bb22284fe1c51e4a4eff22929309b733281844beac6ac42fde3"
+    },
+    {
+      "path": "mc56_rulebook-web_1.pdf",
+      "bytes": 4558336,
+      "hash": "sha256:e6b60cb39eadf5ce6de78711d5dcd9897707139bc08e5b33019d15023e857726"
+    },
+    {
+      "path": "mc57_rulebook-web.pdf",
+      "bytes": 2144644,
+      "hash": "sha256:ce830ff6b0d911bdb2e8e27cfcb0bc1f01d7556c6f97fea169231bc2b664016c"
+    },
+    {
+      "path": "mc58_rulesheet-web_1.pdf",
+      "bytes": 494766,
+      "hash": "sha256:31a298dcf9f6a5335e85d5eeb00802c52242463e73a5a6d4c629b749017938e2"
+    },
+    {
+      "path": "mc59_rulesheet-web_1.pdf",
+      "bytes": 520617,
+      "hash": "sha256:a700af79bae42991072102825ab6280e4a6953002a2feec98e67b8d18f12f27e"
+    },
+    {
+      "path": "mc60_rulebook-web.pdf",
+      "bytes": 40688066,
+      "hash": "sha256:18b29a608418f41b5b690109bf43de29f31c2b6567c8e4dd5c2fee71c3b78b2c"
+    },
+    {
+      "path": "mc61_rulesheet-web.pdf",
+      "bytes": 757742,
+      "hash": "sha256:91350cc48bef0b7aad548a49e5fd922d21ed28fa4787ac509b9f2fe89ce8e07b"
+    },
+    {
+      "path": "mc62_rulesheet-web.pdf",
+      "bytes": 752604,
+      "hash": "sha256:2d61b2c9d4483765de2c2ae772b06cedaee2a0eb00ac19360863b73b9bb5e0fb"
+    },
+    {
+      "path": "mvc01_learn_to_play_eng-compressed.pdf",
+      "bytes": 30797772,
+      "hash": "sha256:357c9be2010723dd3e8831e81eb140567d0d93f83b803a9040dcad2b8f2730b9"
+    }
+  ],
+  "snapshot": {
+    "algorithm": "sha256-length-prefixed-path-and-bytes",
+    "files": 526,
+    "hash": "sha256:a0334d76cf91804a9492094f6ad84ccba9e4de41affca307df42114544194864"
+  }
+}

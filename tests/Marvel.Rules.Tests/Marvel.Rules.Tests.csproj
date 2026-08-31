@@ -14,6 +14,8 @@
          against whatever page somebody last looked at. -->
     <ProjectReference Include="../../tools/Marvel.Rules.Harvest/Marvel.Rules.Harvest.csproj" />
     <ProjectReference Include="../../tools/Marvel.Rulings.Harvest/Marvel.Rulings.Harvest.csproj" />
+    <ProjectReference Include="../../tools/Marvel.Rules.Packs.Harvest/Marvel.Rules.Packs.Harvest.csproj" />
+    <ProjectReference Include="../../tools/Marvel.MarvelCdb.Harvest/Marvel.MarvelCdb.Harvest.csproj" />
   </ItemGroup>
 
   <ItemGroup>

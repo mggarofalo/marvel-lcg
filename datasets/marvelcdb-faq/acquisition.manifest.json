@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "format": "marvelcdb-faq-candidate-v1",
+  "algorithm": "sha256",
+  "bytes": 403253,
+  "hash": "sha256:9f997b46ebbf61e550aaf2e6ee6ac27033429bd0c28fa7cd75ef67d1c4c5ead3",
+  "query": {
+    "version": 1,
+    "algorithm": "sha256-length-prefixed-utf8",
+    "count": 4456,
+    "hash": "sha256:8d585b0d00ebd2e8f08e854d0b90144045a69158c8755d883351870bbe36bc44"
+  }
+}

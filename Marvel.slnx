@@ -5,6 +5,7 @@
     <Project Path="src/Marvel.Cards/Marvel.Cards.csproj" />
     <Project Path="src/Marvel.Content/Marvel.Content.csproj" />
     <Project Path="src/Marvel.Sim/Marvel.Sim.csproj" />
+    <Project Path="src/Marvel.View/Marvel.View.csproj" />
     <Project Path="src/Marvel.Server/Marvel.Server.csproj" />
   </Folder>
   <Folder Name="/tools/">
@@ -12,12 +13,15 @@
     <Project Path="tools/Marvel.Cards.Extract/Marvel.Cards.Extract.csproj" />
     <Project Path="tools/Marvel.Rules.Harvest/Marvel.Rules.Harvest.csproj" />
     <Project Path="tools/Marvel.Rulings.Harvest/Marvel.Rulings.Harvest.csproj" />
+    <Project Path="tools/Marvel.Rules.Packs.Harvest/Marvel.Rules.Packs.Harvest.csproj" />
+    <Project Path="tools/Marvel.MarvelCdb.Harvest/Marvel.MarvelCdb.Harvest.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Marvel.Core.Tests/Marvel.Core.Tests.csproj" />
     <Project Path="tests/Marvel.Rules.Tests/Marvel.Rules.Tests.csproj" />
     <Project Path="tests/Marvel.Content.Tests/Marvel.Content.Tests.csproj" />
     <Project Path="tests/Marvel.Sim.Tests/Marvel.Sim.Tests.csproj" />
+    <Project Path="tests/Marvel.View.Tests/Marvel.View.Tests.csproj" />
     <Project Path="tests/Marvel.Server.Tests/Marvel.Server.Tests.csproj" />
   </Folder>
 </Solution>

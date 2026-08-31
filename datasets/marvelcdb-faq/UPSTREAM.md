@@ -10,7 +10,7 @@ printed card text and errata, and neither carries a ruling.
 | Upstream | https://marvelcdb.com |
 | Harvested with | `marvelcdb v0.1.0` ([source](https://github.com/mggarofalo/marvelcdb-cli)) |
 | Harvested | 2026-08-22 |
-| Pinned by | the harvest date — see below |
+| Pinned by | harvest date plus the reviewed query universe — see below |
 
 ## Why this exists
 
@@ -26,11 +26,15 @@ villain **initiates an attack**"; Ultron's Forced Interrupt fires "when Ultron
 there is no timing difference and the Forced Interrupt takes priority. Nothing
 else in this repository can tell an author that.
 
-## Why the harvest date is the only pin
+## What is pinned
 
 `../marvelsdb/` pins a git SHA because upstream is a git repository. MarvelCDB is
 a website. It publishes no version identifier, no changelog and no content hash
-for FAQ entries, so there is nothing to pin except when the harvest ran.
+for FAQ entries, so the harvest date records when the observation ran. The
+separate `acquisition.manifest.json` pins the raw bytes and format of the
+reviewed acquisition candidate, plus the exact set of card codes it queried.
+This prevents a candidate from declaring itself complete while silently
+omitting results or inventing no-entry outcomes.
 
 Individual entries carry their own `updated` timestamp, which is upstream's and
 is recorded verbatim. That dates the *ruling*; it does not date the *snapshot*,
@@ -42,17 +46,19 @@ The same reason as `../marvelsdb/`: everything under `datasets/` must be readabl
 offline, years from now, with nothing but this repository. Fetching at read time
 makes correctness depend on a community-run site staying up and unchanged.
 
-This one is **vendored, not generated**. `datasets/cards/` has a
-`tools.cards.extract --check` gate that regenerates it and compares byte for
-byte; this has no such gate, because there is nothing a machine without a network
-could regenerate. What guards it instead is `unit_test/test_card_rulings.py`,
-which checks the snapshot is internally consistent and that every ruling still
-lands on a card the dataset has.
+This one is **vendored, not generated**. `datasets/cards/` has a build gate that
+regenerates it and compares byte for byte; this has no such gate, because a
+fresh observation starts at a website. The harvester makes that network boundary
+explicit: `fetch` writes a complete candidate outside the repository, while
+`write` and `check` consume that candidate without the network. The test suite
+holds the snapshot's accounting and canonical wire format offline.
 
 ## What is here
 
 ```
 faq.json    every FAQ entry MarvelCDB served, verbatim
+acquisition.json    the complete reviewed acquisition evidence used to build faq.json
+acquisition.manifest.json    raw-byte, format, and query-universe pin for that evidence
 ```
 
 ```json
@@ -71,6 +77,19 @@ code in `queried` but not in `entries` has *no ruling*, while a code in neither
 was *never asked*. Without it those two are indistinguishable, and the second
 silently masquerading as the first is how a card with a ruling gets a spec
 written against the printed words instead.
+
+The acquisition candidate also records one acquisition outcome for every queried
+code: either `entry` or the CLI's explicit `none`. Those outcomes are removed
+from the vendored wire format after `write`; they are evidence that every
+absence came from the acquisition command rather than from `candidate_complete`
+asserting that a truncated result was whole. Its tracked manifest pins the
+entire candidate byte for byte; editing outcomes makes `write` and `check` fail.
+
+The current `acquisition.json` is the one-time canonical migration of the
+2026-08-22 snapshot. That snapshot already defined `queried` as every code the
+command asked about and absence from `entries` as an explicit no-ruling result.
+Keeping the migrated evidence makes the vendored snapshot deterministically
+regenerable offline under the stricter contract.
 
 Entries are stored raw. HTML, markdown, smart quotes and upstream's `updated`
 shape are all untouched, so a transcription problem is distinguishable from a
@@ -105,11 +124,7 @@ authoring, not something a spec is regenerated from. It is still worth reading
 the diff, because a *changed* ruling means a spec written against the old one may
 now be wrong.
 
-**There is no harvester.** The one that produced this snapshot has been
-removed, so a new ruling cannot currently be taken up — MARVEL-253. Whatever
-replaces it updates the harvest date and CLI version in the table above, and
-reads the
-diff on `faq.json`. Needs the CLI on `PATH`:
+The acquisition step needs the CLI on `PATH`:
 
 ```bash
 go install github.com/mggarofalo/marvelcdb-cli/cmd/marvelcdb@latest
@@ -118,6 +133,26 @@ export PATH="$PATH:$(go env GOPATH)/bin"
 
 `marvelcdb` is an acquisition tool, not a dependency of this software. It runs
 here and nowhere else — see AGENTS.md.
+
+Fetch first. The default candidate lives under the user's local application
+data directory, outside the repository:
+
+```bash
+dotnet run --project tools/Marvel.MarvelCdb.Harvest -- fetch [candidate] [limit] [date]
+dotnet run --project tools/Marvel.MarvelCdb.Harvest -- check [candidate]
+dotnet run --project tools/Marvel.MarvelCdb.Harvest -- write [candidate] [candidate-directory]
+```
+
+Omit `limit` for a publishable observation. A limited run records itself as
+partial and `write`/`check` refuse it, so a wiring test cannot masquerade as a
+complete harvest. Both commands require exactly one consistent acquisition
+outcome per queried code and require the candidate's raw bytes, format, and
+query universe to match the offline acquisition pin. A refresh is deliberately
+two-step: inspect the fetched candidate, copy that reviewed file byte-for-byte
+to `acquisition.json`, then run `pin acquisition.json` and review both tracked
+diffs. `fetch` never updates the trusted manifest. Only after that review should
+`write acquisition.json` replace `faq.json`; inspect its harvest date, CLI
+version, and ruling diff too.
 
 ## Provenance and licence
 

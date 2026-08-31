@@ -8,9 +8,9 @@ is the first.
 | | |
 |---|---|
 | Upstream | 61 booklets published by FFG/Asmodee alongside each product |
-| Harvested with | a PDF harvester, since removed — MARVEL-253 |
+| Harvested with | `tools/Marvel.Rules.Packs.Harvest` |
 | Harvested | 2026-08-24 |
-| Pinned by | the harvest date — these documents carry no version |
+| Pinned by | `sources.manifest.json`: every local PDF byte and the committed snapshot |
 | Tier | `pack:<code>:<section>[.<rule>]` |
 
 **61 documents → 525 sections → 859 citable rules.**
@@ -99,6 +99,26 @@ against two rules each claiming priority over the other.
 ## Refreshing
 
 No gate in CI: the source is 353 MB of copyrighted PDFs that are not in this
-repository, and **there is no harvester** — the one that produced this snapshot
-has been removed, so a new or errata'd pack insert cannot currently be taken up.
-MARVEL-253. What is verified is the committed snapshot's internal consistency.
+repository. The harvester is manual and reads only a local library; it never
+downloads a document. `check` holds that library to `sources.manifest.json` and
+also catches a hand edit anywhere in the committed snapshot:
+
+```bash
+dotnet run --project tools/Marvel.Rules.Packs.Harvest -- check [library]
+```
+
+When a new booklet or errata changes those pins, review a candidate before
+replacing the snapshot:
+
+```bash
+dotnet run --project tools/Marvel.Rules.Packs.Harvest -- list [library]
+dotnet run --project tools/Marvel.Rules.Packs.Harvest -- diff [library]
+dotnet run --project tools/Marvel.Rules.Packs.Harvest -- write [library] [candidate-directory]
+```
+
+The checked-in snapshot predates the PdfPig harvester, so `diff` also exposes
+the extraction-library migration. That delta is not silently accepted: read it
+alongside the actual source change, then write the reviewed result into this
+directory. `write` updates the PDF and snapshot pins with the output. `pin`
+exists only for adopting an already-reviewed snapshot whose original writer is
+unavailable; it must not be used to bless an unexplained source change.

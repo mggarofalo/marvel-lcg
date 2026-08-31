@@ -12,6 +12,7 @@
   <ItemGroup>
     <ProjectReference Include="../Marvel.Cards/Marvel.Cards.csproj" />
     <ProjectReference Include="../Marvel.Content/Marvel.Content.csproj" />
+    <ProjectReference Include="../Marvel.View/Marvel.View.csproj" />
   </ItemGroup>
 
   <ItemGroup>

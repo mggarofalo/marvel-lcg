@@ -183,17 +183,34 @@ not been rebuilt.**
 # Is the pinned Rules Reference still what the harvester reads?
 dotnet run --project tools/Marvel.Rules.Harvest -- check [pdf]
 
+# Do the pinned expansion PDFs and vendored pack snapshot still agree?
+dotnet run --project tools/Marvel.Rules.Packs.Harvest -- check [library]
+
 # Is the card dataset what its generator produces?
 dotnet run --project tools/Marvel.Cards.Extract -- check
 
 # Do the vendored Hall of Heroes pages still produce the pinned ruling index?
 dotnet run --project tools/Marvel.Rulings.Harvest -- check
+
+# After `fetch` acquired a complete local MarvelCDB FAQ candidate, compare it offline.
+dotnet run --project tools/Marvel.MarvelCdb.Harvest -- check [candidate]
 ```
 
-The rulings check has two pins: `pages.manifest.json` holds every source page
+The Hall of Heroes check has two pins: `pages.manifest.json` holds every source page
 byte to SHA-256, then `rulings.json` holds the parser output to explicit UTF-8
 without a byte-order mark. A candidate cache passed as an argument is compared
 semantically, without pretending an absent optional cache is an empty source.
+
+Pack rules use the same separation for copyrighted local inputs:
+`sources.manifest.json` pins all 61 PDF bytes and the raw bytes of every file in
+the complete committed tree, using length-prefixed paths and contents.
+MarvelCDB has no downloadable source document to vendor, so its `fetch` step
+records an explicit entry-or-none acquisition outcome for every queried code in
+a local candidate. The offline `acquisition.manifest.json` separately pins the
+reviewed candidate's raw bytes, format, and exact query universe, while
+`acquisition.json` retains that evidence for deterministic offline regeneration.
+`fetch` cannot update either trust anchor; only an explicit reviewed `pin` step
+can admit a new candidate to `write` or `check`.
 
 A refresh is a reviewable act. `datasets/marvelsdb/UPSTREAM.md` is already
 explicit that refreshing changes printed text and therefore every spec authored
