@@ -238,7 +238,7 @@ public sealed class PlacesTests
         Split(world);
 
         var central = InPlayArea(world, DeckType.MainSchemesArea, PlayArea.Villains);
-        world.Detach(PlayArea.Villains);
+        world.Detach(PlayArea.Villains, "test", []);
 
         var myHero = InPlayArea(world, DeckType.HeroArea, PlayArea.Of(0));
         var theirHero = InPlayArea(world, DeckType.HeroArea, PlayArea.Of(1));
@@ -369,6 +369,51 @@ public sealed class PlacesTests
 
         Assert.Empty(events);
         Assert.True(current.Contains(PlayArea.Of(0)));
+    }
+
+    [Fact]
+    public void DetachingIsOneOperationAndNamesThePriorGameArea()
+    {
+        var world = Ordinary(players: 1);
+        var prior = Assert.Single(world.GameAreas);
+        var events = new List<GameEvent>();
+
+        world.Detach(PlayArea.Of(0), "test", events);
+
+        Assert.Null(world.GameAreaOf(PlayArea.Of(0)));
+        var detached = Assert.IsType<PlayAreaDetached>(Assert.Single(events));
+        Assert.Equal(0, detached.PlayArea);
+        Assert.Equal(prior.Id, detached.GameArea);
+        Assert.Equal("test", detached.Trigger);
+        Assert.Equal("Detach", detached.Verb);
+    }
+
+    [Fact]
+    public void DetachingAPlayAreaOutsideThisWorldIsSilentAndAtomic()
+    {
+        var world = Ordinary(players: 1);
+        var prior = Assert.Single(world.GameAreas);
+        var before = prior.PlayAreas.ToHashSet();
+        var events = new List<GameEvent>();
+
+        world.Detach(PlayArea.Of(99), "test", events);
+
+        Assert.Empty(events);
+        Assert.Equal(before, prior.PlayAreas.ToHashSet());
+    }
+
+    [Fact]
+    public void DetachingAnAlreadyDetachedPlayAreaIsSilent()
+    {
+        var world = Ordinary(players: 1);
+        var events = new List<GameEvent>();
+
+        world.Detach(PlayArea.Of(0), "test", events);
+        events.Clear();
+        world.Detach(PlayArea.Of(0), "test", events);
+
+        Assert.Empty(events);
+        Assert.Null(world.GameAreaOf(PlayArea.Of(0)));
     }
 
     // ---------------------------------------------------------------- the wire

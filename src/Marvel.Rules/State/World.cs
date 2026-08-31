@@ -447,20 +447,43 @@ public sealed class World
         });
     }
 
-    /// <summary>Takes a play area out of every game area.</summary>
+    /// <summary>Takes a play area out of its game area.</summary>
     /// <remarks>
     /// Kang's stage 2B "remains in play in a central location […] though it is
     /// not part of any other game area", and its text stays active for everyone.
     /// Being in no game area is a real placement with a rules consequence, not
     /// an error state — see <c>Places.CanAffect</c>.
+    /// <para>
+    /// The topology change is invisible to the v2 digest, so this emits one
+    /// <see cref="PlayAreaDetached"/> naming the membership that was removed.
+    /// A play area already outside every game area is unchanged and silent.
+    /// </para>
     /// </remarks>
     /// <param name="area">The play area to detach.</param>
-    public void Detach(PlayArea area)
+    /// <param name="trigger">The timing point that caused the detachment.</param>
+    /// <param name="events">The event stream to append to.</param>
+    public void Detach(PlayArea area, string trigger, List<GameEvent> events)
     {
-        foreach (var existing in gameAreas)
+        ArgumentNullException.ThrowIfNull(trigger);
+        ArgumentNullException.ThrowIfNull(events);
+
+        var existing = GameAreaOf(area);
+        if (existing is null)
         {
-            existing.Remove(area);
+            return;
         }
+
+        if (!existing.Remove(area))
+        {
+            throw new InvalidOperationException(
+                $"play area {area} was not in its resolved game area");
+        }
+
+        events.Add(new PlayAreaDetached(area.Player, existing.Id)
+        {
+            Trigger = trigger,
+            Verb = "Detach",
+        });
     }
 
     /// <summary>Which game area a play area is in, or <c>null</c> when it is in none.</summary>

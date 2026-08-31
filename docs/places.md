@@ -179,11 +179,11 @@ decides."* That needs a uniqueness concept the engine does not have, and the
 combine case needs a prompt. It is a fourth rule of place and it belongs here when
 uniqueness exists.
 
-**The engine tells a client a join happened once.** `World.Join` is one
-operation on state and emits one `PlayAreaJoined`; it does not emit one change
-per card.
+**The engine tells a client each topology change once.** `World.Join` and
+`World.Detach` are operations on a play area and emit one `PlayAreaJoined` or
+`PlayAreaDetached`; neither emits one change per card.
 
-## The join event
+## The topology events
 
 The event vocabulary is a closed set of nine kinds, chosen as *the set that
 explains every state change with nothing left over and no member that never
@@ -200,13 +200,16 @@ The physical action the rules describe is *"reorient the cards on the table to
 indicate that you have joined that game area"* — a client plainly needs to be
 told. The contract therefore has two explicit classes: the **derivable** set
 remains the nine corpus-verified kinds, and the **emitted-only** set contains
-`PlayAreaJoined`. `EventVocabularyTests` holds each class independently and
-then holds their union against the serialiser.
+`PlayAreaJoined` and `PlayAreaDetached`. `EventVocabularyTests` holds each class
+independently and then holds their union against the serialiser.
 
-The payload names the play area and destination game area. Those names are the
-engine's wire-format choice; the rulebook establishes the join, not how JSON
-spells it. `World.Join` appends the event after the grouping changes and stays
-silent when the play area is already in that destination.
+The join payload names the play area and destination game area. Detachment is
+the inverse topology change: its payload names the play area and prior game
+area because there is no destination from which a client could infer what
+membership ended. Those names are the engine's wire-format choice; the
+rulebook establishes the operations, not how JSON spells them. `World.Join`
+and `World.Detach` append their events after the grouping changes and stay
+silent when no membership changes.
 
 ## Reproducing
 

@@ -77,7 +77,7 @@ happened, so it is one event carrying five cards, not five events.
 
 ## The vocabulary
 
-Nine derivable records and one emitted-only record, defined by
+Nine derivable records and two emitted-only records, defined by
 `src/Marvel.Rules/Events/GameEvent.cs`.
 
 **The tables below are checked, not decorative.** `EventVocabularyTests` parses
@@ -111,6 +111,7 @@ changing the claim that the derivable set is exactly the measured nine.
 | event | payload |
 |---|---|
 | `PlayAreaJoined` | `play_area`, `game_area` |
+| `PlayAreaDetached` | `play_area`, `game_area` |
 
 Every event also carries `kind`, plus `trigger` and `verb` — the engine's own
 names for why the transition happened, e.g. `WhenPlayerInTurn` and `Play`. Those
@@ -341,11 +342,12 @@ meaning and a second scenario. God of Lies' Epic Multiplayer Mode
 Loki in a neutral one with nobody in it, which rules out the tempting "one game
 area per player" model that Kang alone would have suggested.
 
-**The event is emitted-only.** A player joining a game area is the first change
-the engine can announce and a reducer over digests can never discover, because
-the digest cannot see it (MARVEL-174). `PlayAreaJoined` therefore lives in the
-separate emitted-only class above. `World.Join` emits one record for the moving
-play area; no card changes area or carries a game-area tag.
+**The topology events are emitted-only.** Joining or leaving a game area changes
+state that the engine can announce and a reducer over digests can never
+discover, because the digest cannot see it (MARVEL-174). `PlayAreaJoined` and
+`PlayAreaDetached` therefore live in the separate emitted-only class above.
+Each operation emits one record for the moving play area; no card changes area
+or carries a game-area tag.
 
 ### The oracle is blind to all of it
 
@@ -419,8 +421,8 @@ about, which is why they run in the fast tier.
 
 - **The completeness proof is derived.** MARVEL-163 verified the nine measured
   kinds by comparing engine states. Rule paths now emit events while executing,
-  and `PlayAreaJoined` can only be covered that way; the corpus still cannot
-  prove execution ordering for the stream.
+  and the play-area topology events can only be covered that way; the corpus
+  still cannot prove execution ordering for the stream.
 - **Ordering within a step.** The prototype emits creations, then moves, then
   reorderings, then per-card changes. The interpreter will emit in execution
   order instead, which is more useful and is not checkable until it exists.

@@ -56,6 +56,7 @@ public sealed partial class EventVocabularyTests
     private static readonly GameEvent[] EmittedOnly =
     [
         new PlayAreaJoined(1, 4),
+        new PlayAreaDetached(2, 5),
     ];
 
     /// <summary>Every serialisable kind, with distinguishable payload values.</summary>
@@ -77,13 +78,13 @@ public sealed partial class EventVocabularyTests
     [Fact]
     public void TheEmittedOnlyKindsAreExactlyTheDocumentedOnes()
     {
-        // This class is a separate assertion: PlayAreaJoined is justified by
-        // the engine operation and published scenario rule, not by the frozen
-        // corpus. It must not weaken the nine-kind claim above.
+        // This class is a separate assertion: topology events are justified
+        // by engine operations and published rules, not by the frozen corpus.
+        // They must not weaken the nine-kind claim above.
         var documented = Documented(EmittedOnlyHeading).Keys.ToHashSet(StringComparer.Ordinal);
         var tested = EmittedOnly.Select(Kind).ToHashSet(StringComparer.Ordinal);
 
-        Assert.Single(tested);
+        Assert.Equal(2, tested.Count);
         Assert.Equal(tested, documented);
     }
 
