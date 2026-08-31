@@ -1,5 +1,11 @@
 # Behavioural specs
 
+The authority-to-obligation derivation, legal-scene rules and executable
+completion criteria are defined by
+[`docs/behavioral-specification.md`](../docs/behavioral-specification.md).
+Existing feature files are candidate prose until they are independently derived
+through that contract; prior existence gives them no coverage or trust.
+
 112 Gherkin `.feature` files, one per card or rule, written from printed card
 text. Each opens with the card as printed and reasons about the branches that
 text implies, so the file is readable as an argument and not only as a fixture.
