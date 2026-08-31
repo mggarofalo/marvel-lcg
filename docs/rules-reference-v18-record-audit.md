@@ -8,11 +8,11 @@ The audit is a work list, not a generated coverage gate. The source of truth for
 
 | Disposition | Records |
 |---|---:|
-| Executable and cited | 826 |
+| Executable and cited | 827 |
 | Covered by a narrower rule | 50 |
 | Redirect or summary | 122 |
 | Not enforceable by an engine | 46 |
-| Outside the supported product boundary | 136 |
+| Outside the supported product boundary | 135 |
 | Unimplemented behavior | 38 |
 | Total | 1,218 |
 
@@ -149,7 +149,7 @@ items.
 | `rr:attach-to.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attach-to.2` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attach-to.3` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:attach-to.3.1` | Outside the supported product boundary | MARVEL-264 | No supported card or mode currently reaches this rule; Future Expansions owns it when that product surface opens. |
+| `rr:attach-to.3.1` | Executable and cited | — | Genetic Experiments' boost ability attaches it to a chosen minion without resolving its printed Attach To phrase. |
 | `rr:attack-enemy-activation` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.step.1` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:attack-enemy-activation.step.2` | Executable and cited | — | A behavior test directly cites this record. |

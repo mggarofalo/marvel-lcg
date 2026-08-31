@@ -137,6 +137,63 @@ public sealed class TargetReferenceTests
         Assert.False(Statuses.Has(world, ally!, Statuses.Tough));
     }
 
+    [Rule("rr:referential-ability.step.2")]
+    [Fact]
+    public void AnObligationIsAssociatedWithItsIdentity()
+    {
+        // Step 2 includes "the identity's obligation cards." Eviction Notice
+        // therefore means the Spider-Man identity when its synthetic effect
+        // names Spider-Man, not an unrelated ally with the same printed title.
+        AssertRevealedIdentityAssociation(
+            source: "01165",
+            identity: "01001a",
+            unrelated: "04045",
+            hero: "spider_man");
+    }
+
+    [Rule("rr:referential-ability.step.2")]
+    [Fact]
+    public void ANemesisCardIsAssociatedWithItsIdentity()
+    {
+        // Step 2 includes "the identity's nemesis set." Sweeping Swoop's
+        // `spider_man_nemesis` set therefore outranks the unrelated basic ally
+        // when its synthetic effect names Spider-Man.
+        AssertRevealedIdentityAssociation(
+            source: "01168",
+            identity: "01001a",
+            unrelated: "04045",
+            hero: "spider_man");
+    }
+
+    [Rule("rr:referential-ability.step.2")]
+    [Fact]
+    public void AnIdentitySideDeckCardIsAssociatedWithItsIdentity()
+    {
+        // Step 2 includes "cards belonging to a side deck used by the
+        // identity." Clear Skies belongs to Storm's weather deck, so Storm's
+        // identity wins over the same-titled ally.
+        string title = Cards.Title("36001a");
+        var runner = Runner(
+            "36002",
+            $$"""{ "giveStatus": { "card": { "titled": "{{title}}" }, "status": "tough" } }""");
+        Card? source = null;
+        Card? ally = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                board.Seats[0].IdentityCard.TurnTo("36001a");
+                source = InPlay(board, "36002", DeckType.SupportsArea);
+                ally = InPlay(board, "34021", DeckType.AlliesArea);
+            },
+            runner,
+            hero: "storm");
+
+        ResolveAction(game, source!);
+
+        Assert.True(Statuses.Has(world, world.Seats[0].IdentityCard, Statuses.Tough));
+        Assert.False(Statuses.Has(world, ally!, Statuses.Tough));
+    }
+
     [Rule("rr:referential-ability.step.3")]
     [Fact]
     public void APlayerCardSharedTitleReferenceExcludesEncounterCards()
@@ -1161,6 +1218,37 @@ public sealed class TargetReferenceTests
               "effect": {{effect}}
             } ] } ] }
             """));
+
+    private static void AssertRevealedIdentityAssociation(
+        string source,
+        string identity,
+        string unrelated,
+        string hero)
+    {
+        string title = Cards.Title(identity);
+        var runner = new AbilityRunner(AbilityCatalog.Parse(
+            $$"""
+            { "cards": [ { "card": "{{source}}", "abilities": [ {
+              "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
+              "effect": { "giveStatus": { "card": { "titled": "{{title}}" }, "status": "tough" } }
+            } ] } ] }
+            """));
+        var world = WorldSetup.Deal(
+            Cards,
+            Blueprints.From(Dealer.DealOrder(Setup, "rhino", [hero]), Cards),
+            [Setup.Hero(hero).Name],
+            12345);
+        world.Seats[0].IdentityCard.TurnTo(identity);
+        var abilitySource = world.CreateCard(
+            source,
+            world.AreaOf(DeckType.RevealingArea, PlayArea.Of(0)));
+        var sameTitledAlly = InPlay(world, unrelated, DeckType.AlliesArea);
+
+        runner.WhenRevealed(world, abilitySource, 0);
+
+        Assert.True(Statuses.Has(world, world.Seats[0].IdentityCard, Statuses.Tough));
+        Assert.False(Statuses.Has(world, sameTitledAlly, Statuses.Tough));
+    }
 
     private static Card InPlay(World world, string card, DeckType area) =>
         world.CreateCard(
