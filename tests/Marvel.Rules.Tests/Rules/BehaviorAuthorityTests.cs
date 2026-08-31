@@ -75,10 +75,10 @@ public sealed class BehaviorAuthorityTests
 
         Assert.Equal(2, catalog.Version);
         Assert.Equal(2608, catalog.Sources.Count);
-        Assert.Equal(4326, catalog.Sources.Sum(source => source.Obligations.Count));
+        Assert.Equal(4333, catalog.Sources.Sum(source => source.Obligations.Count));
         Assert.All(catalog.Sources, source => Assert.NotEmpty(source.Obligations));
         Assert.Equal(
-            4326,
+            4333,
             catalog.Sources.SelectMany(source => source.Obligations)
                 .Select(obligation => obligation.Id)
                 .Distinct(StringComparer.Ordinal)
@@ -229,6 +229,27 @@ public sealed class BehaviorAuthorityTests
         Assert.Contains(
             energyChannel.Obligations,
             obligation => obligation.Id.EndsWith(":above-damage-cap", StringComparison.Ordinal));
+
+        var hydraBomber = Assert.Single(
+            catalog.Sources,
+            source => source.Id == "card:01110");
+        Assert.Contains(
+            hydraBomber.Obligations,
+            obligation => obligation.Id.EndsWith(":when-revealed-take-two-damage", StringComparison.Ordinal));
+        Assert.Contains(
+            hydraBomber.Obligations,
+            obligation => obligation.Id.EndsWith(":when-revealed-place-one-threat", StringComparison.Ordinal));
+
+        var nickFury = Assert.Single(catalog.Sources, source => source.Id == "card:01084");
+        Assert.Contains(
+            nickFury.Obligations,
+            obligation => obligation.Id.EndsWith(":after-entering-play-remove-two-threat", StringComparison.Ordinal));
+        Assert.Contains(
+            nickFury.Obligations,
+            obligation => obligation.Id.EndsWith(":after-entering-play-draw-three-cards", StringComparison.Ordinal));
+        Assert.Contains(
+            nickFury.Obligations,
+            obligation => obligation.Id.EndsWith(":after-entering-play-deal-four-damage", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -254,6 +275,22 @@ public sealed class BehaviorAuthorityTests
         Assert.Contains(
             makeTheCall.Obligations,
             obligation => obligation.Disposition == "outside-core");
+
+        var jenniferWalters = Assert.Single(
+            catalog.Sources,
+            source => source.Id == "faq:01019a");
+        Assert.Equal(2, jenniferWalters.Obligations.Count);
+
+        var pepperPotts = Assert.Single(catalog.Sources, source => source.Id == "faq:01033");
+        Assert.Equal(3, pepperPotts.Obligations.Count);
+
+        var focusedRage = Assert.Single(catalog.Sources, source => source.Id == "faq:01027");
+        Assert.Equal("outside-core", focusedRage.Disposition);
+        var nova = Assert.Single(catalog.Sources, source => source.Id == "faq:01135");
+        Assert.Contains(
+            nova.Obligations,
+            obligation => obligation.Id.EndsWith(":published-clarification-3", StringComparison.Ordinal)
+                && obligation.Disposition == "outside-core");
     }
 
     [Fact]
@@ -277,6 +314,15 @@ public sealed class BehaviorAuthorityTests
             obligation => obligation.Disposition == "superseded"
                 && obligation.Target ==
                     "behavior:ruling:7f35317bac86b8c4:already-stunned-enemy");
+
+        var historicalMadameHydra = Assert.Single(
+            catalog.Sources,
+            source => source.Id == "ruling:6d7c80f97619194b");
+        Assert.Contains(
+            historicalMadameHydra.Obligations,
+            obligation => obligation.Disposition == "superseded"
+                && obligation.Target ==
+                    "behavior:ruling:3893e8921b39cf65:madame-hydra-one-legions-scheme");
     }
 
     [Fact]
@@ -299,6 +345,23 @@ public sealed class BehaviorAuthorityTests
             .SelectMany(source => source.Obligations)
             .Where(obligation => obligation.Disposition == "executable");
         Assert.DoesNotContain(forEach, obligation => obligation.Implementation == "unimplemented");
+
+        var defeatSteps = catalog.Sources
+            .Where(source => source.Id is "rr:damage.step.6" or "rr:damage.step.7")
+            .SelectMany(source => source.Obligations);
+        Assert.DoesNotContain(
+            defeatSteps,
+            obligation => obligation.Implementation == "unimplemented");
+
+        var singleTargets = Assert.Single(
+            catalog.Sources,
+            source => source.Id == "ruling:0870bc11f295fbb0");
+        Assert.Contains(
+            singleTargets.Obligations,
+            obligation => obligation.Id.EndsWith(":legal-practice-one-scheme", StringComparison.Ordinal));
+        Assert.Contains(
+            singleTargets.Obligations,
+            obligation => obligation.Id.EndsWith(":energy-channel-one-enemy", StringComparison.Ordinal));
     }
 
     private static JsonDocument Read(params string[] parts) =>

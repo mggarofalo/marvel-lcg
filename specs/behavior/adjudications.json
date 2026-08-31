@@ -5393,9 +5393,9 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unimplemented",
-          "work_item": "MARVEL-275",
-          "exception": "RulesNotImplementedException: rr:damage.step.6",
+          "implementation": "unverified",
+          "work_item": null,
+          "exception": null,
           "scenarios": [],
           "mutation": null
         }
@@ -5411,9 +5411,9 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unimplemented",
-          "work_item": "MARVEL-275",
-          "exception": "RulesNotImplementedException: rr:damage.step.7",
+          "implementation": "unverified",
+          "work_item": null,
+          "exception": null,
           "scenarios": [],
           "mutation": null
         }
@@ -32880,8 +32880,8 @@
           "mutation": null
         },
         {
-          "key": "after-nick-fury-enters-play-choose-one-choice-1",
-          "summary": "Choice 1: Forced Response: After Nick Fury enters play, choose one: remove 2 threat from a scheme, draw 3 cards, or deal 4 damage to an enemy.",
+          "key": "after-entering-play-remove-two-threat",
+          "summary": "After Nick Fury enters play, choosing the first Forced Response option removes 2 threat from one scheme.",
           "disposition": "executable",
           "reason": null,
           "target": null,
@@ -32892,8 +32892,8 @@
           "mutation": null
         },
         {
-          "key": "after-nick-fury-enters-play-choose-one-choice-2",
-          "summary": "Choice 2: Forced Response: After Nick Fury enters play, choose one: remove 2 threat from a scheme, draw 3 cards, or deal 4 damage to an enemy.",
+          "key": "after-entering-play-draw-three-cards",
+          "summary": "After Nick Fury enters play, choosing the second Forced Response option draws 3 cards.",
           "disposition": "executable",
           "reason": null,
           "target": null,
@@ -32904,8 +32904,8 @@
           "mutation": null
         },
         {
-          "key": "after-nick-fury-enters-play-choose-one-choice-3",
-          "summary": "Choice 3: Forced Response: After Nick Fury enters play, choose one: remove 2 threat from a scheme, draw 3 cards, or deal 4 damage to an enemy.",
+          "key": "after-entering-play-deal-four-damage",
+          "summary": "After Nick Fury enters play, choosing the third Forced Response option deals 4 damage to one enemy.",
           "disposition": "executable",
           "reason": null,
           "target": null,
@@ -35586,8 +35586,8 @@
           "mutation": null
         },
         {
-          "key": "choose-either-take-2-damage-or-place-choice-1",
-          "summary": "Choice 1: When Revealed: Choose to either take 2 damage or place 1 threat on the main scheme.",
+          "key": "when-revealed-take-two-damage",
+          "summary": "When Hydra Bomber is revealed, choosing the first option deals 2 damage to the revealing player.",
           "disposition": "executable",
           "reason": null,
           "target": null,
@@ -35598,8 +35598,8 @@
           "mutation": null
         },
         {
-          "key": "choose-either-take-2-damage-or-place-choice-2",
-          "summary": "Choice 2: When Revealed: Choose to either take 2 damage or place 1 threat on the main scheme.",
+          "key": "when-revealed-place-one-threat",
+          "summary": "When Hydra Bomber is revealed, choosing the second option places 1 threat on the main scheme.",
           "disposition": "executable",
           "reason": null,
           "target": null,
@@ -45174,8 +45174,20 @@
       "fingerprint": "sha256:fb5ecf099e00d07c270d8a31b27e797471cbdc9008e9826d7919bacf14627ebf",
       "obligations": [
         {
-          "key": "published-clarification-1",
-          "summary": "**Q:** Can Jennifer Walters remove threat from a side scheme as it enters play? **A:** No. Side schemes enter play with threat already on them, meaning threat is not “placed” at this point. **-(Official FAQ)** ---------------------- **Q:** If threat is placed on a scheme during game setup, does Jennifer Walters’s ability trigger? **A:** No. Abilities that do not have the ”**Setup**” timing trigger cannot resolve during game setup. **-(Official FAQ)**",
+          "key": "side-scheme-enters-with-threat",
+          "summary": "Jennifer Walters does not remove threat when a side scheme enters play because a side scheme enters with threat already on it; that threat is not placed at that time.",
+          "disposition": "executable",
+          "reason": null,
+          "target": null,
+          "implementation": "unverified",
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        },
+        {
+          "key": "non-setup-ability-during-setup",
+          "summary": "Jennifer Walters does not remove threat placed during game setup because an ability without the Setup timing trigger cannot resolve during setup.",
           "disposition": "executable",
           "reason": null,
           "target": null,
@@ -45194,10 +45206,10 @@
         {
           "key": "published-clarification-1",
           "summary": "**Q:** Can Legal Practice remove threat from multiple schemes simultaneously? **A:** No. All of the threat removed by Legal Practice must be removed from a single scheme. **-(Official FAQ)**",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "outside-core",
+          "reason": "The exact interaction requires Energy Barrier (05017), an expansion card absent from a legal Core Set game.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -45212,10 +45224,10 @@
         {
           "key": "published-clarification-1",
           "summary": "**Q:** Can you use [Focused Rage](/card/01027) to take 1 damage, then use [Energy Barrier](/card/05017) to prevent that damage and still draw a card from [Focused Rage](/card/01027)? **A:** No. You must pay the cost fully before you can trigger the effect. If the cost is to take a damage but you prevent the damage, then you have not paid the cost and therefore cannot resolve the effect. **-(Developer Ruling, Hall of Heroes)**",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "outside-core",
+          "reason": "The exact interaction requires Energy Barrier (05017), an expansion card absent from a legal Core Set game.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -45306,8 +45318,8 @@
       "fingerprint": "sha256:136194d456f03d6c3fd48646742201112f314bf064f607c3362aa20775e8661c",
       "obligations": [
         {
-          "key": "published-clarification-1",
-          "summary": "**Q:** Does Pepper Potts generate 2 resources if a card with 2 printed resources (such as Energy, Genius, or Strength) is on top of the discard pile? **A:** Yes. Pepper Potts generates a number of resources that are equal in quantity and type to the resources on the top card of the discard pile. **-(Official FAQ)** --- **Q:** Will Pepper Potts generate 2 resources if a “The Power of [Aspect]” resource card (such as The Power of Aggression) is on top of the discard pile? **A:** No. Though the resources that Pepper Potts generates are equal in quantity and type to the resources of the top card of the discard pile, Pepper Potts is the card that is generating these resources. This means that a The Power of [Aspect] card never generates resources itself, having no opportunity to generate additional resources for a card of its specified aspect. **-(Official FAQ)**",
+          "key": "double-printed-resource",
+          "summary": "Pepper Potts generates 2 resources when a card with 2 printed resources is on top of the discard pile.",
           "disposition": "executable",
           "reason": null,
           "target": null,
@@ -45318,8 +45330,20 @@
           "mutation": null
         },
         {
-          "key": "published-clarification-2",
-          "summary": "**Q:** Can Pepper Potts generate the resources of a card that is currently being spent? **A:** No. Resources are generated simultaneously, meaning the spent card will not be on top of the discard pile at the time Pepper Potts uses her ability. **-(Official FAQ)**",
+          "key": "power-of-aspect-resource",
+          "summary": "Pepper Potts does not double a The Power of [Aspect] card: Pepper Potts, rather than the discarded card, generates the copied resource.",
+          "disposition": "executable",
+          "reason": null,
+          "target": null,
+          "implementation": "unverified",
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        },
+        {
+          "key": "currently-spent-card",
+          "summary": "Pepper Potts cannot generate the resources of the card currently being spent because resources are generated simultaneously and that card is not yet on top of the discard pile.",
           "disposition": "executable",
           "reason": null,
           "target": null,
@@ -45620,10 +45644,10 @@
         {
           "key": "published-clarification-3",
           "summary": "**Q:** I’m being attacked by Ultron Stage 2 and [Nova](/card/05012) is in play. Which interrupt triggers first? **A:** The **Forced Interrupt** triggers before you can trigger a player **Interrupt**. **-(Developer Ruling, Hall of Heroes)**",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "outside-core",
+          "reason": "The exact timing comparison requires Nova (05012), an expansion card absent from a legal Core Set game.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -46962,10 +46986,34 @@
       "fingerprint": "sha256:c4a0fac8ab5b22a1ddd3d90a05cb8a44a30ddc34861d9c498096ccf428af407d",
       "obligations": [
         {
-          "key": "source-disposition",
-          "summary": "93 – I’m wondering about the term “for each”. Some cards worded like “Homeland Intervention” are pretty clear: they can remove threats only from 1 scheme. (wording is explicitly “that scheme”) But is a card worded like “Falcon: Sam Wilson” could remove threat from multiple schemes? (wording is “a scheme”) The answer could have implications on the following cards: – Spider-Man: Pavitr Prabhakar – Wiccan – Beat Cop – Ham It Up – Hex Bolt – Legal Practice – Energy Channel For all of the cards you mentioned except Hex Bolt, their abilities apply to only one target. Falcon: Sam Wilson removes X threat from just one scheme, Energy Channel deals X damage to just one enemy, and so on. The reason Hex Bolt is different is because it’s structured differently, where each result of the discard is resolved separately. Say all 3 discarded cards each have 1 boost icon—you resolve the threat removal one card at a time, and therefore can choose a different scheme to remove threat from each time.",
+          "key": "legal-practice-one-scheme",
+          "summary": "Legal Practice removes all of its threat from one scheme; its variable quantity does not create a separate target for each point removed.",
+          "disposition": "executable",
+          "reason": null,
+          "target": null,
+          "implementation": "unverified",
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        },
+        {
+          "key": "energy-channel-one-enemy",
+          "summary": "Energy Channel deals all of its damage to one enemy; its variable quantity does not create a separate target for each point dealt.",
+          "disposition": "executable",
+          "reason": null,
+          "target": null,
+          "implementation": "unverified",
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        },
+        {
+          "key": "expansion-examples",
+          "summary": "The ruling also adjudicates Homeland Intervention, Falcon: Sam Wilson, Spider-Man: Pavitr Prabhakar, Wiccan, Beat Cop, Ham It Up, and Hex Bolt.",
           "disposition": "outside-core",
-          "reason": "The ruling requires expansion material (Homeland Intervention, Sam Wilson, Ham It Up) absent from a legal Core Set game.",
+          "reason": "Those named examples are expansion cards absent from a legal Core Set game.",
           "target": null,
           "implementation": null,
           "work_item": null,
@@ -50724,10 +50772,22 @@
       "fingerprint": "sha256:bb05c9c917c6947e366ba98ddc2e4ff599296158a2110ad2e9ee99ad1c8c8c1f",
       "obligations": [
         {
-          "key": "source-disposition",
-          "summary": "I have a question about marvel champions. I’ve seen a ruling that states that after the madame hydra minion activates while both copies of the legions of hydra side scheme are in play, she adds 2 threat to both of them. My question is, If I play the melee event, attacking 2 enemies while I have the superhuman strength upgrade in play, can I stun both of them? No; Superhuman Strength is specifically single-target, so only one of the enemies damaged by Melee can be stunned. You can choose which one to stun, though. Also, we realize that we were wrong about Madame Hydra, given the rules of Referential Abilities—only one of the Legions of Hydra schemes would get threat placed on it. I will let the original asker know.",
+          "key": "madame-hydra-one-legions-scheme",
+          "summary": "When Madame Hydra activates while both copies of Legions of Hydra are in play, her referential ability places 2 threat on only one of them.",
+          "disposition": "executable",
+          "reason": null,
+          "target": null,
+          "implementation": "unverified",
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        },
+        {
+          "key": "melee-superhuman-strength",
+          "summary": "Superhuman Strength stuns only one of the two enemies damaged by Melee.",
           "disposition": "outside-core",
-          "reason": "The ruling belongs to the Expansion card questions product surface, which is absent from a legal Core Set game.",
+          "reason": "The exact interaction requires Melee, an expansion card absent from a legal Core Set game.",
           "target": null,
           "implementation": null,
           "work_item": null,
@@ -51150,12 +51210,36 @@
       "fingerprint": "sha256:2b04efc8bbbabc661195bc0f9f859d927c12aa6b515e11cdedef54b574f589f5",
       "obligations": [
         {
-          "key": "published-clarification",
-          "summary": "Does Pepper Potts generate 2 resources if a card with 2 printed resources (such as Energy, Genius, or Strength) is on top of the discard pile? [Second], will Pepper Potts generate 2 resources if a “The Power of [Aspect]” resource card (such as The Power of Aggression) is on top of the discard pile? [Third], can Pepper Potts generate the resources of a card that is currently being spent? Yes. Pepper Potts generates a number of resources that are equal in quantity and type to the resources on the top card of the discard pile. [Second], no. Though the resources that Pepper Potts generates are equal in quantity and type to the resources of the top card of the discard pile, Pepper Potts is the card that is generating these resources. This means that a “The Power of [Aspect]” card never generates resources itself, having no opportunity to generate additional resources for a card of its specified aspect. [Third], no. Resources are generated simultaneously, meaning the spent card will not be on top of the discard pile at the time Pepper Potts uses her ability.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+          "key": "double-printed-resource",
+          "summary": "Pepper Potts generates 2 resources when a card with 2 printed resources is on top of the discard pile.",
+          "disposition": "narrower",
+          "reason": "The same answer is retained as the card-specific FAQ obligation.",
+          "target": "behavior:faq:01033:double-printed-resource",
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        },
+        {
+          "key": "power-of-aspect-resource",
+          "summary": "Pepper Potts does not double a The Power of [Aspect] card because Pepper Potts generates the copied resource.",
+          "disposition": "narrower",
+          "reason": "The same answer is retained as the card-specific FAQ obligation.",
+          "target": "behavior:faq:01033:power-of-aspect-resource",
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        },
+        {
+          "key": "currently-spent-card",
+          "summary": "Pepper Potts cannot generate the resources of the card currently being spent because resource generation is simultaneous.",
+          "disposition": "narrower",
+          "reason": "The same answer is retained as the card-specific FAQ obligation.",
+          "target": "behavior:faq:01033:currently-spent-card",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -55212,12 +55296,12 @@
       "fingerprint": "sha256:95d437cb725364b7c7ab409f1a688820698516e989fadaf90cec14e87ad12c9b",
       "obligations": [
         {
-          "key": "published-clarification",
-          "summary": "If the “Madame Hydra” minion activates and there are two copies of “legions of Hydra” in play, does she add 2 threat to both? She should add 2 threat to each Legions of Hydra in play.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+          "key": "both-legions-schemes",
+          "summary": "The historical answer said Madame Hydra places 2 threat on each copy of Legions of Hydra in play.",
+          "disposition": "superseded",
+          "reason": "A later ruling corrects this answer under Referential Abilities: only one Legions of Hydra scheme receives threat.",
+          "target": "behavior:ruling:3893e8921b39cf65:madame-hydra-one-legions-scheme",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -56826,8 +56910,8 @@
       "fingerprint": "sha256:843bc160ed747de40a17cd22af92aca2fc596bb1b0e5a66a74356a9429e7eb8b",
       "obligations": [
         {
-          "key": "core-when-defeated-before-discard",
-          "summary": "A Core Set When Defeated ability resolves before its defeated card is discarded.",
+          "key": "biomechanical-upgrades-prevents-defeat",
+          "summary": "When Biomechanical Upgrades prevents a Hydra Soldier from being defeated and heals it, Hydra Soldier's When Defeated ability does not resolve because it was not defeated.",
           "disposition": "executable",
           "reason": null,
           "target": null,
@@ -56838,10 +56922,10 @@
           "mutation": null
         },
         {
-          "key": "expansion-examples",
-          "summary": "The ruling also answers examples using Overrun and Followed.",
+          "key": "followed-interrupt-before-when-defeated",
+          "summary": "Followed's interrupt resolves before the attached scheme's When Defeated ability.",
           "disposition": "outside-core",
-          "reason": "Overrun and Followed are expansion cards absent from a legal Core Set game.",
+          "reason": "The exact timing comparison requires Followed, an expansion card absent from a legal Core Set game.",
           "target": null,
           "implementation": null,
           "work_item": null,
