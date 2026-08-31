@@ -62,6 +62,7 @@ Feature: Breakin' & Takin'
     And the main scheme has 0 threat
 
   @card:01107
+  @rr:hazard-icon.1
   Scenario: its hazard icon deals a second encounter card in the villain phase
     Given the hero is "iron_man"
     And I am in alter-ego form
@@ -75,6 +76,7 @@ Feature: Breakin' & Takin'
     And it is round 2
 
   @card:01107
+  @rr:villain-phase.step.3
   Scenario: the same round without the hazard scheme deals one
     # The control. Identical deck, identical form, no side scheme in play:
     # Shocker still comes out and Vulture is still sitting in the encounter

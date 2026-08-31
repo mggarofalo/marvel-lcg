@@ -10,11 +10,10 @@
 #   one hero    3 + 1  =  4      a flat 4 and "4 per hero" agree here
 #   two heroes  3 + 2  =  5      a flat 4 says 4, "4 per hero" says 8
 #
-# The hazard icon has no rules file of its own: `specs/rules/keywords.feature`
-# covers the five keywords the core set prints on characters, and the three
-# scheme icons are not among them. So it is measured here, against the control
-# that matters -- another side scheme, in play, revealed the same way, without
-# the icon.
+# The icon is measured here, against the control that matters -- another side
+# scheme, in play, revealed the same way, without the icon. The canonical
+# hazard pair and its Rules Reference tags are on Breakin' & Takin' (01107),
+# which `specs/rules/keywords.feature` reuses for MARVEL-84 rather than copying.
 
 Feature: Illegal Arms Factory
 
