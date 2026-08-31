@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Marvel.Rules.Index;
 using Marvel.Tests;
 using Xunit;
@@ -134,6 +136,38 @@ public sealed class RulesModificationTests
                 rulingsPath));
 
             Assert.Contains("pins ruling sha256:29a9e917", error.Message, StringComparison.Ordinal);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void DuplicateRulingIdsFailThroughTheControlledCorpusErrorPath()
+    {
+        string root = Path.Combine(
+            Path.GetTempPath(),
+            $"marvel-rules-modifications-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+        try
+        {
+            JsonNode json = JsonNode.Parse(File.ReadAllText(
+                RepositoryPaths.Dataset("rulings", "rulings.json")))!;
+            JsonArray rulings = json["rulings"]!.AsArray();
+            string duplicateId = rulings[0]!["id"]!.GetValue<string>();
+            rulings.Add(rulings[0]!.DeepClone());
+            string rulingsPath = Path.Combine(root, "rulings.json");
+            File.WriteAllText(
+                rulingsPath,
+                json.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+
+            var error = Assert.Throws<InvalidDataException>(() => Corpus.Read(
+                RepositoryPaths.Dataset("rules-reference", "index.json"),
+                RepositoryPaths.Dataset("rules-graph.json"),
+                rulingsPath));
+
+            Assert.Equal($"rulings.json contains duplicate id {duplicateId}", error.Message);
         }
         finally
         {

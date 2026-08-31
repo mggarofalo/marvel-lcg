@@ -149,11 +149,16 @@ internal sealed class Corpus
         }
 
         using var rulings = JsonDocument.Parse(File.ReadAllBytes(rulingsPath));
-        var published = rulings.RootElement.GetProperty("rulings").EnumerateArray()
-            .ToDictionary(
-                ruling => ruling.GetProperty("id").GetString()!,
-                ruling => ruling.Clone(),
-                StringComparer.Ordinal);
+        var published = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
+        foreach (var ruling in rulings.RootElement.GetProperty("rulings").EnumerateArray())
+        {
+            string rulingId = ruling.GetProperty("id").GetString()!;
+            if (!published.TryAdd(rulingId, ruling.Clone()))
+            {
+                throw new InvalidDataException($"rulings.json contains duplicate id {rulingId}");
+            }
+        }
+
         var modifications = new List<Modification>();
         foreach (var mapped in graph.RootElement.GetProperty("modifications").EnumerateObject())
         {
