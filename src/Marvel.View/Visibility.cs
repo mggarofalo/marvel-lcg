@@ -125,7 +125,7 @@ public sealed class RestrictedVisibilityPolicy(int authorizedSeat) : IVisibility
     public IReadOnlyList<SeatScope> AdditionalScopes(ViewerClaim? claim, int players)
     {
         _ = Authorize(claim, players);
-        if (claim is not null && claim.Seat != authorizedSeat)
+        if (claim?.Seat is int claimed && claimed != authorizedSeat)
         {
             return [];
         }

@@ -545,6 +545,12 @@ claim nor an existing seat capability can choose another scope. A replayed or
 wrong-game invitation is rejected. The coordinator capability owns `close`;
 closing an attached capability detaches only that seat.
 
+An omitted, `watch`, or `hot_seat` claim still receives those independently
+scoped invitations. Restricted policy narrows the opening capability to its
+configured seat; it does not remove the only route by which the other seats can
+answer their prompts. Only an explicit claim for a different seat suppresses
+invitations as well as private access.
+
 `sync` returns the current filtered snapshot and the pending prompt only when
 that prompt belongs to the capability's scope. It does not mutate the game and
 returns no historical events. Before `resolve`, the host likewise verifies

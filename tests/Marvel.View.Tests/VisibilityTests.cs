@@ -51,8 +51,16 @@ public sealed class VisibilityTests
             new ViewerClaim(Seat: 0), players: 3);
         IReadOnlyList<SeatScope> denied = policy.AdditionalScopes(
             new ViewerClaim(Seat: 1), players: 3);
+        IReadOnlyList<SeatScope> watching = policy.AdditionalScopes(
+            new ViewerClaim(Watch: true), players: 3);
+        IReadOnlyList<SeatScope> hotSeat = policy.AdditionalScopes(
+            new ViewerClaim(HotSeat: true), players: 3);
+        IReadOnlyList<SeatScope> omitted = policy.AdditionalScopes(null, players: 3);
 
         Assert.Equal([1, 2], grants.Select(grant => grant.Seat));
+        Assert.Equal([1, 2], watching.Select(grant => grant.Seat));
+        Assert.Equal([1, 2], hotSeat.Select(grant => grant.Seat));
+        Assert.Equal([1, 2], omitted.Select(grant => grant.Seat));
         Assert.All(grants, grant =>
         {
             Assert.True(grant.Scope.Includes(grant.Seat));

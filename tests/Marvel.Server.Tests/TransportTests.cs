@@ -290,8 +290,12 @@ public sealed class TransportTests
         Assert.Null(resolveFirst.Error);
     }
 
-    [Fact]
-    public async Task RestrictedSeatsAdvanceOneSharedGameWithIndependentCapabilities()
+    [Theory]
+    [InlineData("omitted")]
+    [InlineData("watch")]
+    [InlineData("hot-seat")]
+    public async Task RestrictedSeatsAdvanceOneSharedGameWithIndependentCapabilities(
+        string viewerMode)
     {
         var host = new EngineHost(
             DatasetGameFactory.Load(Marvel.Tests.RepositoryPaths.Root),
@@ -302,8 +306,15 @@ public sealed class TransportTests
         var specification = new GameSpecification(
             "rhino", ["spider_man", "captain_marvel"], ModularSets: [], Seed: 7);
 
+        ViewerClaim? viewer = viewerMode switch
+        {
+            "omitted" => null,
+            "watch" => new ViewerClaim(Watch: true),
+            "hot-seat" => new ViewerClaim(HotSeat: true),
+            _ => throw new InvalidOperationException($"unknown test mode {viewerMode}"),
+        };
         EngineResponse opened = await ExchangeOverSocket(
-            server, EngineRequest.OpenGame("open", "shared", specification));
+            server, EngineRequest.OpenGame("open", "shared", specification, viewer));
         SeatInvitation invitation = Assert.Single(opened.Invitations!);
         EngineResponse capabilityCannotAttach = await ExchangeOverSocket(
             server,
