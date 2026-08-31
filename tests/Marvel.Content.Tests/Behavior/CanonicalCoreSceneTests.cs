@@ -151,6 +151,47 @@ public sealed class CanonicalCoreSceneTests
     }
 
     [Fact]
+    public void AUsesCardCannotRemainInPlayAtZeroCounters()
+    {
+        var scene = Deal(
+            "behavior:rr:uses-x-type.1:discard-at-zero",
+            "rhino",
+            ["spider_man"]);
+        scene.Apply(new MoveSceneCard(
+            new SceneCard("01008"),
+            new SceneDestination(SceneZone.Upgrade, Seat: 0)));
+
+        var thrown = Assert.Throws<CoreSceneConstructionException>(() => scene.Apply(
+            new SetSceneCounters(new SceneCard("01008"), "web", 0)));
+
+        Assert.Contains("would be discarded", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(3, scene.Find(new SceneCard("01008")).Tokens["c_web"]);
+    }
+
+    [Fact]
+    public void SchemeThreatCannotBypassDefeatOrAdvance()
+    {
+        var scene = Deal(
+            "behavior:rr:side-scheme.2:zero-threat",
+            "klaw",
+            ["spider_man"]);
+        Card defenseNetwork = scene.Find(new SceneCard("01125"));
+        Card mainScheme = scene.World.TheCardIn(DeckType.MainSchemesArea)!;
+
+        var defeated = Assert.Throws<CoreSceneConstructionException>(() => scene.Apply(
+            new SetSceneCounters(new SceneCard("01125"), "threat", 0)));
+        var advanced = Assert.Throws<CoreSceneConstructionException>(() => scene.Apply(
+            new SetSceneCounters(
+                new SceneCard(mainScheme.FaceId),
+                "threat",
+                Cards.PrintedValue(mainScheme.FaceId, "TargetThreat", 1))));
+
+        Assert.Contains("would be defeated", defeated.Message, StringComparison.Ordinal);
+        Assert.Contains("would advance", advanced.Message, StringComparison.Ordinal);
+        Assert.Equal(3, defenseNetwork.Tokens["k_threat"]);
+    }
+
+    [Fact]
     public void FormArrangementUsesOnlyTheSelectedIdentitysPrintedFaces()
     {
         var scene = Deal(
@@ -305,6 +346,50 @@ public sealed class CanonicalCoreSceneTests
     }
 
     [Fact]
+    public void PrintedPerPlayerMaximumIsRequired()
+    {
+        var scene = Deal(
+            "behavior:card:01018:max-one-per-player",
+            "rhino",
+            ["captain_marvel"]);
+        scene.Apply(new MoveSceneCard(
+            new SceneCard("01018", Copy: 0),
+            new SceneDestination(SceneZone.Upgrade, Seat: 0)));
+        Area before = scene.Find(new SceneCard("01018", Copy: 1)).Area;
+
+        var thrown = Assert.Throws<CoreSceneConstructionException>(() => scene.Apply(
+            new MoveSceneCard(
+                new SceneCard("01018", Copy: 1),
+                new SceneDestination(SceneZone.Upgrade, Seat: 0))));
+
+        Assert.Contains("printed maximum", thrown.Message, StringComparison.Ordinal);
+        Assert.Same(before, scene.Find(new SceneCard("01018", Copy: 1)).Area);
+    }
+
+    [Fact]
+    public void FirstPlayerMayChooseEitherTiedLegalEncounterAttachmentHost()
+    {
+        var scene = Deal(
+            "behavior:card:01163:tied-highest-printed-health",
+            "rhino",
+            ["she_hulk"],
+            ["masters_of_evil"]);
+        scene.Apply(new MoveSceneCard(
+            new SceneCard("01162"),
+            new SceneDestination(SceneZone.EngagedMinion, Seat: 0)));
+        scene.Apply(new MoveSceneCard(
+            new SceneCard("01130"),
+            new SceneDestination(SceneZone.EngagedMinion, Seat: 0)));
+        Card titania = scene.Find(new SceneCard("01162"));
+
+        scene.Apply(new MoveSceneCard(
+            new SceneCard("01163"),
+            new SceneDestination(SceneZone.Attachment, Host: titania.ObjectId)));
+
+        Assert.Equal(titania.ObjectId, scene.Find(new SceneCard("01163")).Area.Host);
+    }
+
+    [Fact]
     public void AHostCannotLeavePlayWhileItsHostedCardsRemain()
     {
         var scene = Deal(
@@ -342,6 +427,43 @@ public sealed class CanonicalCoreSceneTests
         Assert.Contains("owned by 0, not seat 1", thrown.Message, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void ActiveStructuralCardsCannotBeMovedOutOfTheirRoles()
+    {
+        var scene = Deal(
+            "behavior:rr:identity.4:identity-remains-in-play",
+            "rhino",
+            ["spider_man"]);
+        Card identity = scene.World.Seats[0].IdentityCard;
+
+        var thrown = Assert.Throws<CoreSceneConstructionException>(() => scene.Apply(
+            new MoveSceneCard(
+                new SceneCard(identity.FaceId),
+                new SceneDestination(SceneZone.SetAside, Seat: 0))));
+
+        Assert.Contains("cannot be rearranged", thrown.Message, StringComparison.Ordinal);
+        Assert.Equal(DeckType.HeroArea, identity.Area.Type);
+    }
+
+    [Fact]
+    public void ASignatureObligationMustGoToItsNamedIdentity()
+    {
+        var scene = Deal(
+            "behavior:rr:obligation.4:named-player",
+            "rhino",
+            ["spider_man", "iron_man"]);
+        Card evictionNotice = scene.Find(new SceneCard("01165"));
+        Area before = evictionNotice.Area;
+
+        var thrown = Assert.Throws<CoreSceneConstructionException>(() => scene.Apply(
+            new MoveSceneCard(
+                new SceneCard("01165"),
+                new SceneDestination(SceneZone.Obligation, Seat: 1))));
+
+        Assert.Contains("must be given to seat 0", thrown.Message, StringComparison.Ordinal);
+        Assert.Same(before, evictionNotice.Area);
+    }
+
     [Rule("rr:player-deck.1")]
     [Fact]
     public void ConstructorCannotStopAtAnEmptyPlayerDeckWithADiscardPile()
@@ -370,9 +492,13 @@ public sealed class CanonicalCoreSceneTests
             DiscardOthers: true));
 
     private static CanonicalCoreScene Deal(
-        string authority, string campaign, IReadOnlyList<string> heroes) =>
+        string authority,
+        string campaign,
+        IReadOnlyList<string> heroes,
+        IReadOnlyList<string>? modularSets = null) =>
         CanonicalCoreScene.Deal(
-            new CoreSceneRequest(authority, campaign, heroes, Seed: 302),
+            new CoreSceneRequest(
+                authority, campaign, heroes, Seed: 302, ModularSets: modularSets),
             Setup,
             Cards,
             AuthoredCards.Runner());

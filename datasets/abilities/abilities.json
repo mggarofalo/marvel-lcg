@@ -2178,11 +2178,14 @@
     {
       "card": "01137a",
       "name": "The Crimson Cowl",
-      "note": "Setup puts the set-aside Ultron Drones environment into its printed in-play destination without revealing it. The contents list is scenario setup data, and rr:appendix-ii-setup.step.12.b performs the printed advance to 1B.",
+      "note": "Setup puts the set-aside Ultron Drones environment into its printed in-play destination without revealing it, then performs the printed encounter-deck shuffle. The contents list is scenario setup data, and rr:appendix-ii-setup.step.12.b performs the printed advance to 1B.",
       "abilities": [
         {
           "trigger": { "timing": "Setup", "subject": "this" },
-          "effect": { "putIntoPlay": { "card": { "cardsIn": { "area": "scenarioSetAside", "title": "Ultron Drones" } }, "where": "printedDestination" } }
+          "effect": { "seq": [
+            { "putIntoPlay": { "card": { "cardsIn": { "area": "scenarioSetAside", "title": "Ultron Drones" } }, "where": "printedDestination" } },
+            { "shuffle": "encounterDeck" }
+          ] }
         }
       ]
     },

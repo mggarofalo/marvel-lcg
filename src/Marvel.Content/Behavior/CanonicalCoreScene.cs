@@ -309,9 +309,10 @@ public sealed class CanonicalCoreScene
     private void Move(Card card, SceneDestination destination)
     {
         ArgumentNullException.ThrowIfNull(destination);
+        RequireStructuralRoleCanMove(card);
         var (playArea, inPlay) = ProjectedDestination(card, destination);
         RequireHostCanMove(card, playArea, inPlay);
-        RequireEntryLimits(card, playArea, inPlay);
+        RequireEntryLimits(card, playArea, inPlay, destination.Host);
         if (inPlay
             && !DeckTypes.IsInPlay(card.Area.Type)
             && Uniqueness.IsBlocked(World, World.Facts, card, playArea))
@@ -401,6 +402,13 @@ public sealed class CanonicalCoreScene
             case SceneZone.Obligation:
                 Player(seat);
                 RequireScenarioKind(card, kind, CardKind.Obligation);
+                if (Reveal.Names(World, World.Facts, card) is { } named && named != seat)
+                {
+                    throw new InvalidOperationException(
+                        named < 0
+                            ? $"'{card.FaceId}' names an identity absent from this game"
+                            : $"'{card.FaceId}' must be given to seat {named}, not seat {seat}");
+                }
                 return World.AreaOf(
                     DeckType.ObligationsArea,
                     PlayArea.Of(seat),
@@ -471,11 +479,40 @@ public sealed class CanonicalCoreScene
             && cardKind is CardKind.MainScheme or CardKind.EncounterSideScheme
                 or CardKind.PlayerSideScheme)
         {
+            if (!DeckTypes.IsInPlay(card.Area.Type))
+            {
+                throw new InvalidOperationException(
+                    "threat can be arranged only on an in-play scheme");
+            }
+
+            if (cardKind is CardKind.EncounterSideScheme or CardKind.PlayerSideScheme
+                && count == 0)
+            {
+                throw new InvalidOperationException(
+                    $"'{card.FaceId}' would be defeated at zero threat");
+            }
+
+            long target = World.Facts.PrintedValue(
+                card.FaceId, "TargetThreat", World.Players, long.MaxValue);
+            if (cardKind == CardKind.MainScheme && count >= target)
+            {
+                throw new InvalidOperationException(
+                    $"'{card.FaceId}' would advance at its target threat of {target}");
+            }
+
             key = "k_threat";
         }
         else if (World.Facts.CounterTypes(card.FaceId).Contains(
                      normalized, StringComparer.Ordinal))
         {
+            if (count == 0
+                && DeckTypes.IsInPlay(card.Area.Type)
+                && World.Facts.Attributes(card.FaceId).ContainsKey("Uses"))
+            {
+                throw new InvalidOperationException(
+                    $"'{card.FaceId}' would be discarded with no {normalized} uses remaining");
+            }
+
             key = "c_" + normalized;
         }
         else
@@ -676,8 +713,8 @@ public sealed class CanonicalCoreScene
     private Card AttachmentHost(Card card, int requested)
     {
         Card host = Host(requested);
-        int? required = World.Abilities.AttachesTo(World, card);
-        if (required is null || required != host.ObjectId)
+        IReadOnlyList<int>? eligible = World.Abilities.AttachmentTargets(World, card);
+        if (eligible is null || !eligible.Contains(host.ObjectId))
         {
             throw new InvalidOperationException(
                 $"card {requested} is not the printed attach-to host for '{card.FaceId}'");
@@ -705,7 +742,8 @@ public sealed class CanonicalCoreScene
         }
     }
 
-    private void RequireEntryLimits(Card card, PlayArea destination, bool destinationInPlay)
+    private void RequireEntryLimits(
+        Card card, PlayArea destination, bool destinationInPlay, int requestedHost)
     {
         if (!destinationInPlay || DeckTypes.IsInPlay(card.Area.Type))
         {
@@ -745,6 +783,33 @@ public sealed class CanonicalCoreScene
                 throw new InvalidOperationException(
                     $"seat {card.Owner} already controls {held} restricted cards");
             }
+        }
+
+        if (card.Owner >= 0 && destination.IsPlayers)
+        {
+            IReadOnlyList<int>? targets = requestedHost >= 0 ? [requestedHost] : null;
+            if (!CardPlay.WithinPerPlayerLimit(
+                    World,
+                    World.Facts,
+                    World.Seats[destination.Player],
+                    card,
+                    targets,
+                    World.Abilities))
+            {
+                throw new InvalidOperationException(
+                    $"seat {destination.Player} already controls the printed maximum of "
+                    + $"'{World.Facts.Title(card.FaceId)}'");
+            }
+        }
+    }
+
+    private static void RequireStructuralRoleCanMove(Card card)
+    {
+        if (card.Area.Type is DeckType.HeroArea or DeckType.MainSchemesArea
+            or DeckType.VillainArea)
+        {
+            throw new InvalidOperationException(
+                $"active {card.Area.Type} card {card.ObjectId} cannot be rearranged directly");
         }
     }
 

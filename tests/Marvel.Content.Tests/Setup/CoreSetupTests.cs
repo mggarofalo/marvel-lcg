@@ -241,6 +241,16 @@ public sealed class CoreSetupTests
                 DeckType.EnvironmentArea,
                 Assert.Single(world.Cards, card => card.FaceId == "01140").Area.Type);
             Assert.Contains(world.Cards, FacedownDrones.Is);
+            var pinnedTop = world.AreaOf(DeckType.EncounterDeck).Cards
+                .TakeLast(5)
+                .Reverse()
+                .Select(card => card.FaceId)
+                .ToList();
+            Assert.Equal(
+                campaign == "ultron"
+                    ? ["01150", "01147", "01141", "01189", "01144a"]
+                    : ["01142", "01188", "01189", "01153", "01152"],
+                pinnedTop);
         }
     }
 
