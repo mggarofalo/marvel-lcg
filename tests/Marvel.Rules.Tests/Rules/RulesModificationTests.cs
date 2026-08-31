@@ -111,6 +111,37 @@ public sealed class RulesModificationTests
     }
 
     [Fact]
+    public void ARevisedRulingAnswerRequiresTheRelationshipToBeReaudited()
+    {
+        string root = Path.Combine(
+            Path.GetTempPath(),
+            $"marvel-rules-modifications-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+        try
+        {
+            string rulings = File.ReadAllText(
+                RepositoryPaths.Dataset("rulings", "rulings.json"))
+                .Replace(
+                    "sha256:29a9e917bc50dd403854ff5a449b3eed5987b6110d4d159279ff8230fc129a9c",
+                    "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+                    StringComparison.Ordinal);
+            string rulingsPath = Path.Combine(root, "rulings.json");
+            File.WriteAllText(rulingsPath, rulings);
+
+            var error = Assert.Throws<InvalidDataException>(() => Corpus.Read(
+                RepositoryPaths.Dataset("rules-reference", "index.json"),
+                RepositoryPaths.Dataset("rules-graph.json"),
+                rulingsPath));
+
+            Assert.Contains("pins ruling sha256:29a9e917", error.Message, StringComparison.Ordinal);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
     public void AVersionWithoutAVendoredBaseIsNotGuessed()
     {
         var corpus = Corpus.Read();
@@ -141,6 +172,34 @@ public sealed class RulesModificationTests
             [
                 Modification("ruling:old", "1.5"),
                 Modification("ruling:new", "1.7-1.8", absorbedIn: "1.8"),
+            ],
+            "1.8",
+            "rr:example");
+
+        Assert.Null(selected);
+    }
+
+    [Fact]
+    public void AnAbsorbedPeerDoesNotMakeTheLiveModificationAmbiguous()
+    {
+        string? selected = Corpus.SelectCurrent(
+            [
+                Modification("ruling:absorbed", "1.7-1.8", absorbedIn: "1.8"),
+                Modification("ruling:live", "1.7-1.8"),
+            ],
+            "1.8",
+            "rr:example");
+
+        Assert.Equal("ruling:live", selected);
+    }
+
+    [Fact]
+    public void TwoAbsorbedPeersReturnAuthorityToTheBase()
+    {
+        string? selected = Corpus.SelectCurrent(
+            [
+                Modification("ruling:first", "1.7-1.8", absorbedIn: "1.8"),
+                Modification("ruling:second", "1.7-1.8", absorbedIn: "1.8"),
             ],
             "1.8",
             "rr:example");

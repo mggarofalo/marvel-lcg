@@ -98,7 +98,10 @@ This vendored dataset records what Hall of Heroes published; it does not guess
 which Rules Reference clause a ruling changes. Audited ruling-to-base mappings
 live in the hand-authored relationship layer at `datasets/rules-graph.json`.
 `tools/Marvel.Rules.Index` joins the two without altering either source, pins
-each mapping to the base record hash, and keeps absorbed rulings citable.
+each mapping to both the base record hash and the ruling content hash, and keeps
+absorbed rulings citable. A revised mapped answer therefore requires an
+explicit relationship re-audit even though its stable `ruling:` id does not
+move.
 
 ## Provenance and licence
 

@@ -184,6 +184,14 @@ internal sealed class Corpus
                     $"rules modification {mapped.Name} pins {supersedesHash}, not {baseRecord.Hash} for {baseId}");
             }
 
+            string rulingHash = ruling.GetProperty("hash").GetString()!;
+            string expectedRulingHash = mapped.Value.GetProperty("ruling_hash").GetString()!;
+            if (!string.Equals(expectedRulingHash, rulingHash, StringComparison.Ordinal))
+            {
+                throw new InvalidDataException(
+                    $"rules modification {mapped.Name} pins ruling {expectedRulingHash}, not {rulingHash}");
+            }
+
             string why = mapped.Value.GetProperty("why").GetString()!;
             string source = ruling.GetProperty("source").GetString()!;
             string via = ruling.GetProperty("via").GetString()!;
@@ -215,7 +223,7 @@ internal sealed class Corpus
                 via,
                 scope,
                 ruling.GetProperty("observed").GetString(),
-                ruling.GetProperty("hash").GetString()!);
+                rulingHash);
             modifications.Add(modification);
             found.Add(mapped.Name, new Record(
                 mapped.Name,
@@ -343,17 +351,17 @@ internal sealed class Corpus
                 latest,
                 StringComparison.Ordinal))
             .ToList();
-        if (currentModifications.Count > 1)
+        var unabsorbed = currentModifications
+            .Where(modification => modification.AbsorbedIn is null
+                || CompareVersions(version, modification.AbsorbedIn) < 0)
+            .ToList();
+        if (unabsorbed.Count > 1)
         {
             throw new InvalidDataException(
-                $"{baseId} has {currentModifications.Count} current modifications from RRG {latest}");
+                $"{baseId} has {unabsorbed.Count} current modifications from RRG {latest}");
         }
 
-        Modification selected = currentModifications[0];
-        return selected.AbsorbedIn is not null
-            && CompareVersions(version, selected.AbsorbedIn) >= 0
-            ? null
-            : selected.Id;
+        return unabsorbed.Count == 0 ? null : unabsorbed[0].Id;
     }
 
     private static string EffectiveVersion(string scope) => scope switch

@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 
 namespace Marvel.Rules.Index;
 
@@ -24,14 +25,27 @@ internal static class Program
 {
     private static int Main(string[] args)
     {
-        var rest = args.Skip(1).ToArray();
-        return (args.Length == 0 ? "" : args[0]) switch
+        try
         {
-            "refs" => Refs(rest),
-            "resolve" => Resolve(rest),
-            "citations" => Report(rest),
-            _ => Usage(),
-        };
+            var rest = args.Skip(1).ToArray();
+            return (args.Length == 0 ? "" : args[0]) switch
+            {
+                "refs" => Refs(rest),
+                "resolve" => Resolve(rest),
+                "citations" => Report(rest),
+                _ => Usage(),
+            };
+        }
+        catch (Exception error) when (error is InvalidDataException
+            or InvalidOperationException
+            or JsonException
+            or KeyNotFoundException
+            or FormatException
+            or IOException)
+        {
+            Console.Error.WriteLine(error.Message);
+            return 1;
+        }
     }
 
     private static int Usage()
@@ -141,32 +155,22 @@ internal static class Program
 
         var corpus = Corpus.Read();
         string version = args.Length == 2 ? args[1] : corpus.Version;
-        try
+        Record record = corpus.Resolve(args[0], version);
+        Console.WriteLine($"{args[0]} @ Rules Reference v{version}");
+        Console.WriteLine($"current: {record.Id}");
+        Console.WriteLine($"hash:    {record.Hash}");
+        if (record.BaseId is not null)
         {
-            Record record = corpus.Resolve(args[0], version);
-            Console.WriteLine($"{args[0]} @ Rules Reference v{version}");
-            Console.WriteLine($"current: {record.Id}");
-            Console.WriteLine($"hash:    {record.Hash}");
-            if (record.BaseId is not null)
-            {
-                Modification modification = corpus.Modifications.Single(item => item.Id == record.Id);
-                Console.WriteLine($"source:  {modification.Source}");
-                Console.WriteLine($"via:     {modification.Via}");
-                Console.WriteLine($"scope:   {modification.Scope}");
-                Console.WriteLine($"observed:{(modification.Observed is null ? " unavailable" : " " + modification.Observed)}");
-            }
+            Modification modification = corpus.Modifications.Single(item => item.Id == record.Id);
+            Console.WriteLine($"source:  {modification.Source}");
+            Console.WriteLine($"via:     {modification.Via}");
+            Console.WriteLine($"scope:   {modification.Scope}");
+            Console.WriteLine($"observed:{(modification.Observed is null ? " unavailable" : " " + modification.Observed)}");
+        }
 
-            Console.WriteLine();
-            Console.WriteLine(Wrap(record.Fragment));
-            return 0;
-        }
-        catch (Exception error) when (error is InvalidOperationException
-            or InvalidDataException
-            or KeyNotFoundException)
-        {
-            Console.Error.WriteLine(error.Message);
-            return 1;
-        }
+        Console.WriteLine();
+        Console.WriteLine(Wrap(record.Fragment));
+        return 0;
     }
 
     private static int Report(string[] args)

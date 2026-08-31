@@ -109,7 +109,8 @@ Each relationship names:
 - the citable `ruling:` record that supplies the replacement text and its
   source, Hall of Heroes URL, RRG scope, observed month, and content hash;
 - the `rr:` base record whose meaning it modifies;
-- the base record's hash, so a re-harvest that moves the target fails closed;
+- both the ruling's content hash and the base record's hash, so a revised
+  answer or a re-harvested target makes the relationship fail closed;
 - why the relationship is correct; and
 - the later RRG version that absorbed the ruling, or `null` while the ruling
   remains current.
@@ -128,6 +129,12 @@ revisions rather than which individual designer rulings supersede which
 citable clauses. It therefore cannot generate this relationship layer. The
 small audited map grows only when a ruling can be tied to a specific record;
 the 1,100-ruling vendored corpus is not bulk-classified by inference.
+
+Ruling ids deliberately survive an answer revision, which makes
+`ruling_hash` load-bearing rather than redundant. When the rulings harvester
+reports a mapped record as revised, the relationship is re-read against the
+new answer before its hash is updated. Updating `rulings.json` alone leaves a
+red modification gate instead of silently carrying old judgment onto new text.
 
 An absorbed ruling remains in the corpus and remains independently citable.
 This preserves older citations while ensuring a current citation to its base

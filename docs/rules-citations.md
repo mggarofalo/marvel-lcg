@@ -130,12 +130,13 @@ attributes — every id resolves, every edge says why, and no rule names itself.
 them.
 
 Modification relationships add two stronger gates. Their `supersedes_hash`
-must still equal the vendored base record, and their id must still resolve to a
-Hall of Heroes record carrying source, RRG scope, date when the source provides
-one, and content hash. `refs rr:id` includes them in the reverse direction, so
-a base citation is in the blast radius of a new ruling. `resolve rr:id 1.8`
-shows whether the base text or a modification is current; an absorbed ruling
-remains available through `refs ruling:id` and as a direct citation.
+must still equal the vendored base record, and their `ruling_hash` must still
+equal the Hall of Heroes record carrying source, RRG scope, date when the
+source provides one, and replacement text. `refs rr:id` includes them in the
+reverse direction, so a base citation is in the blast radius of a new ruling.
+`resolve rr:id 1.8` shows whether the base text or a modification is current;
+an absorbed ruling remains available through `refs ruling:id` and as a direct
+citation.
 
 ## Uncited is not untested
 
