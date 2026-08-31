@@ -10,6 +10,12 @@ public static class EngineProtocol
     /// <summary>The only protocol version this host accepts.</summary>
     public const int Version = 1;
 
+    /// <summary>The largest request or game id accepted or echoed.</summary>
+    public const int MaximumIdentifierLength = 256;
+
+    /// <summary>The largest diagnostic text returned to a client.</summary>
+    public const int MaximumErrorLength = 1024;
+
     /// <summary>Starts a game from the named, vendored content.</summary>
     public const string Open = "open";
 
@@ -57,8 +63,9 @@ public sealed record EngineDecision(
 /// <summary>One command sent through either engine transport.</summary>
 /// <param name="Version">The protocol version.</param>
 /// <param name="RequestId">An opaque client correlation id.</param>
-/// <param name="Operation"><c>open</c> or <c>resolve</c>.</param>
+/// <param name="Operation"><c>open</c>, <c>resolve</c>, or <c>close</c>.</param>
 /// <param name="GameId">An opaque id chosen by the client for this game.</param>
+/// <param name="Capability">The server-issued session capability; absent only for <c>open</c>.</param>
 /// <param name="Game">Present only for <c>open</c>.</param>
 /// <param name="Decision">Present only for <c>resolve</c>.</param>
 public sealed record EngineRequest(
@@ -66,6 +73,7 @@ public sealed record EngineRequest(
     string RequestId,
     string Operation,
     string GameId,
+    string? Capability = null,
     GameSpecification? Game = null,
     EngineDecision? Decision = null)
 {
@@ -76,22 +84,26 @@ public sealed record EngineRequest(
 
     /// <summary>Builds a resolve request for the current protocol.</summary>
     public static EngineRequest ResolveGame(
-        string requestId, string gameId, EngineDecision decision) =>
+        string requestId, string gameId, string capability, EngineDecision decision) =>
         new(EngineProtocol.Version, requestId, EngineProtocol.Resolve, gameId,
-            Decision: decision);
+            Capability: capability, Decision: decision);
 
     /// <summary>Builds a close-game request for the current protocol.</summary>
-    public static EngineRequest CloseGame(string requestId, string gameId) =>
-        new(EngineProtocol.Version, requestId, EngineProtocol.Close, gameId);
+    public static EngineRequest CloseGame(
+        string requestId, string gameId, string capability) =>
+        new(
+            EngineProtocol.Version, requestId, EngineProtocol.Close, gameId,
+            Capability: capability);
 }
 
 /// <summary>A rejected request, represented identically by both transports.</summary>
 public sealed record EngineError(string Code, string Message);
 
-/// <summary>What the engine host returns after opening or resolving a game.</summary>
+/// <summary>What the engine host returns after opening, resolving, or closing a game.</summary>
 /// <param name="Version">The protocol version.</param>
 /// <param name="RequestId">The caller's correlation id.</param>
 /// <param name="GameId">The caller's game id.</param>
+/// <param name="Capability">The new session capability on <c>open</c>; otherwise null.</param>
 /// <param name="Prompt">The next question, or null when the game is over or failed.</param>
 /// <param name="Events">Setup or resolution events, in engine order.</param>
 /// <param name="Error">Why the request failed, or null on success.</param>
@@ -99,6 +111,7 @@ public sealed record EngineResponse(
     int Version,
     string RequestId,
     string GameId,
+    string? Capability,
     Prompt? Prompt,
     IReadOnlyList<GameEvent> Events,
     EngineError? Error = null);

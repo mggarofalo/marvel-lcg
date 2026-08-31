@@ -20,7 +20,7 @@ public sealed class EngineHostTests
         Assert.Equal("game-1", opened.GameId);
 
         var resolved = host.Exchange(EngineRequest.ResolveGame(
-            "request-2", "game-1", EngineDecision.Decline));
+            "request-2", "game-1", RequiredCapability(opened), EngineDecision.Decline));
 
         Assert.Null(resolved.Error);
         Assert.NotNull(resolved.Prompt);
@@ -28,19 +28,22 @@ public sealed class EngineHostTests
     }
 
     [Fact]
-    public void AClientOwnsTheGameIdAndCannotReplaceAnOpenGame()
+    public void SeparateCapabilitiesMayUseTheSameClientChosenGameId()
     {
-        var host = new EngineHost(DatasetGameFactory.Load(RepositoryPaths.Root));
+        var host = new EngineHost(
+            DatasetGameFactory.Load(RepositoryPaths.Root),
+            new SequenceCapabilities("first-capability", "second-capability"));
         var request = EngineRequest.OpenGame(
             "first",
             "chosen-id",
             new GameSpecification("rhino", ["spider_man"], [], Seed: 7));
 
-        Assert.Null(host.Exchange(request).Error);
+        var first = host.Exchange(request);
         var duplicate = host.Exchange(request with { RequestId = "again" });
 
-        Assert.Equal("game_exists", duplicate.Error?.Code);
-        Assert.Equal("again", duplicate.RequestId);
+        Assert.Null(first.Error);
+        Assert.Null(duplicate.Error);
+        Assert.NotEqual(first.Capability, duplicate.Capability);
     }
 
     [Fact]
@@ -51,12 +54,12 @@ public sealed class EngineHostTests
 
         var wrongVersion = host.Exchange(new EngineRequest(
             99, "version", EngineProtocol.Open, "game",
-            new GameSpecification("rhino", ["spider_man"], null, 1)));
+            Game: new GameSpecification("rhino", ["spider_man"], null, 1)));
         var unknownGame = host.Exchange(EngineRequest.ResolveGame(
-            "resolve", "missing", EngineDecision.Decline));
+            "resolve", "missing", "missing-capability", EngineDecision.Decline));
 
         Assert.Equal("unsupported_version", wrongVersion.Error?.Code);
-        Assert.Equal("game_not_found", unknownGame.Error?.Code);
+        Assert.Equal("session_not_found", unknownGame.Error?.Code);
         Assert.Equal(0, factory.Calls);
     }
 
@@ -66,11 +69,13 @@ public sealed class EngineHostTests
         var host = new EngineHost(DatasetGameFactory.Load(RepositoryPaths.Root));
         var specification = new GameSpecification(
             "rhino", ["spider_man"], ModularSets: [], Seed: 7);
-        Assert.Null(host.Exchange(
-            EngineRequest.OpenGame("open", "reusable", specification)).Error);
+        var opened = host.Exchange(
+            EngineRequest.OpenGame("open", "reusable", specification));
+        Assert.Null(opened.Error);
 
         Assert.Null(host.Exchange(
-            EngineRequest.CloseGame("close", "reusable")).Error);
+            EngineRequest.CloseGame(
+                "close", "reusable", RequiredCapability(opened))).Error);
         Assert.Null(host.Exchange(
             EngineRequest.OpenGame("reopen", "reusable", specification)).Error);
     }
@@ -79,19 +84,24 @@ public sealed class EngineHostTests
     public void AFailedResolveCannotLeaveAPartialGameAvailable()
     {
         var host = new EngineHost(DatasetGameFactory.Load(RepositoryPaths.Root));
-        Assert.Null(host.Exchange(EngineRequest.OpenGame(
+        var opened = host.Exchange(EngineRequest.OpenGame(
             "open",
             "fail-closed",
-            new GameSpecification("rhino", ["spider_man"], [], Seed: 7))).Error);
+            new GameSpecification("rhino", ["spider_man"], [], Seed: 7)));
+        Assert.Null(opened.Error);
+        string capability = RequiredCapability(opened);
 
         var rejected = host.Exchange(EngineRequest.ResolveGame(
-            "bad", "fail-closed", new EngineDecision(999, [])));
+            "bad", "fail-closed", capability, new EngineDecision(999, [])));
         var after = host.Exchange(EngineRequest.ResolveGame(
-            "after", "fail-closed", EngineDecision.Decline));
+            "after", "fail-closed", capability, EngineDecision.Decline));
 
         Assert.Equal("game_aborted", rejected.Error?.Code);
-        Assert.Equal("game_not_found", after.Error?.Code);
+        Assert.Equal("session_not_found", after.Error?.Code);
     }
+
+    private static string RequiredCapability(EngineResponse response) =>
+        Assert.IsType<string>(response.Capability);
 
     private sealed class UnusedFactory : IGameFactory
     {
@@ -102,5 +112,13 @@ public sealed class EngineHostTests
             Calls++;
             throw new InvalidOperationException("should not be called");
         }
+    }
+
+    private sealed class SequenceCapabilities(params string[] capabilities)
+        : ISessionCapabilityIssuer
+    {
+        private readonly Queue<string> capabilities = new(capabilities);
+
+        public string Issue() => capabilities.Dequeue();
     }
 }

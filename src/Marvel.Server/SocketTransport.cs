@@ -14,6 +14,7 @@ namespace Marvel.Server;
 /// </remarks>
 public sealed class SocketTransport(string host, int port) : IEngineTransport
 {
+    private readonly Action? onRequestCommitted;
     private readonly string host =
         !string.IsNullOrWhiteSpace(host)
             ? host
@@ -21,6 +22,12 @@ public sealed class SocketTransport(string host, int port) : IEngineTransport
     private readonly int port = port is > 0 and <= ushort.MaxValue
         ? port
         : throw new ArgumentOutOfRangeException(nameof(port));
+
+    internal SocketTransport(
+        string host, int port, Action onRequestCommitted)
+        : this(host, port) =>
+        this.onRequestCommitted = onRequestCommitted
+            ?? throw new ArgumentNullException(nameof(onRequestCommitted));
 
     /// <inheritdoc />
     public async ValueTask<EngineResponse> ExchangeAsync(
@@ -33,7 +40,11 @@ public sealed class SocketTransport(string host, int port) : IEngineTransport
         using NetworkStream stream = client.GetStream();
         await SocketFrame.WriteAsync(
             stream, EngineJson.Write(request), cancellationToken).ConfigureAwait(false);
-        byte[] response = await SocketFrame.ReadAsync(stream, cancellationToken)
+        onRequestCommitted?.Invoke();
+        // The completed write is the transport's commit boundary. The server
+        // may already have mutated game state, so cancellation after this
+        // point cannot discard the only authoritative prompt and event list.
+        byte[] response = await SocketFrame.ReadAsync(stream, CancellationToken.None)
             .ConfigureAwait(false)
             ?? throw new EndOfStreamException("the engine host closed without a response");
         return EngineJson.ReadResponse(response);
@@ -81,6 +92,12 @@ public sealed class SocketEngineServer(IEngineEndpoint endpoint, IPAddress addre
                 catch (SocketException)
                 {
                 }
+                catch (InvalidDataException)
+                {
+                }
+                catch (JsonException)
+                {
+                }
             }
         }
         catch (SocketException) when (cancellationToken.IsCancellationRequested)
@@ -113,12 +130,41 @@ public sealed class SocketEngineServer(IEngineEndpoint endpoint, IPAddress addre
                 EngineProtocol.Version,
                 RequestId: string.Empty,
                 GameId: string.Empty,
+                Capability: null,
                 Prompt: null,
                 Events: [],
                 Error: new EngineError("invalid_frame", failure.Message));
         }
 
-        SocketFrame.Write(stream, EngineJson.Write(response));
+        WriteResponse(stream, response);
+    }
+
+    private static void WriteResponse(Stream stream, EngineResponse response)
+    {
+        try
+        {
+            SocketFrame.Write(stream, EngineJson.Write(response));
+        }
+        catch (Exception failure) when (failure is InvalidDataException
+                                             or JsonException
+                                             or NotSupportedException)
+        {
+            // Serialization finishes and the size is checked before a frame
+            // byte is written, so this compact fallback cannot be appended to
+            // a partial protocol response. It is deliberately independent of
+            // the failed response's client-controlled ids and diagnostic.
+            var fallback = new EngineResponse(
+                EngineProtocol.Version,
+                RequestId: string.Empty,
+                GameId: string.Empty,
+                Capability: null,
+                Prompt: null,
+                Events: [],
+                Error: new EngineError(
+                    "response_failed",
+                    "the engine response could not be represented on the wire"));
+            SocketFrame.Write(stream, EngineJson.Write(fallback));
+        }
     }
 }
 
@@ -182,7 +228,6 @@ internal static class SocketFrame
         BinaryPrimitives.WriteInt32BigEndian(header, payload.Length);
         await stream.WriteAsync(header, cancellationToken).ConfigureAwait(false);
         await stream.WriteAsync(payload, cancellationToken).ConfigureAwait(false);
-        await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public static async ValueTask<byte[]?> ReadAsync(

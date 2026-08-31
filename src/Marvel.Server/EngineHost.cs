@@ -6,6 +6,7 @@ using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
+using System.Security.Cryptography;
 
 namespace Marvel.Server;
 
@@ -32,6 +33,13 @@ public interface IGameFactory
     OpenedGame Create(GameSpecification specification);
 }
 
+/// <summary>Issues transport capabilities that never enter deterministic game state.</summary>
+public interface ISessionCapabilityIssuer
+{
+    /// <summary>Returns a new opaque capability.</summary>
+    string Issue();
+}
+
 /// <summary>A game and the card-text events produced during its setup.</summary>
 public sealed record OpenedGame(Game Game, IReadOnlyList<GameEvent> SetupEvents);
 
@@ -42,11 +50,20 @@ public sealed record OpenedGame(Game Game, IReadOnlyList<GameEvent> SetupEvents)
 /// request at a time. Threading or async must never become a path into game
 /// state; see <c>AGENTS.md</c>, “Determinism is load-bearing”.
 /// </remarks>
-public sealed class EngineHost(IGameFactory factory) : IEngineEndpoint
+public sealed class EngineHost : IEngineEndpoint
 {
-    private readonly IGameFactory factory =
-        factory ?? throw new ArgumentNullException(nameof(factory));
-    private readonly Dictionary<string, Game> games = new(StringComparer.Ordinal);
+    private readonly IGameFactory factory;
+    private readonly ISessionCapabilityIssuer capabilities;
+    private readonly Dictionary<string, Session> sessions = new(StringComparer.Ordinal);
+
+    /// <summary>Creates an engine host with cryptographically random session capabilities.</summary>
+    public EngineHost(
+        IGameFactory factory,
+        ISessionCapabilityIssuer? capabilities = null)
+    {
+        this.factory = factory ?? throw new ArgumentNullException(nameof(factory));
+        this.capabilities = capabilities ?? new CryptographicCapabilityIssuer();
+    }
 
     /// <inheritdoc />
     public EngineResponse Exchange(EngineRequest request)
@@ -81,9 +98,23 @@ public sealed class EngineHost(IGameFactory factory) : IEngineEndpoint
             return Failed(request, "invalid_request", "request_id is required");
         }
 
+        if (request.RequestId.Length > EngineProtocol.MaximumIdentifierLength)
+        {
+            return Failed(
+                request, "invalid_request",
+                $"request_id exceeds {EngineProtocol.MaximumIdentifierLength} characters");
+        }
+
         if (string.IsNullOrWhiteSpace(request.GameId))
         {
             return Failed(request, "invalid_request", "game_id is required");
+        }
+
+        if (request.GameId.Length > EngineProtocol.MaximumIdentifierLength)
+        {
+            return Failed(
+                request, "invalid_request",
+                $"game_id exceeds {EngineProtocol.MaximumIdentifierLength} characters");
         }
 
         return request.Operation switch
@@ -106,6 +137,11 @@ public sealed class EngineHost(IGameFactory factory) : IEngineEndpoint
                 "open requires game and does not accept decision");
         }
 
+        if (request.Capability is not null)
+        {
+            return Failed(request, "invalid_request", "open does not accept capability");
+        }
+
         if (string.IsNullOrWhiteSpace(request.Game.Scenario))
         {
             return Failed(request, "invalid_request", "a game requires a scenario");
@@ -117,14 +153,11 @@ public sealed class EngineHost(IGameFactory factory) : IEngineEndpoint
             return Failed(request, "invalid_request", "a game requires at least one hero");
         }
 
-        if (games.ContainsKey(request.GameId))
-        {
-            return Failed(request, "game_exists", $"game '{request.GameId}' is already open");
-        }
-
         var opened = factory.Create(request.Game);
-        games.Add(request.GameId, opened.Game);
-        return Succeeded(request, opened.Game.Pending, opened.SetupEvents);
+        string capability = IssueCapability();
+        sessions.Add(capability, new Session(request.GameId, opened.Game));
+        return Succeeded(
+            request, opened.Game.Pending, opened.SetupEvents, capability);
     }
 
     private EngineResponse Resolve(EngineRequest request)
@@ -136,9 +169,9 @@ public sealed class EngineHost(IGameFactory factory) : IEngineEndpoint
                 "resolve requires decision and does not accept game");
         }
 
-        if (!games.TryGetValue(request.GameId, out var game))
+        if (!TrySession(request, out string capability, out var session))
         {
-            return Failed(request, "game_not_found", $"game '{request.GameId}' is not open");
+            return Failed(request, "session_not_found", "the session capability is not valid");
         }
 
         if (request.Decision.Targets is null)
@@ -148,7 +181,7 @@ public sealed class EngineHost(IGameFactory factory) : IEngineEndpoint
 
         try
         {
-            var resolved = game.Resolve(request.Decision.ToDomain());
+            var resolved = session.Game.Resolve(request.Decision.ToDomain());
             return Succeeded(request, resolved.Prompt, resolved.Events);
         }
         catch (Exception failure)
@@ -158,7 +191,7 @@ public sealed class EngineHost(IGameFactory factory) : IEngineEndpoint
             // The host chooses to fail closed: a session that might now hold a
             // partial resolve is removed rather than serving a plausible wrong
             // board on the next request.
-            games.Remove(request.GameId);
+            sessions.Remove(capability);
             return Failed(request, "game_aborted", failure.Message);
         }
     }
@@ -172,26 +205,82 @@ public sealed class EngineHost(IGameFactory factory) : IEngineEndpoint
                 "close does not accept game or decision");
         }
 
-        return games.Remove(request.GameId)
-            ? Succeeded(request, prompt: null, events: [])
-            : Failed(request, "game_not_found", $"game '{request.GameId}' is not open");
+        if (!TrySession(request, out string capability, out _))
+        {
+            return Failed(request, "session_not_found", "the session capability is not valid");
+        }
+
+        sessions.Remove(capability);
+        return Succeeded(request, prompt: null, events: []);
+    }
+
+    private bool TrySession(
+        EngineRequest request, out string capability, out Session session)
+    {
+        capability = request.Capability ?? string.Empty;
+        session = null!;
+        if (capability.Length is <= 0 or > EngineProtocol.MaximumIdentifierLength
+            || !sessions.TryGetValue(capability, out Session? found)
+            || !string.Equals(found.GameId, request.GameId, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        session = found;
+        return true;
+    }
+
+    private string IssueCapability()
+    {
+        for (int attempt = 0; attempt < 16; attempt++)
+        {
+            string capability = capabilities.Issue();
+            if (capability.Length is > 0 and <= EngineProtocol.MaximumIdentifierLength
+                && !sessions.ContainsKey(capability))
+            {
+                return capability;
+            }
+        }
+
+        throw new InvalidOperationException("could not issue a unique session capability");
     }
 
     private static EngineResponse Succeeded(
         EngineRequest request,
         Prompt? prompt,
-        IReadOnlyList<GameEvent> events) =>
-        new(EngineProtocol.Version, request.RequestId, request.GameId, prompt, events);
+        IReadOnlyList<GameEvent> events,
+        string? capability = null) =>
+        new(
+            EngineProtocol.Version, request.RequestId, request.GameId,
+            capability, prompt, events);
 
     private static EngineResponse Failed(
         EngineRequest request, string code, string message) =>
         new(
             EngineProtocol.Version,
-            request.RequestId ?? string.Empty,
-            request.GameId ?? string.Empty,
+            Bounded(request.RequestId, EngineProtocol.MaximumIdentifierLength),
+            Bounded(request.GameId, EngineProtocol.MaximumIdentifierLength),
+            Capability: null,
             Prompt: null,
             Events: [],
-            Error: new EngineError(code, message));
+            Error: new EngineError(
+                Bounded(code, EngineProtocol.MaximumIdentifierLength),
+                Bounded(message, EngineProtocol.MaximumErrorLength)));
+
+    private static string Bounded(string? value, int maximum) => value switch
+    {
+        null => string.Empty,
+        { Length: var length } when length <= maximum => value,
+        _ => value[..maximum],
+    };
+
+    private sealed record Session(string GameId, Game Game);
+
+    private sealed class CryptographicCapabilityIssuer : ISessionCapabilityIssuer
+    {
+        public string Issue() =>
+            Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
+    }
 }
 
 /// <summary>Loads the repository's canonical datasets and deals games from them.</summary>
