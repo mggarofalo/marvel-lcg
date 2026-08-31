@@ -73,6 +73,16 @@ internal static class TranscriptParser
             throw At(relative, feature.Location, "feature has no scenarios");
         }
 
+        var duplicate = scenarios
+            .GroupBy(scenario => scenario.Name, StringComparer.Ordinal)
+            .FirstOrDefault(group => group.Count() > 1);
+        if (duplicate is not null)
+        {
+            TranscriptScenario repeated = duplicate.Skip(1).First();
+            throw new TranscriptException(
+                $"{repeated.Location}: duplicate scenario name '{duplicate.Key}'");
+        }
+
         return new TranscriptFeature(
             feature.Name, scenarios, Locate(relative, feature.Location));
     }

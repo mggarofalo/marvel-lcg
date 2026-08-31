@@ -24,6 +24,11 @@ internal sealed record TranscriptBinding(
     Regex Pattern,
     Action<TranscriptContext, TranscriptStep, Match> Execute);
 
+internal sealed record BoundTranscriptStep(
+    TranscriptStep Step,
+    TranscriptBinding Binding,
+    Match Match);
+
 internal sealed class TranscriptContext
 {
     public TranscriptContext(
@@ -51,6 +56,14 @@ internal sealed class TranscriptContext
     public List<GameEvent> Events { get; } = [];
 
     public string CurrentPrompt { get; set; } = "<none>";
+
+    public string? ExpectedException { get; set; }
+
+    public RulesNotImplementedException? PendingException { get; set; }
+
+    public string? ExceptionDigest { get; set; }
+
+    public bool ExceptionObserved { get; set; }
 
     public World World => Scene?.World
         ?? throw new TranscriptException("a canonical Core scene has not been constructed");
@@ -82,32 +95,52 @@ internal sealed class CoreTranscriptRunner
         bindings = bindingOverride ?? DefaultVocabulary();
     }
 
-    public TranscriptResult Execute(TranscriptScenario scenario)
+    public TranscriptResult Execute(TranscriptScenario scenario) => Execute(scenario, null);
+
+    internal TranscriptResult Execute(
+        TranscriptScenario scenario, string? expectedException)
     {
         ArgumentNullException.ThrowIfNull(scenario);
-        var context = new TranscriptContext(scenario.Obligation, setup, cards, abilities);
-        foreach (TranscriptStep step in scenario.Steps)
+        var context = new TranscriptContext(scenario.Obligation, setup, cards, abilities)
         {
-            var matches = bindings
-                .Where(binding => binding.Kind == step.Kind)
-                .Select(binding => (Binding: binding, Match: binding.Pattern.Match(step.Text)))
-                .Where(candidate => candidate.Match.Success)
-                .ToList();
-            if (matches.Count != 1)
+            ExpectedException = expectedException,
+        };
+        IReadOnlyList<BoundTranscriptStep> bound = BindAll(context, scenario);
+        foreach (BoundTranscriptStep current in bound)
+        {
+            TranscriptStep step = current.Step;
+            if (context.ExceptionObserved)
             {
-                string reason = matches.Count == 0
-                    ? $"unknown {step.Kind} step '{step.Text}'"
-                    : $"ambiguous {step.Kind} step '{step.Text}'; matched "
-                      + string.Join(", ", matches.Select(candidate => candidate.Binding.Name));
-                TranscriptFailureKind kind = matches.Count == 0
-                    ? TranscriptFailureKind.UnknownStep
-                    : TranscriptFailureKind.AmbiguousStep;
-                throw Failure(context, scenario, step, kind, reason, null);
+                throw Failure(context, scenario, step, TranscriptFailureKind.Validation,
+                    "unused step after the expected exception was observed", null);
+            }
+
+            if (context.PendingException is not null
+                && current.Binding.Name != "cataloged-exception")
+            {
+                throw Failure(context, scenario, step, TranscriptFailureKind.Validation,
+                    "the step after an unimplemented decision must observe its cataloged exception",
+                    null);
             }
 
             try
             {
-                matches[0].Binding.Execute(context, step, matches[0].Match);
+                current.Binding.Execute(context, step, current.Match);
+            }
+            catch (RulesNotImplementedException error)
+                when (step.Kind == TranscriptStepKind.When
+                    && context.ExpectedException is not null)
+            {
+                if (context.Scene is null)
+                {
+                    throw Failure(context, scenario, step,
+                        TranscriptFailureKind.Execution,
+                        "unimplemented decision was reached before a legal scene existed",
+                        error);
+                }
+
+                context.PendingException = error;
+                context.ExceptionDigest = context.World.Digest().Fingerprint();
             }
             catch (TranscriptAssertionException error)
             {
@@ -133,11 +166,46 @@ internal sealed class CoreTranscriptRunner
                 $"{scenario.Location}: {scenario.Obligation}: scenario never constructs a scene");
         }
 
+        if (context.ExpectedException is not null && !context.ExceptionObserved)
+        {
+            throw new TranscriptException(
+                $"{scenario.Location}: expected '{context.ExpectedException}', but the scenario completed");
+        }
+
         return new TranscriptResult(
             scenario.Obligation,
             $"{scenario.Location.Path}::{scenario.Name}",
-            context.World.Digest().Fingerprint(),
+            context.ExceptionDigest ?? context.World.Digest().Fingerprint(),
             [.. context.Events]);
+    }
+
+    private List<BoundTranscriptStep> BindAll(
+        TranscriptContext context, TranscriptScenario scenario)
+    {
+        var bound = new List<BoundTranscriptStep>();
+        foreach (TranscriptStep step in scenario.Steps)
+        {
+            var matches = bindings
+                .Where(binding => binding.Kind == step.Kind)
+                .Select(binding => (Binding: binding, Match: binding.Pattern.Match(step.Text)))
+                .Where(candidate => candidate.Match.Success)
+                .ToList();
+            if (matches.Count != 1)
+            {
+                string reason = matches.Count == 0
+                    ? $"unknown {step.Kind} step '{step.Text}'"
+                    : $"ambiguous {step.Kind} step '{step.Text}'; matched "
+                      + string.Join(", ", matches.Select(candidate => candidate.Binding.Name));
+                TranscriptFailureKind kind = matches.Count == 0
+                    ? TranscriptFailureKind.UnknownStep
+                    : TranscriptFailureKind.AmbiguousStep;
+                throw Failure(context, scenario, step, kind, reason, null);
+            }
+
+            bound.Add(new BoundTranscriptStep(step, matches[0].Binding, matches[0].Match));
+        }
+
+        return bound;
     }
 
     internal static IReadOnlyList<TranscriptBinding> DefaultVocabulary() =>
@@ -158,6 +226,8 @@ internal sealed class CoreTranscriptRunner
             @"seat (?<seat>\d+) is not eliminated", NotEliminated),
         Bind("game-unfinished", TranscriptStepKind.Then,
             "the game is unfinished", GameUnfinished),
+        Bind("cataloged-exception", TranscriptStepKind.Then,
+            "the engine raises the cataloged unimplemented rule exception", CatalogedException),
     ];
 
     private static TranscriptBinding Bind(
@@ -259,6 +329,28 @@ internal sealed class CoreTranscriptRunner
             throw new TranscriptAssertionException(
                 $"{step.Location}: expected an unfinished game; was {context.World.Result}");
         }
+    }
+
+    private static void CatalogedException(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        _ = match;
+        if (context.ExpectedException is null)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: no cataloged exception is expected for this obligation");
+        }
+
+        string actual = context.PendingException is null
+            ? "(none)"
+            : $"{context.PendingException.GetType().Name}: {context.PendingException.Message}";
+        if (!string.Equals(actual, context.ExpectedException, StringComparison.Ordinal))
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected '{context.ExpectedException}'; reached '{actual}'");
+        }
+
+        context.ExceptionObserved = true;
     }
 
     private static void Equal(int expected, int actual, string observation, TranscriptStep step)
@@ -416,7 +508,11 @@ internal sealed class CoreTranscriptSuite
                 CatalogObligation obligation = ValidateAuthority(
                     scenario, requireCompletionEvidence: true);
                 string reference = Reference(scenario);
-                executed.Add(reference);
+                if (!executed.Add(reference))
+                {
+                    throw new TranscriptException(
+                        $"{scenario.Location}: duplicate executed scenario reference '{reference}'");
+                }
                 if (obligation.Implementation == "supported")
                 {
                     results.Add(runner.Execute(scenario));
@@ -531,8 +627,7 @@ internal sealed class CoreTranscriptSuite
                 $"{scenario.Location}: catalog does not link scenario '{reference}'");
         }
 
-        if (obligation.Implementation == "supported"
-            && string.IsNullOrWhiteSpace(obligation.Mutation))
+        if (string.IsNullOrWhiteSpace(obligation.Mutation))
         {
             throw new TranscriptException(
                 $"{scenario.Location}: '{scenario.Obligation}' has no mutation evidence");
@@ -550,42 +645,7 @@ internal sealed class CoreTranscriptSuite
 
     private TranscriptResult RunUnimplemented(
         TranscriptScenario scenario, CatalogObligation obligation) =>
-        RequireUnimplemented(scenario, obligation, () => runner.Execute(scenario));
-
-    internal static TranscriptResult RequireUnimplemented(
-        TranscriptScenario scenario,
-        CatalogObligation obligation,
-        Func<TranscriptResult> execute)
-    {
-        try
-        {
-            _ = execute();
-        }
-        catch (TranscriptException failure)
-        {
-            Exception? reached = FindRulesNotImplemented(failure);
-            string actual = reached is null
-                ? "(none)"
-                : $"{reached.GetType().Name}: {reached.Message}";
-            if (string.Equals(actual, obligation.Exception, StringComparison.Ordinal))
-            {
-                return new TranscriptResult(
-                    scenario.Obligation,
-                    Reference(scenario),
-                    failure.WorldDigest ?? "<unavailable>",
-                    []);
-            }
-
-            throw new TranscriptException(
-                TranscriptFailureKind.Validation,
-                $"{scenario.Location}: expected '{obligation.Exception}'; reached '{actual}'",
-                failure,
-                failure.WorldDigest);
-        }
-
-        throw new TranscriptException(
-            $"{scenario.Location}: expected '{obligation.Exception}', but the scenario completed");
-    }
+        runner.Execute(scenario, obligation.Exception);
 
     private IReadOnlySet<string> ExpectedScenarioReferences() =>
         CompletedScenarioReferences(catalog.Obligations.Values);
@@ -614,11 +674,10 @@ internal sealed class CoreTranscriptSuite
                     $"completed obligation '{obligation.Id}' has no scenarios");
             }
 
-            if (obligation.Implementation == "supported"
-                && string.IsNullOrWhiteSpace(obligation.Mutation))
+            if (string.IsNullOrWhiteSpace(obligation.Mutation))
             {
                 throw new TranscriptException(
-                    $"supported obligation '{obligation.Id}' has no mutation evidence");
+                    $"completed obligation '{obligation.Id}' has no mutation evidence");
             }
 
             if (obligation.Implementation == "unimplemented"
@@ -659,19 +718,6 @@ internal sealed class CoreTranscriptSuite
             }.Where(value => value is not null));
             throw new TranscriptException(details);
         }
-    }
-
-    private static Exception? FindRulesNotImplemented(Exception failure)
-    {
-        for (Exception? current = failure; current is not null; current = current.InnerException)
-        {
-            if (current is RulesNotImplementedException)
-            {
-                return current;
-            }
-        }
-
-        return null;
     }
 
     private static string Reference(TranscriptScenario scenario) =>
