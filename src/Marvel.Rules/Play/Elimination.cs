@@ -139,7 +139,7 @@ public static class Elimination
         // `rr:player-s-play-area.6` removes the play area itself, not only the
         // game elements that were inside it. Game-area membership is the
         // model's representation of that boundary.
-        world.Detach(PlayArea.Of(player));
+        world.Detach(PlayArea.Of(player), trigger, events);
 
         // `.4`: "if all players are eliminated, the game ends and the players
         // lose." Asked after the play area is cleared, so a game that ends here

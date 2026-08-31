@@ -164,6 +164,8 @@ public sealed class VisibilityTests
                  new CreatedCard(visible.ObjectId, visible.FaceId)]),
             new FieldSet(hidden.ObjectId, "health", 3, 2),
             new FieldSet(visible.ObjectId, "health", 3, 2),
+            new PlayAreaJoined(0, 0),
+            new PlayAreaDetached(1, 0),
         ];
         ViewScope scope = new RestrictedVisibilityPolicy(0).Authorize(null, board.Players);
 
@@ -173,7 +175,9 @@ public sealed class VisibilityTests
         var created = Assert.IsType<CardsCreated>(events[0]);
         Assert.Equal(visible.ObjectId, Assert.Single(created.Cards).Id);
         Assert.Equal(visible.ObjectId, Assert.IsType<FieldSet>(events[1]).Card);
-        Assert.Equal(2, events.Count);
+        Assert.IsType<PlayAreaJoined>(events[2]);
+        Assert.IsType<PlayAreaDetached>(events[3]);
+        Assert.Equal(4, events.Count);
     }
 
     [Fact]

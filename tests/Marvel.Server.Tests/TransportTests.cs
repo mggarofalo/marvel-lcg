@@ -86,8 +86,8 @@ public sealed class TransportTests
     public void UnknownWireFieldsAreRejected()
     {
         byte[] request = Encoding.UTF8.GetBytes(
-            """
-            {"version":1,"request_id":"r","operation":"resolve","game_id":"g","decision":{"affordance":-1,"targets":[]},"surprise":true}
+            $$"""
+            {"version":{{EngineProtocol.Version}},"request_id":"r","operation":"resolve","game_id":"g","decision":{"affordance":-1,"targets":[]},"surprise":true}
             """);
 
         Assert.Throws<JsonException>(() => EngineJson.ReadRequest(request));
@@ -113,6 +113,36 @@ public sealed class TransportTests
         Assert.DoesNotContain("StateDigest", ResponseTypeNames(), StringComparison.Ordinal);
         Assert.DoesNotContain(
             "Marvel.Rules.State.World", ResponseTypeNames(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void CurrentProtocolRoundTripsEveryTopologyEventKind()
+    {
+        var joined = new PlayAreaJoined(1, 4)
+        {
+            Trigger = "test",
+            Verb = "Join",
+        };
+        var detached = new PlayAreaDetached(1, 4)
+        {
+            Trigger = "test",
+            Verb = "Detach",
+        };
+        var response = new EngineResponse(
+            EngineProtocol.Version,
+            "topology",
+            "game",
+            Capability: null,
+            Prompt: null,
+            Events: [joined, detached]);
+
+        var again = EngineJson.ReadResponse(EngineJson.Write(response));
+
+        Assert.Equal(3, again.Version);
+        Assert.Collection(
+            again.Events,
+            happened => Assert.Equal(joined, Assert.IsType<PlayAreaJoined>(happened)),
+            happened => Assert.Equal(detached, Assert.IsType<PlayAreaDetached>(happened)));
     }
 
     [Fact]
@@ -330,6 +360,32 @@ public sealed class TransportTests
         Assert.Equal("session_not_found", afterClose.Error?.Code);
     }
 
+    [Fact]
+    public async Task HostedEliminationDeliversThePlayAreaTopologyChange()
+    {
+        var factory = new EliminatingFactory(
+            DatasetGameFactory.Load(Marvel.Tests.RepositoryPaths.Root));
+        var server = new SocketEngineServer(
+            new EngineHost(factory), IPAddress.Loopback, port: 0);
+        var specification = new GameSpecification(
+            "rhino", ["spider_man", "captain_marvel"], ModularSets: [], Seed: 7);
+
+        EngineResponse opened = await ExchangeOverSocket(
+            server, EngineRequest.OpenGame("eliminate", "shared", specification));
+
+        Assert.Null(opened.Error);
+        var detached = Assert.Single(opened.Events.OfType<PlayAreaDetached>());
+        Assert.Equal(0, detached.PlayArea);
+        Assert.DoesNotContain(
+            Assert.IsType<WorldDescriptor>(opened.World).GameAreas,
+            area => area.PlayAreas.Contains(0));
+        EngineResponse synced = await ExchangeOverSocket(
+            server,
+            EngineRequest.SyncGame(
+                "after-elimination", "shared", opened.Capability!));
+        Assert.Null(synced.Error);
+    }
+
     private static async Task<EngineResponse> ExchangeOverSocket(
         SocketEngineServer server, EngineRequest request)
     {
@@ -400,6 +456,22 @@ public sealed class TransportTests
     {
         public OpenedGame Create(GameSpecification specification) =>
             throw new InvalidOperationException("should not be called");
+    }
+
+    private sealed class EliminatingFactory(IGameFactory inner) : IGameFactory
+    {
+        public OpenedGame Create(GameSpecification specification)
+        {
+            OpenedGame opened = inner.Create(specification);
+            var events = opened.SetupEvents.ToList();
+            Elimination.Eliminate(
+                opened.Game.State,
+                opened.Game.State.Facts,
+                player: 0,
+                trigger: "test",
+                events);
+            return opened with { SetupEvents = events };
+        }
     }
 
     private static string ResponseTypeNames() => string.Join(

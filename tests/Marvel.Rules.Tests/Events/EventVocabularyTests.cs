@@ -16,8 +16,9 @@ namespace Marvel.Rules.Tests.Events;
 /// <para>
 /// <b>The document is the contract, so the document is what the code is checked
 /// against.</b> It carries a table of nine kinds and the payload each one
-/// spells, and a table nobody verifies is a table that drifts: a field renamed
-/// in C# and not in the prose leaves two contracts, both confident.
+/// spells. The derivable and emitted-only tables make different claims, and a
+/// table nobody verifies is a table that drifts: a field renamed in C# and not
+/// in the prose leaves two contracts, both confident.
 /// </para>
 /// <para>
 /// <b>None of this is a rule.</b> The Rules Reference says nothing about wire
@@ -28,11 +29,14 @@ namespace Marvel.Rules.Tests.Events;
 /// </remarks>
 public sealed partial class EventVocabularyTests
 {
+    private const string DerivableHeading = "### Derivable events";
+    private const string EmittedOnlyHeading = "### Emitted-only events";
+
     /// <summary>The keys every event carries whatever its kind.</summary>
     private static readonly string[] Universal = ["kind", "trigger", "verb"];
 
-    /// <summary>One of each kind, with distinguishable values in every field.</summary>
-    private static readonly GameEvent[] OneOfEach =
+    /// <summary>One of each corpus-derived kind.</summary>
+    private static readonly GameEvent[] Derivable =
     [
         new CardsCreated(new AreaRef("HandsArea", 0, -1, "a1"), [new CreatedCard(7, "01001a")]),
         new CardsMoved(
@@ -48,30 +52,56 @@ public sealed partial class EventVocabularyTests
         new FieldSet(7, "health", 10, 8),
     ];
 
-    [Fact]
-    public void TheDocumentAndTheCodeNameTheSameNineKinds()
-    {
-        // The table is the published list. `JsonDerivedType` is the one the
-        // serialiser dispatches on. A tenth kind added to either alone is a
-        // vocabulary two readers disagree about.
-        var documented = Documented().Keys.ToHashSet(StringComparer.Ordinal);
+    /// <summary>One of each kind the engine emits but a digest cannot derive.</summary>
+    private static readonly GameEvent[] EmittedOnly =
+    [
+        new PlayAreaJoined(1, 4),
+        new PlayAreaDetached(2, 5),
+    ];
 
+    /// <summary>Every serialisable kind, with distinguishable payload values.</summary>
+    private static readonly GameEvent[] OneOfEach = [.. Derivable, .. EmittedOnly];
+
+    [Fact]
+    public void TheDerivableKindsAreExactlyTheMeasuredNine()
+    {
+        // Exact equality preserves the measured claim. Moving an emitted-only
+        // kind into this table would say the corpus produced something it
+        // cannot see; dropping one of the nine would lose an observed shape.
+        var documented = Documented(DerivableHeading).Keys.ToHashSet(StringComparer.Ordinal);
+        var tested = Derivable.Select(Kind).ToHashSet(StringComparer.Ordinal);
+
+        Assert.Equal(9, tested.Count);
+        Assert.Equal(tested, documented);
+    }
+
+    [Fact]
+    public void TheEmittedOnlyKindsAreExactlyTheDocumentedOnes()
+    {
+        // This class is a separate assertion: topology events are justified
+        // by engine operations and published rules, not by the frozen corpus.
+        // They must not weaken the nine-kind claim above.
+        var documented = Documented(EmittedOnlyHeading).Keys.ToHashSet(StringComparer.Ordinal);
+        var tested = EmittedOnly.Select(Kind).ToHashSet(StringComparer.Ordinal);
+
+        Assert.Equal(2, tested.Count);
+        Assert.Equal(tested, documented);
+    }
+
+    [Fact]
+    public void TheSerialisedUnionIsExactlyTheDeclaredHierarchy()
+    {
+        // `JsonDerivedType` is the set the serialiser dispatches on. The union
+        // of the two documented classes is the public wire vocabulary.
+        var documented = Documented().Keys.ToHashSet(StringComparer.Ordinal);
+        var tested = OneOfEach.Select(Kind).ToHashSet(StringComparer.Ordinal);
         var declared = typeof(GameEvent)
             .GetCustomAttributes<JsonDerivedTypeAttribute>()
             .Select(attribute => (string)attribute.TypeDiscriminator!)
             .ToHashSet(StringComparer.Ordinal);
 
-        Assert.Equal(9, documented.Count);
-        Assert.Equal(documented, declared);
-    }
-
-    [Fact]
-    public void EveryKindIsTestedHere()
-    {
-        // Guards the tests below against passing by covering eight of nine.
-        Assert.Equal(
-            Documented().Keys.ToHashSet(StringComparer.Ordinal),
-            OneOfEach.Select(Kind).ToHashSet(StringComparer.Ordinal));
+        Assert.Equal(tested, documented);
+        Assert.Equal(tested, declared);
     }
 
     [Fact]
@@ -183,13 +213,24 @@ public sealed partial class EventVocabularyTests
     /// Parsed rather than transcribed. A copy here would be a third statement
     /// of the contract, free to drift from both the document and the code.
     /// </remarks>
-    private static Dictionary<string, HashSet<string>> Documented()
+    private static Dictionary<string, HashSet<string>> Documented() =>
+        Documented(DerivableHeading)
+            .Concat(Documented(EmittedOnlyHeading))
+            .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
+
+    /// <summary>One named vocabulary table in the event-stream document.</summary>
+    private static Dictionary<string, HashSet<string>> Documented(string heading)
     {
         string document = File.ReadAllText(
             Path.Combine(RepositoryPaths.Root, "docs", "event-stream.md"));
+        int start = document.IndexOf(heading, StringComparison.Ordinal);
+        Assert.True(start >= 0, $"the '{heading}' section was not found in the document");
+        start += heading.Length;
+        int end = document.IndexOf("\n### ", start, StringComparison.Ordinal);
+        string section = end < 0 ? document[start..] : document[start..end];
 
         var table = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
-        foreach (Match row in Row().Matches(document))
+        foreach (Match row in Row().Matches(section))
         {
             table[row.Groups[1].Value] =
             [
@@ -199,7 +240,7 @@ public sealed partial class EventVocabularyTests
             ];
         }
 
-        Assert.True(table.Count > 0, "the vocabulary table was not found in the document");
+        Assert.True(table.Count > 0, $"the vocabulary table under '{heading}' was not found");
         return table;
     }
 

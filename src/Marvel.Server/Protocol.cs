@@ -8,7 +8,10 @@ namespace Marvel.Server;
 /// <summary>The versioned request/response protocol shared by both transports.</summary>
 public static class EngineProtocol
 {
-    /// <summary>The only protocol version this host accepts.</summary>
+    /// <summary>
+    /// The only protocol version this host accepts. It includes independently
+    /// scoped seat capabilities and emitted-only play-area topology events.
+    /// </summary>
     public const int Version = 3;
 
     /// <summary>The largest request or game id accepted or echoed.</summary>

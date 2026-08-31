@@ -290,7 +290,7 @@ public sealed class UnusScenarioTests
         // `RealCardsGameTests` carried the same list for the Rhino board while
         // there were any, and what is left of it there is one assertion. This
         // is that list at the stage before.
-        string[] unread = ["45066", "45067", "45072"];
+        string[] unread = ["45067", "45072"];
         int ended = 0;
 
         for (uint seed = 1; seed <= 40; seed++)

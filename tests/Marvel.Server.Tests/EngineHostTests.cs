@@ -80,6 +80,25 @@ public sealed class EngineHostTests
     }
 
     [Fact]
+    public void VersionOneIsRejectedBeforeItCanOpenAGame()
+    {
+        // The current protocol adds play-area topology kinds to the event
+        // union. A version 1 client cannot deserialize those responses, so it is
+        // rejected before the factory can create mutable game state.
+        var factory = new UnusedFactory();
+        var host = new EngineHost(factory);
+
+        var rejected = host.Exchange(new EngineRequest(
+            1, "old-client", EngineProtocol.Open, "game",
+            Game: new GameSpecification("rhino", ["spider_man"], null, 1)));
+
+        Assert.Equal(3, EngineProtocol.Version);
+        Assert.Equal(EngineProtocol.Version, rejected.Version);
+        Assert.Equal("unsupported_version", rejected.Error?.Code);
+        Assert.Equal(0, factory.Calls);
+    }
+
+    [Fact]
     public void ClosingAGameReleasesItsClientChosenId()
     {
         var host = new EngineHost(DatasetGameFactory.Load(RepositoryPaths.Root));

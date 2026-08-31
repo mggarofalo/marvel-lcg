@@ -15,13 +15,33 @@ namespace Marvel.Rules.Index;
 /// How many citable records the entry holds, counting itself. Zero on anything
 /// that is not an entry.
 /// </param>
-internal readonly record struct Record(string Id, string Title, string Fragment, int Clauses);
+internal readonly record struct Record(
+    string Id,
+    string Title,
+    string Fragment,
+    string Hash,
+    int Clauses,
+    string Kind,
+    string? BaseId);
 
 /// <summary>One authored edge of the rule reference graph.</summary>
 /// <param name="From">The rule that names another.</param>
 /// <param name="To">What it names.</param>
 /// <param name="Why">Why the edge is there, as the dataset records it.</param>
 internal readonly record struct Edge(string From, string To, string Why);
+
+/// <summary>A published ruling layered over one citable Rules Reference record.</summary>
+internal readonly record struct Modification(
+    string Id,
+    string BaseId,
+    string SupersedesHash,
+    string? AbsorbedIn,
+    string Why,
+    string Source,
+    string Via,
+    string Scope,
+    string? Observed,
+    string Hash);
 
 /// <summary>
 /// The vendored Rules Reference index, and the authored graph over it.
@@ -46,11 +66,16 @@ internal sealed class Corpus
 {
     private readonly Dictionary<string, Record> records;
     private readonly List<Edge> edges;
+    private readonly List<Modification> modifications;
 
-    private Corpus(Dictionary<string, Record> records, List<Edge> edges)
+    private Corpus(
+        Dictionary<string, Record> records,
+        List<Edge> edges,
+        List<Modification> modifications)
     {
         this.records = records;
         this.edges = edges;
+        this.modifications = modifications;
     }
 
     /// <summary>The Rules Reference version the index was harvested from.</summary>
@@ -62,13 +87,21 @@ internal sealed class Corpus
     /// <summary>Every authored edge, in the order the dataset lists them.</summary>
     public IReadOnlyList<Edge> Edges => edges;
 
-    /// <summary>Reads both datasets from the repository.</summary>
-    public static Corpus Read()
+    /// <summary>Every audited ruling-to-base relationship.</summary>
+    public IReadOnlyList<Modification> Modifications => modifications;
+
+    /// <summary>Reads the base index, relationship graph, and rulings from the repository.</summary>
+    public static Corpus Read() => Read(
+        RepositoryPaths.Dataset("rules-reference", "index.json"),
+        RepositoryPaths.Dataset("rules-graph.json"),
+        RepositoryPaths.Dataset("rulings", "rulings.json"));
+
+    /// <summary>Reads the three corpus inputs from explicit paths.</summary>
+    internal static Corpus Read(string indexPath, string graphPath, string rulingsPath)
     {
         var found = new Dictionary<string, Record>(StringComparer.Ordinal);
 
-        using var index = JsonDocument.Parse(
-            File.ReadAllText(RepositoryPaths.Dataset("rules-reference", "index.json")));
+        using var index = JsonDocument.Parse(File.ReadAllBytes(indexPath));
         var root = index.RootElement;
 
         // An entry's own id is the prefix every one of its clauses shares, so
@@ -91,12 +124,19 @@ internal sealed class Corpus
                 id,
                 entry.TryGetProperty("title", out var title) ? title.GetString() ?? "" : "",
                 entry.TryGetProperty("fragment", out var text) ? text.GetString() ?? "" : "",
-                id == EntryOf(id) ? clauses[id] : 0);
+                entry.TryGetProperty("hash", out var hash) ? hash.GetString() ?? "" : "",
+                id == EntryOf(id) ? clauses[id] : 0,
+                "base",
+                null);
         }
 
         var authored = new List<Edge>();
-        using var graph = JsonDocument.Parse(
-            File.ReadAllText(RepositoryPaths.Dataset("rules-graph.json")));
+        using var graph = JsonDocument.Parse(File.ReadAllBytes(graphPath));
+        if (graph.RootElement.GetProperty("version").GetInt32() != 2)
+        {
+            throw new InvalidDataException("rules-graph.json is not relationship schema version 2");
+        }
+
         foreach (var from in graph.RootElement.GetProperty("edges").EnumerateObject())
         {
             string why = from.Value.TryGetProperty("why", out var reason)
@@ -108,7 +148,99 @@ internal sealed class Corpus
             }
         }
 
-        return new Corpus(found, authored)
+        using var rulings = JsonDocument.Parse(File.ReadAllBytes(rulingsPath));
+        var published = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
+        foreach (var ruling in rulings.RootElement.GetProperty("rulings").EnumerateArray())
+        {
+            string rulingId = ruling.GetProperty("id").GetString()!;
+            if (!published.TryAdd(rulingId, ruling.Clone()))
+            {
+                throw new InvalidDataException($"rulings.json contains duplicate id {rulingId}");
+            }
+        }
+
+        var modifications = new List<Modification>();
+        foreach (var mapped in graph.RootElement.GetProperty("modifications").EnumerateObject())
+        {
+            if (!published.TryGetValue(mapped.Name, out var ruling))
+            {
+                throw new InvalidDataException($"rules modification {mapped.Name} has no published ruling");
+            }
+
+            if (!string.Equals(
+                ruling.GetProperty("kind").GetString(),
+                "rules",
+                StringComparison.Ordinal))
+            {
+                throw new InvalidDataException(
+                    $"rules modification {mapped.Name} is a card ruling, not a rules ruling");
+            }
+
+            string baseId = mapped.Value.GetProperty("base").GetString()!;
+            if (!found.TryGetValue(baseId, out var baseRecord))
+            {
+                throw new InvalidDataException($"rules modification {mapped.Name} names no base rule {baseId}");
+            }
+
+            string supersedesHash = mapped.Value.GetProperty("supersedes_hash").GetString()!;
+            if (!string.Equals(supersedesHash, baseRecord.Hash, StringComparison.Ordinal))
+            {
+                throw new InvalidDataException(
+                    $"rules modification {mapped.Name} pins {supersedesHash}, not {baseRecord.Hash} for {baseId}");
+            }
+
+            string rulingHash = ruling.GetProperty("hash").GetString()!;
+            string expectedRulingHash = mapped.Value.GetProperty("ruling_hash").GetString()!;
+            if (!string.Equals(expectedRulingHash, rulingHash, StringComparison.Ordinal))
+            {
+                throw new InvalidDataException(
+                    $"rules modification {mapped.Name} pins ruling {expectedRulingHash}, not {rulingHash}");
+            }
+
+            string why = mapped.Value.GetProperty("why").GetString()!;
+            string source = ruling.GetProperty("source").GetString()!;
+            string via = ruling.GetProperty("via").GetString()!;
+            string scope = ruling.GetProperty("rrg_scope").GetString()!;
+            string? absorbedIn = mapped.Value.GetProperty("absorbed_in").GetString();
+            if (string.IsNullOrWhiteSpace(why)
+                || string.IsNullOrWhiteSpace(source)
+                || string.IsNullOrWhiteSpace(via)
+                || string.IsNullOrWhiteSpace(scope))
+            {
+                throw new InvalidDataException(
+                    $"rules modification {mapped.Name} has incomplete provenance");
+            }
+
+            if (absorbedIn is not null
+                && CompareVersions(absorbedIn, EffectiveVersion(scope)) < 0)
+            {
+                throw new InvalidDataException(
+                    $"rules modification {mapped.Name} is absorbed before its RRG scope");
+            }
+
+            var modification = new Modification(
+                mapped.Name,
+                baseId,
+                supersedesHash,
+                absorbedIn,
+                why,
+                source,
+                via,
+                scope,
+                ruling.GetProperty("observed").GetString(),
+                rulingHash);
+            modifications.Add(modification);
+            found.Add(mapped.Name, new Record(
+                mapped.Name,
+                $"RULING — {baseRecord.Title}",
+                ruling.GetProperty("answer").GetString()!,
+                modification.Hash,
+                0,
+                "modification",
+                baseId));
+        }
+
+        return new Corpus(found, authored, modifications)
         {
             Version = root.TryGetProperty("version", out var version)
                 ? version.GetString() ?? "unknown"
@@ -140,7 +272,15 @@ internal sealed class Corpus
     /// <summary>What a rule names.</summary>
     /// <param name="id">A citation id.</param>
     public IReadOnlyList<Edge> References(string id) =>
-        [.. edges.Where(edge => string.Equals(edge.From, id, StringComparison.Ordinal))];
+    [
+        .. edges.Where(edge => string.Equals(edge.From, id, StringComparison.Ordinal)),
+        .. modifications
+            .Where(modification => string.Equals(modification.Id, id, StringComparison.Ordinal))
+            .Select(modification => new Edge(
+                modification.Id,
+                modification.BaseId,
+                modification.Why)),
+    ];
 
     /// <summary>
     /// What names a rule — the query the graph exists for, computed rather than
@@ -159,5 +299,83 @@ internal sealed class Corpus
         .. edges.Where(edge =>
             string.Equals(edge.To, id, StringComparison.Ordinal)
             || string.Equals(EntryOf(edge.To), id, StringComparison.Ordinal)),
+        .. modifications
+            .Where(modification =>
+                string.Equals(modification.BaseId, id, StringComparison.Ordinal)
+                || string.Equals(EntryOf(modification.BaseId), id, StringComparison.Ordinal))
+            .Select(modification => new Edge(
+                modification.Id,
+                modification.BaseId,
+                modification.Why)),
     ];
+
+    /// <summary>The one text current for a base record in the vendored RR version.</summary>
+    public Record Resolve(string id, string version)
+    {
+        if (!string.Equals(version, Version, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"Rules Reference v{Version} is the only vendored base; cannot resolve v{version}");
+        }
+
+        if (!records.TryGetValue(id, out var current) || current.Kind != "base")
+        {
+            throw new KeyNotFoundException($"Rules Reference v{Version} has no base rule '{id}'");
+        }
+
+        string? selected = SelectCurrent(
+            modifications.Where(modification => string.Equals(
+                modification.BaseId,
+                id,
+                StringComparison.Ordinal)),
+            version,
+            id);
+        return selected is null ? current : records[selected];
+    }
+
+    /// <summary>Selects one overlay by RRG order, or the base when it was absorbed.</summary>
+    internal static string? SelectCurrent(
+        IEnumerable<Modification> candidates,
+        string version,
+        string baseId)
+    {
+        var applicable = candidates
+            .Where(modification => CompareVersions(EffectiveVersion(modification.Scope), version) <= 0)
+            .ToList();
+        if (applicable.Count == 0)
+        {
+            return null;
+        }
+
+        string latest = applicable
+            .Select(modification => EffectiveVersion(modification.Scope))
+            .MaxBy(value => System.Version.Parse(value))!;
+        var currentModifications = applicable
+            .Where(modification => string.Equals(
+                EffectiveVersion(modification.Scope),
+                latest,
+                StringComparison.Ordinal))
+            .ToList();
+        var unabsorbed = currentModifications
+            .Where(modification => modification.AbsorbedIn is null
+                || CompareVersions(version, modification.AbsorbedIn) < 0)
+            .ToList();
+        if (unabsorbed.Count > 1)
+        {
+            throw new InvalidDataException(
+                $"{baseId} has {unabsorbed.Count} current modifications from RRG {latest}");
+        }
+
+        return unabsorbed.Count == 0 ? null : unabsorbed[0].Id;
+    }
+
+    private static string EffectiveVersion(string scope) => scope switch
+    {
+        "pre-1.5" => "0.0",
+        "1.7-1.8" => "1.7",
+        _ => scope,
+    };
+
+    private static int CompareVersions(string left, string right) =>
+        System.Version.Parse(left).CompareTo(System.Version.Parse(right));
 }

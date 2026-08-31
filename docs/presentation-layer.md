@@ -456,6 +456,12 @@ limits and framing are **our wire-format choices**, not rules of the game.
 `src/Marvel.Server/Dockerfile` packages the same assembly and the three canonical
 runtime datasets for Linux.
 
+Version 3 includes `PlayAreaJoined` and `PlayAreaDetached` in the polymorphic
+event union. Earlier clients do not know those discriminators, so the host
+rejects an earlier version during request negotiation before it opens or
+advances a game. A wire union cannot grow compatibly merely because its new
+members are uncommon.
+
 Game ids are labels, not authority, and two clients may choose the same one.
 `open` returns a cryptographically random 256-bit session capability; every
 `resolve` and `close` must present it, and the host keys the live game by that
@@ -463,11 +469,11 @@ capability. Capability randomness is transport/security state above the engine
 wall: it never enters `World`, the seeded MT19937 stream, a prompt, or an event,
 so it cannot change the game named by a seed.
 
-Version 2 added the filtered `world` descriptor and the opening request's
-`viewer` claim. Version 3 adds independently scoped seat attachment and
-read-only synchronization. There is deliberately no compatibility reading of
-an earlier version: treating a smaller response as a visibility-safe bootstrap
-would leave the client to recover state from some other, unowned channel.
+Version 3 also carries the filtered `world` descriptor, the opening request's
+`viewer` claim, independently scoped seat attachment and read-only
+synchronization. There is deliberately no compatibility reading of an earlier
+version: treating a smaller response as a visibility-safe bootstrap would
+leave the client to recover state from some other, unowned channel.
 
 Cancellation has one explicit boundary. It may cancel DNS/connect and the
 request write. Once the complete request frame has been sent, the server may
@@ -515,7 +521,8 @@ because `TargetRequest.IsSearch` says the player is looking at them. Events are
 kept only for cards visible after the decision: hidden creations, moves,
 reorders, flips and field changes are omitted, while the snapshot still carries
 the resulting pile height. This prevents the event stream from reintroducing a
-face or stable id the descriptor removed.
+face or stable id the descriptor removed. Play-area join and detach events name
+only public topology and pass through for every scope.
 
 The client may assert one `seat`, `hot_seat`, or `watch` mode on `open`. The
 capability is then bound to the server's decision for the lifetime of the

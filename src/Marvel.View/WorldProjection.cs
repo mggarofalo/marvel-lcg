@@ -187,6 +187,8 @@ public static class WorldProjection
                         : null,
                 ControlChanged changed => addressable.Contains(changed.Card) ? changed : null,
                 FieldSet set => readable.Contains(set.Card) ? set : null,
+                PlayAreaJoined joined => joined,
+                PlayAreaDetached detached => detached,
                 _ => throw new InvalidOperationException(
                     $"event kind {happened.GetType().Name} has no visibility decision"),
             };

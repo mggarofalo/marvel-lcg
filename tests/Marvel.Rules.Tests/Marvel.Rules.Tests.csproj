@@ -37,6 +37,7 @@
     <!-- The source reader is the report's behavior. Linking it makes the
          regression independent of whether the tool or the suite has built. -->
     <Compile Include="../../tools/Marvel.Rules.Index/Citations.cs" Link="Citations.cs" />
+    <Compile Include="../../tools/Marvel.Rules.Index/Corpus.cs" Link="Corpus.cs" />
   </ItemGroup>
 
 </Project>

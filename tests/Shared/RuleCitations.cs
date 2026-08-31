@@ -70,6 +70,13 @@ internal static class RuleCitations
             ids.Add(entry.GetProperty("id").GetString()!);
         }
 
+        using var graph = JsonDocument.Parse(
+            File.ReadAllBytes(RepositoryPaths.Dataset("rules-graph.json")));
+        foreach (var modification in graph.RootElement.GetProperty("modifications").EnumerateObject())
+        {
+            ids.Add(modification.Name);
+        }
+
         return ids;
     }
 }
@@ -103,12 +110,14 @@ public sealed class RuleCitationTests
     [Fact]
     public void CitationsAreWellFormed()
     {
-        // `rr:` is the only citation scheme the index carries. A test citing
-        // `pack:mc11:game-areas` is citing a rules *pack*, which is a different
-        // dataset and not covered here -- catching that as a typo would be
-        // wrong, so it has to be caught as a scheme.
+        // The corpus carries Rules Reference records and audited rules
+        // modifications. A test citing `pack:mc11:game-areas` is citing a
+        // rules *pack*, which is a different dataset and not covered here --
+        // catching that as a typo would be wrong, so it has to be caught as a
+        // scheme.
         var citations = RuleCitations.In(typeof(RuleCitationTests).Assembly);
         Assert.DoesNotContain(
-            citations, citation => !citation.Id.StartsWith("rr:", StringComparison.Ordinal));
+            citations, citation => !citation.Id.StartsWith("rr:", StringComparison.Ordinal)
+                && !citation.Id.StartsWith("ruling:", StringComparison.Ordinal));
     }
 }

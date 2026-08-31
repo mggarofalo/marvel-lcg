@@ -1,9 +1,10 @@
 using System.Globalization;
+using System.Text.Json;
 
 namespace Marvel.Rules.Index;
 
 /// <summary>
-/// Two questions about the vendored Rules Reference that nothing could ask.
+/// Queries the vendored Rules Reference, its authored relationships, and rules modifications.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -24,13 +25,27 @@ internal static class Program
 {
     private static int Main(string[] args)
     {
-        var rest = args.Skip(1).ToArray();
-        return (args.Length == 0 ? "" : args[0]) switch
+        try
         {
-            "refs" => Refs(rest),
-            "citations" => Report(rest),
-            _ => Usage(),
-        };
+            var rest = args.Skip(1).ToArray();
+            return (args.Length == 0 ? "" : args[0]) switch
+            {
+                "refs" => Refs(rest),
+                "resolve" => Resolve(rest),
+                "citations" => Report(rest),
+                _ => Usage(),
+            };
+        }
+        catch (Exception error) when (error is InvalidDataException
+            or InvalidOperationException
+            or JsonException
+            or KeyNotFoundException
+            or FormatException
+            or IOException)
+        {
+            Console.Error.WriteLine(error.Message);
+            return 1;
+        }
     }
 
     private static int Usage()
@@ -41,6 +56,8 @@ internal static class Program
 
               refs <rr:id>            what it names, and what names it
               refs --orphans          authored edges naming no citable rule
+
+              resolve <rr:id> [rrg]   current text for a base rule (default: vendored RR)
 
               citations               how much of the Rules Reference is cited
               citations --cited       every citation, by rule
@@ -92,6 +109,16 @@ internal static class Program
 
         Console.WriteLine($"{record.Id}  {record.Title}");
         Console.WriteLine($"  {Wrap(record.Fragment)}");
+        if (record.Kind == "modification")
+        {
+            Modification modification = corpus.Modifications.Single(item => item.Id == record.Id);
+            Console.WriteLine(
+                $"  {modification.Source}; RRG {modification.Scope}; "
+                + $"observed {modification.Observed ?? "unavailable"}");
+            Console.WriteLine(modification.AbsorbedIn is null
+                ? "  current until superseded or absorbed"
+                : $"  absorbed into Rules Reference v{modification.AbsorbedIn}");
+        }
 
         var names = corpus.References(wanted);
         var named = corpus.ReferencedBy(wanted);
@@ -119,6 +146,33 @@ internal static class Program
         return 0;
     }
 
+    private static int Resolve(string[] args)
+    {
+        if (args.Length is < 1 or > 2)
+        {
+            return Usage();
+        }
+
+        var corpus = Corpus.Read();
+        string version = args.Length == 2 ? args[1] : corpus.Version;
+        Record record = corpus.Resolve(args[0], version);
+        Console.WriteLine($"{args[0]} @ Rules Reference v{version}");
+        Console.WriteLine($"current: {record.Id}");
+        Console.WriteLine($"hash:    {record.Hash}");
+        if (record.BaseId is not null)
+        {
+            Modification modification = corpus.Modifications.Single(item => item.Id == record.Id);
+            Console.WriteLine($"source:  {modification.Source}");
+            Console.WriteLine($"via:     {modification.Via}");
+            Console.WriteLine($"scope:   {modification.Scope}");
+            Console.WriteLine($"observed:{(modification.Observed is null ? " unavailable" : " " + modification.Observed)}");
+        }
+
+        Console.WriteLine();
+        Console.WriteLine(Wrap(record.Fragment));
+        return 0;
+    }
+
     private static int Report(string[] args)
     {
         var corpus = Corpus.Read();
@@ -127,6 +181,7 @@ internal static class Program
             .Select(citation => citation.Id)
             .ToHashSet(StringComparer.Ordinal);
         var citedEntries = cited
+            .Where(id => id.StartsWith("rr:", StringComparison.Ordinal))
             .Select(Corpus.EntryOf)
             .ToHashSet(StringComparer.Ordinal);
 
@@ -171,10 +226,17 @@ internal static class Program
         }
 
         int records = corpus.Records.Count;
+        var modificationIds = corpus.Modifications
+            .Select(modification => modification.Id)
+            .ToHashSet(StringComparer.Ordinal);
         Console.WriteLine($"Rules Reference v{corpus.Version}");
         Console.WriteLine();
         Console.WriteLine(Line("entries", citedEntries.Count, entries.Count));
         Console.WriteLine(Line("citable records", cited.Count, records));
+        Console.WriteLine(Line(
+            "modifications",
+            cited.Count(modificationIds.Contains),
+            modificationIds.Count));
         Console.WriteLine();
         Console.WriteLine($"  citations made  {citations.Count}");
         return 0;

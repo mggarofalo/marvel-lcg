@@ -116,8 +116,10 @@ public sealed class EliminationTests
         var playArea = world.Cards
             .Where(card => card.Area.PlayArea == PlayArea.Of(0))
             .ToArray();
+        var priorGameArea = world.GameAreaOf(PlayArea.Of(0))!;
+        var events = new List<GameEvent>();
 
-        Elimination.Eliminate(world, printed, 0, "test", []);
+        Elimination.Eliminate(world, printed, 0, "test", events);
 
         // Their own ally, to their own discard pile (step 4) -- and then step 5
         // removes that pile with the rest of the play area, so it ends up
@@ -131,7 +133,11 @@ public sealed class EliminationTests
         Assert.DoesNotContain(world.Cards, card => card.Area.PlayArea == PlayArea.Of(0));
         Assert.Null(world.GameAreaOf(PlayArea.Of(0)));
         Assert.NotNull(world.GameAreaOf(PlayArea.Of(1)));
-
+        var detached = Assert.Single(events.OfType<PlayAreaDetached>());
+        Assert.Equal(0, detached.PlayArea);
+        Assert.Equal(priorGameArea.Id, detached.GameArea);
+        Assert.Equal("test", detached.Trigger);
+        Assert.Equal("Detach", detached.Verb);
     }
 
     [Rule("rr:player-elimination.step.3")]
@@ -269,12 +275,15 @@ public sealed class EliminationTests
         // twice, which `World.Finish` refuses outright.
         var printed = Cards();
         var world = Board(printed, players: 1);
+        var events = new List<GameEvent>();
 
-        Elimination.Eliminate(world, printed, 0, "test", []);
+        Elimination.Eliminate(world, printed, 0, "test", events);
         Assert.Equal(Outcome.PlayersLose, world.Result);
+        Assert.Single(events.OfType<PlayAreaDetached>());
 
-        Elimination.Eliminate(world, printed, 0, "test", []);
+        Elimination.Eliminate(world, printed, 0, "test", events);
         Assert.Equal(Outcome.PlayersLose, world.Result);
+        Assert.Single(events.OfType<PlayAreaDetached>());
     }
 
     [Rule("rr:defeat")]
