@@ -217,6 +217,11 @@ internal sealed class CoreTranscriptRunner
         Bind("stack-player-deck-empty-discard", TranscriptStepKind.Given,
             @"seat (?<seat>\d+)'s player deck contains only these next cards with all other deck cards in hand",
             StackPlayerDeckWithEmptyDiscard),
+        Bind("set-player-hand", TranscriptStepKind.Given,
+            @"seat (?<seat>\d+)'s hand contains exactly these cards", SetPlayerHand),
+        Bind("set-card-readiness", TranscriptStepKind.Given,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is (?<state>ready|exhausted)",
+            SetCardReadiness),
         Bind("stack-encounter-deck-discard", TranscriptStepKind.Given,
             "the encounter deck contains only these next cards with all other deck cards in the encounter discard pile",
             StackEncounterDeckWithDiscard),
@@ -237,6 +242,16 @@ internal sealed class CoreTranscriptRunner
         Bind("discard-encounter-deck", TranscriptStepKind.When,
             @"the top (?<count>\d+) cards? of the encounter deck (?:is|are) discarded",
             DiscardEncounterDeck),
+        Bind("phase-discard-none", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) keeps every card during the optional end-of-player-phase discard",
+            PhaseDiscardNone),
+        Bind("phase-discard-selected", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) chooses these cards for the end-of-player-phase discard",
+            PhaseDiscardSelected),
+        Bind("phase-draw", TranscriptStepKind.When,
+            "the end-of-player-phase draw step resolves", PhaseDraw),
+        Bind("phase-ready", TranscriptStepKind.When,
+            "the end-of-player-phase ready step resolves", PhaseReady),
         Bind("hand-count", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) has (?<count>\d+) cards? in hand", HandCount),
         Bind("player-deck-count", TranscriptStepKind.Then,
@@ -251,12 +266,20 @@ internal sealed class CoreTranscriptRunner
             @"the encounter discard pile has (?<count>\d+) cards?", EncounterDiscardCount),
         Bind("acceleration-token-count", TranscriptStepKind.Then,
             @"the main scheme has (?<count>\d+) acceleration tokens?", AccelerationTokenCount),
+        Bind("card-readiness", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is (?<state>ready|exhausted)",
+            CardReadiness),
+        Bind("card-player-discard", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is in seat (?<seat>\d+)'s discard pile",
+            CardInPlayerDiscard),
         Bind("not-eliminated", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) is not eliminated", NotEliminated),
         Bind("game-unfinished", TranscriptStepKind.Then,
             "the game is unfinished", GameUnfinished),
         Bind("event-emitted", TranscriptStepKind.Then,
             @"a (?<verb>[A-Za-z_]+) event with trigger (?<trigger>.+) was emitted", EventEmitted),
+        Bind("event-count", TranscriptStepKind.Then,
+            @"(?<count>\d+) (?<verb>[A-Za-z_]+) events? (?:was|were) emitted", EventCount),
         Bind("event-order", TranscriptStepKind.Then,
             @"a (?<first>[A-Za-z_]+) event was emitted before a (?<second>[A-Za-z_]+) event",
             EventOrder),
@@ -325,6 +348,22 @@ internal sealed class CoreTranscriptRunner
                 row["next card"], TableNumber(row, "copy", step)))],
             remainder));
     }
+
+    private static void SetPlayerHand(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        TranscriptTable table = Table(step, "card", "copy");
+        context.SceneRequired(step).Apply(new SetPlayerHand(
+            Seat(match, step),
+            [.. table.Rows.Select(row => new SceneCard(
+                row["card"], TableNumber(row, "copy", step)))]));
+    }
+
+    private static void SetCardReadiness(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        context.SceneRequired(step).Apply(new SetSceneReady(
+            SceneCard(match, step),
+            string.Equals(match.Groups["state"].Value, "ready", StringComparison.Ordinal)));
 
     private static void StackEncounterDeckWithDiscard(
         TranscriptContext context, TranscriptStep step, Match match)
@@ -421,6 +460,54 @@ internal sealed class CoreTranscriptRunner
             context.Events);
     }
 
+    private static void PhaseDiscardNone(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        PhaseDiscard(context, step, Seat(match, step), []);
+
+    private static void PhaseDiscardSelected(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        TranscriptTable table = Table(step, "card", "copy");
+        PhaseDiscard(
+            context,
+            step,
+            Seat(match, step),
+            [.. table.Rows.Select(row => context.SceneRequired(step).Find(
+                new SceneCard(row["card"], TableNumber(row, "copy", step))).ObjectId)]);
+    }
+
+    private static void PhaseDiscard(
+        TranscriptContext context,
+        TranscriptStep step,
+        int seat,
+        IReadOnlyList<int> cards)
+    {
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        PhaseEnd.DiscardToHandSize(
+            context.World, context.Cards, seat, cards, context.Events);
+    }
+
+    private static void PhaseDraw(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        _ = step;
+        _ = match;
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        PhaseEnd.DrawToHandSize(context.World, context.Cards, context.Events);
+    }
+
+    private static void PhaseReady(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        _ = step;
+        _ = match;
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        PhaseEnd.ReadyCards(context.World, context.Events);
+    }
+
     private static void HandCount(
         TranscriptContext context, TranscriptStep step, Match match) =>
         Equal(Number(match, "count", step),
@@ -473,6 +560,37 @@ internal sealed class CoreTranscriptRunner
         long actual = scheme.Tokens.GetValueOrDefault(EncounterDeck.AccelerationToken);
         Equal(Number(match, "count", step), checked((int)actual),
             "acceleration tokens on the main scheme", step);
+    }
+
+    private static void CardReadiness(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        bool expected = string.Equals(
+            match.Groups["state"].Value, "ready", StringComparison.Ordinal);
+        if (card.Ready != expected)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected card {card.ObjectId} to be "
+                + $"{match.Groups["state"].Value}");
+        }
+    }
+
+    private static void CardInPlayerDiscard(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        Area expected = context.World.AreaOf(
+            DeckType.DiscardPile,
+            PlayArea.Of(seat),
+            cardOwner: seat);
+        if (!ReferenceEquals(card.Area, expected))
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected card {card.ObjectId} in seat {seat + 1}'s "
+                + $"discard pile; was {card.Area}");
+        }
     }
 
     private static void NotEliminated(
@@ -531,6 +649,15 @@ internal sealed class CoreTranscriptRunner
                 $"{step.Location}: no {verb} event with trigger {trigger} was emitted");
         }
     }
+
+    private static void EventCount(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        Equal(
+            Number(match, "count", step),
+            context.Events.Count(gameEvent =>
+                gameEvent.Verb == match.Groups["verb"].Value),
+            $"{match.Groups["verb"].Value} events",
+            step);
 
     private static void EventOrder(
         TranscriptContext context, TranscriptStep step, Match match)
@@ -592,6 +719,10 @@ internal sealed class CoreTranscriptRunner
 
         return value;
     }
+
+    private static SceneCard SceneCard(Match match, TranscriptStep step) => new(
+        match.Groups["face"].Value,
+        Number(match, "copy", step));
 
     private static int TableNumber(
         IReadOnlyDictionary<string, string> row, string column, TranscriptStep step)

@@ -222,7 +222,10 @@ card. This distinction lets a scenario be small without making its game false.
 
 Gherkin is the readable serialization of a transcript. Each scenario names its
 primary `@behavior:` obligation and its direct `@rr:`, `@card:` and `@ruling:`
-authorities.
+authorities. When one published operation necessarily produces observations
+for multiple obligations, every secondary obligation is declared with
+`@covers:behavior:`. The catalog must link exactly the same set; an undeclared
+co-coverage claim fails the corpus gate.
 
 - `Given` invokes only the legal scene constructor.
 - `When` records one player or engine decision.

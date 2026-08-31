@@ -74,6 +74,16 @@ public sealed record StackPlayerDeck(
     public override string Name => "stack-player-deck";
 }
 
+/// <summary>Places exactly the selected player-deck cards in a player's hand.</summary>
+public sealed record SetPlayerHand(
+    int Seat,
+    IReadOnlyList<SceneCard> Cards)
+    : CoreSceneOperation
+{
+    /// <inheritdoc />
+    public override string Name => "set-player-hand";
+}
+
 /// <summary>Stacks selected encounter cards; the first id is the next card drawn.</summary>
 public enum EncounterDeckRemainder
 {
@@ -214,6 +224,9 @@ public sealed class CanonicalCoreScene
                 case StackPlayerDeck stack:
                     StackPlayer(stack);
                     break;
+                case SetPlayerHand hand:
+                    PlayerHand(hand);
+                    break;
                 case StackEncounterDeck stack:
                     StackEncounter(stack);
                     break;
@@ -308,6 +321,32 @@ public sealed class CanonicalCoreScene
         foreach (var card in selected.AsEnumerable().Reverse())
         {
             World.MoveToTop(card, seat.Deck);
+        }
+    }
+
+    private void PlayerHand(SetPlayerHand operation)
+    {
+        Seat seat = Player(operation.Seat);
+        var selected = Distinct(operation.Cards);
+        foreach (var card in selected)
+        {
+            RequireOwner(card, operation.Seat);
+            RequirePlayerDeckCard(card);
+            RequireHostCanMove(card, PlayArea.Of(operation.Seat), destinationInPlay: false);
+        }
+
+        var discard = World.AreaOf(
+            DeckType.DiscardPile,
+            PlayArea.Of(operation.Seat),
+            cardOwner: operation.Seat);
+        foreach (var card in seat.Hand.Cards.Where(card => !selected.Contains(card)).ToList())
+        {
+            World.MoveToTop(card, discard);
+        }
+
+        foreach (var card in selected)
+        {
+            World.MoveToTop(card, seat.Hand);
         }
     }
 

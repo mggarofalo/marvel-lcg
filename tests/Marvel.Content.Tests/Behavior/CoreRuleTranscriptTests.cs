@@ -7,6 +7,34 @@ namespace Marvel.Content.Tests.Behavior;
 public sealed class CoreRuleTranscriptTests
 {
     [Fact]
+    public void EndOfPlayerPhaseBranchesHavePinnedOutcomes()
+    {
+        var suite = new CoreTranscriptSuite(RepositoryPaths.Root);
+        var results = suite.RunPassingCorpus()
+            .Where(result => result.Scenario.StartsWith(
+                "specs/behavior/core/end-of-player-phase.feature::",
+                StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
+
+        Assert.Equal(5, results.Count);
+        Assert.Equal(
+            "c81566a2f566d19ac039532532df0d728f6d5583b7028e1798eba3d555e42e23",
+            results["behavior:rr:end-of-player-phase.step.1:optional-at-or-below"].Digest);
+        Assert.Equal(
+            "228ad5267ebe07ec00349ff20b304812ecdf680ab264bfbf98f77c49dde400d3",
+            results["behavior:rr:end-of-player-phase.step.1:mandatory-above-limit"].Digest);
+        Assert.Equal(
+            "c817ffe9c015a6603b0c931b70160c0f82738530c93c80f976412e1fd5140479",
+            results["behavior:rr:end-of-player-phase.step.2:below-limit"].Digest);
+        Assert.Equal(
+            "ba21ebd4d8f01244d40f9dbe5d30c095ea72fdd748ad123d726cdb1596ce45d6",
+            results["behavior:rr:end-of-player-phase.step.2:at-limit"].Digest);
+        Assert.Equal(
+            "4159ea0cb84196706b181c689f9c9dba4b4cc6e3cf7a5775b4342eafbc166e44",
+            results["behavior:rr:end-of-player-phase.step.3:ready-all-in-play"].Digest);
+    }
+
+    [Fact]
     public void EncounterDeckBranchesHavePinnedOutcomes()
     {
         var suite = new CoreTranscriptSuite(RepositoryPaths.Root);

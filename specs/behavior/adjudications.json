@@ -6906,9 +6906,9 @@
         {
           "key": "published-result",
           "summary": "To end the player phase, perform the following steps:",
-          "disposition": "narrower",
-          "reason": "A directly cited child clause states the executable decision more precisely.",
-          "target": "behavior:rr:end-of-player-phase.step.1:published-result",
+          "disposition": "no-independent-behavior",
+          "reason": "This introduction delegates every observable decision to the five numbered steps.",
+          "target": null,
           "implementation": null,
           "work_item": null,
           "exception": null,
@@ -6922,16 +6922,32 @@
       "fingerprint": "sha256:26e7b762ae33c327efd16c3fe0653361f32e0bc2a72d8fb27a881a9fac1bc815",
       "obligations": [
         {
-          "key": "published-result",
-          "summary": "In player order, each player may discard any number of cards from their hand, and must discard down to their hand size if they have more cards than their hand size.",
+          "key": "optional-at-or-below",
+          "summary": "A player at or below their hand size may discard any number of cards, including none, at the end of the player phase.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/end-of-player-phase.feature::A hand below its limit may keep every card"
+          ],
+          "mutation": "CoreRuleTranscriptTests.EndOfPlayerPhaseBranchesHavePinnedOutcomes distinguishes optional zero-card discard from a forced discard."
+        },
+        {
+          "key": "mandatory-above-limit",
+          "summary": "A player above their hand size must choose enough cards to discard down to that size at the end of the player phase.",
+          "disposition": "executable",
+          "reason": null,
+          "target": null,
+          "implementation": "supported",
+          "work_item": null,
+          "exception": null,
+          "scenarios": [
+            "specs/behavior/core/end-of-player-phase.feature::An overfull hand must discard to its limit"
+          ],
+          "mutation": "CoreRuleTranscriptTests.EndOfPlayerPhaseBranchesHavePinnedOutcomes distinguishes the mandatory excess discard and the selected physical card."
         }
       ]
     },
@@ -6940,16 +6956,32 @@
       "fingerprint": "sha256:f5210754f5a20453de62e5e7b3662157bd3ff7639d4d39ab2f70b04e8e1b9cb1",
       "obligations": [
         {
-          "key": "published-result",
-          "summary": "Each player simultaneously draws up to their hand size.",
+          "key": "below-limit",
+          "summary": "At the end of the player phase, each player below their hand size draws up to that size.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/end-of-player-phase.feature::A hand below its limit draws up to its current size"
+          ],
+          "mutation": "CoreRuleTranscriptTests.EndOfPlayerPhaseBranchesHavePinnedOutcomes distinguishes drawing exactly the deficit."
+        },
+        {
+          "key": "at-limit",
+          "summary": "At the end of the player phase, a player already at their hand size draws no cards.",
+          "disposition": "executable",
+          "reason": null,
+          "target": null,
+          "implementation": "supported",
+          "work_item": null,
+          "exception": null,
+          "scenarios": [
+            "specs/behavior/core/end-of-player-phase.feature::A hand at its limit draws nothing"
+          ],
+          "mutation": "CoreRuleTranscriptTests.EndOfPlayerPhaseBranchesHavePinnedOutcomes distinguishes the no-draw boundary at the exact hand size."
         }
       ]
     },
@@ -6958,16 +6990,18 @@
       "fingerprint": "sha256:973d6a1759b491170ba4d83df0e94e017886b74d4542ac76b83f83002a6a443b",
       "obligations": [
         {
-          "key": "published-result",
-          "summary": "Each player simultaneously readies all of their cards.",
+          "key": "ready-all-in-play",
+          "summary": "Each player simultaneously readies all of their cards, and every exhausted encounter card is also readied.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/end-of-player-phase.feature::Player and encounter cards ready together"
+          ],
+          "mutation": "CoreRuleTranscriptTests.EndOfPlayerPhaseBranchesHavePinnedOutcomes distinguishes readying both a player identity and the encounter villain."
         }
       ]
     },
@@ -8650,16 +8684,46 @@
       "fingerprint": "sha256:119fe496b2f97b63723d86ed5724ad1403f3d9ba01f04631a1c0ec08ec282863",
       "obligations": [
         {
-          "key": "published-result",
-          "summary": "Each player checks their hand size at the end of the player phase, either discarding down to or drawing up to the number of cards indicated by their hand size value.",
+          "key": "above-limit",
+          "summary": "At the end of the player phase, a player above their hand-size value discards down to it.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/end-of-player-phase.feature::An overfull hand must discard to its limit"
+          ],
+          "mutation": "CoreRuleTranscriptTests.EndOfPlayerPhaseBranchesHavePinnedOutcomes distinguishes discarding the excess above the printed hand-size value."
+        },
+        {
+          "key": "below-limit",
+          "summary": "At the end of the player phase, a player below their hand-size value draws up to it.",
+          "disposition": "executable",
+          "reason": null,
+          "target": null,
+          "implementation": "supported",
+          "work_item": null,
+          "exception": null,
+          "scenarios": [
+            "specs/behavior/core/end-of-player-phase.feature::A hand below its limit draws up to its current size"
+          ],
+          "mutation": "CoreRuleTranscriptTests.EndOfPlayerPhaseBranchesHavePinnedOutcomes distinguishes drawing the exact deficit below the printed hand-size value."
+        },
+        {
+          "key": "at-limit",
+          "summary": "At the end of the player phase, a player at their hand-size value neither discards nor draws.",
+          "disposition": "executable",
+          "reason": null,
+          "target": null,
+          "implementation": "supported",
+          "work_item": null,
+          "exception": null,
+          "scenarios": [
+            "specs/behavior/core/end-of-player-phase.feature::A hand at its limit draws nothing"
+          ],
+          "mutation": "CoreRuleTranscriptTests.EndOfPlayerPhaseBranchesHavePinnedOutcomes distinguishes the exact no-change boundary."
         }
       ]
     },
@@ -8668,16 +8732,18 @@
       "fingerprint": "sha256:c0f0d93383767da83d318055fcf0439269807c7d67ef155ed2387cc0206f1bce",
       "obligations": [
         {
-          "key": "published-result",
+          "key": "one-at-a-time",
           "summary": "When drawing up to their hand size, a player draws cards one at a time, checking after each card is drawn whether they are at their hand size.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/end-of-player-phase.feature::A hand below its limit draws up to its current size"
+          ],
+          "mutation": "CoreRuleTranscriptTests.EndOfPlayerPhaseBranchesHavePinnedOutcomes distinguishes three one-card Draw events from a bulk move."
         }
       ]
     },
@@ -15600,16 +15666,18 @@
       "fingerprint": "sha256:37c8326365a14d5b3b2df657e12786465cab0693dfd48f8900e207ec9889d2c4",
       "obligations": [
         {
-          "key": "published-result",
+          "key": "instruction",
           "summary": "If a player is instructed to ready an exhausted card, the card is returned to its ready state.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/end-of-player-phase.feature::Player and encounter cards ready together"
+          ],
+          "mutation": "CoreRuleTranscriptTests.EndOfPlayerPhaseBranchesHavePinnedOutcomes distinguishes returning exhausted player and encounter cards to ready state."
         }
       ]
     },

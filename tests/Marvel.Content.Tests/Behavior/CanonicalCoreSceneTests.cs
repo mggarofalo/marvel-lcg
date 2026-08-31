@@ -80,6 +80,28 @@ public sealed class CanonicalCoreSceneTests
     }
 
     [Fact]
+    public void AnExactHandUsesOnlyOwnedPlayerDeckCardsAndAccountsForTheRemainder()
+    {
+        var scene = Deal(
+                "behavior:rr:hand-size:below-limit",
+                "rhino",
+                ["spider_man"])
+            .Apply(new SetPlayerHand(
+                0,
+                [new SceneCard("01002"), new SceneCard("01003")]));
+
+        Assert.Equal(["01002", "01003"],
+            scene.World.Seats[0].Hand.Cards.Select(card => card.FaceId));
+        Assert.Equal(
+            scene.World.Cards.Count,
+            scene.World.Areas.Sum(area => area.Cards.Count + area.Removed.Count));
+
+        var wrongOwner = Assert.Throws<CoreSceneConstructionException>(() => scene.Apply(
+            new SetPlayerHand(0, [new SceneCard("01012")])));
+        Assert.Contains("no copy 0", wrongOwner.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void InvasiveAiCanBeStackedOnlyFromTheLegalUltronEncounterDeck()
     {
         var scene = Deal(
