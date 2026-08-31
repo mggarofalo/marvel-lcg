@@ -51,9 +51,11 @@ The inputs are used as follows:
   hash. `Marvel.Rules.Index resolve` supplies an effective modification.
 - `datasets/cards/cards.json` supplies printed Core Set faces. A feature is
   never authored from an implementation table or a live website.
-- `datasets/marvelcdb-faq/` supplies FAQ records for Core Set card codes, and
-  `datasets/rulings/` supplies relevant rules rulings. Research can discover a
-  candidate; only the vendored record is an input.
+- `datasets/marvelcdb-faq/` and `datasets/rulings/` are enumerated in full.
+  Each record is admitted or classified `outside-core`; card links, section
+  names and the small audited rules graph help adjudicate that classification
+  but do not form an inclusion filter. Research can discover a candidate; only
+  a vendored record is an input.
 - `datasets/setup/setup.json` defines which printed components make a supported
   game. Its tests are the authority gate described by `setup-dataset.md`.
 
@@ -66,16 +68,27 @@ result.
 - A Rules Reference unit uses the effective record hash returned by the rules
   graph resolver.
 - A ruling with a committed `hash` uses that value.
-- A card face, FAQ record or setup record uses SHA-256 over canonical JSON for
-  that record: object keys sorted by ordinal code point, array order preserved,
-  UTF-8 without a byte-order mark, no insignificant whitespace, and JSON string
-  escaping.
+- A card face, FAQ record or setup record uses SHA-256 over the RFC 8785 JSON
+  Canonicalization Scheme representation of that record. JCS object-property
+  ordering, number serialization and string escaping are part of this
+  contract: strings are not Unicode-normalized, control characters use the JCS
+  lower-case escapes, and every other Unicode character is emitted as its
+  literal UTF-8 bytes rather than an optional `\u` escape.
 
 These rules are a wire format for the catalog. A generator must not substitute
 the bytes of a whole dataset, serializer defaults, locale-sensitive ordering or
 filesystem order. An unchanged source unit therefore has the same fingerprint
 on Windows and Linux, while any normative field change invalidates precisely
 the obligations derived from it.
+
+The first implementation pins these reproduction vectors. The inputs are the
+named subtrees in the current committed datasets, not their surrounding files:
+
+| Source unit | SHA-256 of JCS bytes |
+|---|---|
+| card face `cards[card_id = 01001a]` | `141d34bb4dde86154de845afad8526562ee296ada91bea42cd2c3fb2a24b0993` |
+| setup hero `heroes.iron_man` | `68764d8f0751996d173c63635b6a60ed31035a9de22795278320e7ff381e87b7` |
+| FAQ record `entries[code = 01001a]` | `50c91638ef5792206844d0232bf5d623242141daebaef1e9ea1f84c4270d883f` |
 
 ## From a source unit to obligations
 
@@ -129,21 +142,34 @@ Generated reports and skeletons use only that order.
 
 ### Dispositions
 
-Every source unit and every derived obligation has exactly one disposition:
+Every source unit and every derived obligation has exactly one semantic
+disposition:
 
 | Disposition | Meaning |
 |---|---|
-| `executable` | A legal Core Set scene and transcript can distinguish it. |
+| `executable` | A legal Core Set scene and transcript can reach and distinguish it. |
 | `narrower` | A named, more precise obligation carries the same proposition. |
 | `no-independent-behavior` | It is a heading, summary, example or definition with no separate result. |
 | `not-representable` | It governs physical, social, hidden-to-engine or interpretive procedure rather than engine state. |
 | `outside-core` | It requires a component or mode absent from the supported Core Set product. |
-| `unimplemented` | It is executable, but reaching it must raise `RulesNotImplementedException` by name. |
 
 Every disposition except `executable` names its reason. `narrower` names the
-target obligation. `outside-core` names the missing product surface.
-`unimplemented` names the exception text and tracked work. A source unit cannot
-disappear because no code cites it or no scenario was convenient to write.
+target obligation. `outside-core` names the missing product surface. A source
+unit cannot disappear because no code cites it or no scenario was convenient
+to write.
+
+Representability and implementation are independent. Every `executable`
+obligation has one implementation status:
+
+| Status | Required transcript result |
+|---|---|
+| `supported` | The transcript reaches and observes the published result. |
+| `unimplemented` | A negative transcript reaches the branch and observes the exact named `RulesNotImplementedException`. |
+
+An `unimplemented` obligation also names its tracked work. It cannot be treated
+as complete merely because the catalog mentions an exception; the executable
+negative transcript is the proof that the engine fails closed rather than
+guessing.
 
 ## Composition, not multiplication
 
@@ -217,9 +243,12 @@ An executable obligation is complete only when all of the following hold:
 2. its branch decomposition has been reviewed against the full authority text
    and applicable rulings;
 3. one or more legal transcripts directly distinguish it;
-4. those transcripts pass against the C# engine on both supported operating
+4. a `supported` transcript observes the published result, or an
+   `unimplemented` transcript observes its exact named
+   `RulesNotImplementedException`;
+5. those transcripts pass against the C# engine on both supported operating
    systems; and
-5. a mutation that removes or reverses the decision is killed, or an equivalent
+6. a mutation that removes or reverses the decision is killed, or an equivalent
    mutant is documented beside the obligation with the equivalence argument.
 
 Unit `[Rule]` citations are then audited in reverse: every cited behavior must
@@ -234,7 +263,10 @@ these conditions:
 - a canonical source is absent from the catalog;
 - a source fingerprint changed;
 - an obligation has no disposition or invalid target;
-- an executable obligation has no bound passing transcript;
+- an executable obligation has no bound passing transcript for its
+  implementation status;
+- an `unimplemented` transcript does not reach and observe its exact named
+  `RulesNotImplementedException`;
 - a transcript names a missing or stale obligation;
 - a scene violates a legal-game invariant;
 - a code citation cannot be mapped back to the catalog;
