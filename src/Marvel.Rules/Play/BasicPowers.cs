@@ -1057,8 +1057,7 @@ public static class BasicPowers
 
             // `rr:enemy`: "an enemy is a minion or villain."
             enemies.AddRange(area.Cards.Where(card =>
-                FacedownDrones.Kind(card, facts)
-                    is CardKind.EncounterVillain or CardKind.Minion));
+                CardKinds.IsEnemy(FacedownDrones.Kind(card, facts))));
         }
 
         return enemies;

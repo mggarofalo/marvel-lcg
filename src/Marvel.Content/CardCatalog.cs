@@ -422,10 +422,10 @@ public sealed class CardCatalog : ICardFacts
         return type.ToLowerInvariant();
     }
 
-    // The card data's `type` is the engine's face class on every kind but two:
-    // `Villain` and `SideScheme` each have a player and an encounter variant,
-    // and a scenario's own cards are always the encounter one. A player side
-    // scheme is a different class and it does not appear on an opening board.
+    // The card data's `type` is the engine's printed face kind. `Villain` and
+    // `SideScheme` name the encounter variants; PlayerSideScheme is its own
+    // printed type. Leader remains distinct even though the expansion rules
+    // make it function as a villain (`pack:mc56:leaders`).
     private static CardKind ToKind(string type) => type switch
     {
         "Insert" => CardKind.Insert,
@@ -446,6 +446,10 @@ public sealed class CardCatalog : ICardFacts
         "Status" => CardKind.Status,
         "Villain" => CardKind.EncounterVillain,
         "SideScheme" => CardKind.EncounterSideScheme,
+        "Leader" => CardKind.Leader,
+        "Evidence" => CardKind.Evidence,
+        "PlayerSideScheme" => CardKind.PlayerSideScheme,
+        "Challenge" => CardKind.Challenge,
 
         // `rr:environment` is a card type of its own -- "an environment card
         // enters play in the villain's play area, and is active so long as it

@@ -532,9 +532,7 @@ public sealed class ContinuousEffects(World world)
 
         return world.Cards.Where(card =>
                 DeckTypes.IsInPlay(card.Area.Type)
-                && FacedownDrones.Kind(card, world.Facts) is CardKind.Hero
-                    or CardKind.AlterEgo or CardKind.Ally or CardKind.Minion
-                    or CardKind.EncounterVillain
+                && CardKinds.IsCharacter(FacedownDrones.Kind(card, world.Facts))
                 && StateFields.Modified(
                     world, card, "is_infinite_health", world.Facts, world.Players) <= 0
                 && health.Where(effect => effect.AppliesTo(world, card))
@@ -547,7 +545,7 @@ public sealed class ContinuousEffects(World world)
     /// <summary>Maximum hit points before a state change can alter constants.</summary>
     public IReadOnlyDictionary<int, long> CaptureCharacterHealth() => world.Cards
         .Where(card => DeckTypes.IsInPlay(card.Area.Type)
-            && IsCharacter(FacedownDrones.Kind(card, world.Facts)))
+            && CardKinds.IsCharacter(FacedownDrones.Kind(card, world.Facts)))
         .OrderBy(card => card.ObjectId)
         .ToDictionary(
             card => card.ObjectId,
@@ -577,7 +575,7 @@ public sealed class ContinuousEffects(World world)
             }
             var card = world.Cards[id];
             if (!DeckTypes.IsInPlay(card.Area.Type)
-                || !IsCharacter(FacedownDrones.Kind(card, world.Facts)))
+                || !CardKinds.IsCharacter(FacedownDrones.Kind(card, world.Facts)))
             {
                 continue;
             }
@@ -592,10 +590,6 @@ public sealed class ContinuousEffects(World world)
         }
         return suspended;
     }
-
-    private static bool IsCharacter(CardKind kind) => kind is CardKind.Hero
-        or CardKind.AlterEgo or CardKind.Ally or CardKind.Minion
-        or CardKind.EncounterVillain;
 
     private bool SettleHealthDefeat(Card card, string trigger, List<GameEvent> events)
     {
@@ -1015,7 +1009,7 @@ public sealed class ContinuousEffects(World world)
             // effect ends and its damage is now at least its hit points, that
             // character is defeated. Other restored cards here regained a
             // zero-use keyword and follow that keyword's discard rule.
-            if (IsCharacter(FacedownDrones.Kind(card, world.Facts))
+            if (CardKinds.IsCharacter(FacedownDrones.Kind(card, world.Facts))
                 && StateFields.Modified(
                     world, card, "is_infinite_health", world.Facts, world.Players) <= 0
                 && card.Damage >= Play.Damage.Health(world, world.Facts, card))

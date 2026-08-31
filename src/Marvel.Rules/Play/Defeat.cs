@@ -157,7 +157,14 @@ public static class Defeat
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(events);
 
-        switch (FacedownDrones.Kind(card, facts))
+        var kind = FacedownDrones.Kind(card, facts);
+        if (CardKinds.IsVillain(kind))
+        {
+            VillainStage(world, facts, card, trigger, events);
+            return;
+        }
+
+        switch (kind)
         {
             case CardKind.Ally:
             case CardKind.Minion:
@@ -165,10 +172,6 @@ public static class Defeat
                 // minion is the encounter discard. Unless it is worth points.
                 MoveDefeatedCard(world, facts, card, trigger, events);
 
-                return;
-
-            case CardKind.EncounterVillain:
-                VillainStage(world, facts, card, trigger, events);
                 return;
 
             case CardKind.Hero:
@@ -181,7 +184,7 @@ public static class Defeat
 
             default:
                 throw new RulesNotImplementedException(
-                    $"a {FacedownDrones.Kind(card, facts)} was defeated, and rr:defeat does not "
+                    $"a {kind} was defeated, and rr:defeat does not "
                     + "say what happens to one");
         }
     }

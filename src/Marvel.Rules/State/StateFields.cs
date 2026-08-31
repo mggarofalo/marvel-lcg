@@ -364,8 +364,13 @@ public static class StateFields
     /// <param name="hasHeldPools">Whether the card has ever registered them.</param>
     public static IEnumerable<string> Keys(CardKind kind, bool hasHeldPools)
     {
-        var registered = Registered.TryGetValue(kind, out var keys) ? keys : [];
-        if (!hasHeldPools || !TokensOnceInPlay.TryGetValue(kind, out var tokens))
+        // Leaders have their own printed kind, but `pack:mc56:leaders` says
+        // they function exactly like villains. Reusing the registered villain
+        // shape also holds the digest spelling stable rather than introducing
+        // a parallel set of keys that could drift.
+        var stateKind = CardKinds.IsVillain(kind) ? CardKind.EncounterVillain : kind;
+        var registered = Registered.TryGetValue(stateKind, out var keys) ? keys : [];
+        if (!hasHeldPools || !TokensOnceInPlay.TryGetValue(stateKind, out var tokens))
         {
             return registered;
         }
@@ -559,7 +564,6 @@ public static class StateFields
 
                 break;
 
-            case CardKind.EncounterVillain:
             case CardKind.Minion:
                 fields["health"] = Remaining(card, facts, players);
                 break;
@@ -573,7 +577,13 @@ public static class StateFields
                 break;
 
             default:
-                // Every other kind reaches play only by being played, which is
+                if (CardKinds.IsVillain(kind))
+                {
+                    fields["health"] = Remaining(card, facts, players);
+                    break;
+                }
+
+                // Every remaining kind reaches play only by being played, which is
                 // the engine's business and not setup's.
                 break;
         }

@@ -16,7 +16,7 @@ namespace Marvel.Rules.Timing;
 public sealed record OccurrenceCard(int Card, CardKind Kind, int Owner, int Controller)
 {
     /// <summary>Whether the participant was a villain.</summary>
-    public bool IsVillain => Kind == CardKind.EncounterVillain;
+    public bool IsVillain => CardKinds.IsVillain(Kind);
 
     /// <summary>Whether the participant was a minion.</summary>
     public bool IsMinion => Kind == CardKind.Minion;

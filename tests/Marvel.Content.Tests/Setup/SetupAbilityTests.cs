@@ -137,19 +137,17 @@ public sealed class SetupAbilityTests
         Assert.Contains(events, happened => happened is FieldSet { Field: "k_threat" });
     }
 
-    [Rule("rr:setup-triggered-ability.2")]
     [Fact]
-    public void ACardNobodyHasReadStopsTheDealRatherThanDealingWithoutIt()
+    public void AChallengeStopsBeforeItsUnimplementedSetupCanDealAPlausibleBoard()
     {
-        // The distinction the whole dataset exists to make, at the one moment
-        // it is most expensive to get wrong. A scenario whose main scheme
-        // nobody has read would otherwise deal a board quietly missing whatever
-        // its first card said, and every later assertion would be about a
-        // different game.
+        // The Ground is Lava modifies setup and play. Leaving its Challenge
+        // card inert in RemovedArea would let the scenario continue as a
+        // different game, so the product boundary refuses before setup begins.
         var refused = Assert.Throws<RulesNotImplementedException>(
             () => Deal("2401_the_ground_is_lava", AuthoredCards.Runner()));
 
-        Assert.Contains("is being set up", refused.Message, StringComparison.Ordinal);
+        Assert.Contains("Challenge", refused.Message, StringComparison.Ordinal);
+        Assert.Contains("setup and rules modifiers", refused.Message, StringComparison.Ordinal);
     }
 
     [Fact]
