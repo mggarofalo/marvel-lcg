@@ -1,4 +1,6 @@
 using System.Net.Http.Headers;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using Marvel.Rulings.Harvest;
 using Marvel.Tests;
@@ -23,14 +25,15 @@ switch (verb)
         {
             string from = args.Length > 1 ? args[1] : Path.Combine(dataset, "pages");
             string into = args.Length > 2 ? args[2] : dataset;
-            if (!TryRead(from, pages, out var rulings))
+            if (!TryRead(from, pages, out var rulings, out var pageBytes))
             {
-                return 0;
+                return 1;
             }
 
             string harvested = args.Length > 3 ? args[3] : Harvested(Path.Combine(dataset, "rulings.json"));
             Directory.CreateDirectory(into);
-            File.WriteAllText(Path.Combine(into, "rulings.json"), Emit.Json(rulings, harvested));
+            File.WriteAllBytes(Path.Combine(into, "rulings.json"), Emit.JsonBytes(rulings, harvested));
+            File.WriteAllBytes(Path.Combine(into, "pages.manifest.json"), Emit.ManifestBytes(pageBytes));
             Console.Error.WriteLine($"wrote {rulings.Count} rulings into {into}");
             return 0;
         }
@@ -38,7 +41,13 @@ switch (verb)
     case "check":
         {
             string from = args.Length > 1 ? args[1] : Path.Combine(dataset, "pages");
-            if (!TryRead(from, pages, out var rulings))
+            bool pinned = args.Length <= 1;
+            if (pinned && !VerifyManifest(dataset, pages))
+            {
+                return 1;
+            }
+
+            if (!TryRead(from, pages, out var rulings, out _))
             {
                 // A local acquisition cache is optional. The committed pages
                 // are not: CI's offline gate must fail if its input vanished.
@@ -62,7 +71,11 @@ switch (verb)
         return 2;
 }
 
-static bool TryRead(string directory, IReadOnlyList<Page> pages, out IReadOnlyList<Ruling> rulings)
+static bool TryRead(
+    string directory,
+    IReadOnlyList<Page> pages,
+    out IReadOnlyList<Ruling> rulings,
+    out IReadOnlyDictionary<Page, byte[]> pageBytes)
 {
     var missing = pages.Where(page => !File.Exists(Path.Combine(directory, page.FileName))).ToList();
     if (missing.Count > 0)
@@ -70,18 +83,23 @@ static bool TryRead(string directory, IReadOnlyList<Page> pages, out IReadOnlyLi
         Console.Error.WriteLine(
             $"no complete Hall of Heroes harvest at {directory}; rulings are unavailable, not empty");
         rulings = [];
+        pageBytes = new Dictionary<Page, byte[]>();
         return false;
     }
 
-    rulings = pages.SelectMany(page =>
-        Harvest.Read(File.ReadAllText(Path.Combine(directory, page.FileName)), page)).ToList();
+    var bytes = pages.ToDictionary(
+        page => page,
+        page => File.ReadAllBytes(Path.Combine(directory, page.FileName)));
+    var utf8 = new UTF8Encoding(false, true);
+    rulings = pages.SelectMany(page => Harvest.Read(utf8.GetString(bytes[page]), page)).ToList();
+    pageBytes = bytes;
     return true;
 }
 
 static int Parity(IReadOnlyList<Ruling> candidate, string committedPath)
 {
-    string committedText = File.ReadAllText(committedPath);
-    using var committedJson = JsonDocument.Parse(committedText);
+    byte[] committedBytes = File.ReadAllBytes(committedPath);
+    using var committedJson = JsonDocument.Parse(committedBytes);
     var committed = committedJson.RootElement.GetProperty("rulings").EnumerateArray()
         .ToDictionary(
             item => item.GetProperty("id").GetString()!,
@@ -103,10 +121,10 @@ static int Parity(IReadOnlyList<Ruling> candidate, string committedPath)
     foreach (string id in added) Console.WriteLine($"  added    {id}");
     foreach (string id in revised) Console.WriteLine($"  revised  {id}");
     foreach (string id in removed) Console.WriteLine($"  removed  {id}");
-    bool sameIndex = string.Equals(
-        Emit.Json(candidate, committedJson.RootElement.GetProperty("harvested").GetString()!),
-        committedText,
-        StringComparison.Ordinal);
+    byte[] candidateBytes = Emit.JsonBytes(
+        candidate,
+        committedJson.RootElement.GetProperty("harvested").GetString()!);
+    bool sameIndex = candidateBytes.AsSpan().SequenceEqual(committedBytes);
     if (!sameIndex && added.Count == 0 && revised.Count == 0 && removed.Count == 0)
     {
         Console.WriteLine("  index differs without a ruling content change");
@@ -122,8 +140,52 @@ static string Harvested(string committedPath)
         throw new InvalidOperationException("the first write requires an explicit harvest date");
     }
 
-    using var committed = JsonDocument.Parse(File.ReadAllText(committedPath));
+    using var committed = JsonDocument.Parse(File.ReadAllBytes(committedPath));
     return committed.RootElement.GetProperty("harvested").GetString()!;
+}
+
+static bool VerifyManifest(string dataset, IReadOnlyList<Page> pages)
+{
+    string manifestPath = Path.Combine(dataset, "pages.manifest.json");
+    if (!File.Exists(manifestPath))
+    {
+        Console.Error.WriteLine($"no vendored page manifest at {manifestPath}");
+        return false;
+    }
+
+    using var manifest = JsonDocument.Parse(File.ReadAllBytes(manifestPath));
+    var expected = manifest.RootElement.GetProperty("files").EnumerateArray()
+        .ToDictionary(
+            file => file.GetProperty("path").GetString()!,
+            file => (
+                Bytes: file.GetProperty("bytes").GetInt64(),
+                Hash: file.GetProperty("hash").GetString()!),
+            StringComparer.Ordinal);
+    bool valid = expected.Count == pages.Count;
+    foreach (Page page in pages)
+    {
+        string relative = "pages/" + page.FileName;
+        string path = Path.Combine(dataset, "pages", page.FileName);
+        if (!expected.TryGetValue(relative, out var pin) || !File.Exists(path))
+        {
+            Console.Error.WriteLine($"  unpinned or missing  {relative}");
+            valid = false;
+            continue;
+        }
+
+        byte[] bytes = File.ReadAllBytes(path);
+        string hash = "sha256:" + Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
+        if (bytes.LongLength != pin.Bytes || !string.Equals(hash, pin.Hash, StringComparison.Ordinal))
+        {
+            Console.Error.WriteLine($"  page differs         {relative}");
+            valid = false;
+        }
+    }
+
+    Console.WriteLine(valid
+        ? $"verified {pages.Count} vendored page hashes"
+        : "vendored page manifest does not match");
+    return valid;
 }
 
 static async Task<int> Fetch(string into, IReadOnlyList<Page> pages)
@@ -131,20 +193,20 @@ static async Task<int> Fetch(string into, IReadOnlyList<Page> pages)
     using var client = new HttpClient();
     client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("marvel-lcg-rulings-harvester", "1.0"));
     client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("(+https://github.com/mggarofalo/marvel-lcg)"));
-    var fetched = new Dictionary<Page, string>();
+    var fetched = new Dictionary<Page, byte[]>();
     foreach (Page page in pages)
     {
         var uri = new Uri("https://" + page.Via);
-        fetched[page] = await client.GetStringAsync(uri);
+        fetched[page] = await client.GetByteArrayAsync(uri);
         Console.Error.WriteLine($"fetched {uri}");
     }
 
     // A failed request leaves an existing cache intact rather than mixing
     // pages from two observations into one plausible-looking harvest.
     Directory.CreateDirectory(into);
-    foreach ((Page page, string html) in fetched)
+    foreach ((Page page, byte[] html) in fetched)
     {
-        await File.WriteAllTextAsync(Path.Combine(into, page.FileName), html);
+        await File.WriteAllBytesAsync(Path.Combine(into, page.FileName), html);
     }
 
     return 0;

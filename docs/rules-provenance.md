@@ -141,6 +141,11 @@ dotnet run --project tools/Marvel.Cards.Extract -- check
 dotnet run --project tools/Marvel.Rulings.Harvest -- check
 ```
 
+The rulings check has two pins: `pages.manifest.json` holds every source page
+byte to SHA-256, then `rulings.json` holds the parser output to explicit UTF-8
+without a byte-order mark. A candidate cache passed as an argument is compared
+semantically, without pretending an absent optional cache is an empty source.
+
 A refresh is a reviewable act. `datasets/marvelsdb/UPSTREAM.md` is already
 explicit that refreshing changes printed text and therefore every spec authored
 from it — that is a feature of this design, not a hazard, because the next step

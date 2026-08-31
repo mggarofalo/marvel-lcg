@@ -13,7 +13,7 @@ committed so the index can be regenerated and checked offline.
 |---|---|
 | Upstream | https://hallofheroeslcg.com |
 | Harvested | 2026-08-31 |
-| Latest observed ruling | 2026-03 |
+| Latest observed ruling | 2026-08 |
 | Harvester | `tools/Marvel.Rulings.Harvest` |
 
 ## What is here
@@ -23,13 +23,14 @@ pages/official-ffg-rulings.html  pre-RRG 1.5 compendium, grouped by product
 pages/post-rrg-1-5.html          chronological rulings scoped to RRG 1.5
 pages/post-rrg-1-6.html          chronological rulings scoped to RRG 1.6
 pages/post-rrg-1-7.html          chronological rulings scoped to RRG 1.7 and 1.8
-rulings.json                     citable index derived from those four files
+pages.manifest.json              byte length and SHA-256 of every vendored page
+rulings.json                     1,100 citable entries derived from those pages
 ```
 
 There is no post-1.8 page. Hall of Heroes titles the last source “post-RRG 1.7
 & 1.8”, so its URL is recorded explicitly rather than constructed by pattern.
 
-The captured page hashes are:
+`pages.manifest.json` is the machine-readable pin. Its captured page hashes are:
 
 ```
 8fc4a5b08e2bf8b46004a0fbfb89aeb369fb24e53dbbaa5298b70ca928679b3b  official-ffg-rulings.html
@@ -46,6 +47,19 @@ question. Reordering a page leaves it alone; editing the question deliberately
 changes it. The separate `hash` covers the question, answer, attribution,
 scope, observed month, and linked MarvelCDB card codes. An answer edit keeps the
 id and is reported as **revised**.
+
+The chronological pages use three source shapes: question blockquotes followed
+by paragraph or list answers; question blockquotes followed by answer
+blockquotes; and bare paragraph questions followed by answer blockquotes. Lists
+can nest. The parser retains the complete question/answer pair in every shape.
+
+An attribution date normally supplies `observed`. Month headings are checked as
+an independent sanity check: later bylines are accepted because Hall of Heroes
+does not always add a heading when appending a month, but a byline that moves
+backward fails the harvest unless it is an audited correction. The one current
+correction is a ruling grouped under February 2026 whose byline transcribes
+“February 20, 2025”; the grouping and surrounding chronology establish
+`2026-02`.
 
 Attributions are normalized to the full established byline where the page uses
 short forms such as `-Caleb`, `-Alex`, or `-Boggs`. `via` names Hall of Heroes
@@ -64,10 +78,16 @@ dotnet run --project tools/Marvel.Rulings.Harvest -- write /tmp/hall-of-heroes /
 ```
 
 `check` distinguishes added, revised, and removed ids against the committed
-snapshot. With no complete local harvest it reports that rulings are
-unavailable and exits successfully: absence is not misrepresented as an empty
-upstream corpus. CI uses the committed `pages/` input, so its gate is entirely
-offline and catches a hand edit to either leg.
+snapshot. An explicitly named candidate cache is optional: if it is incomplete,
+the command reports that rulings are unavailable and exits successfully rather
+than misrepresenting absence as an empty upstream corpus. `write` always fails
+for incomplete input.
+
+The no-argument committed check is stricter. It first hashes the raw page bytes
+against `pages.manifest.json`, then compares the regenerated `rulings.json`
+bytes. The JSON wire format is UTF-8 without a byte-order mark and uses LF on
+every platform. CI therefore remains entirely offline while detecting a hand
+edit to either the source pages or derived index on both Windows and Linux.
 
 Read the HTML and JSON diffs before replacing the pin and harvest date. A moved
 ruling is an authority change, not a routine data sync.

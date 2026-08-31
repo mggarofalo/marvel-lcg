@@ -6,6 +6,42 @@ namespace Marvel.Rulings.Harvest;
 
 internal static partial class Html
 {
+    public static IReadOnlyList<Block> Blocks(string html)
+    {
+        var blocks = new List<Block>();
+        int offset = 0;
+        while (OpenBlock().Match(html, offset) is { Success: true } opening)
+        {
+            string tag = opening.Groups[1].Value.ToLowerInvariant();
+            int depth = 0;
+            Match? closing = null;
+            foreach (Match candidate in BlockTag().Matches(html, opening.Index))
+            {
+                if (!string.Equals(candidate.Groups[2].Value, tag, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                depth += candidate.Groups[1].Success ? -1 : 1;
+                if (depth == 0)
+                {
+                    closing = candidate;
+                    break;
+                }
+            }
+
+            if (closing is null)
+            {
+                throw new InvalidDataException($"unclosed <{tag}> block");
+            }
+
+            blocks.Add(new Block(tag, html[opening.End()..closing.Index]));
+            offset = closing.Index + closing.Length;
+        }
+
+        return blocks;
+    }
+
     public static string Text(string html)
     {
         string withBreaks = BreakTag().Replace(html, " ");
@@ -49,29 +85,28 @@ internal static partial class Html
         return items;
     }
 
-    public static string? Observed(string attribution, string? section)
+    public static string? AttributionMonth(string attribution)
     {
         Match date = Date().Match(attribution);
-        if (date.Success && DateTime.TryParse(
+        return date.Success && DateTime.TryParse(
             date.Value,
             CultureInfo.InvariantCulture,
             DateTimeStyles.AllowWhiteSpaces,
-            out DateTime parsed))
-        {
-            return parsed.ToString("yyyy-MM", CultureInfo.InvariantCulture);
-        }
+            out DateTime parsed)
+            ? parsed.ToString("yyyy-MM", CultureInfo.InvariantCulture)
+            : null;
+    }
 
-        Match month = Month().Match(section ?? "");
-        if (month.Success && DateTime.TryParse(
+    public static string? SectionMonth(string section)
+    {
+        Match month = Month().Match(section);
+        return month.Success && DateTime.TryParse(
             month.Value,
             CultureInfo.InvariantCulture,
             DateTimeStyles.AllowWhiteSpaces,
-            out parsed))
-        {
-            return parsed.ToString("yyyy-MM", CultureInfo.InvariantCulture);
-        }
-
-        return null;
+            out DateTime parsed)
+            ? parsed.ToString("yyyy-MM", CultureInfo.InvariantCulture)
+            : null;
     }
 
     [GeneratedRegex("<br\\s*/?>", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
@@ -91,4 +126,17 @@ internal static partial class Html
 
     [GeneratedRegex("(?:January|February|March|April|May|June|July|August|September|October|November|December)[,:]?\\s+20\\d{2}", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex Month();
+
+    [GeneratedRegex("<(h2|blockquote|p|ol|ul)\\b[^>]*>", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex OpenBlock();
+
+    [GeneratedRegex("<(/)?(h2|blockquote|p|ol|ul)\\b[^>]*>", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex BlockTag();
+}
+
+internal sealed record Block(string Tag, string Body);
+
+internal static class MatchExtensions
+{
+    public static int End(this Match match) => match.Index + match.Length;
 }

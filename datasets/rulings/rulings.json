@@ -961,11 +961,11 @@
       "source": "Alex Werner (FFG Game Rules Specialist)",
       "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-7/",
       "rrg_scope": "1.7-1.8",
-      "observed": "2025-02",
+      "observed": "2026-02",
       "section": "February, 2026",
       "cards": [],
       "kind": "rules",
-      "hash": "sha256:218c122374467db184772e56eeb6a86837e2ccf7363f265e2cc8fa8452c00e7c"
+      "hash": "sha256:29a9e917bc50dd403854ff5a449b3eed5987b6110d4d159279ff8230fc129a9c"
     },
     {
       "id": "ruling:123a79b5c8900e0c",
@@ -1204,7 +1204,7 @@
     {
       "id": "ruling:1556ded110ced4b1",
       "question": "104 \u2013 We have some questions about the new minion, Malice. 1.Can you blank the text box on Malice while it\u2019s attached to an ally turned minion? And if so does this cause the minion to turn back into an ally? 2.Is Malice still considered a minion while attached to an ally? 3.Can you attack the Malice minion while it\u2019s attached to an ally? 4.Can you discard/defeat her while she\u2019s attached with cards which do explicitly that such as the Nova Prime ally or the Take out the guards player side scheme?",
-      "answer": "These are some good questions for the Malice minion, some of which we hadn\u2019t considered before. Here are our current rulings on her. Yes, you can blank Malice while she\u2019s attached to any ally-minion; if you do, Malice\u2019s ability stating the ally is a minion is inactive, meaning the ally-minion will revert to being an ally for the duration of the blanking ability, and can be used as an ally during that time. Yes, Malice still has the minion card type while attached.",
+      "answer": "These are some good questions for the Malice minion, some of which we hadn\u2019t considered before. Here are our current rulings on her. Yes, you can blank Malice while she\u2019s attached to any ally-minion; if you do, Malice\u2019s ability stating the ally is a minion is inactive, meaning the ally-minion will revert to being an ally for the duration of the blanking ability, and can be used as an ally during that time. Yes, Malice still has the minion card type while attached. Yes, Malice can be attacked while attached to an ally. Note, Malice cannot be defeated more than once per instance of her\u2014in other words, you can only trigger her \u201CWhen Defeated\u201D once between the time she enters play and leaves play. (She doesn\u2019t leave play when she attaches.) So although she can be attacked and targeted, she will not unattach or leave play unless the ally she\u2019s attached to leaves play, or she\u2019s discarded (see below). Also note, Malice is still a \u201Cminion\u201D and \u201Cenemy,\u201D but she\u2019s not considered engaged with you while she\u2019s attached, and will not activate. Yes, you can discard Malice while she\u2019s attached (e.g. via Take Out the Guards), but you can\u2019t \u201Cdefeat\u201D Malice while she\u2019s attached.",
       "source": "Alex Werner (FFG Game Rules Specialist)",
       "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-5/",
       "rrg_scope": "1.5",
@@ -1212,7 +1212,7 @@
       "section": "October, 2023",
       "cards": [],
       "kind": "rules",
-      "hash": "sha256:80e1c5725da167ec5f24ecf1979633aa0eb60f94b8ebb7185c376ffbe3b90681"
+      "hash": "sha256:43eab632b3ecb2746cb2e859cb966340f4839678841f93afbdfb71ec5d38266b"
     },
     {
       "id": "ruling:156885dfd061ec09",
@@ -1412,7 +1412,7 @@
     {
       "id": "ruling:1b36735a9a85d417",
       "question": "1. With the Jefferson davis support cards action ability, If the main scheme has 0 threat on it and a side scheme in play has 1 threat on it, which scheme is considered to have the least? 2.With a boost card like jolt of adrenaline that has a boost ability that says to reveal it, is this the same as if it was revealed normally during step 4 of the villain phase and would gain incite 1 from Dial M for mojo? And I could also trigger spycraft? 3.With defending enemy attacks, we want to make sure we are doing it correctly and understand. Please check our understanding Scenario 1 -The villain initiates an attack and I first give it a boost card then play powerful punch. -if that attack was against another player, the attack it now redirected to me -If that 4 damage dealt was enough to defeat the final stage, the game ends and we win. -if that 4 damage dealt was enough to defeat the first stage, the attack continues and recalculates to the ATK of the next stage after immediately advancing it. -My hero is now defending the attack from this point on because of the (defense) label from powerful punch. -I do not have to exhaust to use my basic DEF power at this point to be considered to have defended but I still can if I want to in order to reduce the damage that will be dealt to me \u2013 I can also still play any number of other (defense) cards with the right triggering condition during this attack and only one character can currently be defending. Scenario 2 The villain initiates an attack against me and I give it a boost card I then choose not to use my basic DEF power to defend but at the boost card step, I play defiance to discard the boost card and now I\u2019m defending because of the (defense) label but I won\u2019t reduce any of the damage dealt from the ATK itself. Scenario 3 The villain initiates an attack against me and I give it a boost card. I again choose not to use my basic DEF power, and again at the boost card step I flip the boost card over and it has a boost ability that deals my identity 1 damage so I play side step to prevent that damage and now I\u2019m defending the attack because of the (defense) label and because this was all during this enemy attack. Scenario 4 The villain initiates an attack and I give it a boost card I choose again not to use my basic DEF power and again at the boost card step, I flip over the boost and then play preemptive strike to cancel the boost icons and now I\u2019m defending the attack because of the (defense label) \u2013 I would also redirect the attack towards me had the attack been made against another player and that player had not yet made a defense with either their hero it an ally they control. \u2013 if a defending ally is defeated or leaves play at the boost card step, then the attack is now undefended and only the hero of that allies controller can now defend but only with a (defense) labeled ability. -if a defending hero was defeated during the boost card step then the attack is now undefended and cannot be defended against but the attack will not deal any damage at the end because the target player was eliminated. -If an ally leaves play or is defeated AFTER the boost card step, the attack is still considered defended by that ally. -if a defending ally is defeated with an attack with overkill, your hero can still play a (defense) card like side step to prevent overkill damage but because overkill damage is dealt simultaneously, the hero isn\u2019t considered to have defended as the ally character already did.",
-      "answer": "Jefferson Davis can only target the scheme with the least threat. If the scheme with the least threat happens to be the main scheme with 0, he cannot remove any threat. Yes, when Jolt of Adrenaline\u2019s boost instructs you to reveal it, you should resolve incite X on Dial M for Mojo. And yes, you are able to trigger Spycraft when you reveal Jolt of Adrenaline.",
+      "answer": "Jefferson Davis can only target the scheme with the least threat. If the scheme with the least threat happens to be the main scheme with 0, he cannot remove any threat. Yes, when Jolt of Adrenaline\u2019s boost instructs you to reveal it, you should resolve incite X on Dial M for Mojo. And yes, you are able to trigger Spycraft when you reveal Jolt of Adrenaline. Scenario 1, Scenario 2, Scenario 3, and what I think is the end of Scenario 4 all appear to be correct. A few added notes: Yes, only one character at a time can defend against an attack. Yes, if a defending ally left play during the revealing of boost cards but before damage from the attack was dealt, that ally\u2019s controller would be able to play a defense-traited event and become the new defender if they meet that event\u2019s triggering condition. Otherwise, if the ally is defeated during the step of the enemy attack dealing damage to them, they are considered to have been the defender of the attack. You can play a defense card on an undefended attack against another player to become the defender of that attack. However, you cannot play a defense card if that player was already defending the attack. Yes, you can play Side Step to block Overkill damage being dealt to you. Note that the ally originally defending the attack would still be considered \u201Cthe defender\u201D.",
       "source": "Alex Werner (FFG Game Rules Specialist)",
       "via": "hallofheroeslcg.com/official-ffg-rulings/",
       "rrg_scope": "pre-1.5",
@@ -1420,7 +1420,7 @@
       "section": "Expansion card questions",
       "cards": [],
       "kind": "rules",
-      "hash": "sha256:31c2e0405961bf1010266829d504b575ddc3c473f6ac252648b957685131819a"
+      "hash": "sha256:0239f9a7d865474fa31a61fbb111af25a58b0512d8c21e7b82e445c586165f6e"
     },
     {
       "id": "ruling:1b420f298dc7b045",
@@ -1633,7 +1633,7 @@
     {
       "id": "ruling:1fc1a3ff38a01231",
       "question": "I was wondering what would happen if I played defender of the nine realms or looking for trouble while I was confused and didn\u2019t find a minion when discarding cards from the encounter deck? It seems I\u2019m unable to pay the second part of the cost but I am also past the point of aborting and paying no costs from the initiating abilities section on page 17 step 4 of the rules. So I\u2019m not sure if I clear the confused status card?",
-      "answer": "Under \u201CEncounter Deck\u201D in the online rules reference, there\u2019s a rule stating that if the encounter deck is emptied because a card ability discarded cards from it searching for a card with specific criteria (\u201Ca minion\u201D), that card ability is considered fulfilled.",
+      "answer": "Under \u201CEncounter Deck\u201D in the online rules reference, there\u2019s a rule stating that if the encounter deck is emptied because a card ability discarded cards from it searching for a card with specific criteria (\u201Ca minion\u201D), that card ability is considered fulfilled. For that, you\u2019d be able to remove Confused with Defender of the Nine Realms if you paid its cost by either discarding \u0026 engaging a minion from the encounter deck, or emptying the encounter deck while attempting to pay that card\u2019s cost. If you end up emptying the encounter deck this way, be sure to place an acceleration token on the main scheme before discarding Confused.",
       "source": "Alex Werner (FFG Game Rules Specialist)",
       "via": "hallofheroeslcg.com/official-ffg-rulings/",
       "rrg_scope": "pre-1.5",
@@ -1641,7 +1641,7 @@
       "section": "Expansion card questions",
       "cards": [],
       "kind": "rules",
-      "hash": "sha256:5108eb106204ef46c716a5f6e56dc3be4f0b6beff5bc9070a3880f9065e67e32"
+      "hash": "sha256:3898397e064673afa7957ddb4aa57129829834255af63e81fc620d895da68614"
     },
     {
       "id": "ruling:1fc96b68f1eb976c",
@@ -1672,7 +1672,7 @@
     {
       "id": "ruling:203110648122e3a0",
       "question": "1. Shadowcat is stunned. Can I play Shadowcat Surprise (while in player phase) to get rid of the Stunned condition and the still ready? During the villain phase, can I play Powerful Punch while in solid form, to discard Stunned, flip over to Phased form, and defend and take no damage? 2. We understand, that you can defend for another player by exhausting your identity and using your basic defense to defend for them. The issue is this. I am playing a Protection Deck, and I use the following cards: Mutant Protectors, Powerful Punch, Preemptive Strike, Shadow and Steel, Quick Shift, and warning. Can I defend for another player, without exhausting my identity, and using one of these cards? If possible could you help with the timing on this. 3. Will there be an updated Rules Reference Guide coming soon, as the current one is from April of 2021?",
-      "answer": "The timing of when to play each card \u0026 become a defender depends on the card. When a villain initiates an attack against another player, you may either exhaust to declare yourself defender of the attack, or play a Defense -traited event with that specific timing window as a way of declaring yourself defender without exhausting (e.g. Powerful Punch, Shadow and Steel, Quick Shift). Mutant Protectors is also played at this time, but it specifically makes the X-Men ally put into play the defender of the attack. If you did not have a card you could play in that window, the attack would have to instead be undefended up until the point in which you played that card, since only one character can defend an attack at a time. (Ex. Preemptive Strike can only be played when a boost card is turned faceup; you would become the defender of the attack upon playing it, and you would then be the target that attack\u2019s damage. Currently Warning has an errata where it\u2019s no longer a Defense -traited event. Without the Defense trait, you cannot use it to become the defender of an attack. The developers are working on a Rules Reference update. That\u2019s all I can say at this time.",
+      "answer": "To discard Stunned with an attack event, you must pay any costs on the card, then replace all that card\u2019s \u201Ceffects\u201D with the removal of Stunned. You would not be able to ready with Shadowcat Surprise if you were also removing Stunned. If you played Powerful Punch to discard Stunned, you would not flip your mass form because removing Stunned replaced your attack. You would still be in Solid form while the villain attacked. It\u2019s possible to play Defense -traited cards and defend for another player without exhausting your identity. However, you would not reduce the damage you\u2019d take by your DEF stat unless the card you played stated such. The timing of when to play each card \u0026 become a defender depends on the card. When a villain initiates an attack against another player, you may either exhaust to declare yourself defender of the attack, or play a Defense -traited event with that specific timing window as a way of declaring yourself defender without exhausting (e.g. Powerful Punch, Shadow and Steel, Quick Shift). Mutant Protectors is also played at this time, but it specifically makes the X-Men ally put into play the defender of the attack. If you did not have a card you could play in that window, the attack would have to instead be undefended up until the point in which you played that card, since only one character can defend an attack at a time. (Ex. Preemptive Strike can only be played when a boost card is turned faceup; you would become the defender of the attack upon playing it, and you would then be the target that attack\u2019s damage. Currently Warning has an errata where it\u2019s no longer a Defense -traited event. Without the Defense trait, you cannot use it to become the defender of an attack. The developers are working on a Rules Reference update. That\u2019s all I can say at this time.",
       "source": "Alex Werner (FFG Game Rules Specialist)",
       "via": "hallofheroeslcg.com/official-ffg-rulings/",
       "rrg_scope": "pre-1.5",
@@ -1680,7 +1680,7 @@
       "section": "Shadowcat",
       "cards": [],
       "kind": "rules",
-      "hash": "sha256:7be683acbff2f74b18362099024dd21bbd0b06f8e464de79fa779401875ae26f"
+      "hash": "sha256:76ae881b1047bbf83705ab4dfb79e1b0daf1dfdda0ed5cf3bc413ce7985ec827"
     },
     {
       "id": "ruling:20353696d669e83d",
@@ -1709,9 +1709,22 @@
       "hash": "sha256:fad65e78cf78cc82b945c490c3099da6a371217540e20da3b451f3ededc245f8"
     },
     {
+      "id": "ruling:214f4f7ab3c9c2f1",
+      "question": "182 \u2013 I wanted to clarify a couple card functions, mostly player cards: 1) Cable\u2019s Temporal Leap, how does this work exactly? If the main scheme has 6 out of 7 threat and the villain schemes for 6, would the players still lose because Temporal Leap removes 4 and leaves 8 threat on the main scheme? 2) Ironheart v3, is the Maximum Efficiency hero ability intended to be limit once per phase/round or can it be used for each progress counter available? 3) Rogue\u2019s Energy Transfer, can this target the character that Touched is already attached to? It would seem to be a valid target and allow Rogue to ready if exhausted. 4) Can the hero action on Search for Spiral side scheme (Take 2 damage. Remove 3 threat) be used more than once per phase?",
+      "answer": "Yes. Temporal Leap can be resolved when the main scheme completing is imminent, but before the threat is physically placed on the main scheme. It\u2019s possible to use Temporal Leap\u2019s ability there, then place the pending threat on the main scheme and still lose. There is no limit on Ironheart V3\u2019s Maximum Efficiency ability; you can use it for as many progress counters you have on her. Just note that each time you do so is a separate action. No. Energy Transfer\u2019s ability cost requires Rogue to attach Touched to a character, and an upgrade can\u2019t attach to a character it\u2019s already attached to. Yes; the Hero Action on The Search for Spiral can be performed multiple times in a phase (both with and without its erratum).",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-5/",
+      "rrg_scope": "1.5",
+      "observed": "2024-05",
+      "section": "2024",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:51c661ee69141cc7687246fc042dd5f7ddaa8a64ab3ea64f95001387d7251b77"
+    },
+    {
       "id": "ruling:218bb67093e9682e",
       "question": "We recently heard that Heroic Strike has to deal its damage to an enemy for the player to be able to stun \u201Cthat enemy.\u201D 1. This ruling ( https://hallofheroeslcg.com/latest-ffg-rulings/#127 ) seems to say the opposite about a similar situation, are these in conflict? 2. Is the stun from Heroic Strike only prevented in cases where the damage \u201Cdealt\u201D is replaced (like Bell Tower or Armored Rhino Suit), or is it also prevented in the case where damage \u201Ctaken\u201D is replaced (like Tough or Magnetic Bubble), and/or where the damage is reduced to 0 (like Wide Stance x6), and/or where the damage is prevented (like Temporal Shield), and/or when the target \u201Ccannot take damage\u201D (like Sanctuary)? 3. Psychic Assault, Swinging Web Pig, Phased Strike, and Web-Trap are worded very similarly to Heroic Strike. Do they work in the same way? 4. What about Drop Kick? If I pay for it with all physical and all 4 of its damage doesn\u2019t land, do I stun the enemy? can I draw a card? 5. Can I play Tackle or Concussive Blow against a stalwart or already-statused enemy, damaging it if I paid the appropriate resource type? (similarly, can Vision play Phase Disruption against a Stalwart enemy to discard an attachment?) 6. How does Sonic Rifle work? Can I deal 3 damage to \u201Cthat enemy\u201D if i did not confuse it?",
-      "answer": "For the linked ruling, Venom Blast dealt damage to 1 specific target, and that target become \u201Cthat enemy\u201D for being able to \u201Cstun that enemy.\u201D The difference with Bell Tower is that the target of the Heroic Strike attack was directed at Bell Tower, which is not an enemy, and cannot be Stunned. Also, if you paid for Drop Kick with only physical resources but dealt its damage to Bell Tower instead, you\u2019d still be able to draw the card, because the card draw is not dependent on there being a targeted enemy. Yes, you can play Phase Disruption and target on a Stalwart Enemy.",
+      "answer": "For the linked ruling, Venom Blast dealt damage to 1 specific target, and that target become \u201Cthat enemy\u201D for being able to \u201Cstun that enemy.\u201D The difference with Bell Tower is that the target of the Heroic Strike attack was directed at Bell Tower, which is not an enemy, and cannot be Stunned. As long as the damage was dealt to a targeted enemy, that enemy can be Stunned with Heroic Strike. Maybe it would help to phrase it as, an enemy must be the target of the damage from Heroic Strike, whether or not that damage is taken/applied. Each of the mentioned cards do not prevent the enemy from being the target of the damage (and therefore \u201Cdealt the damage\u201D) except Armored Rhino Suit , which specifically replaces the dealing of damage. Yes, they work similarly. If their damage was dealt to a targeted enemy, their secondary effects can also apply to that enemy. Yes, Drop Kick works just like the others, you\u2019d be able to stun the targeted enemy and draw 1 card regardless of if the damage was all \u201Ctaken.\u201D Also, if you paid for Drop Kick with only physical resources but dealt its damage to Bell Tower instead, you\u2019d still be able to draw the card, because the card draw is not dependent on there being a targeted enemy. Yes, you can play Tackle and target a Stalwart/\u201Cunstunnable\u201D enemy. Yes, you can play Phase Disruption and target on a Stalwart Enemy. Your two options with Sonic Rifle are either to Confuse an enemy, or deal 3 damage to an already Confused enemy. You could not deal 3 damage to an enemy that isn\u2019t (or can\u2019t be) Confused.",
       "source": "Alex Werner (FFG Game Rules Specialist)",
       "via": "hallofheroeslcg.com/official-ffg-rulings/",
       "rrg_scope": "pre-1.5",
@@ -1721,7 +1734,7 @@
         "01098"
       ],
       "kind": "card",
-      "hash": "sha256:29bc8633801e1f42e58d72601af2b485ed419cbc6a24f87385b209217b87bb43"
+      "hash": "sha256:53f5f1ee5da1d517494250bc021f38286cbd324ba8dffe3dd4da750b3fae27e8"
     },
     {
       "id": "ruling:21a962dd61f4ec73",
@@ -1982,6 +1995,19 @@
       "cards": [],
       "kind": "rules",
       "hash": "sha256:dc458a58d70f867953bef2afaa528d25e0a6861aeadb1096404ad550278401ba"
+    },
+    {
+      "id": "ruling:26154bab901e16ec",
+      "question": "1.Do cards like \u201Cmake the call\u201D and \u201Cacross the spider-verse\u201D allow you to ignore the requirement keyword cost of an ally because your putting into play vs playing it? 2.Can you use \u201Cclarity of purpose\u201D attached to the hero \u201CSpider-ham\u201D with 0 toon counters on him and then trigger his response and use that same toon counter along with that wild resource previously generated by clarity of purpose all at the same time for paying for a two cost card for example.",
+      "answer": "Make the Call would allow you to ignore the Requirement keyword on an ally, because you are instructed to \u201Cpay the printed cost\u201D to \u201Cput the character into play\u201D, which is distinct from paying its cost and playing it from your hand. Across the Spider-Verse is similar in that you could ignore the Requirement keyword with it as well. No, that interaction wouldn\u2019t work. Resources paid for a cost are paid simultaneously, and responses to effects generating resources happen after that cost has been fully paid. Therefore, Spider-Nonsense will not resolve until after the full cost of the card has been paid, and won\u2019t be available for use in paying that cost.",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/official-ffg-rulings/",
+      "rrg_scope": "pre-1.5",
+      "observed": null,
+      "section": "Expansion card questions",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:7dec42398e9023d705c8717e7c034a0afef38f6f512334db8f0f9e28984de721"
     },
     {
       "id": "ruling:2628ce030d037ccd",
@@ -2374,6 +2400,19 @@
       "hash": "sha256:4fb716f67e2e27e81872ec726020a1db0182e6397657f63977c144c9a541bda2"
     },
     {
+      "id": "ruling:2d8ab6c21030fbad",
+      "question": "I wanted to ask you guys to consider a rule change. In regards to preventing damage as a cost. For example with \u201CFocused rage\u201D or \u201CSpider Tingle\u201D. You guys say that using a card like \u201Cenergy barrier\u201D along with those cards prevents the cost and therefore the ability doesn\u2019t work. But another way of looking at it, is that you didn\u2019t actually prevent that cost, the damage still had to be dealt with and it would create a way more fun player experience and open up cool combos if you guys went a different direction with this. What do you think? If you look at the SP//DR hero pack and the preconstructed deck for example, there are negative play experiences , like if you have the \u201Cforcefield generator\u201D in play with 6 counters and only your hero in play you can\u2019t use \u201Cspider tingle\u201D or play \u201Cthwip thwip\u201D. How cool would it be to combo these cards to block the damage that came your way or even use the \u201Cenergy barrier\u201D to pop a pesky minion or tough status card?! I meant \u201Cforcefield generator\u201D not \u201Cenergy shield\u201D ha (that\u2019s not a card) and it being a forced interrupt",
+      "answer": "We are issuing a new ruling that is relative to this interaction. We are choosing to distinguish the phrases \u201C deal X damage\u201D and \u201C take X damage\u201D when used in the costs of player cards. If a player card requires you to \u201C deal X damage\u201D to a target, the damage does not all have to be applied to the target for that card\u2019s cost to be considered paid. An example is Karmic Blast, which deals 4 damage to a target as part of its \u201Ccost.\u201D That 4 damage can be in excess of the target\u2019s health, or can be subjected to damage-reducing effects, and in either case still have its cost considered paid. On cards that require you to \u201Ctake X damage\u201D, though, all of that damage must be applied for the effect to occur. What this means for Forcefield Generator is that it is now possible for SP//dr to have Forcefield Generator attached, then activate Spider-Tingle and \u201Cdeal 1 damage\u201D to herself\u2013even though Forcefield Generator prevents the damage, the cost of Spider-Tingle is considered paid, and she could still resolve the rest of its effect. We hope that you find this new ruling empowering. We understand that this is a relatively large adjustment, so please feel free to send us additional questions if you have any.",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/official-ffg-rulings/",
+      "rrg_scope": "pre-1.5",
+      "observed": null,
+      "section": "SPDR/Iron Spider\u2019s Sinister Six mod",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:4cb9afa34cd3881103da49b66d9d28e1989e9faa397305c45fdc3f02e614faa9"
+    },
+    {
       "id": "ruling:2dac2664e0746392",
       "question": "When Thanos has Master of the Stones out and initiates an activation against Venom (Flash Thompson), if Venom plays Grasping Tendrils I\u2019m assuming Master of the Stones goes first (Forced Interrupt-\u003EHero Interrupt). But since Grasping Tendrils cancels the attack, does Master of the Stones still disarm afterward? Or does the attack being canceled mean that there is no \u201Cend of activation\u201D window for Master of Stones to discard",
       "answer": "If Thanos has Master of the Stones attached and initiates an attack, we rule that Master of the Stones\u2019 Forced Interrupt would definitely put the top card of the Infinity Stone deck into play. Then, if Venom plays Grasping Tendrils to \u201Ccancel the attack\u201D, the attack is still regarded as initiated, and the activation is considered \u201Cended\u201D, so Master of the Stones would get discarded.",
@@ -2580,6 +2619,19 @@
       "cards": [],
       "kind": "rules",
       "hash": "sha256:0010dcd26cd50f172baa8b603a9902314c173dff0d84891f995489255518ba4f"
+    },
+    {
+      "id": "ruling:315fe9bb77081afc",
+      "question": "I wanted to ask how his upgrade interacts with his card count/deck size. He seems a little different in his setup ability to other heroes, since we\u2019ve had: \u2013 heroes with a 15 card deck and a \u2018fetch\u2019 mechanic for a key upgrade, like Black Panther, Thor, Captain America, Star-Lord etc \u2013 heroes with a \u003E15 card deck and a \u2018put into play\u2019 mechanic for a key upgrade, like Spectrum, Vision, Valkyrie. I was under the impression that for Spectrum, Vision \u0026 Valkyrie, those extra upgrades don\u2019t count towards deck size (can you confirm/deny this?) But for Wolverine, he has a sixteen card deck and a \u2018fetch\u2019 mechanic, implying that the Claws should be in the deck at the start of the game. Does this mean that his minimum 40 deck size consists of only 24 aspect/basic cards, instead of 25? And the claws are at risk of being turned into an Ultron drone when playing Ultron? Or should I be treating this ability as applying before any villain setup? (I don\u2019t think that currently happens with the rules as written, but I think previous rulings mentioned the idea that the Setup rules might be changed around a bit, so I\u2019m wondering if Wolverine is set up for that change\u2026?)",
+      "answer": "You are correct in that the permanent cards for Spectrum and Vision don\u2019t count toward their minimum deck size; same goes for Wolverine\u2019s Claws. Wolverine has 25 aspect/basic cards included in his premade deck. During Wolverine\u2019s Setup, if you don\u2019t want to risk being unable to play Wolverine\u2019s Claws, don\u2019t take a mulligan if they\u2019re not in your starting hand (since they cannot be played from hand if you end up drawing them). Or, you can do what most of our playtesters did and put the Claws into play alongside your hero before drawing your starting hand.",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/official-ffg-rulings/",
+      "rrg_scope": "pre-1.5",
+      "observed": null,
+      "section": "Wolverine",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:287621ab0651f70e15a33acbff26793d94f8615fee3b69da12ae56069f97b105"
     },
     {
       "id": "ruling:31cbbf2355fa7b46",
@@ -2920,6 +2972,19 @@
       "hash": "sha256:0284ce44f5cb0e865f895a791930d4a34c1dcd666f6f805a4826453cc64852da"
     },
     {
+      "id": "ruling:35c9b2617234d945",
+      "question": "I\u2019m confused regarding how the Goliath, Vision and Jubilee allies\u2019 Lasting Effects work when they reenter play. We have a ruling that, since Jubilee creates a Lasting Effect, if she was to enter play twice in one turn (with a card such as Rapid Response), her original Lasting Effect both remains and still affects her. But we have an old rulings from Caleb years ago, that the Vision and Goliath allies are not affected by their original Lasting Effect if they reenter play. As I understand it, the copies of an ally who reenter play are considered new instances of that copy, which is why the original lasting effects are not applied to them. Because they are new/different copies. This is at least our interpretation from Caleb\u2019s old rulings. Is there a reason Jubilee is ruled differently to the others? Is it because she targets an enemy first, and the other two (Vision \u002B Goliath) target themselves directly? Or is one ruling out-of-date/incorrect? Or something else? Any clarification on how each of these allies\u2019 original Lasting Effects work on themselves when they reenter play would be greatly appreciated!",
+      "answer": "Our ruling on the Vision ally set a precedent that we would like to continue following. The Goliath, Vision, and Jubilee (Wolverine #3) allies have \u201Cself-referential\u201D abilities, and these abilities only apply to that instance of the card, and not instances where the card re-enters play during the same phase (these instances can be thought of as \u201Cother copies of the card\u201D). Goliath\u2019s ability has a max once per phase anyhow, which applies to all copies/instances of his card. This means that our Jubilee ruling needs to be adjusted . If Jubilee re-enters play during a single phase, the \u002B2 ATK from her first instance would not apply to her second instance. (However, her bonus could be applied multiple times to the Wolverine hero.)",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/official-ffg-rulings/",
+      "rrg_scope": "pre-1.5",
+      "observed": null,
+      "section": "Wolverine",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:6616a1a1f9093ee63f329c4fc01ac0bdbed9fff9baff4e872cbb62292ba0f844"
+    },
+    {
       "id": "ruling:36338fecc1985dee",
       "question": "I don\u2019t want to start a Civil War in any rules discussions but I appear to have found an infinite loop, and the way to resolve it isn\u2019t covered by the rules as far as I can see. If the Mighty Avengers treachery card (Civil War) is on top of the discard pile and you reveal the Moon Knight minion (Synthezoid Smackdown), you are stuck in an infinite loop. Moon Knight will trigger the When Revealed ability of Mighty Avengers, which will trigger the When Revealed ability of Moon Knight, which triggers Mighty Avengers, which triggers Moon Knight\u2013 And so on. It\u2019s my understanding per the reveal article that we cannot use these two modular sets together in the new \u201Ccustom scenarios\u201D in Civil War/Synth. Smackdown as one is a \u201CRegistration\u201D modular set and the other is \u201CResistance\u201D. But outside of the new scenarios it\u2019s my understanding at least that it\u2019s within the rules to include both modular sets in one scenario. Is this correct that we can include both the Moon Knight and Mighty Avengers modulars in an ordinary non-\u201Ccustom\u201D scenario? And would we consider it a game loss or should we resolve it another way?",
       "answer": "Yes, the Moon Knight minion and Mighty Avengers treachery would cause an infinite loop. These sets were not intended/designed to be played in the same encounter deck. That said, it would be possible to play a non-Civil War scenario with these modular sets in the same encounter deck. If that happens and you ran into this situation, we\u2019d recommend resolving just the abilities on other minions in play and ignore triggering Moon Knight a second time, or surging if there are no other minions in play.",
@@ -3130,7 +3195,7 @@
     {
       "id": "ruling:39c26b6b8d77edfd",
       "question": "I\u2019m trying to understand the rule: \u201C(to a maximum of [value])\u201D \u201CAn ability with \u201C(to a maximum of [value])\u201D, imposes a maximum on that ability for the duration of that ability.\u201D But the maximum could apply to the ability itself (locally) or across all abilities (globally), and it\u2019s not obvious to know if the max is local or global Can you explain it for the following examples: * Iron Man\u2019s constant ability follows strictly the pattern \u201C(to a maximum [game element] of X)\u201D, so it seems clear it is a global max, and confirmed by Q\u0026A. * Star-Lord\u2019s Helmet constant ability should be interpretated the same way as Iron Man\u2019s ability? So, can I use Assess the situation if there is already 3 facedown encounter in front of me? * What explains that Parental Guidance cannot attach a 4th card (or more) under George Stacy? Even if the max on George Stacy if global among abilities, it should only apply for the duration of the ability? * Tigra\u2019s response \u201COn the Hunt\u201D target what elements, the number of minion engaged? is it a local or a global maximum? it seems obvious it is a local max but what is the difference with Georges Stacy? * The max on Drax\u2019s response applies locally only to the ability? or is a global max vengeance counter cap of 3? * Nothing prevent Groot from having 11 counter (with Captain Americat and Cameo), but what if he uses Root Stomp and defeats an enemy, is the max is local or global? If the max is global, does it trim to 10 the number of counters?",
-      "answer": "Broadly speaking, an ability that has \u201Cto a maximum of X\u201D should only apply that maximum \u201Clocally\u201D, that is, to that particular ability usage. For triggered abilities, this means each time the ability is triggered, the maximum applies; for other abilities, such as constant abilities, this will look a little different. Below are our current rulings on the cards you asked about, some of which have changed from previous rulings we\u2019ve made; we will aim to make maximums more clear and consistent in a future rules reference update. George Stacy\u2019s \u201Cto a maximum of 3\u201D clause only imposes a maximum number of cards he can have attached when triggering his ability. If he is already at 3 cards attached, he can\u2019t trigger his own ability, but Parental Guidance could attach a fourth card to him since it does not have a maximum on it. Tigra\u2019s On the Hunt imposes a maximum on the number of cards that can be drawn at once when triggering that ability. For example, if she is engaged with 4 minions, she draws only 3 cards at the start of the player phase. Drax\u2019s ability imposes a maximum number of counters he can place on himself using his ability. Captain Americat could place a fourth vengeance counter on Drax. Groot\u2019s Root Stomp imposes a maximum on the number of growth counters Groot can have on him after resolving the event ability. If Groot had 10 growth counters on him, playing Root Stomp wouldn\u2019t add another, but Groot could play Captain Americat to get an eleventh growth counter on him.",
+      "answer": "Broadly speaking, an ability that has \u201Cto a maximum of X\u201D should only apply that maximum \u201Clocally\u201D, that is, to that particular ability usage. For triggered abilities, this means each time the ability is triggered, the maximum applies; for other abilities, such as constant abilities, this will look a little different. Below are our current rulings on the cards you asked about, some of which have changed from previous rulings we\u2019ve made; we will aim to make maximums more clear and consistent in a future rules reference update. George Stacy\u2019s \u201Cto a maximum of 3\u201D clause only imposes a maximum number of cards he can have attached when triggering his ability. If he is already at 3 cards attached, he can\u2019t trigger his own ability, but Parental Guidance could attach a fourth card to him since it does not have a maximum on it. Tigra\u2019s On the Hunt imposes a maximum on the number of cards that can be drawn at once when triggering that ability. For example, if she is engaged with 4 minions, she draws only 3 cards at the start of the player phase. Drax\u2019s ability imposes a maximum number of counters he can place on himself using his ability. Captain Americat could place a fourth vengeance counter on Drax. Groot\u2019s Root Stomp imposes a maximum on the number of growth counters Groot can have on him after resolving the event ability. If Groot had 10 growth counters on him, playing Root Stomp wouldn\u2019t add another, but Groot could play Captain Americat to get an eleventh growth counter on him. Star-Lord\u2019s Helmet is a constant ability, but its \u201Cto a maximum of \u002B3 hand size\u201D clause is similar to the previous triggered ability examples as it only imposes a maximum on the additional hand size its own ability grants. Even if he\u2019s at \u002B3 hand size with his Helmet, Star-Lord can play Assess the Situation to increase his hand size further. We made a similar ruling for Deadpool\u2019s Cable, where his ability has a maximum that only applies to itself; other abilities or upgrades can give Cable additional THW/ATK. Iron Man is an exception to the previous examples, as his constant ability imposes a \u201Cglobal\u201D maximum on his hand size. It doesn\u2019t put a maximum on the bonus it gives, it puts a maximum on his total hand size.",
       "source": "Alex Werner (FFG Game Rules Specialist)",
       "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-7/",
       "rrg_scope": "1.7-1.8",
@@ -3140,7 +3205,7 @@
         "44002"
       ],
       "kind": "card",
-      "hash": "sha256:2e438ed60c0d4190d8f0fb61c2501cb3232760d6192352ad5bffbd6ee76d5b73"
+      "hash": "sha256:9abb8ee5b0928050873bcbdb4e0162d5515405cb2bd0dbf16a6bbcb6367a38a8"
     },
     {
       "id": "ruling:39db66343085b1d6",
@@ -4174,7 +4239,7 @@
     {
       "id": "ruling:492bfbaf661888f3",
       "question": "I have some questions about playing the Sinister Motives Sinister Six scenario. I am playing Spider-Man: Peter Parker, from the core set, and am unsure how to handle his Nemesis minion. I understand that if I draw Shadow of the Past whilst the Vulture villain is in play, I should not bring the Vulture minion into play, but should put the side scheme into play, shuffle the rest of the Nemesis set into the encounter deck, and give Shadow of the Past surge. But what happens if the Vulture villain is set aside when I draw Shadow of the Past? I assume in that instance the Vulture minion would enter play. However, how should I handle the Vulture villain entering play? If the Vulture minion is still in play should it be discarded? Or would the Vulture villain not enter play? Perhaps I should reveal another set aside villain? But then what if Vulture is the only villain set aside?",
-      "answer": "You are correct in that if the Vulture I villain is in play, the Vulture minion cannot enter play; and if the Vulture I villain is not in play, the Vulture minion can enter play.",
+      "answer": "You are correct in that if the Vulture I villain is in play, the Vulture minion cannot enter play; and if the Vulture I villain is not in play, the Vulture minion can enter play. But, in a case where you would be asked to put the Vulture I villain into play when the Vulture minion is already in play: If doing so from the Ambush! ability on the main schemes, put a different villain into play instead. If all of the other villains are already in play, you should skip putting Vulture I into play, and skip moving the active counter. If doing so from the Frequent Flyers treachery card, you should consider Vulture as already in play.",
       "source": "Alex Werner (FFG Game Rules Specialist)",
       "via": "hallofheroeslcg.com/official-ffg-rulings/",
       "rrg_scope": "pre-1.5",
@@ -4182,7 +4247,7 @@
       "section": "Sinister Motives, Miles, and Gwen",
       "cards": [],
       "kind": "rules",
-      "hash": "sha256:ea5b7edc13c4a4926ab37ffbc4cb655bdd6717587ca71e73eac26da5f04f7b0d"
+      "hash": "sha256:82e8ede33d0a4942b2953da742e2fc6e3f98c1f26c106c84d6da6540be52d33b"
     },
     {
       "id": "ruling:4930aa7f116c6204",
@@ -4720,7 +4785,7 @@
     {
       "id": "ruling:5273b2d710a48834",
       "question": "208 \u2013 I\u2019m trying to understand the interaction between defending at the start of an enemy activation, and using interrupts with \u201Cwhen attacks you\u201D timing. For example, Powerful Punch, Mutant Protectors, and Magik\u2019s Colossus ally. Can you tell me which of the following plays are allowed, and who is the final defender in each case? 1. Player 1 is being attacked, they play Powerful Punch, and then Colossus from their hand. 2. Player 1 is being attacked, Player 2 plays Powerful Punch, and then plays Colossus from their hand. 3. Player 1 is being attacked, Player 2 plays Powerful Punch, then Player 1 plays Colossus from their hand. 4. Player 1 is being attacked, Player 1 plays Mutant Protectors, then plays Colossus from their hand. 5. Player 1 is being attacked, Player 2 plays Mutant Protectors, can either player then play Colossus from their hand?",
-      "answer": "To answer your question(s): P1 can play both because the attack was initiated against them and both interrupts resolve in the same window. In this case, P1 \u201Clocks in\u201D being defender when they play Powerful Punch, and while Colossus can still be played, he does not become defender. P2 can play Powerful Punch to become defender, but cannot play Colossus because the enemy did not initiate an attack against them. (\u201CWhen an enemy attacks you\u201D = \u201Cwhen an enemy initiates an attack against you\u201D) P2 becomes defender upon playing Powerful Punch, and since the enemy initiated its attack against P1, they can play Colossus but he does not become defender.",
+      "answer": "To answer your question(s): P1 can play both because the attack was initiated against them and both interrupts resolve in the same window. In this case, P1 \u201Clocks in\u201D being defender when they play Powerful Punch, and while Colossus can still be played, he does not become defender. P2 can play Powerful Punch to become defender, but cannot play Colossus because the enemy did not initiate an attack against them. (\u201CWhen an enemy attacks you\u201D = \u201Cwhen an enemy initiates an attack against you\u201D) P2 becomes defender upon playing Powerful Punch, and since the enemy initiated its attack against P1, they can play Colossus but he does not become defender. We weren\u2019t sure if P1 was playing Colossus with Mutant Protectors, or after playing a different ally with Mutant Protectors. If P1 plays Colossus with MP, they have to follow the ability on MP, declaring him defender and exhausting him. If P1 plays a different ally with MP, they declare that one defender of the attack, and they can still play Colossus with his ability afterward but he does not become defender. Either player can play Mutant Protectors here, but only P1 could play Colossus from their hand because they were the one initiated against.",
       "source": "Alex Werner (FFG Game Rules Specialist)",
       "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-5/",
       "rrg_scope": "1.5",
@@ -4728,7 +4793,7 @@
       "section": "2024",
       "cards": [],
       "kind": "rules",
-      "hash": "sha256:d96cebd8c159959ce24dd1813342c343eb5fd05052a21d17625ddb51f913caef"
+      "hash": "sha256:d7e97c677c115daa54839249d3578914ab19b9e5e95433d3db5a4909e9336132"
     },
     {
       "id": "ruling:52df673f638289ef",
@@ -4833,6 +4898,19 @@
       "cards": [],
       "kind": "rules",
       "hash": "sha256:766b5eb3e97428b84b639596a4b32be0a88f38afa7989e1c17284c49007fe4e0"
+    },
+    {
+      "id": "ruling:5550a00ae4fe89a0",
+      "question": "There was a ruling recently that since Slice and dice and Berserker Barrage make multiple attacks rather than being single attacks that deal multiple instances of damage (like melee) then cards like warrior skill or wolverines claws would only buff one of the attacks, not all the attacks made. I had assumed that aggressive energy would work the same and if you used it to pay for slice and dice only the first attack would be buffed not both of them. However it\u2019s been pointed out by other players that the wording on aggressive energy is slightly different than warrior skill. Warrior skill says \u201Cthat attack deals 1 additional damage\u201D but aggressive energy says \u201Cthat event deals one additional damage\u201D (wolverines claws also say \u201Cthat attack gains piecing\u201D not \u201Cthat event\u2026\u201D). Based on this it\u2019s been suggested that while warrior skill or wolverines claws buff one attack made by slice and dice aggressive energy buffs the whole event and so buffs both attacks; meaning slice and dice will make two 4 damage attacks. Is this correct or does aggressive energy only buff the first attack meaning slice and dice makes a 4 damage and then a 3 damage attack. If both attacks are buffed then how does this effect Berserker Barrage? Are all attacks increased to 5 damage if you pay with aggressive energy? With the upcoming rouge pack I assume that if the character touched is attached to leaves play touched goes into rouge\u2019s discard pile then when the player phase begins rouge\u2019s forced response will set it aside again. Can I only use rouge\u2019s ability or energy transfer to attach touched to a character if touched is set aside or attached to another character already? I can\u2019t use those abilities to attach touch from the discard pile can I?",
+      "answer": "Aggressive Energy is worded in such a way to buff an Attack Event , meaning it buffs each instance of damage in an Attack Event. Using Aggressive Energy on Slice and Dice applies a buff to both attacks on Slice and Dice. (4 damage each) Using Aggressive Energy on Berserker Barrage applies a buff to each attack made with Berserker Barrage. (5 damage each) Yes, Touched would go into Rogue\u2019s discard pile if the character it was attached to left play. And yes, Rogue can use her ability or Energy Transfer to attach Touched from the discard pile.",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/official-ffg-rulings/",
+      "rrg_scope": "pre-1.5",
+      "observed": null,
+      "section": "Expansion card questions",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:1fe7e68c79eef137f7c2255b86635a14c4b41604df69d61ac2d3452889d2e623"
     },
     {
       "id": "ruling:556ecad3abe55ce9",
@@ -5293,6 +5371,19 @@
       "hash": "sha256:dbe929534738bacb0316c69ed5523cc88c94a9741a1c2530ef45f8829c7d3b0a"
     },
     {
+      "id": "ruling:5c649b782743c5e2",
+      "question": "The forced response of the main scheme of magneto scenario is \u201C\u2026 reveal that card, then remove 3 magnet counters from this scheme\u201D. If the first discarded magnetic card is \u201Celectromagnetic blast\u201D or \u201Cmetal shards\u201D,their when revealed ability will once again place magnet counter on the main scheme.Will the forced response of the main scheme be trigger again before removing the 3 magnet counters?",
+      "answer": "The intention for those main scheme abilities is that, once the Magnetic card is found, the 3 magnet counters are removed from the main scheme and then the Magnetic card is resolved. As written, the abilities don\u2019t convey this well, so we will plan to errata them to better match their intention. Play with the updated ability in mind; remove the magnet counters, then resolve the Magnetic card.",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-6/",
+      "rrg_scope": "1.6",
+      "observed": "2025-07",
+      "section": "April, 2025:",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:b745f147dac415eaad67261efbecb8ae5382cd4d7d0526623bbad56bf6298f48"
+    },
+    {
       "id": "ruling:5ca183b997edad79",
       "question": "68 \u2013 What happens if Technovirus Resurgence ( 31) causes Technovirus Purge ( 6) to enter play when the players are at the player side scheme limit?",
       "answer": "The first player chooses one player side scheme in play to discard, which could include Technovirus Purge. If Technovirus Purge is discarded, Technovirus Resurgence cannot attach to it, and so its text deals Cable\u2019s player a facedown encounter card.",
@@ -5711,7 +5802,7 @@
     {
       "id": "ruling:636a35206631252a",
       "question": "Context: I am seeking clarification on how cards interact with \u201Cremoved from the game\u201D and \u201Coutside the current game\u201D states. Question (1): If a card is removed from the game, are they now part of your collection? If a card is removed from the game, can you bring that back that same physical card back into the game via Armed to the Teeth ( https://marvelcdb.com/card/44009 )? Or are they prevented from coming back to the current game? Question (2): In older rulings, Med Lab ( https://marvelcdb.com/card/38028 ) has had the ability to \u201Cretrieve the ally from out-of-play areas (discard pile, victory display, The Collection) so long as the ally was defeated by consequential damage.\u201D Is this still correct? If Odin ( https://marvelcdb.com/card/21139a ) [KING side] is defeated by consequential damage and thereby is removed from the game, can Med Lab retrieve the Odin? Question (3): Is there a difference between cards that are \u201Cin the game, but out of play\u201D (e.g. set-aside), compared to cards \u201Coutside the current game\u201D (e.g. collection)? I believe the FIND is only allowed to find cards that are within the game?",
-      "answer": "Once a card is removed from the game, it can\u2019t be returned to the game by any means (e.g. Armed to the Teeth), and it does not become a part of the collection.",
+      "answer": "Once a card is removed from the game, it can\u2019t be returned to the game by any means (e.g. Armed to the Teeth), and it does not become a part of the collection. Med Lab can target allies from out-of-play areas that are still in the game, such as a player\u2019s discard pile. It cannot target allies that have been removed from the game. Because Odin is removed from the game as a Forced Interrupt, he would be removed from the game before Med Lab\u2019s Response can trigger, making him untargetable. Yes, there is a difference between \u201Cin the game, out of play\u201D and \u201Coutside the current game.\u201D The examples above lay out some differences, and you\u2019re right that the \u201CFind\u201D keyword can only search \u201Cin game\u201D areas.",
       "source": "Alex Werner (FFG Game Rules Specialist)",
       "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-7/",
       "rrg_scope": "1.7-1.8",
@@ -5723,7 +5814,7 @@
         "44009"
       ],
       "kind": "card",
-      "hash": "sha256:660594afc0d5bf210c54e7bff26e8a63f7bc20f0cf38c07aa6a3f6be2d974911"
+      "hash": "sha256:14d57e3092e82349e142b8dbc011da9a1a48de5c81ea33eaf0c853c4b0293958"
     },
     {
       "id": "ruling:636ddac524fafd9a",
@@ -5737,6 +5828,19 @@
       "cards": [],
       "kind": "rules",
       "hash": "sha256:b3874ff64a9902d58f516a9ccfc4b433d4c3e53dc3bf8fc0aecc8b99d75bbe1c"
+    },
+    {
+      "id": "ruling:638d99c719a38af3",
+      "question": "I wanted to clarify some questions about the requirements of targets specifically for encounter cards. It is my understanding that if an (1) ability or game function requires one or more targets, that ability or game function can only be initiated if it has at least one valid target (pg. 39 \u2013 v1.6 RRG). (2) Encounter cards are game functions that require valid target as no exceptions have been granted. This is reinforced by Concussive Bombs which requires a valid support/upgrade to be exhausted otherwise no bomb counters can be removed. Below are a couple hypothetical examples: 1) Using the example of Counterspell card (part of Doctor Strange\u2019s Nemesis Kit), what would happen if I am in Alter-ego? Therefore there is no valid target for Counterspell to be attached? Is there a way to un-initiate an encounter card? 2) With Caught off Guard (part of the standard set), is there always a valid target because \u201Cthis card gains surge\u201D? 3) How should Breakthrough\u2019s (part of the Juggernaut set) choose option work if I have neither any supports/upgrades and I have Go For Champions (part of Ironheart pack) that makes my Champion hero unable to take damage?",
+      "answer": "If Counterspell is drawn by a player in Alter-Ego form, the card has no valid target to attach to, so it is discarded with no effect. Yes, Caught Off Guard can always initiate; even without an upgrade or support to target, the Surge keyword can resolve in almost every circumstance, its \u201Cvalid target\u201D being a card in the encounter deck that can be drawn. In a situation where neither bullet on Breakthrough has a valid target, its ability does not initiate, and it is discarded with no effect.",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-6/",
+      "rrg_scope": "1.6",
+      "observed": "2025-06",
+      "section": "April, 2025:",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:893e37c91241ac055f7d9f3732ad1802cd7b24820ae5985e12fe23b58c4eba4c"
     },
     {
       "id": "ruling:638de69fbb0b5aa6",
@@ -6365,7 +6469,7 @@
     {
       "id": "ruling:6fd4652a06512d03",
       "question": "5 \u2013 I had a few questions I wanted to get clarified. 1.If I play Swift Retribution and the boost card from the villains attack is the Goblin Thrall minion in which the boost ability puts it into play, does its guard keyword prevent me from dealing the 4 damage? 2.If I play Swift Retribution and the boost card has a boost ability that stuns me, do I still deal the 4 damage since I\u2019ve already played the (attack) card? 3.When a boost card is flipped with a boost ability that deals damage and I play something like Jump flip with the (defense) label, am I considered to have defended this attack at this point?",
-      "answer": "Guard prevents you from initiating attacks, but does not prevent you from dealing damage. We rule that, if you already initiated an attack with Swift Retribution and were dealt a Goblin Thrall during the activation, you could still deal the damage from Swift Retribution. In a similar vein, a Stunned status card prevents you from initiating an attack, but does not prevent you from dealing damage. If you\u2019re already resolving an attack by the time Stunned is placed on you, you can still finish resolving the attack.",
+      "answer": "Guard prevents you from initiating attacks, but does not prevent you from dealing damage. We rule that, if you already initiated an attack with Swift Retribution and were dealt a Goblin Thrall during the activation, you could still deal the damage from Swift Retribution. In a similar vein, a Stunned status card prevents you from initiating an attack, but does not prevent you from dealing damage. If you\u2019re already resolving an attack by the time Stunned is placed on you, you can still finish resolving the attack. No; although you are \u201Cthe defender\u201D, you aren\u2019t considered to have \u201Cdefended\u201D until the attack fully resolves. (For instance, you can\u2019t trigger Unflappable \u00B7 MarvelCDB if you play Jump Flip to interrupt damage from a boost ability. The attack would need to fully resolve before you could trigger Unflappable.)",
       "source": "Alex Werner (FFG Game Rules Specialist)",
       "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-5/",
       "rrg_scope": "1.5",
@@ -6375,7 +6479,7 @@
         "09020"
       ],
       "kind": "card",
-      "hash": "sha256:68c46fa712099a9a68ce2874905c6aeabd15b497217dfbdec2c41117f266050e"
+      "hash": "sha256:c5858ddeffc467de52048277c590940a0ac9447f6de026833608c2104a054945"
     },
     {
       "id": "ruling:70055fca52b1ae18",
@@ -6612,6 +6716,21 @@
       "hash": "sha256:2cf60d13bce03d588318978b533c462fd892958c4ee79bc76f6cb82cb570147f"
     },
     {
+      "id": "ruling:7611b62cbe00068d",
+      "question": "Question about the peril keyword. If I reveal \u201CFiery rage\u201D from the upcoming Phoenix hero pack, can another player defend for me with either their basic hero DEF power, an ally they control or a (defense) labeled ability in this case?",
+      "answer": "Yes, other players can defend for you. This is because the Fiery Rage is considered \u201Cresolved\u201D once it tells Dark Phoenix to activate (or once the threat is placed on Consume the World). This is similar to how we\u2019ve ruled on Assault \u00B7 MarvelCDB being \u201Cfully resolved\u201D and discarded after it tells the villain to make an attack activation, but before the steps of the villain\u2019s attack activation are carried out. The \u201CPeril\u201D keyword on Fiery Rage is making it so that only the Phoenix player can cancel/ignore the Treachery\u2019s reveal.",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/official-ffg-rulings/",
+      "rrg_scope": "pre-1.5",
+      "observed": null,
+      "section": "Phoenix",
+      "cards": [
+        "01187"
+      ],
+      "kind": "card",
+      "hash": "sha256:c25c34d340752406db42094445e7a50fa1221a56227125480b62c55efab6af2b"
+    },
+    {
       "id": "ruling:76a9465df95e739c",
       "question": "What about a Tough status card and effects that cannot take damage? Like \u201Ckang\u2019s dominion\u201D side scheme or the \u201Cgo for champions\u201D event card? Is that different?",
       "answer": "After re-examining \u201CTough,\u201D we are now ruling that if damage that would be dealt to the character is reduced to 0, Tough will remain on the character. This should be more empowering to players, but for consistency, the same will have to apply to enemies. So, that means that if \u201CKang\u2019s Dominion\u201D is in play, and Kang has Tough, he will keep Tough even if card effects would otherwise try to deal damage to him. Similarly, if \u201CGo for Champions!\u201D is in play, any characters with the Champion trait that have Tough will keep Tough since they cannot take damage that round. This will overturn the previous ruling made below, at least when it concerns Tough status cards. Hopefully this ruling is more intuitive than before.",
@@ -6770,7 +6889,7 @@
     {
       "id": "ruling:78d8efade3dc6da4",
       "question": "We\u2019d like to learn more about \u201Cdealing\u201D and \u201Ctaking\u201D damage. 1. Would you describe the process of dealing damage to us? 2. What happens if Nimrod is dealt 11 damage by an attack with Overkill? 3. What happens if Nimrod has a Tough status card and is deal 11 damage by an attack with Overkill? 4. What happens if a 9-HP minion with a Tough status card (and no other abilities) is dealt 11 damage by an attack with Overkill?",
-      "answer": "Damage dealt refers to the damage that one character is attempting to place on another character. Damage taken is the damage actually placed on the targeted character.",
+      "answer": "Damage dealt refers to the damage that one character is attempting to place on another character. Damage taken is the damage actually placed on the targeted character. The Overkill damage would be calculated based on the target\u2019s remaining health. Nimrod\u2019s ability would not affect this calculation. If Nimrod had all 9 health, and was dealt 11 damage, only 2 of that damage is considered \u201Cexcess\u201D and would be placed onto the villain. Meanwhile, Nimrod\u2019s ability means he would only take 3 of the damage that was dealt to him. To summarize, 11 damage was dealt , Nimrod took 3, and the villain took 2. The Tough status card would prevent any Overkill damage from being dealt to the villain.",
       "source": "Alex Werner (FFG Game Rules Specialist)",
       "via": "hallofheroeslcg.com/official-ffg-rulings/",
       "rrg_scope": "pre-1.5",
@@ -6778,7 +6897,7 @@
       "section": "Mutant Genesis",
       "cards": [],
       "kind": "rules",
-      "hash": "sha256:5966be36b30010d7f743fc18d47e1f6b559d984bde9550a427b727cf1b911ef9"
+      "hash": "sha256:d3b2625833a3f36c123d6e873aa71c6095f0efaaade5a9598aff2bdb82bfe241"
     },
     {
       "id": "ruling:78ee6578c6efb661",
@@ -6965,7 +7084,7 @@
     {
       "id": "ruling:7b82f5b5843027c9",
       "question": "95 \u2013 If I were to use Psylocke\u2019s flurry of blades on three different enemies who all have retaliate 1, (dealing 2 damage to one, confusing one and dealing 2 damage to the final enemy) would each enemy trigger retaliate against Psylocke, so she takes 3 damage back? If I were instead to target one enemy who again has realitate 1 (dealing 1 damage and then confusing it and then dealing 2 damage to it) would the retaliate trigger 1 for the whole attack? How does Psychic illusion in Psylocke\u2019s nemesis interact with flurry of blades. It\u2019s interrupt triggers when an enemy is attacked. When I play flurry of blades the interrupt would trigger, then after I deal 2 damage to an enemy would it trigger again each time I choose to confuse an enemy or deal 2 damage to it or would it only trigger if I choose to target a different character with the confuse or deal 2 options?",
-      "answer": "If you play Flurry of Blades and target a different enemy for each instance of damage, then each of those enemies will trigger their Retaliate and deal damage back to you. You are considered to have \u201Cattacked\u201D each enemy you deal damage to with an attack event. If you play Flurry of Blades and target only one enemy for each instance of damage, the enemy triggers its Retaliate only once. This is because you are considered to have made \u201Ca single attack\u201D for any attack event that doesn\u2019t explicitly state you made multiple attacks (e.g. Dance of Death).",
+      "answer": "If you play Flurry of Blades and target a different enemy for each instance of damage, then each of those enemies will trigger their Retaliate and deal damage back to you. You are considered to have \u201Cattacked\u201D each enemy you deal damage to with an attack event. If you play Flurry of Blades and target only one enemy for each instance of damage, the enemy triggers its Retaliate only once. This is because you are considered to have made \u201Ca single attack\u201D for any attack event that doesn\u2019t explicitly state you made multiple attacks (e.g. Dance of Death). With Psionic Illusion, you\u2019d essentially resolve its Forced Interrupt each time you choose a target that has not already been chosen for Flurry of Blades, and you\u2019d discard Psionic Illusion whenever you end up targeting a friendly character. For example, say you\u2019re resolving Flurry of Blades and you\u2019re dealing the first 2 damage to a target. You attempt to target the villain, but Psionic Illusion\u2019s Forced Interrupt must resolve before the damage. The card you discard has a resource of the named type, so you deal 2 damage to the villain and keep Psionic Illusion in play. You can continue to target the villain for the rest of Flurry of Blades without triggering the Forced Interrupt on Psionic Illusion. If you change which enemy you\u2019re targeting, though, you are \u201Cattacking\u201D a new enemy and must resolve the Forced Interrupt on Psionic Illusion again.",
       "source": "Alex Werner (FFG Game Rules Specialist)",
       "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-5/",
       "rrg_scope": "1.5",
@@ -6973,7 +7092,7 @@
       "section": "October, 2023",
       "cards": [],
       "kind": "rules",
-      "hash": "sha256:90aecb628b3825d65577b5844b5bb0d950304e778a6459cb58704873d4b6cbed"
+      "hash": "sha256:c3a05c060948c148f2b3cd80de0dcade6cee19a52253507d90586263a8e2dee2"
     },
     {
       "id": "ruling:7baee8839373573b",
@@ -7143,6 +7262,19 @@
       "cards": [],
       "kind": "rules",
       "hash": "sha256:a9d2b77789dc5e03e1adae0b0bb4f13b0a7fe38c3e859e56cf99274a5c14df83"
+    },
+    {
+      "id": "ruling:7dc8823b0fc2f0f2",
+      "question": "35 \u2013 A question I saw on Facebook got me curious about how Steel Fist works under the RRG v1.5 errata and new \u2018valid target\u2019 rules. The question was asking about what happens with the second part of Steel Fist\u2019s ability if the target is either stunned or confused, but not both. And I concluded that the player could still discard a Tough to apply the other status to the target. Because \u201Cand\u201D allows that. And I assume that is correct. However, that got me thinking \u2013 what can I do if the target cannot be stunned or confused (for example if they already have both status effects)? Am I allowed to discard a Tough in that situation (for example to draw a card from Iron Will)? Does it make a difference if the target is Stalwart?",
+      "answer": "For the first part of your email, yes , you can play Steel Fist and discard a tough card to either stun or confuse the enemy in a situation where you can\u2019t do both. For the second part, no , you cannot discard a tough status card with Steel Fist if you can\u2019t stun or confuse the enemy, even if you have Iron Will in play.",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-5/",
+      "rrg_scope": "1.5",
+      "observed": "2023-06",
+      "section": "June, 2023",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:619ef5838eb612d441fae403d58bc714e115962cfa12c3810cb5e4dbf06f0675"
     },
     {
       "id": "ruling:7e0b1d60abc1c6ad",
@@ -7446,7 +7578,7 @@
     {
       "id": "ruling:81a6d987b291ae2f",
       "question": "1.The rules for the ally limit say you can play an ally over the limit and then discard an ally to get back down to the limit. But the same permission is not specifically given to the Restricted keyword, does it work the same way? 2.With the card \u201CPhase disruption\u201D from the vision hero pack, does the 2nd bullet point under \u201Cchoose\u201D in the latest rules reference make it to where this card can only be played if there is an attachment on an enemy in play with the text hero action or hero response and cannot be played just to confuse an enemy? And if so is this intentional? 3.What would happen in a situation in which the Sandman villain attacks a player with only their hero in play with a tough status card, and his attack deals more indirect damage then the hero\u2019s remaining hit points? The indirect damage entry in the latest Rules reference doesn\u2019t seem to cover this scenario. What happens to the damage that wasn\u2019t assigned? 4.Just so I understand. Your saying you can play a restricted card that takes you over the limit and then discard down to the limit just like with allies and im assuming you need to do that before triggering any responses to that new Restricted card entering play just like the way the ally rule is written. Basically they work exactly the same way correct? 5. The current rules say \u201CWhile assigning indirect damage, a character cannot be assigned more indirect damage than would cause it to be defeated. This is assessed without accounting for interactions with other abilities.\u201D Are you saying that in my previous email question that you would just assign enough of the indirect damage to the hero (ignoring the tough) that would defeat it and then that damage and the \u201Crest\u201D of the unassigned damage is all applied at the same time and therefore the tough blocks it all. That sound right? I\u2019m confused why having allies would force you to apply any of the damage then if it works this way.",
-      "answer": "In the current iteration of the Online Rules Reference, you would choose and discard any \u201CRestricted\u201D cards that you have in play over the limit of 2, until you get back down to 2 \u201CRestricted\u201D cards in play. Phase Disruption is able to be played where it can Confuse an enemy without an attachment. The rules on \u201CChoose\u201D in the Rules Reference were mostly intended to apply to cards where their entire ability relies on a \u201CChoose\u201D choice to be made.",
+      "answer": "In the current iteration of the Online Rules Reference, you would choose and discard any \u201CRestricted\u201D cards that you have in play over the limit of 2, until you get back down to 2 \u201CRestricted\u201D cards in play. Phase Disruption is able to be played where it can Confuse an enemy without an attachment. The rules on \u201CChoose\u201D in the Rules Reference were mostly intended to apply to cards where their entire ability relies on a \u201CChoose\u201D choice to be made. The Tough status card should absorb all indirect damage that would be dealt to the hero, because indirect damage is still dealt simultaneously. Note that if allies were in play, they would be forced to take the remaining damage. Yes, you can think of the Restricted limits as similar to the Ally limits. You must \u201Cimmediately\u201D choose and discard from play any Restricted cards over the limit, and you must make that choice before resolving abilities triggered by them entering play. I answered as I did based on part of the discussion I had with the designers on this question. One of the rules of indirect damage is that a character cannot be assigned indirect damage beyond the amount that would cause it to be defeated. If you had a Tough hero and an ally in play, you could still only assign as much indirect damage to the hero as would cause it to be defeated (as if it didn\u2019t have Tough), and if there was remaining damage, that damage would have to be directed to the ally, even though your hero will block its indirect damage using Tough. I apologize if including that led to more confusion.",
       "source": "Alex Werner (FFG Game Rules Specialist)",
       "via": "hallofheroeslcg.com/official-ffg-rulings/",
       "rrg_scope": "pre-1.5",
@@ -7454,7 +7586,7 @@
       "section": "Expansion card questions",
       "cards": [],
       "kind": "rules",
-      "hash": "sha256:90de25a18d8619be15b356d1db2496ce08bbb9e52a3ac887f04a30d329f4c0a7"
+      "hash": "sha256:68e7c97c88627c190f255ff8d4c0daa63d740fe6098ab76fcb5ba73f90c916a9"
     },
     {
       "id": "ruling:81bce25b60d865d5",
@@ -7637,6 +7769,19 @@
       "cards": [],
       "kind": "rules",
       "hash": "sha256:d795baf686711e4d1a8409d5d2affc6759359d7654184f856e417893e8d7f903"
+    },
+    {
+      "id": "ruling:842662945109a41c",
+      "question": "A ruling we received about Armor Up and Master Mold has been confusing me. That ruling suggests that an interrupt to \u201Cwhen the villain activates\u201D is a different (earlier) timing than an interrupt to \u201Cwhen the villain schemes\u201D. The first (like Armor Up) can be triggered, and resolved, entirely before the second (like Master Mold) triggers, even if the latter is Forced. 1. If the window to play Armor Up is before the villain is determined to be either attacking or scheming (that is, before an interrupt like Master Mold\u2019s can trigger), how is it possible for Confused to happen at that time, before Armor Up is playable? Why do status cards \u201Cknow\u201D what kind of activation is about to happen before an interrupt like Master Mold\u2019s does? 2. As an example of an existing interaction that is \u201Cchanged\u201D by this shift in my understanding: What happens when Ebony Maw tries to activate against my hero while Ebony Maw is Webbed Up?",
+      "answer": "I will do my best to explain where we landed on this interaction. If the villain were Confused when it went to activate against an Alter-Ego Colossus, it must discard Confused; doing so replaces its entire activation. Armor Up can only be played as an interrupt to an activation, so it cannot be played if there is no activation to interrupt. Status cards need to be able to recognize the type of activation about to occur, otherwise they wouldn\u2019t work as they were designed to. If Ebony Maw had Webbed Up attached and went to make an attack activation, Webbed Up and Ebony Maw both have Forced Interrupt triggers, so they would resolve in the order of the players\u2019 choice.",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/official-ffg-rulings/",
+      "rrg_scope": "pre-1.5",
+      "observed": null,
+      "section": "Mutant Genesis",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:8f80a310a46884cc57bbaef587af60c17efd454906524b84006d241f873a93c9"
     },
     {
       "id": "ruling:84569f1a5fcccb6f",
@@ -7914,7 +8059,7 @@
     {
       "id": "ruling:89486604a15147ba",
       "question": "I\u2019m confused about how a couple recent rulings can both be true, regarding Exploit Weakness. In this recent ruling https://hallofheroeslcg.com/latest-ffg-rulings/#195 , you indicated that exploit weakness only works when the target would \u201Ctake any amount of damage\u201D (so it does nothing when the target takes no damage). But in this ruling, https://hallofheroeslcg.com/latest-ffg-rulings/#191 , you indicated that exploit weakness only works on the attack, not when the target takes an amount of damage (so if the target takes 3 damage twice it only increases one of them). Which is correct, does the target take an extra damage when it is attacked, or does it take an extra damage when it would take any amount of damage from an attack?",
-      "answer": "Exploit Weakness is essentially saying that the attached enemy will take 1 additional damage from each attack. The attack against that enemy has to deal 1 or more damage to it for Exploit Weakness to have an effect.",
+      "answer": "Exploit Weakness is essentially saying that the attached enemy will take 1 additional damage from each attack. The attack against that enemy has to deal 1 or more damage to it for Exploit Weakness to have an effect. The second ruling was made based on the fact that Ricochet Beam is making a single attack , and Exploit Weakness increases the damage attached enemy takes \u201C from each attack \u201D by 1. Whether Ricochet Beam deals 3 damage once, or 3 damage twice, is irrelevant; only one attack is being made, and Exploit Weakness only affects the enemy once. This would be different if the Ricochet Beam specifically made multiple attacks, like Dance of Death \u00B7 MarvelCDB does. This would also be different if Exploit Weakness increased the damage that events dealt, like Embiggen! \u00B7 MarvelCDB does.",
       "source": "Alex Werner (FFG Game Rules Specialist)",
       "via": "hallofheroeslcg.com/official-ffg-rulings/",
       "rrg_scope": "pre-1.5",
@@ -7925,7 +8070,7 @@
         "08004"
       ],
       "kind": "card",
-      "hash": "sha256:31808930398cf3b2a320ab4a496e65467cdcd03b68f7b686b96f1825ccf4244c"
+      "hash": "sha256:f1c6d0c894859ffc44a65903d1579c38e4942f372e2ee3ed4994c41ad6192638"
     },
     {
       "id": "ruling:895d2e4fcd40b0a2",
@@ -8108,6 +8253,19 @@
       "cards": [],
       "kind": "rules",
       "hash": "sha256:a94288436d832e35f35383802c4873b9036e8af3368d06b68e41858edac0f76c"
+    },
+    {
+      "id": "ruling:8c6b0c94a40eb7a4",
+      "question": "My understanding is that both Aggressive Energy and Warrior Skill are alteration effects, but I was unsure how they affect certain cards. With multiple attack cards like Dance of Death, does Aggressive Energy add one additional damage to each attack listed? If Warrior Skill is used with Attacrobatics does it add only 1 additional damage in total or does it add 1 to the \u201Cdamage per boost icon\u201D?",
+      "answer": "Aggressive Energy increases each instance of damage in an Attack event, so it will add \u002B1 damage to each bullet in Dance of Death. Dance of Death will then deal 2, 3, and 4 damage. Attacrobatics is different from Dance of Death because the damage dealt by Attacrobatics is simultaneous, so it\u2019s \u201Cone instance\u201D of damage. Warrior Skill increases each \u201Cinstance\u201D by \u002B1, meaning it will only boost the damage of Attacrobatics by 1.",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/official-ffg-rulings/",
+      "rrg_scope": "pre-1.5",
+      "observed": null,
+      "section": "Expansion card questions",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:d03a4eb19d6f3784bcf45e787e10ae74b9aa12fbef53fc2ab223b16b54b0c3dc"
     },
     {
       "id": "ruling:8c9c9d30f4c01189",
@@ -8346,7 +8504,7 @@
     {
       "id": "ruling:936a3165157dfec0",
       "question": "202 \u2013 I am playing as Black Panther against Ultron stage II, I have two 1hp drones engaged with me, and I reveal Gang Up during encounter card step of the Villain Phase. Can I have the drones attack first? If so, can the drone from Ultron\u2019s Forced Interrupt attack before Ultron does? When will Black Panther\u2019s Retaliate 1 resolve, defeating the drones? And will this affect Ultron\u2019s ATK?",
-      "answer": "Yes, when you reveal Gang-Up, the villain and enemies engaged with you initiate their attacks simultaneously, so you can resolve each attack in any order. Once you start resolving an attack, you must finish all steps of that attack and all abilities triggered by that attack before resolving the next attack. If Black Panther is engaged with two Drone minions when he reveals Gang-Up, you can follow these steps: Resolve Black Panther\u2019s Retaliate 1 at the end of that attack. Resolve Black Panther\u2019s Retaliate 1 at the end of that attack. Resolve Black Panther\u2019s Retaliate 1 at the end of that attack. I apologize, the [above] answer is incorrect. There\u2019s a rule that I missed under \u201CActivation\u201D stating that when multiple enemies activate against a player simultaneously, the villain activation resolves first, then the minion activations. This rule should also apply to activations initiated by Gang-Up. Ultron would have to attack first, then Black Panther can resolve the 3 Drone attacks in any order.",
+      "answer": "Yes, when you reveal Gang-Up, the villain and enemies engaged with you initiate their attacks simultaneously, so you can resolve each attack in any order. Once you start resolving an attack, you must finish all steps of that attack and all abilities triggered by that attack before resolving the next attack. If Black Panther is engaged with two Drone minions when he reveals Gang-Up, you can follow these steps: Resolve Drone 1\u2019s attack. Resolve Black Panther\u2019s Retaliate 1 at the end of that attack. Resolve Drone 2\u2019s attack. Resolve Black Panther\u2019s Retaliate 1 at the end of that attack. Resolve Ultron\u2019s attack; create the Drone (\u201CDrone 3\u201D) as an Interrupt, then resolve the rest of Ultron\u2019s attack, giving him \u002B1 ATK for having Drone 3 engaged with you. Resolve Black Panther\u2019s Retaliate 1 at the end of that attack. Resolve Drone 3\u2019s attack. Resolve Black Panther\u2019s Retaliate 1 at the end of that attack. I apologize, the [above] answer is incorrect. There\u2019s a rule that I missed under \u201CActivation\u201D stating that when multiple enemies activate against a player simultaneously, the villain activation resolves first, then the minion activations. This rule should also apply to activations initiated by Gang-Up. Ultron would have to attack first, then Black Panther can resolve the 3 Drone attacks in any order.",
       "source": "Alex Werner (FFG Game Rules Specialist)",
       "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-5/",
       "rrg_scope": "1.5",
@@ -8354,7 +8512,7 @@
       "section": "2024",
       "cards": [],
       "kind": "rules",
-      "hash": "sha256:88a70f4477beac37a89e2a2324c56c232065e82d4bfacfc5b7e9f37f5a02be0f"
+      "hash": "sha256:45797b5ee6b13781492968939d1c86d891fb32eeb70df7c9dfa4290159161775"
     },
     {
       "id": "ruling:937d6ff4f970a1da",
@@ -8606,7 +8764,7 @@
     {
       "id": "ruling:989a529399d67e6d",
       "question": "40 \u2013 I have a few nightcrawler pack questions. 1.Does Nightcrawler need to be ready in order to trigger the bamf upgrade? 2.Can I use his tail upgrade to pay for the action on the make the call event card? 3. If the friendly character that the rogue ally uses its ability on leaves play, does she keep the traits and ATK/THW boosts? 4. If the ATK and or the THW of that character changes, does rogue adjust accordingly or remember what it was when she triggered the ability?",
-      "answer": "No, Nightcrawler doesn\u2019t have to be ready in order to trigger Bamf!. No, Prehensile Tail cannot pay for the action ability on Make the Call. Prehensile Tail generates a resource for an event\u2019s resource cost, and Make the Call has a resource cost of 0. No. Rogue\u2019s ability constantly checks for the traits and printed stats of the chosen character. If the character leaves play, her ability doesn\u2019t have a reference point and won\u2019t give her a bonus.",
+      "answer": "No, Nightcrawler doesn\u2019t have to be ready in order to trigger Bamf!. No, Prehensile Tail cannot pay for the action ability on Make the Call. Prehensile Tail generates a resource for an event\u2019s resource cost, and Make the Call has a resource cost of 0. No. Rogue\u2019s ability constantly checks for the traits and printed stats of the chosen character. If the character leaves play, her ability doesn\u2019t have a reference point and won\u2019t give her a bonus. Generally, no; Rogue\u2019s ability is checking for the \u201Cprinted\u201D THW/ATK of the chosen character, and almost every character\u2019s printed stats will never change. We have made a ruling that the Gambit ally in the pack can have his \u201Cprinted\u201D THW/ATK change if the number of boost icons on his tucked card changes, but this is a very unique case.",
       "source": "Alex Werner (FFG Game Rules Specialist)",
       "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-6/",
       "rrg_scope": "1.6",
@@ -8614,7 +8772,7 @@
       "section": "November, 2024",
       "cards": [],
       "kind": "rules",
-      "hash": "sha256:3e702e128057c38e579c856512c534f7bd1e02bb1861991ea24e6e50107ebfd1"
+      "hash": "sha256:b709a9116dc36924d8a5ce1087a75ed049c5d50d73e675f2c4315612db4baea0"
     },
     {
       "id": "ruling:98c1b2bd0b2ab525",
@@ -8628,6 +8786,19 @@
       "cards": [],
       "kind": "rules",
       "hash": "sha256:d79194500865581f0354447e1510532f57592379d95ae841c0626e4a13cebff5"
+    },
+    {
+      "id": "ruling:99935fc95e8b7290",
+      "question": "We are confused about how the White Queen minion works. Many different players seem to have different interpretations. We have the following questions: \u2013 What happens when White Queen engages a steady ID? Does the White Queen give the Steady ID one Confused status card or two? \u2013 Does White Queen give an ID a confused status, or is the ID incapable of thwarting while engaged with her? \u2013 If White Queen applies a status card does it get removed upon White Queen\u2019s defeat or will the ID need to attempt to thwart to remove it as normal? \u2013 If an ID can attempt to thwart while White Queen is engaged with it, and a confused status card is on that ID, does White Queen\u2019s constant effect immediately place another confused status? Relevant card text: The White Queen \u2014 Villainous. While White Queen is engaged with you, you are confused. Confused \u2014 The next time this character would thwart or scheme, discard this status card instead.",
+      "answer": "In essence, while White Queen is engaged with a player, that player is always considered Confused. An identity would be given enough status cards for it to be considered Confused. Steady identities would be given 2. The identity is essentially incapable of thwarting while White Queen is engaged with them\u2014even if the Confused cards were removed, they\u2019d be immediately replaced. When White Queen is defeated, the identity will retain its Confused status cards until their next thwart attempt.",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/official-ffg-rulings/",
+      "rrg_scope": "pre-1.5",
+      "observed": null,
+      "section": "Shadowcat",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:aec66e5ef504ae5987ab4c09d6840c9768fe18975d1f452b45051b5c2e89c9f3"
     },
     {
       "id": "ruling:999d019bca4802d3",
@@ -9328,6 +9499,19 @@
       "hash": "sha256:eeb8e6dcd6948d7dc329eabac23db26e4084e4547d283b9c9e78c6cd0315af55"
     },
     {
+      "id": "ruling:a683efe4c30d11b5",
+      "question": "212 \u2013 2 questions for ya. So we especially enjoy playing the scenarios that have multiple villains but we always have to look up what \u201Cthe villain\u201D means depending on which scenario we are playing. These are the entries from the official rules documents for each of these scenarios. Wrecking Crew \u201CAny card effect that refers to \u201Cthe villain\u201D only refers to the active villain\u201D Tower Defense \u201CWhen a player plays a card or triggers an ability that refers to \u201Cthe villain,\u201D they must choose to which of the villains it refers. If a constant effect on a player card refers to \u201Cthe villain,\u201D that card always refers to the active villain\u201D Sinister Six No entries Four Horseman \u201CWhen a player triggers a player card ability that refers to \u201Cthe villain,\u201D they choose which villain they want to be the target of that ability. If a constant ability or keyword refers to \u201Cthe villain,\u201D it only refers to the active villain.\u201D 1.Does the Sinister Six scenario function like the four horsemen and Tower defense? 2.Should the wrecking crew also function like the four horseman and tower defense?",
+      "answer": "The Sinister Six scenario follows the same rules as Tower Defense and The Four Horsemen: When a player plays a card or triggers an ability on a player card that refers to \u201Cthe villain,\u201D they choose which villain. Similarly, when a friendly character makes a basic attack, they choose which villain to attack. When a constant ability or keyword refers to \u201Cthe villain,\u201D it\u2019s always referring to the active villain. Wrecking Crew, having been designed first, was a little different than these, but only in the sense that any card ability (played, triggered, Action, constant, keyword) that refers to \u201Cthe villain\u201D always refers to the active villain. We would like to keep these rules as written intact. Note that you are still able to make basic attacks against non-active villains, or target them with abilities that target \u201Cenemies.\u201D",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-5/",
+      "rrg_scope": "1.5",
+      "observed": "2024-06",
+      "section": "2024",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:676805ef3fe7b0098b445b51852e244b753c2ef724c74df8b67c785de6472b91"
+    },
+    {
       "id": "ruling:a693e5ba5379e414",
       "question": "Can I trigger Black Widow\u2019s Widowmaker hero ability after using Attacrobatics while stunned?",
       "answer": "Yes, you can trigger her Widowmaker ability because you triggered the ability of Attacrobatics.",
@@ -9408,7 +9592,7 @@
     {
       "id": "ruling:a815d7c969a2d621",
       "question": "I have some questions to consult with you. 1. I played Squirrel Girl. If there are a total of two enemies in play, in what order should I deal damage to the two enemies? Should I first resolve all the damage steps for one enemy, and then resolve for the other? Or should I follow the damage step table, where the next step is resolved after the previous step for both enemies? 2. If Spectrum (Leadership Ally) tucked Captain America\u2019s Shield (Leadership Upgrade). I trigger Captain America (Leadership Upgrade) and add Captain America\u2019s Shield to my hand. Will Spectrum\u2019s basic power change? 3. Can Embody Pathos find Hall of Nastrond that\u2019s been set aside? 4. After a card that defeated Evaluate Threat and was added to the hand is discarded from the hand, and then returned to the hand within the same phase, will the cost of that card be reduced? \u2026",
-      "answer": "Squirrel Girl deals damage to the enemies simultaneously, so you would resolve the damage steps for both enemies at the same time, in either order unless one has priority on a given step indicated by the Simultaneous Timing Priority chart (e.g. one that has an Interrupt to being dealt damage resolves that ability before one that has a Response to being dealt damage).",
+      "answer": "Squirrel Girl deals damage to the enemies simultaneously, so you would resolve the damage steps for both enemies at the same time, in either order unless one has priority on a given step indicated by the Simultaneous Timing Priority chart (e.g. one that has an Interrupt to being dealt damage resolves that ability before one that has a Response to being dealt damage). If the card tucked under Spectrum were later removed (e.g. an ability returned it to hand), then Spectrum would not receive a bonus to her stat(s). Though her ability is currently not phrased as a constant ability, it should only have an effect while a card is tucked under her. We do not intend to make players remember the state of a card that left play some time ago. Yes, since Hall of Nastrond starts the game set aside, Hercules\u2019s Embody Pathos is able to \u201Cfind\u201D and reveal it. Note that this is not the intended way to play the scenario, but no rule prevents this specific interaction. Yes, Evaluate Threat essentially reduces the cost of the searched card by 2 for the next time the player plays it during that phase, even if it leaves and re-enters the hand during that phase.",
       "source": "Alex Werner (FFG Game Rules Specialist)",
       "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-7/",
       "rrg_scope": "1.7-1.8",
@@ -9416,7 +9600,7 @@
       "section": "March, 2026",
       "cards": [],
       "kind": "rules",
-      "hash": "sha256:504e0550ade9a6a351c7a2588211ba43ad53c09f75788b18260fd742b82476c4"
+      "hash": "sha256:3875a38769f0890d893e200a1d9648482dc0b079bdf2a7404120acd7ee2baf93"
     },
     {
       "id": "ruling:a824b56af0206ea6",
@@ -10013,7 +10197,7 @@
     {
       "id": "ruling:b2680fad82d2cba6",
       "question": "Context: I am seeking to understand how Basic Powers are used or perhaps not used when making their respective ability: Question (1): The villain attacks me and I decide to NOT basic defend and to take the attack undefended. On step 4 of the Attack (Enemy Activation) [RRG v1.6 pg 8], I decide to use Side Step ( https://marvelcdb.com/card/14015 ) which now makes me the defender via Labeled Ability [RRG v1.6 pg 15; Defend]. Am I allowed to play Stopping Hitting Yourself ( https://marvelcdb.com/card/52016 ) If so what would be the value (assuming my Hero has 2 DEF)? Question (2): Using Question 1\u2019s scenario. Imagine I also play Not Today ( https://marvelcdb.com/card/38016 ) on top of the Side Step. This would give me \u002B2 DEF. Am I allowed to play Stopping Hitting Yourself? If so what is the value? Question (3): Building upon Questions 1 and 2, if I am playing against Enemy Leader Captain America who has Cap\u2019s Shield ( https://marvelcdb.com/card/56143 ), if I use an attack-labeled ability. Am I considered to have \u201Cuse my ATK to attack and damage\u201D?",
-      "answer": "Yes, you\u2019d still be able to play \u201CStop Hitting Yourself\u201D and deal damage based on your current DEF (2). Your hero still has a DEF value even if it wasn\u2019t used to reduce damage dealt. Yes, similar to above, you\u2019d still be able to deal damage based on your DEF. Not Today! gives you \u002B2 DEF, for a total of 4.",
+      "answer": "Yes, you\u2019d still be able to play \u201CStop Hitting Yourself\u201D and deal damage based on your current DEF (2). Your hero still has a DEF value even if it wasn\u2019t used to reduce damage dealt. Yes, similar to above, you\u2019d still be able to deal damage based on your DEF. Not Today! gives you \u002B2 DEF, for a total of 4. This depends on the attack-labeled ability being used. A lot of attack-labeled abilities do not use your ATK to deal damage, but some do. If the ability is phrased as a flat damage amount, e.g. \u201CDeal # damage to an enemy\u201D, that would not allow you to take Cap\u2019s Shield. If an ability calls out your ATK in some way, e.g. \u201CDeal to an enemy equal to your ATK\u201D, that would allow you to take Cap\u2019s Shield.",
       "source": "Alex Werner (FFG Game Rules Specialist)",
       "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-7/",
       "rrg_scope": "1.7-1.8",
@@ -10026,7 +10210,7 @@
         "56143"
       ],
       "kind": "card",
-      "hash": "sha256:d4d040a2e845b7de45f46e3af1c220eae6ebc5d92c6cb2ccb0c05fbff69d41da"
+      "hash": "sha256:2a3a5ff9a8672cbab8b21125d75c2ee11a0c9c9516a3745d2c1a96d0d4250b49"
     },
     {
       "id": "ruling:b29534aece54178e",
@@ -11199,6 +11383,19 @@
       "hash": "sha256:7b7ffe006e2e54730981cc8fd138fab584ccb0e79570fb75f8f7a7e0398ed6ba"
     },
     {
+      "id": "ruling:c96a5a056c20901f",
+      "question": "Playing in campaign mode against Magneto. I play Vivian (basic hero); and blank the text box of Magneto\u2019s Fortress. I then thwart enough to remove the side scheme in the same turn. Does it just go to the encounter discard pile?",
+      "answer": "Since Magneto\u2019s Fortress is double-sided, it can\u2019t be placed in a discard pile when defeated, and would be removed from the game instead. We will note that this scenario was designed with the intention that Magneto\u2019s Power would attach to him and increase his stats for the rest of the game. We recommend playing the scenario with a rule preventing Magneto\u2019s Fortress from being blanked in this way (and we will consider giving it an official erratum).",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-6/",
+      "rrg_scope": "1.6",
+      "observed": "2025-06",
+      "section": "April, 2025:",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:b15156bb7915fa35d74520b9b8fdb40c5d91849281ceff92d94c09b50611853b"
+    },
+    {
       "id": "ruling:c979bf09b2b99a06",
       "question": "Can you trigger the judoka skill upgrade from the upcoming rogue pack, after defending with a (defense) labeled damage preventing ability like side step and effectively reduce 2 more damage? We\u2019re not sure since the damage has already be calculated and dealt and seems to be past the point of reducing the ATK",
       "answer": "Assuming you weren\u2019t already defending the attack before playing Side Step, then although you could activate Judoka Skill at that time, it wouldn\u2019t change the amount of damage being dealt to you. This is because the damage being dealt is calculated during Step 3 of an Enemy Attack Activation, and Side Step is played as an interrupt during Step 4. Side Step does satisfy the condition \u201Cwhen you defend against an enemy attack\u201D on Judoka Skill, but the -2 ATK from JS doesn\u2019t affect the damage being dealt to you.",
@@ -11526,7 +11723,7 @@
     {
       "id": "ruling:cf60c2c806c05302",
       "question": "The rules for the ally limit say you can play an ally over the limit and then discard an ally to get back down to the limit. But the same permission is not specifically given to the Restricted keyword, does it work the same way? 2.With the card \u201CPhase disruption\u201D from the vision hero pack, does the 2nd bullet point under \u201Cchoose\u201D in the latest rules reference make it to where this card can only be played if there is an attachment on an enemy in play with the text hero action or hero response and cannot be played just to confuse an enemy? And if so is this intentional? 3.What would happen in a situation in which the Sandman villain attacks a player with only their hero in play with a tough status card, and his attack deals more indirect damage then the hero\u2019s remaining hit points? The indirect damage entry in the latest Rules reference doesn\u2019t seem to cover this scenario. What happens to the damage that wasn\u2019t assigned?",
-      "answer": "In the current iteration of the Online Rules Reference, you would choose and discard any \u201CRestricted\u201D cards that you have in play over the limit of 2, until you get back down to 2 \u201CRestricted\u201D cards in play. Phase Disruption is able to be played where it can Confuse an enemy without an attachment. The rules on \u201CChoose\u201D in the Rules Reference were mostly intended to apply to cards where their entire ability relies on a \u201CChoose\u201D choice to be made.",
+      "answer": "In the current iteration of the Online Rules Reference, you would choose and discard any \u201CRestricted\u201D cards that you have in play over the limit of 2, until you get back down to 2 \u201CRestricted\u201D cards in play. Phase Disruption is able to be played where it can Confuse an enemy without an attachment. The rules on \u201CChoose\u201D in the Rules Reference were mostly intended to apply to cards where their entire ability relies on a \u201CChoose\u201D choice to be made. The Tough status card should absorb all indirect damage that would be dealt to the hero, because indirect damage is still dealt simultaneously. Note that if allies were in play, they would be forced to take the remaining damage.",
       "source": "Alex Werner (FFG Game Rules Specialist)",
       "via": "hallofheroeslcg.com/official-ffg-rulings/",
       "rrg_scope": "pre-1.5",
@@ -11534,7 +11731,7 @@
       "section": "Expansion card questions",
       "cards": [],
       "kind": "rules",
-      "hash": "sha256:0139aa543e455721d4e54d1c6b148c94be5400abef7b5b7f05eaf506611f6a9d"
+      "hash": "sha256:5cc87565873b5cb8c581c83fd8ff7f85922666a63ee5fa76dbe8b6989e1537a1"
     },
     {
       "id": "ruling:cf67a7102d2d70df",
@@ -11771,6 +11968,19 @@
       "hash": "sha256:cfc9b8e94365d86633ae0d49a4e3af7e12510f66fd9e4b874b84203069ea1982"
     },
     {
+      "id": "ruling:d502526070e1f010",
+      "question": "1. About Ant-Man/Hank Pym(Leadership), Yellowjacket(Ant-Man\u2019s nemesis minion), Yellow Jacket/Hank Pym(Basic), Yellow Jacket(Minion). These characters have similar titles or subtitles, and I want to know how they should follow unique rules. 2.Will the crisis icon on Distraction affect the main scheme in Venom Goblin scenario without the glider counter? 3.For I\u2019ve Been Waiting For This! boost ability, if the active counter does not move, will the villain schemes?",
+      "answer": "The \u201CYellowjacket\u201D and \u201CYellow Jacket\u201D minions have different titles, so they can both be in play. When playing Civil War competitive games, unique enemy cards have no impact on unique friendly cards; the \u201CYellow Jacket\u201D minion and \u201CYellow Jacket/Hank Pym\u201D ally can both be in play. We are planning a tweak to unique rules when it comes to allies; since \u201CAnt-Man/Hank Pym\u201D and \u201CYellow Jacket/Hank Pym\u201D have the same subtitle, they cannot both be in play. When playing the Venom Goblin scenario, the crisis icon on Distraction will prevent you from removing threat from only the scheme with the glider counter. (This matches what you\u2019d do for a crisis icon on an encounter card.) Yes, if the active counter does not move with the Boost ability on \u201CI\u2019ve Been Waiting For This!\u201D, the current villain with the active counter will scheme. \u201CThat villain\u201D in the ability refers to the one with the active counter, regardless of if the counter moved.",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-6/",
+      "rrg_scope": "1.6",
+      "observed": "2025-11",
+      "section": "April, 2025:",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:4e15228cedb49cd77d675ed255f9a9034e2b36e195f66f66ce21cb5d1e345159"
+    },
+    {
       "id": "ruling:d54efcc10ebe945e",
       "question": "Can Repulsor Blast\u2019s first point of damage remove a tough status card from an enemy, then its additional damage deal damage to that enemy?",
       "answer": "The additional damage that Repulsor Blast deals is a simultaneous modification of its first point of damage. For instance, if a player were to discard 2 energy resources due to Repulsor Blast, they would deal a total of 5 damage to an enemy all at once, as the additional 4 damage dealt by the discard effect happens at the same time as the first point of damage.",
@@ -11795,6 +12005,19 @@
       "cards": [],
       "kind": "rules",
       "hash": "sha256:7845b6b9056253f5fac36a01d62d4276d5623dbb4eab0f82f6ca42c128e18a9d"
+    },
+    {
+      "id": "ruling:d61ac3da43d5e2e9",
+      "question": "How do two cards \u2013 Wolverine\u2019s Claws and Warrior Skill \u2013 interact with certain attack cards. The way that Wolverine\u2019s Claws \u201Cpay\u201D for an attack event is perfectly clear, but at the end of its text the card says \u201CThat attack gains piercing\u201D \u2013 the trouble is, some attack events appear to trigger multiple attacks. Wolverine himself has an attack event called Slice and Dice which says \u201CMake the following TWO attacks:\u201D. Berserker Barrage, another Wolverine card, is also hotly debated. Would Wolverine\u2019s Claws give piercing to both attacks from Slice and Dice, or just one? If one, which one? When you repeat Berserker Barrage\u2019s ability, taking damage after its initial damage defeats a minion, does this count as a new attack? If originally played with Wolverine\u2019s Claws, do all repeated uses have piercing, or just the original 4 damage? And finally, how does the new Aggression aspect card, Warrior Skill, interact with Slice and Dice and Berserker Barrage? If I use Warrior Skill on Slice and Dice, do I deal 4 and 3 damage or 4 and 4? Does each repetition of Berserker Barrage remember the boost from Warrior Skill? And, for the sake of thoroughness and comparison, how does Warrior Skill interact with current Aggression cards Melee and/or One by One?",
+      "answer": "Wolverine\u2019s Claws will give piercing to \u201Cthe first attack\u201D in the event. Note, some events make multiple attacks, and some events make single attacks with multiple instances of damage. Slice and Dice makes two attacks, so only the first gains piercing. Berserker Barrage makes one attack initially, so that one gains piercing; if you repeat its ability, the new attack will not have piercing. With Melee, however, the two instances of damage are considered a single attack , so both instances would gain piercing. Warrior Skill functions similarly: it will boost up the damage of \u201Can attack.\u201D For multi-attack events, it can only boost up one of those attacks; but on an Attack event with one attack \u002B multiple instances of damage, it will empower all instances. To use Melee as an example again, it will boost both instances of damage by 1, since they\u2019re a single attack.",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/official-ffg-rulings/",
+      "rrg_scope": "pre-1.5",
+      "observed": null,
+      "section": "Wolverine",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:6bc40dc51ca5ee02dab0d2b2c5a22ced3d8afdfc15d62c6198e2a87af9b52a6d"
     },
     {
       "id": "ruling:d6499395b5f3fbf3",
@@ -11860,6 +12083,19 @@
       "cards": [],
       "kind": "rules",
       "hash": "sha256:b2841684ea0c8494f498be5d37ad8537fe6c5352ddfcc7e4e6afe4919c162063"
+    },
+    {
+      "id": "ruling:d77ed04f75f0a6a7",
+      "question": "I have a question about the Adam Warlock ally and how the response ability interacts with cards that have multiple printed resources. The rule book clarifies the Hulk ally\u2019s forced response and the Salvage resource card from Rocket Raccoon. Based on this, I assume the Adam Warlock ally discarding Salvage would likewise trigger two responses related to the mental and the wild resource. With a card like Vibranium since the resource icons are both wild it would only trigger one response to a printed wild, correct? However, if the discarded card was Shawarma (having three unique printed resources) it would trigger three responses correct?",
+      "answer": "The Adam Warlock ally functions similarly to the Hulk ally, where if there are multiple different resources on the discarded card (ex. Shawarma), Adam Warlock can resolve multiple effects. However, if Adam Warlock ever discarded a card with multiple of the same resources on it (ex. Vibranium), then he could only resolve one effect for that card.",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/official-ffg-rulings/",
+      "rrg_scope": "pre-1.5",
+      "observed": null,
+      "section": "Adam Warlock",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:6b7b26024d6a14594989b5aee6cc1a3227473760e892fd0848d6f036dbbce9c1"
     },
     {
       "id": "ruling:d7dcff2da6228c89",
@@ -12395,6 +12631,19 @@
       "hash": "sha256:8be5e6bdbdd62ca7a80820831c244d1adf6e73e0be1bbb3183481759f7870c6c"
     },
     {
+      "id": "ruling:e387c85ae6f7c9ba",
+      "question": "34 \u2013 I\u2019ve got a couple interesting questions for you today. Suppose that I\u2019m attacking Venom with Heroic Strike, and choose to deal the damage to Bell Tower, then I know that enemy isn\u2019t Venom because I didn\u2019t damage him, 1) so is Venom even being attacked? In particular, do I trigger his Retaliate? Secondly, suppose I defeat Stage 2 of Venom with Heroic Strike, paying the fist resource. 2)Can I stun stage 3 (is it still \u201Cthat enemy\u201D)? 3) If I stun Stage 3, do I take Retaliate (is stage 3 considered a target in that case)? 4) If I don\u2019t pay with a fist resource (so don\u2019t affect stage 3 at all), do I trigger the Stage 3 response?",
+      "answer": "Yes. Even if the damage from Heroic Strike is redirected to Bell Tower, Venom is still the initial valid target of an (attack)-labeled ability, so he was still \u201Cattacked\u201D and his Retaliate will trigger. We are issuing an updated ruling regarding Heroic Strike\u2019s ability to stun here. Since Venom is the initial valid target of Heroic Strike\u2014meaning, he was able to be dealt damage and therefore a \u201Cvalid target\u201D of HS when it\u2019s played\u2014he is still \u201Cthat enemy\u201D targeted by HS and can still be stunned by HS, even when the damage from HS is redirected to Bell Tower. He was still targeted by the ability, he\u2019s still the attacked enemy, he can still be stunned. (Note, this doesn\u2019t change our rulings on other abilities that use \u201Cthat enemy\u201D language, this is just a unique case because of how Bell Tower fits into the interaction.) Yes; if the 6 damage from Heroic Strike defeats Venom II, you can still stun Venom III. The target of both effects is the same character, \u201Cthe Venom villain.\u201D A stage was defeated, but the character was not. Yes; \u201CVenom\u201D the character has still been attacked, and \u201CVenom\u201D has Retaliate during the window it triggers. Yes; same as before, \u201CVenom\u201D the character has still been attacked, and \u201CVenom\u201D has Retaliate here.",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-6/",
+      "rrg_scope": "1.6",
+      "observed": "2024-11",
+      "section": "November, 2024",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:8e4d5a6828ffa271bf94fc1c6d2b126abf1484b78ce16be813600eb94c4497e4"
+    },
+    {
       "id": "ruling:e3be5117861e00a2",
       "question": "I have a question about Miles\u2019 Venom Blast ability. It is not itself an attack ability, as it lacks the attack tag, so when triggered by \u201CPower Within\u201D it would not count as such. But what about when triggered by \u201CWeb Shot\u201D? Since Web Shot is itself an attack, is an enemy damaged by Venom Blast triggered by Web Shot also getting attacked, or is Venom Blast a separate ability, and so the damage is not considered to be \u2018attacking\u2019 the target?",
       "answer": "No; Venom Blast is not an attack, and it would not be treated as such even if triggered off an attack event like Web-Shot. (But, Web-Shot is still an attack event, which means an attack was made, if that helps.)",
@@ -12540,7 +12789,7 @@
     {
       "id": "ruling:e679d25cfed8e14c",
       "question": "I have 4 questions regarding The Galaxy\u2019s Most Wanted campaign. 1)I was defeated in Brotherhood of Badoon scenario in expert campaign mode and didn\u2019t receive any units. However, my team successfully defeated Drang. How should I set my hit points when starting Infiltrate the Museum scenario? 2)Expert mode Infiltrate the Museum scenario, when Collector II was revealed, dealt me 3 damage. Will this affect my hit points during the subsequent expert campaign setup? 3)When achieving victory in Infiltrate the Museum scenario, if there are multiple cards of the same title in The Collection area, how many times should it be recorded as Cards in The Collection? 4)In Escape the Museum campaign setup, If there are multiple cards of the same title in my deck that are recorded in Cards in The Collection, should one card be removed or all of them be removed? \u2026",
-      "answer": "In that case, you may heal your identity to its printed hit point value at no cost. (You\u2019re already at a disadvantage and should still be able to continue playing the campaign.) Yes. The rules for the scenario were written before the current order of Setup was codified. The intention is that you finish Campaign Setup before resolving the Collector\u2019s \u201CWhen Revealed\u201D ability that potentially deals you 3 damage. Record the name of each copy of each player card in The Collection; this can result in some card titles being written more than once.",
+      "answer": "In that case, you may heal your identity to its printed hit point value at no cost. (You\u2019re already at a disadvantage and should still be able to continue playing the campaign.) Yes. The rules for the scenario were written before the current order of Setup was codified. The intention is that you finish Campaign Setup before resolving the Collector\u2019s \u201CWhen Revealed\u201D ability that potentially deals you 3 damage. Record the name of each copy of each player card in The Collection; this can result in some card titles being written more than once. If you have multiple cards with the same title in your deck that are also recorded under Cards in The Collection, remove a number of them equal to the number of times that title was recorded. In essence, each player card that ended in The Collection during the previous scenario should now be removed from player decks during this scenario.",
       "source": "Alex Werner (FFG Game Rules Specialist)",
       "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-7/",
       "rrg_scope": "1.7-1.8",
@@ -12548,7 +12797,7 @@
       "section": "March, 2026",
       "cards": [],
       "kind": "rules",
-      "hash": "sha256:70bce376dc81df174ff84a27ac89f6aa8a18234518288fc9797d6fe9232e5b3c"
+      "hash": "sha256:60a9d200ba8968b7338e4fac62f9cb32294c41a79c3c999f397b3ebb1327aa37"
     },
     {
       "id": "ruling:e6bdbfb394dd4151",
@@ -12631,7 +12880,7 @@
     {
       "id": "ruling:e84071da865a1ec1",
       "question": "62 \u2013 I have some questions about Next Evolution: The player side scheme techno organic purge says \u201Ccharacters other than Cable cannot remove threat\u201D from it. Can the Cable player use, events and upgrades they control to remove threat from Techno organic purge? The rules reference entry for you says that events and upgrades are an extension of your identity so are they also an extension of the character \u2018cable\u2019. The Vivian ally could blank the text box on techno organic purge to allow any character to remove threat from it. But would that also remove the victory keyword? If so does that mean the scheme would get discarded rather than going into the victory display? The Flight, Super strength and telekinesis modular sets all have a card with \u201Csetup. Attach to the villain. Permanent\u201D. How would these modules interact with the Hood scenario? If one of these modules is set aside and then added to the encounter deck later during the scenario would the permanent card be shuffled into the encounter deck or immediately attached to Hood? Also, how would the infinity gauntlet work with hood since it also has a permanent card and a separate deck.",
-      "answer": "Yes, Cable can use events and upgrades while in hero form to remove threat from Technovirus Purge. Yes, Vivian (Ironheart #24) can blank the text on Technovirus Purge. Doing so blanks all text in the side scheme\u2019s text box, including the restriction and the Victory keyword. If the players defeat the scheme while it\u2019s blanked, it will be discarded.",
+      "answer": "Yes, Cable can use events and upgrades while in hero form to remove threat from Technovirus Purge. Yes, Vivian (Ironheart #24) can blank the text on Technovirus Purge. Doing so blanks all text in the side scheme\u2019s text box, including the restriction and the Victory keyword. If the players defeat the scheme while it\u2019s blanked, it will be discarded. Cards with the Setup keyword should be put into play during Step 11 of Setup. This includes modular sets that have cards with the Setup keyword. When playing The Hood scenario, if you know one of your encounter sets has (or might have) one of these cards, check and separate that card out before shuffling the set into the encounter deck. Additionally, if the Infinity Gauntlet set is being used with The Hood, then it should be the very first modular set added to the game. The Infinity Gauntlet should be attached to The Hood immediately, and the Infinity Stone deck should be created immediately, per the rules of the Infinity Gauntlet set in The Mad Titan\u2019s Shadow .",
       "source": "Alex Werner (FFG Game Rules Specialist)",
       "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-5/",
       "rrg_scope": "1.5",
@@ -12639,7 +12888,7 @@
       "section": "August, 2023",
       "cards": [],
       "kind": "rules",
-      "hash": "sha256:c4c7b23c393e0bdfe6aab6834b1784c91f027b59def01b006ab154541c80fde0"
+      "hash": "sha256:b4093189878687761c8b93a251d3990474a85024c261bb7db9503cb25f3d2d9b"
     },
     {
       "id": "ruling:e844f01be911b633",
@@ -12839,7 +13088,7 @@
     {
       "id": "ruling:eaa75edcb49b0acf",
       "question": "I have some questions about timings and the new Silk hero.",
-      "answer": "Yes; if the first sentence of Wallcrawl defeats a scheme with a crisis icon, the following sentences can target the main scheme.",
+      "answer": "Yes; if the first sentence of Wallcrawl defeats a scheme with a crisis icon, the following sentences can target the main scheme. If the first sentence of Wallcrawl defeats a side scheme, then you can trigger Silk\u2019s ability immediately as a response to that defeat to tuck the scheme, and you can then continue resolving Wallcrawl by discarding the newly tucked scheme. Yes, you\u2019d also trigger any \u201CWhen Defeated\u201D abilities on the tucked scheme immediately, before removing threat from another scheme. The delayed effect created by Spider Reflexes to tuck a card after the attack shares a timing point with discarding Assault after the attack resolves, so you can choose whether to tuck the top card before placing Assault in the discard pile, or after placing Assault in the discard pile (and thereby tuck Assasult). If a treachery has all of its effects canceled, it is not considered resolved. If Spider-Tingle canceling the treachery\u2019s \u201CWhen Revealed\u201D effects means that nothing on the treachery resolved, then it can\u2019t be tucked under Silk; but, if the treachery for instance had a keyword that still resolved, it could then be tucked under Silk.",
       "source": "Alex Werner (FFG Game Rules Specialist)",
       "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-6/",
       "rrg_scope": "1.6",
@@ -12847,7 +13096,7 @@
       "section": "April, 2025:",
       "cards": [],
       "kind": "rules",
-      "hash": "sha256:67dca6763c8bc40829e24413c1d38c0f36da645d3627270ad6282e3ea199bd39"
+      "hash": "sha256:5b4a3238ad2d004a359c22b79dbd486ed8d1fc5c111734e93d02510af8f4c712"
     },
     {
       "id": "ruling:ead76dd0b3c966ee",
@@ -13071,6 +13320,19 @@
       "hash": "sha256:877464e48a7b93d321f91f808e99e48d93411e8cba2611b40f5ca50054a13ca8"
     },
     {
+      "id": "ruling:eea4b7ecc8caae77",
+      "question": "Question about keywords stacking. When a card effect would give a card surge and that card already has surge, would that be two instances of surge? And therefore could mean no limit of how many times the same card can Surge? Same question with Quick strike on a minion, would that cause it to attack twice or more in a row? Same with villainous, would that character get two or more boost cards? Same with Toughness? Where it would most of the time fail but some characters can have multiple tough status cards on them Same with steady? 4 status of the same type? Incite would stack correct? And in general is it if a keyword has a numerical value it stacks and if not it doesn\u2019t?",
+      "answer": "Most keywords, particularly the ones you mentioned, do not stack\u2014for example, a card that already has Surge cannot be given Surge again. Surge, Quickstrike, Villainous, Toughness, and Steady can only be granted to a card once. Granting any of these keywords to a card more than once would not cause any additional effects. One keyword that does stack is Retaliate X; if something already has Retaliate X, X is able to be increased based on some card/game effects. Yes, that\u2019s a good rule of thumb. Most keywords with a numeral will stack, like Retaliate or Hinder.",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/official-ffg-rulings/",
+      "rrg_scope": "pre-1.5",
+      "observed": null,
+      "section": "Expansion card questions",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:d2656f6e798070665b08800df2222fe2eb21775e89b3ddeecd5eed00dd6131f9"
+    },
+    {
       "id": "ruling:ef19e5ae2de7d475",
       "question": "142 \u2013 I use Wakanda Forever to clear the last threat from Superpower Training, and put a new Black Panther upgrade into play. I believe based on how Gang Up works, that (1) I would get to resolve this new Black Panther upgrade, is that correct? (2) Does it matter if I cleared Superpower Training with the \u201Cfinal step of this sequence\u201D? As a specific example, (3) if Tactical Genius is my only Black Panther upgrade, is there any way to clear Superpower Training with it and still resolve another upgrade? (either after using Tactical Genius as a \u201Cfinal step\u201D, or if possible not treating it as the final step, because I intend to resolve another)",
       "answer": "The answers to your questions depend on if Tactical Genius is the last upgrade in the sequence or not. If Tactical Genius is the final step of the sequence, then the sequence has ended by the time you put an upgrade into play using Superpower Training. If Tactical Genius is not the final step of the sequence, then you\u2019ll still be resolving the sequence when you put an upgrade into play using Superpower Training, and you can resolve the ability on the new upgrade.",
@@ -13160,6 +13422,19 @@
       "cards": [],
       "kind": "rules",
       "hash": "sha256:bebabe5a7465f53d3684bad196e93b99fdd67d8c1766e387c13403a2fb309f9a"
+    },
+    {
+      "id": "ruling:efd70dbd89808ade",
+      "question": "If a minion with The villainous keyword flips over a boost card during its activation and it\u2019s \u201Chydra exo-soldier\u201D Would you give the villain \u201Canother\u201D boost card it didn\u2019t have? Would it change if the villain already had a boost card some how? Does the boos card know it\u2019s attached to a minion? If it didn\u2019t say \u201Canother\u201D, would it change anything?",
+      "answer": "If a Villainous minion flipped Hydra Exo-Soldier as its boost card, you would: Give the villain a tough card, always, assuming it\u2019s not already tough. Check if the villain has a boost card already. If it does, give it another. If it doesn\u2019t, don\u2019t give it any. The \u201Canother\u201D in Hydra Exo-Soldier\u2019s boost effect should be thought of as \u201Cadditional\u201D, and only applies if there\u2019s already a boost card on the villain.",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/official-ffg-rulings/",
+      "rrg_scope": "pre-1.5",
+      "observed": null,
+      "section": "Expansion card questions",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:ecd56a0098f4c1568c7706909886da9a368b25208e2f8f401cdfa638f550cbb7"
     },
     {
       "id": "ruling:efee286861de7932",
@@ -13437,7 +13712,7 @@
     {
       "id": "ruling:f502ed750a3f2a6a",
       "question": "There was a ruling on Hawkeye\u2019s Quiver that the attached face-up arrows were in play (in particular they are collected by Collector when discarded). Electro is a new minion in Iron Spider\u2019s Sinister Six (Sp//dr pack), which attaches cards to her from your hand. Are these cards also in play? Can I trigger them for their effects once they are attached, and if not, what allows me to generally do that with cards like Gatekeeper, Overwatch, etc? Also, if I attach Spider-Tracer to her with her effect, and then defeat her, can I remove 3 threat from a scheme? Because Spider-Tracer is an energy resource, does it give her \u002B1 HP while attached even when played, or does her constant ability only refer to cards specifically attached by her Forced Response?",
-      "answer": "I initially misspoke on the way I first answered the Collector rules question. I will try and address that along with your other questions. Cards attached to Electro through her ability are not considered \u201Cin play.\u201D This is the same for cards attached to Hawkeye\u2019s Quiver; those Arrows are not considered in play either\u2014they are just attached faceup so that the player can more easily view them. Cards attached to Electro (or Quiver) cannot be interacted with outside of the ability on the card they\u2019re attached to, if at all.",
+      "answer": "I initially misspoke on the way I first answered the Collector rules question. I will try and address that along with your other questions. Cards attached to Electro through her ability are not considered \u201Cin play.\u201D This is the same for cards attached to Hawkeye\u2019s Quiver; those Arrows are not considered in play either\u2014they are just attached faceup so that the player can more easily view them. Cards attached to Electro (or Quiver) cannot be interacted with outside of the ability on the card they\u2019re attached to, if at all. These cases differ from Overwatch because it uses the phrase \u201CAttach To\u201D, which can be found in the Rules Reference. Cards that include this in their ability ARE considered \u201Cin play.\u201D (And Overwatch wouldn\u2019t make sense if it never was considered \u201Cin play.\u201D) Additionally: unless a card\u2019s cost is \u201Cpaid\u201D, or it\u2019s specifically \u201Cput into play\u201D, it\u2019s not considered \u201Cin play.\u201D (Overwatch just happens to have a cost of 0, but the point still stands.) If you paid for Spider-Tracer and attached it to Electro, then it\u2019s considered \u201Cin play\u201D and you could remove 3 threat from a scheme if you defeat Electro. If Spider-Tracer is attached to Electro through her ability, you have not paid its cost and it has not been put into play, so it would have no effect if Electro was defeated. Wherever possible, we should interpret cards as written; so if Spider-Tracer\u2019s cost was paid and it was put into play attached to Electro, we rule that yes, it would still give Electro \u002B1 HP.",
       "source": "Alex Werner (FFG Game Rules Specialist)",
       "via": "hallofheroeslcg.com/official-ffg-rulings/",
       "rrg_scope": "pre-1.5",
@@ -13445,7 +13720,7 @@
       "section": "Galaxy\u2019s Most Wanted",
       "cards": [],
       "kind": "rules",
-      "hash": "sha256:5d6d05c17420888abd5db4b58e701761b99b02f9578d102663a52c8360014bd5"
+      "hash": "sha256:5daa430750f265ff735a0808401c71790cfa48c077f1306429f84b2980c93af6"
     },
     {
       "id": "ruling:f53a301e8096657d",
@@ -13800,6 +14075,19 @@
       "cards": [],
       "kind": "rules",
       "hash": "sha256:c7b47e3ef8ec5d7034e1ba653a4e8cf9c75eed585339bba1e61f6ff5a397c326"
+    },
+    {
+      "id": "ruling:fba0af85176f8559",
+      "question": "If a minion with the Villainous keyword is activating and a boost card is the Pirate Lackey minion which has a boost ability while the villain currently has 1 or more boost cards, do I give the villain another boost card and then discard that same boost card after the activation from the minion because it says \u201Cfor this activation\u201D?",
+      "answer": "No; since the villain is not activating, do not give it a boost card.",
+      "source": "Alex Werner (FFG Game Rules Specialist)",
+      "via": "hallofheroeslcg.com/latest-ffg-rulings-post-rrg-1-7/",
+      "rrg_scope": "1.7-1.8",
+      "observed": "2026-02",
+      "section": "February, 2026",
+      "cards": [],
+      "kind": "rules",
+      "hash": "sha256:266d586e4033be72162cb4cef1d989cd6f234e41b26620ea624d6a2c6262b9a0"
     },
     {
       "id": "ruling:fbc1e5fb2edc05b3",

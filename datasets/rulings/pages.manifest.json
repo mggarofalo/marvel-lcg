@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "algorithm": "sha256",
+  "files": [
+    {
+      "path": "pages/official-ffg-rulings.html",
+      "bytes": 769156,
+      "hash": "sha256:8fc4a5b08e2bf8b46004a0fbfb89aeb369fb24e53dbbaa5298b70ca928679b3b"
+    },
+    {
+      "path": "pages/post-rrg-1-5.html",
+      "bytes": 357231,
+      "hash": "sha256:72c4800ed7cc6aefa5c98fc6b36a561760937d1fb8dcb03e06da3dca3ee8147c"
+    },
+    {
+      "path": "pages/post-rrg-1-6.html",
+      "bytes": 325580,
+      "hash": "sha256:edf164a75000b6dd160203b3f897d004b6d11f0eacf1b098322329e678a494d0"
+    },
+    {
+      "path": "pages/post-rrg-1-7.html",
+      "bytes": 189118,
+      "hash": "sha256:dd6a3f230e93f0a6b914d91f3de1751bf271bc0a7898ec3976424854f71eda47"
+    }
+  ]
+}
