@@ -635,56 +635,6 @@ public sealed partial class ActionAbilityTests
         Assert.Equal(DeckType.EngagedEnemiesArea, minion!.Area.Type);
     }
 
-    [Rule("rr:ability.step.1")]
-    [Rule("rr:hit-points.2.3")]
-    [Fact]
-    public void ChangedThreatRefusesStaleConditionalHealthProjection()
-    {
-        var runner = Runner(
-            AuthoredCards.AuntMay,
-            "Action",
-            """
-            { "seq": [
-              { "removeThreat": {
-                "scheme": { "titled": "Gene Pool" }, "amount": 1
-              } },
-              { "dealDamage": {
-                "cards": { "titled": "Infinite Soldier" }, "amount": 3
-              } },
-              { "removeFromGame": { "cardsIn": {
-                "area": "encounterDiscardPile", "title": "Infinite Soldier"
-              } } }
-            ] }
-            """,
-            cost: """{ "exhaust": "this" }""",
-            includeAuthored: true);
-        Card? source = null;
-        Card? pool = null;
-        Card? soldier = null;
-
-        var refused = Assert.Throws<RulesNotImplementedException>(() => Playing(
-            board =>
-            {
-                source = InPlay(board, AuthoredCards.AuntMay);
-                pool = board.CreateCard(
-                    "45071", board.AreaOf(DeckType.SideSchemesArea));
-                pool.PlaceTokens("k_threat", 9);
-                soldier = board.CreateCard(
-                    "45069", board.AreaOf(
-                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
-                board.CreateCard(
-                    "45069", board.AreaOf(DeckType.EncounterDiscardPile));
-            },
-            hero: true,
-            abilities: runner));
-
-        Assert.Contains("conditional constant", refused.Message);
-        Assert.True(source!.Ready);
-        Assert.Equal(9, pool!.Tokens.GetValueOrDefault("k_threat"));
-        Assert.Equal(0, soldier!.Damage);
-        Assert.Equal(DeckType.EngagedEnemiesArea, soldier.Area.Type);
-    }
-
     [Rule("rr:guard.1")]
     [Rule("rr:villain-defeat.4.2")]
     [Fact]
@@ -1094,53 +1044,6 @@ public sealed partial class ActionAbilityTests
 
         Assert.True(attachment!.Ready);
         Assert.Equal(originalHost!.ObjectId, attachment.Area.Host);
-        Assert.Equal(DeckType.EngagedEnemiesArea, hydra!.Area.Type);
-    }
-
-    [Rule("rr:attachment.1")]
-    [Rule("rr:traits.1")]
-    [Fact]
-    public void RehostedAttachmentRetargetsProjectedTraitGrant()
-    {
-        var runner = Runner(
-            "40151",
-            "Action",
-            """
-            { "seq": [
-              { "attachTo": { "titled": "Hydra Mercenary" } },
-              { "dealDamage": {
-                "cards": { "enemiesWithTrait": "AERIAL" }, "amount": 3
-              } },
-              { "removeFromGame": { "cardsIn": {
-                "area": "encounterDiscardPile", "title": "Hydra Mercenary"
-              } } }
-            ] }
-            """,
-            includeAuthored: true);
-        Card? attachment = null;
-        Card? originalHost = null;
-        Card? hydra = null;
-
-        Assert.Throws<RulesNotImplementedException>(() => Playing(
-            board =>
-            {
-                originalHost = board.CreateCard(
-                    "16183", board.AreaOf(
-                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
-                attachment = board.CreateCard(
-                    "40151", board.AreaOf(
-                        DeckType.UpgradesArea, PlayArea.Of(0),
-                        originalHost.ObjectId));
-                hydra = board.CreateCard(
-                    "08028", board.AreaOf(
-                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
-                board.CreateCard(
-                    "08028", board.AreaOf(DeckType.EncounterDiscardPile));
-            },
-            hero: true,
-            abilities: runner));
-
-        Assert.Equal(originalHost!.ObjectId, attachment!.Area.Host);
         Assert.Equal(DeckType.EngagedEnemiesArea, hydra!.Area.Type);
     }
 

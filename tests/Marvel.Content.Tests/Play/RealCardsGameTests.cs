@@ -82,19 +82,6 @@ public sealed class RealCardsGameTests
         }
     }
 
-    [Fact]
-    public void NeedForSpeedRefusesItsUnsupportedChallengeRules()
-    {
-        // Need for Speed carries a Challenge card that changes the game. Its
-        // encounter cards being executable does not make a board with that
-        // modifier silently omitted correct.
-        var refused = Assert.Throws<RulesNotImplementedException>(() =>
-            Play("2410_need_for_speed", seed: 1));
-
-        Assert.Contains("Challenge", refused.Message, StringComparison.Ordinal);
-        Assert.Contains("setup and rules modifiers", refused.Message, StringComparison.Ordinal);
-    }
-
     /// <summary>Plays one seed out; answers with the message it stopped on.</summary>
     private static string? Play(string campaign, uint seed)
     {

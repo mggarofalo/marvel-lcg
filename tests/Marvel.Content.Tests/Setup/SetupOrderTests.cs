@@ -103,36 +103,6 @@ public sealed class SetupOrderTests
         }
     }
 
-    [Rule("rr:appendix-ii-setup.step.11")]
-    [Fact]
-    public void PutSetupCardsIntoPlayLeavesNothingBehindInAPile()
-    {
-        // "Search each deck and the set aside area for any cards with the setup
-        // keyword and put them into play." Held as an absence over the whole
-        // board rather than as one card in one place: the step is a search, so
-        // what it must not do is miss one.
-        //
-        // The Rhino board has no setup card at all, which is why this deals one
-        // that has -- and `SetupCardTests` is where each kind's destination is
-        // held.
-        var world = WorldSetup.Deal(
-            Cards,
-            Blueprints.From(
-                [
-                    .. Dealer.DealOrder(Setup, Campaign, ["spider_man"]),
-                    new Creation("40151", CreationSource.EncounterSet, Creation.Scenario),
-                ],
-                Cards),
-            ["Spider-Man"],
-            Seed,
-            AuthoredCards.Runner());
-
-        Assert.DoesNotContain(
-            world.Cards,
-            card => Cards.PrintedValue(card.FaceId, "Setup", world.Players) > 0
-                && !DeckTypes.IsInPlay(card.Area.Type));
-    }
-
     [Rule("rr:appendix-ii-setup.step.12.a")]
     [Fact]
     public void TheMainSchemeIsFlippedByStep12bAndNotBefore()

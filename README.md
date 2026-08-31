@@ -2,6 +2,11 @@
 
 A rules engine for Marvel Champions: The Card Game, written in C#.
 
+The supported runtime product is the Core Set: its 5 heroes, 3 scenarios in
+Standard and Expert, 5 modular encounter sets, and all 209 card faces. The
+repository keeps the complete card catalog and Rules Reference v1.8 for
+research and future work, but later products are not executable content yet.
+
 The engine's job is to be **right about the rules**. Every behaviour it
 implements is held against the published Rules Reference, vendored in
 [`datasets/rules-reference/`](datasets/rules-reference/), and tests cite the

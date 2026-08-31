@@ -433,65 +433,12 @@ public sealed class AbilityDataTests
     [InlineData("""{"cards":[{"card":"01099","abilities":[{"trigger":{"event":"WhenAttackInitiated","timing":"Shouting","actor":"this"},"effect":{"seq":[]}}]}]}""", "Shouting")]
     [InlineData("""{"cards":[{"card":"01099","abilities":[{"trigger":{"event":"WhenAttackInitiated","timing":"Interrupt","actor":"this"}}]}]}""", "no 'effect'")]
     [InlineData("""{"cards":[{"card":"01099","abilities":[{"trigger":{"event":"WhenAttackInitiated","timing":"Interrupt","actor":"this"},"anyPlayer":"yes","effect":{"seq":[]}}]}]}""", "non-boolean")]
-    [InlineData("""{"cards":[{"card":"16142","controlledBy":"lastPlayer"}]}""", "other than 'firstPlayer'")]
-    [InlineData("""{"cards":[{"card":"16142"}]}""", "neither abilities nor placement")]
+    [InlineData("""{"cards":[{"card":"01099","controlledBy":"lastPlayer"}]}""", "other than 'firstPlayer'")]
+    [InlineData("""{"cards":[{"card":"01099"}]}""", "neither abilities nor placement")]
     public void TheReaderRefusesWhatItDoesNotUnderstand(string json, string says)
     {
         var thrown = Assert.Throws<AbilityException>(() => AbilityCatalog.Parse(json));
         Assert.Contains(says, thrown.Message, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void PlacementMetadataDoesNotClaimTheCardsAbilitiesAreAuthored()
-    {
-        // Placement is one declarative sentence on each card. Omitting the
-        // abilities array preserves the engine's refusal when any of the
-        // remaining printed text is later reached.
-        string[] placementOnly = ["16142", "16149", "21129", "40130"];
-
-        Assert.All(
-            placementOnly,
-            faceId => Assert.DoesNotContain(faceId, AuthoredCards.Book.Authored));
-
-        using var cards = JsonDocument.Parse(
-            File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
-        var printed = cards.RootElement.GetProperty("cards").EnumerateArray()
-            .Where(card => placementOnly.Contains(
-                card.GetProperty("card_id").GetString(), StringComparer.Ordinal));
-        Assert.All(
-            printed,
-            card => Assert.DoesNotContain(
-                "When Revealed", card.GetProperty("text").GetString(),
-                StringComparison.Ordinal));
-    }
-
-    [Fact]
-    public void SetupControlNamesTheCurrentFirstPlayer()
-    {
-        // "First player" is board state, not seat zero. This direct seam test
-        // makes the distinction observable even though a fresh deal begins
-        // with the token at seat zero.
-        var world = new World(Printed, players: 2) { FirstPlayer = 1 };
-        world.CreateSeat("p0");
-        world.CreateSeat("p1");
-        var milano = world.CreateCard("16142", world.AreaOf(DeckType.AsideDeck));
-
-        Assert.Equal(1, AuthoredCards.Runner().SetupController(world, milano));
-    }
-
-    [Fact]
-    public void PlacementOnlyTextDoesNotBlockWhileItsCardIsOutOfPlay()
-    {
-        // An aside card's resource, response, and constants cannot affect the
-        // game. The refusal begins only after setup has put it into play.
-        var world = new World(Printed, players: 1);
-        world.CreateSeat("p0");
-        world.CreateCard("16142", world.AreaOf(DeckType.AsideDeck));
-
-        var failure = Record.Exception(
-            () => AuthoredCards.Runner().ValidateForPlay(world));
-
-        Assert.Null(failure);
     }
 
     [Fact]
@@ -710,9 +657,9 @@ public sealed class AbilityDataTests
     [Fact]
     public void TheAuthoredCardsAreTheOnesTheTestsName()
     {
-        // All 209 printed core faces are the completed slice. The explicit
-        // non-core list preserves the scenarios authored before that slice;
-        // anything else still has to be a deliberate test change.
+        // The runtime book is the Core Set product boundary. The complete
+        // generated card catalog remains available for printed facts, but no
+        // later product may acquire executable text accidentally.
         using var cards = JsonDocument.Parse(
             File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
         var core = cards.RootElement.GetProperty("cards").EnumerateArray()
@@ -720,17 +667,8 @@ public sealed class AbilityDataTests
                 card.GetProperty("pack").GetString(), "core", StringComparison.Ordinal))
             .Select(card => card.GetProperty("card_id").GetString()!)
             .ToList();
-        string[] nonCore =
-        [
-            "24042", "24043", "24044", "24045", "24046", "24047", "24048",
-            "40151", "40155", "40159",
-            "45059", "45060", "45061", "45062a", "45062b", "45063", "45064",
-            "45065", "45066", "45068", "45069", "45070", "45071", "45072", "45073", "45074",
-            "90005",
-        ];
-
         Assert.Equal(
-            core.Concat(nonCore).Order(StringComparer.Ordinal),
+            core.Order(StringComparer.Ordinal),
             AuthoredCards.Book.Authored.Order(StringComparer.Ordinal));
     }
 

@@ -72,7 +72,7 @@ public static class Dealer
         for (int seat = 0; seat < heroNames.Count; seat++)
         {
             var hero = catalog.Hero(heroNames[seat]);
-            Add(IdentitySpecs(hero), CreationSource.Identity, seat);
+            Add(hero.Hero.Select(MoveBToFront), CreationSource.Identity, seat);
             Add(hero.Obligations, CreationSource.Obligation, seat);
             Add(hero.NemesisSet, CreationSource.Nemesis, seat);
 
@@ -166,45 +166,6 @@ public static class Dealer
     {
         ArgumentNullException.ThrowIfNull(campaign);
         return [.. campaign.EncounterSets, .. (modularSetNames ?? campaign.ModularSets)];
-    }
-
-    // `player_setup.py:8`, the engine's own name for it.
-    private const string HackHeroIdPrefix = "3100";
-    private const string HackIdentity = "31002a,31002b";
-
-    /// <summary>The identity cards this hero's setup creates, in order.</summary>
-    /// <remarks>
-    /// <para>
-    /// Normally one <see cref="MoveBToFront"/> per declared spec. SP//dr is the
-    /// exception, and it is not a flag or a rule — it is two lines of engine
-    /// (<c>player_setup.py:222</c>): a hero whose first spec starts with
-    /// <c>3100</c> has the declared list discarded outright for one hard-coded
-    /// card.
-    /// </para>
-    /// <para>
-    /// It does the same job <see cref="MoveBToFront"/> does everywhere else —
-    /// start the game in alter-ego form — by substitution rather than
-    /// reordering, because SP//dr's two sides are two <b>cards</b> and not two
-    /// faces of one. The declared <c>31001a,31001b</c> is the SP//dr Suit;
-    /// <c>31002a,31002b</c> is Peni Parker, whose <c>a</c> face is already the
-    /// alter-ego. Her own setup ability puts the suit into play afterwards, so
-    /// the card at the first player-owned id is <c>31002a</c>.
-    /// </para>
-    /// <para>
-    /// Here rather than in the card DSL because this one is decidable from the
-    /// dataset: the branch reads the hero spec and nothing else.
-    /// </para>
-    /// </remarks>
-    /// <param name="hero">The hero's starter deck.</param>
-    public static IReadOnlyList<string> IdentitySpecs(HeroSetup hero)
-    {
-        ArgumentNullException.ThrowIfNull(hero);
-        if (hero.Hero.Count > 0 && hero.Hero[0].StartsWith(HackHeroIdPrefix, StringComparison.Ordinal))
-        {
-            return [HackIdentity];
-        }
-
-        return [.. hero.Hero.Select(MoveBToFront)];
     }
 
     /// <summary>

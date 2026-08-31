@@ -318,13 +318,13 @@ public sealed partial class ActionAbilityTests
         // action; it cannot request the obligation sitting in player zero's
         // play area.
         var runner = Runner(
-            AuthoredCards.Hunted,
+            AuthoredCards.EvictionNotice,
             "Action",
             """{ "draw": { "player": "you", "count": 1 } }""");
         Card? obligation = null;
         var (_, world) = Playing(
             board => obligation = board.CreateCard(
-                AuthoredCards.Hunted,
+                AuthoredCards.EvictionNotice,
                 board.AreaOf(DeckType.ObligationsArea, PlayArea.Of(0))),
             heroes: ["spider_man", "captain_marvel"],
             abilities: runner);
@@ -343,13 +343,13 @@ public sealed partial class ActionAbilityTests
         // controller", and "only" that player can trigger its abilities or
         // pay its costs. The attachment itself belongs to the scenario.
         var runner = Runner(
-            AuthoredCards.PrelateArmor,
+            AuthoredCards.Charge,
             "Action",
             """{ "draw": { "player": "you", "count": 1 } }""");
         Card? attachment = null;
         var (_, world) = Playing(
             board => attachment = board.CreateCard(
-                AuthoredCards.PrelateArmor,
+                AuthoredCards.Charge,
                 board.AreaOf(
                     DeckType.UpgradesArea,
                     PlayArea.Of(0),
@@ -580,7 +580,7 @@ public sealed partial class ActionAbilityTests
     public void AnAttachmentsYouTriggerMatchesOnlyItsHostController()
     {
         var runner = Runner(
-            AuthoredCards.PrelateArmor,
+            AuthoredCards.Charge,
             "Response",
             """{ "draw": { "player": "you", "count": 1 } }""",
             eventName: "WhenAttacked",
@@ -588,7 +588,7 @@ public sealed partial class ActionAbilityTests
         Card? attachment = null;
         var (_, world) = Playing(
             board => attachment = board.CreateCard(
-                AuthoredCards.PrelateArmor,
+                AuthoredCards.Charge,
                 board.AreaOf(
                     DeckType.UpgradesArea,
                     PlayArea.Of(0),
@@ -611,13 +611,13 @@ public sealed partial class ActionAbilityTests
     public void RestrictedResourceAbilitiesBelongOnlyToTheirPermittedPlayer()
     {
         var obligationRunner = Runner(
-            AuthoredCards.Hunted,
+            AuthoredCards.EvictionNotice,
             "Resource",
             """{ "generate": "E" }""");
         Card? obligation = null;
         var (_, obligationWorld) = Playing(
             board => obligation = board.CreateCard(
-                AuthoredCards.Hunted,
+                AuthoredCards.EvictionNotice,
                 board.AreaOf(DeckType.ObligationsArea, PlayArea.Of(0))),
             heroes: ["spider_man", "captain_marvel"],
             abilities: obligationRunner);
@@ -637,7 +637,7 @@ public sealed partial class ActionAbilityTests
         var attachmentRunner = new Marvel.Cards.Run.AbilityRunner(
             Marvel.Cards.Dsl.AbilityCatalog.Parse(
                 $$"""
-                { "cards": [ { "card": "{{AuthoredCards.PrelateArmor}}", "abilities": [ {
+                { "cards": [ { "card": "{{AuthoredCards.Charge}}", "abilities": [ {
                     "trigger": { "event": "WhenActionTriggered", "timing": "Resource", "subject": "game" },
                     "when": { "exists": { "query": "alliesYouControl" } },
                     "effect": { "generate": "B" }
@@ -651,7 +651,7 @@ public sealed partial class ActionAbilityTests
                     "01002",
                     board.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
                 attachment = board.CreateCard(
-                    AuthoredCards.PrelateArmor,
+                    AuthoredCards.Charge,
                     board.AreaOf(
                         DeckType.UpgradesArea,
                         PlayArea.Of(0),
@@ -674,7 +674,7 @@ public sealed partial class ActionAbilityTests
         var kindRunner = new Marvel.Cards.Run.AbilityRunner(
             Marvel.Cards.Dsl.AbilityCatalog.Parse(
                 $$"""
-                { "cards": [ { "card": "{{AuthoredCards.PrelateArmor}}", "abilities": [ {
+                { "cards": [ { "card": "{{AuthoredCards.Charge}}", "abilities": [ {
                     "trigger": { "event": "WhenDamageWouldBeDealt", "timing": "Response", "subject": "game" },
                     "when": { "isYourIdentity": "trigger.target" },
                     "effect": { "draw": { "player": "you", "count": 1 } }
@@ -683,7 +683,7 @@ public sealed partial class ActionAbilityTests
         Card? kindAttachment = null;
         var (_, kindWorld) = Playing(
             board => kindAttachment = board.CreateCard(
-                AuthoredCards.PrelateArmor,
+                AuthoredCards.Charge,
                 board.AreaOf(
                     DeckType.UpgradesArea,
                     PlayArea.Of(0),
@@ -720,13 +720,13 @@ public sealed partial class ActionAbilityTests
     public void AnotherPlayersObligationIsExcludedFromAbilityWindows(string timing)
     {
         var runner = Runner(
-            AuthoredCards.Hunted,
+            AuthoredCards.EvictionNotice,
             timing,
             """{ "draw": { "player": "you", "count": 1 } }""",
             eventName: "WhenAttacked");
         var (_, world) = Playing(
             board => board.CreateCard(
-                AuthoredCards.Hunted,
+                AuthoredCards.EvictionNotice,
                 board.AreaOf(DeckType.ObligationsArea, PlayArea.Of(0))),
             heroes: ["spider_man", "captain_marvel"],
             abilities: runner);
@@ -792,14 +792,14 @@ public sealed partial class ActionAbilityTests
     public void APlayersForcedActionAsksThatPlayerToChooseItsPayment()
     {
         var runner = Runner(
-            AuthoredCards.Hunted,
+            AuthoredCards.EvictionNotice,
             "ForcedAction",
             """{ "discard": "this" }""",
             cost: """{ "discardFromHand": 1 }""");
         Card? source = null;
         var (game, world) = Playing(
             board => source = board.CreateCard(
-                AuthoredCards.Hunted,
+                AuthoredCards.EvictionNotice,
                 board.AreaOf(DeckType.ObligationsArea, PlayArea.Of(1))),
             heroes: ["spider_man", "captain_marvel"],
             abilities: runner);

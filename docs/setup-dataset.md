@@ -13,23 +13,19 @@ gates it instead.
 
 ## What is in it
 
-One file, `datasets/setup/setup.json`, about 195 KB, three groups keyed by the
-name the engine resolves:
+One file, `datasets/setup/setup.json`, with three groups keyed by the name the
+engine resolves:
 
 | group | records |
 |---|---|
-| `campaigns` | 135 |
-| `heroes` | 63 |
-| `encounter_sets` | 184 |
+| `campaigns` | 6 Core Set scenario modes |
+| `heroes` | 5 Core Set starter decks |
+| `encounter_sets` | 7 Core Set fixed and modular sets |
 
 **Names, not paths.** A scenario, a hero and an encounter set are each
-identified by a bare name, and the three groups are three separate tables — so
-a name in two of them is two different things and not an ambiguity.
-**Eleven names are in two**, every one of them a character who is both a
-playable hero and the villain of their own scenario: Black Widow, Captain
-America, Captain Marvel, Iron Man, Magneto, Nebula, Spider-Woman, Venom, and
-three more. Harmless here; not harmless to anything that flattens the three
-into one lookup, which is why `SetupDatasetTests` pins the list.
+identified by a bare name, and the three groups are separate tables. Their Core
+Set keys do not collide. The complete generated card catalog remains available
+for printed facts, but these setup keys are the runtime product boundary.
 
 `modular_sets` stays separate from `encounter_sets`. A scenario's printed
 insert names the sets it always uses and the modular sets it draws from, and
@@ -102,27 +98,11 @@ the first one dealt.
 A port that flipped both, or neither, would still pass a test that only checked
 which card was at which id. That is why the exception is pinned by name.
 
-### The one hero who is not who she says she is
+### Historical source measurements
 
-SP//dr declares `31001a,31001b` and the engine creates `31002a,31002b`.
-`SelectIdentity` tests the first spec against `HACK_HERO_ID` — the literal
-string `'3100'` — and on a hit discards the descriptor's list for a hard-coded
-`31002a,31002b`, with no `move_b_to_front`.
-
-It is the same job the `b`-face reorder does everywhere else — begin the game
-in alter-ego form — done by substitution instead, because SP//dr's two sides
-are two *cards* rather than two faces of one. `31001` is the SP//dr Suit and
-`31002` is Peni Parker, whom the descriptor carries under the dropped
-`set_aside` key. Peni is created as the identity, her `a` face is already the
-alter-ego so no reorder is needed, and her own setup ability puts the suit into
-play. The card at SP//dr's first `object_id` is `31002a`, not `31001b`.
-
-`deal.IdentitySpecs` reproduces the branch. It is the one piece of card-specific
-engine behaviour the deal order does implement, because it is the one that is
-decidable from the dataset: the branch reads the hero spec and nothing else.
-Everything else in this shape is a card script and waits for phase 5.
-
-### What the deal order derives from printed cards
+The measurements below describe the broader source material used while the
+setup format was designed. They are not runtime support claims. The runtime
+dataset now contains only the Core Set boundary listed above.
 
 Measured over **48 boards** — 24 heroes against `rhino`, 24 scenarios against
 `spider_man`, comparing the declared order against the names the engine actually

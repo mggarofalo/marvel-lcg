@@ -31,8 +31,8 @@ public sealed class IndirectDamageTests
     /// <summary>"Aunt May" — a support, so it is not a character.</summary>
     private const string NotACharacter = "01006";
 
-    /// <summary>"Spider-Man" the ally, from Miles Morales's set.</summary>
-    private const string Ally = "13019";
+    /// <summary>Black Cat, the Core Set ally used by hand-built boards.</summary>
+    private const string Ally = "01020";
 
     private static readonly SetupCatalog Setup =
         SetupCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("setup", "setup.json")));
@@ -241,7 +241,7 @@ public sealed class IndirectDamageTests
         // replaying the allocation or skipping its live choice.
         var runner = new AbilityRunner(AbilityCatalog.Parse(
             """
-            {"cards":[{"card":"13019","abilities":[{
+            {"cards":[{"card":"01020","abilities":[{
               "trigger":{"event":"WhenCardWouldBeDefeated","timing":"Interrupt",
                          "subject":"this"},
               "effect":{"heal":{"card":"this","amount":{"damageOn":"this"}}}
@@ -336,15 +336,15 @@ public sealed class IndirectDamageTests
     {
         // `rr:triggering-condition.2` says an attack that both deals damage
         // and defeats a character is handled "with a single interrupt window
-        // and a single response window." The assignment plan is internal;
-        // Gene Pool's "After an ally is defeated" Forced Response therefore
-        // belongs to the outer attack-damage occurrence and feeds the pool.
+        // and a single response window." The assignment plan is internal, so
+        // the fixture's forced response belongs to the outer attack-damage
+        // occurrence and feeds the side scheme.
         var world = Deal();
-        var runner = DeclinedDefeatAndGenePoolRunner();
+        var runner = DeclinedDefeatAndSideSchemeRunner();
         world.Abilities = runner;
         world.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
         var pool = world.CreateCard(
-            AuthoredCards.GenePool, world.AreaOf(DeckType.SideSchemesArea));
+            AuthoredCards.BombScare, world.AreaOf(DeckType.SideSchemesArea));
         var ally = world.CreateCard(
             Ally, world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
         ally.TakeDamage(Damage.Health(world, Cards, ally) - 1);
@@ -628,7 +628,7 @@ public sealed class IndirectDamageTests
 
     private static AbilityRunner HealingAllyRunner() => new(AbilityCatalog.Parse(
         """
-        {"cards":[{"card":"13019","abilities":[{
+        {"cards":[{"card":"01020","abilities":[{
           "trigger":{"event":"WhenCardWouldBeDefeated","timing":"Interrupt",
                      "subject":"this"},
           "effect":{"heal":{"card":"this","amount":{"damageOn":"this"}}}
@@ -665,16 +665,16 @@ public sealed class IndirectDamageTests
         ]}
         """));
 
-    private static AbilityRunner DeclinedDefeatAndGenePoolRunner() =>
+    private static AbilityRunner DeclinedDefeatAndSideSchemeRunner() =>
         new(AbilityCatalog.Parse(
             """
             {"cards":[
-              {"card":"13019","abilities":[{
+              {"card":"01020","abilities":[{
                 "trigger":{"event":"WhenCardWouldBeDefeated","timing":"Interrupt",
                            "subject":"this"},
                 "effect":{"heal":{"card":"this","amount":{"damageOn":"this"}}}
               }]},
-              {"card":"45071","abilities":[{
+              {"card":"01109","abilities":[{
                 "trigger":{"event":"WhenCardDefeated","timing":"ForcedResponse",
                            "subject":"game"},
                 "effect":{"placeThreat":{"scheme":"this","amount":3}}
