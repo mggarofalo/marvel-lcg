@@ -33,6 +33,9 @@ public sealed class SetupDatasetTests
     private static readonly CardCatalog Cards =
         CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
 
+    private static readonly string CardsText =
+        File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json"));
+
     private static readonly string SetupText =
         File.ReadAllText(RepositoryPaths.Dataset("setup", "setup.json"));
 
@@ -242,6 +245,43 @@ public sealed class SetupDatasetTests
             Assert.True(hero.Obligations.Count > 0, $"heroes.{name} has no obligation");
             Assert.True(hero.NemesisSet.Count > 0, $"heroes.{name} has no nemesis set");
         }
+    }
+
+    [Rule("rr:classifications.1")]
+    [Rule("rr:classifications.2")]
+    [Rule("rr:classifications.3")]
+    [Rule("rr:identity-specific-card.1")]
+    [Rule("rr:identity-specific-card.2")]
+    [Rule("rr:identity-specific-card.3.1")]
+    [Rule("rr:nemesis-encounter-set.1")]
+    [Rule("rr:nemesis-encounter-set.2")]
+    [Rule("rr:obligation.3")]
+    [Rule("rr:basic-card.1")]
+    [Rule("rr:basic-card.3")]
+    [Fact]
+    public void EverySupportedStarterDeckPassesProductIndependentConstructionRules()
+    {
+        // The authored setup names signature and customizable cards; the
+        // generated card dataset supplies their printed class and set icon.
+        // Validate every starter rather than proving one hand-picked deck.
+        foreach (string hero in Setup.HeroNames)
+        {
+            Blueprints.From(Dealer.DealOrder(Setup, "rhino", [hero], facts: Cards), Cards);
+        }
+    }
+
+    [Rule("rr:unique-icon")]
+    [Fact]
+    public void TheGeneratedDatasetCarriesEveryPrintedUniqueIcon()
+    {
+        // The icon is vendored as MarvelSDB's `is_unique` boolean and emitted
+        // as the generated `Unique` fact. Pin the complete current pool so a
+        // dropped extractor branch cannot silently disable every rule using it.
+        using var document = JsonDocument.Parse(CardsText);
+        Assert.Equal(
+            1340,
+            document.RootElement.GetProperty("cards").EnumerateArray().Count(card =>
+                card.GetProperty("attributes").TryGetProperty("Unique", out _)));
     }
 
     [Fact]

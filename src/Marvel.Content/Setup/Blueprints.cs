@@ -76,8 +76,11 @@ public static class Blueprints
         foreach (var deck in deckCards.GroupBy(creation => creation.Player))
         {
             foreach (var title in deck.GroupBy(
-                         creation => facts.Title(creation.Faces[0]),
-                         StringComparer.Ordinal))
+                         creation => new CardCopy(
+                             facts.Title(creation.Faces[0]),
+                             facts.Subtitle(creation.Faces[0])))
+                     .OrderBy(group => group.Key.Title, StringComparer.Ordinal)
+                     .ThenBy(group => group.Key.Subtitle, StringComparer.Ordinal))
             {
                 long maximum = title
                     .Select(creation => facts.PrintedValue(
@@ -89,12 +92,16 @@ public static class Blueprints
                 {
                     throw new ArgumentException(
                         $"player {deck.Key}'s deck contains {title.LongCount()} copies of "
-                        + $"'{title.Key}', whose printed maximum is {maximum}",
+                        + $"'{title.Key.Title}'"
+                        + (title.Key.Subtitle.Length > 0 ? $" ({title.Key.Subtitle})" : string.Empty)
+                        + $", whose printed maximum is {maximum}",
                         nameof(dealt));
                 }
             }
         }
     }
+
+    private sealed record CardCopy(string Title, string Subtitle);
 
     private static string? DeckOf(Creation creation) => creation.Source switch
     {

@@ -297,6 +297,20 @@ public static class Reveal
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(events);
 
+        if (facts.Kind(card.FaceId) != CardKind.EncounterVillain
+            && Uniqueness.IsBlocked(world, facts, card))
+        {
+            // `rr:unique-icon.4.2`: a matching non-villain encounter card is
+            // discarded without entering play. When this is a reveal, the
+            // revealing player receives one facedown encounter card.
+            Discard.Card(world, card, "unique", events);
+            if (occurrence is not null)
+            {
+                Deal.EncounterCard(world, player, "unique", events);
+            }
+            return;
+        }
+
         var into = facts.Kind(card.FaceId) switch
         {
             CardKind.Ally when setupController is { } controller => world.AreaOf(

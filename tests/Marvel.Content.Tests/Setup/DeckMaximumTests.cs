@@ -1,5 +1,6 @@
 using Marvel.Cards.Dsl;
 using Marvel.Content.Setup;
+using Marvel.Rules.State;
 using Marvel.Tests;
 using Xunit;
 
@@ -43,5 +44,37 @@ public sealed class DeckMaximumTests
 
         Assert.Equal(2, blueprints.Count);
         Assert.Equal([0, 1], blueprints.Select(card => card.Seat));
+    }
+
+    [Rule("rr:copy")]
+    [Fact]
+    public void CardsWithTheSameTitleAndDifferentSubtitlesAreNotCopies()
+    {
+        // A copy shares its title and subtitle. These two Champions therefore
+        // each satisfy the printed one-copy maximum independently.
+        var facts = new CopyFacts();
+        var blueprints = Blueprints.From(
+        [
+            new Creation("left", CreationSource.PlayerDeck, 0),
+            new Creation("right", CreationSource.PlayerDeck, 0),
+        ], facts);
+
+        Assert.Equal(2, blueprints.Count);
+    }
+
+    private sealed class CopyFacts : ICardFacts
+    {
+        public CardKind Kind(string faceId) => CardKind.Ally;
+        public string Title(string faceId) => "Champion";
+        public string Subtitle(string faceId) => faceId;
+        public IReadOnlyList<string> Traits(string faceId) => [];
+        public IReadOnlyDictionary<string, string> Attributes(string faceId) =>
+            new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["MaxPerDeck"] = "1",
+            };
+        public long PrintedValue(
+            string faceId, string attribute, int players, long fallback = 0) =>
+            attribute == "MaxPerDeck" ? 1 : fallback;
     }
 }
