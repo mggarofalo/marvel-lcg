@@ -18,10 +18,9 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
 
     <!-- The Gherkin parser Reqnroll is built on. Referenced directly rather
-         than through Reqnroll itself: MARVEL-41 asks whether the spec *format*
-         is compatible, and that is a parsing question. Pulling in the full
-         BDD runner would also require step definitions for an engine that does
-         not exist yet. -->
+         than through Reqnroll itself: the repository owns a typed transcript
+         vocabulary and runner, while this package supplies only the standard
+         syntax tree. -->
     <PackageVersion Include="Gherkin" Version="34.0.0" />
 
     <!-- Reads the Rules Reference PDF, for `tools/Marvel.Rules.Harvest`. Not

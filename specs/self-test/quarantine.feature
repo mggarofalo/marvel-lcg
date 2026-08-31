@@ -8,8 +8,17 @@
 Feature: Quarantine self-test
 
   Background:
-    Given the scenario is "rhino"
-    And the hero is "spider_man"
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 303  |
+
+  @runner-self-test @behavior:rr:player-deck.2:published-result @rr:player-deck.1 @rr:player-deck.2
+  Scenario: the executable runner rejects a false hand count
+    Given seat 1's player deck contains only these next cards
+      | next card |
+      | 01006     |
+    When seat 1 draws 2 cards
+    Then seat 1 has 99 cards in hand
 
   @self-test
   Scenario: a wrong expected value is FAIL-engine-suspected

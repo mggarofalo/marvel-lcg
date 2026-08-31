@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Marvel.Behavior.Run</RootNamespace>
+    <AssemblyName>Marvel.Behavior.Run</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Marvel.Content/Marvel.Content.csproj" />
+    <ProjectReference Include="../../src/Marvel.Cards/Marvel.Cards.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Gherkin" />
+  </ItemGroup>
+
+</Project>
