@@ -436,6 +436,46 @@ in-process for the bundled case, a socket for the container. The engine makes th
 straightforward, because `(state, input) -> (state, affordances, events)` says
 nothing about where the function runs.
 
+**Implemented by MARVEL-167.** `IEngineTransport.ExchangeAsync` is that client
+interface. `InProcessTransport` delegates to the host in the bundled case;
+`SocketTransport` sends the same `EngineRequest` and receives the same
+`EngineResponse` in the hosted case. The host itself is one synchronous
+`EngineHost`. The socket side is awaitable and cancellable so network I/O never
+blocks the client loop; the in-process implementation calls the host
+synchronously before returning its completed value, so neither transport
+creates an async or concurrent path into game state.
+
+The socket protocol is version 1, source-generated JSON in a four-byte
+big-endian length frame, with a 4 MiB maximum. One connection carries one
+request and one response. `open`, `resolve`, and `close` are the three
+operations; game ids and request correlation ids are opaque strings chosen by
+the client and limited to 256 characters. Diagnostics are limited to 1,024
+characters, and a response that still cannot be represented becomes a compact
+`response_failed` rather than escaping the connection handler. These spellings,
+limits and framing are **our wire-format choices**, not rules of the game.
+`src/Marvel.Server/Dockerfile` packages the same assembly and the three canonical
+runtime datasets for Linux.
+
+Game ids are labels, not authority, and two clients may choose the same one.
+`open` returns a cryptographically random 256-bit session capability; every
+`resolve` and `close` must present it, and the host keys the live game by that
+capability. Capability randomness is transport/security state above the engine
+wall: it never enters `World`, the seeded MT19937 stream, a prompt, or an event,
+so it cannot change the game named by a seed.
+
+Cancellation has one explicit boundary. It may cancel DNS/connect and the
+request write. Once the complete request frame has been sent, the server may
+have committed the decision, so the response read no longer observes caller
+cancellation: the prompt and event list are the authoritative result and cannot
+be discarded without an idempotent retry protocol. There is no such retry
+protocol in version 1.
+
+The response deliberately contains a prompt and events, never `World` or its
+digest. A fresh client's visible board projection is separate work for
+`Marvel.View` and the visibility owner below; making the digest a bootstrap
+shortcut would expose hidden state and turn an internal truth format into a
+client API.
+
 ### Affordances and events have to be wire types
 
 This is a new constraint on MARVEL-160 and MARVEL-161, and it is cheap now and
