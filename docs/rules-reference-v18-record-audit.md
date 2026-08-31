@@ -8,11 +8,11 @@ The audit is a work list, not a generated coverage gate. The source of truth for
 
 | Disposition | Records |
 |---|---:|
-| Executable and cited | 866 |
+| Executable and cited | 867 |
 | Covered by a narrower rule | 55 |
 | Redirect or summary | 122 |
 | Not enforceable by an engine | 46 |
-| Outside the supported product boundary | 91 |
+| Outside the supported product boundary | 90 |
 | Unimplemented behavior | 38 |
 | Total | 1,218 |
 
@@ -33,16 +33,15 @@ items.
 ### MARVEL-272 product-boundary verification
 
 MARVEL-272 originally held 79 records as one provisional product boundary.
-The engine now supports 44 of them: 39 records are executable and directly
+The engine now supports 45 of them: 40 records are executable and directly
 cited, and five parent records are covered by narrower cited clauses. The
-remaining 35 records stay outside the supported boundary for these concrete
+remaining 34 records stay outside the supported boundary for these concrete
 reasons:
 
 | Unsupported surface | Records | Evidence |
 |---|---:|---|
 | One-aspect deck selection | 1 | `rr:aspect-card.1`; current setup accepts a complete starter product, not a user-selected customizable deck or identity-specific deckbuilding override. |
-| Campaign input and persistence | 3 | `rr:campaign-specific-card`, `.2`, and `rr:you-your.17`; `GameSetup` has no campaign state, campaign role, or campaign-card recipient input. |
-| Leader classification | 2 | `rr:classifications.6` and `rr:leader`; the generated card model has no Leader `CardKind`, and no supported setup product deals one. |
+| Campaign input and persistence | 4 | `rr:classifications.6`, `rr:campaign-specific-card`, `.2`, and `rr:you-your.17`; `GameSetup` has no campaign state, campaign role, same-product campaign classification, or campaign-card recipient input. |
 | Foldable identity faces | 1 | `rr:flip.1`; supported identities have two engine faces, while foldable three-sided identities have no representation. |
 | Private collection inspection | 5 | `rr:look-looked-at`, `.1`, `.1.1`, `rr:search.4`, and `.4.1`; the engine has no collection area or per-player private-view result. |
 | Later play modes | 11 | `rr:modes-of-play` and `.3`–`.12`; setup persists Standard or Expert only, with no campaign, heroic, skirmish, or mode-combination input. |
@@ -289,7 +288,7 @@ Rules Reference v1.8.
 | `rr:classifications.3` | Executable and cited | — | All 63 supported starter products validate nemesis set membership. |
 | `rr:classifications.4` | Executable and cited | — | Core setup tests hold fixed scenario-specific sets to their setup source. |
 | `rr:classifications.5` | Executable and cited | — | Core setup tests distinguish selected modular sets from fixed scenario sets. |
-| `rr:classifications.6` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, a mode, or a product classification not yet supported. |
+| `rr:classifications.6` | Outside the supported product boundary | MARVEL-272 | Setup has no campaign input or same-product campaign classification with which to enforce this restriction. |
 | `rr:classifications.7` | Executable and cited | — | Setup validation holds the Standard sets to fixed difficulty-set membership. |
 | `rr:classifications.8` | Executable and cited | — | Setup validation holds the Expert sets to fixed difficulty-set membership. |
 | `rr:confuse-confused` | Covered by a narrower rule | — | A directly cited child clause states the executable decision more precisely. |
@@ -675,7 +674,7 @@ Rules Reference v1.8.
 | `rr:lasting-effects.4` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:lasting-effects.5` | Executable and cited | — | A behavior test directly cites this record. |
 | `rr:lasting-effects.6` | Executable and cited | — | A behavior test directly cites this record. |
-| `rr:leader` | Outside the supported product boundary | MARVEL-272 | This rule belongs to deckbuilding, campaign, or product classification behavior not yet supported. |
+| `rr:leader` | Executable and cited | — | `LeaderSetupTests` directly holds supported Civil War leaders to the villain rules for setup, targeting, state, and defeat. |
 | `rr:leaves-play` | Executable and cited | — | `LifecycleRulesTests` holds an in-play card's move into its out-of-play discard area. |
 | `rr:leaves-play.1` | Executable and cited | — | `LifecycleRulesTests` holds a returning card to a new incarnation without its old state. |
 | `rr:leaves-play.2` | Executable and cited | — | `LifecycleRulesTests` holds the complete non-villain hosted-state cleanup. |
