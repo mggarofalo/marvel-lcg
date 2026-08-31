@@ -24,7 +24,13 @@ public static partial class Harvest
         }
 
         Match match = PackCode().Match(low);
-        string code = match.Success ? match.Groups[1].Value : Path.GetFileNameWithoutExtension(low)[..Math.Min(12, Path.GetFileNameWithoutExtension(low).Length)];
+        if (!match.Success)
+        {
+            throw new InvalidDataException(
+                $"{filename} does not begin with a supported mc/mvc pack code");
+        }
+
+        string code = match.Groups[1].Value;
         string kind = low.Contains("learn_to_play", StringComparison.Ordinal)
             || low.Contains("learntoplay", StringComparison.Ordinal)
                 ? "learn-to-play"
@@ -177,7 +183,7 @@ public static partial class Harvest
     private static string Clean(string text) =>
         Undouble(Whitespace().Replace(text, " ").Trim());
 
-    [GeneratedRegex("^(mc\\d+|mvc\\d+)", RegexOptions.CultureInvariant)]
+    [GeneratedRegex("^(mc\\d+|mvc\\d+)(?:[_-]|$)", RegexOptions.CultureInvariant)]
     private static partial Regex PackCode();
 
     [GeneratedRegex("^[\\d\\W]+$", RegexOptions.CultureInvariant)]

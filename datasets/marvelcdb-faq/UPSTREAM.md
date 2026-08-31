@@ -10,7 +10,7 @@ printed card text and errata, and neither carries a ruling.
 | Upstream | https://marvelcdb.com |
 | Harvested with | `marvelcdb v0.1.0` ([source](https://github.com/mggarofalo/marvelcdb-cli)) |
 | Harvested | 2026-08-22 |
-| Pinned by | the harvest date — see below |
+| Pinned by | harvest date plus the reviewed query universe — see below |
 
 ## Why this exists
 
@@ -26,11 +26,14 @@ villain **initiates an attack**"; Ultron's Forced Interrupt fires "when Ultron
 there is no timing difference and the Forced Interrupt takes priority. Nothing
 else in this repository can tell an author that.
 
-## Why the harvest date is the only pin
+## What is pinned
 
 `../marvelsdb/` pins a git SHA because upstream is a git repository. MarvelCDB is
 a website. It publishes no version identifier, no changelog and no content hash
-for FAQ entries, so there is nothing to pin except when the harvest ran.
+for FAQ entries, so the harvest date records when the observation ran. The
+separate `query.manifest.json` pins the exact set of card codes a reviewed full
+harvest queried. This prevents a candidate from declaring itself complete while
+silently omitting most of the card catalog.
 
 Individual entries carry their own `updated` timestamp, which is upstream's and
 is recorded verbatim. That dates the *ruling*; it does not date the *snapshot*,
@@ -53,6 +56,7 @@ holds the snapshot's accounting and canonical wire format offline.
 
 ```
 faq.json    every FAQ entry MarvelCDB served, verbatim
+query.manifest.json    count and hash of the reviewed complete query universe
 ```
 
 ```json
@@ -126,8 +130,11 @@ dotnet run --project tools/Marvel.MarvelCdb.Harvest -- write [candidate] [candid
 
 Omit `limit` for a publishable observation. A limited run records itself as
 partial and `write`/`check` refuse it, so a wiring test cannot masquerade as a
-complete harvest. Review the resulting `faq.json` diff, including its harvest
-date and CLI version, before writing it into this directory.
+complete harvest. Both commands also require its queried codes to match the
+offline pin. If a reviewed full refresh intentionally changes that universe,
+run `pin [candidate]` and review the manifest diff before `write`. Review the
+resulting `faq.json` diff, including its harvest date and CLI version, before
+writing it into this directory.
 
 ## Provenance and licence
 

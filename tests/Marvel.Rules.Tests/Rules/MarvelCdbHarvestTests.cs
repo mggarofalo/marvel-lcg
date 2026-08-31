@@ -1,3 +1,7 @@
+using System.Buffers.Binary;
+using System.Diagnostics;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using Marvel.MarvelCdb.Harvest;
 using Marvel.Tests;
@@ -19,6 +23,65 @@ public sealed class MarvelCdbHarvestTests
         Assert.Equal(4456, snapshot.Queried.Count);
         Assert.Equal(63, snapshot.Entries.Count);
         Assert.False(snapshot.CandidateComplete);
+    }
+
+    [Fact]
+    public void TheCommittedQueryUniverseMatchesItsIndependentPin()
+    {
+        Snapshot snapshot = Snapshot.Read(File.ReadAllText(
+            RepositoryPaths.Dataset("marvelcdb-faq", "faq.json")));
+        using var manifest = JsonDocument.Parse(File.ReadAllBytes(
+            RepositoryPaths.Dataset("marvelcdb-faq", "query.manifest.json")));
+        using var digest = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        Span<byte> length = stackalloc byte[sizeof(long)];
+        foreach (string code in snapshot.Queried.Order(StringComparer.Ordinal))
+        {
+            byte[] bytes = Encoding.UTF8.GetBytes(code);
+            BinaryPrimitives.WriteInt64BigEndian(length, bytes.LongLength);
+            digest.AppendData(length);
+            digest.AppendData(bytes);
+        }
+
+        Assert.Equal(1, manifest.RootElement.GetProperty("version").GetInt32());
+        Assert.Equal("sha256-length-prefixed-utf8",
+            manifest.RootElement.GetProperty("algorithm").GetString());
+        Assert.Equal(snapshot.Queried.Count, manifest.RootElement.GetProperty("count").GetInt32());
+        Assert.Equal(
+            "sha256:" + Convert.ToHexString(digest.GetHashAndReset()).ToLowerInvariant(),
+            manifest.RootElement.GetProperty("hash").GetString());
+    }
+
+    [Fact]
+    public void WriteRejectsAForgedCompleteCandidateOutsideThePinnedQueryUniverse()
+    {
+        string temporary = Path.Combine(Path.GetTempPath(), $"marvel-faq-write-{Guid.NewGuid():N}");
+        string candidate = Path.Combine(temporary, "candidate.json");
+        string output = Path.Combine(temporary, "output");
+        try
+        {
+            Directory.CreateDirectory(temporary);
+            File.WriteAllText(candidate,
+                """
+                {
+                  "version": 1,
+                  "candidate_complete": true,
+                  "harvested": "2026-08-31",
+                  "harvester": "forged",
+                  "queried": ["01001a"],
+                  "entries": []
+                }
+                """);
+
+            Assert.Equal(1, RunTool("write", candidate, output));
+            Assert.False(File.Exists(Path.Combine(output, "faq.json")));
+        }
+        finally
+        {
+            if (Directory.Exists(temporary))
+            {
+                Directory.Delete(temporary, recursive: true);
+            }
+        }
     }
 
     [Fact]
@@ -153,5 +216,24 @@ public sealed class MarvelCdbHarvestTests
             Arguments = arguments;
             return results.Dequeue();
         }
+    }
+
+    private static int RunTool(params string[] arguments)
+    {
+        var start = new ProcessStartInfo("dotnet")
+        {
+            RedirectStandardError = true,
+            RedirectStandardOutput = true,
+            UseShellExecute = false,
+        };
+        start.ArgumentList.Add(typeof(QueryPin).Assembly.Location);
+        foreach (string argument in arguments)
+        {
+            start.ArgumentList.Add(argument);
+        }
+
+        using Process process = Process.Start(start)!;
+        process.WaitForExit();
+        return process.ExitCode;
     }
 }

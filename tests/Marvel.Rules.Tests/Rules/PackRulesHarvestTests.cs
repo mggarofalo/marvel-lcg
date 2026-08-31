@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -30,6 +31,60 @@ public sealed class PackRulesHarvestTests
     {
         Assert.Null(PackHarvest.Classify("mc50_agents_campaign_log.pdf"));
         Assert.Null(PackHarvest.Classify("mc_rulesreference_v18.pdf"));
+    }
+
+    [Theory]
+    [InlineData(".pdf")]
+    [InlineData("rules_insert.pdf")]
+    [InlineData("mc_rules_insert.pdf")]
+    public void UnsupportedPdfNamesAreRejected(string filename) =>
+        Assert.Throws<InvalidDataException>(() => PackHarvest.Classify(filename));
+
+    [Fact]
+    public void AGeneratedDestinationCannotEscapeTheOutputRoot()
+    {
+        string temporary = Path.Combine(Path.GetTempPath(), $"marvel-pack-write-{Guid.NewGuid():N}");
+        string root = Path.Combine(temporary, "snapshot");
+        string escaped = Path.Combine(temporary, "escaped.md");
+        try
+        {
+            Directory.CreateDirectory(root);
+            File.WriteAllText(Path.Combine(root, "existing.md"), "preserved");
+
+            Assert.Throws<InvalidDataException>(() => Emit.Write(
+                new Dictionary<string, string> { ["../escaped.md"] = "unsafe" },
+                root));
+
+            Assert.False(File.Exists(escaped));
+            Assert.Equal("preserved", File.ReadAllText(Path.Combine(root, "existing.md")));
+        }
+        finally
+        {
+            if (Directory.Exists(temporary))
+            {
+                Directory.Delete(temporary, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void SourceDiscoveryRejectsAnUnsupportedPdfBeforeReadingIt()
+    {
+        string temporary = Path.Combine(Path.GetTempPath(), $"marvel-pack-source-{Guid.NewGuid():N}");
+        try
+        {
+            Directory.CreateDirectory(temporary);
+            File.WriteAllBytes(Path.Combine(temporary, ".pdf"), []);
+
+            Assert.Throws<InvalidDataException>(() => PackHarvest.Sources(temporary));
+        }
+        finally
+        {
+            if (Directory.Exists(temporary))
+            {
+                Directory.Delete(temporary, recursive: true);
+            }
+        }
     }
 
     [Theory]
@@ -108,8 +163,7 @@ public sealed class PackRulesHarvestTests
         using var manifest = JsonDocument.Parse(File.ReadAllBytes(
             Path.Combine(root, "sources.manifest.json")));
         var files = manifest.RootElement.GetProperty("files").EnumerateArray().ToList();
-        IReadOnlyDictionary<string, string> tree = Emit.ReadTree(root);
-        var actual = Emit.SnapshotHash(tree);
+        var actual = IndependentSnapshotHash(root);
 
         Assert.Equal(61, files.Count);
         Assert.Equal(files.Count, files.Select(file => file.GetProperty("path").GetString())
@@ -126,5 +180,66 @@ public sealed class PackRulesHarvestTests
         Assert.Equal(
             manifest.RootElement.GetProperty("snapshot").GetProperty("hash").GetString(),
             actual.Hash);
+        Assert.Equal(
+            "sha256-length-prefixed-path-and-bytes",
+            manifest.RootElement.GetProperty("snapshot").GetProperty("algorithm").GetString());
+    }
+
+    [Fact]
+    public void SnapshotHashIncludesRawBomBytes()
+    {
+        byte[] plain = Encoding.UTF8.GetBytes("same text");
+        byte[] withBom = [.. Encoding.UTF8.GetPreamble(), .. plain];
+
+        Assert.NotEqual(
+            Emit.SnapshotHash(new Dictionary<string, byte[]> { ["entry.md"] = plain }).Hash,
+            Emit.SnapshotHash(new Dictionary<string, byte[]> { ["entry.md"] = withBom }).Hash);
+    }
+
+    [Fact]
+    public void SnapshotHashFramesPathsAndContentsWithoutBoundaryCollisions()
+    {
+        var first = new Dictionary<string, byte[]>
+        {
+            ["a"] = Encoding.UTF8.GetBytes("bc"),
+            ["d"] = Encoding.UTF8.GetBytes("e"),
+        };
+        var second = new Dictionary<string, byte[]>
+        {
+            ["a"] = Encoding.UTF8.GetBytes("b"),
+            ["cd"] = Encoding.UTF8.GetBytes("e"),
+        };
+
+        Assert.NotEqual(Emit.SnapshotHash(first).Hash, Emit.SnapshotHash(second).Hash);
+    }
+
+    private static (int Files, string Hash) IndependentSnapshotHash(string root)
+    {
+        var files = Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories)
+            .Where(path => !string.Equals(Path.GetFileName(path), "UPSTREAM.md", StringComparison.Ordinal))
+            .Where(path => string.Equals(Path.GetExtension(path), ".json", StringComparison.Ordinal)
+                || string.Equals(Path.GetExtension(path), ".md", StringComparison.Ordinal))
+            .Select(path => (
+                Path: Path.GetRelativePath(root, path).Replace(Path.DirectorySeparatorChar, '/'),
+                Bytes: File.ReadAllBytes(path)))
+            .Where(file => !string.Equals(file.Path, "sources.manifest.json", StringComparison.Ordinal))
+            .OrderBy(file => file.Path, StringComparer.Ordinal)
+            .ToList();
+        using var digest = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        Span<byte> length = stackalloc byte[sizeof(long)];
+        foreach (var file in files)
+        {
+            byte[] path = Encoding.UTF8.GetBytes(file.Path);
+            BinaryPrimitives.WriteInt64BigEndian(length, path.LongLength);
+            digest.AppendData(length);
+            digest.AppendData(path);
+            BinaryPrimitives.WriteInt64BigEndian(length, file.Bytes.LongLength);
+            digest.AppendData(length);
+            digest.AppendData(file.Bytes);
+        }
+
+        return (
+            files.Count,
+            "sha256:" + Convert.ToHexString(digest.GetHashAndReset()).ToLowerInvariant());
     }
 }

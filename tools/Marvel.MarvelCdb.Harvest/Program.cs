@@ -29,12 +29,16 @@ try
         case "write":
         {
             string into = args.Length > 2 ? args[2] : RepositoryPaths.Dataset("marvelcdb-faq");
+            string pinPath = args.Length > 3
+                ? args[3]
+                : RepositoryPaths.Dataset("marvelcdb-faq", "query.manifest.json");
             Snapshot snapshot = Snapshot.Read(File.ReadAllText(cache));
             if (!snapshot.CandidateComplete)
             {
                 throw new InvalidDataException(
                     "the candidate is partial or lacks completion accounting; run a full `fetch`");
             }
+            QueryPin.Read(pinPath).Verify(snapshot.Queried);
             Directory.CreateDirectory(into);
             string target = Path.Combine(into, "faq.json");
             File.WriteAllText(target, snapshot.Json(), new UTF8Encoding(false));
@@ -44,12 +48,16 @@ try
 
         case "check":
         {
+            string pinPath = args.Length > 2
+                ? args[2]
+                : RepositoryPaths.Dataset("marvelcdb-faq", "query.manifest.json");
             Snapshot candidate = Snapshot.Read(File.ReadAllText(cache));
             if (!candidate.CandidateComplete)
             {
                 throw new InvalidDataException(
                     "the candidate is partial or lacks completion accounting; run a full `fetch`");
             }
+            QueryPin.Read(pinPath).Verify(candidate.Queried);
             string target = RepositoryPaths.Dataset("marvelcdb-faq", "faq.json");
             string built = candidate.Json();
             string committed = File.ReadAllText(target);
@@ -63,14 +71,32 @@ try
             return 1;
         }
 
+        case "pin":
+        {
+            string into = args.Length > 2
+                ? args[2]
+                : RepositoryPaths.Dataset("marvelcdb-faq", "query.manifest.json");
+            Snapshot candidate = Snapshot.Read(File.ReadAllText(cache));
+            if (!candidate.CandidateComplete)
+            {
+                throw new InvalidDataException(
+                    "only a fully accounted candidate can become the query-universe pin");
+            }
+
+            File.WriteAllText(into, QueryPin.Create(candidate.Queried).Json(), new UTF8Encoding(false));
+            Console.Error.WriteLine($"pinned {candidate.Queried.Count} queried codes in {into}");
+            return 0;
+        }
+
         default:
             Console.Error.WriteLine(
                 """
                 Acquires MarvelCDB FAQ rulings into a local candidate, then writes the vendored snapshot offline.
 
                   fetch [cache] [limit] [date]   query MarvelCDB and write a complete local candidate
-                  write [cache] [into]          build faq.json from that candidate without the network
-                  check [cache]                 compare that candidate with the committed snapshot
+                  write [cache] [into] [pin]    build faq.json from a pinned candidate offline
+                  check [cache] [pin]           compare a pinned candidate with the committed snapshot
+                  pin [cache] [into]            approve a reviewed full query universe
 
                 The default cache is outside the repository. `limit` is only for testing the wiring;
                 never write a limited candidate into datasets/marvelcdb-faq/.

@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -29,6 +30,12 @@ public static partial class Emit
             foreach (Section section in document.Sections)
             {
                 string key = Harvest.Slug(section.Heading);
+                if (key.Length == 0)
+                {
+                    throw new InvalidDataException(
+                        $"section heading in {document.Path} has no safe destination slug");
+                }
+
                 string identifier = $"pack:{document.Code}:{key}";
                 if (!seen.Add(identifier))
                 {
@@ -121,9 +128,36 @@ public static partial class Emit
                 StringComparer.Ordinal);
     }
 
+    public static IReadOnlyDictionary<string, byte[]> ReadTreeBytes(string root)
+    {
+        if (!Directory.Exists(root))
+        {
+            return new Dictionary<string, byte[]>();
+        }
+
+        return Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories)
+            .Where(path => !string.Equals(Path.GetFileName(path), "UPSTREAM.md", StringComparison.Ordinal))
+            .Where(path => string.Equals(Path.GetExtension(path), ".json", StringComparison.Ordinal)
+                || string.Equals(Path.GetExtension(path), ".md", StringComparison.Ordinal))
+            .ToDictionary(
+                path => Path.GetRelativePath(root, path).Replace(Path.DirectorySeparatorChar, '/'),
+                File.ReadAllBytes,
+                StringComparer.Ordinal);
+    }
+
     public static string Manifest(
         IReadOnlyList<string> sources,
         IReadOnlyDictionary<string, string> snapshot)
+        => Manifest(
+            sources,
+            snapshot.ToDictionary(
+                pair => pair.Key,
+                pair => Encoding.UTF8.GetBytes(pair.Value),
+                StringComparer.Ordinal));
+
+    public static string Manifest(
+        IReadOnlyList<string> sources,
+        IReadOnlyDictionary<string, byte[]> snapshot)
     {
         var files = sources.Select(path =>
         {
@@ -138,22 +172,27 @@ public static partial class Emit
             1,
             "sha256",
             files,
-            new SnapshotPin(pin.Files, pin.Hash));
+            new SnapshotPin("sha256-length-prefixed-path-and-bytes", pin.Files, pin.Hash));
         return JsonSerializer.Serialize(manifest, JsonOptions).ReplaceLineEndings("\n") + "\n";
     }
 
     public static (int Files, string Hash) SnapshotHash(
-        IReadOnlyDictionary<string, string> snapshot)
+        IReadOnlyDictionary<string, byte[]> snapshot)
     {
         var content = snapshot
             .Where(pair => !string.Equals(pair.Key, "sources.manifest.json", StringComparison.Ordinal))
             .OrderBy(pair => pair.Key, StringComparer.Ordinal).ToList();
         using var digest = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
-        foreach ((string path, string text) in content)
+        Span<byte> length = stackalloc byte[sizeof(long)];
+        foreach ((string path, byte[] bytes) in content)
         {
-            digest.AppendData(Encoding.UTF8.GetBytes(path));
-            digest.AppendData([0]);
-            digest.AppendData(Encoding.UTF8.GetBytes(text));
+            byte[] pathBytes = Encoding.UTF8.GetBytes(path);
+            BinaryPrimitives.WriteInt64BigEndian(length, pathBytes.LongLength);
+            digest.AppendData(length);
+            digest.AppendData(pathBytes);
+            BinaryPrimitives.WriteInt64BigEndian(length, bytes.LongLength);
+            digest.AppendData(length);
+            digest.AppendData(bytes);
         }
 
         return (
@@ -170,7 +209,7 @@ public static partial class Emit
             return false;
         }
 
-        IReadOnlyDictionary<string, string> tree = ReadTree(root);
+        IReadOnlyDictionary<string, byte[]> tree = ReadTreeBytes(root);
         using var document = JsonDocument.Parse(File.ReadAllBytes(manifestPath));
         var expected = document.RootElement.GetProperty("files").EnumerateArray()
             .ToDictionary(
@@ -195,6 +234,16 @@ public static partial class Emit
 
         string expectedSnapshot = document.RootElement.GetProperty("snapshot").GetProperty("hash").GetString()!;
         int expectedFiles = document.RootElement.GetProperty("snapshot").GetProperty("files").GetInt32();
+        string expectedSnapshotAlgorithm = document.RootElement.GetProperty("snapshot")
+            .GetProperty("algorithm").GetString()!;
+        if (!string.Equals(
+            expectedSnapshotAlgorithm,
+            "sha256-length-prefixed-path-and-bytes",
+            StringComparison.Ordinal))
+        {
+            Console.Error.WriteLine("  unsupported snapshot-hash algorithm");
+            valid = false;
+        }
         string actualManifest = Manifest(sources, tree);
         using var actual = JsonDocument.Parse(actualManifest);
         string actualSnapshot = actual.RootElement.GetProperty("snapshot").GetProperty("hash").GetString()!;
@@ -213,19 +262,45 @@ public static partial class Emit
 
     public static void Write(IReadOnlyDictionary<string, string> tree, string root)
     {
-        Directory.CreateDirectory(root);
+        var destinations = tree.OrderBy(pair => pair.Key, StringComparer.Ordinal)
+            .Select(pair => (Path: Destination(root, pair.Key), Contents: pair.Value))
+            .ToList();
+        Directory.CreateDirectory(Path.GetFullPath(root));
         foreach (string path in Directory.EnumerateFiles(root, "*.md", SearchOption.AllDirectories)
             .Where(path => !string.Equals(Path.GetFileName(path), "UPSTREAM.md", StringComparison.Ordinal)))
         {
             File.Delete(path);
         }
 
-        foreach ((string relative, string contents) in tree.OrderBy(pair => pair.Key, StringComparer.Ordinal))
+        foreach ((string path, string contents) in destinations)
         {
-            string path = Path.Combine(root, relative);
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             File.WriteAllText(path, contents, new UTF8Encoding(false));
         }
+    }
+
+    public static string Destination(string root, string relative)
+    {
+        if (string.IsNullOrWhiteSpace(relative) || Path.IsPathRooted(relative))
+        {
+            throw new InvalidDataException($"snapshot destination is not relative: {relative}");
+        }
+
+        string fullRoot = Path.GetFullPath(root);
+        string prefix = Path.TrimEndingDirectorySeparator(fullRoot) + Path.DirectorySeparatorChar;
+        string candidate = Path.GetFullPath(Path.Combine(
+            fullRoot,
+            relative.Replace('/', Path.DirectorySeparatorChar)));
+        StringComparison comparison = OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+        if (!candidate.StartsWith(prefix, comparison))
+        {
+            throw new InvalidDataException(
+                $"snapshot destination escapes the output root: {relative}");
+        }
+
+        return candidate;
     }
 
     public static string Hash(string text)
@@ -290,7 +365,7 @@ public static partial class Emit
 
     private sealed record ManifestFile(string Path, long Bytes, string Hash);
 
-    private sealed record SnapshotPin(int Files, string Hash);
+    private sealed record SnapshotPin(string Algorithm, int Files, string Hash);
 
     private static string Sha256(byte[] bytes) =>
         "sha256:" + Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();

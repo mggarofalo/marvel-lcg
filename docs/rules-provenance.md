@@ -202,10 +202,12 @@ without a byte-order mark. A candidate cache passed as an argument is compared
 semantically, without pretending an absent optional cache is an empty source.
 
 Pack rules use the same separation for copyrighted local inputs:
-`sources.manifest.json` pins all 61 PDF bytes and the complete committed tree.
+`sources.manifest.json` pins all 61 PDF bytes and the raw bytes of every file in
+the complete committed tree, using length-prefixed paths and contents.
 MarvelCDB has no downloadable source document to vendor, so its `fetch` step
-accounts for every queried code in a local candidate; only then can the offline
-`write` and `check` steps consume it.
+accounts for every queried code in a local candidate. The offline
+`query.manifest.json` also pins the exact reviewed query universe; only a
+candidate matching that pin can reach `write` or `check`.
 
 A refresh is a reviewable act. `datasets/marvelsdb/UPSTREAM.md` is already
 explicit that refreshing changes printed text and therefore every spec authored

@@ -32,7 +32,7 @@ try
 
     if (verb == "pin")
     {
-        IReadOnlyDictionary<string, string> committed = Emit.ReadTree(output);
+        IReadOnlyDictionary<string, byte[]> committed = Emit.ReadTreeBytes(output);
         string manifest = Emit.Manifest(paths, committed);
         File.WriteAllText(
             Path.Combine(output, "sources.manifest.json"),
