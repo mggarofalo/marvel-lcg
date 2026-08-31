@@ -161,12 +161,14 @@ wrong is invisible until a scenario needs both.
 
 ## What is not here
 
-**No oracle, and that is measured.** The v2 digest cannot see a play area: on the
-legacy engine, creating a game area and moving 47 cards into it left the digest
-**byte-identical** (MARVEL-174). Kang reaches a second game area in **0 of 3,462
-steps** across a large sample of recorded play.
-So these rules are held against the published text, and the tests name the rule
-each one comes from. Nine mutations were watched failing.
+**No differential oracle, deliberately.** The v2 digest cannot see a play area:
+on the legacy engine, creating a game area and moving 47 cards into it left the
+digest **byte-identical**. Kang reaches a second game area in **0 of 3,462
+steps** across the retired sample of recorded play, and the legacy engine did
+not implement Fear No Evil. Those fixtures and that engine are gone, so
+MARVEL-174 keeps v2 frozen instead of adding a self-derived side channel. These
+rules are held against the published text, and the tests name the rule each one
+comes from. Nine mutations were watched failing.
 
 **Uniqueness is scoped per game area, and is not implemented.**
 `pack:mc11:rules-clarifications`: *"Can two players control the same unique cards

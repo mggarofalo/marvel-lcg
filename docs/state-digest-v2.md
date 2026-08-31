@@ -159,12 +159,29 @@ it: 0 of 3,462 steps across all 42 Kang scenes reach a second game area, and
 Nothing implements Fear No Evil yet.
 
 This is the same weakness `AreaRef.Id` exists to work around one level up — **the
-digest describes areas rather than identifying them** — and it is stated rather
-than fixed. `CARD_KEYS` is a frozen format; adding a key changes every recorded
-digest and invalidates the corpus, which AGENTS.md non-negotiable 6 makes a
-decision to raise. Filed as **MARVEL-174**; the modelling question is
-MARVEL-175, and [event-stream.md](event-stream.md#play-areas-and-game-areas)
-sets out what the rules actually require.
+digest describes areas rather than identifying them**.
+
+### The boundary is deliberate
+
+Digest v2 remains unchanged. Its canonical spelling is a wire format pinned by
+`StateDigestTests`; changing that spelling while continuing to call it version 2
+would make the version label lie. Place is validated by the narrow, rule-cited
+tests in `PlacesTests`, not by the digest. A future behavioral spec for either
+affected scenario must assert placement directly rather than treating a matching
+digest as evidence of it.
+
+A side channel would not add an independent oracle: the Python fixtures and the
+engine that produced them are gone, and a value computed from the C# state would
+only repeat the implementation under test. If a later digest version needs to
+cover place, it must serialize both levels of topology: which play area holds a
+card, and which game area contains each play area. The second is world state,
+not a card field — `World.Join` changes it without moving any card between play
+areas. That requires a new pinned top-level shape rather than another key in the
+v2 card record. The eight-key card record remains the version 2 wire format.
+
+This is the decision recorded by **MARVEL-174**. The state model is MARVEL-175,
+and [event-stream.md](event-stream.md#play-areas-and-game-areas) sets out what
+the rules require.
 
 ## The record
 
