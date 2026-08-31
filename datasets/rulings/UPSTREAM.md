@@ -92,6 +92,14 @@ edit to either the source pages or derived index on both Windows and Linux.
 Read the HTML and JSON diffs before replacing the pin and harvest date. A moved
 ruling is an authority change, not a routine data sync.
 
+## Rules Reference relationships
+
+This vendored dataset records what Hall of Heroes published; it does not guess
+which Rules Reference clause a ruling changes. Audited ruling-to-base mappings
+live in the hand-authored relationship layer at `datasets/rules-graph.json`.
+`tools/Marvel.Rules.Index` joins the two without altering either source, pins
+each mapping to the base record hash, and keeps absorbed rulings citable.
+
 ## Provenance and licence
 
 Hall of Heroes publishes no licence for these pages. The rulings are attributed

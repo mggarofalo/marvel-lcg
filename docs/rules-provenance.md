@@ -96,6 +96,45 @@ version and harvest date, on exactly the same footing as
 [`datasets/marvelsdb/`](../datasets/marvelsdb/) and
 [`datasets/marvelcdb-faq/`](../datasets/marvelcdb-faq/UPSTREAM.md).
 
+## Rules modifications are an overlay
+
+A designer ruling can change the meaning of a Rules Reference record between
+published versions without changing the vendored document. Those changes live
+as audited relationships in `datasets/rules-graph.json`; neither the Rules
+Reference index nor the Hall of Heroes harvest is edited to manufacture a
+relationship its upstream does not state.
+
+Each relationship names:
+
+- the citable `ruling:` record that supplies the replacement text and its
+  source, Hall of Heroes URL, RRG scope, observed month, and content hash;
+- the `rr:` base record whose meaning it modifies;
+- the base record's hash, so a re-harvest that moves the target fails closed;
+- why the relationship is correct; and
+- the later RRG version that absorbed the ruling, or `null` while the ruling
+  remains current.
+
+`Marvel.Rules.Index resolve rr:id [rrg]` returns exactly one current record. A
+ruling's scope is its effective-from RRG version; the latest applicable scope
+wins, `absorbed_in` returns authority to the base record, and two current
+modifications from the same scope are invalid rather than resolved by an
+arbitrary date or file order. Only an RRG version with a vendored base snapshot
+can be resolved; today that is 1.8. Guessing an older base from the 1.8 text
+would make a total-looking answer historically false.
+
+The Hall of Heroes Rule changelog was evaluated as the issue suggested. It is a
+useful human diff through RRG 1.5, but it stops at 1.5 and records document
+revisions rather than which individual designer rulings supersede which
+citable clauses. It therefore cannot generate this relationship layer. The
+small audited map grows only when a ruling can be tied to a specific record;
+the 1,100-ruling vendored corpus is not bulk-classified by inference.
+
+An absorbed ruling remains in the corpus and remains independently citable.
+This preserves older citations while ensuring a current citation to its base
+resolves to the later Rules Reference text. A current modification's content
+hash also becomes the effective hash of its base, which is the propagation
+MARVEL-157 pinning needs.
+
 ## Provenance pinning
 
 **This is the mechanism the whole document exists for.**
@@ -117,6 +156,9 @@ Extend the pin to **every authority the scenario derives from**:
 A trusted scenario is trusted **against a stated set of inputs**. When any of
 them moves, the scenario leaves `trusted.json` automatically and returns to
 triage. Nothing is trusted across a change to the thing it was authored from.
+
+C# tests make the same distinction through `[Rule]`: `rr:` cites the base
+record, while `ruling:` cites one audited rules modification directly.
 
 That single property is what makes all three patch paths below identical, and it
 is why the answer to "a new rulebook came out" is a command rather than an

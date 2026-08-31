@@ -27,7 +27,10 @@ what it asserts:
 | `rr:villain-phase.step.2.b` | an enumerated step, where the entry has steps |
 
 `[Rule]` goes on tests only. On the implementation it would name a rule without
-claiming anything about it; the claim is the assertion.
+claiming anything about it; the claim is the assertion. Most citations use the
+`rr:` forms above. A test that specifically asserts a published modification
+uses its audited `ruling:` id from `datasets/rules-graph.json`; an arbitrary
+Hall of Heroes ruling is not a rules citation until that relationship exists.
 
 ## Why an attribute rather than a comment
 
@@ -50,10 +53,11 @@ $ dotnet run --project tools/Marvel.Rules.Index -- citations
 
 Rules Reference v1.8
 
-  entries             153 / 262   cited (58.4%)
-  citable records     509 / 1218  cited (41.8%)
+  entries             186 / 262   cited (71.0%)
+  citable records     867 / 1221  cited (71.0%)
+  modifications         2 / 3     cited (66.7%)
 
-  citations made  1140
+  citations made  2571
 ```
 
 ```
@@ -87,11 +91,12 @@ Two things this deliberately does not do:
 
 ## The graph
 
-`datasets/rules-graph.json` is the other half, and the one the index cannot
-carry: which rule qualifies which. It is hand-authored, one-way — "an exception
-names the rule it overrides or extends; a base rule names nothing" — and every
-edge records why, because a plausible-but-wrong relationship is the failure mode
-it exists to eliminate.
+`datasets/rules-graph.json` is the other half, and the one the harvested index
+cannot carry: which rule qualifies which, and which published ruling modifies
+which base record. It is hand-authored, one-way — "an exception names the rule
+it overrides or extends; a base rule names nothing" — and every relationship
+records why, because a plausible-but-wrong relationship is the failure mode it
+exists to eliminate.
 
 ```
 $ dotnet run --project tools/Marvel.Rules.Index -- refs rr:tough
@@ -123,6 +128,14 @@ finds the three edges that name `rr:thwart.1`.
 attributes — every id resolves, every edge says why, and no rule names itself.
 `refs --orphans` lists the same failures on one screen for whoever is fixing
 them.
+
+Modification relationships add two stronger gates. Their `supersedes_hash`
+must still equal the vendored base record, and their id must still resolve to a
+Hall of Heroes record carrying source, RRG scope, date when the source provides
+one, and content hash. `refs rr:id` includes them in the reverse direction, so
+a base citation is in the blast radius of a new ruling. `resolve rr:id 1.8`
+shows whether the base text or a modification is current; an absorbed ruling
+remains available through `refs ruling:id` and as a direct citation.
 
 ## Uncited is not untested
 

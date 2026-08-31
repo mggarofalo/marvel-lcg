@@ -1,6 +1,26 @@
 {
-  "note": "Hand-authored. The one-way rule reference graph: an exception names the rule it overrides or extends; a base rule names nothing. Generated indexes under datasets/rules-reference/ and datasets/rules-packs/ are rebuilt from PDFs on every harvest and deliberately carry no reference field, so authored edges live here and only here. Each edge records why, because a plausible-but-wrong relationship is the failure mode this corpus exists to eliminate. Reverse lookup is computed at query time by tools/Marvel.Rules.Index and never stored. See docs/rules-provenance.md.",
-  "version": 1,
+  "note": "Hand-authored relationships over vendored sources. The one-way rule reference graph says an exception names the rule it overrides or extends; a base rule names nothing. A rules modification likewise names the base record whose meaning it changes, while its text and provenance remain in the vendored Hall of Heroes index. Generated indexes under datasets/rules-reference/ and datasets/rules-packs/ are rebuilt from PDFs on every harvest and deliberately carry no relationship fields, so authored relationships live here and only here. Each relationship records why, because a plausible-but-wrong relationship is the failure mode this corpus exists to eliminate. Reverse lookup is computed at query time by tools/Marvel.Rules.Index and never stored. See docs/rules-provenance.md.",
+  "version": 2,
+  "modifications": {
+    "ruling:121d5b7b5dcec377": {
+      "base": "rr:reveal.1",
+      "supersedes_hash": "sha256:5282b33dc7863472de025b93a538b6183ec42fe8c54814c606637b4117930208",
+      "absorbed_in": null,
+      "why": "Reveal says an attachment without attach-to text waits out of play, but does not say when it attaches. This ruling supplies the missing timing: its When Revealed ability creates and resolves the attachment target."
+    },
+    "ruling:1bf319f7418a86d7": {
+      "base": "rr:move.5",
+      "supersedes_hash": "sha256:e01ee8763d11b947db4ab7ddb855b493e698903338ba18340777fdd8c1ca3986",
+      "absorbed_in": "1.8",
+      "why": "The FAQ ruling establishes that damage moved to a character counts as dealt damage. Rules Reference 1.8 states that clarification verbatim in Move clause 5, so the ruling remains citable but is absorbed."
+    },
+    "ruling:6cb0530e539c7915": {
+      "base": "rr:cost.4",
+      "supersedes_hash": "sha256:b9fcb7392fc2213edfb91460a57b4c39ed9fed57bc516068869e56460dd5beab",
+      "absorbed_in": null,
+      "why": "Cost clause 4 permits generating resources beyond a cost. This ruling resolves conflicting earlier guidance by establishing that overpaid resources are still spent for abilities that care about spending, while remaining not paid for that cost."
+    }
+  },
   "edges": {
     "rr:acceleration-icon": {
       "references": [
