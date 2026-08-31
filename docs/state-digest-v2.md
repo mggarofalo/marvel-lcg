@@ -159,12 +159,25 @@ it: 0 of 3,462 steps across all 42 Kang scenes reach a second game area, and
 Nothing implements Fear No Evil yet.
 
 This is the same weakness `AreaRef.Id` exists to work around one level up — **the
-digest describes areas rather than identifying them** — and it is stated rather
-than fixed. `CARD_KEYS` is a frozen format; adding a key changes every recorded
-digest and invalidates the corpus, which AGENTS.md non-negotiable 6 makes a
-decision to raise. Filed as **MARVEL-174**; the modelling question is
-MARVEL-175, and [event-stream.md](event-stream.md#play-areas-and-game-areas)
-sets out what the rules actually require.
+digest describes areas rather than identifying them**.
+
+### The boundary is deliberate
+
+Digest v2 remains unchanged. Place is validated by the narrow, rule-cited tests
+in `PlacesTests`, not by the differential corpus. A future behavioral spec for
+either affected scenario must assert placement directly rather than treating a
+matching digest as evidence of it.
+
+A per-step side channel would not add an independent oracle: none of the legacy
+corpus reaches a second game area, and the legacy engine does not implement Fear
+No Evil. Such a field would therefore be empty on every recorded step or repeat
+the implementation under test. A v3 digest may carry play-area identity only as
+part of a separately justified corpus migration, with a new pinned format and a
+regenerated corpus. `CARD_KEYS` stays the v2 wire format.
+
+This is the decision recorded by **MARVEL-174**. The state model is MARVEL-175,
+and [event-stream.md](event-stream.md#play-areas-and-game-areas) sets out what
+the rules require.
 
 ## The record
 

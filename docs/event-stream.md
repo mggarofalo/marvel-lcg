@@ -344,9 +344,10 @@ cards into it left the digest **byte-identical**.
 
 That is a property of the digest, not of any scenario, and it is the same
 weakness `AreaRef.Id` exists to work around one level up: **the digest describes
-areas rather than identifying them.** Recorded in
-[state-digest-v2.md](state-digest-v2.md#what-the-digest-cannot-see) and filed as
-MARVEL-174.
+areas rather than identifying them.** MARVEL-174 keeps v2 frozen and assigns
+this behavior to rule-cited executable tests; the full boundary and the reason a
+side channel would not be an independent oracle are recorded in
+[state-digest-v2.md](state-digest-v2.md#the-boundary-is-deliberate).
 
 ### And nothing exercises either scenario
 
