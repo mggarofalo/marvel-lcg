@@ -33,7 +33,9 @@ Feature: Player and encounter discards
     When the top 1 card of the encounter deck is discarded
     Then card 01101 copy 0 is faceup on top of the encounter discard pile
 
-  @behavior:rr:discard.4:published-result @rr:discard.4
+  @behavior:rr:discard.4:published-result
+  @covers:behavior:rr:player-deck.1:published-result
+  @rr:discard.4 @rr:player-deck.1
   Scenario: A singular effect discards deck cards one at a time without reordering them
     # "Place those cards in the appropriate discard pile one at a time (without
     # changing the order)."

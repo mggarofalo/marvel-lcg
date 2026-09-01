@@ -436,6 +436,9 @@ internal sealed class CoreTranscriptRunner
         Bind("card-damage", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) has (?<count>\d+) damage",
             CardDamage),
+        Bind("card-remaining-hit-points", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) has (?<count>\d+) remaining hit points",
+            CardRemainingHitPoints),
         Bind("card-counters", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) has (?<count>\d+) (?<type>[a-z-]+) counters?",
             CardCounters),
@@ -1613,6 +1616,17 @@ internal sealed class CoreTranscriptRunner
             checked((int)context.SceneRequired(step).Find(SceneCard(match, step)).Damage),
             "damage on the card",
             step);
+
+    private static void CardRemainingHitPoints(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        long actual = Math.Max(
+            0,
+            Damage.Health(context.World, context.Cards, card) - card.Damage);
+        Equal(Number(match, "count", step), checked((int)actual),
+            "remaining hit points", step);
+    }
 
     private static void CardCounters(
         TranscriptContext context, TranscriptStep step, Match match)

@@ -223,8 +223,9 @@ Feature: Core villain phase
   @covers:behavior:rr:ability.step.2.b:published-result
   @covers:behavior:rr:overkill:published-result
   @covers:behavior:rr:overkill.1:published-result
+  @covers:behavior:rr:excess-damage:published-result
   @card:01099 @rr:attack-enemy-activation.5 @rr:ability.7 @rr:ability.12
-  @rr:ability.step.2.b @rr:overkill @rr:overkill.1
+  @rr:ability.step.2.b @rr:overkill @rr:overkill.1 @rr:excess-damage
   Scenario: Charge gives Rhino overkill before a defending ally takes damage
     # Charge's forced interrupt says, "When Rhino attacks, the attack gains
     # overkill." Overkill deals damage beyond the defeated ally's hit points to

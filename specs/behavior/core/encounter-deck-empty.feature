@@ -34,8 +34,9 @@ Feature: The encounter deck empties
     And the game is unfinished
 
   @behavior:rr:encounter-deck.3:published-result
+  @covers:behavior:rr:encounter-deck.1:published-result
   @covers:behavior:rr:deal-deal-an-encounter-card:ability-deal-facedown-queued
-  @rr:encounter-deck.3 @rr:deal-deal-an-encounter-card
+  @rr:encounter-deck.3 @rr:encounter-deck.1 @rr:deal-deal-an-encounter-card
   Scenario: Dealing the final encounter card finishes after the reset
     # "That effect finishes resolving after the encounter deck has been reset."
     Given the encounter deck contains only these next cards with all other deck cards in the encounter discard pile

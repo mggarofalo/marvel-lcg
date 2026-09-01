@@ -11,8 +11,9 @@ Feature: Hero and alter-ego form changes
   @covers:behavior:rr:form-change-form.2:retains-status-cards
   @covers:behavior:rr:form-change-form.2:retains-attached-cards
   @covers:behavior:rr:form-change-form.2:retains-readiness
+  @covers:behavior:rr:remaining-hit-points.1:published-result
   @rr:form-change-form.1 @rr:form-change-form @rr:identity
-  @rr:form-change-form.2 @rr:identity.1
+  @rr:form-change-form.2 @rr:identity.1 @rr:remaining-hit-points.1
   Scenario: Flipping an identity changes only its form
     # "[A player changes] form by flipping their identity card."
     # "When a player changes form, only the form changes. The character retains
@@ -32,3 +33,4 @@ Feature: Hero and alter-ego form changes
     And card 01029a copy 0 is exhausted
     And card 01029a copy 0 has a stunned status card
     And card 01039 copy 0 remains attached to seat 1's identity
+    And card 01029a copy 0 has 6 remaining hit points

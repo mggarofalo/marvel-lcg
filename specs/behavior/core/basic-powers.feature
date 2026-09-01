@@ -24,8 +24,9 @@ Feature: Core basic powers
   @covers:behavior:rr:consequential-damage:published-result
   @covers:behavior:rr:damage.2:tracked-by-damage-tokens
   @covers:behavior:rr:attack-player-ability-type.step.9:published-result
+  @covers:behavior:rr:ability.step.5:published-result
   @rr:ally.2 @rr:ally.3 @rr:ally.5 @rr:consequential-damage
-  @rr:attack-player-ability-type.step.9 @rr:damage.2
+  @rr:attack-player-ability-type.step.9 @rr:damage.2 @rr:ability.step.5
   Scenario: An ally attacks while its identity remains ready and takes consequential damage
     # "After an ally attacks, it takes consequential damage equal to the
     # number of consequential damage icons beneath its ATK field."

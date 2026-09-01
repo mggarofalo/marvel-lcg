@@ -601,11 +601,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-powers.feature::An ally attacks while its identity remains ready and takes consequential damage"
+          ],
+          "mutation": "Omit consequential damage after the ally attack; the ally-damage assertion fails."
         }
       ]
     },
@@ -3143,11 +3145,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-keywords.feature::Retaliate damages the attacker after Black Panther is attacked"
+          ],
+          "mutation": "Resolve retaliate before or without the completed attack; the attacker-damage assertion fails."
         }
       ]
     },
@@ -7059,11 +7063,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-deck-empty.feature::Dealing the final encounter card finishes after the reset"
+          ],
+          "mutation": "Reorder the encounter deck before the instructed deal; the facedown-card identity assertion fails."
         },
         {
           "key": "empty-with-discard",
@@ -7755,11 +7761,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Charge gives Rhino overkill before a defending ally takes damage"
+          ],
+          "mutation": "Calculate excess damage without subtracting the ally's remaining hit points; the hero-damage assertion fails."
         }
       ]
     },
@@ -7770,10 +7778,10 @@
         {
           "key": "published-result",
           "summary": "If a card is exhausted, it is rotated 90 degrees.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "not-representable",
+          "reason": "Physical card rotation is presentation state; the headless engine represents the rules-relevant ready/exhausted state instead.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -14876,11 +14884,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/discard.feature::A singular effect discards deck cards one at a time without reordering them"
+          ],
+          "mutation": "Reorder the instructed cards before discarding them; the pinned discard order fails."
         },
         {
           "key": "empty-with-discard",
@@ -16344,11 +16354,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/defeat.feature::Exactly zero remaining hit points defeats and discards a minion"
+          ],
+          "mutation": "Do not subtract sustained damage from maximum hit points; the pre-attack remaining-hit-points assertion fails."
         }
       ]
     },
@@ -16362,11 +16374,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/form-change.feature::Flipping an identity changes only its form"
+          ],
+          "mutation": "Report the identity's printed maximum instead of the damaged dial value; the remaining-hit-points assertion fails."
         }
       ]
     },
@@ -16380,11 +16394,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/defeat.feature::Exactly zero remaining hit points defeats and discards a minion"
+          ],
+          "mutation": "Calculate a minion's remaining hit points without its damage counters; the pre-attack assertion fails."
         }
       ]
     },

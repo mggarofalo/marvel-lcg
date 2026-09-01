@@ -7,7 +7,10 @@ Feature: Core defeat
   @covers:behavior:rr:defeat:published-result
   @covers:behavior:rr:defeat.1:published-result
   @covers:behavior:rr:damage.step.8:defeated-character-discarded
+  @covers:behavior:rr:remaining-hit-points:published-result
+  @covers:behavior:rr:remaining-hit-points.2:published-result
   @rr:minion.2 @rr:defeat @rr:defeat.1 @rr:damage.step.8
+  @rr:remaining-hit-points @rr:remaining-hit-points.2
   Scenario: Exactly zero remaining hit points defeats and discards a minion
     # "If a minion has zero or fewer remaining hit points, it is defeated and
     # discarded."
@@ -18,7 +21,8 @@ Feature: Core defeat
     And card 01101 copy 0 is a minion engaged with seat 1
     And card 01101 copy 0 has 1 damage
     When seat 1 uses their basic attack against card 01101 copy 0
-    Then card 01101 copy 0 is faceup on top of the encounter discard pile
+    Then card 01101 copy 0 has 0 remaining hit points
+    And card 01101 copy 0 is faceup on top of the encounter discard pile
 
   @behavior:rr:side-scheme.2:published-result
   @covers:behavior:rr:defeat:published-result
