@@ -356,6 +356,36 @@ public sealed class CoreCardFaceTranscriptTests
     }
 
     [Fact]
+    public void KlawCardAbilityBranchesHavePinnedOutcomes()
+    {
+        var results = Corpus.Value
+            .Where(candidate => candidate.Scenario.StartsWith(
+                "specs/behavior/core/klaw-card-abilities.feature::",
+                StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
+
+        Assert.Equal(9, results.Count);
+        Assert.Equal("7c2d9c7e356389496e6586bf8593e9a088ffa4b5d0aa7d4491f2c92dde8f25d0",
+            results["behavior:card:01114:search-encounter-deck-and-discard-pile-for"].Digest);
+        Assert.Equal("26b05d105fd19a68a1708d6b19c3d64611e20414eda96f759c53096be8781ca1",
+            results["behavior:card:01114:when-klaw-attacks-give-him-1-additional"].Digest);
+        Assert.Equal("64c09baa81097e97ccb9fcbea36111fc4e5aaa42e5e2225bd9279fd1c2e86eae",
+            results["behavior:card:01115:toughness"].Digest);
+        Assert.Equal("50900f99b442721cd81c9f4cb26a899ff933c7c81d04da6bdfb65440701d08d7",
+            results["behavior:card:01115:when-klaw-attacks-give-him-1-additional"].Digest);
+        Assert.Equal("8b1dbabb53260c612f9e680acf1077109993724276bb20f2a9ac053ce9e922e7",
+            results["behavior:card:01118:attach-klaw"].Digest);
+        Assert.Equal("7a8c7e0d6791638ea28645efd3b59a416a3682703e09078572d9541c171be263",
+            results["behavior:card:01119:attach-klaw"].Digest);
+        Assert.Equal("ce28b168d4ba585dee7d695cf38b39de54e8d74d9203cb988b08e677bf4d008e",
+            results["behavior:card:01125:place-additional-1-per-hero-threat-here"].Digest);
+        Assert.Equal("562e8d29a205a38a1371396e7a031f32516d5d5dd521b2e84a7e58dba33ffd12",
+            results["behavior:card:01126:place-additional-1-per-hero-threat-here"].Digest);
+        Assert.Equal("dd7b5d78b7070825e29c210afaebde72ed138d94e25671d9d64d767e5755842a",
+            results["behavior:card:01127:klaw-gets-10-hit-points"].Digest);
+    }
+
+    [Fact]
     public void CardActionBranchesHavePinnedOutcomes()
     {
         var results = Corpus.Value

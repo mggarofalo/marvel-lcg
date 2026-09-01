@@ -624,6 +624,9 @@ internal sealed class CoreTranscriptRunner
             @"a (?<verb>[A-Za-z_]+) event with trigger (?<trigger>.+) was emitted", EventEmitted),
         Bind("event-count", TranscriptStepKind.Then,
             @"(?<count>\d+) (?<verb>[A-Za-z_]+) events? (?:was|were) emitted", EventCount),
+        Bind("boost-card-flip-count", TranscriptStepKind.Then,
+            @"(?<count>\d+) cards? (?:was|were) turned faceup as boost cards?",
+            BoostCardFlipCount),
         Bind("event-order", TranscriptStepKind.Then,
             @"(?:a|an) (?<first>[A-Za-z_]+) event was emitted before (?:a|an) (?<second>[A-Za-z_]+) event",
             EventOrder),
@@ -3187,6 +3190,16 @@ internal sealed class CoreTranscriptRunner
             context.Events.Count(gameEvent =>
                 gameEvent.Verb == match.Groups["verb"].Value),
             $"{match.Groups["verb"].Value} events",
+            step);
+
+    private static void BoostCardFlipCount(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        Equal(
+            Number(match, "count", step),
+            context.Events.OfType<CardsFlipped>().Where(gameEvent =>
+                gameEvent.FaceUp && gameEvent.Trigger == Steps.AttackInitiated)
+                .Sum(gameEvent => gameEvent.Cards.Count),
+            "cards turned faceup as boost cards",
             step);
 
     private static void EventOrder(

@@ -39499,11 +39499,11 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": ["specs/behavior/core/klaw-card-abilities.feature::Klaw II reveals The Immortal Klaw and shuffles the encounter deck"],
+          "mutation": "Skip Klaw II's search; The Immortal Klaw does not enter the villain play area."
         },
         {
           "key": "shuffle-encounter-deck",
@@ -39511,11 +39511,11 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": ["specs/behavior/core/klaw-card-abilities.feature::Klaw II reveals The Immortal Klaw and shuffles the encounter deck"],
+          "mutation": "CoreCardFaceTranscriptTests.KlawCardAbilityBranchesHavePinnedOutcomes distinguishes the post-search encounter-deck order produced by the seeded shuffle."
         },
         {
           "key": "when-klaw-attacks-give-him-1-additional",
@@ -39523,11 +39523,11 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": ["specs/behavior/core/klaw-card-abilities.feature::Klaw II receives an additional boost card when he attacks"],
+          "mutation": "Do not give Klaw II an additional boost card; only one rather than two cards is turned faceup as a boost card."
         }
       ]
     },
@@ -39667,11 +39667,11 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": ["specs/behavior/core/klaw-card-abilities.feature::Klaw III enters play with a tough status card"],
+          "mutation": "Remove Klaw III's Toughness keyword; the revealed stage has no tough status card."
         },
         {
           "key": "character-enters-play-with-tough-status-card",
@@ -39679,11 +39679,11 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": ["specs/behavior/core/klaw-card-abilities.feature::Klaw III enters play with a tough status card"],
+          "mutation": "Do not apply Toughness when Klaw III enters play; the revealed stage has no tough status card."
         },
         {
           "key": "when-klaw-attacks-give-him-1-additional",
@@ -39691,11 +39691,11 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": ["specs/behavior/core/klaw-card-abilities.feature::Klaw III receives an additional boost card when he attacks"],
+          "mutation": "Do not give Klaw III an additional boost card; only one rather than two cards is turned faceup as a boost card."
         }
       ]
     },
@@ -40241,11 +40241,11 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": ["specs/behavior/core/klaw-card-abilities.feature::Sonic Converter attaches to Klaw and is discarded for three resources"],
+          "mutation": "Do not attach Sonic Converter to Klaw; its printed host assertion fails."
         },
         {
           "key": "after-klaw-attacks-and-damages-character-stun",
@@ -40267,11 +40267,11 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": ["specs/behavior/core/klaw-card-abilities.feature::Sonic Converter attaches to Klaw and is discarded for three resources"],
+          "mutation": "Do not pay one resource of each type or discard Sonic Converter; it remains attached or payment remains in hand."
         }
       ]
     },
@@ -40341,11 +40341,11 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": ["specs/behavior/core/klaw-card-abilities.feature::Solid Sound Body attaches to Klaw and is discarded for three resources"],
+          "mutation": "Do not attach Solid-Sound Body to Klaw; its printed host assertion fails."
         },
         {
           "key": "klaw-gains-retaliate-1",
@@ -40381,11 +40381,11 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": ["specs/behavior/core/klaw-card-abilities.feature::Solid Sound Body attaches to Klaw and is discarded for three resources"],
+          "mutation": "Do not pay one resource of each type or discard Solid-Sound Body; it remains attached or payment remains in hand."
         }
       ]
     },
@@ -41089,11 +41089,11 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": ["specs/behavior/core/klaw-card-abilities.feature::Defense Network adds one threat per player when revealed"],
+          "mutation": "Omit Defense Network's additional one threat per player; it has two rather than four threat in the two-player scene."
         }
       ]
     },
@@ -41177,11 +41177,11 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": ["specs/behavior/core/klaw-card-abilities.feature::Illegal Arms Factory adds one threat per player when revealed"],
+          "mutation": "Omit Illegal Arms Factory's additional one threat per player; it has three rather than five threat in the two-player scene."
         }
       ]
     },
@@ -41251,11 +41251,11 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": ["specs/behavior/core/klaw-card-abilities.feature::The Immortal Klaw grants ten hit points only while in play"],
+          "mutation": "Ignore The Immortal Klaw's modifier; Klaw remains at twelve instead of twenty-two hit points while the scheme is in play."
         },
         {
           "key": "when-scheme-is-defeated-klaw-loses-those",
@@ -41263,11 +41263,11 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": ["specs/behavior/core/klaw-card-abilities.feature::The Immortal Klaw grants ten hit points only while in play"],
+          "mutation": "Keep the modifier after the side scheme is defeated; Klaw remains at twenty-two rather than returning to twelve hit points."
         }
       ]
     },
