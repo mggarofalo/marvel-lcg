@@ -170,6 +170,27 @@ Feature: Core villain phase
     And card 01001a copy 0 has 0 damage
     And card 01001a copy 0 has 0 tough status cards
 
+  @behavior:rr:attack-enemy-activation.1.2:published-result
+  @covers:behavior:rr:attack-enemy-activation.1.3:published-result
+  @rr:attack-enemy-activation.1.2 @rr:attack-enemy-activation.1.3
+  Scenario: Another player's hero becomes the attack target by defending
+    # "If a player other than the attacked player defends the attack with a
+    # character they control, that player becomes the new target of that
+    # attack." The defending character likewise becomes its character target.
+    Given a canonical Core scene is dealt
+      | campaign | heroes                    | seed |
+      | rhino    | spider_man,captain_marvel | 720  |
+    And seat 1 shows identity face 01001a
+    And seat 2 shows identity face 01010a
+    And card 01097b copy 0 has 0 threat counters
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01103     | 0    |
+    When the villain attacks seat 1 with card 01010a copy 0 defending
+    Then card 01010a copy 0 is exhausted
+    And card 01010a copy 0 has 3 damage
+    And card 01001a copy 0 has 0 damage
+
   @behavior:rr:defend-defense.3:published-result
   @covers:behavior:rr:defend-defense.3.1:published-result
   @covers:behavior:rr:attack-enemy-activation.3:published-result
