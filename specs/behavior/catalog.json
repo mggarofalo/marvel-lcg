@@ -7951,11 +7951,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Charge gives Rhino overkill before a defending ally takes damage"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes Charge's delayed discard occurring when the attack ends."
         }
       ]
     },
@@ -23106,11 +23108,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Stun cancels an event attack after the event is played and paid for"
+          ],
+          "mutation": "CoreCardFaceTranscriptTests.CardActionBranchesHavePinnedOutcomes distinguishes stun replacing the attack before its triggered attack effect can resolve."
         }
       ]
     },

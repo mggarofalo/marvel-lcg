@@ -98,7 +98,8 @@ Feature: Core card actions
     And 1 Attack event was emitted
 
   @behavior:rr:cancel.3:published-result
-  @rr:cancel.3 @card:01005
+  @covers:behavior:rr:status-cards.2:published-result
+  @rr:cancel.3 @rr:status-cards.2 @card:01005
   Scenario: Stun cancels an event attack after the event is played and paid for
     # "If the effects of an event card are canceled, the card is still
     # considered played, and it is discarded." The status replacement removes
