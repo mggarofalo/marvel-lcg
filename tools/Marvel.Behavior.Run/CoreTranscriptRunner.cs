@@ -362,6 +362,9 @@ internal sealed class CoreTranscriptRunner
         Bind("initiate-action-without-payment", TranscriptStepKind.When,
             @"seat (?<seat>\d+) initiates card (?<face>\d+[a-z]?) copy (?<copy>\d+)'s action without payment",
             InitiateActionWithoutPayment),
+        Bind("request-card-actions", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) asks for available card actions",
+            RequestCardActions),
         Bind("choose-pending-card", TranscriptStepKind.When,
             @"seat (?<seat>\d+) chooses card (?<face>\d+[a-z]?) copy (?<copy>\d+) for the pending action",
             ChoosePendingCard),
@@ -481,6 +484,9 @@ internal sealed class CoreTranscriptRunner
         Bind("pending-card-offered", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is offered by the pending action",
             PendingCardOffered),
+        Bind("card-action-availability", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+)'s action is (?<availability>available|unavailable)",
+            CardActionAvailability),
         Bind("cataloged-exception", TranscriptStepKind.Then,
             "the engine raises the cataloged unimplemented rule exception", CatalogedException),
     ];
@@ -1177,6 +1183,16 @@ internal sealed class CoreTranscriptRunner
         TranscriptContext context, TranscriptStep step, Match match) =>
         InitiateAction(context, step, match, []);
 
+    private static void RequestCardActions(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        context.LastCardOptions = ((AbilityRunner)context.World.Abilities)
+            .Actions(context.World, seat)
+            .Select(action => action.Card)
+            .ToHashSet();
+    }
+
     private static void InitiateAction(
         TranscriptContext context,
         TranscriptStep step,
@@ -1628,6 +1644,26 @@ internal sealed class CoreTranscriptRunner
             throw new TranscriptAssertionException(
                 $"{step.Location}: expected card {card.ObjectId} to be "
                 + $"{match.Groups["availability"].Value} as a target");
+        }
+    }
+
+    private static void CardActionAvailability(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        if (context.LastCardOptions is null)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: no card-action query has been made");
+        }
+
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        bool expected = match.Groups["availability"].Value == "available";
+        bool actual = context.LastCardOptions.Contains(card.ObjectId);
+        if (actual != expected)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected card {card.ObjectId}'s action to be "
+                + match.Groups["availability"].Value);
         }
     }
 

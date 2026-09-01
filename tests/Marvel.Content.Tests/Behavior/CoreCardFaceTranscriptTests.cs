@@ -46,7 +46,7 @@ public sealed class CoreCardFaceTranscriptTests
                 "specs/behavior/core/card-actions.feature::", StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(12, results.Count);
+        Assert.Equal(15, results.Count);
         Assert.Equal(
             "560775a73450c5e08a03a8e7c97f7ca5e35754ab02a0d978febf300ff5d24298",
             results["behavior:card:01005:deal-8-damage-enemy"].Digest);
@@ -83,6 +83,15 @@ public sealed class CoreCardFaceTranscriptTests
         Assert.Equal(
             "8152b5e5b44e9f6f24b69baecf6569204df7f05f242fdb466c60407cd794f85d",
             results["behavior:card:01087:deal-3-damage-enemy"].Digest);
+        Assert.Equal(
+            "4cd816982b3424ca8197c8e9dd903c7bd6b9a28fb7f106464f33feb1dfc948cd",
+            results["behavior:card:01030:exhaust-war-machine-and-deal-2-damage"].Digest);
+        Assert.Equal(
+            "d529bc71b74eed39a0129d11c8e4996eb0b9258ccc3809e0f5a318b5e272c84a",
+            results["behavior:card:01027:exhaust-focused-rage-and-take-1-damage"].Digest);
+        Assert.Equal(
+            "bf43a65805536fb5cfdb8b08f950bf67225919f1a677dc0a1ce5c21237037edb",
+            results["behavior:rr:cost.12:damage-prevented"].Digest);
     }
 
     [Fact]

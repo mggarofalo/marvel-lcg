@@ -6047,16 +6047,18 @@
       "disposition": "executable",
       "obligations": [
         {
-          "id": "behavior:rr:cost.11:published-result",
+          "id": "behavior:rr:cost.11:damage-prevented",
           "summary": "If dealing damage is a cost, that cost is considered paid even if some or all of that damage is prevented.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Preventing War Machine's dealt-damage cost does not prevent its effect"
+          ],
+          "mutation": "Treat prevented dealt damage as an unpaid cost; War Machine's enemy-damage assertions fail."
         }
       ]
     },
@@ -6069,16 +6071,32 @@
       "disposition": "executable",
       "obligations": [
         {
-          "id": "behavior:rr:cost.12:published-result",
-          "summary": "If taking damage is a cost, that cost is not considered paid unless all of that damage was taken.",
+          "id": "behavior:rr:cost.12:all-damage-taken",
+          "summary": "Taking all required damage pays a take-damage cost.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Focused Rage pays its take-damage cost before drawing"
+          ],
+          "mutation": "Do not pay a take-damage cost after all required damage is taken; Focused Rage's draw assertion fails."
+        },
+        {
+          "id": "behavior:rr:cost.12:damage-prevented",
+          "summary": "If any damage required by a take-damage cost would be prevented, the cost cannot be paid.",
+          "disposition": "executable",
+          "reason": null,
+          "target": null,
+          "implementation": "supported",
+          "work_item": null,
+          "exception": null,
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Tough makes Focused Rage's take-damage cost unpayable"
+          ],
+          "mutation": "Offer a take-damage action while Tough must prevent its cost; the action-availability assertion fails."
         }
       ]
     },
@@ -31492,11 +31510,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Focused Rage pays its take-damage cost before drawing"
+          ],
+          "mutation": "Omit the damage, exhaustion, or draw from Focused Rage; one of the transcript's state assertions fails."
         }
       ]
     },
@@ -32114,11 +32134,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Preventing War Machine's dealt-damage cost does not prevent its effect"
+          ],
+          "mutation": "Omit War Machine's exhaustion or exclude an enemy from its effect; a transcript assertion fails."
         }
       ]
     },

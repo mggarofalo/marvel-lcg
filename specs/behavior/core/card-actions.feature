@@ -308,6 +308,68 @@ Feature: Core card actions
     And card 01027 copy 1 is in seat 1's discard pile
     And card 01023 copy 0 is faceup on top of seat 1's discard pile
 
+  @behavior:card:01030:exhaust-war-machine-and-deal-2-damage
+  @covers:behavior:rr:cost.11:damage-prevented
+  @card:01030 @rr:cost.11
+  Scenario: Preventing War Machine's dealt-damage cost does not prevent its effect
+    # "If dealing damage is a cost, that cost is considered paid even if some
+    # or all of that damage is prevented." Tough prevents both damage, but the
+    # paid cost still exhausts War Machine and its action damages every enemy.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | iron_man | 729  |
+    And seat 1 shows identity face 01029a
+    And card 01030 copy 0 is an ally controlled by seat 1
+    And card 01030 copy 0 has a tough status card
+    And card 01101 copy 0 is a minion engaged with seat 1
+    When seat 1 initiates card 01030 copy 0's action without payment
+    Then card 01030 copy 0 is exhausted
+    And card 01030 copy 0 has 0 tough status cards
+    And card 01030 copy 0 has 0 damage
+    And card 01094 copy 0 has 1 damage
+    And card 01101 copy 0 has 1 damage
+
+  @behavior:card:01027:exhaust-focused-rage-and-take-1-damage
+  @covers:behavior:rr:cost.12:all-damage-taken
+  @card:01027 @rr:cost.12
+  Scenario: Focused Rage pays its take-damage cost before drawing
+    # "That cost is not considered paid unless all of that damage was taken."
+    # She-Hulk takes the printed one damage, Focused Rage exhausts, and only
+    # then does the post-arrow draw resolve.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 730  |
+    And seat 1 shows identity face 01019a
+    And card 01027 copy 0 is an upgrade attached to seat 1's identity
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01020 | 0    |
+    And these cards are next on seat 1's player deck
+      | next card | copy |
+      | 01024     | 0    |
+    When seat 1 initiates card 01027 copy 0's action without payment
+    Then card 01027 copy 0 is exhausted
+    And card 01019a copy 0 has 1 damage
+    And seat 1 has 2 cards in hand
+
+  @behavior:rr:cost.12:damage-prevented
+  @rr:cost.12 @card:01027
+  Scenario: Tough makes Focused Rage's take-damage cost unpayable
+    # A take-damage cost "is not considered paid unless all of that damage was
+    # taken." Tough would prevent the one damage, so the action cannot be
+    # initiated and neither the status card nor the game state is changed.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 731  |
+    And seat 1 shows identity face 01019a
+    And card 01027 copy 0 is an upgrade attached to seat 1's identity
+    And card 01019a copy 0 has a tough status card
+    When seat 1 asks for available card actions
+    Then card 01027 copy 0's action is unavailable
+    And card 01027 copy 0 is ready
+    And card 01019a copy 0 has a tough status card
+    And card 01019a copy 0 has 0 damage
+
   @behavior:card:01056:uses-3-attack-counters
   @covers:behavior:card:01056:enters-play-with-3-counters
   @covers:behavior:card:01056:when-those-are-gone-discard-card

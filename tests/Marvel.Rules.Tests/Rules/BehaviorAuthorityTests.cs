@@ -75,10 +75,10 @@ public sealed class BehaviorAuthorityTests
 
         Assert.Equal(2, catalog.Version);
         Assert.Equal(2608, catalog.Sources.Count);
-        Assert.Equal(4353, catalog.Sources.Sum(source => source.Obligations.Count));
+        Assert.Equal(4354, catalog.Sources.Sum(source => source.Obligations.Count));
         Assert.All(catalog.Sources, source => Assert.NotEmpty(source.Obligations));
         Assert.Equal(
-            4353,
+            4354,
             catalog.Sources.SelectMany(source => source.Obligations)
                 .Select(obligation => obligation.Id)
                 .Distinct(StringComparer.Ordinal)

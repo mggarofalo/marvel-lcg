@@ -209,7 +209,7 @@
           "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
           "cost": { "seq": [
             { "exhaust": "this" },
-            { "dealDamage": { "cards": "you", "amount": 1 } }
+            { "takeDamage": { "cards": "you", "amount": 1 } }
           ] },
           "effect": { "draw": { "player": "you", "count": 1 } }
         }
