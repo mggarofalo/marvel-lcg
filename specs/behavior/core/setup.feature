@@ -19,6 +19,7 @@ Feature: Canonical Core setup
   @covers:behavior:rr:in-play-and-out-of-play.6:published-result
   @covers:behavior:rr:in-play-and-out-of-play.9:published-result
   @covers:behavior:rr:in-play-and-out-of-play.11:published-result
+  @covers:behavior:rr:in-play-and-out-of-play.13:published-result
   @covers:behavior:rr:modes-of-play.1:published-result
   @covers:behavior:rr:first-player:published-result
   @rr:appendix-ii-setup.step.1 @rr:appendix-ii-setup.step.2
@@ -30,6 +31,7 @@ Feature: Canonical Core setup
   @rr:appendix-ii-setup.step.14
   @rr:in-play-and-out-of-play.2 @rr:in-play-and-out-of-play.6
   @rr:in-play-and-out-of-play.9 @rr:in-play-and-out-of-play.11
+  @rr:in-play-and-out-of-play.13
   @rr:modes-of-play.1
   @rr:first-player
   Scenario: The printed Spider-Man and Rhino deal reaches its opening state
@@ -43,6 +45,7 @@ Feature: Canonical Core setup
     Then the game has 1 player
     And seat 1 is in alter-ego form
     And card 01001b copy 0 is in play
+    And seat 1's identity face 01001a is out of play
     And seat 1 has the first player token
     And seat 1 has 6 cards in hand
     And seat 1 has 34 cards in their player deck

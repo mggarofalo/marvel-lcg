@@ -7,6 +7,7 @@ Feature: Core card actions
   @covers:behavior:rr:attack-player-ability-type.2:published-result
   @covers:behavior:rr:cost.3:published-result
   @covers:behavior:rr:event:published-result
+  @covers:behavior:rr:in-play-and-out-of-play.7:published-result
   @covers:behavior:rr:initiating-abilities.step.1:published-result
   @covers:behavior:rr:initiating-abilities.step.3:published-result
   @covers:behavior:rr:initiating-abilities.step.5:published-result
@@ -15,6 +16,7 @@ Feature: Core card actions
   @covers:behavior:rr:play-put-into-play.2:published-result
   @covers:behavior:rr:player-turn.5:published-result
   @card:01005 @rr:attack-player-ability-type.2 @rr:cost.3 @rr:event
+  @rr:in-play-and-out-of-play.7
   @rr:initiating-abilities.step.1 @rr:initiating-abilities.step.3
   @rr:initiating-abilities.step.5 @rr:initiating-abilities.step.6
   @rr:initiating-abilities.step.7 @rr:play-put-into-play.2 @rr:player-turn.5
@@ -443,10 +445,12 @@ Feature: Core card actions
     And card 01097b copy 0 has 0 threat counters
 
   @behavior:rr:ability.2:in-play-player-card-ability
+  @covers:behavior:rr:in-play-and-out-of-play.4:published-result
   @covers:behavior:rr:in-play-and-out-of-play.5:published-result
   @covers:behavior:rr:in-play-and-out-of-play.8:published-result
   @covers:behavior:rr:upgrade.1:published-result
-  @rr:ability.2 @rr:in-play-and-out-of-play.5
+  @rr:ability.2 @rr:in-play-and-out-of-play.4
+  @rr:in-play-and-out-of-play.5
   @rr:in-play-and-out-of-play.8 @rr:upgrade.1 @card:01027
   Scenario: An upgrade action is active in play and inactive in hand
     # Abilities on upgrades "may only be used if the card is in play," unless

@@ -10122,10 +10122,10 @@
         {
           "key": "published-result",
           "summary": "Facedown cards attached to in-play cards are out of play.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "outside-core",
+          "reason": "No Core Set card or Core rule effect turns a card facedown while it is attached to an in-play card.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -10183,11 +10183,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::The printed Spider-Man and Rhino deal reaches its opening state"
+          ],
+          "mutation": "Treat Spider-Man's facedown hero side as in play alongside Peter Parker; the out-of-play face assertion fails."
         }
       ]
     },
@@ -10241,11 +10243,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::An upgrade action is active in play and inactive in hand"
+          ],
+          "mutation": "Offer the out-of-play Focused Rage copy's action or hide the in-play copy's action; an availability assertion fails."
         }
       ]
     },
@@ -10299,11 +10303,14 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Swinging Web Kick pays, chooses an enemy, deals eight, and discards",
+            "specs/behavior/core/villain-phase.feature::Enhanced Spider-Sense cancels a treachery's When Revealed effect"
+          ],
+          "mutation": "Require the resolving event or treachery to be in play before its text can resolve; an action or cancellation transcript fails."
         }
       ]
     },

@@ -558,6 +558,9 @@ internal sealed class CoreTranscriptRunner
             CardEventOrder),
         Bind("seat-form", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) is in (?<form>hero|alter-ego) form", SeatForm),
+        Bind("identity-face-out-of-play", TranscriptStepKind.Then,
+            @"seat (?<seat>\d+)'s identity face (?<face>\d+[a-z]?) is out of play",
+            IdentityFaceOutOfPlay),
         Bind("form-transition", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) changed from (?<from>hero|alter-ego) to (?<to>hero|alter-ego) form",
             FormTransition),
@@ -2321,6 +2324,19 @@ internal sealed class CoreTranscriptRunner
         {
             throw new TranscriptAssertionException(
                 $"{step.Location}: expected seat {seat + 1} in {expected} form");
+        }
+    }
+
+    private static void IdentityFaceOutOfPlay(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Card identity = context.World.Seats[Seat(match, step)].IdentityCard;
+        string face = match.Groups["face"].Value;
+        if (!identity.Faces.Contains(face, StringComparer.Ordinal)
+            || string.Equals(identity.FaceId, face, StringComparison.Ordinal))
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: identity face {face} is not its out-of-play side");
         }
     }
 

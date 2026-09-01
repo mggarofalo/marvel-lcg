@@ -345,7 +345,9 @@ Feature: Core villain phase
   @covers:behavior:rr:cancel.1:published-result
   @covers:behavior:rr:cancel.2:published-result
   @covers:behavior:rr:cancel.4:published-result
+  @covers:behavior:rr:in-play-and-out-of-play.7:published-result
   @card:01004 @rr:cancel.1 @rr:cancel.2 @rr:cancel.4
+  @rr:in-play-and-out-of-play.7
   Scenario: Enhanced Spider-Sense cancels a treachery's When Revealed effect
     # "Cancel abilities interrupt the initiation of effects and prevent them
     # from resolving." The treachery is nevertheless revealed and discarded,
