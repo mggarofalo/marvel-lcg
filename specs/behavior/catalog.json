@@ -2862,11 +2862,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Spider-Sense follows the attacked player when an ally defends"
+          ],
+          "mutation": "Bind attack-you abilities to the defending character instead of the attacked player; Spider-Sense does not draw and the transcript fails."
         }
       ]
     },
@@ -27477,11 +27479,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Spider-Sense follows the attacked player when an ally defends"
+          ],
+          "mutation": "Suppress Spider-Sense or bind it to the attacked character instead of the player; the hand-count assertion fails."
         }
       ]
     },

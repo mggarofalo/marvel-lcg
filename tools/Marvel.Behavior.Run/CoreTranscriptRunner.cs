@@ -341,6 +341,9 @@ internal sealed class CoreTranscriptRunner
         Bind("villain-attack-defender", TranscriptStepKind.When,
             @"the villain attacks seat (?<seat>\d+) with card (?<face>\d+[a-z]?) copy (?<copy>\d+) defending",
             ResolveVillainAttackWithDefender),
+        Bind("villain-attack-defender-opportunity", TranscriptStepKind.When,
+            @"the villain attacks seat (?<seat>\d+) accepting ""(?<label>[^""]+)"" with card (?<face>\d+[a-z]?) copy (?<copy>\d+) defending",
+            ResolveVillainAttackWithDefenderAndOpportunity),
         Bind("minion-enters-play", TranscriptStepKind.When,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) enters play as a minion engaged with seat (?<seat>\d+)",
             MinionEntersPlay),
@@ -990,7 +993,7 @@ internal sealed class CoreTranscriptRunner
         VillainPhase.Schedule(
             context.World.Agenda, Number(match, "round", step));
 
-        FinishWithDefender(context, step, defender);
+        FinishWithDefender(context, step, defender, acceptedLabel: null);
     }
 
     private static void ResolveVillainAttackWithDefender(
@@ -1006,14 +1009,31 @@ internal sealed class CoreTranscriptRunner
             Steps.Attack, Round: 1, Number: 2, Index: seat,
             Subject: villain.ObjectId, Seat: seat));
 
-        FinishWithDefender(context, step, defender);
+        FinishWithDefender(context, step, defender, acceptedLabel: null);
+    }
+
+    private static void ResolveVillainAttackWithDefenderAndOpportunity(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        Card defender = context.SceneRequired(step).Find(SceneCard(match, step));
+        Card villain = context.World.TheCardIn(DeckType.VillainArea)
+            ?? throw new TranscriptException($"{step.Location}: no villain is in play");
+        int seat = Seat(match, step);
+        context.World.Agenda.Add(new PhaseStep(
+            Steps.Attack, Round: 1, Number: 2, Index: seat,
+            Subject: villain.ObjectId, Seat: seat));
+
+        FinishWithDefender(context, step, defender, match.Groups["label"].Value);
     }
 
     private static void FinishWithDefender(
-        TranscriptContext context, TranscriptStep step, Card defender)
+        TranscriptContext context, TranscriptStep step, Card defender, string? acceptedLabel)
     {
 
         bool defended = false;
+        bool accepted = acceptedLabel is null;
         Prompt? asked = Sequence.Work(
             context.World, context.Cards, context.World.Abilities, context.Events);
         for (int answered = 0; asked is not null; answered++)
@@ -1025,7 +1045,16 @@ internal sealed class CoreTranscriptRunner
             }
 
             Decision decision = Decision.Decline;
-            if (!defended && asked.Asking == Question.Defender)
+            Affordance? opportunity = accepted
+                ? null
+                : asked.Affordances.SingleOrDefault(option =>
+                    option.Label == acceptedLabel);
+            if (opportunity is not null)
+            {
+                decision = Decision.Take(opportunity.Id);
+                accepted = true;
+            }
+            else if (!defended && asked.Asking == Question.Defender)
             {
                 if (!asked.Affordances.Any(option => option.AnchorId == defender.ObjectId))
                 {
@@ -1052,6 +1081,11 @@ internal sealed class CoreTranscriptRunner
         {
             throw new TranscriptException(
                 $"{step.Location}: the villain phase offered no defender window");
+        }
+        if (!accepted)
+        {
+            throw new TranscriptException(
+                $"{step.Location}: the attack offered no '{acceptedLabel}' opportunity");
         }
     }
 

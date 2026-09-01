@@ -191,6 +191,26 @@ Feature: Core villain phase
     And card 01010a copy 0 has 3 damage
     And card 01001a copy 0 has 0 damage
 
+  @behavior:card:01001a:when-villain-initiates-attack-against-you-draw
+  @covers:behavior:rr:attack-enemy-activation.1.4:published-result
+  @card:01001a @rr:attack-enemy-activation.1.4
+  Scenario: Spider-Sense follows the attacked player when an ally defends
+    # Spider-Sense says, "When the villain initiates an attack against you,
+    # draw 1 card." Abilities that trigger when an enemy attacks "you" inspect
+    # the attacked player regardless of which controlled character is attacked.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 721  |
+    And seat 1 shows identity face 01001a
+    And card 01083 copy 0 is an ally controlled by seat 1
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01103     | 0    |
+    When the villain attacks seat 1 accepting "Spider-Sense" with card 01083 copy 0 defending
+    Then seat 1 has 7 cards in hand
+    And card 01083 copy 0 is faceup on top of seat 1's discard pile
+    And card 01001a copy 0 has 0 damage
+
   @behavior:rr:defend-defense.3:published-result
   @covers:behavior:rr:defend-defense.3.1:published-result
   @covers:behavior:rr:attack-enemy-activation.3:published-result
