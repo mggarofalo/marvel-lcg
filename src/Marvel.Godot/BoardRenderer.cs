@@ -42,7 +42,7 @@ public static class BoardRenderer
         content.AddChild(Label(area.Title, 18, Ink));
         content.AddChild(Label(area.Context, 10, Amber));
         content.AddChild(new HSeparator());
-        AddCards(content, area.Cards, "IN PLAY");
+        AddCards(content, area.Cards, "CARDS");
         if (area.Removed.Count > 0)
         {
             content.AddChild(new HSeparator());
