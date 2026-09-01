@@ -75,10 +75,10 @@ public sealed class BehaviorAuthorityTests
 
         Assert.Equal(2, catalog.Version);
         Assert.Equal(2608, catalog.Sources.Count);
-        Assert.Equal(4336, catalog.Sources.Sum(source => source.Obligations.Count));
+        Assert.Equal(4355, catalog.Sources.Sum(source => source.Obligations.Count));
         Assert.All(catalog.Sources, source => Assert.NotEmpty(source.Obligations));
         Assert.Equal(
-            4336,
+            4355,
             catalog.Sources.SelectMany(source => source.Obligations)
                 .Select(obligation => obligation.Id)
                 .Distinct(StringComparer.Ordinal)
@@ -86,6 +86,27 @@ public sealed class BehaviorAuthorityTests
         Assert.DoesNotContain(
             catalog.Sources.SelectMany(source => source.Obligations),
             obligation => obligation.Disposition == "unreviewed");
+    }
+
+    [Fact]
+    public void AbilityEntryRetainsEveryIndependentNormativeStatement()
+    {
+        var catalog = Catalog.Build();
+
+        var sentenceOrder = Assert.Single(
+            catalog.Sources, source => source.Id == "rr:ability.4");
+        Assert.Contains(sentenceOrder.Obligations, obligation =>
+            obligation.Id == "behavior:rr:ability.4:sentence-order"
+            && obligation.Disposition == "executable");
+        Assert.Contains(sentenceOrder.Obligations, obligation =>
+            obligation.Id == "behavior:rr:ability.4:alteration-review"
+            && obligation.Disposition == "no-independent-behavior");
+
+        var constantLifetime = Assert.Single(
+            catalog.Sources, source => source.Id == "rr:ability.8.2");
+        Assert.Contains(constantLifetime.Obligations, obligation =>
+            obligation.Id == "behavior:rr:ability.8.2:constant-active-while-in-play"
+            && obligation.Disposition == "executable");
     }
 
     [Fact]
