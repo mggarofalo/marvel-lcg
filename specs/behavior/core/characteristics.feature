@@ -58,6 +58,47 @@ Feature: Core character calculations
     When the villain attacks seat 1 with every optional choice declined
     Then card 01001a copy 0 has 7 damage
 
+  @behavior:rr:lasting-effects.4:published-result
+  @covers:behavior:rr:lasting-effects.3:published-result
+  @covers:behavior:card:01070:choose-player
+  @covers:behavior:card:01070:each-character-that-player-controls-gets-1
+  @rr:lasting-effects.3 @rr:lasting-effects.4 @card:01070
+  Scenario: A character entering after Lead from the Front receives its lasting bonus
+    # A card that enters play after a lasting effect is created "is still
+    # affected by that lasting effect." Spider-Woman enters after the chosen
+    # player receives Lead from the Front's phase-long +1 ATK and +1 THW.
+    Given a canonical Core scene is dealt
+      | campaign | heroes         | seed |
+      | rhino    | captain_marvel | 815  |
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01070 | 0    |
+      | 01088 | 0    |
+      | 01011 | 0    |
+      | 01014 | 0    |
+    When game setup reaches seat 1's mulligan
+    Then seat 1 is offered a mulligan
+    When seat 1 keeps every opening-hand card at mulligan
+    Then seat 1 is in alter-ego form
+    When seat 1 takes their voluntary form change
+    Then seat 1 changed from alter-ego to hero form
+    When seat 1 initiates card 01070 copy 0's action paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+    Then card 01010a copy 0 is offered by the pending action
+    When seat 1 chooses card 01010a copy 0 for the pending action
+    Then card 01070 copy 0 is in seat 1's discard pile
+    When seat 1 plays card 01011 copy 0 paying with these cards
+      | card  | copy |
+      | 01014 | 0    |
+    Then card 01011 copy 0 remains an ally controlled by seat 1
+    When card 01011 copy 0 uses its basic attack against card 01094 copy 0
+    Then card 01094 copy 0 has 3 damage
+    When the player phase ends
+    Then card 01010a copy 0 is ready
+    When seat 1 uses their basic attack against card 01094 copy 0
+    Then card 01094 copy 0 has 5 damage
+
   @behavior:card:01039:exhaust-rocket-boots-and-spend-mental-resource
   @covers:behavior:rr:mental-resource.2:published-result
   @covers:behavior:rr:lasting-effects.1:published-result

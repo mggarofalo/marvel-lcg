@@ -39,7 +39,7 @@ public sealed class CoreRuleTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(4, results.Count);
+        Assert.Equal(5, results.Count);
         Assert.Equal(
             "34c725e7bf00f8edee5d88a05622b4ea7331342e372910a124114a8527af9a28",
             results["behavior:card:01039:you-get-1-hit-point"].Digest);
@@ -52,6 +52,9 @@ public sealed class CoreRuleTranscriptTests
         Assert.Equal(
             "622899a27dbed3f733ecfbbc58bd17f672d591acb2183f47ecc671025275ca06",
             results["behavior:rr:modifiers.6.1:published-result"].Digest);
+        Assert.Equal(
+            "05313f3e207a94b4780aabbe4b06b217906676bf4877bf87ed6a32c4df4d9997",
+            results["behavior:rr:lasting-effects.4:published-result"].Digest);
     }
 
     [Fact]

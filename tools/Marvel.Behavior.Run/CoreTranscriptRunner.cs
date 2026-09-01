@@ -393,6 +393,9 @@ internal sealed class CoreTranscriptRunner
         Bind("initiate-action-with-discard", TranscriptStepKind.When,
             @"seat (?<seat>\d+) initiates card (?<face>\d+[a-z]?) copy (?<copy>\d+)'s action discarding these cards",
             InitiateActionWithDiscard),
+        Bind("play-card-with-payment", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) plays card (?<face>\d+[a-z]?) copy (?<copy>\d+) paying with these cards",
+            PlayCardWithPayment),
         Bind("request-card-actions", TranscriptStepKind.When,
             @"seat (?<seat>\d+) asks for available card actions",
             RequestCardActions),
@@ -1470,6 +1473,39 @@ internal sealed class CoreTranscriptRunner
             [],
             [.. table.Rows.Select(row => context.SceneRequired(step).Find(new SceneCard(
                 row["card"], TableNumber(row, "copy", step))).ObjectId)]);
+    }
+
+    private static void PlayCardWithPayment(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Game game = context.Game
+            ?? throw new TranscriptException($"{step.Location}: game setup has not begun");
+        int seat = Seat(match, step);
+        Prompt asked = game.Pending
+            ?? throw new TranscriptException($"{step.Location}: no turn prompt is pending");
+        if (game.Phase != GamePhase.PlayerTurn || asked.Player != seat)
+        {
+            throw new TranscriptException(
+                $"{step.Location}: seat {seat + 1} is not taking their turn");
+        }
+
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        Affordance play = asked.Affordances.Single(candidate =>
+            candidate.Verb == CardPlay.Verb && candidate.AnchorId == card.ObjectId);
+        int[] targets = play.Targets switch
+        {
+            null => [],
+            { Legal.Count: 1 } request => [request.Legal[0]],
+            _ => throw new TranscriptException(
+                $"{step.Location}: playing card {card.ObjectId} requires an explicit target"),
+        };
+        TranscriptTable table = Table(step, "card", "copy");
+        int[] payment = [.. table.Rows.Select(row => context.SceneRequired(step).Find(
+            new SceneCard(row["card"], TableNumber(row, "copy", step))).ObjectId)];
+        context.Events.Clear();
+        Resolution resolution = game.Resolve(Decision.Take(play.Id, targets, payment));
+        context.Events.AddRange(resolution.Events);
+        SetPendingPrompt(context, resolution.Prompt);
     }
 
     private static void RequestCardActions(

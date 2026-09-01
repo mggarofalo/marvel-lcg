@@ -14358,11 +14358,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/characteristics.feature::A character entering after Lead from the Front receives its lasting bonus"
+          ],
+          "mutation": "Snapshot the affected characters when Lead from the Front resolves; Spider-Woman's first attack deals only its printed damage."
         }
       ]
     },
@@ -14380,11 +14382,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/characteristics.feature::A character entering after Lead from the Front receives its lasting bonus"
+          ],
+          "mutation": "Exclude characters that enter after the lasting effect is created; Spider-Woman's first attack damage assertion fails."
         }
       ]
     },
@@ -38448,11 +38452,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/characteristics.feature::A character entering after Lead from the Front receives its lasting bonus"
+          ],
+          "mutation": "Do not ask which player Lead from the Front affects; the pending identity assertion fails."
         },
         {
           "id": "behavior:card:01070:each-character-that-player-controls-gets-1",
@@ -38460,11 +38466,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/characteristics.feature::A character entering after Lead from the Front receives its lasting bonus"
+          ],
+          "mutation": "Remove Lead from the Front's +1 ATK or keep it after the phase; one of Spider-Woman's two attack-damage assertions fails."
         }
       ]
     },
