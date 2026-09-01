@@ -406,6 +406,9 @@ internal sealed class CoreTranscriptRunner
         Bind("villain-phase-decline", TranscriptStepKind.When,
             @"villain phase (?<round>\d+) resolves with every optional choice declined",
             ResolveVillainPhase),
+        Bind("villain-phase-until-required", TranscriptStepKind.When,
+            @"villain phase (?<round>\d+) resolves with every optional choice declined until a required decision",
+            ResolveVillainPhaseUntilRequired),
         Bind("villain-phase-opportunity", TranscriptStepKind.When,
             @"villain phase (?<round>\d+) resolves accepting ""(?<label>[^""]+)""",
             ResolveVillainPhaseAccepting),
@@ -1664,6 +1667,16 @@ internal sealed class CoreTranscriptRunner
         FinishAgenda(context, step);
     }
 
+    private static void ResolveVillainPhaseUntilRequired(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        VillainPhase.Schedule(
+            context.World.Agenda, Number(match, "round", step));
+        FinishUntilRequired(context, step);
+    }
+
     private static void ResolveVillainPhaseAccepting(
         TranscriptContext context, TranscriptStep step, Match match)
     {
@@ -1938,6 +1951,35 @@ internal sealed class CoreTranscriptRunner
             asked = Sequence.Work(
                 context.World, context.Cards, context.World.Abilities, context.Events);
         }
+    }
+
+    private static void FinishUntilRequired(
+        TranscriptContext context, TranscriptStep step)
+    {
+        Prompt? asked = Sequence.Work(
+            context.World, context.Cards, context.World.Abilities, context.Events);
+        for (int answered = 0; asked is { Cancellable: true }; answered++)
+        {
+            if (answered >= 100)
+            {
+                throw new TranscriptException(
+                    $"{step.Location}: agenda still asks '{asked.Label}' after 100 declines");
+            }
+
+            Sequence.Answer(
+                context.World, context.Cards, context.World.Abilities,
+                asked, Decision.Decline, context.Events);
+            asked = Sequence.Work(
+                context.World, context.Cards, context.World.Abilities, context.Events);
+        }
+
+        if (asked is null)
+        {
+            throw new TranscriptException(
+                $"{step.Location}: agenda reached no required decision");
+        }
+
+        SetPendingPrompt(context, asked);
     }
 
     private static void FinishAgendaAccepting(
@@ -3674,8 +3716,12 @@ internal sealed class CoreTranscriptRunner
         if (!ReferenceEquals(actual, expected) || !expected.FaceUp)
         {
             throw new TranscriptAssertionException(
-                $"{step.Location}: expected faceup card {expected.ObjectId} as main scheme; was "
-                + (actual is null ? "<none>" : $"{actual.ObjectId}, faceup={actual.FaceUp}"));
+                $"{step.Location}: expected faceup card {expected.ObjectId} "
+                + $"({string.Join(',', expected.Faces)}) as main scheme; was "
+                + (actual is null
+                    ? "<none>"
+                    : $"{actual.ObjectId} ({string.Join(',', actual.Faces)}), "
+                        + $"face={actual.FaceId}, faceup={actual.FaceUp}"));
         }
     }
 

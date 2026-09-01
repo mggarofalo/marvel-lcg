@@ -42751,11 +42751,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [],
-      "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-main-schemes.feature::The Crimson Cowl creates one Drone in a one-player game"
+          ],
+          "mutation": "Omit the stage-one Drone; the exact engaged Drone count fails."
         },
         {
       "key": "each-player-puts-top-card-their-deck-multiple-players",
@@ -42825,11 +42827,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [],
-      "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-main-schemes.feature::Assault on NORAD creates one player's Drone and advances to stage 2B"
+          ],
+          "mutation": "Omit the one-player reveal effect; the stage-two engaged Drone count fails."
         },
         {
           "key": "each-player-puts-top-card-their-deck-multiple-players",
@@ -42837,11 +42841,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-main-schemes.feature::Assault on NORAD creates a Drone for every player"
+          ],
+          "mutation": "Skip either player during the reveal effect; that player's engaged Drone count fails."
         },
         {
           "key": "advance-stage-2b",
@@ -42849,11 +42855,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-main-schemes.feature::Assault on NORAD creates one player's Drone and advances to stage 2B"
+          ],
+          "mutation": "Do not advance the revealed A face; the faceup main-scheme assertion fails."
         }
       ]
     },
@@ -42951,11 +42959,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-main-schemes.feature::One player places threat after villain phase step one"
+          ],
+          "mutation": "Remove the threat option or change its amount; the option and final threat assertions fail."
         },
         {
           "key": "after-placing-threat-here-during-step-one-choice-2",
@@ -42963,11 +42973,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-main-schemes.feature::One player creates a Drone after villain phase step one"
+          ],
+          "mutation": "Remove the Drone option; the option and engaged Drone count assertions fail."
         },
         {
           "key": "after-placing-threat-here-during-step-one-one-player",
@@ -42975,11 +42987,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-main-schemes.feature::One player places threat after villain phase step one"
+          ],
+          "mutation": "Skip the one-player forced response; the required choice and final threat assertions fail."
         },
         {
           "key": "after-placing-threat-here-during-step-one-multiple-players",
@@ -42987,11 +43001,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-main-schemes.feature::Every player resolves an independent Assault on NORAD choice"
+          ],
+          "mutation": "Skip either player frame; the second required choice or per-player result assertions fail."
         }
       ]
     },
@@ -43047,11 +43063,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-main-schemes.feature::Countdown to Oblivion creates one player's Drone and advances to stage 3B"
+          ],
+          "mutation": "Omit the one-player reveal effect; the stage-three engaged Drone count fails."
         },
         {
           "key": "each-player-puts-top-card-their-deck-multiple-players",
@@ -43059,11 +43077,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-main-schemes.feature::Countdown to Oblivion creates a Drone for every player"
+          ],
+          "mutation": "Skip either player during the reveal effect; that player's engaged Drone count fails."
         },
         {
           "key": "advance-stage-3b",
@@ -43071,11 +43091,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-main-schemes.feature::Countdown to Oblivion creates one player's Drone and advances to stage 3B"
+          ],
+          "mutation": "Do not advance the revealed A face; the faceup main-scheme assertion fails."
         }
       ]
     },
@@ -43173,11 +43195,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-main-schemes.feature::Countdown to Oblivion prevents threat removal below its target"
+          ],
+          "mutation": "Allow the basic thwart to remove threat; the unchanged threat assertion fails."
         },
         {
           "key": "if-stage-is-completed-players-lose-game-condition-met",
@@ -43185,11 +43209,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-main-schemes.feature::Completing Countdown to Oblivion makes the villain win"
+          ],
+          "mutation": "Do not end the game at the final target; the villain-win assertion fails."
         },
         {
           "key": "if-stage-is-completed-players-lose-game-condition-not-met",
@@ -43197,11 +43223,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-main-schemes.feature::Countdown to Oblivion prevents threat removal below its target"
+          ],
+          "mutation": "End the game below the final target; the unfinished-game assertion fails."
         }
       ]
     },

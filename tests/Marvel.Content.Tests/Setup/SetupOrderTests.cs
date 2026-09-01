@@ -85,6 +85,25 @@ public sealed class SetupOrderTests
         Assert.Equal(scheme.Faces[^1], scheme.FaceId);
     }
 
+    [Rule("rr:main-scheme-main-scheme-deck.step.2")]
+    [Fact]
+    public void AThreeStageMainSchemeDeckHasStageTwoOnTop()
+    {
+        // The authored setup row lists stages one, two, then three. Areas are
+        // bottom-first, so the waiting cards are stored stage three then stage
+        // two and the next rules-driven advance takes stage two from the top.
+        var world = WorldSetup.Deal(
+            Cards,
+            Blueprints.From(
+                Dealer.DealOrder(Setup, "ultron", ["spider_man"]), Cards),
+            [Setup.Hero("spider_man").Name],
+            Seed);
+
+        Assert.Equal(
+            ["01139a", "01138a"],
+            world.AreaOf(DeckType.MainSchemesDeck).Cards.Select(card => card.FaceId));
+    }
+
     [Rule("rr:appendix-ii-setup.step.14")]
     [Fact]
     public void EachPlayerHoldsTheirHandSize()
