@@ -9555,11 +9555,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-powers.feature::An ally attacks while its identity remains ready and takes consequential damage"
+          ],
+          "mutation": "Track the ally's damage anywhere other than its card damage counter; the one-damage assertion fails."
         }
       ]
     },
@@ -19304,11 +19306,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-powers.feature::An ally attacks while its identity remains ready and takes consequential damage"
+          ],
+          "mutation": "Do not count the ally's consequential damage token as sustained damage; the card-damage assertion fails."
         }
       ]
     },

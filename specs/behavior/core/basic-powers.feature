@@ -23,11 +23,14 @@ Feature: Core basic powers
   @covers:behavior:rr:ally.5:published-result
   @covers:behavior:rr:consequential-damage:published-result
   @covers:behavior:rr:damage.2:tracked-by-damage-tokens
+  @covers:behavior:rr:hit-points.3:published-result
+  @covers:behavior:rr:sustained-damage.2:published-result
   @covers:behavior:rr:attack-player-ability-type.step.9:published-result
   @covers:behavior:rr:ability.step.5:published-result
   @covers:behavior:rr:ally.1:published-result
   @rr:ally.2 @rr:ally.3 @rr:ally.5 @rr:consequential-damage
-  @rr:attack-player-ability-type.step.9 @rr:damage.2 @rr:ability.step.5 @rr:ally.1
+  @rr:attack-player-ability-type.step.9 @rr:damage.2 @rr:hit-points.3
+  @rr:sustained-damage.2 @rr:ability.step.5 @rr:ally.1
   Scenario: An ally attacks while its identity remains ready and takes consequential damage
     # "After an ally attacks, it takes consequential damage equal to the
     # number of consequential damage icons beneath its ATK field."
