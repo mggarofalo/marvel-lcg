@@ -445,6 +445,9 @@ internal sealed class CoreTranscriptRunner
         Bind("ally-controlled", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) remains an ally controlled by seat (?<seat>\d+)",
             AllyControlled),
+        Bind("support-controlled", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) remains a support controlled by seat (?<seat>\d+)",
+            SupportControlled),
         Bind("card-damage", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) has (?<count>\d+) damage",
             CardDamage),
@@ -1725,6 +1728,20 @@ internal sealed class CoreTranscriptRunner
         {
             throw new TranscriptAssertionException(
                 $"{step.Location}: expected card {card.ObjectId} as an ally controlled by "
+                + $"seat {seat + 1}; was {card.Area}");
+        }
+    }
+
+    private static void SupportControlled(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        if (card.Area.Type != DeckType.SupportsArea
+            || card.Area.PlayArea != PlayArea.Of(seat))
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected card {card.ObjectId} as a support controlled by "
                 + $"seat {seat + 1}; was {card.Area}");
         }
     }

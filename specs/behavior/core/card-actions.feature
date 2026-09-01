@@ -456,7 +456,11 @@ Feature: Core card actions
   @covers:behavior:rr:uses-x-type:published-result
   @covers:behavior:rr:uses-x-type.1:published-result
   @covers:behavior:rr:cost.1:published-result
+  @covers:behavior:rr:ready:published-result
+  @covers:behavior:rr:support.1:published-result
+  @covers:behavior:rr:support.2:published-result
   @card:01056 @rr:uses-x-type @rr:uses-x-type.1 @rr:cost.1
+  @rr:ready @rr:support.1 @rr:support.2
   Scenario: Tac Team enters with three uses and discards after the third action
     # "Uses (3 attack counters)" places three counters as Tac Team enters play.
     # Each action exhausts it, spends exactly one counter, and deals two damage;
@@ -466,6 +470,8 @@ Feature: Core card actions
       | rhino    | she_hulk | 715  |
     When card 01056 copy 0 enters play as a support controlled by seat 1
     Then card 01056 copy 0 has 3 attack counters
+    And card 01056 copy 0 is ready
+    And card 01056 copy 0 remains a support controlled by seat 1
     When seat 1 initiates card 01056 copy 0's action without payment
     Then card 01094 copy 0 is offered by the pending action
     When seat 1 chooses card 01094 copy 0 for the pending action

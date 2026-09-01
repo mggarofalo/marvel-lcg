@@ -16217,11 +16217,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Tac Team enters with three uses and discards after the third action"
+          ],
+          "mutation": "Enter Tac Team exhausted; its ready-state assertion fails."
         }
       ]
     },
@@ -19094,11 +19096,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Tac Team enters with three uses and discards after the third action"
+          ],
+          "mutation": "Place Tac Team outside the player support row; the support-area assertion fails."
         }
       ]
     },
@@ -19112,11 +19116,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Tac Team enters with three uses and discards after the third action"
+          ],
+          "mutation": "Deactivate or remove Tac Team without a card ability; its repeated supported actions fail."
         }
       ]
     },
