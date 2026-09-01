@@ -38,7 +38,8 @@ Feature: Core status cards
 
   @behavior:rr:stun-stunned.2:published-result
   @covers:behavior:rr:status-cards:status-card-placement
-  @rr:stun-stunned.2 @rr:status-cards
+  @covers:behavior:rr:stun-stunned.3:published-result
+  @rr:stun-stunned.2 @rr:stun-stunned.3 @rr:status-cards
   Scenario: A stun ability gives the character a stunned status card
     # "If an ability 'stuns' a character, give that character a stunned status
     # card."

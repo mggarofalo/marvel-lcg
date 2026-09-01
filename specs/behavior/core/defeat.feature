@@ -53,18 +53,23 @@ Feature: Core defeat
   @covers:behavior:rr:defeat.2:published-result
   @covers:behavior:rr:hit-points.2.2:published-result
   @covers:behavior:rr:villain-defeat.2:published-result
+  @covers:behavior:rr:villain-defeat.3:published-result
+  @covers:behavior:rr:villain-defeat.3.2:published-result
   @rr:villain-defeat @rr:defeat @rr:defeat.2 @rr:hit-points.2.2
-  @rr:villain-defeat.2
+  @rr:villain-defeat.2 @rr:villain-defeat.3 @rr:villain-defeat.3.2
   Scenario: Defeating a villain stage reveals the next stage without excess damage
     # "Remove the current stage of the villain deck from the game. The next
-    # sequential stage ... is revealed." Excess damage does not carry over.
+    # sequential stage ... is revealed." Excess damage does not carry over;
+    # because both stages are titled Rhino, attachments carry to the new stage.
     Given a canonical Core scene is dealt
       | campaign | heroes     | seed |
       | rhino    | spider_man | 317  |
     And seat 1 shows identity face 01001a
     And card 01094 copy 0 has 13 damage
+    And card 01099 copy 0 is attached to card 01094 copy 0
     When seat 1 uses their basic attack against card 01094 copy 0
     Then card 01094 copy 0 is removed from the game
     And card 01095 copy 0 is the faceup villain
     And card 01095 copy 0 has 0 damage
+    And card 01099 copy 0 is attached to card 01095 copy 0
     And the game is unfinished

@@ -18467,15 +18467,15 @@
       "title": "PLAYER ELIMINATION",
       "fingerprint": "sha256:2f03bf3509da92e772e5ab0fddb7abc6be67aa36a4ce8734e5e485b34e1073bc",
       "scope": "Rules Reference v1.8",
-      "disposition": "executable",
+      "disposition": "outside-core",
       "obligations": [
         {
           "id": "behavior:rr:player-elimination.2:published-result",
           "summary": "Remove each non-attachment card with the permanent keyword from the game.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "outside-core",
+          "reason": "No Core Set card has the permanent keyword.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -23222,19 +23222,21 @@
       "title": "STUN, STUNNED",
       "fingerprint": "sha256:eae0c78f7758a0c57f817591b9730d8ab4e9c9eba61f10473d35d219f8c546c1",
       "scope": "Rules Reference v1.8",
-      "disposition": "narrower",
+      "disposition": "executable",
       "obligations": [
         {
           "id": "behavior:rr:stun-stunned.3:published-result",
           "summary": "A character is stunned if it has a stunned status card.",
-          "disposition": "narrower",
-          "reason": "A directly cited child clause states the executable decision more precisely.",
-          "target": "behavior:rr:stun-stunned.3.1:published-result",
-          "implementation": null,
+          "disposition": "executable",
+          "reason": null,
+          "target": null,
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/status-cards.feature::A stun ability gives the character a stunned status card"
+          ],
+          "mutation": "CoreRuleTranscriptTests.StatusCardBranchesHavePinnedOutcomes distinguishes the status card making Rhino stunned after placement."
         }
       ]
     },
@@ -23244,15 +23246,15 @@
       "title": "STUN, STUNNED",
       "fingerprint": "sha256:e002c4c4c9886f601eccb4d343a009d80bf2254605e285e159639a7375e2b6f7",
       "scope": "Rules Reference v1.8",
-      "disposition": "executable",
+      "disposition": "outside-core",
       "obligations": [
         {
           "id": "behavior:rr:stun-stunned.3.1:published-result",
           "summary": "A character with the steady keyword is stunned only if it has two stunned status cards.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "outside-core",
+          "reason": "No Core Set character has the steady keyword.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -23266,15 +23268,15 @@
       "title": "STUN, STUNNED",
       "fingerprint": "sha256:23e9910954d28f16cfe1e313ad39327114b12d80f12802b5dc47fad020f9275b",
       "scope": "Rules Reference v1.8",
-      "disposition": "executable",
+      "disposition": "outside-core",
       "obligations": [
         {
           "id": "behavior:rr:stun-stunned.4:published-result",
           "summary": "If a character has an ability stating that it “cannot be stunned,” stunned status cards cannot be placed on that character.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "outside-core",
+          "reason": "No Core Set character has an ability stating that it cannot be stunned.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -26259,11 +26261,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/defeat.feature::Defeating a villain stage reveals the next stage without excess damage"
+          ],
+          "mutation": "CoreRuleTranscriptTests.DefeatBranchesHavePinnedOutcomes distinguishes the same-title Rhino stage retaining its attached Charge."
         }
       ]
     },
@@ -26303,11 +26307,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/defeat.feature::Defeating a villain stage reveals the next stage without excess damage"
+          ],
+          "mutation": "CoreRuleTranscriptTests.DefeatBranchesHavePinnedOutcomes distinguishes Charge moving from Rhino I to Rhino II rather than leaving play."
         }
       ]
     },
@@ -26339,15 +26345,15 @@
       "title": "VILLAIN DEFEAT",
       "fingerprint": "sha256:3580bbfeb5c38f86f405a627b5ea611be567ec336634eae25aabde1577210608",
       "scope": "Rules Reference v1.8",
-      "disposition": "executable",
+      "disposition": "outside-core",
       "obligations": [
         {
           "id": "behavior:rr:villain-defeat.4:published-result",
           "summary": "If the new stage of the villain has a different title from the previous stage:",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "outside-core",
+          "reason": "Every supported Core Set villain stage has the same title as the stage it replaces.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -26383,15 +26389,15 @@
       "title": "VILLAIN DEFEAT",
       "fingerprint": "sha256:17a7e16e9637dc0d988f79bfcb19151377bbaf8ff25b66386f0d666b0cfc7b84",
       "scope": "Rules Reference v1.8",
-      "disposition": "executable",
+      "disposition": "outside-core",
       "obligations": [
         {
           "id": "behavior:rr:villain-defeat.4.2:published-result",
           "summary": "Attachments, upgrades, status cards, counters, and non-damage tokens do not carry over to the new stage.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "outside-core",
+          "reason": "Every supported Core Set villain stage has the same title as the stage it replaces.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
