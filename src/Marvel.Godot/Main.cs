@@ -10,11 +10,13 @@ public sealed partial class Main : Control
     private readonly List<string> scenarioNames = [];
     private readonly List<ScenarioSetupChoice> visibleModes = [];
     private Control board = null!;
+    private GridContainer boardAreas = null!;
     private Label briefingHero = null!;
     private Label briefingMode = null!;
     private Label briefingModular = null!;
     private Label briefingScenario = null!;
     private Label description = null!;
+    private Label eyebrow = null!;
     private OptionButton hero = null!;
     private LocalGameClient? localClient;
     private OptionButton mode = null!;
@@ -25,6 +27,7 @@ public sealed partial class Main : Control
     private SetupChoices? setupChoices;
     private Button start = null!;
     private Label status = null!;
+    private Label title = null!;
 
     /// <summary>The initial visibility-safe game view, retained for board rendering.</summary>
     public EngineResponse? OpenedGame { get; private set; }
@@ -51,8 +54,11 @@ public sealed partial class Main : Control
     {
         const string content = "Margin/Shell/Content";
         description = GetNode<Label>($"{content}/Description");
+        eyebrow = GetNode<Label>($"{content}/Eyebrow");
+        title = GetNode<Label>($"{content}/Title");
         setupPanel = GetNode<Control>($"{content}/Setup");
         board = GetNode<Control>($"{content}/Board");
+        boardAreas = GetNode<GridContainer>($"{content}/Board/Margin/Areas");
         hero = GetNode<OptionButton>($"{content}/Setup/Selections/Fields/Grid/Hero");
         scenario = GetNode<OptionButton>($"{content}/Setup/Selections/Fields/Grid/Scenario");
         mode = GetNode<OptionButton>($"{content}/Setup/Selections/Fields/Grid/Mode");
@@ -223,8 +229,13 @@ public sealed partial class Main : Control
             }
 
             OpenedGame = startup.Response;
+            BoardRenderer.Render(
+                boardAreas,
+                BoardPresentation.From(OpenedGame!.World!));
             setupPanel.Visible = false;
             board.Visible = true;
+            eyebrow.Text = "CORE SET  /  LOCAL TABLE";
+            title.Text = "The table is live.";
             description.Text =
                 $"{briefingHero.Text} versus {briefingScenario.Text} · "
                 + $"{OpenedGame!.World!.Areas.Count} visible areas · "

@@ -30,6 +30,21 @@ public sealed class LocalGameClientTests
         Assert.NotNull(opened.Events);
         Assert.Equal(Outcome.Unfinished, opened.World.Outcome);
         Assert.Equal(LocalGameSession.GameId, opened.GameId);
+
+        BoardPresentation board = BoardPresentation.From(opened.World);
+        Assert.Equal(opened.World.Areas.Select(area => area.Id),
+            board.Areas.Select(area => area.Id));
+        Assert.Equal(
+            opened.World.Areas.Select(area => area.Cards.Count),
+            board.Areas.Select(area => area.Cards.Sum(card => card.Count)));
+        Assert.Equal(
+            opened.World.Areas.Select(area => area.Removed.Count),
+            board.Areas.Select(area => area.Removed.Sum(card => card.Count)));
+        Assert.Contains(board.Areas, area => area.Title == "ENCOUNTER DECK");
+        Assert.Contains(board.Areas, area => area.Title == "VILLAIN");
+        Assert.Contains(board.Areas, area => area.Title == "PLAYER DECK");
+        Assert.Contains(board.Areas, area => area.Title == "HANDS");
+        Assert.Contains(board.Areas, area => area.Title == "HERO");
     }
 
     [Fact]
