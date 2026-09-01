@@ -43919,11 +43919,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-treacheries.feature::Rage of Ultron discards one card after a one-threat scheme"
+          ],
+          "mutation": "Skip the Ultron scheme activation; the main-scheme threat and discarded player card assertions fail."
         },
         {
           "key": "discard-top-card-your-deck-for-each-zero",
@@ -43931,11 +43933,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-treacheries.feature::Rage of Ultron discards nothing after a confused scheme"
+          ],
+          "mutation": "Discard a player-deck card when the scheme places no threat; the retained top-card assertion fails."
         },
         {
           "key": "discard-top-card-your-deck-for-each-one",
@@ -43943,11 +43947,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-treacheries.feature::Rage of Ultron discards one card after a one-threat scheme"
+          ],
+          "mutation": "Change the discard count from the one threat placed; the two adjacent player-deck zone assertions fail."
         },
         {
           "key": "discard-top-card-your-deck-for-each-multiple",
@@ -43955,11 +43961,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-treacheries.feature::Rage of Ultron discards multiple cards after a large scheme"
+          ],
+          "mutation": "Change the discard count from five; the exact five discarded cards and retained sixth card assertions fail."
         },
         {
           "key": "ultron-attacks-you",
@@ -43967,11 +43975,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-treacheries.feature::Rage of Ultron discards nothing after a fully defended attack"
+          ],
+          "mutation": "Skip the Ultron attack; the defense prompt and resulting exhausted defender state digest fail."
         },
         {
           "key": "discard-top-card-your-deck-for-each-zero-2",
@@ -43979,11 +43989,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-treacheries.feature::Rage of Ultron discards nothing after a fully defended attack"
+          ],
+          "mutation": "Discard for a fully defended attack that deals zero damage; the top-card zone assertion fails."
         },
         {
           "key": "discard-top-card-your-deck-for-each-one-2",
@@ -43991,11 +44003,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-treacheries.feature::Rage of Ultron discards one card after one attack damage"
+          ],
+          "mutation": "Change the discard count from the one damage dealt; the adjacent player-deck zone assertions fail."
         },
         {
           "key": "discard-top-card-your-deck-for-each-multiple-2",
@@ -44003,11 +44017,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-treacheries.feature::Rage of Ultron discards multiple cards after attack damage"
+          ],
+          "mutation": "Change the discard count from two damage dealt; the two discarded cards and retained third card assertions fail."
         }
       ]
     },
@@ -44063,11 +44079,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-treacheries.feature::Drone's Command surges when no Drone can heal Ultron"
+          ],
+          "mutation": "Heal Ultron with zero engaged Drones; the unchanged damage assertion fails."
         },
         {
           "key": "ultron-heals-2-damage-for-each-drone-one",
@@ -44075,11 +44093,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-treacheries.feature::Drone's Command heals two for one engaged Drone"
+          ],
+          "mutation": "Change the per-Drone healing from two; Ultron's remaining damage assertion fails."
         },
         {
           "key": "ultron-heals-2-damage-for-each-drone-multiple",
@@ -44087,11 +44107,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-treacheries.feature::Drone's Command heals for multiple engaged Drones"
+          ],
+          "mutation": "Change the two-Drone healing total from four; Ultron's remaining damage assertion fails."
         },
         {
           "key": "if-no-damage-was-healed-way-card-condition-met",
@@ -44099,11 +44121,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-treacheries.feature::Drone's Command surges when no Drone can heal Ultron"
+          ],
+          "mutation": "Remove surge after healing zero; the next encounter card is not dealt facedown and the assertion fails."
         },
         {
           "key": "if-no-damage-was-healed-way-card-condition-not-met",
@@ -44111,11 +44135,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-treacheries.feature::Drone's Command heals two for one engaged Drone"
+          ],
+          "mutation": "Grant surge after damage is healed; the transcript digest gains an extra facedown encounter card and fails."
         },
         {
           "key": "ultron-heals-1-damage-for-each-drone-zero",
@@ -44123,11 +44149,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-treacheries.feature::Drone's Command boost heals zero with no engaged Drone"
+          ],
+          "mutation": "Heal Ultron from the boost with zero engaged Drones; the unchanged damage assertion fails."
         },
         {
           "key": "ultron-heals-1-damage-for-each-drone-one",
@@ -44135,11 +44163,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-treacheries.feature::Drone's Command boost heals one for one engaged Drone"
+          ],
+          "mutation": "Change the boost healing for one Drone; Ultron's remaining damage assertion fails."
         },
         {
           "key": "ultron-heals-1-damage-for-each-drone-multiple",
@@ -44147,11 +44177,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-treacheries.feature::Drone's Command boost heals for multiple engaged Drones"
+          ],
+          "mutation": "Change the boost healing total for two Drones; Ultron's remaining damage assertion fails."
         }
       ]
     },
@@ -44207,11 +44239,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-treacheries.feature::Swarm Attack makes each engaged Drone attack"
+          ],
+          "mutation": "Skip either engaged Drone attack; the transcript reaches fewer than two defender decisions."
         },
         {
           "key": "if-no-attack-was-made-way-put-condition-met",
@@ -44219,11 +44253,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-treacheries.feature::Swarm Attack creates a Drone when none attack"
+          ],
+          "mutation": "Do not create a Drone after zero attacks; the engaged Drone count assertion fails."
         },
         {
           "key": "if-no-attack-was-made-way-put-condition-not-met",
@@ -44231,11 +44267,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-treacheries.feature::Swarm Attack makes each engaged Drone attack"
+          ],
+          "mutation": "Create another Drone after attacks were made; the exact engaged Drone count assertion fails."
         }
       ]
     },
