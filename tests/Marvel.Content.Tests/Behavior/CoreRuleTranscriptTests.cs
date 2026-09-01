@@ -263,7 +263,7 @@ public sealed class CoreRuleTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(13, results.Count);
+        Assert.Equal(14, results.Count);
         Assert.Equal(
             "aadbff792b4caca6a6ecbb13041865133c3e9ce1d588d1a9c6a59834d8a97fc8",
             results["behavior:rr:villain-phase:published-result"].Digest);
@@ -273,6 +273,9 @@ public sealed class CoreRuleTranscriptTests
         Assert.Equal(
             "d4864dcf86f264cb0b7cb1a6df0bf3832cfa3c3c388a761716b4cb8787c23d29",
             results["behavior:rr:attack-enemy-activation:published-result"].Digest);
+        Assert.Equal(
+            "885c3b3e7d2c026365646e9da2b7b9477f460466ef8af776f5a8528745d0b88d",
+            results["behavior:rr:boost-boost-icon.1:published-result"].Digest);
         Assert.Equal(
             "56d25f9a5c00d4e9955cea06c73edf7c41e1c0f38021d9b539684b97f36519fd",
             results["behavior:rr:defend-defense.2:published-result"].Digest);

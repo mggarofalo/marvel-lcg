@@ -135,6 +135,29 @@ Feature: Core villain phase
     And a Boost event was emitted before a Deal_Damage event
     And the last attack was undefended
 
+  @behavior:rr:boost-boost-icon.1:published-result
+  @covers:behavior:rr:star-icon.6:published-result
+  @covers:behavior:card:01178:if-villain-is-making-undefended-attack-place-condition-met
+  @rr:boost-boost-icon.1 @rr:star-icon.6 @card:01178
+  Scenario: A boost star resolves its ability without increasing attack damage
+    # "A star icon is not itself considered a boost icon, and does not
+    # contribute to the villain's ATK or SCH value." Kree Manipulator's boost
+    # text places one threat during an undefended attack; Rhino's printed ATK 2
+    # remains the entire damage amount.
+    Given a canonical Core scene is dealt
+      | campaign | heroes         | seed |
+      | rhino    | captain_marvel | 728  |
+    And seat 1 shows identity face 01010a
+    And card 01010a copy 0 is exhausted
+    And card 01097b copy 0 has 0 threat counters
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01178     | 0    |
+    When the villain attacks seat 1 with every optional choice declined
+    Then card 01010a copy 0 has 2 damage
+    And card 01097b copy 0 has 1 threat counter
+    And card 01178 copy 0 is faceup on top of the encounter discard pile
+
   @behavior:rr:defend-defense.2:published-result
   @covers:behavior:rr:attack-enemy-activation.2:published-result
   @covers:behavior:rr:attack-enemy-activation.2.1:published-result
