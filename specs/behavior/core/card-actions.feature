@@ -686,6 +686,26 @@ Feature: Core card actions
     Then card 01092 copy 0 is exhausted
     And seat 1 has 0 cards in hand
 
+  @behavior:rr:initiating-abilities.step.4:published-result
+  @covers:behavior:card:01092:exhaust-helicarrier-choose-player
+  @covers:behavior:card:01092:reduce-resource-cost-next-card-that-player
+  @rr:initiating-abilities.step.4 @card:01092
+  Scenario: Helicarrier modifies the next card's determined cost
+    # After the printed cost is determined, Helicarrier's lasting modifier is
+    # applied at initiation step 4. Mockingbird's cost is reduced from 3 to 2.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 842  |
+    And card 01092 copy 0 is a support controlled by seat 1
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01083 | 0    |
+    When seat 1 initiates card 01092 copy 0's action without payment
+    Then card 01019a copy 0 is offered by the pending action
+    When seat 1 chooses card 01019a copy 0 for the pending action
+    Then card 01092 copy 0 is exhausted
+    And card 01083 copy 0 has modified resource cost 2 for seat 1
+
   @behavior:rr:target.6:published-result
   @covers:behavior:card:01041:after-shuri-enters-play-search-your-deck
   @covers:behavior:card:01041:shuffle-your-deck

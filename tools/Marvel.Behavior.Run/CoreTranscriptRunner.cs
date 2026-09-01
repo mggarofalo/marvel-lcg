@@ -628,6 +628,9 @@ internal sealed class CoreTranscriptRunner
         Bind("card-play-result", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is (?<availability>available|unavailable) to play",
             CardPlayResult),
+        Bind("modified-card-cost", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) has modified resource cost (?<count>\d+) for seat (?<seat>\d+)",
+            ModifiedCardCost),
         Bind("card-removed", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is removed from the game",
             CardRemoved),
@@ -3050,6 +3053,22 @@ internal sealed class CoreTranscriptRunner
     {
         _ = context.SceneRequired(step).Find(SceneCard(match, step));
         BasicRecoveryResult(context, step, match);
+    }
+
+    private static void ModifiedCardCost(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        long actual = CardPlay.CostOf(
+            context.World,
+            context.Cards,
+            context.World.Seats[Seat(match, step)],
+            card).Amount;
+        Equal(
+            Number(match, "count", step),
+            checked((int)actual),
+            "modified resource cost",
+            step);
     }
 
     private static void CardRemoved(

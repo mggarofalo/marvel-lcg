@@ -10947,11 +10947,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Helicarrier modifies the next card's determined cost"
+          ],
+          "mutation": "Skip cost modifiers after determining Mockingbird's printed cost; Helicarrier leaves her adjusted cost at three instead of two."
         }
       ]
     },
@@ -36532,11 +36534,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Helicarrier modifies the next card's determined cost"
+          ],
+          "mutation": "Do not exhaust Helicarrier or bind its chosen player; the transcript's readiness or adjusted-cost assertion fails."
         },
         {
           "key": "reduce-resource-cost-next-card-that-player",
@@ -36544,11 +36548,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Helicarrier modifies the next card's determined cost"
+          ],
+          "mutation": "Omit Helicarrier's one-cost reduction for its chosen player; Mockingbird's modified cost remains three."
         }
       ]
     },
