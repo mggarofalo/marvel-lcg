@@ -15498,11 +15498,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-elimination.feature::A defeated identity is eliminated while the other player continues"
+          ],
+          "mutation": "Leave the eliminated player's game area or any card assigned to it; the removed-play-area assertion fails."
         }
       ]
     },

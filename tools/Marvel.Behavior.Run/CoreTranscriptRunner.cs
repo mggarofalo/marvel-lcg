@@ -487,6 +487,8 @@ internal sealed class CoreTranscriptRunner
             "the players win the game", PlayersWin),
         Bind("seat-eliminated", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) is eliminated", SeatEliminated),
+        Bind("player-play-area-removed", TranscriptStepKind.Then,
+            @"seat (?<seat>\d+)'s play area is removed", PlayerPlayAreaRemoved),
         Bind("first-player", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) has the first player token", FirstPlayer),
         Bind("minion-engaged", TranscriptStepKind.Then,
@@ -2044,6 +2046,18 @@ internal sealed class CoreTranscriptRunner
             checked((int)context.SceneRequired(step).Find(SceneCard(match, step)).Damage),
             "damage on the card",
             step);
+
+    private static void PlayerPlayAreaRemoved(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        if (context.World.GameAreaOf(PlayArea.Of(seat)) is not null
+            || context.World.Cards.Any(card => card.Area.PlayArea == PlayArea.Of(seat)))
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: seat {seat + 1}'s play area still exists");
+        }
+    }
 
     private static void CardRemainingHitPoints(
         TranscriptContext context, TranscriptStep step, Match match)
