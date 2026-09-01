@@ -125,3 +125,50 @@ Feature: Core villain phase
     And card 01103 copy 0 is faceup on top of the encounter discard pile
     And card 01101 copy 0 is engaged with seat 1
     And a Boost event was emitted before a Deal_Damage event
+
+  @behavior:rr:defend-defense.2:published-result
+  @covers:behavior:rr:attack-enemy-activation.2:published-result
+  @covers:behavior:rr:attack-enemy-activation.2.1:published-result
+  @rr:defend-defense.2 @rr:attack-enemy-activation.2
+  @rr:attack-enemy-activation.2.1
+  Scenario: A hero exhausts to defend and reduces the attack by DEF
+    # A hero can use its basic defense. If declared, the attack's damage is
+    # dealt to that hero after reduction by its DEF value.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 321  |
+    And seat 1 shows identity face 01001a
+    And card 01097b copy 0 has 0 threat counters
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01103     | 0    |
+      | 01101     | 0    |
+    When villain phase 1 resolves with card 01001a copy 0 defending the first attack
+    Then card 01001a copy 0 is exhausted
+    And card 01001a copy 0 has 1 damage
+    And card 01101 copy 0 is engaged with seat 1
+
+  @behavior:rr:defend-defense.3:published-result
+  @covers:behavior:rr:defend-defense.3.1:published-result
+  @covers:behavior:rr:attack-enemy-activation.3:published-result
+  @covers:behavior:rr:attack-enemy-activation.3.1:published-result
+  @covers:behavior:rr:ally.4:published-result
+  @rr:defend-defense.3 @rr:defend-defense.3.1
+  @rr:attack-enemy-activation.3 @rr:attack-enemy-activation.3.1 @rr:ally.4
+  Scenario: An ally exhausts to defend and receives the entire attack
+    # "If an ally was declared the defender of the attack, all damage from the
+    # attack is dealt to the ally."
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 322  |
+    And seat 1 shows identity face 01001a
+    And card 01083 copy 0 is an ally controlled by seat 1
+    And card 01097b copy 0 has 0 threat counters
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01103     | 0    |
+      | 01101     | 0    |
+    When villain phase 1 resolves with card 01083 copy 0 defending the first attack
+    Then card 01083 copy 0 is faceup on top of seat 1's discard pile
+    And card 01001a copy 0 has 0 damage
+    And card 01101 copy 0 is engaged with seat 1

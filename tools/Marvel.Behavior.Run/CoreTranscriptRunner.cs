@@ -328,6 +328,9 @@ internal sealed class CoreTranscriptRunner
         Bind("villain-phase-decline", TranscriptStepKind.When,
             @"villain phase (?<round>\d+) resolves with every optional choice declined",
             ResolveVillainPhase),
+        Bind("villain-phase-defender", TranscriptStepKind.When,
+            @"villain phase (?<round>\d+) resolves with card (?<face>\d+[a-z]?) copy (?<copy>\d+) defending the first attack",
+            ResolveVillainPhaseWithDefender),
         Bind("minion-enters-play", TranscriptStepKind.When,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) enters play as a minion engaged with seat (?<seat>\d+)",
             MinionEntersPlay),
@@ -888,6 +891,57 @@ internal sealed class CoreTranscriptRunner
         VillainPhase.Schedule(
             context.World.Agenda, Number(match, "round", step));
         FinishAgenda(context, step);
+    }
+
+    private static void ResolveVillainPhaseWithDefender(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        Card defender = context.SceneRequired(step).Find(SceneCard(match, step));
+        VillainPhase.Schedule(
+            context.World.Agenda, Number(match, "round", step));
+
+        bool defended = false;
+        Prompt? asked = Sequence.Work(
+            context.World, context.Cards, context.World.Abilities, context.Events);
+        for (int answered = 0; asked is not null; answered++)
+        {
+            if (answered >= 100)
+            {
+                throw new TranscriptException(
+                    $"{step.Location}: agenda still asks '{asked.Label}' after 100 answers");
+            }
+
+            Decision decision = Decision.Decline;
+            if (!defended && asked.Asking == Question.Defender)
+            {
+                if (!asked.Affordances.Any(option => option.AnchorId == defender.ObjectId))
+                {
+                    throw new TranscriptException(
+                        $"{step.Location}: card {defender.ObjectId} was not offered as a defender");
+                }
+
+                decision = Decision.Take(defender.ObjectId);
+                defended = true;
+            }
+
+            Sequence.Answer(
+                context.World,
+                context.Cards,
+                context.World.Abilities,
+                asked,
+                decision,
+                context.Events);
+            asked = Sequence.Work(
+                context.World, context.Cards, context.World.Abilities, context.Events);
+        }
+
+        if (!defended)
+        {
+            throw new TranscriptException(
+                $"{step.Location}: the villain phase offered no defender window");
+        }
     }
 
     private static void FinishAgenda(TranscriptContext context, TranscriptStep step)
