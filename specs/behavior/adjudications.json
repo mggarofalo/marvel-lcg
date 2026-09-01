@@ -35822,11 +35822,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Nick Fury removes threat and leaves play at the end of the round"
+          ],
+          "mutation": "Remove other than two threat or omit the scheme choice; the prompt or zero-threat assertion fails."
         },
         {
           "key": "after-entering-play-draw-three-cards",
@@ -35834,11 +35836,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ally-limit.feature::Playing a fourth ally requires one controlled ally to be discarded"
+          ],
+          "mutation": "Draw other than three cards for Nick Fury's second option; the three-card hand assertion fails."
         },
         {
           "key": "after-entering-play-deal-four-damage",
@@ -35846,11 +35850,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Nick Fury deals four damage after entering play"
+          ],
+          "mutation": "Deal other than four damage or omit the enemy choice; the prompt or Rhino-damage assertion fails."
         },
         {
           "key": "at-end-round-if-nick-fury-is-condition-met",
@@ -35858,19 +35864,21 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Nick Fury removes threat and leaves play at the end of the round"
+          ],
+          "mutation": "Retain Nick Fury in play when the round ends; the discard-pile assertion fails."
         },
         {
           "key": "at-end-round-if-nick-fury-is-condition-not-met",
           "summary": "Condition not met; the conditional result does not occur: At the end of the round, if Nick Fury is still in play, discard him.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "no-independent-behavior",
+          "reason": "When Nick Fury is already out of play at round end, the conditional result is no operation; attempting to discard that out-of-play card is state-equivalent to correctly skipping the result.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],

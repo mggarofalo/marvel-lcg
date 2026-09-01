@@ -337,6 +337,8 @@ internal sealed class CoreTranscriptRunner
             "the end-of-player-phase ready step resolves", PhaseReady),
         Bind("end-player-phase", TranscriptStepKind.When,
             "the player phase ends", EndPlayerPhase),
+        Bind("end-villain-phase-and-round", TranscriptStepKind.When,
+            "the villain phase and round end", EndVillainPhaseAndRound),
         Bind("villain-damages-card", TranscriptStepKind.When,
             @"the villain deals (?<count>\d+) damage to card (?<face>\d+[a-z]?) copy (?<copy>\d+)",
             VillainDamagesCard),
@@ -1278,6 +1280,16 @@ internal sealed class CoreTranscriptRunner
         PhaseEnd.DrawToHandSize(context.World, context.Cards, context.Events);
         PhaseEnd.ReadyCards(context.World, context.Events);
         PhaseEnd.EndPlayerPhase(context.World, context.Events);
+    }
+
+    private static void EndVillainPhaseAndRound(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        _ = step;
+        _ = match;
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        PhaseEnd.EndVillainPhase(context.World, context.Cards, context.Events);
     }
 
     private static void VillainDamagesCard(

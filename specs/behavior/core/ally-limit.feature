@@ -6,7 +6,8 @@ Feature: Core ally limit
   @behavior:rr:ally-limit:published-result
   @covers:behavior:rr:choose-option.2:published-result
   @covers:behavior:rr:choose-option.2.2:published-result
-  @rr:ally-limit @rr:choose-option.2 @rr:choose-option.2.2
+  @covers:behavior:card:01084:after-entering-play-draw-three-cards
+  @rr:ally-limit @rr:choose-option.2 @rr:choose-option.2.2 @card:01084
   Scenario: Playing a fourth ally requires one controlled ally to be discarded
     # "Each player is permitted to control a maximum of three allies in play at
     # any given time." Nick Fury remains playable while three allies are in

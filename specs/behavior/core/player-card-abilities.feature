@@ -159,6 +159,69 @@ Feature: Core player card abilities
     Then card 01008 copy 0 generated G resources
     And card 01008 copy 0 is faceup on top of seat 1's discard pile
 
+  @behavior:card:01084:after-entering-play-remove-two-threat
+  @covers:behavior:card:01084:at-end-round-if-nick-fury-is-condition-met
+  @card:01084
+  Scenario: Nick Fury removes threat and leaves play at the end of the round
+    # Nick Fury's first Forced Response option removes two threat from the
+    # chosen scheme. If he remains in play, the delayed end-of-round effect
+    # then discards him.
+    Given a canonical Core scene is dealt
+      | campaign | heroes         | seed |
+      | rhino    | captain_marvel | 888  |
+    And card 01097b copy 0 has 2 threat counters
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01084 | 0    |
+      | 01088 | 0    |
+      | 01089 | 0    |
+    When game setup reaches seat 1's mulligan
+    Then seat 1 is offered a mulligan
+    When seat 1 keeps every opening-hand card at mulligan
+    Then seat 1 is the active player
+    When seat 1 plays card 01084 copy 0 paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+      | 01089 | 0    |
+    Then option 1 is offered by the pending decision
+    When seat 1 chooses option 1 for the pending encounter-card decision
+    Then card 01097b copy 0 is offered by the pending action
+    When seat 1 chooses card 01097b copy 0 for the pending action
+    Then card 01097b copy 0 has 0 threat counters
+    And card 01084 copy 0 remains an ally controlled by seat 1
+    When the villain phase and round end
+    Then card 01084 copy 0 is faceup on top of seat 1's discard pile
+
+  @behavior:card:01084:after-entering-play-deal-four-damage
+  @card:01084
+  Scenario: Nick Fury deals four damage after entering play
+    # Nick Fury's third Forced Response option chooses one enemy and deals four
+    # damage to that enemy.
+    Given a canonical Core scene is dealt
+      | campaign | heroes         | seed |
+      | rhino    | captain_marvel | 889  |
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01084 | 0    |
+      | 01088 | 0    |
+      | 01089 | 0    |
+    When game setup reaches seat 1's mulligan
+    Then seat 1 is offered a mulligan
+    When seat 1 keeps every opening-hand card at mulligan
+    Then seat 1 is the active player
+    When seat 1 plays card 01084 copy 0 paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+      | 01089 | 0    |
+    # The remove-threat branch is ineligible while the scheme has no threat,
+    # so the printed third branch is the second offered legal choice.
+    Then option 2 is offered by the pending decision
+    When seat 1 chooses option 2 for the pending encounter-card decision
+    Then card 01094 copy 0 is offered by the pending action
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01094 copy 0 has 4 damage
+    And card 01084 copy 0 remains an ally controlled by seat 1
+
   @behavior:card:01035:exhaust-arc-reactor-ready-iron-man
   @card:01035
   Scenario: Arc Reactor exhausts to ready Iron Man
