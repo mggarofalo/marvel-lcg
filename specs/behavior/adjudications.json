@@ -23166,11 +23166,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-reveal.feature::A treachery that confuses you places the status on your identity"
+          ],
+          "mutation": "Resolve False Alarm's 'you' without the player's identity; Spider-Man does not receive the confused status."
         }
       ]
     },
@@ -38826,11 +38828,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-reveal.feature::A treachery that confuses you places the status on your identity"
+          ],
+          "mutation": "Omit False Alarm's confused status placement; Spider-Man has no confused status after the treachery resolves."
         },
         {
           "key": "if-you-are-already-confused-card-gains-condition-met",
@@ -38850,11 +38854,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-reveal.feature::A treachery that confuses you places the status on your identity"
+          ],
+          "mutation": "Give False Alarm surge when its target was not already confused; an additional encounter card resolves after the treachery."
         }
       ]
     },

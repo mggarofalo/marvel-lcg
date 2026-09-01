@@ -186,3 +186,19 @@ Feature: Revealing Core encounter card types
     Then card 01101 copy 0 is engaged with seat 1
     And card 01101 copy 0 has 2 damage
     And card 01066 copy 0 has 3 arrow counters
+
+  @behavior:rr:you-your.5:published-result
+  @covers:behavior:card:01112:you-are-confused
+  @covers:behavior:card:01112:if-you-are-already-confused-card-gains-condition-not-met
+  @rr:you-your.5 @card:01112
+  Scenario: A treachery that confuses you places the status on your identity
+    # False Alarm's "you are confused" addresses the resolving player. The
+    # confused status is therefore placed on that player's active identity.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 840  |
+    And seat 1 shows identity face 01001a
+    And seat 1's hand is empty
+    When card 01112 copy 0 is revealed to seat 1
+    Then card 01001a copy 0 has 1 confused status card
+    And card 01112 copy 0 is faceup on top of the encounter discard pile
