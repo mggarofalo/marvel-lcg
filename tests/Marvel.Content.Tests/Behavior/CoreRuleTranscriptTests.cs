@@ -7,6 +7,25 @@ namespace Marvel.Content.Tests.Behavior;
 public sealed class CoreRuleTranscriptTests
 {
     [Fact]
+    public void MainSchemeBranchesHavePinnedOutcomes()
+    {
+        var suite = new CoreTranscriptSuite(RepositoryPaths.Root);
+        var results = suite.RunPassingCorpus()
+            .Where(result => result.Scenario.StartsWith(
+                "specs/behavior/core/main-scheme.feature::",
+                StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
+
+        Assert.Equal(2, results.Count);
+        Assert.Equal(
+            "a0c29f1591b4fc8d736a64e76d9109a4f899a21a278cc4d2760cdd5a4c1f8b70",
+            results["behavior:rr:main-scheme-main-scheme-deck.2:published-result"].Digest);
+        Assert.Equal(
+            "2cab030ee937e52952f66bbb62a1380d8d71faf78ecf985a28b78b00322921c6",
+            results["behavior:rr:main-scheme-main-scheme-deck.2.1:published-result"].Digest);
+    }
+
+    [Fact]
     public void EncounterIconBranchesHavePinnedOutcomes()
     {
         var suite = new CoreTranscriptSuite(RepositoryPaths.Root);

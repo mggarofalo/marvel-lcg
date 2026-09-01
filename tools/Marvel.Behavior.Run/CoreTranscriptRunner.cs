@@ -304,6 +304,9 @@ internal sealed class CoreTranscriptRunner
         Bind("card-deals-damage", TranscriptStepKind.When,
             @"card (?<source>\d+[a-z]?) copy (?<sourceCopy>\d+) deals (?<count>\d+) damage to card (?<face>\d+[a-z]?) copy (?<copy>\d+)",
             CardDealsDamage),
+        Bind("place-threat", TranscriptStepKind.When,
+            @"(?<count>\d+) threat is placed on card (?<face>\d+[a-z]?) copy (?<copy>\d+)",
+            PlaceThreat),
         Bind("basic-attack", TranscriptStepKind.When,
             @"seat (?<seat>\d+) uses their basic attack against card (?<face>\d+[a-z]?) copy (?<copy>\d+)",
             BasicAttack),
@@ -382,6 +385,8 @@ internal sealed class CoreTranscriptRunner
             EventOrder),
         Bind("players-lose", TranscriptStepKind.Then,
             "the players lose the game", PlayersLose),
+        Bind("villain-wins", TranscriptStepKind.Then,
+            "the villain wins the game", VillainWins),
         Bind("players-win", TranscriptStepKind.Then,
             "the players win the game", PlayersWin),
         Bind("seat-eliminated", TranscriptStepKind.Then,
@@ -409,6 +414,9 @@ internal sealed class CoreTranscriptRunner
         Bind("card-is-villain", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is the faceup villain",
             CardIsVillain),
+        Bind("card-is-main-scheme", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is the faceup main scheme",
+            CardIsMainScheme),
         Bind("player-order", TranscriptStepKind.Then,
             @"the player order is (?<order>[\d,]+)", PlayerOrder),
         Bind("per-player-count", TranscriptStepKind.Then,
@@ -794,6 +802,23 @@ internal sealed class CoreTranscriptRunner
             "behavioral transcript",
             "Damage",
             context.Events);
+    }
+
+    private static void PlaceThreat(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Card scheme = context.SceneRequired(step).Find(SceneCard(match, step));
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        Threat.Place(
+            context.World,
+            context.Cards,
+            context.World.Abilities,
+            scheme,
+            Number(match, "count", step),
+            "behavioral transcript",
+            context.Events);
+        FinishAgenda(context, step);
     }
 
     private static void BasicAttack(
@@ -1238,6 +1263,17 @@ internal sealed class CoreTranscriptRunner
         }
     }
 
+    private static void VillainWins(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        _ = match;
+        if (context.World.Result is not Outcome.VillainWins)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected VillainWins; was {context.World.Result}");
+        }
+    }
+
     private static void PlayersWin(
         TranscriptContext context, TranscriptStep step, Match match)
     {
@@ -1350,6 +1386,19 @@ internal sealed class CoreTranscriptRunner
         {
             throw new TranscriptAssertionException(
                 $"{step.Location}: expected faceup card {expected.ObjectId} as villain; was "
+                + (actual is null ? "<none>" : $"{actual.ObjectId}, faceup={actual.FaceUp}"));
+        }
+    }
+
+    private static void CardIsMainScheme(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Card expected = context.SceneRequired(step).Find(SceneCard(match, step));
+        Card? actual = context.World.TheCardIn(DeckType.MainSchemesArea);
+        if (!ReferenceEquals(actual, expected) || !expected.FaceUp)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected faceup card {expected.ObjectId} as main scheme; was "
                 + (actual is null ? "<none>" : $"{actual.ObjectId}, faceup={actual.FaceUp}"));
         }
     }
