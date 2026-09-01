@@ -22,6 +22,8 @@ Feature: Core villain phase
   @covers:behavior:rr:scheme-enemy-activation.step.2.c:published-result
   @covers:behavior:rr:scheme-enemy-activation.step.2.d:published-result
   @covers:behavior:rr:scheme-enemy-activation.step.3:published-result
+  @covers:behavior:rr:main-scheme-main-scheme-deck.1:published-result
+  @covers:behavior:rr:reveal.3:published-result
   @rr:villain-phase @rr:villain-phase.step.1 @rr:villain-phase.step.2.a
   @rr:villain-phase.step.3 @rr:villain-phase.step.4 @rr:activation.1
   @rr:activation.3 @rr:boost-boost-icon @rr:boost-boost-icon.5
@@ -30,6 +32,7 @@ Feature: Core villain phase
   @rr:scheme-enemy-activation.step.2 @rr:scheme-enemy-activation.step.2.a
   @rr:scheme-enemy-activation.step.2.c @rr:scheme-enemy-activation.step.2.d
   @rr:scheme-enemy-activation.step.3
+  @rr:main-scheme-main-scheme-deck.1 @rr:reveal.3
   Scenario: An alter-ego receives scheme threat before its encounter card is revealed
     # Step 1 places the main scheme's acceleration threat. The villain then
     # schemes with SCH plus boost icons; only afterward is one encounter card

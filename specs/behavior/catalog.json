@@ -14944,11 +14944,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed"
+          ],
+          "mutation": "Omit the main scheme's acceleration-field threat in villain-phase step one; the exact final threat assertion fails."
         }
       ]
     },
@@ -21129,15 +21131,15 @@
       "title": "REVEAL",
       "fingerprint": "sha256:5beac7befa2b7a78d768b2247156d3198ce06889388add30224be683780ba12e",
       "scope": "Rules Reference v1.8",
-      "disposition": "executable",
+      "disposition": "outside-core",
       "obligations": [
         {
           "id": "behavior:rr:reveal.2:published-result",
           "summary": "Environment: It enters play in the villain’s play area.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "outside-core",
+          "reason": "The Core Set's only environment, Ultron Drones, enters through scenario setup rather than by being revealed from the encounter deck.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -21159,11 +21161,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed"
+          ],
+          "mutation": "Discard the revealed Hydra Mercenary or engage it with another player; the seat-one engagement assertion fails."
         }
       ]
     },
@@ -21229,11 +21233,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-reveal.feature::A revealed side scheme enters the villain play area with its threat"
+          ],
+          "mutation": "Resolve Breakin' & Takin' outside the villain play area; the play-area assertion fails."
         }
       ]
     },
@@ -21251,11 +21257,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-reveal.feature::A revealed treachery resolves and is discarded"
+          ],
+          "mutation": "Do not expose the treachery for its reveal resolution; Rhino remains damaged and the assertions fail."
         }
       ]
     },
@@ -21265,15 +21273,15 @@
       "title": "REVEAL",
       "fingerprint": "sha256:5fed90e8004ed103d149e848c7131b86ca60f6569c932395e3dc52df0a3799af",
       "scope": "Rules Reference v1.8",
-      "disposition": "executable",
+      "disposition": "outside-core",
       "obligations": [
         {
           "id": "behavior:rr:reveal.7:published-result",
           "summary": "Other: Place it on the table in front of the player revealing it.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "outside-core",
+          "reason": "Every Core Set encounter card uses a specifically enumerated reveal type: attachment, environment, minion, obligation, side scheme, or treachery.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -21295,11 +21303,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-reveal.feature::A response to a revealed minion resolves after the minion enters play"
+          ],
+          "mutation": "Offer Hawkeye's response before the minion finishes entering play; it has no legal just-revealed minion target and the damage assertion fails."
         }
       ]
     },
@@ -21389,11 +21399,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-reveal.feature::A revealed treachery resolves and is discarded"
+          ],
+          "mutation": "Leave the resolved treachery in the resolving area; the top-of-encounter-discard assertion fails."
         }
       ]
     },
@@ -22509,11 +22521,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-reveal.feature::A revealed side scheme enters the villain play area with its threat"
+          ],
+          "mutation": "Omit the side scheme's printed starting threat; its exact post-reveal threat assertion fails."
         }
       ]
     },
@@ -25156,11 +25170,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-reveal.feature::A revealed treachery resolves and is discarded"
+          ],
+          "mutation": "Skip the revealed treachery's mandatory effect; Rhino retains damage and the healing assertion fails."
         }
       ]
     },
@@ -25178,11 +25194,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-reveal.feature::A revealed treachery resolves and is discarded"
+          ],
+          "mutation": "Leave the resolved treachery outside the encounter discard pile; the destination assertion fails."
         }
       ]
     },
@@ -37904,11 +37922,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-reveal.feature::A response to a revealed minion resolves after the minion enters play"
+          ],
+          "mutation": "Give Hawkeye any entry count other than four; removing one no longer leaves the asserted three arrow counters."
         },
         {
           "id": "behavior:card:01066:after-minion-enters-play-remove-1-arrow",
@@ -37916,11 +37936,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-reveal.feature::A response to a revealed minion resolves after the minion enters play"
+          ],
+          "mutation": "Skip Hawkeye's response, its arrow cost, or its damage; a counter or minion-damage assertion fails."
         }
       ]
     },
@@ -42958,11 +42980,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-reveal.feature::A revealed treachery resolves and is discarded"
+          ],
+          "mutation": "Heal Rhino for any amount other than four; the zero-damage assertion from four initial damage fails."
         },
         {
           "id": "behavior:card:01104:if-no-damage-was-healed-way-card-condition-met",
@@ -42982,11 +43006,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-reveal.feature::A revealed treachery resolves and is discarded"
+          ],
+          "mutation": "Grant surge despite healing four damage; an additional encounter card changes the final state digest."
         }
       ]
     },
@@ -43444,11 +43470,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-reveal.feature::A revealed side scheme enters the villain play area with its threat"
+          ],
+          "mutation": "Omit Breakin' & Takin's additional per-player threat; the exact three-threat assertion fails."
         },
         {
           "id": "behavior:card:01109:place-1-threat-on-main-scheme-at",

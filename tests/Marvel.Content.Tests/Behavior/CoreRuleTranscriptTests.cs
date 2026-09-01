@@ -121,6 +121,27 @@ public sealed class CoreRuleTranscriptTests
     }
 
     [Fact]
+    public void EncounterRevealBranchesHavePinnedOutcomes()
+    {
+        var results = Corpus.Value
+            .Where(result => result.Scenario.StartsWith(
+                "specs/behavior/core/encounter-reveal.feature::",
+                StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
+
+        Assert.Equal(3, results.Count);
+        Assert.Equal(
+            "185218ad400e2a7f175baf262f564963e8681749cb53f6a78f7d34b58fd65b4b",
+            results["behavior:rr:reveal.5:published-result"].Digest);
+        Assert.Equal(
+            "65656902d0f5ede582036eb10cae34c68f07ba12613b54ff1293fa39261cfce6",
+            results["behavior:rr:treachery.1:published-result"].Digest);
+        Assert.Equal(
+            "7a639c9c59a9b1327add25af8cf4807d2aaadd09c65b20effeeb5466578b078f",
+            results["behavior:rr:reveal.8:published-result"].Digest);
+    }
+
+    [Fact]
     public void LegalWorkBranchesHavePinnedOutcomes()
     {
         var results = Corpus.Value
