@@ -296,6 +296,12 @@ internal sealed class CoreTranscriptRunner
         Bind("discard-encounter-deck", TranscriptStepKind.When,
             @"the top (?<count>\d+) cards? of the encounter deck (?:is|are) discarded",
             DiscardEncounterDeck),
+        Bind("reveal-encounter-card", TranscriptStepKind.When,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is revealed to seat (?<seat>\d+)",
+            RevealEncounterCard),
+        Bind("answer-encounter-card", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) chooses option (?<option>\d+) for the pending encounter-card decision",
+            AnswerEncounterCard),
         Bind("phase-discard-none", TranscriptStepKind.When,
             @"seat (?<seat>\d+) keeps every card during the optional end-of-player-phase discard",
             PhaseDiscardNone),
@@ -913,6 +919,55 @@ internal sealed class CoreTranscriptRunner
             Number(match, "count", step),
             "behavioral transcript",
             context.Events);
+    }
+
+    private static void RevealEncounterCard(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        Area queue = context.World.AreaOf(
+            DeckType.DealtEncounterCardsDeck, PlayArea.Of(seat));
+        World.MoveToTop(card, queue);
+        context.World.Agenda.Add(new PhaseStep(
+            Steps.RevealEncounterCard, Round: 1, Number: 4,
+            Subject: card.ObjectId, Seat: seat));
+        context.Events.Clear();
+        SetPendingPrompt(context, Sequence.Work(
+            context.World, context.Cards, context.World.Abilities, context.Events));
+    }
+
+    private static void AnswerEncounterCard(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        Prompt asked = context.PendingPrompt
+            ?? throw new TranscriptException(
+                $"{step.Location}: no encounter-card decision is pending");
+        if (asked.Player != seat)
+        {
+            throw new TranscriptException(
+                $"{step.Location}: the pending encounter-card decision belongs to "
+                + $"seat {asked.Player + 1}, not seat {seat + 1}");
+        }
+
+        int option = Number(match, "option", step);
+        if (option < 1 || option > asked.Affordances.Count)
+        {
+            throw new TranscriptException(
+                $"{step.Location}: option {option} is outside the pending decision's "
+                + $"{asked.Affordances.Count} choices");
+        }
+
+        Sequence.Answer(
+            context.World,
+            context.Cards,
+            context.World.Abilities,
+            asked,
+            Decision.Take(asked.Affordances[option - 1].Id),
+            context.Events);
+        SetPendingPrompt(context, Sequence.Work(
+            context.World, context.Cards, context.World.Abilities, context.Events));
     }
 
     private static void PhaseDiscardNone(

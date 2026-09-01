@@ -35,6 +35,36 @@ Feature: Core encounter icons
     When seat 1 uses their basic thwart against card 01109 copy 0
     Then card 01109 copy 0 is faceup on top of the encounter discard pile
 
+  @behavior:rr:acceleration-icon.3:published-result
+  @covers:behavior:rr:acceleration-token.4:published-result
+  @rr:acceleration-icon.3 @rr:acceleration-token.4 @card:01160
+  Scenario: Removing an acceleration icon does not remove an acceleration token
+    # "Acceleration icons are not considered acceleration tokens, and vice
+    # versa." Defeating the card bearing the icon therefore leaves Legal
+    # Work's acceleration token beside the main scheme.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 343  |
+    And seat 1 shows identity face 01019a
+    And card 01109 copy 0 is a side scheme in play
+    And card 01109 copy 0 has 1 threat counter
+    And card 01097b copy 0 has 0 threat counters
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01104     | 0    |
+      | 01101     | 0    |
+    When card 01160 copy 0 is revealed to seat 1
+    Then card 01160 copy 0 is in seat 1's play area
+    When seat 1 chooses option 2 for the pending encounter-card decision
+    Then seat 1 is in hero form
+    When seat 1 chooses option 2 for the pending encounter-card decision
+    Then the main scheme has 1 acceleration token
+    When seat 1 uses their basic thwart against card 01109 copy 0
+    Then card 01109 copy 0 is faceup on top of the encounter discard pile
+    And the main scheme has 1 acceleration token
+    When villain phase 1 resolves with every optional choice declined
+    Then card 01097b copy 0 has 2 threat counters
+
   @behavior:rr:crisis-icon.1:published-result
   @covers:behavior:rr:crisis-icon:published-result
   @rr:crisis-icon @rr:crisis-icon.1

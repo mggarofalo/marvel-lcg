@@ -99,7 +99,7 @@ public sealed class CoreRuleTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(4, results.Count);
+        Assert.Equal(5, results.Count);
         Assert.Equal(
             "addf2e1a30ee9bd6e217a4c98150418b109cae8869e2c5555629a4cb479b8174",
             results["behavior:rr:acceleration-icon.1:published-result"].Digest);
@@ -107,11 +107,34 @@ public sealed class CoreRuleTranscriptTests
             "734689a82d46c7ee345f331008705e7da91491cca538f442c7216a1c92ef5034",
             results["behavior:rr:acceleration-icon.2:published-result"].Digest);
         Assert.Equal(
+            "0c04a5a5f23ac3a5efc0428070ae935ed641fe58146507506e414a1273ccf19e",
+            results["behavior:rr:acceleration-icon.3:published-result"].Digest);
+        Assert.Equal(
             "2cfa2ec91af0e75e2bdd875aadbaf3d1b6e09a68f502df1e5b42676c48b8947f",
             results["behavior:rr:crisis-icon.1:published-result"].Digest);
         Assert.Equal(
             "2cb656c532aea3e361cc1f76be37137240acfb88675a613b9ff3f76d0be39ad0",
             results["behavior:rr:hazard-icon:published-result"].Digest);
+    }
+
+    [Fact]
+    public void LegalWorkBranchesHavePinnedOutcomes()
+    {
+        var results = Corpus.Value
+            .Where(result => result.Scenario.StartsWith(
+                "specs/behavior/core/legal-work.feature::",
+                StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
+
+        Assert.Equal(2, results.Count);
+        Assert.Equal(
+            "938b065fa9f3b767897cfdb4c17547b8319f99e4888561f7e72e2366ff12b83f",
+            results[
+                "behavior:card:01160:you-may-flip-alter-ego-form-declined"].Digest);
+        Assert.Equal(
+            "7858db70acdd29fe98c467078b048d18fa214152b80a30ad36354ec8ae3f6b73",
+            results[
+                "behavior:card:01160:you-may-flip-alter-ego-form-accepted"].Digest);
     }
 
     [Fact]

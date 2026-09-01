@@ -818,11 +818,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-icons.feature::Removing an acceleration icon does not remove an acceleration token"
+          ],
+          "mutation": "Treat acceleration icons and tokens as one removable kind; defeating the side scheme removes Legal Work's token and the token or threat assertion fails."
         }
       ]
     },
@@ -886,11 +888,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Legal Work can accelerate the main scheme without changing form"
+          ],
+          "mutation": "Skip Legal Work's acceleration-token effect; the main-scheme token assertion fails."
         }
       ]
     },
@@ -952,11 +956,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-icons.feature::Removing an acceleration icon does not remove an acceleration token"
+          ],
+          "mutation": "Treat acceleration icons and tokens as one removable kind; defeating the side scheme removes Legal Work's token and the token or threat assertion fails."
         }
       ]
     },
@@ -50214,11 +50220,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Legal Work can accelerate the main scheme without changing form"
+          ],
+          "mutation": "Give Legal Work to the revealing seat instead of the Jennifer Walters player; the play-area assertion fails."
         },
         {
           "id": "behavior:card:01160:you-may-flip-alter-ego-form-accepted",
@@ -50226,11 +50234,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Legal Work can exhaust Jennifer Walters and leave the game"
+          ],
+          "mutation": "Ignore the accepted optional form change; the alter-ego-form assertion fails."
         },
         {
           "id": "behavior:card:01160:you-may-flip-alter-ego-form-declined",
@@ -50238,11 +50248,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Legal Work can accelerate the main scheme without changing form"
+          ],
+          "mutation": "Apply Legal Work's optional form change after its player declines it; the hero-form assertion fails."
         },
         {
           "id": "behavior:card:01160:printed-effect-01",
@@ -50250,11 +50262,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Legal Work can accelerate the main scheme without changing form"
+          ],
+          "mutation": "Collapse Legal Work's printed choice to its first consequence; selecting the second option fails."
         },
         {
           "id": "behavior:card:01160:exhaust-jennifer-walters-remove-legal-work-from",
@@ -50262,11 +50276,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Legal Work can exhaust Jennifer Walters and leave the game"
+          ],
+          "mutation": "Omit either the exhaust or remove-from-game effect; one of the final assertions fails."
         },
         {
           "id": "behavior:card:01160:give-main-scheme-1-acceleration-token",
@@ -50274,11 +50290,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Legal Work can accelerate the main scheme without changing form"
+          ],
+          "mutation": "Place zero or two acceleration tokens; the exact token-count assertion fails."
         },
         {
           "id": "behavior:card:01160:discard-obligation",
@@ -50286,11 +50304,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Legal Work can accelerate the main scheme without changing form"
+          ],
+          "mutation": "Leave Legal Work in play after choosing its acceleration consequence; the encounter-discard assertion fails."
         }
       ]
     },
