@@ -15338,15 +15338,15 @@
       "title": "MAX, MAXIMUM",
       "fingerprint": "sha256:0a0cf09ba7689545ee93538afce6c7f10a6425a517a041fd627cf91a61944e02",
       "scope": "Rules Reference v1.8",
-      "disposition": "executable",
+      "disposition": "not-representable",
       "obligations": [
         {
           "id": "behavior:rr:max-maximum.2:published-result",
           "summary": "“Max X per deck” restricts the number of copies of that card that may be included in each player deck.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "not-representable",
+          "reason": "A canonical behavioral scene begins after deck construction with a legal deck. The Core inventory contains no extra physical copy beyond any printed per-deck maximum, so violating this restriction cannot be represented as a valid Core game state; DeckConstruction tests own rejection of invalid deck input.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -36399,7 +36399,7 @@
       "title": "The Power of Aggression",
       "fingerprint": "sha256:1aa5b8800aa8fab7c57aadae26457a926996a2f45126001a5ccb694594b391f1",
       "scope": "Core Set",
-      "disposition": "executable",
+      "disposition": "mixed",
       "obligations": [
         {
           "id": "behavior:card:01055:printed-name",
@@ -36474,10 +36474,10 @@
         {
           "id": "behavior:card:01055:max-2-per-deck",
           "summary": "Max 2 per deck.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "not-representable",
+          "reason": "The Core box contains exactly two copies and canonical scenes require a legal deck, so no valid Core game state can distinguish exceeding this deck-construction maximum.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -37399,7 +37399,7 @@
       "title": "The Power of Justice",
       "fingerprint": "sha256:a8ec4fae78216d37c827108dbd6bdb46b81d69fc5c38b780679f6fab69be9cb5",
       "scope": "Core Set",
-      "disposition": "executable",
+      "disposition": "mixed",
       "obligations": [
         {
           "id": "behavior:card:01062:printed-name",
@@ -37474,10 +37474,10 @@
         {
           "id": "behavior:card:01062:max-2-per-deck",
           "summary": "Max 2 per deck.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "not-representable",
+          "reason": "The Core box contains exactly two copies and canonical scenes require a legal deck, so no valid Core game state can distinguish exceeding this deck-construction maximum.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -38833,7 +38833,7 @@
       "title": "The Power of Leadership",
       "fingerprint": "sha256:bdabb7fb6ede65983b306e445c3ab868842a7e1aaf74af21f7ab8777c620d48d",
       "scope": "Core Set",
-      "disposition": "executable",
+      "disposition": "mixed",
       "obligations": [
         {
           "id": "behavior:card:01072:printed-name",
@@ -38908,10 +38908,10 @@
         {
           "id": "behavior:card:01072:max-2-per-deck",
           "summary": "Max 2 per deck.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "not-representable",
+          "reason": "The Core box contains exactly two copies and canonical scenes require a legal deck, so no valid Core game state can distinguish exceeding this deck-construction maximum.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -39827,7 +39827,7 @@
       "title": "The Power of Protection",
       "fingerprint": "sha256:74a921a890bd24671df90934a1322fb60fb6c5aade6212533f07d62d5b0790a3",
       "scope": "Core Set",
-      "disposition": "executable",
+      "disposition": "mixed",
       "obligations": [
         {
           "id": "behavior:card:01079:printed-name",
@@ -39902,10 +39902,10 @@
         {
           "id": "behavior:card:01079:max-2-per-deck",
           "summary": "Max 2 per deck.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "not-representable",
+          "reason": "The Core box contains exactly two copies and canonical scenes require a legal deck, so no valid Core game state can distinguish exceeding this deck-construction maximum.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -41045,7 +41045,7 @@
       "title": "Energy",
       "fingerprint": "sha256:7ba573d9378057b7377a9a8ef4edb4c0fbf9cb450db07573a00d19f4e4bdce74",
       "scope": "Core Set",
-      "disposition": "executable",
+      "disposition": "mixed",
       "obligations": [
         {
           "id": "behavior:card:01088:printed-name",
@@ -41120,10 +41120,10 @@
         {
           "id": "behavior:card:01088:max-1-per-deck",
           "summary": "Max 1 per deck.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "not-representable",
+          "reason": "The Core box contains one copy and canonical scenes require a legal deck, so no valid Core game state can distinguish exceeding this deck-construction maximum.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -41137,7 +41137,7 @@
       "title": "Genius",
       "fingerprint": "sha256:a37a7a75f4deb58eddef53ad2fb272615fd4dbd2cde830820a578f0bdf51b509",
       "scope": "Core Set",
-      "disposition": "executable",
+      "disposition": "mixed",
       "obligations": [
         {
           "id": "behavior:card:01089:printed-name",
@@ -41212,10 +41212,10 @@
         {
           "id": "behavior:card:01089:max-1-per-deck",
           "summary": "Max 1 per deck.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "not-representable",
+          "reason": "The Core box contains one copy and canonical scenes require a legal deck, so no valid Core game state can distinguish exceeding this deck-construction maximum.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -41229,7 +41229,7 @@
       "title": "Strength",
       "fingerprint": "sha256:7c2d42972fd96275e8fc6a82bb2da8e4438de7591f4a210ce7788b2656c5a569",
       "scope": "Core Set",
-      "disposition": "executable",
+      "disposition": "mixed",
       "obligations": [
         {
           "id": "behavior:card:01090:printed-name",
@@ -41304,10 +41304,10 @@
         {
           "id": "behavior:card:01090:max-1-per-deck",
           "summary": "Max 1 per deck.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "not-representable",
+          "reason": "The Core box contains one copy and canonical scenes require a legal deck, so no valid Core game state can distinguish exceeding this deck-construction maximum.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
