@@ -83,3 +83,37 @@ Feature: Core identity card abilities
     Then card 01029a copy 0 has modified HS 7
     When card 01039 copy 1 enters play as an upgrade controlled by seat 1
     Then card 01029a copy 0 has modified HS 7
+
+  @behavior:card:01029b:look-at-top-3-cards-your-deck
+  @covers:behavior:card:01029b:add-1-your-hand-and-discard-others
+  @covers:behavior:card:01029b:limit-once-per-round-within-limit
+  @covers:behavior:card:01029b:limit-once-per-round-limit-reached
+  @card:01029b @rr:limit
+  Scenario: Futurist keeps one of the top three and is then spent for the round
+    # "Look at the top 3 cards of your deck. Add 1 to your hand and discard
+    # the others. (Limit once per round.)" The offer preserves deck order;
+    # Tony selects the middle card and the other two enter his discard pile.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | iron_man | 846  |
+    And these cards are next on seat 1's player deck
+      | next card | copy |
+      | 01031     | 0    |
+      | 01031     | 1    |
+      | 01031     | 2    |
+      | 01032     | 0    |
+    When seat 1 asks for available card actions
+    Then card 01029b copy 0's action is available
+    When seat 1 initiates card 01029b copy 0's action without payment
+    Then card 01031 copy 0 is offered by the pending action
+    And card 01031 copy 1 is offered by the pending action
+    And card 01031 copy 2 is offered by the pending action
+    When seat 1 chooses card 01031 copy 1 for the pending action
+    Then card 01031 copy 1 is in seat 1's hand
+    And seat 1's discard pile has these cards from top to bottom
+      | card  | copy |
+      | 01031 | 2    |
+      | 01031 | 0    |
+    And seat 1's player deck has card 01032 on top
+    When seat 1 asks for available card actions
+    Then card 01029b copy 0's action is unavailable

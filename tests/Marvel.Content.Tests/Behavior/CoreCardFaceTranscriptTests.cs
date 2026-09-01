@@ -47,7 +47,7 @@ public sealed class CoreCardFaceTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(3, results.Count);
+        Assert.Equal(4, results.Count);
         Assert.Equal(
             "d46de12a5223add3f2203e2e9b83ba7a0c008aa0af6230de63d490b369facb1a",
             results["behavior:card:01001b:generate-mental-resource"].Digest);
@@ -57,6 +57,9 @@ public sealed class CoreCardFaceTranscriptTests
         Assert.Equal(
             "04a5fcb2bac9b14f3852d2bd68aad8c5ed6febbd4e0c999ea5dd2a273b8bacf3",
             results["behavior:card:01029a:you-get-1-hand-size-for-each-zero"].Digest);
+        Assert.Equal(
+            "ca8f9d039bcb84eead345000521a8f946bb8b36e556f009168ea29f9099b19dd",
+            results["behavior:card:01029b:look-at-top-3-cards-your-deck"].Digest);
     }
 
     [Fact]

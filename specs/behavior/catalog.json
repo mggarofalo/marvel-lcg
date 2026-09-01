@@ -32728,11 +32728,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/identity-card-abilities.feature::Futurist keeps one of the top three and is then spent for the round"
+          ],
+          "mutation": "Offer fewer than the top three cards; one of the three offer assertions fails."
         },
         {
           "id": "behavior:card:01029b:add-1-your-hand-and-discard-others",
@@ -32740,11 +32742,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/identity-card-abilities.feature::Futurist keeps one of the top three and is then spent for the round"
+          ],
+          "mutation": "Keep a different card, leave the selection outside the hand, or discard either other card in the wrong order; the hand, discard-pile, or deck-top assertion fails."
         },
         {
           "id": "behavior:card:01029b:limit-once-per-round-within-limit",
@@ -32752,11 +32756,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/identity-card-abilities.feature::Futurist keeps one of the top three and is then spent for the round"
+          ],
+          "mutation": "Treat Futurist as already used before its first activation; the initial available-action assertion fails."
         },
         {
           "id": "behavior:card:01029b:limit-once-per-round-limit-reached",
@@ -32764,11 +32770,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/identity-card-abilities.feature::Futurist keeps one of the top three and is then spent for the round"
+          ],
+          "mutation": "Fail to record the once-per-round use; the final unavailable-action assertion fails."
         }
       ]
     },
