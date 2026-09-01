@@ -5,7 +5,8 @@ Feature: Player and encounter discards
 
   @behavior:rr:discard.1:published-result
   @covers:behavior:rr:discard-pile.1:published-result
-  @rr:discard.1 @rr:discard-pile.1
+  @covers:behavior:rr:ownership-and-control.7.4:published-result
+  @rr:discard.1 @rr:discard-pile.1 @rr:ownership-and-control.7.4
   Scenario: A discarded player card goes faceup to its owner's pile
     # "If a player card is discarded, it is placed faceup on top of the owning
     # player's discard pile."

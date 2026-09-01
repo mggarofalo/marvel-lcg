@@ -130,7 +130,8 @@ Feature: Hero and alter-ego form changes
 
   @behavior:rr:form-change-form.7:published-result
   @covers:behavior:card:01009:hero-form-only
-  @rr:form-change-form.7 @card:01009
+  @covers:behavior:rr:play-put-into-play.1:published-result
+  @rr:form-change-form.7 @rr:play-put-into-play.1 @card:01009
   Scenario: A hero-form-only card is playable only while the hero face is active
     # Cards with "[type] form only" can only be played by a player in that
     # form. Webbed Up is not offered to Peter Parker and is offered after he

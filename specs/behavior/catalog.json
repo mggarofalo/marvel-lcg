@@ -17405,11 +17405,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Swinging Web Kick pays, chooses an enemy, deals eight, and discards"
+          ],
+          "mutation": "Leave the played event resolving or send it anywhere but its owner's discard pile; Swinging Web Kick's final-area assertion fails."
         }
       ]
     },
@@ -17427,11 +17429,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/discard.feature::A discarded player card goes faceup to its owner's pile"
+          ],
+          "mutation": "Send the hand card to a non-owner discard pile; the owner-pile assertion fails."
         }
       ]
     },
@@ -18031,11 +18035,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Swinging Web Kick pays, chooses an enemy, deals eight, and discards"
+          ],
+          "mutation": "Do not pay Swinging Web Kick from hand, place it faceup while resolving, or finish it in discard; the transcript's zone observations fail."
         }
       ]
     },
@@ -18053,11 +18059,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/form-change.feature::A hero-form-only card is playable only while the hero face is active"
+          ],
+          "mutation": "Allow Webbed Up to be played or put into play in alter-ego form; the first availability assertion fails."
         }
       ]
     },

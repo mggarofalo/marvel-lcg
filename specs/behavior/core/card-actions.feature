@@ -14,6 +14,8 @@ Feature: Core card actions
   @covers:behavior:rr:initiating-abilities.step.6:published-result
   @covers:behavior:rr:initiating-abilities.step.7:published-result
   @covers:behavior:rr:play-put-into-play.2:published-result
+  @covers:behavior:rr:play-put-into-play:published-result
+  @covers:behavior:rr:ownership-and-control.7.3:published-result
   @covers:behavior:rr:player-turn.5:published-result
   @covers:behavior:rr:labeled-ability.1:published-result
   @covers:behavior:rr:labeled-ability.2:published-result
@@ -27,7 +29,8 @@ Feature: Core card actions
   @rr:in-play-and-out-of-play.7
   @rr:initiating-abilities.step.1 @rr:initiating-abilities.step.3
   @rr:initiating-abilities.step.5 @rr:initiating-abilities.step.6
-  @rr:initiating-abilities.step.7 @rr:play-put-into-play.2 @rr:player-turn.5
+  @rr:initiating-abilities.step.7 @rr:play-put-into-play
+  @rr:play-put-into-play.2 @rr:ownership-and-control.7.3 @rr:player-turn.5
   @rr:labeled-ability.1 @rr:labeled-ability.2 @rr:you-your.12
   @rr:choose-game-element @rr:choose-game-element.1 @rr:target.3
   @rr:resource.4 @rr:resolve.1
