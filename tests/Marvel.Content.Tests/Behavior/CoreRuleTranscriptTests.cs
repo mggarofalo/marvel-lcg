@@ -10,6 +10,21 @@ public sealed class CoreRuleTranscriptTests
         () => new CoreTranscriptSuite(RepositoryPaths.Root).RunPassingCorpus());
 
     [Fact]
+    public void AttachmentBranchesHavePinnedOutcomes()
+    {
+        var results = Corpus.Value
+            .Where(result => result.Scenario.StartsWith(
+                "specs/behavior/core/attachments.feature::",
+                StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
+
+        Assert.Single(results);
+        Assert.Equal(
+            "422b6819e211329aa2c280f68d7df90a67ae359196e4bd66a46fb775e961f6c5",
+            results["behavior:rr:attach-to:published-result"].Digest);
+    }
+
+    [Fact]
     public void CharacteristicBranchesHavePinnedOutcomes()
     {
         var results = Corpus.Value

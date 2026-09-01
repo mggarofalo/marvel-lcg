@@ -2624,11 +2624,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/attachments.feature::A revealed attachment enters play attached to its named host"
+          ],
+          "mutation": "Leave Charge in the resolving area instead of attaching it as it enters play; the attachment and villain-play-area assertions fail."
         }
       ]
     },

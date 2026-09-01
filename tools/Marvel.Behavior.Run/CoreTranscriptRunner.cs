@@ -575,6 +575,9 @@ internal sealed class CoreTranscriptRunner
         Bind("upgrade-attached-identity", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) remains attached to seat (?<seat>\d+)'s identity",
             UpgradeAttachedIdentity),
+        Bind("card-attached-card", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is attached to card (?<host>\d+[a-z]?) copy (?<hostCopy>\d+)",
+            CardAttachedToCard),
         Bind("status-count", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) has (?<count>\d+) (?<status>stunned|confused|tough) status cards?",
             StatusCount),
@@ -2421,6 +2424,24 @@ internal sealed class CoreTranscriptRunner
             throw new TranscriptAssertionException(
                 $"{step.Location}: expected card {card.ObjectId} attached to "
                 + $"seat {seat + 1}'s identity; was {card.Area}");
+        }
+    }
+
+    private static void CardAttachedToCard(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        CanonicalCoreScene scene = context.SceneRequired(step);
+        Card card = scene.Find(SceneCard(match, step));
+        Card host = scene.Find(new SceneCard(
+            match.Groups["host"].Value,
+            Number(match, "hostCopy", step)));
+        if (card.Area.Type != DeckType.UpgradesArea
+            || card.Area.Host != host.ObjectId
+            || card.Area.PlayArea != host.Area.PlayArea)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected card {card.ObjectId} attached to "
+                + $"card {host.ObjectId}; was {card.Area}");
         }
     }
 
