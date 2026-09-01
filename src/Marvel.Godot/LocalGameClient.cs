@@ -79,7 +79,8 @@ public sealed class LocalGameClient
                 return Failed(response.Error.Code, response.Error.Message);
             }
 
-            if (response.World is null || response.Prompt is null
+            if (response.World is null || response.World.Areas is null
+                || response.Prompt is null || response.Events is null
                 || string.IsNullOrWhiteSpace(response.Capability))
             {
                 return Failed(

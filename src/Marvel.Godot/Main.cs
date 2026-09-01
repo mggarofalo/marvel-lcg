@@ -23,22 +23,35 @@ public sealed partial class Main : Control
 
     private async Task OpenDevelopmentGameAsync()
     {
-        string dataRoot = ProjectSettings.GlobalizePath("res://../..");
-        ClientStartupResult startup = await LocalGameClient.OpenLocalAsync(dataRoot);
-        if (!startup.Succeeded)
+        try
         {
-            ClientStartupError failure = startup.Error!;
-            description.Text = failure.Message;
-            status.Text = $"GAME UNAVAILABLE  ·  {failure.Code.ToUpperInvariant()}";
-            return;
-        }
+            string dataRoot = ProjectSettings.GlobalizePath("res://../..");
+            ClientStartupResult startup = await LocalGameClient.OpenLocalAsync(dataRoot);
+            if (!startup.Succeeded)
+            {
+                ShowFailure(startup.Error!);
+                return;
+            }
 
-        OpenedGame = startup.Response!;
-        description.Text =
-            $"Spider-Man versus Rhino · {OpenedGame.World!.Areas.Count} visible areas · "
-            + $"{OpenedGame.Events.Count} setup events";
-        status.Text =
-            $"GAME OPEN  ·  {OpenedGame.World.Outcome.ToString().ToUpperInvariant()}  ·  "
-            + OpenedGame.Prompt!.Asking.ToString().ToUpperInvariant();
+            OpenedGame = startup.Response!;
+            description.Text =
+                $"Spider-Man versus Rhino · {OpenedGame.World!.Areas.Count} visible areas · "
+                + $"{OpenedGame.Events.Count} setup events";
+            status.Text =
+                $"GAME OPEN  ·  {OpenedGame.World.Outcome.ToString().ToUpperInvariant()}  ·  "
+                + OpenedGame.Prompt!.Asking.ToString().ToUpperInvariant();
+        }
+        catch (Exception)
+        {
+            ShowFailure(new ClientStartupError(
+                "startup_failed",
+                "The local game could not be displayed. Try opening it again."));
+        }
+    }
+
+    private void ShowFailure(ClientStartupError failure)
+    {
+        description.Text = failure.Message;
+        status.Text = $"GAME UNAVAILABLE  ·  {failure.Code.ToUpperInvariant()}";
     }
 }

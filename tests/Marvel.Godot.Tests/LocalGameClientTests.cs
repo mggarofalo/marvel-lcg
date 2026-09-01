@@ -117,6 +117,21 @@ public sealed class LocalGameClientTests
     }
 
     [Fact]
+    public async Task ASuccessfulResponseWithoutEventsIsRejectedBeforeRendering()
+    {
+        EngineResponse complete = Host().Exchange(EngineRequest.OpenGame(
+            "local-open",
+            DevelopmentGame.GameId,
+            DevelopmentGame.Specification));
+
+        ClientStartupResult startup = await new LocalGameClient(
+            new FixedTransport(complete with { Events = null! }))
+            .OpenAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal("invalid_response", startup.Error?.Code);
+    }
+
+    [Fact]
     public async Task TransportDiagnosticsDoNotEscapeToTheProduct()
     {
         ClientStartupResult startup = await new LocalGameClient(
