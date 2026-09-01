@@ -71,7 +71,19 @@ public sealed class CoreCardFaceTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(56, results.Count);
+        Assert.Equal(60, results.Count);
+        Assert.Equal(
+            "5b0c4c647c6eea14fd4c9c12ce6d56a94a0f882f949d85ff6b28bc53cba7de01",
+            results["behavior:card:01050:physical-deal-2-damage-enemy"].Digest);
+        Assert.Equal(
+            "3355816960f2c6b36c2fa2a50cb7d2953dc34a725cd9bc19d4fcddf38e7235be",
+            results["behavior:card:01050:energy-deal-1-damage-each-character"].Digest);
+        Assert.Equal(
+            "99e826d906fd5a8d5aeddf5c9a5c8b81e318499549514042a0809fff55cc8e17",
+            results["behavior:card:01050:mental-discard-hulk"].Digest);
+        Assert.Equal(
+            "ae379c36134161a6252902afb22055a719f8ee191c0ce6419ea552e75ab5fe25",
+            results["behavior:card:01050:wild-all-above"].Digest);
         Assert.Equal(
             "0363505d44f84ff8ce1c5ab5159f063ecab495c019fb2f7e52eab888ee552f41",
             results["behavior:card:01007:attach-minion"].Digest);

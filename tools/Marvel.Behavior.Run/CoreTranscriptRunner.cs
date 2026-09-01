@@ -379,6 +379,9 @@ internal sealed class CoreTranscriptRunner
         Bind("ally-power", TranscriptStepKind.When,
             @"card (?<ally>\d+[a-z]?) copy (?<allyCopy>\d+) uses its basic (?<power>attack|thwart) against card (?<face>\d+[a-z]?) copy (?<copy>\d+)",
             AllyPower),
+        Bind("begin-ally-power", TranscriptStepKind.When,
+            @"card (?<ally>\d+[a-z]?) copy (?<allyCopy>\d+) begins its basic (?<power>attack|thwart) against card (?<face>\d+[a-z]?) copy (?<copy>\d+)",
+            BeginAllyPower),
         Bind("ally-power-accepting", TranscriptStepKind.When,
             @"card (?<ally>\d+[a-z]?) copy (?<allyCopy>\d+) uses its basic (?<power>attack|thwart) against card (?<face>\d+[a-z]?) copy (?<copy>\d+) and accepts the (?<label>.+) opportunity",
             AllyPowerAccepting),
@@ -1520,6 +1523,23 @@ internal sealed class CoreTranscriptRunner
             : BasicPowers.ThwartVerb;
         BasicPowers.AllyPower(context.World, context.Cards, ally, target, verb, context.Events);
         FinishAgenda(context, step);
+    }
+
+    private static void BeginAllyPower(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        Card ally = context.SceneRequired(step).Find(new SceneCard(
+            match.Groups["ally"].Value,
+            Number(match, "allyCopy", step)));
+        Card target = context.SceneRequired(step).Find(SceneCard(match, step));
+        string verb = match.Groups["power"].Value == "attack"
+            ? BasicPowers.AttackVerb
+            : BasicPowers.ThwartVerb;
+        BasicPowers.AllyPower(context.World, context.Cards, ally, target, verb, context.Events);
+        SetPendingPrompt(context, Sequence.Work(
+            context.World, context.Cards, context.World.Abilities, context.Events));
     }
 
     private static void AllyPowerAccepting(

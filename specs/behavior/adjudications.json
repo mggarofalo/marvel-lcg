@@ -31047,11 +31047,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Hulk's physical discard deals two additional damage"
+          ],
+          "mutation": "Do not discard the fixed top card after Hulk attacks; its discard-zone assertion fails."
         },
         {
           "key": "printed-effect-01-condition-met",
@@ -31059,19 +31061,21 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Hulk's physical discard deals two additional damage"
+          ],
+          "mutation": "Ignore a printed resource on the discarded card; the corresponding branch's outcome assertion fails."
         },
         {
           "key": "printed-effect-01-condition-not-met",
           "summary": "Condition not met; the conditional result does not occur: If that card's printed resource has:",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "no-independent-behavior",
+          "reason": "Every card permitted in a legal Core player deck prints at least one physical, energy, mental, or wild resource. If no card is discarded because the deck and discard pile are empty, the phrase 'that card' has no referent; player-deck exhaustion carries that independent behavior.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -31083,11 +31087,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Hulk's physical discard deals two additional damage"
+          ],
+          "mutation": "Deal other than two damage to the chosen enemy for a physical resource; Rhino's five-damage assertion fails."
         },
         {
           "key": "energy-deal-1-damage-each-character",
@@ -31095,11 +31101,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Hulk's energy discard damages every character"
+          ],
+          "mutation": "Skip a character or deal other than one damage for energy; a hero, ally, or villain damage assertion fails."
         },
         {
           "key": "mental-discard-hulk",
@@ -31107,11 +31115,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Hulk's mental discard removes Hulk from play"
+          ],
+          "mutation": "Retain Hulk after a mental resource is discarded; Hulk's discard-pile assertion fails."
         },
         {
           "key": "wild-all-above",
@@ -31119,11 +31129,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Hulk's wild discard resolves all three resource effects"
+          ],
+          "mutation": "Skip any physical, energy, or mental line for a wild resource; a damage or discard assertion fails."
         }
       ]
     },

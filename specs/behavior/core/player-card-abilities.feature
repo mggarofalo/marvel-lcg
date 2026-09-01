@@ -117,6 +117,85 @@ Feature: Core player card abilities
     And card 01045 copy 0 is in seat 1's player deck
     And card 01046 copy 0 is in seat 1's player deck
 
+  @behavior:card:01050:physical-deal-2-damage-enemy
+  @covers:behavior:card:01050:after-hulk-attacks-discard-top-card-your
+  @covers:behavior:card:01050:printed-effect-01-condition-met
+  @card:01050
+  Scenario: Hulk's physical discard deals two additional damage
+    # Hulk's attack deals his printed three damage. Strength is then discarded
+    # from the top of the player deck; its printed physical resource makes the
+    # Forced Response choose an enemy and deal two more damage.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 924  |
+    And card 01050 copy 0 is an ally controlled by seat 1
+    And these cards are next on seat 1's player deck
+      | next card | copy |
+      | 01090     | 0    |
+    When card 01050 copy 0 begins its basic attack against card 01094 copy 0
+    Then card 01094 copy 0 is offered by the pending action
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01094 copy 0 has 5 damage
+    And card 01050 copy 0 has 1 damage
+    And card 01090 copy 0 is in seat 1's discard pile
+
+  @behavior:card:01050:energy-deal-1-damage-each-character
+  @card:01050
+  Scenario: Hulk's energy discard damages every character
+    # Energy is discarded after Hulk's three-damage attack. Its printed energy
+    # resource deals one damage to Rhino, She-Hulk, and Hulk; Hulk then takes
+    # his one consequential damage.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 925  |
+    And seat 1 shows identity face 01019a
+    And card 01050 copy 0 is an ally controlled by seat 1
+    And these cards are next on seat 1's player deck
+      | next card | copy |
+      | 01088     | 0    |
+    When card 01050 copy 0 begins its basic attack against card 01094 copy 0
+    Then card 01094 copy 0 has 4 damage
+    And card 01019a copy 0 has 1 damage
+    And card 01050 copy 0 has 2 damage
+    And card 01088 copy 0 is in seat 1's discard pile
+
+  @behavior:card:01050:mental-discard-hulk
+  @card:01050
+  Scenario: Hulk's mental discard removes Hulk from play
+    # Genius is discarded after Hulk's three-damage attack. Its printed mental
+    # resource discards Hulk before consequential damage can be applied.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 926  |
+    And card 01050 copy 0 is an ally controlled by seat 1
+    And these cards are next on seat 1's player deck
+      | next card | copy |
+      | 01089     | 0    |
+    When card 01050 copy 0 begins its basic attack against card 01094 copy 0
+    Then card 01094 copy 0 has 3 damage
+    And card 01050 copy 0 is faceup on top of seat 1's discard pile
+
+  @behavior:card:01050:wild-all-above
+  @card:01050
+  Scenario: Hulk's wild discard resolves all three resource effects
+    # Hellcat's printed wild resource applies the physical, energy, and mental
+    # lines independently: Rhino takes three attack damage, two chosen damage,
+    # and one all-character damage; She-Hulk takes one; Hulk is discarded.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 927  |
+    And seat 1 shows identity face 01019a
+    And card 01050 copy 0 is an ally controlled by seat 1
+    And these cards are next on seat 1's player deck
+      | next card | copy |
+      | 01020     | 0    |
+    When card 01050 copy 0 begins its basic attack against card 01094 copy 0
+    Then card 01094 copy 0 is offered by the pending action
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01094 copy 0 has 6 damage
+    And card 01019a copy 0 has 1 damage
+    And card 01050 copy 0 is faceup on top of seat 1's discard pile
+
   @behavior:card:01018:max-1-per-player
   @card:01018
   Scenario: A player with Energy Channel cannot play another copy
