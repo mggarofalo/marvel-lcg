@@ -661,6 +661,9 @@ internal sealed class CoreTranscriptRunner
         Bind("modified-card-cost", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) has modified resource cost (?<count>\d+) for seat (?<seat>\d+)",
             ModifiedCardCost),
+        Bind("modified-card-statistic", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) has modified (?<field>ATK|DEF|REC|THW) (?<count>\d+)",
+            ModifiedCardStatistic),
         Bind("card-removed", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is removed from the game",
             CardRemoved),
@@ -3168,6 +3171,26 @@ internal sealed class CoreTranscriptRunner
             checked((int)context.SceneRequired(step).Find(SceneCard(match, step)).Damage),
             "damage on the card",
             step);
+
+    private static void ModifiedCardStatistic(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        string field = match.Groups["field"].Value switch
+        {
+            "ATK" => "attack",
+            "DEF" => "defense",
+            "REC" => "recover",
+            "THW" => "thwart",
+            _ => throw new InvalidOperationException("unsupported printed statistic"),
+        };
+        Equal(
+            Number(match, "count", step),
+            checked((int)StateFields.Modified(
+                context.World, card, field, context.Cards, context.World.Players)),
+            $"modified {match.Groups["field"].Value}",
+            step);
+    }
 
     private static void PlayerPlayAreaRemoved(
         TranscriptContext context, TranscriptStep step, Match match)
