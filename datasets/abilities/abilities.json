@@ -598,6 +598,7 @@
       "abilities": [
         {
           "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "labels": [ "attack" ],
           "effect": { "chooseCard": {
             "from": { "query": "attackableMinions" },
             "effect": { "attack": { "target": "chosen", "effect":

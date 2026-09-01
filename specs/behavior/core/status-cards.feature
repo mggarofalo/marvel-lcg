@@ -19,6 +19,29 @@ Feature: Core status cards
     And card 01001a copy 0 is exhausted
     And card 01094 copy 0 has 0 damage
 
+  @behavior:rr:stun-stunned.5.1:published-result
+  @rr:stun-stunned.5.1 @card:01053
+  Scenario: A stunned hero can play an attack event without a valid attack target
+    # Stun permits an attack attempt even with no valid attack target because
+    # the status replacement discards stun instead of resolving that attack.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 836  |
+    And seat 1 shows identity face 01019a
+    And card 01019a copy 0 has a stunned status card
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01053 | 0    |
+      | 01090 | 0    |
+    When seat 1 asks for available card actions
+    Then card 01053 copy 0's action is available
+    When seat 1 initiates card 01053 copy 0's action paying with these cards
+      | card  | copy |
+      | 01090 | 0    |
+    Then card 01019a copy 0 has 0 stunned status cards
+    And card 01094 copy 0 has 0 damage
+    And card 01053 copy 0 is faceup on top of seat 1's discard pile
+
   @behavior:rr:confuse-confused.5:published-result
   @covers:behavior:rr:confuse-confused.1:published-result
   @rr:confuse-confused.5 @rr:confuse-confused.1
