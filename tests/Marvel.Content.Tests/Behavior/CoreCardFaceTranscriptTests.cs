@@ -71,7 +71,23 @@ public sealed class CoreCardFaceTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(28, results.Count);
+        Assert.Equal(32, results.Count);
+        Assert.Equal(
+            "026aca6d5424ac5b022a2f159ad65b5e78016f6d62578189c77ad28bd811d611",
+            results[
+                "behavior:card:01002:after-you-play-black-cat-discard-top"].Digest);
+        Assert.Equal(
+            "f7dcdc3c723dbe698865eee3c6eb3de0d4c589f31046029bbe6c290ab3231cbb",
+            results[
+                "behavior:card:01011:after-spider-woman-enters-play-confuse-villain"].Digest);
+        Assert.Equal(
+            "c2ece15d054edcc22adc92af08b8f455a10b11593eb3ef0b806d9901fddf66ae",
+            results[
+                "behavior:card:01019a:after-you-change-form-deal-2-damage"].Digest);
+        Assert.Equal(
+            "fb43fc49e75bb8b81eb0b08772f69cc8707bcfc306d828cb29ceb858e9a7ac69",
+            results[
+                "behavior:card:01024:after-you-make-basic-attack-using-your"].Digest);
         Assert.Equal(
             "d42e5505bd0e5fabc86cfc7328225f032d0ce36b8fc51ccc100a66c374cec003",
             results[

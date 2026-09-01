@@ -28657,11 +28657,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Black Cat keeps only discarded cards with a printed mental resource"
+          ],
+          "mutation": "Discard other than the next two player-deck cards; either the hand or discard-zone assertion fails."
         },
         {
           "id": "behavior:card:01002:add-each-card-with-printed-mental-resource",
@@ -28669,11 +28671,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Black Cat keeps only discarded cards with a printed mental resource"
+          ],
+          "mutation": "Keep the physical-resource card or fail to keep the mental-resource card; its asserted zone is wrong."
         }
       ]
     },
@@ -30107,11 +30111,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Spider-Woman may confuse the villain after entering play"
+          ],
+          "mutation": "Omit the optional Response or give a status other than confused; its prompt or status assertion fails."
         }
       ]
     },
@@ -31190,11 +31196,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::She-Hulk may deal two damage after changing to hero form"
+          ],
+          "mutation": "Trigger before the hero face appears, omit the target, or deal other than two damage; a prompt, form, or damage assertion fails."
         }
       ]
     },
@@ -32002,11 +32010,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::One-Two Punch readies She-Hulk after her basic attack"
+          ],
+          "mutation": "Trigger before the basic attack ends or fail to ready She-Hulk; the attack damage or readiness assertion fails."
         }
       ]
     },

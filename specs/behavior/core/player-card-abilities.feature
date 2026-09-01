@@ -3,6 +3,89 @@ Feature: Core player card abilities
   Player cards resolve their printed Actions and constant modifiers from legal
   Core deals, with targets and resulting zones recorded in the transcript.
 
+  @behavior:card:01002:after-you-play-black-cat-discard-top
+  @covers:behavior:card:01002:add-each-card-with-printed-mental-resource
+  @card:01002
+  Scenario: Black Cat keeps only discarded cards with a printed mental resource
+    # Playing Black Cat discards the next two cards. Enhanced Spider-Sense has
+    # a printed mental resource and returns to hand; Backflip has a printed
+    # physical resource and remains discarded.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 896  |
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01002 | 0    |
+      | 01089 | 0    |
+    And these cards are next on seat 1's player deck
+      | next card | copy |
+      | 01004     | 0    |
+      | 01003     | 0    |
+    When seat 1 plays card 01002 copy 0 paying with these cards
+      | card  | copy |
+      | 01089 | 0    |
+    Then card 01002 copy 0 remains an ally controlled by seat 1
+    And card 01004 copy 0 is in seat 1's hand
+    And card 01003 copy 0 is in seat 1's discard pile
+
+  @behavior:card:01011:after-spider-woman-enters-play-confuse-villain
+  @card:01011
+  Scenario: Spider-Woman may confuse the villain after entering play
+    # Spider-Woman's optional Response resolves after she enters play and gives
+    # the villain one confused status card.
+    Given a canonical Core scene is dealt
+      | campaign | heroes         | seed |
+      | rhino    | captain_marvel | 897  |
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01011 | 0    |
+      | 01017 | 0    |
+      | 01088 | 0    |
+    When seat 1 plays card 01011 copy 0 paying with these cards
+      | card  | copy |
+      | 01017 | 0    |
+      | 01088 | 0    |
+    Then seat 1 is offered the "Spider-Woman" pending opportunity
+    When seat 1 accepts card 01011 copy 0's pending opportunity
+    Then card 01094 copy 0 has 1 confused status card
+    And card 01011 copy 0 remains an ally controlled by seat 1
+
+  @behavior:card:01019a:after-you-change-form-deal-2-damage
+  @card:01019a
+  Scenario: She-Hulk may deal two damage after changing to hero form
+    # Changing from Jennifer Walters to She-Hulk opens Do You Even Lift?; its
+    # chosen enemy takes two damage after the Response is accepted.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 898  |
+    And seat 1 shows identity face 01019b
+    When seat 1 changes form by flipping their identity
+    Then seat 1 is offered the "Do You Even Lift?" pending opportunity
+    When seat 1 accepts card 01019a copy 0's pending opportunity
+    Then card 01094 copy 0 is offered by the pending action
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01094 copy 0 has 2 damage
+    And seat 1 is in hero form
+
+  @behavior:card:01024:after-you-make-basic-attack-using-your
+  @card:01024
+  Scenario: One-Two Punch readies She-Hulk after her basic attack
+    # She-Hulk's basic attack exhausts her and deals her printed three damage.
+    # The response then pays one resource, discards One-Two Punch, and readies
+    # her after that attack ends.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 899  |
+    And seat 1 shows identity face 01019a
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01024 | 0    |
+      | 01088 | 0    |
+    When seat 1 uses their basic attack against card 01094 copy 0 and accepts "One-Two Punch" paid with card 01088 copy 0
+    Then card 01094 copy 0 has 3 damage
+    And card 01019a copy 0 is ready
+    And card 01024 copy 0 is in seat 1's discard pile
+
   @behavior:card:01016:captain-marvel-gets-1-def-2-def-condition-not-met
   @card:01016
   Scenario: Captain Marvel's Helmet grants one defense without Aerial
