@@ -250,7 +250,7 @@ public sealed class CoreRuleTranscriptTests
     }
 
     [Fact]
-    public void LegalWorkBranchesHavePinnedOutcomes()
+    public void CoreIdentityObligationBranchesHavePinnedOutcomes()
     {
         var results = Corpus.Value
             .Where(result => result.Scenario.StartsWith(
@@ -258,7 +258,7 @@ public sealed class CoreRuleTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(2, results.Count);
+        Assert.Equal(10, results.Count);
         Assert.Equal(
             "5555335fa80dde057285925b06d58104f77428c6568acc5d29938b4c81333bd6",
             results[
@@ -267,6 +267,38 @@ public sealed class CoreRuleTranscriptTests
             "d1c1ec43da722baed6be9a31f50e0a20cc3ebdcb04ba04680a0f19257b43115e",
             results[
                 "behavior:card:01160:you-may-flip-alter-ego-form-accepted"].Digest);
+        Assert.Equal(
+            "2b80db251223ef118e229b6718136a3a90f92b63b5269693eea9804e81efbc77",
+            results[
+                "behavior:card:01155:you-may-flip-alter-ego-form-accepted"].Digest);
+        Assert.Equal(
+            "73bc9831566b5df35541b94aea505ac774eacbcb5060b84eed21742f3f094380",
+            results[
+                "behavior:card:01155:you-may-flip-alter-ego-form-declined"].Digest);
+        Assert.Equal(
+            "5738df4b38e857dddb9196398196c0d0ecf10173f2506205fa47f9b869d383fb",
+            results[
+                "behavior:card:01165:you-may-flip-alter-ego-form-accepted"].Digest);
+        Assert.Equal(
+            "0b838c25ca6bdeac12496e6d3f0835f9c4b6e9721ad0ee412b5fd6b6fd8256d9",
+            results[
+                "behavior:card:01165:you-may-flip-alter-ego-form-declined"].Digest);
+        Assert.Equal(
+            "4a0606febb0c70ed09b2b4d07154a6040ce2b4d4abeffe380f188302b47d8ac7",
+            results[
+                "behavior:card:01170:you-may-flip-alter-ego-form-accepted"].Digest);
+        Assert.Equal(
+            "65c41c4fb25749752526fc259d37b9a956ad3c0e515abdd3b5522e5295640e75",
+            results[
+                "behavior:card:01170:you-may-flip-alter-ego-form-declined"].Digest);
+        Assert.Equal(
+            "c28e6854a17bbf90af64b40536b734d4f734ae21dd518d2a4180a3e62c196b0e",
+            results[
+                "behavior:card:01175:you-may-flip-alter-ego-form-accepted"].Digest);
+        Assert.Equal(
+            "c176b18fe710c0d21550b038a31b33659020a86e611779f9efaf0053bf9a6421",
+            results[
+                "behavior:card:01175:you-may-flip-alter-ego-form-declined"].Digest);
     }
 
     [Fact]

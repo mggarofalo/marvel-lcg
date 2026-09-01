@@ -50289,11 +50289,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Affairs of State can exhaust T'Challa and leave the game"
+          ],
+          "mutation": "Keep Affairs of State with the revealing player instead of giving it to T'Challa's player; the play-area assertion fails."
         },
         {
           "id": "behavior:card:01155:you-may-flip-alter-ego-form-accepted",
@@ -50301,11 +50303,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Affairs of State can exhaust T'Challa and leave the game"
+          ],
+          "mutation": "Ignore the accepted optional form change; the alter-ego assertion fails."
         },
         {
           "id": "behavior:card:01155:you-may-flip-alter-ego-form-declined",
@@ -50313,11 +50317,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Affairs of State can discard a controlled Black Panther upgrade"
+          ],
+          "mutation": "Apply the declined optional form change; the hero-form assertion fails."
         },
         {
           "id": "behavior:card:01155:printed-effect-01",
@@ -50325,11 +50331,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Affairs of State can exhaust T'Challa and leave the game"
+          ],
+          "mutation": "Remove the printed choice or prevent selection of its first branch; the second encounter-card decision cannot be completed."
         },
         {
           "id": "behavior:card:01155:exhaust-t-challa-remove-affairs-state-from",
@@ -50337,11 +50345,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Affairs of State can exhaust T'Challa and leave the game"
+          ],
+          "mutation": "Skip either exhausting T'Challa or removing Affairs of State; one of the final assertions fails."
         },
         {
           "id": "behavior:card:01155:choose-and-discard-black-panther-upgrade-you",
@@ -50349,11 +50359,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Affairs of State can discard a controlled Black Panther upgrade"
+          ],
+          "mutation": "Do not offer or discard the selected controlled Black Panther upgrade; the selection or discard assertion fails."
         },
         {
           "id": "behavior:card:01155:discard-obligation",
@@ -50361,11 +50373,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Affairs of State can discard a controlled Black Panther upgrade"
+          ],
+          "mutation": "Do not discard Affairs of State after its second branch; the encounter-discard assertion fails."
         }
       ]
     },
@@ -51579,11 +51593,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Eviction Notice can exhaust Peter Parker and leave the game"
+          ],
+          "mutation": "Keep Eviction Notice with the revealing player instead of giving it to Peter Parker's player; the play-area assertion fails."
         },
         {
           "id": "behavior:card:01165:you-may-flip-alter-ego-form-accepted",
@@ -51591,11 +51607,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Eviction Notice can exhaust Peter Parker and leave the game"
+          ],
+          "mutation": "Ignore the accepted optional form change; the alter-ego assertion fails."
         },
         {
           "id": "behavior:card:01165:you-may-flip-alter-ego-form-declined",
@@ -51603,11 +51621,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Eviction Notice discards from hand and gains surge"
+          ],
+          "mutation": "Apply the declined optional form change; the hero-form assertion fails."
         },
         {
           "id": "behavior:card:01165:printed-effect-01",
@@ -51615,11 +51635,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Eviction Notice can exhaust Peter Parker and leave the game"
+          ],
+          "mutation": "Remove the printed choice or prevent selection of its first branch; the second encounter-card decision cannot be completed."
         },
         {
           "id": "behavior:card:01165:exhaust-peter-parker-remove-eviction-notice-from",
@@ -51627,11 +51649,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Eviction Notice can exhaust Peter Parker and leave the game"
+          ],
+          "mutation": "Skip either exhausting Peter Parker or removing Eviction Notice; one of the final assertions fails."
         },
         {
           "id": "behavior:card:01165:discard-1-card-at-random-from-your",
@@ -51639,11 +51663,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Eviction Notice discards from hand and gains surge"
+          ],
+          "mutation": "Skip the one possible random discard; the hand-card discard assertion fails."
         },
         {
           "id": "behavior:card:01165:card-gains-surge",
@@ -51651,11 +51677,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Eviction Notice discards from hand and gains surge"
+          ],
+          "mutation": "Do not grant surge; the next encounter card is not dealt facedown."
         },
         {
           "id": "behavior:card:01165:discard-obligation",
@@ -51663,11 +51691,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Eviction Notice discards from hand and gains surge"
+          ],
+          "mutation": "Do not discard Eviction Notice after its second branch; the encounter-discard assertion fails."
         }
       ]
     },
@@ -52291,11 +52321,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Business Problems can exhaust Tony Stark and leave the game"
+          ],
+          "mutation": "Keep Business Problems with the revealing player instead of giving it to Tony Stark's player; the play-area assertion fails."
         },
         {
           "id": "behavior:card:01170:you-may-flip-alter-ego-form-accepted",
@@ -52303,11 +52335,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Business Problems can exhaust Tony Stark and leave the game"
+          ],
+          "mutation": "Ignore the accepted optional form change; the alter-ego assertion fails."
         },
         {
           "id": "behavior:card:01170:you-may-flip-alter-ego-form-declined",
@@ -52315,11 +52349,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Business Problems exhausts every controlled upgrade"
+          ],
+          "mutation": "Apply the declined optional form change; the hero-form assertion fails."
         },
         {
           "id": "behavior:card:01170:printed-effect-01",
@@ -52327,11 +52363,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Business Problems can exhaust Tony Stark and leave the game"
+          ],
+          "mutation": "Remove the printed choice or prevent selection of its first branch; the second encounter-card decision cannot be completed."
         },
         {
           "id": "behavior:card:01170:exhaust-tony-stark-remove-business-problems-from",
@@ -52339,11 +52377,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Business Problems can exhaust Tony Stark and leave the game"
+          ],
+          "mutation": "Skip either exhausting Tony Stark or removing Business Problems; one of the final assertions fails."
         },
         {
           "id": "behavior:card:01170:exhaust-each-upgrade-you-control",
@@ -52351,11 +52391,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Business Problems exhausts every controlled upgrade"
+          ],
+          "mutation": "Leave either controlled upgrade ready; its exhausted assertion fails."
         },
         {
           "id": "behavior:card:01170:discard-obligation",
@@ -52363,11 +52405,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Business Problems exhausts every controlled upgrade"
+          ],
+          "mutation": "Do not discard Business Problems after its second branch; the encounter-discard assertion fails."
         }
       ]
     },
@@ -52971,11 +53015,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Family Emergency can exhaust Carol Danvers and leave the game"
+          ],
+          "mutation": "Keep Family Emergency with the revealing player instead of giving it to Carol Danvers's player; the play-area assertion fails."
         },
         {
           "id": "behavior:card:01175:you-may-flip-alter-ego-form-accepted",
@@ -52983,11 +53029,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Family Emergency can exhaust Carol Danvers and leave the game"
+          ],
+          "mutation": "Ignore the accepted optional form change; the alter-ego assertion fails."
         },
         {
           "id": "behavior:card:01175:you-may-flip-alter-ego-form-declined",
@@ -52995,11 +53043,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Family Emergency stuns Carol Danvers and gains surge"
+          ],
+          "mutation": "Apply the declined optional form change; the hero-form assertion fails."
         },
         {
           "id": "behavior:card:01175:printed-effect-01",
@@ -53007,11 +53057,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Family Emergency can exhaust Carol Danvers and leave the game"
+          ],
+          "mutation": "Remove the printed choice or prevent selection of its first branch; the second encounter-card decision cannot be completed."
         },
         {
           "id": "behavior:card:01175:exhaust-carol-danvers-remove-family-emergency-from",
@@ -53019,11 +53071,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Family Emergency can exhaust Carol Danvers and leave the game"
+          ],
+          "mutation": "Skip either exhausting Carol Danvers or removing Family Emergency; one of the final assertions fails."
         },
         {
           "id": "behavior:card:01175:you-are-stunned",
@@ -53031,11 +53085,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Family Emergency stuns Carol Danvers and gains surge"
+          ],
+          "mutation": "Do not stun Carol Danvers; the status-card assertion fails."
         },
         {
           "id": "behavior:card:01175:card-gains-surge",
@@ -53043,11 +53099,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Family Emergency stuns Carol Danvers and gains surge"
+          ],
+          "mutation": "Do not grant surge; the next encounter card is not dealt facedown."
         },
         {
           "id": "behavior:card:01175:discard-obligation",
@@ -53055,11 +53113,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Family Emergency stuns Carol Danvers and gains surge"
+          ],
+          "mutation": "Do not discard Family Emergency after its second branch; the encounter-discard assertion fails."
         }
       ]
     },

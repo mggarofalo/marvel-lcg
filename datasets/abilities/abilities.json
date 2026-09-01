@@ -2224,7 +2224,7 @@
             { "choose": { "options": [ { "changeForm": { "player": "you", "to": "alter-ego" } }, { "seq": [] } ] } },
             { "choose": { "options": [
               { "seq": [ { "exhaust": "you" }, { "removeFromGame": "this" } ] },
-              { "chooseCard": { "from": { "withTrait": { "cards": { "query": "upgradesYouControl" }, "trait": "BLACK PANTHER" } }, "effect": { "seq": [ { "discard": "chosen" }, { "discard": "this" } ] } } }
+              { "chooseCard": { "from": { "withTrait": { "cards": { "query": "upgradesYouControl" }, "trait": "BLACK_PANTHER" } }, "effect": { "seq": [ { "discard": "chosen" }, { "discard": "this" } ] } } }
             ] } }
           ] }
         }

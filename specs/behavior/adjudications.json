@@ -830,7 +830,7 @@
       ]
     },
     {
-  "id": "rr:action.1",
+      "id": "rr:action.1",
       "fingerprint": "sha256:bd76737060bbd1bd6db4378b96bd64e577dd13e44cf874701c3e6d4e857452f7",
       "obligations": [
         {
@@ -839,13 +839,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/ownership-control.feature::Card actions belong to their controller or to an encounter card"
-      ],
-      "mutation": "Offer an Action from another player's controlled support or suppress the encounter-card Action; one of the paired availability assertions fails."
+          "scenarios": [
+            "specs/behavior/core/ownership-control.feature::Card actions belong to their controller or to an encounter card"
+          ],
+          "mutation": "Offer an Action from another player's controlled support or suppress the encounter-card Action; one of the paired availability assertions fails."
         }
       ]
     },
@@ -2694,16 +2694,16 @@
       ]
     },
     {
-  "id": "rr:attack-enemy-activation.6",
+      "id": "rr:attack-enemy-activation.6",
       "fingerprint": "sha256:9a73d627c6d465e362024282f87a7355a1a18262397714669432b42936030b64",
       "obligations": [
         {
           "key": "published-result",
           "summary": "If an enemy attack ends before damage is dealt, abilities that trigger after an attack or after a character defends an attack resolve as normal.",
-      "disposition": "outside-core",
-      "reason": "No supported Core effect ends an initiated enemy attack before its damage step while still allowing after-attack or after-defense abilities to resolve.",
-      "target": null,
-      "implementation": null,
+          "disposition": "outside-core",
+          "reason": "No supported Core effect ends an initiated enemy attack before its damage step while still allowing after-attack or after-defense abilities to resolve.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -4016,7 +4016,7 @@
       ]
     },
     {
-  "id": "rr:cannot",
+      "id": "rr:cannot",
       "fingerprint": "sha256:211ec425c33d90206ac137c9b6a503f21ef9dbb26f76599f88b07a34e20f5ecf",
       "obligations": [
         {
@@ -4025,18 +4025,18 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/card-actions.feature::An each-enemy effect skips an enemy that cannot take damage"
-      ],
-      "mutation": "Let Ground Stomp countermand Madame Hydra's cannot-take-damage ability; she incorrectly receives one damage."
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::An each-enemy effect skips an enemy that cannot take damage"
+          ],
+          "mutation": "Let Ground Stomp countermand Madame Hydra's cannot-take-damage ability; she incorrectly receives one damage."
         }
       ]
     },
     {
-  "id": "rr:cannot.1",
+      "id": "rr:cannot.1",
       "fingerprint": "sha256:99e536f001077f250942814019237e35b79ec68829d408191507b4568878f219",
       "obligations": [
         {
@@ -4045,27 +4045,27 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/card-actions.feature::An each-enemy effect skips an enemy that cannot take damage"
-      ],
-      "mutation": "Give Ground Stomp precedence over Madame Hydra's conflicting cannot ability; she incorrectly receives damage."
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::An each-enemy effect skips an enemy that cannot take damage"
+          ],
+          "mutation": "Give Ground Stomp precedence over Madame Hydra's conflicting cannot ability; she incorrectly receives damage."
         }
       ]
     },
     {
-  "id": "rr:cannot.2",
+      "id": "rr:cannot.2",
       "fingerprint": "sha256:16cfd31df6387cac0dea7d0ce4ba370be3f5111e681e42a890adab05919b00fa",
       "obligations": [
         {
           "key": "published-result",
           "summary": "If two rules conflict, the rule with “cannot” takes precedence.",
-      "disposition": "outside-core",
-      "reason": "No supported Core rules create a distinguishable conflict between two rules in which only one uses the word cannot.",
-      "target": null,
-      "implementation": null,
+          "disposition": "outside-core",
+          "reason": "No supported Core rules create a distinguishable conflict between two rules in which only one uses the word cannot.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -4074,16 +4074,16 @@
       ]
     },
     {
-  "id": "rr:cannot.3",
+      "id": "rr:cannot.3",
       "fingerprint": "sha256:4cbeadfba0f933f2873a5633b487073f2816ecfd9d43f470278b7645ec3f732a",
       "obligations": [
         {
           "key": "published-result",
           "summary": "An ability can override a rule with “cannot” per the Golden Rules.",
-      "disposition": "outside-core",
-      "reason": "No supported Core card ability explicitly overrides a rule that uses the word cannot.",
-      "target": null,
-      "implementation": null,
+          "disposition": "outside-core",
+          "reason": "No supported Core card ability explicitly overrides a rule that uses the word cannot.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -4314,15 +4314,15 @@
       ]
     },
     {
-  "id": "rr:choose-game-element.3",
+      "id": "rr:choose-game-element.3",
       "fingerprint": "sha256:ff19f0fd92abd267b4ada76f44d283aff597cef2f697ba588244695801077148",
       "obligations": [
         {
           "key": "published-result",
           "summary": "If multiple targets are required to be chosen by the same player, simultaneously choose as many as are available, to a maximum of the specified number.",
-      "disposition": "no-independent-behavior",
-      "reason": "Ancestral Knowledge is the only supported Core multiple-target choice and its printed up-to-three-different-cards instruction already supplies both the maximum and distinctness constraints.",
-      "target": null,
+          "disposition": "no-independent-behavior",
+          "reason": "Ancestral Knowledge is the only supported Core multiple-target choice and its printed up-to-three-different-cards instruction already supplies both the maximum and distinctness constraints.",
+          "target": null,
           "implementation": null,
           "work_item": null,
           "exception": null,
@@ -4332,16 +4332,16 @@
       ]
     },
     {
-  "id": "rr:choose-game-element.3.1",
+      "id": "rr:choose-game-element.3.1",
       "fingerprint": "sha256:f67c3fb51e43fdef47add9a3a1c7b78af2cb577c8cfbbc469362b4194b35af33",
       "obligations": [
         {
           "key": "published-result",
           "summary": "The same target cannot be chosen multiple times this way.",
-      "disposition": "no-independent-behavior",
-      "reason": "Ancestral Knowledge is the only supported Core effect that chooses multiple targets and its printed text independently requires different cards.",
-      "target": null,
-      "implementation": null,
+          "disposition": "no-independent-behavior",
+          "reason": "Ancestral Knowledge is the only supported Core effect that chooses multiple targets and its printed text independently requires different cards.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -4406,7 +4406,7 @@
       ]
     },
     {
-  "id": "rr:choose-option.2",
+      "id": "rr:choose-option.2",
       "fingerprint": "sha256:41fdee2edda75188e6e85b788f59d381161910a8297a40e3791d7c03b5ccd328",
       "obligations": [
         {
@@ -4415,13 +4415,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/ally-limit.feature::Playing a fourth ally requires one controlled ally to be discarded"
-      ],
-      "mutation": "Offer Nick Fury's remove-threat option when no scheme has threat; the explicit option-availability assertion fails."
+          "scenarios": [
+            "specs/behavior/core/ally-limit.feature::Playing a fourth ally requires one controlled ally to be discarded"
+          ],
+          "mutation": "Offer Nick Fury's remove-threat option when no scheme has threat; the explicit option-availability assertion fails."
         }
       ]
     },
@@ -4444,7 +4444,7 @@
       ]
     },
     {
-  "id": "rr:choose-option.2.2",
+      "id": "rr:choose-option.2.2",
       "fingerprint": "sha256:e88dd693099defd2b57e68968c1cb5333ac1d9c749d3abb0052b2687d76d16a2",
       "obligations": [
         {
@@ -4453,13 +4453,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/ally-limit.feature::Playing a fourth ally requires one controlled ally to be discarded"
-      ],
-      "mutation": "Treat a zero-threat scheme as a valid target for Nick Fury's remove-threat option; option 1 is incorrectly offered."
+          "scenarios": [
+            "specs/behavior/core/ally-limit.feature::Playing a fourth ally requires one controlled ally to be discarded"
+          ],
+          "mutation": "Treat a zero-threat scheme as a valid target for Nick Fury's remove-threat option; option 1 is incorrectly offered."
         }
       ]
     },
@@ -5620,7 +5620,7 @@
       ]
     },
     {
-  "id": "rr:damage.3.1",
+      "id": "rr:damage.3.1",
       "fingerprint": "sha256:d368e1330bf61137bcf05bea52eda6e239efecedcf7ec380d789972d381614c1",
       "obligations": [
         {
@@ -5629,13 +5629,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/villain-phase.feature::A hero exhausts to defend and reduces the attack by DEF"
-      ],
-      "mutation": "Reduce dealt attack damage by Spider-Man's DEF without reducing the damage he takes; the transcript observes more than one damage."
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::A hero exhausts to defend and reduces the attack by DEF"
+          ],
+          "mutation": "Reduce dealt attack damage by Spider-Man's DEF without reducing the damage he takes; the transcript observes more than one damage."
         }
       ]
     },
@@ -5678,7 +5678,7 @@
       ]
     },
     {
-  "id": "rr:damage.step.1",
+      "id": "rr:damage.step.1",
       "fingerprint": "sha256:223fca40f33287043570ebc2b1eb5ff7eef8b567f1979831a02a63bd7464c540",
       "obligations": [
         {
@@ -5687,13 +5687,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/villain-phase.feature::Backflip prevents all imminent attack damage without exhausting"
-      ],
-      "mutation": "Skip the would-take-damage interrupt window; Backflip is not offered and Spider-Man takes the attack damage."
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Backflip prevents all imminent attack damage without exhausting"
+          ],
+          "mutation": "Skip the would-take-damage interrupt window; Backflip is not offered and Spider-Man takes the attack damage."
         }
       ]
     },
@@ -5738,7 +5738,7 @@
       ]
     },
     {
-  "id": "rr:damage.step.4",
+      "id": "rr:damage.step.4",
       "fingerprint": "sha256:96659f68dd45f2138c908065404f96c8758e7fa090d0bfc627980b867c10761a",
       "obligations": [
         {
@@ -5747,13 +5747,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/villain-phase.feature::Boost damage is not damage dealt by Klaw's attack"
-      ],
-      "mutation": "Skip the after-character-takes-damage response window; Sonic Converter fails to stun the hero damaged by Klaw's completed attack."
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Boost damage is not damage dealt by Klaw's attack"
+          ],
+          "mutation": "Skip the after-character-takes-damage response window; Sonic Converter fails to stun the hero damaged by Klaw's completed attack."
         }
       ]
     },
@@ -5965,7 +5965,7 @@
       ]
     },
     {
-  "id": "rr:deal-deal-an-encounter-card.1",
+      "id": "rr:deal-deal-an-encounter-card.1",
       "fingerprint": "sha256:5f8843785573611a0eba34553767f104ea69e275c68493a9d798081c788aa2e4",
       "obligations": [
         {
@@ -5974,13 +5974,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/encounter-icons.feature::One hazard icon deals one additional encounter card total"
-      ],
-      "mutation": "Defer the hazard card outside the villain phase's deal-and-reveal queue; the second minion remains facedown instead of engaging seat 1."
+          "scenarios": [
+            "specs/behavior/core/encounter-icons.feature::One hazard icon deals one additional encounter card total"
+          ],
+          "mutation": "Defer the hazard card outside the villain phase's deal-and-reveal queue; the second minion remains facedown instead of engaging seat 1."
         }
       ]
     },
@@ -6139,7 +6139,7 @@
       ]
     },
     {
-  "id": "rr:defend-defense.1",
+      "id": "rr:defend-defense.1",
       "fingerprint": "sha256:5a941f5d3bdc0de25b98a96ddfb3121c769d5a229b07366db2c46f4a17ac09be",
       "obligations": [
         {
@@ -6148,13 +6148,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/villain-phase.feature::A hero exhausts to defend and reduces the attack by DEF"
-      ],
-      "mutation": "Permit more than the declared hero to defend the same attack; the single-defender damage result changes."
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::A hero exhausts to defend and reduces the attack by DEF"
+          ],
+          "mutation": "Permit more than the declared hero to defend the same attack; the single-defender damage result changes."
         }
       ]
     },
@@ -8304,7 +8304,7 @@
       ]
     },
     {
-  "id": "rr:first-player.3",
+      "id": "rr:first-player.3",
       "fingerprint": "sha256:d2bc196b96ab5ef63182440b2705abb0c2f1cfea9e9799d26c0ce1de1162bab0",
       "obligations": [
         {
@@ -8313,13 +8313,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/encounter-reveal.feature::Invasive AI lets the first player order its multiplayer effect"
-      ],
-      "mutation": "Resolve Invasive AI's simultaneous player effects in a fixed non-first-player order; the ordered discard transcript changes."
+          "scenarios": [
+            "specs/behavior/core/encounter-reveal.feature::Invasive AI lets the first player order its multiplayer effect"
+          ],
+          "mutation": "Resolve Invasive AI's simultaneous player effects in a fixed non-first-player order; the ordered discard transcript changes."
         }
       ]
     },
@@ -8344,16 +8344,16 @@
       ]
     },
     {
-  "id": "rr:first-player.5",
+      "id": "rr:first-player.5",
       "fingerprint": "sha256:8be5ea9a5826bde2a1587bc67422ae8a79ac26da9e3ab100627c860e7aeebcce",
       "obligations": [
         {
           "key": "published-result",
           "summary": "The first player has the first opportunity to use a response at each appropriate game moment.",
-      "disposition": "outside-core",
-      "reason": "No legal supported Core state gives different players response abilities to the same triggering condition, so first-player response priority cannot be distinguished.",
-      "target": null,
-      "implementation": null,
+          "disposition": "outside-core",
+          "reason": "No legal supported Core state gives different players response abilities to the same triggering condition, so first-player response priority cannot be distinguished.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -8452,7 +8452,7 @@
       ]
     },
     {
-  "id": "rr:for-each",
+      "id": "rr:for-each",
       "fingerprint": "sha256:475ee169b4e0d50b627a1f69e09a00aeb87c347c6c1c65667b52409e6a07d6df",
       "obligations": [
         {
@@ -8461,18 +8461,18 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/card-actions.feature::Legal Practice scales to an intermediate three-card cost"
-      ],
-      "mutation": "Resolve Legal Practice's for-each clause as a fixed one-threat effect; the scheme incorrectly retains five threat."
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Legal Practice scales to an intermediate three-card cost"
+          ],
+          "mutation": "Resolve Legal Practice's for-each clause as a fixed one-threat effect; the scheme incorrectly retains five threat."
         }
       ]
     },
     {
-  "id": "rr:for-each.1",
+      "id": "rr:for-each.1",
       "fingerprint": "sha256:aae8878410a3451477eac14dbe934bad30d97e5ce6da286220fa5a5432da5006",
       "obligations": [
         {
@@ -8481,13 +8481,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/card-actions.feature::Legal Practice scales to an intermediate three-card cost"
-      ],
-      "mutation": "Treat each discarded card as requiring a separately chosen scheme; the single target choice cannot produce the observed three-threat removal."
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Legal Practice scales to an intermediate three-card cost"
+          ],
+          "mutation": "Treat each discarded card as requiring a separately chosen scheme; the single target choice cannot produce the observed three-threat removal."
         }
       ]
     },
@@ -8510,7 +8510,7 @@
       ]
     },
     {
-  "id": "rr:for-each.2",
+      "id": "rr:for-each.2",
       "fingerprint": "sha256:ccb71cedb11882078b010cd706d06741c7c61d387b4b47ede8e7d9a8bf19902d",
       "obligations": [
         {
@@ -8519,27 +8519,27 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/card-actions.feature::Legal Practice scales to an intermediate three-card cost"
-      ],
-      "mutation": "Split Legal Practice's threat removal into independent one-threat resolutions; the transcript's single pending scheme choice no longer resolves the printed effect atomically."
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Legal Practice scales to an intermediate three-card cost"
+          ],
+          "mutation": "Split Legal Practice's threat removal into independent one-threat resolutions; the transcript's single pending scheme choice no longer resolves the printed effect atomically."
         }
       ]
     },
     {
-  "id": "rr:for-each.3",
+      "id": "rr:for-each.3",
       "fingerprint": "sha256:2afae727625dd6faea2321b1e5d5e10b2e3e3f3b9c40c548dc9fd2373413f8a7",
       "obligations": [
         {
           "key": "published-result",
           "summary": "If a “for each” effect has a “choose” instruction, each iteration of that choice is considered a separate instance of that effect, even if the same target is chosen multiple times.",
-      "disposition": "outside-core",
-      "reason": "No supported Core card has a for-each effect whose for-each clause instructs the resolving player to choose a target for each iteration.",
-      "target": null,
-      "implementation": null,
+          "disposition": "outside-core",
+          "reason": "No supported Core card has a for-each effect whose for-each clause instructs the resolving player to choose a target for each iteration.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -8548,16 +8548,16 @@
       ]
     },
     {
-  "id": "rr:for-each.3.1",
+      "id": "rr:for-each.3.1",
       "fingerprint": "sha256:b3b976a27515b0dc7643aa3793a72549b9b876e1b595688ad6c840237411f4fb",
       "obligations": [
         {
           "key": "published-result",
           "summary": "The game state updates after each instance (for example, if a minion or side scheme is defeated).",
-      "disposition": "outside-core",
-      "reason": "No supported Core card has a for-each choose instruction whose separate iterations can update target legality.",
-      "target": null,
-      "implementation": null,
+          "disposition": "outside-core",
+          "reason": "No supported Core card has a for-each choose instruction whose separate iterations can update target legality.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -8566,16 +8566,16 @@
       ]
     },
     {
-  "id": "rr:for-each.3.2",
+      "id": "rr:for-each.3.2",
       "fingerprint": "sha256:1700b9e0fef8d06d62f4835834b6a40d0ab1f8b1132a08277c19e254e388f39b",
       "obligations": [
         {
           "key": "published-result",
           "summary": "Responses can be triggered after each instance.",
-      "disposition": "outside-core",
-      "reason": "No supported Core card has a for-each choose instruction that creates separate response windows after each iteration.",
-      "target": null,
-      "implementation": null,
+          "disposition": "outside-core",
+          "reason": "No supported Core card has a for-each choose instruction that creates separate response windows after each iteration.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -8602,16 +8602,16 @@
       ]
     },
     {
-  "id": "rr:for-each.4",
+      "id": "rr:for-each.4",
       "fingerprint": "sha256:874bbe80014464bc2cf8ffd2e94fe9e002016e24dc9ae6256637e766fa7a9caa",
       "obligations": [
         {
           "key": "published-result",
           "summary": "If another ability modifies a “for each” effect, that modifier is applied to each instance of the “for each” effect.",
-      "disposition": "outside-core",
-      "reason": "No supported Core card modifies another ability's for-each effect, so per-instance application of such a modifier cannot be reached.",
-      "target": null,
-      "implementation": null,
+          "disposition": "outside-core",
+          "reason": "No supported Core card modifies another ability's for-each effect, so per-instance application of such a modifier cannot be reached.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -8676,16 +8676,16 @@
       ]
     },
     {
-  "id": "rr:forced.3",
+      "id": "rr:forced.3",
       "fingerprint": "sha256:b6881c1bcfac851b9ead7729ca1718f69ce43ce298846aede6f0af8e8ad965f9",
       "obligations": [
         {
           "key": "published-result",
           "summary": "If a forced ability requires one or more targets to resolve and it has no valid targets, it does not initiate.",
-      "disposition": "outside-core",
-      "reason": "No supported Core forced ability requires a chosen target that can be absent when its triggering condition occurs.",
-      "target": null,
-      "implementation": null,
+          "disposition": "outside-core",
+          "reason": "No supported Core forced ability requires a chosen target that can be absent when its triggering condition occurs.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -8694,16 +8694,16 @@
       ]
     },
     {
-  "id": "rr:forced.3.1",
+      "id": "rr:forced.3.1",
       "fingerprint": "sha256:6f9b6e0d58e598a0897989218c8e087dc17e108c053617f74a1271cabd8f871b",
       "obligations": [
         {
           "key": "published-result",
           "summary": "Any costs that would have been paid to initiate the ability are not paid.",
-      "disposition": "outside-core",
-      "reason": "No supported Core forced ability combines a payable cost with a required target that can be absent at its triggering condition.",
-      "target": null,
-      "implementation": null,
+          "disposition": "outside-core",
+          "reason": "No supported Core forced ability combines a payable cost with a required target that can be absent at its triggering condition.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -8712,16 +8712,16 @@
       ]
     },
     {
-  "id": "rr:forced.4",
+      "id": "rr:forced.4",
       "fingerprint": "sha256:9edc398391010479ec161283c8df9f4502d2c4c3ed87feebda25afb7c6608378",
       "obligations": [
         {
           "key": "published-result",
           "summary": "For any given triggering condition, forced interrupts take priority and initiate before non-forced interrupts, and forced responses take priority and initiate before non-forced responses.",
-      "disposition": "outside-core",
-      "reason": "No legal supported Core state presents a forced and non-forced interrupt, or a forced and non-forced response, to the same triggering condition.",
-      "target": null,
-      "implementation": null,
+          "disposition": "outside-core",
+          "reason": "No legal supported Core state presents a forced and non-forced interrupt, or a forced and non-forced response, to the same triggering condition.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -8748,16 +8748,16 @@
       ]
     },
     {
-  "id": "rr:forced.6",
+      "id": "rr:forced.6",
       "fingerprint": "sha256:5985cad5eb8817e0a6e52ebe290e6f35c7a1ec850c046c177dcff5acea3dc553",
       "obligations": [
         {
           "key": "published-result",
           "summary": "Each forced ability must resolve as completely as possible before the next forced ability being triggered by the same triggering condition may initiate.",
-      "disposition": "outside-core",
-      "reason": "No legal supported Core state presents multiple forced abilities triggered by the same condition with distinguishable intermediate state.",
-      "target": null,
-      "implementation": null,
+          "disposition": "outside-core",
+          "reason": "No legal supported Core state presents multiple forced abilities triggered by the same condition with distinguishable intermediate state.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -10824,7 +10824,7 @@
       ]
     },
     {
-  "id": "rr:initiating-abilities.1",
+      "id": "rr:initiating-abilities.1",
       "fingerprint": "sha256:0c073d1876610c1a0838d8bfbc19c320b9213e9ce95aa63d31954f3e9d7af652",
       "obligations": [
         {
@@ -10833,18 +10833,18 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/villain-phase.feature::Backflip prevents all imminent attack damage without exhausting"
-      ],
-      "mutation": "Open Backflip's interrupt after damage becomes true instead of just before; Spider-Man takes damage before prevention."
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Backflip prevents all imminent attack damage without exhausting"
+          ],
+          "mutation": "Open Backflip's interrupt after damage becomes true instead of just before; Spider-Man takes damage before prevention."
         }
       ]
     },
     {
-  "id": "rr:initiating-abilities.2",
+      "id": "rr:initiating-abilities.2",
       "fingerprint": "sha256:743dc27d2eccd05e8acbc2c698501f91c7b433b667224b975c2f53d94cb58e5a",
       "obligations": [
         {
@@ -10853,18 +10853,18 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/villain-phase.feature::Counter-Punch damages the attacker after a basic defense ends"
-      ],
-      "mutation": "Do not open the response window immediately after the defense condition becomes true; Counter-Punch cannot damage Rhino."
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Counter-Punch damages the attacker after a basic defense ends"
+          ],
+          "mutation": "Do not open the response window immediately after the defense condition becomes true; Counter-Punch cannot damage Rhino."
         }
       ]
     },
     {
-  "id": "rr:initiating-abilities.3",
+      "id": "rr:initiating-abilities.3",
       "fingerprint": "sha256:a146950c860962b2a6309cba8994cffea22dda74da90750445be3f39cd711ee3",
       "obligations": [
         {
@@ -10873,13 +10873,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/villain-phase.feature::Indomitable follows a defense-labeled Backflip after the attack ends"
-      ],
-      "mutation": "Stop Indomitable's sequence when its discard cost makes it leave play; Spider-Man remains exhausted instead of readying."
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Indomitable follows a defense-labeled Backflip after the attack ends"
+          ],
+          "mutation": "Stop Indomitable's sequence when its discard cost makes it leave play; Spider-Man remains exhausted instead of readying."
         }
       ]
     },
@@ -11138,7 +11138,7 @@
       ]
     },
     {
-  "id": "rr:interrupt.3",
+      "id": "rr:interrupt.3",
       "fingerprint": "sha256:705b94d04d143c8d0f909335602266654f246e65e87fd7e1b031fa386ba4ee29",
       "obligations": [
         {
@@ -11147,13 +11147,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/villain-phase.feature::Backflip prevents all imminent attack damage without exhausting"
-      ],
-      "mutation": "Resolve Backflip after the imminent damage instead of before it; Spider-Man retains attack damage."
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Backflip prevents all imminent attack damage without exhausting"
+          ],
+          "mutation": "Resolve Backflip after the imminent damage instead of before it; Spider-Man retains attack damage."
         }
       ]
     },
@@ -11856,7 +11856,7 @@
       ]
     },
     {
-  "id": "rr:labeled-ability.4",
+      "id": "rr:labeled-ability.4",
       "fingerprint": "sha256:34d050dd7973e81b18a303b654d4998c784daa4db9195fdf3081b9aec54409a8",
       "obligations": [
         {
@@ -11865,27 +11865,27 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/card-actions.feature::Legal Practice scales to an intermediate three-card cost"
-      ],
-      "mutation": "Resolve Legal Practice without treating its labeled action as a thwart; the transcript's threat-removal observation fails."
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Legal Practice scales to an intermediate three-card cost"
+          ],
+          "mutation": "Resolve Legal Practice without treating its labeled action as a thwart; the transcript's threat-removal observation fails."
         }
       ]
     },
     {
-  "id": "rr:labeled-ability.5",
+      "id": "rr:labeled-ability.5",
       "fingerprint": "sha256:765f4b51006f53a3144314117810272961d96b50cd6c95bc53efe612653b3e5f",
       "obligations": [
         {
           "key": "published-result",
           "summary": "When a player resolves an ability with multiple labels, that ability is considered to be each of the labeled ability types, all made by that player’s identity.",
-      "disposition": "outside-core",
-      "reason": "No supported Core ability prints multiple parenthetical ability labels.",
-      "target": null,
-      "implementation": null,
+          "disposition": "outside-core",
+          "reason": "No supported Core ability prints multiple parenthetical ability labels.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -11894,7 +11894,7 @@
       ]
     },
     {
-  "id": "rr:labeled-ability.6",
+      "id": "rr:labeled-ability.6",
       "fingerprint": "sha256:2182a60c272973b2d5402a9e93543b34f7d97f0dee7989a584bf4dcd0f81583c",
       "obligations": [
         {
@@ -11903,18 +11903,18 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/card-actions.feature::Stun cancels an event attack after the event is played and paid for"
-      ],
-      "mutation": "Allow Swinging Web Kick's attack effect to resolve while Spider-Man is stunned; Rhino incorrectly takes eight damage."
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Stun cancels an event attack after the event is played and paid for"
+          ],
+          "mutation": "Allow Swinging Web Kick's attack effect to resolve while Spider-Man is stunned; Rhino incorrectly takes eight damage."
         }
       ]
     },
     {
-  "id": "rr:labeled-ability.6.1",
+      "id": "rr:labeled-ability.6.1",
       "fingerprint": "sha256:1d2ebe2eef7929146f3a0c73be24e2a4b5aa29acac13051149ab3f2ba898b300",
       "obligations": [
         {
@@ -11923,18 +11923,18 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/card-actions.feature::Stun cancels an event attack after the event is played and paid for"
-      ],
-      "mutation": "Record a completed identity attack after stun cancels Swinging Web Kick; the no-damage canceled transcript no longer describes the occurrence."
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Stun cancels an event attack after the event is played and paid for"
+          ],
+          "mutation": "Record a completed identity attack after stun cancels Swinging Web Kick; the no-damage canceled transcript no longer describes the occurrence."
         }
       ]
     },
     {
-  "id": "rr:labeled-ability.6.2",
+      "id": "rr:labeled-ability.6.2",
       "fingerprint": "sha256:7f2f3ff9997616378dc6c875bb9b25ce8efaecd615a78a7d34c0cecffa5c9aec",
       "obligations": [
         {
@@ -11943,13 +11943,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/card-actions.feature::Stun cancels an event attack after the event is played and paid for"
-      ],
-      "mutation": "Leave Spider-Man's stun status in play after it cancels Swinging Web Kick; the transcript observes one status instead of zero."
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Stun cancels an event attack after the event is played and paid for"
+          ],
+          "mutation": "Leave Spider-Man's stun status in play after it cancels Swinging Web Kick; the transcript observes one status instead of zero."
         }
       ]
     },
@@ -13557,15 +13557,15 @@
       ]
     },
     {
-  "id": "rr:move",
+      "id": "rr:move",
       "fingerprint": "sha256:5f05669f58a54be333495e5e5fc350d2254afb7714a4db5b0aed63583101eb7e",
       "obligations": [
         {
           "key": "published-result",
           "summary": "Some abilities allow players to move game elements, such as cards, damage, or threat.",
-      "disposition": "no-independent-behavior",
-      "reason": "This record introduces the move operation; the observable Core damage-move behavior is carried by the quantity and source/destination child clauses.",
-      "target": null,
+          "disposition": "no-independent-behavior",
+          "reason": "This record introduces the move operation; the observable Core damage-move behavior is carried by the quantity and source/destination child clauses.",
+          "target": null,
           "implementation": null,
           "work_item": null,
           "exception": null,
@@ -13575,16 +13575,16 @@
       ]
     },
     {
-  "id": "rr:move.1",
+      "id": "rr:move.1",
       "fingerprint": "sha256:d8e9a3ff335b078971fa82d029d56ab946177fb0d704fa80457a179e56de62ab",
       "obligations": [
         {
           "key": "published-result",
           "summary": "When an element moves, it cannot move to its same (current) placement.",
-      "disposition": "no-independent-behavior",
-      "reason": "Vibranium Suit is the only supported Core move effect and necessarily moves damage from a hero to a distinct enemy, so its source and destination can never be the same placement.",
-      "target": null,
-      "implementation": null,
+          "disposition": "no-independent-behavior",
+          "reason": "Vibranium Suit is the only supported Core move effect and necessarily moves damage from a hero to a distinct enemy, so its source and destination can never be the same placement.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -13987,16 +13987,16 @@
       ]
     },
     {
-  "id": "rr:obligation.5",
+      "id": "rr:obligation.5",
       "fingerprint": "sha256:ddd888fe638d8c70cfcf088028e83ef5d777c7de1724728cf86237ee8c95d7c4",
       "obligations": [
         {
           "key": "published-result",
           "summary": "If an obligation cannot be given to the specified player for any reason, ignore the card’s ability, remove it from the game, and reveal an additional encounter card.",
-      "disposition": "outside-core",
-      "reason": "Each supported Core obligation is part of its specified identity's legal deck and that identity's player is necessarily present when the obligation is revealed.",
-      "target": null,
-      "implementation": null,
+          "disposition": "outside-core",
+          "reason": "Each supported Core obligation is part of its specified identity's legal deck and that identity's player is necessarily present when the obligation is revealed.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -14267,7 +14267,7 @@
       ]
     },
     {
-  "id": "rr:ownership-and-control.1",
+      "id": "rr:ownership-and-control.1",
       "fingerprint": "sha256:db6643fd7c780b365283e7429466d20b8faf3a824c765fc5d414e671645ce88f",
       "obligations": [
         {
@@ -14276,18 +14276,18 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/setup.feature::The printed Spider-Man and Rhino deal reaches its opening state"
-      ],
-      "mutation": "Deal Spider-Man's identity outside seat 1's owned and controlled identity area; the opening-state identity assertions fail."
+          "scenarios": [
+            "specs/behavior/core/setup.feature::The printed Spider-Man and Rhino deal reaches its opening state"
+          ],
+          "mutation": "Deal Spider-Man's identity outside seat 1's owned and controlled identity area; the opening-state identity assertions fail."
         }
       ]
     },
     {
-  "id": "rr:ownership-and-control.2",
+      "id": "rr:ownership-and-control.2",
       "fingerprint": "sha256:9480d64c21ff5229d426b49e27e2ab959ba55f85bc550b085bfd5a432b1191b1",
       "obligations": [
         {
@@ -14296,13 +14296,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/card-actions.feature::Tac Team enters with three uses and discards after the third action"
-      ],
-      "mutation": "Put Tac Team into play without its owner's control; the transcript's controlled-support assertion fails."
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Tac Team enters with three uses and discards after the third action"
+          ],
+          "mutation": "Put Tac Team into play without its owner's control; the transcript's controlled-support assertion fails."
         }
       ]
     },
@@ -14591,7 +14591,7 @@
       ]
     },
     {
-  "id": "rr:per-player-icon",
+      "id": "rr:per-player-icon",
       "fingerprint": "sha256:723a449699099632f6ae5adba688d80ef49e0ced105f93f846c708b80b5d35da",
       "obligations": [
         {
@@ -14600,18 +14600,18 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/player-elimination.feature::A defeated identity is eliminated while the other player continues"
-      ],
-      "mutation": "Initialize the per-player count independently of the two players who started the game; the transcript's count-of-two assertion fails."
+          "scenarios": [
+            "specs/behavior/core/player-elimination.feature::A defeated identity is eliminated while the other player continues"
+          ],
+          "mutation": "Initialize the per-player count independently of the two players who started the game; the transcript's count-of-two assertion fails."
         }
       ]
     },
     {
-  "id": "rr:per-player-icon.1",
+      "id": "rr:per-player-icon.1",
       "fingerprint": "sha256:d43b045466ddb194ee59391cccea1e4f32f7f3d7baffc5e8294e3957cc9feaf9",
       "obligations": [
         {
@@ -14620,13 +14620,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/player-elimination.feature::A defeated identity is eliminated while the other player continues"
-      ],
-      "mutation": "Reduce the per-player count when seat 1 is eliminated; the transcript observes one instead of the original two."
+          "scenarios": [
+            "specs/behavior/core/player-elimination.feature::A defeated identity is eliminated while the other player continues"
+          ],
+          "mutation": "Reduce the per-player count when seat 1 is eliminated; the transcript observes one instead of the original two."
         }
       ]
     },
@@ -15157,7 +15157,7 @@
       ]
     },
     {
-  "id": "rr:play-restrictions-and-permissions.2",
+      "id": "rr:play-restrictions-and-permissions.2",
       "fingerprint": "sha256:0cca44fe2990f6d7ebe0875eb63a3433af05e14ef4b22317f4f79a70d76f2beb",
       "obligations": [
         {
@@ -15166,13 +15166,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/card-actions.feature::Make the Call controls another player's ally until it leaves play"
-      ],
-      "mutation": "Ignore Make the Call's permission to use an ally in a discard pile; Black Cat cannot enter play from seat 2's discard."
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Make the Call controls another player's ally until it leaves play"
+          ],
+          "mutation": "Ignore Make the Call's permission to use an ally in a discard pile; Black Cat cannot enter play from seat 2's discard."
         }
       ]
     },
@@ -15771,16 +15771,16 @@
       ]
     },
     {
-  "id": "rr:player-s-play-area.5",
+      "id": "rr:player-s-play-area.5",
       "fingerprint": "sha256:04ce1382b72a625d3120ca5919086bf8322641537d4f54bfd68e3b5bd655e10c",
       "obligations": [
         {
           "key": "published-result",
           "summary": "While card abilities can affect cards across play areas, unless a game rule or card ability states otherwise, cards cannot be played into another player’s play area.",
-      "disposition": "outside-core",
-      "reason": "No supported Core play instruction offers another player's play area as a destination; Make the Call puts an ally into its resolving player's own area rather than playing into another area.",
-      "target": null,
-      "implementation": null,
+          "disposition": "outside-core",
+          "reason": "No supported Core play instruction offers another player's play area as a destination; Make the Call puts an ally into its resolving player's own area rather than playing into another area.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -16549,16 +16549,16 @@
       ]
     },
     {
-  "id": "rr:quickstrike.2",
+      "id": "rr:quickstrike.2",
       "fingerprint": "sha256:d32d32704a185461aa465184c576bd9992188c598cb37d8322717ca5f0e55f50",
       "obligations": [
         {
           "key": "published-result",
           "summary": "If a minion with the quickstrike keyword is being revealed, the quickstrike keyword resolves after any “When Revealed” abilities on that minion are resolved.",
-      "disposition": "outside-core",
-      "reason": "Vulture is the only supported Core minion with quickstrike and has no When Revealed ability, so the relative ordering cannot be distinguished.",
-      "target": null,
-      "implementation": null,
+          "disposition": "outside-core",
+          "reason": "Vulture is the only supported Core minion with quickstrike and has no When Revealed ability, so the relative ordering cannot be distinguished.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -16737,7 +16737,7 @@
       ]
     },
     {
-  "id": "rr:referential-ability.step.1",
+      "id": "rr:referential-ability.step.1",
       "fingerprint": "sha256:4a2fb9990606cc68fd1e606aa58639b175d12dd218977c92be7440c3bfd24993",
       "obligations": [
         {
@@ -16746,18 +16746,18 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/card-actions.feature::Tac Team enters with three uses and discards after the third action"
-      ],
-      "mutation": "Resolve Tac Team's self-reference against another same-titled copy; the acting support fails to spend its own counters and discard."
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Tac Team enters with three uses and discards after the third action"
+          ],
+          "mutation": "Resolve Tac Team's self-reference against another same-titled copy; the acting support fails to spend its own counters and discard."
         }
       ]
     },
     {
-  "id": "rr:referential-ability.step.2",
+      "id": "rr:referential-ability.step.2",
       "fingerprint": "sha256:e71d18925e7de9dc85f51f98dd363ffc0dc54ee5db67c56e2bf0191ebc48bfdd",
       "obligations": [
         {
@@ -16766,18 +16766,18 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/card-actions.feature::Vibranium Suit moves two damage as the final Wakanda Forever step"
-      ],
-      "mutation": "Fail to resolve the Black Panther identity's associated upgrade reference; Vibranium Suit does not execute its Special."
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Vibranium Suit moves two damage as the final Wakanda Forever step"
+          ],
+          "mutation": "Fail to resolve the Black Panther identity's associated upgrade reference; Vibranium Suit does not execute its Special."
         }
       ]
     },
     {
-  "id": "rr:referential-ability.step.3",
+      "id": "rr:referential-ability.step.3",
       "fingerprint": "sha256:3f4e52019910c8c6eddb79ab44da74b925aab50db7e032cef011ec6075bfb51e",
       "obligations": [
         {
@@ -16786,13 +16786,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/villain-phase.feature::Boost damage is not damage dealt by Klaw's attack"
-      ],
-      "mutation": "Resolve Sonic Converter's encounter-card reference to Klaw outside the encounter classification; its forced response fails to stun the damaged hero."
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Boost damage is not damage dealt by Klaw's attack"
+          ],
+          "mutation": "Resolve Sonic Converter's encounter-card reference to Klaw outside the encounter classification; its forced response fails to stun the damaged hero."
         }
       ]
     },
@@ -16931,7 +16931,7 @@
       ]
     },
     {
-  "id": "rr:replacement-effect",
+      "id": "rr:replacement-effect",
       "fingerprint": "sha256:02f24d3661fb59cd5a42f3b8e4caebb8d1ee1530674c6084b5a5676f9057316f",
       "obligations": [
         {
@@ -16940,18 +16940,18 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/status-cards.feature::A stunned villain discards stun instead of attacking"
-      ],
-      "mutation": "Resolve the villain attack in addition to discarding stun; the hero incorrectly takes attack damage."
+          "scenarios": [
+            "specs/behavior/core/status-cards.feature::A stunned villain discards stun instead of attacking"
+          ],
+          "mutation": "Resolve the villain attack in addition to discarding stun; the hero incorrectly takes attack damage."
         }
       ]
     },
     {
-  "id": "rr:replacement-effect.1",
+      "id": "rr:replacement-effect.1",
       "fingerprint": "sha256:5a0a852f1af9cb3873e1830e6c91ea53153d6867eec84e4bcc905fc3bcaebc3e",
       "obligations": [
         {
@@ -16960,13 +16960,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/status-cards.feature::A stunned villain discards stun instead of attacking"
-      ],
-      "mutation": "Keep the replaced attack imminent after stun is discarded; the attack continues and damages the hero."
+          "scenarios": [
+            "specs/behavior/core/status-cards.feature::A stunned villain discards stun instead of attacking"
+          ],
+          "mutation": "Keep the replaced attack imminent after stun is discarded; the attack continues and damages the hero."
         }
       ]
     },
@@ -17357,16 +17357,16 @@
       ]
     },
     {
-  "id": "rr:resource.2",
+      "id": "rr:resource.2",
       "fingerprint": "sha256:50e8b99b22022eb22f7b7063955dcd40ae35fe7e3ef369789f02aff4d3addc7b",
       "obligations": [
         {
           "key": "published-result",
           "summary": "There are four types of resources in the game: energy ([energy]), mental ([mental]), and physical ([physical]), and wild ([wild]).",
-      "disposition": "no-independent-behavior",
-      "reason": "This record enumerates the four resource types; their payment and matching behavior is carried by the individual energy, mental, physical, and wild resource obligations.",
-      "target": null,
-      "implementation": null,
+          "disposition": "no-independent-behavior",
+          "reason": "This record enumerates the four resource types; their payment and matching behavior is carried by the individual energy, mental, physical, and wild resource obligations.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -20042,7 +20042,7 @@
       ]
     },
     {
-  "id": "rr:target.2.3",
+      "id": "rr:target.2.3",
       "fingerprint": "sha256:bfb414ffc089910e6d325cec47d43b03a6af4063f92b546c503049f555c189f0",
       "obligations": [
         {
@@ -20051,13 +20051,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/card-actions.feature::Rechannel is available once and consumes its round limit"
-      ],
-      "mutation": "Reject Rechannel's draw target despite a stocked player deck; its action is unavailable before the round limit is used."
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Rechannel is available once and consumes its round limit"
+          ],
+          "mutation": "Reject Rechannel's draw target despite a stocked player deck; its action is unavailable before the round limit is used."
         }
       ]
     },
@@ -20120,16 +20120,16 @@
       ]
     },
     {
-  "id": "rr:target.3.3",
+      "id": "rr:target.3.3",
       "fingerprint": "sha256:34045a19f45ca3768840f3bd83d0d79bbbb2e0c5535145d2135592404fded0de",
       "obligations": [
         {
           "key": "published-result",
           "summary": "The cost of an ability or game function is not considered when determining if that ability or game function can affect a target.",
-      "disposition": "outside-core",
-      "reason": "No supported Core ability has a cost that can independently change whether the same game element is a valid target for that ability.",
-      "target": null,
-      "implementation": null,
+          "disposition": "outside-core",
+          "reason": "No supported Core ability has a cost that can independently change whether the same game element is a valid target for that ability.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -20158,16 +20158,16 @@
       ]
     },
     {
-  "id": "rr:target.3.5",
+      "id": "rr:target.3.5",
       "fingerprint": "sha256:bad0ffad9ed8189f5273fede4207e36228ab7b142aba26c8556f82c491ad2a5c",
       "obligations": [
         {
           "key": "published-result",
           "summary": "A target is not valid for an ability if that ability would cause the target to perform a game function that another ability says the target cannot perform.",
-      "disposition": "outside-core",
-      "reason": "No supported Core ability causes a chosen target to perform a function that another ability says that target cannot perform.",
-      "target": null,
-      "implementation": null,
+          "disposition": "outside-core",
+          "reason": "No supported Core ability causes a chosen target to perform a function that another ability says that target cannot perform.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -20196,7 +20196,7 @@
       ]
     },
     {
-  "id": "rr:target.3.7",
+      "id": "rr:target.3.7",
       "fingerprint": "sha256:e39829d2b7a0e7fdad34e69982dd838086aceb51cb38cb245e09bd97b6e12cd7",
       "obligations": [
         {
@@ -20205,13 +20205,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/card-actions.feature::An each-enemy effect skips an enemy that cannot take damage"
-      ],
-      "mutation": "Treat Madame Hydra as a valid damage-only target while she cannot take damage; Ground Stomp incorrectly affects her."
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::An each-enemy effect skips an enemy that cannot take damage"
+          ],
+          "mutation": "Treat Madame Hydra as a valid damage-only target while she cannot take damage; Ground Stomp incorrectly affects her."
         }
       ]
     },
@@ -20256,7 +20256,7 @@
       ]
     },
     {
-  "id": "rr:target.4",
+      "id": "rr:target.4",
       "fingerprint": "sha256:699742782e0b178eef8741a4443f983f82c07305b4773aeab0b148e044104641",
       "obligations": [
         {
@@ -20265,18 +20265,18 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/card-actions.feature::An each-enemy effect skips an enemy that cannot take damage"
-      ],
-      "mutation": "Reject Ground Stomp because one member of its each-enemy set is invalid; Rhino never receives the observed damage."
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::An each-enemy effect skips an enemy that cannot take damage"
+          ],
+          "mutation": "Reject Ground Stomp because one member of its each-enemy set is invalid; Rhino never receives the observed damage."
         }
       ]
     },
     {
-  "id": "rr:target.4.1",
+      "id": "rr:target.4.1",
       "fingerprint": "sha256:b0cc1d5cf04859c460c7d875f59de9b62a4611d539435ee6aa9de62f12c8f397",
       "obligations": [
         {
@@ -20285,13 +20285,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/card-actions.feature::An each-enemy effect skips an enemy that cannot take damage"
-      ],
-      "mutation": "Resolve Ground Stomp against invalid members of its target set; Madame Hydra incorrectly receives one damage."
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::An each-enemy effect skips an enemy that cannot take damage"
+          ],
+          "mutation": "Resolve Ground Stomp against invalid members of its target set; Madame Hydra incorrectly receives one damage."
         }
       ]
     },
@@ -20314,7 +20314,7 @@
       ]
     },
     {
-  "id": "rr:target.5",
+      "id": "rr:target.5",
       "fingerprint": "sha256:57932a6140f9a604852607b8db739c1a7448885daf6ebf3c9c6b15310f14f70f",
       "obligations": [
         {
@@ -20323,13 +20323,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/card-actions.feature::A future-target discount initiates before there is a card to play"
-      ],
-      "mutation": "Require Helicarrier's future next-card target to exist at initiation; its Action is unavailable while the player's hand is empty."
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::A future-target discount initiates before there is a card to play"
+          ],
+          "mutation": "Require Helicarrier's future next-card target to exist at initiation; its Action is unavailable while the player's hand is empty."
         }
       ]
     },
@@ -20534,16 +20534,16 @@
       ]
     },
     {
-  "id": "rr:text-box.1.1",
+      "id": "rr:text-box.1.1",
       "fingerprint": "sha256:4fa094b4c69cf8b5a18047f9ea649c852eef687a5fe2d5f0d698a226f8a88d6a",
       "obligations": [
         {
           "key": "published-result",
           "summary": "Icons printed within a card’s text box are considered abilities within that text box.",
-      "disposition": "outside-core",
-      "reason": "No supported Core effect blanks or otherwise operates on a text box containing a printed icon, so treating that icon as an ability has no distinguishable Core result.",
-      "target": null,
-      "implementation": null,
+          "disposition": "outside-core",
+          "reason": "No supported Core effect blanks or otherwise operates on a text box containing a printed icon, so treating that icon as an ability has no distinguishable Core result.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -20606,7 +20606,7 @@
       ]
     },
     {
-  "id": "rr:then",
+      "id": "rr:then",
       "fingerprint": "sha256:6f7c15bf0dcb41c201a0ce9a4dced29aca34c1371fb34ad824485b1fc9aa67b2",
       "obligations": [
         {
@@ -20615,18 +20615,18 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/card-actions.feature::A fully resolved pre-then thwart attempts the Aerial follow-up"
-      ],
-      "mutation": "Ignore the dependency expressed by then; the paired full and partial transcripts no longer diverge at the second scheme."
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::A fully resolved pre-then thwart attempts the Aerial follow-up"
+          ],
+          "mutation": "Ignore the dependency expressed by then; the paired full and partial transcripts no longer diverge at the second scheme."
         }
       ]
     },
     {
-  "id": "rr:then.1",
+      "id": "rr:then.1",
       "fingerprint": "sha256:58d76875c7ce611a852aaa1dadb30dad602eece3cda35043c77f9504520b79de",
       "obligations": [
         {
@@ -20635,18 +20635,18 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/card-actions.feature::A fully resolved pre-then thwart attempts the Aerial follow-up"
-      ],
-      "mutation": "Skip Crisis Interdiction's post-then effect after its first removal fully resolves; the side scheme retains two threat."
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::A fully resolved pre-then thwart attempts the Aerial follow-up"
+          ],
+          "mutation": "Skip Crisis Interdiction's post-then effect after its first removal fully resolves; the side scheme retains two threat."
         }
       ]
     },
     {
-  "id": "rr:then.2",
+      "id": "rr:then.2",
       "fingerprint": "sha256:737328f0e1f999c7c7a095d2d6e601a318cd58f05223825c9663d8bbf51bea85",
       "obligations": [
         {
@@ -20655,13 +20655,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/card-actions.feature::A partially resolved pre-then thwart skips the Aerial follow-up"
-      ],
-      "mutation": "Attempt Crisis Interdiction's post-then effect after removing only one of the required two threat; the side scheme incorrectly loses two threat."
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::A partially resolved pre-then thwart skips the Aerial follow-up"
+          ],
+          "mutation": "Attempt Crisis Interdiction's post-then effect after removing only one of the required two threat; the side scheme incorrectly loses two threat."
         }
       ]
     },
@@ -20799,7 +20799,7 @@
       ]
     },
     {
-  "id": "rr:thwart.2",
+      "id": "rr:thwart.2",
       "fingerprint": "sha256:cc6633b0ce2540f0934129c3838a740ca8b484c69eafe96b1ffd616a511fe5ad",
       "obligations": [
         {
@@ -20808,13 +20808,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/card-actions.feature::Legal Practice scales to an intermediate three-card cost"
-      ],
-      "mutation": "Do not treat Legal Practice's labeled action as a thwart of the selected scheme; its threat remains at six."
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Legal Practice scales to an intermediate three-card cost"
+          ],
+          "mutation": "Do not treat Legal Practice's labeled action as a thwart of the selected scheme; its threat remains at six."
         }
       ]
     },
@@ -21343,15 +21343,15 @@
       ]
     },
     {
-  "id": "rr:unique-icon.1",
+      "id": "rr:unique-icon.1",
       "fingerprint": "sha256:ffa10735e4c16d92eeaeadc125f0221af9556baa8818b196fe890fadc424a245",
       "obligations": [
         {
           "key": "published-result",
           "summary": "Two unique cards are considered to “match” if any of the following apply:",
-      "disposition": "no-independent-behavior",
-      "reason": "This record introduces the matching tests; the supported Core title and identity-form distinctions are carried by its individual child clauses.",
-      "target": null,
+          "disposition": "no-independent-behavior",
+          "reason": "This record introduces the matching tests; the supported Core title and identity-form distinctions are carried by its individual child clauses.",
+          "target": null,
           "implementation": null,
           "work_item": null,
           "exception": null,
@@ -21361,16 +21361,16 @@
       ]
     },
     {
-  "id": "rr:unique-icon.1.1",
+      "id": "rr:unique-icon.1.1",
       "fingerprint": "sha256:8f15b082438a1756db71f573a42a6810002b8ee448e9e04c3a37aefa41087df7",
       "obligations": [
         {
           "key": "published-result",
           "summary": "The two cards share a title, and both have no subtitle and no alter-ego title.",
-      "disposition": "outside-core",
-      "reason": "The Core component pool contains no two unique player cards that share a title while both lack a subtitle and alter-ego title.",
-      "target": null,
-      "implementation": null,
+          "disposition": "outside-core",
+          "reason": "The Core component pool contains no two unique player cards that share a title while both lack a subtitle and alter-ego title.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -21469,15 +21469,15 @@
       ]
     },
     {
-  "id": "rr:unique-icon.4",
+      "id": "rr:unique-icon.4",
       "fingerprint": "sha256:def4f8c2e43015b3a11a0c471a0b3ff36b229a887951bc0eba89fc0f6fd17731",
       "obligations": [
         {
           "key": "published-result",
           "summary": "A non-villain card in an out-of-play state that matches a card in play cannot enter play.",
-      "disposition": "outside-core",
-      "reason": "The supported Core component pool cannot produce a second matching unique non-villain card in an out-of-play area while the first is in play.",
-      "target": null,
+          "disposition": "outside-core",
+          "reason": "The supported Core component pool cannot produce a second matching unique non-villain card in an out-of-play area while the first is in play.",
+          "target": null,
           "implementation": null,
           "work_item": null,
           "exception": null,
@@ -21487,16 +21487,16 @@
       ]
     },
     {
-  "id": "rr:unique-icon.4.1",
+      "id": "rr:unique-icon.4.1",
       "fingerprint": "sha256:22b1b4fd461d1c6c0428d52eff9c4842aca9b5c275e353235aef42fff4327a1b",
       "obligations": [
         {
           "key": "published-result",
           "summary": "A player card, it cannot be played or put into play.",
-      "disposition": "outside-core",
-      "reason": "The Core component pool contains only one physical copy of every unique player-card title, so a second matching unique player card cannot legally be played or put into play.",
-      "target": null,
-      "implementation": null,
+          "disposition": "outside-core",
+          "reason": "The Core component pool contains only one physical copy of every unique player-card title, so a second matching unique player card cannot legally be played or put into play.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -21505,16 +21505,16 @@
       ]
     },
     {
-  "id": "rr:unique-icon.4.2",
+      "id": "rr:unique-icon.4.2",
       "fingerprint": "sha256:e6ecdb963cc41d622772ac65a648d9fc78eaa8280212f3af6209e261c8f9cac5",
       "obligations": [
         {
           "key": "published-result",
           "summary": "A non-villain encounter card, it is discarded and any effects of it entering play are ignored.",
-      "disposition": "outside-core",
-      "reason": "Supported Core encounter compositions contain no second copy of a unique non-villain encounter title that can enter while the first is in play.",
-      "target": null,
-      "implementation": null,
+          "disposition": "outside-core",
+          "reason": "Supported Core encounter compositions contain no second copy of a unique non-villain encounter title that can enter while the first is in play.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -21617,7 +21617,7 @@
       ]
     },
     {
-  "id": "rr:upgrade.4",
+      "id": "rr:upgrade.4",
       "fingerprint": "sha256:aa5c0009102f8e2389e150c2ce308ede4430584b5b54a8588272118754139042",
       "obligations": [
         {
@@ -21626,13 +21626,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/card-actions.feature::A Hero Action becomes available only in hero form"
-      ],
-      "mutation": "Do not treat Focused Rage attached to the identity as its extension; the Hero Action's form restriction is not applied through the upgrade."
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::A Hero Action becomes available only in hero form"
+          ],
+          "mutation": "Do not treat Focused Rage attached to the identity as its extension; the Hero Action's form restriction is not applied through the upgrade."
         }
       ]
     },
@@ -21895,16 +21895,16 @@
       ]
     },
     {
-  "id": "rr:villain-defeat.1",
+      "id": "rr:villain-defeat.1",
       "fingerprint": "sha256:8fed202603129d878d7b5cd7bf168682ce223f5321287cb6457894925f1faa68",
       "obligations": [
         {
           "key": "published-result",
           "summary": "The revealing of a villain cannot be canceled.",
-      "disposition": "outside-core",
-      "reason": "No supported Core cancellation ability can target the revealing of a villain stage.",
-      "target": null,
-      "implementation": null,
+          "disposition": "outside-core",
+          "reason": "No supported Core cancellation ability can target the revealing of a villain stage.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -22241,15 +22241,15 @@
       ]
     },
     {
-  "id": "rr:villain-phase.step.6",
+      "id": "rr:villain-phase.step.6",
       "fingerprint": "sha256:a2953809c5468230ffcfeb8cdcc165c9404f6c364b5b820dfa881e28a587cf41",
       "obligations": [
         {
           "key": "published-result",
           "summary": "End of Villain Phase and Round.",
-      "disposition": "no-independent-behavior",
-      "reason": "This record is the heading for the two end-of-phase child clauses and states no separate game-state result.",
-      "target": null,
+          "disposition": "no-independent-behavior",
+          "reason": "This record is the heading for the two end-of-phase child clauses and states no separate game-state result.",
+          "target": null,
           "implementation": null,
           "work_item": null,
           "exception": null,
@@ -22259,16 +22259,16 @@
       ]
     },
     {
-  "id": "rr:villain-phase.step.6.a",
+      "id": "rr:villain-phase.step.6.a",
       "fingerprint": "sha256:cdebb9f4891d2b9090504e473e3dc098ef6fad9c394d76ecf09eef625a02a1f4",
       "obligations": [
         {
           "key": "published-result",
           "summary": "Any effects that last “until the end of the [villain] phase” or “until the end of the round” end.",
-      "disposition": "outside-core",
-      "reason": "No supported Core card creates an effect lasting until the end of the villain phase or the end of the round.",
-      "target": null,
-      "implementation": null,
+          "disposition": "outside-core",
+          "reason": "No supported Core card creates an effect lasting until the end of the villain phase or the end of the round.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -22277,16 +22277,16 @@
       ]
     },
     {
-  "id": "rr:villain-phase.step.6.b",
+      "id": "rr:villain-phase.step.6.b",
       "fingerprint": "sha256:99808e2e3d429b2c7363e788d8bf566c7c4fc5eba05c51bab8014d58f549f549",
       "obligations": [
         {
           "key": "published-result",
           "summary": "Resolve any “when/after the [villain] phase ends” or “when/after the round ends” effects.",
-      "disposition": "outside-core",
-      "reason": "No supported Core card has a when-or-after-the-villain-phase-ends or when-or-after-the-round-ends ability.",
-      "target": null,
-      "implementation": null,
+          "disposition": "outside-core",
+          "reason": "No supported Core card has a when-or-after-the-villain-phase-ends or when-or-after-the-round-ends ability.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -22555,15 +22555,15 @@
       ]
     },
     {
-  "id": "rr:when-completed-abilities",
+      "id": "rr:when-completed-abilities",
       "fingerprint": "sha256:65e6d9d368e78f5255dbdf23b06ed9916f7fd466db17dd754a756b71b4c5ba11",
       "obligations": [
         {
           "key": "published-result",
           "summary": "A when completed ability is a type of triggered ability, indicated by the bold “When Completed” timing trigger.",
-      "disposition": "outside-core",
-      "reason": "No supported Core scheme has a When Completed ability, so this trigger type cannot be reached.",
-      "target": null,
+          "disposition": "outside-core",
+          "reason": "No supported Core scheme has a When Completed ability, so this trigger type cannot be reached.",
+          "target": null,
           "implementation": null,
           "work_item": null,
           "exception": null,
@@ -22573,16 +22573,16 @@
       ]
     },
     {
-  "id": "rr:when-completed-abilities.1",
+      "id": "rr:when-completed-abilities.1",
       "fingerprint": "sha256:9014504b7a25044e1fff3bd3b245971e5b16e6261c9c6cf7f922f9a01fc4d327",
       "obligations": [
         {
           "key": "published-result",
           "summary": "The “When Completed” timing trigger is equivalent to the following trigger: “Forced Interrupt: When this scheme is completed...”",
-      "disposition": "outside-core",
-      "reason": "No supported Core scheme has a When Completed ability, so its equivalence to a forced interrupt cannot be exercised.",
-      "target": null,
-      "implementation": null,
+          "disposition": "outside-core",
+          "reason": "No supported Core scheme has a When Completed ability, so its equivalence to a forced interrupt cannot be exercised.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -22949,7 +22949,7 @@
       ]
     },
     {
-  "id": "rr:you-your",
+      "id": "rr:you-your",
       "fingerprint": "sha256:07d57a9cf9f4c5966d7bb0d754b480fef7eb9625c9bc7b95a6728e162785244d",
       "obligations": [
         {
@@ -22958,18 +22958,18 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/villain-phase.feature::Backflip prevents all imminent attack damage without exhausting"
-      ],
-      "mutation": "Resolve Backflip's you as something other than its player's identity; Spider-Man takes the attack damage."
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Backflip prevents all imminent attack damage without exhausting"
+          ],
+          "mutation": "Resolve Backflip's you as something other than its player's identity; Spider-Man takes the attack damage."
         }
       ]
     },
     {
-  "id": "rr:you-your.1",
+      "id": "rr:you-your.1",
       "fingerprint": "sha256:7377d09e171d4d7dc17547d6cb2e98f0813ff73db78c6677bbd6deaa8f79c432",
       "obligations": [
         {
@@ -22978,13 +22978,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/villain-phase.feature::Counter-Punch damages the attacker after a basic defense ends"
-      ],
-      "mutation": "Resolve Counter-Punch's repeated your-hero references against different identities; its trigger and ATK value no longer produce the observed damage."
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Counter-Punch damages the attacker after a basic defense ends"
+          ],
+          "mutation": "Resolve Counter-Punch's repeated your-hero references against different identities; its trigger and ATK value no longer produce the observed damage."
         }
       ]
     },
@@ -23047,16 +23047,16 @@
       ]
     },
     {
-  "id": "rr:you-your.13",
+      "id": "rr:you-your.13",
       "fingerprint": "sha256:14a7553081da2ffba59c8d77720137bba29538ab98ba4e6d9d84fa55f0c7b0be",
       "obligations": [
         {
           "key": "published-result",
           "summary": "Resources — Attacks, thwarts, defenses, and triggered abilities that resolve from a player spending a resource card are also considered to be performed by that player’s identity.",
-      "disposition": "outside-core",
-      "reason": "No supported Core resource card resolves an attack, thwart, defense, or triggered ability whose attribution to the spending identity produces an observable result.",
-      "target": null,
-      "implementation": null,
+          "disposition": "outside-core",
+          "reason": "No supported Core resource card resolves an attack, thwart, defense, or triggered ability whose attribution to the spending identity produces an observable result.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -23065,7 +23065,7 @@
       ]
     },
     {
-  "id": "rr:you-your.14",
+      "id": "rr:you-your.14",
       "fingerprint": "sha256:e3e05020ff4ee29243e4dc39829f46bdfce79eb35b37cb85f416cd01f8d6c2dc",
       "obligations": [
         {
@@ -23074,13 +23074,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/card-actions.feature::A Hero Action becomes available only in hero form"
-      ],
-      "mutation": "Do not treat Focused Rage as an extension of its controlling identity; its Hero Action ignores that identity's current form."
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::A Hero Action becomes available only in hero form"
+          ],
+          "mutation": "Do not treat Focused Rage as an extension of its controlling identity; its Hero Action ignores that identity's current form."
         }
       ]
     },
@@ -23105,16 +23105,16 @@
       ]
     },
     {
-  "id": "rr:you-your.16",
+      "id": "rr:you-your.16",
       "fingerprint": "sha256:7b2dec7dca55d8cdaf8f8b4fce9e17053f7a44c564f1b34009bd4bcf82e01189",
       "obligations": [
         {
           "key": "published-result",
           "summary": "Encounter cards — Triggered abilities that resolve from encounter cards are not considered to be performed by that player’s identity, whether those abilities are optional or forced.",
-      "disposition": "outside-core",
-      "reason": "No supported Core effect observes whether a triggered ability resolving from an encounter card was performed by the resolving player's identity.",
-      "target": null,
-      "implementation": null,
+          "disposition": "outside-core",
+          "reason": "No supported Core effect observes whether a triggered ability resolving from an encounter card was performed by the resolving player's identity.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -23181,16 +23181,16 @@
       ]
     },
     {
-  "id": "rr:you-your.3",
+      "id": "rr:you-your.3",
       "fingerprint": "sha256:03b0546a658aa430987de2375c40d7a4c9c551b20142a311cd8b81c0f1de5cba",
       "obligations": [
         {
           "key": "published-result",
           "summary": "If a card ability deals indirect damage to “you,” or “you” take indirect damage, the player resolving that damage can assign that damage to characters in play under their control.",
-      "disposition": "outside-core",
-      "reason": "No supported Core card deals indirect damage to you or instructs you to take indirect damage.",
-      "target": null,
-      "implementation": null,
+          "disposition": "outside-core",
+          "reason": "No supported Core card deals indirect damage to you or instructs you to take indirect damage.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -23239,7 +23239,7 @@
       ]
     },
     {
-  "id": "rr:you-your.6",
+      "id": "rr:you-your.6",
       "fingerprint": "sha256:6f878e2de7aeceb95c3c24fbe4e1e0c4e4dbcd93a05b1571ebb26d21f30bb558",
       "obligations": [
         {
@@ -23248,18 +23248,18 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/when-defeated.feature::A response observes the enemy defeated by the completed attack"
-      ],
-      "mutation": "Do not resolve Chase Them Down's after-your-hero-attacks condition as the identity's attack; the response cannot remove threat."
+          "scenarios": [
+            "specs/behavior/core/when-defeated.feature::A response observes the enemy defeated by the completed attack"
+          ],
+          "mutation": "Do not resolve Chase Them Down's after-your-hero-attacks condition as the identity's attack; the response cannot remove threat."
         }
       ]
     },
     {
-  "id": "rr:you-your.7",
+      "id": "rr:you-your.7",
       "fingerprint": "sha256:6c5f7f5181beac9aa750688f07533f5e53b937a6d0c69778cb8773e8891667d4",
       "obligations": [
         {
@@ -23268,18 +23268,18 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/villain-phase.feature::Spider-Sense follows the attacked player when an ally defends"
-      ],
-      "mutation": "Resolve attack-you against the defending ally rather than its attacked player; Spider-Sense fails to draw for seat 1."
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Spider-Sense follows the attacked player when an ally defends"
+          ],
+          "mutation": "Resolve attack-you against the defending ally rather than its attacked player; Spider-Sense fails to draw for seat 1."
         }
       ]
     },
     {
-  "id": "rr:you-your.8",
+      "id": "rr:you-your.8",
       "fingerprint": "sha256:a35170092487575d829071e285d10e253a579b49a0ae18ffb8f13d5cd9a17457",
       "obligations": [
         {
@@ -23288,13 +23288,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/card-actions.feature::Legal Practice scales to an intermediate three-card cost"
-      ],
-      "mutation": "Discard Legal Practice's chosen cards from a hand other than the resolving player's; seat 1's three named cards remain in hand."
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Legal Practice scales to an intermediate three-card cost"
+          ],
+          "mutation": "Discard Legal Practice's chosen cards from a hand other than the resolving player's; seat 1's three named cards remain in hand."
         }
       ]
     },
@@ -25268,19 +25268,19 @@
           ],
           "mutation": "Change or omit this printed field in CardCatalog; the generated face-table assertion fails."
         },
-    {
-      "key": "remove-2-threat-from-scheme",
-      "summary": "Hero Action (thwart): Remove 2 threat from a scheme.",
-      "disposition": "executable",
-      "reason": null,
-      "target": null,
-      "implementation": "supported",
-      "work_item": null,
-      "exception": null,
-      "scenarios": [
-        "specs/behavior/core/card-actions.feature::A fully resolved pre-then thwart attempts the Aerial follow-up"
-      ],
-      "mutation": "Skip or alter Crisis Interdiction's first two-threat removal; the main-scheme threat assertion fails."
+        {
+          "key": "remove-2-threat-from-scheme",
+          "summary": "Hero Action (thwart): Remove 2 threat from a scheme.",
+          "disposition": "executable",
+          "reason": null,
+          "target": null,
+          "implementation": "supported",
+          "work_item": null,
+          "exception": null,
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::A fully resolved pre-then thwart attempts the Aerial follow-up"
+          ],
+          "mutation": "Skip or alter Crisis Interdiction's first two-threat removal; the main-scheme threat assertion fails."
         },
         {
           "key": "then-if-you-have-aerial-trait-remove-condition-met",
@@ -25288,13 +25288,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/card-actions.feature::A fully resolved pre-then thwart attempts the Aerial follow-up"
-      ],
-      "mutation": "Skip the conditional second removal while Captain Marvel has Aerial; the side-scheme threat assertion fails."
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::A fully resolved pre-then thwart attempts the Aerial follow-up"
+          ],
+          "mutation": "Skip the conditional second removal while Captain Marvel has Aerial; the side-scheme threat assertion fails."
         },
         {
           "key": "then-if-you-have-aerial-trait-remove-condition-not-met",
@@ -25302,13 +25302,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-      "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-      "scenarios": [
-        "specs/behavior/core/card-actions.feature::Crisis Interdiction has no second thwart without Aerial"
-      ],
-      "mutation": "Apply the conditional second removal while Captain Marvel lacks Aerial; the unchanged side-scheme threat assertion fails."
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Crisis Interdiction has no second thwart without Aerial"
+          ],
+          "mutation": "Apply the conditional second removal while Captain Marvel lacks Aerial; the unchanged side-scheme threat assertion fails."
         }
       ]
     },
@@ -44732,11 +44732,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Affairs of State can exhaust T'Challa and leave the game"
+          ],
+          "mutation": "Keep Affairs of State with the revealing player instead of giving it to T'Challa's player; the play-area assertion fails."
         },
         {
           "key": "you-may-flip-alter-ego-form-accepted",
@@ -44744,11 +44746,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Affairs of State can exhaust T'Challa and leave the game"
+          ],
+          "mutation": "Ignore the accepted optional form change; the alter-ego assertion fails."
         },
         {
           "key": "you-may-flip-alter-ego-form-declined",
@@ -44756,11 +44760,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Affairs of State can discard a controlled Black Panther upgrade"
+          ],
+          "mutation": "Apply the declined optional form change; the hero-form assertion fails."
         },
         {
           "key": "printed-effect-01",
@@ -44768,11 +44774,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Affairs of State can exhaust T'Challa and leave the game"
+          ],
+          "mutation": "Remove the printed choice or prevent selection of its first branch; the second encounter-card decision cannot be completed."
         },
         {
           "key": "exhaust-t-challa-remove-affairs-state-from",
@@ -44780,11 +44788,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Affairs of State can exhaust T'Challa and leave the game"
+          ],
+          "mutation": "Skip either exhausting T'Challa or removing Affairs of State; one of the final assertions fails."
         },
         {
           "key": "choose-and-discard-black-panther-upgrade-you",
@@ -44792,11 +44802,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Affairs of State can discard a controlled Black Panther upgrade"
+          ],
+          "mutation": "Do not offer or discard the selected controlled Black Panther upgrade; the selection or discard assertion fails."
         },
         {
           "key": "discard-obligation",
@@ -44804,11 +44816,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Affairs of State can discard a controlled Black Panther upgrade"
+          ],
+          "mutation": "Do not discard Affairs of State after its second branch; the encounter-discard assertion fails."
         }
       ]
     },
@@ -45982,11 +45996,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Eviction Notice can exhaust Peter Parker and leave the game"
+          ],
+          "mutation": "Keep Eviction Notice with the revealing player instead of giving it to Peter Parker's player; the play-area assertion fails."
         },
         {
           "key": "you-may-flip-alter-ego-form-accepted",
@@ -45994,11 +46010,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Eviction Notice can exhaust Peter Parker and leave the game"
+          ],
+          "mutation": "Ignore the accepted optional form change; the alter-ego assertion fails."
         },
         {
           "key": "you-may-flip-alter-ego-form-declined",
@@ -46006,11 +46024,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Eviction Notice discards from hand and gains surge"
+          ],
+          "mutation": "Apply the declined optional form change; the hero-form assertion fails."
         },
         {
           "key": "printed-effect-01",
@@ -46018,11 +46038,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Eviction Notice can exhaust Peter Parker and leave the game"
+          ],
+          "mutation": "Remove the printed choice or prevent selection of its first branch; the second encounter-card decision cannot be completed."
         },
         {
           "key": "exhaust-peter-parker-remove-eviction-notice-from",
@@ -46030,11 +46052,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Eviction Notice can exhaust Peter Parker and leave the game"
+          ],
+          "mutation": "Skip either exhausting Peter Parker or removing Eviction Notice; one of the final assertions fails."
         },
         {
           "key": "discard-1-card-at-random-from-your",
@@ -46042,11 +46066,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Eviction Notice discards from hand and gains surge"
+          ],
+          "mutation": "Skip the one possible random discard; the hand-card discard assertion fails."
         },
         {
           "key": "card-gains-surge",
@@ -46054,11 +46080,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Eviction Notice discards from hand and gains surge"
+          ],
+          "mutation": "Do not grant surge; the next encounter card is not dealt facedown."
         },
         {
           "key": "discard-obligation",
@@ -46066,11 +46094,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Eviction Notice discards from hand and gains surge"
+          ],
+          "mutation": "Do not discard Eviction Notice after its second branch; the encounter-discard assertion fails."
         }
       ]
     },
@@ -46674,11 +46704,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Business Problems can exhaust Tony Stark and leave the game"
+          ],
+          "mutation": "Keep Business Problems with the revealing player instead of giving it to Tony Stark's player; the play-area assertion fails."
         },
         {
           "key": "you-may-flip-alter-ego-form-accepted",
@@ -46686,11 +46718,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Business Problems can exhaust Tony Stark and leave the game"
+          ],
+          "mutation": "Ignore the accepted optional form change; the alter-ego assertion fails."
         },
         {
           "key": "you-may-flip-alter-ego-form-declined",
@@ -46698,11 +46732,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Business Problems exhausts every controlled upgrade"
+          ],
+          "mutation": "Apply the declined optional form change; the hero-form assertion fails."
         },
         {
           "key": "printed-effect-01",
@@ -46710,11 +46746,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Business Problems can exhaust Tony Stark and leave the game"
+          ],
+          "mutation": "Remove the printed choice or prevent selection of its first branch; the second encounter-card decision cannot be completed."
         },
         {
           "key": "exhaust-tony-stark-remove-business-problems-from",
@@ -46722,11 +46760,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Business Problems can exhaust Tony Stark and leave the game"
+          ],
+          "mutation": "Skip either exhausting Tony Stark or removing Business Problems; one of the final assertions fails."
         },
         {
           "key": "exhaust-each-upgrade-you-control",
@@ -46734,11 +46774,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Business Problems exhausts every controlled upgrade"
+          ],
+          "mutation": "Leave either controlled upgrade ready; its exhausted assertion fails."
         },
         {
           "key": "discard-obligation",
@@ -46746,11 +46788,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Business Problems exhausts every controlled upgrade"
+          ],
+          "mutation": "Do not discard Business Problems after its second branch; the encounter-discard assertion fails."
         }
       ]
     },
@@ -47334,11 +47378,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Family Emergency can exhaust Carol Danvers and leave the game"
+          ],
+          "mutation": "Keep Family Emergency with the revealing player instead of giving it to Carol Danvers's player; the play-area assertion fails."
         },
         {
           "key": "you-may-flip-alter-ego-form-accepted",
@@ -47346,11 +47392,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Family Emergency can exhaust Carol Danvers and leave the game"
+          ],
+          "mutation": "Ignore the accepted optional form change; the alter-ego assertion fails."
         },
         {
           "key": "you-may-flip-alter-ego-form-declined",
@@ -47358,11 +47406,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Family Emergency stuns Carol Danvers and gains surge"
+          ],
+          "mutation": "Apply the declined optional form change; the hero-form assertion fails."
         },
         {
           "key": "printed-effect-01",
@@ -47370,11 +47420,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Family Emergency can exhaust Carol Danvers and leave the game"
+          ],
+          "mutation": "Remove the printed choice or prevent selection of its first branch; the second encounter-card decision cannot be completed."
         },
         {
           "key": "exhaust-carol-danvers-remove-family-emergency-from",
@@ -47382,11 +47434,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Family Emergency can exhaust Carol Danvers and leave the game"
+          ],
+          "mutation": "Skip either exhausting Carol Danvers or removing Family Emergency; one of the final assertions fails."
         },
         {
           "key": "you-are-stunned",
@@ -47394,11 +47448,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Family Emergency stuns Carol Danvers and gains surge"
+          ],
+          "mutation": "Do not stun Carol Danvers; the status-card assertion fails."
         },
         {
           "key": "card-gains-surge",
@@ -47406,11 +47462,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Family Emergency stuns Carol Danvers and gains surge"
+          ],
+          "mutation": "Do not grant surge; the next encounter card is not dealt facedown."
         },
         {
           "key": "discard-obligation",
@@ -47418,11 +47476,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Family Emergency stuns Carol Danvers and gains surge"
+          ],
+          "mutation": "Do not discard Family Emergency after its second branch; the encounter-discard assertion fails."
         }
       ]
     },
