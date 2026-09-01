@@ -31484,11 +31484,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Hellcat returns herself to her controller's hand"
+          ],
+          "mutation": "Leave Hellcat in play or move her to another area; the hand-zone assertion fails."
         }
       ]
     },
@@ -33586,11 +33588,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Arc Reactor exhausts to ready Iron Man"
+          ],
+          "mutation": "Do not exhaust Arc Reactor or ready Iron Man; the corresponding readiness assertion fails."
         }
       ]
     },
@@ -33706,11 +33710,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Mark V Armor grants Iron Man six hit points"
+          ],
+          "mutation": "Omit or alter Mark V Armor's +6 hit-point modifier; undamaged Tony Stark does not have fifteen remaining hit points."
         }
       ]
     },
@@ -35348,11 +35354,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::The Golden City exhausts to draw two cards"
+          ],
+          "mutation": "Do not exhaust The Golden City or draw exactly two cards; its readiness or either hand assertion fails."
         }
       ]
     },
@@ -38889,11 +38897,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Get Ready readies its chosen ally"
+          ],
+          "mutation": "Leave the chosen Maria Hill exhausted; the ready assertion fails."
         }
       ]
     },
@@ -41219,11 +41229,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::First Aid heals two damage from its chosen character"
+          ],
+          "mutation": "Heal fewer than two damage or a different character; Peter Parker's damage assertion fails."
         }
       ]
     },
@@ -41749,11 +41761,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Avengers Mansion draws for the chosen player"
+          ],
+          "mutation": "Do not exhaust Avengers Mansion or omit the player choice; its readiness or offered-target assertion fails."
         },
         {
           "id": "behavior:card:01091:that-player-draws-1-card",
@@ -41761,11 +41775,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Avengers Mansion draws for the chosen player"
+          ],
+          "mutation": "Draw for the controller or draw no card; Black Cat does not enter Spider-Man's hand."
         }
       ]
     },

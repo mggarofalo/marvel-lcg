@@ -63,6 +63,40 @@ public sealed class CoreCardFaceTranscriptTests
     }
 
     [Fact]
+    public void PlayerCardAbilityBranchesHavePinnedOutcomes()
+    {
+        var results = Corpus.Value
+            .Where(candidate => candidate.Scenario.StartsWith(
+                "specs/behavior/core/player-card-abilities.feature::",
+                StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
+
+        Assert.Equal(7, results.Count);
+        Assert.Equal(
+            "b17f9fbb3d730047490cb61c0f065daa8c730d29ac2d28f50c7681c2882c1ad3",
+            results["behavior:card:01035:exhaust-arc-reactor-ready-iron-man"].Digest);
+        Assert.Equal(
+            "352a3f743b5fd56afd7bbf73c950b94f48dadb56431412524de1cf368d477eb7",
+            results["behavior:card:01036:you-get-6-hit-points"].Digest);
+        Assert.Equal(
+            "baba20d06a4ae560afad0d5c873059ac2997644932c9bf9f4a0a5a62531dd5d0",
+            results["behavior:card:01045:exhaust-golden-city-draw-2-cards"].Digest);
+        Assert.Equal(
+            "e25f1313dc5ce5fbbebe4212c0750ffdc7fc55417330cbf05eaa0af0f1fa4930",
+            results["behavior:card:01069:ready-ally"].Digest);
+        Assert.Equal(
+            "5e753604530663b611d5028237c3dc51fd8e0584e09617ac78b835364a4aba1f",
+            results["behavior:card:01086:heal-2-damage-from-any-character"].Digest);
+        Assert.Equal(
+            "8ea0ffdad1bd63a5cb9a4baeda9d24867a335c3e0327ea7c8b8a72f90efd78b7",
+            results["behavior:card:01020:return-hellcat-your-hand"].Digest);
+        Assert.Equal(
+            "e6cf4f880e001bc03a7d5c05eca80611dfb536efe4f6c4d2aea885fdd757bd7f",
+            results[
+                "behavior:card:01091:exhaust-avengers-mansion-choose-player"].Digest);
+    }
+
+    [Fact]
     public void CardActionBranchesHavePinnedOutcomes()
     {
         var results = Corpus.Value
