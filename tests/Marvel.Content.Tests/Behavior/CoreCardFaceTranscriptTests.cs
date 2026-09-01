@@ -48,7 +48,7 @@ public sealed class CoreCardFaceTranscriptTests
 
         Assert.Equal(19, results.Count);
         Assert.Equal(
-            "560775a73450c5e08a03a8e7c97f7ca5e35754ab02a0d978febf300ff5d24298",
+            "5a3c519fb8e602123a5186bc67ab95ff553eb67080b527c327b8f3974ae6f2a4",
             results["behavior:card:01005:deal-8-damage-enemy"].Digest);
         Assert.Equal(
             "878187c1cdd7a76d1fbd35a131a6d21375e4ec2df509a0dea22e3c525bbcc73d",

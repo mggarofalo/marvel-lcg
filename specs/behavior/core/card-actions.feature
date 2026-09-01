@@ -15,19 +15,26 @@ Feature: Core card actions
   @covers:behavior:rr:initiating-abilities.step.7:published-result
   @covers:behavior:rr:play-put-into-play.2:published-result
   @covers:behavior:rr:player-turn.5:published-result
+  @covers:behavior:rr:labeled-ability.1:published-result
+  @covers:behavior:rr:labeled-ability.2:published-result
+  @covers:behavior:rr:you-your.12:published-result
   @card:01005 @rr:attack-player-ability-type.2 @rr:cost.3 @rr:event
   @rr:in-play-and-out-of-play.7
   @rr:initiating-abilities.step.1 @rr:initiating-abilities.step.3
   @rr:initiating-abilities.step.5 @rr:initiating-abilities.step.6
   @rr:initiating-abilities.step.7 @rr:play-put-into-play.2 @rr:player-turn.5
+  @rr:labeled-ability.1 @rr:labeled-ability.2 @rr:you-your.12
   Scenario: Swinging Web Kick pays, chooses an enemy, deals eight, and discards
     # "Hero Action (attack): Deal 8 damage to an enemy." An event is placed
     # faceup while it resolves, its resource cost is paid from hand, and after
     # the selected enemy takes eight damage the event enters its owner's pile.
+    # An attack-labeled event is performed by the player's identity, so Klaw's
+    # Retaliate damage is dealt to Spider-Man.
     Given a canonical Core scene is dealt
       | campaign | heroes     | seed |
-      | rhino    | spider_man | 709  |
+      | klaw     | spider_man | 709  |
     And seat 1 shows identity face 01001a
+    And card 01119 copy 0 is attached to card 01113 copy 0
     And seat 1's hand contains exactly these cards
       | card  | copy |
       | 01005 | 0    |
@@ -38,11 +45,12 @@ Feature: Core card actions
       | 01088 | 0    |
       | 01089 | 0    |
     Then card 01005 copy 0 is faceup in the resolving area
-    And card 01094 copy 0 is offered by the pending action
+    And card 01113 copy 0 is offered by the pending action
     And card 01088 copy 0 is in seat 1's discard pile
     And card 01089 copy 0 is in seat 1's discard pile
-    When seat 1 chooses card 01094 copy 0 for the pending action
-    Then card 01094 copy 0 has 8 damage
+    When seat 1 chooses card 01113 copy 0 for the pending action
+    Then card 01113 copy 0 has 8 damage
+    And card 01001a copy 0 has 1 damage
     And card 01005 copy 0 is faceup on top of seat 1's discard pile
 
   @behavior:rr:cancel.3:published-result
