@@ -525,6 +525,9 @@ internal sealed class CoreTranscriptRunner
         Bind("pending-order-count", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) is asked to order (?<count>\d+) cards? for the pending action",
             PendingOrderCount),
+        Bind("simultaneous-effect-choice-count", TranscriptStepKind.Then,
+            @"seat (?<seat>\d+) is asked to choose between (?<count>\d+) simultaneous effects",
+            SimultaneousEffectChoiceCount),
         Bind("pending-choice-count", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) is asked to choose (?<count>\d+) cards? for the pending action",
             PendingChoiceCount),
@@ -610,6 +613,8 @@ internal sealed class CoreTranscriptRunner
             "the players win the game", PlayersWin),
         Bind("seat-eliminated", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) is eliminated", SeatEliminated),
+        Bind("attack-ended", TranscriptStepKind.Then,
+            "the attack has ended", AttackEnded),
         Bind("player-play-area-removed", TranscriptStepKind.Then,
             @"seat (?<seat>\d+)'s play area is removed", PlayerPlayAreaRemoved),
         Bind("first-player", TranscriptStepKind.Then,
@@ -743,6 +748,9 @@ internal sealed class CoreTranscriptRunner
             PendingCardNotOffered),
         Bind("no-pending-opportunity", TranscriptStepKind.Then,
             "no opportunity is pending", NoPendingOpportunity),
+        Bind("combined-triggering-conditions", TranscriptStepKind.Then,
+            @"the pending occurrence combines (?<first>[A-Za-z_]+) and (?<second>[A-Za-z_]+)",
+            CombinedTriggeringConditions),
         Bind("card-action-availability", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+)'s action is (?<availability>available|unavailable)",
             CardActionAvailability),
@@ -2598,6 +2606,21 @@ internal sealed class CoreTranscriptRunner
         }
     }
 
+    private static void SimultaneousEffectChoiceCount(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        int count = Number(match, "count", step);
+        if (context.PendingPrompt is not { Asking: Question.Order } prompt
+            || prompt.Player != seat
+            || prompt.Affordances.Count != count)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: seat {seat + 1} was not asked to order {count} "
+                + "simultaneous effects");
+        }
+    }
+
     private static void PendingChoiceCount(
         TranscriptContext context, TranscriptStep step, Match match)
     {
@@ -3048,6 +3071,34 @@ internal sealed class CoreTranscriptRunner
         {
             throw new TranscriptAssertionException(
                 $"{step.Location}: expected seat {seat + 1} to be eliminated");
+        }
+    }
+
+    private static void AttackEnded(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        _ = match;
+        if (context.World.Attack is not null || context.World.Activation is not null)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected the attack and its activation to have ended");
+        }
+    }
+
+    private static void CombinedTriggeringConditions(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        var occurrence = context.World.Agenda.Occurrence
+            ?? throw new TranscriptAssertionException(
+                $"{step.Location}: expected a pending occurrence");
+        string first = match.Groups["first"].Value;
+        string second = match.Groups["second"].Value;
+        if (!occurrence.Conditions.Contains(first, StringComparer.Ordinal)
+            || !occurrence.Conditions.Contains(second, StringComparer.Ordinal))
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected one occurrence containing {first} and {second}; "
+                + $"was {string.Join(", ", occurrence.Conditions)}");
         }
     }
 

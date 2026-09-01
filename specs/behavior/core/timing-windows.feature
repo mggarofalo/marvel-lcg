@@ -83,7 +83,8 @@ Feature: Core interrupt and response windows
 
   @behavior:rr:response.2:published-result
   @covers:behavior:rr:response.2.1:published-result
-  @rr:response.2 @rr:response.2.1 @card:01052
+  @covers:behavior:rr:triggering-condition.2:published-result
+  @rr:response.2 @rr:response.2.1 @rr:triggering-condition.2 @card:01052
   Scenario: Two copies respond to the same hero attack
     # Multiple copies of a Response may each trigger from the same condition.
     # She-Hulk defeats Shocker once; each Chase Them Down resolves once and
@@ -99,6 +100,7 @@ Feature: Core interrupt and response windows
       | 01052 | 0    |
       | 01052 | 1    |
     When seat 1 begins their basic attack against card 01103 copy 0
+    Then the pending occurrence combines WhenDamageDealt and WhenCardDefeated
     Then card 01052 copy 0 is offered by the pending action
     And card 01052 copy 1 is offered by the pending action
     When seat 1 accepts card 01052 copy 0's pending opportunity

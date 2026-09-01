@@ -18657,11 +18657,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-elimination.feature::A foreign-owned upgrade returns to its surviving owner's discard pile"
+          ],
+          "mutation": "Discard the foreign-owned Inspired with the eliminated player's game elements instead of returning it to Captain Marvel's discard pile."
         }
       ]
     },
@@ -18703,11 +18705,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-elimination.feature::A revealed ability finishes after eliminating its resolving player"
+          ],
+          "mutation": "Stop Concussive Blast as soon as Captain Marvel is eliminated; Iron Man and War Machine take no damage."
         }
       ]
     },
@@ -18725,11 +18729,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-elimination.feature::A defeated identity is eliminated while the other player continues"
+          ],
+          "mutation": "Leave Rhino's attack or activation active after its attacked player is eliminated."
         }
       ]
     },
@@ -18819,11 +18825,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-elimination.feature::A foreign-owned upgrade returns to its surviving owner's discard pile"
+          ],
+          "mutation": "Remove Inspired with Spider-Man's play area without first applying the foreign-owner cleanup branch."
         }
       ]
     },
@@ -22854,11 +22862,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/simultaneous-resolution.feature::The first player orders Surge before a printed When Revealed effect"
+          ],
+          "mutation": "Resolve Exhaustion's printed effect before Surge without asking the first player to choose their simultaneous order."
         }
       ]
     },
@@ -25665,11 +25675,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/timing-windows.feature::Two copies respond to the same hero attack"
+          ],
+          "mutation": "Split one attack's damage and defeat into different occurrences; the pending response occurrence no longer contains both triggering conditions."
         }
       ]
     },

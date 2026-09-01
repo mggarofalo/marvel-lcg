@@ -566,13 +566,36 @@ public sealed class CoreRuleTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(2, results.Count);
+        Assert.Equal(4, results.Count);
         Assert.Equal(
             "6c82c1944e5b28e57e0ee86754575d4a25672c96571153d058d77d981623fe2e",
             results["behavior:rr:player-elimination:published-result"].Digest);
         Assert.Equal(
+            "23437f86566fa85a416e49f02c9349b56b82c11c49cd53400986e668f72a73da",
+            results["behavior:rr:player-elimination.3:published-result"].Digest);
+        Assert.Equal(
+            "1a0721e53753ef4ff3816f4aadeea4ceb699cad2b50993266a987e125b7a1e72",
+            results["behavior:rr:player-elimination.5:published-result"].Digest);
+        Assert.Equal(
             "c838d45bba9a3b039bc03b7084664ed0875d7d19ac9b5c8febff67f0a187569f",
             results["behavior:rr:player-elimination.4:published-result"].Digest);
+    }
+
+    [Fact]
+    public void SimultaneousResolutionHasAPinnedOutcome()
+    {
+        var result = Assert.Single(
+            Corpus.Value,
+            result => result.Scenario.StartsWith(
+                "specs/behavior/core/simultaneous-resolution.feature::",
+                StringComparison.Ordinal));
+
+        Assert.Equal(
+            "behavior:rr:simultaneous-resolution:published-result",
+            result.Obligation);
+        Assert.Equal(
+            "2bc61be26297584875119a424ebd448aeee32bc871cead2a7f38544d2fb6dc26",
+            result.Digest);
     }
 
     [Fact]

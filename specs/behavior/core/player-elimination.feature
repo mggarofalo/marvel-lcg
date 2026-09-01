@@ -10,11 +10,13 @@ Feature: Identity defeat and player elimination
   @covers:behavior:rr:player-elimination.step.2:published-result
   @covers:behavior:rr:player-elimination.step.4:published-result
   @covers:behavior:rr:player-elimination.step.5:published-result
+  @covers:behavior:rr:player-elimination.5.1:published-result
   @covers:behavior:rr:player-elimination.6:published-result
   @covers:behavior:rr:player-s-play-area.6:published-result
   @covers:behavior:rr:per-player-icon:published-result
   @covers:behavior:rr:per-player-icon.1:published-result
   @rr:player-elimination @rr:defeat.2 @rr:hit-points.2.1
+  @rr:player-elimination.5.1
   @rr:player-elimination.step.1 @rr:player-elimination.step.2
   @rr:player-elimination.step.4 @rr:player-elimination.step.5
   @rr:player-elimination.6 @rr:player-s-play-area.6
@@ -47,6 +49,47 @@ Feature: Identity defeat and player elimination
     And card 01006 copy 0 had a Discard event before an Eliminate event
     And the player order is 2
     And the per-player count is 2
+    And the attack has ended
+    And the game is unfinished
+
+  @behavior:rr:player-elimination.3:published-result
+  @covers:behavior:rr:player-elimination.step.3:published-result
+  @rr:player-elimination.3 @rr:player-elimination.step.3
+  @card:01002 @card:01074
+  Scenario: A foreign-owned upgrade returns to its surviving owner's discard pile
+    # For each card in the eliminated player's play area not owned by that
+    # player, "place each other card in its owner's discard pile." Captain
+    # Marvel owns Inspired while Spider-Man controls it with Black Cat.
+    Given a canonical Core scene is dealt
+      | campaign | heroes                    | seed |
+      | rhino    | captain_marvel,spider_man | 840  |
+    And card 01002 copy 0 is an ally controlled by seat 2
+    And card 01074 copy 0 is attached to card 01002 copy 0
+    When seat 2's identity is defeated
+    Then seat 2 is eliminated
+    And card 01074 copy 0 is faceup on top of seat 1's discard pile
+    And seat 1 is not eliminated
+    And the game is unfinished
+
+  @behavior:rr:player-elimination.5:published-result
+  @rr:player-elimination.5 @card:01154
+  Scenario: A revealed ability finishes after eliminating its resolving player
+    # "If a player is eliminated partway through the resolution of an ability,
+    # resolve the entire ability." Concussive Blast defeats Captain Marvel
+    # first, then continues through the friendly characters still in the game.
+    Given a canonical Core scene is dealt
+      | campaign | heroes                    | modular sets | seed |
+      | rhino    | captain_marvel,iron_man | under_attack | 841  |
+    And seat 1 shows identity face 01010a
+    And seat 2 shows identity face 01029a
+    And card 01010a copy 0 has 11 damage
+    And card 01030 copy 0 is an ally controlled by seat 2
+    When card 01154 copy 0 is revealed to seat 1
+    Then seat 1 is eliminated
+    And seat 2 is not eliminated
+    And card 01029a copy 0 has 1 damage
+    And card 01030 copy 0 has 1 damage
+    And card 01154 copy 0 is removed from the game
     And the game is unfinished
 
   @behavior:rr:player-elimination.4:published-result
