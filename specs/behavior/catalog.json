@@ -28451,11 +28451,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/identity-card-abilities.feature::Scientist pays one cost and is then spent for the round"
+          ],
+          "mutation": "Do not offer Scientist as a mental resource generator; the first First Aid cannot be paid."
         },
         {
           "id": "behavior:card:01001b:limit-once-per-round-within-limit",
@@ -28463,11 +28465,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/identity-card-abilities.feature::Scientist pays one cost and is then spent for the round"
+          ],
+          "mutation": "Treat Scientist as spent before its first use; the first First Aid is unavailable."
         },
         {
           "id": "behavior:card:01001b:limit-once-per-round-limit-reached",
@@ -28475,11 +28479,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/identity-card-abilities.feature::Scientist pays one cost and is then spent for the round"
+          ],
+          "mutation": "Reset Scientist immediately after payment; the second First Aid remains playable in the same round."
         }
       ]
     },

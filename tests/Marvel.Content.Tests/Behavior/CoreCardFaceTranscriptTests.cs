@@ -39,6 +39,21 @@ public sealed class CoreCardFaceTranscriptTests
     }
 
     [Fact]
+    public void IdentityCardAbilityBranchesHavePinnedOutcomes()
+    {
+        var result = Assert.Single(
+            Corpus.Value,
+            candidate => candidate.Scenario.StartsWith(
+                "specs/behavior/core/identity-card-abilities.feature::",
+                StringComparison.Ordinal));
+
+        Assert.Equal("behavior:card:01001b:generate-mental-resource", result.Obligation);
+        Assert.Equal(
+            "d46de12a5223add3f2203e2e9b83ba7a0c008aa0af6230de63d490b369facb1a",
+            result.Digest);
+    }
+
+    [Fact]
     public void CardActionBranchesHavePinnedOutcomes()
     {
         var results = Corpus.Value

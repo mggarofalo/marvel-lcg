@@ -2111,9 +2111,16 @@ internal sealed class CoreTranscriptRunner
     private static void RequestCardPlay(
         TranscriptContext context, TranscriptStep step, Match match)
     {
-        Game game = context.Game
-            ?? throw new TranscriptException($"{step.Location}: game setup has not begun");
         int seat = Seat(match, step);
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        if (context.Game is null)
+        {
+            context.LastAvailability = CardPlay.Price(
+                context.World, context.Cards, context.World.Seats[seat], card) is not null;
+            return;
+        }
+
+        Game game = context.Game;
         Prompt asked = game.Pending
             ?? throw new TranscriptException($"{step.Location}: no turn prompt is pending");
         if (game.Phase != GamePhase.PlayerTurn || asked.Player != seat)
@@ -2122,9 +2129,8 @@ internal sealed class CoreTranscriptRunner
                 $"{step.Location}: seat {seat + 1} is not taking their turn");
         }
 
-        int card = context.SceneRequired(step).Find(SceneCard(match, step)).ObjectId;
         context.LastAvailability = asked.Affordances.Any(option =>
-            option.Verb == CardPlay.Verb && option.AnchorId == card);
+            option.Verb == CardPlay.Verb && option.AnchorId == card.ObjectId);
     }
 
     private static void TakeVoluntaryFormChange(
