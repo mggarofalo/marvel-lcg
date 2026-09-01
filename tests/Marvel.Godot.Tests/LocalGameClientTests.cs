@@ -3,6 +3,7 @@ using System.Net.Sockets;
 using Marvel.Rules.Play;
 using Marvel.Server;
 using Marvel.Tests;
+using Marvel.View;
 using Xunit;
 
 namespace Marvel.Godot.Tests;
@@ -211,6 +212,51 @@ public sealed class LocalGameClientTests
             .OpenAsync(Specification(), TestContext.Current.CancellationToken);
 
         Assert.Equal("invalid_response", startup.Error?.Code);
+    }
+
+    [Fact]
+    public async Task IncompleteBoardCollectionsAreRejectedBeforeRendering()
+    {
+        EngineResponse complete = Host().Exchange(EngineRequest.OpenGame(
+            "local-open", LocalGameSession.GameId, Specification()));
+        WorldDescriptor world = Assert.IsType<WorldDescriptor>(complete.World);
+        AreaDescriptor area = world.Areas[0];
+        CardDescriptor readable = world.Areas
+            .SelectMany(candidate => candidate.Cards.Concat(candidate.Removed))
+            .First(card => card.Face is not null);
+        AreaDescriptor withReadable = world.Areas.First(candidate =>
+            candidate.Cards.Contains(readable) || candidate.Removed.Contains(readable));
+        WorldDescriptor[] incomplete =
+        [
+            world with { Players = null! },
+            world with { GameAreas = null! },
+            world with { Areas = [area with { Cards = null! }] },
+            world with { Areas = [area with { Removed = null! }] },
+            world with
+            {
+                Areas =
+                [
+                    withReadable with
+                    {
+                        Cards = withReadable.Cards.Contains(readable)
+                            ? [readable with { Face = readable.Face! with { Fields = null! } }]
+                            : [],
+                        Removed = withReadable.Removed.Contains(readable)
+                            ? [readable with { Face = readable.Face! with { Fields = null! } }]
+                            : [],
+                    },
+                ],
+            },
+        ];
+
+        foreach (WorldDescriptor malformed in incomplete)
+        {
+            ClientStartupResult startup = await new LocalGameClient(
+                new FixedTransport(complete with { World = malformed }))
+                .OpenAsync(Specification(), TestContext.Current.CancellationToken);
+
+            Assert.Equal("invalid_response", startup.Error?.Code);
+        }
     }
 
     [Fact]
