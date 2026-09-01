@@ -40001,11 +40001,11 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": ["specs/behavior/core/main-scheme.feature::Completing a nonfinal main scheme advances without excess threat"],
+          "mutation": "Do not discard through the fixed encounter stack to the first minion; Radioactive Man is not selected for entry."
         },
         {
           "key": "put-that-minion-into-play-engaged-with",
@@ -40013,11 +40013,11 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": ["specs/behavior/core/main-scheme.feature::Completing a nonfinal main scheme advances without excess threat"],
+          "mutation": "Do not put the discarded minion into play engaged with the first player; Radioactive Man is not engaged with seat one."
         },
         {
           "key": "advance-stage-2b",
@@ -40025,11 +40025,11 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": ["specs/behavior/core/main-scheme.feature::Completing a nonfinal main scheme advances without excess threat"],
+          "mutation": "Do not advance Secret Rendezvous to side B after resolving side A; 01117b is not the faceup main scheme."
         }
       ]
     },
@@ -40127,11 +40127,11 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": ["specs/behavior/core/main-scheme.feature::Completing Secret Rendezvous makes the villain win"],
+          "mutation": "Ignore Secret Rendezvous's printed loss instruction at completion; the villain does not win."
         },
         {
           "key": "if-stage-is-completed-players-lose-game-condition-not-met",
@@ -40139,11 +40139,11 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": ["specs/behavior/core/main-scheme.feature::Completing a nonfinal main scheme advances without excess threat"],
+          "mutation": "Treat the newly advanced zero-threat Secret Rendezvous as completed; the game does not remain unfinished."
         }
       ]
     },

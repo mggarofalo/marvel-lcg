@@ -178,7 +178,7 @@ public sealed class CoreRuleTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(3, results.Count);
+        Assert.Equal(4, results.Count);
         Assert.Equal(
             "a0c29f1591b4fc8d736a64e76d9109a4f899a21a278cc4d2760cdd5a4c1f8b70",
             results["behavior:rr:main-scheme-main-scheme-deck.2:published-result"].Digest);
@@ -188,6 +188,10 @@ public sealed class CoreRuleTranscriptTests
         Assert.Equal(
             "ba88421ca03e246a89956e9b1cdee1b9d9d7694cd0bb60256362aceb668c99d9",
             results["behavior:rr:main-scheme-main-scheme-deck.6:published-result"].Digest);
+        Assert.Equal(
+            "56841b2578c161b58b1ad09cbeaad5210b315d8f1b03c6b2119e7326562cec38",
+            results[
+                "behavior:card:01117b:if-stage-is-completed-players-lose-game-condition-met"].Digest);
     }
 
     [Fact]
