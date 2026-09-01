@@ -368,6 +368,31 @@ Feature: Core villain phase
     Then card 01083 copy 0 is faceup on top of seat 1's discard pile
     And the last attack was undefended
 
+  @behavior:rr:boost-boost-icon.3:published-result
+  @covers:behavior:rr:attack-enemy-activation.7:published-result
+  @covers:behavior:card:01118:after-klaw-attacks-and-damages-character-stun
+  @rr:boost-boost-icon.3 @rr:attack-enemy-activation.7
+  @card:01118 @card:01154
+  Scenario: Boost damage is not damage dealt by Klaw's attack
+    # Damage from a boost ability "is not considered to be damage dealt by the
+    # activation." Concussive Blast damages both Spider-Man and Black Cat, but
+    # Sonic Converter's after-Klaw-attacks-and-damages response stuns only the
+    # hero that Klaw's attack damage actually reaches.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | modular sets | seed |
+      | klaw     | spider_man | under_attack | 726  |
+    And seat 1 shows identity face 01001a
+    And card 01002 copy 0 is an ally controlled by seat 1
+    And card 01118 copy 0 is attached to card 01113 copy 0
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01154     | 0    |
+      | 01151     | 0    |
+    When the villain attacks seat 1 with card 01001a copy 0 defending
+    Then card 01002 copy 0 has 1 damage
+    And card 01002 copy 0 has 0 stunned status cards
+    And card 01001a copy 0 has a stunned status card
+
   @behavior:rr:activation.2:minion-attacks-hero
   @covers:behavior:rr:minion.1:published-result
   @covers:behavior:rr:engage.1:published-result

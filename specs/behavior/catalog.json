@@ -3270,11 +3270,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Boost damage is not damage dealt by Klaw's attack"
+          ],
+          "mutation": "Count Concussive Blast's damage as damage dealt by Klaw's attack; Sonic Converter incorrectly stuns Black Cat."
         }
       ]
     },
@@ -4460,11 +4462,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Boost damage is not damage dealt by Klaw's attack"
+          ],
+          "mutation": "Attribute boost-ability damage to the enclosing activation; Sonic Converter incorrectly stuns Black Cat."
         }
       ]
     },
@@ -45113,11 +45117,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Boost damage is not damage dealt by Klaw's attack"
+          ],
+          "mutation": "Skip Sonic Converter's forced response or stun a character damaged only by the boost; the hero-stunned or ally-not-stunned assertion fails."
         },
         {
           "id": "behavior:card:01118:spend-energy-mental-physical-resources-discard-card",
