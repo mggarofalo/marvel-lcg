@@ -696,11 +696,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-power-restrictions.feature::Guard applies only while the guarding minion remains in play"
+          ],
+          "mutation": "Do not open the non-forced response window after the attack; Tigra cannot heal before consequential damage."
         }
       ]
     },
@@ -3892,11 +3894,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-power-restrictions.feature::Guard applies only while the guarding minion remains in play"
+          ],
+          "mutation": "Resolve no non-forced response after the player attack; Tigra ends with the wrong damage."
         }
       ]
     },
@@ -35579,11 +35583,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-power-restrictions.feature::Guard applies only while the guarding minion remains in play"
+          ],
+          "mutation": "Do not heal Tigra after her attack defeats the minion; consequential damage leaves her with two damage instead of one."
         }
       ]
     },

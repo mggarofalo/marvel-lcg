@@ -326,6 +326,9 @@ internal sealed class CoreTranscriptRunner
         Bind("ally-power", TranscriptStepKind.When,
             @"card (?<ally>\d+[a-z]?) copy (?<allyCopy>\d+) uses its basic (?<power>attack|thwart) against card (?<face>\d+[a-z]?) copy (?<copy>\d+)",
             AllyPower),
+        Bind("ally-power-accepting", TranscriptStepKind.When,
+            @"card (?<ally>\d+[a-z]?) copy (?<allyCopy>\d+) uses its basic (?<power>attack|thwart) against card (?<face>\d+[a-z]?) copy (?<copy>\d+) and accepts the (?<label>.+) opportunity",
+            AllyPowerAccepting),
         Bind("basic-attack-targets", TranscriptStepKind.When,
             @"seat (?<seat>\d+) asks for their basic attack targets",
             BasicAttackTargets),
@@ -981,6 +984,22 @@ internal sealed class CoreTranscriptRunner
         FinishAgenda(context, step);
     }
 
+    private static void AllyPowerAccepting(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        Card ally = context.SceneRequired(step).Find(new SceneCard(
+            match.Groups["ally"].Value,
+            Number(match, "allyCopy", step)));
+        Card target = context.SceneRequired(step).Find(SceneCard(match, step));
+        string verb = match.Groups["power"].Value == "attack"
+            ? BasicPowers.AttackVerb
+            : BasicPowers.ThwartVerb;
+        BasicPowers.AllyPower(context.World, context.Cards, ally, target, verb, context.Events);
+        FinishAgendaAccepting(context, step, match.Groups["label"].Value);
+    }
+
     private static void BasicAttackTargets(
         TranscriptContext context, TranscriptStep step, Match match)
     {
@@ -1151,6 +1170,45 @@ internal sealed class CoreTranscriptRunner
                 context.Events);
             asked = Sequence.Work(
                 context.World, context.Cards, context.World.Abilities, context.Events);
+        }
+    }
+
+    private static void FinishAgendaAccepting(
+        TranscriptContext context, TranscriptStep step, string acceptedLabel)
+    {
+        bool accepted = false;
+        Prompt? asked = Sequence.Work(
+            context.World, context.Cards, context.World.Abilities, context.Events);
+        for (int answered = 0; asked is not null; answered++)
+        {
+            if (answered >= 100)
+            {
+                throw new TranscriptException(
+                    $"{step.Location}: agenda still asks '{asked.Label}' after 100 answers");
+            }
+
+            Affordance? opportunity = accepted
+                ? null
+                : asked.Affordances.SingleOrDefault(option => option.Label == acceptedLabel);
+            Decision decision = opportunity is null
+                ? Decision.Decline
+                : Decision.Take(opportunity.Id);
+            accepted |= opportunity is not null;
+            Sequence.Answer(
+                context.World,
+                context.Cards,
+                context.World.Abilities,
+                asked,
+                decision,
+                context.Events);
+            asked = Sequence.Work(
+                context.World, context.Cards, context.World.Abilities, context.Events);
+        }
+
+        if (!accepted)
+        {
+            throw new TranscriptException(
+                $"{step.Location}: the action offered no '{acceptedLabel}' opportunity");
         }
     }
 
