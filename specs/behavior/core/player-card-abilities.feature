@@ -3,6 +3,187 @@ Feature: Core player card abilities
   Player cards resolve their printed Actions and constant modifiers from legal
   Core deals, with targets and resulting zones recorded in the transcript.
 
+  @behavior:card:01028:she-hulk-gets-2-atk
+  @covers:behavior:card:01028:after-she-hulk-attacks-discard-superhuman-strength
+  @card:01028
+  Scenario: Superhuman Strength increases an attack then discards and stuns
+    # Superhuman Strength raises She-Hulk's printed ATK 3 by two. After that
+    # attack ends, its Forced Response discards the upgrade and stuns Rhino.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 900  |
+    And seat 1 shows identity face 01019a
+    And card 01028 copy 0 is an upgrade attached to seat 1's identity
+    When seat 1 uses their basic attack against card 01094 copy 0
+    Then card 01094 copy 0 has 5 damage
+    And card 01094 copy 0 has 1 stunned status card
+    And card 01028 copy 0 is faceup on top of seat 1's discard pile
+
+  @behavior:card:01031:for-each-printed-energy-resource-discarded-way-zero
+  @card:01031
+  Scenario: Repulsor Blast deals only its base damage with no energy resource
+    # None of the five discarded cards prints an energy resource, so Repulsor
+    # Blast deals only its one base attack damage.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | iron_man | 901  |
+    And seat 1 shows identity face 01029a
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01031 | 0    |
+      | 01086 | 0    |
+    And these cards are next on seat 1's player deck
+      | next card | copy |
+      | 01030     | 0    |
+      | 01033     | 0    |
+      | 01034     | 0    |
+      | 01036     | 0    |
+      | 01037     | 0    |
+    When seat 1 initiates card 01031 copy 0's action paying with these cards
+      | card  | copy |
+      | 01086 | 0    |
+    Then card 01094 copy 0 is offered by the pending action
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01094 copy 0 has 1 damage
+
+  @behavior:card:01031:for-each-printed-energy-resource-discarded-way-one
+  @card:01031
+  Scenario: Repulsor Blast adds two damage for one energy resource
+    # Supersonic Punch is the only one of the five discarded cards with a
+    # printed energy resource, adding two damage to the one base damage.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | iron_man | 902  |
+    And seat 1 shows identity face 01029a
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01031 | 0    |
+      | 01086 | 0    |
+    And these cards are next on seat 1's player deck
+      | next card | copy |
+      | 01032     | 0    |
+      | 01033     | 0    |
+      | 01034     | 0    |
+      | 01036     | 0    |
+      | 01037     | 0    |
+    When seat 1 initiates card 01031 copy 0's action paying with these cards
+      | card  | copy |
+      | 01086 | 0    |
+    Then card 01094 copy 0 is offered by the pending action
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01094 copy 0 has 3 damage
+
+  @behavior:card:01059:jessica-jones-gets-1-thw-for-each-zero
+  @card:01059
+  Scenario: Jessica Jones has printed thwart with no side scheme
+    # With no side scheme in play, Jessica Jones receives no modifier and keeps
+    # her printed THW 1.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 903  |
+    And card 01059 copy 0 is an ally controlled by seat 1
+    When the printed characteristics of card 01059 copy 0 are requested
+    Then card 01059 copy 0 has modified THW 1
+
+  @behavior:card:01059:jessica-jones-gets-1-thw-for-each-one
+  @card:01059
+  Scenario: Jessica Jones gains one thwart for one side scheme
+    # One side scheme in play raises Jessica Jones from printed THW 1 to 2.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 904  |
+    And card 01059 copy 0 is an ally controlled by seat 1
+    And card 01107 copy 0 is a side scheme in play
+    When the printed characteristics of card 01059 copy 0 are requested
+    Then card 01059 copy 0 has modified THW 2
+
+  @behavior:card:01059:jessica-jones-gets-1-thw-for-each-multiple
+  @card:01059
+  Scenario: Jessica Jones gains thwart for each of multiple side schemes
+    # Two side schemes in play raise Jessica Jones from printed THW 1 to 3.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | modular sets     | seed |
+      | rhino    | spider_man | legions_of_hydra | 905  |
+    And card 01059 copy 0 is an ally controlled by seat 1
+    And card 01107 copy 0 is a side scheme in play
+    And card 01180 copy 0 is a side scheme in play
+    When the printed characteristics of card 01059 copy 0 are requested
+    Then card 01059 copy 0 has modified THW 3
+
+  @behavior:card:01065:play-under-any-player-s-control
+  @covers:behavior:card:01065:your-hero-gets-1-thw
+  @card:01065
+  Scenario: Heroic Intuition may be played under another player's control
+    # Spider-Man owns and plays Heroic Intuition on Captain Marvel. Captain
+    # Marvel controls it and her printed THW 2 is increased to 3.
+    Given a canonical Core scene is dealt
+      | campaign | heroes                    | seed |
+      | rhino    | spider_man,captain_marvel | 906  |
+    And seat 2 shows identity face 01010a
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01065 | 0    |
+      | 01088 | 0    |
+    When seat 1 plays card 01065 copy 0 targeting card 01010a copy 0 paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+    Then card 01065 copy 0 is attached to card 01010a copy 0
+    And card 01010a copy 0 has modified THW 3
+
+  @behavior:card:01065:max-1-per-player
+  @card:01065
+  Scenario: A player with Heroic Intuition cannot receive another copy
+    # The first copy already satisfies Max 1 per player. In this solo Core
+    # game, the second owned copy therefore has no legal player to receive it.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 907  |
+    And seat 1 shows identity face 01001a
+    And card 01065 copy 0 is attached to card 01001a copy 0
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01065 | 1    |
+      | 01088 | 0    |
+    When seat 1 asks whether card 01065 copy 1 is available to play
+    Then card 01065 copy 1 is unavailable to play
+
+  @behavior:card:01081:play-under-any-player-s-control
+  @covers:behavior:card:01081:your-hero-gets-1-def
+  @card:01081
+  Scenario: Armored Vest may be played under another player's control
+    # Black Panther owns and plays Armored Vest on Captain Marvel. Captain
+    # Marvel controls it and her printed DEF 1 is increased to 2.
+    Given a canonical Core scene is dealt
+      | campaign | heroes                       | seed |
+      | rhino    | black_panther,captain_marvel | 908  |
+    And seat 2 shows identity face 01010a
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01081 | 0    |
+      | 01088 | 0    |
+    When seat 1 plays card 01081 copy 0 targeting card 01010a copy 0 paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+    Then card 01081 copy 0 is attached to card 01010a copy 0
+    And card 01010a copy 0 has modified DEF 2
+
+  @behavior:card:01081:max-1-per-player
+  @card:01081
+  Scenario: A player with Armored Vest cannot receive another copy
+    # The first copy already satisfies Max 1 per player. In this solo Core
+    # game, the second owned copy therefore has no legal player to receive it.
+    Given a canonical Core scene is dealt
+      | campaign | heroes       | seed |
+      | rhino    | black_panther | 909  |
+    And seat 1 shows identity face 01040a
+    And card 01081 copy 0 is attached to card 01040a copy 0
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01081 | 1    |
+      | 01088 | 0    |
+    When seat 1 asks whether card 01081 copy 1 is available to play
+    Then card 01081 copy 1 is unavailable to play
+
   @behavior:card:01002:after-you-play-black-cat-discard-top
   @covers:behavior:card:01002:add-each-card-with-printed-mental-resource
   @card:01002

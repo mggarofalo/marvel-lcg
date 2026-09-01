@@ -71,7 +71,44 @@ public sealed class CoreCardFaceTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(32, results.Count);
+        Assert.Equal(42, results.Count);
+        Assert.Equal(
+            "f8f3ecc459be52e526426c9233adcb55a0b3f6b8a4921e3adad4557835d14178",
+            results["behavior:card:01028:she-hulk-gets-2-atk"].Digest);
+        Assert.Equal(
+            "d62eb9bf8db245ce8215888eea115e68c60ff6ea5e06af335328cce73eb7cac6",
+            results[
+                "behavior:card:01031:for-each-printed-energy-resource-discarded-way-zero"].Digest);
+        Assert.Equal(
+            "f136c6402f9eab31c03b11e809f3744a11f567c4b25ed51550426507da5cdafd",
+            results[
+                "behavior:card:01031:for-each-printed-energy-resource-discarded-way-one"].Digest);
+        Assert.Equal(
+            "2ce687e2d3d128417371548fa3273fad1d74c4863d0d94644a081b2c879efdcd",
+            results[
+                "behavior:card:01059:jessica-jones-gets-1-thw-for-each-zero"].Digest);
+        Assert.Equal(
+            "83a69cd7c8aea514995e3544f892e0e816e9b076fb1ef070d2a1d62010e1c08a",
+            results[
+                "behavior:card:01059:jessica-jones-gets-1-thw-for-each-one"].Digest);
+        Assert.Equal(
+            "d964be28b0d360b0781e53fe5765566979771a5a72ad02210df8abecaa6a54f7",
+            results[
+                "behavior:card:01059:jessica-jones-gets-1-thw-for-each-multiple"].Digest);
+        Assert.Equal(
+            "43321a13acef3113a7e17fe31e4c2905370407286862f56bcb9f203de6a4d7f0",
+            results[
+                "behavior:card:01065:play-under-any-player-s-control"].Digest);
+        Assert.Equal(
+            "07439cae66151bd5005443426ebf6143b6f1d125067c5285612cdf6c0a42b407",
+            results["behavior:card:01065:max-1-per-player"].Digest);
+        Assert.Equal(
+            "ef1e8af4c22bfc004c75e70ea50a6b79cd5a1d12e410c0d8f1c0dce20698ebfd",
+            results[
+                "behavior:card:01081:play-under-any-player-s-control"].Digest);
+        Assert.Equal(
+            "aad10fb81e66300476a915c533e117ae35929b798630d4e1c16a936ce234df7e",
+            results["behavior:card:01081:max-1-per-player"].Digest);
         Assert.Equal(
             "026aca6d5424ac5b022a2f159ad65b5e78016f6d62578189c77ad28bd811d611",
             results[

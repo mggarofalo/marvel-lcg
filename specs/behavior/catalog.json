@@ -32470,11 +32470,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Superhuman Strength increases an attack then discards and stuns"
+          ],
+          "mutation": "Remove or change the +2 ATK modifier; Rhino's five-damage assertion fails."
         },
         {
           "id": "behavior:card:01028:after-she-hulk-attacks-discard-superhuman-strength",
@@ -32482,11 +32484,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Superhuman Strength increases an attack then discards and stuns"
+          ],
+          "mutation": "Retain Superhuman Strength or fail to stun the attacked enemy after the attack; its asserted zone or status fails."
         }
       ]
     },
@@ -33122,11 +33126,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Repulsor Blast deals only its base damage with no energy resource"
+          ],
+          "mutation": "Add bonus damage when none of the discarded cards prints energy; Rhino's one-damage assertion fails."
         },
         {
           "id": "behavior:card:01031:for-each-printed-energy-resource-discarded-way-one",
@@ -33134,11 +33140,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Repulsor Blast adds two damage for one energy resource"
+          ],
+          "mutation": "Count the one energy card as zero or multiple; Rhino's three-damage assertion fails."
         },
         {
           "id": "behavior:card:01031:for-each-printed-energy-resource-discarded-way-multiple",
@@ -37519,11 +37527,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Jessica Jones has printed thwart with no side scheme"
+          ],
+          "mutation": "Apply a nonzero modifier with no side schemes in play; the modified-THW assertion fails."
         },
         {
           "id": "behavior:card:01059:jessica-jones-gets-1-thw-for-each-one",
@@ -37531,11 +37541,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Jessica Jones gains one thwart for one side scheme"
+          ],
+          "mutation": "Count one side scheme as zero or multiple; the modified-THW assertion fails."
         },
         {
           "id": "behavior:card:01059:jessica-jones-gets-1-thw-for-each-multiple",
@@ -37543,11 +37555,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Jessica Jones gains thwart for each of multiple side schemes"
+          ],
+          "mutation": "Count two side schemes as fewer or more than two; the modified-THW assertion fails."
         }
       ]
     },
@@ -38303,11 +38317,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Heroic Intuition may be played under another player's control"
+          ],
+          "mutation": "Restrict the attachment to its owner's identity; the cross-player attachment assertion fails."
         },
         {
           "id": "behavior:card:01065:max-1-per-player",
@@ -38315,11 +38331,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::A player with Heroic Intuition cannot receive another copy"
+          ],
+          "mutation": "Permit the second copy when the sole player already controls one; the availability assertion fails."
         },
         {
           "id": "behavior:card:01065:your-hero-gets-1-thw",
@@ -38327,11 +38345,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Heroic Intuition may be played under another player's control"
+          ],
+          "mutation": "Omit or change the +1 THW modifier; Captain Marvel's modified-THW assertion fails."
         }
       ]
     },
@@ -40613,11 +40633,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Armored Vest may be played under another player's control"
+          ],
+          "mutation": "Restrict the attachment to its owner's identity; the cross-player attachment assertion fails."
         },
         {
           "id": "behavior:card:01081:max-1-per-player",
@@ -40625,11 +40647,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::A player with Armored Vest cannot receive another copy"
+          ],
+          "mutation": "Permit the second copy when the sole player already controls one; the availability assertion fails."
         },
         {
           "id": "behavior:card:01081:your-hero-gets-1-def",
@@ -40637,11 +40661,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Armored Vest may be played under another player's control"
+          ],
+          "mutation": "Omit or change the +1 DEF modifier; Captain Marvel's modified-DEF assertion fails."
         }
       ]
     },

@@ -27468,28 +27468,32 @@
           "mutation": "Change or omit this printed field in CardCatalog; the generated face-table assertion fails."
         },
         {
-          "key": "she-hulk-gets-2-atk",
+      "key": "she-hulk-gets-2-atk",
           "summary": "She-Hulk gets +2 ATK.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/player-card-abilities.feature::Superhuman Strength increases an attack then discards and stuns"
+      ],
+      "mutation": "Remove or change the +2 ATK modifier; Rhino's five-damage assertion fails."
         },
         {
-          "key": "after-she-hulk-attacks-discard-superhuman-strength",
+      "key": "after-she-hulk-attacks-discard-superhuman-strength",
           "summary": "Forced Response: After She-Hulk attacks, discard Superhuman Strength → stun the attacked enemy.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/player-card-abilities.feature::Superhuman Strength increases an attack then discards and stuns"
+      ],
+      "mutation": "Retain Superhuman Strength or fail to stun the attacked enemy after the attack; its asserted zone or status fails."
         }
       ]
     },
@@ -28104,28 +28108,32 @@
           "mutation": "Omit Repulsor Blast's deck discard or damage instance; the transcript's status, damage, or five discard assertions fail."
         },
         {
-          "key": "for-each-printed-energy-resource-discarded-way-zero",
+      "key": "for-each-printed-energy-resource-discarded-way-zero",
           "summary": "Zero qualifying elements: For each printed energy resource discarded this way, deal 2 additional damage to that enemy.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/player-card-abilities.feature::Repulsor Blast deals only its base damage with no energy resource"
+      ],
+      "mutation": "Add bonus damage when none of the discarded cards prints energy; Rhino's one-damage assertion fails."
         },
         {
-          "key": "for-each-printed-energy-resource-discarded-way-one",
+      "key": "for-each-printed-energy-resource-discarded-way-one",
           "summary": "One qualifying element: For each printed energy resource discarded this way, deal 2 additional damage to that enemy.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/player-card-abilities.feature::Repulsor Blast adds two damage for one energy resource"
+      ],
+      "mutation": "Count the one energy card as zero or multiple; Rhino's three-damage assertion fails."
         },
         {
           "key": "for-each-printed-energy-resource-discarded-way-multiple",
@@ -32373,40 +32381,46 @@
           "mutation": "Change or omit this printed field in CardCatalog; the generated face-table assertion fails."
         },
         {
-          "key": "jessica-jones-gets-1-thw-for-each-zero",
+      "key": "jessica-jones-gets-1-thw-for-each-zero",
           "summary": "Zero qualifying elements: Jessica Jones gets +1 THW for each side scheme in play.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/player-card-abilities.feature::Jessica Jones has printed thwart with no side scheme"
+      ],
+      "mutation": "Apply a nonzero modifier with no side schemes in play; the modified-THW assertion fails."
         },
         {
-          "key": "jessica-jones-gets-1-thw-for-each-one",
+      "key": "jessica-jones-gets-1-thw-for-each-one",
           "summary": "One qualifying element: Jessica Jones gets +1 THW for each side scheme in play.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/player-card-abilities.feature::Jessica Jones gains one thwart for one side scheme"
+      ],
+      "mutation": "Count one side scheme as zero or multiple; the modified-THW assertion fails."
         },
         {
-          "key": "jessica-jones-gets-1-thw-for-each-multiple",
+      "key": "jessica-jones-gets-1-thw-for-each-multiple",
           "summary": "Multiple qualifying elements: Jessica Jones gets +1 THW for each side scheme in play.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/player-card-abilities.feature::Jessica Jones gains thwart for each of multiple side schemes"
+      ],
+      "mutation": "Count two side schemes as fewer or more than two; the modified-THW assertion fails."
         }
       ]
     },
@@ -33133,41 +33147,47 @@
           "mutation": "Change or omit this printed field in CardCatalog; the generated face-table assertion fails."
         },
         {
-          "key": "play-under-any-player-s-control",
-          "summary": "Play under any player's control.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
-          "work_item": null,
-          "exception": null,
-          "scenarios": [],
-          "mutation": null
-        },
-        {
-          "key": "max-1-per-player",
-          "summary": "Max 1 per player.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
-          "work_item": null,
-          "exception": null,
-          "scenarios": [],
-          "mutation": null
-        },
-        {
-          "key": "your-hero-gets-1-thw",
-          "summary": "Your hero gets +1 THW.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
-          "work_item": null,
-          "exception": null,
-          "scenarios": [],
-          "mutation": null
-        }
+      "key": "play-under-any-player-s-control",
+      "summary": "Play under any player's control.",
+      "disposition": "executable",
+      "reason": null,
+      "target": null,
+      "implementation": "supported",
+      "work_item": null,
+      "exception": null,
+      "scenarios": [
+        "specs/behavior/core/player-card-abilities.feature::Heroic Intuition may be played under another player's control"
+      ],
+      "mutation": "Restrict the attachment to its owner's identity; the cross-player attachment assertion fails."
+    },
+    {
+      "key": "max-1-per-player",
+      "summary": "Max 1 per player.",
+      "disposition": "executable",
+      "reason": null,
+      "target": null,
+      "implementation": "supported",
+      "work_item": null,
+      "exception": null,
+      "scenarios": [
+        "specs/behavior/core/player-card-abilities.feature::A player with Heroic Intuition cannot receive another copy"
+      ],
+      "mutation": "Permit the second copy when the sole player already controls one; the availability assertion fails."
+    },
+    {
+      "key": "your-hero-gets-1-thw",
+      "summary": "Your hero gets +1 THW.",
+      "disposition": "executable",
+      "reason": null,
+      "target": null,
+      "implementation": "supported",
+      "work_item": null,
+      "exception": null,
+      "scenarios": [
+        "specs/behavior/core/player-card-abilities.feature::Heroic Intuition may be played under another player's control"
+      ],
+      "mutation": "Omit or change the +1 THW modifier; Captain Marvel's modified-THW assertion fails."
+    }
       ]
     },
     {
@@ -35379,40 +35399,46 @@
           "mutation": "Change or omit this printed field in CardCatalog; the generated face-table assertion fails."
         },
         {
-          "key": "play-under-any-player-s-control",
+      "key": "play-under-any-player-s-control",
           "summary": "Play under any player's control.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/player-card-abilities.feature::Armored Vest may be played under another player's control"
+      ],
+      "mutation": "Restrict the attachment to its owner's identity; the cross-player attachment assertion fails."
         },
         {
-          "key": "max-1-per-player",
+      "key": "max-1-per-player",
           "summary": "Max 1 per player.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/player-card-abilities.feature::A player with Armored Vest cannot receive another copy"
+      ],
+      "mutation": "Permit the second copy when the sole player already controls one; the availability assertion fails."
         },
         {
-          "key": "your-hero-gets-1-def",
+      "key": "your-hero-gets-1-def",
           "summary": "Your hero gets +1 DEF.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/player-card-abilities.feature::Armored Vest may be played under another player's control"
+      ],
+      "mutation": "Omit or change the +1 DEF modifier; Captain Marvel's modified-DEF assertion fails."
         }
       ]
     },
