@@ -51116,11 +51116,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/black-panther-nemesis.feature::Killmonger prevents damage from a Black Panther upgrade"
+          ],
+          "mutation": "Remove the source-specific damage prohibition; Killmonger's damage assertion fails."
         }
       ]
     },
@@ -51208,11 +51210,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/black-panther-nemesis.feature::Heart-Shaped Herb toughens every enemy engaged with the player and surges"
+          ],
+          "mutation": "Remove surge; the facedown encounter-card assertion fails."
         },
         {
           "id": "behavior:card:01158:give-villain-and-each-minion-engaged-with",
@@ -51220,11 +51224,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/black-panther-nemesis.feature::Heart-Shaped Herb toughens every enemy engaged with the player and surges"
+          ],
+          "mutation": "Skip the villain or either engaged minion; a tough-status assertion fails."
         },
         {
           "id": "behavior:card:01158:give-villain-tough-status-card",
@@ -51232,11 +51238,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/black-panther-nemesis.feature::Heart-Shaped Herb gives the villain tough as a boost ability"
+          ],
+          "mutation": "Remove the boost ability; the villain's tough-status assertion fails."
         }
       ]
     },
@@ -51310,11 +51318,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/black-panther-nemesis.feature::Ritual Combat adds one to a zero-boost card and damages the hero"
+          ],
+          "mutation": "Do not discard the top encounter card; its encounter-discard assertion fails."
         },
         {
           "id": "behavior:card:01159:then-choose-either-deal-x-damage-your-choice-1",
@@ -51322,11 +51332,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/black-panther-nemesis.feature::Ritual Combat adds one to a zero-boost card and damages the hero"
+          ],
+          "mutation": "Remove the damage branch; the hero-damage assertion fails."
         },
         {
           "id": "behavior:card:01159:then-choose-either-deal-x-damage-your-choice-2",
@@ -51334,11 +51346,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/black-panther-nemesis.feature::Ritual Combat can place its computed amount as threat"
+          ],
+          "mutation": "Remove the threat branch; the main-scheme threat assertion fails."
         },
         {
           "id": "behavior:card:01159:x-is-1-more-than-number-boost",
@@ -51346,11 +51360,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/black-panther-nemesis.feature::Ritual Combat scales X with multiple printed boost icons"
+          ],
+          "mutation": "Use a constant or omit the plus one; the four-damage assertion fails."
         }
       ]
     },

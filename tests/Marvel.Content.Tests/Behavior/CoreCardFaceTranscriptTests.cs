@@ -838,4 +838,29 @@ public sealed class CoreCardFaceTranscriptTests
             Assert.Equal(digest, results[obligation].Digest);
         }
     }
+
+    [Fact]
+    public void BlackPantherNemesisBranchesHavePinnedOutcomes()
+    {
+        var results = Corpus.Value
+            .Where(candidate => candidate.Scenario.StartsWith(
+                "specs/behavior/core/black-panther-nemesis.feature::",
+                StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
+        var expected = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["behavior:card:01157:killmonger-cannot-take-damage-from-black-panther"] = "ddd96d0af40e16d44bcae30734030b185f52e2ecc155dd5792a14060037816a0",
+            ["behavior:card:01158:surge-after-card-resolves-reveal-1-additional"] = "82014a5fbb1e74f1388e52bd969db49fb47e455b1c4ca68fa37cbb4b30ca3caf",
+            ["behavior:card:01158:give-villain-tough-status-card"] = "732cbda6f8216c8bd16ed9698edc97162ca682623906cd797a072b3f66c94ad9",
+            ["behavior:card:01159:discard-top-card-encounter-deck"] = "29b75b614149ce84152c976478e7e1048e9eb500d13690d73939d2eb9948e44a",
+            ["behavior:card:01159:then-choose-either-deal-x-damage-your-choice-2"] = "40f458007da12ab493323f0ae07a8546f5e2fa558a1faefbc2ef4fa3ed34682b",
+            ["behavior:card:01159:x-is-1-more-than-number-boost"] = "032092d3de1b94ae9e1968d6befd9a0cbbb6493e72228530a07e6accfbad2ef8",
+        };
+
+        Assert.Equal(expected.Count, results.Count);
+        foreach ((string obligation, string digest) in expected)
+        {
+            Assert.Equal(digest, results[obligation].Digest);
+        }
+    }
 }
