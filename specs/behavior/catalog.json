@@ -14690,11 +14690,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Rechannel is available once and consumes its round limit"
+          ],
+          "mutation": "Do not count Rechannel's completed initiation against its round limit; the second availability assertion fails."
         }
       ]
     },
@@ -29503,11 +29505,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Rechannel is available once and consumes its round limit"
+          ],
+          "mutation": "Skip the energy payment, healing, or draw; the resource locations, damage, or drawn-card assertions fail."
         },
         {
           "id": "behavior:card:01010a:limit-once-per-round-within-limit",
@@ -29515,11 +29519,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Rechannel is available once and consumes its round limit"
+          ],
+          "mutation": "Treat the unused round limit as already consumed; Rechannel is unavailable before its first initiation."
         },
         {
           "id": "behavior:card:01010a:limit-once-per-round-limit-reached",
@@ -29527,11 +29533,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Rechannel is available once and consumes its round limit"
+          ],
+          "mutation": "Fail to record Rechannel's first use; it remains available after resolving and the transcript fails."
         }
       ]
     },

@@ -648,3 +648,34 @@ Feature: Core card actions
     When seat 1 asks whether card 01057 copy 1 is available to play
     Then card 01057 copy 1 is unavailable to play
     And card 01057 copy 0 remains attached to seat 1's identity
+
+  @behavior:card:01010a:spend-energy-resource-and-heal-1-damage
+  @covers:behavior:card:01010a:limit-once-per-round-within-limit
+  @covers:behavior:card:01010a:limit-once-per-round-limit-reached
+  @covers:behavior:rr:limit:published-result
+  @card:01010a @rr:limit
+  Scenario: Rechannel is available once and consumes its round limit
+    # "Spend a [energy] resource and heal 1 damage from Captain Marvel → draw
+    # 1 card. (Limit once per round.)" Its first initiation pays and resolves;
+    # afterward the same ability is absent for the rest of that round.
+    Given a canonical Core scene is dealt
+      | campaign | heroes         | seed |
+      | rhino    | captain_marvel | 718  |
+    And seat 1 shows identity face 01010a
+    And card 01010a copy 0 has 1 damage
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01088 | 0    |
+    And these cards are next on seat 1's player deck
+      | next card | copy |
+      | 01014     | 0    |
+    When seat 1 asks for available card actions
+    Then card 01010a copy 0's action is available
+    When seat 1 initiates card 01010a copy 0's action paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+    Then card 01010a copy 0 has 0 damage
+    And card 01014 copy 0 is in seat 1's hand
+    And card 01088 copy 0 is in seat 1's discard pile
+    When seat 1 asks for available card actions
+    Then card 01010a copy 0's action is unavailable
