@@ -201,3 +201,25 @@ Feature: Core player card abilities
     Then card 01006 copy 0's action is available
     And card 01006 copy 0 is ready
     And card 01001b copy 0 has 4 damage
+
+  @behavior:card:01034:exhaust-stark-tower-choose-player
+  @covers:behavior:card:01034:that-player-returns-topmost-tech-upgrade-in
+  @card:01034
+  Scenario: Stark Tower returns the chosen player's topmost Tech upgrade
+    # "That player returns the topmost Tech upgrade in their discard pile to
+    # their hand." A non-Tech card remains above the selected Web-Shooter, and
+    # the lower Web-Shooter remains below it.
+    Given a canonical Core scene is dealt
+      | campaign | heroes              | seed |
+      | rhino    | iron_man,spider_man | 863  |
+    And card 01034 copy 0 is a support controlled by seat 1
+    And card 01008 copy 0 starts in seat 2's discard pile
+    And card 01008 copy 1 starts in seat 2's discard pile
+    And card 01006 copy 0 starts in seat 2's discard pile
+    When seat 1 initiates card 01034 copy 0's action without payment
+    Then card 01001b copy 0 is offered by the pending action
+    When seat 1 chooses card 01001b copy 0 for the pending action
+    Then card 01034 copy 0 is exhausted
+    And card 01008 copy 1 is in seat 2's hand
+    And card 01008 copy 0 is in seat 2's discard pile
+    And card 01006 copy 0 is in seat 2's discard pile

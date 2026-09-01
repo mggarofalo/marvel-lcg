@@ -28441,11 +28441,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Stark Tower returns the chosen player's topmost Tech upgrade"
+          ],
+          "mutation": "Do not exhaust Stark Tower or offer the player choice; the readiness or offered-target assertion fails."
         },
         {
           "key": "that-player-returns-topmost-tech-upgrade-in",
@@ -28453,11 +28455,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Stark Tower returns the chosen player's topmost Tech upgrade"
+          ],
+          "mutation": "Return the lower Tech, the top non-Tech, or no card; the three zone assertions distinguish the error."
         }
       ]
     },
