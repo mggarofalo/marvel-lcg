@@ -353,6 +353,48 @@ Feature: Core card actions
     And card 01094 copy 0 has 0 damage
     And card 01053 copy 0 is faceup on top of seat 1's discard pile
 
+  @behavior:card:01031:deal-1-damage-enemy-and-discard-top
+  @covers:behavior:card:01031:for-each-printed-energy-resource-discarded-way-multiple
+  @covers:behavior:rr:and:published-result
+  @covers:behavior:rr:and.1:published-result
+  @covers:behavior:rr:and.2:published-result
+  @covers:behavior:faq:01031:published-clarification-1
+  @card:01031 @rr:and @rr:and.1 @rr:and.2 @faq:01031
+  Scenario: Repulsor Blast's combined damage is prevented without canceling its discard
+    # Repulsor Blast deals its base and additional damage as one simultaneous
+    # five-damage instance. Tough prevents that entire instance; independently,
+    # the effect joined by "and" still discards all five cards from the deck.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | iron_man | 834  |
+    And seat 1 shows identity face 01029a
+    And card 01101 copy 0 is a minion engaged with seat 1
+    And card 01101 copy 0 has a tough status card
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01031 | 0    |
+      | 01086 | 0    |
+    And these cards are next on seat 1's player deck
+      | next card | copy |
+      | 01032     | 0    |
+      | 01035     | 0    |
+      | 01037     | 0    |
+      | 01039     | 0    |
+      | 01054     | 0    |
+    When seat 1 initiates card 01031 copy 0's action paying with these cards
+      | card  | copy |
+      | 01086 | 0    |
+    Then card 01101 copy 0 is offered by the pending action
+    When seat 1 chooses card 01101 copy 0 for the pending action
+    Then card 01101 copy 0 has 0 damage
+    And card 01101 copy 0 has 0 tough status cards
+    And card 01032 copy 0 is in seat 1's discard pile
+    And card 01035 copy 0 is in seat 1's discard pile
+    And card 01037 copy 0 is in seat 1's discard pile
+    And card 01039 copy 0 is in seat 1's discard pile
+    And card 01054 copy 0 is in seat 1's discard pile
+    And card 01031 copy 0 is faceup on top of seat 1's discard pile
+
   @behavior:card:01023:choose-and-discard-up-5-cards-from-minimum
   @covers:behavior:rr:cost.8:published-result
   @covers:behavior:rr:cost.9:published-result

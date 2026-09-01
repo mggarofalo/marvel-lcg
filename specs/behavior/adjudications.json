@@ -1585,11 +1585,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Repulsor Blast's combined damage is prevented without canceling its discard"
+          ],
+          "mutation": "Resolve Repulsor Blast's base damage before counting its discarded energy resources; Tough is removed before the added damage and the minion takes four damage."
         }
       ]
     },
@@ -1603,11 +1605,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Repulsor Blast's combined damage is prevented without canceling its discard"
+          ],
+          "mutation": "Make Repulsor Blast's deck discard depend on its damage being taken; Tough prevents the discard and its five card assertions fail."
         }
       ]
     },
@@ -1621,11 +1625,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Repulsor Blast's combined damage is prevented without canceling its discard"
+          ],
+          "mutation": "Cancel Repulsor Blast's entire joined effect when Tough prevents its damage; the independent deck-discard assertions fail."
         }
       ]
     },
@@ -27925,11 +27931,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Repulsor Blast's combined damage is prevented without canceling its discard"
+          ],
+          "mutation": "Omit Repulsor Blast's deck discard or damage instance; the transcript's status, damage, or five discard assertions fail."
         },
         {
           "key": "for-each-printed-energy-resource-discarded-way-zero",
@@ -27961,11 +27969,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Repulsor Blast's combined damage is prevented without canceling its discard"
+          ],
+          "mutation": "Count fewer than both printed energy resources in Repulsor Blast's five discarded cards; Tough no longer prevents the specified five-damage instance."
         }
       ]
     },
@@ -49308,11 +49318,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Repulsor Blast's combined damage is prevented without canceling its discard"
+          ],
+          "mutation": "Deal Repulsor Blast's base point before its four additional points; Tough is discarded by the first instance and the minion takes the second."
         },
         {
           "key": "published-clarification-2",
