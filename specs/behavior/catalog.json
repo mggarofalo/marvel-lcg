@@ -1004,11 +1004,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ownership-control.feature::Card actions belong to their controller or to an encounter card"
+          ],
+          "mutation": "Offer an Action from another player's controlled support or suppress the encounter-card Action; one of the paired availability assertions fails."
         }
       ]
     },

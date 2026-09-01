@@ -3,6 +3,25 @@ Feature: Core ownership and control
   Ownership is fixed by the legal deal; control determines which cards a
   player may use and pay with at the current game moment.
 
+  @behavior:rr:action.1:published-result
+  @rr:action.1 @card:01091 @card:01141
+  Scenario: Card actions belong to their controller or to an encounter card
+    # A player may trigger an Action only on a card they control or on an
+    # encounter card. Seat 1 can pay Program Transmitter's encounter-card Hero
+    # Action, but cannot trigger seat 2's controlled Avengers Mansion Action.
+    Given a canonical Core scene is dealt
+      | campaign | heroes                    | seed |
+      | ultron   | captain_marvel,spider_man | 832  |
+    And seat 1 shows identity face 01010a
+    And card 01091 copy 1 is a support controlled by seat 2
+    And card 01141 copy 0 is attached to card 01134 copy 0
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01089 | 0    |
+    When seat 1 asks for available card actions
+    Then card 01141 copy 0's action is available
+    And card 01091 copy 1's action is unavailable
+
   @behavior:rr:cost.7:published-result
   @covers:behavior:rr:ownership-and-control.4:published-result
   @rr:cost.7 @rr:ownership-and-control.4 @card:01086 @card:01088
