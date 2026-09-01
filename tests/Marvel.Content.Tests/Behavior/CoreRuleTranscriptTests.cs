@@ -7,6 +7,31 @@ namespace Marvel.Content.Tests.Behavior;
 public sealed class CoreRuleTranscriptTests
 {
     [Fact]
+    public void EncounterIconBranchesHavePinnedOutcomes()
+    {
+        var suite = new CoreTranscriptSuite(RepositoryPaths.Root);
+        var results = suite.RunPassingCorpus()
+            .Where(result => result.Scenario.StartsWith(
+                "specs/behavior/core/encounter-icons.feature::",
+                StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
+
+        Assert.Equal(4, results.Count);
+        Assert.Equal(
+            "addf2e1a30ee9bd6e217a4c98150418b109cae8869e2c5555629a4cb479b8174",
+            results["behavior:rr:acceleration-icon.1:published-result"].Digest);
+        Assert.Equal(
+            "734689a82d46c7ee345f331008705e7da91491cca538f442c7216a1c92ef5034",
+            results["behavior:rr:acceleration-icon.2:published-result"].Digest);
+        Assert.Equal(
+            "2cfa2ec91af0e75e2bdd875aadbaf3d1b6e09a68f502df1e5b42676c48b8947f",
+            results["behavior:rr:crisis-icon.1:published-result"].Digest);
+        Assert.Equal(
+            "2cb656c532aea3e361cc1f76be37137240acfb88675a613b9ff3f76d0be39ad0",
+            results["behavior:rr:hazard-icon:published-result"].Digest);
+    }
+
+    [Fact]
     public void BasicPowerBranchesHavePinnedOutcomes()
     {
         var suite = new CoreTranscriptSuite(RepositoryPaths.Root);
