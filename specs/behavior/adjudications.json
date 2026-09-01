@@ -25809,11 +25809,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Ground Stomp deals one damage to every enemy"
+          ],
+          "mutation": "Damage only one enemy or change the amount; a villain or minion damage assertion fails."
         }
       ]
     },
@@ -30565,11 +30567,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Uppercut deals five damage to its chosen enemy"
+          ],
+          "mutation": "Change Uppercut target selection or damage; its prompt or five-damage assertion fails."
         }
       ]
     },
@@ -35055,11 +35059,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Haymaker deals three damage to its chosen enemy"
+          ],
+          "mutation": "Change Haymaker target selection or damage; its prompt or three-damage assertion fails."
         }
       ]
     },

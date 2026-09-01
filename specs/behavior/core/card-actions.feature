@@ -98,3 +98,66 @@ Feature: Core card actions
     Then card 01094 copy 0 has 5 damage
     And seat 1 has 0 cards in hand
     And card 01013 copy 0 is faceup on top of seat 1's discard pile
+
+  @behavior:card:01022:deal-1-damage-each-enemy
+  @card:01022
+  Scenario: Ground Stomp deals one damage to every enemy
+    # "Hero Action: Deal 1 damage to each enemy." The singular action changes
+    # both the villain and every engaged minion without a target prompt.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 712  |
+    And seat 1 shows identity face 01019a
+    And card 01101 copy 0 is a minion engaged with seat 1
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01022 | 0    |
+      | 01089 | 0    |
+    When seat 1 initiates card 01022 copy 0's action paying with these cards
+      | card  | copy |
+      | 01089 | 0    |
+    Then card 01094 copy 0 has 1 damage
+    And card 01101 copy 0 has 1 damage
+    And card 01022 copy 0 is faceup on top of seat 1's discard pile
+
+  @behavior:card:01054:deal-5-damage-enemy
+  @card:01054
+  Scenario: Uppercut deals five damage to its chosen enemy
+    # "Hero Action (attack): Deal 5 damage to an enemy."
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 713  |
+    And seat 1 shows identity face 01019a
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01054 | 0    |
+      | 01088 | 0    |
+      | 01089 | 0    |
+    When seat 1 initiates card 01054 copy 0's action paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+      | 01089 | 0    |
+    Then card 01094 copy 0 is offered by the pending action
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01094 copy 0 has 5 damage
+    And card 01054 copy 0 is faceup on top of seat 1's discard pile
+
+  @behavior:card:01087:deal-3-damage-enemy
+  @card:01087
+  Scenario: Haymaker deals three damage to its chosen enemy
+    # "Hero Action (attack): Deal 3 damage to an enemy."
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 714  |
+    And seat 1 shows identity face 01001a
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01087 | 0    |
+      | 01089 | 0    |
+    When seat 1 initiates card 01087 copy 0's action paying with these cards
+      | card  | copy |
+      | 01089 | 0    |
+    Then card 01094 copy 0 is offered by the pending action
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01094 copy 0 has 3 damage
+    And card 01087 copy 0 is faceup on top of seat 1's discard pile
