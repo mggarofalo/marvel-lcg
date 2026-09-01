@@ -6,11 +6,13 @@ namespace Marvel.Content.Tests.Behavior;
 
 public sealed class CoreRuleTranscriptTests
 {
+    private static readonly Lazy<IReadOnlyList<TranscriptResult>> Corpus = new(
+        () => new CoreTranscriptSuite(RepositoryPaths.Root).RunPassingCorpus());
+
     [Fact]
     public void MainSchemeBranchesHavePinnedOutcomes()
     {
-        var suite = new CoreTranscriptSuite(RepositoryPaths.Root);
-        var results = suite.RunPassingCorpus()
+        var results = Corpus.Value
             .Where(result => result.Scenario.StartsWith(
                 "specs/behavior/core/main-scheme.feature::",
                 StringComparison.Ordinal))
@@ -28,8 +30,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void EncounterIconBranchesHavePinnedOutcomes()
     {
-        var suite = new CoreTranscriptSuite(RepositoryPaths.Root);
-        var results = suite.RunPassingCorpus()
+        var results = Corpus.Value
             .Where(result => result.Scenario.StartsWith(
                 "specs/behavior/core/encounter-icons.feature::",
                 StringComparison.Ordinal))
@@ -53,8 +54,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void BasicPowerBranchesHavePinnedOutcomes()
     {
-        var suite = new CoreTranscriptSuite(RepositoryPaths.Root);
-        var results = suite.RunPassingCorpus()
+        var results = Corpus.Value
             .Where(result => result.Scenario.StartsWith(
                 "specs/behavior/core/basic-powers.feature::",
                 StringComparison.Ordinal))
@@ -81,8 +81,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void BasicPowerRestrictionBranchesHavePinnedOutcomes()
     {
-        var suite = new CoreTranscriptSuite(RepositoryPaths.Root);
-        var results = suite.RunPassingCorpus()
+        var results = Corpus.Value
             .Where(result => result.Scenario.StartsWith(
                 "specs/behavior/core/basic-power-restrictions.feature::",
                 StringComparison.Ordinal))
@@ -103,8 +102,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void DefeatBranchesHavePinnedOutcomes()
     {
-        var suite = new CoreTranscriptSuite(RepositoryPaths.Root);
-        var results = suite.RunPassingCorpus()
+        var results = Corpus.Value
             .Where(result => result.Scenario.StartsWith(
                 "specs/behavior/core/defeat.feature::",
                 StringComparison.Ordinal))
@@ -125,8 +123,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void VillainPhaseBranchesHavePinnedOutcomes()
     {
-        var suite = new CoreTranscriptSuite(RepositoryPaths.Root);
-        var results = suite.RunPassingCorpus()
+        var results = Corpus.Value
             .Where(result => result.Scenario.StartsWith(
                 "specs/behavior/core/villain-phase.feature::",
                 StringComparison.Ordinal))
@@ -159,8 +156,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void StatusCardBranchesHavePinnedOutcomes()
     {
-        var suite = new CoreTranscriptSuite(RepositoryPaths.Root);
-        var results = suite.RunPassingCorpus()
+        var results = Corpus.Value
             .Where(result => result.Scenario.StartsWith(
                 "specs/behavior/core/status-cards.feature::",
                 StringComparison.Ordinal))
@@ -190,8 +186,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void DiscardBranchesHavePinnedOutcomes()
     {
-        var suite = new CoreTranscriptSuite(RepositoryPaths.Root);
-        var results = suite.RunPassingCorpus()
+        var results = Corpus.Value
             .Where(result => result.Scenario.StartsWith(
                 "specs/behavior/core/discard.feature::",
                 StringComparison.Ordinal))
@@ -212,9 +207,8 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void FormChangeBranchesHavePinnedOutcomes()
     {
-        var suite = new CoreTranscriptSuite(RepositoryPaths.Root);
         TranscriptResult result = Assert.Single(
-            suite.RunPassingCorpus(),
+            Corpus.Value,
             candidate => candidate.Scenario.StartsWith(
                 "specs/behavior/core/form-change.feature::",
                 StringComparison.Ordinal));
@@ -228,8 +222,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void PlayerEliminationBranchesHavePinnedOutcomes()
     {
-        var suite = new CoreTranscriptSuite(RepositoryPaths.Root);
-        var results = suite.RunPassingCorpus()
+        var results = Corpus.Value
             .Where(result => result.Scenario.StartsWith(
                 "specs/behavior/core/player-elimination.feature::",
                 StringComparison.Ordinal))
@@ -247,8 +240,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void EndOfPlayerPhaseBranchesHavePinnedOutcomes()
     {
-        var suite = new CoreTranscriptSuite(RepositoryPaths.Root);
-        var results = suite.RunPassingCorpus()
+        var results = Corpus.Value
             .Where(result => result.Scenario.StartsWith(
                 "specs/behavior/core/end-of-player-phase.feature::",
                 StringComparison.Ordinal))
@@ -275,8 +267,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void EncounterDeckBranchesHavePinnedOutcomes()
     {
-        var suite = new CoreTranscriptSuite(RepositoryPaths.Root);
-        var results = suite.RunPassingCorpus()
+        var results = Corpus.Value
             .Where(result => result.Scenario.StartsWith(
                 "specs/behavior/core/encounter-deck-empty.feature::",
                 StringComparison.Ordinal))
@@ -300,8 +291,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void PlayerDeckBranchesHavePinnedOutcomes()
     {
-        var suite = new CoreTranscriptSuite(RepositoryPaths.Root);
-        var results = suite.RunPassingCorpus()
+        var results = Corpus.Value
             .Where(result => result.Scenario.StartsWith(
                 "specs/behavior/core/player-deck-empty.feature::",
                 StringComparison.Ordinal))

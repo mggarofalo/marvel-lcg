@@ -72,6 +72,8 @@ internal sealed class TranscriptContext
 
     public bool? LastAvailability { get; set; }
 
+    public string? LastInspectedFace { get; set; }
+
     public World World => Scene?.World
         ?? throw new TranscriptException("a canonical Core scene has not been constructed");
 }
@@ -337,6 +339,9 @@ internal sealed class CoreTranscriptRunner
         Bind("minion-enters-play", TranscriptStepKind.When,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) enters play as a minion engaged with seat (?<seat>\d+)",
             MinionEntersPlay),
+        Bind("request-printed-characteristics", TranscriptStepKind.When,
+            @"the printed characteristics of card (?<face>\d+[a-z]?) copy (?<copy>\d+) are requested",
+            RequestPrintedCharacteristics),
         Bind("hand-count", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) has (?<count>\d+) cards? in hand", HandCount),
         Bind("player-deck-count", TranscriptStepKind.Then,
@@ -441,6 +446,9 @@ internal sealed class CoreTranscriptRunner
         Bind("card-afflicted", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is (?<status>stunned|confused)",
             CardAfflicted),
+        Bind("printed-characteristics", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) exposes these printed characteristics",
+            PrintedCharacteristics),
         Bind("cataloged-exception", TranscriptStepKind.Then,
             "the engine raises the cataloged unimplemented rule exception", CatalogedException),
     ];
@@ -459,8 +467,32 @@ internal sealed class CoreTranscriptRunner
         TranscriptContext context, TranscriptStep step, Match match)
     {
         _ = match;
-        IReadOnlyDictionary<string, string> row = OneRow(
-            step, "campaign", "heroes", "seed");
+        TranscriptTable table = step.Table
+            ?? throw new TranscriptException($"{step.Location}: expected a table");
+        string[] required = ["campaign", "heroes", "seed"];
+        string[] allowed = [.. required, "modular sets"];
+        var unused = table.Header.Except(allowed, StringComparer.Ordinal).ToList();
+        var missing = required.Except(table.Header, StringComparer.Ordinal).ToList();
+        if (unused.Count > 0 || missing.Count > 0)
+        {
+            string detail = string.Join("; ", new[]
+            {
+                unused.Count == 0 ? null : $"unused columns: {string.Join(", ", unused)}",
+                missing.Count == 0 ? null : $"missing columns: {string.Join(", ", missing)}",
+            }.Where(value => value is not null));
+            throw new TranscriptException(
+                $"{step.Location}: {detail}");
+        }
+
+        bool hasModularSets = table.Header.Contains("modular sets", StringComparer.Ordinal);
+
+        if (table.Rows.Count != 1)
+        {
+            throw new TranscriptException(
+                $"{step.Location}: expected exactly one table row; found {table.Rows.Count}");
+        }
+
+        IReadOnlyDictionary<string, string> row = table.Rows[0];
         if (!uint.TryParse(row["seed"], NumberStyles.None, CultureInfo.InvariantCulture,
                 out uint seed))
         {
@@ -476,7 +508,15 @@ internal sealed class CoreTranscriptRunner
 
         context.Scene = CanonicalCoreScene.Deal(
             new CoreSceneRequest(
-                context.Obligation, row["campaign"], heroes, seed),
+                context.Obligation,
+                row["campaign"],
+                heroes,
+                seed,
+                hasModularSets
+                    ? [.. row["modular sets"].Split(
+                        ',', StringSplitOptions.TrimEntries
+                             | StringSplitOptions.RemoveEmptyEntries)]
+                    : null),
             context.Setup,
             context.Cards,
             new AbilityRunner(context.Abilities));
@@ -1001,6 +1041,13 @@ internal sealed class CoreTranscriptRunner
         context.SceneRequired(step).Apply(new MoveSceneCard(
             SceneCard(match, step),
             new SceneDestination(SceneZone.EngagedMinion, Seat(match, step))));
+    }
+
+    private static void RequestPrintedCharacteristics(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        _ = context.SceneRequired(step).Find(SceneCard(match, step));
+        context.LastInspectedFace = match.Groups["face"].Value;
     }
 
     private static void HandCount(
@@ -1530,6 +1577,50 @@ internal sealed class CoreTranscriptRunner
                 $"{step.Location}: expected card {card.ObjectId} to be {status}");
         }
     }
+
+    private static void PrintedCharacteristics(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        string face = match.Groups["face"].Value;
+        _ = context.SceneRequired(step).Find(SceneCard(match, step));
+        if (!string.Equals(context.LastInspectedFace, face, StringComparison.Ordinal))
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: printed characteristics for {face} were not requested");
+        }
+        TranscriptTable table = Table(step, "field", "value");
+        foreach (IReadOnlyDictionary<string, string> row in table.Rows)
+        {
+            string field = row["field"];
+            string actual = field switch
+            {
+                "name" => context.Cards.Title(face),
+                "subtitle" => context.Cards.Subtitle(face),
+                "type" => PrintedType(context.Cards.Kind(face)),
+                "traits" => string.Join('/', context.Cards.Traits(face)
+                    .Select(trait => trait.Replace('_', ' '))),
+                _ when field.StartsWith("attribute:", StringComparison.Ordinal) =>
+                    context.Cards.Attributes(face).TryGetValue(
+                        field["attribute:".Length..], out string? value)
+                        ? value
+                        : "<absent>",
+                _ => throw new TranscriptException(
+                    $"{step.Location}: unknown printed field '{field}'"),
+            };
+            if (!string.Equals(row["value"], actual, StringComparison.Ordinal))
+            {
+                throw new TranscriptAssertionException(
+                    $"{step.Location}: expected {face} {field} '{row["value"]}'; was '{actual}'");
+            }
+        }
+    }
+
+    private static string PrintedType(CardKind kind) => kind switch
+    {
+        CardKind.EncounterVillain => "Villain",
+        CardKind.EncounterSideScheme => "SideScheme",
+        _ => kind.ToString(),
+    };
 
     private static void Equal(int expected, int actual, string observation, TranscriptStep step)
     {
