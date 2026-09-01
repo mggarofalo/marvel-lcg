@@ -174,7 +174,7 @@ public sealed class CoreRuleTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(6, results.Count);
+        Assert.Equal(9, results.Count);
         Assert.Equal(
             "dab07315ec82d4dffa5852140b360299a47d7cc396c78e54b34be5b4c22cfe53",
             results["behavior:rr:stun-stunned.5:published-result"].Digest);
@@ -184,6 +184,15 @@ public sealed class CoreRuleTranscriptTests
         Assert.Equal(
             "7d7ced5d78722f6dd1c69d9a07e291dad214bd3037a647c5ceeab7a6933e2906",
             results["behavior:rr:stun-stunned.2:published-result"].Digest);
+        Assert.Equal(
+            "6fc1a413ed3f43e85a910bc31d784d81089286b2ee8dfb81baecf09b90a396e9",
+            results["behavior:rr:confuse-confused.2:published-result"].Digest);
+        Assert.Equal(
+            "2101b8ad401a6a79db1f7aa993da745e667782a87ba63310ece0c412507281c2",
+            results["behavior:rr:confuse-confused.6:published-result"].Digest);
+        Assert.Equal(
+            "5fa890a7f260b7839348e83cd891ec85e0b800b4a5f14ef66c2e19b53ec46e28",
+            results["behavior:rr:stun-stunned.6:published-result"].Digest);
         Assert.Equal(
             "7d7ced5d78722f6dd1c69d9a07e291dad214bd3037a647c5ceeab7a6933e2906",
             results["behavior:rr:status-cards.1:published-result"].Digest);

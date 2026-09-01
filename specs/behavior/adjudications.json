@@ -4595,11 +4595,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/status-cards.feature::A confuse ability gives the character a confused status card"
+          ],
+          "mutation": "Skip creation of the confused status card; both the count and afflicted assertions fail."
         }
       ]
     },
@@ -4705,11 +4707,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/status-cards.feature::A confused villain discards confuse instead of scheming"
+          ],
+          "mutation": "Allow the confused villain to scheme; the status and main-scheme threat assertions fail."
         }
       ]
     },
@@ -4723,11 +4727,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/status-cards.feature::A confused villain discards confuse instead of scheming"
+          ],
+          "mutation": "Treat the replaced activation as a scheme; the zero scheme contribution assertion fails."
         }
       ]
     },
@@ -18947,11 +18953,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/status-cards.feature::A stunned villain discards stun instead of attacking"
+          ],
+          "mutation": "Allow the stunned villain to attack; the status and identity-damage assertions fail."
         }
       ]
     },
@@ -18965,11 +18973,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unimplemented",
-          "work_item": "MARVEL-287",
-          "exception": "RulesNotImplementedException: rr:stun-stunned.7",
-          "scenarios": [],
-          "mutation": null
+          "implementation": "supported",
+          "work_item": null,
+          "exception": null,
+          "scenarios": [
+            "specs/behavior/core/status-cards.feature::A stunned villain discards stun instead of attacking"
+          ],
+          "mutation": "Treat the replaced activation as an attack; the zero attack-damage assertion fails."
         }
       ]
     },

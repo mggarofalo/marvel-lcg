@@ -49,6 +49,54 @@ Feature: Core status cards
     Then card 01094 copy 0 has 1 stunned status card
     And card 01094 copy 0 is stunned
 
+  @behavior:rr:confuse-confused.2:published-result
+  @rr:confuse-confused.2
+  Scenario: A confuse ability gives the character a confused status card
+    # "If an ability 'confuses' a character, give that character a confused
+    # status card."
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 315  |
+    When an ability confuses card 01094 copy 0
+    Then card 01094 copy 0 has 1 confused status card
+    And card 01094 copy 0 is confused
+
+  @behavior:rr:confuse-confused.6:published-result
+  @covers:behavior:rr:confuse-confused.7:published-result
+  @rr:confuse-confused.6 @rr:confuse-confused.7
+  Scenario: A confused villain discards confuse instead of scheming
+    # "If a confused villain or minion would scheme, discard the confused
+    # status card instead." The replaced activation is not a scheme.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 316  |
+    And card 01094 copy 0 has a confused status card
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01101     | 0    |
+    When villain phase 1 resolves with every optional choice declined
+    Then card 01094 copy 0 has 0 confused status cards
+    And card 01097b copy 0 has 1 threat counters
+    And card 01001b copy 0 has 0 damage
+
+  @behavior:rr:stun-stunned.6:published-result
+  @covers:behavior:rr:stun-stunned.7:published-result
+  @rr:stun-stunned.6 @rr:stun-stunned.7
+  Scenario: A stunned villain discards stun instead of attacking
+    # "If a stunned villain or minion would attack, discard the stunned status
+    # card instead." The replaced activation is not an attack.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 317  |
+    And seat 1 shows identity face 01001a
+    And card 01094 copy 0 has a stunned status card
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01101     | 0    |
+    When villain phase 1 resolves with every optional choice declined
+    Then card 01094 copy 0 has 0 stunned status cards
+    And card 01001a copy 0 has 0 damage
+
   @behavior:rr:status-cards.1:published-result @rr:status-cards.1
   Scenario: A character cannot receive a second status card of the same type
     # "A character cannot have more than one status card of each type at a
