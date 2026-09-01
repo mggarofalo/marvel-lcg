@@ -482,7 +482,7 @@ public sealed class CoreRuleTranscriptTests
                 "specs/behavior/core/setup.feature::", StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(7, results.Count);
+        Assert.Equal(9, results.Count);
         Assert.Equal(
             "e72ed15ec31a9a7a09fc27204c124b81b9721e2591a43d75bed51ecd6e2f49d5",
             results["behavior:rr:appendix-ii-setup.step.1:published-result"].Digest);
@@ -504,6 +504,12 @@ public sealed class CoreRuleTranscriptTests
         Assert.Equal(
             "bd60d3534d573e413df7d3efa055d1b24035584a2707f3cee4af4f4811fa89a8",
             results["behavior:card:01137a:put-ultron-drones-environment-into-play"].Digest);
+        Assert.Equal(
+            "4579d062a0a07070c81b283aa5303fe8c6c8da5b4c820d1edb893897988d98c2",
+            results["behavior:card:01116a:klaw-ii-and-klaw-iii-instead-for"].Digest);
+        Assert.Equal(
+            "f833b0ee0fa8a3a5d74c3e54a120ac5df8c2a9ed70b8d079c846799940847f98",
+            results["behavior:card:01137a:ultron-ii-and-ultron-iii-instead-for"].Digest);
     }
 
     [Fact]

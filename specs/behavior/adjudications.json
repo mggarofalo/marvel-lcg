@@ -37244,11 +37244,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::The printed Spider-Man and Rhino deal reaches its opening state"
+          ],
+          "mutation": "Use a different normal-mode villain stage pair; the faceup Rhino I or villain-deck Rhino II assertion fails."
         },
         {
           "key": "rhino-ii-and-rhino-iii-instead-for",
@@ -37256,11 +37258,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::Expert mode substitutes villain stages and adds the Expert set"
+          ],
+          "mutation": "Use the normal-mode villain stages in expert mode; the faceup Rhino II or villain-deck Rhino III assertion fails."
         },
         {
           "key": "bomb-scare",
@@ -37268,11 +37272,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::The printed Spider-Man and Rhino deal reaches its opening state"
+          ],
+          "mutation": "Omit or partially include the recommended Bomb Scare set; one of its exact encounter-deck counts fails."
         },
         {
           "key": "advance-stage-1b",
@@ -37280,11 +37286,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::The printed Spider-Man and Rhino deal reaches its opening state"
+          ],
+          "mutation": "Do not advance The Break-In! to stage 1B; the faceup-main-scheme assertion fails."
         }
       ]
     },
@@ -39506,11 +39514,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::Expert Klaw substitutes stages two and three and adds Expert cards"
+          ],
+          "mutation": "Use Klaw I or omit Klaw III in expert mode; the faceup or villain-deck stage assertion fails."
         },
         {
           "key": "masters-evil",
@@ -42258,11 +42268,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::Expert Ultron substitutes stages two and three and adds Expert cards"
+          ],
+          "mutation": "Use Ultron I or omit Ultron III in expert mode; the faceup or villain-deck stage assertion fails."
         },
         {
           "key": "under-attack",

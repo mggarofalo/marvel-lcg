@@ -24,6 +24,9 @@ Feature: Canonical Core setup
   @covers:behavior:rr:first-player:published-result
   @covers:behavior:rr:identity-specific-card.1:published-result
   @covers:behavior:rr:ownership-and-control.1:published-result
+  @covers:behavior:card:01097a:rhino-i-and-rhino-ii
+  @covers:behavior:card:01097a:bomb-scare
+  @covers:behavior:card:01097a:advance-stage-1b
   @rr:appendix-ii-setup.step.1 @rr:appendix-ii-setup.step.2
   @rr:appendix-ii-setup.step.3 @rr:appendix-ii-setup.step.4
   @rr:appendix-ii-setup.step.5 @rr:appendix-ii-setup.step.6
@@ -38,6 +41,7 @@ Feature: Canonical Core setup
   @rr:first-player
   @rr:identity-specific-card.1
   @rr:ownership-and-control.1
+  @card:01097a
   Scenario: The printed Spider-Man and Rhino deal reaches its opening state
     # Setup selects identities, sets their hit points, chooses a first player,
     # sets aside obligations and nemesis sets, selects the scenario, sets the
@@ -68,16 +72,40 @@ Feature: Canonical Core setup
     And card 01094 copy 0 is the faceup villain
     And card 01094 copy 0 is in play
     And card 01094 copy 0 has 14 remaining hit points
+    And card 01095 copy 0 is in the villain deck
     And card 01097b copy 0 is the faceup main scheme
     And card 01097b copy 0 is in play
     And card 01165 copy 0 is in the encounter deck
     And card 01165 copy 0 is out of play
     And card 01166 copy 0 is in seat 1's set-aside nemesis pile
     And card 01166 copy 0 is out of play
+    And the encounter deck contains these card counts
+      | card  | count |
+      | 01098 | 1     |
+      | 01099 | 2     |
+      | 01100 | 1     |
+      | 01101 | 2     |
+      | 01102 | 1     |
+      | 01103 | 1     |
+      | 01104 | 2     |
+      | 01105 | 2     |
+      | 01106 | 3     |
+      | 01107 | 1     |
+      | 01108 | 1     |
+      | 01109 | 1     |
+      | 01110 | 2     |
+      | 01111 | 1     |
+      | 01112 | 2     |
+      | 01186 | 2     |
+      | 01187 | 2     |
+      | 01188 | 1     |
+      | 01189 | 1     |
+      | 01190 | 1     |
 
   @behavior:rr:modes-of-play.2:published-result
   @covers:behavior:rr:appendix-ii-setup.step.12.c:published-result
-  @rr:modes-of-play.2 @rr:appendix-ii-setup.step.12.c
+  @covers:behavior:card:01097a:rhino-ii-and-rhino-iii-instead-for
+  @rr:modes-of-play.2 @rr:appendix-ii-setup.step.12.c @card:01097a
   Scenario: Expert mode substitutes villain stages and adds the Expert set
     # Expert mode follows the scenario setup using its listed expert villain
     # stages and adds the complete Expert encounter set to the encounter deck.
@@ -90,6 +118,44 @@ Feature: Canonical Core setup
     And card 01107 copy 0 has 3 threat counters
     And the encounter deck contains these card counts
       | card  | count |
+      | 01191 | 1     |
+      | 01192 | 1     |
+      | 01193 | 1     |
+
+  @behavior:card:01116a:klaw-ii-and-klaw-iii-instead-for
+  @card:01116a
+  Scenario: Expert Klaw substitutes stages two and three and adds Expert cards
+    # "Klaw (II) and Klaw (III) instead for expert mode." The normal Klaw and
+    # Standard contents remain, and expert mode adds the complete Expert set.
+    Given a canonical Core scene is dealt
+      | campaign    | heroes     | seed |
+      | klaw_expert | spider_man | 847  |
+    When the dealt Core scene is inspected
+    Then card 01114 copy 0 is the faceup villain
+    And card 01115 copy 0 is in the villain deck
+    And the encounter deck contains these card counts
+      | card  | count |
+      | 01118 | 1     |
+      | 01186 | 2     |
+      | 01191 | 1     |
+      | 01192 | 1     |
+      | 01193 | 1     |
+
+  @behavior:card:01137a:ultron-ii-and-ultron-iii-instead-for
+  @card:01137a
+  Scenario: Expert Ultron substitutes stages two and three and adds Expert cards
+    # "Ultron (II) and Ultron (III) instead for expert mode." The normal Ultron
+    # and Standard contents remain, and expert mode adds the complete Expert set.
+    Given a canonical Core scene is dealt
+      | campaign      | heroes     | seed |
+      | ultron_expert | spider_man | 848  |
+    When the dealt Core scene is inspected
+    Then card 01135 copy 0 is the faceup villain
+    And card 01136 copy 0 is in the villain deck
+    And the encounter deck contains these card counts
+      | card  | count |
+      | 01141 | 1     |
+      | 01186 | 2     |
       | 01191 | 1     |
       | 01192 | 1     |
       | 01193 | 1     |
