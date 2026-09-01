@@ -102,6 +102,34 @@ Feature: Core card actions
     And 1 Move_Damage event was emitted
     And 1 Attack event was emitted
 
+  @behavior:rr:move.2:published-result
+  @covers:behavior:card:01049:move-1-damage-from-your-hero-enemy-condition-not-met
+  @rr:move.2 @card:01043a @card:01049
+  Scenario: Vibranium Suit cannot move damage when its hero has none
+    # Rhino remains a valid enemy target, but the undamaged hero is not a valid
+    # source for the move. The Special resolves without creating damage.
+    Given a canonical Core scene is dealt
+      | campaign | heroes        | seed |
+      | rhino    | black_panther | 841  |
+    And seat 1 shows identity face 01040a
+    And card 01049 copy 0 is an upgrade attached to seat 1's identity
+    And seat 1's hand contains exactly these cards
+      | card   | copy |
+      | 01043a | 0    |
+      | 01088  | 0    |
+    When seat 1 initiates card 01043a copy 0's action paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+    Then seat 1 is asked to order 1 card for the pending action
+    When seat 1 orders these cards for the pending action
+      | card  | copy |
+      | 01049 | 0    |
+    Then card 01094 copy 0 is offered by the pending action
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01040a copy 0 has 0 damage
+    And card 01094 copy 0 has 0 damage
+    And 0 Move_Damage events were emitted
+
   @behavior:rr:cancel.3:published-result
   @covers:behavior:rr:status-cards.2:published-result
   @covers:behavior:rr:labeled-ability.6:published-result
