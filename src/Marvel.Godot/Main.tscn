@@ -396,38 +396,27 @@ theme_override_font_sizes/font_size = 16
 text = "—"
 autowrap_mode = 2
 
-[node name="Board" type="HBoxContainer" parent="Margin/Shell/Content"]
+[node name="Board" type="ScrollContainer" parent="Margin/Shell/Content"]
 visible = false
 custom_minimum_size = Vector2(0, 260)
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 18
+focus_mode = 2
+follow_focus = true
+horizontal_scroll_mode = 0
 
-[node name="Hero" type="PanelContainer" parent="Margin/Shell/Content/Board"]
+[node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Board"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_styles/panel = SubResource("Style_panel")
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
 
-[node name="Label" type="Label" parent="Margin/Shell/Content/Board/Hero"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.48, 0.61, 0.67, 0.85)
-theme_override_font_sizes/font_size = 15
-text = "HERO AREA"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="Encounter" type="PanelContainer" parent="Margin/Shell/Content/Board"]
+[node name="Areas" type="GridContainer" parent="Margin/Shell/Content/Board/Margin"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_styles/panel = SubResource("Style_panel")
-
-[node name="Label" type="Label" parent="Margin/Shell/Content/Board/Encounter"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.48, 0.61, 0.67, 0.85)
-theme_override_font_sizes/font_size = 15
-text = "ENCOUNTER AREA"
-horizontal_alignment = 1
-vertical_alignment = 1
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 12
+columns = 2
 
 [node name="Status" type="PanelContainer" parent="Margin/Shell/Content"]
 layout_mode = 2

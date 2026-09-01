@@ -1,5 +1,6 @@
 using System.Globalization;
 using Marvel.Server;
+using Marvel.View;
 
 namespace Marvel.Godot;
 
@@ -207,7 +208,7 @@ public sealed class LocalGameClient
                 return Failed(response.Error.Code, response.Error.Message);
             }
 
-            if (response.World is null || response.World.Areas is null
+            if (!HasCompleteBoard(response.World)
                 || response.Prompt is null || response.Events is null
                 || string.IsNullOrWhiteSpace(response.Capability))
             {
@@ -238,6 +239,25 @@ public sealed class LocalGameClient
 
     private static ClientStartupError Error(string code, string message) =>
         new(Bounded(code), Bounded(message));
+
+    private static bool HasCompleteBoard(WorldDescriptor? world) =>
+        world?.Players is not null
+        && world.Areas is not null
+        && world.GameAreas is not null
+        && world.Players.All(player => player is not null && player.Name is not null)
+        && world.GameAreas.All(area => area is not null && area.PlayAreas is not null)
+        && world.Areas.All(area =>
+            area is not null
+            && area.Zone is not null
+            && area.Cards is not null
+            && area.Removed is not null
+            && area.Cards.Concat(area.Removed).All(card =>
+                card is not null
+                && (card.Face is null
+                    || card.Face.Id is not null
+                    && card.Face.Title is not null
+                    && card.Face.Subtitle is not null
+                    && card.Face.Fields is not null)));
 
     private static string Bounded(string value) =>
         value.Length <= MaximumDisplayedErrorLength

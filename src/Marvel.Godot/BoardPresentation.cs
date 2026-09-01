@@ -1,0 +1,154 @@
+using System.Globalization;
+using System.Text;
+using Marvel.View;
+
+namespace Marvel.Godot;
+
+/// <summary>A display-only board derived from one visibility-safe snapshot.</summary>
+public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Areas)
+{
+    /// <summary>Builds a fresh presentation without retaining or enriching engine state.</summary>
+    public static BoardPresentation From(WorldDescriptor world)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        var players = world.Players.ToDictionary(player => player.Seat);
+        return new BoardPresentation(
+            world.Areas.Select(area => Present(area, players)).ToArray());
+    }
+
+    private static BoardAreaPresentation Present(
+        AreaDescriptor area,
+        Dictionary<int, PlayerDescriptor> players)
+    {
+        string owner = players.TryGetValue(area.Owner, out PlayerDescriptor? player)
+            ? player.Name
+            : area.Owner < 0 ? "Scenario" : $"Seat {area.Owner}";
+        string context = $"AREA {area.Id}  ·  OWNER {owner.ToUpperInvariant()}";
+        if (area.Host >= 0)
+        {
+            context += $"  ·  HOST {area.Host}";
+        }
+
+        return new BoardAreaPresentation(
+            area.Id,
+            Humanize(area.Zone, trimArea: true).ToUpperInvariant(),
+            context,
+            Present(area.Cards),
+            Present(area.Removed));
+    }
+
+    private static List<BoardCardPresentation> Present(
+        IReadOnlyList<CardDescriptor> cards)
+    {
+        var presented = new List<BoardCardPresentation>();
+        var concealed = new Dictionary<CardBack, int>();
+        foreach (CardDescriptor card in cards)
+        {
+            if (card.Face is null && card.Id is null)
+            {
+                concealed[card.Back] = concealed.GetValueOrDefault(card.Back) + 1;
+                continue;
+            }
+
+            presented.Add(Present(card));
+        }
+
+        foreach ((CardBack back, int count) in concealed)
+        {
+            string noun = count == 1 ? "card" : "cards";
+            presented.Add(new BoardCardPresentation(
+                TargetId: null,
+                Count: count,
+                Concealed: true,
+                Title: $"{count} concealed {back.ToString().ToLowerInvariant()} {noun}",
+                Subtitle: "Identity and order hidden",
+                Kind: "CONCEALED PILE",
+                Status: $"{back.ToString().ToUpperInvariant()} BACK",
+                Fields: []));
+        }
+
+        return presented;
+    }
+
+    private static BoardCardPresentation Present(CardDescriptor card)
+    {
+        string status = card.Ready ? "READY" : "EXHAUSTED";
+        status += card.FaceUp ? "  ·  FACE UP" : "  ·  FACE DOWN";
+        if (card.Host >= 0)
+        {
+            status += $"  ·  HOST {card.Host}";
+        }
+
+        if (card.Face is null)
+        {
+            return new BoardCardPresentation(
+                card.Id,
+                Count: 1,
+                Concealed: true,
+                Title: $"Face-down {card.Back.ToString().ToLowerInvariant()} card",
+                Subtitle: "Identity hidden",
+                Kind: "CONCEALED CARD",
+                Status: status,
+                Fields: []);
+        }
+
+        return new BoardCardPresentation(
+            card.Id,
+            Count: 1,
+            Concealed: false,
+            card.Face.Title,
+            card.Face.Subtitle,
+            Humanize(card.Face.Kind.ToString(), trimArea: false).ToUpperInvariant(),
+            status,
+            card.Face.Fields
+                .OrderBy(field => field.Key, StringComparer.Ordinal)
+                .Select(field => new BoardFieldPresentation(
+                    Humanize(field.Key, trimArea: false).ToUpperInvariant(),
+                    field.Value.ToString(CultureInfo.InvariantCulture)))
+                .ToArray());
+    }
+
+    private static string Humanize(string value, bool trimArea)
+    {
+        string text = trimArea && value.EndsWith("Area", StringComparison.Ordinal)
+            ? value[..^"Area".Length]
+            : value;
+        var result = new StringBuilder(text.Length + 8);
+        for (int index = 0; index < text.Length; index++)
+        {
+            char current = text[index];
+            if (index > 0 && char.IsUpper(current)
+                && (char.IsLower(text[index - 1])
+                    || index + 1 < text.Length && char.IsLower(text[index + 1])))
+            {
+                result.Append(' ');
+            }
+
+            result.Append(current);
+        }
+
+        return result.ToString();
+    }
+}
+
+/// <summary>One engine-provided area and its two card containers.</summary>
+public sealed record BoardAreaPresentation(
+    int Id,
+    string Title,
+    string Context,
+    IReadOnlyList<BoardCardPresentation> Cards,
+    IReadOnlyList<BoardCardPresentation> Removed);
+
+/// <summary>One readable card, face-down object, or concealed pile summary.</summary>
+public sealed record BoardCardPresentation(
+    int? TargetId,
+    int Count,
+    bool Concealed,
+    string Title,
+    string Subtitle,
+    string Kind,
+    string Status,
+    IReadOnlyList<BoardFieldPresentation> Fields);
+
+/// <summary>One live public field rendered on a readable card.</summary>
+public sealed record BoardFieldPresentation(string Name, string Value);
