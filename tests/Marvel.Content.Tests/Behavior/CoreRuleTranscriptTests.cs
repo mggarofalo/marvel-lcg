@@ -57,6 +57,28 @@ public sealed class CoreRuleTranscriptTests
     }
 
     [Fact]
+    public void DefeatBranchesHavePinnedOutcomes()
+    {
+        var suite = new CoreTranscriptSuite(RepositoryPaths.Root);
+        var results = suite.RunPassingCorpus()
+            .Where(result => result.Scenario.StartsWith(
+                "specs/behavior/core/defeat.feature::",
+                StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
+
+        Assert.Equal(3, results.Count);
+        Assert.Equal(
+            "87b20f195af0f89ca10e94890082e869d08366a336f3b3b566b1811b99744754",
+            results["behavior:rr:minion.2:published-result"].Digest);
+        Assert.Equal(
+            "071e9a2731b848811a847e30d8d452ecfc3195ce515e9ed2afd9397f8bbb71bd",
+            results["behavior:rr:side-scheme.2:published-result"].Digest);
+        Assert.Equal(
+            "107af270de710690ab92afe8c1bd3c073593b6c171aea3c6dfd921c08b822976",
+            results["behavior:rr:villain-defeat:published-result"].Digest);
+    }
+
+    [Fact]
     public void StatusCardBranchesHavePinnedOutcomes()
     {
         var suite = new CoreTranscriptSuite(RepositoryPaths.Root);

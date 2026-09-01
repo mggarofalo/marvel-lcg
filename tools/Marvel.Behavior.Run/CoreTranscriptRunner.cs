@@ -250,6 +250,9 @@ internal sealed class CoreTranscriptRunner
         Bind("engage-minion", TranscriptStepKind.Given,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is a minion engaged with seat (?<seat>\d+)",
             EngageMinion),
+        Bind("place-side-scheme", TranscriptStepKind.Given,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is a side scheme in play",
+            PlaceSideScheme),
         Bind("attach-identity-upgrade", TranscriptStepKind.Given,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is an upgrade attached to seat (?<seat>\d+)'s identity",
             AttachIdentityUpgrade),
@@ -373,6 +376,8 @@ internal sealed class CoreTranscriptRunner
             EventOrder),
         Bind("players-lose", TranscriptStepKind.Then,
             "the players lose the game", PlayersLose),
+        Bind("players-win", TranscriptStepKind.Then,
+            "the players win the game", PlayersWin),
         Bind("seat-eliminated", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) is eliminated", SeatEliminated),
         Bind("first-player", TranscriptStepKind.Then,
@@ -395,6 +400,9 @@ internal sealed class CoreTranscriptRunner
         Bind("card-removed", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is removed from the game",
             CardRemoved),
+        Bind("card-is-villain", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is the faceup villain",
+            CardIsVillain),
         Bind("player-order", TranscriptStepKind.Then,
             @"the player order is (?<order>[\d,]+)", PlayerOrder),
         Bind("per-player-count", TranscriptStepKind.Then,
@@ -537,6 +545,11 @@ internal sealed class CoreTranscriptRunner
         context.SceneRequired(step).Apply(new MoveSceneCard(
             SceneCard(match, step),
             new SceneDestination(SceneZone.EngagedMinion, Seat(match, step))));
+
+    private static void PlaceSideScheme(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        context.SceneRequired(step).Apply(new MoveSceneCard(
+            SceneCard(match, step), new SceneDestination(SceneZone.SideScheme)));
 
     private static void AttachIdentityUpgrade(
         TranscriptContext context, TranscriptStep step, Match match) =>
@@ -1158,6 +1171,17 @@ internal sealed class CoreTranscriptRunner
         }
     }
 
+    private static void PlayersWin(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        _ = match;
+        if (context.World.Result is not Outcome.PlayersWin)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected PlayersWin; was {context.World.Result}");
+        }
+    }
+
     private static void SeatEliminated(
         TranscriptContext context, TranscriptStep step, Match match)
     {
@@ -1247,6 +1271,19 @@ internal sealed class CoreTranscriptRunner
         {
             throw new TranscriptAssertionException(
                 $"{step.Location}: expected card {card.ObjectId} removed; was {card.Area}");
+        }
+    }
+
+    private static void CardIsVillain(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Card expected = context.SceneRequired(step).Find(SceneCard(match, step));
+        Card? actual = context.World.TheCardIn(DeckType.VillainArea);
+        if (!ReferenceEquals(actual, expected) || !expected.FaceUp)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected faceup card {expected.ObjectId} as villain; was "
+                + (actual is null ? "<none>" : $"{actual.ObjectId}, faceup={actual.FaceUp}"));
         }
     }
 

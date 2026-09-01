@@ -6943,11 +6943,15 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/defeat.feature::Exactly zero remaining hit points defeats and discards a minion",
+            "specs/behavior/core/defeat.feature::Removing the final threat defeats and discards a side scheme",
+            "specs/behavior/core/defeat.feature::Defeating a villain stage reveals the next stage without excess damage"
+          ],
+          "mutation": "CoreRuleTranscriptTests.DefeatBranchesHavePinnedOutcomes distinguishes the zero boundary for characters and side schemes."
         }
       ]
     },
@@ -6965,11 +6969,14 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/defeat.feature::Exactly zero remaining hit points defeats and discards a minion",
+            "specs/behavior/core/defeat.feature::Removing the final threat defeats and discards a side scheme"
+          ],
+          "mutation": "CoreRuleTranscriptTests.DefeatBranchesHavePinnedOutcomes distinguishes encounter discard destinations for defeated minions and side schemes."
         }
       ]
     },
@@ -6991,9 +6998,10 @@
           "work_item": null,
           "exception": null,
           "scenarios": [
-            "specs/behavior/core/player-elimination.feature::A defeated identity is eliminated while the other player continues"
+            "specs/behavior/core/player-elimination.feature::A defeated identity is eliminated while the other player continues",
+            "specs/behavior/core/defeat.feature::Defeating a villain stage reveals the next stage without excess damage"
           ],
-          "mutation": "CoreRuleTranscriptTests.PlayerEliminationBranchesHavePinnedOutcomes distinguishes identity removal."
+          "mutation": "CoreRuleTranscriptTests.PlayerEliminationBranchesHavePinnedOutcomes and DefeatBranchesHavePinnedOutcomes distinguish identity and villain-stage removal."
         }
       ]
     },
@@ -11154,11 +11162,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/defeat.feature::Defeating a villain stage reveals the next stage without excess damage"
+          ],
+          "mutation": "CoreRuleTranscriptTests.DefeatBranchesHavePinnedOutcomes distinguishes the villain hit-point zero boundary."
         }
       ]
     },
@@ -15096,11 +15106,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/defeat.feature::Exactly zero remaining hit points defeats and discards a minion"
+          ],
+          "mutation": "CoreRuleTranscriptTests.DefeatBranchesHavePinnedOutcomes distinguishes exact lethal damage and encounter discard."
         }
       ]
     },
@@ -21946,11 +21958,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/defeat.feature::Removing the final threat defeats and discards a side scheme"
+          ],
+          "mutation": "CoreRuleTranscriptTests.DefeatBranchesHavePinnedOutcomes distinguishes removal of the final threat and encounter discard."
         }
       ]
     },
@@ -25471,11 +25485,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/defeat.feature::Defeating a villain stage reveals the next stage without excess damage"
+          ],
+          "mutation": "CoreRuleTranscriptTests.DefeatBranchesHavePinnedOutcomes distinguishes current-stage removal and next-stage reveal."
         }
       ]
     },
@@ -25515,11 +25531,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/defeat.feature::Defeating a villain stage reveals the next stage without excess damage"
+          ],
+          "mutation": "CoreRuleTranscriptTests.DefeatBranchesHavePinnedOutcomes distinguishes the new stage's zero damage from carried excess."
         }
       ]
     },
