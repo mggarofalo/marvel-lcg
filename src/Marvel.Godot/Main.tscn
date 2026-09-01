@@ -115,7 +115,7 @@ label_settings = SubResource("Label_title")
 layout_mode = 2
 theme_override_colors/font_color = Color(0.69, 0.75, 0.77, 1)
 theme_override_font_sizes/font_size = 18
-text = "The client boundary is ready. Game setup and the visible board arrive next."
+text = "Opening a deterministic Core Set game through the local engine…"
 autowrap_mode = 2
 
 [node name="Slots" type="HBoxContainer" parent="Margin/Shell/Content"]
@@ -159,4 +159,4 @@ theme_override_styles/panel = SubResource("Style_status")
 layout_mode = 2
 theme_override_colors/font_color = Color(0.93, 0.78, 0.48, 1)
 theme_override_font_sizes/font_size = 14
-text = "SHELL READY  ·  NO GAME OPEN"
+text = "OPENING GAME  ·  RHINO  /  SPIDER-MAN  /  SEED 7"

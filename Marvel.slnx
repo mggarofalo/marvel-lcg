@@ -26,5 +26,6 @@
     <Project Path="tests/Marvel.Sim.Tests/Marvel.Sim.Tests.csproj" />
     <Project Path="tests/Marvel.View.Tests/Marvel.View.Tests.csproj" />
     <Project Path="tests/Marvel.Server.Tests/Marvel.Server.Tests.csproj" />
+    <Project Path="tests/Marvel.Godot.Tests/Marvel.Godot.Tests.csproj" />
   </Folder>
 </Solution>
