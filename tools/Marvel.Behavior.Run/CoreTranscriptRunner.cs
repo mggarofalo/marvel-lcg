@@ -350,6 +350,9 @@ internal sealed class CoreTranscriptRunner
         Bind("villain-attack-defender-opportunity", TranscriptStepKind.When,
             @"the villain attacks seat (?<seat>\d+) accepting ""(?<label>[^""]+)"" with card (?<face>\d+[a-z]?) copy (?<copy>\d+) defending",
             ResolveVillainAttackWithDefenderAndOpportunity),
+        Bind("villain-attack-opportunity", TranscriptStepKind.When,
+            @"the villain attacks seat (?<seat>\d+) accepting ""(?<label>[^""]+)""",
+            ResolveVillainAttackWithOpportunity),
         Bind("minion-enters-play", TranscriptStepKind.When,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) enters play as a minion engaged with seat (?<seat>\d+)",
             MinionEntersPlay),
@@ -1092,6 +1095,20 @@ internal sealed class CoreTranscriptRunner
             Subject: villain.ObjectId, Seat: seat));
 
         FinishWithDefender(context, step, defender, match.Groups["label"].Value);
+    }
+
+    private static void ResolveVillainAttackWithOpportunity(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        Card villain = context.World.TheCardIn(DeckType.VillainArea)
+            ?? throw new TranscriptException($"{step.Location}: no villain is in play");
+        int seat = Seat(match, step);
+        context.World.Agenda.Add(new PhaseStep(
+            Steps.Attack, Round: 1, Number: 2, Index: seat,
+            Subject: villain.ObjectId, Seat: seat));
+        FinishAgendaAccepting(context, step, match.Groups["label"].Value);
     }
 
     private static void FinishWithDefender(

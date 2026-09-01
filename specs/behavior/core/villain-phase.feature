@@ -313,3 +313,30 @@ Feature: Core villain phase
     When villain phase 1 resolves with every optional choice declined
     Then card 01097b copy 0 has 3 threat counters
     And card 01103 copy 0 is engaged with seat 1
+
+  @behavior:card:01003:when-you-would-take-any-amount-damage
+  @covers:behavior:rr:damage.step.3:published-result
+  @covers:behavior:rr:prevent.1:published-result
+  @covers:behavior:rr:prevent.1.2:published-result
+  @covers:behavior:rr:defend-defense.4.4:published-result
+  @card:01003 @rr:damage.step.3 @rr:prevent.1 @rr:prevent.1.2
+  @rr:defend-defense.4.4
+  Scenario: Backflip prevents all imminent attack damage without exhausting
+    # "When you would take any amount of damage from an attack, prevent all of
+    # that damage." A defense-labeled ability does not exhaust the hero unless
+    # its text says it does.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 724  |
+    And seat 1 shows identity face 01001a
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01003 | 0    |
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01103     | 0    |
+    When the villain attacks seat 1 accepting "Backflip"
+    Then card 01001a copy 0 has 0 damage
+    And card 01001a copy 0 is ready
+    And card 01003 copy 0 is faceup on top of seat 1's discard pile
+    And 0 Damage events were emitted
