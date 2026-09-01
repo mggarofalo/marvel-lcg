@@ -10018,11 +10018,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-reveal.feature::Invasive AI lets the first player order its multiplayer effect"
+          ],
+          "mutation": "Resolve Invasive AI's simultaneous player effects in a fixed non-first-player order; the ordered discard transcript changes."
         }
       ]
     },
@@ -13046,11 +13048,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Backflip prevents all imminent attack damage without exhausting"
+          ],
+          "mutation": "Open Backflip's interrupt after damage becomes true instead of just before; Spider-Man takes damage before prevention."
         }
       ]
     },
@@ -13068,11 +13072,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Counter-Punch damages the attacker after a basic defense ends"
+          ],
+          "mutation": "Do not open the response window immediately after the defense condition becomes true; Counter-Punch cannot damage Rhino."
         }
       ]
     },
@@ -13090,11 +13096,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Indomitable follows a defense-labeled Backflip after the attack ends"
+          ],
+          "mutation": "Stop Indomitable's sequence when its discard cost makes it leave play; Spider-Man remains exhausted instead of readying."
         }
       ]
     },
@@ -13410,11 +13418,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Backflip prevents all imminent attack damage without exhausting"
+          ],
+          "mutation": "Resolve Backflip after the imminent damage instead of before it; Spider-Man retains attack damage."
         }
       ]
     },
@@ -18271,11 +18281,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Make the Call controls another player's ally until it leaves play"
+          ],
+          "mutation": "Ignore Make the Call's permission to use an ally in a discard pile; Black Cat cannot enter play from seat 2's discard."
         }
       ]
     },
@@ -20391,11 +20403,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/status-cards.feature::A stunned villain discards stun instead of attacking"
+          ],
+          "mutation": "Resolve the villain attack in addition to discarding stun; the hero incorrectly takes attack damage."
         }
       ]
     },
@@ -20413,11 +20427,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/status-cards.feature::A stunned villain discards stun instead of attacking"
+          ],
+          "mutation": "Keep the replaced attack imminent after stun is discarded; the attack continues and damages the hero."
         }
       ]
     },
@@ -24136,11 +24152,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Rechannel is available once and consumes its round limit"
+          ],
+          "mutation": "Reject Rechannel's draw target despite a stocked player deck; its action is unavailable before the round limit is used."
         }
       ]
     },
@@ -27975,11 +27993,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/when-defeated.feature::A response observes the enemy defeated by the completed attack"
+          ],
+          "mutation": "Do not resolve Chase Them Down's after-your-hero-attacks condition as the identity's attack; the response cannot remove threat."
         }
       ]
     },

@@ -82,7 +82,10 @@ Feature: Core status cards
 
   @behavior:rr:stun-stunned.6:published-result
   @covers:behavior:rr:stun-stunned.7:published-result
+  @covers:behavior:rr:replacement-effect:published-result
+  @covers:behavior:rr:replacement-effect.1:published-result
   @rr:stun-stunned.6 @rr:stun-stunned.7
+  @rr:replacement-effect @rr:replacement-effect.1
   Scenario: A stunned villain discards stun instead of attacking
     # "If a stunned villain or minion would attack, discard the stunned status
     # card instead." The replaced activation is not an attack.

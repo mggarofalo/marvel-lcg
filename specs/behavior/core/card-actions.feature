@@ -700,7 +700,8 @@ Feature: Core card actions
   @covers:behavior:card:01010a:limit-once-per-round-within-limit
   @covers:behavior:card:01010a:limit-once-per-round-limit-reached
   @covers:behavior:rr:limit:published-result
-  @card:01010a @rr:limit
+  @covers:behavior:rr:target.2.3:published-result
+  @card:01010a @rr:limit @rr:target.2.3
   Scenario: Rechannel is available once and consumes its round limit
     # "Spend a [energy] resource and heal 1 damage from Captain Marvel → draw
     # 1 card. (Limit once per round.)" Its first initiation pays and resolves;
@@ -730,10 +731,12 @@ Feature: Core card actions
   @behavior:card:01071:pay-printed-cost-ally-in-any-player
   @covers:behavior:rr:play-put-into-play.3:published-result
   @covers:behavior:rr:play-put-into-play.5:published-result
+  @covers:behavior:rr:play-restrictions-and-permissions.2:published-result
   @covers:behavior:rr:ownership-and-control.3:published-result
   @covers:behavior:rr:ownership-and-control.7.2:published-result
   @card:01071 @rr:play-put-into-play.3 @rr:play-put-into-play.5
   @rr:ownership-and-control.3 @rr:ownership-and-control.7.2
+  @rr:play-restrictions-and-permissions.2
   Scenario: Make the Call controls another player's ally until it leaves play
     # "Pay the printed cost of an ally in any player's discard pile → put that
     # ally into play under your control." Putting Black Cat into play is not

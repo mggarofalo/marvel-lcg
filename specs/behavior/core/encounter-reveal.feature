@@ -48,7 +48,9 @@ Feature: Revealing Core encounter card types
   @covers:behavior:rr:each-player:published-result
   @covers:behavior:rr:each-player.1:published-result
   @covers:behavior:rr:in-player-order.1:published-result
+  @covers:behavior:rr:first-player.3:published-result
   @card:01149 @rr:each-player @rr:each-player.1 @rr:in-player-order.1
+  @rr:first-player.3
   Scenario: Invasive AI lets the first player order its multiplayer effect
     # "When each player is instructed to resolve an effect, each player
     # resolves that effect one at a time." Because Invasive AI specifies no

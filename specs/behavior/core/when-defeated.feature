@@ -75,7 +75,8 @@ Feature: Core When Defeated timing
 
   @behavior:rr:damage.step.9:published-result
   @covers:behavior:card:01052:after-your-hero-attacks-and-defeats-enemy
-  @rr:damage.step.9 @card:01052
+  @covers:behavior:rr:you-your.6:published-result
+  @rr:damage.step.9 @rr:you-your.6 @card:01052
   Scenario: A response observes the enemy defeated by the completed attack
     # Damage step 9 opens abilities that trigger "after [a character]
     # defeats". Chase Them Down responds after the attack defeats the minion
