@@ -5308,11 +5308,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-reveal.feature::Affairs of State omits its upgrade option when no target exists"
+          ],
+          "mutation": "Offer Affairs of State's discard-upgrade option without a controlled Black Panther upgrade; the transcript observes the illegal second option."
         }
       ]
     },

@@ -202,3 +202,24 @@ Feature: Revealing Core encounter card types
     When card 01112 copy 0 is revealed to seat 1
     Then card 01001a copy 0 has 1 confused status card
     And card 01112 copy 0 is faceup on top of the encounter discard pile
+
+  @behavior:rr:choose-option.1:published-result
+  @rr:choose-option.1 @card:01155
+  Scenario: Affairs of State omits its upgrade option when no target exists
+    # T'Challa is already in alter-ego form, so the optional flip is skipped.
+    # With no Black Panther upgrade in play, only the option that exhausts the
+    # identity has every target it requires.
+    Given a canonical Core scene is dealt
+      | campaign | heroes        | seed |
+      | rhino    | black_panther | 844  |
+    And seat 1 shows identity face 01040b
+    And seat 1's hand is empty
+    When card 01155 copy 0 is revealed to seat 1
+    Then option 1 is offered by the pending decision
+    And option 2 is offered by the pending decision
+    When seat 1 chooses option 2 for the pending encounter-card decision
+    Then option 1 is offered by the pending decision
+    And option 2 is not offered by the pending decision
+    When seat 1 chooses option 1 for the pending encounter-card decision
+    Then card 01040b copy 0 is exhausted
+    And card 01155 copy 0 is removed from the game

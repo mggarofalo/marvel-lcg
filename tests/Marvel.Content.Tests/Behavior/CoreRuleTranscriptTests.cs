@@ -164,7 +164,7 @@ public sealed class CoreRuleTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(8, results.Count);
+        Assert.Equal(9, results.Count);
         Assert.Equal(
             "185218ad400e2a7f175baf262f564963e8681749cb53f6a78f7d34b58fd65b4b",
             results["behavior:rr:reveal.5:published-result"].Digest);
