@@ -18,12 +18,19 @@ Feature: Core card actions
   @covers:behavior:rr:labeled-ability.1:published-result
   @covers:behavior:rr:labeled-ability.2:published-result
   @covers:behavior:rr:you-your.12:published-result
+  @covers:behavior:rr:choose-game-element:published-result
+  @covers:behavior:rr:choose-game-element.1:published-result
+  @covers:behavior:rr:target.3:published-result
+  @covers:behavior:rr:resource.4:published-result
+  @covers:behavior:rr:resolve.1:published-result
   @card:01005 @rr:attack-player-ability-type.2 @rr:cost.3 @rr:event
   @rr:in-play-and-out-of-play.7
   @rr:initiating-abilities.step.1 @rr:initiating-abilities.step.3
   @rr:initiating-abilities.step.5 @rr:initiating-abilities.step.6
   @rr:initiating-abilities.step.7 @rr:play-put-into-play.2 @rr:player-turn.5
   @rr:labeled-ability.1 @rr:labeled-ability.2 @rr:you-your.12
+  @rr:choose-game-element @rr:choose-game-element.1 @rr:target.3
+  @rr:resource.4 @rr:resolve.1
   Scenario: Swinging Web Kick pays, chooses an enemy, deals eight, and discards
     # "Hero Action (attack): Deal 8 damage to an enemy." An event is placed
     # faceup while it resolves, its resource cost is paid from hand, and after

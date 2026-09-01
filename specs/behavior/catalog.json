@@ -5122,11 +5122,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Swinging Web Kick pays, chooses an enemy, deals eight, and discards"
+          ],
+          "mutation": "CoreCardFaceTranscriptTests.CardActionBranchesHavePinnedOutcomes distinguishes the pending action requiring selection of an eligible enemy."
         }
       ]
     },
@@ -5144,11 +5146,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Swinging Web Kick pays, chooses an enemy, deals eight, and discards"
+          ],
+          "mutation": "CoreCardFaceTranscriptTests.CardActionBranchesHavePinnedOutcomes distinguishes seat 1 making Swinging Web Kick's explicit enemy choice."
         }
       ]
     },
@@ -20407,11 +20411,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Swinging Web Kick pays, chooses an enemy, deals eight, and discards"
+          ],
+          "mutation": "CoreCardFaceTranscriptTests.CardActionBranchesHavePinnedOutcomes distinguishes the chosen eight-damage effect being applied to Klaw's game state."
         }
       ]
     },
@@ -20829,11 +20835,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Swinging Web Kick pays, chooses an enemy, deals eight, and discards"
+          ],
+          "mutation": "CoreCardFaceTranscriptTests.CardActionBranchesHavePinnedOutcomes distinguishes two generated resources satisfying Swinging Web Kick's cost before resolution."
         }
       ]
     },
@@ -24014,11 +24022,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Swinging Web Kick pays, chooses an enemy, deals eight, and discards"
+          ],
+          "mutation": "CoreCardFaceTranscriptTests.CardActionBranchesHavePinnedOutcomes distinguishes the affectable Klaw being offered and taking the chosen damage."
         }
       ]
     },
