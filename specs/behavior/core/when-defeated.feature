@@ -30,3 +30,24 @@ Feature: Core When Defeated timing
     Then card 01006 copy 0 is in seat 1's hand
     And card 01020 copy 0 is in seat 2's hand
     And card 01166 copy 0 is faceup on top of the encounter discard pile
+
+  @behavior:rr:damage.step.6:published-result
+  @covers:behavior:rr:would.1:published-result
+  @covers:behavior:rr:forced.1:published-result
+  @covers:behavior:card:01185:when-attached-minion-would-be-defeated-heal
+  @rr:damage.step.6 @rr:would.1 @rr:forced.1 @card:01185
+  Scenario: A forced would-be-defeated interrupt invalidates the defeat
+    # Damage step 6 opens abilities that trigger "when [a character] would be
+    # defeated." Biomechanical Upgrades heals all damage and discards itself,
+    # so the minion is no longer imminently defeated.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | modular sets      | seed |
+      | rhino    | spider_man | the_doomsday_chair | 349 |
+    And seat 1 shows identity face 01001a
+    And card 01101 copy 0 is a minion engaged with seat 1
+    And card 01101 copy 0 has 1 damage
+    And card 01185 copy 0 is attached to card 01101 copy 0
+    When seat 1 uses their basic attack against card 01101 copy 0
+    Then card 01101 copy 0 is engaged with seat 1
+    And card 01101 copy 0 has 0 damage
+    And card 01185 copy 0 is faceup on top of the encounter discard pile

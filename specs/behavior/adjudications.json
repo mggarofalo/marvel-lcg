@@ -5735,11 +5735,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/when-defeated.feature::A forced would-be-defeated interrupt invalidates the defeat"
+          ],
+          "mutation": "Skip the would-be-defeated window after lethal damage; the minion is discarded instead of remaining healed and engaged."
         }
       ]
     },
@@ -8549,11 +8551,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/when-defeated.feature::A forced would-be-defeated interrupt invalidates the defeat"
+          ],
+          "mutation": "Make Biomechanical Upgrades optional and decline it; the lethal minion no longer survives automatically."
         }
       ]
     },
@@ -22565,11 +22569,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/when-defeated.feature::A forced would-be-defeated interrupt invalidates the defeat"
+          ],
+          "mutation": "Continue resolving the original imminent defeat after the interrupt heals all damage; the minion engagement assertion fails."
         }
       ]
     },
@@ -48059,11 +48065,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/when-defeated.feature::A forced would-be-defeated interrupt invalidates the defeat"
+          ],
+          "mutation": "Omit the heal or attachment discard; the minion-damage or encounter-discard assertion fails."
         }
       ]
     },
