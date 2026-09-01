@@ -51632,11 +51632,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/she-hulk-nemesis.feature::Personal Challenge adds one threat per hero"
+          ],
+          "mutation": "Change or omit the per-hero addition; the five-threat assertion fails."
         }
       ]
     },
@@ -51780,11 +51782,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/she-hulk-nemesis.feature::Titania's attack equals her remaining hit points"
+          ],
+          "mutation": "Use printed or maximum hit points; the modified-ATK assertion fails."
         }
       ]
     },
@@ -51994,11 +51998,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/she-hulk-nemesis.feature::Titania's Fury attacks without healing or surging in hero form"
+          ],
+          "mutation": "Remove Titania's attack; the identity-damage assertion fails."
         },
         {
           "id": "behavior:card:01164:if-titania-did-not-attack-heal-all-condition-met",
@@ -52006,11 +52012,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/she-hulk-nemesis.feature::Titania's Fury heals Titania and surges when no attack can occur"
+          ],
+          "mutation": "Skip healing or surge when no attack occurs; a damage or encounter-queue assertion fails."
         },
         {
           "id": "behavior:card:01164:if-titania-did-not-attack-heal-all-condition-not-met",
@@ -52018,11 +52026,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/she-hulk-nemesis.feature::Titania's Fury attacks without healing or surging in hero form"
+          ],
+          "mutation": "Heal or surge after an attack; the Titania-damage or zero-queue assertion fails."
         },
         {
           "id": "behavior:card:01164:give-villain-1-additional-boost-card-for",

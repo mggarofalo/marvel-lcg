@@ -863,4 +863,27 @@ public sealed class CoreCardFaceTranscriptTests
             Assert.Equal(digest, results[obligation].Digest);
         }
     }
+
+    [Fact]
+    public void SheHulkNemesisBranchesHavePinnedOutcomes()
+    {
+        var results = Corpus.Value
+            .Where(candidate => candidate.Scenario.StartsWith(
+                "specs/behavior/core/she-hulk-nemesis.feature::",
+                StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
+        var expected = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["behavior:card:01161:place-additional-1-per-hero-threat-here"] = "17a645bd1dfd9c465111c067f375882c187618174dfe1c6f6dab50c445b4e446",
+            ["behavior:card:01162:x-is-equal-titania-s-remaining-hit"] = "6d173d028bb9bd26ab4e593df353939cbd4c2d0e54ee0ad642018e4c87740515",
+            ["behavior:card:01164:titania-attacks-your-hero"] = "bda60851782214d974dd1b642ee9603d50f5c10cd9076379ae4b1c4046bad238",
+            ["behavior:card:01164:if-titania-did-not-attack-heal-all-condition-met"] = "80304606fb01c765d902a1bc385f8ba80446b399179b523548be79a366387c3b",
+        };
+
+        Assert.Equal(expected.Count, results.Count);
+        foreach ((string obligation, string digest) in expected)
+        {
+            Assert.Equal(digest, results[obligation].Digest);
+        }
+    }
 }
