@@ -442,6 +442,9 @@ internal sealed class CoreTranscriptRunner
         Bind("minion-engaged", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is engaged with seat (?<seat>\d+)",
             MinionEngaged),
+        Bind("ally-controlled", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) remains an ally controlled by seat (?<seat>\d+)",
+            AllyControlled),
         Bind("card-damage", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) has (?<count>\d+) damage",
             CardDamage),
@@ -1709,6 +1712,20 @@ internal sealed class CoreTranscriptRunner
             throw new TranscriptAssertionException(
                 $"{step.Location}: expected card {card.ObjectId} engaged with seat "
                 + $"{seat + 1}; was {card.Area}");
+        }
+    }
+
+    private static void AllyControlled(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        if (card.Area.Type != DeckType.AlliesArea
+            || card.Area.PlayArea != PlayArea.Of(seat))
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected card {card.ObjectId} as an ally controlled by "
+                + $"seat {seat + 1}; was {card.Area}");
         }
     }
 

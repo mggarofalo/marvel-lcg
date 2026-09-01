@@ -25,8 +25,9 @@ Feature: Core basic powers
   @covers:behavior:rr:damage.2:tracked-by-damage-tokens
   @covers:behavior:rr:attack-player-ability-type.step.9:published-result
   @covers:behavior:rr:ability.step.5:published-result
+  @covers:behavior:rr:ally.1:published-result
   @rr:ally.2 @rr:ally.3 @rr:ally.5 @rr:consequential-damage
-  @rr:attack-player-ability-type.step.9 @rr:damage.2 @rr:ability.step.5
+  @rr:attack-player-ability-type.step.9 @rr:damage.2 @rr:ability.step.5 @rr:ally.1
   Scenario: An ally attacks while its identity remains ready and takes consequential damage
     # "After an ally attacks, it takes consequential damage equal to the
     # number of consequential damage icons beneath its ATK field."
@@ -39,6 +40,7 @@ Feature: Core basic powers
     And card 01083 copy 0 has 1 damage
     And card 01094 copy 0 has 1 damage
     And card 01001b copy 0 is ready
+    And card 01083 copy 0 remains an ally controlled by seat 1
 
   @behavior:rr:thwart.1:published-result
   @covers:behavior:rr:threat:published-result
