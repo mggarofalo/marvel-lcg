@@ -321,13 +321,24 @@ Feature: Core villain phase
   @covers:behavior:rr:damage.step.3:published-result
   @covers:behavior:rr:prevent.1:published-result
   @covers:behavior:rr:prevent.1.2:published-result
+  @covers:behavior:rr:defend-defense.4:published-result
+  @covers:behavior:rr:defend-defense.4.1:published-result
+  @covers:behavior:rr:defend-defense.4.3:published-result
   @covers:behavior:rr:defend-defense.4.4:published-result
+  @covers:behavior:rr:interrupt.3.1:published-result
+  @covers:behavior:rr:labeled-ability.3:published-result
+  @covers:behavior:rr:labeled-ability.3.1:published-result
+  @covers:behavior:rr:target.3.6:published-result
   @card:01003 @rr:damage.step.3 @rr:prevent.1 @rr:prevent.1.2
-  @rr:defend-defense.4.4
+  @rr:defend-defense.4 @rr:defend-defense.4.1 @rr:defend-defense.4.3
+  @rr:defend-defense.4.4 @rr:interrupt.3.1 @rr:labeled-ability.3
+  @rr:labeled-ability.3.1 @rr:target.3.6
   Scenario: Backflip prevents all imminent attack damage without exhausting
     # "When you would take any amount of damage from an attack, prevent all of
     # that damage." A defense-labeled ability does not exhaust the hero unless
-    # its text says it does.
+    # its text says it does. The identity becomes the defender as this
+    # defense-labeled ability begins resolving, and prevented damage still
+    # affects its target even though the target takes none.
     Given a canonical Core scene is dealt
       | campaign | heroes     | seed |
       | rhino    | spider_man | 724  |
@@ -341,6 +352,7 @@ Feature: Core villain phase
     When the villain attacks seat 1 accepting "Backflip"
     Then card 01001a copy 0 has 0 damage
     And card 01001a copy 0 is ready
+    And card 01001a copy 0 defended the last attack without a basic defense
     And card 01003 copy 0 is faceup on top of seat 1's discard pile
     And 0 Damage events were emitted
 

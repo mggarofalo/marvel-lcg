@@ -55,6 +55,7 @@
       "abilities": [
         {
           "trigger": { "event": "WhenDamageWouldBeDealt", "timing": "Interrupt", "target": "you" },
+          "labels": [ "defense" ],
           "when": { "isYourIdentity": "trigger.target" },
           "effect": { "preventDamage": "trigger.target" }
         }
