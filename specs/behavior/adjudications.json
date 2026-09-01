@@ -40770,52 +40770,60 @@
           "mutation": "Change or omit this printed field in CardCatalog; the generated face-table assertion fails."
         },
         {
-          "key": "discard-1-card-at-random-from-your",
+      "key": "discard-1-card-at-random-from-your",
           "summary": "When Revealed (Alter-Ego): Discard 1 card at random from your hand.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/klaw-card-abilities.feature::Klaw's Vengeance discards a random card in alter-ego form"
+      ],
+      "mutation": "Remove or change the random one-card discard; the hand and discard-pile assertions fail."
         },
         {
-          "key": "klaw-attacks-you",
+      "key": "klaw-attacks-you",
           "summary": "When Revealed (Hero): Klaw attacks you.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/klaw-card-abilities.feature::A damaging Vengeance attack places threat on the main scheme"
+      ],
+      "mutation": "Remove the enemy-attacks effect; the identity-damage and main-scheme-threat assertions fail."
         },
         {
-          "key": "if-attack-deals-damage-place-1-threat-condition-met",
+      "key": "if-attack-deals-damage-place-1-threat-condition-met",
           "summary": "Condition met: If this attack deals damage, place 1 threat on the main scheme.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/klaw-card-abilities.feature::A damaging Vengeance attack places threat on the main scheme"
+      ],
+      "mutation": "Remove or invert the successful activation-damage branch; the main-scheme threat assertion fails."
         },
         {
-          "key": "if-attack-deals-damage-place-1-threat-condition-not-met",
+      "key": "if-attack-deals-damage-place-1-threat-condition-not-met",
           "summary": "Condition not met; the conditional result does not occur: If this attack deals damage, place 1 threat on the main scheme.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/klaw-card-abilities.feature::A fully defended Vengeance attack places no threat"
+      ],
+      "mutation": "Make the threat placement unconditional or ignore defense when calculating attack damage; the zero-threat assertion fails."
         }
       ]
     },
@@ -40852,52 +40860,60 @@
           "mutation": "Change or omit this printed field in CardCatalog; the generated face-table assertion fails."
         },
         {
-          "key": "either-spend-energy-mental-physical-resources-or-choice-1",
+      "key": "either-spend-energy-mental-physical-resources-or-choice-1",
           "summary": "Choice 1: When Revealed: Either spend energy mental physical resources or exhaust each character you control.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/klaw-card-abilities.feature::Sonic Boom can be paid with all three resource types"
+      ],
+      "mutation": "Remove the resource-payment choice or any required resource type; the offered-choice, discard-pile, or pinned-digest assertion fails."
         },
         {
-          "key": "either-spend-energy-mental-physical-resources-or-choice-2",
+      "key": "either-spend-energy-mental-physical-resources-or-choice-2",
           "summary": "Choice 2: When Revealed: Either spend energy mental physical resources or exhaust each character you control.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/klaw-card-abilities.feature::Sonic Boom can exhaust every controlled character"
+      ],
+      "mutation": "Remove the exhaust-all-characters alternative or omit a controlled character; the offered-choice or readiness assertion fails."
         },
         {
-          "key": "if-activation-deals-damage-you-exhaust-your-condition-met",
+      "key": "if-activation-deals-damage-you-exhaust-your-condition-met",
           "summary": "Condition met: star Boost: If this activation deals damage to you, exhaust your hero.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/klaw-card-abilities.feature::Sonic Boom exhausts a hero damaged by the activation"
+      ],
+      "mutation": "Remove or invert the successful activation-damage branch; the hero-readiness assertion fails."
         },
         {
-          "key": "if-activation-deals-damage-you-exhaust-your-condition-not-met",
+      "key": "if-activation-deals-damage-you-exhaust-your-condition-not-met",
           "summary": "Condition not met; the conditional result does not occur: star Boost: If this activation deals damage to you, exhaust your hero.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/klaw-card-abilities.feature::Sonic Boom leaves an undamaged hero ready"
+      ],
+      "mutation": "Make the exhaust unconditional; the zero-damage hero-readiness assertion fails."
         }
       ]
     },
@@ -40948,64 +40964,74 @@
           "mutation": "Change or omit this printed field in CardCatalog; the generated face-table assertion fails."
         },
         {
-          "key": "klaw-heals-4-damage",
+      "key": "klaw-heals-4-damage",
           "summary": "When Revealed (Alter-Ego): Klaw heals 4 damage.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/klaw-card-abilities.feature::Sound Manipulation heals four damage in alter-ego form"
+      ],
+      "mutation": "Remove or change the four-point heal; the villain-damage assertion fails."
         },
         {
-          "key": "if-no-damage-was-healed-way-card-condition-met",
+      "key": "if-no-damage-was-healed-way-card-condition-met",
           "summary": "Condition met: If no damage was healed this way, this card gains surge.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/klaw-card-abilities.feature::Sound Manipulation surges when Klaw has no damage"
+      ],
+      "mutation": "Remove or invert the no-healing surge branch; the facedown encounter-queue assertion fails."
         },
         {
-          "key": "if-no-damage-was-healed-way-card-condition-not-met",
+      "key": "if-no-damage-was-healed-way-card-condition-not-met",
           "summary": "Condition not met; the conditional result does not occur: If no damage was healed this way, this card gains surge.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/klaw-card-abilities.feature::Sound Manipulation heals four damage in alter-ego form"
+      ],
+      "mutation": "Grant surge after a successful heal; the discard-top and pinned-digest assertions fail."
         },
         {
-          "key": "take-2-damage",
+      "key": "take-2-damage",
           "summary": "When Revealed (Hero): Take 2 damage.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/klaw-card-abilities.feature::Sound Manipulation damages the hero and heals Klaw"
+      ],
+      "mutation": "Remove or change the two damage dealt to the hero; the identity-damage assertion fails."
         },
         {
-          "key": "klaw-heals-2-damage",
+      "key": "klaw-heals-2-damage",
           "summary": "Klaw heals 2 damage.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/klaw-card-abilities.feature::Sound Manipulation damages the hero and heals Klaw"
+      ],
+      "mutation": "Remove or change the two-point villain heal; the villain-damage assertion fails."
         }
       ]
     },
@@ -41346,28 +41372,32 @@
           "mutation": "Change or omit this printed field in CardCatalog; the generated face-table assertion fails."
         },
         {
-          "key": "discard-cards-from-encounter-deck-until-masters",
+      "key": "discard-cards-from-encounter-deck-until-masters",
           "summary": "When Revealed: Discard cards from the encounter deck until a Masters of Evil minion is discarded.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/klaw-card-abilities.feature::The Masters of Evil discards until its minion engages the first player"
+      ],
+      "mutation": "Stop before or after the first qualifying minion; the engagement assertion or pinned digest fails."
         },
         {
-          "key": "put-that-minion-into-play-engaged-with",
+      "key": "put-that-minion-into-play-engaged-with",
           "summary": "Put that minion into play engaged with the first player.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/klaw-card-abilities.feature::The Masters of Evil discards until its minion engages the first player"
+      ],
+      "mutation": "Discard the found minion or engage it with the revealing player; the first-player engagement assertion fails."
         }
       ]
     },
@@ -41474,28 +41504,32 @@
           "mutation": "Change or omit this printed field in CardCatalog; the generated face-table assertion fails."
         },
         {
-          "key": "after-radioactive-man-attacks-you-discard-1",
+      "key": "after-radioactive-man-attacks-you-discard-1",
           "summary": "star Forced Response: After Radioactive Man attacks you, discard 1 card at random from your hand.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/klaw-card-abilities.feature::Radioactive Man discards a random card after attacking"
+      ],
+      "mutation": "Remove the forced response or move it before the attack; the discard-pile or pinned-digest assertion fails."
         },
         {
-          "key": "discard-1-card-at-random-from-your",
+      "key": "discard-1-card-at-random-from-your",
           "summary": "star Boost: Discard 1 card at random from your hand.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/klaw-card-abilities.feature::Radioactive Man discards a random hand card as a boost"
+      ],
+      "mutation": "Remove the boost discard or discard from another zone; the player discard-pile assertion fails."
         }
       ]
     },
@@ -41602,28 +41636,32 @@
           "mutation": "Change or omit this printed field in CardCatalog; the generated face-table assertion fails."
         },
         {
-          "key": "when-whirlwind-attacks-you-also-resolve-his",
+      "key": "when-whirlwind-attacks-you-also-resolve-his",
           "summary": "star Forced Interrupt: When Whirlwind attacks you, also resolve his attack against each other hero.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/klaw-card-abilities.feature::Whirlwind attacks every hero"
+      ],
+      "mutation": "Remove an additional hero attack or resolve it against an alter ego; the two-identity damage assertions fail."
         },
         {
-          "key": "deal-1-damage-each-hero",
+      "key": "deal-1-damage-each-hero",
           "summary": "star Boost: Deal 1 damage to each hero.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/klaw-card-abilities.feature::Whirlwind deals one boost damage to each hero"
+      ],
+      "mutation": "Omit either hero or change the boost damage; one of the identity-damage assertions fails."
         }
       ]
     },
@@ -41730,28 +41768,32 @@
           "mutation": "Change or omit this printed field in CardCatalog; the generated face-table assertion fails."
         },
         {
-          "key": "after-tiger-shark-attacks-give-him-tough",
+      "key": "after-tiger-shark-attacks-give-him-tough",
           "summary": "star Forced Response: After Tiger Shark attacks, give him a tough status card.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/klaw-card-abilities.feature::Tiger Shark gains tough after attacking"
+      ],
+      "mutation": "Remove the forced response or give Tough before the attack; the status or pinned-digest assertion fails."
         },
         {
-          "key": "give-villain-tough-status-card",
+      "key": "give-villain-tough-status-card",
           "summary": "star Boost: Give the villain a tough status card.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/klaw-card-abilities.feature::Tiger Shark gives Klaw tough as a boost"
+      ],
+      "mutation": "Remove the boost ability or give Tough to the minion; the villain-status assertion fails."
         }
       ]
     },
@@ -41858,40 +41900,46 @@
           "mutation": "Change or omit this printed field in CardCatalog; the generated face-table assertion fails."
         },
         {
-          "key": "star-engaged-player-must-defend-against-melter-condition-met",
+      "key": "star-engaged-player-must-defend-against-melter-condition-met",
           "summary": "Condition met: star The engaged player must defend against Melter's attacks with an ally they control, if able.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/klaw-card-abilities.feature::Melter forces an available ally to defend"
+      ],
+      "mutation": "Permit the identity or no character to defend while an ally is able; the ally-discard or identity-damage assertion fails."
         },
         {
-          "key": "star-engaged-player-must-defend-against-melter-condition-not-met",
+      "key": "star-engaged-player-must-defend-against-melter-condition-not-met",
           "summary": "Condition not met; the conditional result does not occur: star The engaged player must defend against Melter's attacks with an ally they control, if able.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/klaw-card-abilities.feature::Melter attacks the hero when no ally can defend"
+      ],
+      "mutation": "Require a nonexistent ally or cancel the attack when no ally is able; the identity-damage assertion fails."
         },
         {
-          "key": "exhaust-each-ally-you-control",
+      "key": "exhaust-each-ally-you-control",
           "summary": "star Boost: Exhaust each ally you control.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/klaw-card-abilities.feature::Melter exhausts each controlled ally as a boost"
+      ],
+      "mutation": "Omit either controlled ally or exhaust the identity; the readiness assertions or pinned digest fail."
         }
       ]
     },
@@ -41942,40 +41990,46 @@
           "mutation": "Change or omit this printed field in CardCatalog; the generated face-table assertion fails."
         },
         {
-          "key": "each-masters-evil-minion-attacks-hero-it",
+      "key": "each-masters-evil-minion-attacks-hero-it",
           "summary": "When Revealed: Each Masters of Evil minion attacks the hero it is engaged with.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/klaw-card-abilities.feature::Masters of Mayhem attacks without searching"
+      ],
+      "mutation": "Skip the engaged Masters of Evil minion's attack; the identity-damage assertion fails."
         },
         {
-          "key": "if-no-attacks-were-made-way-search-condition-met",
+      "key": "if-no-attacks-were-made-way-search-condition-met",
           "summary": "Condition met: If no attacks were made this way, search the encounter deck and discard pile for a Masters of Evil minion and put it into play engaged with you, then shuffle the encounter deck.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/klaw-card-abilities.feature::Masters of Mayhem finds a minion when none attack"
+      ],
+      "mutation": "Remove the no-attack search, omit discard-pile candidates, or skip engagement; the choice or engagement assertion fails."
         },
         {
-          "key": "if-no-attacks-were-made-way-search-condition-not-met",
+      "key": "if-no-attacks-were-made-way-search-condition-not-met",
           "summary": "Condition not met; the conditional result does not occur: If no attacks were made this way, search the encounter deck and discard pile for a Masters of Evil minion and put it into play engaged with you, then shuffle the encounter deck.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/klaw-card-abilities.feature::Masters of Mayhem attacks without searching"
+      ],
+      "mutation": "Search after an attack was made; the untouched Whirlwind assertion fails."
         }
       ]
     },

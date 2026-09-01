@@ -322,6 +322,9 @@ internal sealed class CoreTranscriptRunner
         Bind("answer-encounter-card", TranscriptStepKind.When,
             @"seat (?<seat>\d+) chooses option (?<option>\d+) for the pending encounter-card decision",
             AnswerEncounterCard),
+        Bind("answer-encounter-card-with-payment", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) chooses option (?<option>\d+) paying with these cards for the pending encounter-card decision",
+            AnswerEncounterCardWithPayment),
         Bind("order-pending-players", TranscriptStepKind.When,
             @"seat (?<seat>\d+) orders these players for the pending encounter-card decision",
             OrderPendingPlayers),
@@ -412,6 +415,12 @@ internal sealed class CoreTranscriptRunner
         Bind("villain-attack-decline", TranscriptStepKind.When,
             @"the villain attacks seat (?<seat>\d+) with every optional choice declined",
             ResolveVillainAttack),
+        Bind("enemy-attack-decline", TranscriptStepKind.When,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) attacks seat (?<seat>\d+) with every optional choice declined",
+            ResolveEnemyAttack),
+        Bind("enemy-attack-defender", TranscriptStepKind.When,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) attacks seat (?<seat>\d+) with card (?<defender>\d+[a-z]?) copy (?<defenderCopy>\d+) defending",
+            ResolveEnemyAttackWithDefender),
         Bind("villain-scheme-decline", TranscriptStepKind.When,
             @"the villain schemes against seat (?<seat>\d+) with every optional choice declined",
             ResolveVillainScheme),
@@ -1164,6 +1173,19 @@ internal sealed class CoreTranscriptRunner
 
     private static void AnswerEncounterCard(
         TranscriptContext context, TranscriptStep step, Match match)
+        => AnswerEncounterCard(context, step, match, payments: []);
+
+    private static void AnswerEncounterCardWithPayment(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        TranscriptTable table = Table(step, "card", "copy");
+        int[] payments = [.. table.Rows.Select(row => context.SceneRequired(step).Find(
+            new SceneCard(row["card"], TableNumber(row, "copy", step))).ObjectId)];
+        AnswerEncounterCard(context, step, match, payments);
+    }
+
+    private static void AnswerEncounterCard(
+        TranscriptContext context, TranscriptStep step, Match match, int[] payments)
     {
         int seat = Seat(match, step);
         Prompt asked = context.PendingPrompt
@@ -1189,7 +1211,7 @@ internal sealed class CoreTranscriptRunner
             context.Cards,
             context.World.Abilities,
             asked,
-            Decision.Take(asked.Affordances[option - 1].Id),
+            Decision.Take(asked.Affordances[option - 1].Id, [], payments),
             context.Events);
         SetPendingPrompt(context, Sequence.Work(
             context.World, context.Cards, context.World.Abilities, context.Events));
@@ -1667,6 +1689,35 @@ internal sealed class CoreTranscriptRunner
             Steps.Attack, Round: 1, Number: 2, Index: seat,
             Subject: villain.ObjectId, Seat: seat));
         FinishAgenda(context, step);
+    }
+
+    private static void ResolveEnemyAttack(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        Card enemy = context.SceneRequired(step).Find(SceneCard(match, step));
+        int seat = Seat(match, step);
+        context.World.Agenda.Add(new PhaseStep(
+            Steps.Attack, Round: 1, Number: 2, Index: seat,
+            Subject: enemy.ObjectId, Seat: seat));
+        FinishAgenda(context, step);
+    }
+
+    private static void ResolveEnemyAttackWithDefender(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        Card enemy = context.SceneRequired(step).Find(SceneCard(match, step));
+        Card defender = context.SceneRequired(step).Find(new SceneCard(
+            match.Groups["defender"].Value,
+            Number(match, "defenderCopy", step)));
+        int seat = Seat(match, step);
+        context.World.Agenda.Add(new PhaseStep(
+            Steps.Attack, Round: 1, Number: 2, Index: seat,
+            Subject: enemy.ObjectId, Seat: seat));
+        FinishWithDefender(context, step, defender, acceptedLabel: null);
     }
 
     private static void ResolveVillainScheme(

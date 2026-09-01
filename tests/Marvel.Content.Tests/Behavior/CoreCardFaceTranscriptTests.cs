@@ -364,7 +364,7 @@ public sealed class CoreCardFaceTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(9, results.Count);
+        Assert.Equal(31, results.Count);
         Assert.Equal("7c2d9c7e356389496e6586bf8593e9a088ffa4b5d0aa7d4491f2c92dde8f25d0",
             results["behavior:card:01114:search-encounter-deck-and-discard-pile-for"].Digest);
         Assert.Equal("26b05d105fd19a68a1708d6b19c3d64611e20414eda96f759c53096be8781ca1",
@@ -383,6 +383,64 @@ public sealed class CoreCardFaceTranscriptTests
             results["behavior:card:01126:place-additional-1-per-hero-threat-here"].Digest);
         Assert.Equal("dd7b5d78b7070825e29c210afaebde72ed138d94e25671d9d64d767e5755842a",
             results["behavior:card:01127:klaw-gets-10-hit-points"].Digest);
+        Assert.Equal("efcb99203880c3f6b650b5009563337716284437063996b68899e30d496a5ec7",
+            results["behavior:card:01122:discard-1-card-at-random-from-your"].Digest);
+        Assert.Equal("722d6a1988fbc1427f28910407a5b58f8e4a9ca7c54185ce61ddd3abbf2aa190",
+            results["behavior:card:01122:klaw-attacks-you"].Digest);
+        Assert.Equal("b0588618fe3b773ae50cb1cd84f52d01be1be73587ff3e8591029e349e4bc806",
+            results[
+                "behavior:card:01122:if-attack-deals-damage-place-1-threat-condition-not-met"].Digest);
+        Assert.Equal("1acd65e8742ad9fa303f23bc5619c46ed3ddcbff6cdff2bab023df1c14b71598",
+            results[
+                "behavior:card:01123:either-spend-energy-mental-physical-resources-or-choice-1"].Digest);
+        Assert.Equal("8c85648a114d458531a6f8bf78901f2c23df720a2c6549c3d566b831666eec25",
+            results[
+                "behavior:card:01123:either-spend-energy-mental-physical-resources-or-choice-2"].Digest);
+        Assert.Equal("7bbd50286402d7a0a4d4b203daaa9b8cc83aaf60d54aa9bbb062c55ddc3142e2",
+            results["behavior:card:01124:klaw-heals-4-damage"].Digest);
+        Assert.Equal("084bfc759b9582ff91d6b78fcc57d25efccbdcd0343bc248985bada1fa01a8a5",
+            results[
+                "behavior:card:01124:if-no-damage-was-healed-way-card-condition-met"].Digest);
+        Assert.Equal("5cd80b8a7d0449f4e611b65c90e943fd756f041e48197aba53a2ac04bf5c65ad",
+            results["behavior:card:01124:take-2-damage"].Digest);
+        Assert.Equal("ec79b71d060627e391b65da59d158b2ee3fc57bf6ae499b18f8bbad5da86ef2d",
+            results[
+                "behavior:card:01123:if-activation-deals-damage-you-exhaust-your-condition-met"].Digest);
+        Assert.Equal("8932d10f2d100c39533c2fbc76dcf25929f4a1f762392c1908daefd52e344d6a",
+            results[
+                "behavior:card:01123:if-activation-deals-damage-you-exhaust-your-condition-not-met"].Digest);
+        Assert.Equal("006f7b5815387944ada68236ab92e9b925171c431b0abd176b83e44bf6a8ed18",
+            results[
+                "behavior:card:01128:discard-cards-from-encounter-deck-until-masters"].Digest);
+        Assert.Equal("b30ae1137eaa028f9ef589a08608f448750f953bba4c7b5ecffc9d7b6386e1f6",
+            results[
+                "behavior:card:01129:after-radioactive-man-attacks-you-discard-1"].Digest);
+        Assert.Equal("3de667a7f26becabdd594c0bf532b1668dfa59e7d9992d03b654b573eb71a6ad",
+            results["behavior:card:01129:discard-1-card-at-random-from-your"].Digest);
+        Assert.Equal("f3f5f4ca24a6074e5d639655e640eb429fad66f84cb6c452e5c223c18ed30995",
+            results[
+                "behavior:card:01130:when-whirlwind-attacks-you-also-resolve-his"].Digest);
+        Assert.Equal("83d4f81d546d4c4e424903cd45cf39ad610fe8fdabb5c01a075001d7b386f1be",
+            results["behavior:card:01130:deal-1-damage-each-hero"].Digest);
+        Assert.Equal("d1d25060d56ecd197c9502c17ceb981e69a03ff621ba98d138e583b170ac55ae",
+            results[
+                "behavior:card:01131:after-tiger-shark-attacks-give-him-tough"].Digest);
+        Assert.Equal("d74888b1e2175213064c3e9f9335ea166919424a1510b5a8bd73a84933e1277a",
+            results["behavior:card:01131:give-villain-tough-status-card"].Digest);
+        Assert.Equal("f2f3c7b3966e55a774653142a55afc0a706562e2e1f6a0cf4149dba1a54119bb",
+            results[
+                "behavior:card:01132:star-engaged-player-must-defend-against-melter-condition-met"].Digest);
+        Assert.Equal("415cd6ef0478895e59cfa83fc86b743e5d06bf58b508e41e2cc5d1fa29f30fbe",
+            results[
+                "behavior:card:01132:star-engaged-player-must-defend-against-melter-condition-not-met"].Digest);
+        Assert.Equal("d70ac8380df3acc4e45c121c0135ead1e97ace449b7c07b22219532f638c8ef4",
+            results["behavior:card:01132:exhaust-each-ally-you-control"].Digest);
+        Assert.Equal("5c98aaa77e652f7a834d65de443acac98576dad7ff61372006c002aa6d217003",
+            results[
+                "behavior:card:01133:each-masters-evil-minion-attacks-hero-it"].Digest);
+        Assert.Equal("96f64e810394c1810bf96402cf32c53bd98bb37a1a95df03933b71b699fe7c5e",
+            results[
+                "behavior:card:01133:if-no-attacks-were-made-way-search-condition-met"].Digest);
     }
 
     [Fact]
