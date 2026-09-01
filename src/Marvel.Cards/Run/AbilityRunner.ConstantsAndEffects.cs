@@ -325,6 +325,15 @@ public sealed partial class AbilityRunner
             || target.Area.Type is DeckType.BoostingArea
                 or DeckType.ProcessingArea
                 or DeckType.RevealingArea
+            // Black Widow's printed Interrupt names "that card" at the
+            // WhenCardRevealed occurrence. The villain-phase agenda still
+            // holds that card in the dealt queue during the interrupt window,
+            // so this retained trigger binding is the express authority to
+            // discard it before its reveal procedure applies.
+            || target.Area.Type == DeckType.DealtEncounterCardsDeck
+                && selector is AbilityValue.Word { Value: "trigger.subject" }
+                && cast.Occurrence.Conditions.Contains(
+                    Steps.CardRevealed, StringComparer.Ordinal)
             || selector is AbilityValue.Word { Value: "chosen" }
                 && cast.WasSelectedInCurrentArea(target)
             || ExplicitlySelectsOutOfPlayCard(selector, cast, target);

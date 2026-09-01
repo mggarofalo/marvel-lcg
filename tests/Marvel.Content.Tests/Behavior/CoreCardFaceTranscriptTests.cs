@@ -71,7 +71,23 @@ public sealed class CoreCardFaceTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(60, results.Count);
+        Assert.Equal(64, results.Count);
+        Assert.Equal(
+            "942c7c7769123feb2634068e0e4eeb3822bdea0c230abb9c9e8c0679d4de9a2a",
+            results[
+                "behavior:card:01058:after-daredevil-thwarts-deal-1-damage-enemy"].Digest);
+        Assert.Equal(
+            "879610d7908a2657b12d1be3ce8ca0350f46072882f489bc34cc84296bc29dce",
+            results[
+                "behavior:card:01073:increase-your-ally-limit-by-1-limit-reached"].Digest);
+        Assert.Equal(
+            "a3dd15a5b648deaafb8db120ca0507629ed3c848e25bbc38c74a6096e969615c",
+            results[
+                "behavior:card:01075:when-card-is-revealed-from-encounter-deck"].Digest);
+        Assert.Equal(
+            "015cee3721c8b799304dcd5269f6300a51e76233e904a4f0fc002cdc07f15c49",
+            results[
+                "behavior:card:01078:when-treachery-card-is-revealed-from-encounter"].Digest);
         Assert.Equal(
             "5b0c4c647c6eea14fd4c9c12ce6d56a94a0f882f949d85ff6b28bc53cba7de01",
             results["behavior:card:01050:physical-deal-2-damage-enemy"].Digest);

@@ -37391,11 +37391,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Daredevil deals one damage after he thwarts"
+          ],
+          "mutation": "Remove Daredevil's response or deal zero damage; Rhino has zero rather than one damage after Daredevil thwarts."
         }
       ]
     },
@@ -39389,7 +39391,7 @@
       "title": "The Triskelion",
       "fingerprint": "sha256:bcbbdac247a0ce2ae0f179e8b074668c6ed22d84009fd787bac81636ad2f6262",
       "scope": "Core Set",
-      "disposition": "executable",
+      "disposition": "mixed",
       "obligations": [
         {
           "id": "behavior:card:01073:printed-name",
@@ -39492,10 +39494,10 @@
         {
           "id": "behavior:card:01073:increase-your-ally-limit-by-1-within-limit",
           "summary": "Before the printed limit: Increase your ally limit by 1.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "no-independent-behavior",
+          "reason": "Below the ordinary three-ally limit, a valid board has the same observable state whether the limit is three or four; the modifier first becomes observable at the boundary covered separately.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -39507,19 +39509,21 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::The Triskelion permits a fourth controlled ally"
+          ],
+          "mutation": "Ignore The Triskelion's modifier and enforce the ordinary limit of three; playing Mockingbird requires one of the four allies to leave play."
         },
         {
           "id": "behavior:card:01073:allows-you-control-more-than-3-allies",
           "summary": "(This allows you to control more than 3 allies.)",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+          "disposition": "narrower",
+          "reason": "The parenthetical restates the observable consequence of increasing the ally limit at its boundary.",
+          "target": "behavior:card:01073:increase-your-ally-limit-by-1-limit-reached",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -39859,11 +39863,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Black Widow cancels one revealed card and reveals the next"
+          ],
+          "mutation": "Do not exhaust Black Widow, spend the mental resource, or cancel Advance; her state, the payment discard, or the main scheme threat assertion fails."
         },
         {
           "id": "behavior:card:01075:then-reveal-another-card-from-encounter-deck",
@@ -39871,11 +39877,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Black Widow cancels one revealed card and reveals the next"
+          ],
+          "mutation": "Do not reveal a replacement encounter card after Black Widow cancels Advance; Hydra Mercenary is not engaged with the player."
         }
       ]
     },
@@ -40263,11 +40271,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Get Behind Me cancels a treachery and causes another villain attack"
+          ],
+          "mutation": "Allow Advance's When Revealed effect to resolve; the main scheme gains threat instead of remaining at zero."
         },
         {
           "id": "behavior:card:01078:villain-attacks-you-instead",
@@ -40275,11 +40285,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Get Behind Me cancels a treachery and causes another villain attack"
+          ],
+          "mutation": "Do not initiate the replacement villain attack; Black Panther takes only the first attack's four damage and only one Attack event is emitted."
         }
       ]
     },

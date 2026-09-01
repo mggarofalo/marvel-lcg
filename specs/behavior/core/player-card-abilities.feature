@@ -196,6 +196,111 @@ Feature: Core player card abilities
     And card 01019a copy 0 has 1 damage
     And card 01050 copy 0 is faceup on top of seat 1's discard pile
 
+  @behavior:card:01058:after-daredevil-thwarts-deal-1-damage-enemy
+  @card:01058
+  Scenario: Daredevil deals one damage after he thwarts
+    # Daredevil removes his printed two threat, then his optional Response
+    # chooses Rhino and deals one damage before consequential damage is applied.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 928  |
+    And card 01058 copy 0 is an ally controlled by seat 1
+    And card 01097b copy 0 has 2 threat counters
+    When card 01058 copy 0 begins its basic thwart against card 01097b copy 0
+    Then seat 1 is offered the "Daredevil" pending opportunity
+    When seat 1 accepts card 01058 copy 0's pending opportunity
+    Then card 01094 copy 0 is offered by the pending action
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01097b copy 0 has 0 threat counters
+    And card 01094 copy 0 has 1 damage
+    And card 01058 copy 0 has 1 damage
+
+  @behavior:card:01073:increase-your-ally-limit-by-1-limit-reached
+  @card:01073
+  Scenario: The Triskelion permits a fourth controlled ally
+    # The Triskelion increases this player's ally limit from three to four.
+    # Mockingbird therefore enters while three allies are already controlled
+    # without requiring any of those four allies to be discarded.
+    Given a canonical Core scene is dealt
+      | campaign | heroes         | seed |
+      | rhino    | captain_marvel | 929  |
+    And card 01073 copy 0 is a support controlled by seat 1
+    And card 01066 copy 0 is an ally controlled by seat 1
+    And card 01067 copy 0 is an ally controlled by seat 1
+    And card 01068 copy 0 is an ally controlled by seat 1
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01083 | 0    |
+      | 01088 | 0    |
+      | 01089 | 0    |
+    When seat 1 plays card 01083 copy 0 paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+      | 01089 | 0    |
+    Then seat 1 is offered the "Mockingbird" pending opportunity
+    When seat 1 declines the pending opportunity
+    Then card 01066 copy 0 remains an ally controlled by seat 1
+    And card 01067 copy 0 remains an ally controlled by seat 1
+    And card 01068 copy 0 remains an ally controlled by seat 1
+    And card 01083 copy 0 remains an ally controlled by seat 1
+
+  @behavior:card:01075:when-card-is-revealed-from-encounter-deck
+  @covers:behavior:card:01075:then-reveal-another-card-from-encounter-deck
+  @card:01075
+  Scenario: Black Widow cancels one revealed card and reveals the next
+    # During the encounter-card reveal, Black Widow exhausts and spends a
+    # mental resource to cancel Advance, discard it, and reveal Hydra Mercenary
+    # instead. Advance places no threat; only villain-phase step 1 places one.
+    Given a canonical Core scene is dealt
+      | campaign | heroes        | seed |
+      | rhino    | black_panther | 930  |
+    And seat 1 shows identity face 01040a
+    And card 01075 copy 0 is an ally controlled by seat 1
+    And card 01097b copy 0 has 0 threat counters
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01089 | 0    |
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01103     | 0    |
+      | 01186     | 0    |
+      | 01101     | 0    |
+    When villain phase 1 resolves accepting "Black Widow" paid with card 01089 copy 0
+    Then card 01075 copy 0 is exhausted
+    And card 01089 copy 0 is in seat 1's discard pile
+    And card 01186 copy 0 is faceup on top of the encounter discard pile
+    And card 01101 copy 0 is engaged with seat 1
+    And card 01097b copy 0 has 1 threat counter
+
+  @behavior:card:01078:when-treachery-card-is-revealed-from-encounter
+  @covers:behavior:card:01078:villain-attacks-you-instead
+  @card:01078
+  Scenario: Get Behind Me cancels a treachery and causes another villain attack
+    # Get Behind Me cancels Advance's When Revealed scheme activation, then
+    # causes Rhino to make a second attack. The two fixed boost cards make the
+    # attacks deal four and three damage respectively; villain-phase step 1
+    # remains the main scheme's only threat placement.
+    Given a canonical Core scene is dealt
+      | campaign | heroes        | seed |
+      | rhino    | black_panther | 931  |
+    And seat 1 shows identity face 01040a
+    And card 01097b copy 0 has 0 threat counters
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01078 | 0    |
+      | 01088 | 0    |
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01103     | 0    |
+      | 01186     | 0    |
+      | 01101     | 0    |
+    When villain phase 1 resolves accepting "Get Behind Me!" paid with card 01088 copy 0
+    Then card 01040a copy 0 has 7 damage
+    And card 01097b copy 0 has 1 threat counter
+    And card 01186 copy 0 is faceup on top of the encounter discard pile
+    And card 01078 copy 0 is faceup on top of seat 1's discard pile
+    And 6 Boost events were emitted
+
   @behavior:card:01018:max-1-per-player
   @card:01018
   Scenario: A player with Energy Channel cannot play another copy
