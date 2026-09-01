@@ -17247,11 +17247,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Make the Call controls another player's ally until it leaves play"
+          ],
+          "mutation": "Ignore Make the Call's explicit control instruction or revert control while Black Cat remains in play; the seat 1 play-area and defense decisions fail."
         }
       ]
     },
@@ -17379,11 +17381,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Make the Call controls another player's ally until it leaves play"
+          ],
+          "mutation": "Send defeated Black Cat to her controller's discard pile instead of her owner's equivalent area; the seat 2 discard assertion fails."
         }
       ]
     },
@@ -18095,11 +18099,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Make the Call controls another player's ally until it leaves play"
+          ],
+          "mutation": "Treat Black Cat as played when Make the Call puts her into play; her forced response removes the two asserted deck cards."
         }
       ]
     },
@@ -18139,11 +18145,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Make the Call controls another player's ally until it leaves play"
+          ],
+          "mutation": "Put Black Cat into an area inconsistent with an ally under seat 1's control; the play-area assertion or defender decision fails."
         }
       ]
     },
@@ -38831,11 +38839,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Make the Call controls another player's ally until it leaves play"
+          ],
+          "mutation": "Search only the acting player's discard, charge Make the Call's printed cost instead of Black Cat's, or put the ally under its owner; the offer, payment, and play-area assertions fail."
         }
       ]
     },

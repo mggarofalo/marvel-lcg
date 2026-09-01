@@ -679,3 +679,44 @@ Feature: Core card actions
     And card 01088 copy 0 is in seat 1's discard pile
     When seat 1 asks for available card actions
     Then card 01010a copy 0's action is unavailable
+
+  @behavior:card:01071:pay-printed-cost-ally-in-any-player
+  @covers:behavior:rr:play-put-into-play.3:published-result
+  @covers:behavior:rr:play-put-into-play.5:published-result
+  @covers:behavior:rr:ownership-and-control.3:published-result
+  @covers:behavior:rr:ownership-and-control.7.2:published-result
+  @card:01071 @rr:play-put-into-play.3 @rr:play-put-into-play.5
+  @rr:ownership-and-control.3 @rr:ownership-and-control.7.2
+  Scenario: Make the Call controls another player's ally until it leaves play
+    # "Pay the printed cost of an ally in any player's discard pile → put that
+    # ally into play under your control." Putting Black Cat into play is not
+    # playing her, so her After-you-play response does not discard Spider-Man's
+    # deck. She enters Captain Marvel's ally area, but when defeated returns to
+    # her owner Spider-Man's discard pile.
+    Given a canonical Core scene is dealt
+      | campaign | heroes                    | seed |
+      | rhino    | captain_marvel,spider_man | 719  |
+    And card 01002 copy 0 starts in seat 2's discard pile
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01071 | 0    |
+      | 01088 | 0    |
+    And these cards are next on seat 2's player deck
+      | next card | copy |
+      | 01003     | 0    |
+      | 01004     | 0    |
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01103     | 0    |
+    When seat 1 initiates card 01071 copy 0's action without payment
+    Then card 01002 copy 0 is offered by the pending action
+    When seat 1 chooses card 01002 copy 0 paying with these cards for the pending action
+      | card  | copy |
+      | 01088 | 0    |
+    Then card 01002 copy 0 is in seat 1's play area
+    And card 01003 copy 0 is in seat 2's player deck
+    And card 01004 copy 0 is in seat 2's player deck
+    And card 01071 copy 0 is in seat 1's discard pile
+    And card 01088 copy 0 is in seat 1's discard pile
+    When the villain attacks seat 1 with card 01002 copy 0 defending
+    Then card 01002 copy 0 is faceup on top of seat 2's discard pile

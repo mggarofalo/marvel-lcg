@@ -268,6 +268,9 @@ internal sealed class CoreTranscriptRunner
         Bind("place-obligation", TranscriptStepKind.Given,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is an obligation in seat (?<seat>\d+)'s play area",
             PlaceObligation),
+        Bind("place-player-discard", TranscriptStepKind.Given,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) starts in seat (?<seat>\d+)'s discard pile",
+            PlacePlayerDiscard),
         Bind("attach-identity-upgrade", TranscriptStepKind.Given,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is an upgrade attached to seat (?<seat>\d+)'s identity",
             AttachIdentityUpgrade),
@@ -465,6 +468,9 @@ internal sealed class CoreTranscriptRunner
         Bind("choose-pending-card-and-discard", TranscriptStepKind.When,
             @"seat (?<seat>\d+) chooses card (?<face>\d+[a-z]?) copy (?<copy>\d+) and discards these cards for the pending action",
             ChoosePendingCardAndDiscard),
+        Bind("choose-pending-card-with-payment", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) chooses card (?<face>\d+[a-z]?) copy (?<copy>\d+) paying with these cards for the pending action",
+            ChoosePendingCardWithPayment),
         Bind("hand-count", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) has (?<count>\d+) cards? in hand", HandCount),
         Bind("mulligan-offered", TranscriptStepKind.Then,
@@ -860,6 +866,12 @@ internal sealed class CoreTranscriptRunner
         context.SceneRequired(step).Apply(new MoveSceneCard(
             SceneCard(match, step),
             new SceneDestination(SceneZone.Obligation, Seat(match, step))));
+
+    private static void PlacePlayerDiscard(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        context.SceneRequired(step).Apply(new MoveSceneCard(
+            SceneCard(match, step),
+            new SceneDestination(SceneZone.PlayerDiscard, Seat(match, step))));
 
     private static void AttachIdentityUpgrade(
         TranscriptContext context, TranscriptStep step, Match match) =>
@@ -2171,6 +2183,37 @@ internal sealed class CoreTranscriptRunner
             context.World.Abilities,
             asked,
             Decision.Take(offer.Id, discarded, []),
+            context.Events);
+        SetPendingPrompt(context, Sequence.Work(
+            context.World, context.Cards, context.World.Abilities, context.Events));
+    }
+
+    private static void ChoosePendingCardWithPayment(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        Prompt asked = context.PendingPrompt
+            ?? throw new TranscriptException($"{step.Location}: no action prompt is pending");
+        if (asked.Player != seat)
+        {
+            throw new TranscriptException(
+                $"{step.Location}: pending action asks seat {asked.Player + 1}, not seat {seat + 1}");
+        }
+
+        Card target = context.SceneRequired(step).Find(SceneCard(match, step));
+        Affordance offer = asked.Affordances.SingleOrDefault(candidate =>
+            candidate.AnchorId == target.ObjectId)
+            ?? throw new TranscriptException(
+                $"{step.Location}: card {target.ObjectId} is not offered by '{asked.Label}'");
+        TranscriptTable table = Table(step, "card", "copy");
+        int[] payments = [.. table.Rows.Select(row => context.SceneRequired(step).Find(
+            new SceneCard(row["card"], TableNumber(row, "copy", step))).ObjectId)];
+        Sequence.Answer(
+            context.World,
+            context.Cards,
+            context.World.Abilities,
+            asked,
+            Decision.Take(offer.Id, [], payments),
             context.Events);
         SetPendingPrompt(context, Sequence.Work(
             context.World, context.Cards, context.World.Abilities, context.Events));
