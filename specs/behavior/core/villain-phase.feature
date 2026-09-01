@@ -148,6 +148,28 @@ Feature: Core villain phase
     And card 01001a copy 0 has 1 damage
     And card 01101 copy 0 is engaged with seat 1
 
+  @behavior:rr:attack-enemy-activation.2.2:published-result
+  @covers:behavior:rr:attack-enemy-activation.step.2:published-result
+  @rr:attack-enemy-activation.2.2 @rr:attack-enemy-activation.step.2
+  Scenario: A tough hero defends before tough prevents the reduced damage
+    # "If a hero with a tough status makes a basic defense, the damage is first
+    # reduced by that hero's DEF value." Declaring the defense exhausts the
+    # hero; tough then prevents the remaining damage instance.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 719  |
+    And seat 1 shows identity face 01001a
+    And card 01001a copy 0 has a tough status card
+    And card 01097b copy 0 has 0 threat counters
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01103     | 0    |
+      | 01101     | 0    |
+    When villain phase 1 resolves with card 01001a copy 0 defending the first attack
+    Then card 01001a copy 0 is exhausted
+    And card 01001a copy 0 has 0 damage
+    And card 01001a copy 0 has 0 tough status cards
+
   @behavior:rr:defend-defense.3:published-result
   @covers:behavior:rr:defend-defense.3.1:published-result
   @covers:behavior:rr:attack-enemy-activation.3:published-result

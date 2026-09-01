@@ -2403,11 +2403,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::A tough hero defends before tough prevents the reduced damage"
+          ],
+          "mutation": "Apply tough before DEF, skip the defense exhaustion, or allow the reduced damage through; the exhaustion, damage, or status assertion fails."
         }
       ]
     },
@@ -2609,11 +2611,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::A tough hero defends before tough prevents the reduced damage"
+          ],
+          "mutation": "Skip declaring or exhausting the chosen defender; the hero exhaustion and resulting attack assertions fail."
         }
       ]
     },
