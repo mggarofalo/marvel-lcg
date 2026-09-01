@@ -886,4 +886,31 @@ public sealed class CoreCardFaceTranscriptTests
             Assert.Equal(digest, results[obligation].Digest);
         }
     }
+
+    [Fact]
+    public void SpiderManNemesisBranchesHavePinnedOutcomes()
+    {
+        var results = Corpus.Value
+            .Where(candidate => candidate.Scenario.StartsWith(
+                "specs/behavior/core/spider-man-nemesis.feature::",
+                StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
+        var expected = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["behavior:card:01166:each-player-places-random-card-from-their-one-player"] = "126e4835d82bedd44329c0e33af5a9313e82b74e3c073dcc2f47c3c8ff585ce5",
+            ["behavior:card:01168:stun-your-hero"] = "0ab7f3f86edbc4554861933a7cde61f26810c4ed358c354f9df15dc3cc6aa4e0",
+            ["behavior:card:01168:if-vulture-is-in-play-card-gains-condition-met"] = "0a72d26b4d71392b45963a29a45c1f6a07a35c58f09150d319e142e924d0e8b7",
+            ["behavior:card:01168:if-activation-deals-damage-friendly-character-stun-condition-met"] = "63fcfd51806781803a2c0b47909ab3ff68f7df757152e78979bf75d846e2daed",
+            ["behavior:card:01168:if-activation-deals-damage-friendly-character-stun-condition-not-met"] = "6ddc049bd99e68737448a9b369273e12295bb26c3e1fea42914348a3bf1914ab",
+            ["behavior:card:01169:discard-1-card-at-random-from-each-one-player"] = "8c78b43d243dc963aebfa639795c8f772934d005685979eb59aa4903661c1192",
+            ["behavior:card:01169:discard-1-card-at-random-from-each-multiple-players"] = "0e6cbfb3605fe7924f53c68d780d22d8dac39e741f8d083859756a922fe4abe0",
+            ["behavior:card:01169:place-1-threat-on-main-scheme-for-zero"] = "eaf0a0192ebed377b346ceb1b38a23e957d63af2efd667fa97211c453d80a903",
+        };
+
+        Assert.Equal(expected.Count, results.Count);
+        foreach ((string obligation, string digest) in expected)
+        {
+            Assert.Equal(digest, results[obligation].Digest);
+        }
+    }
 }

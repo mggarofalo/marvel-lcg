@@ -46643,11 +46643,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/spider-man-nemesis.feature::Highway Robbery places a random hand card facedown on the scheme"
+          ],
+          "mutation": "Remove or alter this printed branch; the transcript's prompt and direct state assertions fail."
         },
         {
           "key": "each-player-places-random-card-from-their-multiple-players",
@@ -46905,11 +46907,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/spider-man-nemesis.feature::Sweeping Swoop stuns the hero without surging when Vulture is absent"
+          ],
+          "mutation": "Remove or alter this printed branch; the transcript's prompt and direct state assertions fail."
         },
         {
           "key": "if-vulture-is-in-play-card-gains-condition-met",
@@ -46917,11 +46921,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/spider-man-nemesis.feature::Sweeping Swoop surges when Vulture is in play"
+          ],
+          "mutation": "Remove or alter this printed branch; the transcript's prompt and direct state assertions fail."
         },
         {
           "key": "if-vulture-is-in-play-card-gains-condition-not-met",
@@ -46929,11 +46935,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/spider-man-nemesis.feature::Sweeping Swoop stuns the hero without surging when Vulture is absent"
+          ],
+          "mutation": "Remove or alter this printed branch; the transcript's prompt and direct state assertions fail."
         },
         {
           "key": "if-activation-deals-damage-friendly-character-stun-condition-met",
@@ -46941,11 +46949,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/spider-man-nemesis.feature::Sweeping Swoop stuns the friendly character damaged by its activation"
+          ],
+          "mutation": "Remove or alter this printed branch; the transcript's prompt and direct state assertions fail."
         },
         {
           "key": "if-activation-deals-damage-friendly-character-stun-condition-not-met",
@@ -46953,11 +46963,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/spider-man-nemesis.feature::Sweeping Swoop does not stun when tough prevents all activation damage"
+          ],
+          "mutation": "Remove or alter this printed branch; the transcript's prompt and direct state assertions fail."
         }
       ]
     },
@@ -47027,11 +47039,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/spider-man-nemesis.feature::Vulture's Plans discards one player's only card and counts its resource type"
+          ],
+          "mutation": "Remove or alter this printed branch; the transcript's prompt and direct state assertions fail."
         },
         {
           "key": "discard-1-card-at-random-from-each-multiple-players",
@@ -47039,11 +47053,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/spider-man-nemesis.feature::Vulture's Plans discards from every player and counts distinct resource types"
+          ],
+          "mutation": "Remove or alter this printed branch; the transcript's prompt and direct state assertions fail."
         },
         {
           "key": "place-1-threat-on-main-scheme-for-zero",
@@ -47051,11 +47067,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/spider-man-nemesis.feature::Vulture's Plans places no threat when no resource type is discarded"
+          ],
+          "mutation": "Remove or alter this printed branch; the transcript's prompt and direct state assertions fail."
         },
         {
           "key": "place-1-threat-on-main-scheme-for-one",
@@ -47063,11 +47081,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/spider-man-nemesis.feature::Vulture's Plans discards one player's only card and counts its resource type"
+          ],
+          "mutation": "Remove or alter this printed branch; the transcript's prompt and direct state assertions fail."
         },
         {
           "key": "place-1-threat-on-main-scheme-for-multiple",
@@ -47075,11 +47095,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/spider-man-nemesis.feature::Vulture's Plans discards from every player and counts distinct resource types"
+          ],
+          "mutation": "Remove or alter this printed branch; the transcript's prompt and direct state assertions fail."
         }
       ]
     },
