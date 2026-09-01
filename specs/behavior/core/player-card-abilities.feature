@@ -3,6 +3,121 @@ Feature: Core player card abilities
   Player cards resolve their printed Actions and constant modifiers from legal
   Core deals, with targets and resulting zones recorded in the transcript.
 
+  @behavior:card:01016:captain-marvel-gets-1-def-2-def-condition-not-met
+  @card:01016
+  Scenario: Captain Marvel's Helmet grants one defense without Aerial
+    # Captain Marvel's Helmet grants +1 DEF while Captain Marvel lacks Aerial,
+    # increasing her printed DEF 1 to 2.
+    Given a canonical Core scene is dealt
+      | campaign | heroes         | seed |
+      | rhino    | captain_marvel | 890  |
+    And seat 1 shows identity face 01010a
+    And card 01016 copy 0 is an upgrade attached to seat 1's identity
+    When the printed characteristics of card 01010a copy 0 are requested
+    Then card 01010a copy 0 has modified DEF 2
+
+  @behavior:card:01016:captain-marvel-gets-1-def-2-def-condition-met
+  @card:01016 @card:01017
+  Scenario: Captain Marvel's Helmet grants two defense with Aerial
+    # Cosmic Flight grants Captain Marvel Aerial, so the Helmet grants +2 DEF
+    # instead and increases her printed DEF 1 to 3.
+    Given a canonical Core scene is dealt
+      | campaign | heroes         | seed |
+      | rhino    | captain_marvel | 891  |
+    And seat 1 shows identity face 01010a
+    And card 01016 copy 0 is an upgrade attached to seat 1's identity
+    And card 01017 copy 0 is an upgrade attached to seat 1's identity
+    When the printed characteristics of card 01010a copy 0 are requested
+    Then card 01010a copy 0 has the AERIAL trait
+    And card 01010a copy 0 has modified DEF 3
+
+  @behavior:card:01032:deal-4-damage-enemy-8-damage-instead-condition-not-met
+  @card:01032
+  Scenario: Supersonic Punch deals four damage without Aerial
+    # Without Aerial, Supersonic Punch deals its base four attack damage to the
+    # chosen enemy.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | iron_man | 892  |
+    And seat 1 shows identity face 01029a
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01032 | 0    |
+      | 01088 | 0    |
+    When seat 1 initiates card 01032 copy 0's action paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+    Then card 01094 copy 0 is offered by the pending action
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01094 copy 0 has 4 damage
+    And card 01032 copy 0 is faceup on top of seat 1's discard pile
+
+  @behavior:card:01032:deal-4-damage-enemy-8-damage-instead-condition-met
+  @card:01032 @card:01039
+  Scenario: Supersonic Punch deals eight damage with Aerial
+    # Rocket Boots grants Iron Man Aerial for the phase, so Supersonic Punch
+    # deals eight attack damage instead of four.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | iron_man | 893  |
+    And seat 1 shows identity face 01029a
+    And card 01039 copy 0 is an upgrade attached to seat 1's identity
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01032 | 0    |
+      | 01088 | 0    |
+      | 01089 | 0    |
+    When seat 1 initiates card 01039 copy 0's action paying with these cards
+      | card  | copy |
+      | 01089 | 0    |
+    Then card 01029a copy 0 has the AERIAL trait
+    When seat 1 initiates card 01032 copy 0's action paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+    Then card 01094 copy 0 is offered by the pending action
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01094 copy 0 has 8 damage
+
+  @behavior:card:01038:exhaust-powered-gauntlets-deal-1-damage-enemy-condition-not-met
+  @card:01038
+  Scenario: Powered Gauntlets deals one damage without Aerial
+    # Without Aerial, exhausting Powered Gauntlets deals one attack damage to
+    # the chosen enemy.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | iron_man | 894  |
+    And seat 1 shows identity face 01029a
+    And card 01038 copy 0 is an upgrade attached to seat 1's identity
+    When seat 1 initiates card 01038 copy 0's action without payment
+    Then card 01094 copy 0 is offered by the pending action
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01038 copy 0 is exhausted
+    And card 01094 copy 0 has 1 damage
+
+  @behavior:card:01038:exhaust-powered-gauntlets-deal-1-damage-enemy-condition-met
+  @card:01038 @card:01039
+  Scenario: Powered Gauntlets deals two damage with Aerial
+    # Rocket Boots grants Iron Man Aerial for the phase, so exhausting Powered
+    # Gauntlets deals two attack damage instead of one.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | iron_man | 895  |
+    And seat 1 shows identity face 01029a
+    And card 01038 copy 0 is an upgrade attached to seat 1's identity
+    And card 01039 copy 0 is an upgrade attached to seat 1's identity
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01089 | 0    |
+    When seat 1 initiates card 01039 copy 0's action paying with these cards
+      | card  | copy |
+      | 01089 | 0    |
+    Then card 01029a copy 0 has the AERIAL trait
+    When seat 1 initiates card 01038 copy 0's action without payment
+    Then card 01094 copy 0 is offered by the pending action
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01038 copy 0 is exhausted
+    And card 01094 copy 0 has 2 damage
+
   @behavior:card:01068:choose-thw-plus-two-until-end-phase
   @covers:behavior:card:01068:limit-once-per-round-within-limit
   @covers:behavior:card:01068:limit-once-per-round-limit-reached

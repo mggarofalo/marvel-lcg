@@ -25752,28 +25752,32 @@
           "mutation": "Change or omit this printed field in CardCatalog; the generated face-table assertion fails."
         },
         {
-          "key": "captain-marvel-gets-1-def-2-def-condition-met",
+      "key": "captain-marvel-gets-1-def-2-def-condition-met",
           "summary": "Condition met: Captain Marvel gets +1 DEF (+2 DEF instead if you have the Aerial trait).",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/player-card-abilities.feature::Captain Marvel's Helmet grants two defense with Aerial"
+      ],
+      "mutation": "Grant one rather than two DEF while Captain Marvel has Aerial; the modified-DEF assertion fails."
         },
         {
-          "key": "captain-marvel-gets-1-def-2-def-condition-not-met",
+      "key": "captain-marvel-gets-1-def-2-def-condition-not-met",
           "summary": "Condition not met; the conditional result does not occur: Captain Marvel gets +1 DEF (+2 DEF instead if you have the Aerial trait).",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/player-card-abilities.feature::Captain Marvel's Helmet grants one defense without Aerial"
+      ],
+      "mutation": "Grant two rather than one DEF while Captain Marvel lacks Aerial; the modified-DEF assertion fails."
         }
       ]
     },
@@ -28218,28 +28222,32 @@
           "mutation": "Change or omit this printed field in CardCatalog; the generated face-table assertion fails."
         },
         {
-          "key": "deal-4-damage-enemy-8-damage-instead-condition-met",
+      "key": "deal-4-damage-enemy-8-damage-instead-condition-met",
           "summary": "Condition met: Hero Action (attack): Deal 4 damage to an enemy (8 damage instead if you have the Aerial trait).",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/player-card-abilities.feature::Supersonic Punch deals eight damage with Aerial"
+      ],
+      "mutation": "Deal four rather than eight damage while Iron Man has Aerial; Rhino's damage assertion fails."
         },
         {
-          "key": "deal-4-damage-enemy-8-damage-instead-condition-not-met",
+      "key": "deal-4-damage-enemy-8-damage-instead-condition-not-met",
           "summary": "Condition not met; the conditional result does not occur: Hero Action (attack): Deal 4 damage to an enemy (8 damage instead if you have the Aerial trait).",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/player-card-abilities.feature::Supersonic Punch deals four damage without Aerial"
+      ],
+      "mutation": "Deal eight rather than four damage while Iron Man lacks Aerial; Rhino's damage assertion fails."
         }
       ]
     },
@@ -28950,28 +28958,32 @@
           "mutation": "Change or omit this printed field in CardCatalog; the generated face-table assertion fails."
         },
         {
-          "key": "exhaust-powered-gauntlets-deal-1-damage-enemy-condition-met",
+      "key": "exhaust-powered-gauntlets-deal-1-damage-enemy-condition-met",
           "summary": "Condition met: Hero Action (attack): Exhaust Powered Gauntlets → deal 1 damage to an enemy (2 damage instead if you have the Aerial trait).",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/player-card-abilities.feature::Powered Gauntlets deals two damage with Aerial"
+      ],
+      "mutation": "Deal one rather than two damage while Iron Man has Aerial; Rhino's damage assertion fails."
         },
         {
-          "key": "exhaust-powered-gauntlets-deal-1-damage-enemy-condition-not-met",
+      "key": "exhaust-powered-gauntlets-deal-1-damage-enemy-condition-not-met",
           "summary": "Condition not met; the conditional result does not occur: Hero Action (attack): Exhaust Powered Gauntlets → deal 1 damage to an enemy (2 damage instead if you have the Aerial trait).",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/player-card-abilities.feature::Powered Gauntlets deals one damage without Aerial"
+      ],
+      "mutation": "Deal two rather than one damage while Iron Man lacks Aerial; Rhino's damage assertion fails."
         }
       ]
     },

@@ -71,7 +71,31 @@ public sealed class CoreCardFaceTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(22, results.Count);
+        Assert.Equal(28, results.Count);
+        Assert.Equal(
+            "d42e5505bd0e5fabc86cfc7328225f032d0ce36b8fc51ccc100a66c374cec003",
+            results[
+                "behavior:card:01016:captain-marvel-gets-1-def-2-def-condition-not-met"].Digest);
+        Assert.Equal(
+            "3112d7a3543aa7d330edb6cb21dfe0b7726de8ef12caef3f448a5d807d4d884e",
+            results[
+                "behavior:card:01016:captain-marvel-gets-1-def-2-def-condition-met"].Digest);
+        Assert.Equal(
+            "b6e23c351b2e616cee5aea0e3db909756e7c83bc807f0d090a012a0a2ccb59ce",
+            results[
+                "behavior:card:01032:deal-4-damage-enemy-8-damage-instead-condition-not-met"].Digest);
+        Assert.Equal(
+            "27d5db84be7a4ac54ce8fa63f929645ee487591d643d5df64f5d9b2d426f235a",
+            results[
+                "behavior:card:01032:deal-4-damage-enemy-8-damage-instead-condition-met"].Digest);
+        Assert.Equal(
+            "9ae31578c15b762555c5399bad6512c92454c17071136d7ff04461c902136379",
+            results[
+                "behavior:card:01038:exhaust-powered-gauntlets-deal-1-damage-enemy-condition-not-met"].Digest);
+        Assert.Equal(
+            "0633f7f7f766f40f1b4bdd8e201bda42c70ef4f3619bb199484ed16dfaa674e5",
+            results[
+                "behavior:card:01038:exhaust-powered-gauntlets-deal-1-damage-enemy-condition-met"].Digest);
         Assert.Equal(
             "03df40ae6ceac7d4b6c94fcaf97e185e3eca0c0948fd20d570df26d5823c6503",
             results[
