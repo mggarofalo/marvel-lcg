@@ -7729,11 +7729,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::Ultron setup creates the environment and a Drone for each player"
+          ],
+          "mutation": "CoreRuleTranscriptTests.SetupBranchesHavePinnedOutcomes distinguishes Ultron Drones remaining in the villain play area after setup completes."
         }
       ]
     },
@@ -41872,11 +41874,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::Ultron setup creates the environment and a Drone for each player"
+          ],
+          "mutation": "CoreRuleTranscriptTests.SetupBranchesHavePinnedOutcomes distinguishes Ultron I entering play with Ultron II retained in the villain deck."
         },
         {
           "key": "ultron-ii-and-ultron-iii-instead-for",
@@ -41896,11 +41900,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::Ultron setup creates the environment and a Drone for each player"
+          ],
+          "mutation": "CoreRuleTranscriptTests.SetupBranchesHavePinnedOutcomes distinguishes every card of the recommended Under Attack modular set entering the encounter deck."
         },
         {
           "key": "put-ultron-drones-environment-into-play",
@@ -41908,11 +41914,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::Ultron setup creates the environment and a Drone for each player"
+          ],
+          "mutation": "CoreRuleTranscriptTests.SetupBranchesHavePinnedOutcomes distinguishes the set-aside Ultron Drones environment entering the villain play area."
         },
         {
           "key": "shuffle-encounter-deck",
@@ -41920,11 +41928,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::Ultron setup creates the environment and a Drone for each player"
+          ],
+          "mutation": "CoreRuleTranscriptTests.SetupBranchesHavePinnedOutcomes pins the encounter-deck order produced by Ultron's setup shuffle."
         },
         {
           "key": "advanced-stage-1b",
@@ -41932,11 +41942,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::Ultron setup creates the environment and a Drone for each player"
+          ],
+          "mutation": "CoreRuleTranscriptTests.SetupBranchesHavePinnedOutcomes distinguishes The Crimson Cowl showing its 1B face after scenario setup."
         }
       ]
     },
@@ -42046,11 +42058,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::Ultron setup creates the environment and a Drone for each player"
+          ],
+          "mutation": "CoreRuleTranscriptTests.SetupBranchesHavePinnedOutcomes distinguishes both players losing their top deck card and gaining one facedown Drone."
         }
       ]
     },

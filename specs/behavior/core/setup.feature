@@ -125,6 +125,36 @@ Feature: Canonical Core setup
       | 01132 | 1     |
       | 01133 | 2     |
 
+  @behavior:card:01137a:put-ultron-drones-environment-into-play
+  @covers:behavior:card:01137a:ultron-i-and-ultron-ii
+  @covers:behavior:card:01137a:under-attack
+  @covers:behavior:card:01137a:shuffle-encounter-deck
+  @covers:behavior:card:01137a:advanced-stage-1b
+  @covers:behavior:card:01137b:each-player-puts-top-card-their-deck-multiple-players
+  @covers:behavior:rr:environment.1:published-result
+  @card:01137a @card:01137b @rr:environment.1
+  Scenario: Ultron setup creates the environment and a Drone for each player
+    # "Setup: Put the Ultron Drones environment into play. Shuffle the
+    # encounter deck. Advance to stage 1B." Stage 1B then instructs each
+    # player to put the top card of their deck into play facedown, engaged with
+    # them as a Drone minion. The environment remains in the villain play area.
+    Given a canonical Core scene is dealt
+      | campaign | heroes                    | seed |
+      | ultron   | spider_man,captain_marvel | 807  |
+    When the dealt Core scene is inspected
+    Then card 01134 copy 0 is the faceup villain
+    And card 01135 copy 0 is in the villain deck
+    And card 01137b copy 0 is the faceup main scheme
+    And card 01140 copy 0 is in the villain's play area
+    And seat 1 has 1 facedown Drone minion
+    And seat 2 has 1 facedown Drone minion
+    And the encounter deck contains these card counts
+      | card  | count |
+      | 01151 | 1     |
+      | 01152 | 1     |
+      | 01153 | 1     |
+      | 01154 | 2     |
+
   @behavior:rr:modular-encounter-set.1:published-result
   @covers:behavior:rr:modular-encounter-set.2:published-result
   @rr:modular-encounter-set.1 @rr:modular-encounter-set.2

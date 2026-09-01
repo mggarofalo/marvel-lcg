@@ -387,7 +387,7 @@ public sealed class CoreRuleTranscriptTests
                 "specs/behavior/core/setup.feature::", StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(6, results.Count);
+        Assert.Equal(7, results.Count);
         Assert.Equal(
             "e72ed15ec31a9a7a09fc27204c124b81b9721e2591a43d75bed51ecd6e2f49d5",
             results["behavior:rr:appendix-ii-setup.step.1:published-result"].Digest);
@@ -406,6 +406,9 @@ public sealed class CoreRuleTranscriptTests
         Assert.Equal(
             "12469af423d842a404f38f0fa679e05f1686d269e7f30d2b820c184a4381e1e0",
             results["behavior:card:01116a:search-encounter-deck-for-defense-network-side"].Digest);
+        Assert.Equal(
+            "bd60d3534d573e413df7d3efa055d1b24035584a2707f3cee4af4f4811fa89a8",
+            results["behavior:card:01137a:put-ultron-drones-environment-into-play"].Digest);
     }
 
     [Fact]

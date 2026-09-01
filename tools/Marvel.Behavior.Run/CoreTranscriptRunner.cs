@@ -560,6 +560,9 @@ internal sealed class CoreTranscriptRunner
         Bind("minion-engaged", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is engaged with seat (?<seat>\d+)",
             MinionEngaged),
+        Bind("facedown-drone-count", TranscriptStepKind.Then,
+            @"seat (?<seat>\d+) has (?<count>\d+) facedown Drone minions?",
+            FacedownDroneCount),
         Bind("ally-controlled", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) remains an ally controlled by seat (?<seat>\d+)",
             AllyControlled),
@@ -2591,6 +2594,19 @@ internal sealed class CoreTranscriptRunner
             throw new TranscriptAssertionException(
                 $"{step.Location}: expected card {card.ObjectId} engaged with seat "
                 + $"{seat + 1}; was {card.Area}");
+        }
+    }
+
+    private static void FacedownDroneCount(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int actual = FacedownDrones.EngagedWith(
+            context.World, Seat(match, step)).Count;
+        int expected = Number(match, "count", step);
+        if (actual != expected)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected {expected} facedown Drone minions; was {actual}");
         }
     }
 
