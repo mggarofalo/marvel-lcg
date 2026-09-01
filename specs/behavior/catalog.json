@@ -16359,11 +16359,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Vibranium Suit moves two damage as the final Wakanda Forever step"
+          ],
+          "mutation": "CoreCardFaceTranscriptTests.CardActionBranchesHavePinnedOutcomes distinguishes the dial increasing by two while two damage is placed on Rhino."
         }
       ]
     },
@@ -16403,11 +16405,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Vibranium Suit moves two damage as the final Wakanda Forever step"
+          ],
+          "mutation": "CoreCardFaceTranscriptTests.CardActionBranchesHavePinnedOutcomes distinguishes the moved damage healing Black Panther; no Core card observes a separate healing trigger, so that trigger-only mutant is equivalent in Core."
         }
       ]
     },
@@ -16425,11 +16429,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Vibranium Suit moves two damage as the final Wakanda Forever step"
+          ],
+          "mutation": "CoreCardFaceTranscriptTests.CardActionBranchesHavePinnedOutcomes distinguishes the moved damage being dealt to Rhino and emitting the damage event."
         }
       ]
     },
@@ -34424,11 +34430,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Vibranium Suit moves two damage as the final Wakanda Forever step"
+          ],
+          "mutation": "CoreCardFaceTranscriptTests.CardActionBranchesHavePinnedOutcomes distinguishes Wakanda Forever resolving the controlled Vibranium Suit Special."
         },
         {
           "id": "behavior:card:01043a:resolving-each-ability-is-step-in-sequence",
@@ -34436,11 +34444,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Vibranium Suit moves two damage as the final Wakanda Forever step"
+          ],
+          "mutation": "CoreCardFaceTranscriptTests.CardActionBranchesHavePinnedOutcomes distinguishes the sole Special being marked as the final sequence step and moving two damage."
         }
       ]
     },
@@ -35484,11 +35494,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Vibranium Suit moves two damage as the final Wakanda Forever step"
+          ],
+          "mutation": "CoreCardFaceTranscriptTests.CardActionBranchesHavePinnedOutcomes distinguishes the final-step branch moving two damage rather than one."
         },
         {
           "id": "behavior:card:01049:move-1-damage-from-your-hero-enemy-condition-not-met",
@@ -35508,11 +35520,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Vibranium Suit moves two damage as the final Wakanda Forever step"
+          ],
+          "mutation": "CoreCardFaceTranscriptTests.CardActionBranchesHavePinnedOutcomes distinguishes Vibranium Suit's Special becoming available only through the played Wakanda Forever event."
         }
       ]
     },

@@ -332,7 +332,10 @@ public sealed partial class AbilityRunner
         {
             return
             [
-                .. cast.World.AreaOf(DeckType.UpgradesArea, PlayArea.Of(cast.Player)).Cards
+                .. cast.World.Areas
+                    .Where(area => area.Type == DeckType.UpgradesArea
+                        && area.PlayArea == PlayArea.Of(cast.Player))
+                    .SelectMany(area => area.Cards)
                     .Where(card => Rules.State.Traits.Has(
                         cast.World, card, "BLACK_PANTHER", cast.World.Facts)),
             ];

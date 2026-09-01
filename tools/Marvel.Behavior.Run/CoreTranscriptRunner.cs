@@ -444,6 +444,9 @@ internal sealed class CoreTranscriptRunner
         Bind("choose-pending-card", TranscriptStepKind.When,
             @"seat (?<seat>\d+) chooses card (?<face>\d+[a-z]?) copy (?<copy>\d+) for the pending action",
             ChoosePendingCard),
+        Bind("order-pending-cards", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) orders these cards for the pending action",
+            OrderPendingCards),
         Bind("choose-pending-card-and-discard", TranscriptStepKind.When,
             @"seat (?<seat>\d+) chooses card (?<face>\d+[a-z]?) copy (?<copy>\d+) and discards these cards for the pending action",
             ChoosePendingCardAndDiscard),
@@ -462,6 +465,9 @@ internal sealed class CoreTranscriptRunner
         Bind("pending-setup-card-not-offered", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is not offered by the pending setup ability",
             PendingCardNotOffered),
+        Bind("pending-order-count", TranscriptStepKind.Then,
+            @"seat (?<seat>\d+) is asked to order (?<count>\d+) cards? for the pending action",
+            PendingOrderCount),
         Bind("setup-deck-shuffled", TranscriptStepKind.Then,
             @"seat (?<seat>\d+)'s player deck was shuffled by the setup ability",
             SetupDeckShuffled),
@@ -1912,6 +1918,48 @@ internal sealed class CoreTranscriptRunner
             context.World, context.Cards, context.World.Abilities, context.Events));
     }
 
+    private static void OrderPendingCards(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        Prompt asked = context.PendingPrompt
+            ?? throw new TranscriptException($"{step.Location}: no action prompt is pending");
+        if (asked.Player != seat)
+        {
+            throw new TranscriptException(
+                $"{step.Location}: pending action asks seat {asked.Player + 1}, not seat {seat + 1}");
+        }
+
+        if (asked.Affordances.Count != 1)
+        {
+            throw new TranscriptException(
+                $"{step.Location}: pending order has {asked.Affordances.Count} affordances");
+        }
+        Affordance offer = asked.Affordances[0];
+        TargetRequest targets = offer.Targets
+            ?? throw new TranscriptException($"{step.Location}: pending action asks for no order");
+        TranscriptTable table = Table(step, "card", "copy");
+        int[] ordered = [.. table.Rows.Select(row => context.SceneRequired(step).Find(
+            new SceneCard(row["card"], TableNumber(row, "copy", step))).ObjectId)];
+        if (ordered.Length < targets.Min
+            || ordered.Length > targets.Max
+            || ordered.Any(id => !targets.Legal.Contains(id)))
+        {
+            throw new TranscriptException(
+                $"{step.Location}: requested order is not legal for '{asked.Label}'");
+        }
+
+        Sequence.Answer(
+            context.World,
+            context.Cards,
+            context.World.Abilities,
+            asked,
+            Decision.Take(offer.Id, ordered, []),
+            context.Events);
+        SetPendingPrompt(context, Sequence.Work(
+            context.World, context.Cards, context.World.Abilities, context.Events));
+    }
+
     private static void ChoosePendingCardAndDiscard(
         TranscriptContext context, TranscriptStep step, Match match)
     {
@@ -2001,6 +2049,23 @@ internal sealed class CoreTranscriptRunner
         {
             throw new TranscriptAssertionException(
                 $"{step.Location}: seat {seat + 1} was not offered the end-of-player-phase discard");
+        }
+    }
+
+    private static void PendingOrderCount(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        int count = Number(match, "count", step);
+        if (context.PendingPrompt is not { Player: var player, Affordances.Count: 1 } prompt
+            || player != seat
+            || prompt.Affordances[0].Targets is not { } targets
+            || targets.Min != count
+            || targets.Max != count
+            || targets.Legal.Count != count)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: seat {seat + 1} was not asked to order {count} cards");
         }
     }
 

@@ -60,6 +60,43 @@ Feature: Core card actions
     And card 01001a copy 0 has 1 damage
     And card 01005 copy 0 is faceup on top of seat 1's discard pile
 
+  @behavior:card:01049:move-1-damage-from-your-hero-enemy-condition-met
+  @covers:behavior:card:01049:play-wakanda-forever-event-use-ability
+  @covers:behavior:card:01043a:resolve-special-ability-on-each-black-panther
+  @covers:behavior:card:01043a:resolving-each-ability-is-step-in-sequence
+  @covers:behavior:rr:move.3.1:published-result
+  @covers:behavior:rr:move.4:published-result
+  @covers:behavior:rr:move.5:published-result
+  @card:01043a @card:01049 @rr:move.3.1 @rr:move.4 @rr:move.5
+  Scenario: Vibranium Suit moves two damage as the final Wakanda Forever step
+    # "Move 1 damage from your hero to an enemy (2 damage instead if this is
+    # the final step of this sequence)." With Vibranium Suit as the only Black
+    # Panther upgrade, its Special is necessarily the final step: two damage is
+    # healed from Black Panther and the same amount is dealt to Rhino.
+    Given a canonical Core scene is dealt
+      | campaign | heroes        | seed |
+      | rhino    | black_panther | 735  |
+    And seat 1 shows identity face 01040a
+    And card 01040a copy 0 has 2 damage
+    And card 01049 copy 0 is an upgrade attached to seat 1's identity
+    And seat 1's hand contains exactly these cards
+      | card   | copy |
+      | 01043a | 0    |
+      | 01088  | 0    |
+    When seat 1 initiates card 01043a copy 0's action paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+    Then seat 1 is asked to order 1 card for the pending action
+    When seat 1 orders these cards for the pending action
+      | card  | copy |
+      | 01049 | 0    |
+    Then card 01094 copy 0 is offered by the pending action
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01040a copy 0 has 0 damage
+    And card 01094 copy 0 has 2 damage
+    And 1 Move_Damage event was emitted
+    And 1 Attack event was emitted
+
   @behavior:rr:cancel.3:published-result
   @rr:cancel.3 @card:01005
   Scenario: Stun cancels an event attack after the event is played and paid for
