@@ -6376,11 +6376,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Legal Practice requires and accepts its minimum of one card"
+          ],
+          "mutation": "Permit an empty up-to cost or cards from another out-of-play area; the one-card minimum and hand-scoped prompt evidence fails."
         }
       ]
     },
@@ -6398,11 +6400,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Legal Practice requires and accepts its minimum of one card"
+          ],
+          "mutation": "Permit an empty up-to cost or cards from another out-of-play area; the one-card minimum and hand-scoped prompt evidence fails."
         }
       ]
     },
@@ -30998,11 +31002,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Legal Practice requires and accepts its minimum of one card"
+          ],
+          "mutation": "Permit zero cards, use another player out-of-play area, or remove the wrong amount of threat; the prompt or result transcript fails."
         },
         {
           "id": "behavior:card:01023:choose-and-discard-up-5-cards-from-maximum",
@@ -31010,11 +31016,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Legal Practice accepts no more than its maximum of five cards"
+          ],
+          "mutation": "Cap the cost below five, include the event itself, or remove the wrong amount; the maximum transcript fails."
         },
         {
           "id": "behavior:card:01023:choose-and-discard-up-5-cards-from-intermediate",
@@ -31022,47 +31030,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
-        },
-        {
-          "id": "behavior:card:01023:choose-and-discard-up-5-cards-from-zero",
-          "summary": "Zero qualifying elements: Alter-Ego Action (thwart): Choose and discard up to 5 cards from your hand → remove 1 threat from a scheme for each card discarded this way.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
-          "work_item": null,
-          "exception": null,
-          "scenarios": [],
-          "mutation": null
-        },
-        {
-          "id": "behavior:card:01023:choose-and-discard-up-5-cards-from-one",
-          "summary": "One qualifying element: Alter-Ego Action (thwart): Choose and discard up to 5 cards from your hand → remove 1 threat from a scheme for each card discarded this way.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
-          "work_item": null,
-          "exception": null,
-          "scenarios": [],
-          "mutation": null
-        },
-        {
-          "id": "behavior:card:01023:choose-and-discard-up-5-cards-from-multiple",
-          "summary": "Multiple qualifying elements: Alter-Ego Action (thwart): Choose and discard up to 5 cards from your hand → remove 1 threat from a scheme for each card discarded this way.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
-          "work_item": null,
-          "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Legal Practice scales to an intermediate three-card cost"
+          ],
+          "mutation": "Ignore the selected intermediate count or remove a fixed amount; the discard-count or threat assertion fails."
         }
       ]
     },

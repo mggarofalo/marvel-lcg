@@ -221,6 +221,93 @@ Feature: Core card actions
     And card 01094 copy 0 has 0 damage
     And card 01053 copy 0 is faceup on top of seat 1's discard pile
 
+  @behavior:card:01023:choose-and-discard-up-5-cards-from-minimum
+  @covers:behavior:rr:cost.8:published-result
+  @covers:behavior:rr:cost.9:published-result
+  @card:01023 @rr:cost.8 @rr:cost.9
+  Scenario: Legal Practice requires and accepts its minimum of one card
+    # "A cost requiring ... 'up to' some number of game elements requires a
+    # minimum of one." Because the cost names cards outside play, the payer can
+    # use only cards in their own hand. One discarded card removes one threat.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 726  |
+    And card 01097b copy 0 has 6 threat counters
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01023 | 0    |
+      | 01024 | 0    |
+    When seat 1 initiates card 01023 copy 0's action without payment
+    Then card 01097b copy 0 is offered by the pending action
+    When seat 1 chooses card 01097b copy 0 and discards these cards for the pending action
+      | card  | copy |
+      | 01024 | 0    |
+    Then card 01097b copy 0 has 5 threat counters
+    And card 01024 copy 0 is in seat 1's discard pile
+    And card 01023 copy 0 is faceup on top of seat 1's discard pile
+
+  @behavior:card:01023:choose-and-discard-up-5-cards-from-intermediate
+  @card:01023
+  Scenario: Legal Practice scales to an intermediate three-card cost
+    # The chosen quantity is part of the cost; the effect removes exactly one
+    # threat for each of the three cards discarded this way.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 727  |
+    And card 01097b copy 0 has 6 threat counters
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01023 | 0    |
+      | 01024 | 0    |
+      | 01024 | 1    |
+      | 01024 | 2    |
+    When seat 1 initiates card 01023 copy 0's action without payment
+    Then card 01097b copy 0 is offered by the pending action
+    When seat 1 chooses card 01097b copy 0 and discards these cards for the pending action
+      | card  | copy |
+      | 01024 | 0    |
+      | 01024 | 1    |
+      | 01024 | 2    |
+    Then card 01097b copy 0 has 3 threat counters
+    And card 01024 copy 0 is in seat 1's discard pile
+    And card 01024 copy 1 is in seat 1's discard pile
+    And card 01024 copy 2 is in seat 1's discard pile
+    And card 01023 copy 0 is faceup on top of seat 1's discard pile
+
+  @behavior:card:01023:choose-and-discard-up-5-cards-from-maximum
+  @card:01023
+  Scenario: Legal Practice accepts no more than its maximum of five cards
+    # "Up to 5" permits five cards. Paying that maximum removes five threat,
+    # and the event itself is not one of the cards chosen from its owner's hand.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 728  |
+    And card 01097b copy 0 has 6 threat counters
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01023 | 0    |
+      | 01024 | 0    |
+      | 01024 | 1    |
+      | 01024 | 2    |
+      | 01027 | 0    |
+      | 01027 | 1    |
+    When seat 1 initiates card 01023 copy 0's action without payment
+    Then card 01097b copy 0 is offered by the pending action
+    When seat 1 chooses card 01097b copy 0 and discards these cards for the pending action
+      | card  | copy |
+      | 01024 | 0    |
+      | 01024 | 1    |
+      | 01024 | 2    |
+      | 01027 | 0    |
+      | 01027 | 1    |
+    Then card 01097b copy 0 has 1 threat counter
+    And card 01024 copy 0 is in seat 1's discard pile
+    And card 01024 copy 1 is in seat 1's discard pile
+    And card 01024 copy 2 is in seat 1's discard pile
+    And card 01027 copy 0 is in seat 1's discard pile
+    And card 01027 copy 1 is in seat 1's discard pile
+    And card 01023 copy 0 is faceup on top of seat 1's discard pile
+
   @behavior:card:01056:uses-3-attack-counters
   @covers:behavior:card:01056:enters-play-with-3-counters
   @covers:behavior:card:01056:when-those-are-gone-discard-card

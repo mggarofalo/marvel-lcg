@@ -365,6 +365,9 @@ internal sealed class CoreTranscriptRunner
         Bind("choose-pending-card", TranscriptStepKind.When,
             @"seat (?<seat>\d+) chooses card (?<face>\d+[a-z]?) copy (?<copy>\d+) for the pending action",
             ChoosePendingCard),
+        Bind("choose-pending-card-and-discard", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) chooses card (?<face>\d+[a-z]?) copy (?<copy>\d+) and discards these cards for the pending action",
+            ChoosePendingCardAndDiscard),
         Bind("hand-count", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) has (?<count>\d+) cards? in hand", HandCount),
         Bind("player-deck-count", TranscriptStepKind.Then,
@@ -1222,6 +1225,37 @@ internal sealed class CoreTranscriptRunner
             context.World.Abilities,
             asked,
             Decision.Take(offer.Id),
+            context.Events);
+        SetPendingPrompt(context, Sequence.Work(
+            context.World, context.Cards, context.World.Abilities, context.Events));
+    }
+
+    private static void ChoosePendingCardAndDiscard(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        Prompt asked = context.PendingPrompt
+            ?? throw new TranscriptException($"{step.Location}: no action prompt is pending");
+        if (asked.Player != seat)
+        {
+            throw new TranscriptException(
+                $"{step.Location}: pending action asks seat {asked.Player + 1}, not seat {seat + 1}");
+        }
+
+        Card target = context.SceneRequired(step).Find(SceneCard(match, step));
+        var offer = asked.Affordances.SingleOrDefault(candidate =>
+            candidate.AnchorId == target.ObjectId)
+            ?? throw new TranscriptException(
+                $"{step.Location}: card {target.ObjectId} is not offered by '{asked.Label}'");
+        TranscriptTable table = Table(step, "card", "copy");
+        int[] discarded = [.. table.Rows.Select(row => context.SceneRequired(step).Find(
+            new SceneCard(row["card"], TableNumber(row, "copy", step))).ObjectId)];
+        Sequence.Answer(
+            context.World,
+            context.Cards,
+            context.World.Abilities,
+            asked,
+            Decision.Take(offer.Id, discarded, []),
             context.Events);
         SetPendingPrompt(context, Sequence.Work(
             context.World, context.Cards, context.World.Abilities, context.Events));

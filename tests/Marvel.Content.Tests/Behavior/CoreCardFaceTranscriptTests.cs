@@ -46,7 +46,7 @@ public sealed class CoreCardFaceTranscriptTests
                 "specs/behavior/core/card-actions.feature::", StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(9, results.Count);
+        Assert.Equal(12, results.Count);
         Assert.Equal(
             "560775a73450c5e08a03a8e7c97f7ca5e35754ab02a0d978febf300ff5d24298",
             results["behavior:card:01005:deal-8-damage-enemy"].Digest);
@@ -68,6 +68,15 @@ public sealed class CoreCardFaceTranscriptTests
         Assert.Equal(
             "7a4d27570e90aa7c98f1a5eca0e90786bff9981739b963eb97c0c0d2e1599cff",
             results["behavior:card:01053:if-you-paid-for-card-using-physical-condition-not-met"].Digest);
+        Assert.Equal(
+            "675d0037dc995595e2cbf1a70985c25b7431dc42db41136b88e2ebbc599bff44",
+            results["behavior:card:01023:choose-and-discard-up-5-cards-from-minimum"].Digest);
+        Assert.Equal(
+            "b3bab57cebe8e142917b4c3244c2af15f151d98a2834eb6443af0194bfdb5e5e",
+            results["behavior:card:01023:choose-and-discard-up-5-cards-from-intermediate"].Digest);
+        Assert.Equal(
+            "c477aa40e1b88e69389385c2831e11b1b5eb902420c07cede591f5ae156211e3",
+            results["behavior:card:01023:choose-and-discard-up-5-cards-from-maximum"].Digest);
         Assert.Equal(
             "8f5386c90bf545e65e809666cb8de3c16f5b2690f54ae1e97034bcefab7194b8",
             results["behavior:card:01056:uses-3-attack-counters"].Digest);

@@ -75,10 +75,10 @@ public sealed class BehaviorAuthorityTests
 
         Assert.Equal(2, catalog.Version);
         Assert.Equal(2608, catalog.Sources.Count);
-        Assert.Equal(4355, catalog.Sources.Sum(source => source.Obligations.Count));
+        Assert.Equal(4352, catalog.Sources.Sum(source => source.Obligations.Count));
         Assert.All(catalog.Sources, source => Assert.NotEmpty(source.Obligations));
         Assert.Equal(
-            4355,
+            4352,
             catalog.Sources.SelectMany(source => source.Obligations)
                 .Select(obligation => obligation.Id)
                 .Distinct(StringComparer.Ordinal)
@@ -107,6 +107,23 @@ public sealed class BehaviorAuthorityTests
         Assert.Contains(constantLifetime.Obligations, obligation =>
             obligation.Id == "behavior:rr:ability.8.2:constant-active-while-in-play"
             && obligation.Disposition == "executable");
+    }
+
+    [Fact]
+    public void UpToCostBranchesStartAtOneRatherThanZero()
+    {
+        var catalog = Catalog.Build();
+        var legalPractice = Assert.Single(
+            catalog.Sources, source => source.Id == "card:01023");
+
+        Assert.Equal(
+            3,
+            legalPractice.Obligations.Count(obligation =>
+                obligation.Id.Contains("choose-and-discard-up-5", StringComparison.Ordinal)));
+        Assert.DoesNotContain(legalPractice.Obligations, obligation =>
+            obligation.Id.EndsWith("-zero", StringComparison.Ordinal)
+            || obligation.Id.EndsWith("-one", StringComparison.Ordinal)
+            || obligation.Id.EndsWith("-multiple", StringComparison.Ordinal));
     }
 
     [Fact]
