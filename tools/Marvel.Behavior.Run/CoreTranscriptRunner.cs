@@ -386,6 +386,8 @@ internal sealed class CoreTranscriptRunner
             FacedownEncounterQueueCard),
         Bind("encounter-deck-count", TranscriptStepKind.Then,
             @"the encounter deck has (?<count>\d+) cards?", EncounterDeckCount),
+        Bind("encounter-deck-face-counts", TranscriptStepKind.Then,
+            "the encounter deck contains these card counts", EncounterDeckFaceCounts),
         Bind("player-count", TranscriptStepKind.Then,
             @"the game has (?<count>\d+) players?", PlayerCount),
         Bind("encounter-discard-count", TranscriptStepKind.Then,
@@ -458,6 +460,9 @@ internal sealed class CoreTranscriptRunner
         Bind("card-is-villain", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is the faceup villain",
             CardIsVillain),
+        Bind("card-in-villain-deck", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is in the villain deck",
+            CardInVillainDeck),
         Bind("card-is-main-scheme", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is the faceup main scheme",
             CardIsMainScheme),
@@ -1364,6 +1369,21 @@ internal sealed class CoreTranscriptRunner
         Equal(Number(match, "count", step), context.World.Players,
             "players in the game", step);
 
+    private static void EncounterDeckFaceCounts(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        _ = match;
+        TranscriptTable table = Table(step, "card", "count");
+        foreach (IReadOnlyDictionary<string, string> row in table.Rows)
+        {
+            string face = row["card"];
+            int expected = TableNumber(row, "count", step);
+            int actual = context.World.AreaOf(DeckType.EncounterDeck).Cards.Count(
+                card => card.FaceId == face);
+            Equal(expected, actual, $"copies of {face} in the encounter deck", step);
+        }
+    }
+
     private static void EncounterDiscardCount(
         TranscriptContext context, TranscriptStep step, Match match) =>
         Equal(Number(match, "count", step),
@@ -1742,6 +1762,18 @@ internal sealed class CoreTranscriptRunner
             throw new TranscriptAssertionException(
                 $"{step.Location}: expected faceup card {expected.ObjectId} as villain; was "
                 + (actual is null ? "<none>" : $"{actual.ObjectId}, faceup={actual.FaceUp}"));
+        }
+    }
+
+    private static void CardInVillainDeck(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        if (card.Area.Type != DeckType.VillainDeck)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected card {card.ObjectId} in the villain deck; "
+                + $"was {card.Area}");
         }
     }
 

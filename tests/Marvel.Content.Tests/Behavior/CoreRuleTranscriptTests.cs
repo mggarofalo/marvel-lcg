@@ -212,10 +212,16 @@ public sealed class CoreRuleTranscriptTests
                 "specs/behavior/core/setup.feature::", StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Single(results);
+        Assert.Equal(3, results.Count);
         Assert.Equal(
             "e72ed15ec31a9a7a09fc27204c124b81b9721e2591a43d75bed51ecd6e2f49d5",
             results["behavior:rr:appendix-ii-setup.step.1:published-result"].Digest);
+        Assert.Equal(
+            "8bed7c3f7cf64b3ffd42e60c6f02748eacba87495d945cc3676585b1eecd8a11",
+            results["behavior:rr:modes-of-play.2:published-result"].Digest);
+        Assert.Equal(
+            "d932db79c8e0e61e965876db8983433706c3eb48a5b47bb57d2ff7620683e4a6",
+            results["behavior:rr:modular-encounter-set.1:published-result"].Digest);
     }
 
     [Fact]

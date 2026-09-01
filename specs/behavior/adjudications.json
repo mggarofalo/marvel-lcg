@@ -12806,11 +12806,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::The printed Spider-Man and Rhino deal reaches its opening state"
+          ],
+          "mutation": "Ignore Rhino's Standard-mode setup instructions; the selected villain, scheme, or encounter-card assertions fail."
         }
       ]
     },
@@ -12878,11 +12880,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::Expert mode substitutes villain stages and adds the Expert set"
+          ],
+          "mutation": "Keep the Standard villain stages or omit any Expert card; the expert-stage or encounter-count assertions fail."
         }
       ]
     },
@@ -13181,10 +13185,10 @@
         {
           "key": "published-result",
           "summary": "Cards belonging to a “modular encounter set” (or sometimes “modular set”) are a classification of encounter card that can be added to and/or removed from nearly any scenario.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "no-independent-behavior",
+          "reason": "This record defines the printed modular-set classification; selected-set inclusion and whole-set behavior are carried by the adjacent setup obligations.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -13202,11 +13206,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::A selected modular set replaces the recommendation as a whole set"
+          ],
+          "mutation": "Ignore the scenario's one selected modular set; its encounter-card count assertions fail."
         }
       ]
     },
@@ -13220,11 +13226,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::A selected modular set replaces the recommendation as a whole set"
+          ],
+          "mutation": "Add only part of Under Attack; the missing or incorrect encounter-card count fails."
         }
       ]
     },
@@ -13235,10 +13243,10 @@
         {
           "key": "published-result",
           "summary": "A modular encounter set card is designated by the modular encounter set’s name with which it is associated printed at the bottom of the card in its encounter set name area.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "no-independent-behavior",
+          "reason": "This record defines the printed modular-set classification; selected-set inclusion and whole-set behavior are carried by the adjacent setup obligations.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
