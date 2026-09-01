@@ -101,7 +101,7 @@ public sealed class CoreRuleTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(4, results.Count);
+        Assert.Equal(6, results.Count);
         Assert.Equal(
             "422b6819e211329aa2c280f68d7df90a67ae359196e4bd66a46fb775e961f6c5",
             results["behavior:rr:attach-to:published-result"].Digest);
@@ -114,6 +114,14 @@ public sealed class CoreRuleTranscriptTests
         Assert.Equal(
             "b0519e50cb3b5fa1e265795eaa4bbe18deaa19fb300c515a6a36b7ec6d67361f",
             results["behavior:rr:max-maximum.4:published-result"].Digest);
+        Assert.Equal(
+            "e9fd28b2b2c2364def7f1b172f27d077d2f48bc318cee4867a06681937a8c7aa",
+            results[
+                "behavior:card:01163:attach-minion-with-highest-printed-hit-points"].Digest);
+        Assert.Equal(
+            "0f4332812192a3edf68718b79c17b0cdc49349bd67c91fc37bd23931b4dbcfb3",
+            results[
+                "behavior:card:01163:if-there-are-no-minions-in-play-condition-met"].Digest);
     }
 
     [Fact]

@@ -5,6 +5,7 @@ Feature: Core attachment lifecycle
 
   @behavior:rr:attach-to:published-result
   @covers:behavior:rr:reveal.1:attach-to-text
+  @covers:behavior:card:01099:attach-rhino
   @rr:attach-to @rr:reveal.1 @card:01099
   Scenario: A revealed attachment enters play attached to its named host
     # "If a card uses the phrase 'attach to', it must be attached to ... the
@@ -57,6 +58,39 @@ Feature: Core attachment lifecycle
     When card 01162 copy 0 enters play as a minion engaged with seat 1
     Then card 01163 copy 0 is attached to card 01101 copy 0
     And card 01162 copy 0 is engaged with seat 1
+
+  @behavior:card:01163:attach-minion-with-highest-printed-hit-points
+  @covers:behavior:card:01163:if-there-are-no-minions-in-play-condition-not-met
+  @covers:behavior:card:01163:attached-minion-gets-3-hit-points
+  @card:01163
+  Scenario: Genetically Enhanced attaches to the highest-hit-point minion
+    # "Attach to the minion with the highest printed hit points." Titania's
+    # printed six exceeds Hydra Mercenary's three, and the attachment then
+    # raises Titania's remaining hit points from six to nine.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | modular sets       | seed |
+      | rhino    | she_hulk | the_doomsday_chair | 849  |
+    And card 01101 copy 0 is a minion engaged with seat 1
+    And card 01162 copy 0 is a minion engaged with seat 1
+    When card 01163 copy 0 is revealed to seat 1
+    Then card 01163 copy 0 is attached to card 01162 copy 0
+    And card 01162 copy 0 has 9 remaining hit points
+
+  @behavior:card:01163:if-there-are-no-minions-in-play-condition-met
+  @card:01163
+  Scenario: Genetically Enhanced surges when there is no minion to attach to
+    # "If there are no minions in play, this card gains surge." With no legal
+    # host, Genetically Enhanced is discarded and its additional card reveals.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | modular sets   | seed |
+      | rhino    | she_hulk | the_doomsday_chair | 850  |
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01163     | 0    |
+      | 01184     | 0    |
+    When villain phase 1 resolves with every optional choice declined
+    Then card 01163 copy 0 is faceup on top of the encounter discard pile
+    And card 01184 copy 0 is engaged with seat 1
 
   @behavior:rr:max-maximum.4:published-result
   @covers:behavior:card:01074:max-1-per-ally
