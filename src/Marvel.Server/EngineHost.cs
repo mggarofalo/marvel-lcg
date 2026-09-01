@@ -563,7 +563,7 @@ public sealed class DatasetGameFactory : IGameFactory, ISetupDiscovery
             {
                 CampaignSetup campaign = setup.Campaign(key);
                 return new ScenarioSetupChoice(
-                    key, campaign.Name, campaign.Expert, campaign.ModularSets);
+                    key, campaign.Name, campaign.Expert, [.. campaign.ModularSets]);
             }),
         ],
         ModularSets:

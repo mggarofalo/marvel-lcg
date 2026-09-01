@@ -38,6 +38,32 @@ public sealed class EngineHostTests
     }
 
     [Fact]
+    public void InProcessSetupResponsesCannotMutateTheAuthoredCatalog()
+    {
+        var host = new EngineHost(DatasetGameFactory.Load(RepositoryPaths.Root));
+        SetupChoices first = Assert.IsType<SetupChoices>(
+            host.Exchange(EngineRequest.ReadSetup("first")).Setup);
+        IList<string> exposed = Assert.IsAssignableFrom<IList<string>>(
+            first.Scenarios.Single(choice => choice.Key == "rhino")
+                .RecommendedModularSets);
+
+        Assert.Throws<NotSupportedException>(exposed.Clear);
+
+        SetupChoices second = Assert.IsType<SetupChoices>(
+            host.Exchange(EngineRequest.ReadSetup("second")).Setup);
+        EngineResponse opened = host.Exchange(EngineRequest.OpenGame(
+            "open",
+            "catalog-isolation",
+            new GameSpecification(
+                "rhino", ["spider_man"], ModularSets: null, Seed: 7)));
+        Assert.Equal(
+            ["bomb_scare"],
+            second.Scenarios.Single(choice => choice.Key == "rhino")
+                .RecommendedModularSets);
+        Assert.Null(opened.Error);
+    }
+
+    [Fact]
     public void SetupDiscoveryRejectsFieldsThatCouldNameOrMutateAGame()
     {
         var host = new EngineHost(DatasetGameFactory.Load(RepositoryPaths.Root));
