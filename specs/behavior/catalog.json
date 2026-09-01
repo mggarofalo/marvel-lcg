@@ -30546,11 +30546,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Alpha Flight Station draws two for Carol Danvers"
+          ],
+          "mutation": "Draw only one card for Carol Danvers or skip either cost; a hand, discard, or readiness assertion fails."
         },
         {
           "id": "behavior:card:01015:exhaust-alpha-flight-station-choose-and-discard-condition-not-met",
@@ -32206,11 +32208,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Superhuman Law Division spends mental to remove two threat"
+          ],
+          "mutation": "Do not exhaust the support or remove exactly two threat from the chosen scheme; the corresponding assertion fails."
         }
       ]
     },
@@ -33336,11 +33340,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Pepper Potts generates the top discard card's resources"
+          ],
+          "mutation": "Generate fewer than Energy's two printed energy resources or do not exhaust Pepper; the generated-resource or readiness assertion fails."
         }
       ]
     },

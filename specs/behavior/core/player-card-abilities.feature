@@ -114,3 +114,62 @@ Feature: Core player card abilities
     When seat 1 chooses card 01001b copy 0 for the pending action
     Then card 01091 copy 0 is exhausted
     And card 01002 copy 0 is in seat 2's hand
+
+  @behavior:card:01015:exhaust-alpha-flight-station-choose-and-discard-condition-met
+  @card:01015
+  Scenario: Alpha Flight Station draws two for Carol Danvers
+    # "Draw 1 card (draw 2 cards instead if you are Carol Danvers)." Carol
+    # discards one card as the cost, then receives the altered two-card draw.
+    Given a canonical Core scene is dealt
+      | campaign | heroes         | seed |
+      | rhino    | captain_marvel | 858  |
+    And card 01015 copy 0 is a support controlled by seat 1
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01088 | 0    |
+    And these cards are next on seat 1's player deck
+      | next card | copy |
+      | 01014     | 0    |
+      | 01014     | 1    |
+    When seat 1 initiates card 01015 copy 0's action discarding these cards
+      | card  | copy |
+      | 01088 | 0    |
+    Then card 01015 copy 0 is exhausted
+    And card 01088 copy 0 is in seat 1's discard pile
+    And card 01014 copy 0 is in seat 1's hand
+    And card 01014 copy 1 is in seat 1's hand
+
+  @behavior:card:01026:exhaust-superhuman-law-division-and-spend-mental
+  @card:01026
+  Scenario: Superhuman Law Division spends mental to remove two threat
+    # "Alter-Ego Action: Exhaust Superhuman Law Division and spend a [mental]
+    # resource → remove 2 threat from a scheme."
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 859  |
+    And card 01026 copy 0 is a support controlled by seat 1
+    And card 01097b copy 0 has 3 threat counters
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01089 | 0    |
+    When seat 1 initiates card 01026 copy 0's action paying with these cards
+      | card  | copy |
+      | 01089 | 0    |
+    Then card 01097b copy 0 is offered by the pending action
+    When seat 1 chooses card 01097b copy 0 for the pending action
+    Then card 01026 copy 0 is exhausted
+    And card 01097b copy 0 has 1 threat counter
+
+  @behavior:card:01033:exhaust-pepper-potts-generate-resources-top-card
+  @card:01033
+  Scenario: Pepper Potts generates the top discard card's resources
+    # "Resource: Exhaust Pepper Potts → generate the resources of the top card
+    # in your discard pile." Energy's two printed resources produce YY.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | iron_man | 860  |
+    And card 01033 copy 0 is a support controlled by seat 1
+    And card 01088 copy 0 starts in seat 1's discard pile
+    When seat 1 uses card 01033 copy 0's resource ability
+    Then card 01033 copy 0 generated YY resources
+    And card 01033 copy 0 is exhausted

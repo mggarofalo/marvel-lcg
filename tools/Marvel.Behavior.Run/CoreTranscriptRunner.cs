@@ -75,6 +75,8 @@ internal sealed class TranscriptContext
 
     public string? LastInspectedFace { get; set; }
 
+    public (int Card, string Resources)? LastResourceGeneration { get; set; }
+
     public Prompt? PendingPrompt { get; set; }
 
     public Game? Game { get; set; }
@@ -447,6 +449,9 @@ internal sealed class CoreTranscriptRunner
         Bind("request-card-actions", TranscriptStepKind.When,
             @"seat (?<seat>\d+) asks for available card actions",
             RequestCardActions),
+        Bind("use-card-resource-ability", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) uses card (?<face>\d+[a-z]?) copy (?<copy>\d+)'s resource ability",
+            UseCardResourceAbility),
         Bind("request-turn-card-actions", TranscriptStepKind.When,
             @"seat (?<seat>\d+) asks for card actions available during their turn",
             RequestTurnCardActions),
@@ -571,6 +576,9 @@ internal sealed class CoreTranscriptRunner
         Bind("card-readiness", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is (?<state>ready|exhausted)",
             CardReadiness),
+        Bind("generated-resources", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) generated (?<resources>[A-Z]+) resources",
+            GeneratedResources),
         Bind("last-attack-defense", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) defended the last attack without a basic defense",
             LastAttackDefense),
@@ -1984,6 +1992,25 @@ internal sealed class CoreTranscriptRunner
             .ToHashSet();
     }
 
+    private static void UseCardResourceAbility(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        var runner = (AbilityRunner)context.World.Abilities;
+        if (!runner.ResourceAbilities(context.World, seat)
+            .Any(candidate => candidate.Effect == card.ObjectId))
+        {
+            throw new TranscriptException(
+                $"{step.Location}: card {card.ObjectId} has no available resource ability");
+        }
+
+        context.Events.Clear();
+        string resources = runner.UseResource(
+            context.World, seat, card.ObjectId, context.Events);
+        context.LastResourceGeneration = (card.ObjectId, resources);
+    }
+
     private static void RequestTurnCardActions(
         TranscriptContext context, TranscriptStep step, Match match)
     {
@@ -2833,6 +2860,24 @@ internal sealed class CoreTranscriptRunner
             throw new TranscriptAssertionException(
                 $"{step.Location}: expected card {card.ObjectId} to be "
                 + $"{match.Groups["state"].Value}");
+        }
+    }
+
+    private static void GeneratedResources(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        string expected = match.Groups["resources"].Value;
+        if (context.LastResourceGeneration is not { } actual
+            || actual.Card != card.ObjectId
+            || !string.Equals(actual.Resources, expected, StringComparison.Ordinal))
+        {
+            string observed = context.LastResourceGeneration is { } generation
+                ? $"card {generation.Card} generated {generation.Resources}"
+                : "no resource ability was used";
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected card {card.ObjectId} to generate {expected}; "
+                + observed);
         }
     }
 

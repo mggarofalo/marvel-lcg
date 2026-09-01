@@ -71,7 +71,7 @@ public sealed class CoreCardFaceTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(7, results.Count);
+        Assert.Equal(10, results.Count);
         Assert.Equal(
             "b17f9fbb3d730047490cb61c0f065daa8c730d29ac2d28f50c7681c2882c1ad3",
             results["behavior:card:01035:exhaust-arc-reactor-ready-iron-man"].Digest);
@@ -94,6 +94,18 @@ public sealed class CoreCardFaceTranscriptTests
             "e6cf4f880e001bc03a7d5c05eca80611dfb536efe4f6c4d2aea885fdd757bd7f",
             results[
                 "behavior:card:01091:exhaust-avengers-mansion-choose-player"].Digest);
+        Assert.Equal(
+            "fdc1fe9a404b8ee735bf36adef04640631fee32c1c5e0279aa7321fedfb61639",
+            results[
+                "behavior:card:01015:exhaust-alpha-flight-station-choose-and-discard-condition-met"].Digest);
+        Assert.Equal(
+            "f7d1e8e807c5da9102f16333e42c7242becadb4e86db18b3f3e0d293fd9ae529",
+            results[
+                "behavior:card:01026:exhaust-superhuman-law-division-and-spend-mental"].Digest);
+        Assert.Equal(
+            "510369bea032b2c09917c59fb16654c5baa6712fec98af0b6df23f8fab940573",
+            results[
+                "behavior:card:01033:exhaust-pepper-potts-generate-resources-top-card"].Digest);
     }
 
     [Fact]
