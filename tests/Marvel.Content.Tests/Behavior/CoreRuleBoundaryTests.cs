@@ -17,6 +17,7 @@ public sealed class CoreRuleBoundaryTests
     [InlineData("Peril", "peril")]
     [InlineData("Permanent", "permanent")]
     [InlineData("Requirement", "requirement-resources")]
+    [InlineData("Setup", "setup-keyword")]
     [InlineData("Stalwart", "stalwart")]
     [InlineData("Steady", "steady")]
     [InlineData("TeamUp", "team-up")]
@@ -50,6 +51,41 @@ public sealed class CoreRuleBoundaryTests
                 printedPhrase, StringComparison.OrdinalIgnoreCase));
 
         AssertFamilyOutsideCore(ruleFamily);
+    }
+
+    [Theory]
+    [InlineData("Leader", "leader")]
+    [InlineData("PlayerSideScheme", "player-side-scheme")]
+    public void ExpansionOnlyCardTypesStayOutsideTheCoreContract(
+        string cardType,
+        string ruleFamily)
+    {
+        using JsonDocument cards = Cards();
+        Assert.DoesNotContain(CoreCards(cards), card =>
+            card.GetProperty("type").GetString() == cardType);
+
+        AssertFamilyOutsideCore(ruleFamily);
+    }
+
+    [Fact]
+    public void CampaignRulesStayOutsideTheCoreContract()
+    {
+        using JsonDocument cards = Cards();
+        Assert.All(CoreCards(cards), card =>
+            Assert.Equal("core", card.GetProperty("pack").GetString()));
+
+        AssertFamilyOutsideCore("campaign-specific-card");
+    }
+
+    [Fact]
+    public void TuckRulesStayOutsideTheCoreContract()
+    {
+        using JsonDocument cards = Cards();
+        Assert.DoesNotContain(CoreCards(cards), card =>
+            (card.GetProperty("text_plain").GetString() ?? "").Contains(
+                "tuck", StringComparison.OrdinalIgnoreCase));
+
+        AssertFamilyOutsideCore("tuck");
     }
 
     private static void AssertFamilyOutsideCore(string family)
