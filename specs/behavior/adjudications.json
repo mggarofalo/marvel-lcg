@@ -6123,7 +6123,7 @@
       ]
     },
     {
-      "id": "rr:defend-defense.1",
+  "id": "rr:defend-defense.1",
       "fingerprint": "sha256:5a941f5d3bdc0de25b98a96ddfb3121c769d5a229b07366db2c46f4a17ac09be",
       "obligations": [
         {
@@ -6132,11 +6132,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/villain-phase.feature::A hero exhausts to defend and reduces the attack by DEF"
+      ],
+      "mutation": "Permit more than the declared hero to defend the same attack; the single-defender damage result changes."
         }
       ]
     },
@@ -16681,7 +16683,7 @@
       ]
     },
     {
-      "id": "rr:referential-ability.step.1",
+  "id": "rr:referential-ability.step.1",
       "fingerprint": "sha256:4a2fb9990606cc68fd1e606aa58639b175d12dd218977c92be7440c3bfd24993",
       "obligations": [
         {
@@ -16690,16 +16692,18 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/card-actions.feature::Tac Team enters with three uses and discards after the third action"
+      ],
+      "mutation": "Resolve Tac Team's self-reference against another same-titled copy; the acting support fails to spend its own counters and discard."
         }
       ]
     },
     {
-      "id": "rr:referential-ability.step.2",
+  "id": "rr:referential-ability.step.2",
       "fingerprint": "sha256:e71d18925e7de9dc85f51f98dd363ffc0dc54ee5db67c56e2bf0191ebc48bfdd",
       "obligations": [
         {
@@ -16708,16 +16712,18 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/card-actions.feature::Vibranium Suit moves two damage as the final Wakanda Forever step"
+      ],
+      "mutation": "Fail to resolve the Black Panther identity's associated upgrade reference; Vibranium Suit does not execute its Special."
         }
       ]
     },
     {
-      "id": "rr:referential-ability.step.3",
+  "id": "rr:referential-ability.step.3",
       "fingerprint": "sha256:3f4e52019910c8c6eddb79ab44da74b925aab50db7e032cef011ec6075bfb51e",
       "obligations": [
         {
@@ -16726,11 +16732,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/villain-phase.feature::Boost damage is not damage dealt by Klaw's attack"
+      ],
+      "mutation": "Resolve Sonic Converter's encounter-card reference to Klaw outside the encounter classification; its forced response fails to stun the damaged hero."
         }
       ]
     },
@@ -21517,7 +21525,7 @@
       ]
     },
     {
-      "id": "rr:upgrade.4",
+  "id": "rr:upgrade.4",
       "fingerprint": "sha256:aa5c0009102f8e2389e150c2ce308ede4430584b5b54a8588272118754139042",
       "obligations": [
         {
@@ -21526,11 +21534,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/card-actions.feature::A Hero Action becomes available only in hero form"
+      ],
+      "mutation": "Do not treat Focused Rage attached to the identity as its extension; the Hero Action's form restriction is not applied through the upgrade."
         }
       ]
     },
@@ -22847,7 +22857,7 @@
       ]
     },
     {
-      "id": "rr:you-your",
+  "id": "rr:you-your",
       "fingerprint": "sha256:07d57a9cf9f4c5966d7bb0d754b480fef7eb9625c9bc7b95a6728e162785244d",
       "obligations": [
         {
@@ -22856,16 +22866,18 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/villain-phase.feature::Backflip prevents all imminent attack damage without exhausting"
+      ],
+      "mutation": "Resolve Backflip's you as something other than its player's identity; Spider-Man takes the attack damage."
         }
       ]
     },
     {
-      "id": "rr:you-your.1",
+  "id": "rr:you-your.1",
       "fingerprint": "sha256:7377d09e171d4d7dc17547d6cb2e98f0813ff73db78c6677bbd6deaa8f79c432",
       "obligations": [
         {
@@ -22874,11 +22886,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/villain-phase.feature::Counter-Punch damages the attacker after a basic defense ends"
+      ],
+      "mutation": "Resolve Counter-Punch's repeated your-hero references against different identities; its trigger and ATK value no longer produce the observed damage."
         }
       ]
     },
@@ -22959,7 +22973,7 @@
       ]
     },
     {
-      "id": "rr:you-your.14",
+  "id": "rr:you-your.14",
       "fingerprint": "sha256:e3e05020ff4ee29243e4dc39829f46bdfce79eb35b37cb85f416cd01f8d6c2dc",
       "obligations": [
         {
@@ -22968,11 +22982,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/card-actions.feature::A Hero Action becomes available only in hero form"
+      ],
+      "mutation": "Do not treat Focused Rage as an extension of its controlling identity; its Hero Action ignores that identity's current form."
         }
       ]
     },

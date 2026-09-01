@@ -204,9 +204,11 @@ Feature: Core villain phase
   @covers:behavior:rr:attack-enemy-activation.2:published-result
   @covers:behavior:rr:attack-enemy-activation.2.1:published-result
   @covers:behavior:rr:damage.3.1:published-result
+  @covers:behavior:rr:defend-defense.1:published-result
   @rr:defend-defense.2 @rr:attack-enemy-activation.2
   @rr:attack-enemy-activation.2.1
   @rr:damage.3.1
+  @rr:defend-defense.1
   Scenario: A hero exhausts to defend and reduces the attack by DEF
     # A hero can use its basic defense. If declared, the attack's damage is
     # dealt to that hero after reduction by its DEF value.
@@ -376,9 +378,11 @@ Feature: Core villain phase
   @covers:behavior:rr:attack-enemy-activation.7:published-result
   @covers:behavior:card:01118:after-klaw-attacks-and-damages-character-stun
   @covers:behavior:rr:damage.step.4:published-result
+  @covers:behavior:rr:referential-ability.step.3:published-result
   @rr:boost-boost-icon.3 @rr:attack-enemy-activation.7
   @card:01118 @card:01154
   @rr:damage.step.4
+  @rr:referential-ability.step.3
   Scenario: Boost damage is not damage dealt by Klaw's attack
     # Damage from a boost ability "is not considered to be damage dealt by the
     # activation." Concussive Blast damages both Spider-Man and Black Cat, but
@@ -447,6 +451,7 @@ Feature: Core villain phase
   @covers:behavior:rr:damage.step.1:published-result
   @covers:behavior:rr:initiating-abilities.1:published-result
   @covers:behavior:rr:interrupt.3:published-result
+  @covers:behavior:rr:you-your:published-result
   @covers:behavior:rr:prevent.1:published-result
   @covers:behavior:rr:prevent.1.2:published-result
   @covers:behavior:rr:defend-defense.4:published-result
@@ -458,7 +463,7 @@ Feature: Core villain phase
   @covers:behavior:rr:labeled-ability.3.1:published-result
   @covers:behavior:rr:target.3.6:published-result
   @card:01003 @rr:damage.step.1 @rr:damage.step.3 @rr:initiating-abilities.1
-  @rr:interrupt.3 @rr:prevent.1 @rr:prevent.1.2
+  @rr:interrupt.3 @rr:prevent.1 @rr:prevent.1.2 @rr:you-your
   @rr:defend-defense.4 @rr:defend-defense.4.1 @rr:defend-defense.4.3
   @rr:defend-defense.4.4 @rr:interrupt.3.1 @rr:labeled-ability.3
   @rr:labeled-ability.3.1 @rr:target.3.6
@@ -520,7 +525,8 @@ Feature: Core villain phase
 
   @behavior:card:01077:after-your-hero-defends-against-enemy-attack
   @covers:behavior:rr:initiating-abilities.2:published-result
-  @card:01077 @rr:initiating-abilities.2
+  @covers:behavior:rr:you-your.1:published-result
+  @card:01077 @rr:initiating-abilities.2 @rr:you-your.1
   Scenario: Counter-Punch damages the attacker after a basic defense ends
     # "After your hero defends against an enemy attack, deal damage to that
     # enemy equal to your hero's ATK." Black Panther first completes a basic

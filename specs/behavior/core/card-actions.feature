@@ -70,7 +70,9 @@ Feature: Core card actions
   @covers:behavior:rr:move.3.1:published-result
   @covers:behavior:rr:move.4:published-result
   @covers:behavior:rr:move.5:published-result
+  @covers:behavior:rr:referential-ability.step.2:published-result
   @card:01043a @card:01049 @rr:move.3.1 @rr:move.4 @rr:move.5
+  @rr:referential-ability.step.2
   Scenario: Vibranium Suit moves two damage as the final Wakanda Forever step
     # "Move 1 damage from your hero to an enemy (2 damage instead if this is
     # the final step of this sequence)." With Vibranium Suit as the only Black
@@ -572,8 +574,10 @@ Feature: Core card actions
   @covers:behavior:rr:in-play-and-out-of-play.1:published-result
   @covers:behavior:rr:identity.4:published-result
   @covers:behavior:rr:player-turn.5.1:published-result
+  @covers:behavior:rr:upgrade.4:published-result
+  @covers:behavior:rr:you-your.14:published-result
   @rr:ability.13 @rr:in-play-and-out-of-play.1 @rr:identity.4
-  @rr:player-turn.5.1 @card:01027
+  @rr:player-turn.5.1 @rr:upgrade.4 @rr:you-your.14 @card:01027
   Scenario: A Hero Action becomes available only in hero form
     # A bold trigger containing "Hero" can be used only in hero form. Focused
     # Rage is in play throughout; changing form is the only changed condition.
@@ -595,6 +599,7 @@ Feature: Core card actions
   @covers:behavior:card:01056:exhaust-tac-team-and-remove-1-attack
   @covers:behavior:rr:uses-x-type:published-result
   @covers:behavior:rr:uses-x-type.1:published-result
+  @covers:behavior:rr:referential-ability.step.1:published-result
   @covers:behavior:rr:cost.1:published-result
   @covers:behavior:rr:ready:published-result
   @covers:behavior:rr:support.1:published-result
@@ -603,6 +608,7 @@ Feature: Core card actions
   @covers:behavior:rr:ownership-and-control.2:published-result
   @card:01056 @rr:uses-x-type @rr:uses-x-type.1 @rr:cost.1
   @rr:ready @rr:support.1 @rr:support.2 @rr:in-play-and-out-of-play.3
+  @rr:referential-ability.step.1
   @rr:ownership-and-control.2
   Scenario: Tac Team enters with three uses and discards after the third action
     # "Uses (3 attack counters)" places three counters as Tac Team enters play.
