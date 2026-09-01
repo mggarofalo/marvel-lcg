@@ -4,10 +4,11 @@ The presentation architecture has 3 layers:
 
 1. `Marvel.View` projects engine truth into visibility-safe descriptors.
 2. `Marvel.Server` hosts games behind one transport-neutral protocol.
-3. A planned Godot client will render those descriptors on macOS and Windows.
+3. The Godot client renders those descriptors on macOS and Windows.
 
-The Godot client does not yet exist in this repository. The view and server
-boundaries do exist and are covered by tests.
+The Godot project is a launchable shell. It does not yet open a game or render
+engine descriptors. The view and server boundaries exist and are covered by
+tests.
 
 ## Build boundary
 
@@ -144,9 +145,9 @@ it.
 client tasks, not engine or DSL fields. Presentation hints must not enter
 `datasets/abilities/abilities.json`.
 
-## Planned client
+## Client delivery
 
-The remaining presentation work is a Godot project that:
+The Godot project remains deliberately above the engine wall. Its delivery work:
 
 - depends on transport and descriptor contracts rather than `Game`;
 - renders areas, cards, prompts and events;

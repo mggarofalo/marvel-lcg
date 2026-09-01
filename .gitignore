@@ -9,7 +9,9 @@ __pycache__/
 # C# engine (src/)
 [Bb]in/
 [Oo]bj/
+.godot/
 *.user
+*.csproj.old
 .vs/
 
 # Agent working state: scratch plans and per-agent worktrees. Not project data.

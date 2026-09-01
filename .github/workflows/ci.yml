@@ -99,10 +99,11 @@ jobs:
       # Godot cannot reference -- so the Build step above is already the
       # positive case, on every project in the solution, on both legs.
       #
-      # This is the other half: it builds four throwaway projects that are
-      # *supposed* to fail and checks that they fail for the stated reason. An
-      # `<Error>` condition nobody has watched evaluate to true is a claim
+      # This is the other half: four throwaway verdict projects prove the
+      # opt-out restriction, transitive-reference wall and runtime floor fail
+      # for their stated reasons, while the allowed presentation case builds.
+      # An `<Error>` condition nobody has watched evaluate to true is a claim
       # about a build rather than a property of one. Offline -- the GodotSharp
-      # it references is a stub. See tests/godot-wall/README.md.
+      # reference is a stub. See tests/godot-wall/README.md.
       - name: The wall's gates fire
         run: bash tools/godot-wall.sh

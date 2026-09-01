@@ -25,7 +25,34 @@
          a deliberate, reviewable edit rather than something that happens by
          adding a package. -->
     <MarvelMayReferenceGodot Condition="'$(MarvelMayReferenceGodot)' == ''">false</MarvelMayReferenceGodot>
+
+    <!-- These are normalized here, after each project has been evaluated. A
+         project cannot appoint itself as the product client or a wall probe
+         by copying a marker property into its own file. -->
+    <MarvelGodotClientProject>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)src/Marvel.Godot/Marvel.Godot.csproj'))</MarvelGodotClientProject>
+    <MarvelGodotClientTestsProject>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)tests/Marvel.Godot.Tests/Marvel.Godot.Tests.csproj'))</MarvelGodotClientTestsProject>
+    <MarvelGodotStubProject>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)tests/godot-wall/GodotSharp/GodotSharp.csproj'))</MarvelGodotStubProject>
+    <MarvelGodotMiddleProbeProject>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)tests/godot-wall/Marvel.WallProbe.Middle/Marvel.WallProbe.Middle.csproj'))</MarvelGodotMiddleProbeProject>
+    <MarvelGodotAllowedProbeProject>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)tests/godot-wall/Marvel.WallProbe.Allowed/Marvel.WallProbe.Allowed.csproj'))</MarvelGodotAllowedProbeProject>
   </PropertyGroup>
+
+  <!-- An opt-out is part of the wall, not a way around it. The product's
+       Godot assembly and its tests are the only ordinary projects allowed to
+       set it. The throwaway wall probes identify themselves separately so the
+       negative and positive cases remain offline and isolated from product
+       code. -->
+  <Target Name="MarvelGodotOptOut"
+          BeforeTargets="ResolveReferences"
+          Condition="'$(MarvelMayReferenceGodot)' == 'true' and
+                     '$(MSBuildProjectFullPath)' != '$(MarvelGodotClientProject)' and
+                     '$(MSBuildProjectFullPath)' != '$(MarvelGodotClientTestsProject)' and
+                     '$(MSBuildProjectFullPath)' != '$(MarvelGodotStubProject)' and
+                     '$(MSBuildProjectFullPath)' != '$(MarvelGodotMiddleProbeProject)' and
+                     '$(MSBuildProjectFullPath)' != '$(MarvelGodotAllowedProbeProject)'">
+
+    <Error Code="MARVELWALLOPT"
+           Text="$(MSBuildProjectName) opts out of the Godot wall, but only the exact Godot presentation and wall-probe projects may do that. Remove MarvelMayReferenceGodot or add an explicit path to Directory.Build.targets with a firing probe." />
+  </Target>
 
   <!-- Resolved references, not declared ones. `ReferencePath` is what the
        compiler will actually be handed after `ResolveReferences` has walked

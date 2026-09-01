@@ -18,18 +18,13 @@ src/Marvel.Content       printed cards and scenario setup readers
 src/Marvel.Sim           non-Godot headless driver and replay harness
 src/Marvel.View          engine-agnostic visible-state projection
 src/Marvel.Server        engine host; embedded or a standalone socket process
+src/Marvel.Godot         macOS and Windows client; the only Godot reference
 
 tests/*.Tests            behavioral xUnit suites for the corresponding project
 ```
 
-The Godot client and procedural card renderer remain planned:
-
-```
-Directory.Build.props / Directory.Packages.props   central package management
-Marvel.slnx
-
-src/Marvel.Godot         macOS and Windows client; the only Godot reference
-```
+The Godot project is a launchable shell. Opening a Core game, rendering the
+visible board and prompts, and the procedural card renderer remain client work.
 
 `Marvel.Server` is one assembly with two entry points. A bundled client uses
 `InProcessTransport`; a hosted client uses `SocketTransport` against the same

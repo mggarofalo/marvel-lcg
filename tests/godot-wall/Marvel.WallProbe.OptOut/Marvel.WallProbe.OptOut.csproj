@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The tempting escape: an ordinary project sets the presentation opt-out.
+       This must fail even without a Godot reference, because the opt-out is
+       itself part of the dependency boundary. -->
+  <PropertyGroup>
+    <MarvelMayReferenceGodot>true</MarvelMayReferenceGodot>
+    <!-- Copying the old probe marker is part of the attempted bypass. The
+         target authorizes exact probe paths instead of trusting this value. -->
+    <MarvelGodotWallProbe>true</MarvelGodotWallProbe>
+  </PropertyGroup>
+
+</Project>

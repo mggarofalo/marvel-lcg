@@ -59,6 +59,11 @@ check() {
 
 echo "The Godot wall:"
 
+# The opt-out itself is restricted. Otherwise an engine project could make the
+# wall disappear with one property while still looking deliberate in review.
+check "an engine-shaped project cannot opt out of the wall" \
+  MARVELWALLOPT "$probes/Marvel.WallProbe.OptOut/Marvel.WallProbe.OptOut.csproj"
+
 # The case that a .csproj scan would miss. Marvel.WallProbe names Godot
 # nowhere; it reaches it through Marvel.WallProbe.Middle.
 check "a transitive GodotSharp reference stops the build" \
@@ -82,4 +87,4 @@ if [ "$failures" -ne 0 ]; then
 fi
 
 echo
-echo "The wall holds, and both gates were watched firing."
+echo "The wall holds, and every gate was watched firing."
