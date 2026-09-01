@@ -10682,11 +10682,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/form-change.feature::An alter-ego title does not match the identity in hero form"
+          ],
+          "mutation": "Treat Captain Marvel as Carol Danvers while the hero face is active; Alpha Flight Station draws two and the hand-count assertion fails."
         }
       ]
     },
@@ -10704,11 +10706,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/form-change.feature::A hero title does not match the identity in alter-ego form"
+          ],
+          "mutation": "Treat Carol Danvers as Captain Marvel while the alter-ego face is active; the no-Aerial assertion fails."
         }
       ]
     },
@@ -30062,11 +30066,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/form-change.feature::An alter-ego title does not match the identity in hero form"
+          ],
+          "mutation": "Take Alpha Flight Station's Carol Danvers branch while Captain Marvel is active; the hand-count assertion fails."
         }
       ]
     },
@@ -30300,11 +30306,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/form-change.feature::A hero title does not match the identity in alter-ego form"
+          ],
+          "mutation": "Remove Cosmic Flight's Aerial grant from Captain Marvel; the hero-face trait assertion fails."
         },
         {
           "id": "behavior:card:01017:when-captain-marvel-would-take-damage-discard",

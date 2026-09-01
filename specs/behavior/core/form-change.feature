@@ -81,3 +81,46 @@ Feature: Hero and alter-ego form changes
     Then seat 1 is in hero form
     When seat 1 takes their voluntary form change
     Then seat 1 changed from hero to alter-ego form
+
+  @behavior:rr:form-change-form.4:published-result
+  @covers:behavior:card:01015:exhaust-alpha-flight-station-choose-and-discard-condition-not-met
+  @rr:form-change-form.4 @card:01015
+  Scenario: An alter-ego title does not match the identity in hero form
+    # While a player is in hero form, abilities that interact with their
+    # alter-ego do not interact with their identity. Captain Marvel is not
+    # Carol Danvers, so Alpha Flight Station draws one card rather than two.
+    Given a canonical Core scene is dealt
+      | campaign | heroes         | seed |
+      | rhino    | captain_marvel | 811  |
+    And seat 1 shows identity face 01010a
+    And card 01015 copy 0 is a support controlled by seat 1
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01088 | 0    |
+    And these cards are next on seat 1's player deck
+      | next card | copy |
+      | 01014     | 0    |
+      | 01014     | 1    |
+    When seat 1 initiates card 01015 copy 0's action discarding these cards
+      | card  | copy |
+      | 01088 | 0    |
+    Then card 01015 copy 0 is exhausted
+    And card 01088 copy 0 is in seat 1's discard pile
+    And seat 1 has 1 card in hand
+
+  @behavior:rr:form-change-form.5:published-result
+  @covers:behavior:card:01017:captain-marvel-gains-aerial-trait
+  @rr:form-change-form.5 @card:01017
+  Scenario: A hero title does not match the identity in alter-ego form
+    # While a player is in alter-ego form, abilities that interact with their
+    # hero do not interact with their identity. Cosmic Flight grants Aerial to
+    # Captain Marvel, not to the Carol Danvers face of the identity.
+    Given a canonical Core scene is dealt
+      | campaign | heroes         | seed |
+      | rhino    | captain_marvel | 812  |
+    And seat 1 shows identity face 01010b
+    And card 01017 copy 0 is an upgrade attached to seat 1's identity
+    When the dealt Core scene is inspected
+    Then card 01010b copy 0 does not have the AERIAL trait
+    When seat 1 changes form by flipping their identity
+    Then card 01010a copy 0 has the AERIAL trait

@@ -390,6 +390,9 @@ internal sealed class CoreTranscriptRunner
         Bind("initiate-action-without-payment", TranscriptStepKind.When,
             @"seat (?<seat>\d+) initiates card (?<face>\d+[a-z]?) copy (?<copy>\d+)'s action without payment",
             InitiateActionWithoutPayment),
+        Bind("initiate-action-with-discard", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) initiates card (?<face>\d+[a-z]?) copy (?<copy>\d+)'s action discarding these cards",
+            InitiateActionWithDiscard),
         Bind("request-card-actions", TranscriptStepKind.When,
             @"seat (?<seat>\d+) asks for available card actions",
             RequestCardActions),
@@ -1447,6 +1450,19 @@ internal sealed class CoreTranscriptRunner
         TranscriptContext context, TranscriptStep step, Match match) =>
         InitiateAction(context, step, match, []);
 
+    private static void InitiateActionWithDiscard(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        TranscriptTable table = Table(step, "card", "copy");
+        InitiateAction(
+            context,
+            step,
+            match,
+            [],
+            [.. table.Rows.Select(row => context.SceneRequired(step).Find(new SceneCard(
+                row["card"], TableNumber(row, "copy", step))).ObjectId)]);
+    }
+
     private static void RequestCardActions(
         TranscriptContext context, TranscriptStep step, Match match)
     {
@@ -1607,7 +1623,8 @@ internal sealed class CoreTranscriptRunner
         TranscriptContext context,
         TranscriptStep step,
         Match match,
-        IReadOnlyList<int> payments)
+        IReadOnlyList<int> payments,
+        IReadOnlyList<int>? chosen = null)
     {
         int seat = Seat(match, step);
         Card source = context.SceneRequired(step).Find(SceneCard(match, step));
@@ -1623,7 +1640,7 @@ internal sealed class CoreTranscriptRunner
         context.Events.Clear();
         context.CurrentPrompt = "<none>";
         context.Events.AddRange(runner.Act(
-            context.World, action, payments, [], allocations: allocations));
+            context.World, action, payments, chosen ?? [], allocations: allocations));
         SetPendingPrompt(context, Sequence.Work(
             context.World, context.Cards, runner, context.Events));
     }

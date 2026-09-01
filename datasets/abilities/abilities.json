@@ -159,7 +159,12 @@
       "abilities": [
         {
           "trigger": { "timing": "Constant", "subject": "this" },
-          "effect": { "grant": { "card": "you", "trait": "AERIAL" } }
+          "effect": {
+            "if": {
+              "test": { "isTitle": { "card": "you", "title": "Captain Marvel" } },
+              "then": { "grant": { "card": "you", "trait": "AERIAL" } }
+            }
+          }
         },
         {
           "trigger": { "event": "WhenDamageWouldBeDealt", "timing": "Interrupt", "target": "you", "form": "hero" },
