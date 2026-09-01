@@ -22492,11 +22492,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::Klaw setup reveals Defense Network before advancing to stage 1B"
+          ],
+          "mutation": "CoreRuleTranscriptTests.SetupBranchesHavePinnedOutcomes distinguishes Klaw's main-scheme Setup ability resolving during scenario setup."
         }
       ]
     },
@@ -27215,11 +27217,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::Klaw setup reveals Defense Network before advancing to stage 1B"
+          ],
+          "mutation": "CoreRuleTranscriptTests.SetupBranchesHavePinnedOutcomes distinguishes Underground Distribution 1B resolving its When Revealed ability during setup."
         }
       ]
     },
@@ -44495,11 +44499,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::Klaw setup reveals Defense Network before advancing to stage 1B"
+          ],
+          "mutation": "CoreRuleTranscriptTests.SetupBranchesHavePinnedOutcomes distinguishes Klaw I entering play with Klaw II retained in the villain deck."
         },
         {
           "id": "behavior:card:01116a:klaw-ii-and-klaw-iii-instead-for",
@@ -44519,11 +44525,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::Klaw setup reveals Defense Network before advancing to stage 1B"
+          ],
+          "mutation": "CoreRuleTranscriptTests.SetupBranchesHavePinnedOutcomes distinguishes every card of the recommended Masters of Evil modular set entering the encounter deck."
         },
         {
           "id": "behavior:card:01116a:search-encounter-deck-for-defense-network-side",
@@ -44531,11 +44539,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::Klaw setup reveals Defense Network before advancing to stage 1B"
+          ],
+          "mutation": "CoreRuleTranscriptTests.SetupBranchesHavePinnedOutcomes distinguishes Defense Network being searched out, revealed, and assigned its one-player threat."
         },
         {
           "id": "behavior:card:01116a:shuffle-encounter-deck",
@@ -44543,11 +44553,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::Klaw setup reveals Defense Network before advancing to stage 1B"
+          ],
+          "mutation": "CoreRuleTranscriptTests.SetupBranchesHavePinnedOutcomes pins the post-search encounter-deck order produced by the setup shuffle."
         },
         {
           "id": "behavior:card:01116a:advance-stage-1b",
@@ -44555,11 +44567,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::Klaw setup reveals Defense Network before advancing to stage 1B"
+          ],
+          "mutation": "CoreRuleTranscriptTests.SetupBranchesHavePinnedOutcomes distinguishes Underground Distribution showing its 1B face after scenario setup."
         }
       ]
     },
@@ -44661,11 +44675,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::Klaw setup reveals Defense Network before advancing to stage 1B"
+          ],
+          "mutation": "CoreRuleTranscriptTests.SetupBranchesHavePinnedOutcomes distinguishes Underground Distribution discarding through the shuffled encounter deck until Radioactive Man."
         },
         {
           "id": "behavior:card:01116b:put-that-minion-into-play-engaged-with",
@@ -44673,11 +44689,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::Klaw setup reveals Defense Network before advancing to stage 1B"
+          ],
+          "mutation": "CoreRuleTranscriptTests.SetupBranchesHavePinnedOutcomes distinguishes the discarded Radioactive Man entering play engaged with the first player."
         }
       ]
     },

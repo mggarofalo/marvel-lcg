@@ -387,7 +387,7 @@ public sealed class CoreRuleTranscriptTests
                 "specs/behavior/core/setup.feature::", StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(5, results.Count);
+        Assert.Equal(6, results.Count);
         Assert.Equal(
             "e72ed15ec31a9a7a09fc27204c124b81b9721e2591a43d75bed51ecd6e2f49d5",
             results["behavior:rr:appendix-ii-setup.step.1:published-result"].Digest);
@@ -403,6 +403,9 @@ public sealed class CoreRuleTranscriptTests
         Assert.Equal(
             "063ebf9a425ae67894205a48cd6ac1444920d7f60a45925bdd2a533f28fc0aa6",
             results["behavior:card:01040b:search-your-deck-for-black-panther-upgrade"].Digest);
+        Assert.Equal(
+            "12469af423d842a404f38f0fa679e05f1686d269e7f30d2b820c184a4381e1e0",
+            results["behavior:card:01116a:search-encounter-deck-for-defense-network-side"].Digest);
     }
 
     [Fact]

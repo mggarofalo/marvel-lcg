@@ -92,6 +92,39 @@ Feature: Canonical Core setup
       | 01192 | 1     |
       | 01193 | 1     |
 
+  @behavior:card:01116a:search-encounter-deck-for-defense-network-side
+  @covers:behavior:card:01116a:klaw-i-and-klaw-ii
+  @covers:behavior:card:01116a:masters-evil
+  @covers:behavior:card:01116a:shuffle-encounter-deck
+  @covers:behavior:card:01116a:advance-stage-1b
+  @covers:behavior:card:01116b:discard-cards-from-encounter-deck-until-minion
+  @covers:behavior:card:01116b:put-that-minion-into-play-engaged-with
+  @covers:behavior:rr:setup-triggered-ability.2:published-result
+  @covers:behavior:rr:when-revealed-abilities.1:published-result
+  @card:01116a @card:01116b @rr:setup-triggered-ability.2
+  @rr:when-revealed-abilities.1
+  Scenario: Klaw setup reveals Defense Network before advancing to stage 1B
+    # "Setup: Search the encounter deck for the Defense Network side scheme and
+    # reveal it. Shuffle the encounter deck. Advance to stage 1B." Normal Klaw
+    # setup also selects Klaw I and II and the recommended Masters of Evil set.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | klaw     | spider_man | 806  |
+    When the dealt Core scene is inspected
+    Then card 01113 copy 0 is the faceup villain
+    And card 01114 copy 0 is in the villain deck
+    And card 01116b copy 0 is the faceup main scheme
+    And card 01125 copy 0 is in the villain's play area
+    And card 01125 copy 0 has 3 threat counters
+    And card 01129 copy 0 is engaged with seat 1
+    And the encounter deck contains these card counts
+      | card  | count |
+      | 01128 | 1     |
+      | 01130 | 1     |
+      | 01131 | 1     |
+      | 01132 | 1     |
+      | 01133 | 2     |
+
   @behavior:rr:modular-encounter-set.1:published-result
   @covers:behavior:rr:modular-encounter-set.2:published-result
   @rr:modular-encounter-set.1 @rr:modular-encounter-set.2
