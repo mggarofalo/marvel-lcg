@@ -782,10 +782,10 @@
         {
           "key": "published-result",
           "summary": "“Action” is a type of triggered ability.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "no-independent-behavior",
+          "reason": "This record defines terminology used by operational obligations and produces no independent game-state result.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -1147,10 +1147,10 @@
         {
           "key": "published-result",
           "summary": "The word “after” refers to a game occurrence that just concluded.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "no-independent-behavior",
+          "reason": "This record defines terminology used by operational obligations and produces no independent game-state result.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -2912,10 +2912,10 @@
         {
           "key": "published-result",
           "summary": "Some game effects and card abilities reference an attack.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "no-independent-behavior",
+          "reason": "This record defines terminology used by operational obligations and produces no independent game-state result.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -3210,10 +3210,10 @@
         {
           "key": "published-result",
           "summary": "Some effects cause a villain or minion to attack an ally directly.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "no-independent-behavior",
+          "reason": "This record defines terminology used by operational obligations and produces no independent game-state result.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -3318,10 +3318,10 @@
         {
           "key": "published-result",
           "summary": "A defined value before modifiers are applied.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "no-independent-behavior",
+          "reason": "This record defines terminology used by operational obligations and produces no independent game-state result.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -4244,10 +4244,10 @@
         {
           "key": "published-result",
           "summary": "Some abilities instruct a player to choose between multiple options.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "no-independent-behavior",
+          "reason": "This record defines terminology used by operational obligations and produces no independent game-state result.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -4979,57 +4979,57 @@
         }
       ]
     },
-  {
-    "id": "rr:cost.11",
+    {
+      "id": "rr:cost.11",
       "fingerprint": "sha256:f788d1163dd2e6ac1cacaf093841a683f34eac709ba6de127e5f293a1cf8643f",
       "obligations": [
         {
-        "key": "damage-prevented",
-        "summary": "If dealing damage is a cost, that cost is considered paid even if some or all of that damage is prevented.",
+          "key": "damage-prevented",
+          "summary": "If dealing damage is a cost, that cost is considered paid even if some or all of that damage is prevented.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-        "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-        "scenarios": [
-          "specs/behavior/core/card-actions.feature::Preventing War Machine's dealt-damage cost does not prevent its effect"
-        ],
-        "mutation": "Treat prevented dealt damage as an unpaid cost; War Machine's enemy-damage assertions fail."
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Preventing War Machine's dealt-damage cost does not prevent its effect"
+          ],
+          "mutation": "Treat prevented dealt damage as an unpaid cost; War Machine's enemy-damage assertions fail."
         }
       ]
     },
-  {
-    "id": "rr:cost.12",
+    {
+      "id": "rr:cost.12",
       "fingerprint": "sha256:a27ae6342a495661f1edd60ca714fab56a045ae4e72383343969e8b9cce74b3d",
       "obligations": [
         {
-        "key": "all-damage-taken",
-        "summary": "Taking all required damage pays a take-damage cost.",
+          "key": "all-damage-taken",
+          "summary": "Taking all required damage pays a take-damage cost.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-        "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-        "scenarios": [
-          "specs/behavior/core/card-actions.feature::Focused Rage pays its take-damage cost before drawing"
-        ],
-        "mutation": "Do not pay a take-damage cost after all required damage is taken; Focused Rage's draw assertion fails."
-      },
-      {
-        "key": "damage-prevented",
-        "summary": "If any damage required by a take-damage cost would be prevented, the cost cannot be paid.",
-        "disposition": "executable",
-        "reason": null,
-        "target": null,
-        "implementation": "supported",
-        "work_item": null,
-        "exception": null,
-        "scenarios": [
-          "specs/behavior/core/card-actions.feature::Tough makes Focused Rage's take-damage cost unpayable"
-        ],
-        "mutation": "Offer a take-damage action while Tough must prevent its cost; the action-availability assertion fails."
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Focused Rage pays its take-damage cost before drawing"
+          ],
+          "mutation": "Do not pay a take-damage cost after all required damage is taken; Focused Rage's draw assertion fails."
+        },
+        {
+          "key": "damage-prevented",
+          "summary": "If any damage required by a take-damage cost would be prevented, the cost cannot be paid.",
+          "disposition": "executable",
+          "reason": null,
+          "target": null,
+          "implementation": "supported",
+          "work_item": null,
+          "exception": null,
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Tough makes Focused Rage's take-damage cost unpayable"
+          ],
+          "mutation": "Offer a take-damage action while Tough must prevent its cost; the action-availability assertion fails."
         }
       ]
     },
@@ -6421,10 +6421,10 @@
         {
           "key": "published-result",
           "summary": "Some abilities contain delayed effects.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "no-independent-behavior",
+          "reason": "This record defines terminology used by operational obligations and produces no independent game-state result.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -7408,10 +7408,10 @@
         {
           "key": "published-result",
           "summary": "An energy resource ([energy]) is one of the four types of resources.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "no-independent-behavior",
+          "reason": "This record defines terminology used by operational obligations and produces no independent game-state result.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -11468,10 +11468,10 @@
         {
           "key": "published-result",
           "summary": "A labeled ability is a triggered ability with a parenthetical following its bold trigger text that designates that ability as an attack, defense, and/or thwart.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "no-independent-behavior",
+          "reason": "This heading defines a family whose child clauses and card-selected branches carry the observable behavior.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -11648,10 +11648,10 @@
         {
           "key": "published-result",
           "summary": "Some card abilities create effects or conditions that affect the game for a specified duration (such as “until the end of the phase” or “until the end of this attack”).",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "no-independent-behavior",
+          "reason": "This heading defines a family whose child clauses and card-selected branches carry the observable behavior.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -12578,10 +12578,10 @@
         {
           "key": "published-result",
           "summary": "A mental resource ([mental]) is one of the four types of resources.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "no-independent-behavior",
+          "reason": "This record defines terminology used by operational obligations and produces no independent game-state result.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -14407,10 +14407,10 @@
         {
           "key": "published-result",
           "summary": "A physical resource ([physical]) is one of the four types of resources.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "no-independent-behavior",
+          "reason": "This record defines terminology used by operational obligations and produces no independent game-state result.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -14701,10 +14701,10 @@
         {
           "key": "published-result",
           "summary": "Many cards and abilities contain specific instructions pertaining to when or how they may or may not be used, or to specific conditions that must be true in order to use them.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "no-independent-behavior",
+          "reason": "This heading defines a family whose child clauses and card-selected branches carry the observable behavior.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -15817,10 +15817,10 @@
         {
           "key": "published-result",
           "summary": "Some card abilities prevent damage or threat.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "no-independent-behavior",
+          "reason": "This heading defines a family whose child clauses and card-selected branches carry the observable behavior.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -16241,10 +16241,10 @@
         {
           "key": "published-result",
           "summary": "Some abilities refer to specific cards by name.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "no-independent-behavior",
+          "reason": "This heading defines a family whose child clauses and card-selected branches carry the observable behavior.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -16709,10 +16709,10 @@
         {
           "key": "published-result",
           "summary": "A resource ability is a type of triggered ability, indicated by the bold “Resource” timing trigger.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "no-independent-behavior",
+          "reason": "This record defines terminology used by operational obligations and produces no independent game-state result.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -16763,10 +16763,10 @@
         {
           "key": "published-result",
           "summary": "Resource cards are a player card type.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "no-independent-behavior",
+          "reason": "This record defines terminology used by operational obligations and produces no independent game-state result.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -16931,10 +16931,10 @@
         {
           "key": "published-result",
           "summary": "A response ability is a type of triggered ability, indicated by the bold “Response” timing trigger.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "no-independent-behavior",
+          "reason": "This heading defines a family whose child clauses and card-selected branches carry the observable behavior.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -18390,10 +18390,10 @@
         {
           "key": "published-result",
           "summary": "A special ability is a type of triggered ability, indicated by the bold “Special” timing trigger.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "no-independent-behavior",
+          "reason": "This record defines terminology used by operational obligations and produces no independent game-state result.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -20106,10 +20106,10 @@
         {
           "key": "published-result",
           "summary": "Some game effects and card abilities reference a thwart attempt.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "no-independent-behavior",
+          "reason": "This record defines terminology used by operational obligations and produces no independent game-state result.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -20407,10 +20407,10 @@
         {
           "key": "published-result",
           "summary": "Many cards have one or more traits listed at the top of the text box and printed in bold italics.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "no-independent-behavior",
+          "reason": "This record defines terminology used by operational obligations and produces no independent game-state result.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -21745,10 +21745,10 @@
         {
           "key": "published-result",
           "summary": "Villain is an encounter card type that represents the primary enemy the players are attempting to defeat in a scenario.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "no-independent-behavior",
+          "reason": "This record defines terminology used by operational obligations and produces no independent game-state result.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -21943,10 +21943,10 @@
         {
           "key": "published-result",
           "summary": "A when defeated ability is a type of triggered ability, indicated by the bold “When Defeated” timing trigger.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "no-independent-behavior",
+          "reason": "This record defines terminology used by operational obligations and produces no independent game-state result.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -22015,10 +22015,10 @@
         {
           "key": "published-result",
           "summary": "A when revealed ability is a type of triggered ability, indicated by the bold “When Revealed” timing trigger.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "no-independent-behavior",
+          "reason": "This record defines terminology used by operational obligations and produces no independent game-state result.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -22087,10 +22087,10 @@
         {
           "key": "published-result",
           "summary": "A wild resource ([wild]) is one of the four types of resources.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "no-independent-behavior",
+          "reason": "This record defines terminology used by operational obligations and produces no independent game-state result.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -26554,18 +26554,18 @@
           "mutation": "Change or omit this printed field in CardCatalog; the generated face-table assertion fails."
         },
         {
-        "key": "exhaust-focused-rage-and-take-1-damage",
+          "key": "exhaust-focused-rage-and-take-1-damage",
           "summary": "Hero Action: Exhaust Focused Rage and take 1 damage → draw 1 card.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-        "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-        "scenarios": [
-          "specs/behavior/core/card-actions.feature::Focused Rage pays its take-damage cost before drawing"
-        ],
-        "mutation": "Omit the damage, exhaustion, or draw from Focused Rage; one of the transcript's state assertions fails."
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Focused Rage pays its take-damage cost before drawing"
+          ],
+          "mutation": "Omit the damage, exhaustion, or draw from Focused Rage; one of the transcript's state assertions fails."
         }
       ]
     },
@@ -27162,18 +27162,18 @@
           "mutation": "Change or omit this printed field in CardCatalog; the generated face-table assertion fails."
         },
         {
-        "key": "exhaust-war-machine-and-deal-2-damage",
+          "key": "exhaust-war-machine-and-deal-2-damage",
           "summary": "Action: Exhaust War Machine and deal 2 damage to him → deal 1 damage to each enemy.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-        "implementation": "supported",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-        "scenarios": [
-          "specs/behavior/core/card-actions.feature::Preventing War Machine's dealt-damage cost does not prevent its effect"
-        ],
-        "mutation": "Omit War Machine's exhaustion or exclude an enemy from its effect; a transcript assertion fails."
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Preventing War Machine's dealt-damage cost does not prevent its effect"
+          ],
+          "mutation": "Omit War Machine's exhaustion or exclude an enemy from its effect; a transcript assertion fails."
         }
       ]
     },
