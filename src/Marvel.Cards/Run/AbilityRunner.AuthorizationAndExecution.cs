@@ -985,9 +985,11 @@ public sealed partial class AbilityRunner
             Resources.GeneratedBy(card.FaceId, cast.World.Facts).Contains(
                 Word(node.Argument), StringComparison.Ordinal)),
 
+        // Defeated.By is already the seat whose character caused the defeat;
+        // it is not a card object id. Interrogation Room's "after you defeat"
+        // therefore compares that recorded seat directly with the resolver.
         "defeatedByYou" => cast.Occurrence.Defeat is { By: >= 0 } defeatedByYou
-            && defeatedByYou.By < cast.World.Cards.Count
-            && ControllerOf(cast.World, cast.World.Cards[defeatedByYou.By]) == Resolver(cast),
+            && defeatedByYou.By == Resolver(cast),
 
         "wasDefeated" => Find(node.Argument, cast) is { } defeatedCard
             && cast.Occurrence.Defeats.Any(defeat => defeat.Card == defeatedCard.ObjectId),

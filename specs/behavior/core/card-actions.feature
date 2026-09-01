@@ -1233,8 +1233,9 @@ Feature: Core card actions
 
   @behavior:faq:01071:power-of-aspect-pays-printed-ally-cost
   @covers:behavior:card:01072:double-number-resources-card-generates-while-paying
+  @covers:behavior:card:01067:after-maria-hill-enters-play-each-player-one-player
   @covers:behavior:rr:resource-card.1:published-result
-  @faq:01071 @card:01071 @card:01072 @rr:resource-card.1
+  @faq:01071 @card:01067 @card:01071 @card:01072 @rr:resource-card.1
   Scenario: Power of Leadership doubles for Make the Call's chosen ally
     # The official FAQ says Make the Call pays the chosen ally's printed cost.
     # Maria Hill is a Leadership ally costing two, so Power of Leadership's

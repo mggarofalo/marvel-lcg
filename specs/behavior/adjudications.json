@@ -26027,11 +26027,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::A player with Energy Channel cannot play another copy"
+          ],
+          "mutation": "Permit the second Energy Channel when the sole player already controls one; the availability assertion fails."
         },
         {
           "key": "spend-x-energy-resources-put-x-energy",
@@ -31736,11 +31738,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::The Power of Aggression alone pays a cost-two Aggression card"
+          ],
+          "mutation": "Generate only the printed one wild while paying for Combat Training; the cost-two card cannot enter play."
         }
       ]
     },
@@ -32518,11 +32522,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::For Justice removes four threat with a mental payment"
+          ],
+          "mutation": "Ignore the mental payment or remove other than four threat; the zero-threat assertion fails."
         },
         {
           "key": "remove-3-threat-from-scheme-4-threat-condition-not-met",
@@ -32530,11 +32536,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::For Justice removes three threat without a mental payment"
+          ],
+          "mutation": "Apply the mental-payment bonus to an energy payment or remove other than three threat; the remaining-threat assertion fails."
         }
       ]
     },
@@ -32720,11 +32728,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::The Power of Justice alone pays a cost-two Justice card"
+          ],
+          "mutation": "Generate only the printed one wild while paying for Heroic Intuition; the cost-two card cannot enter play."
         }
       ]
     },
@@ -32850,11 +32860,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::A player with Interrogation Room cannot play another copy"
+          ],
+          "mutation": "Permit the second Interrogation Room when the sole player already controls one; the availability assertion fails."
         },
         {
           "key": "after-you-defeat-minion-exhaust-interrogation-room",
@@ -32862,11 +32874,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Interrogation Room exhausts after its player defeats a minion"
+          ],
+          "mutation": "Trigger without the player's defeat, omit exhaustion, or remove other than one threat; a prompt, readiness, or threat assertion fails."
         }
       ]
     },
@@ -33528,11 +33542,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Power of Leadership doubles for Make the Call's chosen ally"
+          ],
+          "mutation": "Draw other than one card for the sole player; the fixed top card does not enter that player's hand."
         },
         {
           "key": "after-maria-hill-enters-play-each-player-multiple-players",
@@ -33540,11 +33556,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Maria Hill lets every player draw in a multiplayer game"
+          ],
+          "mutation": "Skip either player or draw from the wrong deck; one of the two fixed-card hand assertions fails."
         }
       ]
     },
@@ -34798,11 +34816,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Luke Cage enters tough when Power of Protection pays part of his cost"
+          ],
+          "mutation": "Omit Toughness from Luke Cage; the entering ally's tough-status assertion fails."
         },
         {
           "key": "character-enters-play-with-tough-status-card",
@@ -34810,11 +34830,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Luke Cage enters tough when Power of Protection pays part of his cost"
+          ],
+          "mutation": "Delay or omit the tough status as Luke Cage enters play; the post-entry status assertion fails."
         }
       ]
     },
@@ -35114,11 +35136,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Luke Cage enters tough when Power of Protection pays part of his cost"
+          ],
+          "mutation": "Generate only the printed one wild while paying for Luke Cage; Energy plus that resource cannot pay cost four."
         }
       ]
     },
@@ -36906,11 +36930,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Tenacity spends a physical resource and discards to ready its hero"
+          ],
+          "mutation": "Fail to spend physical, discard Tenacity, or ready the hero; the payment, zone, or readiness assertion fails."
         }
       ]
     },

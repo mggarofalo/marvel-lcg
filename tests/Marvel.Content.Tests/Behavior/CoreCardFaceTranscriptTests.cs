@@ -71,7 +71,44 @@ public sealed class CoreCardFaceTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(42, results.Count);
+        Assert.Equal(52, results.Count);
+        Assert.Equal(
+            "67de81717f3b3c0dc3cca2713e200db998c3c910e61b75e2a1b49f29d50e98cb",
+            results["behavior:card:01018:max-1-per-player"].Digest);
+        Assert.Equal(
+            "5e38da71ec0b7101f5da52d471a3c1bf9b9ba5b5ad44cedbe8b425b22dd2312d",
+            results[
+                "behavior:card:01055:double-number-resources-card-generates-while-paying"].Digest);
+        Assert.Equal(
+            "ae21a5c4cabecc7e8df9f0857d5f23e460d435a3aa29cc05abca431ce6461b90",
+            results[
+                "behavior:card:01060:remove-3-threat-from-scheme-4-threat-condition-not-met"].Digest);
+        Assert.Equal(
+            "d7738653c03360999a609b97199b9cffd43e3d0f98c198bbb7e08ac7d498541e",
+            results[
+                "behavior:card:01060:remove-3-threat-from-scheme-4-threat-condition-met"].Digest);
+        Assert.Equal(
+            "b6c5ca4d268526f5a2f69e05e53d12f7324ea6eb90d549b924206b3543abc32c",
+            results[
+                "behavior:card:01062:double-number-resources-card-generates-while-paying"].Digest);
+        Assert.Equal(
+            "d30070c30994c5c873b52fc50a6f68acbff85a4805d25ae8faa16110c4277ab7",
+            results["behavior:card:01063:max-1-per-player"].Digest);
+        Assert.Equal(
+            "8c360cb1898bae31bcdc3b1dc65a378973c5d257e9b7a53762fd7de388df4a34",
+            results[
+                "behavior:card:01063:after-you-defeat-minion-exhaust-interrogation-room"].Digest);
+        Assert.Equal(
+            "c05378dd8cdd624516568c8a890a370c050f5158b19c801150de426dcbdf8b8b",
+            results[
+                "behavior:card:01067:after-maria-hill-enters-play-each-player-multiple-players"].Digest);
+        Assert.Equal(
+            "81db58abc2d31bd5dc478370430541c98463348c313865f6e12190f5bbdc611c",
+            results["behavior:card:01076:toughness"].Digest);
+        Assert.Equal(
+            "c4fe1e77b86f576ac6803e8f3ffb15e343def984f42a0b75a7a877ecba72a70a",
+            results[
+                "behavior:card:01093:spend-physical-resource-and-discard-card-ready"].Digest);
         Assert.Equal(
             "f8f3ecc459be52e526426c9233adcb55a0b3f6b8a4921e3adad4557835d14178",
             results["behavior:card:01028:she-hulk-gets-2-atk"].Digest);

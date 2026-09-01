@@ -3,6 +3,210 @@ Feature: Core player card abilities
   Player cards resolve their printed Actions and constant modifiers from legal
   Core deals, with targets and resulting zones recorded in the transcript.
 
+  @behavior:card:01018:max-1-per-player
+  @card:01018
+  Scenario: A player with Energy Channel cannot play another copy
+    # One Energy Channel is already attached to Captain Marvel, satisfying Max
+    # 1 per player; in a solo game the second copy therefore has no legal host.
+    Given a canonical Core scene is dealt
+      | campaign | heroes         | seed |
+      | rhino    | captain_marvel | 910  |
+    And seat 1 shows identity face 01010a
+    And card 01018 copy 0 is attached to card 01010a copy 0
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01018 | 1    |
+      | 01088 | 0    |
+    When seat 1 asks whether card 01018 copy 1 is available to play
+    Then card 01018 copy 1 is unavailable to play
+
+  @behavior:card:01055:double-number-resources-card-generates-while-paying
+  @card:01055 @card:01057
+  Scenario: The Power of Aggression alone pays a cost-two Aggression card
+    # The Power of Aggression's one printed wild resource doubles while paying
+    # for Combat Training, exactly meeting that Aggression card's cost of two.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 911  |
+    And seat 1 shows identity face 01019a
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01055 | 0    |
+      | 01057 | 0    |
+    When seat 1 plays card 01057 copy 0 targeting card 01019a copy 0 paying with these cards
+      | card  | copy |
+      | 01055 | 0    |
+    Then card 01057 copy 0 is attached to card 01019a copy 0
+    And card 01019a copy 0 has modified ATK 4
+
+  @behavior:card:01060:remove-3-threat-from-scheme-4-threat-condition-not-met
+  @card:01060
+  Scenario: For Justice removes three threat without a mental payment
+    # Energy pays the event's cost but is not mental, so For Justice removes
+    # its base three threat and leaves one of the scheme's four threat.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 912  |
+    And seat 1 shows identity face 01001a
+    And card 01097b copy 0 has 4 threat counters
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01060 | 0    |
+      | 01088 | 0    |
+    When seat 1 initiates card 01060 copy 0's action paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+    Then card 01097b copy 0 is offered by the pending action
+    When seat 1 chooses card 01097b copy 0 for the pending action
+    Then card 01097b copy 0 has 1 threat counters
+
+  @behavior:card:01060:remove-3-threat-from-scheme-4-threat-condition-met
+  @card:01060
+  Scenario: For Justice removes four threat with a mental payment
+    # Genius pays the event's cost with mental resources, so For Justice
+    # removes four threat instead of three.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 913  |
+    And seat 1 shows identity face 01001a
+    And card 01097b copy 0 has 4 threat counters
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01060 | 1    |
+      | 01089 | 0    |
+    When seat 1 initiates card 01060 copy 1's action paying with these cards
+      | card  | copy |
+      | 01089 | 0    |
+    Then card 01097b copy 0 is offered by the pending action
+    When seat 1 chooses card 01097b copy 0 for the pending action
+    Then card 01097b copy 0 has 0 threat counters
+
+  @behavior:card:01062:double-number-resources-card-generates-while-paying
+  @card:01062 @card:01065
+  Scenario: The Power of Justice alone pays a cost-two Justice card
+    # The Power of Justice's one printed wild resource doubles while paying for
+    # Heroic Intuition, exactly meeting that Justice card's cost of two.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 914  |
+    And seat 1 shows identity face 01001a
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01062 | 0    |
+      | 01065 | 0    |
+    When seat 1 plays card 01065 copy 0 targeting card 01001a copy 0 paying with these cards
+      | card  | copy |
+      | 01062 | 0    |
+    Then card 01065 copy 0 is attached to card 01001a copy 0
+    And card 01001a copy 0 has modified THW 2
+
+  @behavior:card:01063:max-1-per-player
+  @card:01063
+  Scenario: A player with Interrogation Room cannot play another copy
+    # One Interrogation Room is already controlled by the sole player, so Max
+    # 1 per player makes the second copy unavailable to play.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 915  |
+    And card 01063 copy 0 is a support controlled by seat 1
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01063 | 1    |
+      | 01088 | 0    |
+    When seat 1 asks whether card 01063 copy 1 is available to play
+    Then card 01063 copy 1 is unavailable to play
+
+  @behavior:card:01063:after-you-defeat-minion-exhaust-interrogation-room
+  @card:01063
+  Scenario: Interrogation Room exhausts after its player defeats a minion
+    # Spider-Man's basic attack defeats the already damaged Hydra Mercenary.
+    # Interrogation Room's Response then exhausts and removes one threat from
+    # the chosen main scheme.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 916  |
+    And seat 1 shows identity face 01001a
+    And card 01063 copy 0 is a support controlled by seat 1
+    And card 01101 copy 0 is a minion engaged with seat 1
+    And card 01101 copy 0 has 1 damage
+    And card 01097b copy 0 has 1 threat counter
+    When seat 1 begins their basic attack against card 01101 copy 0
+    Then seat 1 is offered the "Interrogation Room" pending opportunity
+    When seat 1 accepts card 01063 copy 0's pending opportunity
+    Then card 01097b copy 0 is offered by the pending action
+    When seat 1 chooses card 01097b copy 0 for the pending action
+    Then card 01063 copy 0 is exhausted
+    And card 01097b copy 0 has 0 threat counters
+
+  @behavior:card:01067:after-maria-hill-enters-play-each-player-multiple-players
+  @card:01067
+  Scenario: Maria Hill lets every player draw in a multiplayer game
+    # Maria Hill's Response draws one card for each of the two players. Each
+    # asserted card was fixed on that player's own deck before she entered.
+    Given a canonical Core scene is dealt
+      | campaign | heroes                      | seed |
+      | rhino    | captain_marvel,spider_man   | 917  |
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01067 | 0    |
+      | 01088 | 0    |
+    And these cards are next on seat 1's player deck
+      | next card | copy |
+      | 01068     | 0    |
+    And these cards are next on seat 2's player deck
+      | next card | copy |
+      | 01002     | 0    |
+    When seat 1 plays card 01067 copy 0 paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+    Then seat 1 is offered the "Maria Hill" pending opportunity
+    When seat 1 accepts card 01067 copy 0's pending opportunity
+    Then card 01068 copy 0 is in seat 1's hand
+    And card 01002 copy 0 is in seat 2's hand
+
+  @behavior:card:01076:toughness
+  @covers:behavior:card:01076:character-enters-play-with-tough-status-card
+  @covers:behavior:card:01079:double-number-resources-card-generates-while-paying
+  @card:01076 @card:01079
+  Scenario: Luke Cage enters tough when Power of Protection pays part of his cost
+    # Power of Protection doubles its printed wild while paying for Luke Cage;
+    # with Energy's two resources that pays his cost four. Toughness gives him
+    # one tough status card as he enters play.
+    Given a canonical Core scene is dealt
+      | campaign | heroes        | seed |
+      | rhino    | black_panther | 918  |
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01076 | 0    |
+      | 01079 | 0    |
+      | 01088 | 0    |
+    When seat 1 plays card 01076 copy 0 paying with these cards
+      | card  | copy |
+      | 01079 | 0    |
+      | 01088 | 0    |
+    Then card 01076 copy 0 remains an ally controlled by seat 1
+    And card 01076 copy 0 has 1 tough status card
+
+  @behavior:card:01093:spend-physical-resource-and-discard-card-ready
+  @card:01093
+  Scenario: Tenacity spends a physical resource and discards to ready its hero
+    # Tenacity's cost spends a physical resource and discards the upgrade; its
+    # effect then readies the exhausted hero.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 919  |
+    And seat 1 shows identity face 01001a
+    And card 01093 copy 0 is attached to card 01001a copy 0
+    And card 01001a copy 0 is exhausted
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01090 | 0    |
+    When seat 1 initiates card 01093 copy 0's action paying with these cards
+      | card  | copy |
+      | 01090 | 0    |
+    Then card 01001a copy 0 is ready
+    And card 01093 copy 0 is faceup on top of seat 1's discard pile
+
   @behavior:card:01028:she-hulk-gets-2-atk
   @covers:behavior:card:01028:after-she-hulk-attacks-discard-superhuman-strength
   @card:01028
