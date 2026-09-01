@@ -1103,7 +1103,8 @@ public static class VillainPhase
                 return ChoosePostRevealAbility(world, step);
 
             case Steps.FinalizeAllyEntry:
-                FinalizeAllyEntry(world, facts, abilities, step.Subject, events);
+                FinalizeAllyEntry(
+                    world, facts, abilities, step.Subject, step.Seat, events);
                 break;
 
             case Steps.OrderEachPlayer:
@@ -1990,13 +1991,14 @@ public static class VillainPhase
     }
 
     private static void FinalizeAllyEntry(
-        World world, ICardFacts facts, ICardAbilities abilities, int allyId,
+        World world, ICardFacts facts, ICardAbilities abilities, int allyId, int player,
         List<GameEvent> events)
     {
         var ally = world.Cards[allyId];
         if (ally.Area.Type == DeckType.AlliesArea)
         {
             Reveal.EnterPlay(world, facts, ally, events, abilities: abilities);
+            CardPlay.Entered(world, ally, player);
         }
     }
 

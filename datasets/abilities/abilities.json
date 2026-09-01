@@ -1405,10 +1405,10 @@
     {
       "card": "01011",
       "name": "Spider-Woman",
-      "note": "Response: after Spider-Woman enters play, confuse the villain. Playing the ally produces WhenCardPlayed after it enters play; the response remains optional under rr:response.",
+      "note": "Response: after Spider-Woman enters play, confuse the villain. Putting her into play also satisfies the printed condition; the response remains optional under rr:response.",
       "abilities": [
         {
-          "trigger": { "event": "WhenCardPlayed", "timing": "Response", "subject": "this" },
+          "trigger": { "event": "WhenCardEntersPlay", "timing": "Response", "subject": "this" },
           "effect": { "giveStatus": { "card": { "query": "villain" }, "status": "confused" } }
         }
       ]
@@ -1612,7 +1612,7 @@
       "note": "Response: after Mockingbird enters play, stun an enemy. The response asks the resolving player which enemy receives the status.",
       "abilities": [
         {
-          "trigger": { "event": "WhenCardPlayed", "timing": "Response", "subject": "this" },
+          "trigger": { "event": "WhenCardEntersPlay", "timing": "Response", "subject": "this" },
           "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "giveStatus": { "card": "chosen", "status": "stunned" } } } }
         }
       ]
@@ -2099,7 +2099,7 @@
       "note": "After Maria Hill enters play, her optional response has each player draw 1 card in player order.",
       "abilities": [
         {
-          "trigger": { "event": "WhenCardPlayed", "timing": "Response", "subject": "this" },
+          "trigger": { "event": "WhenCardEntersPlay", "timing": "Response", "subject": "this" },
           "effect": { "draw": { "player": "each", "count": 1 } }
         }
       ]
@@ -2110,7 +2110,7 @@
       "note": "After Nick Fury enters play, choose one printed effect. The same response records the delayed end-of-round discard, which does nothing if he has already left play.",
       "abilities": [
         {
-          "trigger": { "event": "WhenCardPlayed", "timing": "ForcedResponse", "subject": "this" },
+          "trigger": { "event": "WhenCardEntersPlay", "timing": "ForcedResponse", "subject": "this" },
           "effect": { "seq": [
             { "choose": { "options": [
               { "chooseCard": { "from": { "query": "schemes" }, "effect": { "removeThreat": { "scheme": "chosen", "amount": 2 } } } },

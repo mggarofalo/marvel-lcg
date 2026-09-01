@@ -754,3 +754,35 @@ Feature: Core card actions
     When seat 1 chooses card 01001a copy 0 for the pending action
     Then card 01001a copy 0 has 0 damage
     And card 01086 copy 0 is faceup on top of seat 1's discard pile
+
+  @behavior:faq:01071:power-of-aspect-pays-printed-ally-cost
+  @covers:behavior:card:01072:double-number-resources-card-generates-while-paying
+  @covers:behavior:rr:resource-card.1:published-result
+  @faq:01071 @card:01071 @card:01072 @rr:resource-card.1
+  Scenario: Power of Leadership doubles for Make the Call's chosen ally
+    # The official FAQ says Make the Call pays the chosen ally's printed cost.
+    # Maria Hill is a Leadership ally costing two, so Power of Leadership's
+    # text is active while it generates resources and its one printed wild
+    # resource becomes two, exactly paying that cost.
+    Given a canonical Core scene is dealt
+      | campaign | heroes         | seed |
+      | rhino    | captain_marvel | 721  |
+    And card 01067 copy 0 starts in seat 1's discard pile
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01071 | 0    |
+      | 01072 | 0    |
+    And these cards are next on seat 1's player deck
+      | next card | copy |
+      | 01068     | 0    |
+    When seat 1 initiates card 01071 copy 0's action without payment
+    Then card 01067 copy 0 is offered by the pending action
+    When seat 1 chooses card 01067 copy 0 paying with these cards for the pending action
+      | card  | copy |
+      | 01072 | 0    |
+    Then seat 1 is offered the "Maria Hill" pending opportunity
+    When seat 1 accepts the "Maria Hill" pending opportunity
+    Then card 01067 copy 0 is in seat 1's play area
+    And card 01068 copy 0 is in seat 1's hand
+    And card 01071 copy 0 is in seat 1's discard pile
+    And card 01072 copy 0 is in seat 1's discard pile

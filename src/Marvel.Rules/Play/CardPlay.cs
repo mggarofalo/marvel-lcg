@@ -518,6 +518,7 @@ public static class CardPlay
         else
         {
             Reveal.EnterPlay(world, facts, ally, events, abilities: abilities);
+            Entered(world, ally, controller);
         }
     }
 
@@ -1207,6 +1208,21 @@ public static class CardPlay
             Subject: ally.ObjectId,
             Seat: player,
             Plan: true));
+
+    /// <summary>Schedules the response window for an ally put into play.</summary>
+    internal static void Entered(World world, Card ally, int player)
+    {
+        // `rr:enters-play`: putting a card into play by a card ability is one
+        // way it enters play. The transition therefore creates the same
+        // after-entry response window as a card played from hand, but not the
+        // `WhenCardPlayed` condition that rr:play-put-into-play.3 excludes.
+        world.Agenda.Then(new PhaseStep(
+            Steps.CardEntersPlay,
+            world.Agenda.Current?.Round ?? 0,
+            0,
+            Subject: ally.ObjectId,
+            Seat: player));
+    }
 
     private static void Played(World world, Seat seat, Card card)
     {

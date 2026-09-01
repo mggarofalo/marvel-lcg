@@ -17164,11 +17164,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Power of Leadership doubles for Make the Call's chosen ally"
+          ],
+          "mutation": "Ignore Power of Leadership's text while it generates resources; one wild cannot pay Maria Hill's printed cost of two."
         }
       ]
     },
@@ -17179,10 +17181,10 @@
         {
           "key": "published-result",
           "summary": "Resource cards are considered to be an extension of an identity.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "outside-core",
+          "reason": "No Core Set ability distinguishes a resource spent by a player from the same resource being spent by that player's identity; all Core resource conditions observe only its type or payer.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -33770,11 +33772,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Power of Leadership doubles for Make the Call's chosen ally"
+          ],
+          "mutation": "Generate only the printed one wild while paying for Maria Hill; the cost-two pending choice cannot resolve."
         }
       ]
     },
@@ -49430,11 +49434,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Power of Leadership doubles for Make the Call's chosen ally"
+          ],
+          "mutation": "Classify the payment by Make the Call instead of its chosen Leadership ally; Power of Leadership generates one and Maria Hill cannot enter play."
         },
         {
           "key": "red-dagger-control-and-return",

@@ -474,6 +474,12 @@ internal sealed class CoreTranscriptRunner
         Bind("choose-pending-card-with-payment", TranscriptStepKind.When,
             @"seat (?<seat>\d+) chooses card (?<face>\d+[a-z]?) copy (?<copy>\d+) paying with these cards for the pending action",
             ChoosePendingCardWithPayment),
+        Bind("accept-pending-opportunity", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) accepts the ""(?<label>[^""]+)"" pending opportunity",
+            AcceptPendingOpportunity),
+        Bind("pending-opportunity-offered", TranscriptStepKind.Then,
+            @"seat (?<seat>\d+) is offered the ""(?<label>[^""]+)"" pending opportunity",
+            PendingOpportunityOffered),
         Bind("hand-count", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) has (?<count>\d+) cards? in hand", HandCount),
         Bind("mulligan-offered", TranscriptStepKind.Then,
@@ -2230,6 +2236,50 @@ internal sealed class CoreTranscriptRunner
             context.Events);
         SetPendingPrompt(context, Sequence.Work(
             context.World, context.Cards, context.World.Abilities, context.Events));
+    }
+
+    private static void AcceptPendingOpportunity(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        Prompt asked = context.PendingPrompt
+            ?? throw new TranscriptException($"{step.Location}: no opportunity is pending");
+        if (asked.Player != seat)
+        {
+            throw new TranscriptException(
+                $"{step.Location}: pending opportunity asks seat {asked.Player + 1}, "
+                + $"not seat {seat + 1}");
+        }
+
+        string label = match.Groups["label"].Value;
+        Affordance offer = asked.Affordances.SingleOrDefault(candidate =>
+            candidate.Label == label)
+            ?? throw new TranscriptException(
+                $"{step.Location}: '{label}' is not offered by '{asked.Label}'");
+        Sequence.Answer(
+            context.World,
+            context.Cards,
+            context.World.Abilities,
+            asked,
+            Decision.Take(offer.Id),
+            context.Events);
+        SetPendingPrompt(context, Sequence.Work(
+            context.World, context.Cards, context.World.Abilities, context.Events));
+    }
+
+    private static void PendingOpportunityOffered(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        Prompt asked = context.PendingPrompt
+            ?? throw new TranscriptException($"{step.Location}: no opportunity is pending");
+        string label = match.Groups["label"].Value;
+        if (asked.Player != seat || !asked.Affordances.Any(candidate =>
+                candidate.Label == label))
+        {
+            throw new TranscriptException(
+                $"{step.Location}: seat {seat + 1} is not offered '{label}'");
+        }
     }
 
     private static void SetPendingPrompt(TranscriptContext context, Prompt? prompt)
