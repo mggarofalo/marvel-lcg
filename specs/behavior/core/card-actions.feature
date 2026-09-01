@@ -218,6 +218,34 @@ Feature: Core card actions
     And card 01101 copy 0 has 1 damage
     And card 01022 copy 0 is faceup on top of seat 1's discard pile
 
+  @behavior:rr:cannot:published-result
+  @covers:behavior:rr:cannot.1:published-result
+  @covers:behavior:rr:target.3.7:published-result
+  @covers:behavior:rr:target.4:published-result
+  @covers:behavior:rr:target.4.1:published-result
+  @rr:cannot @rr:cannot.1 @rr:target.3.7 @rr:target.4 @rr:target.4.1
+  @card:01022 @card:01180 @card:01181
+  Scenario: An each-enemy effect skips an enemy that cannot take damage
+    # Madame Hydra's constant ability says she "cannot take damage" while
+    # Legions of Hydra is in play. Ground Stomp can still resolve because Rhino
+    # is a valid member of its each-enemy target set, but it cannot damage her.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | modular sets     | seed |
+      | rhino    | she_hulk | legions_of_hydra | 829  |
+    And seat 1 shows identity face 01019a
+    And card 01180 copy 0 is a side scheme in play
+    And card 01181 copy 0 is a minion engaged with seat 1
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01022 | 0    |
+      | 01089 | 0    |
+    When seat 1 initiates card 01022 copy 0's action paying with these cards
+      | card  | copy |
+      | 01089 | 0    |
+    Then card 01094 copy 0 has 1 damage
+    And card 01181 copy 0 has 0 damage
+    And card 01022 copy 0 is faceup on top of seat 1's discard pile
+
   @behavior:card:01054:deal-5-damage-enemy
   @card:01054
   Scenario: Uppercut deals five damage to its chosen enemy

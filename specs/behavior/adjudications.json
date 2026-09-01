@@ -4008,7 +4008,7 @@
       ]
     },
     {
-      "id": "rr:cannot",
+  "id": "rr:cannot",
       "fingerprint": "sha256:211ec425c33d90206ac137c9b6a503f21ef9dbb26f76599f88b07a34e20f5ecf",
       "obligations": [
         {
@@ -4017,16 +4017,18 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/card-actions.feature::An each-enemy effect skips an enemy that cannot take damage"
+      ],
+      "mutation": "Let Ground Stomp countermand Madame Hydra's cannot-take-damage ability; she incorrectly receives one damage."
         }
       ]
     },
     {
-      "id": "rr:cannot.1",
+  "id": "rr:cannot.1",
       "fingerprint": "sha256:99e536f001077f250942814019237e35b79ec68829d408191507b4568878f219",
       "obligations": [
         {
@@ -4035,11 +4037,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/card-actions.feature::An each-enemy effect skips an enemy that cannot take damage"
+      ],
+      "mutation": "Give Ground Stomp precedence over Madame Hydra's conflicting cannot ability; she incorrectly receives damage."
         }
       ]
     },
@@ -20092,7 +20096,7 @@
       ]
     },
     {
-      "id": "rr:target.3.7",
+  "id": "rr:target.3.7",
       "fingerprint": "sha256:e39829d2b7a0e7fdad34e69982dd838086aceb51cb38cb245e09bd97b6e12cd7",
       "obligations": [
         {
@@ -20101,11 +20105,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/card-actions.feature::An each-enemy effect skips an enemy that cannot take damage"
+      ],
+      "mutation": "Treat Madame Hydra as a valid damage-only target while she cannot take damage; Ground Stomp incorrectly affects her."
         }
       ]
     },
@@ -20150,7 +20156,7 @@
       ]
     },
     {
-      "id": "rr:target.4",
+  "id": "rr:target.4",
       "fingerprint": "sha256:699742782e0b178eef8741a4443f983f82c07305b4773aeab0b148e044104641",
       "obligations": [
         {
@@ -20159,16 +20165,18 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/card-actions.feature::An each-enemy effect skips an enemy that cannot take damage"
+      ],
+      "mutation": "Reject Ground Stomp because one member of its each-enemy set is invalid; Rhino never receives the observed damage."
         }
       ]
     },
     {
-      "id": "rr:target.4.1",
+  "id": "rr:target.4.1",
       "fingerprint": "sha256:b0cc1d5cf04859c460c7d875f59de9b62a4611d539435ee6aa9de62f12c8f397",
       "obligations": [
         {
@@ -20177,11 +20185,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/card-actions.feature::An each-enemy effect skips an enemy that cannot take damage"
+      ],
+      "mutation": "Resolve Ground Stomp against invalid members of its target set; Madame Hydra incorrectly receives one damage."
         }
       ]
     },

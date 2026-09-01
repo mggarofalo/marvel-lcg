@@ -4850,11 +4850,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::An each-enemy effect skips an enemy that cannot take damage"
+          ],
+          "mutation": "Let Ground Stomp countermand Madame Hydra's cannot-take-damage ability; she incorrectly receives one damage."
         }
       ]
     },
@@ -4872,11 +4874,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::An each-enemy effect skips an enemy that cannot take damage"
+          ],
+          "mutation": "Give Ground Stomp precedence over Madame Hydra's conflicting cannot ability; she incorrectly receives damage."
         }
       ]
     },
@@ -24314,11 +24318,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::An each-enemy effect skips an enemy that cannot take damage"
+          ],
+          "mutation": "Treat Madame Hydra as a valid damage-only target while she cannot take damage; Ground Stomp incorrectly affects her."
         }
       ]
     },
@@ -24384,11 +24390,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::An each-enemy effect skips an enemy that cannot take damage"
+          ],
+          "mutation": "Reject Ground Stomp because one member of its each-enemy set is invalid; Rhino never receives the observed damage."
         }
       ]
     },
@@ -24406,11 +24414,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::An each-enemy effect skips an enemy that cannot take damage"
+          ],
+          "mutation": "Resolve Ground Stomp against invalid members of its target set; Madame Hydra incorrectly receives one damage."
         }
       ]
     },
