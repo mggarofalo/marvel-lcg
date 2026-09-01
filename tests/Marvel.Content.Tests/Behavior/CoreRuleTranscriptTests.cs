@@ -582,7 +582,7 @@ public sealed class CoreRuleTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(6, results.Count);
+        Assert.Equal(8, results.Count);
         Assert.Equal(
             "90cc019d785eda872e3253f08a8f786009c7ec7d72a55a69148171973e0c1f46",
             results["behavior:rr:form-change-form.1:flip-identity"].Digest);
@@ -592,6 +592,14 @@ public sealed class CoreRuleTranscriptTests
         Assert.Equal(
             "410e4fc088da5f7bc65834761ff21efefe7c57bf7489ce0c669cabd7c2b76afa",
             results["behavior:rr:form-change-form.3:published-result"].Digest);
+        Assert.Equal(
+            "e2ee518234c3be57040c3ab21dcfadff9a30aa12c6e0d5fc46425bd82d172ca5",
+            results[
+                "behavior:card:01025:then-draw-up-your-printed-hand-size-intermediate"].Digest);
+        Assert.Equal(
+            "6301b86cee3485d30f133d44bddc2b4c36b9a1aafdf3f2a4aff2fff3f62abede",
+            results[
+                "behavior:card:01025:then-draw-up-your-printed-hand-size-minimum"].Digest);
         Assert.Equal(
             "02934a0a9019cfb3b71e148a7f881d388edef755b04a4d61316e198fde976380",
             results["behavior:rr:form-change-form.4:published-result"].Digest);
