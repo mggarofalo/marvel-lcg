@@ -34,3 +34,22 @@ Feature: Hero and alter-ego form changes
     And card 01029a copy 0 has a stunned status card
     And card 01039 copy 0 remains attached to seat 1's identity
     And card 01029a copy 0 has 6 remaining hit points
+
+  @behavior:rr:form-change-form.1:voluntary-window-and-limit
+  @rr:form-change-form.1
+  Scenario: A voluntary form change is offered once during the player's turn
+    # "Once each round, during their turn, each player is permitted to change
+    # form." Taking that permission removes it from the same turn's options.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 809  |
+    When game setup reaches seat 1's mulligan
+    Then seat 1 is offered a mulligan
+    When seat 1 keeps every opening-hand card at mulligan
+    Then seat 1 is in alter-ego form
+    When seat 1 asks whether a voluntary form change is available
+    Then a voluntary form change is available
+    When seat 1 takes their voluntary form change
+    Then seat 1 changed from alter-ego to hero form
+    When seat 1 asks whether a voluntary form change is available
+    Then a voluntary form change is unavailable

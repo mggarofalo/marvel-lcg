@@ -317,16 +317,19 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void FormChangeBranchesHavePinnedOutcomes()
     {
-        TranscriptResult result = Assert.Single(
-            Corpus.Value,
-            candidate => candidate.Scenario.StartsWith(
+        var results = Corpus.Value
+            .Where(candidate => candidate.Scenario.StartsWith(
                 "specs/behavior/core/form-change.feature::",
-                StringComparison.Ordinal));
+                StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal("behavior:rr:form-change-form.1:flip-identity", result.Obligation);
+        Assert.Equal(2, results.Count);
         Assert.Equal(
             "8ac76760febf2740557277dc71b65fbc299b5cef08e0a510bbb53a2c06a33a26",
-            result.Digest);
+            results["behavior:rr:form-change-form.1:flip-identity"].Digest);
+        Assert.Equal(
+            "7cd5c816aad3d3414b2a168c18ef54b42152f75e6301f10b17bccde0f43a243a",
+            results["behavior:rr:form-change-form.1:voluntary-window-and-limit"].Digest);
     }
 
     [Fact]

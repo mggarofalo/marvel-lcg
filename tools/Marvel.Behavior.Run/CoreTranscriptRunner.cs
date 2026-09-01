@@ -402,6 +402,12 @@ internal sealed class CoreTranscriptRunner
         Bind("keep-mulligan", TranscriptStepKind.When,
             @"seat (?<seat>\d+) keeps every opening-hand card at mulligan",
             KeepMulligan),
+        Bind("request-voluntary-form-change", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) asks whether a voluntary form change is available",
+            RequestVoluntaryFormChange),
+        Bind("take-voluntary-form-change", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) takes their voluntary form change",
+            TakeVoluntaryFormChange),
         Bind("choose-setup-card", TranscriptStepKind.When,
             @"seat (?<seat>\d+) chooses card (?<face>\d+[a-z]?) copy (?<copy>\d+) for the pending setup ability",
             ChooseSetupCard),
@@ -519,6 +525,9 @@ internal sealed class CoreTranscriptRunner
             CardTargetAvailability),
         Bind("basic-recovery-result", TranscriptStepKind.Then,
             @"basic recovery is (?<availability>available|unavailable)",
+            BasicRecoveryResult),
+        Bind("voluntary-form-change-result", TranscriptStepKind.Then,
+            @"a voluntary form change is (?<availability>available|unavailable)",
             BasicRecoveryResult),
         Bind("card-removed", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is removed from the game",
@@ -1513,6 +1522,50 @@ internal sealed class CoreTranscriptRunner
         Resolution resolution = game.Resolve(Decision.Decline);
         context.Events.AddRange(resolution.Events);
         SetPendingPrompt(context, resolution.Prompt);
+    }
+
+    private static void RequestVoluntaryFormChange(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Game game = context.Game
+            ?? throw new TranscriptException($"{step.Location}: game setup has not begun");
+        int seat = Seat(match, step);
+        Prompt asked = game.Pending
+            ?? throw new TranscriptException($"{step.Location}: no turn prompt is pending");
+        if (game.Phase != GamePhase.PlayerTurn || asked.Player != seat)
+        {
+            throw new TranscriptException(
+                $"{step.Location}: seat {seat + 1} is not taking their turn");
+        }
+
+        context.LastAvailability = asked.Affordances.Any(option =>
+            option.Verb == Game.ChangeForm);
+    }
+
+    private static void TakeVoluntaryFormChange(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Game game = context.Game
+            ?? throw new TranscriptException($"{step.Location}: game setup has not begun");
+        int seatIndex = Seat(match, step);
+        Prompt asked = game.Pending
+            ?? throw new TranscriptException($"{step.Location}: no turn prompt is pending");
+        if (game.Phase != GamePhase.PlayerTurn || asked.Player != seatIndex)
+        {
+            throw new TranscriptException(
+                $"{step.Location}: seat {seatIndex + 1} is not taking their turn");
+        }
+
+        Affordance option = asked.Affordances.Single(candidate =>
+            candidate.Verb == Game.ChangeForm);
+        Seat seat = context.World.Seats[seatIndex];
+        string from = FormName(Forms.Of(context.World, seat, context.Cards));
+        context.Events.Clear();
+        Resolution resolution = game.Resolve(Decision.Take(option.Id));
+        context.Events.AddRange(resolution.Events);
+        SetPendingPrompt(context, resolution.Prompt);
+        string to = FormName(Forms.Of(context.World, seat, context.Cards));
+        context.LastFormChange = (seatIndex, from, to);
     }
 
     private static void ChooseSetupCard(

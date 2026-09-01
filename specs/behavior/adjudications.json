@@ -2324,10 +2324,10 @@
         {
           "key": "published-result",
           "summary": "If an attachment modifies a value the attached character does not have or for which that character has a dash (–) as a value, that modifier is ignored.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "outside-core",
+          "reason": "Every Core Set attachment with a printed ATK, SCH, or THW modifier legally attaches only to a character that has the modified value; no legal Core game can reach the ignored-modifier branch.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -8701,11 +8701,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/form-change.feature::A voluntary form change is offered once during the player's turn"
+          ],
+          "mutation": "Offer Change_Form again after the player takes it; the final unavailable assertion fails."
         }
       ]
     },
