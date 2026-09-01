@@ -12,10 +12,13 @@ Feature: Identity defeat and player elimination
   @covers:behavior:rr:player-elimination.step.5:published-result
   @covers:behavior:rr:player-elimination.6:published-result
   @covers:behavior:rr:player-s-play-area.6:published-result
+  @covers:behavior:rr:per-player-icon:published-result
+  @covers:behavior:rr:per-player-icon.1:published-result
   @rr:player-elimination @rr:defeat.2 @rr:hit-points.2.1
   @rr:player-elimination.step.1 @rr:player-elimination.step.2
   @rr:player-elimination.step.4 @rr:player-elimination.step.5
   @rr:player-elimination.6 @rr:player-s-play-area.6
+  @rr:per-player-icon @rr:per-player-icon.1
   Scenario: A defeated identity is eliminated while the other player continues
     # "A player is eliminated from the game if their identity is defeated."
     # "When a player is eliminated," pass the first-player token, move their

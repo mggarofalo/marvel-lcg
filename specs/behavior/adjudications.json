@@ -2686,16 +2686,16 @@
       ]
     },
     {
-      "id": "rr:attack-enemy-activation.6",
+  "id": "rr:attack-enemy-activation.6",
       "fingerprint": "sha256:9a73d627c6d465e362024282f87a7355a1a18262397714669432b42936030b64",
       "obligations": [
         {
           "key": "published-result",
           "summary": "If an enemy attack ends before damage is dealt, abilities that trigger after an attack or after a character defends an attack resolve as normal.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+      "disposition": "outside-core",
+      "reason": "No supported Core effect ends an initiated enemy attack before its damage step while still allowing after-attack or after-defense abilities to resolve.",
+      "target": null,
+      "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -5602,7 +5602,7 @@
       ]
     },
     {
-      "id": "rr:damage.3.1",
+  "id": "rr:damage.3.1",
       "fingerprint": "sha256:d368e1330bf61137bcf05bea52eda6e239efecedcf7ec380d789972d381614c1",
       "obligations": [
         {
@@ -5611,11 +5611,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/villain-phase.feature::A hero exhausts to defend and reduces the attack by DEF"
+      ],
+      "mutation": "Reduce dealt attack damage by Spider-Man's DEF without reducing the damage he takes; the transcript observes more than one damage."
         }
       ]
     },
@@ -5656,7 +5658,7 @@
       ]
     },
     {
-      "id": "rr:damage.step.1",
+  "id": "rr:damage.step.1",
       "fingerprint": "sha256:223fca40f33287043570ebc2b1eb5ff7eef8b567f1979831a02a63bd7464c540",
       "obligations": [
         {
@@ -5665,11 +5667,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/villain-phase.feature::Backflip prevents all imminent attack damage without exhausting"
+      ],
+      "mutation": "Skip the would-take-damage interrupt window; Backflip is not offered and Spider-Man takes the attack damage."
         }
       ]
     },
@@ -5714,7 +5718,7 @@
       ]
     },
     {
-      "id": "rr:damage.step.4",
+  "id": "rr:damage.step.4",
       "fingerprint": "sha256:96659f68dd45f2138c908065404f96c8758e7fa090d0bfc627980b867c10761a",
       "obligations": [
         {
@@ -5723,11 +5727,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/villain-phase.feature::Boost damage is not damage dealt by Klaw's attack"
+      ],
+      "mutation": "Skip the after-character-takes-damage response window; Sonic Converter fails to stun the hero damaged by Klaw's completed attack."
         }
       ]
     },
@@ -5939,7 +5945,7 @@
       ]
     },
     {
-      "id": "rr:deal-deal-an-encounter-card.1",
+  "id": "rr:deal-deal-an-encounter-card.1",
       "fingerprint": "sha256:5f8843785573611a0eba34553767f104ea69e275c68493a9d798081c788aa2e4",
       "obligations": [
         {
@@ -5948,11 +5954,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/encounter-icons.feature::One hazard icon deals one additional encounter card total"
+      ],
+      "mutation": "Defer the hazard card outside the villain phase's deal-and-reveal queue; the second minion remains facedown instead of engaging seat 1."
         }
       ]
     },
@@ -14515,7 +14523,7 @@
       ]
     },
     {
-      "id": "rr:per-player-icon",
+  "id": "rr:per-player-icon",
       "fingerprint": "sha256:723a449699099632f6ae5adba688d80ef49e0ced105f93f846c708b80b5d35da",
       "obligations": [
         {
@@ -14524,16 +14532,18 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/player-elimination.feature::A defeated identity is eliminated while the other player continues"
+      ],
+      "mutation": "Initialize the per-player count independently of the two players who started the game; the transcript's count-of-two assertion fails."
         }
       ]
     },
     {
-      "id": "rr:per-player-icon.1",
+  "id": "rr:per-player-icon.1",
       "fingerprint": "sha256:d43b045466ddb194ee59391cccea1e4f32f7f3d7baffc5e8294e3957cc9feaf9",
       "obligations": [
         {
@@ -14542,11 +14552,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/player-elimination.feature::A defeated identity is eliminated while the other player continues"
+      ],
+      "mutation": "Reduce the per-player count when seat 1 is eliminated; the transcript observes one instead of the original two."
         }
       ]
     },
@@ -16453,16 +16465,16 @@
       ]
     },
     {
-      "id": "rr:quickstrike.2",
+  "id": "rr:quickstrike.2",
       "fingerprint": "sha256:d32d32704a185461aa465184c576bd9992188c598cb37d8322717ca5f0e55f50",
       "obligations": [
         {
           "key": "published-result",
           "summary": "If a minion with the quickstrike keyword is being revealed, the quickstrike keyword resolves after any “When Revealed” abilities on that minion are resolved.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+      "disposition": "outside-core",
+      "reason": "Vulture is the only supported Core minion with quickstrike and has no When Revealed ability, so the relative ordering cannot be distinguished.",
+      "target": null,
+      "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -17251,16 +17263,16 @@
       ]
     },
     {
-      "id": "rr:resource.2",
+  "id": "rr:resource.2",
       "fingerprint": "sha256:50e8b99b22022eb22f7b7063955dcd40ae35fe7e3ef369789f02aff4d3addc7b",
       "obligations": [
         {
           "key": "published-result",
           "summary": "There are four types of resources in the game: energy ([energy]), mental ([mental]), and physical ([physical]), and wild ([wild]).",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+      "disposition": "no-independent-behavior",
+      "reason": "This record enumerates the four resource types; their payment and matching behavior is carried by the individual energy, mental, physical, and wild resource obligations.",
+      "target": null,
+      "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -20396,16 +20408,16 @@
       ]
     },
     {
-      "id": "rr:text-box.1.1",
+  "id": "rr:text-box.1.1",
       "fingerprint": "sha256:4fa094b4c69cf8b5a18047f9ea649c852eef687a5fe2d5f0d698a226f8a88d6a",
       "obligations": [
         {
           "key": "published-result",
           "summary": "Icons printed within a card’s text box are considered abilities within that text box.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+      "disposition": "outside-core",
+      "reason": "No supported Core effect blanks or otherwise operates on a text box containing a printed icon, so treating that icon as an ability has no distinguishable Core result.",
+      "target": null,
+      "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -22085,15 +22097,15 @@
       ]
     },
     {
-      "id": "rr:villain-phase.step.6",
+  "id": "rr:villain-phase.step.6",
       "fingerprint": "sha256:a2953809c5468230ffcfeb8cdcc165c9404f6c364b5b820dfa881e28a587cf41",
       "obligations": [
         {
           "key": "published-result",
           "summary": "End of Villain Phase and Round.",
-          "disposition": "narrower",
-          "reason": "A directly cited child clause states the executable decision more precisely.",
-          "target": "behavior:rr:villain-phase.step.6.a:published-result",
+      "disposition": "no-independent-behavior",
+      "reason": "This record is the heading for the two end-of-phase child clauses and states no separate game-state result.",
+      "target": null,
           "implementation": null,
           "work_item": null,
           "exception": null,
@@ -22103,16 +22115,16 @@
       ]
     },
     {
-      "id": "rr:villain-phase.step.6.a",
+  "id": "rr:villain-phase.step.6.a",
       "fingerprint": "sha256:cdebb9f4891d2b9090504e473e3dc098ef6fad9c394d76ecf09eef625a02a1f4",
       "obligations": [
         {
           "key": "published-result",
           "summary": "Any effects that last “until the end of the [villain] phase” or “until the end of the round” end.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+      "disposition": "outside-core",
+      "reason": "No supported Core card creates an effect lasting until the end of the villain phase or the end of the round.",
+      "target": null,
+      "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -22121,16 +22133,16 @@
       ]
     },
     {
-      "id": "rr:villain-phase.step.6.b",
+  "id": "rr:villain-phase.step.6.b",
       "fingerprint": "sha256:99808e2e3d429b2c7363e788d8bf566c7c4fc5eba05c51bab8014d58f549f549",
       "obligations": [
         {
           "key": "published-result",
           "summary": "Resolve any “when/after the [villain] phase ends” or “when/after the round ends” effects.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+      "disposition": "outside-core",
+      "reason": "No supported Core card has a when-or-after-the-villain-phase-ends or when-or-after-the-round-ends ability.",
+      "target": null,
+      "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -22399,15 +22411,15 @@
       ]
     },
     {
-      "id": "rr:when-completed-abilities",
+  "id": "rr:when-completed-abilities",
       "fingerprint": "sha256:65e6d9d368e78f5255dbdf23b06ed9916f7fd466db17dd754a756b71b4c5ba11",
       "obligations": [
         {
           "key": "published-result",
           "summary": "A when completed ability is a type of triggered ability, indicated by the bold “When Completed” timing trigger.",
-          "disposition": "narrower",
-          "reason": "A directly cited child clause states the executable decision more precisely.",
-          "target": "behavior:rr:when-completed-abilities.1:published-result",
+      "disposition": "outside-core",
+      "reason": "No supported Core scheme has a When Completed ability, so this trigger type cannot be reached.",
+      "target": null,
           "implementation": null,
           "work_item": null,
           "exception": null,
@@ -22417,16 +22429,16 @@
       ]
     },
     {
-      "id": "rr:when-completed-abilities.1",
+  "id": "rr:when-completed-abilities.1",
       "fingerprint": "sha256:9014504b7a25044e1fff3bd3b245971e5b16e6261c9c6cf7f922f9a01fc4d327",
       "obligations": [
         {
           "key": "published-result",
           "summary": "The “When Completed” timing trigger is equivalent to the following trigger: “Forced Interrupt: When this scheme is completed...”",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+      "disposition": "outside-core",
+      "reason": "No supported Core scheme has a When Completed ability, so its equivalence to a forced interrupt cannot be exercised.",
+      "target": null,
+      "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],

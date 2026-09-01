@@ -84,7 +84,8 @@ Feature: Core encounter icons
 
   @behavior:rr:hazard-icon:published-result
   @covers:behavior:rr:hazard-icon.1:published-result
-  @rr:hazard-icon @rr:hazard-icon.1
+  @covers:behavior:rr:deal-deal-an-encounter-card.1:published-result
+  @rr:hazard-icon @rr:hazard-icon.1 @rr:deal-deal-an-encounter-card.1
   Scenario: One hazard icon deals one additional encounter card total
     # Each hazard icon deals one additional encounter card during step three;
     # it does not deal one additional card per player.

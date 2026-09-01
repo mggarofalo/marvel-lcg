@@ -203,8 +203,10 @@ Feature: Core villain phase
   @behavior:rr:defend-defense.2:published-result
   @covers:behavior:rr:attack-enemy-activation.2:published-result
   @covers:behavior:rr:attack-enemy-activation.2.1:published-result
+  @covers:behavior:rr:damage.3.1:published-result
   @rr:defend-defense.2 @rr:attack-enemy-activation.2
   @rr:attack-enemy-activation.2.1
+  @rr:damage.3.1
   Scenario: A hero exhausts to defend and reduces the attack by DEF
     # A hero can use its basic defense. If declared, the attack's damage is
     # dealt to that hero after reduction by its DEF value.
@@ -371,8 +373,10 @@ Feature: Core villain phase
   @behavior:rr:boost-boost-icon.3:published-result
   @covers:behavior:rr:attack-enemy-activation.7:published-result
   @covers:behavior:card:01118:after-klaw-attacks-and-damages-character-stun
+  @covers:behavior:rr:damage.step.4:published-result
   @rr:boost-boost-icon.3 @rr:attack-enemy-activation.7
   @card:01118 @card:01154
+  @rr:damage.step.4
   Scenario: Boost damage is not damage dealt by Klaw's attack
     # Damage from a boost ability "is not considered to be damage dealt by the
     # activation." Concussive Blast damages both Spider-Man and Black Cat, but
@@ -438,6 +442,7 @@ Feature: Core villain phase
 
   @behavior:card:01003:when-you-would-take-any-amount-damage
   @covers:behavior:rr:damage.step.3:published-result
+  @covers:behavior:rr:damage.step.1:published-result
   @covers:behavior:rr:prevent.1:published-result
   @covers:behavior:rr:prevent.1.2:published-result
   @covers:behavior:rr:defend-defense.4:published-result
@@ -448,7 +453,7 @@ Feature: Core villain phase
   @covers:behavior:rr:labeled-ability.3:published-result
   @covers:behavior:rr:labeled-ability.3.1:published-result
   @covers:behavior:rr:target.3.6:published-result
-  @card:01003 @rr:damage.step.3 @rr:prevent.1 @rr:prevent.1.2
+  @card:01003 @rr:damage.step.1 @rr:damage.step.3 @rr:prevent.1 @rr:prevent.1.2
   @rr:defend-defense.4 @rr:defend-defense.4.1 @rr:defend-defense.4.3
   @rr:defend-defense.4.4 @rr:interrupt.3.1 @rr:labeled-ability.3
   @rr:labeled-ability.3.1 @rr:target.3.6
