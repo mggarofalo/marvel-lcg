@@ -25,9 +25,10 @@ Feature: Revealing Core encounter card types
   @covers:behavior:rr:reveal.6:published-result
   @covers:behavior:rr:reveal.step.4:published-result
   @covers:behavior:rr:treachery.2:published-result
+  @covers:behavior:rr:heal.2:published-result
   @covers:behavior:card:01104:rhino-heals-4-damage
   @covers:behavior:card:01104:if-no-damage-was-healed-way-card-condition-not-met
-  @rr:treachery.1 @rr:reveal.6 @rr:reveal.step.4 @rr:treachery.2
+  @rr:treachery.1 @rr:reveal.6 @rr:reveal.step.4 @rr:treachery.2 @rr:heal.2
   @card:01104
   Scenario: A revealed treachery resolves and is discarded
     # A revealed treachery's effects resolve, and "after resolving the effects

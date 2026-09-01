@@ -9393,11 +9393,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-reveal.feature::A revealed treachery resolves and is discarded"
+          ],
+          "mutation": "CoreRuleTranscriptTests.EncounterRevealBranchesHavePinnedOutcomes distinguishes Hard to Keep Down moving four damage off Rhino and treating that amount as healed."
         }
       ]
     },
