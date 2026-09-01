@@ -6,9 +6,10 @@ The presentation architecture has 3 layers:
 2. `Marvel.Server` hosts games behind one transport-neutral protocol.
 3. The Godot client renders those descriptors on macOS and Windows.
 
-The Godot project is a launchable shell. It does not yet open a game or render
-engine descriptors. The view and server boundaries exist and are covered by
-tests.
+The Godot project opens a deterministic Rhino-versus-Spider-Man development
+game through `InProcessTransport`. It retains the initial visibility-safe
+response for board rendering; the board itself is still a placeholder. The
+same app-facing bootstrap is exercised over the socket transport in tests.
 
 ## Build boundary
 

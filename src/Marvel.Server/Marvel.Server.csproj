@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Marvel.Server.Tests" />
+    <InternalsVisibleTo Include="Marvel.Godot.Tests" />
   </ItemGroup>
 
 </Project>
