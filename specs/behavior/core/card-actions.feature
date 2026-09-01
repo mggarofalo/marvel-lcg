@@ -598,8 +598,10 @@ Feature: Core card actions
   @behavior:card:01018:spend-x-energy-resources-put-x-energy
   @covers:behavior:card:01018:above-damage-cap
   @covers:behavior:rr:max-maximum.6:published-result
+  @covers:behavior:rr:non-numerical-variable:published-result
   @covers:behavior:rr:non-numerical-variable.1:published-result
-  @card:01018 @rr:max-maximum.6 @rr:non-numerical-variable.1
+  @card:01018 @rr:max-maximum.6
+  @rr:non-numerical-variable @rr:non-numerical-variable.1
   Scenario: Energy Channel remembers X and caps damage above five counters
     # "Spend X [energy] resources → put X energy counters here." Two Energy
     # Absorptions generate six energy and define X as six. The later attack
