@@ -6,7 +6,8 @@ Feature: Core basic powers
   @behavior:rr:attack-player-ability-type.1:published-result
   @covers:behavior:rr:exhausted.1:published-result
   @covers:behavior:rr:target.2.1:published-result
-  @rr:attack-player-ability-type.1 @rr:exhausted.1 @rr:target.2.1
+  @covers:behavior:rr:player-turn.3:published-result
+  @rr:attack-player-ability-type.1 @rr:exhausted.1 @rr:target.2.1 @rr:player-turn.3
   Scenario: A hero exhausts and deals its ATK with a basic attack
     # "A character must exhaust to use this power. This deals damage equal to
     # the character's ATK value to the enemy."
@@ -28,9 +29,10 @@ Feature: Core basic powers
   @covers:behavior:rr:attack-player-ability-type.step.9:published-result
   @covers:behavior:rr:ability.step.5:published-result
   @covers:behavior:rr:ally.1:published-result
+  @covers:behavior:rr:player-turn.4:published-result
   @rr:ally.2 @rr:ally.3 @rr:ally.5 @rr:consequential-damage
   @rr:attack-player-ability-type.step.9 @rr:damage.2 @rr:hit-points.3
-  @rr:sustained-damage.2 @rr:ability.step.5 @rr:ally.1
+  @rr:sustained-damage.2 @rr:ability.step.5 @rr:ally.1 @rr:player-turn.4
   Scenario: An ally attacks while its identity remains ready and takes consequential damage
     # "After an ally attacks, it takes consequential damage equal to the
     # number of consequential damage icons beneath its ATK field."
@@ -47,7 +49,8 @@ Feature: Core basic powers
 
   @behavior:rr:thwart.1:published-result
   @covers:behavior:rr:threat:published-result
-  @rr:thwart.1 @rr:threat
+  @covers:behavior:rr:player-turn.3:published-result
+  @rr:thwart.1 @rr:threat @rr:player-turn.3
   Scenario: A hero exhausts and removes its THW with a basic thwart
     # "A character must exhaust to use this power. This removes threat equal
     # to the character's THW value from the scheme."
@@ -65,7 +68,9 @@ Feature: Core basic powers
   @covers:behavior:rr:ally.3:published-result
   @covers:behavior:rr:ally.5:published-result
   @covers:behavior:rr:thwart.1:published-result
+  @covers:behavior:rr:player-turn.4:published-result
   @rr:consequential-damage.1 @rr:ally.2 @rr:ally.3 @rr:ally.5 @rr:thwart.1
+  @rr:player-turn.4
   Scenario: An ally takes consequential damage after its basic thwart resolves
     # "Consequential damage is dealt to an ally after resolving abilities that
     # are triggered by the ally attacking or thwarting."
@@ -84,7 +89,8 @@ Feature: Core basic powers
   @behavior:rr:recover-recovery:published-result
   @covers:behavior:rr:heal:published-result
   @covers:behavior:rr:heal.1:published-result
-  @rr:recover-recovery @rr:heal @rr:heal.1
+  @covers:behavior:rr:player-turn.3:published-result
+  @rr:recover-recovery @rr:heal @rr:heal.1 @rr:player-turn.3
   Scenario: An alter-ego exhausts and cannot heal beyond maximum hit points
     # "The player exhausts their alter-ego and heals a number of hit points
     # equal to their REC value." A heal can only reach maximum hit points.

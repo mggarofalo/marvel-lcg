@@ -19185,11 +19185,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/form-change.feature::A voluntary form change is offered once during the player's turn"
+          ],
+          "mutation": "Remove the turn's voluntary form-change option or permit it twice; one of the availability assertions fails."
         }
       ]
     },
@@ -19207,11 +19209,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/characteristics.feature::A character entering after Lead from the Front receives its lasting bonus"
+          ],
+          "mutation": "Remove the ally play option from the active player's turn; Spider-Woman cannot enter and the ally assertion fails."
         }
       ]
     },
@@ -19229,11 +19233,15 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-powers.feature::A hero exhausts and deals its ATK with a basic attack",
+            "specs/behavior/core/basic-powers.feature::A hero exhausts and removes its THW with a basic thwart",
+            "specs/behavior/core/basic-powers.feature::An alter-ego exhausts and cannot heal beyond maximum hit points"
+          ],
+          "mutation": "Disable any identity basic power in its matching form; its attack, thwart, or recovery transcript fails."
         }
       ]
     },
@@ -19251,11 +19259,14 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-powers.feature::An ally attacks while its identity remains ready and takes consequential damage",
+            "specs/behavior/core/basic-powers.feature::An ally takes consequential damage after its basic thwart resolves"
+          ],
+          "mutation": "Disallow an ally's attack or thwart option during its controller's turn; the corresponding power transcript fails."
         }
       ]
     },
@@ -19297,11 +19308,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::A Hero Action becomes available only in hero form"
+          ],
+          "mutation": "Ignore the Hero label's form restriction; Focused Rage remains available in alter-ego form and the negative assertion fails."
         }
       ]
     },

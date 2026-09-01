@@ -472,7 +472,9 @@ Feature: Core card actions
   @behavior:rr:ability.13:hero-form-required
   @covers:behavior:rr:in-play-and-out-of-play.1:published-result
   @covers:behavior:rr:identity.4:published-result
-  @rr:ability.13 @rr:in-play-and-out-of-play.1 @rr:identity.4 @card:01027
+  @covers:behavior:rr:player-turn.5.1:published-result
+  @rr:ability.13 @rr:in-play-and-out-of-play.1 @rr:identity.4
+  @rr:player-turn.5.1 @card:01027
   Scenario: A Hero Action becomes available only in hero form
     # A bold trigger containing "Hero" can be used only in hero form. Focused
     # Rage is in play throughout; changing form is the only changed condition.

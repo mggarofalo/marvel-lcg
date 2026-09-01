@@ -62,7 +62,8 @@ Feature: Core character calculations
   @covers:behavior:rr:lasting-effects.3:published-result
   @covers:behavior:card:01070:choose-player
   @covers:behavior:card:01070:each-character-that-player-controls-gets-1
-  @rr:lasting-effects.3 @rr:lasting-effects.4 @card:01070
+  @covers:behavior:rr:player-turn.2:published-result
+  @rr:lasting-effects.3 @rr:lasting-effects.4 @rr:player-turn.2 @card:01070
   Scenario: A character entering after Lead from the Front receives its lasting bonus
     # A card that enters play after a lasting effect is created "is still
     # affected by that lasting effect." Spider-Woman enters after the chosen

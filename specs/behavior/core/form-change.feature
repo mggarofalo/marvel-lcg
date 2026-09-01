@@ -36,7 +36,8 @@ Feature: Hero and alter-ego form changes
     And card 01029a copy 0 has 6 remaining hit points
 
   @behavior:rr:form-change-form.1:voluntary-window-and-limit
-  @rr:form-change-form.1
+  @covers:behavior:rr:player-turn.1:published-result
+  @rr:form-change-form.1 @rr:player-turn.1
   Scenario: A voluntary form change is offered once during the player's turn
     # "Once each round, during their turn, each player is permitted to change
     # form." Taking that permission removes it from the same turn's options.
