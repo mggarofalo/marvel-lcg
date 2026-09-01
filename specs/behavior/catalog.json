@@ -29887,11 +29887,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/identity-card-abilities.feature::Commander draws for the chosen player and is then spent for the round"
+          ],
+          "mutation": "Draw for Carol instead of the chosen Spider-Man player; seat 2's hand stays empty."
         },
         {
           "id": "behavior:card:01010b:limit-once-per-round-within-limit",
@@ -29899,11 +29901,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/identity-card-abilities.feature::Commander draws for the chosen player and is then spent for the round"
+          ],
+          "mutation": "Treat Commander as spent before its first use; Carol cannot initiate it."
         },
         {
           "id": "behavior:card:01010b:limit-once-per-round-limit-reached",
@@ -29911,11 +29915,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/identity-card-abilities.feature::Commander draws for the chosen player and is then spent for the round"
+          ],
+          "mutation": "Do not record Commander's use; the action remains available a second time in the same round."
         }
       ]
     },

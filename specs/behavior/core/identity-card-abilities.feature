@@ -30,3 +30,28 @@ Feature: Core identity card abilities
     And card 01001b copy 0 is in play
     When seat 1 asks whether card 01063 copy 0 is available to play
     Then card 01063 copy 0 is unavailable to play
+
+  @behavior:card:01010b:choose-player-draw-1-card
+  @covers:behavior:card:01010b:limit-once-per-round-within-limit
+  @covers:behavior:card:01010b:limit-once-per-round-limit-reached
+  @card:01010b @rr:limit
+  Scenario: Commander draws for the chosen player and is then spent for the round
+    # "Action: Choose a player to draw 1 card. (Limit once per round.)"
+    # Carol chooses Spider-Man rather than herself. After that player's draw,
+    # the same printed action is absent for the remainder of the round.
+    Given a canonical Core scene is dealt
+      | campaign | heroes                    | seed |
+      | rhino    | captain_marvel,spider_man | 844  |
+    And seat 1 shows identity face 01010b
+    And seat 2's hand is empty
+    And these cards are next on seat 2's player deck
+      | next card | copy |
+      | 01003     | 0    |
+    When seat 1 asks for available card actions
+    Then card 01010b copy 0's action is available
+    When seat 1 initiates card 01010b copy 0's action without payment
+    Then card 01001b copy 0 is offered by the pending action
+    When seat 1 chooses card 01001b copy 0 for the pending action
+    Then seat 2 has 1 card in hand
+    When seat 1 asks for available card actions
+    Then card 01010b copy 0's action is unavailable
