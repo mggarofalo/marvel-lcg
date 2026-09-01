@@ -20697,11 +20697,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Web-Shooter supplies a wild resource while paying an event cost"
+          ],
+          "mutation": "Close the resource-ability window while First Aid's cost is being paid; Web-Shooter cannot be selected and the transcript fails."
         }
       ]
     },
@@ -27353,11 +27355,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Web-Shooter supplies a wild resource while paying an event cost"
+          ],
+          "mutation": "Reject Web-Shooter's wild resource for First Aid's generic resource cost; action initiation fails before its target offer."
         }
       ]
     },
@@ -29153,11 +29157,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Web-Shooter supplies a wild resource while paying an event cost"
+          ],
+          "mutation": "Give Web-Shooter a uses pool other than three; the entry counter assertion fails."
         },
         {
           "id": "behavior:card:01008:enters-play-with-3-counters",
@@ -29165,11 +29171,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Web-Shooter supplies a wild resource while paying an event cost"
+          ],
+          "mutation": "Do not place three web counters as Web-Shooter enters play; the immediate counter assertion fails."
         },
         {
           "id": "behavior:card:01008:when-those-are-gone-discard-card",
@@ -29189,11 +29197,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Web-Shooter supplies a wild resource while paying an event cost"
+          ],
+          "mutation": "Skip exhaustion, counter removal, or wild generation; Web-Shooter's post-payment state or First Aid's initiation fails."
         }
       ]
     },

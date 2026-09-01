@@ -46,7 +46,7 @@ public sealed class CoreCardFaceTranscriptTests
                 "specs/behavior/core/card-actions.feature::", StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(24, results.Count);
+        Assert.Equal(25, results.Count);
         Assert.Equal(
             "5a3c519fb8e602123a5186bc67ab95ff553eb67080b527c327b8f3974ae6f2a4",
             results["behavior:card:01005:deal-8-damage-enemy"].Digest);
@@ -121,6 +121,10 @@ public sealed class CoreCardFaceTranscriptTests
             "bbb7a908275cfadaf06774c9c7c27e2030c1d5d53bbcc512bb6cba12f38481f6",
             results[
                 "behavior:card:01071:pay-printed-cost-ally-in-any-player"].Digest);
+        Assert.Equal(
+            "9ffe55d71d2ea3f55e6b329ce7d8b4114a77a4a737a88643cb45c2d06f183800",
+            results[
+                "behavior:card:01008:exhaust-web-shooter-and-remove-1-web"].Digest);
     }
 
     [Fact]

@@ -723,3 +723,34 @@ Feature: Core card actions
     And card 01088 copy 0 is in seat 1's discard pile
     When the villain attacks seat 1 with card 01002 copy 0 defending
     Then card 01002 copy 0 is faceup on top of seat 2's discard pile
+
+  @behavior:card:01008:exhaust-web-shooter-and-remove-1-web
+  @covers:behavior:card:01008:uses-3-web-counters
+  @covers:behavior:card:01008:enters-play-with-3-counters
+  @covers:behavior:rr:resource-ability.1:published-result
+  @covers:behavior:rr:wild-resource.1:published-result
+  @card:01008 @rr:resource-ability.1 @rr:wild-resource.1
+  Scenario: Web-Shooter supplies a wild resource while paying an event cost
+    # "Hero Resource: Exhaust Web-Shooter and remove 1 web counter from it →
+    # generate a [wild] resource." It enters with three uses, and its wild
+    # resource pays First Aid's generic cost while the resource window is open.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 720  |
+    And seat 1 shows identity face 01001a
+    And card 01001a copy 0 has 2 damage
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01086 | 0    |
+    When card 01008 copy 0 enters play as an upgrade controlled by seat 1
+    Then card 01008 copy 0 has 3 web counters
+    And card 01008 copy 0 is ready
+    When seat 1 initiates card 01086 copy 0's action paying with these cards
+      | card  | copy |
+      | 01008 | 0    |
+    Then card 01001a copy 0 is offered by the pending action
+    And card 01008 copy 0 has 2 web counters
+    And card 01008 copy 0 is exhausted
+    When seat 1 chooses card 01001a copy 0 for the pending action
+    Then card 01001a copy 0 has 0 damage
+    And card 01086 copy 0 is faceup on top of seat 1's discard pile

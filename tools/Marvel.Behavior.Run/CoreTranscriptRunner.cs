@@ -408,6 +408,9 @@ internal sealed class CoreTranscriptRunner
         Bind("support-enters-play", TranscriptStepKind.When,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) enters play as a support controlled by seat (?<seat>\d+)",
             SupportEntersPlay),
+        Bind("upgrade-enters-play", TranscriptStepKind.When,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) enters play as an upgrade controlled by seat (?<seat>\d+)",
+            UpgradeEntersPlay),
         Bind("request-printed-characteristics", TranscriptStepKind.When,
             @"the printed characteristics of card (?<face>\d+[a-z]?) copy (?<copy>\d+) are requested",
             RequestPrintedCharacteristics),
@@ -1738,6 +1741,16 @@ internal sealed class CoreTranscriptRunner
         context.SceneRequired(step).Apply(new MoveSceneCard(
             SceneCard(match, step),
             new SceneDestination(SceneZone.Support, Seat(match, step))));
+    }
+
+    private static void UpgradeEntersPlay(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        context.SceneRequired(step).Apply(new MoveSceneCard(
+            SceneCard(match, step),
+            new SceneDestination(SceneZone.Upgrade, Seat(match, step))));
     }
 
     private static void RequestPrintedCharacteristics(
