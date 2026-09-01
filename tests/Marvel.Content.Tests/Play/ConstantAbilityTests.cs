@@ -200,6 +200,33 @@ public sealed class ConstantAbilityTests
         Assert.Equal(otherHero.ObjectId, training.Area.Host);
     }
 
+    [Rule("rr:ownership-and-control.2.1")]
+    [Rule("rr:upgrade.3.1")]
+    [Fact]
+    public void InspiredCanBePlayedOnAnotherPlayersAlly()
+    {
+        // "A player controls any upgrades attached to characters they
+        // control, including upgrades owned by another player." Inspired says
+        // only "Attach to an ally," so another player's ally is a legal host.
+        var world = TwoPlayers();
+        var ally = world.CreateCard(
+            "01002",
+            world.AreaOf(DeckType.AlliesArea, PlayArea.Of(1), cardOwner: 1));
+        var inspired = world.CreateCard("01074", world.Seats[0].Hand);
+        var energy = world.CreateCard("01088", world.Seats[0].Hand);
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+
+        Assert.Contains(ally.ObjectId, runner.AttachmentTargets(world, inspired)!);
+        CardPlay.Play(
+            world, Cards, runner, world.Seats[0], inspired, [energy.ObjectId], [],
+            [ally.ObjectId]);
+
+        Assert.Equal(0, inspired.Owner);
+        Assert.Equal(PlayArea.Of(1), inspired.Area.PlayArea);
+        Assert.Equal(ally.ObjectId, inspired.Area.Host);
+    }
+
     private static AbilityRunner Runner(string effect) =>
         new(AbilityCatalog.Parse(
             $$"""

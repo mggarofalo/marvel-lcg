@@ -3,6 +3,23 @@ Feature: Core ownership and control
   Ownership is fixed by the legal deal; control determines which cards a
   player may use and pay with at the current game moment.
 
+  @behavior:rr:ownership-and-control.2.1:published-result
+  @covers:behavior:rr:upgrade.3.1:published-result
+  @rr:ownership-and-control.2.1 @rr:upgrade.3.1 @card:01002 @card:01074
+  Scenario: An attached upgrade follows the controller of its host without changing owner
+    # "Upgrades attached to a card controlled by a player other than the
+    # upgrade's owner are controlled by that other player." Captain Marvel may
+    # attach her Inspired to the friendly Black Cat. Inspired remains owned by
+    # Captain Marvel but is controlled by Spider-Man with its attached ally.
+    Given a canonical Core scene is dealt
+      | campaign | heroes                    | seed |
+      | rhino    | captain_marvel,spider_man | 829  |
+    And card 01002 copy 0 is an ally controlled by seat 2
+    And card 01074 copy 0 is attached to card 01002 copy 0
+    When seat 2 asks for available card actions
+    Then card 01074 copy 0 is owned by seat 1
+    And card 01074 copy 0 is controlled by seat 2
+
   @behavior:rr:action.1:published-result
   @rr:action.1 @card:01091 @card:01141
   Scenario: Card actions belong to their controller or to an encounter card

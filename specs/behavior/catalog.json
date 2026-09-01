@@ -17279,11 +17279,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ownership-control.feature::An attached upgrade follows the controller of its host without changing owner"
+          ],
+          "mutation": "Place Inspired in its owner's play area instead of its host controller's play area; the transcript's controller assertion fails."
         }
       ]
     },
@@ -26073,11 +26075,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ownership-control.feature::An attached upgrade follows the controller of its host without changing owner"
+          ],
+          "mutation": "Treat an upgrade attached to another player's character as controlled by its owner; the transcript's controller assertion fails."
         }
       ]
     },

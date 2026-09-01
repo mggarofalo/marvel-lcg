@@ -18,7 +18,10 @@ public sealed class CoreRuleTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(3, results.Count);
+        Assert.Equal(4, results.Count);
+        Assert.Equal(
+            "fc0969e044e19641e706f861ab461224eedae2eb03560f926571c20a3d6c2ab2",
+            results["behavior:rr:ownership-and-control.2.1:published-result"].Digest);
         Assert.Equal(
             "270b3cab1ef837a77419721764d66dbfdc9bbfe1a898cdb0b7b40993d0f3b923",
             results["behavior:rr:cost.7:published-result"].Digest);

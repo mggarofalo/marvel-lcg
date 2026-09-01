@@ -607,6 +607,12 @@ internal sealed class CoreTranscriptRunner
         Bind("support-controlled", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) remains a support controlled by seat (?<seat>\d+)",
             SupportControlled),
+        Bind("card-owned", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is owned by seat (?<seat>\d+)",
+            CardOwned),
+        Bind("card-controlled", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is controlled by seat (?<seat>\d+)",
+            CardControlled),
         Bind("card-damage", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) has (?<count>\d+) damage",
             CardDamage),
@@ -3319,6 +3325,27 @@ internal sealed class CoreTranscriptRunner
                 $"{step.Location}: expected card {card.ObjectId} to have "
                 + $"{match.Groups["status"].Value} status");
         }
+    }
+
+    private static void CardOwned(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        Equal(Seat(match, step), card.Owner, "card owner", step);
+    }
+
+    private static void CardControlled(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        if (!DeckTypes.IsInPlay(card.Area.Type)
+            || !card.Area.PlayArea.IsPlayers)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: card {card.ObjectId} is not a controlled in-play card");
+        }
+
+        Equal(Seat(match, step), card.Area.PlayArea.Player, "card controller", step);
     }
 
     private static void UpgradeAttachedIdentity(

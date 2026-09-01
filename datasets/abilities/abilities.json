@@ -1563,7 +1563,7 @@
       "card": "01074",
       "name": "Inspired",
       "note": "Attach to an ally. The attached ally gets +1 THW and +1 ATK while this upgrade remains attached.",
-      "attachTo": { "withoutAnotherCopyAttached": { "query": "alliesYouControl" } },
+      "attachTo": { "withoutAnotherCopyAttached": { "query": "allies" } },
       "abilities": [
         {
           "trigger": { "timing": "Constant", "subject": "this" },
