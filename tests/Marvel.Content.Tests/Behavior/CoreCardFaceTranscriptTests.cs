@@ -314,6 +314,44 @@ public sealed class CoreCardFaceTranscriptTests
     }
 
     [Fact]
+    public void RhinoCardAbilityBranchesHavePinnedOutcomes()
+    {
+        var results = Corpus.Value
+            .Where(candidate => candidate.Scenario.StartsWith(
+                "specs/behavior/core/rhino-card-abilities.feature::",
+                StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
+
+        Assert.Equal(13, results.Count);
+        Assert.Equal("52303ca82ba61eecfacfa708c390bf5d637fbbcf1cb51ede2ecf55abaeb1ec2c",
+            results["behavior:card:01095:search-encounter-deck-and-discard-pile-for"].Digest);
+        Assert.Equal("6cbf533d47f0a327837f9b9128327152208c21367b8ba8aacddc17a8fdd497f9",
+            results["behavior:card:01097b:if-stage-is-completed-players-lose-game-condition-not-met"].Digest);
+        Assert.Equal("309d89412d61015c4f0fc6a4ea1ddbbb66516a3131ef552f8d8c97d73eaa6f2d",
+            results["behavior:card:01098:attach-rhino"].Digest);
+        Assert.Equal("77c80bc5e77c81b565196ddabac9a16572ac17415d61b13305a8af73dddaf27c",
+            results["behavior:card:01098:then-if-there-is-at-least-5-condition-not-met"].Digest);
+        Assert.Equal("b09ed1930a066f03bfa32407b31058d31593edebfdc5e819caf63e3cf3a1a792",
+            results["behavior:card:01100:attach-rhino"].Digest);
+        Assert.Equal("0e0c9dc3e9c962316f80d4ab116112a72351e5c330f36a2fb59579fc6cc01136",
+            results["behavior:card:01103:deal-1-damage-each-hero"].Digest);
+        Assert.Equal("8be2818aa61bf984ab2171c98f75217b311cc66f27d7de186207c756517b0136",
+            results["behavior:card:01105:give-rhino-tough-status-card"].Digest);
+        Assert.Equal("5feba949d3a19b37b7957f3ac8e21c1a5947c6a9df55fba80020058155b78d81",
+            results["behavior:card:01105:if-rhino-already-has-tough-status-card-condition-met"].Digest);
+        Assert.Equal("cb179aee011ab2ed5c888cb1b7d5bb1790612f661cdae15c74e2e1832e662e47",
+            results["behavior:card:01106:card-gains-surge"].Digest);
+        Assert.Equal("2380e4a8d77c313b973a965c59bc41fcd790e467a116f13e0018e7afc9af8561",
+            results["behavior:card:01106:if-character-is-damaged-by-attack-that-condition-not-met"].Digest);
+        Assert.Equal("85bebc79cdc7fb5b5330ecdf3ea0aa09bf63fcd5424e2dfba401a39053679d26",
+            results["behavior:card:01110:when-revealed-take-two-damage"].Digest);
+        Assert.Equal("641a116581cdf0b9fd2b9c43d378256d3d8a39c3b06097c3c36007396dfda7ce",
+            results["behavior:card:01110:when-revealed-place-one-threat"].Digest);
+        Assert.Equal("65c0a5e16448651c6dee7d9fa78eba6af77841d123aed0c6ecc843f5ebae73bf",
+            results["behavior:card:01112:if-you-are-already-confused-card-gains-condition-met"].Digest);
+    }
+
+    [Fact]
     public void CardActionBranchesHavePinnedOutcomes()
     {
         var results = Corpus.Value

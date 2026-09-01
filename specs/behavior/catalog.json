@@ -42523,11 +42523,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/rhino-card-abilities.feature::Rhino II reveals Breakin and Takin and shuffles the encounter deck"
+          ],
+          "mutation": "Skip Rhino II's search; Breakin' & Takin' does not enter the villain play area."
         },
         {
           "id": "behavior:card:01095:shuffle-encounter-deck",
@@ -42535,11 +42537,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/rhino-card-abilities.feature::Rhino II reveals Breakin and Takin and shuffles the encounter deck"
+          ],
+          "mutation": "CoreCardFaceTranscriptTests.RhinoCardAbilityBranchesHavePinnedOutcomes distinguishes the post-search encounter-deck order produced by the seeded shuffle."
         }
       ]
     },
@@ -42939,11 +42943,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/rhino-card-abilities.feature::The Rhino main scheme below its target does not end the game"
+          ],
+          "mutation": "Treat six threat as completion of the target-seven stage; the villain wins instead of the game remaining unfinished."
         }
       ]
     },
@@ -43003,11 +43009,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/rhino-card-abilities.feature::Armored Rhino Suit absorbs a large hit and is discarded"
+          ],
+          "mutation": "Do not attach the revealed Armored Rhino Suit to Rhino; its host assertion and replacement effect fail."
         },
         {
           "id": "behavior:card:01098:when-any-amount-damage-would-be-dealt",
@@ -43015,11 +43023,14 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/rhino-card-abilities.feature::Armored Rhino Suit absorbs a large hit and is discarded",
+            "specs/behavior/core/rhino-card-abilities.feature::Armored Rhino Suit remains below five stored damage"
+          ],
+          "mutation": "Deal either attack's damage to Rhino rather than placing it on Armored Rhino Suit; Rhino's damage assertion fails."
         },
         {
           "id": "behavior:card:01098:then-if-there-is-at-least-5-condition-met",
@@ -43027,11 +43038,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/rhino-card-abilities.feature::Armored Rhino Suit absorbs a large hit and is discarded"
+          ],
+          "mutation": "Keep Armored Rhino Suit after it stores at least five damage; it remains attached rather than entering the encounter discard pile."
         },
         {
           "id": "behavior:card:01098:then-if-there-is-at-least-5-condition-not-met",
@@ -43039,11 +43052,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/rhino-card-abilities.feature::Armored Rhino Suit remains below five stored damage"
+          ],
+          "mutation": "Discard Armored Rhino Suit below five stored damage; the two-damage Suit does not remain attached."
         }
       ]
     },
@@ -43239,11 +43254,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/rhino-card-abilities.feature::Enhanced Ivory Horn attaches and is discarded for three physical resources"
+          ],
+          "mutation": "Do not attach the revealed Enhanced Ivory Horn to Rhino; the host assertion fails."
         },
         {
           "id": "behavior:card:01100:spend-physical-physical-physical-resources-discard-card",
@@ -43251,11 +43268,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/rhino-card-abilities.feature::Enhanced Ivory Horn attaches and is discarded for three physical resources"
+          ],
+          "mutation": "Do not spend three physical resources or discard Enhanced Ivory Horn; the attachment remains in play or payment cards remain in hand."
         }
       ]
     },
@@ -43699,11 +43718,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/rhino-card-abilities.feature::Shocker damages each hero but not an alter ego"
+          ],
+          "mutation": "Omit Shocker's damage or apply it to alter egos; Spider-Man or Carol Danvers has the wrong damage."
         }
       ]
     },
@@ -43829,11 +43850,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/rhino-card-abilities.feature::Im Tough gives an unprotected Rhino a tough status card"
+          ],
+          "mutation": "Do not give an unprotected Rhino Tough; Rhino has zero tough status cards."
         },
         {
           "id": "behavior:card:01105:if-rhino-already-has-tough-status-card-condition-met",
@@ -43841,11 +43864,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/rhino-card-abilities.feature::Im Tough gains surge when Rhino is already tough"
+          ],
+          "mutation": "Do not gain Surge for an already-tough Rhino; the next encounter card is not dealt."
         },
         {
           "id": "behavior:card:01105:if-rhino-already-has-tough-status-card-condition-not-met",
@@ -43853,11 +43878,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/rhino-card-abilities.feature::Im Tough gives an unprotected Rhino a tough status card"
+          ],
+          "mutation": "Take the already-tough Surge branch for an unprotected Rhino; Rhino does not receive Tough or an extra card is dealt."
         }
       ]
     },
@@ -43917,11 +43944,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/rhino-card-abilities.feature::Stampede gains surge for a player in alter ego form"
+          ],
+          "mutation": "Do not give alter-ego Stampede Surge; the next encounter card is not dealt."
         },
         {
           "id": "behavior:card:01106:rhino-attacks-you",
@@ -43957,11 +43986,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/rhino-card-abilities.feature::Stampede does not stun a character whose Tough prevents the attack damage"
+          ],
+          "mutation": "Stun the attacked character even though Tough prevented all damage; Spider-Man gains a stunned status card."
         }
       ]
     },
@@ -44387,11 +44418,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/rhino-card-abilities.feature::Hydra Bomber lets the revealing player take two damage"
+          ],
+          "mutation": "Make Hydra Bomber's first option deal a different amount or damage another identity; the revealing identity does not have two damage."
         },
         {
           "id": "behavior:card:01110:when-revealed-place-one-threat",
@@ -44399,11 +44432,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/rhino-card-abilities.feature::Hydra Bomber lets the revealing player place one threat"
+          ],
+          "mutation": "Make Hydra Bomber's second option place a different amount or no threat; the main scheme does not have one threat."
         }
       ]
     },
@@ -44577,11 +44612,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/rhino-card-abilities.feature::False Alarm gains surge when the revealing identity is already confused"
+          ],
+          "mutation": "Do not gain Surge for an already-confused identity; the next encounter card is not dealt."
         },
         {
           "id": "behavior:card:01112:if-you-are-already-confused-card-gains-condition-not-met",
