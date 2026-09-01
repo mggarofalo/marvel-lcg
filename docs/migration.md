@@ -111,9 +111,10 @@ parse strings or streams supplied by a host.
 ## Presentation boundary
 
 The client is a Godot .NET project for macOS and Windows. Its launchable shell
-ships in this repository; opening games and rendering the visible board remain
-presentation work. `Marvel.View` and `Marvel.Server` provide the client-safe
-projection and transport boundary.
+ships in this repository and opens, renders and plays a complete local Core
+game. `Marvel.View` and `Marvel.Server` provide the client-safe projection and
+transport boundary. The verified editor-run workflow is documented in
+[godot-client.md](godot-client.md).
 
 The client must use `IEngineTransport` in both deployments:
 

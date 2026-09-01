@@ -167,5 +167,8 @@ The Godot project remains deliberately above the engine wall. It:
 - can switch to the socket transport without changing client behavior; and
 - keeps game rules and legality in the engine.
 
+The editor launch and native complete-game smoke are documented in
+[godot-client.md](godot-client.md).
+
 `Marvel.Sim` remains the non-Godot driver. It proves the engine is playable and
 diagnosable without opening the graphical client.

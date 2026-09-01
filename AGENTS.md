@@ -133,6 +133,7 @@ Seven, all run by hand and none on any path a game takes.
 | what the engine tells a client the player can do | [affordances.md](docs/affordances.md) |
 | the supported product boundary | [scope.md](docs/scope.md) |
 | the client, the engine's return signature, `Marvel.Server` | [presentation-layer.md](docs/presentation-layer.md) |
+| launching or smoke-testing the Godot client | [godot-client.md](docs/godot-client.md) |
 | adding a C# project, or changing a `TargetFramework` | [presentation-layer.md](docs/presentation-layer.md#dependency-rules) |
 | Plane issues, modules, labels, priority | [plane.md](docs/plane.md) |
 | why the engine is shaped as it is | [migration.md](docs/migration.md) |

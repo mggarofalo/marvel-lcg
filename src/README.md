@@ -23,8 +23,10 @@ src/Marvel.Godot         macOS and Windows client; the only Godot reference
 tests/*.Tests            behavioral xUnit suites for the corresponding project
 ```
 
-The Godot project is a launchable shell. Opening a Core game, rendering the
-visible board and prompts, and the procedural card renderer remain client work.
+The Godot project opens a local Core game, renders its visibility-safe board,
+composes every admitted prompt shape and reconciles each authoritative response.
+See [godot-client.md](../docs/godot-client.md) for the verified editor launch and
+complete native local-game smoke.
 
 `Marvel.Server` is one assembly with two entry points. A bundled client uses
 `InProcessTransport`; a hosted client uses `SocketTransport` against the same
