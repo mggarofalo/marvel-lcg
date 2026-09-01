@@ -31,6 +31,24 @@ public sealed class CoreRuleTranscriptTests
     }
 
     [Fact]
+    public void ThreatPreventionBranchesHavePinnedOutcomes()
+    {
+        var results = Corpus.Value.Where(candidate =>
+                candidate.Scenario.StartsWith(
+                    "specs/behavior/core/threat-prevention.feature::",
+                    StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
+
+        Assert.Equal(2, results.Count);
+        Assert.Equal(
+            "af84073b680fe3a5643b670ef39fed6c14b2f602be028045811b888bfb0fd8a3",
+            results["behavior:rr:prevent.2:published-result"].Digest);
+        Assert.Equal(
+            "a1d7bc3b1777635d2d7533d9c826672de58b97619123449f1b47920b6c772295",
+            results["behavior:rr:you-your.2:published-result"].Digest);
+    }
+
+    [Fact]
     public void AllyLimitHasPinnedOutcome()
     {
         TranscriptResult result = Assert.Single(Corpus.Value, result =>

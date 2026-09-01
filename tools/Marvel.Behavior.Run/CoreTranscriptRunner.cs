@@ -10,6 +10,7 @@ using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 
 namespace Marvel.Behavior.Run;
 
@@ -310,6 +311,9 @@ internal sealed class CoreTranscriptRunner
         Bind("reveal-encounter-card", TranscriptStepKind.When,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is revealed to seat (?<seat>\d+)",
             RevealEncounterCard),
+        Bind("assign-threat-accepting", TranscriptStepKind.When,
+            @"(?<count>\d+) threat is assigned to the main scheme for seat (?<seat>\d+) accepting ""(?<label>[^""]+)""",
+            AssignThreatAccepting),
         Bind("answer-encounter-card", TranscriptStepKind.When,
             @"seat (?<seat>\d+) chooses option (?<option>\d+) for the pending encounter-card decision",
             AnswerEncounterCard),
@@ -1059,6 +1063,26 @@ internal sealed class CoreTranscriptRunner
         context.Events.Clear();
         SetPendingPrompt(context, Sequence.Work(
             context.World, context.Cards, context.World.Abilities, context.Events));
+    }
+
+    private static void AssignThreatAccepting(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Card scheme = context.World.TheCardIn(DeckType.MainSchemesArea)
+            ?? throw new TranscriptException($"{step.Location}: no main scheme is in play");
+        Card villain = context.World.TheCardIn(DeckType.VillainArea)
+            ?? throw new TranscriptException($"{step.Location}: no villain is in play");
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        Threat.Schedule(
+            context.World,
+            scheme,
+            villain,
+            Number(match, "count", step),
+            ThreatCause.CardAbility,
+            "behavioral transcript",
+            Seat(match, step));
+        FinishAgendaAccepting(context, step, match.Groups["label"].Value);
     }
 
     private static void AnswerEncounterCard(
