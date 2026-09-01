@@ -35008,11 +35008,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::The second Wakanda Forever copy makes Panther Claws its final step"
+          ],
+          "mutation": "Do not resolve the controlled Panther Claws Special; Rhino remains undamaged instead of taking four damage."
         },
         {
           "id": "behavior:card:01043b:resolving-each-ability-is-step-in-sequence",
@@ -35020,11 +35022,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::The second Wakanda Forever copy makes Panther Claws its final step"
+          ],
+          "mutation": "Do not mark the sole Special as the final sequence step; Panther Claws deals two rather than four damage."
         }
       ]
     },
@@ -35126,11 +35130,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::The third Wakanda Forever copy resolves Claws before final Genius"
+          ],
+          "mutation": "Do not resolve both controlled Specials from this event copy; Rhino damage or main-scheme threat differs."
         },
         {
           "id": "behavior:card:01043c:resolving-each-ability-is-step-in-sequence",
@@ -35138,11 +35144,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::The third Wakanda Forever copy resolves Claws before final Genius"
+          ],
+          "mutation": "Ignore the selected sequence or its final-step marker; Panther Claws does not deal two before Tactical Genius removes two threat."
         }
       ]
     },
@@ -35244,11 +35252,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::The fourth Wakanda Forever copy resolves Genius before final Claws"
+          ],
+          "mutation": "Do not resolve both controlled Specials from this event copy; main-scheme threat or Rhino damage differs."
         },
         {
           "id": "behavior:card:01043d:resolving-each-ability-is-step-in-sequence",
@@ -35256,11 +35266,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::The fourth Wakanda Forever copy resolves Genius before final Claws"
+          ],
+          "mutation": "Ignore the selected sequence or its final-step marker; Tactical Genius does not remove one before Panther Claws deals four damage."
         }
       ]
     },
@@ -35700,11 +35712,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::The second Wakanda Forever copy makes Panther Claws its final step"
+          ],
+          "mutation": "Resolve Panther Claws at its ordinary value despite being final; Rhino has two rather than four damage."
         },
         {
           "id": "behavior:card:01047:deal-2-damage-enemy-4-damage-instead-condition-not-met",
@@ -35712,11 +35726,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::The third Wakanda Forever copy resolves Claws before final Genius"
+          ],
+          "mutation": "Apply Panther Claws' final replacement while it is nonfinal; Rhino has four rather than two damage."
         },
         {
           "id": "behavior:card:01047:play-wakanda-forever-event-use-ability",
@@ -35724,11 +35740,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::The second Wakanda Forever copy makes Panther Claws its final step"
+          ],
+          "mutation": "Permit Panther Claws to resolve without a Wakanda Forever event; the transcript's event-driven action no longer controls access to the Special."
         }
       ]
     },
@@ -35830,11 +35848,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::The third Wakanda Forever copy resolves Claws before final Genius"
+          ],
+          "mutation": "Resolve final Tactical Genius at its ordinary value; one threat remains instead of zero."
         },
         {
           "id": "behavior:card:01048:remove-1-threat-from-scheme-2-threat-condition-not-met",
@@ -35842,11 +35862,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::The fourth Wakanda Forever copy resolves Genius before final Claws"
+          ],
+          "mutation": "Apply Tactical Genius' final replacement while it is nonfinal; zero threat remains instead of one."
         },
         {
           "id": "behavior:card:01048:play-wakanda-forever-event-use-ability",
@@ -35854,11 +35876,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::The third Wakanda Forever copy resolves Claws before final Genius"
+          ],
+          "mutation": "Permit Tactical Genius to resolve without a Wakanda Forever event; the transcript's event-driven action no longer controls access to the Special."
         }
       ]
     },
@@ -40291,7 +40315,7 @@
           "scenarios": [
             "specs/behavior/core/player-card-abilities.feature::Get Behind Me cancels a treachery and causes another villain attack"
           ],
-          "mutation": "Do not initiate the replacement villain attack; Black Panther takes only the first attack's four damage and only one Attack event is emitted."
+          "mutation": "Do not initiate the replacement villain attack; Black Panther takes only the first attack's four damage and only three Boost events are emitted."
         }
       ]
     },

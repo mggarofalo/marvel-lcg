@@ -321,7 +321,19 @@ public sealed class CoreCardFaceTranscriptTests
                 "specs/behavior/core/card-actions.feature::", StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(44, results.Count);
+        Assert.Equal(47, results.Count);
+        Assert.Equal(
+            "a28c5a59b66c973e782638089dee02710747f76025a7cfa380584a6062562a26",
+            results[
+                "behavior:card:01043b:resolve-special-ability-on-each-black-panther"].Digest);
+        Assert.Equal(
+            "d5468b4ec7184a46336d38d3a9d478df505e3b029498f23d0f9abe37cbc0787c",
+            results[
+                "behavior:card:01043c:resolve-special-ability-on-each-black-panther"].Digest);
+        Assert.Equal(
+            "91be3dea7c12c3eacf49f433265c1e6e24202da06d8a6cf45109cc2c7d144ced",
+            results[
+                "behavior:card:01043d:resolve-special-ability-on-each-black-panther"].Digest);
         Assert.Equal(
             "d227e2da9f5490ce815bdc5ff48f817f28184c83a5c744369b9bed4fd6408dee",
             results[

@@ -194,6 +194,105 @@ Feature: Core card actions
     When seat 1 chooses card 01097b copy 0 for the pending action
     Then card 01097b copy 0 has 0 threat counters
 
+  @behavior:card:01043b:resolve-special-ability-on-each-black-panther
+  @covers:behavior:card:01043b:resolving-each-ability-is-step-in-sequence
+  @covers:behavior:card:01047:deal-2-damage-enemy-4-damage-instead-condition-met
+  @covers:behavior:card:01047:play-wakanda-forever-event-use-ability
+  @card:01043b @card:01047
+  Scenario: The second Wakanda Forever copy makes Panther Claws its final step
+    # This printed event copy resolves the only controlled Black Panther
+    # upgrade. Panther Claws is therefore the final sequence step and deals
+    # four damage rather than two.
+    Given a canonical Core scene is dealt
+      | campaign | heroes        | seed |
+      | rhino    | black_panther | 932  |
+    And seat 1 shows identity face 01040a
+    And card 01047 copy 0 is an upgrade attached to seat 1's identity
+    And seat 1's hand contains exactly these cards
+      | card   | copy |
+      | 01043b | 0    |
+      | 01088  | 0    |
+    When seat 1 initiates card 01043b copy 0's action paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+    Then seat 1 is asked to order 1 card for the pending action
+    When seat 1 orders these cards for the pending action
+      | card  | copy |
+      | 01047 | 0    |
+    Then card 01094 copy 0 is offered by the pending action
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01094 copy 0 has 4 damage
+
+  @behavior:card:01043c:resolve-special-ability-on-each-black-panther
+  @covers:behavior:card:01043c:resolving-each-ability-is-step-in-sequence
+  @covers:behavior:card:01047:deal-2-damage-enemy-4-damage-instead-condition-not-met
+  @covers:behavior:card:01048:remove-1-threat-from-scheme-2-threat-condition-met
+  @covers:behavior:card:01048:play-wakanda-forever-event-use-ability
+  @card:01043c @card:01047 @card:01048
+  Scenario: The third Wakanda Forever copy resolves Claws before final Genius
+    # The chosen sequence makes Panther Claws nonfinal for two damage and
+    # Tactical Genius final for two threat. Each result distinguishes its own
+    # branch while both Specials come from this printed event copy.
+    Given a canonical Core scene is dealt
+      | campaign | heroes        | seed |
+      | rhino    | black_panther | 933  |
+    And seat 1 shows identity face 01040a
+    And card 01047 copy 0 is an upgrade attached to seat 1's identity
+    And card 01048 copy 0 is an upgrade attached to seat 1's identity
+    And card 01097b copy 0 has 2 threat counters
+    And seat 1's hand contains exactly these cards
+      | card   | copy |
+      | 01043c | 0    |
+      | 01088  | 0    |
+    When seat 1 initiates card 01043c copy 0's action paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+    Then seat 1 is asked to order 2 cards for the pending action
+    When seat 1 orders these cards for the pending action
+      | card  | copy |
+      | 01047 | 0    |
+      | 01048 | 0    |
+    Then card 01094 copy 0 is offered by the pending action
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01094 copy 0 has 2 damage
+    And card 01097b copy 0 is offered by the pending action
+    When seat 1 chooses card 01097b copy 0 for the pending action
+    Then card 01097b copy 0 has 0 threat counters
+
+  @behavior:card:01043d:resolve-special-ability-on-each-black-panther
+  @covers:behavior:card:01043d:resolving-each-ability-is-step-in-sequence
+  @covers:behavior:card:01048:remove-1-threat-from-scheme-2-threat-condition-not-met
+  @card:01043d @card:01047 @card:01048
+  Scenario: The fourth Wakanda Forever copy resolves Genius before final Claws
+    # Reversing the order makes Tactical Genius nonfinal for one threat and
+    # Panther Claws final for four damage. The selected order, not card id,
+    # decides which Special receives the final-step replacement.
+    Given a canonical Core scene is dealt
+      | campaign | heroes        | seed |
+      | rhino    | black_panther | 934  |
+    And seat 1 shows identity face 01040a
+    And card 01047 copy 0 is an upgrade attached to seat 1's identity
+    And card 01048 copy 0 is an upgrade attached to seat 1's identity
+    And card 01097b copy 0 has 2 threat counters
+    And seat 1's hand contains exactly these cards
+      | card   | copy |
+      | 01043d | 0    |
+      | 01088  | 0    |
+    When seat 1 initiates card 01043d copy 0's action paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+    Then seat 1 is asked to order 2 cards for the pending action
+    When seat 1 orders these cards for the pending action
+      | card  | copy |
+      | 01048 | 0    |
+      | 01047 | 0    |
+    Then card 01097b copy 0 is offered by the pending action
+    When seat 1 chooses card 01097b copy 0 for the pending action
+    Then card 01097b copy 0 has 1 threat counter
+    And card 01094 copy 0 is offered by the pending action
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01094 copy 0 has 4 damage
+
   @behavior:rr:cancel.3:published-result
   @covers:behavior:rr:status-cards.2:published-result
   @covers:behavior:rr:labeled-ability.6:published-result
