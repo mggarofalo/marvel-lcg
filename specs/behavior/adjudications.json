@@ -859,16 +859,32 @@
       "fingerprint": "sha256:eaba84b645d5aff6b8f385d9b87535ccc66c89d583253056e54f089560bf95ae",
       "obligations": [
         {
-          "key": "published-result",
-          "summary": "During step two of the villain phase, each minion engaged with a player activates against that player.",
+          "key": "minion-attacks-hero",
+          "summary": "During step two of the villain phase, each minion engaged with a hero attacks that hero.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An engaged minion attacks its hero after the villain attacks"
+          ],
+          "mutation": "Remove the engaged-minion attack from villain-phase step two; the second Attack event and identity damage assertions fail."
+        },
+        {
+          "key": "minion-schemes-against-alter-ego",
+          "summary": "During step two of the villain phase, each minion engaged with an alter-ego schemes against that alter-ego.",
+          "disposition": "executable",
+          "reason": null,
+          "target": null,
+          "implementation": "supported",
+          "work_item": null,
+          "exception": null,
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An engaged minion schemes after the villain schemes"
+          ],
+          "mutation": "Remove the engaged-minion scheme from villain-phase step two; the second Scheme event and main-scheme threat assertions fail."
         }
       ]
     },
@@ -12451,11 +12467,14 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An engaged minion attacks its hero after the villain attacks",
+            "specs/behavior/core/villain-phase.feature::An engaged minion schemes after the villain schemes"
+          ],
+          "mutation": "Discard an engaged minion after one activation; both transcripts fail their retained-engagement assertion."
         }
       ]
     },

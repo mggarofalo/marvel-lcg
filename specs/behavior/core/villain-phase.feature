@@ -172,3 +172,45 @@ Feature: Core villain phase
     Then card 01083 copy 0 is faceup on top of seat 1's discard pile
     And card 01001a copy 0 has 0 damage
     And card 01101 copy 0 is engaged with seat 1
+
+  @behavior:rr:activation.2:minion-attacks-hero
+  @covers:behavior:rr:minion.1:published-result
+  @rr:activation.2 @rr:minion.1
+  Scenario: An engaged minion attacks its hero after the villain attacks
+    # During step two, each minion engaged with a player activates after the
+    # villain. Against a hero, that activation is an attack and uses no boost
+    # card unless another rule says otherwise.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 323  |
+    And seat 1 shows identity face 01001a
+    And card 01103 copy 0 is a minion engaged with seat 1
+    And card 01097b copy 0 has 0 threat counters
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01104     | 0    |
+      | 01101     | 0    |
+    When villain phase 1 resolves with every optional choice declined
+    Then card 01001a copy 0 has 4 damage
+    And card 01103 copy 0 is engaged with seat 1
+    And 2 Deal_Damage events were emitted
+
+  @behavior:rr:activation.2:minion-schemes-against-alter-ego
+  @covers:behavior:rr:minion.1:published-result
+  @rr:activation.2 @rr:minion.1
+  Scenario: An engaged minion schemes after the villain schemes
+    # During step two, each minion engaged with a player activates after the
+    # villain. Against an alter-ego, both enemies add their SCH and only the
+    # villain receives a boost card.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 324  |
+    And card 01103 copy 0 is a minion engaged with seat 1
+    And card 01097b copy 0 has 0 threat counters
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01104     | 0    |
+      | 01101     | 0    |
+    When villain phase 1 resolves with every optional choice declined
+    Then card 01097b copy 0 has 3 threat counters
+    And card 01103 copy 0 is engaged with seat 1
