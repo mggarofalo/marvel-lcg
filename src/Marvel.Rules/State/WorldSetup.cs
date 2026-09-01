@@ -181,6 +181,12 @@ public static class WorldSetup
         if (scheme is not null)
         {
             World.MoveToTop(scheme, mainSchemeArea);
+
+            // The setup dataset lists stages in printed resolution order,
+            // while Area stores a deck bottom-first. Object ids retain deal
+            // order; only the remaining deck positions are reversed so stage
+            // two, not the final stage, is on top of a three-stage deck.
+            mainSchemeDeck.Replace(mainSchemeDeck.Cards.Reverse().ToList());
         }
 
         // 5. The first villain stage enters play; the later stages wait.

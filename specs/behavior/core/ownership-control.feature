@@ -5,6 +5,8 @@ Feature: Core ownership and control
 
   @behavior:rr:ownership-and-control.2.1:published-result
   @covers:behavior:rr:upgrade.3.1:published-result
+  @covers:behavior:card:01074:attach-ally
+  @covers:behavior:card:01074:attached-ally-gets-1-thw-and-1
   @rr:ownership-and-control.2.1 @rr:upgrade.3.1 @card:01002 @card:01074
   Scenario: An attached upgrade follows the controller of its host without changing owner
     # "Upgrades attached to a card controlled by a player other than the
@@ -19,6 +21,8 @@ Feature: Core ownership and control
     When seat 2 asks for available card actions
     Then card 01074 copy 0 is owned by seat 1
     And card 01074 copy 0 is controlled by seat 2
+    And card 01002 copy 0 has modified THW 2
+    And card 01002 copy 0 has modified ATK 2
 
   @behavior:rr:action.1:published-result
   @rr:action.1 @card:01091 @card:01141

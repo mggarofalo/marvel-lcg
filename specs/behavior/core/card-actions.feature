@@ -130,6 +130,169 @@ Feature: Core card actions
     And card 01094 copy 0 has 0 damage
     And 0 Move_Damage events were emitted
 
+  @behavior:card:01046:deal-1-damage-villain-and-each-enemy-condition-met
+  @covers:behavior:card:01046:choose-player
+  @covers:behavior:card:01046:play-wakanda-forever-event-use-ability
+  @card:01043a @card:01046
+  Scenario: Final Energy Daggers damage the villain and one player's enemies twice
+    # Energy Daggers is the only Black Panther upgrade, so its Special is the
+    # final step. Choosing Black Panther's player deals two damage to Rhino and
+    # to each enemy engaged with that player.
+    Given a canonical Core scene is dealt
+      | campaign | heroes        | seed |
+      | rhino    | black_panther | 879  |
+    And seat 1 shows identity face 01040a
+    And card 01046 copy 0 is an upgrade attached to seat 1's identity
+    And card 01101 copy 0 is a minion engaged with seat 1
+    And seat 1's hand contains exactly these cards
+      | card   | copy |
+      | 01043a | 0    |
+      | 01088  | 0    |
+    When seat 1 initiates card 01043a copy 0's action paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+    Then seat 1 is asked to order 1 card for the pending action
+    When seat 1 orders these cards for the pending action
+      | card  | copy |
+      | 01046 | 0    |
+    Then card 01040a copy 0 is offered by the pending action
+    When seat 1 chooses card 01040a copy 0 for the pending action
+    Then card 01094 copy 0 has 2 damage
+    And card 01101 copy 0 has 2 damage
+
+  @behavior:card:01046:deal-1-damage-villain-and-each-enemy-condition-not-met
+  @card:01043a @card:01046 @card:01048
+  Scenario: Nonfinal Energy Daggers damage the villain and one player's enemies once
+    # Energy Daggers resolves before Tactical Genius, so it is not the final
+    # step. Choosing Black Panther's player deals one damage to Rhino and each
+    # enemy engaged with that player before the final Special resolves.
+    Given a canonical Core scene is dealt
+      | campaign | heroes        | seed |
+      | rhino    | black_panther | 880  |
+    And seat 1 shows identity face 01040a
+    And card 01046 copy 0 is an upgrade attached to seat 1's identity
+    And card 01048 copy 0 is an upgrade attached to seat 1's identity
+    And card 01101 copy 0 is a minion engaged with seat 1
+    And card 01097b copy 0 has 2 threat counters
+    And seat 1's hand contains exactly these cards
+      | card   | copy |
+      | 01043a | 0    |
+      | 01088  | 0    |
+    When seat 1 initiates card 01043a copy 0's action paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+    Then seat 1 is asked to order 2 cards for the pending action
+    When seat 1 orders these cards for the pending action
+      | card  | copy |
+      | 01046 | 0    |
+      | 01048 | 0    |
+    Then card 01040a copy 0 is offered by the pending action
+    When seat 1 chooses card 01040a copy 0 for the pending action
+    Then card 01094 copy 0 has 1 damage
+    And card 01101 copy 0 has 1 damage
+    And card 01097b copy 0 is offered by the pending action
+    When seat 1 chooses card 01097b copy 0 for the pending action
+    Then card 01097b copy 0 has 0 threat counters
+
+  @behavior:card:01043b:resolve-special-ability-on-each-black-panther
+  @covers:behavior:card:01043b:resolving-each-ability-is-step-in-sequence
+  @covers:behavior:card:01047:deal-2-damage-enemy-4-damage-instead-condition-met
+  @covers:behavior:card:01047:play-wakanda-forever-event-use-ability
+  @card:01043b @card:01047
+  Scenario: The second Wakanda Forever copy makes Panther Claws its final step
+    # This printed event copy resolves the only controlled Black Panther
+    # upgrade. Panther Claws is therefore the final sequence step and deals
+    # four damage rather than two.
+    Given a canonical Core scene is dealt
+      | campaign | heroes        | seed |
+      | rhino    | black_panther | 932  |
+    And seat 1 shows identity face 01040a
+    And card 01047 copy 0 is an upgrade attached to seat 1's identity
+    And seat 1's hand contains exactly these cards
+      | card   | copy |
+      | 01043b | 0    |
+      | 01088  | 0    |
+    When seat 1 initiates card 01043b copy 0's action paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+    Then seat 1 is asked to order 1 card for the pending action
+    When seat 1 orders these cards for the pending action
+      | card  | copy |
+      | 01047 | 0    |
+    Then card 01094 copy 0 is offered by the pending action
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01094 copy 0 has 4 damage
+
+  @behavior:card:01043c:resolve-special-ability-on-each-black-panther
+  @covers:behavior:card:01043c:resolving-each-ability-is-step-in-sequence
+  @covers:behavior:card:01047:deal-2-damage-enemy-4-damage-instead-condition-not-met
+  @covers:behavior:card:01048:remove-1-threat-from-scheme-2-threat-condition-met
+  @covers:behavior:card:01048:play-wakanda-forever-event-use-ability
+  @card:01043c @card:01047 @card:01048
+  Scenario: The third Wakanda Forever copy resolves Claws before final Genius
+    # The chosen sequence makes Panther Claws nonfinal for two damage and
+    # Tactical Genius final for two threat. Each result distinguishes its own
+    # branch while both Specials come from this printed event copy.
+    Given a canonical Core scene is dealt
+      | campaign | heroes        | seed |
+      | rhino    | black_panther | 933  |
+    And seat 1 shows identity face 01040a
+    And card 01047 copy 0 is an upgrade attached to seat 1's identity
+    And card 01048 copy 0 is an upgrade attached to seat 1's identity
+    And card 01097b copy 0 has 2 threat counters
+    And seat 1's hand contains exactly these cards
+      | card   | copy |
+      | 01043c | 0    |
+      | 01088  | 0    |
+    When seat 1 initiates card 01043c copy 0's action paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+    Then seat 1 is asked to order 2 cards for the pending action
+    When seat 1 orders these cards for the pending action
+      | card  | copy |
+      | 01047 | 0    |
+      | 01048 | 0    |
+    Then card 01094 copy 0 is offered by the pending action
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01094 copy 0 has 2 damage
+    And card 01097b copy 0 is offered by the pending action
+    When seat 1 chooses card 01097b copy 0 for the pending action
+    Then card 01097b copy 0 has 0 threat counters
+
+  @behavior:card:01043d:resolve-special-ability-on-each-black-panther
+  @covers:behavior:card:01043d:resolving-each-ability-is-step-in-sequence
+  @covers:behavior:card:01048:remove-1-threat-from-scheme-2-threat-condition-not-met
+  @card:01043d @card:01047 @card:01048
+  Scenario: The fourth Wakanda Forever copy resolves Genius before final Claws
+    # Reversing the order makes Tactical Genius nonfinal for one threat and
+    # Panther Claws final for four damage. The selected order, not card id,
+    # decides which Special receives the final-step replacement.
+    Given a canonical Core scene is dealt
+      | campaign | heroes        | seed |
+      | rhino    | black_panther | 934  |
+    And seat 1 shows identity face 01040a
+    And card 01047 copy 0 is an upgrade attached to seat 1's identity
+    And card 01048 copy 0 is an upgrade attached to seat 1's identity
+    And card 01097b copy 0 has 2 threat counters
+    And seat 1's hand contains exactly these cards
+      | card   | copy |
+      | 01043d | 0    |
+      | 01088  | 0    |
+    When seat 1 initiates card 01043d copy 0's action paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+    Then seat 1 is asked to order 2 cards for the pending action
+    When seat 1 orders these cards for the pending action
+      | card  | copy |
+      | 01048 | 0    |
+      | 01047 | 0    |
+    Then card 01097b copy 0 is offered by the pending action
+    When seat 1 chooses card 01097b copy 0 for the pending action
+    Then card 01097b copy 0 has 1 threat counter
+    And card 01094 copy 0 is offered by the pending action
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01094 copy 0 has 4 damage
+
   @behavior:rr:cancel.3:published-result
   @covers:behavior:rr:status-cards.2:published-result
   @covers:behavior:rr:labeled-ability.6:published-result
@@ -253,6 +416,7 @@ Feature: Core card actions
   @covers:behavior:rr:target.3.7:published-result
   @covers:behavior:rr:target.4:published-result
   @covers:behavior:rr:target.4.1:published-result
+  @covers:behavior:card:01181:madame-hydra-cannot-take-damage-while-legions
   @rr:cannot @rr:cannot.1 @rr:target.3.7 @rr:target.4 @rr:target.4.1
   @card:01022 @card:01180 @card:01181
   Scenario: An each-enemy effect skips an enemy that cannot take damage
@@ -823,6 +987,81 @@ Feature: Core card actions
     Then card 01094 copy 0 has 6 damage
     And card 01056 copy 0 is faceup on top of seat 1's discard pile
 
+  @behavior:card:01064:uses-3-snoop-counters
+  @covers:behavior:card:01064:enters-play-with-3-counters
+  @covers:behavior:card:01064:when-those-are-gone-discard-card
+  @covers:behavior:card:01064:exhaust-surveillance-team-and-remove-1-snoop
+  @card:01064
+  Scenario: Surveillance Team spends three uses and leaves play
+    # “Uses (3 snoop counters)” places three counters as Surveillance Team
+    # enters play. Each action exhausts it, spends one counter, and removes one
+    # threat; spending the third counter discards the support.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 875  |
+    And card 01097b copy 0 has 3 threat counters
+    When card 01064 copy 0 enters play as a support controlled by seat 1
+    Then card 01064 copy 0 has 3 snoop counters
+    And card 01064 copy 0 is ready
+    When seat 1 initiates card 01064 copy 0's action without payment
+    Then card 01097b copy 0 is offered by the pending action
+    When seat 1 chooses card 01097b copy 0 for the pending action
+    Then card 01097b copy 0 has 2 threat counters
+    And card 01064 copy 0 has 2 snoop counters
+    And card 01064 copy 0 is exhausted
+    When the end-of-player-phase ready step resolves
+    Then card 01064 copy 0 is ready
+    When seat 1 initiates card 01064 copy 0's action without payment
+    Then card 01097b copy 0 is offered by the pending action
+    When seat 1 chooses card 01097b copy 0 for the pending action
+    Then card 01097b copy 0 has 1 threat counter
+    And card 01064 copy 0 has 1 snoop counter
+    When the end-of-player-phase ready step resolves
+    Then card 01064 copy 0 is ready
+    When seat 1 initiates card 01064 copy 0's action without payment
+    Then card 01097b copy 0 is offered by the pending action
+    When seat 1 chooses card 01097b copy 0 for the pending action
+    Then card 01097b copy 0 has 0 threat counters
+    And card 01064 copy 0 is faceup on top of seat 1's discard pile
+
+  @behavior:card:01080:uses-3-medical-counters
+  @covers:behavior:card:01080:enters-play-with-3-counters
+  @covers:behavior:card:01080:when-those-are-gone-discard-card
+  @covers:behavior:card:01080:exhaust-med-team-and-remove-1-medical
+  @card:01080
+  Scenario: Med Team spends three uses and leaves play
+    # “Uses (3 medical counters)” places three counters as Med Team enters
+    # play. Each action exhausts it, spends one counter, and heals two damage;
+    # spending the third counter discards the support.
+    Given a canonical Core scene is dealt
+      | campaign | heroes        | seed |
+      | rhino    | black_panther | 876  |
+    And seat 1 shows identity face 01040a
+    And card 01040a copy 0 has 6 damage
+    When card 01080 copy 0 enters play as a support controlled by seat 1
+    Then card 01080 copy 0 has 3 medical counters
+    And card 01080 copy 0 is ready
+    When seat 1 initiates card 01080 copy 0's action without payment
+    Then card 01040a copy 0 is offered by the pending action
+    When seat 1 chooses card 01040a copy 0 for the pending action
+    Then card 01040a copy 0 has 4 damage
+    And card 01080 copy 0 has 2 medical counters
+    And card 01080 copy 0 is exhausted
+    When the end-of-player-phase ready step resolves
+    Then card 01080 copy 0 is ready
+    When seat 1 initiates card 01080 copy 0's action without payment
+    Then card 01040a copy 0 is offered by the pending action
+    When seat 1 chooses card 01040a copy 0 for the pending action
+    Then card 01040a copy 0 has 2 damage
+    And card 01080 copy 0 has 1 medical counter
+    When the end-of-player-phase ready step resolves
+    Then card 01080 copy 0 is ready
+    When seat 1 initiates card 01080 copy 0's action without payment
+    Then card 01040a copy 0 is offered by the pending action
+    When seat 1 chooses card 01040a copy 0 for the pending action
+    Then card 01040a copy 0 has 0 damage
+    And card 01080 copy 0 is faceup on top of seat 1's discard pile
+
   @behavior:rr:support.3:published-result
   @covers:behavior:rr:you-your.18:published-result
   @rr:support.3 @rr:you-your.18 @card:01056 @card:01052
@@ -881,9 +1120,60 @@ Feature: Core card actions
     Then card 01134 copy 0 has 10 damage
     And card 01018 copy 0 is faceup on top of seat 1's discard pile
 
+  @behavior:card:01018:below-damage-cap
+  @card:01018
+  Scenario: Energy Channel deals two damage per counter below its cap
+    # Four energy counters are below the printed maximum, so the attack deals
+    # eight damage rather than the capped value of ten.
+    Given a canonical Core scene is dealt
+      | campaign | heroes         | seed |
+      | rhino    | captain_marvel | 871  |
+    And seat 1 shows identity face 01010a
+    And card 01018 copy 0 is an upgrade attached to seat 1's identity
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01012 | 0    |
+      | 01014 | 0    |
+    When seat 1 initiates card 01018 copy 0's first printed action defining X as 4 paying with these cards
+      | card  | copy |
+      | 01012 | 0    |
+      | 01014 | 0    |
+    Then card 01018 copy 0 has 4 energy counters
+    When seat 1 initiates card 01018 copy 0's second printed action without payment
+    Then card 01094 copy 0 is offered by the pending action
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01094 copy 0 has 8 damage
+    And card 01018 copy 0 is faceup on top of seat 1's discard pile
+
+  @behavior:card:01018:at-damage-cap
+  @card:01018
+  Scenario: Energy Channel deals ten damage at five counters
+    # Five energy counters would produce ten damage, exactly the printed
+    # maximum, so no part of the product is lost to the cap.
+    Given a canonical Core scene is dealt
+      | campaign | heroes         | seed |
+      | rhino    | captain_marvel | 872  |
+    And seat 1 shows identity face 01010a
+    And card 01018 copy 0 is an upgrade attached to seat 1's identity
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01014 | 0    |
+      | 01088 | 0    |
+    When seat 1 initiates card 01018 copy 0's first printed action defining X as 5 paying with these cards
+      | card  | copy |
+      | 01014 | 0    |
+      | 01088 | 0    |
+    Then card 01018 copy 0 has 5 energy counters
+    When seat 1 initiates card 01018 copy 0's second printed action without payment
+    Then card 01094 copy 0 is offered by the pending action
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01094 copy 0 has 10 damage
+    And card 01018 copy 0 is faceup on top of seat 1's discard pile
+
   @behavior:rr:max-maximum.3:published-result
   @covers:behavior:rr:max-maximum:published-result
   @covers:behavior:card:01057:max-1-per-player
+  @covers:behavior:card:01057:your-hero-gets-1-atk
   @rr:max-maximum @rr:max-maximum.3 @card:01057
   Scenario: Max one per player prevents a second controlled copy
     # "Max 1 per player" restricts how many copies of that title a player may
@@ -892,6 +1182,7 @@ Feature: Core card actions
     Given a canonical Core scene is dealt
       | campaign | heroes   | seed |
       | rhino    | she_hulk | 717  |
+    And seat 1 shows identity face 01019a
     And card 01057 copy 0 is attached to card 01019a copy 0
     And seat 1's hand contains exactly these cards
       | card  | copy |
@@ -905,6 +1196,33 @@ Feature: Core card actions
     When seat 1 asks whether card 01057 copy 1 is available to play
     Then card 01057 copy 1 is unavailable to play
     And card 01057 copy 0 remains attached to seat 1's identity
+    And card 01019a copy 0 has modified ATK 4
+
+  @behavior:card:01057:play-under-any-player-s-control
+  @card:01057
+  Scenario: Combat Training can enter another player's control
+    # “Play under any player's control” lets She-Hulk play her owned Combat
+    # Training on Spider-Man. The upgrade remains owned by seat 1 while its
+    # continuous +1 ATK applies to the controlling player's hero.
+    Given a canonical Core scene is dealt
+      | campaign | heroes              | seed |
+      | rhino    | she_hulk,spider_man | 883  |
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01057 | 0    |
+      | 01088 | 0    |
+    When game setup reaches seat 1's mulligan
+    Then seat 1 is offered a mulligan
+    When seat 1 keeps every opening-hand card at mulligan
+    Then seat 2 is offered a mulligan
+    When seat 2 keeps every opening-hand card at mulligan
+    Then seat 1 is the active player
+    When seat 1 plays card 01057 copy 0 targeting card 01001b copy 0 paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+    Then card 01057 copy 0 remains attached to seat 2's identity
+    And card 01057 copy 0 is owned by seat 1
+    And card 01057 copy 0 is controlled by seat 2
 
   @behavior:card:01010a:spend-energy-resource-and-heal-1-damage
   @covers:behavior:card:01010a:limit-once-per-round-within-limit
@@ -1014,8 +1332,9 @@ Feature: Core card actions
 
   @behavior:faq:01071:power-of-aspect-pays-printed-ally-cost
   @covers:behavior:card:01072:double-number-resources-card-generates-while-paying
+  @covers:behavior:card:01067:after-maria-hill-enters-play-each-player-one-player
   @covers:behavior:rr:resource-card.1:published-result
-  @faq:01071 @card:01071 @card:01072 @rr:resource-card.1
+  @faq:01071 @card:01067 @card:01071 @card:01072 @rr:resource-card.1
   Scenario: Power of Leadership doubles for Make the Call's chosen ally
     # The official FAQ says Make the Call pays the chosen ally's printed cost.
     # Maria Hill is a Leadership ally costing two, so Power of Leadership's
@@ -1046,6 +1365,8 @@ Feature: Core card actions
 
   @behavior:rr:then:published-result
   @covers:behavior:rr:then.1:published-result
+  @covers:behavior:card:01012:remove-2-threat-from-scheme
+  @covers:behavior:card:01012:then-if-you-have-aerial-trait-remove-condition-met
   @rr:then @rr:then.1 @card:01012 @card:01017
   Scenario: A fully resolved pre-then thwart attempts the Aerial follow-up
     # Crisis Interdiction removes its full two threat from the first scheme.
@@ -1073,6 +1394,33 @@ Feature: Core card actions
       | 01107  | 0    |
     Then card 01097b copy 0 has 0 threat counters
     And card 01107 copy 0 has 0 threat counters
+
+  @behavior:card:01012:then-if-you-have-aerial-trait-remove-condition-not-met
+  @card:01012
+  Scenario: Crisis Interdiction has no second thwart without Aerial
+    # The first instruction removes its full two threat. Captain Marvel has no
+    # Aerial trait, so the conditional removal from a different scheme does not
+    # occur and the side scheme retains both threat.
+    Given a canonical Core scene is dealt
+      | campaign | heroes         | seed |
+      | rhino    | captain_marvel | 861  |
+    And seat 1 shows identity face 01010a
+    And card 01107 copy 0 is a side scheme in play
+    And card 01097b copy 0 has 2 threat counters
+    And card 01107 copy 0 has 2 threat counters
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01012 | 0    |
+      | 01088 | 0    |
+    When seat 1 initiates card 01012 copy 0's action paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+    Then seat 1 is asked to choose 1 cards for the pending action
+    When seat 1 chooses these cards for the pending action
+      | card   | copy |
+      | 01097b | 0    |
+    Then card 01097b copy 0 has 0 threat counters
+    And card 01107 copy 0 has 2 threat counters
 
   @behavior:rr:then.2:published-result
   @rr:then.2 @card:01012 @card:01017

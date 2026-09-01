@@ -222,8 +222,10 @@ public sealed partial class AbilityRunner
             // is -- the same reading `rr:engage.1` gets for a minion.
             return
             [
-                .. Owned.SelectMany(where =>
-                    cast.World.AreaOf(where, PlayArea.Of(cast.Player)).Cards),
+                .. cast.World.Areas
+                    .Where(area => Owned.Contains(area.Type)
+                        && area.PlayArea == PlayArea.Of(cast.Player))
+                    .SelectMany(area => area.Cards),
             ];
         }
 
@@ -324,7 +326,13 @@ public sealed partial class AbilityRunner
             // because Beetle's two abilities both say "upgrade" and a support
             // is not one. Same reading of control: `rr:play-area.1` puts "any
             // cards in play under their control" in a player's own play area.
-            return [.. cast.World.AreaOf(DeckType.UpgradesArea, PlayArea.Of(cast.Player)).Cards];
+            return
+            [
+                .. cast.World.Areas
+                    .Where(area => area.Type == DeckType.UpgradesArea
+                        && area.PlayArea == PlayArea.Of(cast.Player))
+                    .SelectMany(area => area.Cards),
+            ];
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } panther

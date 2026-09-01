@@ -57,6 +57,7 @@ Feature: Hero and alter-ego form changes
 
   @behavior:rr:form-change-form.3:published-result
   @covers:behavior:card:01025:change-your-form-flip-your-identity-card
+  @covers:behavior:card:01025:then-draw-up-your-printed-hand-size-maximum
   @rr:form-change-form.3 @card:01025
   Scenario: A form change caused by Split Personality preserves the voluntary change
     # "If a card ability causes a player to change forms, it does not count
@@ -80,8 +81,66 @@ Feature: Hero and alter-ego form changes
       | 01024 | 1    |
       | 01024 | 2    |
     Then seat 1 is in hero form
+    And seat 1 has 4 cards in hand
     When seat 1 takes their voluntary form change
     Then seat 1 changed from hero to alter-ego form
+
+  @behavior:card:01025:then-draw-up-your-printed-hand-size-intermediate
+  @card:01025
+  Scenario: Split Personality draws an intermediate amount up to hero hand size
+    # After paying for Split Personality, two cards remain in hand. She-Hulk's
+    # printed hero hand size is four, so “draw up to” draws exactly two cards.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 873  |
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01020 | 0    |
+      | 01021 | 0    |
+      | 01024 | 0    |
+      | 01024 | 1    |
+      | 01024 | 2    |
+      | 01025 | 0    |
+    When seat 1 initiates card 01025 copy 0's action paying with these cards
+      | card  | copy |
+      | 01024 | 0    |
+      | 01024 | 1    |
+      | 01024 | 2    |
+    Then seat 1 is in hero form
+    And seat 1 has 4 cards in hand
+    And card 01020 copy 0 is in seat 1's hand
+    And card 01021 copy 0 is in seat 1's hand
+
+  @behavior:card:01025:then-draw-up-your-printed-hand-size-minimum
+  @card:01025
+  Scenario: Split Personality draws nothing at printed hero hand size
+    # A player may legally hold more than their hand size during the player
+    # phase. After this oversized hand pays for the event, four cards remain,
+    # already equal to She-Hulk's printed hero hand size, so no card is drawn.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 874  |
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01020 | 0    |
+      | 01021 | 0    |
+      | 01022 | 0    |
+      | 01022 | 1    |
+      | 01024 | 0    |
+      | 01024 | 1    |
+      | 01024 | 2    |
+      | 01025 | 0    |
+    When seat 1 initiates card 01025 copy 0's action paying with these cards
+      | card  | copy |
+      | 01024 | 0    |
+      | 01024 | 1    |
+      | 01024 | 2    |
+    Then seat 1 is in hero form
+    And seat 1 has 4 cards in hand
+    And card 01020 copy 0 is in seat 1's hand
+    And card 01021 copy 0 is in seat 1's hand
+    And card 01022 copy 0 is in seat 1's hand
+    And card 01022 copy 1 is in seat 1's hand
 
   @behavior:rr:form-change-form.4:published-result
   @covers:behavior:card:01015:exhaust-alpha-flight-station-choose-and-discard-condition-not-met

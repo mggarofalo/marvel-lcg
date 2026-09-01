@@ -62,7 +62,11 @@ public sealed class CoreCardDslTests
         // a lasting effect grants TECH to another controlled upgrade.
         var world = Hero("01029a");
         world.Abilities = AuthoredCards.Runner();
-        var upgrades = world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0);
+        var upgrades = world.AreaOf(
+            DeckType.UpgradesArea,
+            PlayArea.Of(0),
+            host: world.Seats[0].IdentityCard.ObjectId,
+            cardOwner: 0);
         world.CreateCard("01036", upgrades); // printed TECH
         var granted = world.CreateCard("01093", upgrades); // no printed TECH
         world.Effects.Register(new ContinuousEffect(
@@ -74,9 +78,9 @@ public sealed class CoreCardDslTests
 
         Assert.Equal(3, Modified(world, world.Seats[0].IdentityCard, "hand_size"));
 
-        for (int copy = 0; copy < 6; copy++)
+        foreach (string face in new[] { "01035", "01037", "01038", "01038", "01039", "01039" })
         {
-            world.CreateCard("01037", upgrades);
+            world.CreateCard(face, upgrades);
         }
 
         Assert.Equal(7, Modified(world, world.Seats[0].IdentityCard, "hand_size"));

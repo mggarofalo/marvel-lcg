@@ -8,7 +8,11 @@ Feature: Core triggered keywords
   @covers:behavior:rr:surge:published-result
   @covers:behavior:rr:surge.1:published-result
   @covers:behavior:rr:surge.2:published-result
-  @card:01121 @rr:surge @rr:surge.1 @rr:surge.2
+  @covers:behavior:card:01120:guard
+  @covers:behavior:card:01120:while-minion-is-engaged-with-you-you
+  @covers:behavior:card:01120:toughness
+  @covers:behavior:card:01120:character-enters-play-with-tough-status-card
+  @card:01120 @card:01121 @rr:surge @rr:surge.1 @rr:surge.2
   Scenario: Surge finishes Weapons Runner before revealing the additional card
     # "After this card is revealed, reveal 1 additional encounter card." The
     # original minion enters play first, then the surged card is revealed.
@@ -23,10 +27,16 @@ Feature: Core triggered keywords
     When villain phase 1 resolves with every optional choice declined
     Then card 01121 copy 1 is engaged with seat 1
     And card 01120 copy 1 is engaged with seat 1
+    And card 01120 copy 1 has 1 tough status card
     And the Reveal events moved these cards in order
       | card  | copy |
       | 01121 | 1    |
       | 01120 | 1    |
+    When seat 1 changes form by flipping their identity
+    Then seat 1 is in hero form
+    When seat 1 asks for their basic attack targets
+    Then card 01113 copy 0 is unavailable as a target
+    And card 01120 copy 1 is available as a target
 
   @behavior:card:01121:put-weapons-runner-into-play-engaged-with
   @covers:behavior:rr:boost-boost-icon.2:published-result

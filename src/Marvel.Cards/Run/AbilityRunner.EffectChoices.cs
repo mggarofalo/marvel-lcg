@@ -17,6 +17,23 @@ public sealed partial class AbilityRunner
                 $"'{cast.Source.FaceId}' offers a choice of one, which is not a choice");
         }
 
+        if (node.Kind == "choose"
+            && !Nodes(node.Require("options")).Any(option => OptionIsLegal(option, cast)))
+        {
+            // rr:target.2 and rr:choose-option.1: a mandatory encounter-card
+            // ability with no valid option cannot initiate. Reaching that
+            // instruction directly during reveal or boost resolution is a
+            // no-effect resolution, not a question with an invented answer.
+            if (!IsPlayerCard(cast)
+                && cast.Tier is { } tier
+                && AbilityTypes.IsMandatory(tier))
+            {
+                return;
+            }
+            throw new RulesNotImplementedException(
+                $"'{cast.Source.FaceId}' requires a choice and has no legal option");
+        }
+
         if (node.Kind == "chooseCard"
             && LegalCardChoicesForContinuation(node, cast).Count == 0)
         {

@@ -41,7 +41,7 @@ public sealed class CoreRuleTranscriptTests
 
         Assert.Equal(2, results.Count);
         Assert.Equal(
-            "af84073b680fe3a5643b670ef39fed6c14b2f602be028045811b888bfb0fd8a3",
+            "50f656d54db4bc2bdd8bb146cde7374a2ed3a46ab8e6ab80c88bad6b73f7f463",
             results["behavior:rr:prevent.2:published-result"].Digest);
         Assert.Equal(
             "a1d7bc3b1777635d2d7533d9c826672de58b97619123449f1b47920b6c772295",
@@ -101,7 +101,10 @@ public sealed class CoreRuleTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(4, results.Count);
+        Assert.Equal(7, results.Count);
+        Assert.Equal(
+            "f00098f9a7b58eb4ead41d6950018a674febe272eef54560f5cdc6978dbdd4f3",
+            results["behavior:card:01009:attach-enemy"].Digest);
         Assert.Equal(
             "422b6819e211329aa2c280f68d7df90a67ae359196e4bd66a46fb775e961f6c5",
             results["behavior:rr:attach-to:published-result"].Digest);
@@ -114,6 +117,14 @@ public sealed class CoreRuleTranscriptTests
         Assert.Equal(
             "b0519e50cb3b5fa1e265795eaa4bbe18deaa19fb300c515a6a36b7ec6d67361f",
             results["behavior:rr:max-maximum.4:published-result"].Digest);
+        Assert.Equal(
+            "e9fd28b2b2c2364def7f1b172f27d077d2f48bc318cee4867a06681937a8c7aa",
+            results[
+                "behavior:card:01163:attach-minion-with-highest-printed-hit-points"].Digest);
+        Assert.Equal(
+            "0f4332812192a3edf68718b79c17b0cdc49349bd67c91fc37bd23931b4dbcfb3",
+            results[
+                "behavior:card:01163:if-there-are-no-minions-in-play-condition-met"].Digest);
     }
 
     [Fact]
@@ -130,7 +141,7 @@ public sealed class CoreRuleTranscriptTests
             "34c725e7bf00f8edee5d88a05622b4ea7331342e372910a124114a8527af9a28",
             results["behavior:card:01039:you-get-1-hit-point"].Digest);
         Assert.Equal(
-            "70c83706d9a4071f8d1971e131006ad4631b5ffae646de407983e2640515e9d2",
+            "c8e8488adad559d9a8ca35d7dc9d5ca8a622053f27abc0abfa1287c692ccdeb1",
             results["behavior:rr:attachment.1:published-result"].Digest);
         Assert.Equal(
             "c5a14e8a14152ebd20333940065ac44678643817379e43da317231a6c4a05571",
@@ -154,7 +165,7 @@ public sealed class CoreRuleTranscriptTests
 
         Assert.Single(results);
         Assert.Equal(
-            "129b052cf1d9337a6fa2b05540538dda462d1bba59751234c5a0bd8d806fb519",
+            "e20aa23bd8ccbea05ac162a7817ce670663981f006508cbf0de63d714746eda6",
             results["behavior:rr:play-area.1:published-result"].Digest);
     }
 
@@ -167,7 +178,7 @@ public sealed class CoreRuleTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(3, results.Count);
+        Assert.Equal(4, results.Count);
         Assert.Equal(
             "a0c29f1591b4fc8d736a64e76d9109a4f899a21a278cc4d2760cdd5a4c1f8b70",
             results["behavior:rr:main-scheme-main-scheme-deck.2:published-result"].Digest);
@@ -177,6 +188,10 @@ public sealed class CoreRuleTranscriptTests
         Assert.Equal(
             "ba88421ca03e246a89956e9b1cdee1b9d9d7694cd0bb60256362aceb668c99d9",
             results["behavior:rr:main-scheme-main-scheme-deck.6:published-result"].Digest);
+        Assert.Equal(
+            "56841b2578c161b58b1ad09cbeaad5210b315d8f1b03c6b2119e7326562cec38",
+            results[
+                "behavior:card:01117b:if-stage-is-completed-players-lose-game-condition-met"].Digest);
     }
 
     [Fact]
@@ -232,17 +247,17 @@ public sealed class CoreRuleTranscriptTests
             "eae3014b5502cdd02cd7694ea2a6332b306a402acf3e089126d2a661a7df28e4",
             results["behavior:card:01106:rhino-attacks-you"].Digest);
         Assert.Equal(
-            "ee37b7f3a89ce756dfd77db1489ed47e0705f1f1c318c1945b9f64358b42bc21",
+            "6eb0932507b48f8cec8946effe4790e1781011da17b8dc828f7088db0916042f",
             results[
                 "behavior:card:01149:each-player-discards-top-3-cards-their-one-player"].Digest);
         Assert.Equal(
-            "0e89a8c73a6db2f6ac37524a7ffed0a4d01f3d067a74c74c6a1c06490db98d16",
+            "704da517e0a7d6338dc8e094c2f13c78b68471e1b0bc9b07598869048424b71a",
             results[
                 "behavior:card:01149:each-player-discards-top-3-cards-their-multiple-players"].Digest);
     }
 
     [Fact]
-    public void LegalWorkBranchesHavePinnedOutcomes()
+    public void CoreIdentityObligationBranchesHavePinnedOutcomes()
     {
         var results = Corpus.Value
             .Where(result => result.Scenario.StartsWith(
@@ -250,7 +265,7 @@ public sealed class CoreRuleTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(2, results.Count);
+        Assert.Equal(10, results.Count);
         Assert.Equal(
             "5555335fa80dde057285925b06d58104f77428c6568acc5d29938b4c81333bd6",
             results[
@@ -259,6 +274,38 @@ public sealed class CoreRuleTranscriptTests
             "d1c1ec43da722baed6be9a31f50e0a20cc3ebdcb04ba04680a0f19257b43115e",
             results[
                 "behavior:card:01160:you-may-flip-alter-ego-form-accepted"].Digest);
+        Assert.Equal(
+            "2b80db251223ef118e229b6718136a3a90f92b63b5269693eea9804e81efbc77",
+            results[
+                "behavior:card:01155:you-may-flip-alter-ego-form-accepted"].Digest);
+        Assert.Equal(
+            "73bc9831566b5df35541b94aea505ac774eacbcb5060b84eed21742f3f094380",
+            results[
+                "behavior:card:01155:you-may-flip-alter-ego-form-declined"].Digest);
+        Assert.Equal(
+            "5738df4b38e857dddb9196398196c0d0ecf10173f2506205fa47f9b869d383fb",
+            results[
+                "behavior:card:01165:you-may-flip-alter-ego-form-accepted"].Digest);
+        Assert.Equal(
+            "0b838c25ca6bdeac12496e6d3f0835f9c4b6e9721ad0ee412b5fd6b6fd8256d9",
+            results[
+                "behavior:card:01165:you-may-flip-alter-ego-form-declined"].Digest);
+        Assert.Equal(
+            "4a0606febb0c70ed09b2b4d07154a6040ce2b4d4abeffe380f188302b47d8ac7",
+            results[
+                "behavior:card:01170:you-may-flip-alter-ego-form-accepted"].Digest);
+        Assert.Equal(
+            "65c41c4fb25749752526fc259d37b9a956ad3c0e515abdd3b5522e5295640e75",
+            results[
+                "behavior:card:01170:you-may-flip-alter-ego-form-declined"].Digest);
+        Assert.Equal(
+            "c28e6854a17bbf90af64b40536b734d4f734ae21dd518d2a4180a3e62c196b0e",
+            results[
+                "behavior:card:01175:you-may-flip-alter-ego-form-accepted"].Digest);
+        Assert.Equal(
+            "c176b18fe710c0d21550b038a31b33659020a86e611779f9efaf0053bf9a6421",
+            results[
+                "behavior:card:01175:you-may-flip-alter-ego-form-declined"].Digest);
     }
 
     [Fact]
@@ -482,7 +529,7 @@ public sealed class CoreRuleTranscriptTests
                 "specs/behavior/core/setup.feature::", StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(7, results.Count);
+        Assert.Equal(9, results.Count);
         Assert.Equal(
             "e72ed15ec31a9a7a09fc27204c124b81b9721e2591a43d75bed51ecd6e2f49d5",
             results["behavior:rr:appendix-ii-setup.step.1:published-result"].Digest);
@@ -502,8 +549,14 @@ public sealed class CoreRuleTranscriptTests
             "12469af423d842a404f38f0fa679e05f1686d269e7f30d2b820c184a4381e1e0",
             results["behavior:card:01116a:search-encounter-deck-for-defense-network-side"].Digest);
         Assert.Equal(
-            "bd60d3534d573e413df7d3efa055d1b24035584a2707f3cee4af4f4811fa89a8",
+            "06aa63dd18da1c434ba94187777bbcc4255d9ef0615767a157e6735757674f84",
             results["behavior:card:01137a:put-ultron-drones-environment-into-play"].Digest);
+        Assert.Equal(
+            "4579d062a0a07070c81b283aa5303fe8c6c8da5b4c820d1edb893897988d98c2",
+            results["behavior:card:01116a:klaw-ii-and-klaw-iii-instead-for"].Digest);
+        Assert.Equal(
+            "81235bf82be267f8c5d4698982d2599205fdbc61020006db754755dddb52f40c",
+            results["behavior:card:01137a:ultron-ii-and-ultron-iii-instead-for"].Digest);
     }
 
     [Fact]
@@ -536,9 +589,9 @@ public sealed class CoreRuleTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(6, results.Count);
+        Assert.Equal(8, results.Count);
         Assert.Equal(
-            "8ac76760febf2740557277dc71b65fbc299b5cef08e0a510bbb53a2c06a33a26",
+            "90cc019d785eda872e3253f08a8f786009c7ec7d72a55a69148171973e0c1f46",
             results["behavior:rr:form-change-form.1:flip-identity"].Digest);
         Assert.Equal(
             "7cd5c816aad3d3414b2a168c18ef54b42152f75e6301f10b17bccde0f43a243a",
@@ -546,6 +599,14 @@ public sealed class CoreRuleTranscriptTests
         Assert.Equal(
             "410e4fc088da5f7bc65834761ff21efefe7c57bf7489ce0c669cabd7c2b76afa",
             results["behavior:rr:form-change-form.3:published-result"].Digest);
+        Assert.Equal(
+            "e2ee518234c3be57040c3ab21dcfadff9a30aa12c6e0d5fc46425bd82d172ca5",
+            results[
+                "behavior:card:01025:then-draw-up-your-printed-hand-size-intermediate"].Digest);
+        Assert.Equal(
+            "6301b86cee3485d30f133d44bddc2b4c36b9a1aafdf3f2a4aff2fff3f62abede",
+            results[
+                "behavior:card:01025:then-draw-up-your-printed-hand-size-minimum"].Digest);
         Assert.Equal(
             "02934a0a9019cfb3b71e148a7f881d388edef755b04a4d61316e198fde976380",
             results["behavior:rr:form-change-form.4:published-result"].Digest);

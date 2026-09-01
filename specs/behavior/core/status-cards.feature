@@ -153,7 +153,9 @@ Feature: Core status cards
 
   @behavior:rr:toughness:published-result
   @covers:behavior:rr:toughness.1:published-result
-  @rr:toughness @rr:toughness.1
+  @covers:behavior:card:01102:toughness
+  @covers:behavior:card:01102:character-enters-play-with-tough-status-card
+  @rr:toughness @rr:toughness.1 @card:01102
   Scenario: A character with Toughness gains tough after entering play
     # "Forced Response: After this character enters play, give it a tough
     # status card."

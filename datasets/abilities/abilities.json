@@ -465,7 +465,7 @@
       "note": "When this minion would be defeated, its forced interrupt creates a facedown Drone from the engaged player's deck. The engaged seat is read while this card is still in its engagement area.",
       "abilities": [
         {
-          "trigger": { "event": "WhenCardDefeated", "timing": "ForcedInterrupt", "subject": "this" },
+          "trigger": { "event": "WhenCardDefeated", "timing": "WhenDefeated", "subject": "this" },
           "effect": { "createDrones": { "player": "engagedPlayer", "count": 1 } }
         }
       ]
@@ -2224,7 +2224,7 @@
             { "choose": { "options": [ { "changeForm": { "player": "you", "to": "alter-ego" } }, { "seq": [] } ] } },
             { "choose": { "options": [
               { "seq": [ { "exhaust": "you" }, { "removeFromGame": "this" } ] },
-              { "chooseCard": { "from": { "withTrait": { "cards": { "query": "upgradesYouControl" }, "trait": "BLACK PANTHER" } }, "effect": { "seq": [ { "discard": "chosen" }, { "discard": "this" } ] } } }
+              { "chooseCard": { "from": { "withTrait": { "cards": { "query": "upgradesYouControl" }, "trait": "BLACK_PANTHER" } }, "effect": { "seq": [ { "discard": "chosen" }, { "discard": "this" } ] } } }
             ] } }
           ] }
         }
@@ -2912,7 +2912,7 @@
           "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
           "effect": { "seq": [
             { "discardHandWithResource": "Y" },
-            { "if": { "test": { "not": { "atLeast": { "value": { "result": "discarded" }, "count": 1 } } }, "then": { "gainSurge": "this" } } }
+            { "if": { "test": { "not": { "atLeast": { "value": { "result": "discarded" }, "count": 1 } } }, "then": { "gainSurge": 1 } } }
           ] }
         }
       ]

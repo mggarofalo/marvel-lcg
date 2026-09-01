@@ -3,8 +3,52 @@ Feature: Core attachment lifecycle
   Cards that print "attach to" enter play on the named game element and remain
   there until an effect or their host makes them leave play.
 
+  @behavior:card:01009:attach-enemy
+  @covers:behavior:card:01009:max-1-per-enemy
+  @covers:behavior:card:01009:when-attached-enemy-would-attack-discard-webbed
+  @covers:behavior:card:01009:then-stun-that-enemy
+  @card:01009
+  Scenario: Webbed Up replaces one enemy attack and stuns its attacker
+    # Webbed Up attaches to Rhino, and its maximum prevents the second copy
+    # from attaching to that same enemy. When Rhino would attack, the forced
+    # interrupt discards Webbed Up and gives Rhino stun; that new stun then
+    # replaces the attack and is itself discarded.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 881  |
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01002 | 0    |
+      | 01003 | 0    |
+      | 01009 | 0    |
+      | 01009 | 1    |
+      | 01088 | 0    |
+      | 01089 | 0    |
+      | 01090 | 0    |
+    When game setup reaches seat 1's mulligan
+    Then seat 1 is offered a mulligan
+    When seat 1 keeps every opening-hand card at mulligan
+    Then seat 1 is the active player
+    When seat 1 takes their voluntary form change
+    Then seat 1 changed from alter-ego to hero form
+    When seat 1 plays card 01009 copy 0 paying with these cards
+      | card  | copy |
+      | 01002 | 0    |
+      | 01003 | 0    |
+      | 01088 | 0    |
+    Then card 01009 copy 0 is attached to card 01094 copy 0
+    When seat 1 asks whether card 01009 copy 1 is available to play
+    Then card 01009 copy 1 is unavailable to play
+    When the villain attacks seat 1 with every optional choice declined
+    Then card 01009 copy 0 is faceup on top of seat 1's discard pile
+    And card 01001a copy 0 has 0 damage
+    And card 01094 copy 0 has 0 stunned status cards
+    And 3 Give_Status events were emitted
+    And the attack has ended
+
   @behavior:rr:attach-to:published-result
   @covers:behavior:rr:reveal.1:attach-to-text
+  @covers:behavior:card:01099:attach-rhino
   @rr:attach-to @rr:reveal.1 @card:01099
   Scenario: A revealed attachment enters play attached to its named host
     # "If a card uses the phrase 'attach to', it must be attached to ... the
@@ -57,6 +101,39 @@ Feature: Core attachment lifecycle
     When card 01162 copy 0 enters play as a minion engaged with seat 1
     Then card 01163 copy 0 is attached to card 01101 copy 0
     And card 01162 copy 0 is engaged with seat 1
+
+  @behavior:card:01163:attach-minion-with-highest-printed-hit-points
+  @covers:behavior:card:01163:if-there-are-no-minions-in-play-condition-not-met
+  @covers:behavior:card:01163:attached-minion-gets-3-hit-points
+  @card:01163
+  Scenario: Genetically Enhanced attaches to the highest-hit-point minion
+    # "Attach to the minion with the highest printed hit points." Titania's
+    # printed six exceeds Hydra Mercenary's three, and the attachment then
+    # raises Titania's remaining hit points from six to nine.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | modular sets       | seed |
+      | rhino    | she_hulk | the_doomsday_chair | 849  |
+    And card 01101 copy 0 is a minion engaged with seat 1
+    And card 01162 copy 0 is a minion engaged with seat 1
+    When card 01163 copy 0 is revealed to seat 1
+    Then card 01163 copy 0 is attached to card 01162 copy 0
+    And card 01162 copy 0 has 9 remaining hit points
+
+  @behavior:card:01163:if-there-are-no-minions-in-play-condition-met
+  @card:01163
+  Scenario: Genetically Enhanced surges when there is no minion to attach to
+    # "If there are no minions in play, this card gains surge." With no legal
+    # host, Genetically Enhanced is discarded and its additional card reveals.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | modular sets   | seed |
+      | rhino    | she_hulk | the_doomsday_chair | 850  |
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01163     | 0    |
+      | 01184     | 0    |
+    When villain phase 1 resolves with every optional choice declined
+    Then card 01163 copy 0 is faceup on top of the encounter discard pile
+    And card 01184 copy 0 is engaged with seat 1
 
   @behavior:rr:max-maximum.4:published-result
   @covers:behavior:card:01074:max-1-per-ally

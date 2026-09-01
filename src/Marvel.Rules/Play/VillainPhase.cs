@@ -2396,6 +2396,18 @@ public static class VillainPhase
     {
         var revealOccurrence = world.Agenda.Occurrence
             ?? throw new InvalidOperationException("a revealing card has no occurrence");
+
+        // An interrupt to this reveal may discard the card and replace its
+        // effects before the occurrence applies. A card no longer in either
+        // reveal staging area cannot enter play or resolve printed text from
+        // the stale scheduled step. Cards explicitly revealed by an ability
+        // begin in RevealingArea; villain-phase cards begin in the dealt queue.
+        if (card.Area.Type is not (DeckType.DealtEncounterCardsDeck
+            or DeckType.RevealingArea))
+        {
+            return;
+        }
+
         // `rr:reveal.4.1` -- "if the card specifies a player to give it to,
         // **that player is considered to be revealing it**." One reassignment
         // and not a special case at the placement, because being the revealing

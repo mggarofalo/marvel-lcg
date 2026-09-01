@@ -43,10 +43,11 @@ public sealed class CoreGameMatrixTests
                     // once, and every set receives six games.
                     string modular = ModularSets[(heroIndex + campaignIndex) % ModularSets.Length];
                     uint seed = (uint)(265 + heroIndex * Campaigns.Length + campaignIndex);
-                    // Two deterministic replacements keep the row meaningful:
-                    // the formula's Spider-Man game exceeded the decision bound
-                    // and its She-Hulk game ended before any card was played.
-                    // Seeds are test inputs, not rules-derived values.
+                    // Deterministic replacements keep each row meaningful: a
+                    // formula seed may exceed the decision bound, stop at a
+                    // known unsupported setup prompt, or end before exercising
+                    // every smoke-test action. Seeds are authored test inputs,
+                    // not rules-derived values.
                     seed = (Heroes[heroIndex], Campaigns[campaignIndex]) switch
                     {
                         ("spider_man", "klaw") => 1267,
@@ -57,6 +58,7 @@ public sealed class CoreGameMatrixTests
                         // MARVEL-275 owns making that choice resumable.
                         ("iron_man", "klaw") => 1285,
                         ("she_hulk", "ultron") => 1281,
+                        ("she_hulk", "ultron_expert") => 1282,
                         _ => seed,
                     };
                     cases.Add(Heroes[heroIndex], Campaigns[campaignIndex], modular, seed);

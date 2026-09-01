@@ -155,6 +155,32 @@ public sealed class CoreActivationAbilityTests
             world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)).Cards.Count);
     }
 
+    [Rule("rr:attack-enemy-activation")]
+    [Fact]
+    public void SwarmAttackSchedulesEveryEngagedDrone()
+    {
+        var world = Board("01001a", "01134");
+        var first = world.CreateCard(
+            "01087",
+            world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0), cardOwner: 0));
+        first.TurnFaceDown();
+        var second = world.CreateCard(
+            "01088",
+            world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0), cardOwner: 0));
+        second.TurnFaceDown();
+        var card = world.CreateCard("01147", world.AreaOf(DeckType.RevealingArea));
+        world.Agenda.Add(new PhaseStep(
+            Steps.RevealEncounterCard, 1, 4, Subject: card.ObjectId, Seat: 0));
+
+        AuthoredCards.Runner().WhenRevealed(world, card, 0);
+
+        Assert.Equal(
+            [first.ObjectId, second.ObjectId],
+            world.Agenda.Outstanding
+                .Where(step => step.What == Steps.Attack)
+                .Select(step => step.Subject));
+    }
+
     [Rule("rr:activation.7")]
     [Rule("rr:surge.1")]
     [Fact]

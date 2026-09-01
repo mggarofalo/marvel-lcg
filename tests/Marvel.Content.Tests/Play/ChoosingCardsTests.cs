@@ -195,6 +195,28 @@ public sealed class ChoosingCardsTests
         Assert.Equal("dealDamage", damage.Label);
     }
 
+    [Rule("rr:target.2")]
+    [Rule("rr:choose-option.1")]
+    [Fact]
+    public void AWhenRevealedChoiceWithNoLegalOptionDoesNotInitiate()
+    {
+        // Electric Whip Attack computes zero damage with no controlled
+        // upgrades, and its discard branch has no valid target. Neither option
+        // can initiate, so the mandatory When Revealed ability resolves with
+        // no effect and asks no impossible question.
+        var world = Deal("iron_man");
+        world.Seats[0].IdentityCard.TurnTo("01029a");
+        var card = world.CreateCard("01173", world.AreaOf(DeckType.RevealingArea));
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+
+        var events = runner.WhenRevealed(world, card, player: 0);
+
+        Assert.Empty(events);
+        Assert.Empty(world.Agenda.Outstanding);
+        Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
+    }
+
     [Rule("rr:choose-option.2")]
     [Fact]
     public void APlayerCardDoesNotOfferAnOptionThatCannotPartiallyResolve()

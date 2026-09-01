@@ -4,6 +4,8 @@ Feature: Simultaneous Core effects
   their resolution order.
 
   @behavior:rr:simultaneous-resolution:published-result
+  @covers:behavior:card:01191:surge
+  @covers:behavior:card:01191:exhaust-your-identity-card
   @rr:simultaneous-resolution @rr:surge.1 @rr:when-revealed-abilities.1
   @card:01191 @card:01103
   Scenario: The first player orders Surge before a printed When Revealed effect
