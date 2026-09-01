@@ -82,3 +82,46 @@ Feature: Core villain phase
     And seat 1 has 0 facedown encounter cards
     And seat 2 has 0 facedown encounter cards
     And seat 2 has the first player token
+
+  @behavior:rr:attack-enemy-activation:published-result
+  @covers:behavior:rr:activation:published-result
+  @covers:behavior:rr:attack-enemy-activation.1:published-result
+  @covers:behavior:rr:attack-enemy-activation.1.1:published-result
+  @covers:behavior:rr:attack-enemy-activation.4:published-result
+  @covers:behavior:rr:attack-enemy-activation.step.1:published-result
+  @covers:behavior:rr:attack-enemy-activation.step.3.a:published-result
+  @covers:behavior:rr:attack-enemy-activation.step.3.c:published-result
+  @covers:behavior:rr:attack-enemy-activation.step.3.d:published-result
+  @covers:behavior:rr:attack-enemy-activation.step.4:published-result
+  @covers:behavior:rr:attack-enemy-activation.step.5:published-result
+  @covers:behavior:rr:attack-enemy-activation.step.6:published-result
+  @covers:behavior:rr:damage.1:published-result
+  @covers:behavior:rr:damage.3:published-result
+  @covers:behavior:rr:damage.step.5:published-result
+  @rr:attack-enemy-activation @rr:activation
+  @rr:attack-enemy-activation.1 @rr:attack-enemy-activation.1.1
+  @rr:attack-enemy-activation.4 @rr:attack-enemy-activation.step.1
+  @rr:attack-enemy-activation.step.3.a @rr:attack-enemy-activation.step.3.c
+  @rr:attack-enemy-activation.step.3.d @rr:attack-enemy-activation.step.4
+  @rr:attack-enemy-activation.step.5 @rr:attack-enemy-activation.step.6
+  @rr:damage.1 @rr:damage.3 @rr:damage.step.5
+  Scenario: A villain attacks an undefended hero with its ATK plus boost icons
+    # A villain attack targets both the player and their hero. The facedown
+    # boost is flipped, its icons modify ATK, and the calculated damage is then
+    # placed on the undefended target.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 320  |
+    And seat 1 shows identity face 01001a
+    And card 01001a copy 0 is exhausted
+    And card 01097b copy 0 has 0 threat counters
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01103     | 0    |
+      | 01101     | 0    |
+    When villain phase 1 resolves with every optional choice declined
+    Then card 01001a copy 0 has 4 damage
+    And card 01097b copy 0 has 1 threat counter
+    And card 01103 copy 0 is faceup on top of the encounter discard pile
+    And card 01101 copy 0 is engaged with seat 1
+    And a Boost event was emitted before a Deal_Damage event
