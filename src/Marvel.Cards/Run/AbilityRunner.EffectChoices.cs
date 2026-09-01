@@ -931,10 +931,10 @@ public sealed partial class AbilityRunner
     /// hero who had flipped since the card was dealt.
     /// </para>
     /// <para>
-    /// One step per enemy, in the order <see cref="Every"/> returns them.
-    /// <c>rr:minion.3</c> makes that order the player's choice; it is taken
-    /// here as the order the minions sit in the play area, deterministically
-    /// and stated, exactly as the villain phase's own step 2 takes it.
+    /// <c>rr:activation.5</c> gives the first player the order when one effect
+    /// initiates multiple enemy activations. A dynamic activation collection
+    /// therefore suspends for an ordered target request whenever a read finds
+    /// several eligible enemies, then re-reads after that ordered batch.
     /// </para>
     /// </remarks>
     private static void Activate(AbilityNode node, Cast cast, string what)
@@ -985,8 +985,27 @@ public sealed partial class AbilityRunner
         // parenthesis is the card saying it.
         bool first = node.Field("first") is AbilityValue.Word { Value: "true" };
 
-        var activationIds = new List<int>();
-        foreach (var enemy in Every(node.Require("enemies"), cast))
+        bool dynamic = node.Field("dynamic") is AbilityValue.Word { Value: "true" };
+        var enemies = ActivationCandidates(node, cast).ToList();
+        bool ordered = cast.Results.Remove("dynamicActivationOrderSet");
+        if (enemies.Count > 1 && !ordered)
+        {
+            SuspendForChoice(node, cast);
+            return;
+        }
+        if (ordered)
+        {
+            enemies = enemies
+                .OrderBy(enemy => cast.Results.GetValueOrDefault(
+                    $"dynamicActivationOrder:{enemy.ObjectId}", long.MaxValue))
+                .ToList();
+            foreach (var enemy in enemies)
+            {
+                cast.Results.Remove($"dynamicActivationOrder:{enemy.ObjectId}");
+            }
+        }
+        var activations = new List<PhaseStep>();
+        foreach (var enemy in enemies)
         {
             int activationSeat = engagedHero ? enemy.Area.PlayArea.Player : seat;
             if (activationSeat < 0
@@ -999,11 +1018,18 @@ public sealed partial class AbilityRunner
                 continue;
             }
 
-            var activation = new PhaseStep(
+            activations.Add(new PhaseStep(
                 what, round, 2, Index: activationSeat, Subject: enemy.ObjectId,
-                Seat: activationSeat,
-                Character: against);
+                Seat: activationSeat, Character: against));
+        }
 
+        var activationIds = new List<int>();
+        foreach (var activation in activations)
+        {
+            if (dynamic)
+            {
+                cast.Results[$"dynamicActivation:{activation.Subject}"] = 1;
+            }
             if (first)
             {
                 activationIds.Add(cast.World.Agenda.NowActivation(activation));
@@ -1016,6 +1042,10 @@ public sealed partial class AbilityRunner
 
         if (activationIds.Count > 0)
         {
+            if (dynamic)
+            {
+                cast.Results["repeatDynamicActivation"] = 1;
+            }
             int abilityOrdinal = AbilityOrdinal(node, cast);
             cast.World.Agenda.AfterActivations(activationIds, new PhaseStep(
                 Steps.ResumeAbility,
@@ -1042,6 +1072,19 @@ public sealed partial class AbilityRunner
             cast.WaitFor(activationIds);
             cast.Suspend();
         }
+        else if (dynamic)
+        {
+            cast.Results["activationMade"] =
+                cast.Results.GetValueOrDefault("dynamicActivationMade");
+        }
+    }
+
+    private static IReadOnlyList<Card> ActivationCandidates(
+        AbilityNode node, Cast cast)
+    {
+        bool dynamic = node.Field("dynamic") is AbilityValue.Word { Value: "true" };
+        return [.. Every(node.Require("enemies"), cast).Where(enemy => !dynamic
+            || cast.Results.GetValueOrDefault($"dynamicActivation:{enemy.ObjectId}") == 0)];
     }
 
     private static Dictionary<string, long> ActivationResults(

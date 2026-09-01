@@ -121,19 +121,11 @@ public sealed class ActivationCardsTests
 
         Reveal(world, AuthoredCards.GangUp);
 
-        // The activation batch schedules only its first enemy. Completion of
-        // that activation resumes the batch and schedules the next, preserving
-        // the villain-then-minions order without putting overlapping attacks
-        // on the agenda.
         Assert.Equal(
             [villain.ObjectId],
             world.Agenda.Outstanding.Select(step => step.Subject));
         Assert.All(world.Agenda.Outstanding, step => Assert.Equal(Steps.Attack, step.What));
 
-        // Each scheduled attack constructs its own occurrence, with the same
-        // source-neutral condition and a different actor. A single occurrence
-        // over all three would share once-per-occurrence bookkeeping and let a
-        // card answer the group only once.
         var occurrences = world.Agenda.Outstanding
             .Select(step => step.OccurrenceOf(world, Cards))
             .ToList();

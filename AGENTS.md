@@ -13,7 +13,7 @@ src/        the engine — `Marvel.Core`, `Marvel.Rules`, `Marvel.Cards`, `Marve
 tests/      the test suite, plus `godot-wall/` (projects that must fail to build)
 tools/      repo-level scripts, and the six that read a dataset in or out
 datasets/   the rules, the cards, and what a scenario is dealt from
-specs/      Gherkin scenarios written from printed card text — all drafts
+specs/      authority-derived executable Core Gherkin, plus inherited drafts
 docs/       design documents and wire-format specifications
 ```
 
@@ -151,10 +151,13 @@ survivor buys a test or is documented as equivalent in place.
 
 Specs answer "does Swinging Web Kick deal 8 damage". **A scenario is a
 transcript** — one `When` per engine decision, `Then`s interleaved, Gherkin
-under `specs/`. **Every scenario there is a draft**; see
-[specs/README.md](specs/README.md). `specs/self-test/quarantine.feature` is
-wrong on purpose and must stay that way. `GherkinFormatTests` holds the format
-and says nothing about the behaviour; no runner binds the steps yet.
+under `specs/`. The authority-derived Core corpus under `specs/behavior/core/`
+is executable; the inherited files under `specs/cards/` and `specs/rules/`
+remain drafts. See [specs/README.md](specs/README.md).
+`specs/self-test/quarantine.feature` is wrong on purpose and must stay that
+way. `GherkinFormatTests` holds the complete tree's format;
+`Marvel.Behavior.Run` binds the admitted corpus and proves the quarantine is
+rejected.
 
 **Check for a ruling before asserting timing.** A card whose printed words are
 ambiguous may have an official MarvelCDB ruling — `datasets/marvelcdb-faq/`.

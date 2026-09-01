@@ -114,7 +114,8 @@ public sealed partial class AbilityRunner
                 .. cast.World.Areas
                     .Where(area => area.Type == DeckType.EngagedEnemiesArea)
                     .SelectMany(area => area.Cards)
-                    .Where(card => cast.World.Facts.Kind(card.FaceId) == CardKind.Minion),
+                    .Where(card => FacedownDrones.Kind(
+                        card, cast.World.Facts) == CardKind.Minion),
             ];
         }
 
@@ -128,7 +129,7 @@ public sealed partial class AbilityRunner
                         or DeckType.EngagedEnemiesArea)
                     .SelectMany(area => area.Cards)
                     .Where(card => CardKinds.IsEnemy(
-                        cast.World.Facts.Kind(card.FaceId))),
+                        FacedownDrones.Kind(card, cast.World.Facts))),
             ];
         }
 
@@ -149,7 +150,8 @@ public sealed partial class AbilityRunner
             return
             [
                 .. BasicPowers.Attackable(cast.World, cast.World.Facts, Resolver(cast))
-                    .Where(enemy => cast.World.Facts.Kind(enemy.FaceId) == CardKind.Minion)
+                    .Where(enemy => FacedownDrones.Kind(
+                        enemy, cast.World.Facts) == CardKind.Minion)
                     .Where(enemy => cast.World.Abilities.CanTakeDamage(
                         cast.World, enemy, cast.Source)),
             ];
@@ -458,7 +460,11 @@ public sealed partial class AbilityRunner
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } engagedDrones
             && engagedDrones.Argument is AbilityValue.Word { Value: "dronesEngagedWithYou" })
         {
-            return FacedownDrones.EngagedWith(cast.World, Resolver(cast));
+            return [.. cast.World.AreaOf(
+                    DeckType.EngagedEnemiesArea, PlayArea.Of(Resolver(cast))).Cards
+                .Where(card => FacedownDrones.Kind(card, cast.World.Facts) == CardKind.Minion
+                    && Rules.State.Traits.Has(
+                        cast.World, card, "DRONE", cast.World.Facts))];
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "withTrait" } withTrait)
@@ -574,8 +580,10 @@ public sealed partial class AbilityRunner
             "cost" => cast.World.Facts.PrintedValue(card.FaceId, "Cost", cast.World.Players),
             "attack" => StateFields.Modified(
                 cast.World, card, "attack", cast.World.Facts, cast.World.Players),
-            "printedHealth" => cast.World.Facts.PrintedValue(
-                card.FaceId, "HP", cast.World.Players),
+            // FAQ 01185: a facedown Ultron Drone's environment-defined base
+            // stats count as printed for this comparison; +HP modifiers do not.
+            "printedHealth" => FacedownDrones.BaseValue(
+                card, cast.World.Facts, "HP", cast.World.Players),
             _ => throw new AbilityException($"'{key}' is not a value cards can be ranked by"),
         };
 
@@ -1698,8 +1706,8 @@ public sealed partial class AbilityRunner
                 "cost" => cast.World.Facts.PrintedValue(
                     card.FaceId, "Cost", cast.World.Players),
                 "attack" => state.ModifiedOf(cast, card, "attack"),
-                "printedHealth" => cast.World.Facts.PrintedValue(
-                    card.FaceId, "HP", cast.World.Players),
+                "printedHealth" => FacedownDrones.BaseValue(
+                    card, cast.World.Facts, "HP", cast.World.Players),
                 _ => throw new AbilityException(
                     $"'{key}' is not a value cards can be ranked by"),
             };

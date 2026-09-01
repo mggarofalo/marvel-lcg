@@ -94,6 +94,23 @@ Feature: Core Ultron main schemes
     And seat 1 has 2 facedown Drone minions
     And seat 2 has 3 facedown Drone minions
 
+  @behavior:faq:01138:published-clarification-1
+  @faq:01138 @card:01138b @card:01019b
+  Scenario: Prevented step-one threat does not trigger Assault on NORAD
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | ultron   | she_hulk | 1024 |
+    And seat 1 shows identity face 01019b
+    And seat 1 has no facedown Drone minions
+    And these cards are next on seat 1's player deck
+      | next card | copy |
+      | 01020     | 0    |
+    And card 01137b copy 0 has 2 threat counters
+    When 1 threat is placed on card 01137b copy 0
+    Then card 01138b copy 0 is the faceup main scheme
+    When villain phase 1 resolves accepting "I Object!"
+    Then seat 1 has 1 facedown Drone minion
+
   @behavior:card:01139a:each-player-puts-top-card-their-deck-one-player
   @covers:behavior:card:01139a:advance-stage-3b
   @card:01139a @card:01139b

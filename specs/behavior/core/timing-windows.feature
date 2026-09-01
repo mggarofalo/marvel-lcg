@@ -115,9 +115,43 @@ Feature: Core interrupt and response windows
     And card 01052 copy 0 is in seat 1's discard pile
     And card 01052 copy 1 is in seat 1's discard pile
 
+  @behavior:rr:response.3:published-result
+  @rr:response.3 @card:01024 @card:01052
+  Scenario: Responses to attack and defeat conditions resolve in either order
+    # She-Hulk's attack both completes a basic attack and defeats Hydra
+    # Mercenary. Chase Them Down belongs to the attack-and-defeat condition;
+    # One-Two Punch belongs to the basic-attack condition. The player chooses
+    # Chase Them Down first and One-Two Punch second.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 839  |
+    And seat 1 shows identity face 01019a
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01024 | 0    |
+      | 01052 | 0    |
+      | 01088 | 0    |
+    And card 01101 copy 0 is a minion engaged with seat 1
+    And card 01097b copy 0 has 2 threat counters
+    When seat 1 begins their basic attack against card 01101 copy 0
+    Then card 01024 copy 0 is offered by the pending action
+    And card 01052 copy 0 is offered by the pending action
+    When seat 1 accepts card 01052 copy 0's pending opportunity
+    Then card 01024 copy 0 is offered by the pending action
+    When seat 1 chooses card 01024 copy 0 paying with these cards for the pending action
+      | card  | copy |
+      | 01088 | 0    |
+    Then card 01097b copy 0 is offered by the pending action
+    When seat 1 chooses card 01097b copy 0 for the pending action
+    Then no opportunity is pending
+    And card 01097b copy 0 has 0 threat counters
+    And card 01019a copy 0 is ready
+
   @behavior:rr:triggering-condition.1:published-result
   @covers:behavior:rr:response.1:published-result
+  @covers:behavior:ruling:7ae039f5499a5662:published-clarification
   @rr:triggering-condition.1 @rr:response.1 @card:01066
+  @ruling:7ae039f5499a5662
   Scenario: One Hawkeye response resolves only once for one minion entry
     # Each Response can trigger only once per occurrence. Hawkeye's controller
     # receives the opportunity, spends one arrow, and cannot spend another

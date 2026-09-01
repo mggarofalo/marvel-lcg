@@ -56,6 +56,20 @@ Feature: Core Ultron side schemes
     Then seat 1 has 3 facedown Drone minions
     And seat 2 has 1 facedown Drone minion
 
+  @behavior:faq:01150:published-clarification-1
+  @faq:01150 @card:01150 @rr:player-deck.1
+  Scenario: Ultron's Imperative continues after its first Drone empties the deck
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | ultron   | spider_man | 995  |
+    And seat 1 has no facedown Drone minions
+    And seat 1's player deck contains only these next cards
+      | next card | copy |
+      | 01002     | 0    |
+    When card 01150 copy 0 is revealed to seat 1
+    Then seat 1 has 2 facedown Drone minions
+    And seat 1 has 1 facedown encounter card
+
   @behavior:card:01151:each-player-chooses-either-place-2-threat-one-player
   @covers:behavior:card:01151:each-player-chooses-either-place-2-threat-choice-1
   @card:01151

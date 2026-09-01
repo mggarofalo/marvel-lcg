@@ -181,8 +181,9 @@ Feature: Core villain phase
   @covers:behavior:card:01113:when-klaw-attacks-give-him-1-additional
   @covers:behavior:rr:star-icon.1:published-result
   @covers:behavior:rr:target.3.2:published-result
+  @covers:behavior:ruling:547baeeb99680e7a:published-clarification
   @rr:boost-boost-icon.4 @rr:attack-enemy-activation.step.3.e
-  @rr:star-icon.1 @rr:target.3.2 @card:01113
+  @rr:star-icon.1 @rr:target.3.2 @card:01113 @ruling:547baeeb99680e7a
   Scenario: Klaw resolves two boost cards and adds all of their icons
     # "If additional boost cards are resolved for an activation, the boost
     # icons are cumulative." Klaw's forced interrupt gives him one additional
@@ -253,7 +254,8 @@ Feature: Core villain phase
 
   @behavior:rr:attack-enemy-activation.2.2:published-result
   @covers:behavior:rr:attack-enemy-activation.step.2:published-result
-  @rr:attack-enemy-activation.2.2 @rr:attack-enemy-activation.step.2
+  @covers:behavior:rr:tough.2.2:published-result
+  @rr:attack-enemy-activation.2.2 @rr:attack-enemy-activation.step.2 @rr:tough.2.2
   Scenario: A tough hero defends before tough prevents the reduced damage
     # "If a hero with a tough status makes a basic defense, the damage is first
     # reduced by that hero's DEF value." Declaring the defense exhausts the
@@ -324,8 +326,9 @@ Feature: Core villain phase
   @covers:behavior:rr:attack-enemy-activation.1.4:published-result
   @covers:behavior:rr:defend-defense.5.1:published-result
   @covers:behavior:rr:you-your.7:published-result
+  @covers:behavior:faq:01001a:published-clarification-1
   @card:01001a @rr:attack-enemy-activation.1.4 @rr:defend-defense.5.1
-  @rr:you-your.7
+  @rr:you-your.7 @faq:01001a
   Scenario: Spider-Sense follows the attacked player when an ally defends
     # Spider-Sense says, "When the villain initiates an attack against you,
     # draw 1 card." Abilities that trigger when an enemy attacks "you" inspect
@@ -342,6 +345,58 @@ Feature: Core villain phase
     Then seat 1 has 7 cards in hand
     And card 01083 copy 0 is faceup on top of seat 1's discard pile
     And card 01001a copy 0 has 0 damage
+
+  @behavior:faq:01001a:published-clarification-2
+  @faq:01001a @card:01001a @card:01135
+  Scenario: Ultron's forced attack interrupt precedes Spider-Sense
+    Given a canonical Core scene is dealt
+      | campaign      | heroes     | seed |
+      | ultron_expert | spider_man | 722  |
+    And seat 1 shows identity face 01001a
+    And seat 1 has no facedown Drone minions
+    And card 01083 copy 0 is an ally controlled by seat 1
+    And these cards are next on seat 1's player deck
+      | next card | copy |
+      | 01002     | 0    |
+      | 01003     | 0    |
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01142     | 0    |
+    When the villain attacks seat 1 accepting "Spider-Sense" with card 01083 copy 0 defending
+    Then card 01002 copy 0 is engaged with seat 1
+    And card 01003 copy 0 is in seat 1's hand
+
+  @behavior:faq:01040a:published-clarification-1
+  @faq:01040a @card:01040a
+  Scenario: Black Panther does not retaliate when his ally defends
+    Given a canonical Core scene is dealt
+      | campaign | heroes        | seed |
+      | rhino    | black_panther | 723  |
+    And seat 1 shows identity face 01040a
+    And card 01076 copy 0 is an ally controlled by seat 1
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01103     | 0    |
+    When the villain attacks seat 1 with card 01076 copy 0 defending
+    Then card 01094 copy 0 has 0 damage
+
+  @behavior:faq:01077:published-clarification-1
+  @faq:01077 @card:01077 @rr:guard
+  Scenario: Guard prevents Counter-Punch from attacking the villain
+    Given a canonical Core scene is dealt
+      | campaign | heroes        | seed |
+      | rhino    | black_panther | 724  |
+    And seat 1 shows identity face 01040a
+    And card 01101 copy 0 is a minion engaged with seat 1
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01077 | 0    |
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01103     | 0    |
+    When the villain attacks seat 1 with card 01040a copy 0 defending
+    Then card 01077 copy 0 is in seat 1's hand
+    And card 01094 copy 0 has 1 damage
 
   @behavior:card:01099:when-rhino-attacks-attack-gains-overkill
   @covers:behavior:card:01099:excess-damage-ally-from-attack-is-dealt
@@ -400,18 +455,42 @@ Feature: Core villain phase
     And card 01001a copy 0 has 0 damage
     And card 01101 copy 0 is engaged with seat 1
 
-  @behavior:rr:attack-enemy-activation.3.2:published-result
-  @covers:behavior:card:01154:deal-1-damage-each-character-you-control
-  @rr:attack-enemy-activation.3.2 @card:01154
-  Scenario: An ally defeated by a boost leaves the attack undefended
+  @behavior:ruling:11c0aab1a6bc0a20:published-clarification
+  @rr:attack-enemy-activation.3.2 @card:01003 @card:01154 @faq:01154 @ruling:11c0aab1a6bc0a20
+  Scenario: Backflip prevents damage after a boost defeats the defending ally
     # If a defending ally leaves play before attack damage, "the attack is
     # considered to have no character defending" and its controller's identity
     # becomes the target. Concussive Blast defeats Mockingbird during Klaw's
-    # first boost. Klaw's attack is therefore recorded as undefended and its
-    # damage is redirected to Spider-Man.
+    # first boost. Damage is redirected to Spider-Man, whose defense event
+    # then prevents it and makes him the attack's final defender.
     Given a canonical Core scene is dealt
       | campaign | heroes     | modular sets | seed |
       | klaw     | spider_man | under_attack | 725  |
+    And seat 1 shows identity face 01001a
+    And card 01083 copy 0 is an ally controlled by seat 1
+    And card 01083 copy 0 has 2 damage
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01003 | 0    |
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01154     | 0    |
+      | 01153     | 0    |
+    When the villain attacks seat 1 accepting "Backflip" with card 01083 copy 0 defending
+    Then card 01083 copy 0 is in seat 1's discard pile
+    And card 01001a copy 0 defended the last attack without a basic defense
+    And card 01001a copy 0 has 1 damage
+
+  @behavior:rr:attack-enemy-activation.3.2:published-result
+  @covers:behavior:card:01154:deal-1-damage-each-character-you-control
+  @covers:behavior:faq:01154:published-clarification-1
+  @rr:attack-enemy-activation.3.2 @card:01154 @faq:01154
+  Scenario: An ally defeated by a boost leaves the attack undefended
+    # When Concussive Blast defeats the defending ally during boost
+    # resolution, attack damage is redirected to the attacked hero.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | modular sets | seed |
+      | klaw     | spider_man | under_attack | 726  |
     And seat 1 shows identity face 01001a
     And card 01083 copy 0 is an ally controlled by seat 1
     And card 01083 copy 0 has 2 damage
@@ -422,6 +501,7 @@ Feature: Core villain phase
     When the villain attacks seat 1 with card 01083 copy 0 defending
     Then card 01083 copy 0 is faceup on top of seat 1's discard pile
     And the last attack was undefended
+    And card 01001a copy 0 has 2 damage
 
   @behavior:rr:boost-boost-icon.3:published-result
   @covers:behavior:rr:attack-enemy-activation.7:published-result
@@ -647,8 +727,10 @@ Feature: Core villain phase
   @covers:behavior:rr:cancel.2:published-result
   @covers:behavior:rr:cancel.4:published-result
   @covers:behavior:rr:in-play-and-out-of-play.7:published-result
+  @covers:behavior:rr:resolve.7:published-result
+  @covers:behavior:rr:resolve.8:published-result
   @card:01004 @rr:cancel.1 @rr:cancel.2 @rr:cancel.4
-  @rr:in-play-and-out-of-play.7
+  @rr:in-play-and-out-of-play.7 @rr:resolve.7 @rr:resolve.8
   Scenario: Enhanced Spider-Sense cancels a treachery's When Revealed effect
     # "Cancel abilities interrupt the initiation of effects and prevent them
     # from resolving." The treachery is nevertheless revealed and discarded,
@@ -671,3 +753,95 @@ Feature: Core villain phase
     And card 01186 copy 0 is faceup on top of the encounter discard pile
     And card 01004 copy 0 is faceup on top of seat 1's discard pile
     And card 01088 copy 0 is in seat 1's discard pile
+
+  @behavior:rr:minion.3:published-result
+  @covers:behavior:rr:villain-phase.step.2.b:published-result
+  @rr:minion.3 @rr:villain-phase.step.2.b
+  Scenario: The engaged player orders multiple minion activations after the villain
+    # Step two resolves the villain first. With two engaged minions remaining,
+    # their player chooses a complete order before either minion activates.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | captain_marvel | 1109 |
+    And seat 1 shows identity face 01010a
+    And card 01010a copy 0 is exhausted
+    And seat 1's hand is empty
+    And card 01103 copy 0 is a minion engaged with seat 1
+    And card 01102 copy 0 is a minion engaged with seat 1
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01104     | 0    |
+      | 01101     | 1    |
+    When villain phase 1 resolves with every optional choice declined until a required decision
+    Then seat 1 is asked to order 2 cards for the pending action
+    When seat 1 orders these cards for the pending action
+      | card  | copy |
+      | 01102 | 0    |
+      | 01103 | 0    |
+    Then card 01010a copy 0 has 7 damage
+
+  @behavior:ruling:2ea7a5960d1275c8:published-clarification
+  @ruling:2ea7a5960d1275c8 @card:01121 @rr:villain-phase.step.2.b
+  Scenario: A minion entering during the villain activation attacks in the same step
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | klaw     | spider_man | 1122 |
+    And seat 1 shows identity face 01001a
+    And card 01001a copy 0 is exhausted
+    And seat 1's hand is empty
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01121     | 0    |
+      | 01120     | 0    |
+    When villain phase 1 resolves with every optional choice declined until a required decision
+    Then seat 1 is asked to order 2 cards for the pending action
+    When seat 1 orders these cards for the pending action
+      | card  | copy |
+      | 01121 | 0    |
+      | 01121 | 1    |
+    Then card 01121 copy 0 is engaged with seat 1
+    And card 01001a copy 0 has 3 damage
+
+  @behavior:ruling:2ea7a5960d1275c8:published-clarification
+  @ruling:2ea7a5960d1275c8 @card:01121 @rr:villain-phase.step.2.b
+  Scenario: A minion entering after activation step waits until the next round
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | klaw     | spider_man | 1123 |
+    And seat 1 shows identity face 01001a
+    When card 01121 copy 0 is revealed to seat 1
+    Then card 01121 copy 0 is engaged with seat 1
+    And card 01001a copy 0 has 0 damage
+
+  @behavior:ruling:b3b6f61bb908d5a0:published-clarification
+  @ruling:b3b6f61bb908d5a0 @card:01113 @rr:encounter-deck.1
+  Scenario: Klaw receives his second boost after the first empties the encounter deck
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | klaw     | spider_man | 1124 |
+    And seat 1 shows identity face 01001a
+    And card 01001a copy 0 is exhausted
+    And the encounter deck contains only these next cards with all other deck cards in the encounter discard pile
+      | next card | copy |
+      | 01120     | 0    |
+    When the villain attacks seat 1 with every optional choice declined
+    Then 2 cards were turned faceup as boost cards
+    And the main scheme has 1 acceleration token
+
+  @behavior:ruling:89d7cd86480cbda5:published-clarification
+  @ruling:89d7cd86480cbda5 @card:01106 @card:01077 @rr:attack-enemy-activation.7
+  Scenario: Stampede stuns before Counter-Punch resolves
+    Given a canonical Core scene is dealt
+      | campaign | heroes        | seed |
+      | rhino    | black_panther | 1125 |
+    And seat 1 shows identity face 01040a
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01077 | 0    |
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01107     | 0    |
+    When card 01106 copy 0 is revealed to seat 1 accepting "Counter-Punch" with card 01040a copy 0 defending its attack
+    Then card 01040a copy 0 has 0 stunned status cards
+    And card 01077 copy 0 is faceup on top of seat 1's discard pile
+    And card 01094 copy 0 has 1 damage

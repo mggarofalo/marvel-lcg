@@ -258,6 +258,9 @@ internal sealed class CoreTranscriptRunner
         Bind("set-identity-face", TranscriptStepKind.Given,
             @"seat (?<seat>\d+) shows identity face (?<face>\d+[a-z]?)",
             SetIdentityFace),
+        Bind("set-villain-stage", TranscriptStepKind.Given,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is the faceup villain",
+            SetVillainStage),
         Bind("place-ally", TranscriptStepKind.Given,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is an ally controlled by seat (?<seat>\d+)",
             PlaceAlly),
@@ -319,6 +322,12 @@ internal sealed class CoreTranscriptRunner
         Bind("reveal-encounter-card", TranscriptStepKind.When,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is revealed to seat (?<seat>\d+)",
             RevealEncounterCard),
+        Bind("reveal-encounter-card-with-defender", TranscriptStepKind.When,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is revealed to seat (?<seat>\d+) with card (?<defender>\d+[a-z]?) copy (?<defenderCopy>\d+) defending its attack",
+            RevealEncounterCardWithDefender),
+        Bind("reveal-encounter-card-with-defender-opportunity", TranscriptStepKind.When,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is revealed to seat (?<seat>\d+) accepting ""(?<label>[^""]+)"" with card (?<defender>\d+[a-z]?) copy (?<defenderCopy>\d+) defending its attack",
+            RevealEncounterCardWithDefenderAndOpportunity),
         Bind("assign-threat-accepting", TranscriptStepKind.When,
             @"(?<count>\d+) threat is assigned to the main scheme for seat (?<seat>\d+) accepting ""(?<label>[^""]+)""",
             AssignThreatAccepting),
@@ -430,6 +439,9 @@ internal sealed class CoreTranscriptRunner
         Bind("enemy-attack-decline", TranscriptStepKind.When,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) attacks seat (?<seat>\d+) with every optional choice declined",
             ResolveEnemyAttack),
+        Bind("enemy-attack-until-required", TranscriptStepKind.When,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) attacks seat (?<seat>\d+) with every optional choice declined until a required decision",
+            ResolveEnemyAttackUntilRequired),
         Bind("enemy-attack-defender", TranscriptStepKind.When,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) attacks seat (?<seat>\d+) with card (?<defender>\d+[a-z]?) copy (?<defenderCopy>\d+) defending",
             ResolveEnemyAttackWithDefender),
@@ -602,6 +614,9 @@ internal sealed class CoreTranscriptRunner
         Bind("owned-player-card-counts", TranscriptStepKind.Then,
             @"seat (?<seat>\d+)'s player cards contain these counts",
             OwnedPlayerCardCounts),
+        Bind("setup-authority", TranscriptStepKind.Then,
+            @"the dealt scene matches setup authority ""(?<authority>setup:(?:campaign|hero|encounter-set):[a-z0-9_]+)""",
+            SetupAuthority),
         Bind("player-count", TranscriptStepKind.Then,
             @"the game has (?<count>\d+) players?", PlayerCount),
         Bind("encounter-discard-count", TranscriptStepKind.Then,
@@ -628,6 +643,9 @@ internal sealed class CoreTranscriptRunner
         Bind("card-top-encounter-discard", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is faceup on top of the encounter discard pile",
             CardOnTopOfEncounterDiscard),
+        Bind("card-encounter-discard", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is in the encounter discard pile",
+            CardInEncounterDiscard),
         Bind("card-resolving", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is faceup in the resolving area",
             CardResolving),
@@ -952,6 +970,10 @@ internal sealed class CoreTranscriptRunner
         context.SceneRequired(step).Apply(new SetSceneForm(
             Seat(match, step), match.Groups["face"].Value));
 
+    private static void SetVillainStage(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        context.SceneRequired(step).Apply(new SetSceneVillain(SceneCard(match, step)));
+
     private static void PlaceAlly(
         TranscriptContext context, TranscriptStep step, Match match) =>
         context.SceneRequired(step).Apply(new MoveSceneCard(
@@ -1168,6 +1190,46 @@ internal sealed class CoreTranscriptRunner
         context.Events.Clear();
         SetPendingPrompt(context, Sequence.Work(
             context.World, context.Cards, context.World.Abilities, context.Events));
+    }
+
+    private static void RevealEncounterCardWithDefender(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        Card defender = context.SceneRequired(step).Find(new SceneCard(
+            match.Groups["defender"].Value,
+            Number(match, "defenderCopy", step)));
+        Area queue = context.World.AreaOf(
+            DeckType.DealtEncounterCardsDeck, PlayArea.Of(seat));
+        World.MoveToTop(card, queue);
+        context.World.Agenda.Add(new PhaseStep(
+            Steps.RevealEncounterCard, Round: 1, Number: 4,
+            Subject: card.ObjectId, Seat: seat));
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        FinishWithDefender(
+            context, step, defender, acceptedLabel: null,
+            stopAtRequiredAfterDefense: true);
+    }
+
+    private static void RevealEncounterCardWithDefenderAndOpportunity(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        Card defender = context.SceneRequired(step).Find(new SceneCard(
+            match.Groups["defender"].Value,
+            Number(match, "defenderCopy", step)));
+        Area queue = context.World.AreaOf(
+            DeckType.DealtEncounterCardsDeck, PlayArea.Of(seat));
+        World.MoveToTop(card, queue);
+        context.World.Agenda.Add(new PhaseStep(
+            Steps.RevealEncounterCard, Round: 1, Number: 4,
+            Subject: card.ObjectId, Seat: seat));
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        FinishWithDefender(context, step, defender, match.Groups["label"].Value);
     }
 
     private static void AssignThreatAccepting(
@@ -1708,7 +1770,9 @@ internal sealed class CoreTranscriptRunner
         VillainPhase.Schedule(
             context.World.Agenda, Number(match, "round", step));
 
-        FinishWithDefender(context, step, defender, acceptedLabel: null);
+        FinishWithDefender(
+            context, step, defender, acceptedLabel: null,
+            stopAtRequiredAfterDefense: true);
     }
 
     private static void ResolveVillainAttackWithDefender(
@@ -1724,7 +1788,9 @@ internal sealed class CoreTranscriptRunner
             Steps.Attack, Round: 1, Number: 2, Index: seat,
             Subject: villain.ObjectId, Seat: seat));
 
-        FinishWithDefender(context, step, defender, acceptedLabel: null);
+        FinishWithDefender(
+            context, step, defender, acceptedLabel: null,
+            stopAtRequiredAfterDefense: true);
     }
 
     private static void ResolveVillainAttack(
@@ -1790,6 +1856,19 @@ internal sealed class CoreTranscriptRunner
             Steps.Attack, Round: 1, Number: 2, Index: seat,
             Subject: enemy.ObjectId, Seat: seat));
         FinishAgenda(context, step);
+    }
+
+    private static void ResolveEnemyAttackUntilRequired(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        Card enemy = context.SceneRequired(step).Find(SceneCard(match, step));
+        int seat = Seat(match, step);
+        context.World.Agenda.Add(new PhaseStep(
+            Steps.Attack, Round: 1, Number: 2, Index: seat,
+            Subject: enemy.ObjectId, Seat: seat));
+        FinishUntilRequired(context, step);
     }
 
     private static void ResolveEnemyAttackWithDefender(
@@ -1869,7 +1948,8 @@ internal sealed class CoreTranscriptRunner
     }
 
     private static void FinishWithDefender(
-        TranscriptContext context, TranscriptStep step, Card defender, string? acceptedLabel)
+        TranscriptContext context, TranscriptStep step, Card defender, string? acceptedLabel,
+        bool stopAtRequiredAfterDefense = false)
     {
 
         bool defended = false;
@@ -1882,6 +1962,12 @@ internal sealed class CoreTranscriptRunner
             {
                 throw new TranscriptException(
                     $"{step.Location}: agenda still asks '{asked.Label}' after 100 answers");
+            }
+
+            if (defended && stopAtRequiredAfterDefense && !asked.Cancellable)
+            {
+                SetPendingPrompt(context, asked);
+                return;
             }
 
             Decision decision = Decision.Decline;
@@ -2202,6 +2288,13 @@ internal sealed class CoreTranscriptRunner
         TranscriptTable table = Table(step, "card", "copy");
         int[] payment = [.. table.Rows.Select(row => context.SceneRequired(step).Find(
             new SceneCard(row["card"], TableNumber(row, "copy", step))).ObjectId)];
+        var abilityResources = context.World.Abilities
+            .ResourceAbilities(context.World, seat)
+            .Where(source => payment.Contains(source.Effect))
+            .ToList();
+        context.LastResourceGeneration = abilityResources.Count == 1
+            ? (abilityResources[0].Effect, abilityResources[0].Generates)
+            : null;
 
         // Some card transcripts need to fix the player deck before playing a
         // card. Setup's opening-hand draw would consume that authority-derived
@@ -2518,8 +2611,17 @@ internal sealed class CoreTranscriptRunner
                     $"{step.Location}: the selected cards cannot be allocated to the action cost");
         context.Events.Clear();
         context.CurrentPrompt = "<none>";
-        context.Events.AddRange(runner.Act(
-            context.World, action, payments, chosen ?? [], values, allocations));
+        // Actions are game occurrences, not direct interpreter calls. Routing
+        // the accepted action through the agenda preserves its interrupt and
+        // response windows when paying the cost itself defeats a character.
+        context.World.Agenda.AddPlayerAction(1, new PlayerAction(
+            action,
+            [.. payments],
+            [.. chosen ?? []],
+            values is null
+                ? null
+                : new Dictionary<string, long>(values, StringComparer.Ordinal),
+            allocations is null ? null : [.. allocations]));
         SetPendingPrompt(context, Sequence.Work(
             context.World, context.Cards, runner, context.Events));
     }
@@ -2580,7 +2682,8 @@ internal sealed class CoreTranscriptRunner
             || ordered.Any(id => !targets.Legal.Contains(id)))
         {
             throw new TranscriptException(
-                $"{step.Location}: requested order is not legal for '{asked.Label}'");
+                $"{step.Location}: requested order [{string.Join(',', ordered)}] is not "
+                + $"legal for '{asked.Label}' [{string.Join(',', targets.Legal)}]");
         }
 
         Sequence.Answer(
@@ -2959,7 +3062,11 @@ internal sealed class CoreTranscriptRunner
         {
             throw new TranscriptAssertionException(
                 $"{step.Location}: seat {seat + 1} was not asked to choose between "
-                + $"{min} and {max} cards");
+                + $"{min} and {max} cards; actual request was "
+                + (context.PendingPrompt is { Affordances.Count: > 0 } pending
+                    && pending.Affordances[0].Targets is { } actual
+                    ? $"{actual.Min} to {actual.Max} from {actual.Legal.Count} legal cards"
+                    : "not a card-target request"));
         }
     }
 
@@ -3122,6 +3229,173 @@ internal sealed class CoreTranscriptRunner
         }
     }
 
+    private static void SetupAuthority(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        string authority = match.Groups["authority"].Value;
+        string[] parts = authority.Split(':');
+        CanonicalCoreScene scene = context.SceneRequired(step);
+        switch (parts[1])
+        {
+            case "campaign":
+                AssertCampaignSetup(context, scene, parts[2], step);
+                return;
+            case "hero":
+                AssertHeroSetup(context, scene, parts[2], step);
+                return;
+            case "encounter-set":
+                AssertEncounterSetSetup(context, scene, parts[2], step);
+                return;
+            default:
+                throw new TranscriptAssertionException(
+                    $"{step.Location}: unknown setup authority '{authority}'");
+        }
+    }
+
+    private static void AssertCampaignSetup(
+        TranscriptContext context,
+        CanonicalCoreScene scene,
+        string name,
+        TranscriptStep step)
+    {
+        if (!string.Equals(scene.Request.Campaign, name, StringComparison.Ordinal))
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: scene campaign is '{scene.Request.Campaign}', not '{name}'");
+        }
+
+        CampaignSetup campaign = context.Setup.Campaign(name);
+        if (campaign.Expert != context.World.Expert)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected expert setup mode {campaign.Expert}; "
+                + $"was {context.World.Expert}");
+        }
+        AssertFaceInventory(context.World, campaign.Villain, step, "villain stages");
+        AssertFaceInventory(context.World, campaign.Schemes, step, "main schemes");
+        AssertFaceInventory(context.World, campaign.SetAside, step, "set-aside cards");
+        AssertFaceInventory(context.World, campaign.Encounters, step, "scenario cards");
+        foreach (string setName in campaign.EncounterSets)
+        {
+            AssertFaceInventory(
+                context.World, context.Setup.EncounterSet(setName), step,
+                $"'{setName}' encounter set");
+        }
+
+        IReadOnlyList<string> modular = scene.Request.ModularSets ?? campaign.ModularSets;
+        foreach (string setName in modular)
+        {
+            AssertFaceInventory(
+                context.World, context.Setup.EncounterSet(setName), step,
+                $"'{setName}' modular set");
+        }
+    }
+
+    private static void AssertHeroSetup(
+        TranscriptContext context,
+        CanonicalCoreScene scene,
+        string name,
+        TranscriptStep step)
+    {
+        int seat = scene.Request.Heroes
+            .Select((hero, index) => (hero, index))
+            .Where(candidate => string.Equals(candidate.hero, name, StringComparison.Ordinal))
+            .Select(candidate => candidate.index)
+            .DefaultIfEmpty(-1)
+            .Single();
+        if (seat < 0)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: scene does not contain hero '{name}'");
+        }
+
+        HeroSetup hero = context.Setup.Hero(name);
+        AssertOwnedFaceInventory(
+            context.World, seat, [.. hero.Hero, .. hero.HeroDeck, .. hero.PlayerDeck],
+            step, $"'{name}' owned cards");
+        AssertFaceInventory(
+            context.World, hero.Obligations,
+            step, $"'{name}' obligations");
+        AssertAreaFaceInventory(
+            context.World.Seats[seat].Nemesis,
+            hero.NemesisSet,
+            step, $"'{name}' nemesis cards");
+    }
+
+    private static void AssertEncounterSetSetup(
+        TranscriptContext context,
+        CanonicalCoreScene scene,
+        string name,
+        TranscriptStep step)
+    {
+        CampaignSetup campaign = context.Setup.Campaign(scene.Request.Campaign);
+        IReadOnlyList<string> selected =
+        [
+            .. campaign.EncounterSets,
+            .. scene.Request.ModularSets ?? campaign.ModularSets,
+        ];
+        if (!selected.Contains(name, StringComparer.Ordinal))
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: encounter set '{name}' is not selected");
+        }
+
+        AssertFaceInventory(
+            context.World, context.Setup.EncounterSet(name), step,
+            $"'{name}' encounter set");
+    }
+
+    private static void AssertFaceInventory(
+        World world,
+        IEnumerable<string> expected,
+        TranscriptStep step,
+        string label)
+    {
+        var expectedCounts = PhysicalFaces(expected);
+        foreach ((string face, int count) in expectedCounts)
+        {
+            int actual = world.Cards.Count(card =>
+                card.Owner == World.Scenario
+                && card.Faces.Contains(face, StringComparer.Ordinal));
+            Equal(count, actual, $"copies of {face} among {label}", step);
+        }
+    }
+
+    private static void AssertOwnedFaceInventory(
+        World world,
+        int seat,
+        IEnumerable<string> expected,
+        TranscriptStep step,
+        string label)
+    {
+        foreach ((string face, int count) in PhysicalFaces(expected))
+        {
+            int actual = world.Cards.Count(card =>
+                card.Owner == seat && card.Faces.Contains(face, StringComparer.Ordinal));
+            Equal(count, actual, $"copies of {face} among {label}", step);
+        }
+    }
+
+    private static void AssertAreaFaceInventory(
+        Area area,
+        IEnumerable<string> expected,
+        TranscriptStep step,
+        string label)
+    {
+        foreach ((string face, int count) in PhysicalFaces(expected))
+        {
+            int actual = area.Cards.Count(card =>
+                card.Faces.Contains(face, StringComparer.Ordinal));
+            Equal(count, actual, $"copies of {face} among {label}", step);
+        }
+    }
+
+    private static Dictionary<string, int> PhysicalFaces(
+        IEnumerable<string> entries) => entries
+        .Select(entry => entry.Split(',')[0])
+        .GroupBy(face => face, StringComparer.Ordinal)
+        .ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal);
+
     private static void EncounterDiscardCount(
         TranscriptContext context, TranscriptStep step, Match match) =>
         Equal(Number(match, "count", step),
@@ -3230,6 +3504,18 @@ internal sealed class CoreTranscriptRunner
         TranscriptContext context, TranscriptStep step, Match match) =>
         AssertFaceupTop(
             context, step, match, context.World.AreaOf(DeckType.EncounterDiscardPile));
+
+    private static void CardInEncounterDiscard(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        if (card.Area.Type != DeckType.EncounterDiscardPile)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected card {card.ObjectId} in the encounter "
+                + $"discard pile; was {card.Area.Type}");
+        }
+    }
 
     private static void CardResolving(
         TranscriptContext context, TranscriptStep step, Match match)
@@ -4086,7 +4372,8 @@ internal sealed class CoreTranscriptRunner
         if (!asked.Affordances.Any(offer => offer.AnchorId == card.ObjectId))
         {
             throw new TranscriptAssertionException(
-                $"{step.Location}: card {card.ObjectId} is not offered by '{asked.Label}'");
+                $"{step.Location}: card {card.ObjectId} is not offered by '{asked.Label}'; "
+                + $"offered [{string.Join(',', asked.Affordances.Select(offer => offer.AnchorId))}]");
         }
     }
 
@@ -4209,7 +4496,7 @@ internal sealed class CoreTranscriptRunner
         string recent = context.Events.Count == 0
             ? "<none>"
             : string.Join(Environment.NewLine,
-                context.Events.TakeLast(5).Select(gameEvent =>
+                context.Events.TakeLast(12).Select(gameEvent =>
                     $"  - {gameEvent.GetType().Name}: {gameEvent}"));
         string message = $"""
             obligation: {scenario.Obligation}
@@ -4463,17 +4750,13 @@ internal sealed class CoreTranscriptSuite
     {
         var references = new HashSet<string>(StringComparer.Ordinal);
         foreach (CatalogObligation obligation in obligations.Where(obligation =>
-                     obligation.Disposition == "executable"
-                     && obligation.Implementation is "supported" or "unimplemented"))
+                     obligation.Disposition == "executable"))
         {
-            // During catalog derivation, an unimplemented status names a known
-            // engine gap before its negative transcript is admitted. Once any
-            // scenario is linked, the runner holds that evidence bidirectionally.
-            // MARVEL-307 turns absence itself into the final module gate.
-            if (obligation.Implementation == "unimplemented"
-                && obligation.Scenarios.Count == 0)
+            if (obligation.Implementation is not ("supported" or "unimplemented"))
             {
-                continue;
+                throw new TranscriptException(
+                    $"executable obligation '{obligation.Id}' is not completed; "
+                    + $"implementation is {obligation.Implementation ?? "(none)"}");
             }
 
             if (obligation.Scenarios.Count == 0)

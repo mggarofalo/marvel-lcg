@@ -52,6 +52,32 @@ Feature: Core Standard and Expert encounter cards
     When card 01188 copy 0 is revealed to seat 1
     Then seat 1 has 1 facedown encounter card
 
+  @behavior:faq:01036:published-clarification-1
+  @faq:01036 @card:01036 @card:01188
+  Scenario: Losing Mark V Armor at zero unmodified hit points defeats Iron Man
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | iron_man | 1050 |
+    And card 01036 copy 0 is an upgrade attached to seat 1's identity
+    And card 01029b copy 0 has 9 damage
+    When card 01188 copy 0 is revealed to seat 1
+    Then card 01036 copy 0 is offered by the pending action
+    When seat 1 chooses card 01036 copy 0 for the pending action
+    Then seat 1 is eliminated
+
+  @behavior:faq:01039:published-clarification-1
+  @faq:01039 @card:01039 @card:01188
+  Scenario: Losing Rocket Boots at zero unmodified hit points defeats Iron Man
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | iron_man | 1051 |
+    And card 01039 copy 0 is an upgrade attached to seat 1's identity
+    And card 01029b copy 0 has 9 damage
+    When card 01188 copy 0 is revealed to seat 1
+    Then card 01039 copy 0 is offered by the pending action
+    When seat 1 chooses card 01039 copy 0 for the pending action
+    Then seat 1 is eliminated
+
   @behavior:card:01189:card-gains-surge
   @card:01189
   Scenario: Gang-Up surges in alter-ego form
@@ -97,7 +123,8 @@ Feature: Core Standard and Expert encounter cards
     And seat 1 has 0 facedown encounter cards
 
   @behavior:card:01190:if-your-nemesis-minion-does-not-enter-condition-met
-  @card:01190
+  @covers:behavior:faq:01190:published-clarification-1
+  @card:01190 @faq:01190
   Scenario: Shadow of the Past surges when the nemesis minion is already in play
     Given a canonical Core scene is dealt
       | campaign | heroes     | seed |
@@ -123,17 +150,18 @@ Feature: Core Standard and Expert encounter cards
 
   @behavior:card:01192:if-there-are-no-side-schemes-in-condition-met
   @covers:behavior:card:01192:reveal-that-side-scheme
-  @card:01192
+  @covers:behavior:ruling:e3c98d687be651de:published-clarification
+  @card:01192 @ruling:e3c98d687be651de
   Scenario: Masterplan discards until and reveals a side scheme when none is in play
     Given a canonical Core scene is dealt
       | campaign     | heroes     | seed |
       | rhino_expert | spider_man | 1047 |
-    And these cards are next on the encounter deck
+    And the encounter deck contains only these next cards with all other deck cards in the encounter discard pile
       | next card | copy |
       | 01101     | 0    |
       | 01107     | 0    |
     When card 01192 copy 0 is revealed to seat 1
-    Then the encounter discard pile has 2 cards
+    Then the main scheme has 1 acceleration token
     And card 01107 copy 0 is in play
 
   @behavior:card:01193:surge

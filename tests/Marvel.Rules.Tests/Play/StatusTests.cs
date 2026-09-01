@@ -570,6 +570,33 @@ public sealed class StatusTests
     }
 
     [Rule("rr:overkill.1")]
+    [Rule("rr:overkill.2")]
+    [Fact]
+    public void OverkillTreatsAFacedownPlayerCardAsTheDroneThatWasAttacked()
+    {
+        // A facedown Drone is a minion while it is attacked. Its defeat turns
+        // the underlying ally faceup in its owner's discard pile, but excess
+        // damage still goes to the villain rather than that ally's controller.
+        var printed = Cards().With("hero", ("ATK", "4"), ("HP", "10"))
+            .With("villain", ("HP", "10"))
+            .With("underlying-ally", ("HP", "4"), ("Kind", "Ally"));
+        var world = Board(printed);
+        var hero = world.Seats[0].IdentityCard;
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        world.CreateCard("underlying-ally", world.Seats[0].Deck);
+        var drone = Assert.IsType<Card>(
+            FacedownDrones.EngageTop(world, 0, "test", "Create_Drone", []));
+
+        Grant(world, hero, Marvel.Rules.Timing.Keywords.Overkill);
+        Agendas.Happening(world);
+        Damage.Attack(world, printed, hero, drone, 4, "test", "Attack", []);
+
+        Assert.Equal(DeckType.DiscardPile, drone.Area.Type);
+        Assert.Equal(3, villain.Damage);
+        Assert.Equal(0, hero.Damage);
+    }
+
+    [Rule("rr:overkill.1")]
     [Fact]
     public void OverkillCarriesTheExcessFromADefeatedAllyToItsController()
     {

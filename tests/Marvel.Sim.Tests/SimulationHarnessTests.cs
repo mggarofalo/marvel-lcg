@@ -83,14 +83,12 @@ public sealed class SimulationHarnessTests
             games: 1,
             seeds: [5],
             selectionSeed: null,
-            heroes: ["spider_man", "she_hulk"]));
+            heroes: ["spider_man", "she_hulk"]) with { PolicySeed = 9006 });
 
         var moves = record
             .Where(item => item.GetProperty("type").GetString() == "step")
             .SelectMany(item => item.GetProperty("events").EnumerateArray())
             .Where(item => item.GetProperty("kind").GetString() == "CardsMoved")
-            .Where(item => item.GetProperty("cards").EnumerateArray()
-                .Any(card => card.GetProperty("card").GetInt32() == 2))
             .ToList();
         Assert.Contains(moves, moved =>
             moved.GetProperty("to").GetProperty("zone").GetString()

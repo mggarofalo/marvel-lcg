@@ -1626,7 +1626,9 @@ public sealed partial class AbilityRunner
     {
         string status = Word(node.Require("status"));
         return [.. Every(node.Require("card"), cast).Where(card =>
-            Statuses.Count(cast.World, card, status)
+            DeckTypes.IsInPlay(card.Area.Type)
+                && CardKinds.IsCharacter(FacedownDrones.Kind(card, cast.World.Facts))
+                && Statuses.Count(cast.World, card, status)
                 < Statuses.Limit(cast.World, cast.World.Facts, card, status))];
     }
 

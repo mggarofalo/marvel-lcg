@@ -25,6 +25,8 @@ Feature: Core card actions
   @covers:behavior:rr:target.3:published-result
   @covers:behavior:rr:resource.4:published-result
   @covers:behavior:rr:resolve.1:published-result
+  @covers:behavior:rr:resolve.2:published-result
+  @covers:behavior:rr:resolve.3:published-result
   @card:01005 @rr:attack-player-ability-type.2 @rr:cost.3 @rr:event
   @rr:in-play-and-out-of-play.7
   @rr:initiating-abilities.step.1 @rr:initiating-abilities.step.3
@@ -33,7 +35,7 @@ Feature: Core card actions
   @rr:play-put-into-play.2 @rr:ownership-and-control.7.3 @rr:player-turn.5
   @rr:labeled-ability.1 @rr:labeled-ability.2 @rr:you-your.12
   @rr:choose-game-element @rr:choose-game-element.1 @rr:target.3
-  @rr:resource.4 @rr:resolve.1
+  @rr:resource.4 @rr:resolve.1 @rr:resolve.2 @rr:resolve.3
   Scenario: Swinging Web Kick pays, chooses an enemy, deals eight, and discards
     # "Hero Action (attack): Deal 8 damage to an enemy." An event is placed
     # faceup while it resolves, its resource cost is paid from hand, and after
@@ -101,6 +103,33 @@ Feature: Core card actions
     And card 01094 copy 0 has 2 damage
     And 1 Move_Damage event was emitted
     And 1 Attack event was emitted
+
+  @behavior:faq:01049:published-clarification-1
+  @faq:01049 @card:01049
+  Scenario: Moved damage is dealt and discards Tough
+    Given a canonical Core scene is dealt
+      | campaign | heroes        | seed |
+      | rhino    | black_panther | 736  |
+    And seat 1 shows identity face 01040a
+    And card 01040a copy 0 has 2 damage
+    And card 01049 copy 0 is an upgrade attached to seat 1's identity
+    And card 01094 copy 0 has a tough status card
+    And seat 1's hand contains exactly these cards
+      | card   | copy |
+      | 01043a | 0    |
+      | 01088  | 0    |
+    When seat 1 initiates card 01043a copy 0's action paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+    Then seat 1 is asked to order 1 card for the pending action
+    When seat 1 orders these cards for the pending action
+      | card  | copy |
+      | 01049 | 0    |
+    Then card 01094 copy 0 is offered by the pending action
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01040a copy 0 has 0 damage
+    And card 01094 copy 0 has 0 damage
+    And card 01094 copy 0 has 0 tough status cards
 
   @behavior:rr:move.2:published-result
   @covers:behavior:card:01049:move-1-damage-from-your-hero-enemy-condition-not-met
@@ -441,13 +470,15 @@ Feature: Core card actions
     And card 01022 copy 0 is faceup on top of seat 1's discard pile
 
   @behavior:card:01054:deal-5-damage-enemy
-  @card:01054
+  @covers:behavior:faq:01028:attack-event-triggers-response
+  @card:01054 @card:01028 @faq:01028
   Scenario: Uppercut deals five damage to its chosen enemy
     # "Hero Action (attack): Deal 5 damage to an enemy."
     Given a canonical Core scene is dealt
       | campaign | heroes   | seed |
       | rhino    | she_hulk | 713  |
     And seat 1 shows identity face 01019a
+    And card 01028 copy 0 is an upgrade attached to seat 1's identity
     And seat 1's hand contains exactly these cards
       | card  | copy |
       | 01054 | 0    |
@@ -460,7 +491,9 @@ Feature: Core card actions
     Then card 01094 copy 0 is offered by the pending action
     When seat 1 chooses card 01094 copy 0 for the pending action
     Then card 01094 copy 0 has 5 damage
-    And card 01054 copy 0 is faceup on top of seat 1's discard pile
+    And card 01094 copy 0 has 1 stunned status card
+    And card 01028 copy 0 is faceup on top of seat 1's discard pile
+    And card 01054 copy 0 is in seat 1's discard pile
 
   @behavior:card:01087:deal-3-damage-enemy
   @covers:behavior:rr:mental-resource.1:pays-resource-cost
@@ -513,6 +546,29 @@ Feature: Core card actions
     And card 01094 copy 0 has 2 damage
     And card 01019a copy 0 has 0 damage
     And card 01053 copy 0 is faceup on top of seat 1's discard pile
+
+  @behavior:faq:01136:published-clarification-2
+  @faq:01136 @card:01136 @card:01053 @rr:overkill.2
+  Scenario: Overkill damages Ultron III after defeating the last Drone
+    Given a canonical Core scene is dealt
+      | campaign      | heroes   | seed |
+      | ultron_expert | she_hulk | 725  |
+    And seat 1 shows identity face 01019a
+    And card 01136 copy 0 is the faceup villain
+    And card 01150 copy 0 is a side scheme in play
+    And seat 1 has no facedown Drone minions
+    And card 01020 copy 0 is a facedown Drone minion engaged with seat 1
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01053 | 0    |
+      | 01090 | 0    |
+    When seat 1 initiates card 01053 copy 0's action paying with these cards
+      | card  | copy |
+      | 01090 | 0    |
+    Then card 01020 copy 0 is offered by the pending action
+    When seat 1 chooses card 01020 copy 0 for the pending action
+    Then card 01020 copy 0 is in seat 1's discard pile
+    And card 01136 copy 0 has 3 damage
 
   @behavior:rr:overkill.4:published-result
   @rr:overkill.4 @card:01053
@@ -578,7 +634,9 @@ Feature: Core card actions
   @covers:behavior:rr:and.1:published-result
   @covers:behavior:rr:and.2:published-result
   @covers:behavior:faq:01031:published-clarification-1
-  @card:01031 @rr:and @rr:and.1 @rr:and.2 @faq:01031
+  @covers:behavior:faq:01031:published-clarification-2
+  @covers:behavior:rr:alteration-effect:published-result
+  @card:01031 @rr:and @rr:and.1 @rr:and.2 @rr:alteration-effect @faq:01031
   Scenario: Repulsor Blast's combined damage is prevented without canceling its discard
     # Repulsor Blast deals its base and additional damage as one simultaneous
     # five-damage instance. Tough prevents that entire instance; independently,
@@ -646,9 +704,10 @@ Feature: Core card actions
   @covers:behavior:rr:labeled-ability.4:published-result
   @covers:behavior:rr:thwart.2:published-result
   @covers:behavior:rr:you-your.8:published-result
+  @covers:behavior:ruling:0870bc11f295fbb0:legal-practice-one-scheme
   @rr:for-each @rr:for-each.1 @rr:for-each.2 @rr:labeled-ability.4
   @rr:thwart.2 @rr:you-your.8
-  @card:01023
+  @card:01023 @ruling:0870bc11f295fbb0
   Scenario: Legal Practice scales to an intermediate three-card cost
     # The chosen quantity is part of the cost; the effect removes exactly one
     # threat for each of the three cards discarded this way.
@@ -656,6 +715,8 @@ Feature: Core card actions
       | campaign | heroes   | seed |
       | rhino    | she_hulk | 727  |
     And card 01097b copy 0 has 6 threat counters
+    And card 01109 copy 0 is a side scheme in play
+    And card 01109 copy 0 has 4 threat counters
     And seat 1's hand contains exactly these cards
       | card  | copy |
       | 01023 | 0    |
@@ -670,6 +731,7 @@ Feature: Core card actions
       | 01024 | 1    |
       | 01024 | 2    |
     Then card 01097b copy 0 has 3 threat counters
+    And card 01109 copy 0 has 4 threat counters
     And card 01024 copy 0 is in seat 1's discard pile
     And card 01024 copy 1 is in seat 1's discard pile
     And card 01024 copy 2 is in seat 1's discard pile
@@ -732,6 +794,21 @@ Feature: Core card actions
     Then card 01030 copy 0 is exhausted
     And card 01030 copy 0 has 0 tough status cards
     And card 01030 copy 0 has 0 damage
+    And card 01094 copy 0 has 1 damage
+    And card 01101 copy 0 has 1 damage
+
+  @behavior:ruling:96bfdd5f94a5f95a:published-clarification
+  @ruling:96bfdd5f94a5f95a @card:01030 @rr:cost.1
+  Scenario: War Machine resolves his action after its damage cost defeats him
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | iron_man | 1114 |
+    And seat 1 shows identity face 01029a
+    And card 01030 copy 0 is an ally controlled by seat 1
+    And card 01030 copy 0 has 2 damage
+    And card 01101 copy 0 is a minion engaged with seat 1
+    When seat 1 initiates card 01030 copy 0's action without payment
+    Then card 01030 copy 0 is in seat 1's discard pile
     And card 01094 copy 0 has 1 damage
     And card 01101 copy 0 has 1 damage
 
@@ -1121,7 +1198,8 @@ Feature: Core card actions
     And card 01018 copy 0 is faceup on top of seat 1's discard pile
 
   @behavior:card:01018:below-damage-cap
-  @card:01018
+  @covers:behavior:ruling:0870bc11f295fbb0:energy-channel-one-enemy
+  @card:01018 @ruling:0870bc11f295fbb0
   Scenario: Energy Channel deals two damage per counter below its cap
     # Four energy counters are below the printed maximum, so the attack deals
     # eight damage rather than the capped value of ten.
@@ -1130,6 +1208,7 @@ Feature: Core card actions
       | rhino    | captain_marvel | 871  |
     And seat 1 shows identity face 01010a
     And card 01018 copy 0 is an upgrade attached to seat 1's identity
+    And card 01103 copy 0 is a minion engaged with seat 1
     And seat 1's hand contains exactly these cards
       | card  | copy |
       | 01012 | 0    |
@@ -1143,7 +1222,26 @@ Feature: Core card actions
     Then card 01094 copy 0 is offered by the pending action
     When seat 1 chooses card 01094 copy 0 for the pending action
     Then card 01094 copy 0 has 8 damage
+    And card 01103 copy 0 has 0 damage
     And card 01018 copy 0 is faceup on top of seat 1's discard pile
+
+  @behavior:faq:01018:published-clarification-1
+  @faq:01018 @card:01018
+  Scenario: Tough prevents Energy Channel as one damage instance
+    # Four counters create one eight-damage instance. Tough prevents the whole
+    # instance; four separate instances would damage Rhino after Tough left.
+    Given a canonical Core scene is dealt
+      | campaign | heroes         | seed |
+      | rhino    | captain_marvel | 873  |
+    And seat 1 shows identity face 01010a
+    And card 01018 copy 0 is an upgrade attached to seat 1's identity
+    And card 01018 copy 0 has 4 energy counters
+    And card 01094 copy 0 has a tough status card
+    When seat 1 initiates card 01018 copy 0's second printed action without payment
+    Then card 01094 copy 0 is offered by the pending action
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01094 copy 0 has 0 damage
+    And card 01094 copy 0 has 0 tough status cards
 
   @behavior:card:01018:at-damage-cap
   @card:01018

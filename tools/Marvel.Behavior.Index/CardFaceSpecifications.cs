@@ -31,7 +31,7 @@ internal static class CardFaceSpecifications
         }
     }
 
-    private static string Build()
+    internal static string Build()
     {
         CatalogFile catalog = Catalog.Build();
         var sources = catalog.Sources
@@ -96,7 +96,9 @@ internal static class CardFaceSpecifications
             ordinal++;
         }
 
-        return output.ToString();
+        // The generated feature is a repository artifact, so its line endings
+        // are part of that artifact rather than a choice made by the host OS.
+        return output.ToString().Replace(Environment.NewLine, "\n", StringComparison.Ordinal);
     }
 
     private static List<PrintedField> PrintedFields(JsonElement card)

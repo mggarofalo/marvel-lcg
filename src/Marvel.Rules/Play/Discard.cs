@@ -242,6 +242,8 @@ public static class Discard
     public static void ResetLeavingState(
         World world, State.Card card, string trigger, List<GameEvent> events)
     {
+        world.Effects.CardLeftPlay(card);
+
         // Most state fields are dormant outside play and reset if the card
         // becomes a new copy on re-entry. An acceleration token is different:
         // rr:acceleration-token.2.1 counts it from any in-play host, so clause

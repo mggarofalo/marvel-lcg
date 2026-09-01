@@ -24,6 +24,7 @@ Feature: Canonical Core setup
   @covers:behavior:rr:first-player:published-result
   @covers:behavior:rr:identity-specific-card.1:published-result
   @covers:behavior:rr:ownership-and-control.1:published-result
+  @covers:behavior:rr:hit-points.1:published-result
   @covers:behavior:card:01097a:rhino-i-and-rhino-ii
   @covers:behavior:card:01097a:bomb-scare
   @covers:behavior:card:01097a:advance-stage-1b
@@ -41,6 +42,7 @@ Feature: Canonical Core setup
   @rr:first-player
   @rr:identity-specific-card.1
   @rr:ownership-and-control.1
+  @rr:hit-points.1
   @card:01097a
   Scenario: The printed Spider-Man and Rhino deal reaches its opening state
     # Setup selects identities, sets their hit points, chooses a first player,

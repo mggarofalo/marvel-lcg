@@ -74,6 +74,41 @@ Feature: Core defeat
     And card 01099 copy 0 is attached to card 01095 copy 0
     And the game is unfinished
 
+  @behavior:rr:villain-defeat.3.1:source-disposition
+  @covers:behavior:ruling:63d198b6904c2d2a:general-clarification
+  @rr:villain-defeat.3.1 @ruling:63d198b6904c2d2a @card:01153
+  Scenario: A same-title next villain stage retaliates for the completed attack
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | ultron   | spider_man | 1119 |
+    And seat 1 shows identity face 01001a
+    And card 01134 copy 0 has 15 damage
+    And card 01153 copy 0 is attached to card 01134 copy 0
+    When seat 1 uses their basic attack against card 01134 copy 0
+    Then card 01135 copy 0 is the faceup villain
+    And card 01153 copy 0 is attached to card 01135 copy 0
+    And card 01001a copy 0 has 1 damage
+
+  @behavior:faq:01052:published-clarification-1
+  @faq:01052 @card:01052
+  Scenario: Chase Them Down responds to defeating a villain stage
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 318  |
+    And seat 1 shows identity face 01019a
+    And card 01094 copy 0 has 12 damage
+    And card 01097b copy 0 has 2 threat counters
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01052 | 0    |
+    When seat 1 begins their basic attack against card 01094 copy 0
+    Then card 01052 copy 0 is offered by the pending action
+    When seat 1 accepts card 01052 copy 0's pending opportunity
+    Then card 01097b copy 0 is offered by the pending action
+    When seat 1 chooses card 01097b copy 0 for the pending action
+    Then card 01095 copy 0 is the faceup villain
+    And card 01097b copy 0 has 0 threat counters
+
   @behavior:rr:winning-the-game:published-result
   @covers:behavior:card:01021:deal-x-damage-enemy
   @covers:behavior:card:01021:x-is-amount-damage-you-have-sustained

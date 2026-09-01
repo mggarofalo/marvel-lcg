@@ -255,23 +255,26 @@ Feature: Core Ultron treacheries
     Then card 01134 copy 0 has 2 damage
 
   @behavior:card:01147:each-drone-minion-engaged-with-your-hero
-  @covers:behavior:card:01147:if-no-attack-was-made-way-put-condition-not-met
-  @card:01147
-  Scenario: Swarm Attack makes each engaged Drone attack
-    # The setup Drone and one named second Drone each reach their own defender
-    # decision. Because attacks were made, Swarm Attack creates no third Drone.
+  @covers:behavior:rr:activation.5:published-result
+  @card:01147 @rr:activation.5
+  Scenario: Swarm Attack requires the first player to order multiple Drone activations
+    # The two engaged Drones activate simultaneously. The first player chooses
+    # their complete order before either attack changes the game state.
     Given a canonical Core scene is dealt
       | campaign | heroes     | seed |
       | ultron   | spider_man | 1014 |
     And seat 1 shows identity face 01001a
+    And seat 1 has no facedown Drone minions
     And card 01002 copy 0 is a facedown Drone minion engaged with seat 1
+    And card 01003 copy 0 is a facedown Drone minion engaged with seat 1
     And seat 1's hand is empty
     When card 01147 copy 0 is revealed to seat 1
-    Then card 01001a copy 0 is offered by the pending action
-    When seat 1 declines the pending opportunity
-    Then card 01001a copy 0 is offered by the pending action
-    When seat 1 declines the pending opportunity
-    Then seat 1 has 2 facedown Drone minions
+    Then seat 1 is asked to order 2 cards for the pending action
+    When seat 1 orders these cards for the pending action
+      | card  | copy |
+      | 01003 | 0    |
+      | 01002 | 0    |
+    Then the game is unfinished
 
   @behavior:card:01147:if-no-attack-was-made-way-put-condition-met
   @card:01147
@@ -290,3 +293,53 @@ Feature: Core Ultron treacheries
     Then seat 1 may pass the pending window
     When seat 1 declines the pending opportunity
     Then seat 1 has 1 facedown Drone minion
+
+  @behavior:ruling:2a73561d6faa69ed:published-clarification
+  @covers:behavior:card:01147:if-no-attack-was-made-way-put-condition-not-met
+  @ruling:2a73561d6faa69ed @card:01143 @card:01147 @rr:activation.5
+  Scenario: Swarm Attack includes the Drone made by a defeated Advanced Drone
+    Given a canonical Core scene is dealt
+      | campaign | heroes        | seed |
+      | ultron   | black_panther | 1115 |
+    And seat 1 shows identity face 01040a
+    And seat 1 has no facedown Drone minions
+    And card 01143 copy 0 is a minion engaged with seat 1
+    And card 01143 copy 0 has 3 damage
+    And these cards are next on seat 1's player deck
+      | next card | copy |
+      | 01041     | 0    |
+    When card 01147 copy 0 is revealed to seat 1
+    Then seat 1 may pass the pending window
+    When seat 1 declines the pending opportunity
+    Then seat 1 may pass the pending window
+    When seat 1 declines the pending opportunity
+    Then card 01143 copy 0 is in the encounter discard pile
+    And seat 1 has 0 facedown Drone minions
+    And card 01041 copy 0 is in seat 1's discard pile
+    And card 01040a copy 0 has 2 damage
+
+  @behavior:ruling:fc57e61be5945ac9:core-clarification
+  @ruling:fc57e61be5945ac9 @card:01145 @rr:defend-defense.5.1
+  Scenario: Rage of Ultron discards from its revealing player after another player defends
+    Given a canonical Core scene is dealt
+      | campaign | heroes                    | seed |
+      | ultron   | spider_man,captain_marvel | 1116 |
+    And seat 1 shows identity face 01001a
+    And card 01011 copy 0 is an ally controlled by seat 2
+    And seat 1's player deck contains only these next cards
+      | next card | copy |
+      | 01002     | 0    |
+      | 01003     | 0    |
+      | 01004     | 0    |
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01142     | 0    |
+    When card 01145 copy 0 is revealed to seat 1 with card 01011 copy 0 defending its attack
+    Then option 1 is offered by the pending decision
+    When seat 2 chooses option 1 for the pending encounter-card decision
+    Then seat 1 may pass the pending window
+    When seat 1 declines the pending opportunity
+    Then card 01002 copy 0 is in seat 1's discard pile
+    And card 01003 copy 0 is in seat 1's discard pile
+    And card 01004 copy 0 is in seat 1's player deck
+    And card 01011 copy 0 is in seat 2's discard pile

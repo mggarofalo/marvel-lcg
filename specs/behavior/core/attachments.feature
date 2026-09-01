@@ -7,7 +7,9 @@ Feature: Core attachment lifecycle
   @covers:behavior:card:01009:max-1-per-enemy
   @covers:behavior:card:01009:when-attached-enemy-would-attack-discard-webbed
   @covers:behavior:card:01009:then-stun-that-enemy
-  @card:01009
+  @covers:behavior:faq:01009:prevents-two-attacks
+  @covers:behavior:faq:01009:replaced-attack-does-not-trigger-spider-sense
+  @card:01009 @faq:01009
   Scenario: Webbed Up replaces one enemy attack and stuns its attacker
     # Webbed Up attaches to Rhino, and its maximum prevents the second copy
     # from attaching to that same enemy. When Rhino would attack, the forced
@@ -44,6 +46,7 @@ Feature: Core attachment lifecycle
     And card 01001a copy 0 has 0 damage
     And card 01094 copy 0 has 0 stunned status cards
     And 3 Give_Status events were emitted
+    And 0 Draw_Cards events were emitted
     And the attack has ended
 
   @behavior:rr:attach-to:published-result

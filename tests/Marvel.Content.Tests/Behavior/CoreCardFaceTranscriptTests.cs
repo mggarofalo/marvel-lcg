@@ -47,7 +47,7 @@ public sealed class CoreCardFaceTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(4, results.Count);
+        Assert.Equal(5, results.Count);
         Assert.Equal(
             "d46de12a5223add3f2203e2e9b83ba7a0c008aa0af6230de63d490b369facb1a",
             results["behavior:card:01001b:generate-mental-resource"].Digest);
@@ -71,7 +71,7 @@ public sealed class CoreCardFaceTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(64, results.Count);
+        Assert.Equal(70, results.Count);
         Assert.Equal(
             "942c7c7769123feb2634068e0e4eeb3822bdea0c230abb9c9e8c0679d4de9a2a",
             results[
@@ -327,7 +327,7 @@ public sealed class CoreCardFaceTranscriptTests
             results["behavior:card:01095:search-encounter-deck-and-discard-pile-for"].Digest);
         Assert.Equal("6cbf533d47f0a327837f9b9128327152208c21367b8ba8aacddc17a8fdd497f9",
             results["behavior:card:01097b:if-stage-is-completed-players-lose-game-condition-not-met"].Digest);
-        Assert.Equal("309d89412d61015c4f0fc6a4ea1ddbbb66516a3131ef552f8d8c97d73eaa6f2d",
+        Assert.Equal("e54175a23686cc32d77ce3fb94274c2456efa43bd574f6e233c5a116fc11a117",
             results["behavior:card:01098:attach-rhino"].Digest);
         Assert.Equal("77c80bc5e77c81b565196ddabac9a16572ac17415d61b13305a8af73dddaf27c",
             results["behavior:card:01098:then-if-there-is-at-least-5-condition-not-met"].Digest);
@@ -364,7 +364,7 @@ public sealed class CoreCardFaceTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(31, results.Count);
+        Assert.Equal(33, results.Count);
         Assert.Equal("7c2d9c7e356389496e6586bf8593e9a088ffa4b5d0aa7d4491f2c92dde8f25d0",
             results["behavior:card:01114:search-encounter-deck-and-discard-pile-for"].Digest);
         Assert.Equal("26b05d105fd19a68a1708d6b19c3d64611e20414eda96f759c53096be8781ca1",
@@ -484,7 +484,7 @@ public sealed class CoreCardFaceTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(10, results.Count);
+        Assert.Equal(11, results.Count);
         Assert.Equal("870ef71d126c3054f1cab459a87cd77c57574103989b59e5c5ad8edc1de47cb2",
             results[
                 "behavior:card:01137b:each-player-puts-top-card-their-deck-one-player"].Digest);
@@ -526,7 +526,7 @@ public sealed class CoreCardFaceTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(5, results.Count);
+        Assert.Equal(6, results.Count);
         Assert.Equal("4f27ab7cd4c7b20239b62f64c7c2a125c0d89dc4ba17a47650a38b6174804c03",
             results[
                 "behavior:card:01148:each-player-puts-top-card-their-deck-one-player"].Digest);
@@ -552,7 +552,7 @@ public sealed class CoreCardFaceTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(7, results.Count);
+        Assert.Equal(9, results.Count);
         Assert.Equal("62e1050af2ffdf32d28bd699913ac85c574dc84925b9f00f12489b224ab00470",
             results[
                 "behavior:card:01134:after-ultron-attacks-you-choose-either-place-choice-1"].Digest);
@@ -583,7 +583,7 @@ public sealed class CoreCardFaceTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(14, results.Count);
+        Assert.Equal(16, results.Count);
         Assert.Equal("5f832f8f13b1ee16b00e3fc8a1fffcc83efaea50eae119b97433aa43f8085ec9",
             results["behavior:card:01145:ultron-schemes"].Digest);
         Assert.Equal("0328de1a7b9d93b8fd925cc2ea430d80ad685fddf34f20e82e3082b27d0927a9",
@@ -618,7 +618,7 @@ public sealed class CoreCardFaceTranscriptTests
         Assert.Equal("cefe505d1fdf9fc59f312cda5162fbd118b235cc5ab8bebcb1ea01cd519d56f9",
             results[
                 "behavior:card:01146:ultron-heals-1-damage-for-each-drone-multiple"].Digest);
-        Assert.Equal("00967078b27089b4c1c94b3d33b59b123cfc5d42809e7f20f064e97b0c437797",
+        Assert.Equal("fa0dcb4232851887fd6482ed5c3953fd916eca40de292e010ee32f039d7d5627",
             results[
                 "behavior:card:01147:each-drone-minion-engaged-with-your-hero"].Digest);
         Assert.Equal("5f714ff8b81a3a0dd8f613eb45285f2a24eb583218dd49fe065f3441dc688112",
@@ -634,7 +634,7 @@ public sealed class CoreCardFaceTranscriptTests
                 "specs/behavior/core/card-actions.feature::", StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(47, results.Count);
+        Assert.Equal(51, results.Count);
         Assert.Equal(
             "a28c5a59b66c973e782638089dee02710747f76025a7cfa380584a6062562a26",
             results[
@@ -678,7 +678,7 @@ public sealed class CoreCardFaceTranscriptTests
             "96a7acbd0a2292913eadd775c682b396c769e9e7008a472211c88de17cdbf45d",
             results["behavior:card:01022:deal-1-damage-each-enemy"].Digest);
         Assert.Equal(
-            "82643ed799db2373ad67cdb5a400147de38a073b631527496f160214cc232528",
+            "e63a34db35f24fa3c08f6d1b42b53c608465b06dfcaf0f664714d264ea9095e2",
             results["behavior:card:01054:deal-5-damage-enemy"].Digest);
         Assert.Equal(
             "1bf2c010c2bd2606a260cb3d090bfea365155e9ee701597cb5e2f8dee59673a0",
@@ -690,7 +690,7 @@ public sealed class CoreCardFaceTranscriptTests
             "675d0037dc995595e2cbf1a70985c25b7431dc42db41136b88e2ebbc599bff44",
             results["behavior:card:01023:choose-and-discard-up-5-cards-from-minimum"].Digest);
         Assert.Equal(
-            "b3bab57cebe8e142917b4c3244c2af15f151d98a2834eb6443af0194bfdb5e5e",
+            "75f294e1395ead05dc3819fd94ae60f260f188e0ec3b4948bcb3d3815af17026",
             results["behavior:card:01023:choose-and-discard-up-5-cards-from-intermediate"].Digest);
         Assert.Equal(
             "c477aa40e1b88e69389385c2831e11b1b5eb902420c07cede591f5ae156211e3",
@@ -729,7 +729,7 @@ public sealed class CoreCardFaceTranscriptTests
             "55f512a54aefb56447e6c96eddd9f9d0d5103281bba5ee8a354129c5d79d1397",
             results["behavior:card:01018:spend-x-energy-resources-put-x-energy"].Digest);
         Assert.Equal(
-            "b6f72af5698b600a7aea17b5f938be35ec0ba4b1453a5b3136aef409edddae9b",
+            "c2e7c43beec3fc5fb3641766933b850a168e95a54ec83e44afb67629c75622e0",
             results["behavior:card:01018:below-damage-cap"].Digest);
         Assert.Equal(
             "721f2535f7df38cce66290f8cfb8ec4bac3ef9b91994d0a18123a558fac4ef58",
@@ -823,12 +823,14 @@ public sealed class CoreCardFaceTranscriptTests
             ["behavior:card:01187:card-gains-surge"] = "4f9435f818a4bb99756b428a6c35581a8940f7a67b2e766264d73edfc487abca",
             ["behavior:card:01187:villain-attacks-you"] = "a7e3e2c73c0c0e0812726e528ebf73d96d8dee6affa2a50b0a54e830e2e91da5",
             ["behavior:card:01188:if-no-cards-were-discarded-way-card-condition-not-met"] = "c72ec9206076f32041820d8cf740c93da963c79f73fe311e4edf6eeb22c694ba",
+            ["behavior:faq:01036:published-clarification-1"] = "5058b370270e2c06702e0b32f85146fa827c558ee086a1fd2dff5b17d752cd71",
+            ["behavior:faq:01039:published-clarification-1"] = "4ec16f79115ef1c2bbdde87dba848aef87738417b8f5df019370535482b310dc",
             ["behavior:card:01189:card-gains-surge"] = "64b5b49bdb024e44a03d782965275c21208f4791047c4e849e508c5842fe6ca7",
             ["behavior:card:01189:villain-and-each-minion-engaged-with-you"] = "8cd208c3620ecec39b026e99f3b51e5f2a260a9c1f5530b00fb4f3d165d2ddf2",
             ["behavior:card:01190:reveal-your-set-aside-nemesis-minion-and"] = "f2c0629cd6cdc09553d94e67e069ad3219685ef47547417df69a4e7bd9f896b7",
             ["behavior:card:01190:if-your-nemesis-minion-does-not-enter-condition-met"] = "8a9b0e12d15e224392da4e26ae0d08947da198ab8cab9d3bdf0ca706410e16e9",
             ["behavior:card:01192:place-4-threat-on-each-side-scheme"] = "5a7f282eaf358cbd1e3036f1bb4a0065727ca28abc4c6708409aea888429a0c7",
-            ["behavior:card:01192:if-there-are-no-side-schemes-in-condition-met"] = "3b4c7f86feca3d304a46d88322623e98543810d54860eaee87733cc6b4e1e90b",
+            ["behavior:card:01192:if-there-are-no-side-schemes-in-condition-met"] = "d62650d2bf058ea41ff601fdd0be6ef0d30357f78d65776917d70db61a54edd4",
             ["behavior:card:01193:surge"] = "bf95a321792a592f4cb53dbffab168d525ca218aec1ebe5120a51a4da7d4f885",
         };
 
@@ -978,14 +980,17 @@ public sealed class CoreCardFaceTranscriptTests
             .ToDictionary(result => result.Scenario, StringComparer.Ordinal);
         var expected = new Dictionary<string, string>(StringComparer.Ordinal)
         {
+            ["specs/behavior/core/core-modular-nemesis.feature::The first player breaks an encounter attachment target tie"] = "65900b85a34453a4992c5cdb7d78d67166cb12cb5c7b6d40b98010f5e39b2edc",
             ["specs/behavior/core/core-modular-nemesis.feature::Legions of Hydra finds Madame Hydra before counting Hydra enemies"] = "f17df5aa6684d20eff1dd1011dd7d0b369488d6025ef4782dbc919ee2e5da5b0",
             ["specs/behavior/core/core-modular-nemesis.feature::Legions of Hydra counts every Hydra enemy already in play"] = "3be9b030dd0e432991d31969ff3619c08cb2e4e09b4efea211b0c3e4a92e8ffe",
             ["specs/behavior/core/core-modular-nemesis.feature::Madame Hydra places threat after attacking"] = "87e5113dbdfc9b2721c270620eea1a6a89bfbd16eddd712e78892879ee783208",
+            ["specs/behavior/core/core-modular-nemesis.feature::Madame Hydra chooses one of two Legions schemes for her threat"] = "5c77130191f777c6f2395c94b499b538e0483d4afc5cb635df13bbb18134b76d",
             ["specs/behavior/core/core-modular-nemesis.feature::Madame Hydra places threat after scheming"] = "19df77dfb688c0994eecdaab6cba191bb29d3a38144cb721b755e69476b22cd6",
             ["specs/behavior/core/core-modular-nemesis.feature::The Doomsday Chair finds M.O.D.O.K. outside play"] = "6f9cacfb78e8140a95d019ba1c8e11b0d782bc2a48a0f10b10fc7812aa5bfee2",
             ["specs/behavior/core/core-modular-nemesis.feature::The Doomsday Chair does not search when M.O.D.O.K. is in play"] = "646837941474844b69d5de2a3a96a050f38580ddc430edf07c44bea92c1e6bb6",
             ["specs/behavior/core/core-modular-nemesis.feature::M.O.D.O.K. retaliates against an attacking hero"] = "66bd9dc80319e667ff05b617c2f4e7ca8724392141294818958527befff01336",
             ["specs/behavior/core/core-modular-nemesis.feature::Biomechanical Upgrades attaches to the highest printed hit points and surges"] = "c475ca3a6a440e1eb2644e8fa651fdaed063a30029abb7d389107d53b93b4f9f",
+            ["specs/behavior/core/core-modular-nemesis.feature::Biomechanical Upgrades can attach to a facedown Drone"] = "2e5b4236db564a60d1f739b1665ac1e6dbd34312525cd2f94db08fc18294f45e",
         };
 
         Assert.Equal(expected.Count, results.Count);

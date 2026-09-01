@@ -2175,8 +2175,14 @@ public static class VillainPhase
     {
         if (world.Agenda.Occurrence is { } occurrence)
         {
-            Threat.Apply(world, facts, abilities, occurrence, events);
-            occurrence.Also(Steps.VillainPhaseStepOneEnds);
+            long placed = Threat.Apply(world, facts, abilities, occurrence, events);
+            // Assault on NORAD says "After placing threat here during step
+            // one". A fully prevented assignment did not place threat, so it
+            // does not create that response condition (FAQ 01138).
+            if (placed > 0)
+            {
+                occurrence.Also(Steps.VillainPhaseStepOneEnds);
+            }
         }
     }
 

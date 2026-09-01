@@ -191,6 +191,24 @@ public sealed class ContinuousEffects(World world)
         return new Registration(this, entry);
     }
 
+    /// <summary>Ends direct lasting effects on a card that leaves play.</summary>
+    /// <remarks>
+    /// A card that leaves play and later returns is a new instance of that
+    /// card. Direct lasting effects therefore do not follow its object id
+    /// across the zone boundary. Live-set effects use <see cref="ContinuousEffect.Scope"/>
+    /// and remain in force so newly entering cards can still join that set.
+    /// </remarks>
+    public void CardLeftPlay(Card card)
+    {
+        ArgumentNullException.ThrowIfNull(card);
+
+        entries.RemoveAll(entry =>
+            entry.Effect.Source == EffectSource.LastingEffect
+            && entry.Effect.Card is not null
+            && entry.Effect.Affects == card.ObjectId
+            && entry.Effect.Scope.Length == 0);
+    }
+
     /// <summary>
     /// Grants a modified field to every character one player controls for a
     /// stated duration.
