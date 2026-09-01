@@ -136,13 +136,21 @@ public sealed class CoreCardFaceTranscriptTests
                 "specs/behavior/core/card-actions.feature::", StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(41, results.Count);
+        Assert.Equal(43, results.Count);
         Assert.Equal(
             "5a3c519fb8e602123a5186bc67ab95ff553eb67080b527c327b8f3974ae6f2a4",
             results["behavior:card:01005:deal-8-damage-enemy"].Digest);
         Assert.Equal(
             "305649c664396e1d741f7d98aa96f833030caf7178026bdffb6c0059b362b00e",
             results["behavior:card:01049:move-1-damage-from-your-hero-enemy-condition-met"].Digest);
+        Assert.Equal(
+            "3f18c9a5ebdbc44462092b8723cfd93e30df6b8c84e4a8fb1f92c2d04e013482",
+            results[
+                "behavior:card:01046:deal-1-damage-villain-and-each-enemy-condition-met"].Digest);
+        Assert.Equal(
+            "cd2cb2b2ddf46cc7a634a7700311fa4394875aaa6631201975f7a8bb356ab499",
+            results[
+                "behavior:card:01046:deal-1-damage-villain-and-each-enemy-condition-not-met"].Digest);
         Assert.Equal(
             "878187c1cdd7a76d1fbd35a131a6d21375e4ec2df509a0dea22e3c525bbcc73d",
             results["behavior:rr:cancel.3:published-result"].Digest);

@@ -130,6 +130,70 @@ Feature: Core card actions
     And card 01094 copy 0 has 0 damage
     And 0 Move_Damage events were emitted
 
+  @behavior:card:01046:deal-1-damage-villain-and-each-enemy-condition-met
+  @covers:behavior:card:01046:choose-player
+  @covers:behavior:card:01046:play-wakanda-forever-event-use-ability
+  @card:01043a @card:01046
+  Scenario: Final Energy Daggers damage the villain and one player's enemies twice
+    # Energy Daggers is the only Black Panther upgrade, so its Special is the
+    # final step. Choosing Black Panther's player deals two damage to Rhino and
+    # to each enemy engaged with that player.
+    Given a canonical Core scene is dealt
+      | campaign | heroes        | seed |
+      | rhino    | black_panther | 879  |
+    And seat 1 shows identity face 01040a
+    And card 01046 copy 0 is an upgrade attached to seat 1's identity
+    And card 01101 copy 0 is a minion engaged with seat 1
+    And seat 1's hand contains exactly these cards
+      | card   | copy |
+      | 01043a | 0    |
+      | 01088  | 0    |
+    When seat 1 initiates card 01043a copy 0's action paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+    Then seat 1 is asked to order 1 card for the pending action
+    When seat 1 orders these cards for the pending action
+      | card  | copy |
+      | 01046 | 0    |
+    Then card 01040a copy 0 is offered by the pending action
+    When seat 1 chooses card 01040a copy 0 for the pending action
+    Then card 01094 copy 0 has 2 damage
+    And card 01101 copy 0 has 2 damage
+
+  @behavior:card:01046:deal-1-damage-villain-and-each-enemy-condition-not-met
+  @card:01043a @card:01046 @card:01048
+  Scenario: Nonfinal Energy Daggers damage the villain and one player's enemies once
+    # Energy Daggers resolves before Tactical Genius, so it is not the final
+    # step. Choosing Black Panther's player deals one damage to Rhino and each
+    # enemy engaged with that player before the final Special resolves.
+    Given a canonical Core scene is dealt
+      | campaign | heroes        | seed |
+      | rhino    | black_panther | 880  |
+    And seat 1 shows identity face 01040a
+    And card 01046 copy 0 is an upgrade attached to seat 1's identity
+    And card 01048 copy 0 is an upgrade attached to seat 1's identity
+    And card 01101 copy 0 is a minion engaged with seat 1
+    And card 01097b copy 0 has 2 threat counters
+    And seat 1's hand contains exactly these cards
+      | card   | copy |
+      | 01043a | 0    |
+      | 01088  | 0    |
+    When seat 1 initiates card 01043a copy 0's action paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+    Then seat 1 is asked to order 2 cards for the pending action
+    When seat 1 orders these cards for the pending action
+      | card  | copy |
+      | 01046 | 0    |
+      | 01048 | 0    |
+    Then card 01040a copy 0 is offered by the pending action
+    When seat 1 chooses card 01040a copy 0 for the pending action
+    Then card 01094 copy 0 has 1 damage
+    And card 01101 copy 0 has 1 damage
+    And card 01097b copy 0 is offered by the pending action
+    When seat 1 chooses card 01097b copy 0 for the pending action
+    Then card 01097b copy 0 has 0 threat counters
+
   @behavior:rr:cancel.3:published-result
   @covers:behavior:rr:status-cards.2:published-result
   @covers:behavior:rr:labeled-ability.6:published-result

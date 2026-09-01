@@ -30403,11 +30403,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Final Energy Daggers damage the villain and one player's enemies twice"
+          ],
+          "mutation": "Do not offer or use Black Panther's player for Energy Daggers; the selection or engaged-enemy damage assertions fail."
         },
         {
           "key": "deal-1-damage-villain-and-each-enemy-condition-met",
@@ -30415,11 +30417,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Final Energy Daggers damage the villain and one player's enemies twice"
+          ],
+          "mutation": "Deal one rather than two to Rhino or the engaged minion on the final step; a damage assertion fails."
         },
         {
           "key": "deal-1-damage-villain-and-each-enemy-condition-not-met",
@@ -30427,11 +30431,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Nonfinal Energy Daggers damage the villain and one player's enemies once"
+          ],
+          "mutation": "Use final-step damage while Energy Daggers resolves first; Rhino or the engaged minion has two damage instead of one."
         },
         {
           "key": "play-wakanda-forever-event-use-ability",
@@ -30439,11 +30445,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Final Energy Daggers damage the villain and one player's enemies twice"
+          ],
+          "mutation": "Fail to make Energy Daggers' Special resolvable through Wakanda Forever; its player-choice prompt is absent."
         }
       ]
     },
