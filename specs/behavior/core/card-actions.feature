@@ -314,7 +314,8 @@ Feature: Core card actions
   @covers:behavior:card:01056:exhaust-tac-team-and-remove-1-attack
   @covers:behavior:rr:uses-x-type:published-result
   @covers:behavior:rr:uses-x-type.1:published-result
-  @card:01056 @rr:uses-x-type @rr:uses-x-type.1
+  @covers:behavior:rr:cost.1:published-result
+  @card:01056 @rr:uses-x-type @rr:uses-x-type.1 @rr:cost.1
   Scenario: Tac Team enters with three uses and discards after the third action
     # "Uses (3 attack counters)" places three counters as Tac Team enters play.
     # Each action exhausts it, spends exactly one counter, and deals two damage;
@@ -330,6 +331,7 @@ Feature: Core card actions
     Then card 01094 copy 0 has 2 damage
     And card 01056 copy 0 has 2 attack counters
     And card 01056 copy 0 is exhausted
+    And a Remove_Counter event was emitted before a Deal_Damage event
     When the end-of-player-phase ready step resolves
     Then card 01056 copy 0 is ready
     When seat 1 initiates card 01056 copy 0's action without payment

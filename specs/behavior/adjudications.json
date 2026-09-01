@@ -4856,12 +4856,24 @@
       "fingerprint": "sha256:a1f3038ae0a861e6844e00ec58580ac437be7ddc769bcd3e20032e191dc56b14",
       "obligations": [
         {
-          "key": "published-result",
-          "summary": "A card’s resource cost is the numerical value that must be paid to play the card.",
-          "disposition": "executable",
-          "reason": null,
+          "key": "card-resource-cost-definition",
+          "summary": "A card resource cost is the numerical value paid to play that card.",
+          "disposition": "no-independent-behavior",
+          "reason": "This defines a printed cost field; payment and initiation obligations carry every observable result.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
+          "work_item": null,
+          "exception": null,
+          "scenarios": [],
+          "mutation": null
+        },
+        {
+          "key": "ability-cost-definition",
+          "summary": "An ability can describe a cost that must be paid to use it.",
+          "disposition": "no-independent-behavior",
+          "reason": "This defines an ability-text component; cost payment and the specific card ability carry every observable result.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -4876,10 +4888,10 @@
         {
           "key": "published-result",
           "summary": "A cost arrow icon () in ability text distinguishes a cost from an effect, in a “pay cost resolve effect” format.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+          "disposition": "narrower",
+          "reason": "This repeats the cost-arrow proposition carried by rr:cost.1.",
+          "target": "behavior:rr:cost.1:published-result",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -4915,11 +4927,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Tac Team enters with three uses and discards after the third action"
+          ],
+          "mutation": "Resolve Tac Team damage before exhausting and removing its counter; the event-order assertion fails."
         }
       ]
     },
@@ -4948,10 +4962,10 @@
         {
           "key": "published-result",
           "summary": "Some card abilities may reference an “additional cost.” A player must pay all additional costs simultaneously with the cost that is being added to, even if multiple cards or abilities are adding separate additional costs.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "outside-core",
+          "reason": "No Core Set card adds an additional cost; the mechanic requires later product content.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -5002,10 +5016,10 @@
         {
           "key": "published-result",
           "summary": "A resource cost with the per-player icon ([per-player]) is multiplied by the number of players who started the scenario.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "outside-core",
+          "reason": "No Core Set card has a per-player resource cost; the mechanic requires later product content.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -5020,10 +5034,10 @@
         {
           "key": "published-result",
           "summary": "If a cost with the per-player icon is reduced, the total cost of the card is reduced, not the value that is multiplied by the number of players.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "outside-core",
+          "reason": "No Core Set card has a per-player resource cost; the mechanic requires later product content.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],

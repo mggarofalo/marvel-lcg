@@ -75,10 +75,10 @@ public sealed class BehaviorAuthorityTests
 
         Assert.Equal(2, catalog.Version);
         Assert.Equal(2608, catalog.Sources.Count);
-        Assert.Equal(4352, catalog.Sources.Sum(source => source.Obligations.Count));
+        Assert.Equal(4353, catalog.Sources.Sum(source => source.Obligations.Count));
         Assert.All(catalog.Sources, source => Assert.NotEmpty(source.Obligations));
         Assert.Equal(
-            4352,
+            4353,
             catalog.Sources.SelectMany(source => source.Obligations)
                 .Select(obligation => obligation.Id)
                 .Distinct(StringComparer.Ordinal)
@@ -124,6 +124,24 @@ public sealed class BehaviorAuthorityTests
             obligation.Id.EndsWith("-zero", StringComparison.Ordinal)
             || obligation.Id.EndsWith("-one", StringComparison.Ordinal)
             || obligation.Id.EndsWith("-multiple", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void CoreCostBoundaryExcludesOnlyAbsentPrintedMechanics()
+    {
+        var catalog = Catalog.Build();
+
+        foreach (string id in new[] { "rr:cost.2", "rr:cost.2.1", "rr:cost.10" })
+        {
+            var source = Assert.Single(catalog.Sources, candidate => candidate.Id == id);
+            Assert.All(source.Obligations, obligation =>
+                Assert.Equal("outside-core", obligation.Disposition));
+        }
+
+        var upTo = Assert.Single(catalog.Sources, source => source.Id == "rr:cost.9");
+        Assert.Contains(upTo.Obligations, obligation =>
+            obligation.Disposition == "executable"
+            && obligation.Implementation == "supported");
     }
 
     [Fact]
