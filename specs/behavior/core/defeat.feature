@@ -73,3 +73,67 @@ Feature: Core defeat
     And card 01095 copy 0 has 0 damage
     And card 01099 copy 0 is attached to card 01095 copy 0
     And the game is unfinished
+
+  @behavior:rr:winning-the-game:published-result
+  @rr:winning-the-game
+  Scenario: Defeating the final villain stage makes the players win
+    # "If the final villain stage is defeated, the players win the game."
+    # Rhino II is first defeated with no excess carrying to Rhino III. Rhino
+    # III stuns She-Hulk and gains Tough. Her first basic attack clears stun;
+    # Tenacity readies her, and her second basic attack clears Tough. Gamma
+    # Slam then deals her sustained 14 damage before the final Uppercut.
+    Given a canonical Core scene is dealt
+      | campaign     | heroes   | seed |
+      | rhino_expert | she_hulk | 733  |
+    And seat 1 shows identity face 01019a
+    And card 01019a copy 0 has 14 damage
+    And card 01095 copy 0 has 14 damage
+    And card 01093 copy 0 is an upgrade attached to seat 1's identity
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01021 | 0    |
+      | 01054 | 0    |
+      | 01054 | 1    |
+      | 01088 | 0    |
+      | 01089 | 0    |
+      | 01090 | 0    |
+      | 01052 | 0    |
+      | 01052 | 1    |
+      | 01055 | 0    |
+      | 01055 | 1    |
+    When seat 1 initiates card 01054 copy 0's action paying with these cards
+      | card  | copy |
+      | 01055 | 0    |
+      | 01052 | 0    |
+    Then card 01095 copy 0 is offered by the pending action
+    When seat 1 chooses card 01095 copy 0 for the pending action
+    Then card 01096 copy 0 is the faceup villain
+    And card 01096 copy 0 has 0 damage
+    And card 01096 copy 0 has 1 tough status card
+    And card 01019a copy 0 has 1 stunned status card
+    When seat 1 uses their basic attack against card 01096 copy 0
+    Then card 01019a copy 0 is exhausted
+    And card 01019a copy 0 has 0 stunned status cards
+    And card 01096 copy 0 has 1 tough status card
+    When seat 1 initiates card 01093 copy 0's action paying with these cards
+      | card  | copy |
+      | 01090 | 0    |
+    Then card 01019a copy 0 is ready
+    And card 01093 copy 0 is in seat 1's discard pile
+    When seat 1 uses their basic attack against card 01096 copy 0
+    Then card 01096 copy 0 has 0 damage
+    And card 01096 copy 0 has 0 tough status cards
+    When seat 1 initiates card 01021 copy 0's action paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+      | 01089 | 0    |
+    Then card 01096 copy 0 is offered by the pending action
+    When seat 1 chooses card 01096 copy 0 for the pending action
+    Then card 01096 copy 0 has 14 damage
+    When seat 1 initiates card 01054 copy 1's action paying with these cards
+      | card  | copy |
+      | 01055 | 1    |
+      | 01052 | 1    |
+    Then card 01096 copy 0 is offered by the pending action
+    When seat 1 chooses card 01096 copy 0 for the pending action
+    Then the players win the game

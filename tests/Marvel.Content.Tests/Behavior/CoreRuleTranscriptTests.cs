@@ -221,7 +221,7 @@ public sealed class CoreRuleTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(3, results.Count);
+        Assert.Equal(4, results.Count);
         Assert.Equal(
             "87b20f195af0f89ca10e94890082e869d08366a336f3b3b566b1811b99744754",
             results["behavior:rr:minion.2:published-result"].Digest);
@@ -231,6 +231,9 @@ public sealed class CoreRuleTranscriptTests
         Assert.Equal(
             "be40938c050e970910307f3563ad59453381899280587bb12e904c8865af56c7",
             results["behavior:rr:villain-defeat:published-result"].Digest);
+        Assert.Equal(
+            "9cc5b86fe4515ed10962285b02a812c97110b09be6de8f27b013563fa1b898d5",
+            results["behavior:rr:winning-the-game:published-result"].Digest);
     }
 
     [Fact]
