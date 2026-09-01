@@ -342,6 +342,9 @@ internal sealed class CoreTranscriptRunner
         Bind("basic-attack", TranscriptStepKind.When,
             @"seat (?<seat>\d+) uses their basic attack against card (?<face>\d+[a-z]?) copy (?<copy>\d+)",
             BasicAttack),
+        Bind("basic-attack-accepting-paid", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) uses their basic attack against card (?<face>\d+[a-z]?) copy (?<copy>\d+) and accepts ""(?<label>[^""]+)"" targeting card (?<target>\d+[a-z]?) copy (?<targetCopy>\d+) paid with card (?<payment>\d+[a-z]?) copy (?<paymentCopy>\d+)",
+            BasicAttackAcceptingWithPayment),
         Bind("basic-thwart", TranscriptStepKind.When,
             @"seat (?<seat>\d+) uses their basic thwart against card (?<face>\d+[a-z]?) copy (?<copy>\d+)",
             BasicThwart),
@@ -1183,6 +1186,27 @@ internal sealed class CoreTranscriptRunner
         FinishAgenda(context, step);
     }
 
+    private static void BasicAttackAcceptingWithPayment(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        BasicPowers.BasicAttack(
+            context.World,
+            context.Cards,
+            Seat(match, step),
+            context.SceneRequired(step).Find(SceneCard(match, step)),
+            context.Events);
+        Card payment = context.SceneRequired(step).Find(new SceneCard(
+            match.Groups["payment"].Value,
+            Number(match, "paymentCopy", step)));
+        Card target = context.SceneRequired(step).Find(new SceneCard(
+            match.Groups["target"].Value,
+            Number(match, "targetCopy", step)));
+        FinishAgendaAccepting(
+            context, step, match.Groups["label"].Value, payment.ObjectId, target.ObjectId);
+    }
+
     private static void BasicThwart(
         TranscriptContext context, TranscriptStep step, Match match)
     {
@@ -1477,9 +1501,10 @@ internal sealed class CoreTranscriptRunner
 
     private static void FinishAgendaAccepting(
         TranscriptContext context, TranscriptStep step, string acceptedLabel,
-        int? payment = null)
+        int? payment = null, int? target = null)
     {
         bool accepted = false;
+        bool targetChosen = target is null;
         Prompt? asked = Sequence.Work(
             context.World, context.Cards, context.World.Abilities, context.Events);
         for (int answered = 0; asked is not null; answered++)
@@ -1493,12 +1518,22 @@ internal sealed class CoreTranscriptRunner
             Affordance? opportunity = accepted
                 ? null
                 : asked.Affordances.SingleOrDefault(option => option.Label == acceptedLabel);
-            Decision decision = opportunity is null
-                ? Decision.Decline
-                : payment is null
+            Affordance? targetOption = !accepted || targetChosen
+                ? null
+                : asked.Affordances.SingleOrDefault(option =>
+                    option.Id == target || option.AnchorId == target);
+            Decision decision = opportunity is not null
+                ? payment is null
                     ? Decision.Take(opportunity.Id)
-                    : Decision.Take(opportunity.Id, [], [payment.Value]);
+                    : Decision.Take(
+                        opportunity.Id,
+                        target is null ? [] : [target.Value],
+                        [payment.Value])
+                : targetOption is not null
+                    ? Decision.Take(targetOption.Id)
+                    : Decision.Decline;
             accepted |= opportunity is not null;
+            targetChosen |= targetOption is not null;
             Sequence.Answer(
                 context.World,
                 context.Cards,
@@ -1514,6 +1549,11 @@ internal sealed class CoreTranscriptRunner
         {
             throw new TranscriptException(
                 $"{step.Location}: the action offered no '{acceptedLabel}' opportunity");
+        }
+        if (!targetChosen)
+        {
+            throw new TranscriptException(
+                $"{step.Location}: '{acceptedLabel}' offered no requested target {target}");
         }
     }
 

@@ -6960,11 +6960,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/when-defeated.feature::A defeated minion resolves its When Defeated ability before discard"
+          ],
+          "mutation": "Skip the defeated-character timing step or discard Hydra Soldier first; its engaged player receives no facedown encounter card."
         }
       ]
     },
@@ -7006,11 +7008,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/when-defeated.feature::A response observes the enemy defeated by the completed attack"
+          ],
+          "mutation": "Omit the post-damage response window; Chase Them Down is never offered and the threat assertion fails."
         }
       ]
     },
@@ -35947,11 +35951,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/when-defeated.feature::A response observes the enemy defeated by the completed attack"
+          ],
+          "mutation": "Do not offer Chase Them Down after the hero's defeating attack or remove a different threat amount; the response or exact threat assertion fails."
         }
       ]
     },
@@ -53362,11 +53368,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/when-defeated.feature::A defeated minion resolves its When Defeated ability before discard"
+          ],
+          "mutation": "Do not deal Hydra Soldier's engaged player a card; the encounter queue and named facedown-card assertions fail."
         }
       ]
     },

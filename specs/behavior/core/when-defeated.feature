@@ -51,3 +51,48 @@ Feature: Core When Defeated timing
     Then card 01101 copy 0 is engaged with seat 1
     And card 01101 copy 0 has 0 damage
     And card 01185 copy 0 is faceup on top of the encounter discard pile
+
+  @behavior:rr:damage.step.7:published-result
+  @covers:behavior:card:01182:deal-engaged-player-encounter-card
+  @rr:damage.step.7 @card:01182
+  Scenario: A defeated minion resolves its When Defeated ability before discard
+    # Damage step 7 resolves abilities that trigger "when [a character] is
+    # defeated" before step 8 discards that character. Hydra Soldier therefore
+    # deals its engaged player an encounter card before leaving play.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | modular sets    | seed |
+      | rhino    | spider_man | legions_of_hydra | 350 |
+    And seat 1 shows identity face 01001a
+    And card 01182 copy 0 is a minion engaged with seat 1
+    And card 01182 copy 0 has 2 damage
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01180     | 0    |
+    When seat 1 uses their basic attack against card 01182 copy 0
+    Then card 01182 copy 0 is faceup on top of the encounter discard pile
+    And seat 1 has 1 facedown encounter card
+    And card 01180 copy 0 is facedown in seat 1's encounter queue
+
+  @behavior:rr:damage.step.9:published-result
+  @covers:behavior:card:01052:after-your-hero-attacks-and-defeats-enemy
+  @rr:damage.step.9 @card:01052
+  Scenario: A response observes the enemy defeated by the completed attack
+    # Damage step 9 opens abilities that trigger "after [a character]
+    # defeats". Chase Them Down responds after the attack defeats the minion
+    # and removes two threat from the chosen scheme.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | she_hulk | 351  |
+    And seat 1 shows identity face 01019a
+    And card 01097b copy 0 has 3 threat counters
+    And card 01101 copy 0 is a minion engaged with seat 1
+    And card 01101 copy 0 has 1 damage
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01052 | 0    |
+      | 01088 | 0    |
+    When seat 1 uses their basic attack against card 01101 copy 0 and accepts "Chase Them Down" targeting card 01097b copy 0 paid with card 01088 copy 0
+    Then card 01101 copy 0 is faceup on top of the encounter discard pile
+    And card 01097b copy 0 has 1 threat counter
+    And card 01052 copy 0 is in seat 1's discard pile
+    And card 01088 copy 0 is in seat 1's discard pile
