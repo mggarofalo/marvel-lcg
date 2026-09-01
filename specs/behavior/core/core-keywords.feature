@@ -28,6 +28,27 @@ Feature: Core triggered keywords
       | 01121 | 1    |
       | 01120 | 1    |
 
+  @behavior:card:01121:put-weapons-runner-into-play-engaged-with
+  @covers:behavior:rr:boost-boost-icon.2:published-result
+  @covers:behavior:rr:attack-enemy-activation.step.3.b:published-result
+  @covers:behavior:rr:ability.step.3:published-result
+  @card:01121 @rr:boost-boost-icon.2
+  @rr:attack-enemy-activation.step.3.b @rr:ability.step.3
+  Scenario: Weapons Runner resolves its Boost text instead of its reveal text
+    # "Only the ability text beneath the divider line is active on a card that
+    # is resolving as a boost card." Its Boost ability puts Weapons Runner into
+    # play engaged with the attacked player rather than discarding it.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | klaw     | spider_man | 723  |
+    And seat 1 shows identity face 01001a
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01121     | 1    |
+    When the villain attacks seat 1 with card 01001a copy 0 defending
+    Then card 01121 copy 1 is engaged with seat 1
+    And card 01001a copy 0 has 0 damage
+
   @behavior:card:01167:quickstrike
   @covers:behavior:card:01167:after-minion-engages-your-hero-it-attacks
   @covers:behavior:rr:quickstrike:published-result

@@ -78,10 +78,13 @@ public sealed class CoreCardFaceTranscriptTests
                 "specs/behavior/core/core-keywords.feature::", StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(3, results.Count);
+        Assert.Equal(4, results.Count);
         Assert.Equal(
             "44539cd9a74dc6025015263af5b8693e180b4a25c4a3c3373862bb6de3a4c10f",
             results["behavior:card:01121:surge"].Digest);
+        Assert.Equal(
+            "7de1ad47d61f5cf884d1e489f5317867b18bbc2111ad68945a0f1e2ec572ca17",
+            results["behavior:card:01121:put-weapons-runner-into-play-engaged-with"].Digest);
         Assert.Equal(
             "e68bb9edec359b1f737d40d278fa7806d5e5d8a05c7dfd11ab999f8362e2ed8e",
             results["behavior:card:01167:quickstrike"].Digest);
