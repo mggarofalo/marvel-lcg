@@ -200,6 +200,30 @@ Feature: Core villain phase
     Then card 01001a copy 0 has 3 damage
     And 6 Boost events were emitted
 
+  @behavior:rr:scheme-enemy-activation.step.2.b:published-result
+  @covers:behavior:rr:scheme-enemy-activation.step.2.e:published-result
+  @rr:scheme-enemy-activation.step.2.b @rr:scheme-enemy-activation.step.2.e
+  @card:01164 @card:01103
+  Scenario: Titania's Fury adds a boost card that Rhino resolves while scheming
+    # Resolve each boost card in dealt order: first resolve any Boost ability,
+    # then add its icons, discard it, and repeat for a remaining boost card.
+    # After Shadows of the Past has shuffled She-Hulk's nemesis set into the
+    # encounter deck, Titania's Fury can be Rhino's boost. Its Boost ability
+    # deals Shocker as an additional boost; their one and two icons join
+    # Rhino's printed SCH 1, placing four threat in all.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 838  |
+    And seat 1 shows identity face 01019b
+    And card 01097b copy 0 has 0 threat counters
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01164     | 0    |
+      | 01103     | 0    |
+    When the villain schemes against seat 1 with every optional choice declined
+    Then card 01097b copy 0 has 4 threat counters
+    And card 01103 copy 0 is faceup on top of the encounter discard pile
+
   @behavior:rr:defend-defense.2:published-result
   @covers:behavior:rr:attack-enemy-activation.2:published-result
   @covers:behavior:rr:attack-enemy-activation.2.1:published-result
