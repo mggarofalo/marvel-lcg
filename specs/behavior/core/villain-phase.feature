@@ -158,6 +158,24 @@ Feature: Core villain phase
     And card 01097b copy 0 has 1 threat counter
     And card 01178 copy 0 is faceup on top of the encounter discard pile
 
+  @behavior:card:01178:if-villain-is-making-undefended-attack-place-condition-not-met
+  @card:01178
+  Scenario: Kree Manipulator places no threat during a defended attack
+    # "If the villain is making an undefended attack, place 1 threat on the
+    # main scheme." Captain Marvel's basic defense makes that condition false;
+    # the boost star still contributes no numeric boost icons.
+    Given a canonical Core scene is dealt
+      | campaign | heroes         | seed |
+      | rhino    | captain_marvel | 730  |
+    And seat 1 shows identity face 01010a
+    And card 01097b copy 0 has 0 threat counters
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01178     | 0    |
+    When the villain attacks seat 1 with card 01010a copy 0 defending
+    Then card 01010a copy 0 has 1 damage
+    And card 01097b copy 0 has 0 threat counters
+
   @behavior:rr:boost-boost-icon.4:published-result
   @covers:behavior:rr:attack-enemy-activation.step.3.e:published-result
   @covers:behavior:card:01113:when-klaw-attacks-give-him-1-additional
