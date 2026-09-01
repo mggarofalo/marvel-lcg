@@ -1,4 +1,6 @@
 using System.Globalization;
+using Marvel.Rules.Events;
+using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Server;
 using Marvel.View;
@@ -79,6 +81,10 @@ public sealed record GameSetupSelection(
 public sealed class LocalGameClient
 {
     private const int MaximumDisplayedErrorLength = 240;
+    private const string OpenRequestId = "local-open";
+    private const string RecoverRequestId = "local-recover";
+    private const string ResolveRequestId = "local-resolve";
+    private const string SetupRequestId = "local-setup";
     private readonly IEngineTransport transport;
 
     /// <summary>Creates an app client over an embedded or remote transport.</summary>
@@ -111,10 +117,24 @@ public sealed class LocalGameClient
         try
         {
             EngineResponse response = await transport.ExchangeAsync(
-                EngineRequest.ReadSetup("local-setup"), cancellationToken)
+                EngineRequest.ReadSetup(SetupRequestId), cancellationToken)
                 .ConfigureAwait(false);
+            ClientStartupError? envelope = EnvelopeError(
+                response, SetupRequestId, string.Empty);
+            if (envelope is not null)
+            {
+                return new ClientSetupResult(Choices: null, envelope);
+            }
+
             if (response.Error is not null)
             {
+                if (!Complete(response.Error))
+                {
+                    return SetupFailed(
+                        "invalid_response",
+                        "The game service returned an incomplete error.");
+                }
+
                 return SetupFailed(response.Error.Code, response.Error.Message);
             }
 
@@ -126,7 +146,7 @@ public sealed class LocalGameClient
                     .SelectMany(scenario => scenario.RecommendedModularSets)
                     .Any(recommended => !choices.ModularSets.Any(
                         modular => modular.Key == recommended))
-                || response.Events is null)
+                || !HasCompleteEvents(response.Events))
             {
                 return SetupFailed(
                     "invalid_response",
@@ -209,15 +229,30 @@ public sealed class LocalGameClient
         GameSpecification specification,
         CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         try
         {
             EngineResponse response = await transport.ExchangeAsync(
                 EngineRequest.OpenGame(
-                    "local-open", LocalGameSession.GameId, specification),
+                    OpenRequestId, LocalGameSession.GameId, specification),
                 cancellationToken).ConfigureAwait(false);
+
+            ClientStartupError? envelope = EnvelopeError(
+                response, OpenRequestId, LocalGameSession.GameId);
+            if (envelope is not null)
+            {
+                return new ClientStartupResult(Response: null, envelope);
+            }
 
             if (response.Error is not null)
             {
+                if (!Complete(response.Error))
+                {
+                    return Failed(
+                        "invalid_response",
+                        "The game service returned an incomplete error.");
+                }
+
                 return Failed(response.Error.Code, response.Error.Message);
             }
 
@@ -255,14 +290,21 @@ public sealed class LocalGameClient
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(capability);
         ArgumentNullException.ThrowIfNull(decision);
+        cancellationToken.ThrowIfCancellationRequested();
         ClientStartupError? failure = null;
         try
         {
             EngineResponse response = await transport.ExchangeAsync(
                 EngineRequest.ResolveGame(
-                    "local-resolve", LocalGameSession.GameId, capability, decision),
+                    ResolveRequestId, LocalGameSession.GameId, capability, decision),
                 cancellationToken).ConfigureAwait(false);
-            if (response.Error is null)
+            ClientStartupError? envelope = EnvelopeError(
+                response, ResolveRequestId, LocalGameSession.GameId);
+            if (envelope is not null)
+            {
+                failure = envelope;
+            }
+            else if (response.Error is null)
             {
                 if (HasCompleteGameplayResponse(response))
                 {
@@ -275,7 +317,11 @@ public sealed class LocalGameClient
             }
             else
             {
-                failure = Error(response.Error.Code, response.Error.Message);
+                failure = Complete(response.Error)
+                    ? Error(response.Error.Code, response.Error.Message)
+                    : Error(
+                        "invalid_response",
+                        "The game service returned an incomplete error.");
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -289,7 +335,7 @@ public sealed class LocalGameClient
                 "The decision response was lost. The client will read the current table without repeating it.");
         }
 
-        return await RecoverCurrentViewAsync(capability, failure, cancellationToken)
+        return await RecoverCurrentViewAsync(capability, failure)
             .ConfigureAwait(false);
     }
 
@@ -301,22 +347,20 @@ public sealed class LocalGameClient
 
     private async ValueTask<ClientResolutionResult> RecoverCurrentViewAsync(
         string capability,
-        ClientStartupError failure,
-        CancellationToken cancellationToken)
+        ClientStartupError failure)
     {
         try
         {
             EngineResponse synchronized = await transport.ExchangeAsync(
                 EngineRequest.SyncGame(
-                    "local-recover", LocalGameSession.GameId, capability),
-                cancellationToken).ConfigureAwait(false);
-            return synchronized.Error is null && HasCompleteGameplayResponse(synchronized)
+                    RecoverRequestId, LocalGameSession.GameId, capability),
+                CancellationToken.None).ConfigureAwait(false);
+            return EnvelopeError(
+                    synchronized, RecoverRequestId, LocalGameSession.GameId) is null
+                && synchronized.Error is null
+                && HasCompleteGameplayResponse(synchronized)
                 ? new ClientResolutionResult(synchronized, failure)
                 : new ClientResolutionResult(Response: null, failure);
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
         }
         catch (Exception)
         {
@@ -326,6 +370,25 @@ public sealed class LocalGameClient
 
     private static ClientStartupError Error(string code, string message) =>
         new(Bounded(code), Bounded(message));
+
+    private static ClientStartupError? EnvelopeError(
+        EngineResponse response,
+        string requestId,
+        string gameId)
+    {
+        if (response.Version != EngineProtocol.Version)
+        {
+            return Error(
+                "unsupported_version",
+                "The game service uses an unsupported protocol version.");
+        }
+
+        return response.RequestId == requestId && response.GameId == gameId
+            ? null
+            : Error(
+                "invalid_response",
+                "The game service returned a response for a different request or game.");
+    }
 
     private static bool HasCompleteBoard(WorldDescriptor? world) =>
         world?.Players is not null
@@ -347,11 +410,45 @@ public sealed class LocalGameClient
                     && card.Face.Fields is not null)));
 
     private static bool HasCompleteGameplayResponse(EngineResponse response) =>
-        response.Events is not null
+        HasCompleteEvents(response.Events)
         && HasCompleteBoard(response.World)
-        && (response.World!.Outcome == Marvel.Rules.Play.Outcome.Unfinished
+        && Enum.IsDefined(response.World!.Outcome)
+        && (response.World.Outcome == Outcome.Unfinished
             ? HasCompletePrompt(response.Prompt)
             : response.Prompt is null);
+
+    private static bool HasCompleteEvents(IReadOnlyList<GameEvent>? events) =>
+        events is not null && events.All(happened =>
+            happened is not null
+            && happened.Trigger is not null
+            && happened.Verb is not null
+            && happened switch
+            {
+                CardsCreated created => Complete(created.Area)
+                    && created.Cards is not null
+                    && created.Cards.All(card => card.Card is not null),
+                CardsMoved moved => Complete(moved.From)
+                    && Complete(moved.To)
+                    && moved.Cards is not null,
+                AreaReordered reordered => Complete(reordered.Area)
+                    && reordered.Order is not null,
+                CardFormChanged changed => changed.From is not null
+                    && changed.To is not null,
+                CardsFlipped flipped => flipped.Cards is not null,
+                CardAttached => true,
+                CardDetached => true,
+                ControlChanged => true,
+                PlayAreaJoined => true,
+                PlayAreaDetached => true,
+                FieldSet set => set.Field is not null,
+                _ => false,
+            });
+
+    private static bool Complete(AreaRef area) =>
+        area.Zone is not null && area.Id is not null;
+
+    private static bool Complete(EngineError error) =>
+        error.Code is not null && error.Message is not null;
 
     private static bool HasCompletePrompt(Prompt? prompt) =>
         prompt?.Trigger is not null

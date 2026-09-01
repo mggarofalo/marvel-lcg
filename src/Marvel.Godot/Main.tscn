@@ -437,17 +437,45 @@ theme_override_constants/margin_top = 0
 theme_override_constants/margin_right = 0
 theme_override_constants/margin_bottom = 0
 
-[node name="Scroll" type="ScrollContainer" parent="Margin/Shell/Content/Play/Prompt/Margin"]
+[node name="Stack" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="DecisionScroll" type="ScrollContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 follow_focus = true
 horizontal_scroll_mode = 0
 
-[node name="Decision" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Scroll"]
+[node name="Decision" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/DecisionScroll"]
 layout_mode = 2
 size_flags_horizontal = 3
 script = ExtResource("2_decision")
+
+[node name="Rule" type="HSeparator" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
+layout_mode = 2
+
+[node name="EventHeading" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.93, 0.78, 0.48, 1)
+theme_override_font_sizes/font_size = 12
+text = "EVENT LOG"
+
+[node name="EventLog" type="RichTextLabel" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_override_colors/default_color = Color(0.76, 0.78, 0.82, 1)
+theme_override_font_sizes/normal_font_size = 12
+bbcode_enabled = true
+fit_content = false
+scroll_active = true
+selection_enabled = true
+text = "No events yet."
 
 [node name="Status" type="PanelContainer" parent="Margin/Shell/Content"]
 layout_mode = 2

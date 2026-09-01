@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Sockets;
+using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Server;
 using Marvel.Tests;
@@ -73,13 +74,15 @@ public sealed class LocalGameClientTests
             "open", LocalGameSession.GameId, Specification()));
         var rejected = new EngineResponse(
             EngineProtocol.Version,
-            "resolve",
+            "local-resolve",
             LocalGameSession.GameId,
             Capability: null,
             Prompt: null,
             Events: [],
             Error: new EngineError("stale_decision", "The prompt changed."));
-        var transport = new ScriptedTransport(rejected, current with { Capability = null });
+        var transport = new ScriptedTransport(
+            rejected,
+            current with { RequestId = "local-recover", Capability = null });
 
         ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(
             current.Capability!,
@@ -102,7 +105,7 @@ public sealed class LocalGameClientTests
             "open", LocalGameSession.GameId, Specification()));
         var transport = new ScriptedTransport(
             new IOException("response lost"),
-            current with { Capability = null });
+            current with { RequestId = "local-recover", Capability = null });
 
         ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(
             current.Capability!,
@@ -121,8 +124,12 @@ public sealed class LocalGameClientTests
         EngineResponse current = Host().Exchange(EngineRequest.OpenGame(
             "open", LocalGameSession.GameId, Specification()));
         var transport = new ScriptedTransport(
-            current with { Prompt = current.Prompt! with { Affordances = null! } },
-            current with { Capability = null });
+            current with
+            {
+                RequestId = "local-resolve",
+                Prompt = current.Prompt! with { Affordances = null! },
+            },
+            current with { RequestId = "local-recover", Capability = null });
 
         ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(
             current.Capability!,
@@ -491,6 +498,108 @@ public sealed class LocalGameClientTests
                 .ReadSetupAsync(cancelled.Token));
     }
 
+    [Fact]
+    public async Task MutationCancellationBeforeDispatchSendsNoRequest()
+    {
+        using var cancelled = new CancellationTokenSource();
+        cancelled.Cancel();
+        var transport = new CapturingTransport();
+        var client = new LocalGameClient(transport);
+
+        await Assert.ThrowsAsync<OperationCanceledException>(async () =>
+            await client.OpenAsync(Specification(), cancelled.Token));
+        await Assert.ThrowsAsync<OperationCanceledException>(async () =>
+            await client.ResolveAsync("capability", EngineDecision.Decline, cancelled.Token));
+
+        Assert.Empty(transport.Requests);
+    }
+
+    [Fact]
+    public async Task CancellationAfterMutationDispatchStillConsumesItsResponse()
+    {
+        EngineResponse opened = Host().Exchange(EngineRequest.OpenGame(
+            "local-open", LocalGameSession.GameId, Specification()));
+        using var cancellation = new CancellationTokenSource();
+        var transport = new CommitAwareCancellingTransport(
+            opened with { RequestId = "local-resolve", Capability = null }, cancellation);
+
+        ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(
+            opened.Capability!, EngineDecision.Decline, cancellation.Token);
+
+        Assert.True(result.Succeeded);
+        Assert.True(cancellation.IsCancellationRequested);
+        Assert.True(transport.ReceivedToken.CanBeCanceled);
+        Assert.Single(transport.Requests);
+    }
+
+    [Theory]
+    [InlineData(999, "local-open", "local-core-game", "unsupported_version")]
+    [InlineData(5, "other", "local-core-game", "invalid_response")]
+    [InlineData(5, "local-open", "other-game", "invalid_response")]
+    public async Task OpenRejectsMismatchedResponseEnvelopes(
+        int version,
+        string requestId,
+        string gameId,
+        string expectedCode)
+    {
+        EngineResponse complete = Host().Exchange(EngineRequest.OpenGame(
+            "local-open", LocalGameSession.GameId, Specification()));
+
+        ClientStartupResult result = await new LocalGameClient(new FixedTransport(
+            complete with { Version = version, RequestId = requestId, GameId = gameId }))
+            .OpenAsync(Specification(), TestContext.Current.CancellationToken);
+
+        Assert.Equal(expectedCode, result.Error?.Code);
+        Assert.Null(result.Response);
+    }
+
+    [Fact]
+    public async Task MismatchedResolveEnvelopeRecoversBySync()
+    {
+        EngineResponse current = Host().Exchange(EngineRequest.OpenGame(
+            "local-open", LocalGameSession.GameId, Specification()));
+        var transport = new ScriptedTransport(
+            current with { RequestId = "wrong", Capability = null },
+            current with { RequestId = "local-recover", Capability = null });
+
+        ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(
+            current.Capability!, EngineDecision.Decline,
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.HasAuthoritativeView);
+        Assert.Equal("invalid_response", result.Error?.Code);
+        Assert.Equal([EngineProtocol.Resolve, EngineProtocol.Sync],
+            transport.Requests.Select(request => request.Operation));
+    }
+
+    [Fact]
+    public async Task UnknownOutcomesAndMalformedEventsAreNeverRendered()
+    {
+        EngineResponse complete = Host().Exchange(EngineRequest.OpenGame(
+            "local-open", LocalGameSession.GameId, Specification()));
+        EngineResponse[] malformed =
+        [
+            complete with { World = complete.World! with { Outcome = (Outcome)999 } },
+            complete with
+            {
+                Events = [new FieldSet(1, null!, From: 0, To: 1)],
+            },
+            complete with
+            {
+                Events = [new CardsFlipped(null!, FaceUp: true)],
+            },
+        ];
+
+        foreach (EngineResponse response in malformed)
+        {
+            ClientStartupResult result = await new LocalGameClient(
+                new FixedTransport(response)).OpenAsync(
+                    Specification(), TestContext.Current.CancellationToken);
+
+            Assert.Equal("invalid_response", result.Error?.Code);
+        }
+    }
+
     private static GameSetupSelection DefaultSelection(SetupChoices choices) =>
         new(
             choices.Heroes.Single(choice => choice.Key == "spider_man").Key,
@@ -568,5 +677,24 @@ public sealed class LocalGameClientTests
             EngineRequest request,
             CancellationToken cancellationToken = default) =>
             ValueTask.FromException<EngineResponse>(new IOException(message));
+    }
+
+    private sealed class CommitAwareCancellingTransport(
+        EngineResponse response,
+        CancellationTokenSource cancellation) : IEngineTransport
+    {
+        public List<EngineRequest> Requests { get; } = [];
+
+        public CancellationToken ReceivedToken { get; private set; }
+
+        public ValueTask<EngineResponse> ExchangeAsync(
+            EngineRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            Requests.Add(request);
+            ReceivedToken = cancellationToken;
+            cancellation.Cancel();
+            return ValueTask.FromResult(response);
+        }
     }
 }

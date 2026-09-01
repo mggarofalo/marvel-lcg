@@ -8,9 +8,11 @@ The presentation architecture has 3 layers:
 
 The Godot project reads the authored Core Set setup surface through
 `IEngineTransport`, lets the player select an offered assignment, and opens it
-through `InProcessTransport`. It retains the initial visibility-safe response
-for board rendering; the board itself is still a placeholder. The same
-app-facing setup and open path is exercised over the socket transport in tests.
+through `InProcessTransport`. Each complete response replaces the prior
+visibility-safe snapshot, while its semantic events are appended in engine order
+to a diagnostic chronology. The client renders the board and every admitted
+prompt shape from those contracts. The same app-facing setup and open path is
+exercised over the socket transport in tests.
 
 ## Build boundary
 
@@ -157,7 +159,7 @@ client tasks, not engine or DSL fields. Presentation hints must not enter
 
 ## Client delivery
 
-The Godot project remains deliberately above the engine wall. Its delivery work:
+The Godot project remains deliberately above the engine wall. It:
 
 - depends on transport and descriptor contracts rather than `Game`;
 - renders areas, cards, prompts and events;
