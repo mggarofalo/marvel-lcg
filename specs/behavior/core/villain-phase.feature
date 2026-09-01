@@ -158,6 +158,27 @@ Feature: Core villain phase
     And card 01097b copy 0 has 1 threat counter
     And card 01178 copy 0 is faceup on top of the encounter discard pile
 
+  @behavior:rr:boost-boost-icon.4:published-result
+  @covers:behavior:rr:attack-enemy-activation.step.3.e:published-result
+  @covers:behavior:card:01113:when-klaw-attacks-give-him-1-additional
+  @rr:boost-boost-icon.4 @rr:attack-enemy-activation.step.3.e @card:01113
+  Scenario: Klaw resolves two boost cards and adds all of their icons
+    # "If additional boost cards are resolved for an activation, the boost
+    # icons are cumulative." Klaw's forced interrupt gives him one additional
+    # boost card; his printed ATK 0 plus one and two boost icons deals three.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | klaw     | spider_man | 729  |
+    And seat 1 shows identity face 01001a
+    And card 01001a copy 0 is exhausted
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01120     | 0    |
+      | 01125     | 0    |
+    When the villain attacks seat 1 with every optional choice declined
+    Then card 01001a copy 0 has 3 damage
+    And 6 Boost events were emitted
+
   @behavior:rr:defend-defense.2:published-result
   @covers:behavior:rr:attack-enemy-activation.2:published-result
   @covers:behavior:rr:attack-enemy-activation.2.1:published-result

@@ -3472,11 +3472,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Klaw resolves two boost cards and adds all of their icons"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes the second boost card being flipped and resolved after the first."
         }
       ]
     },
@@ -4470,11 +4472,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Klaw resolves two boost cards and adds all of their icons"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes both boost events and their cumulative three damage."
         }
       ]
     },
@@ -44007,11 +44011,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Klaw resolves two boost cards and adds all of their icons"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes Klaw's forced interrupt dealing the additional boost card."
         }
       ]
     },
