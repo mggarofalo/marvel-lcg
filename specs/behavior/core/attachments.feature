@@ -4,7 +4,8 @@ Feature: Core attachment lifecycle
   there until an effect or their host makes them leave play.
 
   @behavior:rr:attach-to:published-result
-  @rr:attach-to @card:01099
+  @covers:behavior:rr:reveal.1:attach-to-text
+  @rr:attach-to @rr:reveal.1 @card:01099
   Scenario: A revealed attachment enters play attached to its named host
     # "If a card uses the phrase 'attach to', it must be attached to ... the
     # specified game element as it enters play." Charge names Rhino.
