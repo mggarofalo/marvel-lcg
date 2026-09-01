@@ -19,3 +19,19 @@ Feature: Core character calculations
     When the dealt Core scene is inspected
     Then card 01029b copy 0 has 8 remaining hit points
     And card 01039 copy 0 remains attached to seat 1's identity
+
+  @behavior:rr:attachment.1:published-result
+  @rr:attachment.1 @card:01141
+  Scenario: A character attachment modifies the attached villain's scheme value
+    # Program Transmitter is attached to Ultron and prints SCH +1. Ultron's
+    # printed SCH 1 plus the attachment and two boost icons places four threat.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | ultron   | spider_man | 808  |
+    And card 01141 copy 0 is attached to card 01134 copy 0
+    And card 01137b copy 0 has 0 threat counters
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01143     | 0    |
+    When the villain schemes against seat 1 with every optional choice declined
+    Then card 01137b copy 0 has 4 threat counters

@@ -18,10 +18,13 @@ public sealed class CoreRuleTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Single(results);
+        Assert.Equal(2, results.Count);
         Assert.Equal(
             "34c725e7bf00f8edee5d88a05622b4ea7331342e372910a124114a8527af9a28",
             results["behavior:card:01039:you-get-1-hit-point"].Digest);
+        Assert.Equal(
+            "70c83706d9a4071f8d1971e131006ad4631b5ffae646de407983e2640515e9d2",
+            results["behavior:rr:attachment.1:published-result"].Digest);
     }
 
     [Fact]
