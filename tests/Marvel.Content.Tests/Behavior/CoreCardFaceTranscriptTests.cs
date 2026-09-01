@@ -71,7 +71,7 @@ public sealed class CoreCardFaceTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(10, results.Count);
+        Assert.Equal(12, results.Count);
         Assert.Equal(
             "b17f9fbb3d730047490cb61c0f065daa8c730d29ac2d28f50c7681c2882c1ad3",
             results["behavior:card:01035:exhaust-arc-reactor-ready-iron-man"].Digest);
@@ -106,6 +106,14 @@ public sealed class CoreCardFaceTranscriptTests
             "510369bea032b2c09917c59fb16654c5baa6712fec98af0b6df23f8fab940573",
             results[
                 "behavior:card:01033:exhaust-pepper-potts-generate-resources-top-card"].Digest);
+        Assert.Equal(
+            "220eb146ad58642d460bca21ee7526d6e03560381c9424bae02921f77f618709",
+            results[
+                "behavior:card:01006:exhaust-aunt-may-heal-4-damage-from-accepted"].Digest);
+        Assert.Equal(
+            "5896375c93ec09a9309e1e3a75b3bc50628c8f3d896014673074f8e95eb0e566",
+            results[
+                "behavior:card:01006:exhaust-aunt-may-heal-4-damage-from-declined"].Digest);
     }
 
     [Fact]

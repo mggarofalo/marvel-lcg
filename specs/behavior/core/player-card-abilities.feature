@@ -173,3 +173,31 @@ Feature: Core player card abilities
     When seat 1 uses card 01033 copy 0's resource ability
     Then card 01033 copy 0 generated YY resources
     And card 01033 copy 0 is exhausted
+
+  @behavior:card:01006:exhaust-aunt-may-heal-4-damage-from-accepted
+  @card:01006
+  Scenario: Aunt May exhausts to heal Peter Parker
+    # "Alter-Ego Action: Exhaust Aunt May → heal 4 damage from Peter Parker."
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 861  |
+    And card 01006 copy 0 is a support controlled by seat 1
+    And card 01001b copy 0 has 4 damage
+    When seat 1 initiates card 01006 copy 0's action without payment
+    Then card 01006 copy 0 is exhausted
+    And card 01001b copy 0 has 0 damage
+
+  @behavior:card:01006:exhaust-aunt-may-heal-4-damage-from-declined
+  @card:01006
+  Scenario: Declining Aunt May leaves Peter Parker damaged
+    # The unforced Action is optional. Asking for legal Actions exposes Aunt
+    # May without resolving it, so neither its cost nor effect occurs.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 862  |
+    And card 01006 copy 0 is a support controlled by seat 1
+    And card 01001b copy 0 has 4 damage
+    When seat 1 asks for available card actions
+    Then card 01006 copy 0's action is available
+    And card 01006 copy 0 is ready
+    And card 01001b copy 0 has 4 damage
