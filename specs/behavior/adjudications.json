@@ -2913,11 +2913,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Swinging Web Kick pays, chooses an enemy, deals eight, and discards"
+          ],
+          "mutation": "Remove payment, target selection, eight damage, or event cleanup from this action; a transcript assertion fails."
         }
       ]
     },
@@ -4963,11 +4965,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Swinging Web Kick pays, chooses an enemy, deals eight, and discards"
+          ],
+          "mutation": "Remove payment, target selection, eight damage, or event cleanup from this action; a transcript assertion fails."
         }
       ]
     },
@@ -7451,11 +7455,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Swinging Web Kick pays, chooses an enemy, deals eight, and discards"
+          ],
+          "mutation": "Remove payment, target selection, eight damage, or event cleanup from this action; a transcript assertion fails."
         }
       ]
     },
@@ -10465,11 +10471,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Swinging Web Kick pays, chooses an enemy, deals eight, and discards"
+          ],
+          "mutation": "Remove payment, target selection, eight damage, or event cleanup from this action; a transcript assertion fails."
         }
       ]
     },
@@ -10501,11 +10509,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Swinging Web Kick pays, chooses an enemy, deals eight, and discards"
+          ],
+          "mutation": "Remove payment, target selection, eight damage, or event cleanup from this action; a transcript assertion fails."
         }
       ]
     },
@@ -10537,11 +10547,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Swinging Web Kick pays, chooses an enemy, deals eight, and discards"
+          ],
+          "mutation": "Remove payment, target selection, eight damage, or event cleanup from this action; a transcript assertion fails."
         }
       ]
     },
@@ -10555,11 +10567,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Swinging Web Kick pays, chooses an enemy, deals eight, and discards"
+          ],
+          "mutation": "Remove payment, target selection, eight damage, or event cleanup from this action; a transcript assertion fails."
         }
       ]
     },
@@ -10573,11 +10587,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Swinging Web Kick pays, chooses an enemy, deals eight, and discards"
+          ],
+          "mutation": "Remove payment, target selection, eight damage, or event cleanup from this action; a transcript assertion fails."
         }
       ]
     },
@@ -14460,11 +14476,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Swinging Web Kick pays, chooses an enemy, deals eight, and discards"
+          ],
+          "mutation": "Remove payment, target selection, eight damage, or event cleanup from this action; a transcript assertion fails."
         }
       ]
     },
@@ -15502,11 +15520,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Swinging Web Kick pays, chooses an enemy, deals eight, and discards"
+          ],
+          "mutation": "Remove payment, target selection, eight damage, or event cleanup from this action; a transcript assertion fails."
         }
       ]
     },
@@ -23182,11 +23202,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Swinging Web Kick pays, chooses an enemy, deals eight, and discards"
+          ],
+          "mutation": "Remove payment, target selection, eight damage, or event cleanup from this action; a transcript assertion fails."
         }
       ]
     },

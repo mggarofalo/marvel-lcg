@@ -74,6 +74,8 @@ internal sealed class TranscriptContext
 
     public string? LastInspectedFace { get; set; }
 
+    public Prompt? PendingPrompt { get; set; }
+
     public World World => Scene?.World
         ?? throw new TranscriptException("a canonical Core scene has not been constructed");
 }
@@ -342,6 +344,15 @@ internal sealed class CoreTranscriptRunner
         Bind("request-printed-characteristics", TranscriptStepKind.When,
             @"the printed characteristics of card (?<face>\d+[a-z]?) copy (?<copy>\d+) are requested",
             RequestPrintedCharacteristics),
+        Bind("initiate-action-with-payment", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) initiates card (?<face>\d+[a-z]?) copy (?<copy>\d+)'s action paying with these cards",
+            InitiateActionWithPayment),
+        Bind("initiate-action-without-payment", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) initiates card (?<face>\d+[a-z]?) copy (?<copy>\d+)'s action without payment",
+            InitiateActionWithoutPayment),
+        Bind("choose-pending-card", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) chooses card (?<face>\d+[a-z]?) copy (?<copy>\d+) for the pending action",
+            ChoosePendingCard),
         Bind("hand-count", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) has (?<count>\d+) cards? in hand", HandCount),
         Bind("player-deck-count", TranscriptStepKind.Then,
@@ -371,6 +382,9 @@ internal sealed class CoreTranscriptRunner
         Bind("card-top-encounter-discard", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is faceup on top of the encounter discard pile",
             CardOnTopOfEncounterDiscard),
+        Bind("card-resolving", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is faceup in the resolving area",
+            CardResolving),
         Bind("player-discard-order", TranscriptStepKind.Then,
             @"seat (?<seat>\d+)'s discard pile has these cards from top to bottom",
             PlayerDiscardOrder),
@@ -449,6 +463,9 @@ internal sealed class CoreTranscriptRunner
         Bind("printed-characteristics", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) exposes these printed characteristics",
             PrintedCharacteristics),
+        Bind("pending-card-offered", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is offered by the pending action",
+            PendingCardOffered),
         Bind("cataloged-exception", TranscriptStepKind.Then,
             "the engine raises the cataloged unimplemented rule exception", CatalogedException),
     ];
@@ -1050,6 +1067,74 @@ internal sealed class CoreTranscriptRunner
         context.LastInspectedFace = match.Groups["face"].Value;
     }
 
+    private static void InitiateActionWithPayment(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        TranscriptTable table = Table(step, "card", "copy");
+        InitiateAction(
+            context,
+            step,
+            match,
+            [.. table.Rows.Select(row => context.SceneRequired(step).Find(new SceneCard(
+                row["card"], TableNumber(row, "copy", step))).ObjectId)]);
+    }
+
+    private static void InitiateActionWithoutPayment(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        InitiateAction(context, step, match, []);
+
+    private static void InitiateAction(
+        TranscriptContext context,
+        TranscriptStep step,
+        Match match,
+        IReadOnlyList<int> payments)
+    {
+        int seat = Seat(match, step);
+        Card source = context.SceneRequired(step).Find(SceneCard(match, step));
+        var runner = (AbilityRunner)context.World.Abilities;
+        var action = runner.Actions(context.World, seat)
+            .Single(candidate => candidate.Card == source.ObjectId);
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        context.Events.AddRange(runner.Act(context.World, action, payments, []));
+        SetPendingPrompt(context, Sequence.Work(
+            context.World, context.Cards, runner, context.Events));
+    }
+
+    private static void ChoosePendingCard(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        Prompt asked = context.PendingPrompt
+            ?? throw new TranscriptException($"{step.Location}: no action prompt is pending");
+        if (asked.Player != seat)
+        {
+            throw new TranscriptException(
+                $"{step.Location}: pending action asks seat {asked.Player + 1}, not seat {seat + 1}");
+        }
+
+        Card target = context.SceneRequired(step).Find(SceneCard(match, step));
+        var offer = asked.Affordances.SingleOrDefault(candidate =>
+            candidate.AnchorId == target.ObjectId)
+            ?? throw new TranscriptException(
+                $"{step.Location}: card {target.ObjectId} is not offered by '{asked.Label}'");
+        Sequence.Answer(
+            context.World,
+            context.Cards,
+            context.World.Abilities,
+            asked,
+            Decision.Take(offer.Id),
+            context.Events);
+        SetPendingPrompt(context, Sequence.Work(
+            context.World, context.Cards, context.World.Abilities, context.Events));
+    }
+
+    private static void SetPendingPrompt(TranscriptContext context, Prompt? prompt)
+    {
+        context.PendingPrompt = prompt;
+        context.CurrentPrompt = prompt?.Label ?? "<none>";
+    }
+
     private static void HandCount(
         TranscriptContext context, TranscriptStep step, Match match) =>
         Equal(Number(match, "count", step),
@@ -1166,6 +1251,18 @@ internal sealed class CoreTranscriptRunner
         TranscriptContext context, TranscriptStep step, Match match) =>
         AssertFaceupTop(
             context, step, match, context.World.AreaOf(DeckType.EncounterDiscardPile));
+
+    private static void CardResolving(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        if (card.Area.Type != DeckType.RevealingArea || !card.FaceUp)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected faceup card {card.ObjectId} in the resolving area; "
+                + $"was {card.Area}, faceup={card.FaceUp}");
+        }
+    }
 
     private static void AssertFaceupTop(
         TranscriptContext context, TranscriptStep step, Match match, Area area)
@@ -1612,6 +1709,20 @@ internal sealed class CoreTranscriptRunner
                 throw new TranscriptAssertionException(
                     $"{step.Location}: expected {face} {field} '{row["value"]}'; was '{actual}'");
             }
+        }
+    }
+
+    private static void PendingCardOffered(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Prompt asked = context.PendingPrompt
+            ?? throw new TranscriptAssertionException(
+                $"{step.Location}: expected a pending action prompt");
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        if (!asked.Affordances.Any(offer => offer.AnchorId == card.ObjectId))
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: card {card.ObjectId} is not offered by '{asked.Label}'");
         }
     }
 

@@ -7,6 +7,9 @@ namespace Marvel.Content.Tests.Behavior;
 
 public sealed class CoreCardFaceTranscriptTests
 {
+    private static readonly Lazy<IReadOnlyList<TranscriptResult>> Corpus = new(
+        () => new CoreTranscriptSuite(RepositoryPaths.Root).RunPassingCorpus());
+
     [Fact]
     public void EveryCanonicalCoreFaceHasAnExecutablePrintedFactTranscript()
     {
@@ -20,7 +23,7 @@ public sealed class CoreCardFaceTranscriptTests
                     $"behavior:card:{card.GetProperty("card_id").GetString()}:printed-name")
                 .Order(StringComparer.Ordinal),
         ];
-        var results = new CoreTranscriptSuite(RepositoryPaths.Root).RunPassingCorpus()
+        var results = Corpus.Value
             .Where(result => result.Scenario.StartsWith(
                 "specs/behavior/core/card-faces.feature::", StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
@@ -33,5 +36,19 @@ public sealed class CoreCardFaceTranscriptTests
         Assert.Equal(
             "28e935913f4352fee6d06f2617a6d48d7725475a94b2cf8f092cf22278299beb",
             results["behavior:card:01149:printed-name"].Digest);
+    }
+
+    [Fact]
+    public void CardActionBranchesHavePinnedOutcomes()
+    {
+        TranscriptResult result = Assert.Single(
+            Corpus.Value,
+            candidate => candidate.Scenario.StartsWith(
+                "specs/behavior/core/card-actions.feature::", StringComparison.Ordinal));
+
+        Assert.Equal("behavior:card:01005:deal-8-damage-enemy", result.Obligation);
+        Assert.Equal(
+            "560775a73450c5e08a03a8e7c97f7ca5e35754ab02a0d978febf300ff5d24298",
+            result.Digest);
     }
 }
