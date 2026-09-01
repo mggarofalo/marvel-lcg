@@ -298,7 +298,7 @@ public sealed class CoreRuleTranscriptTests
 
         Assert.Equal(2, results.Count);
         Assert.Equal(
-            "738068fc245332178451bfe360292ac3d058c7b1cede5e38abfa090541f59e0f",
+            "6c82c1944e5b28e57e0ee86754575d4a25672c96571153d058d77d981623fe2e",
             results["behavior:rr:player-elimination:published-result"].Digest);
         Assert.Equal(
             "c838d45bba9a3b039bc03b7084664ed0875d7d19ac9b5c8febff67f0a187569f",

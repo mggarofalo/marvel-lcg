@@ -5,12 +5,13 @@ Feature: Identity defeat and player elimination
 
   @behavior:rr:player-elimination:published-result
   @covers:behavior:rr:defeat.2:published-result
+  @covers:behavior:rr:hit-points.2.1:published-result
   @covers:behavior:rr:player-elimination.step.1:published-result
   @covers:behavior:rr:player-elimination.step.2:published-result
   @covers:behavior:rr:player-elimination.step.4:published-result
   @covers:behavior:rr:player-elimination.step.5:published-result
   @covers:behavior:rr:player-elimination.6:published-result
-  @rr:player-elimination @rr:defeat.2
+  @rr:player-elimination @rr:defeat.2 @rr:hit-points.2.1
   @rr:player-elimination.step.1 @rr:player-elimination.step.2
   @rr:player-elimination.step.4 @rr:player-elimination.step.5
   @rr:player-elimination.6
@@ -22,10 +23,15 @@ Feature: Identity defeat and player elimination
     Given a canonical Core scene is dealt
       | campaign | heroes                | seed |
       | rhino    | spider_man, iron_man | 305  |
+    And seat 1 shows identity face 01001a
+    And card 01001a copy 0 has 6 damage
     And card 01006 copy 0 is a support controlled by seat 1
     And card 01101 copy 0 is a minion engaged with seat 1
     And card 01101 copy 0 has 1 damage
-    When seat 1's identity is defeated
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01103     | 0    |
+    When the villain attacks seat 1 with every optional choice declined
     Then seat 1 is eliminated
     And seat 2 is not eliminated
     And seat 2 has the first player token
