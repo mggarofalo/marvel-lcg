@@ -10,8 +10,9 @@ Feature: Core basic power restrictions
   @covers:behavior:rr:ability.8.2:constant-active-while-in-play
   @covers:behavior:rr:ability.9:condition-met
   @covers:behavior:rr:ability.9:condition-not-met
+  @covers:behavior:rr:exhausted.2:published-result
   @rr:guard @rr:guard.1 @rr:attack-player-ability-type.1.1
-  @rr:attack-player-ability-type.4 @rr:ability.8.2 @rr:ability.9
+  @rr:attack-player-ability-type.4 @rr:ability.8.2 @rr:ability.9 @rr:exhausted.2
   Scenario: Guard applies only while the guarding minion remains in play
     # "While this minion is engaged with you, you cannot attack the villain."
     # The constant condition is true while Hydra Mercenary is engaged; after
@@ -22,6 +23,7 @@ Feature: Core basic power restrictions
     And seat 1 shows identity face 01019a
     And card 01101 copy 0 is a minion engaged with seat 1
     And card 01101 copy 0 has 1 damage
+    And card 01101 copy 0 is exhausted
     And card 01051 copy 0 is an ally controlled by seat 1
     When seat 1 asks for their basic attack targets
     Then card 01094 copy 0 is unavailable as a target

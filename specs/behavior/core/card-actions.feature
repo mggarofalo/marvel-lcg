@@ -322,8 +322,9 @@ Feature: Core card actions
 
   @behavior:card:01030:exhaust-war-machine-and-deal-2-damage
   @covers:behavior:rr:cost.11:damage-prevented
+  @covers:behavior:rr:prevent.1.4:published-result
   @covers:behavior:rr:enemy:villain-or-minion
-  @card:01030 @rr:cost.11 @rr:enemy
+  @card:01030 @rr:cost.11 @rr:prevent.1.4 @rr:enemy
   Scenario: Preventing War Machine's dealt-damage cost does not prevent its effect
     # "If dealing damage is a cost, that cost is considered paid even if some
     # or all of that damage is prevented." Tough prevents both damage, but the
@@ -344,7 +345,8 @@ Feature: Core card actions
 
   @behavior:card:01027:exhaust-focused-rage-and-take-1-damage
   @covers:behavior:rr:cost.12:all-damage-taken
-  @card:01027 @rr:cost.12
+  @covers:behavior:rr:prevent.1.5:published-result
+  @card:01027 @rr:cost.12 @rr:prevent.1.5
   Scenario: Focused Rage pays its take-damage cost before drawing
     # "That cost is not considered paid unless all of that damage was taken."
     # She-Hulk takes the printed one damage, Focused Rage exhausts, and only
@@ -367,7 +369,8 @@ Feature: Core card actions
 
   @behavior:rr:cost.12:damage-prevented
   @covers:behavior:rr:cost.5:simultaneous-costs
-  @rr:cost.12 @card:01027
+  @covers:behavior:rr:prevent.1.5:published-result
+  @rr:cost.12 @rr:prevent.1.5 @card:01027
   @rr:cost.5
   Scenario: Tough makes Focused Rage's take-damage cost unpayable
     # A take-damage cost "is not considered paid unless all of that damage was

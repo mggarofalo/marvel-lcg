@@ -89,7 +89,7 @@ public sealed class CoreRuleTranscriptTests
 
         Assert.Equal(3, results.Count);
         Assert.Equal(
-            "11477bc9e62efbb12adf598a0de6a07a165cb6a4230cb805d7b83c4c33c7d6ac",
+            "36fcdb5d79e4a039ba08dea0218a26d8c2402ead146d666691f43f6995e63c34",
             results["behavior:rr:guard:published-result"].Digest);
         Assert.Equal(
             "0852412184728a9360eb6fa1be001946ec862cd5afa5f9d68f60cfba82c90fd0",

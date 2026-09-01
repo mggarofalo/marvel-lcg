@@ -7819,11 +7819,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-power-restrictions.feature::Guard applies only while the guarding minion remains in play"
+          ],
+          "mutation": "Disable constant abilities on exhausted cards; the exhausted Hydra Mercenary no longer blocks the villain target."
         }
       ]
     },
@@ -15948,11 +15950,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Preventing War Machine's dealt-damage cost does not prevent its effect"
+          ],
+          "mutation": "Treat prevented dealt damage as an unpaid cost; War Machine's effect assertions fail."
         }
       ]
     },
@@ -15966,11 +15970,14 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Focused Rage pays its take-damage cost before drawing",
+            "specs/behavior/core/card-actions.feature::Tough makes Focused Rage's take-damage cost unpayable"
+          ],
+          "mutation": "Accept a partially prevented take-damage cost or reject a fully taken cost; one of the paired Focused Rage branches fails."
         }
       ]
     },
