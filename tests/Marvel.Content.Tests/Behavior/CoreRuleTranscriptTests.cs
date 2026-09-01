@@ -47,13 +47,13 @@ public sealed class CoreRuleTranscriptTests
             "70c83706d9a4071f8d1971e131006ad4631b5ffae646de407983e2640515e9d2",
             results["behavior:rr:attachment.1:published-result"].Digest);
         Assert.Equal(
-            "2548df288ece058ea555c626b770b985f85db17619b2c44a24b7dc433a6bbfa2",
+            "c5a14e8a14152ebd20333940065ac44678643817379e43da317231a6c4a05571",
             results["behavior:card:01039:exhaust-rocket-boots-and-spend-mental-resource"].Digest);
         Assert.Equal(
             "622899a27dbed3f733ecfbbc58bd17f672d591acb2183f47ecc671025275ca06",
             results["behavior:rr:modifiers.6.1:published-result"].Digest);
         Assert.Equal(
-            "05313f3e207a94b4780aabbe4b06b217906676bf4877bf87ed6a32c4df4d9997",
+            "eae2c4796f896ebabf4f786154582acdfa5494b31c4c42f8f4b83bcd0cbc64eb",
             results["behavior:rr:lasting-effects.4:published-result"].Digest);
     }
 

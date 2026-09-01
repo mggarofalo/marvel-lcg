@@ -63,11 +63,15 @@ Feature: Core character calculations
   @covers:behavior:card:01070:choose-player
   @covers:behavior:card:01070:each-character-that-player-controls-gets-1
   @covers:behavior:rr:player-turn.2:published-result
-  @rr:lasting-effects.3 @rr:lasting-effects.4 @rr:player-turn.2 @card:01070
+  @covers:behavior:rr:player-phase.1:published-result
+  @rr:lasting-effects.3 @rr:lasting-effects.4 @rr:player-turn.2
+  @rr:player-phase.1 @card:01070
   Scenario: A character entering after Lead from the Front receives its lasting bonus
     # A card that enters play after a lasting effect is created "is still
     # affected by that lasting effect." Spider-Woman enters after the chosen
     # player receives Lead from the Front's phase-long +1 ATK and +1 THW.
+    # Effects lasting until the end of the player phase expire only after the
+    # ready step, so the ally is ready before its bonus is gone.
     Given a canonical Core scene is dealt
       | campaign | heroes         | seed |
       | rhino    | captain_marvel | 815  |
@@ -97,6 +101,7 @@ Feature: Core character calculations
     Then card 01094 copy 0 has 3 damage
     When the player phase ends
     Then card 01010a copy 0 is ready
+    And card 01011 copy 0 is ready
     When seat 1 uses their basic attack against card 01094 copy 0
     Then card 01094 copy 0 has 5 damage
 

@@ -1065,6 +1065,8 @@ internal sealed class CoreTranscriptRunner
         _ = match;
         context.Events.Clear();
         context.CurrentPrompt = "<none>";
+        PhaseEnd.DrawToHandSize(context.World, context.Cards, context.Events);
+        PhaseEnd.ReadyCards(context.World, context.Events);
         PhaseEnd.EndPlayerPhase(context.World, context.Events);
     }
 
