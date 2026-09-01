@@ -57,3 +57,27 @@ Feature: Core attachment lifecycle
     When card 01162 copy 0 enters play as a minion engaged with seat 1
     Then card 01163 copy 0 is attached to card 01101 copy 0
     And card 01162 copy 0 is engaged with seat 1
+
+  @behavior:rr:max-maximum.4:published-result
+  @covers:behavior:card:01074:max-1-per-ally
+  @rr:max-maximum.4 @card:01074
+  Scenario: Max one per ally prevents a second attachment on the same ally
+    # "Max 1 per [game element]" restricts copies attached to each named game
+    # element. Spider-Woman is the only ally in play and already has Inspired,
+    # so the second owned copy has no legal host and is not offered for play.
+    Given a canonical Core scene is dealt
+      | campaign | heroes         | seed |
+      | rhino    | captain_marvel | 809  |
+    And card 01011 copy 0 is an ally controlled by seat 1
+    And card 01074 copy 0 is attached to card 01011 copy 0
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01074 | 1    |
+      | 01088 | 0    |
+    When game setup reaches seat 1's mulligan
+    Then seat 1 is offered a mulligan
+    When seat 1 keeps every opening-hand card at mulligan
+    Then seat 1 is the active player
+    When seat 1 asks whether card 01074 copy 1 is available to play
+    Then card 01074 copy 1 is unavailable to play
+    And card 01074 copy 0 is attached to card 01011 copy 0

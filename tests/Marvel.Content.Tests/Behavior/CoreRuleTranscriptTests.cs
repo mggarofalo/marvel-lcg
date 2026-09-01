@@ -32,7 +32,7 @@ public sealed class CoreRuleTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(3, results.Count);
+        Assert.Equal(4, results.Count);
         Assert.Equal(
             "422b6819e211329aa2c280f68d7df90a67ae359196e4bd66a46fb775e961f6c5",
             results["behavior:rr:attach-to:published-result"].Digest);
@@ -42,6 +42,9 @@ public sealed class CoreRuleTranscriptTests
         Assert.Equal(
             "2b2f1084f9e733267098a0d3479984e30d5f786edf0a42009c2c7836247b2c7f",
             results["behavior:rr:attach-to.3:published-result"].Digest);
+        Assert.Equal(
+            "b0519e50cb3b5fa1e265795eaa4bbe18deaa19fb300c515a6a36b7ec6d67361f",
+            results["behavior:rr:max-maximum.4:published-result"].Digest);
     }
 
     [Fact]

@@ -15414,11 +15414,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/attachments.feature::Max one per ally prevents a second attachment on the same ally"
+          ],
+          "mutation": "Ignore the copy already attached to Spider-Woman; the second Inspired becomes available to play."
         }
       ]
     },
@@ -39213,11 +39215,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/attachments.feature::Max one per ally prevents a second attachment on the same ally"
+          ],
+          "mutation": "Remove Inspired's printed maximum; the second copy becomes available with Spider-Woman as its host."
         },
         {
           "id": "behavior:card:01074:attached-ally-gets-1-thw-and-1",
