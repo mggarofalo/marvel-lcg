@@ -70,9 +70,10 @@ Feature: Core triggered keywords
   @covers:behavior:rr:retaliate-x:published-result
   @covers:behavior:rr:retaliate-x.1:published-result
   @covers:behavior:rr:retaliate-x.2:published-result
-  @covers:behavior:rr:attack-player-ability-type.5.1:published-result
+  @covers:behavior:rr:attack-enemy-activation.4.1:published-result
+  @covers:behavior:rr:attack-enemy-activation.step.6.a:published-result
   @card:01040a @rr:retaliate-x @rr:retaliate-x.1 @rr:retaliate-x.2
-  @rr:attack-player-ability-type.5.1
+  @rr:attack-enemy-activation.4.1 @rr:attack-enemy-activation.step.6.a
   Scenario: Retaliate damages the attacker after Black Panther is attacked
     # "After this character is attacked, deal 1 damage to the attacking
     # character." Retaliate resolves after the enemy attack finishes.
