@@ -1348,11 +1348,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ally-limit.feature::Playing a fourth ally requires one controlled ally to be discarded"
+          ],
+          "mutation": "CoreRuleTranscriptTests.AllyLimitHasPinnedOutcome distinguishes the fourth ally opening a mandatory discard choice and returning the controller to three allies."
         }
       ]
     },

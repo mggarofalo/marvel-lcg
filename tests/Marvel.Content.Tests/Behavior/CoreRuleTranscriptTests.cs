@@ -10,6 +10,20 @@ public sealed class CoreRuleTranscriptTests
         () => new CoreTranscriptSuite(RepositoryPaths.Root).RunPassingCorpus());
 
     [Fact]
+    public void AllyLimitHasPinnedOutcome()
+    {
+        TranscriptResult result = Assert.Single(Corpus.Value, result =>
+            result.Scenario.StartsWith(
+                "specs/behavior/core/ally-limit.feature::",
+                StringComparison.Ordinal));
+
+        Assert.Equal("behavior:rr:ally-limit:published-result", result.Obligation);
+        Assert.Equal(
+            "8c4cc2574dcaf3373fdee717b3fee9a6c283735f219cd4fe4365993d93506261",
+            result.Digest);
+    }
+
+    [Fact]
     public void AttachmentBranchesHavePinnedOutcomes()
     {
         var results = Corpus.Value
