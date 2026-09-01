@@ -528,6 +528,10 @@ internal sealed class CoreTranscriptRunner
         Bind("card-in-seat-nemesis", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is in seat (?<seat>\d+)'s set-aside nemesis pile",
             CardInSeatNemesis),
+        Bind("card-in-play", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is in play", CardInPlay),
+        Bind("card-out-of-play", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is out of play", CardOutOfPlay),
         Bind("player-order", TranscriptStepKind.Then,
             @"the player order is (?<order>[\d,]+)", PlayerOrder),
         Bind("per-player-count", TranscriptStepKind.Then,
@@ -2170,6 +2174,28 @@ internal sealed class CoreTranscriptRunner
             throw new TranscriptAssertionException(
                 $"{step.Location}: expected card {card.ObjectId} in seat {seat + 1}'s "
                 + $"set-aside nemesis pile; was {card.Area}");
+        }
+    }
+
+    private static void CardInPlay(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        if (!DeckTypes.IsInPlay(card.Area.Type))
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected card {card.ObjectId} in play; was {card.Area.Type}");
+        }
+    }
+
+    private static void CardOutOfPlay(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        if (DeckTypes.IsInPlay(card.Area.Type))
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected card {card.ObjectId} out of play; was {card.Area.Type}");
         }
     }
 
