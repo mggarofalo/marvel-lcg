@@ -31988,11 +31988,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Combat Training can enter another player's control"
+          ],
+          "mutation": "Force Combat Training to remain under its owner's control; the host and controller assertions fail."
         },
         {
           "key": "max-1-per-player",
@@ -35652,11 +35654,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Mockingbird responds to entering play by stunning an enemy"
+          ],
+          "mutation": "Suppress Mockingbird's Response, its enemy choice, or the resulting stun; a prompt or status assertion fails."
         }
       ]
     },
@@ -36547,10 +36551,10 @@
         {
           "key": "max-1-per-player",
           "summary": "Max 1 per player.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "not-representable",
+          "reason": "Each legal Core player deck contains only one Avengers Mansion, the card cannot be played under another player's control, and no Core effect can transfer support control, so a second controlled copy cannot occur in a valid Core game state.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -36705,10 +36709,10 @@
         {
           "key": "max-1-per-player",
           "summary": "Max 1 per player.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "not-representable",
+          "reason": "Each legal Core player deck contains only one Helicarrier, the card cannot be played under another player's control, and no Core effect can transfer support control, so a second controlled copy cannot occur in a valid Core game state.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],

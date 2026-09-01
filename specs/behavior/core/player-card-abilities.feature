@@ -52,6 +52,34 @@ Feature: Core player card abilities
     Then card 01068 copy 0 has modified THW 1
     And card 01068 copy 0 has modified ATK 4
 
+  @behavior:card:01083:after-mockingbird-enters-play-stun-enemy
+  @card:01083
+  Scenario: Mockingbird responds to entering play by stunning an enemy
+    # After Mockingbird enters play, her optional Response chooses Rhino and
+    # gives that enemy a stunned status card.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 882  |
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01050 | 0    |
+      | 01083 | 0    |
+      | 01088 | 0    |
+    When game setup reaches seat 1's mulligan
+    Then seat 1 is offered a mulligan
+    When seat 1 keeps every opening-hand card at mulligan
+    Then seat 1 is the active player
+    When seat 1 plays card 01083 copy 0 paying with these cards
+      | card  | copy |
+      | 01050 | 0    |
+      | 01088 | 0    |
+    Then seat 1 is offered the "Mockingbird" pending opportunity
+    When seat 1 accepts card 01083 copy 0's pending opportunity
+    Then card 01094 copy 0 is offered by the pending action
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01094 copy 0 has 1 stunned status card
+    And card 01083 copy 0 remains an ally controlled by seat 1
+
   @behavior:card:01035:exhaust-arc-reactor-ready-iron-man
   @card:01035
   Scenario: Arc Reactor exhausts to ready Iron Man

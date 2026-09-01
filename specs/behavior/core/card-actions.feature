@@ -1099,6 +1099,32 @@ Feature: Core card actions
     And card 01057 copy 0 remains attached to seat 1's identity
     And card 01019a copy 0 has modified ATK 4
 
+  @behavior:card:01057:play-under-any-player-s-control
+  @card:01057
+  Scenario: Combat Training can enter another player's control
+    # “Play under any player's control” lets She-Hulk play her owned Combat
+    # Training on Spider-Man. The upgrade remains owned by seat 1 while its
+    # continuous +1 ATK applies to the controlling player's hero.
+    Given a canonical Core scene is dealt
+      | campaign | heroes              | seed |
+      | rhino    | she_hulk,spider_man | 883  |
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01057 | 0    |
+      | 01088 | 0    |
+    When game setup reaches seat 1's mulligan
+    Then seat 1 is offered a mulligan
+    When seat 1 keeps every opening-hand card at mulligan
+    Then seat 2 is offered a mulligan
+    When seat 2 keeps every opening-hand card at mulligan
+    Then seat 1 is the active player
+    When seat 1 plays card 01057 copy 0 targeting card 01001b copy 0 paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+    Then card 01057 copy 0 remains attached to seat 2's identity
+    And card 01057 copy 0 is owned by seat 1
+    And card 01057 copy 0 is controlled by seat 2
+
   @behavior:card:01010a:spend-energy-resource-and-heal-1-damage
   @covers:behavior:card:01010a:limit-once-per-round-within-limit
   @covers:behavior:card:01010a:limit-once-per-round-limit-reached

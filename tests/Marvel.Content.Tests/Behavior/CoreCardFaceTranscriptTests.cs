@@ -71,7 +71,11 @@ public sealed class CoreCardFaceTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(15, results.Count);
+        Assert.Equal(16, results.Count);
+        Assert.Equal(
+            "3e1d13290b6ce29527eb0cae35ebbfb897ddc5d8c6e51a08c3fbcfb8b4d52fdc",
+            results[
+                "behavior:card:01083:after-mockingbird-enters-play-stun-enemy"].Digest);
         Assert.Equal(
             "972ad7da1753fcc4ad6a68a0bb480871c6a28424c83d996c19ebdab268cf73bb",
             results[
@@ -136,7 +140,11 @@ public sealed class CoreCardFaceTranscriptTests
                 "specs/behavior/core/card-actions.feature::", StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(43, results.Count);
+        Assert.Equal(44, results.Count);
+        Assert.Equal(
+            "d227e2da9f5490ce815bdc5ff48f817f28184c83a5c744369b9bed4fd6408dee",
+            results[
+                "behavior:card:01057:play-under-any-player-s-control"].Digest);
         Assert.Equal(
             "5a3c519fb8e602123a5186bc67ab95ff553eb67080b527c327b8f3974ae6f2a4",
             results["behavior:card:01005:deal-8-damage-enemy"].Digest);

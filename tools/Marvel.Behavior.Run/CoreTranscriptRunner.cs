@@ -443,6 +443,9 @@ internal sealed class CoreTranscriptRunner
         Bind("initiate-indexed-action-without-payment", TranscriptStepKind.When,
             @"seat (?<seat>\d+) initiates card (?<face>\d+[a-z]?) copy (?<copy>\d+)'s (?<ordinal>first|second) printed action without payment",
             InitiateIndexedActionWithoutPayment),
+        Bind("play-card-with-target-and-payment", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) plays card (?<face>\d+[a-z]?) copy (?<copy>\d+) targeting card (?<target>\d+[a-z]?) copy (?<targetCopy>\d+) paying with these cards",
+            PlayCardWithTargetAndPayment),
         Bind("play-card-with-payment", TranscriptStepKind.When,
             @"seat (?<seat>\d+) plays card (?<face>\d+[a-z]?) copy (?<copy>\d+) paying with these cards",
             PlayCardWithPayment),
@@ -1950,7 +1953,20 @@ internal sealed class CoreTranscriptRunner
         };
 
     private static void PlayCardWithPayment(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        PlayCardWithPayment(context, step, match, explicitTarget: null);
+
+    private static void PlayCardWithTargetAndPayment(
         TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int target = context.SceneRequired(step).Find(new SceneCard(
+            match.Groups["target"].Value,
+            Number(match, "targetCopy", step))).ObjectId;
+        PlayCardWithPayment(context, step, match, target);
+    }
+
+    private static void PlayCardWithPayment(
+        TranscriptContext context, TranscriptStep step, Match match, int? explicitTarget)
     {
         Game game = context.Game
             ?? throw new TranscriptException($"{step.Location}: game setup has not begun");
@@ -1966,10 +1982,14 @@ internal sealed class CoreTranscriptRunner
         Card card = context.SceneRequired(step).Find(SceneCard(match, step));
         Affordance play = asked.Affordances.Single(candidate =>
             candidate.Verb == CardPlay.Verb && candidate.AnchorId == card.ObjectId);
-        int[] targets = play.Targets switch
+        int[] targets = (play.Targets, explicitTarget) switch
         {
-            null => [],
-            { Legal.Count: 1 } request => [request.Legal[0]],
+            (null, null) => [],
+            ({ } request, { } target) when request.Legal.Contains(target) => [target],
+            ({ } request, { } target) => throw new TranscriptException(
+                $"{step.Location}: card {target} is not a legal target for playing "
+                + $"card {card.ObjectId}; legal targets are {string.Join(",", request.Legal)}"),
+            ({ Legal.Count: 1 } request, null) => [request.Legal[0]],
             _ => throw new TranscriptException(
                 $"{step.Location}: playing card {card.ObjectId} requires an explicit target"),
         };
