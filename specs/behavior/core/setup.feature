@@ -146,8 +146,15 @@ Feature: Canonical Core setup
   @covers:behavior:rr:search.1:published-result
   @covers:behavior:rr:search.2:published-result
   @covers:behavior:rr:search.3:published-result
+  @covers:behavior:rr:search:published-result
+  @covers:behavior:rr:shuffle.2:published-result
+  @covers:behavior:rr:setup-triggered-ability:published-result
+  @covers:behavior:rr:setup-triggered-ability.1:published-result
+  @covers:behavior:rr:setup-triggered-ability.3:published-result
   @card:01040b @rr:ability.6 @rr:appendix-ii-setup.step.16
   @rr:search.1 @rr:search.2 @rr:search.3
+  @rr:search @rr:shuffle.2 @rr:setup-triggered-ability
+  @rr:setup-triggered-ability.1 @rr:setup-triggered-ability.3
   Scenario: T'Challa chooses one of his upgrades after mulligans and shuffles
     # Setup step 16 resolves player Setup abilities after mulligans. Foresight
     # searches "your deck," offers every matching Black Panther upgrade, moves

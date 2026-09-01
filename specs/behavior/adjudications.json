@@ -18337,11 +18337,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::T'Challa chooses one of his upgrades after mulligans and shuffles"
+          ],
+          "mutation": "CoreRuleTranscriptTests.SetupBranchesHavePinnedOutcomes distinguishes every matching Black Panther upgrade in the searched deck being offered."
         }
       ]
     },
@@ -18541,11 +18543,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::T'Challa chooses one of his upgrades after mulligans and shuffles"
+          ],
+          "mutation": "CoreRuleTranscriptTests.SetupBranchesHavePinnedOutcomes distinguishes T'Challa's Setup ability opening its printed search decision during setup."
         }
       ]
     },
@@ -18559,11 +18563,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::T'Challa chooses one of his upgrades after mulligans and shuffles"
+          ],
+          "mutation": "CoreRuleTranscriptTests.SetupBranchesHavePinnedOutcomes distinguishes the mandatory Setup search being presented without an option to skip the ability."
         }
       ]
     },
@@ -18595,11 +18601,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::T'Challa chooses one of his upgrades after mulligans and shuffles"
+          ],
+          "mutation": "CoreRuleTranscriptTests.SetupBranchesHavePinnedOutcomes distinguishes T'Challa's player-card Setup ability resolving after mulligans."
         }
       ]
     },
@@ -18649,11 +18657,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::T'Challa chooses one of his upgrades after mulligans and shuffles"
+          ],
+          "mutation": "CoreRuleTranscriptTests.SetupBranchesHavePinnedOutcomes distinguishes the searched player deck being shuffled only after the chosen upgrade enters hand."
         }
       ]
     },
