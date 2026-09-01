@@ -89,3 +89,21 @@ Feature: Core triggered keywords
     When villain phase 1 resolves with every optional choice declined
     Then card 01040a copy 0 has 2 damage
     And card 01094 copy 0 has 1 damage
+
+  @behavior:card:01119:klaw-gains-retaliate-1
+  @covers:behavior:card:01119:after-character-is-attacked-deal-1-damage
+  @covers:behavior:rr:attack-player-ability-type.5.1:published-result
+  @covers:behavior:rr:attack-player-ability-type.step.7:published-result
+  @card:01119 @rr:attack-player-ability-type.5.1
+  @rr:attack-player-ability-type.step.7
+  Scenario: An enemy's Retaliate damages its player attacker after the attack
+    # After the player attack resolves, each attacked enemy with Retaliate that
+    # remains in play deals its Retaliate damage to the attacking character.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | klaw     | spider_man | 719  |
+    And seat 1 shows identity face 01001a
+    And card 01119 copy 0 is attached to card 01113 copy 0
+    When seat 1 uses their basic attack against card 01113 copy 0
+    Then card 01113 copy 0 has 2 damage
+    And card 01001a copy 0 has 1 damage

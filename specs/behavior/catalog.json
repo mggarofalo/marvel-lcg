@@ -3830,11 +3830,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-keywords.feature::An enemy's Retaliate damages its player attacker after the attack"
+          ],
+          "mutation": "Do not make an attacked enemy that remains in play deal its Retaliate damage; the attacker remains undamaged."
         }
       ]
     },
@@ -3874,11 +3876,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-keywords.feature::An enemy's Retaliate damages its player attacker after the attack"
+          ],
+          "mutation": "Skip forced abilities after the player attack; Klaw's Retaliate does not resolve."
         }
       ]
     },
@@ -44694,11 +44698,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-keywords.feature::An enemy's Retaliate damages its player attacker after the attack"
+          ],
+          "mutation": "Do not grant Klaw Retaliate 1 while Solid-Sound Body is attached; Spider-Man takes no damage."
         },
         {
           "id": "behavior:card:01119:after-character-is-attacked-deal-1-damage",
@@ -44706,11 +44712,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-keywords.feature::An enemy's Retaliate damages its player attacker after the attack"
+          ],
+          "mutation": "Do not deal Retaliate damage after Klaw is attacked; Spider-Man's damage assertion fails."
         },
         {
           "id": "behavior:card:01119:spend-energy-mental-physical-resources-discard-card",

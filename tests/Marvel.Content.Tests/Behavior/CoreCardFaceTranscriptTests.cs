@@ -111,7 +111,7 @@ public sealed class CoreCardFaceTranscriptTests
                 "specs/behavior/core/core-keywords.feature::", StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(4, results.Count);
+        Assert.Equal(5, results.Count);
         Assert.Equal(
             "44539cd9a74dc6025015263af5b8693e180b4a25c4a3c3373862bb6de3a4c10f",
             results["behavior:card:01121:surge"].Digest);
@@ -124,5 +124,8 @@ public sealed class CoreCardFaceTranscriptTests
         Assert.Equal(
             "271e4ccdef895fcebee75a00392c0f65ffff163d5c899ecdda9e30446ac38fba",
             results["behavior:card:01040a:retaliate-1"].Digest);
+        Assert.Equal(
+            "86ca8e9cffb3f4bbff86a0538135743c6e32bfb46eee814cd01af51adc9c6181",
+            results["behavior:card:01119:klaw-gains-retaliate-1"].Digest);
     }
 }
