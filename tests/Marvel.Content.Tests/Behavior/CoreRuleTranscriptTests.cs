@@ -128,11 +128,11 @@ public sealed class CoreRuleTranscriptTests
 
         Assert.Equal(2, results.Count);
         Assert.Equal(
-            "938b065fa9f3b767897cfdb4c17547b8319f99e4888561f7e72e2366ff12b83f",
+            "5555335fa80dde057285925b06d58104f77428c6568acc5d29938b4c81333bd6",
             results[
                 "behavior:card:01160:you-may-flip-alter-ego-form-declined"].Digest);
         Assert.Equal(
-            "7858db70acdd29fe98c467078b048d18fa214152b80a30ad36354ec8ae3f6b73",
+            "d1c1ec43da722baed6be9a31f50e0a20cc3ebdcb04ba04680a0f19257b43115e",
             results[
                 "behavior:card:01160:you-may-flip-alter-ego-form-accepted"].Digest);
     }

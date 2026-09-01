@@ -376,11 +376,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Legal Work can accelerate the main scheme without changing form"
+          ],
+          "mutation": "Make Legal Work's 'may' form change mandatory; declining it no longer leaves She-Hulk in hero form."
         }
       ]
     },
@@ -15418,11 +15420,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Legal Work can accelerate the main scheme without changing form"
+          ],
+          "mutation": "Remove the option to decline Legal Work's 'may' effect; the second option cannot be selected."
         }
       ]
     },
@@ -16627,11 +16631,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Legal Work can accelerate the main scheme without changing form"
+          ],
+          "mutation": "Ask the revealing Spider-Man player to resolve Legal Work's 'you' choice; the seat-two decision fails."
         }
       ]
     },
@@ -16693,11 +16699,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Legal Work can accelerate the main scheme without changing form"
+          ],
+          "mutation": "Leave Legal Work with its revealing Spider-Man player; the She-Hulk play-area assertion fails."
         }
       ]
     },
@@ -16737,11 +16745,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Legal Work can accelerate the main scheme without changing form"
+          ],
+          "mutation": "Assign Legal Work's decisions to a player other than its controller; the seat-two answer is rejected."
         }
       ]
     },
@@ -20126,11 +20136,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Legal Work can exhaust Jennifer Walters and leave the game"
+          ],
+          "mutation": "Discard Legal Work instead of placing it in the removed area; the removed-from-game assertion fails."
         }
       ]
     },
@@ -21165,11 +21177,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Legal Work can accelerate the main scheme without changing form"
+          ],
+          "mutation": "Resolve Legal Work outside a player play area; the play-area assertion fails."
         }
       ]
     },
@@ -21187,11 +21201,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Legal Work can accelerate the main scheme without changing form"
+          ],
+          "mutation": "Keep the original revealing seat after Legal Work names Jennifer Walters; the seat-two prompt fails."
         }
       ]
     },
@@ -21297,11 +21313,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Legal Work can accelerate the main scheme without changing form"
+          ],
+          "mutation": "Do not turn Legal Work faceup; its When Revealed choices never become pending."
         }
       ]
     },
@@ -21319,11 +21337,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Legal Work can accelerate the main scheme without changing form"
+          ],
+          "mutation": "Skip obligation placement while resolving the revealed card type; the play-area assertion fails."
         }
       ]
     },
@@ -21341,11 +21361,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Legal Work can accelerate the main scheme without changing form"
+          ],
+          "mutation": "Skip Legal Work's When Revealed ability; neither printed decision becomes pending."
         }
       ]
     },
@@ -27628,11 +27650,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/legal-work.feature::Legal Work can exhaust Jennifer Walters and leave the game"
+          ],
+          "mutation": "Treat Legal Work's 'exhaust you' as no identity exhaust; the Jennifer Walters readiness assertion fails."
         }
       ]
     },
