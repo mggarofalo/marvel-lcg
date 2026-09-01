@@ -35,3 +35,27 @@ Feature: Core character calculations
       | 01143     | 0    |
     When the villain schemes against seat 1 with every optional choice declined
     Then card 01137b copy 0 has 4 threat counters
+
+  @behavior:card:01039:exhaust-rocket-boots-and-spend-mental-resource
+  @covers:behavior:rr:mental-resource.2:published-result
+  @covers:behavior:rr:lasting-effects.1:published-result
+  @covers:behavior:rr:lasting-effects.2:published-result
+  @card:01039 @rr:mental-resource.2
+  @rr:lasting-effects.1 @rr:lasting-effects.2
+  Scenario: Rocket Boots spends mental and grants Aerial after its action resolves
+    # The mental resource pays the printed ability cost. Its Aerial grant is a
+    # lasting effect, so it remains active after Rocket Boots finishes resolving.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | iron_man | 809  |
+    And seat 1 shows identity face 01029a
+    And card 01039 copy 0 is an upgrade attached to seat 1's identity
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01089 | 0    |
+    When seat 1 initiates card 01039 copy 0's action paying with these cards
+      | card  | copy |
+      | 01089 | 0    |
+    Then card 01039 copy 0 is exhausted
+    And card 01089 copy 0 is in seat 1's discard pile
+    And card 01029a copy 0 has the AERIAL trait

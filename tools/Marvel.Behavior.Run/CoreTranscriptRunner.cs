@@ -579,6 +579,9 @@ internal sealed class CoreTranscriptRunner
         Bind("card-afflicted", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is (?<status>stunned|confused)",
             CardAfflicted),
+        Bind("card-trait", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) has the (?<trait>[A-Z][A-Z ]*) trait",
+            CardTrait),
         Bind("printed-characteristics", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) exposes these printed characteristics",
             PrintedCharacteristics),
@@ -2426,6 +2429,18 @@ internal sealed class CoreTranscriptRunner
         {
             throw new TranscriptAssertionException(
                 $"{step.Location}: expected card {card.ObjectId} to be {status}");
+        }
+    }
+
+    private static void CardTrait(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        string trait = match.Groups["trait"].Value.Replace(' ', '_');
+        if (!Traits.Has(context.World, card, trait, context.Cards))
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected card {card.ObjectId} to have trait {trait}");
         }
     }
 
