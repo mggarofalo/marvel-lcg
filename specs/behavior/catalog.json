@@ -48900,11 +48900,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-attachments.feature::Program Transmitter attaches to Ultron and is discarded for mental resources"
+          ],
+          "mutation": "Reveal the attachment into another area or host; the attached-card assertion fails."
         },
         {
           "id": "behavior:card:01141:after-ultron-schemes-place-1-threat-on",
@@ -48912,11 +48914,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-attachments.feature::Program Transmitter adds threat to every side scheme after Ultron schemes"
+          ],
+          "mutation": "Remove the forced response or target the main scheme; the side-scheme threat assertion fails."
         },
         {
           "id": "behavior:card:01141:exhaust-your-hero-and-spend-mental-mental",
@@ -48924,11 +48928,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-attachments.feature::Program Transmitter attaches to Ultron and is discarded for mental resources"
+          ],
+          "mutation": "Omit the exhaust or mental payment, or retain the attachment; a readiness, payment, discard, or pinned-digest assertion fails."
         }
       ]
     },
@@ -48988,11 +48994,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-attachments.feature::Upgraded Drones attaches to the environment and is discarded for three resources"
+          ],
+          "mutation": "Attach to another host or area; the Ultron Drones attachment assertion fails."
         },
         {
           "id": "behavior:card:01142:each-facedown-drone-minion-gets-1-atk",
@@ -49000,11 +49008,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-attachments.feature::Upgraded Drones increases a facedown Drone's attack and hit points"
+          ],
+          "mutation": "Remove either characteristic grant or change its amount; the modified ATK or remaining-hit-points assertion fails."
         },
         {
           "id": "behavior:card:01142:spend-energy-mental-physical-resources-discard-card",
@@ -49012,11 +49022,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-attachments.feature::Upgraded Drones attaches to the environment and is discarded for three resources"
+          ],
+          "mutation": "Change the resource requirement or retain the attachment; the payment, discard, or pinned-digest assertion fails."
         }
       ]
     },
@@ -50346,11 +50358,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-attachments.feature::Vibranium Armor gives the damaged villain tough"
+          ],
+          "mutation": "Reveal the attachment into another area or host; the villain attachment assertion fails."
         },
         {
           "id": "behavior:card:01152:after-villain-take-damage-give-it-tough",
@@ -50358,11 +50372,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-attachments.feature::Vibranium Armor gives the damaged villain tough"
+          ],
+          "mutation": "Remove the forced response or give Tough to another card; the villain-status assertion fails."
         },
         {
           "id": "behavior:card:01152:exhaust-your-hero-and-spend-physical-physical",
@@ -50370,11 +50386,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-attachments.feature::Vibranium Armor is discarded for physical resources"
+          ],
+          "mutation": "Omit the exhaust or physical payment, or retain the attachment; a readiness, payment, discard, or pinned-digest assertion fails."
         }
       ]
     },
@@ -50462,11 +50480,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-attachments.feature::Concussion Blasters gives the villain retaliate"
+          ],
+          "mutation": "Reveal the attachment into another area or host; the villain attachment assertion fails."
         },
         {
           "id": "behavior:card:01153:villain-gains-retaliate-1",
@@ -50474,11 +50494,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-attachments.feature::Concussion Blasters gives the villain retaliate"
+          ],
+          "mutation": "Remove or change Retaliate 1; the attacking identity's damage assertion fails."
         },
         {
           "id": "behavior:card:01153:exhaust-your-hero-and-spend-energy-energy",
@@ -50486,11 +50508,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-attachments.feature::Concussion Blasters is discarded for energy resources"
+          ],
+          "mutation": "Omit the exhaust or energy payment, or retain the attachment; a readiness, payment, discard, or pinned-digest assertion fails."
         }
       ]
     },

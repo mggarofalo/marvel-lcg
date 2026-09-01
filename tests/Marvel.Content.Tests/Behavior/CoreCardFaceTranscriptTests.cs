@@ -444,6 +444,38 @@ public sealed class CoreCardFaceTranscriptTests
     }
 
     [Fact]
+    public void UltronAttachmentBranchesHavePinnedOutcomes()
+    {
+        var results = Corpus.Value
+            .Where(candidate => candidate.Scenario.StartsWith(
+                "specs/behavior/core/ultron-attachments.feature::",
+                StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
+
+        Assert.Equal(8, results.Count);
+        Assert.Equal("96d72a8aea5021f3b25bc0ef7457183abab053f9c5d6ac0fc58b659ac092b242",
+            results["behavior:card:01141:attach-ultron"].Digest);
+        Assert.Equal("65eeea12d004bce9f74b7c40c9e2ae65b961cc32ab8ec3ffd35420d73ccdec5d",
+            results[
+                "behavior:card:01141:after-ultron-schemes-place-1-threat-on"].Digest);
+        Assert.Equal("9d850f2a91dad043b21bc783b1f089b1d7f47bef38afe5ba5b04cc3a2a591959",
+            results["behavior:card:01142:attach-ultron-drones-environment"].Digest);
+        Assert.Equal("9ab9cfd083dad98a2c60f84fecb7fb46e0f9db5510aa884bef52ff7682431b35",
+            results[
+                "behavior:card:01142:each-facedown-drone-minion-gets-1-atk"].Digest);
+        Assert.Equal("ebaafda818759549cdbf83e7fde203e90f3dc3e0dee74b6a363ee4b19790dd8c",
+            results["behavior:card:01152:attach-villain"].Digest);
+        Assert.Equal("f68bfdc62aef95548bfdf282d2fd71c6bb48ec43b0bb80c41a8d2aa01d05613e",
+            results[
+                "behavior:card:01152:exhaust-your-hero-and-spend-physical-physical"].Digest);
+        Assert.Equal("426fa245a3db48b7e796235a1a650953af81f66f24e48b26e09ca9634cf96e32",
+            results["behavior:card:01153:attach-villain"].Digest);
+        Assert.Equal("944ed48f2cd2b9fa6865e5a2430ddc99e7406762989902615b2398a8ac38a64b",
+            results[
+                "behavior:card:01153:exhaust-your-hero-and-spend-energy-energy"].Digest);
+    }
+
+    [Fact]
     public void CardActionBranchesHavePinnedOutcomes()
     {
         var results = Corpus.Value

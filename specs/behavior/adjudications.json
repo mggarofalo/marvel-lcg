@@ -43320,40 +43320,46 @@
           "mutation": "Change or omit this printed field in CardCatalog; the generated face-table assertion fails."
         },
         {
-          "key": "attach-ultron",
+      "key": "attach-ultron",
           "summary": "Attach to Ultron.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/ultron-attachments.feature::Program Transmitter attaches to Ultron and is discarded for mental resources"
+      ],
+      "mutation": "Reveal the attachment into another area or host; the attached-card assertion fails."
         },
         {
-          "key": "after-ultron-schemes-place-1-threat-on",
+      "key": "after-ultron-schemes-place-1-threat-on",
           "summary": "star Forced Response: After Ultron schemes, place 1 threat on each side scheme.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/ultron-attachments.feature::Program Transmitter adds threat to every side scheme after Ultron schemes"
+      ],
+      "mutation": "Remove the forced response or target the main scheme; the side-scheme threat assertion fails."
         },
         {
-          "key": "exhaust-your-hero-and-spend-mental-mental",
+      "key": "exhaust-your-hero-and-spend-mental-mental",
           "summary": "Hero Action: Exhaust your hero and spend mental mental resources → discard this card.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/ultron-attachments.feature::Program Transmitter attaches to Ultron and is discarded for mental resources"
+      ],
+      "mutation": "Omit the exhaust or mental payment, or retain the attachment; a readiness, payment, discard, or pinned-digest assertion fails."
         }
       ]
     },
@@ -43404,40 +43410,46 @@
           "mutation": "Change or omit this printed field in CardCatalog; the generated face-table assertion fails."
         },
         {
-          "key": "attach-ultron-drones-environment",
+      "key": "attach-ultron-drones-environment",
           "summary": "Attach to the Ultron Drones environment.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/ultron-attachments.feature::Upgraded Drones attaches to the environment and is discarded for three resources"
+      ],
+      "mutation": "Attach to another host or area; the Ultron Drones attachment assertion fails."
         },
         {
-          "key": "each-facedown-drone-minion-gets-1-atk",
+      "key": "each-facedown-drone-minion-gets-1-atk",
           "summary": "Each facedown Drone minion gets +1 ATK and +1 hit point.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/ultron-attachments.feature::Upgraded Drones increases a facedown Drone's attack and hit points"
+      ],
+      "mutation": "Remove either characteristic grant or change its amount; the modified ATK or remaining-hit-points assertion fails."
         },
         {
-          "key": "spend-energy-mental-physical-resources-discard-card",
+      "key": "spend-energy-mental-physical-resources-discard-card",
           "summary": "Hero Action: Spend energy mental physical resources → discard this card.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/ultron-attachments.feature::Upgraded Drones attaches to the environment and is discarded for three resources"
+      ],
+      "mutation": "Change the resource requirement or retain the attachment; the payment, discard, or pinned-digest assertion fails."
         }
       ]
     },
@@ -44719,35 +44731,41 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-attachments.feature::Vibranium Armor gives the damaged villain tough"
+          ],
+          "mutation": "Reveal the attachment into another area or host; the villain attachment assertion fails."
         },
         {
-          "key": "after-villain-take-damage-give-it-tough",
+      "key": "after-villain-take-damage-give-it-tough",
           "summary": "Forced Response: After the villain take damage, give it a tough status card.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/ultron-attachments.feature::Vibranium Armor gives the damaged villain tough"
+      ],
+      "mutation": "Remove the forced response or give Tough to another card; the villain-status assertion fails."
         },
         {
-          "key": "exhaust-your-hero-and-spend-physical-physical",
+      "key": "exhaust-your-hero-and-spend-physical-physical",
           "summary": "Hero Action: Exhaust your hero and spend physical physical resources → discard this card.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/ultron-attachments.feature::Vibranium Armor is discarded for physical resources"
+      ],
+      "mutation": "Omit the exhaust or physical payment, or retain the attachment; a readiness, payment, discard, or pinned-digest assertion fails."
         }
       ]
     },
@@ -44831,35 +44849,41 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-attachments.feature::Concussion Blasters gives the villain retaliate"
+          ],
+          "mutation": "Reveal the attachment into another area or host; the villain attachment assertion fails."
         },
         {
-          "key": "villain-gains-retaliate-1",
+      "key": "villain-gains-retaliate-1",
           "summary": "The villain gains retaliate 1.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/ultron-attachments.feature::Concussion Blasters gives the villain retaliate"
+      ],
+      "mutation": "Remove or change Retaliate 1; the attacking identity's damage assertion fails."
         },
         {
-          "key": "exhaust-your-hero-and-spend-energy-energy",
+      "key": "exhaust-your-hero-and-spend-energy-energy",
           "summary": "Hero Action: Exhaust your hero and spend energy energy resources → discard this card.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/ultron-attachments.feature::Concussion Blasters is discarded for energy resources"
+      ],
+      "mutation": "Omit the exhaust or energy payment, or retain the attachment; a readiness, payment, discard, or pinned-digest assertion fails."
         }
       ]
     },

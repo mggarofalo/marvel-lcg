@@ -267,6 +267,9 @@ internal sealed class CoreTranscriptRunner
         Bind("engage-minion", TranscriptStepKind.Given,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is a minion engaged with seat (?<seat>\d+)",
             EngageMinion),
+        Bind("engage-facedown-drone", TranscriptStepKind.Given,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is a facedown Drone minion engaged with seat (?<seat>\d+)",
+            EngageFacedownDrone),
         Bind("place-side-scheme", TranscriptStepKind.Given,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is a side scheme in play",
             PlaceSideScheme),
@@ -957,6 +960,22 @@ internal sealed class CoreTranscriptRunner
         context.SceneRequired(step).Apply(new MoveSceneCard(
             SceneCard(match, step),
             new SceneDestination(SceneZone.EngagedMinion, Seat(match, step))));
+
+    private static void EngageFacedownDrone(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        SceneCard card = SceneCard(match, step);
+        context.SceneRequired(step).Apply(new StackPlayerDeck(
+            seat, [card], PlayerDeckRemainder.Leave));
+        Card? engaged = FacedownDrones.EngageTop(
+            context.World, seat, "behavioral fixture", "Create_Drone", context.Events);
+        if (engaged != context.SceneRequired(step).Find(card))
+        {
+            throw new TranscriptException(
+                $"{step.Location}: card {card.FaceId} copy {card.Copy} was not the created Drone");
+        }
+    }
 
     private static void PlaceSideScheme(
         TranscriptContext context, TranscriptStep step, Match match) =>
