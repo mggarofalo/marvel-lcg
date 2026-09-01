@@ -345,6 +345,10 @@ Feature: Core card actions
     And card 01023 copy 0 is faceup on top of seat 1's discard pile
 
   @behavior:card:01023:choose-and-discard-up-5-cards-from-intermediate
+  @covers:behavior:rr:for-each:published-result
+  @covers:behavior:rr:for-each.1:published-result
+  @covers:behavior:rr:for-each.2:published-result
+  @rr:for-each @rr:for-each.1 @rr:for-each.2
   @card:01023
   Scenario: Legal Practice scales to an intermediate three-card cost
     # The chosen quantity is part of the cost; the effect removes exactly one

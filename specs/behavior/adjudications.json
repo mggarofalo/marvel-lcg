@@ -8416,7 +8416,7 @@
       ]
     },
     {
-      "id": "rr:for-each",
+  "id": "rr:for-each",
       "fingerprint": "sha256:475ee169b4e0d50b627a1f69e09a00aeb87c347c6c1c65667b52409e6a07d6df",
       "obligations": [
         {
@@ -8425,16 +8425,18 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/card-actions.feature::Legal Practice scales to an intermediate three-card cost"
+      ],
+      "mutation": "Resolve Legal Practice's for-each clause as a fixed one-threat effect; the scheme incorrectly retains five threat."
         }
       ]
     },
     {
-      "id": "rr:for-each.1",
+  "id": "rr:for-each.1",
       "fingerprint": "sha256:aae8878410a3451477eac14dbe934bad30d97e5ce6da286220fa5a5432da5006",
       "obligations": [
         {
@@ -8443,11 +8445,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/card-actions.feature::Legal Practice scales to an intermediate three-card cost"
+      ],
+      "mutation": "Treat each discarded card as requiring a separately chosen scheme; the single target choice cannot produce the observed three-threat removal."
         }
       ]
     },
@@ -8470,7 +8474,7 @@
       ]
     },
     {
-      "id": "rr:for-each.2",
+  "id": "rr:for-each.2",
       "fingerprint": "sha256:ccb71cedb11882078b010cd706d06741c7c61d387b4b47ede8e7d9a8bf19902d",
       "obligations": [
         {
@@ -8479,25 +8483,27 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/card-actions.feature::Legal Practice scales to an intermediate three-card cost"
+      ],
+      "mutation": "Split Legal Practice's threat removal into independent one-threat resolutions; the transcript's single pending scheme choice no longer resolves the printed effect atomically."
         }
       ]
     },
     {
-      "id": "rr:for-each.3",
+  "id": "rr:for-each.3",
       "fingerprint": "sha256:2afae727625dd6faea2321b1e5d5e10b2e3e3f3b9c40c548dc9fd2373413f8a7",
       "obligations": [
         {
           "key": "published-result",
           "summary": "If a “for each” effect has a “choose” instruction, each iteration of that choice is considered a separate instance of that effect, even if the same target is chosen multiple times.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+      "disposition": "outside-core",
+      "reason": "No supported Core card has a for-each effect whose for-each clause instructs the resolving player to choose a target for each iteration.",
+      "target": null,
+      "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -8506,16 +8512,16 @@
       ]
     },
     {
-      "id": "rr:for-each.3.1",
+  "id": "rr:for-each.3.1",
       "fingerprint": "sha256:b3b976a27515b0dc7643aa3793a72549b9b876e1b595688ad6c840237411f4fb",
       "obligations": [
         {
           "key": "published-result",
           "summary": "The game state updates after each instance (for example, if a minion or side scheme is defeated).",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+      "disposition": "outside-core",
+      "reason": "No supported Core card has a for-each choose instruction whose separate iterations can update target legality.",
+      "target": null,
+      "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -8524,16 +8530,16 @@
       ]
     },
     {
-      "id": "rr:for-each.3.2",
+  "id": "rr:for-each.3.2",
       "fingerprint": "sha256:1700b9e0fef8d06d62f4835834b6a40d0ab1f8b1132a08277c19e254e388f39b",
       "obligations": [
         {
           "key": "published-result",
           "summary": "Responses can be triggered after each instance.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+      "disposition": "outside-core",
+      "reason": "No supported Core card has a for-each choose instruction that creates separate response windows after each iteration.",
+      "target": null,
+      "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -8560,16 +8566,16 @@
       ]
     },
     {
-      "id": "rr:for-each.4",
+  "id": "rr:for-each.4",
       "fingerprint": "sha256:874bbe80014464bc2cf8ffd2e94fe9e002016e24dc9ae6256637e766fa7a9caa",
       "obligations": [
         {
           "key": "published-result",
           "summary": "If another ability modifies a “for each” effect, that modifier is applied to each instance of the “for each” effect.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+      "disposition": "outside-core",
+      "reason": "No supported Core card modifies another ability's for-each effect, so per-instance application of such a modifier cannot be reached.",
+      "target": null,
+      "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
