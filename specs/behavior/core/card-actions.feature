@@ -324,16 +324,18 @@ Feature: Core card actions
   @covers:behavior:card:01053:excess-damage-from-attack-is-dealt-villain
   @covers:behavior:rr:physical-resource.1:pays-resource-cost
   @covers:behavior:rr:physical-resource.2:required-by-card-effect
-  @card:01053 @rr:physical-resource.1 @rr:physical-resource.2
+  @covers:behavior:rr:overkill.2:published-result
+  @card:01053 @rr:physical-resource.1 @rr:physical-resource.2 @rr:overkill.2
   Scenario: Relentless Assault gains overkill when physical pays its cost
     # "If you paid for this card using a physical resource, this attack gains
     # overkill." Strength's two physical resources exactly pay the cost, so
     # damage beyond the defeated minion's hit points reaches the villain.
     Given a canonical Core scene is dealt
-      | campaign | heroes   | seed |
-      | rhino    | she_hulk | 724  |
+      | campaign | heroes   | modular sets | seed |
+      | rhino    | she_hulk | under_attack | 724  |
     And seat 1 shows identity face 01019a
     And card 01101 copy 0 is a minion engaged with seat 1
+    And card 01153 copy 0 is attached to card 01094 copy 0
     And seat 1's hand contains exactly these cards
       | card  | copy |
       | 01053 | 0    |
@@ -345,7 +347,32 @@ Feature: Core card actions
     When seat 1 chooses card 01101 copy 0 for the pending action
     Then card 01101 copy 0 is faceup on top of the encounter discard pile
     And card 01094 copy 0 has 2 damage
+    And card 01019a copy 0 has 0 damage
     And card 01053 copy 0 is faceup on top of seat 1's discard pile
+
+  @behavior:rr:overkill.4:published-result
+  @rr:overkill.4 @card:01053
+  Scenario: Tough prevents all excess damage from an overkill attack
+    # Relentless Assault defeats the minion, then its two excess attack damage
+    # is dealt to Rhino as one instance. Tough prevents that entire instance.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 845  |
+    And seat 1 shows identity face 01019a
+    And card 01101 copy 0 is a minion engaged with seat 1
+    And card 01094 copy 0 has a tough status card
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01053 | 0    |
+      | 01090 | 0    |
+    When seat 1 initiates card 01053 copy 0's action paying with these cards
+      | card  | copy |
+      | 01090 | 0    |
+    Then card 01101 copy 0 is offered by the pending action
+    When seat 1 chooses card 01101 copy 0 for the pending action
+    Then card 01101 copy 0 is faceup on top of the encounter discard pile
+    And card 01094 copy 0 has 0 damage
+    And card 01094 copy 0 has 0 tough status cards
 
   @behavior:card:01053:if-you-paid-for-card-using-physical-condition-not-met
   @covers:behavior:card:01053:deal-5-damage-minion

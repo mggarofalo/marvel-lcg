@@ -46,7 +46,7 @@ public sealed class CoreCardFaceTranscriptTests
                 "specs/behavior/core/card-actions.feature::", StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(35, results.Count);
+        Assert.Equal(36, results.Count);
         Assert.Equal(
             "5a3c519fb8e602123a5186bc67ab95ff553eb67080b527c327b8f3974ae6f2a4",
             results["behavior:card:01005:deal-8-damage-enemy"].Digest);
@@ -69,7 +69,7 @@ public sealed class CoreCardFaceTranscriptTests
             "82643ed799db2373ad67cdb5a400147de38a073b631527496f160214cc232528",
             results["behavior:card:01054:deal-5-damage-enemy"].Digest);
         Assert.Equal(
-            "d76a21c9f4daa35a8eee7f05cf63bcd6f86553b2555aa6bd40e557cfe5934966",
+            "1bf2c010c2bd2606a260cb3d090bfea365155e9ee701597cb5e2f8dee59673a0",
             results["behavior:card:01053:if-you-paid-for-card-using-physical-condition-met"].Digest);
         Assert.Equal(
             "7a4d27570e90aa7c98f1a5eca0e90786bff9981739b963eb97c0c0d2e1599cff",
