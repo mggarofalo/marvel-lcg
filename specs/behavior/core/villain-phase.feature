@@ -211,6 +211,30 @@ Feature: Core villain phase
     And card 01083 copy 0 is faceup on top of seat 1's discard pile
     And card 01001a copy 0 has 0 damage
 
+  @behavior:card:01099:when-rhino-attacks-attack-gains-overkill
+  @covers:behavior:card:01099:excess-damage-ally-from-attack-is-dealt
+  @covers:behavior:rr:attack-enemy-activation.5:published-result
+  @covers:behavior:rr:overkill:published-result
+  @covers:behavior:rr:overkill.1:published-result
+  @card:01099 @rr:attack-enemy-activation.5 @rr:overkill @rr:overkill.1
+  Scenario: Charge gives Rhino overkill before a defending ally takes damage
+    # Charge's forced interrupt says, "When Rhino attacks, the attack gains
+    # overkill." Overkill deals damage beyond the defeated ally's hit points to
+    # that ally's controller, and Charge is discarded when the attack ends.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 722  |
+    And seat 1 shows identity face 01001a
+    And card 01083 copy 0 is an ally controlled by seat 1
+    And card 01099 copy 0 is attached to card 01094 copy 0
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01103     | 0    |
+    When the villain attacks seat 1 with card 01083 copy 0 defending
+    Then card 01083 copy 0 is faceup on top of seat 1's discard pile
+    And card 01001a copy 0 has 4 damage
+    And card 01099 copy 0 is faceup on top of the encounter discard pile
+
   @behavior:rr:defend-defense.3:published-result
   @covers:behavior:rr:defend-defense.3.1:published-result
   @covers:behavior:rr:attack-enemy-activation.3:published-result

@@ -260,6 +260,9 @@ internal sealed class CoreTranscriptRunner
         Bind("attach-identity-upgrade", TranscriptStepKind.Given,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is an upgrade attached to seat (?<seat>\d+)'s identity",
             AttachIdentityUpgrade),
+        Bind("attach-card", TranscriptStepKind.Given,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is attached to card (?<host>\d+[a-z]?) copy (?<hostCopy>\d+)",
+            AttachCard),
         Bind("give-card-status", TranscriptStepKind.Given,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) has a (?<status>stunned|confused|tough) status card",
             GiveCardStatus),
@@ -636,6 +639,17 @@ internal sealed class CoreTranscriptRunner
         context.SceneRequired(step).Apply(new MoveSceneCard(
             SceneCard(match, step),
             new SceneDestination(SceneZone.Upgrade, Seat(match, step))));
+
+    private static void AttachCard(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        var host = context.SceneRequired(step).Find(new SceneCard(
+            match.Groups["host"].Value,
+            Number(match, "hostCopy", step)));
+        context.SceneRequired(step).Apply(new MoveSceneCard(
+            SceneCard(match, step),
+            new SceneDestination(SceneZone.Attachment, Host: host.ObjectId)));
+    }
 
     private static void GiveCardStatus(
         TranscriptContext context, TranscriptStep step, Match match) =>

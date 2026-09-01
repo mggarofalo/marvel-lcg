@@ -3074,11 +3074,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Charge gives Rhino overkill before a defending ally takes damage"
+          ],
+          "mutation": "Move the named-enemy interrupt after attack initiation; Charge cannot grant overkill before damage and the identity damage assertion fails."
         }
       ]
     },
@@ -16563,11 +16565,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Charge gives Rhino overkill before a defending ally takes damage"
+          ],
+          "mutation": "Suppress or miscalculate excess damage from the defeated ally; the controller damage assertion fails."
         }
       ]
     },
@@ -16585,11 +16589,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Charge gives Rhino overkill before a defending ally takes damage"
+          ],
+          "mutation": "Suppress or miscalculate excess damage from the defeated ally; the controller damage assertion fails."
         }
       ]
     },
@@ -41904,11 +41910,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Charge gives Rhino overkill before a defending ally takes damage"
+          ],
+          "mutation": "Suppress Charge, grant overkill after damage, or retain Charge after the attack; the excess-damage or discard assertion fails."
         },
         {
           "id": "behavior:card:01099:excess-damage-ally-from-attack-is-dealt",
@@ -41916,11 +41924,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Charge gives Rhino overkill before a defending ally takes damage"
+          ],
+          "mutation": "Suppress Charge, grant overkill after damage, or retain Charge after the attack; the excess-damage or discard assertion fails."
         }
       ]
     },
