@@ -4,6 +4,9 @@ Feature: Core threat prevention
   amount is placed on the scheme.
 
   @behavior:rr:prevent.2:published-result
+  @covers:behavior:card:01019b:when-threat-would-be-placed-on-scheme
+  @covers:behavior:card:01019b:limit-once-per-round-within-limit
+  @covers:behavior:card:01019b:limit-once-per-round-limit-reached
   @rr:prevent.2 @card:01019b
   Scenario: I Object reduces an imminent threat assignment before placement
     # "When threat is prevented, reduce the amount of threat being assigned
@@ -15,6 +18,9 @@ Feature: Core threat prevention
     And seat 1 shows identity face 01019b
     When 3 threat is assigned to the main scheme for seat 1 accepting "I Object!"
     Then card 01097b copy 0 has 2 threat counters
+    When 2 threat begins assignment to the main scheme for seat 1
+    Then no opportunity is pending
+    And card 01097b copy 0 has 4 threat counters
 
   @behavior:rr:you-your.2:published-result
   @covers:behavior:card:01061:when-any-amount-threat-would-be-placed

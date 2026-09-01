@@ -31266,11 +31266,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/threat-prevention.feature::I Object reduces an imminent threat assignment before placement"
+          ],
+          "mutation": "Do not offer I Object for the first threat occurrence; all three assigned threat reaches the main scheme."
         },
         {
           "id": "behavior:card:01019b:limit-once-per-round-within-limit",
@@ -31278,11 +31280,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/threat-prevention.feature::I Object reduces an imminent threat assignment before placement"
+          ],
+          "mutation": "Treat I Object as already spent before its first use; the first assignment is not reduced."
         },
         {
           "id": "behavior:card:01019b:limit-once-per-round-limit-reached",
@@ -31290,11 +31294,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/threat-prevention.feature::I Object reduces an imminent threat assignment before placement"
+          ],
+          "mutation": "Offer I Object a second time in the same round; the second threat assignment is reduced below two."
         }
       ]
     },
