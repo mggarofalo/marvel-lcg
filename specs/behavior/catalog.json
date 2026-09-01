@@ -7607,11 +7607,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Indomitable follows a defense-labeled Backflip after the attack ends"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes Indomitable being offered after a non-basic defense."
         }
       ]
     },
@@ -7859,11 +7861,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Indomitable follows a defense-labeled Backflip after the attack ends"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes Indomitable resolving only after the attack has completed."
         }
       ]
     },
@@ -39623,11 +39627,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Counter-Punch damages the attacker after a basic defense ends"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes Counter-Punch dealing the hero's modified ATK to the attacking villain after a defense-labeled event."
         }
       ]
     },
@@ -40251,11 +40257,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Indomitable follows a defense-labeled Backflip after the attack ends"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes Indomitable discarding itself and readying the hero after a defense-labeled event."
         }
       ]
     },

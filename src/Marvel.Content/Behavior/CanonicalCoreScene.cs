@@ -9,7 +9,8 @@ public sealed record CoreSceneRequest(
     string Campaign,
     IReadOnlyList<string> Heroes,
     uint Seed,
-    IReadOnlyList<string>? ModularSets = null);
+    IReadOnlyList<string>? ModularSets = null,
+    IReadOnlyList<string>? PlayerDecks = null);
 
 /// <summary>One physical card selected by printed face and zero-based copy number.</summary>
 public sealed record SceneCard(string FaceId, int Copy = 0);
@@ -206,7 +207,8 @@ public sealed class CanonicalCoreScene
         }
 
         var order = Setup.Dealer.DealOrder(
-            setup, request.Campaign, request.Heroes, request.ModularSets, facts);
+            setup, request.Campaign, request.Heroes, request.ModularSets, facts,
+            request.PlayerDecks);
         var world = WorldSetup.Deal(
             facts,
             Setup.Blueprints.From(order, facts),

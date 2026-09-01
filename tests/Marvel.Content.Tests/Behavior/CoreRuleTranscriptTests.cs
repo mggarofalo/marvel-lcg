@@ -266,7 +266,7 @@ public sealed class CoreRuleTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(16, results.Count);
+        Assert.Equal(18, results.Count);
         Assert.Equal(
             "aadbff792b4caca6a6ecbb13041865133c3e9ce1d588d1a9c6a59834d8a97fc8",
             results["behavior:rr:villain-phase:published-result"].Digest);
@@ -312,6 +312,12 @@ public sealed class CoreRuleTranscriptTests
         Assert.Equal(
             "080a2c1a8dfdcd99c12aeafaa40777a8d3c064a11753e890d26105140ed413c2",
             results["behavior:card:01003:when-you-would-take-any-amount-damage"].Digest);
+        Assert.Equal(
+            "591130ae9ca5d2bfa29ba64d56660cb89e096ef30c24e2ed669589f3e17fa2dd",
+            results["behavior:card:01082:after-your-hero-defends-discard-indomitable-ready"].Digest);
+        Assert.Equal(
+            "30faaeaee0de61082e94349c75e92cd1594664a966961e643556694a9703b288",
+            results["behavior:card:01077:after-your-hero-defends-against-enemy-attack"].Digest);
         Assert.Equal(
             "dfa94764f0b3bcd3d3a6bfd48b16cb1e9d29b5543990980a9e37403069015280",
             results["behavior:card:01004:when-treachery-card-is-revealed-from-encounter"].Digest);

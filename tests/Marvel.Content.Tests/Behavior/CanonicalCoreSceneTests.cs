@@ -31,6 +31,30 @@ public sealed class CanonicalCoreSceneTests
     }
 
     [Fact]
+    public void APublishedCustomizationBlockCanBuildAnotherHerosLegalDeck()
+    {
+        // The source name is this engine's compact recipe. DeckConstruction
+        // remains the authority-backed gate for the resulting 40-card deck.
+        var scene = CanonicalCoreScene.Deal(
+            new CoreSceneRequest(
+                "behavior:card:01082:after-your-hero-defends-discard-indomitable-ready",
+                "rhino",
+                ["spider_man"],
+                302,
+                PlayerDecks: ["black_panther"]),
+            Setup,
+            Cards,
+            AuthoredCards.Runner());
+
+        Assert.Equal("01001b", scene.World.Seats[0].IdentityCard.FaceId);
+        Assert.Equal(0, scene.Find(new SceneCard("01082")).Owner);
+        Assert.Equal(
+            40,
+            scene.World.Seats[0].Deck.Cards.Count
+            + scene.World.Seats[0].Hand.Cards.Count);
+    }
+
+    [Fact]
     public void OneCardBoundaryAccountsForEveryOtherDeckCardInALegalZone()
     {
         var scene = OneCardDeck();

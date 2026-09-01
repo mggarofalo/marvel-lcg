@@ -393,6 +393,9 @@ internal sealed class CoreTranscriptRunner
         Bind("villain-attack-opportunity", TranscriptStepKind.When,
             @"the villain attacks seat (?<seat>\d+) accepting ""(?<label>[^""]+)""",
             ResolveVillainAttackWithOpportunity),
+        Bind("villain-attack-two-opportunities", TranscriptStepKind.When,
+            @"the villain attacks seat (?<seat>\d+) accepting ""(?<first>[^""]+)"" then ""(?<second>[^""]+)""",
+            ResolveVillainAttackWithTwoOpportunities),
         Bind("minion-enters-play", TranscriptStepKind.When,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) enters play as a minion engaged with seat (?<seat>\d+)",
             MinionEntersPlay),
@@ -687,7 +690,7 @@ internal sealed class CoreTranscriptRunner
         TranscriptTable table = step.Table
             ?? throw new TranscriptException($"{step.Location}: expected a table");
         string[] required = ["campaign", "heroes", "seed"];
-        string[] allowed = [.. required, "modular sets"];
+        string[] allowed = [.. required, "modular sets", "decks"];
         var unused = table.Header.Except(allowed, StringComparer.Ordinal).ToList();
         var missing = required.Except(table.Header, StringComparer.Ordinal).ToList();
         if (unused.Count > 0 || missing.Count > 0)
@@ -723,6 +726,12 @@ internal sealed class CoreTranscriptRunner
             throw new TranscriptException($"{step.Location}: heroes must not be empty");
         }
 
+        IReadOnlyList<string>? playerDecks = row.TryGetValue("decks", out string? decks)
+            ? [.. decks.Split(
+                ',', StringSplitOptions.TrimEntries
+                     | StringSplitOptions.RemoveEmptyEntries)]
+            : null;
+
         context.Scene = CanonicalCoreScene.Deal(
             new CoreSceneRequest(
                 context.Obligation,
@@ -733,7 +742,8 @@ internal sealed class CoreTranscriptRunner
                     ? [.. row["modular sets"].Split(
                         ',', StringSplitOptions.TrimEntries
                              | StringSplitOptions.RemoveEmptyEntries)]
-                    : null),
+                    : null,
+                PlayerDecks: playerDecks),
             context.Setup,
             context.Cards,
             new AbilityRunner(context.Abilities));
@@ -1438,6 +1448,22 @@ internal sealed class CoreTranscriptRunner
         FinishAgendaAccepting(context, step, match.Groups["label"].Value);
     }
 
+    private static void ResolveVillainAttackWithTwoOpportunities(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        Card villain = context.World.TheCardIn(DeckType.VillainArea)
+            ?? throw new TranscriptException($"{step.Location}: no villain is in play");
+        int seat = Seat(match, step);
+        context.World.Agenda.Add(new PhaseStep(
+            Steps.Attack, Round: 1, Number: 2, Index: seat,
+            Subject: villain.ObjectId, Seat: seat));
+        FinishAgendaAccepting(
+            context, step,
+            [match.Groups["first"].Value, match.Groups["second"].Value]);
+    }
+
     private static void FinishWithDefender(
         TranscriptContext context, TranscriptStep step, Card defender, string? acceptedLabel)
     {
@@ -1578,6 +1604,46 @@ internal sealed class CoreTranscriptRunner
         {
             throw new TranscriptException(
                 $"{step.Location}: '{acceptedLabel}' offered no requested target {target}");
+        }
+    }
+
+    private static void FinishAgendaAccepting(
+        TranscriptContext context, TranscriptStep step, IReadOnlyList<string> acceptedLabels)
+    {
+        int next = 0;
+        Prompt? asked = Sequence.Work(
+            context.World, context.Cards, context.World.Abilities, context.Events);
+        for (int answered = 0; asked is not null; answered++)
+        {
+            if (answered >= 100)
+            {
+                throw new TranscriptException(
+                    $"{step.Location}: agenda still asks '{asked.Label}' after 100 answers");
+            }
+
+            Affordance? opportunity = next == acceptedLabels.Count
+                ? null
+                : asked.Affordances.SingleOrDefault(option =>
+                    option.Label == acceptedLabels[next]);
+            Decision decision = opportunity is null
+                ? Decision.Decline
+                : Decision.Take(opportunity.Id);
+            next += opportunity is null ? 0 : 1;
+            Sequence.Answer(
+                context.World,
+                context.Cards,
+                context.World.Abilities,
+                asked,
+                decision,
+                context.Events);
+            asked = Sequence.Work(
+                context.World, context.Cards, context.World.Abilities, context.Events);
+        }
+
+        if (next != acceptedLabels.Count)
+        {
+            throw new TranscriptException(
+                $"{step.Location}: the attack offered no '{acceptedLabels[next]}' opportunity");
         }
     }
 

@@ -181,7 +181,7 @@ public sealed class CoreCombatResponseTests
     [Rule("rr:defend-defense.7.2")]
     [Rule("rr:attack-enemy-activation.step.6.b")]
     [Fact]
-    public void IndomitableRequiresABasicHeroDefense()
+    public void IndomitableRequiresTheHeroToHaveDefended()
     {
         var world = Board("01001a");
         var hero = world.Seats[0].IdentityCard;
@@ -195,9 +195,6 @@ public sealed class CoreCombatResponseTests
 
         world.FinishedAttack = new EnemyAttack(
             enemy.ObjectId, 0, hero.ObjectId, Defender: hero.ObjectId, BasicDefense: false);
-        Assert.Empty(runner.Waiting(world, occurrence, WindowKind.Response));
-
-        world.FinishedAttack = world.FinishedAttack with { BasicDefense = true };
         var pending = Assert.Single(runner.Waiting(world, occurrence, WindowKind.Response));
         runner.Resolve(world, occurrence, pending, [], []);
 

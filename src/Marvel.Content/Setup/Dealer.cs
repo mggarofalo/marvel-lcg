@@ -46,13 +46,24 @@ public static class Dealer
     /// Printed facts used to reject a Standard or Expert set selected as a
     /// modular set. Null preserves the data-only deal-order operation.
     /// </param>
+    /// <param name="playerDeckNames">
+    /// Optional published starter names whose 25-card customization blocks
+    /// replace the selected heroes' blocks, one per seat.
+    /// </param>
     /// <exception cref="KeyNotFoundException">A name the dataset does not hold.</exception>
     public static IReadOnlyList<Creation> DealOrder(
         SetupCatalog catalog, string campaignName, IReadOnlyList<string> heroNames,
-        IReadOnlyList<string>? modularSetNames = null, ICardFacts? facts = null)
+        IReadOnlyList<string>? modularSetNames = null, ICardFacts? facts = null,
+        IReadOnlyList<string>? playerDeckNames = null)
     {
         ArgumentNullException.ThrowIfNull(catalog);
         ArgumentNullException.ThrowIfNull(heroNames);
+        if (playerDeckNames is not null && playerDeckNames.Count != heroNames.Count)
+        {
+            throw new ArgumentException(
+                "a customization source must be named for every selected hero",
+                nameof(playerDeckNames));
+        }
 
         var campaign = catalog.Campaign(campaignName);
         if (facts is not null && modularSetNames is not null)
@@ -72,6 +83,12 @@ public static class Dealer
         for (int seat = 0; seat < heroNames.Count; seat++)
         {
             var hero = catalog.Hero(heroNames[seat]);
+            // The rulebook decides whether the resulting deck is legal;
+            // choosing a published starter's 25-card customization block as a
+            // compact deterministic deck recipe is this engine's test format.
+            var customization = playerDeckNames is null
+                ? hero
+                : catalog.Hero(playerDeckNames[seat]);
             Add(hero.Hero.Select(MoveBToFront), CreationSource.Identity, seat);
             Add(hero.Obligations, CreationSource.Obligation, seat);
             Add(hero.NemesisSet, CreationSource.Nemesis, seat);
@@ -79,7 +96,7 @@ public static class Dealer
             // One call over the concatenation in the engine, so the two lists
             // are a single unbroken run of ids rather than two.
             Add(hero.HeroDeck, CreationSource.HeroDeck, seat);
-            Add(hero.PlayerDeck, CreationSource.PlayerDeck, seat);
+            Add(customization.PlayerDeck, CreationSource.PlayerDeck, seat);
         }
 
         Add(campaign.Schemes, CreationSource.MainScheme, Creation.Scenario);

@@ -987,7 +987,7 @@ public sealed partial class AbilityRunner
         "wasDefeated" => Find(node.Argument, cast) is { } defeatedCard
             && cast.Occurrence.Defeats.Any(defeat => defeat.Card == defeatedCard.ObjectId),
 
-        "heroDefended" => cast.World.FinishedAttack is { BasicDefense: true } defended
+        "heroDefended" => cast.World.FinishedAttack is { } defended
             && defended.Defender == cast.World.Seats[Resolver(cast)].IdentityCard.ObjectId,
 
         "undefendedAttack" => cast.World.Attack is { IsDefended: false },

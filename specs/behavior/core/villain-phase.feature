@@ -421,6 +421,60 @@ Feature: Core villain phase
     And card 01003 copy 0 is faceup on top of seat 1's discard pile
     And 0 Damage events were emitted
 
+  @behavior:card:01082:after-your-hero-defends-discard-indomitable-ready
+  @covers:behavior:rr:defend-defense.4.2:published-result
+  @covers:behavior:rr:defend-defense.7:published-result
+  @rr:defend-defense.4.2 @rr:defend-defense.7 @card:01082
+  Scenario: Indomitable follows a defense-labeled Backflip after the attack ends
+    # "Abilities that trigger 'when your hero defends against an attack' can be
+    # triggered when resolving a defense-labeled ability." Backflip establishes
+    # Spider-Man as the defender without making a basic defense. Indomitable's
+    # response waits until that attack ends, then readies him. Spider-Man uses
+    # the Protection customization block from the published Black Panther
+    # starter, producing a legal forty-card Core deck with his signature set.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | decks         | seed |
+      | rhino    | spider_man | black_panther | 731  |
+    And seat 1 shows identity face 01001a
+    And card 01001a copy 0 is exhausted
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01003 | 0    |
+    And card 01082 copy 0 is an upgrade attached to seat 1's identity
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01103     | 0    |
+    When the villain attacks seat 1 accepting "Backflip" then "Indomitable"
+    Then card 01001a copy 0 has 0 damage
+    And card 01001a copy 0 is ready
+    And card 01001a copy 0 defended the last attack without a basic defense
+    And card 01003 copy 0 is in seat 1's discard pile
+    And card 01082 copy 0 is faceup on top of seat 1's discard pile
+
+  @behavior:card:01077:after-your-hero-defends-against-enemy-attack
+  @card:01077
+  Scenario: Counter-Punch damages the attacker after a basic defense ends
+    # "After your hero defends against an enemy attack, deal damage to that
+    # enemy equal to your hero's ATK." Black Panther first completes a basic
+    # defense, then Counter-Punch deals his modified ATK 2 to Rhino after
+    # Black Panther's Retaliate 1 has already resolved.
+    Given a canonical Core scene is dealt
+      | campaign | heroes        | seed |
+      | rhino    | black_panther | 732  |
+    And seat 1 shows identity face 01040a
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01077 | 0    |
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01103     | 0    |
+    When the villain attacks seat 1 accepting "Counter-Punch" with card 01040a copy 0 defending
+    Then card 01040a copy 0 is exhausted
+    And card 01040a copy 0 has 2 damage
+    And card 01094 copy 0 has 3 damage
+    And card 01077 copy 0 is faceup on top of seat 1's discard pile
+    And 1 Attack event was emitted
+
   @behavior:card:01004:when-treachery-card-is-revealed-from-encounter
   @covers:behavior:rr:cancel.1:published-result
   @covers:behavior:rr:cancel.2:published-result
