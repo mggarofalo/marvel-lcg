@@ -4048,16 +4048,16 @@
       ]
     },
     {
-      "id": "rr:cannot.2",
+  "id": "rr:cannot.2",
       "fingerprint": "sha256:16cfd31df6387cac0dea7d0ce4ba370be3f5111e681e42a890adab05919b00fa",
       "obligations": [
         {
           "key": "published-result",
           "summary": "If two rules conflict, the rule with “cannot” takes precedence.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+      "disposition": "outside-core",
+      "reason": "No supported Core rules create a distinguishable conflict between two rules in which only one uses the word cannot.",
+      "target": null,
+      "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -4066,16 +4066,16 @@
       ]
     },
     {
-      "id": "rr:cannot.3",
+  "id": "rr:cannot.3",
       "fingerprint": "sha256:4cbeadfba0f933f2873a5633b487073f2816ecfd9d43f470278b7645ec3f732a",
       "obligations": [
         {
           "key": "published-result",
           "summary": "An ability can override a rule with “cannot” per the Golden Rules.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+      "disposition": "outside-core",
+      "reason": "No supported Core card ability explicitly overrides a rule that uses the word cannot.",
+      "target": null,
+      "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -4306,15 +4306,15 @@
       ]
     },
     {
-      "id": "rr:choose-game-element.3",
+  "id": "rr:choose-game-element.3",
       "fingerprint": "sha256:ff19f0fd92abd267b4ada76f44d283aff597cef2f697ba588244695801077148",
       "obligations": [
         {
           "key": "published-result",
           "summary": "If multiple targets are required to be chosen by the same player, simultaneously choose as many as are available, to a maximum of the specified number.",
-          "disposition": "narrower",
-          "reason": "A directly cited child clause states the executable decision more precisely.",
-          "target": "behavior:rr:choose-game-element.3.1:published-result",
+      "disposition": "no-independent-behavior",
+      "reason": "Ancestral Knowledge is the only supported Core multiple-target choice and its printed up-to-three-different-cards instruction already supplies both the maximum and distinctness constraints.",
+      "target": null,
           "implementation": null,
           "work_item": null,
           "exception": null,
@@ -4324,16 +4324,16 @@
       ]
     },
     {
-      "id": "rr:choose-game-element.3.1",
+  "id": "rr:choose-game-element.3.1",
       "fingerprint": "sha256:f67c3fb51e43fdef47add9a3a1c7b78af2cb577c8cfbbc469362b4194b35af33",
       "obligations": [
         {
           "key": "published-result",
           "summary": "The same target cannot be chosen multiple times this way.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+      "disposition": "no-independent-behavior",
+      "reason": "Ancestral Knowledge is the only supported Core effect that chooses multiple targets and its printed text independently requires different cards.",
+      "target": null,
+      "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -8652,16 +8652,16 @@
       ]
     },
     {
-      "id": "rr:forced.3",
+  "id": "rr:forced.3",
       "fingerprint": "sha256:b6881c1bcfac851b9ead7729ca1718f69ce43ce298846aede6f0af8e8ad965f9",
       "obligations": [
         {
           "key": "published-result",
           "summary": "If a forced ability requires one or more targets to resolve and it has no valid targets, it does not initiate.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+      "disposition": "outside-core",
+      "reason": "No supported Core forced ability requires a chosen target that can be absent when its triggering condition occurs.",
+      "target": null,
+      "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -8670,16 +8670,16 @@
       ]
     },
     {
-      "id": "rr:forced.3.1",
+  "id": "rr:forced.3.1",
       "fingerprint": "sha256:6f9b6e0d58e598a0897989218c8e087dc17e108c053617f74a1271cabd8f871b",
       "obligations": [
         {
           "key": "published-result",
           "summary": "Any costs that would have been paid to initiate the ability are not paid.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+      "disposition": "outside-core",
+      "reason": "No supported Core forced ability combines a payable cost with a required target that can be absent at its triggering condition.",
+      "target": null,
+      "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -8688,16 +8688,16 @@
       ]
     },
     {
-      "id": "rr:forced.4",
+  "id": "rr:forced.4",
       "fingerprint": "sha256:9edc398391010479ec161283c8df9f4502d2c4c3ed87feebda25afb7c6608378",
       "obligations": [
         {
           "key": "published-result",
           "summary": "For any given triggering condition, forced interrupts take priority and initiate before non-forced interrupts, and forced responses take priority and initiate before non-forced responses.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+      "disposition": "outside-core",
+      "reason": "No legal supported Core state presents a forced and non-forced interrupt, or a forced and non-forced response, to the same triggering condition.",
+      "target": null,
+      "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -8724,16 +8724,16 @@
       ]
     },
     {
-      "id": "rr:forced.6",
+  "id": "rr:forced.6",
       "fingerprint": "sha256:5985cad5eb8817e0a6e52ebe290e6f35c7a1ec850c046c177dcff5acea3dc553",
       "obligations": [
         {
           "key": "published-result",
           "summary": "Each forced ability must resolve as completely as possible before the next forced ability being triggered by the same triggering condition may initiate.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+      "disposition": "outside-core",
+      "reason": "No legal supported Core state presents multiple forced abilities triggered by the same condition with distinguishable intermediate state.",
+      "target": null,
+      "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -11832,16 +11832,16 @@
       ]
     },
     {
-      "id": "rr:labeled-ability.5",
+  "id": "rr:labeled-ability.5",
       "fingerprint": "sha256:765f4b51006f53a3144314117810272961d96b50cd6c95bc53efe612653b3e5f",
       "obligations": [
         {
           "key": "published-result",
           "summary": "When a player resolves an ability with multiple labels, that ability is considered to be each of the labeled ability types, all made by that player’s identity.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+      "disposition": "outside-core",
+      "reason": "No supported Core ability prints multiple parenthetical ability labels.",
+      "target": null,
+      "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -13941,16 +13941,16 @@
       ]
     },
     {
-      "id": "rr:obligation.5",
+  "id": "rr:obligation.5",
       "fingerprint": "sha256:ddd888fe638d8c70cfcf088028e83ef5d777c7de1724728cf86237ee8c95d7c4",
       "obligations": [
         {
           "key": "published-result",
           "summary": "If an obligation cannot be given to the specified player for any reason, ignore the card’s ability, remove it from the game, and reveal an additional encounter card.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+      "disposition": "outside-core",
+      "reason": "Each supported Core obligation is part of its specified identity's legal deck and that identity's player is necessarily present when the obligation is revealed.",
+      "target": null,
+      "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -15709,16 +15709,16 @@
       ]
     },
     {
-      "id": "rr:player-s-play-area.5",
+  "id": "rr:player-s-play-area.5",
       "fingerprint": "sha256:04ce1382b72a625d3120ca5919086bf8322641537d4f54bfd68e3b5bd655e10c",
       "obligations": [
         {
           "key": "published-result",
           "summary": "While card abilities can affect cards across play areas, unless a game rule or card ability states otherwise, cards cannot be played into another player’s play area.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+      "disposition": "outside-core",
+      "reason": "No supported Core play instruction offers another player's play area as a destination; Make the Call puts an ally into its resolving player's own area rather than playing into another area.",
+      "target": null,
+      "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -20022,16 +20022,16 @@
       ]
     },
     {
-      "id": "rr:target.3.3",
+  "id": "rr:target.3.3",
       "fingerprint": "sha256:34045a19f45ca3768840f3bd83d0d79bbbb2e0c5535145d2135592404fded0de",
       "obligations": [
         {
           "key": "published-result",
           "summary": "The cost of an ability or game function is not considered when determining if that ability or game function can affect a target.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+      "disposition": "outside-core",
+      "reason": "No supported Core ability has a cost that can independently change whether the same game element is a valid target for that ability.",
+      "target": null,
+      "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -20058,16 +20058,16 @@
       ]
     },
     {
-      "id": "rr:target.3.5",
+  "id": "rr:target.3.5",
       "fingerprint": "sha256:bad0ffad9ed8189f5273fede4207e36228ab7b142aba26c8556f82c491ad2a5c",
       "obligations": [
         {
           "key": "published-result",
           "summary": "A target is not valid for an ability if that ability would cause the target to perform a game function that another ability says the target cannot perform.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+      "disposition": "outside-core",
+      "reason": "No supported Core ability causes a chosen target to perform a function that another ability says that target cannot perform.",
+      "target": null,
+      "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -21389,16 +21389,16 @@
       ]
     },
     {
-      "id": "rr:unique-icon.4.2",
+  "id": "rr:unique-icon.4.2",
       "fingerprint": "sha256:e6ecdb963cc41d622772ac65a648d9fc78eaa8280212f3af6209e261c8f9cac5",
       "obligations": [
         {
           "key": "published-result",
           "summary": "A non-villain encounter card, it is discarded and any effects of it entering play are ignored.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+      "disposition": "outside-core",
+      "reason": "Supported Core encounter compositions contain no second copy of a unique non-villain encounter title that can enter while the first is in play.",
+      "target": null,
+      "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -21775,16 +21775,16 @@
       ]
     },
     {
-      "id": "rr:villain-defeat.1",
+  "id": "rr:villain-defeat.1",
       "fingerprint": "sha256:8fed202603129d878d7b5cd7bf168682ce223f5321287cb6457894925f1faa68",
       "obligations": [
         {
           "key": "published-result",
           "summary": "The revealing of a villain cannot be canceled.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+      "disposition": "outside-core",
+      "reason": "No supported Core cancellation ability can target the revealing of a villain stage.",
+      "target": null,
+      "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
