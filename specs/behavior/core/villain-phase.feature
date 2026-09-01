@@ -513,6 +513,27 @@ Feature: Core villain phase
     And card 01001a copy 0 has 0 stunned status cards
     And card 01003 copy 0 is faceup on top of seat 1's discard pile
 
+  @behavior:rr:target.3.4:published-result
+  @rr:target.3.4 @card:01106
+  Scenario: Stampede still damages a hero who cannot receive its stun
+    # Spider-Man already has the one allowed stunned status, so Stampede's
+    # conditional status effect cannot change him. Its attack can still affect
+    # the same target, which is enough to keep that target valid.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 843  |
+    And seat 1 shows identity face 01001a
+    And card 01001a copy 0 has a stunned status card
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01103     | 0    |
+      | 01106     | 0    |
+      | 01104     | 0    |
+    When villain phase 1 resolves with every optional choice declined
+    Then card 01001a copy 0 has 6 damage
+    And card 01001a copy 0 has 1 stunned status card
+    And card 01106 copy 0 is faceup on top of the encounter discard pile
+
   @behavior:card:01082:after-your-hero-defends-discard-indomitable-ready
   @covers:behavior:rr:defend-defense.4.2:published-result
   @covers:behavior:rr:defend-defense.7:published-result

@@ -20101,11 +20101,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Stampede still damages a hero who cannot receive its stun"
+          ],
+          "mutation": "Invalidate Stampede's target when its stun effect cannot add a second status; Rhino's attack no longer damages the already-stunned hero."
         }
       ]
     },
