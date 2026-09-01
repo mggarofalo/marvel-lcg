@@ -7,6 +7,31 @@ namespace Marvel.Content.Tests.Behavior;
 public sealed class CoreRuleTranscriptTests
 {
     [Fact]
+    public void StatusCardBranchesHavePinnedOutcomes()
+    {
+        var suite = new CoreTranscriptSuite(RepositoryPaths.Root);
+        var results = suite.RunPassingCorpus()
+            .Where(result => result.Scenario.StartsWith(
+                "specs/behavior/core/status-cards.feature::",
+                StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
+
+        Assert.Equal(4, results.Count);
+        Assert.Equal(
+            "7d7ced5d78722f6dd1c69d9a07e291dad214bd3037a647c5ceeab7a6933e2906",
+            results["behavior:rr:stun-stunned.2:published-result"].Digest);
+        Assert.Equal(
+            "7d7ced5d78722f6dd1c69d9a07e291dad214bd3037a647c5ceeab7a6933e2906",
+            results["behavior:rr:status-cards.1:published-result"].Digest);
+        Assert.Equal(
+            "ec6c7fd5a9ebfe1aff876848a982ec1ff60371028415b7ab983b9919b13b0eb2",
+            results["behavior:rr:tough.2:published-result"].Digest);
+        Assert.Equal(
+            "99aabf9e027f556c91314e0f769edab28f3021124ddba46a06fb489e2ad2957d",
+            results["behavior:rr:toughness:published-result"].Digest);
+    }
+
+    [Fact]
     public void DiscardBranchesHavePinnedOutcomes()
     {
         var suite = new CoreTranscriptSuite(RepositoryPaths.Root);

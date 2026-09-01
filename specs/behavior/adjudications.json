@@ -18289,16 +18289,18 @@
       "fingerprint": "sha256:2ea27f2c8c937f8bc2b04197f2bbfc02f46286378ce03aa11652c7802a64d783",
       "obligations": [
         {
-          "key": "published-result",
-          "summary": "Status card represent different states a character may find themselves in during the game.",
-          "disposition": "narrower",
-          "reason": "A directly cited child clause states the executable decision more precisely.",
-          "target": "behavior:rr:status-cards.1:published-result",
-          "implementation": null,
+          "key": "status-card-placement",
+          "summary": "When a character is given a status, take a card of the specified type from the pool and place it on that character.",
+          "disposition": "executable",
+          "reason": null,
+          "target": null,
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/status-cards.feature::A stun ability gives the character a stunned status card"
+          ],
+          "mutation": "CoreRuleTranscriptTests.StatusCardBranchesHavePinnedOutcomes distinguishes creation of the specified physical status card on the character."
         }
       ]
     },
@@ -18312,11 +18314,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/status-cards.feature::A character cannot receive a second status card of the same type"
+          ],
+          "mutation": "CoreRuleTranscriptTests.StatusCardBranchesHavePinnedOutcomes distinguishes the published status-card result."
         }
       ]
     },
@@ -18327,10 +18331,10 @@
         {
           "key": "published-result",
           "summary": "Characters with the steady keyword can have one additional confused status card and one additional stunned status card.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "outside-core",
+          "reason": "No supported Core Set character has or can gain the steady keyword.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -18438,11 +18442,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/status-cards.feature::A stun ability gives the character a stunned status card"
+          ],
+          "mutation": "CoreRuleTranscriptTests.StatusCardBranchesHavePinnedOutcomes distinguishes the published status-card result."
         }
       ]
     },
@@ -19896,11 +19902,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/status-cards.feature::Tough prevents the entire damage instance and is discarded"
+          ],
+          "mutation": "CoreRuleTranscriptTests.StatusCardBranchesHavePinnedOutcomes distinguishes the published status-card result."
         }
       ]
     },
@@ -19911,10 +19919,10 @@
         {
           "key": "published-result",
           "summary": "A character with multiple tough status cards discards only one tough status card each time it would take damage.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "outside-core",
+          "reason": "Core status limits permit at most one tough card and no supported Core Set card overrides that limit.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -19950,11 +19958,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/status-cards.feature::Tough prevents the entire damage instance and is discarded"
+          ],
+          "mutation": "CoreRuleTranscriptTests.StatusCardBranchesHavePinnedOutcomes distinguishes the published status-card result."
         }
       ]
     },
@@ -19968,11 +19978,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/status-cards.feature::A character with Toughness gains tough after entering play"
+          ],
+          "mutation": "CoreRuleTranscriptTests.StatusCardBranchesHavePinnedOutcomes distinguishes the published status-card result."
         }
       ]
     },
@@ -19986,11 +19998,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/status-cards.feature::A character with Toughness gains tough after entering play"
+          ],
+          "mutation": "CoreRuleTranscriptTests.StatusCardBranchesHavePinnedOutcomes distinguishes the published status-card result."
         }
       ]
     },

@@ -281,6 +281,15 @@ internal sealed class CoreTranscriptRunner
             @"seat (?<seat>\d+)'s identity is defeated", IdentityDefeated),
         Bind("change-form", TranscriptStepKind.When,
             @"seat (?<seat>\d+) changes form by flipping their identity", ChangeForm),
+        Bind("inflict-status", TranscriptStepKind.When,
+            @"an ability (?<action>stuns|confuses) card (?<face>\d+[a-z]?) copy (?<copy>\d+)",
+            InflictStatus),
+        Bind("card-deals-damage", TranscriptStepKind.When,
+            @"card (?<source>\d+[a-z]?) copy (?<sourceCopy>\d+) deals (?<count>\d+) damage to card (?<face>\d+[a-z]?) copy (?<copy>\d+)",
+            CardDealsDamage),
+        Bind("minion-enters-play", TranscriptStepKind.When,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) enters play as a minion engaged with seat (?<seat>\d+)",
+            MinionEntersPlay),
         Bind("hand-count", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) has (?<count>\d+) cards? in hand", HandCount),
         Bind("player-deck-count", TranscriptStepKind.Then,
@@ -360,6 +369,12 @@ internal sealed class CoreTranscriptRunner
         Bind("upgrade-attached-identity", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) remains attached to seat (?<seat>\d+)'s identity",
             UpgradeAttachedIdentity),
+        Bind("status-count", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) has (?<count>\d+) (?<status>stunned|confused|tough) status cards?",
+            StatusCount),
+        Bind("card-afflicted", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is (?<status>stunned|confused)",
+            CardAfflicted),
         Bind("cataloged-exception", TranscriptStepKind.Then,
             "the engine raises the cataloged unimplemented rule exception", CatalogedException),
     ];
@@ -666,6 +681,48 @@ internal sealed class CoreTranscriptRunner
         _ = Forms.Change(seat, context.Cards);
         string to = FormName(Forms.Of(context.World, seat, context.Cards));
         context.LastFormChange = (seatIndex, from, to);
+    }
+
+    private static void InflictStatus(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Card target = context.SceneRequired(step).Find(SceneCard(match, step));
+        string status = match.Groups["action"].Value == "stuns"
+            ? Statuses.Stunned
+            : Statuses.Confused;
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        _ = Statuses.Inflict(context.World, context.Cards, target, status);
+    }
+
+    private static void CardDealsDamage(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Card source = context.SceneRequired(step).Find(new SceneCard(
+            match.Groups["source"].Value,
+            Number(match, "sourceCopy", step)));
+        Card target = context.SceneRequired(step).Find(SceneCard(match, step));
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        _ = Damage.Deal(
+            context.World,
+            context.Cards,
+            source,
+            target,
+            Number(match, "count", step),
+            "behavioral transcript",
+            "Damage",
+            context.Events);
+    }
+
+    private static void MinionEntersPlay(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        context.SceneRequired(step).Apply(new MoveSceneCard(
+            SceneCard(match, step),
+            new SceneDestination(SceneZone.EngagedMinion, Seat(match, step))));
     }
 
     private static void HandCount(
@@ -1078,6 +1135,29 @@ internal sealed class CoreTranscriptRunner
             throw new TranscriptAssertionException(
                 $"{step.Location}: expected card {card.ObjectId} attached to "
                 + $"seat {seat + 1}'s identity; was {card.Area}");
+        }
+    }
+
+    private static void StatusCount(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        Equal(
+            Number(match, "count", step),
+            Statuses.Count(context.World, card, match.Groups["status"].Value),
+            $"{match.Groups["status"].Value} status cards",
+            step);
+    }
+
+    private static void CardAfflicted(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        string status = match.Groups["status"].Value;
+        if (!Statuses.Afflicted(context.World, context.Cards, card, status))
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected card {card.ObjectId} to be {status}");
         }
     }
 
