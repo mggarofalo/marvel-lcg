@@ -49,6 +49,36 @@ public sealed class CoreRuleTranscriptTests
     }
 
     [Fact]
+    public void TimingWindowBranchesHavePinnedOutcomes()
+    {
+        var results = Corpus.Value.Where(candidate =>
+                candidate.Scenario.StartsWith(
+                    "specs/behavior/core/timing-windows.feature::",
+                    StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
+
+        Assert.Equal(6, results.Count);
+        Assert.Equal(
+            "cf0c14b5a10b7cc87760c3ba462daa2a657242c520db5ef0a3334d6d0f8e74be",
+            results["behavior:rr:interrupt.2:published-result"].Digest);
+        Assert.Equal(
+            "6d908134dac70fe57bba1892870238d0ea86dda556786e7bab66407d00b2d3eb",
+            results["behavior:rr:interrupt.4:published-result"].Digest);
+        Assert.Equal(
+            "28223233dad071844323e9f5c9ad02dfd4598264e1dab3e3e0ac54bde8293016",
+            results["behavior:rr:interrupt.5:published-result"].Digest);
+        Assert.Equal(
+            "f126d0407e6845603f387368def162da7d4f6451ea60044b69eadc8fe2a108d9",
+            results["behavior:rr:response.2:published-result"].Digest);
+        Assert.Equal(
+            "6f0f7dc71af08c51e682ca353a505e934e51aa0ece2ceec45cb55d2e523a6cf6",
+            results["behavior:rr:triggering-condition.1:published-result"].Digest);
+        Assert.Equal(
+            "910925405dbe99abeeb5ca5a7aaa969b2be078c8aadfa68165ffdfea8cc48339",
+            results["behavior:rr:response.4:published-result"].Digest);
+    }
+
+    [Fact]
     public void AllyLimitHasPinnedOutcome()
     {
         TranscriptResult result = Assert.Single(Corpus.Value, result =>

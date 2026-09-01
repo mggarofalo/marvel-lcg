@@ -8331,11 +8331,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/timing-windows.feature::Two controlled copies interrupt one threat assignment in player order"
+          ],
+          "mutation": "Offer seat 2 the first interrupt opportunity; the transcript's first pending-player assertion fails."
         }
       ]
     },
@@ -11065,11 +11067,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/timing-windows.feature::Two controlled copies interrupt one threat assignment in player order"
+          ],
+          "mutation": "Offer seat 2's hand event during seat 1's opportunity; the transcript's unavailable-card assertion fails."
         }
       ]
     },
@@ -11101,11 +11105,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/timing-windows.feature::Two controlled copies interrupt one threat assignment in player order"
+          ],
+          "mutation": "Close the interrupt window after the first Emergency; the second copy remains in hand and two threat is placed."
         }
       ]
     },
@@ -11119,11 +11125,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/timing-windows.feature::Two controlled copies interrupt one threat assignment in player order"
+          ],
+          "mutation": "Treat Emergency's printed title as spent after one copy resolves; seat 2's copy is not offered."
         }
       ]
     },
@@ -11177,11 +11185,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/timing-windows.feature::A replacement closes further interrupts to the original condition"
+          ],
+          "mutation": "Leave the original interrupt window open after Great Responsibility replaces the threat; seat 2 receives an Emergency prompt."
         }
       ]
     },
@@ -11195,11 +11205,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/timing-windows.feature::Passing closes the interrupt window for that occurrence"
+          ],
+          "mutation": "Reopen the same interrupt window after the table passes; Emergency remains pending instead of threat being placed."
         }
       ]
     },
@@ -17440,11 +17452,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/timing-windows.feature::One Hawkeye response resolves only once for one minion entry"
+          ],
+          "mutation": "Route Hawkeye's controlled response to another seat; the pending-player assertion fails."
         }
       ]
     },
@@ -17476,11 +17490,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/timing-windows.feature::Two copies respond to the same hero attack"
+          ],
+          "mutation": "Close the response window after the first Chase Them Down; only two threat is removed."
         }
       ]
     },
@@ -17494,11 +17510,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/timing-windows.feature::Two copies respond to the same hero attack"
+          ],
+          "mutation": "Treat Chase Them Down's printed title as spent after one copy resolves; the second copy is not offered."
         }
       ]
     },
@@ -17530,11 +17548,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/timing-windows.feature::Passing closes the response window for that occurrence"
+          ],
+          "mutation": "Reopen the same response window after the table passes; Hawkeye remains pending instead of the occurrence finishing."
         }
       ]
     },
@@ -21166,11 +21186,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/timing-windows.feature::One Hawkeye response resolves only once for one minion entry"
+          ],
+          "mutation": "Forget that Hawkeye answered this occurrence; a second Hawkeye opportunity remains pending and another arrow can be spent."
         }
       ]
     },
@@ -21184,11 +21206,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/timing-windows.feature::Two controlled copies interrupt one threat assignment in player order"
+          ],
+          "mutation": "Record resolution by printed face rather than physical card; the second Emergency copy cannot answer the occurrence."
         }
       ]
     },
@@ -35800,11 +35824,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/timing-windows.feature::Two controlled copies interrupt one threat assignment in player order"
+          ],
+          "mutation": "Do not reduce the imminent scheme threat for each Emergency; the transcript places more than one threat."
         }
       ]
     },

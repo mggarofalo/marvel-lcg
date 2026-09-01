@@ -314,6 +314,9 @@ internal sealed class CoreTranscriptRunner
         Bind("assign-threat-accepting", TranscriptStepKind.When,
             @"(?<count>\d+) threat is assigned to the main scheme for seat (?<seat>\d+) accepting ""(?<label>[^""]+)""",
             AssignThreatAccepting),
+        Bind("begin-threat-assignment", TranscriptStepKind.When,
+            @"(?<count>\d+) threat begins assignment to the main scheme for seat (?<seat>\d+)",
+            BeginThreatAssignment),
         Bind("answer-encounter-card", TranscriptStepKind.When,
             @"seat (?<seat>\d+) chooses option (?<option>\d+) for the pending encounter-card decision",
             AnswerEncounterCard),
@@ -354,6 +357,9 @@ internal sealed class CoreTranscriptRunner
         Bind("basic-attack", TranscriptStepKind.When,
             @"seat (?<seat>\d+) uses their basic attack against card (?<face>\d+[a-z]?) copy (?<copy>\d+)",
             BasicAttack),
+        Bind("begin-basic-attack", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) begins their basic attack against card (?<face>\d+[a-z]?) copy (?<copy>\d+)",
+            BeginBasicAttack),
         Bind("basic-attack-accepting-paid", TranscriptStepKind.When,
             @"seat (?<seat>\d+) uses their basic attack against card (?<face>\d+[a-z]?) copy (?<copy>\d+) and accepts ""(?<label>[^""]+)"" targeting card (?<target>\d+[a-z]?) copy (?<targetCopy>\d+) paid with card (?<payment>\d+[a-z]?) copy (?<paymentCopy>\d+)",
             BasicAttackAcceptingWithPayment),
@@ -486,9 +492,18 @@ internal sealed class CoreTranscriptRunner
         Bind("accept-pending-opportunity", TranscriptStepKind.When,
             @"seat (?<seat>\d+) accepts the ""(?<label>[^""]+)"" pending opportunity",
             AcceptPendingOpportunity),
+        Bind("accept-card-pending-opportunity", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) accepts card (?<face>\d+[a-z]?) copy (?<copy>\d+)'s pending opportunity",
+            AcceptCardPendingOpportunity),
+        Bind("decline-pending-opportunity", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) declines the pending opportunity",
+            DeclinePendingOpportunity),
         Bind("pending-opportunity-offered", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) is offered the ""(?<label>[^""]+)"" pending opportunity",
             PendingOpportunityOffered),
+        Bind("pending-window-pass", TranscriptStepKind.Then,
+            @"seat (?<seat>\d+) may pass the pending window",
+            PendingWindowPass),
         Bind("pending-option-availability", TranscriptStepKind.Then,
             @"option (?<option>\d+) is (?<availability>offered|not offered) by the pending decision",
             PendingOptionAvailability),
@@ -723,6 +738,11 @@ internal sealed class CoreTranscriptRunner
         Bind("pending-card-offered", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is offered by the pending action",
             PendingCardOffered),
+        Bind("pending-card-not-offered", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is not offered by the pending action",
+            PendingCardNotOffered),
+        Bind("no-pending-opportunity", TranscriptStepKind.Then,
+            "no opportunity is pending", NoPendingOpportunity),
         Bind("card-action-availability", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+)'s action is (?<availability>available|unavailable)",
             CardActionAvailability),
@@ -1085,6 +1105,27 @@ internal sealed class CoreTranscriptRunner
         FinishAgendaAccepting(context, step, match.Groups["label"].Value);
     }
 
+    private static void BeginThreatAssignment(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Card scheme = context.World.TheCardIn(DeckType.MainSchemesArea)
+            ?? throw new TranscriptException($"{step.Location}: no main scheme is in play");
+        Card villain = context.World.TheCardIn(DeckType.VillainArea)
+            ?? throw new TranscriptException($"{step.Location}: no villain is in play");
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        Threat.Schedule(
+            context.World,
+            scheme,
+            villain,
+            Number(match, "count", step),
+            ThreatCause.EnemyScheme,
+            "behavioral transcript",
+            Seat(match, step));
+        SetPendingPrompt(context, Sequence.Work(
+            context.World, context.Cards, context.World.Abilities, context.Events));
+    }
+
     private static void AnswerEncounterCard(
         TranscriptContext context, TranscriptStep step, Match match)
     {
@@ -1344,6 +1385,21 @@ internal sealed class CoreTranscriptRunner
             context.SceneRequired(step).Find(SceneCard(match, step)),
             context.Events);
         FinishAgenda(context, step);
+    }
+
+    private static void BeginBasicAttack(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        BasicPowers.BasicAttack(
+            context.World,
+            context.Cards,
+            Seat(match, step),
+            context.SceneRequired(step).Find(SceneCard(match, step)),
+            context.Events);
+        SetPendingPrompt(context, Sequence.Work(
+            context.World, context.Cards, context.World.Abilities, context.Events));
     }
 
     private static void BasicAttackAcceptingWithPayment(
@@ -2358,6 +2414,58 @@ internal sealed class CoreTranscriptRunner
             context.World, context.Cards, context.World.Abilities, context.Events));
     }
 
+    private static void AcceptCardPendingOpportunity(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        Prompt asked = context.PendingPrompt
+            ?? throw new TranscriptException($"{step.Location}: no opportunity is pending");
+        if (asked.Player != seat)
+        {
+            throw new TranscriptException(
+                $"{step.Location}: pending opportunity asks seat {asked.Player + 1}, "
+                + $"not seat {seat + 1}");
+        }
+
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        Affordance offer = asked.Affordances.SingleOrDefault(candidate =>
+            candidate.AnchorId == card.ObjectId)
+            ?? throw new TranscriptException(
+                $"{step.Location}: card {card.ObjectId} is not offered by '{asked.Label}'");
+        Sequence.Answer(
+            context.World,
+            context.Cards,
+            context.World.Abilities,
+            asked,
+            Decision.Take(offer.Id),
+            context.Events);
+        SetPendingPrompt(context, Sequence.Work(
+            context.World, context.Cards, context.World.Abilities, context.Events));
+    }
+
+    private static void DeclinePendingOpportunity(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        Prompt asked = context.PendingPrompt
+            ?? throw new TranscriptException($"{step.Location}: no opportunity is pending");
+        if (asked.Player != seat || !asked.Cancellable)
+        {
+            throw new TranscriptException(
+                $"{step.Location}: seat {seat + 1} cannot decline '{asked.Label}'");
+        }
+
+        Sequence.Answer(
+            context.World,
+            context.Cards,
+            context.World.Abilities,
+            asked,
+            Decision.Decline,
+            context.Events);
+        SetPendingPrompt(context, Sequence.Work(
+            context.World, context.Cards, context.World.Abilities, context.Events));
+    }
+
     private static void PendingOpportunityOffered(
         TranscriptContext context, TranscriptStep step, Match match)
     {
@@ -2370,6 +2478,29 @@ internal sealed class CoreTranscriptRunner
         {
             throw new TranscriptException(
                 $"{step.Location}: seat {seat + 1} is not offered '{label}'");
+        }
+    }
+
+    private static void PendingWindowPass(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        if (context.PendingPrompt is not { Cancellable: true } asked
+            || asked.Player != seat)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: seat {seat + 1} cannot pass the pending window");
+        }
+    }
+
+    private static void NoPendingOpportunity(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        _ = match;
+        if (context.PendingPrompt is not null)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: '{context.PendingPrompt.Label}' is still pending");
         }
     }
 
