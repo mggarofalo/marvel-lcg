@@ -73,6 +73,14 @@ public static class Discard
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(events);
 
+        // rr:main-scheme-main-scheme-deck.6: "Main scheme cards cannot be
+        // discarded from play." The attempted game function resolves without
+        // moving the card or emitting a discard event.
+        if (card.Area.Type == DeckType.MainSchemesArea)
+        {
+            return;
+        }
+
         var constantsEnding = world.Effects.PreflightConstantsEnding(card);
         using var departure = constantsEnding.Begin();
 

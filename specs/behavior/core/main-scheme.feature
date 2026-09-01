@@ -8,11 +8,13 @@ Feature: Core main scheme completion
   @covers:behavior:rr:main-scheme-main-scheme-deck.step.1:published-result
   @covers:behavior:rr:main-scheme-main-scheme-deck.step.2:published-result
   @covers:behavior:rr:main-scheme-main-scheme-deck.step.3:published-result
+  @covers:behavior:rr:main-scheme-main-scheme-deck.5:published-result
   @rr:main-scheme-main-scheme-deck.2
   @rr:main-scheme-main-scheme-deck.4
   @rr:main-scheme-main-scheme-deck.step.1
   @rr:main-scheme-main-scheme-deck.step.2
   @rr:main-scheme-main-scheme-deck.step.3
+  @rr:main-scheme-main-scheme-deck.5
   Scenario: Completing a nonfinal main scheme advances without excess threat
     # At its target, the old stage is completed and removed. The next A-side's
     # When Revealed ability resolves, then its B-side enters with only its own
@@ -21,6 +23,7 @@ Feature: Core main scheme completion
       | campaign | heroes     | seed |
       | klaw     | spider_man | 329  |
     And card 01116b copy 0 has 5 threat counters
+    And the main scheme has 1 acceleration token
     And these cards are next on the encounter deck
       | next card | copy |
       | 01121     | 0    |
@@ -28,6 +31,7 @@ Feature: Core main scheme completion
     Then card 01116b copy 0 is removed from the game
     And card 01117b copy 0 is the faceup main scheme
     And card 01117b copy 0 has 0 threat counters
+    And the main scheme has 1 acceleration token
     And card 01121 copy 0 is engaged with seat 1
     And the game is unfinished
 
@@ -42,3 +46,14 @@ Feature: Core main scheme completion
     And card 01097b copy 0 has 6 threat counters
     When 1 threat is placed on card 01097b copy 0
     Then the villain wins the game
+
+  @behavior:rr:main-scheme-main-scheme-deck.6:published-result
+  @rr:main-scheme-main-scheme-deck.6
+  Scenario: A main scheme cannot be discarded from play
+    # "Main scheme cards cannot be discarded from play."
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 344  |
+    When an effect attempts to discard card 01097b copy 0
+    Then card 01097b copy 0 is the faceup main scheme
+    And 0 Discard events were emitted

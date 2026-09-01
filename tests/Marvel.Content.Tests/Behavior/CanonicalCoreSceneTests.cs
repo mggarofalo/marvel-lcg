@@ -1,6 +1,7 @@
 using Marvel.Content.Behavior;
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
+using Marvel.Rules.Play;
 using Marvel.Rules.State;
 using Marvel.Tests;
 using Xunit;
@@ -221,6 +222,27 @@ public sealed class CanonicalCoreSceneTests
         scene.Apply(new SetSceneCounters(new SceneCard("01018"), "energy", 4));
 
         Assert.Equal(4, scene.Find(new SceneCard("01018")).Tokens["c_energy"]);
+    }
+
+    [Rule("rr:acceleration-token")]
+    [Fact]
+    public void RulesProvidedAccelerationTokensCanBeArrangedOnTheMainScheme()
+    {
+        // "They are placed next to the main scheme as a reminder to add X
+        // additional threat to the main scheme during step one."
+        var scene = Deal(
+            "behavior:rr:main-scheme-main-scheme-deck.5:published-result",
+            "klaw",
+            ["spider_man"]);
+
+        scene.Apply(new SetSceneAccelerationTokens(2));
+
+        Card scheme = scene.World.TheCardIn(DeckType.MainSchemesArea)!;
+        Assert.Equal(2, scheme.Tokens[EncounterDeck.AccelerationToken]);
+        var thrown = Assert.Throws<CoreSceneConstructionException>(() =>
+            scene.Apply(new SetSceneAccelerationTokens(-1)));
+        Assert.Equal("set-acceleration-tokens", thrown.Operation);
+        Assert.Equal(2, scheme.Tokens[EncounterDeck.AccelerationToken]);
     }
 
     [Fact]

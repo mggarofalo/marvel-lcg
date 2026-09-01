@@ -247,6 +247,9 @@ internal sealed class CoreTranscriptRunner
         Bind("set-card-counters", TranscriptStepKind.Given,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) has (?<count>\d+) (?<type>[a-z-]+) counters?",
             SetCardCounters),
+        Bind("set-acceleration-tokens", TranscriptStepKind.Given,
+            @"the main scheme has (?<count>\d+) acceleration tokens?",
+            SetAccelerationTokens),
         Bind("set-identity-face", TranscriptStepKind.Given,
             @"seat (?<seat>\d+) shows identity face (?<face>\d+[a-z]?)",
             SetIdentityFace),
@@ -290,6 +293,9 @@ internal sealed class CoreTranscriptRunner
         Bind("discard-from-hand", TranscriptStepKind.When,
             @"seat (?<seat>\d+) discards card (?<face>\d+[a-z]?) copy (?<copy>\d+) from hand",
             DiscardFromHand),
+        Bind("discard-card-effect", TranscriptStepKind.When,
+            @"an effect attempts to discard card (?<face>\d+[a-z]?) copy (?<copy>\d+)",
+            DiscardCardEffect),
         Bind("deal-encounter-cards", TranscriptStepKind.When,
             @"seat (?<seat>\d+) is dealt (?<count>\d+) encounter cards?",
             DealEncounterCards),
@@ -757,6 +763,11 @@ internal sealed class CoreTranscriptRunner
             match.Groups["type"].Value,
             Number(match, "count", step)));
 
+    private static void SetAccelerationTokens(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        context.SceneRequired(step).Apply(new SetSceneAccelerationTokens(
+            Number(match, "count", step)));
+
     private static void SetIdentityFace(
         TranscriptContext context, TranscriptStep step, Match match) =>
         context.SceneRequired(step).Apply(new SetSceneForm(
@@ -893,6 +904,15 @@ internal sealed class CoreTranscriptRunner
         context.Events.Clear();
         context.CurrentPrompt = "<none>";
         Discard.Card(context.World, card, "behavioral transcript", context.Events);
+    }
+
+    private static void DiscardCardEffect(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        Discard.Card(context.World, card, "behavioral transcript effect", context.Events);
     }
 
     private static void DealEncounterCards(

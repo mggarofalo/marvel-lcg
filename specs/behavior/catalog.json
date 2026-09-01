@@ -15082,11 +15082,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/main-scheme.feature::Completing a nonfinal main scheme advances without excess threat"
+          ],
+          "mutation": "Return acceleration tokens to the pool with the completed stage; the token assertion on the new stage fails."
         }
       ]
     },
@@ -15104,11 +15106,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/main-scheme.feature::A main scheme cannot be discarded from play"
+          ],
+          "mutation": "Allow Discard.Card to move a faceup main scheme; the main-scheme identity and zero-event assertions fail."
         }
       ]
     },

@@ -121,6 +121,13 @@ public sealed record SetSceneCounters(SceneCard Card, string Type, long Count)
     public override string Name => "set-counters";
 }
 
+/// <summary>Sets rules-provided acceleration tokens beside the main scheme.</summary>
+public sealed record SetSceneAccelerationTokens(long Count) : CoreSceneOperation
+{
+    /// <inheritdoc />
+    public override string Name => "set-acceleration-tokens";
+}
+
 /// <summary>Shows one of the selected player's two printed identity faces.</summary>
 public sealed record SetSceneForm(int Seat, string FaceId)
     : CoreSceneOperation
@@ -235,6 +242,9 @@ public sealed class CanonicalCoreScene
                     break;
                 case SetSceneCounters counters:
                     Counters(Find(counters.Card), counters.Type, counters.Count);
+                    break;
+                case SetSceneAccelerationTokens acceleration:
+                    AccelerationTokens(acceleration.Count);
                     break;
                 case SetSceneForm form:
                     Form(form);
@@ -626,6 +636,20 @@ public sealed class CanonicalCoreScene
 
         long held = card.Tokens.GetValueOrDefault(key, 0);
         card.PlaceTokens(key, count - held);
+    }
+
+    private void AccelerationTokens(long count)
+    {
+        if (count < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(count),
+                "acceleration token count must not be negative");
+        }
+
+        Card scheme = World.TheCardIn(DeckType.MainSchemesArea)
+            ?? throw new InvalidOperationException("the scene has no faceup main scheme");
+        long held = scheme.Tokens.GetValueOrDefault(EncounterDeck.AccelerationToken);
+        scheme.PlaceTokens(EncounterDeck.AccelerationToken, count - held);
     }
 
     private void Form(SetSceneForm operation)
