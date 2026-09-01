@@ -71,7 +71,15 @@ public sealed class CoreCardFaceTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(13, results.Count);
+        Assert.Equal(15, results.Count);
+        Assert.Equal(
+            "972ad7da1753fcc4ad6a68a0bb480871c6a28424c83d996c19ebdab268cf73bb",
+            results[
+                "behavior:card:01068:choose-thw-plus-two-until-end-phase"].Digest);
+        Assert.Equal(
+            "f2acf656d1837dc30c688e59e129c288bad617303fda322bc4b76a3cef53d9a9",
+            results[
+                "behavior:card:01068:choose-atk-plus-two-until-end-phase"].Digest);
         Assert.Equal(
             "b17f9fbb3d730047490cb61c0f065daa8c730d29ac2d28f50c7681c2882c1ad3",
             results["behavior:card:01035:exhaust-arc-reactor-ready-iron-man"].Digest);

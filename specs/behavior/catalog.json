@@ -38807,11 +38807,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Vision chooses a temporary thwart increase once per round"
+          ],
+          "mutation": "Suppress Vision's unused action before its once-per-round limit; the initial availability assertion fails."
         },
         {
           "id": "behavior:card:01068:limit-once-per-round-limit-reached",
@@ -38819,11 +38821,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Vision chooses a temporary thwart increase once per round"
+          ],
+          "mutation": "Offer Vision's action a second time in the same round; the final unavailability assertion fails."
         },
         {
           "id": "behavior:card:01068:choose-thw-plus-two-until-end-phase",
@@ -38831,11 +38835,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Vision chooses a temporary thwart increase once per round"
+          ],
+          "mutation": "Do not add two THW or add it to ATK; a modified-power assertion fails."
         },
         {
           "id": "behavior:card:01068:choose-atk-plus-two-until-end-phase",
@@ -38843,11 +38849,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Vision chooses a temporary attack increase"
+          ],
+          "mutation": "Do not add two ATK or alter THW when ATK is chosen; a modified-power assertion fails."
         }
       ]
     },

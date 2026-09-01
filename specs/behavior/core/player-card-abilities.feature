@@ -3,6 +3,55 @@ Feature: Core player card abilities
   Player cards resolve their printed Actions and constant modifiers from legal
   Core deals, with targets and resulting zones recorded in the transcript.
 
+  @behavior:card:01068:choose-thw-plus-two-until-end-phase
+  @covers:behavior:card:01068:limit-once-per-round-within-limit
+  @covers:behavior:card:01068:limit-once-per-round-limit-reached
+  @card:01068
+  Scenario: Vision chooses a temporary thwart increase once per round
+    # Vision spends one energy resource and chooses THW, raising his printed
+    # THW 1 by two until the end of the phase. His once-per-round action is no
+    # longer available after that resolution.
+    Given a canonical Core scene is dealt
+      | campaign | heroes         | seed |
+      | rhino    | captain_marvel | 877  |
+    And card 01068 copy 0 is an ally controlled by seat 1
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01012 | 0    |
+    When seat 1 asks for available card actions
+    Then card 01068 copy 0's action is available
+    When seat 1 initiates card 01068 copy 0's action paying with these cards
+      | card  | copy |
+      | 01012 | 0    |
+    Then option 1 is offered by the pending decision
+    And option 2 is offered by the pending decision
+    When seat 1 chooses option 1 for the pending encounter-card decision
+    Then card 01068 copy 0 has modified THW 3
+    And card 01068 copy 0 has modified ATK 2
+    When seat 1 asks for available card actions
+    Then card 01068 copy 0's action is unavailable
+
+  @behavior:card:01068:choose-atk-plus-two-until-end-phase
+  @card:01068
+  Scenario: Vision chooses a temporary attack increase
+    # Choosing ATK instead leaves Vision's printed THW 1 unchanged and raises
+    # his printed ATK 2 by two until the end of the phase.
+    Given a canonical Core scene is dealt
+      | campaign | heroes         | seed |
+      | rhino    | captain_marvel | 878  |
+    And card 01068 copy 0 is an ally controlled by seat 1
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01017 | 0    |
+    When seat 1 initiates card 01068 copy 0's action paying with these cards
+      | card  | copy |
+      | 01017 | 0    |
+    Then option 1 is offered by the pending decision
+    And option 2 is offered by the pending decision
+    When seat 1 chooses option 2 for the pending encounter-card decision
+    Then card 01068 copy 0 has modified THW 1
+    And card 01068 copy 0 has modified ATK 4
+
   @behavior:card:01035:exhaust-arc-reactor-ready-iron-man
   @card:01035
   Scenario: Arc Reactor exhausts to ready Iron Man
