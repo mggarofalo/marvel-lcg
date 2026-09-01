@@ -121,6 +121,7 @@ public sealed class AttackTests
 
     [Rule("rr:indirect-damage.5")]
     [Rule("rr:indirect-damage.5.1")]
+    [Rule("rr:indirect-damage.3.1")]
     [Fact]
     public void IndirectAttackDamageIsAssignedAfterDefenseWithoutAttackingRecipients()
     {
@@ -148,6 +149,16 @@ public sealed class AttackTests
         Assert.Equal(
             [world.Seats[0].IdentityCard.ObjectId, ally.ObjectId],
             targets.Legal);
+        // "A character cannot be assigned more indirect damage than would
+        // cause it to be defeated." The prompt carries those remaining-health
+        // capacities so a client does not have to derive them.
+        Assert.Equal(
+            new Dictionary<int, int>
+            {
+                [world.Seats[0].IdentityCard.ObjectId] = 10,
+                [ally.ObjectId] = 3,
+            },
+            targets.MaximumOccurrences);
         Sequence.Answer(
             world, printed, abilities, assign,
             Decision.Take(

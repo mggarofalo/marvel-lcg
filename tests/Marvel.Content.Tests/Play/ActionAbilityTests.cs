@@ -1292,6 +1292,7 @@ public sealed partial class ActionAbilityTests
         Assert.Equal(DeckType.DiscardPile, mental.Area.Type);
     }
 
+    [Rule("rr:wild-resource")]
     [Fact]
     public void ARemainingWildDeclarationChoiceIsOfferedButNotInferred()
     {
@@ -1324,6 +1325,18 @@ public sealed partial class ActionAbilityTests
             []));
         Assert.Same(world.Seats[0].Hand, card!.Area);
         Assert.Same(world.Seats[0].Hand, doubleWild!.Area);
+
+        Assert.Throws<RulesNotImplementedException>(() => runner.Act(
+            world,
+            action,
+            [doubleWild.ObjectId],
+            [],
+            allocations:
+            [
+                new ResourceAllocation(doubleWild.ObjectId, Cost: 0, PaidAs: "GG"),
+            ]));
+        Assert.Same(world.Seats[0].Hand, card.Area);
+        Assert.Same(world.Seats[0].Hand, doubleWild.Area);
 
         runner.Act(
             world,

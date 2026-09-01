@@ -49,6 +49,93 @@ public sealed class LocalGameClientTests
     }
 
     [Fact]
+    public async Task ALocalDecisionReturnsTheNextAuthoritativePromptAndBoard()
+    {
+        var client = new LocalGameClient(new InProcessTransport(Host()));
+        ClientStartupResult opened = await client.OpenAsync(
+            Specification(), TestContext.Current.CancellationToken);
+
+        ClientResolutionResult resolved = await client.ResolveAsync(
+            opened.Response!.Capability!,
+            EngineDecision.Decline,
+            TestContext.Current.CancellationToken);
+
+        Assert.True(resolved.Succeeded);
+        Assert.NotNull(resolved.Response?.World);
+        Assert.NotNull(resolved.Response?.Prompt);
+        Assert.Null(resolved.Error);
+    }
+
+    [Fact]
+    public async Task ARejectedDecisionSynchronizesWithoutRepeatingTheMutation()
+    {
+        EngineResponse current = Host().Exchange(EngineRequest.OpenGame(
+            "open", LocalGameSession.GameId, Specification()));
+        var rejected = new EngineResponse(
+            EngineProtocol.Version,
+            "resolve",
+            LocalGameSession.GameId,
+            Capability: null,
+            Prompt: null,
+            Events: [],
+            Error: new EngineError("stale_decision", "The prompt changed."));
+        var transport = new ScriptedTransport(rejected, current with { Capability = null });
+
+        ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(
+            current.Capability!,
+            EngineDecision.Decline,
+            TestContext.Current.CancellationToken);
+
+        Assert.False(result.Succeeded);
+        Assert.True(result.HasAuthoritativeView);
+        Assert.Equal("stale_decision", result.Error?.Code);
+        Assert.Equal([EngineProtocol.Resolve, EngineProtocol.Sync],
+            transport.Requests.Select(request => request.Operation));
+        Assert.NotNull(transport.Requests[0].Decision);
+        Assert.Null(transport.Requests[1].Decision);
+    }
+
+    [Fact]
+    public async Task AnUncertainResolveReadsStateAndNeverRetriesTheDecision()
+    {
+        EngineResponse current = Host().Exchange(EngineRequest.OpenGame(
+            "open", LocalGameSession.GameId, Specification()));
+        var transport = new ScriptedTransport(
+            new IOException("response lost"),
+            current with { Capability = null });
+
+        ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(
+            current.Capability!,
+            EngineDecision.Decline,
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.HasAuthoritativeView);
+        Assert.Equal("transport_unavailable", result.Error?.Code);
+        Assert.Equal([EngineProtocol.Resolve, EngineProtocol.Sync],
+            transport.Requests.Select(request => request.Operation));
+    }
+
+    [Fact]
+    public async Task AMalformedResolveReadsStateAndNeverRetriesTheDecision()
+    {
+        EngineResponse current = Host().Exchange(EngineRequest.OpenGame(
+            "open", LocalGameSession.GameId, Specification()));
+        var transport = new ScriptedTransport(
+            current with { Prompt = current.Prompt! with { Affordances = null! } },
+            current with { Capability = null });
+
+        ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(
+            current.Capability!,
+            EngineDecision.Decline,
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.HasAuthoritativeView);
+        Assert.Equal("invalid_response", result.Error?.Code);
+        Assert.Equal([EngineProtocol.Resolve, EngineProtocol.Sync],
+            transport.Requests.Select(request => request.Operation));
+    }
+
+    [Fact]
     public async Task AppSetupAndOpenUseTheSameRequestsOverLocalAndRemoteTransports()
     {
         var local = new LocalGameClient(new InProcessTransport(Host()));
@@ -212,6 +299,59 @@ public sealed class LocalGameClientTests
             .OpenAsync(Specification(), TestContext.Current.CancellationToken);
 
         Assert.Equal("invalid_response", startup.Error?.Code);
+    }
+
+    [Fact]
+    public async Task AnIncompletePromptIsRejectedBeforeRendering()
+    {
+        EngineResponse complete = Host().Exchange(EngineRequest.OpenGame(
+            "local-open", LocalGameSession.GameId, Specification()));
+
+        ClientStartupResult startup = await new LocalGameClient(
+            new FixedTransport(complete with
+            {
+                Prompt = complete.Prompt! with { Affordances = null! },
+            })).OpenAsync(Specification(), TestContext.Current.CancellationToken);
+
+        Assert.Equal("invalid_response", startup.Error?.Code);
+    }
+
+    [Fact]
+    public async Task AnEmptyPromptIsRejectedBeforeRendering()
+    {
+        EngineResponse complete = Host().Exchange(EngineRequest.OpenGame(
+            "local-open", LocalGameSession.GameId, Specification()));
+
+        ClientStartupResult startup = await new LocalGameClient(
+            new FixedTransport(complete with
+            {
+                Prompt = complete.Prompt! with { Affordances = [] },
+            })).OpenAsync(Specification(), TestContext.Current.CancellationToken);
+
+        Assert.Equal("invalid_response", startup.Error?.Code);
+    }
+
+    [Fact]
+    public async Task ATerminalWorldWithAStalePromptIsNeverRenderedAsAuthoritative()
+    {
+        EngineResponse complete = Host().Exchange(EngineRequest.OpenGame(
+            "local-open", LocalGameSession.GameId, Specification()));
+        EngineResponse malformed = complete with
+        {
+            Capability = null,
+            World = complete.World! with { Outcome = Outcome.PlayersWin },
+        };
+        var transport = new ScriptedTransport(malformed, malformed);
+
+        ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(
+            complete.Capability!,
+            EngineDecision.Decline,
+            TestContext.Current.CancellationToken);
+
+        Assert.False(result.HasAuthoritativeView);
+        Assert.Equal("invalid_response", result.Error?.Code);
+        Assert.Equal([EngineProtocol.Resolve, EngineProtocol.Sync],
+            transport.Requests.Select(request => request.Operation));
     }
 
     [Fact]
@@ -401,6 +541,24 @@ public sealed class LocalGameClientTests
                 Prompt: null,
                 Events: [],
                 Error: new EngineError("stopped", "capture complete")));
+        }
+    }
+
+    private sealed class ScriptedTransport(params object[] results) : IEngineTransport
+    {
+        private readonly Queue<object> remaining = new(results);
+
+        public List<EngineRequest> Requests { get; } = [];
+
+        public ValueTask<EngineResponse> ExchangeAsync(
+            EngineRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            Requests.Add(request);
+            object result = remaining.Dequeue();
+            return result is Exception failure
+                ? ValueTask.FromException<EngineResponse>(failure)
+                : ValueTask.FromResult((EngineResponse)result);
         }
     }
 

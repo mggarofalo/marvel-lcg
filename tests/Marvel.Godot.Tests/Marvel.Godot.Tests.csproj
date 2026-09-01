@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="../Shared/CoreGamePolicy.cs" Link="CoreGamePolicy.cs" />
     <Compile Include="../Shared/RepositoryPaths.cs" Link="RepositoryPaths.cs" />
   </ItemGroup>
 

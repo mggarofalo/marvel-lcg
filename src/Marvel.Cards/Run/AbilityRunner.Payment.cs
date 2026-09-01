@@ -712,7 +712,7 @@ public sealed partial class AbilityRunner
             string assigned = paid[index].ToString();
             string required = string.Concat(components[index].Rule ?? []);
             if (assigned.Length != amount
-                || !Resources.Pays(assigned, amount, required))
+                || !Resources.PaysDeclared(assigned, amount, required))
             {
                 throw new RulesNotImplementedException(
                     $"event {card.ObjectId} assigns '{assigned}' to cost {index}, "

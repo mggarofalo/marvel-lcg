@@ -215,6 +215,23 @@ public static class Resources
     /// </remarks>
     public static bool PaysPrinted(string generated, long cost, string? required = null)
     {
+        return PaysExactTypes(generated, cost, required);
+    }
+
+    /// <summary>Whether player-declared paid types exactly satisfy a cost.</summary>
+    /// <remarks>
+    /// <c>rr:wild-resource</c>: a player generating a wild “must specify which
+    /// resource type ... it is being used as.” Once declared, the wire letter
+    /// is that type; a declaration of wild cannot later substitute for a
+    /// physical, energy, or mental requirement.
+    /// </remarks>
+    public static bool PaysDeclared(string declared, long cost, string? required = null)
+    {
+        return PaysExactTypes(declared, cost, required);
+    }
+
+    private static bool PaysExactTypes(string generated, long cost, string? required)
+    {
         ArgumentNullException.ThrowIfNull(generated);
         if (generated.Length < cost || (required?.Length ?? 0) > cost)
         {

@@ -59,15 +59,22 @@ domain shape.
 - `MustIncludeTraits`, traits the final selection must contain;
 - `Rule`, a named extra selection rule;
 - `IsSearch`, which marks a choice through hidden information; and
-- `AllowRepeated`, used for allocations such as indirect damage.
+- `AllowRepeated`, used for allocations such as indirect damage; and
+- `MaximumOccurrences`, the maximum allocation entries permitted for each
+  candidate when repeated entries are allowed.
 
 When `Groups` is non-empty, it is authoritative. `Min` and `Max` then describe
-the pooled candidates and must not be applied to a selected group. Clients and
-tests should use `TargetRequest.Allows` rather than rebuilding this distinction.
+the pooled candidates and must not be applied to a selected group. A selection
+must exactly equal one complete group in its listed order; a subset or reordered
+copy is not the offered answer. Clients and tests should use
+`TargetRequest.Allows` rather than rebuilding this distinction.
 
 Duplicate targets are rejected unless `AllowRepeated` is true. Indirect damage
 uses repeated entries because each entry allocates one point; it is not choosing
-the same target repeatedly for one effect.
+the same target repeatedly for one effect. Its `MaximumOccurrences` entry is
+the character's current remaining hit points, so a client can render a bounded
+allocation control without deriving damage rules from the board. The engine
+still validates the submitted allocation.
 
 Search requests also inform visibility. The authorized player may see the legal
 hidden targets while the prompt is active. Other viewers may not.
@@ -86,7 +93,11 @@ The record can carry:
 - several simultaneous resource components that share one payment.
 
 The engine must not choose generators for the player. The selected subset is
-part of the answer and is validated against the offered cost.
+part of the answer and is validated against the offered cost. When a generated
+icon can be declared as more than one type, or simultaneous components share a
+payment, the answer also carries the player's explicit per-icon declaration and
+component assignment. A client may suggest an allocation but cannot silently
+substitute a deterministic policy for that choice.
 
 An alternative is not flattened into one number. “One mental resource or 2 of
 any type” has 2 legal readings, and their resource restrictions differ.

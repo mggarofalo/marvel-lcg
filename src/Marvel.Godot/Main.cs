@@ -1,6 +1,7 @@
 using System.Globalization;
 using Godot;
 using Marvel.Server;
+using Marvel.View;
 
 namespace Marvel.Godot;
 
@@ -11,14 +12,17 @@ public sealed partial class Main : Control
     private readonly List<ScenarioSetupChoice> visibleModes = [];
     private Control board = null!;
     private GridContainer boardAreas = null!;
+    private BoardRenderResult? boardRender;
     private Label briefingHero = null!;
     private Label briefingMode = null!;
     private Label briefingModular = null!;
     private Label briefingScenario = null!;
     private Label description = null!;
+    private DecisionPanel decisions = null!;
     private Label eyebrow = null!;
     private OptionButton hero = null!;
     private LocalGameClient? localClient;
+    private string? localCapability;
     private OptionButton mode = null!;
     private OptionButton modular = null!;
     private OptionButton scenario = null!;
@@ -57,8 +61,11 @@ public sealed partial class Main : Control
         eyebrow = GetNode<Label>($"{content}/Eyebrow");
         title = GetNode<Label>($"{content}/Title");
         setupPanel = GetNode<Control>($"{content}/Setup");
-        board = GetNode<Control>($"{content}/Board");
-        boardAreas = GetNode<GridContainer>($"{content}/Board/Margin/Areas");
+        board = GetNode<Control>($"{content}/Play");
+        boardAreas = GetNode<GridContainer>($"{content}/Play/Board/Margin/Areas");
+        decisions = GetNode<DecisionPanel>($"{content}/Play/Prompt/Margin/Scroll/Decision");
+        decisions.Submitted += OnDecisionSubmitted;
+        decisions.AnchorFocused += id => boardRender?.Highlight(id);
         hero = GetNode<OptionButton>($"{content}/Setup/Selections/Fields/Grid/Hero");
         scenario = GetNode<OptionButton>($"{content}/Setup/Selections/Fields/Grid/Scenario");
         mode = GetNode<OptionButton>($"{content}/Setup/Selections/Fields/Grid/Mode");
@@ -229,20 +236,12 @@ public sealed partial class Main : Control
             }
 
             OpenedGame = startup.Response;
-            BoardRenderer.Render(
-                boardAreas,
-                BoardPresentation.From(OpenedGame!.World!));
+            localCapability = OpenedGame!.Capability;
+            RenderGame(OpenedGame);
             setupPanel.Visible = false;
             board.Visible = true;
             eyebrow.Text = "CORE SET  /  LOCAL TABLE";
             title.Text = "The table is live.";
-            description.Text =
-                $"{briefingHero.Text} versus {briefingScenario.Text} · "
-                + $"{OpenedGame!.World!.Areas.Count} visible areas · "
-                + $"{OpenedGame.Events.Count} setup events";
-            status.Text =
-                $"GAME OPEN  ·  {OpenedGame.World.Outcome.ToString().ToUpperInvariant()}  ·  "
-                + OpenedGame.Prompt!.Asking.ToString().ToUpperInvariant();
         }
         catch (Exception)
         {
@@ -252,6 +251,50 @@ public sealed partial class Main : Control
                 "startup_failed",
                 "The selected game could not be displayed. Check the assignment and try again."));
         }
+    }
+
+    private async void OnDecisionSubmitted(EngineDecision decision)
+    {
+        try
+        {
+            decisions.SetSubmitting(true);
+            status.Text = "DECISION SENT  ·  WAITING FOR THE ENGINE";
+            ClientResolutionResult result = await localClient!.ResolveAsync(
+                localCapability!, decision);
+            if (result.HasAuthoritativeView)
+            {
+                RenderGame(result.Response!);
+            }
+
+            if (result.Error is not null)
+            {
+                description.Text = result.Error.Message;
+                status.Text = result.HasAuthoritativeView
+                    ? $"TABLE RECOVERED  ·  {result.Error.Code.ToUpperInvariant()}"
+                    : $"DECISION UNCONFIRMED  ·  {result.Error.Code.ToUpperInvariant()}";
+            }
+        }
+        catch (Exception)
+        {
+            description.Text =
+                "The decision result could not be displayed. Restart the client before taking another action.";
+            status.Text = "TABLE UNCONFIRMED  ·  THE PREVIOUS DECISION WILL NOT BE REPEATED";
+        }
+    }
+
+    private void RenderGame(EngineResponse response)
+    {
+        WorldDescriptor world = response.World!;
+        boardRender = BoardRenderer.Render(boardAreas, BoardPresentation.From(world));
+        decisions.Render(response.Prompt, world);
+        description.Text =
+            $"{briefingHero.Text} versus {briefingScenario.Text} · "
+            + $"{world.Areas.Count} visible areas · "
+            + $"{response.Events.Count} new events";
+        status.Text = response.Prompt is null
+            ? $"GAME COMPLETE  ·  {world.Outcome.ToString().ToUpperInvariant()}"
+            : $"GAME OPEN  ·  {world.Outcome.ToString().ToUpperInvariant()}  ·  "
+                + response.Prompt.Asking.ToString().ToUpperInvariant();
     }
 
     private GameSetupSelection SelectedSetup()
