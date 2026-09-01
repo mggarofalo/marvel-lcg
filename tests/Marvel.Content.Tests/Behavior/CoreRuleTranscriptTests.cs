@@ -205,6 +205,20 @@ public sealed class CoreRuleTranscriptTests
     }
 
     [Fact]
+    public void SetupBranchesHavePinnedOutcomes()
+    {
+        var results = Corpus.Value
+            .Where(result => result.Scenario.StartsWith(
+                "specs/behavior/core/setup.feature::", StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
+
+        Assert.Single(results);
+        Assert.Equal(
+            "e72ed15ec31a9a7a09fc27204c124b81b9721e2591a43d75bed51ecd6e2f49d5",
+            results["behavior:rr:appendix-ii-setup.step.1:published-result"].Digest);
+    }
+
+    [Fact]
     public void DiscardBranchesHavePinnedOutcomes()
     {
         var results = Corpus.Value

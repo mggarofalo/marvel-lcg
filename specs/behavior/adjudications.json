@@ -1635,11 +1635,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::The printed Spider-Man and Rhino deal reaches its opening state"
+          ],
+          "mutation": "Deal a different identity or start its hero face; the identity-form and hit-point assertions fail."
         }
       ]
     },
@@ -1653,11 +1655,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::The printed Spider-Man and Rhino deal reaches its opening state"
+          ],
+          "mutation": "Do not create the selected scenario's encounter deck; the Spider-Man obligation cannot occupy that deck."
         }
       ]
     },
@@ -1779,11 +1783,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::The printed Spider-Man and Rhino deal reaches its opening state"
+          ],
+          "mutation": "Do not draw Spider-Man's printed opening hand size; the hand and deck counts fail."
         }
       ]
     },
@@ -1833,11 +1839,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::The printed Spider-Man and Rhino deal reaches its opening state"
+          ],
+          "mutation": "Do not initialize the selected identity at its printed hit points; the remaining-hit-points assertion fails."
         }
       ]
     },
@@ -1851,11 +1859,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::The printed Spider-Man and Rhino deal reaches its opening state"
+          ],
+          "mutation": "Assign the first-player token to a different seat; the first-player assertion fails."
         }
       ]
     },
@@ -1869,11 +1879,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::The printed Spider-Man and Rhino deal reaches its opening state"
+          ],
+          "mutation": "Omit the selected identity's obligation from the encounter deck; the obligation-zone assertion fails."
         }
       ]
     },
@@ -1887,11 +1899,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::The printed Spider-Man and Rhino deal reaches its opening state"
+          ],
+          "mutation": "Do not set aside the selected identity's nemesis set; the nemesis-zone assertion fails."
         }
       ]
     },
@@ -1941,11 +1955,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::The printed Spider-Man and Rhino deal reaches its opening state"
+          ],
+          "mutation": "Deal a campaign other than the selected Rhino scenario; the villain and main-scheme assertions fail."
         }
       ]
     },
@@ -1959,11 +1975,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::The printed Spider-Man and Rhino deal reaches its opening state"
+          ],
+          "mutation": "Do not initialize Rhino at his printed per-player hit points; the villain remaining-hit-points assertion fails."
         }
       ]
     },

@@ -365,6 +365,8 @@ internal sealed class CoreTranscriptRunner
         Bind("request-card-actions", TranscriptStepKind.When,
             @"seat (?<seat>\d+) asks for available card actions",
             RequestCardActions),
+        Bind("inspect-core-scene", TranscriptStepKind.When,
+            "the dealt Core scene is inspected", InspectCoreScene),
         Bind("choose-pending-card", TranscriptStepKind.When,
             @"seat (?<seat>\d+) chooses card (?<face>\d+[a-z]?) copy (?<copy>\d+) for the pending action",
             ChoosePendingCard),
@@ -384,6 +386,8 @@ internal sealed class CoreTranscriptRunner
             FacedownEncounterQueueCard),
         Bind("encounter-deck-count", TranscriptStepKind.Then,
             @"the encounter deck has (?<count>\d+) cards?", EncounterDeckCount),
+        Bind("player-count", TranscriptStepKind.Then,
+            @"the game has (?<count>\d+) players?", PlayerCount),
         Bind("encounter-discard-count", TranscriptStepKind.Then,
             @"the encounter discard pile has (?<count>\d+) cards?", EncounterDiscardCount),
         Bind("acceleration-token-count", TranscriptStepKind.Then,
@@ -457,6 +461,12 @@ internal sealed class CoreTranscriptRunner
         Bind("card-is-main-scheme", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is the faceup main scheme",
             CardIsMainScheme),
+        Bind("card-in-encounter-deck", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is in the encounter deck",
+            CardInEncounterDeck),
+        Bind("card-in-seat-nemesis", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is in seat (?<seat>\d+)'s set-aside nemesis pile",
+            CardInSeatNemesis),
         Bind("player-order", TranscriptStepKind.Then,
             @"the player order is (?<order>[\d,]+)", PlayerOrder),
         Bind("per-player-count", TranscriptStepKind.Then,
@@ -1196,6 +1206,16 @@ internal sealed class CoreTranscriptRunner
             .ToHashSet();
     }
 
+    private static void InspectCoreScene(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        _ = step;
+        _ = match;
+        _ = context.World;
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+    }
+
     private static void InitiateAction(
         TranscriptContext context,
         TranscriptStep step,
@@ -1338,6 +1358,11 @@ internal sealed class CoreTranscriptRunner
         Equal(Number(match, "count", step),
             context.World.AreaOf(DeckType.EncounterDeck).Cards.Count,
             "cards in the encounter deck", step);
+
+    private static void PlayerCount(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        Equal(Number(match, "count", step), context.World.Players,
+            "players in the game", step);
 
     private static void EncounterDiscardCount(
         TranscriptContext context, TranscriptStep step, Match match) =>
@@ -1730,6 +1755,31 @@ internal sealed class CoreTranscriptRunner
             throw new TranscriptAssertionException(
                 $"{step.Location}: expected faceup card {expected.ObjectId} as main scheme; was "
                 + (actual is null ? "<none>" : $"{actual.ObjectId}, faceup={actual.FaceUp}"));
+        }
+    }
+
+    private static void CardInEncounterDeck(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        if (card.Area.Type != DeckType.EncounterDeck)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected card {card.ObjectId} in the encounter deck; "
+                + $"was {card.Area}");
+        }
+    }
+
+    private static void CardInSeatNemesis(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        if (!ReferenceEquals(card.Area, context.World.Seats[seat].Nemesis))
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected card {card.ObjectId} in seat {seat + 1}'s "
+                + $"set-aside nemesis pile; was {card.Area}");
         }
     }
 
