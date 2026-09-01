@@ -30203,11 +30203,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::A fully resolved pre-then thwart attempts the Aerial follow-up"
+          ],
+          "mutation": "Skip or alter Crisis Interdiction's first two-threat removal; the main-scheme threat assertion fails."
         },
         {
           "id": "behavior:card:01012:then-if-you-have-aerial-trait-remove-condition-met",
@@ -30215,11 +30217,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::A fully resolved pre-then thwart attempts the Aerial follow-up"
+          ],
+          "mutation": "Skip the conditional second removal while Captain Marvel has Aerial; the side-scheme threat assertion fails."
         },
         {
           "id": "behavior:card:01012:then-if-you-have-aerial-trait-remove-condition-not-met",
@@ -30227,11 +30231,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Crisis Interdiction has no second thwart without Aerial"
+          ],
+          "mutation": "Apply the conditional second removal while Captain Marvel lacks Aerial; the unchanged side-scheme threat assertion fails."
         }
       ]
     },

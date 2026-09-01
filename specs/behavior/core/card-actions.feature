@@ -1050,6 +1050,8 @@ Feature: Core card actions
 
   @behavior:rr:then:published-result
   @covers:behavior:rr:then.1:published-result
+  @covers:behavior:card:01012:remove-2-threat-from-scheme
+  @covers:behavior:card:01012:then-if-you-have-aerial-trait-remove-condition-met
   @rr:then @rr:then.1 @card:01012 @card:01017
   Scenario: A fully resolved pre-then thwart attempts the Aerial follow-up
     # Crisis Interdiction removes its full two threat from the first scheme.
@@ -1077,6 +1079,33 @@ Feature: Core card actions
       | 01107  | 0    |
     Then card 01097b copy 0 has 0 threat counters
     And card 01107 copy 0 has 0 threat counters
+
+  @behavior:card:01012:then-if-you-have-aerial-trait-remove-condition-not-met
+  @card:01012
+  Scenario: Crisis Interdiction has no second thwart without Aerial
+    # The first instruction removes its full two threat. Captain Marvel has no
+    # Aerial trait, so the conditional removal from a different scheme does not
+    # occur and the side scheme retains both threat.
+    Given a canonical Core scene is dealt
+      | campaign | heroes         | seed |
+      | rhino    | captain_marvel | 861  |
+    And seat 1 shows identity face 01010a
+    And card 01107 copy 0 is a side scheme in play
+    And card 01097b copy 0 has 2 threat counters
+    And card 01107 copy 0 has 2 threat counters
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01012 | 0    |
+      | 01088 | 0    |
+    When seat 1 initiates card 01012 copy 0's action paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+    Then seat 1 is asked to choose 1 cards for the pending action
+    When seat 1 chooses these cards for the pending action
+      | card   | copy |
+      | 01097b | 0    |
+    Then card 01097b copy 0 has 0 threat counters
+    And card 01107 copy 0 has 2 threat counters
 
   @behavior:rr:then.2:published-result
   @rr:then.2 @card:01012 @card:01017

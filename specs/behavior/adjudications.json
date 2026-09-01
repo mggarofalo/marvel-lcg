@@ -25268,17 +25268,19 @@
           ],
           "mutation": "Change or omit this printed field in CardCatalog; the generated face-table assertion fails."
         },
-        {
-          "key": "remove-2-threat-from-scheme",
-          "summary": "Hero Action (thwart): Remove 2 threat from a scheme.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
-          "work_item": null,
-          "exception": null,
-          "scenarios": [],
-          "mutation": null
+    {
+      "key": "remove-2-threat-from-scheme",
+      "summary": "Hero Action (thwart): Remove 2 threat from a scheme.",
+      "disposition": "executable",
+      "reason": null,
+      "target": null,
+      "implementation": "supported",
+      "work_item": null,
+      "exception": null,
+      "scenarios": [
+        "specs/behavior/core/card-actions.feature::A fully resolved pre-then thwart attempts the Aerial follow-up"
+      ],
+      "mutation": "Skip or alter Crisis Interdiction's first two-threat removal; the main-scheme threat assertion fails."
         },
         {
           "key": "then-if-you-have-aerial-trait-remove-condition-met",
@@ -25286,11 +25288,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/card-actions.feature::A fully resolved pre-then thwart attempts the Aerial follow-up"
+      ],
+      "mutation": "Skip the conditional second removal while Captain Marvel has Aerial; the side-scheme threat assertion fails."
         },
         {
           "key": "then-if-you-have-aerial-trait-remove-condition-not-met",
@@ -25298,11 +25302,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/card-actions.feature::Crisis Interdiction has no second thwart without Aerial"
+      ],
+      "mutation": "Apply the conditional second removal while Captain Marvel lacks Aerial; the unchanged side-scheme threat assertion fails."
         }
       ]
     },
