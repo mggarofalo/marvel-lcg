@@ -325,6 +325,9 @@ internal sealed class CoreTranscriptRunner
         Bind("basic-recovery-availability", TranscriptStepKind.When,
             @"seat (?<seat>\d+) asks whether basic recovery is available",
             BasicRecoveryAvailability),
+        Bind("villain-phase-decline", TranscriptStepKind.When,
+            @"villain phase (?<round>\d+) resolves with every optional choice declined",
+            ResolveVillainPhase),
         Bind("minion-enters-play", TranscriptStepKind.When,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) enters play as a minion engaged with seat (?<seat>\d+)",
             MinionEntersPlay),
@@ -875,6 +878,16 @@ internal sealed class CoreTranscriptRunner
         context.LastCardOptions = null;
         context.LastAvailability = BasicPowers.CanRecover(
             context.World, context.Cards, Seat(match, step));
+    }
+
+    private static void ResolveVillainPhase(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        VillainPhase.Schedule(
+            context.World.Agenda, Number(match, "round", step));
+        FinishAgenda(context, step);
     }
 
     private static void FinishAgenda(TranscriptContext context, TranscriptStep step)

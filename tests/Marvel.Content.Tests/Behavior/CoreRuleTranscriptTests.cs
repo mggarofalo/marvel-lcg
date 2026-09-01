@@ -79,6 +79,25 @@ public sealed class CoreRuleTranscriptTests
     }
 
     [Fact]
+    public void VillainPhaseBranchesHavePinnedOutcomes()
+    {
+        var suite = new CoreTranscriptSuite(RepositoryPaths.Root);
+        var results = suite.RunPassingCorpus()
+            .Where(result => result.Scenario.StartsWith(
+                "specs/behavior/core/villain-phase.feature::",
+                StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
+
+        Assert.Equal(2, results.Count);
+        Assert.Equal(
+            "aadbff792b4caca6a6ecbb13041865133c3e9ce1d588d1a9c6a59834d8a97fc8",
+            results["behavior:rr:villain-phase:published-result"].Digest);
+        Assert.Equal(
+            "056458e0067d1547ec97b141112469a9bbf885320236cab8539b54d32902c3c9",
+            results["behavior:rr:villain-phase.step.5:published-result"].Digest);
+    }
+
+    [Fact]
     public void StatusCardBranchesHavePinnedOutcomes()
     {
         var suite = new CoreTranscriptSuite(RepositoryPaths.Root);

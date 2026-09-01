@@ -1030,11 +1030,14 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed",
+            "specs/behavior/core/villain-phase.feature::Two players resolve in clockwise order and pass the first player token"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes two-player clockwise order and first-player transfer."
         }
       ]
     },
@@ -1074,11 +1077,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes the published phase order and each observed state transition."
         }
       ]
     },
@@ -4149,11 +4154,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes the published phase order and each observed state transition."
         }
       ]
     },
@@ -4259,11 +4266,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes the published phase order and each observed state transition."
         }
       ]
     },
@@ -6797,11 +6806,14 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed",
+            "specs/behavior/core/villain-phase.feature::Two players resolve in clockwise order and pass the first player token"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes two-player clockwise order and first-player transfer."
         },
         {
           "id": "behavior:rr:deal-deal-an-encounter-card:ability-deal-facedown-queued",
@@ -8824,11 +8836,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes the published phase order and each observed state transition."
         }
       ]
     },
@@ -12158,11 +12172,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Two players resolve in clockwise order and pass the first player token"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes two-player clockwise order and first-player transfer."
         }
       ]
     },
@@ -12202,11 +12218,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Two players resolve in clockwise order and pass the first player token"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes two-player clockwise order and first-player transfer."
         }
       ]
     },
@@ -20538,11 +20556,14 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed",
+            "specs/behavior/core/villain-phase.feature::Two players resolve in clockwise order and pass the first player token"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes two-player clockwise order and first-player transfer."
         }
       ]
     },
@@ -21320,11 +21341,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes the published phase order and each observed state transition."
         }
       ]
     },
@@ -21342,11 +21365,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes the published phase order and each observed state transition."
         }
       ]
     },
@@ -21364,11 +21389,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes the published phase order and each observed state transition."
         }
       ]
     },
@@ -21386,11 +21413,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes the published phase order and each observed state transition."
         }
       ]
     },
@@ -21430,11 +21459,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes the published phase order and each observed state transition."
         }
       ]
     },
@@ -21452,11 +21483,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes the published phase order and each observed state transition."
         }
       ]
     },
@@ -21496,11 +21529,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes the published phase order and each observed state transition."
         }
       ]
     },
@@ -25731,11 +25766,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes the published phase order and each observed state transition."
         }
       ]
     },
@@ -25753,11 +25790,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes the published phase order and each observed state transition."
         }
       ]
     },
@@ -25775,11 +25814,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Two players resolve in clockwise order and pass the first player token"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes two-player clockwise order and first-player transfer."
         }
       ]
     },
@@ -25797,11 +25838,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes the published phase order and each observed state transition."
         }
       ]
     },
@@ -25841,11 +25884,14 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed",
+            "specs/behavior/core/villain-phase.feature::Two players resolve in clockwise order and pass the first player token"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes two-player clockwise order and first-player transfer."
         }
       ]
     },
@@ -25863,11 +25909,14 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed",
+            "specs/behavior/core/villain-phase.feature::Two players resolve in clockwise order and pass the first player token"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes two-player clockwise order and first-player transfer."
         }
       ]
     },
@@ -25885,11 +25934,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Two players resolve in clockwise order and pass the first player token"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes two-player clockwise order and first-player transfer."
         }
       ]
     },

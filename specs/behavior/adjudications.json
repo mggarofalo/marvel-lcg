@@ -841,11 +841,14 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed",
+            "specs/behavior/core/villain-phase.feature::Two players resolve in clockwise order and pass the first player token"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes two-player clockwise order and first-player transfer."
         }
       ]
     },
@@ -877,11 +880,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes the published phase order and each observed state transition."
         }
       ]
     },
@@ -3396,11 +3401,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes the published phase order and each observed state transition."
         }
       ]
     },
@@ -3486,11 +3493,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes the published phase order and each observed state transition."
         }
       ]
     },
@@ -5564,11 +5573,14 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed",
+            "specs/behavior/core/villain-phase.feature::Two players resolve in clockwise order and pass the first player token"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes two-player clockwise order and first-player transfer."
         },
         {
           "key": "ability-deal-facedown-queued",
@@ -7239,11 +7251,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes the published phase order and each observed state transition."
         }
       ]
     },
@@ -9993,11 +10007,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Two players resolve in clockwise order and pass the first player token"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes two-player clockwise order and first-player transfer."
         }
       ]
     },
@@ -10029,11 +10045,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Two players resolve in clockwise order and pass the first player token"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes two-player clockwise order and first-player transfer."
         }
       ]
     },
@@ -16857,11 +16875,14 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed",
+            "specs/behavior/core/villain-phase.feature::Two players resolve in clockwise order and pass the first player token"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes two-player clockwise order and first-player transfer."
         }
       ]
     },
@@ -17499,11 +17520,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes the published phase order and each observed state transition."
         }
       ]
     },
@@ -17517,11 +17540,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes the published phase order and each observed state transition."
         }
       ]
     },
@@ -17535,11 +17560,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes the published phase order and each observed state transition."
         }
       ]
     },
@@ -17553,11 +17580,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes the published phase order and each observed state transition."
         }
       ]
     },
@@ -17589,11 +17618,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes the published phase order and each observed state transition."
         }
       ]
     },
@@ -17607,11 +17638,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes the published phase order and each observed state transition."
         }
       ]
     },
@@ -17643,11 +17676,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes the published phase order and each observed state transition."
         }
       ]
     },
@@ -21114,11 +21149,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes the published phase order and each observed state transition."
         }
       ]
     },
@@ -21132,11 +21169,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes the published phase order and each observed state transition."
         }
       ]
     },
@@ -21150,11 +21189,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Two players resolve in clockwise order and pass the first player token"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes two-player clockwise order and first-player transfer."
         }
       ]
     },
@@ -21168,11 +21209,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes the published phase order and each observed state transition."
         }
       ]
     },
@@ -21204,11 +21247,14 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed",
+            "specs/behavior/core/villain-phase.feature::Two players resolve in clockwise order and pass the first player token"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes two-player clockwise order and first-player transfer."
         }
       ]
     },
@@ -21222,11 +21268,14 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An alter-ego receives scheme threat before its encounter card is revealed",
+            "specs/behavior/core/villain-phase.feature::Two players resolve in clockwise order and pass the first player token"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes two-player clockwise order and first-player transfer."
         }
       ]
     },
@@ -21240,11 +21289,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Two players resolve in clockwise order and pass the first player token"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes two-player clockwise order and first-player transfer."
         }
       ]
     },
@@ -47654,7 +47705,7 @@
       "obligations": [
         {
           "key": "source-disposition",
-          "summary": "I want to make sure I’m understanding this correctly. I’ve got two scenarios here for you. Scenario One I’m playing the Colossus hero. I’m Stunned. I play “Steel Fist”. I have to pay the resource cost of 2 and any ability costs, so since part of the cost of steel fist is to deal 5 damage→ I get to deal 5 damage while stunned and then stun only replaces the effects → of stun and confuse that enemy. So I get to deal damage from an (attack) event while stunned and then remove the stun!? \uD83D\uDE03 Scenario two I’m playing Colossus. Every enemy in play has stalwart. I want to play “Steel Fist” but I can’t because it’s effect of → stun and confuse that enemy, doesn’t have the potential to change the game state. Correct? \uD83D\uDE03 However, If I’m also stunned in this scenario, I can play steel fist, because the removal of the stun status is making it so that it does have the potential to change the game state To answer your question(s): · We are planning to issue an errata to Steel Fist that changes the cost arrow to the word “to.” With that, the card should function as we intended. · Meaning, if you were Stunned and attempted to play Steel Fist, you’d just pay its printed cost of 2 resources, not resolve any of its text, and remove Stunned. · Additionally, you would be able to play Steel Fist targeting a stalwart enemy with the 5 damage.",
+          "summary": "I want to make sure I’m understanding this correctly. I’ve got two scenarios here for you. Scenario One I’m playing the Colossus hero. I’m Stunned. I play “Steel Fist”. I have to pay the resource cost of 2 and any ability costs, so since part of the cost of steel fist is to deal 5 damage→ I get to deal 5 damage while stunned and then stun only replaces the effects → of stun and confuse that enemy. So I get to deal damage from an (attack) event while stunned and then remove the stun!? 😃 Scenario two I’m playing Colossus. Every enemy in play has stalwart. I want to play “Steel Fist” but I can’t because it’s effect of → stun and confuse that enemy, doesn’t have the potential to change the game state. Correct? 😃 However, If I’m also stunned in this scenario, I can play steel fist, because the removal of the stun status is making it so that it does have the potential to change the game state To answer your question(s): · We are planning to issue an errata to Steel Fist that changes the cost arrow to the word “to.” With that, the card should function as we intended. · Meaning, if you were Stunned and attempted to play Steel Fist, you’d just pay its printed cost of 2 resources, not resolve any of its text, and remove Stunned. · Additionally, you would be able to play Steel Fist targeting a stalwart enemy with the 5 damage.",
           "disposition": "outside-core",
           "reason": "The ruling belongs to the Expansion card questions product surface, which is absent from a legal Core Set game.",
           "target": null,
@@ -47762,7 +47813,7 @@
       "obligations": [
         {
           "key": "source-disposition",
-          "summary": "An interesting question came up during our Red Skull scenario run. The Rise of Red Skull main scheme does not specify “who” is actually revealing the side scheme deck. But for the card Legions of Hydra (the modular set side scheme, which is put into the side scheme deck), it asks for someone to search for Madame Hydra and put it into play engaged with “you.” Who is “you” in regards to the side scheme deck? We assumed that the first player is actually revealing the side scheme deck. Defaulting to the first player was going to be my answer as well \uD83D\uDE42",
+          "summary": "An interesting question came up during our Red Skull scenario run. The Rise of Red Skull main scheme does not specify “who” is actually revealing the side scheme deck. But for the card Legions of Hydra (the modular set side scheme, which is put into the side scheme deck), it asks for someone to search for Madame Hydra and put it into play engaged with “you.” Who is “you” in regards to the side scheme deck? We assumed that the first player is actually revealing the side scheme deck. Defaulting to the first player was going to be my answer as well 🙂",
           "disposition": "outside-core",
           "reason": "The ruling belongs to the Rise of Red Skull product surface, which is absent from a legal Core Set game.",
           "target": null,
@@ -48950,7 +49001,7 @@
       "obligations": [
         {
           "key": "source-disposition",
-          "summary": "1- If the kraken minion’s forced response defeats every other character, what happens? \uD83D\uDE03 We assume the game ends in a tie but wanted to know for sure If The Kraken defeats all remaining characters—heroes and villain included—then The Kraken wins! Or, on a slightly more serious note, the players are considered to have lost the scenario. We agreed that there aren’t any ties in Marvel Champions between the villain and the heroes, so if the heroes don’t win, they have lost.",
+          "summary": "1- If the kraken minion’s forced response defeats every other character, what happens? 😃 We assume the game ends in a tie but wanted to know for sure If The Kraken defeats all remaining characters—heroes and villain included—then The Kraken wins! Or, on a slightly more serious note, the players are considered to have lost the scenario. We agreed that there aren’t any ties in Marvel Champions between the villain and the heroes, so if the heroes don’t win, they have lost.",
           "disposition": "outside-core",
           "reason": "The ruling requires expansion material (The Kraken, Minion) absent from a legal Core Set game.",
           "target": null,
@@ -51536,7 +51587,7 @@
       "obligations": [
         {
           "key": "source-disposition",
-          "summary": "12 – An enemy with a tough status is attacking me \uD83D\uDE31 If my hero has retaliate and I defend and play the new riposte protection event, do I understand correctly that I could resolve retaliate first to knock off the tough and then resolve the delayed effect of Riposte to deal 3 damage? You can. Riposte’s ability creates a delayed effect, which has the same timing priority as the Retaliate keyword (RR 1.6, page 5), meaning that they can be resolved in either order; you may deal the damage from Retaliate first to remove Tough, then deal 3 from Riposte.",
+          "summary": "12 – An enemy with a tough status is attacking me 😱 If my hero has retaliate and I defend and play the new riposte protection event, do I understand correctly that I could resolve retaliate first to knock off the tough and then resolve the delayed effect of Riposte to deal 3 damage? You can. Riposte’s ability creates a delayed effect, which has the same timing priority as the Retaliate keyword (RR 1.6, page 5), meaning that they can be resolved in either order; you may deal the damage from Retaliate first to remove Tough, then deal 3 from Riposte.",
           "disposition": "outside-core",
           "reason": "The ruling requires expansion material (Riposte, Tough) absent from a legal Core Set game.",
           "target": null,
@@ -55460,7 +55511,7 @@
       "obligations": [
         {
           "key": "source-disposition",
-          "summary": "How much damage does relentless assault deal to a dragon minion from the mojo mania pack? I understand it to deal 5 damage and then the dragon takes 10 because of RA having a energy resource on it. But I’ve seen where it was ruled that damage it deals to the the dragon is based off of the remaining HP of the dragon so I’m trying to understand. Overkill is involved here as well. Help me if I have these examples wrong 1.Relentless assault deals 5 damage to the dragon who only has 5 HP remaining. The dragon would take 10 which is double the amount needed to be defeated but there is no overkill because the 5 damage only looked at the remaining HP of the target when determining overkill damage. 2.The dragon is at full 10 hp in a solo game, relentless assault would defeat it by dealing 5 and the dragon taking 10 but again no overkill. 3. The dragon has 1hp remaining and relentless assault deals 5 damage to it and the dragon takes 10 but only 4 is applied to the overkill to the villain. All three of your examples are correct \uD83D\uDE0A Dragon will always “take” 10, but Relentless Assault only ever “deals” 5.",
+          "summary": "How much damage does relentless assault deal to a dragon minion from the mojo mania pack? I understand it to deal 5 damage and then the dragon takes 10 because of RA having a energy resource on it. But I’ve seen where it was ruled that damage it deals to the the dragon is based off of the remaining HP of the dragon so I’m trying to understand. Overkill is involved here as well. Help me if I have these examples wrong 1.Relentless assault deals 5 damage to the dragon who only has 5 HP remaining. The dragon would take 10 which is double the amount needed to be defeated but there is no overkill because the 5 damage only looked at the remaining HP of the target when determining overkill damage. 2.The dragon is at full 10 hp in a solo game, relentless assault would defeat it by dealing 5 and the dragon taking 10 but again no overkill. 3. The dragon has 1hp remaining and relentless assault deals 5 damage to it and the dragon takes 10 but only 4 is applied to the overkill to the villain. All three of your examples are correct 😊 Dragon will always “take” 10, but Relentless Assault only ever “deals” 5.",
           "disposition": "outside-core",
           "reason": "The ruling belongs to the Mojo product surface, which is absent from a legal Core Set game.",
           "target": null,
@@ -62120,7 +62171,7 @@
       "obligations": [
         {
           "key": "source-disposition",
-          "summary": "30 – I have some questions regarding 1.5 and a couple extras \uD83D\uDE03 1.Can another player play a (defense) labeled event card or trigger a (defense) labeled ability during an enemy attack in which another player already defended using their heroes basic DEF power? 2.If your identity is at full HP, can you use your REC basic power? 3.With the SETUP abilities for the Heroes, Valkyrie and Rogue. We didn’t see anything about them and as their cards don’t have the permanent keyword, have you guys discussed what to do about these if anything? 4.With Visions Phased Disruption event, if the enemy I confused doesn’t have an attachment with the text hero action or hero response, can I even play it without a valid CHOOSE target? 5.We would love to confirm that Visions starting hand size is 5? 6.With the updated FAQ in 1.5 for widows bite, we don’t understand why if the keyword quickstrike has timing priority and goes First, why it then waits for the response on widows bite instead of fully resolving? 7. With the upcoming White fox basic ally, does she physically have to be the top card of the deck or could she be discarded with something like global logistics in which she started as the second card for example? 8.With the upcoming Angel hero. If you trigger his response in Angel hero form, change form, then play Metamorphosis to change back to Angel form, can you trigger his ability again? 9. Can you play an (attack) ot (thwart) EVENT card while stunned or confused just to clear the status card even if there isn’t a valid target. Like “get over here” while stunned and no minions in play for example. No. If one player defends an attack, including by using a basic defense, another player cannot then play a Defense event. No. You must be able to heal at least 1 damage to use a basic recovery. Valkyrie’s Death-Glow and Rogue’s Touched count toward each hero’s deck size. Yes, you can play Phase Disruption to confuse the enemy and not discard an attachment. Correct, Vision’s opening hand size is 5. Quickstrike is considered resolved when the subsequent attack initiates , not finishes. Quickstrike and Widow’s Bite are both responding to a minion entering play & engaging Black Widow, and Quickstrike is resolving first by having the minion initiate its attack, but Widow’s Bite is then able to resolve before all the steps of the attack are completed. And since the attack was initiated, the minion will still complete its attack even with Widow’s Bite’s stun, unless the 2 damage dealt to it defeats it. Yes, you can resolve White Fox’s ability if she’s the second card in a deck and discarded via Global Logistics. No, you cannot resolve Angel’s ability twice in the same round. Yes, you can pay the cost of an attack event to discard stunned even if there’s not a valid target to attack. Similarly, you can pay the cost of a thwart event to discard confused even if there’s no threat in play. These are both stated in RR 1.5, under “Stunned” and “Confused.”",
+          "summary": "30 – I have some questions regarding 1.5 and a couple extras 😃 1.Can another player play a (defense) labeled event card or trigger a (defense) labeled ability during an enemy attack in which another player already defended using their heroes basic DEF power? 2.If your identity is at full HP, can you use your REC basic power? 3.With the SETUP abilities for the Heroes, Valkyrie and Rogue. We didn’t see anything about them and as their cards don’t have the permanent keyword, have you guys discussed what to do about these if anything? 4.With Visions Phased Disruption event, if the enemy I confused doesn’t have an attachment with the text hero action or hero response, can I even play it without a valid CHOOSE target? 5.We would love to confirm that Visions starting hand size is 5? 6.With the updated FAQ in 1.5 for widows bite, we don’t understand why if the keyword quickstrike has timing priority and goes First, why it then waits for the response on widows bite instead of fully resolving? 7. With the upcoming White fox basic ally, does she physically have to be the top card of the deck or could she be discarded with something like global logistics in which she started as the second card for example? 8.With the upcoming Angel hero. If you trigger his response in Angel hero form, change form, then play Metamorphosis to change back to Angel form, can you trigger his ability again? 9. Can you play an (attack) ot (thwart) EVENT card while stunned or confused just to clear the status card even if there isn’t a valid target. Like “get over here” while stunned and no minions in play for example. No. If one player defends an attack, including by using a basic defense, another player cannot then play a Defense event. No. You must be able to heal at least 1 damage to use a basic recovery. Valkyrie’s Death-Glow and Rogue’s Touched count toward each hero’s deck size. Yes, you can play Phase Disruption to confuse the enemy and not discard an attachment. Correct, Vision’s opening hand size is 5. Quickstrike is considered resolved when the subsequent attack initiates , not finishes. Quickstrike and Widow’s Bite are both responding to a minion entering play & engaging Black Widow, and Quickstrike is resolving first by having the minion initiate its attack, but Widow’s Bite is then able to resolve before all the steps of the attack are completed. And since the attack was initiated, the minion will still complete its attack even with Widow’s Bite’s stun, unless the 2 damage dealt to it defeats it. Yes, you can resolve White Fox’s ability if she’s the second card in a deck and discarded via Global Logistics. No, you cannot resolve Angel’s ability twice in the same round. Yes, you can pay the cost of an attack event to discard stunned even if there’s not a valid target to attack. Similarly, you can pay the cost of a thwart event to discard confused even if there’s no threat in play. These are both stated in RR 1.5, under “Stunned” and “Confused.”",
           "disposition": "outside-core",
           "reason": "The ruling requires expansion material (Phase Disruption, Global Logistics, Metamorphosis) absent from a legal Core Set game.",
           "target": null,
@@ -62516,7 +62567,7 @@
       "obligations": [
         {
           "key": "source-disposition",
-          "summary": "I’ve seen a ruling that preventing damage with a card like side step which has the same timing as a tough status card would have priority and the tough would remain. Trying to understand. So is there a difference between damage “reducing” effects and damage “preventing” effects. Groot’s hero ability would now function that he would lose his growth counters while tough when taking damage and would hurt him alot \uD83D\uDE26 Trying to understand if the goal is to have damage “reducing” effects like the vision hero in intangible form where he reduces all damage from attacks by 2 as a constant ability or the victor mancha ally that reduces damage from attacks by 1 also as a constant ability in that your reducing the damage that would have been dealt and the tough never receives it so the tough remains. VS “Preventing” effects like “side step” and “shield block” that would directly compete with Tough. I will do my best to address your questions. Note, some of the rulings we made recently are no longer accurate, and we plan to address many of them in our next rules reference update. The following notes are our current rulings on this subject. First, status cards like “Tough” should have priority over constant effects and interrupts. This means that if Groot was Tough and was dealt damage, “Tough” would get discarded before any growth counters were removed. This also means that Tough would have priority over the text on Side Step and Shield Block—Tough would get discarded first, before interrupts could resolve. Let me know if you have other questions in light of this information.",
+          "summary": "I’ve seen a ruling that preventing damage with a card like side step which has the same timing as a tough status card would have priority and the tough would remain. Trying to understand. So is there a difference between damage “reducing” effects and damage “preventing” effects. Groot’s hero ability would now function that he would lose his growth counters while tough when taking damage and would hurt him alot 😦 Trying to understand if the goal is to have damage “reducing” effects like the vision hero in intangible form where he reduces all damage from attacks by 2 as a constant ability or the victor mancha ally that reduces damage from attacks by 1 also as a constant ability in that your reducing the damage that would have been dealt and the tough never receives it so the tough remains. VS “Preventing” effects like “side step” and “shield block” that would directly compete with Tough. I will do my best to address your questions. Note, some of the rulings we made recently are no longer accurate, and we plan to address many of them in our next rules reference update. The following notes are our current rulings on this subject. First, status cards like “Tough” should have priority over constant effects and interrupts. This means that if Groot was Tough and was dealt damage, “Tough” would get discarded before any growth counters were removed. This also means that Tough would have priority over the text on Side Step and Shield Block—Tough would get discarded first, before interrupts could resolve. Let me know if you have other questions in light of this information.",
           "disposition": "outside-core",
           "reason": "The ruling belongs to the Expansion card questions product surface, which is absent from a legal Core Set game.",
           "target": null,
@@ -65162,7 +65213,7 @@
       "obligations": [
         {
           "key": "source-disposition",
-          "summary": "I’ve got a bit of a detailed question, which I hope you will answer as fully as you can, thanks ahead of time \uD83D\uDE42 I’m trying to understand a situation, and I have a couple rulings that I’m not sure how they might apply. So, Rocket Raccoon is fighting Arnim Zola. Zola has 1 HP left on his first stage, and Rocket has Energy Barrier in play with 1 token, and 1 card in his deck. He plays Haymaker, attacking Zola. Now, several things happen, and I want to make sure I order them correctly: Rocket responds to dealing excess damage by drawing a card and reshuffling his deck, Haymaker is discarded, Zola retaliates, Energy Barrier triggers to prevent the damage and ends up discarded. Depending on the order of triggers Haymaker and Energy Barrier could each end up either in my discard, or in my newly shuffled deck. In trying to understand how this works, I see 3 things happening more or less at once: playing an event, attacking an enemy, damaging that enemy. Damaging the enemy is the effect, while attacking an enemy and playing an event are more like processes which may generally have multiple effects (in this case there is only the one). As far as any nesting could go it seems like playing the event > attacking the enemy > dealing damage. The rules don’t provide any clarity on how this works. But, there are 2 rulings that seem to deal with situations like this: the Black Panther/Sneak Attack ruling and the Counterattack/Retaliate ruling. The Black Panther/Sneak Attack ruling says that Black Panther’s response to the effect of Sneak Attack triggers after Sneak Attack is discarded (i.e. after the process of playing an event is complete). Applied here, this should see Rocket’s response to the effect (dealing damage) triggering after the process of playing the event (so Haymaker gets discarded first, and is shuffled into my new deck). Combined with the nesting above, Rocket’s Response should also trigger after the attack, meaning it will share a window with Retaliate. Retaliate, being a constant ability, has priority over a Response, so Energy Barrier also gets discarded before Rocket’s response (and shuffled into my new deck). This seems to contradict the recent Counterattack/Retaliate ruling though, as that ruling suggests that responses to damage (the last effect in the attack process) would trigger before Retaliate. (The Enemy Attack process does have more steps, but as dealing damage is the last step of that process, it seems to match this scenario where the damage is the last step of the player’s attack). I appreciate your responding to the specific scenario, but what I would most like is some way to handle these timing scenarios consistently, whether the things which happen as the final step of a process (such as the final effect of an event, or the damage from an enemy attack) trigger responses to happen: before the process is complete, after the process itself is complete but before responses to the process itself, or at the same time as responses to the process itself. I hope that makes sense, thanks! For the situation described, this is the order that we would resolve it: Rocket Raccoon plays Haymaker on Zola I. This attack has excess damage. Haymaker is discarded. Zola I is removed, and Zola II is revealed. Rocket’s Response triggers off of the attack he made, and he draws 1. This empties his deck. Haymaker is shuffled in with the new deck. Zola’s Retaliate triggers. Rocket blocks the damage with Energy Barrier, and discards EB.",
+          "summary": "I’ve got a bit of a detailed question, which I hope you will answer as fully as you can, thanks ahead of time 🙂 I’m trying to understand a situation, and I have a couple rulings that I’m not sure how they might apply. So, Rocket Raccoon is fighting Arnim Zola. Zola has 1 HP left on his first stage, and Rocket has Energy Barrier in play with 1 token, and 1 card in his deck. He plays Haymaker, attacking Zola. Now, several things happen, and I want to make sure I order them correctly: Rocket responds to dealing excess damage by drawing a card and reshuffling his deck, Haymaker is discarded, Zola retaliates, Energy Barrier triggers to prevent the damage and ends up discarded. Depending on the order of triggers Haymaker and Energy Barrier could each end up either in my discard, or in my newly shuffled deck. In trying to understand how this works, I see 3 things happening more or less at once: playing an event, attacking an enemy, damaging that enemy. Damaging the enemy is the effect, while attacking an enemy and playing an event are more like processes which may generally have multiple effects (in this case there is only the one). As far as any nesting could go it seems like playing the event > attacking the enemy > dealing damage. The rules don’t provide any clarity on how this works. But, there are 2 rulings that seem to deal with situations like this: the Black Panther/Sneak Attack ruling and the Counterattack/Retaliate ruling. The Black Panther/Sneak Attack ruling says that Black Panther’s response to the effect of Sneak Attack triggers after Sneak Attack is discarded (i.e. after the process of playing an event is complete). Applied here, this should see Rocket’s response to the effect (dealing damage) triggering after the process of playing the event (so Haymaker gets discarded first, and is shuffled into my new deck). Combined with the nesting above, Rocket’s Response should also trigger after the attack, meaning it will share a window with Retaliate. Retaliate, being a constant ability, has priority over a Response, so Energy Barrier also gets discarded before Rocket’s response (and shuffled into my new deck). This seems to contradict the recent Counterattack/Retaliate ruling though, as that ruling suggests that responses to damage (the last effect in the attack process) would trigger before Retaliate. (The Enemy Attack process does have more steps, but as dealing damage is the last step of that process, it seems to match this scenario where the damage is the last step of the player’s attack). I appreciate your responding to the specific scenario, but what I would most like is some way to handle these timing scenarios consistently, whether the things which happen as the final step of a process (such as the final effect of an event, or the damage from an enemy attack) trigger responses to happen: before the process is complete, after the process itself is complete but before responses to the process itself, or at the same time as responses to the process itself. I hope that makes sense, thanks! For the situation described, this is the order that we would resolve it: Rocket Raccoon plays Haymaker on Zola I. This attack has excess damage. Haymaker is discarded. Zola I is removed, and Zola II is revealed. Rocket’s Response triggers off of the attack he made, and he draws 1. This empties his deck. Haymaker is shuffled in with the new deck. Zola’s Retaliate triggers. Rocket blocks the damage with Energy Barrier, and discards EB.",
           "disposition": "outside-core",
           "reason": "The ruling belongs to the Rocket Racoon product surface, which is absent from a legal Core Set game.",
           "target": null,
@@ -65336,7 +65387,7 @@
       "obligations": [
         {
           "key": "source-disposition",
-          "summary": "Just another SP//DR question. I use an interface card to pay for “all systems go’ can I ready the interface I used to pay for “all systems go”? Yes. The cost is fully paid before the effect resolves, so the Interface will be exhausted and eligible to be readied. \uD83D\uDE0A",
+          "summary": "Just another SP//DR question. I use an interface card to pay for “all systems go’ can I ready the interface I used to pay for “all systems go”? Yes. The cost is fully paid before the effect resolves, so the Interface will be exhausted and eligible to be readied. 😊",
           "disposition": "outside-core",
           "reason": "The ruling belongs to the SPDR/Iron Spider’s Sinister Six mod product surface, which is absent from a legal Core Set game.",
           "target": null,
