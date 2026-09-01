@@ -625,8 +625,9 @@ Feature: Core card actions
     And card 01018 copy 0 is faceup on top of seat 1's discard pile
 
   @behavior:rr:max-maximum.3:published-result
+  @covers:behavior:rr:max-maximum:published-result
   @covers:behavior:card:01057:max-1-per-player
-  @rr:max-maximum.3 @card:01057
+  @rr:max-maximum @rr:max-maximum.3 @card:01057
   Scenario: Max one per player prevents a second controlled copy
     # "Max 1 per player" restricts how many copies of that title a player may
     # control in play at once. One Combat Training is already attached to
