@@ -770,12 +770,17 @@ internal sealed class CoreTranscriptRunner
     private static void AttachCard(
         TranscriptContext context, TranscriptStep step, Match match)
     {
-        var host = context.SceneRequired(step).Find(new SceneCard(
+        CanonicalCoreScene scene = context.SceneRequired(step);
+        Card card = scene.Find(SceneCard(match, step));
+        var host = scene.Find(new SceneCard(
             match.Groups["host"].Value,
             Number(match, "hostCopy", step)));
-        context.SceneRequired(step).Apply(new MoveSceneCard(
+        SceneDestination destination = card.Owner == World.Scenario
+            ? new SceneDestination(SceneZone.Attachment, Host: host.ObjectId)
+            : new SceneDestination(SceneZone.Upgrade, card.Owner, host.ObjectId);
+        scene.Apply(new MoveSceneCard(
             SceneCard(match, step),
-            new SceneDestination(SceneZone.Attachment, Host: host.ObjectId)));
+            destination));
     }
 
     private static void GiveCardStatus(

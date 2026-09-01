@@ -19,3 +19,21 @@ Feature: Core attachment lifecycle
     When villain phase 1 resolves with every optional choice declined
     Then card 01099 copy 0 is attached to card 01094 copy 0
     And card 01099 copy 0 is in the villain's play area
+
+  @behavior:rr:attach-to.1:published-result
+  @rr:attach-to.1 @card:01074
+  Scenario: An attachment is discarded when its attached ally leaves play
+    # An attached card remains in play until its host leaves play, "in which
+    # case the attached card is discarded." Inspired is attached to Spider-Woman.
+    Given a canonical Core scene is dealt
+      | campaign | heroes         | seed |
+      | rhino    | captain_marvel | 807  |
+    And seat 1 shows identity face 01010a
+    And card 01011 copy 0 is an ally controlled by seat 1
+    And card 01074 copy 0 is attached to card 01011 copy 0
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01103     | 0    |
+    When the villain attacks seat 1 with card 01011 copy 0 defending
+    Then card 01011 copy 0 is in seat 1's discard pile
+    And card 01074 copy 0 is in seat 1's discard pile
