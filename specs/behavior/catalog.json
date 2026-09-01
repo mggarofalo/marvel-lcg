@@ -42443,11 +42443,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/defeat.feature::Defeating the final villain stage makes the players win"
+          ],
+          "mutation": "Omit Rhino III's Toughness entry response; the initial tough-status assertion fails."
         },
         {
           "id": "behavior:card:01096:character-enter-play-with-tough-status-card",
@@ -42455,11 +42457,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/defeat.feature::Defeating the final villain stage makes the players win"
+          ],
+          "mutation": "Do not give Rhino III a tough status card when it enters play; the entry-state assertion fails."
         },
         {
           "id": "behavior:card:01096:stun-each-hero",
@@ -42467,11 +42471,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/defeat.feature::Defeating the final villain stage makes the players win"
+          ],
+          "mutation": "Skip Rhino III's When Revealed stun; She-Hulk's first basic attack damages Tough instead of clearing stun."
         }
       ]
     },
@@ -43129,11 +43135,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-power-restrictions.feature::Guard applies only while the guarding minion remains in play"
+          ],
+          "mutation": "Ignore Hydra Mercenary's Guard keyword; Rhino remains an available attack target while the minion is engaged."
         },
         {
           "id": "behavior:card:01101:while-minion-is-engaged-with-you-you",
@@ -43141,11 +43149,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-power-restrictions.feature::Guard applies only while the guarding minion remains in play"
+          ],
+          "mutation": "Apply no attack restriction while Hydra Mercenary is engaged; the villain-unavailable assertion fails."
         }
       ]
     },
@@ -43289,11 +43299,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/status-cards.feature::A character with Toughness gains tough after entering play"
+          ],
+          "mutation": "Omit Sandman's Toughness entry response; its tough-status assertion fails."
         },
         {
           "id": "behavior:card:01102:character-enters-play-with-tough-status-card",
@@ -43301,11 +43313,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/status-cards.feature::A character with Toughness gains tough after entering play"
+          ],
+          "mutation": "Do not give Sandman a tough status card when it enters play; the entry-state assertion fails."
         }
       ]
     },
@@ -45647,11 +45661,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-keywords.feature::Surge finishes Weapons Runner before revealing the additional card"
+          ],
+          "mutation": "Ignore Armored Guard's Guard keyword; Klaw becomes an available basic-attack target while Armored Guard is engaged."
         },
         {
           "id": "behavior:card:01120:while-minion-is-engaged-with-you-you",
@@ -45659,11 +45675,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-keywords.feature::Surge finishes Weapons Runner before revealing the additional card"
+          ],
+          "mutation": "Apply no attack restriction while Armored Guard is engaged; the Klaw-unavailable assertion fails."
         },
         {
           "id": "behavior:card:01120:toughness",
@@ -45671,11 +45689,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-keywords.feature::Surge finishes Weapons Runner before revealing the additional card"
+          ],
+          "mutation": "Omit Armored Guard's Toughness response; its tough-status assertion fails."
         },
         {
           "id": "behavior:card:01120:character-enters-play-with-tough-status-card",
@@ -45683,11 +45703,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-keywords.feature::Surge finishes Weapons Runner before revealing the additional card"
+          ],
+          "mutation": "Do not give Armored Guard a tough status card when it enters play; the entry-state assertion fails."
         }
       ]
     },

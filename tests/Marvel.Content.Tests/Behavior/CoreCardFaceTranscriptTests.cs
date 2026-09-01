@@ -165,7 +165,7 @@ public sealed class CoreCardFaceTranscriptTests
 
         Assert.Equal(5, results.Count);
         Assert.Equal(
-            "44539cd9a74dc6025015263af5b8693e180b4a25c4a3c3373862bb6de3a4c10f",
+            "6012ca33e5deae43c6c2e5e1e710e56308796bfc1671ba2c0f1229956f67de6d",
             results["behavior:card:01121:surge"].Digest);
         Assert.Equal(
             "7de1ad47d61f5cf884d1e489f5317867b18bbc2111ad68945a0f1e2ec572ca17",

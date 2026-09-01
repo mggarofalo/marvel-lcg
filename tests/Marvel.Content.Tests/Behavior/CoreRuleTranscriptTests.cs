@@ -538,7 +538,7 @@ public sealed class CoreRuleTranscriptTests
 
         Assert.Equal(6, results.Count);
         Assert.Equal(
-            "8ac76760febf2740557277dc71b65fbc299b5cef08e0a510bbb53a2c06a33a26",
+            "90cc019d785eda872e3253f08a8f786009c7ec7d72a55a69148171973e0c1f46",
             results["behavior:rr:form-change-form.1:flip-identity"].Digest);
         Assert.Equal(
             "7cd5c816aad3d3414b2a168c18ef54b42152f75e6301f10b17bccde0f43a243a",
