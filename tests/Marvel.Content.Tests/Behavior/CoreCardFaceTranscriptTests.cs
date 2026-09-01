@@ -71,7 +71,23 @@ public sealed class CoreCardFaceTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(16, results.Count);
+        Assert.Equal(20, results.Count);
+        Assert.Equal(
+            "73429b06e06aac69e83c9747c047cf1263a76e6b23cb489de9202a616dc6764d",
+            results[
+                "behavior:card:01037:exhaust-mark-v-helmet-remove-1-threat-condition-not-met"].Digest);
+        Assert.Equal(
+            "74b768ace6a3265777f0eec610ad2d205af799e3145ab2f5bd8ab3f0d9919560",
+            results[
+                "behavior:card:01037:exhaust-mark-v-helmet-remove-1-threat-condition-met"].Digest);
+        Assert.Equal(
+            "bf14a182626b760d182d0a1e611be7c73e6605e06d61a6ba53abda50ab612e0b",
+            results[
+                "behavior:card:01017:when-captain-marvel-would-take-damage-discard"].Digest);
+        Assert.Equal(
+            "a7231e18de95fa513b562f8f1eeedc8db9be34f7005b493d1be05d6e53f5e6d0",
+            results[
+                "behavior:card:01008:when-those-are-gone-discard-card"].Digest);
         Assert.Equal(
             "3e1d13290b6ce29527eb0cae35ebbfb897ddc5d8c6e51a08c3fbcfb8b4d52fdc",
             results[

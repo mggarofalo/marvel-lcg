@@ -80,6 +80,85 @@ Feature: Core player card abilities
     Then card 01094 copy 0 has 1 stunned status card
     And card 01083 copy 0 remains an ally controlled by seat 1
 
+  @behavior:card:01037:exhaust-mark-v-helmet-remove-1-threat-condition-not-met
+  @card:01037
+  Scenario: Mark V Helmet removes threat from one scheme without Aerial
+    # Without the Aerial trait, the Helmet's thwart action chooses one scheme
+    # and removes one threat only from that scheme.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | iron_man | 884  |
+    And seat 1 shows identity face 01029a
+    And card 01037 copy 0 is an upgrade attached to seat 1's identity
+    And card 01107 copy 0 is a side scheme in play
+    And card 01097b copy 0 has 1 threat counter
+    And card 01107 copy 0 has 1 threat counter
+    When seat 1 initiates card 01037 copy 0's action without payment
+    Then card 01097b copy 0 is offered by the pending action
+    When seat 1 chooses card 01097b copy 0 for the pending action
+    Then card 01037 copy 0 is exhausted
+    And card 01097b copy 0 has 0 threat counters
+    And card 01107 copy 0 has 1 threat counter
+
+  @behavior:card:01037:exhaust-mark-v-helmet-remove-1-threat-condition-met
+  @card:01037 @card:01039
+  Scenario: Mark V Helmet removes threat from every scheme with Aerial
+    # Rocket Boots grants Iron Man Aerial until the end of the phase. The
+    # Helmet therefore removes one threat from both thwartable schemes.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | iron_man | 885  |
+    And seat 1 shows identity face 01029a
+    And card 01037 copy 0 is an upgrade attached to seat 1's identity
+    And card 01039 copy 0 is an upgrade attached to seat 1's identity
+    And card 01107 copy 0 is a side scheme in play
+    And card 01097b copy 0 has 1 threat counter
+    And card 01107 copy 0 has 1 threat counter
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01089 | 0    |
+    When seat 1 initiates card 01039 copy 0's action paying with these cards
+      | card  | copy |
+      | 01089 | 0    |
+    Then card 01029a copy 0 has the AERIAL trait
+    And card 01039 copy 0 is exhausted
+    When seat 1 initiates card 01037 copy 0's action without payment
+    Then card 01037 copy 0 is exhausted
+    And card 01097b copy 0 has 0 threat counters
+    And card 01107 copy 0 has 0 threat counters
+
+  @behavior:card:01017:when-captain-marvel-would-take-damage-discard
+  @card:01017
+  Scenario: Cosmic Flight discards to prevent three imminent damage
+    # Cosmic Flight's Hero Interrupt discards the upgrade before damage is
+    # applied and prevents three of the five damage, leaving two to be taken.
+    Given a canonical Core scene is dealt
+      | campaign | heroes         | modular sets     | seed |
+      | rhino    | captain_marvel | legions_of_hydra | 886  |
+    And seat 1 shows identity face 01010a
+    And card 01017 copy 0 is an upgrade attached to seat 1's identity
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01180     | 0    |
+    When the villain attacks seat 1 accepting "Cosmic Flight"
+    Then card 01010a copy 0 has 2 damage
+    And card 01017 copy 0 is faceup on top of seat 1's discard pile
+
+  @behavior:card:01008:when-those-are-gone-discard-card
+  @card:01008
+  Scenario: Web-Shooter leaves play when its final web counter is spent
+    # Removing the last of Web-Shooter's three uses generates its wild resource
+    # and then discards the upgrade because no web counters remain.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 887  |
+    And seat 1 shows identity face 01001a
+    And card 01008 copy 0 is an upgrade attached to seat 1's identity
+    And card 01008 copy 0 has 1 web counter
+    When seat 1 uses card 01008 copy 0's resource ability
+    Then card 01008 copy 0 generated G resources
+    And card 01008 copy 0 is faceup on top of seat 1's discard pile
+
   @behavior:card:01035:exhaust-arc-reactor-ready-iron-man
   @card:01035
   Scenario: Arc Reactor exhausts to ready Iron Man

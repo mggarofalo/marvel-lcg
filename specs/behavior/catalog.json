@@ -29395,11 +29395,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Web-Shooter leaves play when its final web counter is spent"
+          ],
+          "mutation": "Retain Web-Shooter after removing its final web counter; the discard-pile assertion fails."
         },
         {
           "id": "behavior:card:01008:exhaust-web-shooter-and-remove-1-web",
@@ -30832,11 +30834,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Cosmic Flight discards to prevent three imminent damage"
+          ],
+          "mutation": "Do not discard Cosmic Flight or prevent other than three damage; a final zone or damage assertion fails."
         }
       ]
     },
@@ -33870,11 +33874,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Mark V Helmet removes threat from every scheme with Aerial"
+          ],
+          "mutation": "Remove threat from fewer than every thwartable scheme while Iron Man has Aerial; a threat assertion fails."
         },
         {
           "id": "behavior:card:01037:exhaust-mark-v-helmet-remove-1-threat-condition-not-met",
@@ -33882,11 +33888,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Mark V Helmet removes threat from one scheme without Aerial"
+          ],
+          "mutation": "Remove threat from every scheme while Iron Man lacks Aerial; the unchanged side-scheme assertion fails."
         }
       ]
     },
