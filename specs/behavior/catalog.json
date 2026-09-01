@@ -10842,11 +10842,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/characteristics.feature::Rocket Boots spends mental and grants Aerial after its action resolves"
+          ],
+          "mutation": "Ignore gained traits when querying the affected card; the Rocket Boots Aerial assertion fails."
         }
       ]
     },
@@ -11994,11 +11996,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::The printed Spider-Man and Rhino deal reaches its opening state"
+          ],
+          "mutation": "Omit or change the required quantity of any Spider-Man identity-specific card; its owned-card count assertion fails."
         }
       ]
     },
@@ -12008,15 +12012,15 @@
       "title": "IDENTITY-SPECIFIC CARD",
       "fingerprint": "sha256:0e6ec9db86b998e4bfcee2c6b662078b0bbd8932f7a6778baa6f3b2f455dfc4f",
       "scope": "Rules Reference v1.8",
-      "disposition": "executable",
+      "disposition": "not-representable",
       "obligations": [
         {
           "id": "behavior:rr:identity-specific-card.2:published-result",
           "summary": "Identity-specific cards (along with obligation cards and nemesis encounter set cards) may only be used alongside an identity if those cards share a set icon with that identity.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "not-representable",
+          "reason": "A mismatched identity-specific, obligation, or nemesis card is forbidden during deck construction and cannot occur in a valid Core scene; the canonical scene constructor rejects that invalid input before a transcript exists.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -12106,11 +12110,14 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/form-change.feature::An alter-ego title does not match the identity in hero form",
+            "specs/behavior/core/form-change.feature::A hero title does not match the identity in alter-ego form"
+          ],
+          "mutation": "Resolve a title against the opposite identity face; Alpha Flight Station or Cosmic Flight produces the opposite published result."
         }
       ]
     },
@@ -12120,15 +12127,15 @@
       "title": "IDENTITY",
       "fingerprint": "sha256:ac32217467f4c65e8fe7d324cdfb14f826d09d14a1c8b53d0f040417e66032eb",
       "scope": "Rules Reference v1.8",
-      "disposition": "executable",
+      "disposition": "outside-core",
       "obligations": [
         {
           "id": "behavior:rr:identity.3:published-result",
           "summary": "Identity cards cannot be discarded from play.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "outside-core",
+          "reason": "No supported Core Set card or setup instruction attempts to discard an identity card from play, so no legal Core game can reach the prohibition's attempted-discard branch.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],

@@ -458,6 +458,9 @@ internal sealed class CoreTranscriptRunner
             @"the encounter deck has (?<count>\d+) cards?", EncounterDeckCount),
         Bind("encounter-deck-face-counts", TranscriptStepKind.Then,
             "the encounter deck contains these card counts", EncounterDeckFaceCounts),
+        Bind("owned-player-card-counts", TranscriptStepKind.Then,
+            @"seat (?<seat>\d+)'s player cards contain these counts",
+            OwnedPlayerCardCounts),
         Bind("player-count", TranscriptStepKind.Then,
             @"the game has (?<count>\d+) players?", PlayerCount),
         Bind("encounter-discard-count", TranscriptStepKind.Then,
@@ -1879,6 +1882,21 @@ internal sealed class CoreTranscriptRunner
             int actual = context.World.AreaOf(DeckType.EncounterDeck).Cards.Count(
                 card => card.FaceId == face);
             Equal(expected, actual, $"copies of {face} in the encounter deck", step);
+        }
+    }
+
+    private static void OwnedPlayerCardCounts(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        TranscriptTable table = Table(step, "card", "count");
+        foreach (IReadOnlyDictionary<string, string> row in table.Rows)
+        {
+            string face = row["card"];
+            int expected = TableNumber(row, "count", step);
+            int actual = context.World.Cards.Count(card =>
+                card.Owner == seat && card.Faces.Contains(face, StringComparer.Ordinal));
+            Equal(expected, actual, $"owned copies of {face}", step);
         }
     }
 

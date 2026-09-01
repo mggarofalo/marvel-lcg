@@ -84,7 +84,8 @@ Feature: Hero and alter-ego form changes
 
   @behavior:rr:form-change-form.4:published-result
   @covers:behavior:card:01015:exhaust-alpha-flight-station-choose-and-discard-condition-not-met
-  @rr:form-change-form.4 @card:01015
+  @covers:behavior:rr:identity.2:published-result
+  @rr:form-change-form.4 @rr:identity.2 @card:01015
   Scenario: An alter-ego title does not match the identity in hero form
     # While a player is in hero form, abilities that interact with their
     # alter-ego do not interact with their identity. Captain Marvel is not
@@ -110,7 +111,8 @@ Feature: Hero and alter-ego form changes
 
   @behavior:rr:form-change-form.5:published-result
   @covers:behavior:card:01017:captain-marvel-gains-aerial-trait
-  @rr:form-change-form.5 @card:01017
+  @covers:behavior:rr:identity.2:published-result
+  @rr:form-change-form.5 @rr:identity.2 @card:01017
   Scenario: A hero title does not match the identity in alter-ego form
     # While a player is in alter-ego form, abilities that interact with their
     # hero do not interact with their identity. Cosmic Flight grants Aerial to

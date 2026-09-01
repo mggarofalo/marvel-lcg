@@ -22,6 +22,7 @@ Feature: Canonical Core setup
   @covers:behavior:rr:in-play-and-out-of-play.13:published-result
   @covers:behavior:rr:modes-of-play.1:published-result
   @covers:behavior:rr:first-player:published-result
+  @covers:behavior:rr:identity-specific-card.1:published-result
   @rr:appendix-ii-setup.step.1 @rr:appendix-ii-setup.step.2
   @rr:appendix-ii-setup.step.3 @rr:appendix-ii-setup.step.4
   @rr:appendix-ii-setup.step.5 @rr:appendix-ii-setup.step.6
@@ -34,6 +35,7 @@ Feature: Canonical Core setup
   @rr:in-play-and-out-of-play.13
   @rr:modes-of-play.1
   @rr:first-player
+  @rr:identity-specific-card.1
   Scenario: The printed Spider-Man and Rhino deal reaches its opening state
     # Setup selects identities, sets their hit points, chooses a first player,
     # sets aside obligations and nemesis sets, selects the scenario, sets the
@@ -49,6 +51,16 @@ Feature: Canonical Core setup
     And seat 1 has the first player token
     And seat 1 has 6 cards in hand
     And seat 1 has 34 cards in their player deck
+    And seat 1's player cards contain these counts
+      | card  | count |
+      | 01002 | 1     |
+      | 01003 | 2     |
+      | 01004 | 2     |
+      | 01005 | 3     |
+      | 01006 | 1     |
+      | 01007 | 2     |
+      | 01008 | 2     |
+      | 01009 | 2     |
     And seat 1's player deck has card 01065 on top
     And card 01001b copy 0 has 10 remaining hit points
     And card 01094 copy 0 is the faceup villain

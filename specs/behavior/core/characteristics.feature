@@ -41,11 +41,13 @@ Feature: Core character calculations
   @covers:behavior:rr:lasting-effects.1:published-result
   @covers:behavior:rr:lasting-effects.2:published-result
   @covers:behavior:rr:lasting-effects.5:published-result
+  @covers:behavior:rr:gains:published-result
   @covers:behavior:rr:end-of-player-phase.step.4:published-result
   @covers:behavior:rr:form-change-form.2:retains-lasting-effects
   @card:01039 @rr:mental-resource.2
   @rr:lasting-effects.1 @rr:lasting-effects.2 @rr:lasting-effects.5
   @rr:end-of-player-phase.step.4
+  @rr:gains
   @rr:form-change-form.2
   Scenario: Rocket Boots spends mental and grants Aerial after its action resolves
     # The mental resource pays the printed ability cost. Its Aerial grant is a

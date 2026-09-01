@@ -8973,11 +8973,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/characteristics.feature::Rocket Boots spends mental and grants Aerial after its action resolves"
+          ],
+          "mutation": "Ignore gained traits when querying the affected card; the Rocket Boots Aerial assertion fails."
         }
       ]
     },
@@ -9925,11 +9927,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::The printed Spider-Man and Rhino deal reaches its opening state"
+          ],
+          "mutation": "Omit or change the required quantity of any Spider-Man identity-specific card; its owned-card count assertion fails."
         }
       ]
     },
@@ -9940,10 +9944,10 @@
         {
           "key": "published-result",
           "summary": "Identity-specific cards (along with obligation cards and nemesis encounter set cards) may only be used alongside an identity if those cards share a set icon with that identity.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "not-representable",
+          "reason": "A mismatched identity-specific, obligation, or nemesis card is forbidden during deck construction and cannot occur in a valid Core scene; the canonical scene constructor rejects that invalid input before a transcript exists.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -10017,11 +10021,14 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/form-change.feature::An alter-ego title does not match the identity in hero form",
+            "specs/behavior/core/form-change.feature::A hero title does not match the identity in alter-ego form"
+          ],
+          "mutation": "Resolve a title against the opposite identity face; Alpha Flight Station or Cosmic Flight produces the opposite published result."
         }
       ]
     },
@@ -10032,10 +10039,10 @@
         {
           "key": "published-result",
           "summary": "Identity cards cannot be discarded from play.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "outside-core",
+          "reason": "No supported Core Set card or setup instruction attempts to discard an identity card from play, so no legal Core game can reach the prohibition's attempted-discard branch.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
