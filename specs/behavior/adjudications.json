@@ -1676,10 +1676,10 @@
         {
           "key": "published-result",
           "summary": "Put Setup Cards Into Play.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "outside-core",
+          "reason": "No Core Set card has the setup keyword, so the product boundary contains no card for this step to put into play.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -1715,11 +1715,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::The printed Spider-Man and Rhino deal reaches its opening state"
+          ],
+          "mutation": "Skip The Break-In!'s Setup instruction; the asserted 1B main-scheme face is absent."
         }
       ]
     },
@@ -1733,11 +1735,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::The printed Spider-Man and Rhino deal reaches its opening state"
+          ],
+          "mutation": "Leave The Break-In! on side 1A; the asserted 1B main-scheme face is absent."
         }
       ]
     },
@@ -1751,11 +1755,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::Expert mode substitutes villain stages and adds the Expert set"
+          ],
+          "mutation": "Skip Rhino II's When Revealed ability; Breakin' & Takin' does not enter play with three threat."
         }
       ]
     },

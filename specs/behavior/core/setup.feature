@@ -11,6 +11,8 @@ Feature: Canonical Core setup
   @covers:behavior:rr:appendix-ii-setup.step.8:published-result
   @covers:behavior:rr:appendix-ii-setup.step.9:published-result
   @covers:behavior:rr:appendix-ii-setup.step.10:published-result
+  @covers:behavior:rr:appendix-ii-setup.step.12.a:published-result
+  @covers:behavior:rr:appendix-ii-setup.step.12.b:published-result
   @covers:behavior:rr:appendix-ii-setup.step.14:published-result
   @covers:behavior:rr:modes-of-play.1:published-result
   @covers:behavior:rr:first-player:published-result
@@ -18,6 +20,7 @@ Feature: Canonical Core setup
   @rr:appendix-ii-setup.step.3 @rr:appendix-ii-setup.step.4
   @rr:appendix-ii-setup.step.5 @rr:appendix-ii-setup.step.8
   @rr:appendix-ii-setup.step.9 @rr:appendix-ii-setup.step.10
+  @rr:appendix-ii-setup.step.12.a @rr:appendix-ii-setup.step.12.b
   @rr:appendix-ii-setup.step.14
   @rr:modes-of-play.1
   @rr:first-player
@@ -42,7 +45,8 @@ Feature: Canonical Core setup
     And card 01166 copy 0 is in seat 1's set-aside nemesis pile
 
   @behavior:rr:modes-of-play.2:published-result
-  @rr:modes-of-play.2
+  @covers:behavior:rr:appendix-ii-setup.step.12.c:published-result
+  @rr:modes-of-play.2 @rr:appendix-ii-setup.step.12.c
   Scenario: Expert mode substitutes villain stages and adds the Expert set
     # Expert mode follows the scenario setup using its listed expert villain
     # stages and adds the complete Expert encounter set to the encounter deck.
@@ -52,6 +56,7 @@ Feature: Canonical Core setup
     When the dealt Core scene is inspected
     Then card 01095 copy 0 is the faceup villain
     And card 01096 copy 0 is in the villain deck
+    And card 01107 copy 0 has 3 threat counters
     And the encounter deck contains these card counts
       | card  | count |
       | 01191 | 1     |
