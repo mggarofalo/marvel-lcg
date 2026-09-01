@@ -202,6 +202,7 @@ Feature: Core villain phase
 
   @behavior:rr:scheme-enemy-activation.step.2.b:published-result
   @covers:behavior:rr:scheme-enemy-activation.step.2.e:published-result
+  @covers:behavior:card:01164:give-villain-1-additional-boost-card-for
   @rr:scheme-enemy-activation.step.2.b @rr:scheme-enemy-activation.step.2.e
   @card:01164 @card:01103
   Scenario: Titania's Fury adds a boost card that Rhino resolves while scheming

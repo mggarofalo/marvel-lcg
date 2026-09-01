@@ -51519,11 +51519,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Titania's Fury adds a boost card that Rhino resolves while scheming"
+          ],
+          "mutation": "Do not add Titania's Fury's extra boost card; Rhino places only two threat instead of the asserted four."
         }
       ]
     },
@@ -54027,11 +54029,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/when-defeated.feature::A defeated minion resolves its When Defeated ability before discard"
+          ],
+          "mutation": "Ignore Hydra Soldier's Guard keyword while it is engaged; Rhino becomes an available basic-attack target."
         },
         {
           "id": "behavior:card:01182:while-minion-is-engaged-with-you-you",
@@ -54039,11 +54043,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/when-defeated.feature::A defeated minion resolves its When Defeated ability before discard"
+          ],
+          "mutation": "Permit the engaged player to attack Rhino while Hydra Soldier remains engaged; the unavailable-target assertion fails."
         },
         {
           "id": "behavior:card:01182:deal-engaged-player-encounter-card",

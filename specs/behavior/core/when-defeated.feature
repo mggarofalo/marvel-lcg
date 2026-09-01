@@ -54,6 +54,8 @@ Feature: Core When Defeated timing
 
   @behavior:rr:damage.step.7:published-result
   @covers:behavior:card:01182:deal-engaged-player-encounter-card
+  @covers:behavior:card:01182:guard
+  @covers:behavior:card:01182:while-minion-is-engaged-with-you-you
   @rr:damage.step.7 @card:01182
   Scenario: A defeated minion resolves its When Defeated ability before discard
     # Damage step 7 resolves abilities that trigger "when [a character] is
@@ -68,6 +70,9 @@ Feature: Core When Defeated timing
     And these cards are next on the encounter deck
       | next card | copy |
       | 01180     | 0    |
+    When seat 1 asks for their basic attack targets
+    Then card 01094 copy 0 is unavailable as a target
+    And card 01182 copy 0 is available as a target
     When seat 1 uses their basic attack against card 01182 copy 0
     Then card 01182 copy 0 is faceup on top of the encounter discard pile
     And seat 1 has 1 facedown encounter card
