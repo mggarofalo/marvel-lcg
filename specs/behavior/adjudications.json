@@ -20528,7 +20528,7 @@
       ]
     },
     {
-      "id": "rr:then",
+  "id": "rr:then",
       "fingerprint": "sha256:6f7c15bf0dcb41c201a0ce9a4dced29aca34c1371fb34ad824485b1fc9aa67b2",
       "obligations": [
         {
@@ -20537,16 +20537,18 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/card-actions.feature::A fully resolved pre-then thwart attempts the Aerial follow-up"
+      ],
+      "mutation": "Ignore the dependency expressed by then; the paired full and partial transcripts no longer diverge at the second scheme."
         }
       ]
     },
     {
-      "id": "rr:then.1",
+  "id": "rr:then.1",
       "fingerprint": "sha256:58d76875c7ce611a852aaa1dadb30dad602eece3cda35043c77f9504520b79de",
       "obligations": [
         {
@@ -20555,16 +20557,18 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/card-actions.feature::A fully resolved pre-then thwart attempts the Aerial follow-up"
+      ],
+      "mutation": "Skip Crisis Interdiction's post-then effect after its first removal fully resolves; the side scheme retains two threat."
         }
       ]
     },
     {
-      "id": "rr:then.2",
+  "id": "rr:then.2",
       "fingerprint": "sha256:737328f0e1f999c7c7a095d2d6e601a318cd58f05223825c9663d8bbf51bea85",
       "obligations": [
         {
@@ -20573,11 +20577,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/card-actions.feature::A partially resolved pre-then thwart skips the Aerial follow-up"
+      ],
+      "mutation": "Attempt Crisis Interdiction's post-then effect after removing only one of the required two threat; the side scheme incorrectly loses two threat."
         }
       ]
     },

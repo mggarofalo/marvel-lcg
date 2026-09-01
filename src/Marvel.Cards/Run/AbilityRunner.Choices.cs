@@ -593,10 +593,25 @@ public sealed partial class AbilityRunner
                 throw new RulesNotImplementedException(
                     $"'{source.FaceId}' requires {expected} different scheme target(s)");
             }
+
+            // rr:then: the second Crisis Interdiction removal is dependent on
+            // the first removal fully resolving. The choice is simultaneous,
+            // but only the first selected scheme belongs to the pre-then
+            // effect, so determine that outcome in isolation before the power
+            // receives the targets it will actually resolve against.
             cast.Choose(selected[0]);
+            var priorTargets = cast.PowerTargets;
+            cast.SetPowerTargets([selected[0]]);
+            var power = Tree(choice.Require("power"));
+            bool firstFullyResolves = ResolutionOf(
+                Tree(power.Require("effect")), cast) == ResolutionOutcome.Full;
+            cast.SetPowerTargets(priorTargets);
+            IReadOnlyList<Card> resolving = firstFullyResolves
+                ? selected
+                : [selected[0]];
             SchedulePower(
-                Tree(choice.Require("power")), cast, BasicPowers.ThwartVerb,
-                selected[0], selected, -1);
+                power, cast, BasicPowers.ThwartVerb,
+                selected[0], resolving, -1);
             return Continue(source, cast, stoppedAt);
         }
         if (choice.Kind == "makeTheCall")

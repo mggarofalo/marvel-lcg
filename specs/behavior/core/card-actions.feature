@@ -839,3 +839,62 @@ Feature: Core card actions
     And card 01068 copy 0 is in seat 1's hand
     And card 01071 copy 0 is in seat 1's discard pile
     And card 01072 copy 0 is in seat 1's discard pile
+
+  @behavior:rr:then:published-result
+  @covers:behavior:rr:then.1:published-result
+  @rr:then @rr:then.1 @card:01012 @card:01017
+  Scenario: A fully resolved pre-then thwart attempts the Aerial follow-up
+    # Crisis Interdiction removes its full two threat from the first scheme.
+    # The text after "Then" must therefore attempt to resolve, and Aerial makes
+    # its two-threat removal from the different second scheme applicable.
+    Given a canonical Core scene is dealt
+      | campaign | heroes         | seed |
+      | rhino    | captain_marvel | 830  |
+    And seat 1 shows identity face 01010a
+    And card 01017 copy 0 is an upgrade attached to seat 1's identity
+    And card 01107 copy 0 is a side scheme in play
+    And card 01097b copy 0 has 2 threat counters
+    And card 01107 copy 0 has 2 threat counters
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01012 | 0    |
+      | 01088 | 0    |
+    When seat 1 initiates card 01012 copy 0's action paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+    Then seat 1 is asked to choose 2 cards for the pending action
+    When seat 1 chooses these cards for the pending action
+      | card   | copy |
+      | 01097b | 0    |
+      | 01107  | 0    |
+    Then card 01097b copy 0 has 0 threat counters
+    And card 01107 copy 0 has 0 threat counters
+
+  @behavior:rr:then.2:published-result
+  @rr:then.2 @card:01012 @card:01017
+  Scenario: A partially resolved pre-then thwart skips the Aerial follow-up
+    # Removing only the one available threat does not fully resolve the
+    # pre-"then" instruction to remove two. The different side scheme remains
+    # unchanged because the Aerial follow-up is not attempted.
+    Given a canonical Core scene is dealt
+      | campaign | heroes         | seed |
+      | rhino    | captain_marvel | 831  |
+    And seat 1 shows identity face 01010a
+    And card 01017 copy 0 is an upgrade attached to seat 1's identity
+    And card 01107 copy 0 is a side scheme in play
+    And card 01097b copy 0 has 1 threat counter
+    And card 01107 copy 0 has 2 threat counters
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01012 | 0    |
+      | 01088 | 0    |
+    When seat 1 initiates card 01012 copy 0's action paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+    Then seat 1 is asked to choose 2 cards for the pending action
+    When seat 1 chooses these cards for the pending action
+      | card   | copy |
+      | 01097b | 0    |
+      | 01107  | 0    |
+    Then card 01097b copy 0 has 0 threat counters
+    And card 01107 copy 0 has 2 threat counters
