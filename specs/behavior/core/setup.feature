@@ -109,3 +109,44 @@ Feature: Canonical Core setup
     Then seat 1 has 6 cards in hand
     And card 01002 copy 0 is in seat 1's discard pile
     And card 01008 copy 0 is in seat 1's hand
+
+  @behavior:card:01040b:search-your-deck-for-black-panther-upgrade
+  @covers:behavior:card:01040b:shuffle-your-deck
+  @covers:behavior:rr:appendix-ii-setup.step.16:published-result
+  @covers:behavior:rr:search.1:published-result
+  @covers:behavior:rr:search.2:published-result
+  @covers:behavior:rr:search.3:published-result
+  @card:01040b @rr:appendix-ii-setup.step.16
+  @rr:search.1 @rr:search.2 @rr:search.3
+  Scenario: T'Challa chooses one of his upgrades after mulligans and shuffles
+    # Setup step 16 resolves player Setup abilities after mulligans. Foresight
+    # searches "your deck," offers every matching Black Panther upgrade, moves
+    # the chosen card to hand, and shuffles that entire deck.
+    Given a canonical Core scene is dealt
+      | campaign | heroes        | seed |
+      | rhino    | black_panther | 805  |
+    And seat 1's hand contains exactly these cards
+      | card   | copy |
+      | 01041  | 0    |
+      | 01042  | 0    |
+      | 01043a | 0    |
+      | 01043b | 0    |
+      | 01043c | 0    |
+      | 01043d | 0    |
+    And these cards are next on seat 1's player deck
+      | next card | copy |
+      | 01046     | 0    |
+      | 01047     | 0    |
+      | 01048     | 0    |
+      | 01049     | 0    |
+    When game setup reaches seat 1's mulligan
+    Then seat 1 is offered a mulligan
+    When seat 1 keeps every opening-hand card at mulligan
+    Then card 01046 copy 0 is offered by the pending setup ability
+    And card 01047 copy 0 is offered by the pending setup ability
+    And card 01048 copy 0 is offered by the pending setup ability
+    And card 01049 copy 0 is offered by the pending setup ability
+    And card 01047 copy 0 is in seat 1's player deck
+    When seat 1 chooses card 01046 copy 0 for the pending setup ability
+    Then card 01046 copy 0 is in seat 1's hand
+    And seat 1's player deck was shuffled by the setup ability

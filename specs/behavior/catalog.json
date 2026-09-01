@@ -2210,11 +2210,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::T'Challa chooses one of his upgrades after mulligans and shuffles"
+          ],
+          "mutation": "Skip player Setup abilities after mulligans; the Foresight choice is never offered."
         }
       ]
     },
@@ -21989,11 +21991,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::T'Challa chooses one of his upgrades after mulligans and shuffles"
+          ],
+          "mutation": "Choose an upgrade automatically instead of offering all four matches; an offer assertion fails."
         }
       ]
     },
@@ -22011,11 +22015,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::T'Challa chooses one of his upgrades after mulligans and shuffles"
+          ],
+          "mutation": "Move matching cards out of the searched deck while the choice is open; the deck-zone assertion fails."
         }
       ]
     },
@@ -22033,11 +22039,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::T'Challa chooses one of his upgrades after mulligans and shuffles"
+          ],
+          "mutation": "Do not shuffle the searched deck after Foresight; the deck retains its pre-shuffle order."
         }
       ]
     },
@@ -27620,15 +27628,15 @@
       "title": "YOU, YOUR",
       "fingerprint": "sha256:1c47afd5a9edf437e6adf78f2771ad23dc3fc5e02aa4232071f15c89d8932c7d",
       "scope": "Rules Reference v1.8",
-      "disposition": "executable",
+      "disposition": "not-representable",
       "obligations": [
         {
           "id": "behavior:rr:you-your.9:published-result",
           "summary": "If a card ability searches “your” deck, the player resolving that ability searches for cards in their deck.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "not-representable",
+          "reason": "In a legal Core game, every Black Panther upgrade is an identity-specific card owned by T'Challa's player, so Foresight cannot distinguish searching that deck from searching every legal player deck.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -33743,11 +33751,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::T'Challa chooses one of his upgrades after mulligans and shuffles"
+          ],
+          "mutation": "Do not offer the matching Black Panther upgrades or leave the chosen one in the deck; an offer or hand-zone assertion fails."
         },
         {
           "id": "behavior:card:01040b:shuffle-your-deck",
@@ -33755,11 +33765,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::T'Challa chooses one of his upgrades after mulligans and shuffles"
+          ],
+          "mutation": "Skip Foresight's final shuffle; the deck retains its pre-shuffle order."
         }
       ]
     },
