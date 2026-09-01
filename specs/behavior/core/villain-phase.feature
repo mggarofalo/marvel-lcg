@@ -340,3 +340,31 @@ Feature: Core villain phase
     And card 01001a copy 0 is ready
     And card 01003 copy 0 is faceup on top of seat 1's discard pile
     And 0 Damage events were emitted
+
+  @behavior:card:01004:when-treachery-card-is-revealed-from-encounter
+  @covers:behavior:rr:cancel.1:published-result
+  @covers:behavior:rr:cancel.2:published-result
+  @covers:behavior:rr:cancel.4:published-result
+  @card:01004 @rr:cancel.1 @rr:cancel.2 @rr:cancel.4
+  Scenario: Enhanced Spider-Sense cancels a treachery's When Revealed effect
+    # "Cancel abilities interrupt the initiation of effects and prevent them
+    # from resolving." The treachery is nevertheless revealed and discarded,
+    # and Enhanced Spider-Sense is still played and paid for.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 725  |
+    And seat 1 shows identity face 01001a
+    And card 01097b copy 0 has 0 threat counters
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01004 | 0    |
+      | 01088 | 0    |
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01103     | 0    |
+      | 01186     | 0    |
+    When villain phase 1 resolves accepting "Enhanced Spider-Sense" paid with card 01088 copy 0
+    Then card 01097b copy 0 has 1 threat counter
+    And card 01186 copy 0 is faceup on top of the encounter discard pile
+    And card 01004 copy 0 is faceup on top of seat 1's discard pile
+    And card 01088 copy 0 is in seat 1's discard pile

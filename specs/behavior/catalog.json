@@ -4660,11 +4660,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Enhanced Spider-Sense cancels a treachery's When Revealed effect"
+          ],
+          "mutation": "Resolve Advance's When Revealed scheme despite cancellation; the main-scheme threat assertion fails."
         }
       ]
     },
@@ -4682,11 +4684,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Enhanced Spider-Sense cancels a treachery's When Revealed effect"
+          ],
+          "mutation": "Refund Enhanced Spider-Sense or its resource after cancellation; either discard assertion fails."
         }
       ]
     },
@@ -4726,11 +4730,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Enhanced Spider-Sense cancels a treachery's When Revealed effect"
+          ],
+          "mutation": "Leave the canceled Advance outside the encounter discard pile; its zone assertion fails."
         }
       ]
     },
@@ -28308,11 +28314,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Enhanced Spider-Sense cancels a treachery's When Revealed effect"
+          ],
+          "mutation": "Do not offer Enhanced Spider-Sense when Advance is revealed; the accepted opportunity cannot be reached."
         }
       ]
     },

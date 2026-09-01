@@ -341,6 +341,12 @@ internal sealed class CoreTranscriptRunner
         Bind("villain-phase-decline", TranscriptStepKind.When,
             @"villain phase (?<round>\d+) resolves with every optional choice declined",
             ResolveVillainPhase),
+        Bind("villain-phase-opportunity", TranscriptStepKind.When,
+            @"villain phase (?<round>\d+) resolves accepting ""(?<label>[^""]+)""",
+            ResolveVillainPhaseAccepting),
+        Bind("villain-phase-paid-opportunity", TranscriptStepKind.When,
+            @"villain phase (?<round>\d+) resolves accepting ""(?<label>[^""]+)"" paid with card (?<face>\d+[a-z]?) copy (?<copy>\d+)",
+            ResolveVillainPhaseAcceptingWithPayment),
         Bind("villain-phase-defender", TranscriptStepKind.When,
             @"villain phase (?<round>\d+) resolves with card (?<face>\d+[a-z]?) copy (?<copy>\d+) defending the first attack",
             ResolveVillainPhaseWithDefender),
@@ -1053,6 +1059,28 @@ internal sealed class CoreTranscriptRunner
         FinishAgenda(context, step);
     }
 
+    private static void ResolveVillainPhaseAccepting(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        VillainPhase.Schedule(
+            context.World.Agenda, Number(match, "round", step));
+        FinishAgendaAccepting(context, step, match.Groups["label"].Value);
+    }
+
+    private static void ResolveVillainPhaseAcceptingWithPayment(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        Card payment = context.SceneRequired(step).Find(SceneCard(match, step));
+        VillainPhase.Schedule(
+            context.World.Agenda, Number(match, "round", step));
+        FinishAgendaAccepting(
+            context, step, match.Groups["label"].Value, payment.ObjectId);
+    }
+
     private static void ResolveVillainPhaseWithDefender(
         TranscriptContext context, TranscriptStep step, Match match)
     {
@@ -1197,7 +1225,8 @@ internal sealed class CoreTranscriptRunner
     }
 
     private static void FinishAgendaAccepting(
-        TranscriptContext context, TranscriptStep step, string acceptedLabel)
+        TranscriptContext context, TranscriptStep step, string acceptedLabel,
+        int? payment = null)
     {
         bool accepted = false;
         Prompt? asked = Sequence.Work(
@@ -1215,7 +1244,9 @@ internal sealed class CoreTranscriptRunner
                 : asked.Affordances.SingleOrDefault(option => option.Label == acceptedLabel);
             Decision decision = opportunity is null
                 ? Decision.Decline
-                : Decision.Take(opportunity.Id);
+                : payment is null
+                    ? Decision.Take(opportunity.Id)
+                    : Decision.Take(opportunity.Id, [], [payment.Value]);
             accepted |= opportunity is not null;
             Sequence.Answer(
                 context.World,
