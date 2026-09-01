@@ -418,7 +418,7 @@ internal sealed class CoreTranscriptRunner
         Bind("event-count", TranscriptStepKind.Then,
             @"(?<count>\d+) (?<verb>[A-Za-z_]+) events? (?:was|were) emitted", EventCount),
         Bind("event-order", TranscriptStepKind.Then,
-            @"a (?<first>[A-Za-z_]+) event was emitted before a (?<second>[A-Za-z_]+) event",
+            @"(?:a|an) (?<first>[A-Za-z_]+) event was emitted before (?:a|an) (?<second>[A-Za-z_]+) event",
             EventOrder),
         Bind("players-lose", TranscriptStepKind.Then,
             "the players lose the game", PlayersLose),

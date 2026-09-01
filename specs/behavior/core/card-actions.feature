@@ -45,7 +45,8 @@ Feature: Core card actions
 
   @behavior:card:01013:if-you-paid-for-card-using-energy-condition-met
   @covers:behavior:card:01013:deal-5-damage-enemy
-  @card:01013
+  @covers:behavior:rr:ability.4:sentence-order
+  @card:01013 @rr:ability.4
   Scenario: Photonic Blast draws after damage when paid with energy
     # "Deal 5 damage to an enemy. If you paid for this card using an energy
     # resource, draw 1 card."
@@ -69,6 +70,7 @@ Feature: Core card actions
     When seat 1 chooses card 01094 copy 0 for the pending action
     Then card 01094 copy 0 has 5 damage
     And seat 1 has 1 card in hand
+    And an Attack event was emitted before a Draw event
     And card 01013 copy 0 is faceup on top of seat 1's discard pile
 
   @behavior:card:01013:if-you-paid-for-card-using-energy-condition-not-met
@@ -353,7 +355,9 @@ Feature: Core card actions
     And seat 1 has 2 cards in hand
 
   @behavior:rr:cost.12:damage-prevented
+  @covers:behavior:rr:cost.5:simultaneous-costs
   @rr:cost.12 @card:01027
+  @rr:cost.5
   Scenario: Tough makes Focused Rage's take-damage cost unpayable
     # A take-damage cost "is not considered paid unless all of that damage was
     # taken." Tough would prevent the one damage, so the action cannot be
@@ -369,6 +373,32 @@ Feature: Core card actions
     And card 01027 copy 0 is ready
     And card 01019a copy 0 has a tough status card
     And card 01019a copy 0 has 0 damage
+
+  @behavior:rr:ability.3:requires-valid-target
+  @covers:behavior:rr:choose-game-element.2:requires-valid-target
+  @covers:behavior:rr:cost.6:requires-valid-target
+  @covers:behavior:rr:event.3:requires-valid-target
+  @covers:behavior:rr:target.2:requires-valid-target
+  @covers:behavior:rr:target.2.2:choose-requires-target
+  @rr:ability.3 @rr:choose-game-element.2 @rr:cost.6 @rr:event.3
+  @rr:target.2 @rr:target.2.2 @card:01023
+  Scenario: A targeted event is unavailable when no scheme can be affected
+    # An ability that "requires one or more targets" can be initiated only
+    # when at least one valid target exists. Legal Practice must choose a
+    # scheme and remove threat; at zero threat, the only scheme cannot be
+    # affected, so the event action is not offered and no cost can be paid.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 732  |
+    And card 01097b copy 0 has 0 threat counters
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01023 | 0    |
+      | 01024 | 0    |
+    When seat 1 asks for available card actions
+    Then card 01023 copy 0's action is unavailable
+    And seat 1 has 2 cards in hand
+    And card 01097b copy 0 has 0 threat counters
 
   @behavior:card:01056:uses-3-attack-counters
   @covers:behavior:card:01056:enters-play-with-3-counters

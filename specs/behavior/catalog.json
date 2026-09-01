@@ -203,16 +203,18 @@
       "disposition": "executable",
       "obligations": [
         {
-          "id": "behavior:rr:ability.3:published-result",
+          "id": "behavior:rr:ability.3:requires-valid-target",
           "summary": "If an ability specifies one or more targets, that ability can only be initiated if it has at least one valid target.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::A targeted event is unavailable when no scheme can be affected"
+          ],
+          "mutation": "Offer Legal Practice when no scheme can be affected; the card-action availability assertion fails."
         }
       ]
     },
@@ -264,11 +266,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Photonic Blast draws after damage when paid with energy"
+          ],
+          "mutation": "Resolve Photonic Blast's draw before its damage; the event-order assertion fails."
         }
       ]
     },
@@ -5057,16 +5061,18 @@
       "disposition": "executable",
       "obligations": [
         {
-          "id": "behavior:rr:choose-game-element.2:published-result",
+          "id": "behavior:rr:choose-game-element.2:requires-valid-target",
           "summary": "If a player card ability requires the choosing of one or more targets, and there are no valid targets for any part of the ability, the ability cannot be initiated.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::A targeted event is unavailable when no scheme can be affected"
+          ],
+          "mutation": "Offer Legal Practice when its required scheme choice has no legal target; the availability assertion fails."
         }
       ]
     },
@@ -6271,16 +6277,18 @@
       "disposition": "executable",
       "obligations": [
         {
-          "id": "behavior:rr:cost.5:published-result",
+          "id": "behavior:rr:cost.5:simultaneous-costs",
           "summary": "If multiple costs for a single card or ability require payment, those costs must be paid simultaneously.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Tough makes Focused Rage's take-damage cost unpayable"
+          ],
+          "mutation": "Pay Focused Rage's exhaust cost independently when its damage cost cannot be paid; the ready-state assertion fails."
         }
       ]
     },
@@ -6315,16 +6323,18 @@
       "disposition": "executable",
       "obligations": [
         {
-          "id": "behavior:rr:cost.6:published-result",
+          "id": "behavior:rr:cost.6:requires-valid-target",
           "summary": "An ability’s cost cannot be paid if that ability’s effect requires one or more targets and there is not at least one valid target.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::A targeted event is unavailable when no scheme can be affected"
+          ],
+          "mutation": "Pay Legal Practice's discard cost without a valid scheme target; the hand or availability assertion fails."
         }
       ]
     },
@@ -9249,16 +9259,18 @@
       "disposition": "executable",
       "obligations": [
         {
-          "id": "behavior:rr:event.3:published-result",
+          "id": "behavior:rr:event.3:requires-valid-target",
           "summary": "An event card cannot be played if it requires one or more targets and does not have at least one valid target.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::A targeted event is unavailable when no scheme can be affected"
+          ],
+          "mutation": "Offer the Legal Practice event without a valid target; the card-action availability assertion fails."
         }
       ]
     },
@@ -23463,7 +23475,7 @@
           "summary": "If a game function or card ability is directed toward a game element (such as an attack that deals damage to an enemy), that game element becomes the target of that function or ability for the duration of that function’s or ability’s resolution.",
           "disposition": "narrower",
           "reason": "A directly cited child clause states the executable decision more precisely.",
-          "target": "behavior:rr:target.2:published-result",
+          "target": "behavior:rr:target.2:requires-valid-target",
           "implementation": null,
           "work_item": null,
           "exception": null,
@@ -23525,16 +23537,18 @@
       "disposition": "executable",
       "obligations": [
         {
-          "id": "behavior:rr:target.2:published-result",
+          "id": "behavior:rr:target.2:requires-valid-target",
           "summary": "If an ability or game function requires one or more targets, that ability or game function can only be initiated if it has at least one valid target.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::A targeted event is unavailable when no scheme can be affected"
+          ],
+          "mutation": "Treat an unaffected scheme as a valid target; the Legal Practice availability assertion fails."
         }
       ]
     },
@@ -23571,16 +23585,18 @@
       "disposition": "executable",
       "obligations": [
         {
-          "id": "behavior:rr:target.2.2:published-result",
+          "id": "behavior:rr:target.2.2:choose-requires-target",
           "summary": "The phrase “choose a [game element]” indicates that one or more targets must be selected in order for an ability to initiate.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::A targeted event is unavailable when no scheme can be affected"
+          ],
+          "mutation": "Allow Legal Practice's required choose instruction to resolve without a scheme; the availability assertion fails."
         }
       ]
     },
