@@ -7,7 +7,7 @@
 # This is here for the helper, not for the card. `PlayerAction.DiscardDeckTopCard`
 # indexed `DiscardDeckTopCards(1, ...)[0]` unguarded, so on a board with nothing
 # to discard it raised `IndexError` mid-resolution and the engine's broad
-# handlers swallowed it (MARVEL-119). Twenty card scripts call it; 01050 Hulk is
+# handlers swallowed it (the original investigation). Twenty card scripts call it; 01050 Hulk is
 # the one the bug was found on, and its scenario in specs/cards/core/ can only
 # catch a regression through the ERROR verdict `Log.HasError` produces, because
 # every branch of Hulk's response is conditional on the discarded card and the
@@ -18,7 +18,7 @@
 # discard. Before the fix the event was paid for, the discard raised, and
 # `DealDamage` was never reached -- Rhino took 0 and two resources were gone.
 # That is a board assertion, so this scenario fails without depending on the
-# log-demotion machinery, which MARVEL-65 showed can itself silently stop
+# log-demotion machinery, which the original investigation showed can itself silently stop
 # working.
 #
 # ---------------------------------------------------------------------------

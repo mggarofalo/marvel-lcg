@@ -154,11 +154,9 @@ public interface ICardFacts
     /// cased: <c>energy</c>, <c>mass</c>, <c>suit</c>.
     /// </para>
     /// <para>
-    /// <b>Defaulted, because nine faces out of 4,344 carry one.</b> A board
-    /// assembled by hand that never sets up an additional form should not have
-    /// to say so. The real catalog implements it, and
-    /// <c>CardCatalogTests</c> pins the exact nine so that forgetting is a
-    /// failing test rather than a silent absence.
+    /// Defaulted because Core boards do not require an additional form. The
+    /// generated catalog implements the broader printed-data lookup, while a
+    /// product using it remains outside the executable boundary.
     /// </para>
     /// </remarks>
     /// <param name="faceId">A printed card id.</param>

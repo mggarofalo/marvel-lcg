@@ -5,7 +5,7 @@ The engine and its hosts are implemented as plain .NET 8 projects. See
 [presentation-layer.md](../docs/presentation-layer.md) for the build-enforced
 Godot wall and server topology.
 
-Current:
+Current projects:
 
 ```
 Directory.Build.props / Directory.Packages.props   central package management
@@ -16,18 +16,18 @@ src/Marvel.Rules         state, phases, timing, prompts, events, and the fold
 src/Marvel.Cards         authored ability DSL and interpreter
 src/Marvel.Content       printed cards and scenario setup readers
 src/Marvel.Sim           non-Godot headless driver and replay harness
+src/Marvel.View          engine-agnostic visible-state projection
 src/Marvel.Server        engine host; embedded or a standalone socket process
 
 tests/*.Tests            behavioral xUnit suites for the corresponding project
 ```
 
-The presentation projects that consume this engine remain planned:
+The Godot client and procedural card renderer remain planned:
 
 ```
 Directory.Build.props / Directory.Packages.props   central package management
 Marvel.slnx
 
-src/Marvel.View          engine-agnostic visible view model and card layout
 src/Marvel.Godot         macOS and Windows client; the only Godot reference
 ```
 

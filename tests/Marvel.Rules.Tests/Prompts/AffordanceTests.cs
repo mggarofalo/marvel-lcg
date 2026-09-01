@@ -104,7 +104,7 @@ public sealed class AffordanceTests
     public void AnAlternativeCostIsAdditiveNotAReplacement()
     {
         // Flattening "a mental resource or two of any type" to a bare "2" is
-        // what MARVEL-158 found breaking games: the payer met the number with
+        // what the original investigation found breaking games: the payer met the number with
         // the wrong types and the ability failed mid-resolution.
         var cost = new CostOption(0, "1", Rule: ["mental"], OrCost: "2", OrRule: []);
 
@@ -221,7 +221,7 @@ public sealed class AffordanceTests
     [Fact]
     public void AGroupedRequestIgnoresTheCount()
     {
-        // MARVEL-164, Explosive Arrow: "choose a player -> deal 3 damage to the
+        // the original investigation, Explosive Arrow: "choose a player -> deal 3 damage to the
         // villain and each minion engaged with that player", played against a
         // player with one minion. Three cards were pooled, so the flat range
         // said [3, 3]; both legal selections had two.

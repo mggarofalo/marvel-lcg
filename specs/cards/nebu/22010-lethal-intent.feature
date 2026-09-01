@@ -6,7 +6,7 @@
 # ---------------------------------------------------------------------------
 # The second of the three X-cost cards, and the one that shows X is not only a
 # number of damage. Here it is a number of *abilities*, and the card resolved
-# none of them until MARVEL-135: the planner paid nothing for a variable cost,
+# none of them until the original investigation: the planner paid nothing for a variable cost,
 # `Effect.GetCostX` reported 0, and `effect.targets[:0]` is empty.
 #
 # ## Why the upgrades are played rather than placed
@@ -94,7 +94,7 @@ Feature: Lethal Intent
   @card:22010
   Scenario: with nothing left to spend the card resolves no Special at all
     # Exactly enough in hand to play the two upgrades and the card itself, so
-    # X is 0. This is what every game did with Lethal Intent before MARVEL-135:
+    # X is 0. This is what every game did with Lethal Intent before the original investigation:
     # the card was played, it was discarded, and nothing happened.
     Given my hand is "Enhanced Spider-Sense", "Enhanced Spider-Sense", "Unyielding Persistence", "Cutthroat Ambition", "Lethal Intent"
 

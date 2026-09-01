@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!-- The card DSL: the node types, the deserialiser, and the interpreter that
-       runs them (docs/card-dsl.md, MARVEL-92).
+       runs them (docs/card-dsl.md).
 
        Separate from `Marvel.Rules` because the layout in
        docs/presentation-layer.md says the engine holds "state, zones, phases,

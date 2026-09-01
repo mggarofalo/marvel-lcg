@@ -22,7 +22,7 @@ namespace Marvel.Content.Tests.Play;
 /// else. <c>rr:when-revealed-abilities.2</c> — "if an encounter card with a
 /// 'When Revealed' ability is put into play <b>without being revealed</b>, the
 /// 'When Revealed' ability does not trigger" — and a setup attachment is put
-/// into play without being revealed, which is what blocked MARVEL-211.
+/// into play without being revealed, which is what blocked the original investigation.
 /// </para>
 /// <para>
 /// An attachment therefore enters play like anything else, through

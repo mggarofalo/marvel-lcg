@@ -8,6 +8,10 @@ holds the rules you can break without noticing; everything else is a pointer.
 A rules engine for Marvel Champions: The Card Game, in C#. Work is tracked in
 the Plane project `MARVEL` — see [docs/plane.md](docs/plane.md).
 
+The executable runtime is the Core Set. Broader card, rule and ruling datasets
+remain available for research without making expansion content playable. See
+[docs/scope.md](docs/scope.md).
+
 ```
 src/        the engine — `Marvel.Core`, `Marvel.Rules`, `Marvel.Cards`, `Marvel.Content`
 tests/      the test suite, plus `godot-wall/` (projects that must fail to build)
@@ -127,6 +131,7 @@ Seven, all run by hand and none on any path a game takes.
 | the card ability DSL, `src/Marvel.Cards`, adding a card to `datasets/abilities/` | [card-dsl.md](docs/card-dsl.md) |
 | what the engine tells a client changed | [event-stream.md](docs/event-stream.md) |
 | what the engine tells a client the player can do | [affordances.md](docs/affordances.md) |
+| the supported product boundary | [scope.md](docs/scope.md) |
 | the client, the engine's return signature, `Marvel.Server` | [presentation-layer.md](docs/presentation-layer.md) |
 | adding a C# project, or changing a `TargetFramework` | [presentation-layer.md](docs/presentation-layer.md#dependency-rules) |
 | Plane issues, modules, labels, priority | [plane.md](docs/plane.md) |

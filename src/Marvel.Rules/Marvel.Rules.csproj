@@ -1,14 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- The fold: state, zones, phases, timing, events. No cards, no I/O, no UI.
-       See docs/presentation-layer.md, "Proposed layout".
-
-       Holds the event stream (MARVEL-160) and, since MARVEL-176, the state
-       model: cards, areas, the digest, and the setup that deals an opening
-       board. The fold itself is still to come; the events were here first
-       because the return signature had to be settled before an interpreter was
-       written against it, and retrofitting a semantic stream after the card
-       ports is not viable. -->
+  <!-- The fold: state, zones, phases, timing, prompts and semantic events.
+       No cards, filesystem or network I/O, or UI framework references.
+       See docs/presentation-layer.md, "Build boundary". -->
   <PropertyGroup>
     <RootNamespace>Marvel.Rules</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>

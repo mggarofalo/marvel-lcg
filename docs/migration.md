@@ -1,237 +1,140 @@
-# Migration to C#
+# C# architecture
 
-**The migration is done.** The Python engine has been removed; C# is the only
-engine. Tracked in the Plane project `MARVEL` — see [plane.md](plane.md).
+The migration from Python is complete. C# is the only engine, and no Python
+implementation remains an authority or compatibility target.
 
-This document is the decision record. It exists so that settled questions are
-not re-litigated and measurements are not re-derived — not as a description of
-how the repository is arranged today, which is [AGENTS.md](../AGENTS.md).
+This document records the architectural outcomes that still constrain the
+repository. [AGENTS.md](../AGENTS.md) describes the working rules, and
+[scope.md](scope.md) defines the supported product.
 
-## Why migrate
+## Why the engine changed
 
-Two reasons, in order of weight.
+The retired implementation loaded card scripts as arbitrary Python and blocked a
+gameplay thread while waiting for player input. Those properties made downloaded
+content unsafe, deterministic replay difficult, and rule resolution hard to test.
 
-**1. Card scripts execute arbitrary Python.** `cards/database.py` calls `exec()` on card modules. The AST denylist in `engine/security/command_validation.py` guards only the cheat console, not card loading — and a denylist over import names would not hold anyway. Any downloaded card pack is arbitrary code execution. The upstream README acknowledges this; there is no fix that preserves the current design.
+The C# design removes both:
 
-**2. The architecture is built around blocking on player input.** `Controller.ChoiceOne` blocks a thread inside `GetInput`. Everything downstream — `engine/task/`, `engine/job/`, condition variables, sync/notify — exists to support that. It makes the engine hard to test, hard to drive programmatically, and hard to reason about.
+- card behavior is inert, schema-checked data interpreted by trusted code; and
+- player input is a typed continuation returned by the engine, never a blocking
+  call inside gameplay.
 
-## Measurements
+## Resolve contract
 
-Taken 2026-08-06. Re-measure rather than trusting these if the tree has moved substantially.
+The engine advances one decision at a time:
 
-| | |
+```text
+(state, input) -> (state, prompt, events)
+```
+
+The prompt contains anchored affordances. The event list describes the semantic
+changes made by that decision. Game-over state is part of the returned result.
+
+Gameplay state is single-threaded and deterministic. Networking and asynchronous
+input live above the engine boundary.
+
+This shape gives replay, simulation and clients the same interface. A replay is
+the same resolve operation over a recorded input sequence. Undo can rebuild a
+prefix. Tests do not need timing coordination with a blocked engine thread.
+
+## Cards are data
+
+`datasets/abilities/abilities.json` contains executable card text. The parser
+accepts values and named nodes, never source code, delegates or callbacks.
+
+Only the Core Set has executable rows. See [card-dsl.md](card-dsl.md) for the
+language and [scope.md](scope.md) for the product boundary and future-content
+validation strategy.
+
+General game rules stay compiled. Card-specific behavior stays in data. A rule
+concept that several cards need belongs in the engine and DSL vocabulary. A
+one-off card does not justify a general-purpose escape hatch.
+
+## Deterministic state
+
+One MT19937 stream is seeded once for each game. Bounded integers and shuffles
+use the algorithms fixed by [rng-contract.md](rng-contract.md). Gameplay never
+uses wall-clock time, ambient randomness or a second RNG.
+
+`World.Digest()` serializes every card, area and gameplay field using the wire
+format in [state-digest-v2.md](state-digest-v2.md). The digest records hidden
+truth for testing and replay comparison. It never crosses the client wire.
+
+Card id allocation, iteration order, JSON spelling and RNG consumption are
+deterministic contracts. A change to any of them can change every game produced
+from a seed.
+
+## Authority replaces compatibility
+
+The retired engine is not an oracle. Published sources decide behavior:
+
+- Rules Reference v1.8 and audited modifications;
+- joined, corrected printed card text;
+- official rulings and FAQ entries; and
+- authored setup facts taken from product instructions.
+
+Tests cite the narrow rule they enforce. The executable Core behavioral corpus
+is derived from those authorities and legal game scenes. Existing behavior is
+evidence only when the same published authority supports it.
+
+## Project boundaries
+
+The dependency structure is:
+
+```text
+Marvel.Core
+└── Marvel.Rules
+    ├── Marvel.Cards
+    ├── Marvel.Content
+    └── Marvel.View
+
+Marvel.Sim    -> Marvel.Cards + Marvel.Content
+Marvel.Server -> Marvel.Cards + Marvel.Content + Marvel.View
+```
+
+An arrow points from a host to the engine projects it consumes. The enforced
+responsibilities are:
+
+| Project | Responsibility |
 |---|---|
-| Engine + game + core | 58,905 LOC Python |
-| Card scripts | 3,457 files, ~102k LOC |
-| Card script size | median 27 lines, p90 41, p99 57, max 187 |
-| Distinct `AbilityFactory` methods | 310 |
-| Trigger-method coverage | top 10 = 57%, top 50 = 83%, top 150 = 95% |
-| Cards with no imperative handler | 531 scripts (15%) |
-| Cards that suspend for player choice mid-resolution | 440 scripts (13%) |
-| Data files (scenarios, encounter sets, decks) | 390 JSON — portable as-is |
-| Frontend | 38 TS + 16 HTML + 69 CSS — portable as-is |
-| Content matrix | 108 scenarios, 63 starter decks, 148 encounter sets, 25 challenges |
+| `Marvel.Core` | RNG and canonical digest primitives |
+| `Marvel.Rules` | State, phases, timing, prompts and semantic events |
+| `Marvel.Cards` | Ability data types, validation and interpretation |
+| `Marvel.Content` | Printed facts and supported setup readers |
+| `Marvel.Sim` | Headless deterministic simulation and replay |
+| `Marvel.View` | Visibility-safe descriptors of engine state |
+| `Marvel.Server` | In-process and socket engine host |
 
-The distribution is the important part: card scripts are small and mostly shaped alike, but the trigger vocabulary has a long tail, and the tail is where port bugs will hide.
+Core engine projects contain no filesystem, network or UI-framework input. They
+parse strings or streams supplied by a host.
 
-The last two rows are now recomputed on every run of `python -m tools.cards.extract`, each stated next to the rule that produces it — see [card-dataset.md](card-dataset.md#stratification). The 531 reproduced exactly. The player-choice figure was originally recorded here as 334 from a measurement whose rule was never written down; no principled rule reproduces it, so 440 supersedes it.
+## Presentation boundary
 
-## Decisions
+The client direction is Godot for macOS and Windows. A Godot project does not yet
+ship in this repository. `Marvel.View` and `Marvel.Server` provide the client-safe
+projection and transport boundary that already exist.
 
-### Target language: C#
+The client must use `IEngineTransport` in both deployments:
 
-Chosen over TypeScript and Rust. Determinism control is better than TypeScript's, `yield return` iterators model suspend-for-player-input directly, and **Reqnroll** (the maintained SpecFlow successor) is the strongest Gherkin tooling available — which matters given the testing strategy below. Costs accepted: slower compile loop than TS, and no shared language with the existing web client.
+- `InProcessTransport` hosts a local game inside the client process; and
+- `SocketTransport` speaks to the same `EngineHost` remotely.
 
-~~The existing TS/HTML/CSS client is kept and served from ASP.NET Core.~~
+The engine never references Godot. Build targets enforce that wall and keep the
+solution on the .NET runtime Godot can host. See
+[presentation-layer.md](presentation-layer.md).
 
-**Superseded on 24 August 2026 by [presentation-layer.md](presentation-layer.md)
-(MARVEL-159).** The client is built in Godot for macOS and Windows, and the
-TypeScript client is dropped. `Marvel.Server` survives as the engine host —
-in-process for local play, a Linux container for hosted play — rather than as a
-web-client server. The engine's return signature gains a semantic event stream and
-anchored affordances. Nothing else in this document is affected.
+## Security boundary
 
-### Architecture: the engine is a resolve
+The server exposes game operations, not arbitrary host capabilities. It has no
+path-bearing file-read operation, dynamic code loader or cheat console.
 
-```
-(state, input) -> (state, Prompt?, GameEvent[])
-```
+The server applies a visibility policy before serialization. Clients never
+receive `World`, the state digest, hidden card identities or prompts they are not
+authorized to answer. Session capabilities authorize mutations independently of
+client-chosen game labels.
 
-~~`(state, input) -> (state, prompt | gameOver)`~~ — **extended by MARVEL-160 and
-MARVEL-161.** The prompt is now a list of affordances anchored to board objects
-([affordances.md](affordances.md)), and the engine also returns a semantic event
-stream describing what happened ([event-stream.md](event-stream.md)). A prompt is
-absent when the game is over, which is what the old `| gameOver` said.
+## Repository outcome
 
-No blocking, no threads in gameplay paths. "Ask the player" is a `yield`, not an I/O wait.
-
-This falls out of the change rather than being extra work: replay becomes a resolve over the recorded input list, undo becomes re-resolving a prefix, tests lose all timing flake, and driving the engine from an agent or a bot becomes a function call instead of a websocket client.
-
-### Cards become data, not sandboxed scripts
-
-The goal is not a safer sandbox. It is removing the concept of card-supplied code.
-
-A card ability becomes a serializable tree of typed nodes (`seq`, `ifThen`, `forEach`, `dealDamage`, `askPlayer`, `placeCounter`, …) that the engine interprets. Third-party cards then cannot execute anything, because there is nothing to execute — they are data that can be schema-validated, diffed, hashed, and rendered as English.
-
-The trust boundary is **provenance, not expressiveness**:
-
-- A small number of first-party scenario scripts stay as compiled engine code. Some content genuinely does not fit a data DSL — `cards/pack/twc/07001a.py` (Breakout) builds four encounter decks and registers abilities dynamically at setup.
-- Everything a user can author or download is data only.
-
-Forcing the hard tail into the DSL would warp it into a general-purpose language, which reintroduces the original problem. Do not do this.
-
-**Design the DSL against the hardest ~30 cards first, not the common ones.** The common cases fall out for free; the tail does not. Projects like this routinely hit 90% quickly, then bolt escape hatches onto the DSL until it is a scripting language again.
-
-**Done, in [card-dsl.md](card-dsl.md) (MARVEL-92).** All thirty were read and the node set is written against named ones. Three things there change what this section said:
-
-- **The envelope is already data.** The imperative handler is one field of an `Ability` whose target selector, cost, printed conditions and use-limits are literals today. 22.9% of statements in `GetAbilities` are that envelope and 531 scripts (15.4%) are nothing else. The work is replacing the `operation` callback, not inventing a card language.
-- **The escape hatch is 2 cards plus scenario setup**, measured — cards that install an ability onto a card they do not own. Seven scripts call `.Registers()`, but five call it on themselves and unregister it again: three are duration-scoped grants (`grantUntil`, a node, shared with 56 `RegisterTemp` users) and two watch their own sub-resolution, which wants a return value rather than a watcher. `python -m tools.dsl.blockers` re-measures it.
-- **Tic-Tac-Toe was named here in error.** `44057` is nine named counters, a literal table of eight win-lines, and `any(line, all(cell, counter > 0))`. Breakout holds up; Tic-Tac-Toe does not, and the correction is argued where it can be checked.
-
-## The oracle
-
-The single highest-leverage asset, and the reason preparation comes before any C# code.
-
-Every replay step records a state digest — `World.CalculateDigest()` (`game/world/world_render.py`) — which `engine/controller/module/replay.py` compares against the recorded value on replay, printing a **card-by-card, field-by-field diff** on mismatch. Combined with a seeded RNG, this means: replay the same corpus through both engines and get told exactly which card, and which of its fields, diverged at which step.
-
-The digest is specified in full in [state-digest-v2.md](state-digest-v2.md).
-
-That is the difference between a rewrite that converges and one that does not.
-
-**The problem: `replays/` is empty and untracked.** The corpus does not exist, and there is no AI or auto-play in the engine — it is entirely built around a blocking human. So the corpus has to be generated by a bot written against the Python engine, which is why that work is sequenced first.
-
-### State digest: replace it, before the corpus exists (MARVEL-9, MARVEL-44)
-
-**Decided, and landed.** `MARVEL-9` wrote the original digest down and found four structural problems that could not be fixed inside its shape. `MARVEL-44` replaced it. [state-digest-v2.md](state-digest-v2.md) is the result, and the v1 findings it settles are tabulated there by name.
-
-The v1 digest was a dictionary from card id to **one integer**, which was either a negative sentinel meaning "somewhere I only track coarsely" or the plain arithmetic sum of that card's state fields. Four consequences:
-
-- **The sum collided by construction.** +1 ATK and −1 trait cancelled, and the mismatch table printed only the net delta — so a collision did not merely hide a divergence, it hid it silently.
-- **Negative values collided with the sentinels.** `health` can go negative and twenty-one other fields were unclamped, so a card in play could become indistinguishable from a card in hand.
-- **It described a fifth of the game.** Measured: 19 of 94 cards. Nothing about deck order, and boost cards — which decide how much damage a villain activation deals — were absent entirely.
-- **A third of each value was card identity**, contributing a fixed offset that could never detect anything.
-
-Measured over 243 steps, v1 was blind to **half** the per-card state changes that happened in front of it.
-
-v2 keeps the shape that made v1 useful — one record per card, compared every step, diffed on mismatch — and replaces the lossy parts: a **dictionary of named fields** instead of a sum, a **zone name and an index** instead of a negative sentinel, and **card identity on the wire**. Every card is described, so pile order is in the digest and nothing is excluded by number.
-
-Two calls worth recording because they went against the initial sketch:
-
-- **Printed constants are kept.** The objection to them was an objection to *summing*. Once fields are named a constant cannot collide with anything, never appears in a diff, and costs bytes that gzip removes — while holding both engines to parsing the card data identically.
-- **Hidden state is recorded, not hidden.** A differential oracle that cannot see hidden state catches a divergence at the step it *surfaces*, not the step it happens. So the digest records the truth and labels it `face_up: false`, and the safety property moves to where it belongs: the digest never reaches a client. The browser now gets `CardDescriptor.revision`, computed from face-up-guarded render info, which leaks strictly less than the v1 `crc` field it replaces.
-
-**Corpus impact, measured rather than estimated.** On thirteen bot games — the same measurement that sized the corpus above — 491 steps came to 5.7 MB raw and **84 KB gzipped**, a 69.6× compression ratio against the 8.2× measured for v1-era scenes, because the document is highly repetitive. Extrapolated to a 10,000-game corpus: ~37 GB raw, **~0.53 GB compressed**, against the under-200 MB estimated for v1. The corpus roughly triples in compressed size and every MARVEL-4 decision — gzip, separate repo pinned by SHA, hash manifest here, shard by scenario — still holds unchanged.
-
-**It had to happen before corpus generation (MARVEL-15).** Changing the digest after generation invalidates the corpus, exactly as with the RNG. `replays/` was empty, so the cost was zero; afterwards it is a full regeneration. Everything downstream — MARVEL-16 coverage-directed generation, MARVEL-17 self-consistency verification, MARVEL-18 the freeze — sequences after this and needs no rework.
-
-`datasets/digest/vectors.json` was the cross-language acceptance fixture, on the same footing as `datasets/rng/vectors.json`. Both were dropped with the Python engine — see MARVEL-251.
-
-### RNG: replace it on both sides with one standard (MARVEL-25, MARVEL-38)
-
-**Decided, and landed on the Python side.** Both engines implement the *same* precisely-specified standard RNG, so the same seed produces the same output in both. Seed-based cross-engine replay works, and no randomness needs to be recorded in the corpus. The specification is [docs/rng-contract.md](rng-contract.md); MARVEL-8 implements it in C#.
-
-The starting position was a mess: `engine/lib/random.py` dispatched on `disable_numpy_random`, which **defaulted to False**, so the production RNG was `numpy.random` (legacy global `RandomState`) and the hand-written `engine/lib/mt19937.py` was dead code. Neither was a good contract — the custom one shuffled by `10 * len` random swaps instead of Fisher-Yates and derived bounded integers by truncating a float division.
-
-Rather than port either set of quirks into C#, both were replaced.
-
-Why it works: numpy and the repo's custom generator **already agreed on the first draw from seed 42** (both `0.37454`) — both *are* MT19937. They diverged only in the consumption layer, where numpy takes two 32-bit words per double and the repo took one. (Observable: the repo's third value equalled numpy's second.) Standardising that layer makes them agree. The raw word stream is unchanged from what the engine produced before, which `unit_test/test_rng.py` pins against both numpy's values and MT19937's own published ones.
-
-**It had to happen before corpus generation.** Changing the RNG changes game outcomes. There was no corpus and no tracked replays, so the cost was zero; afterwards it would have been a full regeneration.
-
-What the contract pins, each of which would reintroduce divergence if left open:
-
-- **Seeding routine** — always `init_genrand` with one 32-bit word, never `init_by_array`
-- **No floats at all** — bounded integers come straight off the raw 32-bit output by masked rejection, which sidesteps cross-language float semantics and removes modulo bias. The draw-to-float question that caused the original divergence simply stops existing.
-- **Fisher-Yates direction** — downward for `Shuffle`, upward for the partial shuffle behind `ChooseWithoutReplacement`
-- **Exact consumption** — including that a bound of 1 still consumes a word, and that selecting every element consumes none
-- **State save/restore** — 624 words plus an index. `Random.Undo()` is bounded and errors past the end, rather than the previous unbounded list that silently did nothing under one backend
-
-These were genuine behaviour changes rather than additive ones, and there was no upstream to preserve a diff against. The choices are listed in section 9 of the contract.
-
-### Other portability hazards
-
-- ~~`Random.states` grows without bound~~ — fixed by MARVEL-38. Snapshots now live in a bounded ring (`UNDO_DEPTH`), so a long game no longer grows one per draw, and undo no longer depends on total call history.
-- Card `object_id` allocation order determines each card's `id` and its position in the digest's `cards` array, so allocation order is part of the cross-engine contract. (Under v1 it determined the digest's dict keys; the coupling is the same, the shape is not.)
-- Two collections whose iteration order can reach recorded replays: `GetTeamUpUnits` returns `list(set(...))`, and forced-effect resolution order derives from an identity-hashed set. **`PYTHONHASHSEED=0` does not fix these** — it hides them. They must be fixed at the source.
-
-### Corpus storage: gzipped, in a separate pinned repo (MARVEL-4)
-
-**Decided, from measurement rather than estimate.** 13 bot-generated games: mean 11.0 KB, range 5.2–20.8 KB, 7–45 steps — roughly **0.5 KB per step** raw. Gzip at level 9 compresses the set **8.2x** (146 KB → 17.8 KB), and `engine/lib/json.py` already supports gzip.
-
-Extrapolating to deeper games from a heuristic policy (a few hundred steps each), a 10,000-game corpus lands near 1.5 GB raw, under 200 MB compressed.
-
-The decisive property is that **the corpus is immutable and write-once**. Git's problem is repeated churn on large files, not one-time storage — so a dedicated repo holding compressed, never-modified shards is fine at this scale and avoids both LFS friction and object-storage infrastructure.
-
-- Store gzipped
-- Separate repo, pinned from here by commit SHA
-- Hash manifest checked into *this* repo, so integrity is verifiable without fetching the corpus
-- Shard by scenario so CI can fetch a subset instead of the whole thing
-
-Re-measure once the heuristic policy exists; these games came from a random policy that loses in ~20 steps, so per-game size is a lower bound.
-
-### Repo layout: one repo (MARVEL-3)
-
-**Decided.** A single repository, on the grounds that agents work poorly across
-two: cross-referencing while porting was constant, and every split introduces
-coordination the work does not need. The alternative considered was a separate
-repo to keep a fork cheap to pull from upstream, and that constraint never
-applied — upstream was not tracked.
-
-The layout,
-including the assembly wall that keeps Godot types out of the engine, is in
-[presentation-layer.md](presentation-layer.md#proposed-layout).
-
-Two constraints from that decision reach every project in the solution:
-
-- **`net8.0`, not `net10.0`.** `GodotSharp` 4.7.0 ships `net8.0`, and a `net8.0`
-  project cannot reference a `net10.0` library. Recorded in
-  `Directory.Build.props`.
-- **No runtime reflection, and source-generated `System.Text.Json` contexts.**
-  Both future targets that could matter — an iOS export and a Blazor WebAssembly
-  client — forbid just-in-time compilation.
-
-The web client that shipped with the original implementation is not carried
-forward.
-
-### Deployment: what a served surface may do
-
-**Decided.** Settles MARVEL-145, -146, -152 and -153.
-
-If multiplayer is ever exposed, it is a separate C# server project — `src/Marvel.Server`, containerized, behind Nginx. TLS, authentication and rate limiting terminate at the reverse proxy; the engine server never faces the network directly.
-
-**The C# MVP is single-player and local.** No server, no multiplayer, no network surface. `src/Marvel.Server` is a later phase and is deliberately not being architected now.
-
-That settles the four filed issues, but **not** along a confidentiality line — this is a cooperative game. Hidden information is routinely shared at a real table, and with one scenario excepted there is no opponent among the players to keep secrets from. "One client must not read another seat's cards" is the wrong requirement, and designing toward it would be designing toward the wrong game.
-
-**MARVEL-153.** The constraint is one line, recorded here rather than tracked as work: **a served surface must not expose an arbitrary file read or a cheat console.** A fresh implementation does not inherit one unless somebody adds it.
-
-**MARVEL-145, -146, -152 — one requirement, and it is about authority, not secrecy.** Today `p`, `hot_seat` and `watch` are asserted by the requesting client and nothing checks them; object ids and the descriptor's free text leak around the filter that does exist. The defect is not that a client can see too much. It is that **there is no policy** — visibility is whatever the client claims it should be.
-
-The requirement `Marvel.Server` inherits is therefore: **the server decides what each seat sees, and the client's assertion is an input to that decision rather than the decision itself.** A cooperative policy may legitimately be permissive — show everything to everyone is a defensible answer for most scenarios, and probably the right default. It is still a policy, made server-side, and a permissive one has to be chosen rather than arrived at by nobody checking. The one non-cooperative scenario is where a restrictive policy actually has to work, and it is the case that proves the mechanism exists.
-
-MARVEL-62 established the shape that mechanism takes: the walk is driven by the shape of the descriptor rather than a list of zone names, so a zone is filtered the day it is added. That property carries forward. The three residuals — ids, free text, and the seat assertion itself — are the places the Python implementation does not reach, and they are notes for whoever designs the C# wire format, not work items now.
-
-## Testing strategy
-
-Three oracles, used for different things.
-
-**1. The replay corpus** — integration-level ground truth. Mechanically generated, covers whole games.
-
-**2. Behavioral specs authored from printed card text** — the text the game's designers wrote, which is authoritative in a way that the Python implementation is not. It comes from the vendored MarvelSDB snapshot, not from `data/cards.json`: the engine's copy has 36 cards corrupted by an encoding round-trip and 197 that say something materially different from the printed card. See [card-dataset.md](card-dataset.md).
-
-The discipline that makes this trustworthy at scale: **a scenario is not trusted until it passes against the running Python engine.** A disagreement is triaged as either a spec bug or an engine bug; both are worth finding. That makes it differential spec extraction rather than inference — and it only works while the Python engine is still the reference, which makes it urgent.
-
-**3. The puzzle system** — `game/puzzle/puzzle.py` `RunPuzzle` is already a state-setup DSL (`CreateHandCards`, `SetThreat`, `Damage`, `Confuse`, …). It is the Gherkin `Given` clause, already built. `When` is selecting an effect; `Then` is a state assertion. This is how per-card specs execute, and it is also how cards unreachable by self-play get covered.
-
-Vary spec depth by card complexity rather than writing a fixed number per card. The 531 scripts with no handler need very little; the 440 that suspend for player choice need the most. Both counts were published to `datasets/cards/summary.json`, which went with the pipeline that computed them.
-
-## Sequencing
-
-1. **Foundations** — guidance, get the Python engine running reproducibly, decide repo layout and corpus storage
-2. **Corpus and Oracle** — headless bot, determinism audit, coverage-directed corpus, freeze it
-3. **Spec Extraction** — card text dataset, puzzle harness, validation runner, rules-engine specs
-4. **Engine Core** — the C# resolve
-5. **Card DSL and Port** — DSL against the hard cases, then the 3,457 ports
-6. **Client and Integration**
-
-Phases 1–3 all run against the Python engine and produce artifacts that outlive it. Nothing in 4–6 can be validated without them.
+The repository uses one solution and one test tree. The retired Python engine,
+web client, cross-engine fixtures and compatibility adapters are gone. Git keeps
+their history; current documentation describes only the C# system that remains.

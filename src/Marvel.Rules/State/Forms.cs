@@ -16,38 +16,20 @@ namespace Marvel.Rules.State;
 /// not go through one place.
 /// </para>
 /// <para>
-/// <b>Not a boolean, and not two options.</b> <c>rr:form-change-form.6</c>:
-/// cards with the "[type] form" keyword grant an identity forms that are "in
-/// addition to the identity's alter-ego and hero forms, and they come with
-/// their own conditions for changing into them". Measured over the 4,344-card
-/// pool, three such types exist on nine faces the engine has —
-/// <c>energy</c> (Spectrum's Gamma, Photon and Pulsar), <c>mass</c> (Vision's
-/// Intangible and Dense, Shadowcat's Solid and Phased) and <c>suit</c> (Nick
-/// Fury's Assault and Stealth). Every one of them is a <b>set-aside permanent
-/// on a separate card</b>, never a face of the identity.
+/// <b>Not a boolean, and not two options.</b> <c>rr:form-change-form.6</c>
+/// permits a card with a "[type] form" keyword to grant a form in addition to
+/// hero or alter-ego form. The runtime is Core Set only, but the representation
+/// supports that later rules pattern without changing the form model.
 /// </para>
 /// <para>
-/// Those forms <i>coexist</i> with hero form rather than replacing it:
-/// <c>21002</c> Gamma reads "Spectrum gets +2 ATK" and "<b>Hero</b> Response",
-/// which only parses if Spectrum is in hero form while an energy form is
-/// faceup. So a player is in a <b>set</b> of forms, and this returns a set.
+/// Additional forms are not emitted into the state digest. The reserved
+/// <c>f_&lt;name&gt;</c> namespace is a wire-format boundary that must be specified
+/// and pinned before a product using it becomes executable.
 /// </para>
 /// <para>
-/// <b>Nothing here is emitted into the state digest yet, on purpose.</b>
-/// <c>docs/state-digest-v2.md</c> reserves an <c>f_&lt;name&gt;</c> namespace for
-/// form keys and says they "come from game data, so the key set is open-ended
-/// and a port cannot enumerate it from a fixed schema" — which is this type's
-/// claim in the digest's words. But no recording shows one, so which card
-/// carries the key (the identity, or the card granting the form) and what its
-/// value counts are both unknown, and the digest is a wire format where a
-/// guessed key changes every game outcome. Naming a form is a rules question
-/// and is answered here; putting one on the wire waits for a recording.
-/// </para>
-/// <para>
-/// A second hero face on the identity card is a different thing again and is
-/// <i>not</i> a keyword form: Ant-Man <c>12001a/c</c>, Wasp <c>13001a/c</c> and
-/// Angel <c>42001a</c>/<c>42001c</c> Archangel are foldable three-sided cards
-/// under <c>rr:flip.1</c>. See <see cref="Change"/>, which refuses them by name.
+/// A foldable identity with more than two faces is a different case again.
+/// See <see cref="Change"/>, which refuses to choose a destination the general
+/// rule does not settle.
 /// </para>
 /// </remarks>
 public static class Forms
@@ -221,13 +203,8 @@ public static class Forms
         if (identity.Faces.Count != 2)
         {
             // `rr:flip.1` -- "a foldable, 'three-sided' card is considered to
-            // have flipped any time the faceup side of the card changes". Three
-            // identities in the pool are built that way: Ant-Man `12001a/c`,
-            // Wasp `13001a/c` and Angel `42001a` / Archangel `42001c`. Which
-            // hero face a flip from alter-ego arrives at is a choice the
-            // rulebook does not settle here, and guessing it would put a wrong
-            // stat line on the board -- Archangel prints THW 0 where Angel
-            // prints 2.
+            // have flipped any time the faceup side of the card changes". The
+            // general rule does not settle which face a change arrives at.
             throw new RulesNotImplementedException(
                 $"'{seat.Name}' has an identity of {identity.Faces.Count} faces "
                 + $"({string.Join(", ", identity.Faces)}), and which one a flip arrives at "

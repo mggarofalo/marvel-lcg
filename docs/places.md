@@ -2,7 +2,11 @@
 
 Where a card is, and what that changes about what its own text means.
 
-`src/Marvel.Rules/State/PlayArea.cs`, `GameArea.cs`, `Places.cs`. MARVEL-175.
+`src/Marvel.Rules/State/PlayArea.cs`, `GameArea.cs`, `Places.cs` implement the
+model.
+
+Later-product examples below validate the general topology. They do not make
+those products executable; [scope.md](scope.md) defines the runtime boundary.
 
 `docs/event-stream.md` settled what these are *not* — not an event, not a card
 tag. This is what they are.
@@ -54,11 +58,9 @@ The reason `PlayArea` is a type:
 | `Area.CardOwner` | who a card **made here** belongs to | `Area` |
 | `Area.PlayArea` | which play area this area **sits in** | `Area`, and `AreaRef.Owner` on the wire |
 
-They are all `int`, all seat-shaped, and the first and third agree **98.1%** of
-the time — exactly often enough for a confusion to pass its tests and fail on the
-cards where whose-is-it drives rules. Before MARVEL-175 the second was called
-`Owner` and the third `RelatedPlayer`, which put the *least* alike pair under the
-most similar names.
+They are all `int`, all seat-shaped, and the first and third agreed **98.1%** in
+the design sample — enough for a confusion to pass common tests and fail where
+ownership drives rules. The model keeps all 3 meanings distinct.
 
 A player's nemesis pile is the worked example: it is **theirs** (play area 1) and
 the **scenario's** property (card owner -1). `Places.Reference` is the single
@@ -89,8 +91,8 @@ game area per player" the tempting model. **God of Lies rules it out twice** —
 `pack:mc55:game-areas` has *"a collection of 1 to 4 players who work as a team to
 fight the villain in their game area"*, and puts Loki himself in *"a neutral game
 area that is outside of any group's game area"* with nobody in it. The mc55 case
-is not in MARVEL-175's description; it turned up surveying every rules file that
-uses the phrase, and it is the one that fixes the shape.
+turned up while surveying every rules file that uses the phrase, and it fixes
+the shape.
 
 **An ordinary game has exactly one**, made with the world, holding every play
 area. Nothing in the rules distinguishes that from having none, so every
@@ -133,7 +135,7 @@ first run.
 The second sentence is the one worth keeping: the answer is *the players in your
 game area*, not *the others*, and it can be just you. An implementation reading
 it as "the others" is wrong by one in the exact case the clarification exists to
-settle. This rule is not in MARVEL-175's description either.
+settle.
 
 ### Reach — `pack:mc11:game-areas`, `pack:mc55:game-areas`
 
@@ -161,14 +163,10 @@ wrong is invisible until a scenario needs both.
 
 ## What is not here
 
-**No differential oracle, deliberately.** The v2 digest cannot see a play area:
-on the legacy engine, creating a game area and moving 47 cards into it left the
-digest **byte-identical**. Kang reaches a second game area in **0 of 3,462
-steps** across the retired sample of recorded play, and the legacy engine did
-not implement Fear No Evil. Those fixtures and that engine are gone, so
-MARVEL-174 keeps v2 frozen instead of adding a self-derived side channel. These
-rules are held against the published text, and the tests name the rule each one
-comes from. Nine mutations were watched failing.
+**Game-area topology is not part of digest v2.** The digest remains frozen
+rather than acquiring an uncited extension for research-only scenarios. These
+rules are held against published pack text and focused tests; opening a scenario
+that uses them also requires an explicit state-contract decision.
 
 **Uniqueness is scoped per game area.**
 `pack:mc11:rules-clarifications`: *"Can two players control the same unique cards

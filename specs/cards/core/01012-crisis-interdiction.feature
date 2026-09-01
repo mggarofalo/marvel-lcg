@@ -76,7 +76,7 @@ Feature: Crisis Interdiction
       | Play |
     # "A different scheme", stated directly rather than inferred from the board
     # afterwards. The option set is one row -- the schemes are its targets, not
-    # options -- so before MARVEL-94 the exclusion could only be pinned by
+    # options -- so before the original investigation the exclusion could only be pinned by
     # building a board where the main scheme was the sole candidate and showing
     # it kept its threat.
     And the legal targets for "Play" are

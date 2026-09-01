@@ -37,7 +37,7 @@ namespace Marvel.Rules.Play;
 /// the numbers say the same: <c>docs/affordances.md</c> measures 22.1% of priced
 /// affordances offering five ways to pay and 21.6% offering six, against 7.3%
 /// offering exactly one. <c>CostOption.Sources</c> has modelled the menu since
-/// MARVEL-169; this is where the answer goes.
+/// the original investigation; this is where the answer goes.
 /// </para>
 /// <para>
 /// It is also not new information. <c>tools/affordances/verify.py</c> already

@@ -25,7 +25,7 @@ public static class Blueprints
     /// shuffle draws from the game's single random stream, so reproducing one
     /// needs the exact position in that stream rather than merely the right
     /// permutation. This deals in creation order, which is deterministic and
-    /// which nothing so far contradicts. See MARVEL-210.
+    /// which nothing so far contradicts. See the original investigation.
     /// </para>
     /// </remarks>
     /// <param name="dealt">The creations, in allocation order.</param>

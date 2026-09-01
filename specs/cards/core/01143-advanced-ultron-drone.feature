@@ -26,7 +26,7 @@ Feature: Advanced Ultron Drone
   Scenario: its guard puts the villain out of reach while it is engaged with me
     # Guard is enforced by emptying the Attack option's legal targets rather than
     # by removing the option, so neither the prompt table nor any card's state
-    # can see it -- `I cannot attack` is the step that can (MARVEL-84).
+    # can see it -- `I cannot attack` is the step that can (the original investigation).
     #
     # The second half is the control: the restriction is about the villain, not
     # about attacking, and without it an engine that had forgotten how to attack

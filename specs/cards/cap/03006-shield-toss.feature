@@ -1,7 +1,7 @@
 # Printed: "Hero Action (attack): Return Captain America's Shield to your hand
 # → deal 4 damage to an enemy for each card discarded this way."
 #
-# The discard is a ranged cost with a legal floor of zero. Before MARVEL-138,
+# The discard is a ranged cost with a legal floor of zero. Before the original investigation,
 # the bot's ordinary minimum-target rule chose that floor every time, so Shield
 # Toss returned the shield but discarded no cards and damaged no enemies. The
 # payment prompt now says that its size is the effect; the shared bot planner

@@ -12,7 +12,7 @@ namespace Marvel.Rules.Tests.State;
 /// <para>
 /// <b>Nothing but the rulebook can check any of this.</b> The digest cannot see a
 /// play area — moving 47 cards into a freshly created game area left it
-/// byte-identical (MARVEL-174). So these tests are written from the rulebooks,
+/// byte-identical (the original investigation). So these tests are written from the rulebooks,
 /// and each one names the rule it comes from.
 /// </para>
 /// <para>

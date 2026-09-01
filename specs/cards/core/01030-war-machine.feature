@@ -2,7 +2,7 @@
 # damage to each enemy."
 #
 # ---------------------------------------------------------------------------
-# Written for MARVEL-129, which was filed about Wakanda Forever! and turned out
+# Written for the original investigation, which was filed about Wakanda Forever! and turned out
 # to be a population of two. Both cards print "each" and both spelled their
 # selector `range=(1, "All")` -- "some or all" -- so a player could take the
 # cost and then deal the damage to one enemy of their choosing. Self-play did

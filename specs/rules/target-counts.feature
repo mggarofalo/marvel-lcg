@@ -1,4 +1,4 @@
-# How many targets an effect takes. MARVEL-120 / MARVEL-134.
+# How many targets an effect takes. the original investigation / the original investigation.
 #
 # A selector has a floor and a ceiling, and the two are pinned by different
 # assertions. `Then the target minimum for "<option>" is <n>` reads the floor;
@@ -95,7 +95,7 @@ Feature: Target counts
   # two scenarios above a claim about Ancestral Knowledge and not about
   # selectors in general.
   #
-  # It was `range=(1, "All")` before MARVEL-129, making "each" resolvable one at
+  # It was `range=(1, "All")` before the original investigation, making "each" resolvable one at
   # a time. `range="All"` moves both ends together; the paired assertions below
   # are the direct control that the old 1..N range cannot satisfy.
 

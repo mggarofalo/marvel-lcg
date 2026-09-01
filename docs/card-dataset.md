@@ -21,17 +21,10 @@ build.
 
 ## Why printed text is the authority
 
-Behavioural specs and card abilities have to be authored from **printed card
-text**. Text written by the game's designers is authoritative in a way that an
-implementation is not: infer a rule from code you only partly understand and you
-get a confident, wrong answer, and then you build the engine to match it.
-
-The dataset this replaced was a *join* — MarvelSDB's transcription beside a
-retired Python engine's own card table — and it recorded, without resolving,
-that the two disagreed about 197 cards' text, 12 cards' traits and about a
-hundred printed values. A dataset that carries two answers has not answered.
-
-So there is one list now, and it is a reading of the printed card.
+Behavioural specs and card abilities are authored from **printed card text**.
+Implementation tables are not authorities. The generated catalog supplies one
+normalized answer for each printed fact and keeps corrections in the auditable
+supplement rather than merging competing runtime interpretations.
 
 ## What a record holds
 
@@ -89,10 +82,9 @@ the reader's correctness: `04067` Full Auto's "**When Revealed (Alter-Ego)**:
 Surge." is an ability whose *effect* is a surge, and the card does not have the
 keyword. A bare substring search gives it one.
 
-Three things end the run, and a card in the pool turns on each: a colon, because
-a bold timing trigger has one and no keyword does; a lower-case first letter;
-and a name longer than three words. Reminder text neither counts nor ends it —
-`rr:reminder-text`, "reminder text has no effect on gameplay".
+A colon, a lower-case first letter, or a name longer than three words ends the
+keyword run. Reminder text neither counts nor ends it — `rr:reminder-text`,
+"reminder text has no effect on gameplay".
 
 ## The supplement
 
@@ -129,13 +121,12 @@ begins.
 
 ## What is not here
 
-- **`datasets/setup/`** is the other half of MARVEL-252 and still has no
-  generator. Its inputs were hand-maintained game data — which scenario holds
-  which encounter sets, which hero opens with which forty cards — and there is
-  no upstream to re-derive them from, so it likely becomes vendored data of its
-  own rather than something generated.
+- **`datasets/setup/`** is authored rather than generated. Scenario composition
+  and starter decks come from product instructions, so `SetupDatasetTests`
+  provide its gate. See [setup-dataset.md](setup-dataset.md).
 - **Rulings.** `datasets/marvelcdb-faq/` carries official rulings and nothing
   here is built from them: a ruling is an input an author reads, not a field the
   dataset derives. See [its UPSTREAM.md](../datasets/marvelcdb-faq/UPSTREAM.md).
-- **Deck-building.** Nothing in the engine builds a deck, so the identities'
-  deck-building lines are not extracted.
+- **Arbitrary deck building.** The runtime validates the 5 published Core Set
+  starter decks. It does not accept a user-built deck, so identity-specific
+  deck-building exceptions are outside the current product boundary.

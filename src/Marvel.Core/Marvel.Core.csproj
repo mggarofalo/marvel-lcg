@@ -1,8 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!-- The leaf assembly. No I/O, no UI framework, no ambient state.
-       `Marvel.Core` is the one project name common to both layouts under
-       review in MARVEL-159, so what lands here survives that decision. -->
+       `Marvel.Core` contains only primitives shared by every host. -->
   <PropertyGroup>
     <RootNamespace>Marvel.Core</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>

@@ -1,6 +1,6 @@
 # Proving the wall fires
 
-MARVEL-162. Four projects that exist only to be built and to fail. They are not
+Four projects exist only to be built and to fail. They are not
 in `Marvel.slnx`, so `dotnet build` and `dotnet test` never see them;
 `tools/godot-wall.sh` builds them one at a time and checks the verdict.
 

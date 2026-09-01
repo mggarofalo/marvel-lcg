@@ -15,7 +15,7 @@
 # at the moment Foresight fired there was nothing in the deck to find and no
 # `Given` could put anything there in time.
 #
-# MARVEL-121 closed that with a step that is not a `Given` at all:
+# the original investigation closed that with a step that is not a `Given` at all:
 #
 #     Given my deck at setup is "Vibranium Suit", "Combat Training", "Vibranium"
 #
@@ -28,7 +28,7 @@
 #
 # There used to be a third -- "a searching hero needs at least two cards" -- and
 # it was not a property of the step at all. `SelectorEnd.DoShuffle` asserted its
-# source deck was non-empty, so a one-card deck raised. That is MARVEL-131, it
+# source deck was non-empty, so a one-card deck raised. That is the original investigation, it
 # is fixed, and the last Foresight scenario below is the board it used to fail
 # on. An authoring rule that is really a bug wearing a rule's clothes is worth
 # deleting loudly: the next author would have read it as arbitrary.
@@ -81,7 +81,7 @@ Feature: T'Challa
 
   @card:01040b
   Scenario: Foresight may take the only card in the deck
-    # "Shuffle your deck" with nothing left to shuffle. MARVEL-131:
+    # "Shuffle your deck" with nothing left to shuffle. the original investigation:
     # `SelectorEnd.DoShuffle` asserted its source deck was non-empty directly
     # above a branch written to handle it being empty, so this board raised --
     # and `Log.OnCrash` swallows on a release build, so what a run actually

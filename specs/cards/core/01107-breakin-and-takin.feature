@@ -23,7 +23,7 @@
 # and without the side scheme in play, and the only difference between them is
 # how far down the encounter deck the villain phase reaches.
 #
-# The deck is written top-first (MARVEL-82) and the activation takes the first
+# The deck is written top-first (the original investigation) and the activation takes the first
 # card as its boost, so `"Hydra Mercenary", "Shocker", "Vulture", ...` gives
 # Shocker as the encounter card every round deals and Vulture as the one only a
 # hazard round reaches. Both are minions and both enter play when revealed, so

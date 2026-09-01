@@ -4,7 +4,7 @@
 # the last threat from that scheme, you may discard an attachment with the text
 # "Hero Action" or "Hero Response.""
 #
-# This card was listed alongside the six "may search" cards on MARVEL-112, on
+# This card was listed alongside the six "may search" cards on the original investigation, on
 # the strength of the `may=True` keyword it passes. It is a different `may`:
 # `Players.DiscardHeroActionAttachment(..., may=True)` branches to
 # `Player.MayChooseOneAbility` and always has, so the opt-in was already a real
@@ -17,11 +17,11 @@
 # `Effect.Render` falls back to the binding effect's display name when a
 # `ForChoiceAbility` has none -- so the opt-in was offered as **"Play"**, the
 # name of the event being played, rather than as anything about discarding an
-# attachment. It was answerable, unlike the search cards before MARVEL-112, but
+# attachment. It was answerable, unlike the search cards before the original investigation, but
 # it did not say what it did.
 #
 # This scenario was written recording that wrong label rather than papering over
-# it, so that fixing the engine would fail it on purpose. MARVEL-116 is that fix:
+# it, so that fixing the engine would fail it on purpose. the original investigation is that fix:
 # the ability now carries `Players.DISCARD_ATTACHMENT_PROMPT`, the same shape as
 # `SearchInternal.MAY_SEARCH_PROMPT`, and the prompt table below is what the
 # label change is pinned by.

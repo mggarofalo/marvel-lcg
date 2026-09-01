@@ -68,7 +68,7 @@ Feature: Quarantine self-test
     # Both cards named "Rhino" -- the stage-1 villain and the stage-2 card in
     # the villain deck -- were allocated by the engine during setup, so "#2"
     # would mean whichever the allocator reached second. Naming a zone is the
-    # only honest way to say which one (MARVEL-42).
+    # only honest way to say which one (the original investigation).
     Given I am in hero form
     Then "Rhino #2" has 0 damage
 
@@ -102,7 +102,7 @@ Feature: Quarantine self-test
 
   @self-test
   Scenario: a legal-targets list that disagrees is FAIL-engine-suspected
-    # MARVEL-94. `the legal targets for` has to be capable of failing, or every
+    # the original investigation. `the legal targets for` has to be capable of failing, or every
     # scenario that uses it to pin "look at the top 3" or "a different scheme"
     # establishes nothing. Attack accepts Rhino here and nothing else.
     Given I am in hero form

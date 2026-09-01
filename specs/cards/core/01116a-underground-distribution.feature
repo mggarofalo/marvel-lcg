@@ -19,7 +19,7 @@
 # reveal runs 1B's When Revealed rather than 1A's setup.
 #
 # What changed is that a scene can now be handed a stocked encounter deck before
-# `GameSetup()` runs (MARVEL-121):
+# `GameSetup()` runs (the original investigation):
 #
 #     Given the encounter deck at setup is "Defense Network", ...
 #
@@ -38,7 +38,7 @@
 # encounter deck until a minion is discarded, put that minion into play" -- eats
 # into what is left. And "Shuffle the encounter deck" is still not assertable:
 # the vocabulary has no step for deck order, and order does not survive a shuffle
-# anyway (MARVEL-82).
+# anyway (the original investigation).
 
 Feature: Underground Distribution (1A)
 

@@ -13,7 +13,7 @@
 # The icon is measured here, against the control that matters -- another side
 # scheme, in play, revealed the same way, without the icon. The canonical
 # hazard pair and its Rules Reference tags are on Breakin' & Takin' (01107),
-# which `specs/rules/keywords.feature` reuses for MARVEL-84 rather than copying.
+# which `specs/rules/keywords.feature` reuses for the original investigation rather than copying.
 
 Feature: Illegal Arms Factory
 

@@ -12,7 +12,7 @@ namespace Marvel.Core.Random;
 /// </para>
 /// <para>
 /// <b>Nothing checks that this is really MT19937</b>, and something should:
-/// the standard published test vector. MARVEL-251.
+/// the standard published test vector. the original investigation.
 /// </para>
 /// <para>
 /// <b>There are no floating point numbers anywhere in this contract.</b>

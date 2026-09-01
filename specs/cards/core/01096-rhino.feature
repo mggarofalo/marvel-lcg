@@ -29,7 +29,7 @@
 # opens with stage II standing in the villain area on 15 hit points and stage III
 # behind it in the villain deck. Defeating stage II advances stage III into play
 # with its printed hit points, ATK, SCH and its Toughness, which is what the last
-# two scenarios below do. MARVEL-121 measured 46 villain ids that appear only in
+# two scenarios below do. the original investigation measured 46 villain ids that appear only in
 # an expert scenario file; 37 of them, this one included, are reached by
 # defeating the stage before them, and 9 stand in the villain area at setup.
 #
@@ -47,7 +47,7 @@
 # puts another player into hero form (the same limitation Under Attack's file
 # records). So there is no third scenario for the "each" of "each hero"; a
 # two-player board would measure the same one hero. **That gap is still real**
-# and is recorded in specs/unreachable.json; nothing MARVEL-121 added reaches it.
+# and is recorded in specs/unreachable.json; nothing the original investigation added reaches it.
 #
 # ---------------------------------------------------------------------------
 # There is no shared Background: the first two scenarios play the standard

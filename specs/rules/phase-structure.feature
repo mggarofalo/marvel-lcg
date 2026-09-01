@@ -4,7 +4,7 @@
 # identity carries no interrupt and no response and so asks no questions of its
 # own.
 #
-# MARVEL-23.
+# the original investigation.
 #
 # ---------------------------------------------------------------------------
 # Every phase scenario stocks both decks, and that is not decoration.

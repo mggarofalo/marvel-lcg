@@ -13,7 +13,7 @@ namespace Marvel.Rules.State;
 /// <b>A zone name is not an area.</b> One name can belong to several distinct
 /// areas at once — <c>HandsArea</c> names one per player, and a player's
 /// set-aside pile and their nemesis pile are both <c>AsideDeck</c>. That is why
-/// an area carries an identity of its own (MARVEL-175) and why <c>index</c> in
+/// an area carries an identity of its own (the original investigation) and why <c>index</c> in
 /// the digest is per area rather than per name.
 /// </para>
 /// </remarks>

@@ -20,7 +20,7 @@
 #
 # A card surged from a `Given` stops in `DealtEncounterCardsDeck` and never
 # reveals what it surged into, so both surge scenarios walk a round instead. The
-# encounter deck is written top-first (MARVEL-82) and a villain activation takes
+# encounter deck is written top-first (the original investigation) and a villain activation takes
 # two cards off it, so in `"Hydra Mercenary", "Hard to Keep Down", "Shocker"`
 # the mercenary is the boost card, the treachery is the card revealed, and
 # Shocker is what a surge reaches. Shocker entering play is the surge and

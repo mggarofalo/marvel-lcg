@@ -18,7 +18,7 @@
 # bug: the icon is real behaviour, and a cost like Sonic Boom's `Cost("YBR")`
 # demands three *specific* icons, so two printings of this card are not
 # interchangeable at payment time. Saying so used to be impossible: no step read
-# a card's resource icons. MARVEL-120 added one --
+# a card's resource icons. the original investigation added one --
 # `Then "<card>" has <n> "<icon>" resource icons` -- and
 # `specs/rules/resource-icons.feature` now makes that claim for all four
 # printings, tagged per id. So the distinction the coverage tool refuses to
@@ -95,7 +95,7 @@ Feature: Wakanda Forever!
 
   @card:01043a
   Scenario: each means each -- naming no order resolves every upgrade
-    # MARVEL-129. The card script spelled its selector `range=(1, "All")`,
+    # the original investigation. The card script spelled its selector `range=(1, "All")`,
     # which means "some or all", so a player controlling three upgrades could
     # resolve one and stop -- and self-play did exactly that, because
     # `BotCommand.Build` always submits `min_targets`. `range="All"` fixes the

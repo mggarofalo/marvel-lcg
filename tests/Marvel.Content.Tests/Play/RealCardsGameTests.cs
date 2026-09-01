@@ -127,7 +127,7 @@ public sealed class RealCardsGameTests
     /// The mulligan is the exception, and it is one because the engine has a
     /// hole rather than because the rules do: the prompt is offered
     /// non-cancellable and taking it is unimplemented, so declining is the
-    /// only answer it accepts. MARVEL-229.
+    /// only answer it accepts. the original investigation.
     /// </para>
     /// </remarks>
     private static Decision Answer(Prompt asked)

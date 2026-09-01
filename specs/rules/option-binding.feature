@@ -1,4 +1,4 @@
-# Which option an assertion is about. MARVEL-134 / MARVEL-141.
+# Which option an assertion is about. the original investigation / the original investigation.
 #
 # Three `Then` steps inspect a single offered option rather than the board:
 # `the legal targets for`, `the target minimum for` and `the target maximum
@@ -43,7 +43,7 @@
 # `specs/cards/core/01043a-wakanda-forever.feature`.
 #
 # The hand holds nothing but the two events, and neither is affordable. That is
-# deliberate and it is worth knowing: **MARVEL-130's affordability filter does
+# deliberate and it is worth knowing: **the original investigation's affordability filter does
 # not apply to a play.** `EffectChecker` sets `requires_affordability` for a
 # choose ability or a non-play action, so an unaffordable `Play` is still
 # offered and only fails when it is chosen. Both options are therefore present

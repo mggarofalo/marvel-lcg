@@ -24,7 +24,7 @@
 #   printed    Advanced Ultron Drone (01143), a DRONE minion that prints its own
 #              4 hit points and is not facedown -- so this card does not touch it
 #
-# The last scenario is the MARVEL-111 regression. Each grant used to *set* the
+# The last scenario is the the original investigation regression. Each grant used to *set* the
 # base on application and restore the *printed* value on removal, so two sources
 # granting a base to one character did not stack: removing either one wiped the
 # other's live grant and the drone reverted to a printed 0 and died. The base is
@@ -49,7 +49,7 @@ Feature: Ultron Drones
     # All three statistics, because the grant is one line of printed text and an
     # engine that dropped one of the three would still pass a scenario that only
     # checked hit points. The `0` case is not hypothetical either: until
-    # MARVEL-108 a base grant was guarded on truthiness, so "a base ATK of 0"
+    # the original investigation a base grant was guarded on truthiness, so "a base ATK of 0"
     # and "no base ATK at all" were the same thing to the engine.
     Given my deck is "Aunt May", "Backflip", "Backflip", "Backflip"
     And "Ultron Drones" is in play
@@ -120,7 +120,7 @@ Feature: Ultron Drones
 
   @card:01140
   Scenario: two live base grants stack, so removing one leaves the other standing
-    # MARVEL-111. 26031 is this same card printed into the Vision nemesis set --
+    # the original investigation. 26031 is this same card printed into the Vision nemesis set --
     # not a second script, a second id linked to this one -- so a board holding
     # both has two independent sources granting the same drone a base 1 hit
     # point, 1 ATK and 1 SCH.

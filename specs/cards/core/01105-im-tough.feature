@@ -20,7 +20,7 @@
 #
 # Both walk a real villain phase, because surge is invisible from a `Given`-time
 # reveal -- a surged card stops in `DealtEncounterCardsDeck`. The deck is written
-# top-first (MARVEL-82): the mercenary boosts the activation, 01105 is the card
+# top-first (the original investigation): the mercenary boosts the activation, 01105 is the card
 # revealed, and Shocker is what a surge reaches. The two scenarios differ in one
 # Given, whether Rhino starts tough, so Shocker's fate is the branch and nothing
 # else.

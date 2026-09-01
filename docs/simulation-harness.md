@@ -1,6 +1,6 @@
 # Configurable whole-game simulation harness
 
-MARVEL-266. `Marvel.Sim` is the permanent headless driver for the engine. It
+`Marvel.Sim` is the permanent headless driver for the engine. It
 runs named game setups under deterministic policies and writes records that can
 be reviewed, aggregated and replayed.
 
@@ -571,7 +571,7 @@ cannot replay what it writes is incomplete.
 
 ## Acceptance
 
-MARVEL-266 is complete when the following statements are executable tests:
+The harness is complete when the following statements are executable tests:
 
 - One command can name any supported scenario, one to four ordered heroes,
   modular sets, difficulty, a game count and deterministic seeds.

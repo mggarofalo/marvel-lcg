@@ -1,5 +1,5 @@
 # Resource icons: what a player card prints in its bottom-left corner, and what
-# that buys. MARVEL-120.
+# that buys. the original investigation.
 #
 # Every player card carries between zero and two resource icons in one of four
 # colours -- physical, mental, energy, wild -- and a card in hand may be

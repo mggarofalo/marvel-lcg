@@ -154,7 +154,7 @@ public sealed class PhaseEndTests
     {
         // Declining on the player's behalf would produce a board that is right
         // about everything except the ability nobody was offered. Offering it
-        // needs a prompt that can name a window -- MARVEL-179.
+        // needs a prompt that can name a window -- the original investigation.
         var world = Board();
         var waiting = new Offering(new PendingAbility(0, AbilityType.Response, 0));
 

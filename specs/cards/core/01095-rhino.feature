@@ -33,7 +33,7 @@
 # by raising or by revealing something else instead.
 #
 # "Shuffle the encounter deck" is not assertable: the vocabulary has no step for
-# deck order, and order does not survive a shuffle anyway (MARVEL-82), so there
+# deck order, and order does not survive a shuffle anyway (the original investigation), so there
 # is nothing a scenario could observe. It is called out here rather than quietly
 # dropped.
 

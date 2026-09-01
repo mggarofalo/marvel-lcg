@@ -27,7 +27,7 @@ Feature: Hydra Mercenary
 
   @card:01101
   Scenario: two copies are told apart by the order the scenario created them
-    # The duplicate-name case (MARVEL-42). Create both, then address them by
+    # The duplicate-name case (the original investigation). Create both, then address them by
     # ordinal. "#1" is the first one the encounter-deck step listed, and it
     # stays "#1" after it moves into play -- the ordinal counts creation order,
     # not position in a zone.

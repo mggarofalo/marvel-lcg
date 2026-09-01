@@ -13,7 +13,7 @@ namespace Marvel.Rules.State;
 /// <b>This is not yet a play area.</b> A seat holds the areas a deal makes for
 /// one player; the Rules Reference's <i>play area</i> is a grouping a card can
 /// be in, which decides what "the main scheme" resolves to and what a game area
-/// contains. MARVEL-175 is that model, and this type is deliberately smaller
+/// contains. the original investigation is that model, and this type is deliberately smaller
 /// than it: adding areas here that the engine does not use would be guessing at
 /// its shape.
 /// </para>

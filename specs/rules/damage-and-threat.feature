@@ -1,5 +1,5 @@
 # Damage and threat: how each is dealt, prevented, carried and counted, and what
-# happens when a scheme fills up. Rulebook behavior. MARVEL-23.
+# happens when a scheme fills up. Rulebook behavior. the original investigation.
 #
 # Prevention lives in timing-priority.feature, next to the interrupt window it
 # happens in, rather than here -- Backflip is about *when*, and splitting it
@@ -108,8 +108,8 @@ Feature: Damage and threat
   #
   # The icon is `stats.scheme_crisis` in the dataset and `Crisis` in the engine's
   # attributes, and no step in the catalogue can name it. It is printed as an
-  # icon rather than as text -- with exactly one exception in 4,422 cards: Crowd
-  # Control (01108), whose entire printed text is the reminder,
+  # icon rather than as text. Crowd Control (01108) is a useful transcription
+  # edge case because its entire printed text is the reminder,
   #
   #     "(Crisis Icon: While this scheme is in play, you cannot remove threat
   #      from the main scheme.)"
@@ -130,10 +130,10 @@ Feature: Damage and threat
   # implements the bypass -- `scheme_main.py` guards the crisis branch with
   # `by_effect.IsIgnoreKeyword('Crisis', ...)`. No scenario below exercises that
   # branch, because no core-set card reaches it; it needs a board from pack 04 or
-  # later. See MARVEL-90.
+  # later. See the original investigation.
   #
   # This section exists because a false reading of this board was filed as an
-  # engine bug (MARVEL-86). The engine was right. What that report established
+  # engine bug (the original investigation). The engine was right. What that report established
   # was that the harness sends the correct target -- it never asked whether the
   # engine was correct to ignore it.
 

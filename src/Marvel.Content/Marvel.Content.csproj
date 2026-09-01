@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Card data and the scenario setup format (MARVEL-159's layout).
+  <!-- Card data and the supported scenario setup format.
 
        No file or network I/O: everything here parses a string or a stream the
        caller opened. Where the bytes come from is a packaging decision that has

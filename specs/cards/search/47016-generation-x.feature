@@ -5,7 +5,7 @@
 # and discard pile for an identity-specific event and add it to their hand.
 # (Shuffle.)"
 #
-# One of the six cards whose "may search" clause did nothing until MARVEL-112:
+# One of the six cards whose "may search" clause did nothing until the original investigation:
 # `Search.PlayerCard(..., may=True)` widened the selector range to (0, max), and
 # every automated player picks the minimum, so the search always came back
 # empty. `SearchInternal` now offers the decline as its own option instead.
