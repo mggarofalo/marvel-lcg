@@ -1058,9 +1058,13 @@ internal sealed class CoreTranscriptRunner
     {
         context.Events.Clear();
         context.CurrentPrompt = "<none>";
+        int seat = Seat(match, step);
+        Card minion = context.SceneRequired(step).Find(SceneCard(match, step));
         context.SceneRequired(step).Apply(new MoveSceneCard(
             SceneCard(match, step),
-            new SceneDestination(SceneZone.EngagedMinion, Seat(match, step))));
+            new SceneDestination(SceneZone.EngagedMinion, seat)));
+        Reveal.Quickstrike(context.World, context.Cards, minion, seat, round: 1);
+        FinishAgenda(context, step);
     }
 
     private static void SupportEntersPlay(

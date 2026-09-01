@@ -69,4 +69,24 @@ public sealed class CoreCardFaceTranscriptTests
             "8152b5e5b44e9f6f24b69baecf6569204df7f05f242fdb466c60407cd794f85d",
             results["behavior:card:01087:deal-3-damage-enemy"].Digest);
     }
+
+    [Fact]
+    public void TriggeredKeywordBranchesHavePinnedOutcomes()
+    {
+        var results = Corpus.Value
+            .Where(candidate => candidate.Scenario.StartsWith(
+                "specs/behavior/core/core-keywords.feature::", StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
+
+        Assert.Equal(3, results.Count);
+        Assert.Equal(
+            "44539cd9a74dc6025015263af5b8693e180b4a25c4a3c3373862bb6de3a4c10f",
+            results["behavior:card:01121:surge"].Digest);
+        Assert.Equal(
+            "e68bb9edec359b1f737d40d278fa7806d5e5d8a05c7dfd11ab999f8362e2ed8e",
+            results["behavior:card:01167:quickstrike"].Digest);
+        Assert.Equal(
+            "271e4ccdef895fcebee75a00392c0f65ffff163d5c899ecdda9e30446ac38fba",
+            results["behavior:card:01040a:retaliate-1"].Digest);
+    }
 }

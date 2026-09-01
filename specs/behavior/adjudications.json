@@ -15882,11 +15882,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-keywords.feature::Quickstrike attacks when Vulture engages a hero"
+          ],
+          "mutation": "Suppress quickstrike when Vulture engages a hero; the identity damage assertion fails."
         }
       ]
     },
@@ -15900,11 +15902,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-keywords.feature::Quickstrike attacks when Vulture engages a hero"
+          ],
+          "mutation": "Suppress quickstrike when Vulture engages a hero; the identity damage assertion fails."
         }
       ]
     },
@@ -16932,11 +16936,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-keywords.feature::Retaliate damages the attacker after Black Panther is attacked"
+          ],
+          "mutation": "Suppress or mistime retaliate after the attack; Rhino remains undamaged and the transcript fails."
         }
       ]
     },
@@ -16950,11 +16956,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-keywords.feature::Retaliate damages the attacker after Black Panther is attacked"
+          ],
+          "mutation": "Suppress or mistime retaliate after the attack; Rhino remains undamaged and the transcript fails."
         }
       ]
     },
@@ -16968,11 +16976,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-keywords.feature::Retaliate damages the attacker after Black Panther is attacked"
+          ],
+          "mutation": "Suppress or mistime retaliate after the attack; Rhino remains undamaged and the transcript fails."
         }
       ]
     },
@@ -18881,11 +18891,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-keywords.feature::Surge finishes Weapons Runner before revealing the additional card"
+          ],
+          "mutation": "Skip, duplicate, or reveal the surged card before the original finishes; an engagement or event-order assertion fails."
         }
       ]
     },
@@ -18899,11 +18911,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-keywords.feature::Surge finishes Weapons Runner before revealing the additional card"
+          ],
+          "mutation": "Skip, duplicate, or reveal the surged card before the original finishes; an engagement or event-order assertion fails."
         }
       ]
     },
@@ -18917,11 +18931,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-keywords.feature::Surge finishes Weapons Runner before revealing the additional card"
+          ],
+          "mutation": "Skip, duplicate, or reveal the surged card before the original finishes; an engagement or event-order assertion fails."
         }
       ]
     },
@@ -28255,11 +28271,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-keywords.feature::Retaliate damages the attacker after Black Panther is attacked"
+          ],
+          "mutation": "Suppress or mistime retaliate after the attack; Rhino remains undamaged and the transcript fails."
         },
         {
           "key": "after-character-is-attacked-deal-1-damage",
@@ -28267,11 +28285,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-keywords.feature::Retaliate damages the attacker after Black Panther is attacked"
+          ],
+          "mutation": "Suppress or mistime retaliate after the attack; Rhino remains undamaged and the transcript fails."
         }
       ]
     },
@@ -39355,11 +39375,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-keywords.feature::Surge finishes Weapons Runner before revealing the additional card"
+          ],
+          "mutation": "Skip, duplicate, or reveal the surged card before the original finishes; an engagement or event-order assertion fails."
         },
         {
           "key": "after-card-is-revealed-reveal-1-additional",
@@ -39367,11 +39389,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-keywords.feature::Surge finishes Weapons Runner before revealing the additional card"
+          ],
+          "mutation": "Skip, duplicate, or reveal the surged card before the original finishes; an engagement or event-order assertion fails."
         },
         {
           "key": "put-weapons-runner-into-play-engaged-with",
@@ -45175,11 +45199,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-keywords.feature::Quickstrike attacks when Vulture engages a hero"
+          ],
+          "mutation": "Suppress quickstrike when Vulture engages a hero; the identity damage assertion fails."
         },
         {
           "key": "after-minion-engages-your-hero-it-attacks",
@@ -45187,11 +45213,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-keywords.feature::Quickstrike attacks when Vulture engages a hero"
+          ],
+          "mutation": "Suppress quickstrike when Vulture engages a hero; the identity damage assertion fails."
         }
       ]
     },
