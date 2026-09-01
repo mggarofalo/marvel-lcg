@@ -54208,7 +54208,7 @@
       "title": "Legions of Hydra",
       "fingerprint": "sha256:314da3df5fc0b2748da4a1778774fa5e084632718f1f7da471249196d96abe1d",
       "scope": "Core Set",
-      "disposition": "executable",
+      "disposition": "mixed",
       "obligations": [
         {
           "id": "behavior:card:01180:printed-name",
@@ -54286,11 +54286,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-modular-nemesis.feature::Legions of Hydra finds Madame Hydra before counting Hydra enemies"
+          ],
+          "mutation": "Do not find and engage Madame Hydra before resolving the remaining text; the engagement and one-Hydra threat assertions fail."
         },
         {
           "id": "behavior:card:01180:if-madame-hydra-is-not-in-play-condition-not-met",
@@ -54298,19 +54300,21 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-modular-nemesis.feature::Legions of Hydra counts every Hydra enemy already in play"
+          ],
+          "mutation": "Search for Madame Hydra despite her being in play; the unique in-play state or resulting transcript fails."
         },
         {
           "id": "behavior:card:01180:place-2-additional-threat-here-for-each-zero",
           "summary": "Zero qualifying elements: Place 2 additional threat here for each Hydra enemy in play.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "not-representable",
+          "reason": "In every valid Core resolution, Madame Hydra is either already in play or the preceding printed sentence puts her into play before this count is made, so at least one Hydra enemy is in play.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -54322,11 +54326,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-modular-nemesis.feature::Legions of Hydra finds Madame Hydra before counting Hydra enemies"
+          ],
+          "mutation": "Count zero or more than one Hydra enemy after Madame Hydra enters play; the five-threat assertion fails."
         },
         {
           "id": "behavior:card:01180:place-2-additional-threat-here-for-each-multiple",
@@ -54334,11 +54340,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-modular-nemesis.feature::Legions of Hydra counts every Hydra enemy already in play"
+          ],
+          "mutation": "Count fewer than all three Hydra enemies in play; the nine-threat assertion fails."
         }
       ]
     },
@@ -54482,11 +54490,14 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-modular-nemesis.feature::Madame Hydra places threat after attacking",
+            "specs/behavior/core/core-modular-nemesis.feature::Madame Hydra places threat after scheming"
+          ],
+          "mutation": "Omit either completed activation kind or alter the amount; its transcript leaves Legions of Hydra below five threat."
         }
       ]
     },
@@ -54738,11 +54749,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-modular-nemesis.feature::The Doomsday Chair finds M.O.D.O.K. outside play"
+          ],
+          "mutation": "Do not find and engage M.O.D.O.K. when he is outside play; the engagement assertion fails."
         },
         {
           "id": "behavior:card:01183:if-m-o-d-o-k-is-condition-not-met",
@@ -54750,11 +54763,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-modular-nemesis.feature::The Doomsday Chair does not search when M.O.D.O.K. is in play"
+          ],
+          "mutation": "Search for another M.O.D.O.K. despite the unique minion being in play; the valid transcript fails."
         }
       ]
     },
@@ -54898,11 +54913,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-modular-nemesis.feature::M.O.D.O.K. retaliates against an attacking hero"
+          ],
+          "mutation": "Remove or alter Retaliate 2; Spider-Man's two-damage assertion fails."
         },
         {
           "id": "behavior:card:01184:after-character-is-attacked-deal-2-damage",
@@ -54910,11 +54927,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-modular-nemesis.feature::M.O.D.O.K. retaliates against an attacking hero"
+          ],
+          "mutation": "Do not deal two damage to M.O.D.O.K.'s attacker after the attack; Spider-Man's damage assertion fails."
         }
       ]
     },
@@ -55002,11 +55021,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-modular-nemesis.feature::Biomechanical Upgrades attaches to the highest printed hit points and surges"
+          ],
+          "mutation": "Ignore Biomechanical Upgrades' Surge keyword; the facedown encounter-card count remains zero."
         },
         {
           "id": "behavior:card:01185:attach-minion-with-highest-printed-hit-points",
@@ -55014,11 +55035,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-modular-nemesis.feature::Biomechanical Upgrades attaches to the highest printed hit points and surges"
+          ],
+          "mutation": "Choose Shocker's lower printed hit points instead of M.O.D.O.K.'s eight; the attachment assertion fails."
         },
         {
           "id": "behavior:card:01185:when-attached-minion-would-be-defeated-heal",
