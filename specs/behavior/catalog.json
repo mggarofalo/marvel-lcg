@@ -29557,11 +29557,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/attachments.feature::Webbed Up replaces one enemy attack and stuns its attacker"
+          ],
+          "mutation": "Do not attach the played Webbed Up to the chosen enemy; the attachment assertion fails."
         },
         {
           "id": "behavior:card:01009:max-1-per-enemy",
@@ -29569,11 +29571,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/attachments.feature::Webbed Up replaces one enemy attack and stuns its attacker"
+          ],
+          "mutation": "Permit the second Webbed Up to attach to Rhino; its play-availability assertion fails."
         },
         {
           "id": "behavior:card:01009:when-attached-enemy-would-attack-discard-webbed",
@@ -29581,11 +29585,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/attachments.feature::Webbed Up replaces one enemy attack and stuns its attacker"
+          ],
+          "mutation": "Do not discard Webbed Up instead of Rhino's attack; the attachment remains or Spider-Man takes damage."
         },
         {
           "id": "behavior:card:01009:then-stun-that-enemy",
@@ -29593,11 +29599,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/attachments.feature::Webbed Up replaces one enemy attack and stuns its attacker"
+          ],
+          "mutation": "Do not give Rhino stun after discarding Webbed Up; no Give_Status event occurs and the attack deals damage."
         }
       ]
     },

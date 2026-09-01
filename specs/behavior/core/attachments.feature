@@ -3,6 +3,49 @@ Feature: Core attachment lifecycle
   Cards that print "attach to" enter play on the named game element and remain
   there until an effect or their host makes them leave play.
 
+  @behavior:card:01009:attach-enemy
+  @covers:behavior:card:01009:max-1-per-enemy
+  @covers:behavior:card:01009:when-attached-enemy-would-attack-discard-webbed
+  @covers:behavior:card:01009:then-stun-that-enemy
+  @card:01009
+  Scenario: Webbed Up replaces one enemy attack and stuns its attacker
+    # Webbed Up attaches to Rhino, and its maximum prevents the second copy
+    # from attaching to that same enemy. When Rhino would attack, the forced
+    # interrupt discards Webbed Up and gives Rhino stun; that new stun then
+    # replaces the attack and is itself discarded.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 881  |
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01002 | 0    |
+      | 01003 | 0    |
+      | 01009 | 0    |
+      | 01009 | 1    |
+      | 01088 | 0    |
+      | 01089 | 0    |
+      | 01090 | 0    |
+    When game setup reaches seat 1's mulligan
+    Then seat 1 is offered a mulligan
+    When seat 1 keeps every opening-hand card at mulligan
+    Then seat 1 is the active player
+    When seat 1 takes their voluntary form change
+    Then seat 1 changed from alter-ego to hero form
+    When seat 1 plays card 01009 copy 0 paying with these cards
+      | card  | copy |
+      | 01002 | 0    |
+      | 01003 | 0    |
+      | 01088 | 0    |
+    Then card 01009 copy 0 is attached to card 01094 copy 0
+    When seat 1 asks whether card 01009 copy 1 is available to play
+    Then card 01009 copy 1 is unavailable to play
+    When the villain attacks seat 1 with every optional choice declined
+    Then card 01009 copy 0 is faceup on top of seat 1's discard pile
+    And card 01001a copy 0 has 0 damage
+    And card 01094 copy 0 has 0 stunned status cards
+    And 3 Give_Status events were emitted
+    And the attack has ended
+
   @behavior:rr:attach-to:published-result
   @covers:behavior:rr:reveal.1:attach-to-text
   @covers:behavior:card:01099:attach-rhino

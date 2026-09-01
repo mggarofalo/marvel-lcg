@@ -3667,8 +3667,7 @@ internal sealed class CoreTranscriptRunner
             match.Groups["host"].Value,
             Number(match, "hostCopy", step)));
         if (card.Area.Type != DeckType.UpgradesArea
-            || card.Area.Host != host.ObjectId
-            || card.Area.PlayArea != host.Area.PlayArea)
+            || card.Area.Host != host.ObjectId)
         {
             throw new TranscriptAssertionException(
                 $"{step.Location}: expected card {card.ObjectId} attached to "

@@ -101,7 +101,10 @@ public sealed class CoreRuleTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(6, results.Count);
+        Assert.Equal(7, results.Count);
+        Assert.Equal(
+            "f00098f9a7b58eb4ead41d6950018a674febe272eef54560f5cdc6978dbdd4f3",
+            results["behavior:card:01009:attach-enemy"].Digest);
         Assert.Equal(
             "422b6819e211329aa2c280f68d7df90a67ae359196e4bd66a46fb775e961f6c5",
             results["behavior:rr:attach-to:published-result"].Digest);
