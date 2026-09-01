@@ -784,4 +784,28 @@ public sealed class CoreCardFaceTranscriptTests
             "86ca8e9cffb3f4bbff86a0538135743c6e32bfb46eee814cd01af51adc9c6181",
             results["behavior:card:01119:klaw-gains-retaliate-1"].Digest);
     }
+
+    [Fact]
+    public void UltronAndroidEfficiencyBranchesHavePinnedOutcomes()
+    {
+        var results = Corpus.Value
+            .Where(candidate => candidate.Scenario.StartsWith(
+                "specs/behavior/core/ultron-android-efficiency.feature::",
+                StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
+
+        Assert.Equal(12, results.Count);
+        Assert.Equal("14bf07d3dc98972cde907cce6b21dacde5af2a6c3c1e346bb051569cc72ce8ce", results["behavior:card:01144a:each-player-puts-top-card-their-deck-one-player"].Digest);
+        Assert.Equal("9c036fd1843d99c807d64bd14c5639bee76916422d54d56a91a859f075a5b8c4", results["behavior:card:01144a:each-player-puts-top-card-their-deck-multiple-players"].Digest);
+        Assert.Equal("39b85d4384ea45b98d2fa462c889c3a59cb7092e285863dbb77fd6544ff818e0", results["behavior:card:01144a:choose-either-spend-energy-resource-or-put-choice-1"].Digest);
+        Assert.Equal("8e8c6197dba3df98061895a3633fbdf8ab11a1313f90b926ba0cdce2c3b800c1", results["behavior:card:01144a:choose-either-spend-energy-resource-or-put-choice-2"].Digest);
+        Assert.Equal("096d4613217bc5929309c1fb0723b20217e267becf36493d4a8f27bd0a71a0ad", results["behavior:card:01144b:each-player-puts-top-card-their-deck-one-player"].Digest);
+        Assert.Equal("58ff8401bcddc55bdf6a0e62a6f44203e3421bf7044bd7c80dc77345024a84d6", results["behavior:card:01144b:each-player-puts-top-card-their-deck-multiple-players"].Digest);
+        Assert.Equal("29f1095eef367e71c9aab57fbb4f23bb198387a3b61c6ce5462b37299cd1b451", results["behavior:card:01144b:choose-either-spend-mental-resource-or-put-choice-1"].Digest);
+        Assert.Equal("f3ba42b9c596c5651f8a72ab967d313af3d7e5a72dbfb371c38b6981cf8df8d5", results["behavior:card:01144b:choose-either-spend-mental-resource-or-put-choice-2"].Digest);
+        Assert.Equal("e36585247f82927f4f9d333f76d39a6a7d7761f566ca9c09b9fe8c9e333bab07", results["behavior:card:01144c:each-player-puts-top-card-their-deck-one-player"].Digest);
+        Assert.Equal("47f6d9099f8c21b363ac820052eb125d9a7db63885254739af431be5c94f99d3", results["behavior:card:01144c:each-player-puts-top-card-their-deck-multiple-players"].Digest);
+        Assert.Equal("85eca6d9d215f3d432566425f737a8679d718aa0dcecef376b35cd8426be1abb", results["behavior:card:01144c:choose-either-spend-physical-resource-or-put-choice-1"].Digest);
+        Assert.Equal("f27de204583d55c36d530d8dd157fe6a30b01bea3257329085428ca9402b4e20", results["behavior:card:01144c:choose-either-spend-physical-resource-or-put-choice-2"].Digest);
+    }
 }

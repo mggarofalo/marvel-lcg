@@ -43687,11 +43687,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-android-efficiency.feature::Energy Android Efficiency creates one player's Drone"
+          ],
+          "mutation": "Remove the one-player reveal effect; the facedown Drone count assertion fails."
         },
         {
           "key": "each-player-puts-top-card-their-deck-multiple-players",
@@ -43699,11 +43701,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-android-efficiency.feature::Energy Android Efficiency creates every player's Drone"
+          ],
+          "mutation": "Skip either player or the player-order decision; a prompt or facedown Drone count assertion fails."
         },
         {
           "key": "choose-either-spend-energy-resource-or-put-choice-1",
@@ -43711,11 +43715,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-android-efficiency.feature::Energy Android Efficiency can spend an energy resource"
+          ],
+          "mutation": "Remove or misprice the energy-resource choice; the offered option, discard, or Drone-count assertion fails."
         },
         {
           "key": "choose-either-spend-energy-resource-or-put-choice-2",
@@ -43723,11 +43729,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-android-efficiency.feature::Energy Android Efficiency can create a Drone"
+          ],
+          "mutation": "Remove the Drone choice; the offered option or facedown Drone count assertion fails."
         }
       ]
     },
@@ -43769,11 +43777,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-android-efficiency.feature::Mental Android Efficiency creates one player's Drone"
+          ],
+          "mutation": "Remove the one-player reveal effect; the facedown Drone count assertion fails."
         },
         {
           "key": "each-player-puts-top-card-their-deck-multiple-players",
@@ -43781,11 +43791,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-android-efficiency.feature::Mental Android Efficiency creates every player's Drone"
+          ],
+          "mutation": "Skip either player or the player-order decision; a prompt or facedown Drone count assertion fails."
         },
         {
           "key": "choose-either-spend-mental-resource-or-put-choice-1",
@@ -43793,11 +43805,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-android-efficiency.feature::Mental Android Efficiency can spend a mental resource"
+          ],
+          "mutation": "Remove or misprice the mental-resource choice; the offered option, discard, or Drone-count assertion fails."
         },
         {
           "key": "choose-either-spend-mental-resource-or-put-choice-2",
@@ -43805,11 +43819,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-android-efficiency.feature::Mental Android Efficiency can create a Drone"
+          ],
+          "mutation": "Remove the Drone choice; the offered option or facedown Drone count assertion fails."
         }
       ]
     },
@@ -43851,11 +43867,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-android-efficiency.feature::Physical Android Efficiency creates one player's Drone"
+          ],
+          "mutation": "Remove the one-player reveal effect; the facedown Drone count assertion fails."
         },
         {
           "key": "each-player-puts-top-card-their-deck-multiple-players",
@@ -43863,11 +43881,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-android-efficiency.feature::Physical Android Efficiency creates every player's Drone"
+          ],
+          "mutation": "Skip either player or the player-order decision; a prompt or facedown Drone count assertion fails."
         },
         {
           "key": "choose-either-spend-physical-resource-or-put-choice-1",
@@ -43875,11 +43895,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-android-efficiency.feature::Physical Android Efficiency can spend a physical resource"
+          ],
+          "mutation": "Remove or misprice the physical-resource choice; the offered option, discard, or Drone-count assertion fails."
         },
         {
           "key": "choose-either-spend-physical-resource-or-put-choice-2",
@@ -43887,11 +43909,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-android-efficiency.feature::Physical Android Efficiency can create a Drone"
+          ],
+          "mutation": "Remove the Drone choice; the offered option or facedown Drone count assertion fails."
         }
       ]
     },
