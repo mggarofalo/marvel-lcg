@@ -47359,11 +47359,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/iron-man-nemesis.feature::Imminent Overload adds one threat per hero"
+          ],
+          "mutation": "Remove or alter this printed branch; the transcript's prompt and direct state assertions fail."
         }
       ]
     },
@@ -47517,11 +47519,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/iron-man-nemesis.feature::Whiplash retaliates after the hero attacks him"
+          ],
+          "mutation": "Remove or alter this printed branch; the transcript's prompt and direct state assertions fail."
         }
       ]
     },
@@ -47577,11 +47581,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/iron-man-nemesis.feature::Electric Whip Attack deals one damage for one controlled upgrade"
+          ],
+          "mutation": "Remove or alter this printed branch; the transcript's prompt and direct state assertions fail."
         },
         {
           "key": "choose-either-deal-1-damage-your-hero-choice-2",
@@ -47589,11 +47595,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/iron-man-nemesis.feature::Electric Whip Attack discards the chosen upgrade among multiple"
+          ],
+          "mutation": "Remove or alter this printed branch; the transcript's prompt and direct state assertions fail."
         },
         {
           "key": "choose-either-deal-1-damage-your-hero-zero",
@@ -47601,11 +47609,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/iron-man-nemesis.feature::Electric Whip Attack does nothing when no upgrade is controlled"
+          ],
+          "mutation": "Remove or alter this printed branch; the transcript's prompt and direct state assertions fail."
         },
         {
           "key": "choose-either-deal-1-damage-your-hero-one",
@@ -47613,11 +47623,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/iron-man-nemesis.feature::Electric Whip Attack deals one damage for one controlled upgrade"
+          ],
+          "mutation": "Remove or alter this printed branch; the transcript's prompt and direct state assertions fail."
         },
         {
           "key": "choose-either-deal-1-damage-your-hero-multiple",
@@ -47625,11 +47637,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/iron-man-nemesis.feature::Electric Whip Attack discards the chosen upgrade among multiple"
+          ],
+          "mutation": "Remove or alter this printed branch; the transcript's prompt and direct state assertions fail."
         },
         {
           "key": "if-villain-is-making-undefended-attack-choose-condition-met",
@@ -47637,11 +47651,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/iron-man-nemesis.feature::Electric Whip Attack discards an upgrade during an undefended attack"
+          ],
+          "mutation": "Remove or alter this printed branch; the transcript's prompt and direct state assertions fail."
         },
         {
           "key": "if-villain-is-making-undefended-attack-choose-condition-not-met",
@@ -47649,11 +47665,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/iron-man-nemesis.feature::Electric Whip Attack leaves upgrades alone during a defended attack"
+          ],
+          "mutation": "Remove or alter this printed branch; the transcript's prompt and direct state assertions fail."
         }
       ]
     },
@@ -47723,11 +47741,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/iron-man-nemesis.feature::Electromagnetic Backlash discards five and deals zero without energy resources"
+          ],
+          "mutation": "Remove or alter this printed branch; the transcript's prompt and direct state assertions fail."
         },
         {
           "key": "each-player-discards-top-5-cards-their-multiple-players",
@@ -47735,11 +47755,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/iron-man-nemesis.feature::Electromagnetic Backlash discards five cards from every player's deck"
+          ],
+          "mutation": "Remove or alter this printed branch; the transcript's prompt and direct state assertions fail."
         },
         {
           "key": "for-each-printed-energy-resource-player-discards-zero",
@@ -47747,11 +47769,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/iron-man-nemesis.feature::Electromagnetic Backlash discards five and deals zero without energy resources"
+          ],
+          "mutation": "Remove or alter this printed branch; the transcript's prompt and direct state assertions fail."
         },
         {
           "key": "for-each-printed-energy-resource-player-discards-one",
@@ -47759,11 +47783,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/iron-man-nemesis.feature::Electromagnetic Backlash deals one damage for one printed energy resource"
+          ],
+          "mutation": "Remove or alter this printed branch; the transcript's prompt and direct state assertions fail."
         },
         {
           "key": "for-each-printed-energy-resource-player-discards-multiple",
@@ -47771,11 +47797,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/iron-man-nemesis.feature::Electromagnetic Backlash counts every printed energy resource"
+          ],
+          "mutation": "Remove or alter this printed branch; the transcript's prompt and direct state assertions fail."
         }
       ]
     },

@@ -913,4 +913,34 @@ public sealed class CoreCardFaceTranscriptTests
             Assert.Equal(digest, results[obligation].Digest);
         }
     }
+
+    [Fact]
+    public void IronManNemesisBranchesHavePinnedOutcomes()
+    {
+        var results = Corpus.Value
+            .Where(candidate => candidate.Scenario.StartsWith(
+                "specs/behavior/core/iron-man-nemesis.feature::",
+                StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
+        var expected = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["behavior:card:01171:place-additional-1-per-hero-threat-here"] = "416b539f69365d22159cbb0b1373728faa6702cd619df9ade26ef234871f9138",
+            ["behavior:card:01172:retaliate-1-after-character-is-attacked-deal"] = "dc00e8380ff20ebeb7fe526bfa5f1252a0f9a0435e8704e5579020b5a58289df",
+            ["behavior:card:01173:choose-either-deal-1-damage-your-hero-zero"] = "744dd9808acb612fb976a8cd62dc351fd1178aa4bc007d5e7ef7099baca6ab8b",
+            ["behavior:card:01173:choose-either-deal-1-damage-your-hero-choice-1"] = "ae7a4dd5c1da4f900b433ba575d208c8f37d0370fd7065baaeb0822b1465f43a",
+            ["behavior:card:01173:choose-either-deal-1-damage-your-hero-choice-2"] = "8508d46390159c061a3259322f1aeaa93acc3cfaae4fbd354fa7e8dd1cf7882e",
+            ["behavior:card:01173:if-villain-is-making-undefended-attack-choose-condition-met"] = "1be98fca6e19c02025c514a4a79f3204d55e37156d45bb8750f584fa53ae9790",
+            ["behavior:card:01173:if-villain-is-making-undefended-attack-choose-condition-not-met"] = "22a4ca1dff7cbae06cf317b02583a66f8c2a90c03d56ae2a75cd2e94e92ec048",
+            ["behavior:card:01174:each-player-discards-top-5-cards-their-one-player"] = "e6bd52919a62892fec7f2b661bdf44cc7d47cf98bf4aa41b83b5c92d9b5a63c5",
+            ["behavior:card:01174:for-each-printed-energy-resource-player-discards-one"] = "870a87bc026b382d56959336430a412e0c23536a556a85f5287d268678a1874d",
+            ["behavior:card:01174:for-each-printed-energy-resource-player-discards-multiple"] = "255eeb22511b4370d221acc1fadcd62794f8efd07e5fe1c33e67051a4a65838a",
+            ["behavior:card:01174:each-player-discards-top-5-cards-their-multiple-players"] = "18f5c4aa8a47162bb9871e24c08d4c217d1a848c44f6f5685250cec380ce44f9",
+        };
+
+        Assert.Equal(expected.Count, results.Count);
+        foreach ((string obligation, string digest) in expected)
+        {
+            Assert.Equal(digest, results[obligation].Digest);
+        }
+    }
 }
