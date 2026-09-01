@@ -61,8 +61,22 @@ public sealed class CoreDroneAbilityTests
         SeedDecks(world, cards: 4);
         var invasive = world.CreateCard("01149", world.AreaOf(DeckType.SideSchemesArea));
         var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
 
         runner.WhenRevealed(world, invasive, player: 0);
+        var ordering = Sequence.Work(world, Cards, runner, [])!;
+        var order = Assert.Single(ordering.Affordances);
+        int[] identities = world.Seats
+            .Select(seat => seat.IdentityCard.ObjectId)
+            .ToArray();
+        Sequence.Answer(
+            world,
+            Cards,
+            runner,
+            ordering,
+            new Decision(order.Id, identities),
+            []);
+        Sequence.Finish(world, Cards, runner, []);
 
         for (int player = 0; player < 2; player++)
         {

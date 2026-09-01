@@ -8458,11 +8458,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-reveal.feature::Invasive AI lets the first player order its multiplayer effect"
+          ],
+          "mutation": "Interleave the players' three-card effects; the asserted global Discard event order fails."
         }
       ]
     },
@@ -8480,11 +8482,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-reveal.feature::Invasive AI lets the first player order its multiplayer effect"
+          ],
+          "mutation": "Force seat order instead of accepting the first player's reverse order; the asserted global Discard event order fails."
         }
       ]
     },
@@ -12638,11 +12642,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-reveal.feature::Invasive AI lets the first player order its multiplayer effect"
+          ],
+          "mutation": "Stop the chosen player sequence after its first participant; the other player's discard-pile assertions fail."
         }
       ]
     },
@@ -49273,11 +49279,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-reveal.feature::Invasive AI discards three owned cards in a one-player game"
+          ],
+          "mutation": "Discard fewer than three cards, move them to another player's pile, reorder the three moves, or eliminate the player; the transcript's ordered pile and elimination assertions fail."
         },
         {
           "id": "behavior:card:01149:each-player-discards-top-3-cards-their-multiple-players",
@@ -49285,11 +49293,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-reveal.feature::Invasive AI lets the first player order its multiplayer effect"
+          ],
+          "mutation": "Discard from only one player, discard a count other than three, or use the revealing player's deck for both iterations; the two ordered discard-pile assertions fail."
         }
       ]
     },

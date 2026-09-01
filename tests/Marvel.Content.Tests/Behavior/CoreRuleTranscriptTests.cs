@@ -143,7 +143,7 @@ public sealed class CoreRuleTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(5, results.Count);
+        Assert.Equal(7, results.Count);
         Assert.Equal(
             "185218ad400e2a7f175baf262f564963e8681749cb53f6a78f7d34b58fd65b4b",
             results["behavior:rr:reveal.5:published-result"].Digest);
@@ -159,6 +159,14 @@ public sealed class CoreRuleTranscriptTests
         Assert.Equal(
             "eae3014b5502cdd02cd7694ea2a6332b306a402acf3e089126d2a661a7df28e4",
             results["behavior:card:01106:rhino-attacks-you"].Digest);
+        Assert.Equal(
+            "ee37b7f3a89ce756dfd77db1489ed47e0705f1f1c318c1945b9f64358b42bc21",
+            results[
+                "behavior:card:01149:each-player-discards-top-3-cards-their-one-player"].Digest);
+        Assert.Equal(
+            "0e89a8c73a6db2f6ac37524a7ffed0a4d01f3d067a74c74c6a1c06490db98d16",
+            results[
+                "behavior:card:01149:each-player-discards-top-3-cards-their-multiple-players"].Digest);
     }
 
     [Fact]

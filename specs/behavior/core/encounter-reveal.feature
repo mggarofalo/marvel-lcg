@@ -21,6 +21,77 @@ Feature: Revealing Core encounter card types
     Then card 01109 copy 0 is in the villain's play area
     And card 01109 copy 0 has 3 threat counters
 
+  @behavior:card:01149:each-player-discards-top-3-cards-their-one-player
+  @card:01149
+  Scenario: Invasive AI discards three owned cards in a one-player game
+    # "When Revealed: Each player discards the top 3 cards of their deck."
+    # Spider-Man's three cards move, one at a time, to Spider-Man's discard
+    # pile; no foreign signature card is introduced and the player remains in
+    # the game.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | ultron   | spider_man | 350  |
+    And these cards are next on seat 1's player deck
+      | next card | copy |
+      | 01002     | 0    |
+      | 01003     | 0    |
+      | 01004     | 0    |
+    When card 01149 copy 0 is revealed to seat 1
+    Then seat 1's discard pile has these cards from top to bottom
+      | card  | copy |
+      | 01004 | 0    |
+      | 01003 | 0    |
+      | 01002 | 0    |
+    And seat 1 is not eliminated
+
+  @behavior:card:01149:each-player-discards-top-3-cards-their-multiple-players
+  @covers:behavior:rr:each-player:published-result
+  @covers:behavior:rr:each-player.1:published-result
+  @covers:behavior:rr:in-player-order.1:published-result
+  @card:01149 @rr:each-player @rr:each-player.1 @rr:in-player-order.1
+  Scenario: Invasive AI lets the first player order its multiplayer effect
+    # "When each player is instructed to resolve an effect, each player
+    # resolves that effect one at a time." Because Invasive AI specifies no
+    # order, the first player chooses seat 2 before seat 1; all three of seat
+    # 2's cards move before any of seat 1's cards.
+    Given a canonical Core scene is dealt
+      | campaign | heroes                    | seed |
+      | ultron   | spider_man,captain_marvel | 351  |
+    And these cards are next on seat 1's player deck
+      | next card | copy |
+      | 01002     | 0    |
+      | 01003     | 0    |
+      | 01004     | 0    |
+    And these cards are next on seat 2's player deck
+      | next card | copy |
+      | 01011     | 0    |
+      | 01012     | 0    |
+      | 01013     | 0    |
+    When card 01149 copy 0 is revealed to seat 1
+    Then seat 1 is asked to order 2 players for the pending encounter-card decision
+    When seat 1 orders these players for the pending encounter-card decision
+      | seat |
+      | 2    |
+      | 1    |
+    Then the Discard events moved these cards in order
+      | card  | copy |
+      | 01011 | 0    |
+      | 01012 | 0    |
+      | 01013 | 0    |
+      | 01002 | 0    |
+      | 01003 | 0    |
+      | 01004 | 0    |
+    And seat 1's discard pile has these cards from top to bottom
+      | card  | copy |
+      | 01004 | 0    |
+      | 01003 | 0    |
+      | 01002 | 0    |
+    And seat 2's discard pile has these cards from top to bottom
+      | card  | copy |
+      | 01013 | 0    |
+      | 01012 | 0    |
+      | 01011 | 0    |
+
   @behavior:rr:treachery.1:published-result
   @covers:behavior:rr:reveal.6:published-result
   @covers:behavior:rr:reveal.step.4:published-result

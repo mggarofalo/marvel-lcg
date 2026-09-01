@@ -514,7 +514,9 @@
       "abilities": [
         {
           "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
-          "effect": { "discardTop": { "from": "yourDeck", "player": "each", "count": 3 } }
+          "effect": { "eachPlayer": { "effect":
+            { "discardTop": { "from": "yourDeck", "count": 3 } }
+          } }
         }
       ]
     },
