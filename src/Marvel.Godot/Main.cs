@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 using Godot;
 using Marvel.Server;
 using Marvel.View;
@@ -20,6 +21,8 @@ public sealed partial class Main : Control
     private Label description = null!;
     private DecisionPanel decisions = null!;
     private Label eyebrow = null!;
+    private RichTextLabel eventLog = null!;
+    private readonly EventChronology events = new();
     private OptionButton hero = null!;
     private LocalGameClient? localClient;
     private string? localCapability;
@@ -32,9 +35,10 @@ public sealed partial class Main : Control
     private Button start = null!;
     private Label status = null!;
     private Label title = null!;
+    private bool decisionPending;
 
-    /// <summary>The initial visibility-safe game view, retained for board rendering.</summary>
-    public EngineResponse? OpenedGame { get; private set; }
+    /// <summary>The latest complete visibility-safe response accepted as authoritative.</summary>
+    public EngineResponse? CurrentGame { get; private set; }
 
     /// <inheritdoc />
     public override void _Ready()
@@ -63,7 +67,10 @@ public sealed partial class Main : Control
         setupPanel = GetNode<Control>($"{content}/Setup");
         board = GetNode<Control>($"{content}/Play");
         boardAreas = GetNode<GridContainer>($"{content}/Play/Board/Margin/Areas");
-        decisions = GetNode<DecisionPanel>($"{content}/Play/Prompt/Margin/Scroll/Decision");
+        decisions = GetNode<DecisionPanel>(
+            $"{content}/Play/Prompt/Margin/Stack/DecisionScroll/Decision");
+        eventLog = GetNode<RichTextLabel>(
+            $"{content}/Play/Prompt/Margin/Stack/EventLog");
         decisions.Submitted += OnDecisionSubmitted;
         decisions.AnchorFocused += id => boardRender?.Highlight(id);
         hero = GetNode<OptionButton>($"{content}/Setup/Selections/Fields/Grid/Hero");
@@ -211,7 +218,7 @@ public sealed partial class Main : Control
         {
             status.Text = "SEED REQUIRED  ·  ENTER A WHOLE NUMBER FROM 0 THROUGH 4294967295";
         }
-        else if (setupChoices is not null && OpenedGame is null)
+        else if (setupChoices is not null && CurrentGame is null)
         {
             status.Text = "ASSIGNMENT READY  ·  START WHEN THE TABLE IS SET";
         }
@@ -235,13 +242,11 @@ public sealed partial class Main : Control
                 return;
             }
 
-            OpenedGame = startup.Response;
-            localCapability = OpenedGame!.Capability;
-            RenderGame(OpenedGame);
+            localCapability = startup.Response!.Capability;
+            RenderGame(startup.Response, resetEvents: true);
             setupPanel.Visible = false;
             board.Visible = true;
             eyebrow.Text = "CORE SET  /  LOCAL TABLE";
-            title.Text = "The table is live.";
         }
         catch (Exception)
         {
@@ -255,46 +260,96 @@ public sealed partial class Main : Control
 
     private async void OnDecisionSubmitted(EngineDecision decision)
     {
+        if (decisionPending)
+        {
+            return;
+        }
+
+        decisionPending = true;
         try
         {
             decisions.SetSubmitting(true);
-            status.Text = "DECISION SENT  ·  WAITING FOR THE ENGINE";
+            ApplyProgress(GameProgressPresentation.Resolving());
             ClientResolutionResult result = await localClient!.ResolveAsync(
                 localCapability!, decision);
+            if (!IsInsideTree())
+            {
+                return;
+            }
+
             if (result.HasAuthoritativeView)
             {
                 RenderGame(result.Response!);
+                decisionPending = false;
             }
 
             if (result.Error is not null)
             {
-                description.Text = result.Error.Message;
-                status.Text = result.HasAuthoritativeView
-                    ? $"TABLE RECOVERED  ·  {result.Error.Code.ToUpperInvariant()}"
-                    : $"DECISION UNCONFIRMED  ·  {result.Error.Code.ToUpperInvariant()}";
+                ApplyProgress(result.HasAuthoritativeView
+                    ? GameProgressPresentation.Recovered(result.Response!, result.Error)
+                    : GameProgressPresentation.Unconfirmed(result.Error));
             }
         }
         catch (Exception)
         {
-            description.Text =
-                "The decision result could not be displayed. Restart the client before taking another action.";
-            status.Text = "TABLE UNCONFIRMED  ·  THE PREVIOUS DECISION WILL NOT BE REPEATED";
+            if (IsInsideTree())
+            {
+                ApplyProgress(GameProgressPresentation.Unconfirmed(new ClientStartupError(
+                    "display_failed",
+                    "The decision result could not be displayed.")));
+            }
         }
     }
 
-    private void RenderGame(EngineResponse response)
+    private void RenderGame(EngineResponse response, bool resetEvents = false)
     {
+        CurrentGame = response;
         WorldDescriptor world = response.World!;
         boardRender = BoardRenderer.Render(boardAreas, BoardPresentation.From(world));
         decisions.Render(response.Prompt, world);
-        description.Text =
-            $"{briefingHero.Text} versus {briefingScenario.Text} · "
-            + $"{world.Areas.Count} visible areas · "
-            + $"{response.Events.Count} new events";
-        status.Text = response.Prompt is null
-            ? $"GAME COMPLETE  ·  {world.Outcome.ToString().ToUpperInvariant()}"
-            : $"GAME OPEN  ·  {world.Outcome.ToString().ToUpperInvariant()}  ·  "
-                + response.Prompt.Asking.ToString().ToUpperInvariant();
+        if (resetEvents)
+        {
+            events.Reset(response.Events, world);
+        }
+        else
+        {
+            events.Append(response.Events, world);
+        }
+
+        RenderEvents();
+        ApplyProgress(GameProgressPresentation.FromResponse(response));
+    }
+
+    private void RenderEvents()
+    {
+        if (events.Entries.Count == 0)
+        {
+            eventLog.Text = "No events yet.";
+            return;
+        }
+
+        var text = new StringBuilder();
+        for (int index = 0; index < events.Entries.Count; index++)
+        {
+            EventPresentation entry = events.Entries[index];
+            text.Append("[color=#edc77a]")
+                .Append((index + 1).ToString("000", CultureInfo.InvariantCulture))
+                .Append("[/color]  ")
+                .AppendLine(entry.Summary)
+                .Append("     [color=#858b98]")
+                .Append(entry.Cause)
+                .AppendLine("[/color]");
+        }
+
+        eventLog.Text = text.ToString();
+        eventLog.ScrollToLine(eventLog.GetLineCount());
+    }
+
+    private void ApplyProgress(GameProgressPresentation progress)
+    {
+        title.Text = progress.Title;
+        description.Text = progress.Description;
+        status.Text = progress.Status;
     }
 
     private GameSetupSelection SelectedSetup()
@@ -329,7 +384,6 @@ public sealed partial class Main : Control
 
     private void ShowFailure(ClientStartupError failure)
     {
-        description.Text = failure.Message;
-        status.Text = $"GAME UNAVAILABLE  ·  {failure.Code.ToUpperInvariant()}";
+        ApplyProgress(GameProgressPresentation.Unavailable(failure));
     }
 }
