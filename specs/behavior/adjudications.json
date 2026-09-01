@@ -12174,10 +12174,10 @@
         {
           "key": "published-result",
           "summary": "If an effect with a limit is canceled, the card is still considered to have been played or the ability initiated, and it counts toward the limit.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "outside-core",
+          "reason": "No Core Set ability with a printed limit can be canceled by a Core rule or card effect: the limited abilities are unlabeled actions, resources, or interrupts, while Core cancellation affects attacks, thwarts, defenses, or revealed encounter effects.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
