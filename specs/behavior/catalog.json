@@ -30838,7 +30838,7 @@
       "title": "Energy Channel",
       "fingerprint": "sha256:b9e4f01901aee637d580764db3e1993a7d4ef84a2adf3673818833013bb48129",
       "scope": "Core Set",
-      "disposition": "executable",
+      "disposition": "mixed",
       "obligations": [
         {
           "id": "behavior:card:01018:printed-name",
@@ -30981,10 +30981,10 @@
         {
           "id": "behavior:card:01018:zero-counters",
           "summary": "With zero energy counters, Energy Channel deals zero damage.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "not-representable",
+          "reason": "With zero counters, the attack would deal zero damage and cannot change the game state, so rr:ability.3 prevents the action from initiating in a legal game state.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -30996,11 +30996,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Energy Channel deals two damage per counter below its cap"
+          ],
+          "mutation": "Use the ten-damage cap instead of two damage per counter below five; Rhino's eight-damage assertion fails."
         },
         {
           "id": "behavior:card:01018:at-damage-cap",
@@ -31008,11 +31010,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Energy Channel deals ten damage at five counters"
+          ],
+          "mutation": "Deal any value other than ten at five energy counters; Rhino's damage assertion fails."
         },
         {
           "id": "behavior:card:01018:above-damage-cap",

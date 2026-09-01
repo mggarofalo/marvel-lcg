@@ -882,6 +882,56 @@ Feature: Core card actions
     Then card 01134 copy 0 has 10 damage
     And card 01018 copy 0 is faceup on top of seat 1's discard pile
 
+  @behavior:card:01018:below-damage-cap
+  @card:01018
+  Scenario: Energy Channel deals two damage per counter below its cap
+    # Four energy counters are below the printed maximum, so the attack deals
+    # eight damage rather than the capped value of ten.
+    Given a canonical Core scene is dealt
+      | campaign | heroes         | seed |
+      | rhino    | captain_marvel | 871  |
+    And seat 1 shows identity face 01010a
+    And card 01018 copy 0 is an upgrade attached to seat 1's identity
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01012 | 0    |
+      | 01014 | 0    |
+    When seat 1 initiates card 01018 copy 0's first printed action defining X as 4 paying with these cards
+      | card  | copy |
+      | 01012 | 0    |
+      | 01014 | 0    |
+    Then card 01018 copy 0 has 4 energy counters
+    When seat 1 initiates card 01018 copy 0's second printed action without payment
+    Then card 01094 copy 0 is offered by the pending action
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01094 copy 0 has 8 damage
+    And card 01018 copy 0 is faceup on top of seat 1's discard pile
+
+  @behavior:card:01018:at-damage-cap
+  @card:01018
+  Scenario: Energy Channel deals ten damage at five counters
+    # Five energy counters would produce ten damage, exactly the printed
+    # maximum, so no part of the product is lost to the cap.
+    Given a canonical Core scene is dealt
+      | campaign | heroes         | seed |
+      | rhino    | captain_marvel | 872  |
+    And seat 1 shows identity face 01010a
+    And card 01018 copy 0 is an upgrade attached to seat 1's identity
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01014 | 0    |
+      | 01088 | 0    |
+    When seat 1 initiates card 01018 copy 0's first printed action defining X as 5 paying with these cards
+      | card  | copy |
+      | 01014 | 0    |
+      | 01088 | 0    |
+    Then card 01018 copy 0 has 5 energy counters
+    When seat 1 initiates card 01018 copy 0's second printed action without payment
+    Then card 01094 copy 0 is offered by the pending action
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01094 copy 0 has 10 damage
+    And card 01018 copy 0 is faceup on top of seat 1's discard pile
+
   @behavior:rr:max-maximum.3:published-result
   @covers:behavior:rr:max-maximum:published-result
   @covers:behavior:card:01057:max-1-per-player
