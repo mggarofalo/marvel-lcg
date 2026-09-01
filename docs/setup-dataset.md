@@ -30,6 +30,12 @@ name.
 The complete generated card catalog remains available for printed facts. A card
 appearing there does not make its hero, scenario or product a valid setup key.
 
+The server exposes these authored records through protocol setup discovery.
+Clients submit the returned keys rather than reading this file or deriving
+support from the broader card catalog. Standard and Expert remain separate
+campaign records even when a client presents their shared scenario name as one
+control.
+
 ## Dataset shape
 
 A campaign names its main schemes, villain stages, fixed encounter sets,

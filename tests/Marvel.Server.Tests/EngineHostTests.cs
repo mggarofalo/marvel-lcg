@@ -6,6 +6,100 @@ namespace Marvel.Server.Tests;
 
 public sealed class EngineHostTests
 {
+    [Fact]
+    public void AuthoredSetupChoicesAreAvailableBeforeAGameExists()
+    {
+        var host = new EngineHost(DatasetGameFactory.Load(RepositoryPaths.Root));
+
+        EngineResponse response = host.Exchange(EngineRequest.ReadSetup("choices"));
+
+        Assert.Null(response.Error);
+        Assert.Equal(string.Empty, response.GameId);
+        Assert.Null(response.World);
+        Assert.Empty(response.Events);
+        SetupChoices choices = Assert.IsType<SetupChoices>(response.Setup);
+        Assert.Equal(
+            ["spider_man", "captain_marvel", "she_hulk", "iron_man", "black_panther"],
+            choices.Heroes.Select(choice => choice.Key));
+        Assert.Equal("Spider-Man", choices.Heroes[0].Name);
+        Assert.Equal(
+            ["rhino", "rhino_expert", "klaw", "klaw_expert", "ultron", "ultron_expert"],
+            choices.Scenarios.Select(choice => choice.Key));
+        Assert.False(choices.Scenarios[0].Expert);
+        Assert.True(choices.Scenarios[1].Expert);
+        Assert.Equal(["bomb_scare"], choices.Scenarios[0].RecommendedModularSets);
+        Assert.Equal(
+            [
+                "bomb_scare", "masters_of_evil", "under_attack",
+                "legions_of_hydra", "the_doomsday_chair",
+            ],
+            choices.ModularSets.Select(choice => choice.Key));
+        Assert.Equal("The Doomsday Chair", choices.ModularSets[^1].Name);
+    }
+
+    [Fact]
+    public void InProcessSetupResponsesCannotMutateTheAuthoredCatalog()
+    {
+        var host = new EngineHost(DatasetGameFactory.Load(RepositoryPaths.Root));
+        SetupChoices first = Assert.IsType<SetupChoices>(
+            host.Exchange(EngineRequest.ReadSetup("first")).Setup);
+        IList<string> exposed = Assert.IsAssignableFrom<IList<string>>(
+            first.Scenarios.Single(choice => choice.Key == "rhino")
+                .RecommendedModularSets);
+
+        Assert.Throws<NotSupportedException>(exposed.Clear);
+
+        SetupChoices second = Assert.IsType<SetupChoices>(
+            host.Exchange(EngineRequest.ReadSetup("second")).Setup);
+        EngineResponse opened = host.Exchange(EngineRequest.OpenGame(
+            "open",
+            "catalog-isolation",
+            new GameSpecification(
+                "rhino", ["spider_man"], ModularSets: null, Seed: 7)));
+        Assert.Equal(
+            ["bomb_scare"],
+            second.Scenarios.Single(choice => choice.Key == "rhino")
+                .RecommendedModularSets);
+        Assert.Null(opened.Error);
+    }
+
+    [Fact]
+    public void SetupDiscoveryRejectsFieldsThatCouldNameOrMutateAGame()
+    {
+        var host = new EngineHost(DatasetGameFactory.Load(RepositoryPaths.Root));
+        EngineRequest valid = EngineRequest.ReadSetup("bad");
+        EngineRequest[] malformed =
+        {
+            valid with { GameId = "game" },
+            valid with { Capability = "capability" },
+            valid with
+            {
+                Game = new GameSpecification("rhino", ["spider_man"], [], 7),
+            },
+            valid with { Decision = EngineDecision.Decline },
+            valid with { Viewer = new ViewerClaim(Watch: true) },
+        };
+
+        foreach (EngineRequest request in malformed)
+        {
+            EngineResponse response = host.Exchange(request);
+            Assert.Equal("invalid_request", response.Error?.Code);
+            Assert.Null(response.Setup);
+        }
+    }
+
+    [Fact]
+    public void HostsWithoutSetupDiscoveryReportItAsUnavailable()
+    {
+        var factory = new UnusedFactory();
+        var host = new EngineHost(factory);
+
+        EngineResponse response = host.Exchange(EngineRequest.ReadSetup("choices"));
+
+        Assert.Equal("setup_unavailable", response.Error?.Code);
+        Assert.Equal(0, factory.Calls);
+    }
+
     [Theory]
     [InlineData("unus", "spider_man", null, "no campaign named 'unus'")]
     [InlineData("rhino", "sp_dr", null, "no hero named 'sp_dr'")]
@@ -112,7 +206,7 @@ public sealed class EngineHostTests
             1, "old-client", EngineProtocol.Open, "game",
             Game: new GameSpecification("rhino", ["spider_man"], null, 1)));
 
-        Assert.Equal(3, EngineProtocol.Version);
+        Assert.Equal(4, EngineProtocol.Version);
         Assert.Equal(EngineProtocol.Version, rejected.Version);
         Assert.Equal("unsupported_version", rejected.Error?.Code);
         Assert.Equal(0, factory.Calls);

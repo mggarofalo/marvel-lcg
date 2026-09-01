@@ -34,6 +34,13 @@ public interface IGameFactory
     OpenedGame Create(GameSpecification specification);
 }
 
+/// <summary>Exposes the authored choices a client may use to open a game.</summary>
+public interface ISetupDiscovery
+{
+    /// <summary>Returns the complete supported setup surface.</summary>
+    SetupChoices DiscoverSetup();
+}
+
 /// <summary>Issues transport capabilities that never enter deterministic game state.</summary>
 public interface ISessionCapabilityIssuer
 {
@@ -113,6 +120,11 @@ public sealed class EngineHost : IEngineEndpoint
                 $"request_id exceeds {EngineProtocol.MaximumIdentifierLength} characters");
         }
 
+        if (request.Operation == EngineProtocol.Setup)
+        {
+            return Setup(request);
+        }
+
         if (string.IsNullOrWhiteSpace(request.GameId))
         {
             return Failed(request, "invalid_request", "game_id is required");
@@ -136,6 +148,37 @@ public sealed class EngineHost : IEngineEndpoint
                 request, "invalid_request",
                 $"operation '{request.Operation}' is not supported"),
         };
+    }
+
+    private EngineResponse Setup(EngineRequest request)
+    {
+        if (request.GameId is not ""
+            || request.Capability is not null
+            || request.Game is not null
+            || request.Decision is not null
+            || request.Viewer is not null)
+        {
+            return Failed(
+                request, "invalid_request",
+                "setup accepts only a request id");
+        }
+
+        if (factory is not ISetupDiscovery discovery)
+        {
+            return Failed(
+                request, "setup_unavailable",
+                "setup choices are not available from this host");
+        }
+
+        SetupChoices choices = discovery.DiscoverSetup();
+        return new EngineResponse(
+            EngineProtocol.Version,
+            request.RequestId,
+            GameId: string.Empty,
+            Capability: null,
+            Prompt: null,
+            Events: [],
+            Setup: choices);
     }
 
     private EngineResponse Open(EngineRequest request)
@@ -458,7 +501,7 @@ public sealed class EngineHost : IEngineEndpoint
 }
 
 /// <summary>Loads the repository's canonical datasets and deals games from them.</summary>
-public sealed class DatasetGameFactory : IGameFactory
+public sealed class DatasetGameFactory : IGameFactory, ISetupDiscovery
 {
     private readonly SetupCatalog setup;
     private readonly CardCatalog cards;
@@ -506,6 +549,30 @@ public sealed class DatasetGameFactory : IGameFactory
             campaign.Expert);
         return new OpenedGame(Game.Begin(world, cards, runner), setupEvents);
     }
+
+    /// <inheritdoc />
+    public SetupChoices DiscoverSetup() => new(
+        Heroes:
+        [
+            .. setup.HeroNames.Select(key =>
+                new HeroSetupChoice(key, setup.Hero(key).Name)),
+        ],
+        Scenarios:
+        [
+            .. setup.CampaignNames.Select(key =>
+            {
+                CampaignSetup campaign = setup.Campaign(key);
+                return new ScenarioSetupChoice(
+                    key, campaign.Name, campaign.Expert, [.. campaign.ModularSets]);
+            }),
+        ],
+        ModularSets:
+        [
+            .. setup.EncounterSetNames
+                .Where(key => ModularEncounterSets.IsModular(setup, cards, key))
+                .Select(key => new ModularSetupChoice(
+                    key, setup.EncounterSetDisplayName(key))),
+        ]);
 
     private static string Read(string root, string dataset, string file) =>
         File.ReadAllText(Path.Combine(root, "datasets", dataset, file));

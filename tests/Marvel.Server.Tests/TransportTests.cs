@@ -15,6 +15,23 @@ namespace Marvel.Server.Tests;
 public sealed class TransportTests
 {
     [Fact]
+    public async Task SetupDiscoveryHasSocketAndInProcessSerializationParity()
+    {
+        var host = new EngineHost(
+            DatasetGameFactory.Load(Marvel.Tests.RepositoryPaths.Root));
+        var request = EngineRequest.ReadSetup("choices");
+        var local = new InProcessTransport(host);
+        var server = new SocketEngineServer(host, IPAddress.Loopback, port: 0);
+
+        EngineResponse inProcess = await local.ExchangeAsync(
+            request, TestContext.Current.CancellationToken);
+        EngineResponse socket = await ExchangeOverSocket(server, request);
+
+        Assert.Equal(EngineJson.Write(inProcess), EngineJson.Write(socket));
+        Assert.NotNull(socket.Setup);
+    }
+
+    [Fact]
     public async Task SocketAndInProcessTransportsExposeTheSameContract()
     {
         var request = EngineRequest.ResolveGame(
@@ -139,7 +156,7 @@ public sealed class TransportTests
 
         var again = EngineJson.ReadResponse(EngineJson.Write(response));
 
-        Assert.Equal(3, again.Version);
+        Assert.Equal(4, again.Version);
         Assert.Collection(
             again.Events,
             happened => Assert.Equal(joined, Assert.IsType<PlayAreaJoined>(happened)),

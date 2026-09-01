@@ -19,12 +19,12 @@ public sealed class SetupCatalog
 {
     private readonly IReadOnlyDictionary<string, CampaignSetup> campaigns;
     private readonly IReadOnlyDictionary<string, HeroSetup> heroes;
-    private readonly IReadOnlyDictionary<string, IReadOnlyList<string>> encounterSets;
+    private readonly IReadOnlyDictionary<string, EncounterSetSetup> encounterSets;
 
     private SetupCatalog(
         IReadOnlyDictionary<string, CampaignSetup> campaigns,
         IReadOnlyDictionary<string, HeroSetup> heroes,
-        IReadOnlyDictionary<string, IReadOnlyList<string>> encounterSets)
+        IReadOnlyDictionary<string, EncounterSetSetup> encounterSets)
     {
         this.campaigns = campaigns;
         this.heroes = heroes;
@@ -54,7 +54,11 @@ public sealed class SetupCatalog
     /// <summary>One named encounter set's cards, in printed order.</summary>
     /// <exception cref="KeyNotFoundException">The dataset has no such name.</exception>
     public IReadOnlyList<string> EncounterSet(string name) =>
-        Get(encounterSets, name, "encounter set");
+        Get(encounterSets, name, "encounter set").Cards;
+
+    /// <summary>The authored printed name of one encounter set.</summary>
+    public string EncounterSetDisplayName(string name) =>
+        Get(encounterSets, name, "encounter set").Name;
 
     private static T Get<T>(IReadOnlyDictionary<string, T> from, string name, string what)
     {
@@ -84,10 +88,11 @@ public sealed class SetupCatalog
             heroes[entry.Name] = ReadHero(entry.Value);
         }
 
-        var sets = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
+        var sets = new Dictionary<string, EncounterSetSetup>(StringComparer.Ordinal);
         foreach (var entry in Section(root, "encounter_sets"))
         {
-            sets[entry.Name] = Strings(entry.Value, "encounters");
+            sets[entry.Name] = new EncounterSetSetup(
+                Text(entry.Value, "name"), Strings(entry.Value, "encounters"));
         }
 
         return new SetupCatalog(campaigns, heroes, sets);
