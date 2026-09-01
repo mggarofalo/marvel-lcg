@@ -17787,11 +17787,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/play-areas.feature::Core encounter cards occupy exactly their prescribed play areas"
+          ],
+          "mutation": "The printed play-area membership assertions fail if a player's identity, minion, or obligation is assigned elsewhere."
         }
       ]
     },
@@ -17809,11 +17811,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/play-areas.feature::Core encounter cards occupy exactly their prescribed play areas"
+          ],
+          "mutation": "The villain-area assertions fail if an environment, side scheme, or villain attachment is assigned elsewhere."
         }
       ]
     },
@@ -17831,11 +17835,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/play-areas.feature::Core encounter cards occupy exactly their prescribed play areas"
+          ],
+          "mutation": "Assign any arranged encounter card to both play areas; its paired positive and negative assertions cannot both pass."
         }
       ]
     },
@@ -18683,11 +18689,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/play-areas.feature::Core encounter cards occupy exactly their prescribed play areas"
+          ],
+          "mutation": "Assign Program Transmitter to the player rather than its villain host's play area; its paired assertions fail."
         }
       ]
     },
@@ -18705,11 +18713,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/play-areas.feature::Core encounter cards occupy exactly their prescribed play areas"
+          ],
+          "mutation": "Assign Advanced Ultron Drone to the villain rather than the engaged player's play area; its paired assertions fail."
         }
       ]
     },
@@ -18727,11 +18737,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/play-areas.feature::Core encounter cards occupy exactly their prescribed play areas"
+          ],
+          "mutation": "Assign Spider-Man's obligation to the villain rather than its player's play area; its paired assertions fail."
         }
       ]
     },
@@ -26514,11 +26526,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/play-areas.feature::Core encounter cards occupy exactly their prescribed play areas"
+          ],
+          "mutation": "Assign Ultron Drones or Drone Factory outside the villain's play area; a villain-area assertion fails."
         }
       ]
     },
@@ -26536,11 +26550,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/play-areas.feature::Core encounter cards occupy exactly their prescribed play areas"
+          ],
+          "mutation": "Assign Program Transmitter outside its villain host's play area; a villain-area assertion fails."
         }
       ]
     },
@@ -26558,11 +26574,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/play-areas.feature::Core encounter cards occupy exactly their prescribed play areas"
+          ],
+          "mutation": "Assign Advanced Ultron Drone to the villain's play area; its negative villain-area assertion fails."
         }
       ]
     },
@@ -26580,11 +26598,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/play-areas.feature::Core encounter cards occupy exactly their prescribed play areas"
+          ],
+          "mutation": "Assign Spider-Man's obligation to the villain's play area; its negative villain-area assertion fails."
         }
       ]
     },

@@ -25,6 +25,21 @@ public sealed class CoreRuleTranscriptTests
     }
 
     [Fact]
+    public void PlayAreaBranchesHavePinnedOutcomes()
+    {
+        var results = Corpus.Value
+            .Where(result => result.Scenario.StartsWith(
+                "specs/behavior/core/play-areas.feature::",
+                StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
+
+        Assert.Single(results);
+        Assert.Equal(
+            "129b052cf1d9337a6fa2b05540538dda462d1bba59751234c5a0bd8d806fb519",
+            results["behavior:rr:play-area.1:published-result"].Digest);
+    }
+
+    [Fact]
     public void MainSchemeBranchesHavePinnedOutcomes()
     {
         var results = Corpus.Value

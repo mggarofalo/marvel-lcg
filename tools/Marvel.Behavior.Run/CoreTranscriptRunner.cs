@@ -262,6 +262,9 @@ internal sealed class CoreTranscriptRunner
         Bind("place-side-scheme", TranscriptStepKind.Given,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is a side scheme in play",
             PlaceSideScheme),
+        Bind("place-obligation", TranscriptStepKind.Given,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is an obligation in seat (?<seat>\d+)'s play area",
+            PlaceObligation),
         Bind("attach-identity-upgrade", TranscriptStepKind.Given,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is an upgrade attached to seat (?<seat>\d+)'s identity",
             AttachIdentityUpgrade),
@@ -532,6 +535,18 @@ internal sealed class CoreTranscriptRunner
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is in play", CardInPlay),
         Bind("card-out-of-play", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is out of play", CardOutOfPlay),
+        Bind("card-player-play-area", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is in seat (?<seat>\d+)'s play area",
+            CardInPlayerPlayArea),
+        Bind("card-not-player-play-area", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is not in seat (?<seat>\d+)'s play area",
+            CardNotInPlayerPlayArea),
+        Bind("card-villain-play-area", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is in the villain's play area",
+            CardInVillainPlayArea),
+        Bind("card-not-villain-play-area", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is not in the villain's play area",
+            CardNotInVillainPlayArea),
         Bind("player-order", TranscriptStepKind.Then,
             @"the player order is (?<order>[\d,]+)", PlayerOrder),
         Bind("per-player-count", TranscriptStepKind.Then,
@@ -720,6 +735,12 @@ internal sealed class CoreTranscriptRunner
         TranscriptContext context, TranscriptStep step, Match match) =>
         context.SceneRequired(step).Apply(new MoveSceneCard(
             SceneCard(match, step), new SceneDestination(SceneZone.SideScheme)));
+
+    private static void PlaceObligation(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        context.SceneRequired(step).Apply(new MoveSceneCard(
+            SceneCard(match, step),
+            new SceneDestination(SceneZone.Obligation, Seat(match, step))));
 
     private static void AttachIdentityUpgrade(
         TranscriptContext context, TranscriptStep step, Match match) =>
@@ -2196,6 +2217,40 @@ internal sealed class CoreTranscriptRunner
         {
             throw new TranscriptAssertionException(
                 $"{step.Location}: expected card {card.ObjectId} out of play; was {card.Area.Type}");
+        }
+    }
+
+    private static void CardInPlayerPlayArea(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        CardPlayArea(context, step, match, PlayArea.Of(Seat(match, step)), expected: true);
+
+    private static void CardNotInPlayerPlayArea(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        CardPlayArea(context, step, match, PlayArea.Of(Seat(match, step)), expected: false);
+
+    private static void CardInVillainPlayArea(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        CardPlayArea(context, step, match, PlayArea.Villains, expected: true);
+
+    private static void CardNotInVillainPlayArea(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        CardPlayArea(context, step, match, PlayArea.Villains, expected: false);
+
+    private static void CardPlayArea(
+        TranscriptContext context,
+        TranscriptStep step,
+        Match match,
+        PlayArea playArea,
+        bool expected)
+    {
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        bool actual = card.Area.PlayArea == playArea;
+        if (actual != expected)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected card {card.ObjectId} "
+                + (expected ? $"in play area {playArea}" : $"outside play area {playArea}")
+                + $"; was {card.Area.PlayArea}");
         }
     }
 
