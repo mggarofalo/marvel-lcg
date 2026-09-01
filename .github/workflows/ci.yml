@@ -65,6 +65,20 @@ jobs:
       - name: Test
         run: dotnet test --no-build --configuration Release
 
+      # The catalog is derived from every committed Core authority, not from
+      # whichever rules and cards the implementation happens to cite. This
+      # gate rejects a changed authority, an unclassified source unit, an
+      # unverified executable obligation, or a transcript that does not name
+      # the exact reviewed obligation it proves.
+      - name: The Core behavioral obligation catalog is complete
+        run: dotnet run --project tools/Marvel.Behavior.Index --no-build --configuration Release -- check
+
+      # The admitted Gherkin is executable documentation. Run every transcript
+      # against a canonical legal Core game and separately require the
+      # deliberately false quarantine scenario to fail.
+      - name: The Core behavioral specification passes
+        run: dotnet run --project tools/Marvel.Behavior.Run --no-build --configuration Release -- check
+
       # `AGENTS.md` non-negotiable 8: a generated dataset is rebuildable
       # offline and byte-identically. `datasets/cards/` is generated from the
       # vendored MarvelSDB snapshot and `datasets/cards/supplement.json`, and

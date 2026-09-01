@@ -117,6 +117,27 @@ Feature: Core player card abilities
     And card 01045 copy 0 is in seat 1's player deck
     And card 01046 copy 0 is in seat 1's player deck
 
+  @behavior:faq:01042:published-clarification-1
+  @faq:01042 @card:01042
+  Scenario: Ancestral Knowledge treats Wakanda Forever faces as one title
+    # The four printed faces share one title, so they are the same card for the
+    # "different cards" restriction and provide only one title; the payment
+    # card is the only second title available after the event is initiated.
+    Given a canonical Core scene is dealt
+      | campaign | heroes        | seed |
+      | rhino    | black_panther | 924  |
+    And seat 1 shows identity face 01040b
+    And seat 1's player deck contains only these next cards with all other deck cards in hand
+      | next card | copy |
+      | 01044     | 0    |
+    And card 01043a copy 0 starts in seat 1's discard pile
+    And card 01043b copy 0 starts in seat 1's discard pile
+    And card 01043c copy 0 starts in seat 1's discard pile
+    When seat 1 initiates card 01042 copy 0's action paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+    Then seat 1 is asked to choose between 1 and 2 cards for the pending action
+
   @behavior:card:01050:physical-deal-2-damage-enemy
   @covers:behavior:card:01050:after-hulk-attacks-discard-top-card-your
   @covers:behavior:card:01050:printed-effect-01-condition-met
@@ -274,7 +295,8 @@ Feature: Core player card abilities
 
   @behavior:card:01078:when-treachery-card-is-revealed-from-encounter
   @covers:behavior:card:01078:villain-attacks-you-instead
-  @card:01078
+  @covers:behavior:ruling:3724bc02d9defdbe:published-clarification
+  @card:01078 @ruling:3724bc02d9defdbe
   Scenario: Get Behind Me cancels a treachery and causes another villain attack
     # Get Behind Me cancels Advance's When Revealed scheme activation, then
     # causes Rhino to make a second attack. The two fixed boost cards make the
@@ -520,6 +542,33 @@ Feature: Core player card abilities
     Then card 01094 copy 0 has 5 damage
     And card 01094 copy 0 has 1 stunned status card
     And card 01028 copy 0 is faceup on top of seat 1's discard pile
+
+  @behavior:ruling:7f35317bac86b8c4:already-stunned-enemy
+  @ruling:7f35317bac86b8c4 @card:01028 @rr:target.2
+  Scenario: Superhuman Strength remains after attacking an already stunned enemy
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 1112 |
+    And seat 1 shows identity face 01019a
+    And card 01028 copy 0 is an upgrade attached to seat 1's identity
+    And card 01094 copy 0 has a stunned status card
+    When seat 1 uses their basic attack against card 01094 copy 0
+    Then card 01094 copy 0 has 5 damage
+    And card 01094 copy 0 has 1 stunned status card
+    And card 01028 copy 0 remains attached to seat 1's identity
+
+  @behavior:ruling:7f35317bac86b8c4:defeated-enemy-left-play
+  @ruling:7f35317bac86b8c4 @card:01028 @rr:target.2
+  Scenario: Superhuman Strength remains when its attacked enemy is defeated
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 1113 |
+    And seat 1 shows identity face 01019a
+    And card 01028 copy 0 is an upgrade attached to seat 1's identity
+    And card 01101 copy 0 is a minion engaged with seat 1
+    When seat 1 uses their basic attack against card 01101 copy 0
+    Then card 01101 copy 0 is faceup on top of the encounter discard pile
+    And card 01028 copy 0 remains attached to seat 1's identity
 
   @behavior:card:01031:for-each-printed-energy-resource-discarded-way-zero
   @card:01031
@@ -912,6 +961,38 @@ Feature: Core player card abilities
     When seat 1 asks for available card actions
     Then card 01068 copy 0's action is unavailable
 
+  @behavior:faq:01068:published-clarification-1
+  @faq:01068 @card:01068 @card:01071
+  Scenario: Vision re-enters without its prior lasting bonus
+    Given a canonical Core scene is dealt
+      | campaign | heroes         | seed |
+      | rhino    | captain_marvel | 884  |
+    And card 01068 copy 0 is an ally controlled by seat 1
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01012 | 0    |
+      | 01071 | 0    |
+      | 01014 | 0    |
+      | 01014 | 1    |
+      | 01088 | 0    |
+    When seat 1 initiates card 01068 copy 0's action paying with these cards
+      | card  | copy |
+      | 01012 | 0    |
+    Then option 1 is offered by the pending decision
+    When seat 1 chooses option 1 for the pending encounter-card decision
+    Then card 01068 copy 0 has modified THW 3
+    When an effect attempts to discard card 01068 copy 0
+    Then card 01068 copy 0 is in seat 1's discard pile
+    When seat 1 initiates card 01071 copy 0's action without payment
+    Then card 01068 copy 0 is offered by the pending action
+    When seat 1 chooses card 01068 copy 0 paying with these cards for the pending action
+      | card  | copy |
+      | 01014 | 0    |
+      | 01088 | 0    |
+    Then card 01068 copy 0 has modified THW 1
+    When seat 1 asks for available card actions
+    Then card 01068 copy 0's action is available
+
   @behavior:card:01068:choose-atk-plus-two-until-end-phase
   @card:01068
   Scenario: Vision chooses a temporary attack increase
@@ -962,7 +1043,8 @@ Feature: Core player card abilities
     And card 01083 copy 0 remains an ally controlled by seat 1
 
   @behavior:card:01037:exhaust-mark-v-helmet-remove-1-threat-condition-not-met
-  @card:01037
+  @covers:behavior:rr:scheme-card-type.1:published-result
+  @card:01037 @rr:scheme-card-type.1
   Scenario: Mark V Helmet removes threat from one scheme without Aerial
     # Without the Aerial trait, the Helmet's thwart action chooses one scheme
     # and removes one threat only from that scheme.
@@ -1118,7 +1200,8 @@ Feature: Core player card abilities
     And card 01029a copy 0 is ready
 
   @behavior:card:01036:you-get-6-hit-points
-  @card:01036
+  @covers:behavior:rr:hit-points.2.3:published-result
+  @card:01036 @rr:hit-points.2.3
   Scenario: Mark V Armor grants Iron Man six hit points
     # "You get +6 hit points." Tony Stark begins with nine hit points, so the
     # controlled upgrade raises his undamaged remaining total to fifteen.
@@ -1261,7 +1344,8 @@ Feature: Core player card abilities
     And card 01097b copy 0 has 1 threat counter
 
   @behavior:card:01033:exhaust-pepper-potts-generate-resources-top-card
-  @card:01033
+  @covers:behavior:faq:01033:double-printed-resource
+  @card:01033 @faq:01033
   Scenario: Pepper Potts generates the top discard card's resources
     # "Resource: Exhaust Pepper Potts → generate the resources of the top card
     # in your discard pile." Energy's two printed resources produce YY.
@@ -1273,6 +1357,38 @@ Feature: Core player card abilities
     When seat 1 uses card 01033 copy 0's resource ability
     Then card 01033 copy 0 generated YY resources
     And card 01033 copy 0 is exhausted
+
+  @behavior:faq:01033:power-of-aspect-resource
+  @faq:01033 @card:01033 @card:01055
+  Scenario: Pepper Potts copies rather than doubles a Power card's resource
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | iron_man | 864  |
+    And card 01033 copy 0 is a support controlled by seat 1
+    And card 01055 copy 0 starts in seat 1's discard pile
+    When seat 1 uses card 01033 copy 0's resource ability
+    Then card 01033 copy 0 generated G resources
+
+  @behavior:faq:01033:currently-spent-card
+  @faq:01033 @card:01033
+  Scenario: Pepper Potts reads the prior discard top during simultaneous payment
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | iron_man | 865  |
+    And card 01033 copy 0 is a support controlled by seat 1
+    And card 01090 copy 0 starts in seat 1's discard pile
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01030 | 0    |
+      | 01088 | 0    |
+      | 01089 | 0    |
+    When seat 1 plays card 01030 copy 0 paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+      | 01089 | 0    |
+      | 01033 | 0    |
+    Then card 01033 copy 0 generated R resources
+    And card 01030 copy 0 remains an ally controlled by seat 1
 
   @behavior:card:01006:exhaust-aunt-may-heal-4-damage-from-accepted
   @card:01006

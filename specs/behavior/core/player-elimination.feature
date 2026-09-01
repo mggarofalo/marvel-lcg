@@ -103,3 +103,34 @@ Feature: Identity defeat and player elimination
     When seat 1's identity is defeated
     Then seat 1 is eliminated
     And the players lose the game
+
+  @behavior:ruling:895d2e4fcd40b0a2:published-clarification
+  @ruling:895d2e4fcd40b0a2 @rr:player-elimination.step.2 @rr:villain-phase.step.2.b
+  Scenario: Transferred minions attack the next player during that player's activation step
+    Given a canonical Core scene is dealt
+      | campaign | heroes                    | seed |
+      | rhino    | spider_man,captain_marvel | 1126 |
+    And seat 1 shows identity face 01001a
+    And seat 2 shows identity face 01010a
+    And card 01001a copy 0 has 9 damage
+    And card 01010a copy 0 is exhausted
+    And card 01094 copy 0 has a stunned status card
+    And card 01101 copy 0 is a minion engaged with seat 1
+    And card 01103 copy 0 is a minion engaged with seat 1
+    And seat 1's hand is empty
+    And seat 2's hand is empty
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01104     | 0    |
+      | 01101     | 1    |
+    When villain phase 1 resolves with every optional choice declined until a required decision
+    Then seat 1 is asked to order 2 cards for the pending action
+    When seat 1 orders these cards for the pending action
+      | card  | copy |
+      | 01101 | 0    |
+      | 01103 | 0    |
+    Then seat 1 may pass the pending window
+    When seat 1 declines the pending opportunity
+    Then card 01101 copy 0 is engaged with seat 2
+    And card 01103 copy 0 is engaged with seat 2
+    And card 01010a copy 0 has 5 damage

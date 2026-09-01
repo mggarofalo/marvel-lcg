@@ -29,6 +29,29 @@ public sealed class CoreTranscriptRunnerTests
     }
 
     [Fact]
+    public void EveryAuthoredCoreSetupRecordRunsFromItsCanonicalScene()
+    {
+        string path = Path.Combine(
+            RepositoryPaths.Root, "specs", "behavior", "core",
+            "setup-authorities.feature");
+        TranscriptFeature feature = TranscriptParser.Parse(
+            RepositoryPaths.Root, path);
+        var runner = new CoreTranscriptRunner(RepositoryPaths.Root);
+
+        List<TranscriptResult> results =
+            feature.Scenarios.Select(runner.Execute).ToList();
+
+        Assert.Equal(18, results.Count);
+        Assert.Equal(
+            18,
+            results.Select(result => result.Obligation)
+                .Distinct(StringComparer.Ordinal)
+                .Count());
+        Assert.All(results, result =>
+            Assert.Matches("^[0-9a-f]{64}$", result.Digest));
+    }
+
+    [Fact]
     public void QuarantineFailsOnItsFalseObservationAndIsNotInThePassingCorpus()
     {
         var suite = new CoreTranscriptSuite(RepositoryPaths.Root);
@@ -244,6 +267,16 @@ public sealed class CoreTranscriptRunnerTests
     [Fact]
     public void CompletedCatalogEvidenceIsCheckedInReverse()
     {
+        var unverified = new CatalogObligation(
+            "behavior:rr:test:unverified", "rr:test", "executable", "unverified",
+            [], null, null);
+
+        TranscriptException incomplete = Assert.Throws<TranscriptException>(() =>
+            CoreTranscriptSuite.CompletedScenarioReferences([unverified]));
+
+        Assert.Contains("is not completed; implementation is unverified", incomplete.Message,
+            StringComparison.Ordinal);
+
         var missingScenario = new CatalogObligation(
             "behavior:rr:test:branch", "rr:test", "executable", "supported",
             [], "a mutation", null);
@@ -274,6 +307,16 @@ public sealed class CoreTranscriptRunnerTests
 
         Assert.Contains("has no mutation evidence", negative.Message,
             StringComparison.Ordinal);
+
+        var untranscribedNegative = untestedNegative with
+        {
+            Scenarios = [],
+            Mutation = "remove the refusal",
+        };
+        TranscriptException absentNegative = Assert.Throws<TranscriptException>(() =>
+            CoreTranscriptSuite.CompletedScenarioReferences([untranscribedNegative]));
+
+        Assert.Contains("has no scenarios", absentNegative.Message, StringComparison.Ordinal);
     }
 
     [Fact]

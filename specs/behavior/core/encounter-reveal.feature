@@ -6,7 +6,8 @@ Feature: Revealing Core encounter card types
   @behavior:rr:reveal.5:published-result
   @covers:behavior:rr:side-scheme.1:published-result
   @covers:behavior:card:01109:place-additional-1-per-hero-threat-here
-  @rr:reveal.5 @rr:side-scheme.1 @card:01109
+  @covers:behavior:faq:01019a:side-scheme-enters-with-threat
+  @rr:reveal.5 @rr:side-scheme.1 @card:01109 @faq:01019a
   Scenario: A revealed side scheme enters the villain play area with its threat
     # "Side scheme: It enters play in the villain's play area." Its starting
     # threat is placed on entry before its When Revealed text adds 1 per player.
@@ -101,8 +102,9 @@ Feature: Revealing Core encounter card types
   @covers:behavior:rr:heal.2:published-result
   @covers:behavior:card:01104:rhino-heals-4-damage
   @covers:behavior:card:01104:if-no-damage-was-healed-way-card-condition-not-met
+  @covers:behavior:rr:resolve.4:published-result
   @rr:treachery.1 @rr:reveal.6 @rr:reveal.step.4 @rr:treachery.2 @rr:heal.2
-  @card:01104
+  @card:01104 @rr:resolve.4
   Scenario: A revealed treachery resolves and is discarded
     # A revealed treachery's effects resolve, and "after resolving the effects
     # of a treachery card ... place the card in the encounter discard pile."
@@ -143,7 +145,9 @@ Feature: Revealing Core encounter card types
   @covers:behavior:rr:activation.4:published-result
   @covers:behavior:rr:activation.7:published-result
   @covers:behavior:rr:treachery.2.1:published-result
+  @covers:behavior:rr:alteration-effect.1:published-result
   @card:01106 @rr:activation.4 @rr:activation.7 @rr:treachery.2.1
+  @rr:alteration-effect.1
   Scenario: Stampede remains resolving until its villain attack finishes
     # "If a treachery causes one or more enemies to activate as its last effect,
     # that treachery card is considered resolved and is discarded after all of
@@ -187,6 +191,22 @@ Feature: Revealing Core encounter card types
     And card 01101 copy 0 has 2 damage
     And card 01066 copy 0 has 3 arrow counters
 
+  @behavior:faq:01066:published-clarification-1
+  @faq:01066 @card:01066 @card:01121
+  Scenario: A defeated Weapons Runner still surges after Hawkeye responds
+    Given a canonical Core scene is dealt
+      | campaign | heroes         | seed |
+      | klaw     | captain_marvel | 348  |
+    And card 01066 copy 0 is an ally controlled by seat 1
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01121     | 1    |
+    When card 01121 copy 0 is revealed to seat 1
+    Then seat 1 is offered the "Hawkeye" pending opportunity
+    When seat 1 accepts card 01066 copy 0's pending opportunity
+    Then card 01121 copy 0 is faceup on top of the encounter discard pile
+    And seat 1 has 1 facedown encounter card
+
   @behavior:rr:you-your.5:published-result
   @covers:behavior:card:01112:you-are-confused
   @covers:behavior:card:01112:if-you-are-already-confused-card-gains-condition-not-met
@@ -204,7 +224,8 @@ Feature: Revealing Core encounter card types
     And card 01112 copy 0 is faceup on top of the encounter discard pile
 
   @behavior:rr:choose-option.1:published-result
-  @rr:choose-option.1 @card:01155
+  @covers:behavior:faq:01155:published-clarification-1
+  @rr:choose-option.1 @card:01155 @faq:01155
   Scenario: Affairs of State omits its upgrade option when no target exists
     # T'Challa is already in alter-ego form, so the optional flip is skipped.
     # With no Black Panther upgrade in play, only the option that exhausts the

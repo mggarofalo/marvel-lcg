@@ -91,6 +91,21 @@ public sealed partial class AbilityRunner
                 $"'{card.FaceId}' has a cost of '{cost.Kind}', which is not implemented"),
         };
 
+    /// <summary>Whether a mandatory cost can be paid without asking a player.</summary>
+    /// <remarks>
+    /// A forced ability is not optional, but its arrow cost is still paid at
+    /// <c>rr:initiating-abilities.step.5</c>. A cost that identifies its own
+    /// payment, such as “discard this card,” needs no decision. Resource and
+    /// variable-card costs do, so they remain explicitly unimplemented until
+    /// the timing window can carry that mandatory payment prompt.
+    /// </remarks>
+    private static bool MandatoryCostIsAutomatic(AbilityNode cost) => cost.Kind switch
+    {
+        "seq" => Nodes(cost.Argument).All(MandatoryCostIsAutomatic),
+        "discard" or "exhaust" or "removeCounters" => true,
+        _ => false,
+    };
+
     private static bool SequencePayable(World world, Card card, int player, AbilityNode cost)
     {
         var steps = Nodes(cost.Argument).ToList();

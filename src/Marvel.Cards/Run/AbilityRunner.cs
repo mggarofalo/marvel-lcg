@@ -232,6 +232,21 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
         var root = AbilityAt(
             source, continuation.Tier, continuation.AbilityOrdinal,
             continuation.AbilityFace).Effect;
+        bool repeatDynamicActivation =
+            cast.Results.Remove("repeatDynamicActivation");
+        if (repeatDynamicActivation)
+        {
+            if (cast.Results.GetValueOrDefault("activationMade") > 0)
+            {
+                cast.Results["dynamicActivationMade"] = 1;
+            }
+            Run(NodeAtPath(root, path), cast);
+            if (cast.Suspended)
+            {
+                cast.CompleteResolution();
+                return cast.Events;
+            }
+        }
         int eachPlayer = path.ToList().FindIndex(frame =>
             frame.StartsWith("eachPlayer:", StringComparison.Ordinal));
         ResumeAfter(
@@ -635,17 +650,24 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
                 + "ability's period");
         }
 
-        // **A forced ability is resolved, never offered, and so never priced.**
-        // `rr:forced.1` makes it resolve when its condition is met, which is
-        // why `Offering.Work` runs it without asking anybody anything -- and a
-        // payment is an answer to a question. `rr:initiating-abilities.step.5`
-        // would still have to be paid, out of a hand nobody chose from. No card
-        // in the pool prints one; the day one does, the window has to ask.
+        // A forced ability is resolved rather than offered, but its printed
+        // arrow cost is still paid at `rr:initiating-abilities.step.5`.
+        // Superhuman Strength's “discard this card” names the whole payment,
+        // so no player decision is needed. A mandatory cost that does require
+        // a selection needs a prompt carried by the timing window; refuse that
+        // state instead of choosing on the player's behalf.
         if (AbilityTypes.IsMandatory(found.Trigger.Timing) && found.Cost is not null)
         {
-            throw new RulesNotImplementedException(
-                $"'{card.FaceId}' has a mandatory ability with a cost, and a mandatory ability "
-                + "resolves without any player being asked to pay one");
+            if (!MandatoryCostIsAutomatic(found.Cost))
+            {
+                throw new RulesNotImplementedException(
+                    $"'{card.FaceId}' has a mandatory ability whose '{found.Cost.Kind}' "
+                    + "cost requires a player decision");
+            }
+            if (!Payable(world, card, resolving, found.Cost))
+            {
+                return events;
+            }
         }
 
         if (resolving >= 0 && !CanInitiate(found, cast))

@@ -6,7 +6,8 @@ Feature: Simultaneous Core effects
   @behavior:rr:simultaneous-resolution:published-result
   @covers:behavior:card:01191:surge
   @covers:behavior:card:01191:exhaust-your-identity-card
-  @rr:simultaneous-resolution @rr:surge.1 @rr:when-revealed-abilities.1
+  @covers:behavior:rr:forced.5:published-result
+  @rr:simultaneous-resolution @rr:surge.1 @rr:when-revealed-abilities.1 @rr:forced.5
   @card:01191 @card:01103
   Scenario: The first player orders Surge before a printed When Revealed effect
     # "If two or more effects with the same bold timing trigger would resolve

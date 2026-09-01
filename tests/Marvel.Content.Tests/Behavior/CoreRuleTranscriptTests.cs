@@ -57,7 +57,7 @@ public sealed class CoreRuleTranscriptTests
                     StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(6, results.Count);
+        Assert.Equal(7, results.Count);
         Assert.Equal(
             "cf0c14b5a10b7cc87760c3ba462daa2a657242c520db5ef0a3334d6d0f8e74be",
             results["behavior:rr:interrupt.2:published-result"].Digest);
@@ -230,7 +230,7 @@ public sealed class CoreRuleTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(9, results.Count);
+        Assert.Equal(10, results.Count);
         Assert.Equal(
             "185218ad400e2a7f175baf262f564963e8681749cb53f6a78f7d34b58fd65b4b",
             results["behavior:rr:reveal.5:published-result"].Digest);
@@ -365,7 +365,7 @@ public sealed class CoreRuleTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(4, results.Count);
+        Assert.Equal(6, results.Count);
         Assert.Equal(
             "87b20f195af0f89ca10e94890082e869d08366a336f3b3b566b1811b99744754",
             results["behavior:rr:minion.2:published-result"].Digest);
@@ -397,7 +397,7 @@ public sealed class CoreRuleTranscriptTests
             "cc9b0c5ed4114e87fa527bf10e21a0168a001c9ba37840dcb0d859c1737c7e11",
             results["behavior:rr:damage.step.6:published-result"].Digest);
         Assert.Equal(
-            "14afde0ec017bb9bba8551df18711a2697311d93db3886c32c98fe21e200cc8e",
+            "19c28e1cd2c2b5dc32ecbd861b63d200e60fba83e49f843a442bf651964d26b8",
             results["behavior:rr:damage.step.7:published-result"].Digest);
         Assert.Equal(
             "315a8c560b9a88e6d0ca2ad9876e5374c45842428880cdbcaa104015b280ed4f",
@@ -407,13 +407,27 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void VillainPhaseBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var transcripts = Corpus.Value
             .Where(result => result.Scenario.StartsWith(
                 "specs/behavior/core/villain-phase.feature::",
                 StringComparison.Ordinal))
-            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
+            .ToList();
+        var results = transcripts
+            .GroupBy(result => result.Obligation, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
 
-        Assert.Equal(24, results.Count);
+        Assert.Equal(
+            [
+                "1ad66f20a225b596a40a5616b4e07758c0393fea73b6ef6452b91e50924ca032",
+                "8fdd75885f6d9a5ae593edee39872f64856f97ae8bf3d7a5bd4324544602fead",
+            ],
+            transcripts
+                .Where(result => result.Obligation
+                    == "behavior:ruling:2ea7a5960d1275c8:published-clarification")
+                .Select(result => result.Digest)
+                .Order(StringComparer.Ordinal));
+
+        Assert.Equal(32, results.Count);
         Assert.Equal(
             "aadbff792b4caca6a6ecbb13041865133c3e9ce1d588d1a9c6a59834d8a97fc8",
             results["behavior:rr:villain-phase:published-result"].Digest);
@@ -457,7 +471,7 @@ public sealed class CoreRuleTranscriptTests
             "19ae349185692d4d06243e8ad5b6cb272e9eae4a699a5d993d9f563aef081212",
             results["behavior:rr:defend-defense.3:published-result"].Digest);
         Assert.Equal(
-            "68c1c95fac4d73b9f1ee2d06497719065788fc843552eed5be888ce1b737c8ca",
+            "bf83abdf023f7d0a08b4b011d6bc7c678641f3e79a07371bc5b274ffbf894c17",
             results["behavior:rr:attack-enemy-activation.3.2:published-result"].Digest);
         Assert.Equal(
             "0623b6e4b73ad819c92b02f7940d4d4db612d688361fdbc4f9d8992933df7e52",
@@ -496,7 +510,7 @@ public sealed class CoreRuleTranscriptTests
             "dab07315ec82d4dffa5852140b360299a47d7cc396c78e54b34be5b4c22cfe53",
             results["behavior:rr:stun-stunned.5:published-result"].Digest);
         Assert.Equal(
-            "2e19591503121238703885aa7b629ade053670e7e220727ce82bcf5e7b12857e",
+            "8566f39188fee85d0c62e5330cc9104c32020f6a301f0541e007419031c2659f",
             results["behavior:rr:confuse-confused.5:published-result"].Digest);
         Assert.Equal(
             "7d7ced5d78722f6dd1c69d9a07e291dad214bd3037a647c5ceeab7a6933e2906",
@@ -627,7 +641,7 @@ public sealed class CoreRuleTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(4, results.Count);
+        Assert.Equal(5, results.Count);
         Assert.Equal(
             "6c82c1944e5b28e57e0ee86754575d4a25672c96571153d058d77d981623fe2e",
             results["behavior:rr:player-elimination:published-result"].Digest);

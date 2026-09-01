@@ -43,6 +43,7 @@ public sealed class CoreActivationAbilityTests
         var madame = world.CreateCard(
             "01181", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
 
         var events = runner.ActivationCompleted(
             world,
@@ -174,6 +175,15 @@ public sealed class CoreActivationAbilityTests
 
         AuthoredCards.Runner().WhenRevealed(world, card, 0);
 
+        var choice = Assert.Single(
+            world.Agenda.Outstanding, step => step.What == Steps.ChooseOption);
+        var runner = AuthoredCards.Runner();
+        var prompt = runner.Choosing(world, card, 0, choice.Index, choice.Tier)!;
+        var order = Assert.Single(prompt.Affordances);
+        runner.Chose(
+            world, card, 0, choice.Index,
+            new Decision(order.Id, [first.ObjectId, second.ObjectId]), choice.Tier);
+
         Assert.Equal(
             [first.ObjectId, second.ObjectId],
             world.Agenda.Outstanding
@@ -223,6 +233,14 @@ public sealed class CoreActivationAbilityTests
             world, new EnemyActivation(
                 madame.ObjectId, 0, Attacking: false, Id: 7, Made: true, ThreatPlaced: 1));
 
+        var choice = Assert.Single(world.Agenda.Outstanding);
+        Assert.Equal(Steps.ChooseOption, choice.What);
+        var prompt = runner.Choosing(world, madame, 0, choice.Index, choice.Tier)!;
+        var order = Assert.Single(prompt.Affordances);
+        runner.Chose(
+            world, madame, 0, choice.Index,
+            Decision.Take(order.Id), choice.Tier);
+
         var placement = Assert.Single(
             world.Agenda.Outstanding, step => step.What == Steps.PlaceThreatEffect);
         Assert.Equal(legions.ObjectId, placement.Placement!.Scheme);
@@ -240,14 +258,23 @@ public sealed class CoreActivationAbilityTests
         second.IdentityCard = world.CreateCard("01029b", second.Hero);
         var attacks = world.CreateCard(
             "01129", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
-        world.CreateCard(
+        var other = world.CreateCard(
             "01131", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(1)));
         var card = world.CreateCard("01133", world.AreaOf(DeckType.RevealingArea));
+        var runner = AuthoredCards.Runner();
 
-        AuthoredCards.Runner().WhenRevealed(world, card, 0);
+        runner.WhenRevealed(world, card, 0);
 
-        var activation = Assert.Single(
-            world.Agenda.Outstanding, step => step.What == Steps.Attack);
+        var choice = Assert.Single(
+            world.Agenda.Outstanding, step => step.What == Steps.ChooseOption);
+        var prompt = runner.Choosing(world, card, 0, choice.Index, choice.Tier)!;
+        var order = Assert.Single(prompt.Affordances);
+        runner.Chose(
+            world, card, 0, choice.Index,
+            new Decision(order.Id, [attacks.ObjectId, other.ObjectId]), choice.Tier);
+
+        var activation = world.Agenda.Outstanding
+            .First(step => step.What == Steps.Attack);
         Assert.Equal(attacks.ObjectId, activation.Subject);
         Assert.Equal(0, activation.Seat);
     }

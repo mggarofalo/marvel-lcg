@@ -1394,7 +1394,8 @@ public sealed partial class AbilityRunner
                     kind == CardKind.Minion
                     && TraceEngagedWith(candidate, cast.Player, engagement),
                 AbilityValue.Word { Value: "dronesEngagedWithYou" } =>
-                    FacedownDrones.Is(candidate)
+                    kind == CardKind.Minion
+                    && TraceHasTrait(candidate, "DRONE", cast, discarded, traits)
                     && TraceEngagedWith(candidate, Resolver(cast), engagement),
                 AbilityValue.Word { Value: "enemiesEngagedWithChosenPlayer" } =>
                     kind == CardKind.Minion
@@ -1728,8 +1729,8 @@ public sealed partial class AbilityRunner
                 card.FaceId, "Cost", cast.World.Players),
             "attack" => TraceModified(
                 card, "attack", cast, discarded, modifiers),
-            "printedHealth" => cast.World.Facts.PrintedValue(
-                card.FaceId, "HP", cast.World.Players),
+            "printedHealth" => FacedownDrones.BaseValue(
+                card, cast.World.Facts, "HP", cast.World.Players),
             _ => throw new AbilityException(
                 $"'{key}' is not a value cards can be ranked by"),
         };

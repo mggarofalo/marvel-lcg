@@ -54,6 +54,13 @@ public sealed record MoveSceneCard(SceneCard Card, SceneDestination Destination)
     public override string Name => "move-card";
 }
 
+/// <summary>Replaces the current villain with one later stage from its legal deck.</summary>
+public sealed record SetSceneVillain(SceneCard Card) : CoreSceneOperation
+{
+    /// <inheritdoc />
+    public override string Name => "set-villain";
+}
+
 /// <summary>Where unselected draw-pile cards go while arranging a deck boundary.</summary>
 public enum PlayerDeckRemainder
 {
@@ -229,6 +236,9 @@ public sealed class CanonicalCoreScene
             {
                 case MoveSceneCard move:
                     Move(Find(move.Card), move.Destination);
+                    break;
+                case SetSceneVillain villain:
+                    Villain(Find(villain.Card));
                     break;
                 case StackPlayerDeck stack:
                     StackPlayer(stack);
@@ -431,6 +441,30 @@ public sealed class CanonicalCoreScene
             Reveal.EnterPlay(World, World.Facts, card, [], abilities: World.Abilities);
             AccountCreatedCards();
         }
+    }
+
+    private void Villain(Card card)
+    {
+        if (!CardKinds.IsVillain(World.Facts.Kind(card.FaceId))
+            || card.Owner != World.Scenario)
+        {
+            throw new InvalidOperationException(
+                $"'{card.FaceId}' is not a scenario-owned villain stage");
+        }
+
+        Card? current = World.TheCardIn(DeckType.VillainArea);
+        if (current == card)
+        {
+            return;
+        }
+
+        if (current is not null)
+        {
+            World.MoveToTop(current, World.AreaOf(DeckType.RemovedArea));
+        }
+
+        World.MoveToTop(card, World.AreaOf(DeckType.VillainArea));
+        card.TurnFaceUp();
     }
 
     private (PlayArea PlayArea, bool InPlay) ProjectedDestination(

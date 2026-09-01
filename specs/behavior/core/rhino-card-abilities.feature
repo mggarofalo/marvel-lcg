@@ -34,7 +34,8 @@ Feature: Core Rhino card abilities
   @behavior:card:01098:attach-rhino
   @covers:behavior:card:01098:when-any-amount-damage-would-be-dealt
   @covers:behavior:card:01098:then-if-there-is-at-least-5-condition-met
-  @card:01098 @card:01005
+  @covers:behavior:ruling:074448583686e795:armored-rhino-suit-interrupts-before-tough
+  @card:01098 @card:01005 @ruling:074448583686e795
   Scenario: Armored Rhino Suit absorbs a large hit and is discarded
     # The revealed Suit attaches to Rhino. Swinging Web Kick's eight damage is
     # placed on the Suit instead; reaching at least five discards the Suit.
@@ -47,6 +48,7 @@ Feature: Core Rhino card abilities
       | 01005 | 0    |
       | 01088 | 0    |
       | 01003 | 0    |
+    And card 01094 copy 0 has a tough status card
     When card 01098 copy 0 is revealed to seat 1
     Then card 01098 copy 0 is attached to card 01094 copy 0
     When seat 1 initiates card 01005 copy 0's action paying with these cards
@@ -56,6 +58,7 @@ Feature: Core Rhino card abilities
     Then card 01094 copy 0 is offered by the pending action
     When seat 1 chooses card 01094 copy 0 for the pending action
     Then card 01094 copy 0 has 0 damage
+    And card 01094 copy 0 has 1 tough status card
     And card 01098 copy 0 is faceup on top of the encounter discard pile
 
   @behavior:card:01098:then-if-there-is-at-least-5-condition-not-met

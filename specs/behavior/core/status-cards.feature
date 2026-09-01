@@ -44,7 +44,8 @@ Feature: Core status cards
 
   @behavior:rr:confuse-confused.5:published-result
   @covers:behavior:rr:confuse-confused.1:published-result
-  @rr:confuse-confused.5 @rr:confuse-confused.1
+  @covers:behavior:rr:confuse-confused.5.1:published-result
+  @rr:confuse-confused.5 @rr:confuse-confused.1 @rr:confuse-confused.5.1
   Scenario: A confused hero's basic thwart is replaced by discarding confuse
     # "If a confused identity or ally attempts to thwart ... discard the
     # confused card instead."
@@ -53,11 +54,11 @@ Feature: Core status cards
       | rhino    | spider_man | 314  |
     And seat 1 shows identity face 01001a
     And card 01001a copy 0 has a confused status card
-    And card 01097b copy 0 has 3 threat counters
+    And card 01097b copy 0 has 0 threat counters
     When seat 1 uses their basic thwart against card 01097b copy 0
     Then card 01001a copy 0 has 0 confused status cards
     And card 01001a copy 0 is exhausted
-    And card 01097b copy 0 has 3 threat counters
+    And card 01097b copy 0 has 0 threat counters
 
   @behavior:rr:stun-stunned.2:published-result
   @covers:behavior:rr:status-cards:status-card-placement

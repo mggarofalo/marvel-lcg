@@ -204,7 +204,7 @@ public sealed partial class AbilityRunner
         node.Kind is "choose" or "chooseCard" or "indirectDamage"
             or "resolveSpecials" or "payOrExhaust" or "chooseTopForHand"
             or "chooseDiscardToShuffle" or "thwartDifferentSchemes" or "makeTheCall"
-            or "legalPractice" or "payOrEffect";
+            or "legalPractice" or "payOrEffect" or "enemyAttacks" or "enemySchemes";
 
     /// <summary>Choice nodes on the control-flow path that can execute now.</summary>
     private static IEnumerable<AbilityNode> ActiveChoices(AbilityNode node, Cast cast)
@@ -217,6 +217,15 @@ public sealed partial class AbilityRunner
         if (node.Kind == "and" && Nodes(node.Argument).Skip(1).Any())
         {
             yield return node;
+            yield break;
+        }
+
+        if (node.Kind is "enemyAttacks" or "enemySchemes")
+        {
+            if (ActivationCandidates(node, cast).Count > 1)
+            {
+                yield return node;
+            }
             yield break;
         }
 

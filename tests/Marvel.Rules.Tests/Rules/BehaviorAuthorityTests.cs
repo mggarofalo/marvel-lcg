@@ -58,6 +58,47 @@ public sealed class BehaviorAuthorityTests
     }
 
     [Fact]
+    public void ExpansionCardsCannotChangeTheCoreAuthorityUniverse()
+    {
+        using var document = JsonDocument.Parse(
+            """
+            [
+              {
+                "card_id": "01001a",
+                "name": "Core",
+                "pack": "core",
+                "text_plain": "Core text"
+              },
+              {
+                "card_id": "02001a",
+                "name": "Expansion",
+                "pack": "green-goblin",
+                "text_plain": "Expansion text"
+              }
+            ]
+            """);
+        var withExpansion = new List<AuthoritySource>();
+        AuthoritySources.AddCards(withExpansion, document.RootElement);
+        using var coreOnly = JsonDocument.Parse(
+            """
+            [
+              {
+                "card_id": "01001a",
+                "name": "Core",
+                "pack": "core",
+                "text_plain": "Core text"
+              }
+            ]
+            """);
+        var withoutExpansion = new List<AuthoritySource>();
+        AuthoritySources.AddCards(withoutExpansion, coreOnly.RootElement);
+
+        Assert.Equal(withoutExpansion, withExpansion);
+        Assert.Single(withExpansion);
+        Assert.Equal("card:01001a", withExpansion[0].Id);
+    }
+
+    [Fact]
     public void JcsEscapingUsesLiteralUnicodeAndRequiredControlEscapes()
     {
         using var document = JsonDocument.Parse(
@@ -194,7 +235,7 @@ public sealed class BehaviorAuthorityTests
             source => source.Id == "ruling:81a47ee5901551a4");
 
         Assert.Equal("mixed", ruling.Disposition);
-        Assert.Contains(ruling.Obligations, obligation => obligation.Disposition == "executable");
+        Assert.Contains(ruling.Obligations, obligation => obligation.Disposition == "narrower");
         Assert.Contains(ruling.Obligations, obligation => obligation.Disposition == "outside-core");
     }
 
@@ -214,20 +255,27 @@ public sealed class BehaviorAuthorityTests
     }
 
     [Fact]
-    public void SkeletonsNameExactNegativeTranscriptExceptions()
+    public void CardFaceSpecificationUsesLfOnEveryPlatform()
+    {
+        string feature = CardFaceSpecifications.Build();
+
+        Assert.DoesNotContain('\r', feature);
+        Assert.EndsWith("\n", feature, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void CompletedCatalogEmitsNoNegativeTranscriptSkeletons()
     {
         var catalog = Catalog.Build();
-        var unsupported = catalog.Sources.SelectMany(source => source.Obligations)
-            .First(obligation => obligation.Implementation == "unimplemented");
         using var output = new StringWriter();
 
         Catalog.Skeletons(catalog, output);
 
-        Assert.Contains($"@{unsupported.Id}", output.ToString(), StringComparison.Ordinal);
-        Assert.Contains(
-            $"Then {unsupported.Exception} is raised",
-            output.ToString(),
-            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            catalog.Sources.SelectMany(source => source.Obligations),
+            obligation => obligation.Implementation == "unimplemented");
+        Assert.DoesNotContain(
+            "RulesNotImplementedException", output.ToString(), StringComparison.Ordinal);
     }
 
     [Fact]

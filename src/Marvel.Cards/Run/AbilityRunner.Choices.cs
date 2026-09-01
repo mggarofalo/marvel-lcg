@@ -72,6 +72,29 @@ public sealed partial class AbilityRunner
                 ]);
         }
 
+        if (choice.Kind is "enemyAttacks" or "enemySchemes")
+        {
+            var enemies = ActivationCandidates(choice, cast);
+            var ids = enemies.Select(enemy => enemy.ObjectId).ToList();
+            return new Prompt(
+                Player: world.FirstPlayer,
+                Asking: Question.Order,
+                When: TimingPriority.Untimed,
+                Trigger: Steps.CardRevealed,
+                Label: $"{source.FaceId}: order enemy activations",
+                Cancellable: false,
+                Affordances:
+                [
+                    new Affordance(
+                        source.ObjectId,
+                        "Order",
+                        source.ObjectId,
+                        world.FirstPlayer,
+                        "enemy activations",
+                        new TargetRequest(ids, ids.Count, ids.Count, Rule: "rr:activation.5")),
+                ]);
+        }
+
         bool cards = choice.Kind == "chooseCard";
 
         // `rr:choose-option` and `rr:choose-game-element` are two questions and
@@ -122,8 +145,13 @@ public sealed partial class AbilityRunner
                             Sources: sources),
                     ]));
             }
-            offers.Add(new Affordance(
-                1, ChooseVerb, source.ObjectId, World.Scenario, "exhaust"));
+            AbilityNode otherwise = Tree(choice.Require("otherwise"));
+            if (otherwise.Kind != "exhaust"
+                || Every(otherwise.Argument, cast).Any(card => card.Ready))
+            {
+                offers.Add(new Affordance(
+                    1, ChooseVerb, source.ObjectId, World.Scenario, "exhaust"));
+            }
             return new Prompt(
                 player, Question.Option, TimingPriority.Untimed,
                 Steps.CardRevealed, $"{source.FaceId}: spend or exhaust",
@@ -442,6 +470,38 @@ public sealed partial class AbilityRunner
             }
             cast.SetContinuation(outerContinuation);
 
+            return Continue(source, cast, stoppedAt);
+        }
+
+        if (choice.Kind is "enemyAttacks" or "enemySchemes")
+        {
+            var legal = ActivationCandidates(choice, cast)
+                .Select(enemy => enemy.ObjectId)
+                .ToList();
+            if (input.IsDecline
+                || input.Affordance != source.ObjectId
+                || input.Targets.Count != legal.Count
+                || input.Targets.Distinct().Count() != legal.Count
+                || input.Targets.Any(id => !legal.Contains(id)))
+            {
+                throw new RulesNotImplementedException(
+                    $"'{source.FaceId}' requires one permutation of all "
+                    + $"{legal.Count} enemy activations");
+            }
+
+            cast.Results["dynamicActivationOrderSet"] = 1;
+            for (int index = 0; index < input.Targets.Count; index++)
+            {
+                cast.Results[$"dynamicActivationOrder:{input.Targets[index]}"] = index;
+            }
+            Activate(
+                choice,
+                cast,
+                choice.Kind == "enemyAttacks" ? Steps.Attack : Steps.Scheme);
+            if (cast.Suspended)
+            {
+                return cast.Events;
+            }
             return Continue(source, cast, stoppedAt);
         }
 

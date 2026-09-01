@@ -72,7 +72,13 @@ internal static class AuthoritySources
     private static void AddCards(List<AuthoritySource> sources)
     {
         using var document = ReadDataset("cards", "cards.json");
-        foreach (var card in document.RootElement.GetProperty("cards").EnumerateArray())
+        AddCards(sources, document.RootElement.GetProperty("cards"));
+    }
+
+    internal static void AddCards(
+        List<AuthoritySource> sources, JsonElement cards)
+    {
+        foreach (var card in cards.EnumerateArray())
         {
             if (!string.Equals(card.GetProperty("pack").GetString(), "core", StringComparison.Ordinal))
             {

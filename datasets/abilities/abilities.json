@@ -473,7 +473,7 @@
     {
       "card": "01147",
       "name": "Swarm Attack",
-      "note": "When revealed in hero form, every facedown Drone engaged with the resolving player attacks in board order. The sentence waits for every activation and creates one Drone if none actually attacked, including when every attempted attack was canceled by stun. In alter-ego form it creates one immediately.",
+      "note": "When revealed in hero form, every DRONE minion engaged with the resolving player attacks. The set is re-read after each activation, so a Drone created by an Advanced Ultron Drone defeated during the effect also attacks. The sentence creates one Drone if none actually attacked, including when every attempted attack was canceled by stun. In alter-ego form it creates one immediately.",
       "abilities": [
         {
           "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
@@ -484,7 +484,7 @@
                 { "exists": { "query": "dronesEngagedWithYou" } }
               ] },
               "then": { "seq": [
-                { "enemyAttacks": { "enemies": { "query": "dronesEngagedWithYou" } } },
+                { "enemyAttacks": { "enemies": { "query": "dronesEngagedWithYou" }, "dynamic": "true" } },
                 { "if": { "test": { "not": { "atLeast": { "value": { "result": "activationMade" }, "count": 1 } } }, "then": { "createDrones": { "player": "you", "count": 1 } } } }
               ] },
               "else": { "createDrones": { "player": "you", "count": 1 } }
@@ -2399,7 +2399,10 @@
         },
         {
           "trigger": { "event": "WhenActivationCompleted", "timing": "ForcedResponse", "actor": "this" },
-          "effect": { "placeThreat": { "scheme": { "titled": "Legions of Hydra" }, "amount": 2 } }
+          "effect": { "chooseCard": {
+            "from": { "titled": "Legions of Hydra" },
+            "effect": { "placeThreat": { "scheme": "chosen", "amount": 2 } }
+          } }
         }
       ]
     },
@@ -2572,7 +2575,8 @@
         },
         {
           "trigger": { "event": "WhenAttackEnds", "timing": "ForcedResponse", "actor": "you", "target": "enemy" },
-          "effect": { "seq": [ { "discard": "this" }, { "giveStatus": { "card": "trigger.target", "status": "stunned" } } ] }
+          "cost": { "discard": "this" },
+          "effect": { "giveStatus": { "card": "trigger.target", "status": "stunned" } }
         }
       ]
     },
@@ -2710,11 +2714,12 @@
     {
       "card": "01077",
       "name": "Counter-Punch",
-      "note": "After the player's hero uses its basic defense against an enemy attack, this attack response deals that hero's modified ATK damage to the attacking enemy.",
+      "note": "After the player's hero uses its basic defense against an enemy attack, this attack response performs an attack using that hero's modified ATK. The printed attack label makes a stunned status cancel the entire ability after its cost is paid.",
       "abilities": [
         {
           "trigger": { "event": "WhenAttackEnds", "timing": "Response", "actor": "enemy", "target": "you" },
           "when": { "heroDefended": "you" },
+          "labels": [ "attack" ],
           "effect": { "attack": { "target": "trigger.actor", "effect": { "dealAttackDamage": { "cards": "trigger.actor", "amount": { "modified": { "card": "you", "field": "attack" } } } } } }
         }
       ]

@@ -48,9 +48,32 @@ Feature: Core Ultron villain stages and Drones
     Then card 01137b copy 0 has 0 threat counters
     And seat 1 has 2 facedown Drone minions
 
+  @behavior:ruling:5afa90a922165fcc:stage-one-defender-receives-drone
+  @ruling:5afa90a922165fcc @card:01134 @rr:defend-defense.5
+  Scenario: Ultron I gives his after-attack Drone to the defending player
+    Given a canonical Core scene is dealt
+      | campaign | heroes                    | seed |
+      | ultron   | spider_man,captain_marvel | 1118 |
+    And seat 1 shows identity face 01001a
+    And seat 1 has no facedown Drone minions
+    And seat 2 has no facedown Drone minions
+    And card 01011 copy 0 is an ally controlled by seat 2
+    And these cards are next on seat 2's player deck
+      | next card | copy |
+      | 01012     | 0    |
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01142     | 0    |
+    When the villain attacks seat 1 with card 01011 copy 0 defending
+    Then option 2 is offered by the pending decision
+    When seat 2 chooses option 2 for the pending encounter-card decision
+    Then seat 1 has 0 facedown Drone minions
+    And card 01012 copy 0 is engaged with seat 2
+
   @behavior:card:01135:when-ultron-attacks-you-put-top-card
   @covers:behavior:card:01135:until-end-his-attack-ultron-gets-1-one
-  @card:01135
+  @covers:behavior:faq:01135:published-clarification-2
+  @card:01135 @faq:01135
   Scenario: Ultron II creates and counts one Drone for an attack
     # With no Drone initially engaged, Ultron II creates one before calculating
     # his attack and receives +1 ATK for that one Drone until the attack ends.
@@ -70,6 +93,27 @@ Feature: Core Ultron villain stages and Drones
     When the villain attacks seat 1 with every optional choice declined
     Then seat 1 has 1 facedown Drone minion
     And card 01001a copy 0 has 3 damage
+
+  @behavior:faq:01135:published-clarification-1
+  @covers:behavior:ruling:3db19283592b0b90:original-target-receives-drone
+  @faq:01135 @card:01135 @ruling:3db19283592b0b90
+  Scenario: Ultron II gives the Drone to the original target before defense
+    Given a canonical Core scene is dealt
+      | campaign      | heroes                    | seed |
+      | ultron_expert | spider_man,captain_marvel | 1001 |
+    And seat 1 shows identity face 01001a
+    And seat 1 has no facedown Drone minions
+    And seat 2 has no facedown Drone minions
+    And card 01011 copy 0 is an ally controlled by seat 2
+    And these cards are next on seat 1's player deck
+      | next card | copy |
+      | 01002     | 0    |
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01142     | 0    |
+    When the villain attacks seat 1 with card 01011 copy 0 defending
+    Then card 01002 copy 0 is engaged with seat 1
+    And seat 2 has 0 facedown Drone minions
 
   @behavior:card:01135:until-end-his-attack-ultron-gets-1-multiple
   @card:01135
@@ -96,7 +140,8 @@ Feature: Core Ultron villain stages and Drones
   @covers:behavior:card:01136:then-shuffle-encounter-deck
   @covers:behavior:card:01136:each-drone-minion-gets-1-atk-and
   @covers:behavior:card:01136:ultron-cannot-take-damage-while-drone-minion
-  @card:01136
+  @covers:behavior:faq:01136:published-clarification-1
+  @card:01136 @faq:01136
   Scenario: Ultron III reveals his Imperative and is protected by enhanced Drones
     # Defeating Ultron II reveals stage III. It searches for Ultron's Imperative,
     # reveals it to create two more Drones, and shuffles. A named Drone has two

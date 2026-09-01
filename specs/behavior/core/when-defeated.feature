@@ -56,7 +56,8 @@ Feature: Core When Defeated timing
   @covers:behavior:card:01182:deal-engaged-player-encounter-card
   @covers:behavior:card:01182:guard
   @covers:behavior:card:01182:while-minion-is-engaged-with-you-you
-  @rr:damage.step.7 @card:01182
+  @covers:behavior:ruling:2c98d8b065c9e8b0:published-clarification
+  @rr:damage.step.7 @card:01182 @ruling:2c98d8b065c9e8b0
   Scenario: A defeated minion resolves its When Defeated ability before discard
     # Damage step 7 resolves abilities that trigger "when [a character] is
     # defeated" before step 8 discards that character. Hydra Soldier therefore
@@ -67,7 +68,7 @@ Feature: Core When Defeated timing
     And seat 1 shows identity face 01001a
     And card 01182 copy 0 is a minion engaged with seat 1
     And card 01182 copy 0 has 2 damage
-    And these cards are next on the encounter deck
+    And the encounter deck contains only these next cards with all other deck cards in the encounter discard pile
       | next card | copy |
       | 01180     | 0    |
     When seat 1 asks for their basic attack targets
@@ -77,6 +78,8 @@ Feature: Core When Defeated timing
     Then card 01182 copy 0 is faceup on top of the encounter discard pile
     And seat 1 has 1 facedown encounter card
     And card 01180 copy 0 is facedown in seat 1's encounter queue
+    And card 01182 copy 0 is faceup on top of the encounter discard pile
+    And the main scheme has 1 acceleration token
 
   @behavior:rr:damage.step.9:published-result
   @covers:behavior:card:01052:after-your-hero-attacks-and-defeats-enemy

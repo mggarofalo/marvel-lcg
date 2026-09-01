@@ -154,6 +154,19 @@ Feature: Core Klaw card abilities
     Then card 01127 copy 0 is faceup on top of the encounter discard pile
     And card 01113 copy 0 has 12 remaining hit points
 
+  @behavior:faq:01127:published-clarification-1
+  @faq:01127 @card:01127
+  Scenario: The Immortal Klaw grants ten hit points to the next villain stage
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | klaw     | spider_man | 982  |
+    And seat 1 shows identity face 01001a
+    And card 01127 copy 0 is a side scheme in play
+    And card 01113 copy 0 has 21 damage
+    When seat 1 uses their basic attack against card 01113 copy 0
+    Then card 01114 copy 0 is the faceup villain
+    And card 01114 copy 0 has 28 remaining hit points
+
   @behavior:card:01122:discard-1-card-at-random-from-your
   @card:01122
   Scenario: Klaw's Vengeance discards a random card in alter-ego form
@@ -260,6 +273,25 @@ Feature: Core Klaw card abilities
     When seat 1 chooses option 2 for the pending encounter-card decision
     Then card 01001a copy 0 is exhausted
     And card 01083 copy 0 is exhausted
+
+  @behavior:faq:01123:published-clarification-1
+  @faq:01123 @card:01123
+  Scenario: Sonic Boom cannot choose to exhaust only exhausted characters
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | klaw     | spider_man | 983  |
+    And seat 1 shows identity face 01001a
+    And card 01001a copy 0 is exhausted
+    And card 01083 copy 0 is an ally controlled by seat 1
+    And card 01083 copy 0 is exhausted
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01088 | 0    |
+      | 01089 | 0    |
+      | 01090 | 0    |
+    When card 01123 copy 0 is revealed to seat 1
+    Then option 1 is offered by the pending decision
+    And option 2 is not offered by the pending decision
 
   @behavior:card:01124:klaw-heals-4-damage
   @covers:behavior:card:01124:if-no-damage-was-healed-way-card-condition-not-met
@@ -396,7 +428,8 @@ Feature: Core Klaw card abilities
     Then card 01002 copy 0 is in seat 1's discard pile
 
   @behavior:card:01130:when-whirlwind-attacks-you-also-resolve-his
-  @card:01130
+  @covers:behavior:ruling:82d66e85735baf99:whirlwind-simultaneous-attacks
+  @card:01130 @ruling:82d66e85735baf99
   Scenario: Whirlwind attacks every hero
     # Whirlwind attacks his engaged hero. His forced interrupt also resolves
     # that attack against the other hero.
