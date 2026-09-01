@@ -40,8 +40,11 @@ Feature: Core character calculations
   @covers:behavior:rr:mental-resource.2:published-result
   @covers:behavior:rr:lasting-effects.1:published-result
   @covers:behavior:rr:lasting-effects.2:published-result
+  @covers:behavior:rr:lasting-effects.5:published-result
+  @covers:behavior:rr:end-of-player-phase.step.4:published-result
   @card:01039 @rr:mental-resource.2
-  @rr:lasting-effects.1 @rr:lasting-effects.2
+  @rr:lasting-effects.1 @rr:lasting-effects.2 @rr:lasting-effects.5
+  @rr:end-of-player-phase.step.4
   Scenario: Rocket Boots spends mental and grants Aerial after its action resolves
     # The mental resource pays the printed ability cost. Its Aerial grant is a
     # lasting effect, so it remains active after Rocket Boots finishes resolving.
@@ -59,3 +62,5 @@ Feature: Core character calculations
     Then card 01039 copy 0 is exhausted
     And card 01089 copy 0 is in seat 1's discard pile
     And card 01029a copy 0 has the AERIAL trait
+    When the player phase ends
+    Then card 01029a copy 0 does not have the AERIAL trait

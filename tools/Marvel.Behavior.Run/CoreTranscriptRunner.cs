@@ -306,6 +306,8 @@ internal sealed class CoreTranscriptRunner
             "the end-of-player-phase draw step resolves", PhaseDraw),
         Bind("phase-ready", TranscriptStepKind.When,
             "the end-of-player-phase ready step resolves", PhaseReady),
+        Bind("end-player-phase", TranscriptStepKind.When,
+            "the player phase ends", EndPlayerPhase),
         Bind("villain-damages-card", TranscriptStepKind.When,
             @"the villain deals (?<count>\d+) damage to card (?<face>\d+[a-z]?) copy (?<copy>\d+)",
             VillainDamagesCard),
@@ -582,6 +584,9 @@ internal sealed class CoreTranscriptRunner
         Bind("card-trait", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) has the (?<trait>[A-Z][A-Z ]*) trait",
             CardTrait),
+        Bind("card-no-trait", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) does not have the (?<trait>[A-Z][A-Z ]*) trait",
+            CardDoesNotHaveTrait),
         Bind("printed-characteristics", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) exposes these printed characteristics",
             PrintedCharacteristics),
@@ -924,6 +929,16 @@ internal sealed class CoreTranscriptRunner
         context.Events.Clear();
         context.CurrentPrompt = "<none>";
         PhaseEnd.ReadyCards(context.World, context.Events);
+    }
+
+    private static void EndPlayerPhase(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        _ = step;
+        _ = match;
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        PhaseEnd.EndPlayerPhase(context.World, context.Events);
     }
 
     private static void VillainDamagesCard(
@@ -2441,6 +2456,18 @@ internal sealed class CoreTranscriptRunner
         {
             throw new TranscriptAssertionException(
                 $"{step.Location}: expected card {card.ObjectId} to have trait {trait}");
+        }
+    }
+
+    private static void CardDoesNotHaveTrait(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        string trait = match.Groups["trait"].Value.Replace(' ', '_');
+        if (Traits.Has(context.World, card, trait, context.Cards))
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected card {card.ObjectId} not to have trait {trait}");
         }
     }
 

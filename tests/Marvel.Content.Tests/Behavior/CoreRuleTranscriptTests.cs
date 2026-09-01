@@ -26,7 +26,7 @@ public sealed class CoreRuleTranscriptTests
             "70c83706d9a4071f8d1971e131006ad4631b5ffae646de407983e2640515e9d2",
             results["behavior:rr:attachment.1:published-result"].Digest);
         Assert.Equal(
-            "e53f31725c689fb8022eb3daf40e6b6db6d92027537a9094233c711bb6231272",
+            "8d95e9de51a2c8093c3d30fb18c719a3f98f5bf0b1ee54728a2294ee49b5b5e0",
             results["behavior:card:01039:exhaust-rocket-boots-and-spend-mental-resource"].Digest);
     }
 
