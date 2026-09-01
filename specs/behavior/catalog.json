@@ -15368,11 +15368,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Max one per player prevents a second controlled copy"
+          ],
+          "mutation": "Ignore the already-controlled same-title upgrade; the second Combat Training becomes available and the transcript fails."
         }
       ]
     },
@@ -36797,11 +36799,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Max one per player prevents a second controlled copy"
+          ],
+          "mutation": "Remove Combat Training's printed per-player maximum; its second copy becomes available to play."
         },
         {
           "id": "behavior:card:01057:your-hero-gets-1-atk",

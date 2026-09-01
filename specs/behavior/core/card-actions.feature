@@ -623,3 +623,27 @@ Feature: Core card actions
     When seat 1 chooses card 01134 copy 0 for the pending action
     Then card 01134 copy 0 has 10 damage
     And card 01018 copy 0 is faceup on top of seat 1's discard pile
+
+  @behavior:rr:max-maximum.3:published-result
+  @covers:behavior:card:01057:max-1-per-player
+  @rr:max-maximum.3 @card:01057
+  Scenario: Max one per player prevents a second controlled copy
+    # "Max 1 per player" restricts how many copies of that title a player may
+    # control in play at once. One Combat Training is already attached to
+    # She-Hulk, so her second owned copy is absent from the legal play offers.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 717  |
+    And card 01057 copy 0 is attached to card 01019a copy 0
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01057 | 1    |
+      | 01088 | 0    |
+      | 01089 | 0    |
+    When game setup reaches seat 1's mulligan
+    Then seat 1 is offered a mulligan
+    When seat 1 keeps every opening-hand card at mulligan
+    Then seat 1 is the active player
+    When seat 1 asks whether card 01057 copy 1 is available to play
+    Then card 01057 copy 1 is unavailable to play
+    And card 01057 copy 0 remains attached to seat 1's identity
