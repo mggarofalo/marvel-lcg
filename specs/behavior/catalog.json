@@ -38077,11 +38077,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Surveillance Team spends three uses and leaves play"
+          ],
+          "mutation": "Enter with other than three snoop counters; the initial counter assertion fails."
         },
         {
           "id": "behavior:card:01064:enters-play-with-3-counters",
@@ -38089,11 +38091,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Surveillance Team spends three uses and leaves play"
+          ],
+          "mutation": "Omit placing Surveillance Team's counters as it enters play; the first counter assertion fails."
         },
         {
           "id": "behavior:card:01064:when-those-are-gone-discard-card",
@@ -38101,11 +38105,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Surveillance Team spends three uses and leaves play"
+          ],
+          "mutation": "Retain Surveillance Team after its last snoop counter is removed; the discard-pile assertion fails."
         },
         {
           "id": "behavior:card:01064:exhaust-surveillance-team-and-remove-1-snoop",
@@ -38113,11 +38119,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Surveillance Team spends three uses and leaves play"
+          ],
+          "mutation": "Skip exhausting Surveillance Team, removing its counter, or removing one threat; a per-use assertion fails."
         }
       ]
     },
@@ -40371,11 +40379,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Med Team spends three uses and leaves play"
+          ],
+          "mutation": "Enter with other than three medical counters; the initial counter assertion fails."
         },
         {
           "id": "behavior:card:01080:enters-play-with-3-counters",
@@ -40383,11 +40393,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Med Team spends three uses and leaves play"
+          ],
+          "mutation": "Omit placing Med Team's counters as it enters play; the first counter assertion fails."
         },
         {
           "id": "behavior:card:01080:when-those-are-gone-discard-card",
@@ -40395,11 +40407,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Med Team spends three uses and leaves play"
+          ],
+          "mutation": "Retain Med Team after its last medical counter is removed; the discard-pile assertion fails."
         },
         {
           "id": "behavior:card:01080:exhaust-med-team-and-remove-1-medical",
@@ -40407,11 +40421,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Med Team spends three uses and leaves play"
+          ],
+          "mutation": "Skip exhausting Med Team, removing its counter, or healing two damage; a per-use assertion fails."
         }
       ]
     },

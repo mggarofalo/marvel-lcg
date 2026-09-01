@@ -824,6 +824,81 @@ Feature: Core card actions
     Then card 01094 copy 0 has 6 damage
     And card 01056 copy 0 is faceup on top of seat 1's discard pile
 
+  @behavior:card:01064:uses-3-snoop-counters
+  @covers:behavior:card:01064:enters-play-with-3-counters
+  @covers:behavior:card:01064:when-those-are-gone-discard-card
+  @covers:behavior:card:01064:exhaust-surveillance-team-and-remove-1-snoop
+  @card:01064
+  Scenario: Surveillance Team spends three uses and leaves play
+    # “Uses (3 snoop counters)” places three counters as Surveillance Team
+    # enters play. Each action exhausts it, spends one counter, and removes one
+    # threat; spending the third counter discards the support.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 875  |
+    And card 01097b copy 0 has 3 threat counters
+    When card 01064 copy 0 enters play as a support controlled by seat 1
+    Then card 01064 copy 0 has 3 snoop counters
+    And card 01064 copy 0 is ready
+    When seat 1 initiates card 01064 copy 0's action without payment
+    Then card 01097b copy 0 is offered by the pending action
+    When seat 1 chooses card 01097b copy 0 for the pending action
+    Then card 01097b copy 0 has 2 threat counters
+    And card 01064 copy 0 has 2 snoop counters
+    And card 01064 copy 0 is exhausted
+    When the end-of-player-phase ready step resolves
+    Then card 01064 copy 0 is ready
+    When seat 1 initiates card 01064 copy 0's action without payment
+    Then card 01097b copy 0 is offered by the pending action
+    When seat 1 chooses card 01097b copy 0 for the pending action
+    Then card 01097b copy 0 has 1 threat counter
+    And card 01064 copy 0 has 1 snoop counter
+    When the end-of-player-phase ready step resolves
+    Then card 01064 copy 0 is ready
+    When seat 1 initiates card 01064 copy 0's action without payment
+    Then card 01097b copy 0 is offered by the pending action
+    When seat 1 chooses card 01097b copy 0 for the pending action
+    Then card 01097b copy 0 has 0 threat counters
+    And card 01064 copy 0 is faceup on top of seat 1's discard pile
+
+  @behavior:card:01080:uses-3-medical-counters
+  @covers:behavior:card:01080:enters-play-with-3-counters
+  @covers:behavior:card:01080:when-those-are-gone-discard-card
+  @covers:behavior:card:01080:exhaust-med-team-and-remove-1-medical
+  @card:01080
+  Scenario: Med Team spends three uses and leaves play
+    # “Uses (3 medical counters)” places three counters as Med Team enters
+    # play. Each action exhausts it, spends one counter, and heals two damage;
+    # spending the third counter discards the support.
+    Given a canonical Core scene is dealt
+      | campaign | heroes        | seed |
+      | rhino    | black_panther | 876  |
+    And seat 1 shows identity face 01040a
+    And card 01040a copy 0 has 6 damage
+    When card 01080 copy 0 enters play as a support controlled by seat 1
+    Then card 01080 copy 0 has 3 medical counters
+    And card 01080 copy 0 is ready
+    When seat 1 initiates card 01080 copy 0's action without payment
+    Then card 01040a copy 0 is offered by the pending action
+    When seat 1 chooses card 01040a copy 0 for the pending action
+    Then card 01040a copy 0 has 4 damage
+    And card 01080 copy 0 has 2 medical counters
+    And card 01080 copy 0 is exhausted
+    When the end-of-player-phase ready step resolves
+    Then card 01080 copy 0 is ready
+    When seat 1 initiates card 01080 copy 0's action without payment
+    Then card 01040a copy 0 is offered by the pending action
+    When seat 1 chooses card 01040a copy 0 for the pending action
+    Then card 01040a copy 0 has 2 damage
+    And card 01080 copy 0 has 1 medical counter
+    When the end-of-player-phase ready step resolves
+    Then card 01080 copy 0 is ready
+    When seat 1 initiates card 01080 copy 0's action without payment
+    Then card 01040a copy 0 is offered by the pending action
+    When seat 1 chooses card 01040a copy 0 for the pending action
+    Then card 01040a copy 0 has 0 damage
+    And card 01080 copy 0 is faceup on top of seat 1's discard pile
+
   @behavior:rr:support.3:published-result
   @covers:behavior:rr:you-your.18:published-result
   @rr:support.3 @rr:you-your.18 @card:01056 @card:01052
