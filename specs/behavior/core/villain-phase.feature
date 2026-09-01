@@ -179,7 +179,10 @@ Feature: Core villain phase
   @behavior:rr:boost-boost-icon.4:published-result
   @covers:behavior:rr:attack-enemy-activation.step.3.e:published-result
   @covers:behavior:card:01113:when-klaw-attacks-give-him-1-additional
-  @rr:boost-boost-icon.4 @rr:attack-enemy-activation.step.3.e @card:01113
+  @covers:behavior:rr:star-icon.1:published-result
+  @covers:behavior:rr:target.3.2:published-result
+  @rr:boost-boost-icon.4 @rr:attack-enemy-activation.step.3.e
+  @rr:star-icon.1 @rr:target.3.2 @card:01113
   Scenario: Klaw resolves two boost cards and adds all of their icons
     # "If additional boost cards are resolved for an activation, the boost
     # icons are cumulative." Klaw's forced interrupt gives him one additional
@@ -295,9 +298,10 @@ Feature: Core villain phase
   @covers:behavior:rr:overkill.1:published-result
   @covers:behavior:rr:excess-damage:published-result
   @covers:behavior:rr:delayed-effect.1:published-result
+  @covers:behavior:rr:star-icon.2:published-result
   @card:01099 @rr:attack-enemy-activation.5 @rr:ability.7 @rr:ability.12
   @rr:ability.step.2.b @rr:overkill @rr:overkill.1 @rr:excess-damage
-  @rr:delayed-effect.1
+  @rr:delayed-effect.1 @rr:star-icon.2
   Scenario: Charge gives Rhino overkill before a defending ally takes damage
     # Charge's forced interrupt says, "When Rhino attacks, the attack gains
     # overkill." Overkill deals damage beyond the defeated ally's hit points to
@@ -426,7 +430,9 @@ Feature: Core villain phase
   @behavior:card:01082:after-your-hero-defends-discard-indomitable-ready
   @covers:behavior:rr:defend-defense.4.2:published-result
   @covers:behavior:rr:defend-defense.7:published-result
-  @rr:defend-defense.4.2 @rr:defend-defense.7 @card:01082
+  @covers:behavior:rr:attack-enemy-activation.step.6.b:published-result
+  @rr:defend-defense.4.2 @rr:defend-defense.7
+  @rr:attack-enemy-activation.step.6.b @card:01082
   Scenario: Indomitable follows a defense-labeled Backflip after the attack ends
     # "Abilities that trigger 'when your hero defends against an attack' can be
     # triggered when resolving a defense-labeled ability." Backflip establishes

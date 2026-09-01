@@ -2981,11 +2981,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Indomitable follows a defense-labeled Backflip after the attack ends"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes the optional Indomitable response being offered after the attack ends."
         }
       ]
     },
@@ -18921,11 +18923,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Klaw resolves two boost cards and adds all of their icons"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes Klaw's ATK star text granting an additional boost card when he attacks."
         }
       ]
     },
@@ -18939,11 +18943,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Charge gives Rhino overkill before a defending ally takes damage"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes Charge's ATK star text granting overkill for Rhino's attack."
         }
       ]
     },
@@ -19899,11 +19905,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Klaw resolves two boost cards and adds all of their icons"
+          ],
+          "mutation": "CoreRuleTranscriptTests.VillainPhaseBranchesHavePinnedOutcomes distinguishes printed ATK 0 Klaw still initiating an attack against a valid hero."
         }
       ]
     },
@@ -20009,11 +20017,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-power-restrictions.feature::Guard applies only while the guarding minion remains in play"
+          ],
+          "mutation": "CoreRuleTranscriptTests.BasicPowerRestrictionBranchesHavePinnedOutcomes distinguishes Guard making the villain unavailable to an attack-labeled basic power."
         }
       ]
     },
@@ -20027,11 +20037,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-icons.feature::A crisis icon prevents a player card from thwarting the main scheme"
+          ],
+          "mutation": "CoreRuleTranscriptTests.EncounterIconBranchesHavePinnedOutcomes distinguishes crisis making the main scheme unavailable to a thwart-labeled basic power."
         }
       ]
     },

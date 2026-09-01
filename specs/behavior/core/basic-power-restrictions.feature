@@ -15,10 +15,11 @@ Feature: Core basic power restrictions
   @covers:behavior:rr:ability.step.4.b:published-result
   @covers:behavior:rr:attack-player-ability-type.step.8:published-result
   @covers:behavior:rr:in-play-and-out-of-play.12:published-result
+  @covers:behavior:rr:target.3.8:published-result
   @rr:guard @rr:guard.1 @rr:attack-player-ability-type.1.1
   @rr:attack-player-ability-type.4 @rr:ability.8.2 @rr:ability.9 @rr:exhausted.2
   @card:01051 @rr:ability.step.4.b @rr:attack-player-ability-type.step.8
-  @rr:in-play-and-out-of-play.12
+  @rr:in-play-and-out-of-play.12 @rr:target.3.8
   Scenario: Guard applies only while the guarding minion remains in play
     # "While this minion is engaged with you, you cannot attack the villain."
     # The constant condition is true while Hydra Mercenary is engaged; after

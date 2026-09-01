@@ -67,7 +67,8 @@ Feature: Core encounter icons
 
   @behavior:rr:crisis-icon.1:published-result
   @covers:behavior:rr:crisis-icon:published-result
-  @rr:crisis-icon @rr:crisis-icon.1
+  @covers:behavior:rr:target.3.9:published-result
+  @rr:crisis-icon @rr:crisis-icon.1 @rr:target.3.9
   Scenario: A crisis icon prevents a player card from thwarting the main scheme
     # While a crisis icon is in play, player cards cannot remove threat from
     # the main scheme; the crisis side scheme remains a legal thwart target.
