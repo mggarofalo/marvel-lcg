@@ -65,6 +65,34 @@ Feature: Revealing Core encounter card types
     And card 01101 copy 0 is engaged with seat 1
     And card 01104 copy 0 is faceup on top of the encounter discard pile
 
+  @behavior:card:01106:rhino-attacks-you
+  @covers:behavior:card:01106:if-character-is-damaged-by-attack-that-condition-met
+  @covers:behavior:rr:activation.4:published-result
+  @covers:behavior:rr:activation.7:published-result
+  @covers:behavior:rr:treachery.2.1:published-result
+  @card:01106 @rr:activation.4 @rr:activation.7 @rr:treachery.2.1
+  Scenario: Stampede remains resolving until its villain attack finishes
+    # "If a treachery causes one or more enemies to activate as its last effect,
+    # that treachery card is considered resolved and is discarded after all of
+    # those activations have resolved." After the phase's first attack,
+    # Stampede initiates another attack for two more damage, stuns the damaged
+    # hero, and only afterward enters the discard pile.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 349  |
+    And seat 1 shows identity face 01001a
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01103     | 0    |
+      | 01106     | 0    |
+      | 01104     | 0    |
+    When villain phase 1 resolves with every optional choice declined
+    Then card 01001a copy 0 has 6 damage
+    And card 01001a copy 0 has 1 stunned status card
+    And card 01106 copy 0 is faceup on top of the encounter discard pile
+    And card 01106 copy 0 was discarded after a Deal_Damage event
+    And 2 Deal_Damage events were emitted
+
   @behavior:rr:reveal.8:published-result
   @covers:behavior:card:01066:hawkeye-enters-play-with-4-arrow-counters
   @covers:behavior:card:01066:after-minion-enters-play-remove-1-arrow

@@ -1024,11 +1024,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-reveal.feature::Stampede remains resolving until its villain attack finishes"
+          ],
+          "mutation": "CoreRuleTranscriptTests.EncounterRevealBranchesHavePinnedOutcomes distinguishes Stampede initiating Rhino's complete attack activation."
         }
       ]
     },
@@ -1078,11 +1080,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-reveal.feature::Stampede remains resolving until its villain attack finishes"
+          ],
+          "mutation": "CoreRuleTranscriptTests.EncounterRevealBranchesHavePinnedOutcomes distinguishes Stampede's conditional stun and discard waiting until the initiated attack finishes."
         }
       ]
     },
@@ -20938,11 +20942,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-reveal.feature::Stampede remains resolving until its villain attack finishes"
+          ],
+          "mutation": "CoreRuleTranscriptTests.EncounterRevealBranchesHavePinnedOutcomes distinguishes Stampede's discard event occurring after the attack's damage event."
         }
       ]
     },
@@ -37994,11 +38000,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-reveal.feature::Stampede remains resolving until its villain attack finishes"
+          ],
+          "mutation": "CoreRuleTranscriptTests.EncounterRevealBranchesHavePinnedOutcomes distinguishes Rhino's Stampede attack dealing ATK plus boost damage to the hero."
         },
         {
           "key": "if-character-is-damaged-by-attack-that-condition-met",
@@ -38006,11 +38014,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-reveal.feature::Stampede remains resolving until its villain attack finishes"
+          ],
+          "mutation": "CoreRuleTranscriptTests.EncounterRevealBranchesHavePinnedOutcomes distinguishes the character damaged by Stampede's attack becoming stunned."
         },
         {
           "key": "if-character-is-damaged-by-attack-that-condition-not-met",

@@ -631,6 +631,9 @@ internal sealed class CoreTranscriptRunner
         Bind("card-event-order", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) had a (?<first>[A-Za-z_]+) event before an (?<second>[A-Za-z_]+) event",
             CardEventOrder),
+        Bind("card-discard-after-event", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) was discarded after a (?<verb>[A-Za-z_]+) event",
+            CardDiscardAfterEvent),
         Bind("seat-form", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) is in (?<form>hero|alter-ego) form", SeatForm),
         Bind("identity-face-out-of-play", TranscriptStepKind.Then,
@@ -2909,6 +2912,24 @@ internal sealed class CoreTranscriptRunner
             throw new TranscriptAssertionException(
                 $"{step.Location}: expected {match.Groups["first"].Value} before "
                 + $"{match.Groups["second"].Value} for card {card}");
+        }
+    }
+
+    private static void CardDiscardAfterEvent(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int card = context.SceneRequired(step).Find(SceneCard(match, step)).ObjectId;
+        // Reveal keeps a treachery's event verb while moving it from the
+        // resolving area to the encounter discard pile, so use the card's
+        // final landing rather than the engine's operation spelling.
+        int discard = context.Events.FindLastIndex(gameEvent => EventLands(gameEvent, card));
+        int prior = context.Events.FindLastIndex(gameEvent =>
+            gameEvent.Verb == match.Groups["verb"].Value);
+        if (prior < 0 || discard <= prior)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected card {card} discarded after "
+                + $"{match.Groups["verb"].Value}");
         }
     }
 
