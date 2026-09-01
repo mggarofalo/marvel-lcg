@@ -2332,11 +2332,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::The printed Spider-Man and Rhino deal reaches its opening state"
+          ],
+          "mutation": "Leave Spider-Man's player deck in authored order instead of consuming the seeded shuffle; the pinned top card and world digest fail."
         }
       ]
     },

@@ -421,6 +421,9 @@ internal sealed class CoreTranscriptRunner
             CardInPlayerDeck),
         Bind("player-deck-count", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) has (?<count>\d+) cards? in their player deck", PlayerDeckCount),
+        Bind("player-deck-top-face", TranscriptStepKind.Then,
+            @"seat (?<seat>\d+)'s player deck has card (?<face>\d+[a-z]?) on top",
+            PlayerDeckTopFace),
         Bind("player-discard-count", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) has (?<count>\d+) cards? in their discard pile", PlayerDiscardCount),
         Bind("encounter-queue-count", TranscriptStepKind.Then,
@@ -1375,7 +1378,7 @@ internal sealed class CoreTranscriptRunner
             || context.Game.Active != Seat(match, step))
         {
             throw new TranscriptException(
-                $"${step.Location}: setup did not reach the requested player's mulligan");
+                $"{step.Location}: setup did not reach the requested player's mulligan");
         }
     }
 
@@ -1383,16 +1386,16 @@ internal sealed class CoreTranscriptRunner
         TranscriptContext context, TranscriptStep step, Match match)
     {
         Game game = context.Game
-            ?? throw new TranscriptException($"${step.Location}: game setup has not begun");
+            ?? throw new TranscriptException($"{step.Location}: game setup has not begun");
         int seat = Seat(match, step);
         if (game.Phase != GamePhase.Mulligan || game.Active != seat)
         {
             throw new TranscriptException(
-                $"${step.Location}: seat ${seat + 1} is not resolving a mulligan");
+                $"{step.Location}: seat {seat + 1} is not resolving a mulligan");
         }
 
         Prompt asked = game.Pending
-            ?? throw new TranscriptException($"${step.Location}: no mulligan prompt is pending");
+            ?? throw new TranscriptException($"{step.Location}: no mulligan prompt is pending");
         Affordance option = asked.Affordances.Single(candidate =>
             candidate.Verb == Game.ResolveMulligans);
         TranscriptTable table = Table(step, "card", "copy");
@@ -1408,12 +1411,12 @@ internal sealed class CoreTranscriptRunner
         TranscriptContext context, TranscriptStep step, Match match)
     {
         Game game = context.Game
-            ?? throw new TranscriptException($"${step.Location}: game setup has not begun");
+            ?? throw new TranscriptException($"{step.Location}: game setup has not begun");
         int seat = Seat(match, step);
         if (game.Phase != GamePhase.Mulligan || game.Active != seat)
         {
             throw new TranscriptException(
-                $"${step.Location}: seat ${seat + 1} is not resolving a mulligan");
+                $"{step.Location}: seat {seat + 1} is not resolving a mulligan");
         }
 
         context.Events.Clear();
@@ -1426,21 +1429,21 @@ internal sealed class CoreTranscriptRunner
         TranscriptContext context, TranscriptStep step, Match match)
     {
         Game game = context.Game
-            ?? throw new TranscriptException($"${step.Location}: game setup has not begun");
+            ?? throw new TranscriptException($"{step.Location}: game setup has not begun");
         int seat = Seat(match, step);
         if (game.Phase != GamePhase.PlayerSetup)
         {
             throw new TranscriptException(
-                $"${step.Location}: no player Setup ability is resolving");
+                $"{step.Location}: no player Setup ability is resolving");
         }
 
         Prompt asked = game.Pending
-            ?? throw new TranscriptException($"${step.Location}: no setup prompt is pending");
+            ?? throw new TranscriptException($"{step.Location}: no setup prompt is pending");
         Card selected = context.SceneRequired(step).Find(SceneCard(match, step));
         Affordance option = asked.Affordances.SingleOrDefault(candidate =>
             candidate.AnchorId == selected.ObjectId)
             ?? throw new TranscriptException(
-                $"${step.Location}: card ${selected.ObjectId} is not offered by '${asked.Label}'");
+                $"{step.Location}: card {selected.ObjectId} is not offered by '{asked.Label}'");
         int[] unshuffled =
         [
             .. context.World.Seats[seat].Deck.Cards
@@ -1557,7 +1560,7 @@ internal sealed class CoreTranscriptRunner
         TranscriptContext context, TranscriptStep step, Match match)
     {
         Game game = context.Game
-            ?? throw new TranscriptException($"${step.Location}: game setup has not begun");
+            ?? throw new TranscriptException($"{step.Location}: game setup has not begun");
         int seat = Seat(match, step);
         if (game.Phase != GamePhase.Mulligan
             || game.Active != seat
@@ -1565,7 +1568,7 @@ internal sealed class CoreTranscriptRunner
             || !prompt.Affordances.Any(option => option.Verb == Game.ResolveMulligans))
         {
             throw new TranscriptException(
-                $"${step.Location}: seat ${seat + 1} was not offered its mulligan");
+                $"{step.Location}: seat {seat + 1} was not offered its mulligan");
         }
     }
 
@@ -1577,8 +1580,8 @@ internal sealed class CoreTranscriptRunner
         if (!ReferenceEquals(card.Area, context.World.Seats[seat].Hand))
         {
             throw new TranscriptException(
-                $"${step.Location}: expected card ${card.ObjectId} in seat ${seat + 1}'s hand; "
-                + $"was ${card.Area.Type}");
+                $"{step.Location}: expected card {card.ObjectId} in seat {seat + 1}'s hand; "
+                + $"was {card.Area.Type}");
         }
     }
 
@@ -1590,8 +1593,8 @@ internal sealed class CoreTranscriptRunner
         if (!ReferenceEquals(card.Area, context.World.Seats[seat].Deck))
         {
             throw new TranscriptException(
-                $"${step.Location}: expected card ${card.ObjectId} in seat ${seat + 1}'s deck; "
-                + $"was ${card.Area.Type}");
+                $"{step.Location}: expected card {card.ObjectId} in seat {seat + 1}'s deck; "
+                + $"was {card.Area.Type}");
         }
     }
 
@@ -1603,12 +1606,12 @@ internal sealed class CoreTranscriptRunner
             || shuffle.Seat != seat)
         {
             throw new TranscriptAssertionException(
-                $"${step.Location}: no setup shuffle was observed for seat ${seat + 1}");
+                $"{step.Location}: no setup shuffle was observed for seat {seat + 1}");
         }
         if (shuffle.Unshuffled.SequenceEqual(shuffle.After))
         {
             throw new TranscriptAssertionException(
-                $"${step.Location}: seat ${seat + 1}'s deck retained its unshuffled order");
+                $"{step.Location}: seat {seat + 1}'s deck retained its unshuffled order");
         }
     }
 
@@ -1617,6 +1620,21 @@ internal sealed class CoreTranscriptRunner
         Equal(Number(match, "count", step),
             context.World.Seats[Seat(match, step)].Deck.Cards.Count,
             "cards in the player deck", step);
+
+    private static void PlayerDeckTopFace(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        IReadOnlyList<Card> deck = context.World.Seats[seat].Deck.Cards;
+        Card? top = deck.Count == 0 ? null : deck[^1];
+        string expected = match.Groups["face"].Value;
+        if (top is null || !string.Equals(top.FaceId, expected, StringComparison.Ordinal))
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected {expected} on top of seat {seat + 1}'s deck; "
+                + $"was {top?.FaceId ?? "<empty>"}");
+        }
+    }
 
     private static void PlayerDiscardCount(
         TranscriptContext context, TranscriptStep step, Match match)
@@ -2322,12 +2340,12 @@ internal sealed class CoreTranscriptRunner
     {
         Prompt asked = context.PendingPrompt
             ?? throw new TranscriptAssertionException(
-                $"${step.Location}: expected a pending setup prompt");
+                $"{step.Location}: expected a pending setup prompt");
         Card card = context.SceneRequired(step).Find(SceneCard(match, step));
         if (asked.Affordances.Any(offer => offer.AnchorId == card.ObjectId))
         {
             throw new TranscriptAssertionException(
-                $"${step.Location}: card ${card.ObjectId} was offered by '${asked.Label}'");
+                $"{step.Location}: card {card.ObjectId} was offered by '{asked.Label}'");
         }
     }
 

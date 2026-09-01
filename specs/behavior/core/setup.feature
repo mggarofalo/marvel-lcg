@@ -8,6 +8,7 @@ Feature: Canonical Core setup
   @covers:behavior:rr:appendix-ii-setup.step.3:published-result
   @covers:behavior:rr:appendix-ii-setup.step.4:published-result
   @covers:behavior:rr:appendix-ii-setup.step.5:published-result
+  @covers:behavior:rr:appendix-ii-setup.step.6:published-result
   @covers:behavior:rr:appendix-ii-setup.step.8:published-result
   @covers:behavior:rr:appendix-ii-setup.step.9:published-result
   @covers:behavior:rr:appendix-ii-setup.step.10:published-result
@@ -18,7 +19,8 @@ Feature: Canonical Core setup
   @covers:behavior:rr:first-player:published-result
   @rr:appendix-ii-setup.step.1 @rr:appendix-ii-setup.step.2
   @rr:appendix-ii-setup.step.3 @rr:appendix-ii-setup.step.4
-  @rr:appendix-ii-setup.step.5 @rr:appendix-ii-setup.step.8
+  @rr:appendix-ii-setup.step.5 @rr:appendix-ii-setup.step.6
+  @rr:appendix-ii-setup.step.8
   @rr:appendix-ii-setup.step.9 @rr:appendix-ii-setup.step.10
   @rr:appendix-ii-setup.step.12.a @rr:appendix-ii-setup.step.12.b
   @rr:appendix-ii-setup.step.14
@@ -37,6 +39,7 @@ Feature: Canonical Core setup
     And seat 1 has the first player token
     And seat 1 has 6 cards in hand
     And seat 1 has 34 cards in their player deck
+    And seat 1's player deck has card 01065 on top
     And card 01001b copy 0 has 10 remaining hit points
     And card 01094 copy 0 is the faceup villain
     And card 01094 copy 0 has 14 remaining hit points
