@@ -8,6 +8,7 @@ using Marvel.Content.Behavior;
 using Marvel.Content.Setup;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 
 namespace Marvel.Behavior.Run;
@@ -230,6 +231,15 @@ internal sealed class CoreTranscriptRunner
         Bind("set-card-damage", TranscriptStepKind.Given,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) has (?<count>\d+) damage",
             SetCardDamage),
+        Bind("set-card-counters", TranscriptStepKind.Given,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) has (?<count>\d+) (?<type>[a-z-]+) counters?",
+            SetCardCounters),
+        Bind("set-identity-face", TranscriptStepKind.Given,
+            @"seat (?<seat>\d+) shows identity face (?<face>\d+[a-z]?)",
+            SetIdentityFace),
+        Bind("place-ally", TranscriptStepKind.Given,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is an ally controlled by seat (?<seat>\d+)",
+            PlaceAlly),
         Bind("place-support", TranscriptStepKind.Given,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is a support controlled by seat (?<seat>\d+)",
             PlaceSupport),
@@ -287,6 +297,18 @@ internal sealed class CoreTranscriptRunner
         Bind("card-deals-damage", TranscriptStepKind.When,
             @"card (?<source>\d+[a-z]?) copy (?<sourceCopy>\d+) deals (?<count>\d+) damage to card (?<face>\d+[a-z]?) copy (?<copy>\d+)",
             CardDealsDamage),
+        Bind("basic-attack", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) uses their basic attack against card (?<face>\d+[a-z]?) copy (?<copy>\d+)",
+            BasicAttack),
+        Bind("basic-thwart", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) uses their basic thwart against card (?<face>\d+[a-z]?) copy (?<copy>\d+)",
+            BasicThwart),
+        Bind("basic-recovery", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) uses their basic recovery",
+            BasicRecovery),
+        Bind("ally-power", TranscriptStepKind.When,
+            @"card (?<ally>\d+[a-z]?) copy (?<allyCopy>\d+) uses its basic (?<power>attack|thwart) against card (?<face>\d+[a-z]?) copy (?<copy>\d+)",
+            AllyPower),
         Bind("minion-enters-play", TranscriptStepKind.When,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) enters play as a minion engaged with seat (?<seat>\d+)",
             MinionEntersPlay),
@@ -348,6 +370,9 @@ internal sealed class CoreTranscriptRunner
         Bind("card-damage", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) has (?<count>\d+) damage",
             CardDamage),
+        Bind("card-counters", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) has (?<count>\d+) (?<type>[a-z-]+) counters?",
+            CardCounters),
         Bind("card-removed", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is removed from the game",
             CardRemoved),
@@ -463,6 +488,24 @@ internal sealed class CoreTranscriptRunner
         TranscriptContext context, TranscriptStep step, Match match) =>
         context.SceneRequired(step).Apply(new SetSceneDamage(
             SceneCard(match, step), Number(match, "count", step)));
+
+    private static void SetCardCounters(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        context.SceneRequired(step).Apply(new SetSceneCounters(
+            SceneCard(match, step),
+            match.Groups["type"].Value,
+            Number(match, "count", step)));
+
+    private static void SetIdentityFace(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        context.SceneRequired(step).Apply(new SetSceneForm(
+            Seat(match, step), match.Groups["face"].Value));
+
+    private static void PlaceAlly(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        context.SceneRequired(step).Apply(new MoveSceneCard(
+            SceneCard(match, step),
+            new SceneDestination(SceneZone.Ally, Seat(match, step))));
 
     private static void PlaceSupport(
         TranscriptContext context, TranscriptStep step, Match match) =>
@@ -713,6 +756,83 @@ internal sealed class CoreTranscriptRunner
             "behavioral transcript",
             "Damage",
             context.Events);
+    }
+
+    private static void BasicAttack(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        BasicPowers.BasicAttack(
+            context.World,
+            context.Cards,
+            Seat(match, step),
+            context.SceneRequired(step).Find(SceneCard(match, step)),
+            context.Events);
+        FinishAgenda(context, step);
+    }
+
+    private static void BasicThwart(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        BasicPowers.BasicThwart(
+            context.World,
+            context.Cards,
+            Seat(match, step),
+            context.SceneRequired(step).Find(SceneCard(match, step)),
+            context.Events);
+        FinishAgenda(context, step);
+    }
+
+    private static void BasicRecovery(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        BasicPowers.BasicRecovery(
+            context.World, context.Cards, Seat(match, step), context.Events);
+    }
+
+    private static void AllyPower(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        Card ally = context.SceneRequired(step).Find(new SceneCard(
+            match.Groups["ally"].Value,
+            Number(match, "allyCopy", step)));
+        Card target = context.SceneRequired(step).Find(SceneCard(match, step));
+        string verb = match.Groups["power"].Value == "attack"
+            ? BasicPowers.AttackVerb
+            : BasicPowers.ThwartVerb;
+        BasicPowers.AllyPower(context.World, context.Cards, ally, target, verb, context.Events);
+        FinishAgenda(context, step);
+    }
+
+    private static void FinishAgenda(TranscriptContext context, TranscriptStep step)
+    {
+        Prompt? asked = Sequence.Work(
+            context.World, context.Cards, context.World.Abilities, context.Events);
+        for (int answered = 0; asked is not null; answered++)
+        {
+            if (answered >= 100)
+            {
+                throw new TranscriptException(
+                    $"{step.Location}: agenda still asks '{asked.Label}' after 100 declines");
+            }
+
+            Sequence.Answer(
+                context.World,
+                context.Cards,
+                context.World.Abilities,
+                asked,
+                Decision.Decline,
+                context.Events);
+            asked = Sequence.Work(
+                context.World, context.Cards, context.World.Abilities, context.Events);
+        }
     }
 
     private static void MinionEntersPlay(
@@ -1020,6 +1140,15 @@ internal sealed class CoreTranscriptRunner
             Number(match, "count", step),
             checked((int)context.SceneRequired(step).Find(SceneCard(match, step)).Damage),
             "damage on the card",
+            step);
+
+    private static void CardCounters(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        Equal(
+            Number(match, "count", step),
+            checked((int)context.SceneRequired(step).Find(SceneCard(match, step))
+                .Tokens.GetValueOrDefault($"k_{match.Groups["type"].Value}")),
+            $"{match.Groups["type"].Value} counters on the card",
             step);
 
     private static void CardRemoved(

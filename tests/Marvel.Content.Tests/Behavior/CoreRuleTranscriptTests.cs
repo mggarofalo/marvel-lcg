@@ -7,6 +7,34 @@ namespace Marvel.Content.Tests.Behavior;
 public sealed class CoreRuleTranscriptTests
 {
     [Fact]
+    public void BasicPowerBranchesHavePinnedOutcomes()
+    {
+        var suite = new CoreTranscriptSuite(RepositoryPaths.Root);
+        var results = suite.RunPassingCorpus()
+            .Where(result => result.Scenario.StartsWith(
+                "specs/behavior/core/basic-powers.feature::",
+                StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
+
+        Assert.Equal(5, results.Count);
+        Assert.Equal(
+            "18fc35ed0b6fc714a853ec3bedb7814696bc741496c82e5af4e8932f1f48ad18",
+            results["behavior:rr:attack-player-ability-type.1:published-result"].Digest);
+        Assert.Equal(
+            "af7b74e4760c3e5d358eb6ac4f3b9e174cad0686a8cd11aeebe4ff9fa2edb3aa",
+            results["behavior:rr:ally.2:published-result"].Digest);
+        Assert.Equal(
+            "735e397ab8fbdc6d3ccc89d0b1d452da40d6ad8080a9c8d0cdd01186dc5c6c26",
+            results["behavior:rr:thwart.1:published-result"].Digest);
+        Assert.Equal(
+            "5544ca405e8d6c6682d491e3215491fdd98c8f8f5e9e2740743f3d810bb0b489",
+            results["behavior:rr:consequential-damage.1:published-result"].Digest);
+        Assert.Equal(
+            "990abfbca51dc3c52846309365d832c3755c69853501253b8e55fdf2ab4382da",
+            results["behavior:rr:recover-recovery:published-result"].Digest);
+    }
+
+    [Fact]
     public void StatusCardBranchesHavePinnedOutcomes()
     {
         var suite = new CoreTranscriptSuite(RepositoryPaths.Root);

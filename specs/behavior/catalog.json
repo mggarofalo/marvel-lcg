@@ -1536,11 +1536,14 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-powers.feature::An ally attacks while its identity remains ready and takes consequential damage",
+            "specs/behavior/core/basic-powers.feature::An ally takes consequential damage after its basic thwart resolves"
+          ],
+          "mutation": "CoreRuleTranscriptTests.BasicPowerBranchesHavePinnedOutcomes distinguishes both ally powers, their exhaust cost, and their results."
         }
       ]
     },
@@ -1558,11 +1561,14 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-powers.feature::An ally attacks while its identity remains ready and takes consequential damage",
+            "specs/behavior/core/basic-powers.feature::An ally takes consequential damage after its basic thwart resolves"
+          ],
+          "mutation": "CoreRuleTranscriptTests.BasicPowerBranchesHavePinnedOutcomes distinguishes consequential damage after both ally powers."
         }
       ]
     },
@@ -1602,11 +1608,14 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-powers.feature::An ally attacks while its identity remains ready and takes consequential damage",
+            "specs/behavior/core/basic-powers.feature::An ally takes consequential damage after its basic thwart resolves"
+          ],
+          "mutation": "CoreRuleTranscriptTests.BasicPowerBranchesHavePinnedOutcomes distinguishes the ally exhausting while the identity stays ready."
         }
       ]
     },
@@ -3406,11 +3415,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-powers.feature::A hero exhausts and deals its ATK with a basic attack"
+          ],
+          "mutation": "CoreRuleTranscriptTests.BasicPowerBranchesHavePinnedOutcomes distinguishes the hero's printed ATK damage and exhaust cost."
         }
       ]
     },
@@ -3714,11 +3725,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-powers.feature::An ally attacks while its identity remains ready and takes consequential damage"
+          ],
+          "mutation": "CoreRuleTranscriptTests.BasicPowerBranchesHavePinnedOutcomes distinguishes the post-attack consequential damage step."
         }
       ]
     },
@@ -5562,11 +5575,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-powers.feature::An ally attacks while its identity remains ready and takes consequential damage"
+          ],
+          "mutation": "CoreRuleTranscriptTests.BasicPowerBranchesHavePinnedOutcomes distinguishes the printed ATK consequential icon result."
         }
       ]
     },
@@ -5584,11 +5599,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-powers.feature::An ally takes consequential damage after its basic thwart resolves"
+          ],
+          "mutation": "CoreRuleTranscriptTests.BasicPowerBranchesHavePinnedOutcomes distinguishes the completed thwart and following consequential damage."
         }
       ]
     },
@@ -9143,11 +9160,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-powers.feature::A hero exhausts and deals its ATK with a basic attack"
+          ],
+          "mutation": "CoreRuleTranscriptTests.BasicPowerBranchesHavePinnedOutcomes distinguishes the basic-power exhaust cost."
         }
       ]
     },
@@ -10855,11 +10874,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-powers.feature::An alter-ego exhausts and cannot heal beyond maximum hit points"
+          ],
+          "mutation": "CoreRuleTranscriptTests.BasicPowerBranchesHavePinnedOutcomes distinguishes removal of sustained damage."
         }
       ]
     },
@@ -10877,11 +10898,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-powers.feature::An alter-ego exhausts and cannot heal beyond maximum hit points"
+          ],
+          "mutation": "CoreRuleTranscriptTests.BasicPowerBranchesHavePinnedOutcomes distinguishes the maximum-hit-point healing cap."
         }
       ]
     },
@@ -19343,11 +19366,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-powers.feature::An alter-ego exhausts and cannot heal beyond maximum hit points"
+          ],
+          "mutation": "CoreRuleTranscriptTests.BasicPowerBranchesHavePinnedOutcomes distinguishes the alter-ego REC heal and exhaust cost."
         }
       ]
     },
@@ -23211,11 +23236,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-powers.feature::A hero exhausts and deals its ATK with a basic attack"
+          ],
+          "mutation": "CoreRuleTranscriptTests.BasicPowerBranchesHavePinnedOutcomes distinguishes the selected enemy receiving the attack."
         }
       ]
     },
@@ -24003,11 +24030,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-powers.feature::A hero exhausts and removes its THW with a basic thwart"
+          ],
+          "mutation": "CoreRuleTranscriptTests.BasicPowerBranchesHavePinnedOutcomes distinguishes the main scheme's exact threat counter change."
         }
       ]
     },
@@ -24069,11 +24098,14 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-powers.feature::A hero exhausts and removes its THW with a basic thwart",
+            "specs/behavior/core/basic-powers.feature::An ally takes consequential damage after its basic thwart resolves"
+          ],
+          "mutation": "CoreRuleTranscriptTests.BasicPowerBranchesHavePinnedOutcomes distinguishes hero and ally THW removal and exhaust costs."
         }
       ]
     },
