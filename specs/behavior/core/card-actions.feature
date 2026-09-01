@@ -102,7 +102,11 @@ Feature: Core card actions
 
   @behavior:rr:cancel.3:published-result
   @covers:behavior:rr:status-cards.2:published-result
-  @rr:cancel.3 @rr:status-cards.2 @card:01005
+  @covers:behavior:rr:labeled-ability.6:published-result
+  @covers:behavior:rr:labeled-ability.6.1:published-result
+  @covers:behavior:rr:labeled-ability.6.2:published-result
+  @rr:cancel.3 @rr:status-cards.2 @rr:labeled-ability.6
+  @rr:labeled-ability.6.1 @rr:labeled-ability.6.2 @card:01005
   Scenario: Stun cancels an event attack after the event is played and paid for
     # "If the effects of an event card are canceled, the card is still
     # considered played, and it is discarded." The status replacement removes
@@ -348,7 +352,11 @@ Feature: Core card actions
   @covers:behavior:rr:for-each:published-result
   @covers:behavior:rr:for-each.1:published-result
   @covers:behavior:rr:for-each.2:published-result
-  @rr:for-each @rr:for-each.1 @rr:for-each.2
+  @covers:behavior:rr:labeled-ability.4:published-result
+  @covers:behavior:rr:thwart.2:published-result
+  @covers:behavior:rr:you-your.8:published-result
+  @rr:for-each @rr:for-each.1 @rr:for-each.2 @rr:labeled-ability.4
+  @rr:thwart.2 @rr:you-your.8
   @card:01023
   Scenario: Legal Practice scales to an intermediate three-card cost
     # The chosen quantity is part of the cost; the effect removes exactly one
@@ -564,8 +572,10 @@ Feature: Core card actions
   @covers:behavior:rr:support.1:published-result
   @covers:behavior:rr:support.2:published-result
   @covers:behavior:rr:in-play-and-out-of-play.3:published-result
+  @covers:behavior:rr:ownership-and-control.2:published-result
   @card:01056 @rr:uses-x-type @rr:uses-x-type.1 @rr:cost.1
   @rr:ready @rr:support.1 @rr:support.2 @rr:in-play-and-out-of-play.3
+  @rr:ownership-and-control.2
   Scenario: Tac Team enters with three uses and discards after the third action
     # "Uses (3 attack counters)" places three counters as Tac Team enters play.
     # Each action exhausts it, spends exactly one counter, and deals two damage;

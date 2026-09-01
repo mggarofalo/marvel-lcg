@@ -14274,11 +14274,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Legal Practice scales to an intermediate three-card cost"
+          ],
+          "mutation": "Resolve Legal Practice without treating its labeled action as a thwart; the transcript's threat-removal observation fails."
         }
       ]
     },
@@ -14318,11 +14320,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Stun cancels an event attack after the event is played and paid for"
+          ],
+          "mutation": "Allow Swinging Web Kick's attack effect to resolve while Spider-Man is stunned; Rhino incorrectly takes eight damage."
         }
       ]
     },
@@ -14340,11 +14344,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Stun cancels an event attack after the event is played and paid for"
+          ],
+          "mutation": "Record a completed identity attack after stun cancels Swinging Web Kick; the no-damage canceled transcript no longer describes the occurrence."
         }
       ]
     },
@@ -14362,11 +14368,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Stun cancels an event attack after the event is played and paid for"
+          ],
+          "mutation": "Leave Spider-Man's stun status in play after it cancels Swinging Web Kick; the transcript observes one status instead of zero."
         }
       ]
     },
@@ -17183,11 +17191,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/setup.feature::The printed Spider-Man and Rhino deal reaches its opening state"
+          ],
+          "mutation": "Deal Spider-Man's identity outside seat 1's owned and controlled identity area; the opening-state identity assertions fail."
         }
       ]
     },
@@ -17205,11 +17215,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Tac Team enters with three uses and discards after the third action"
+          ],
+          "mutation": "Put Tac Team into play without its owner's control; the transcript's controlled-support assertion fails."
         }
       ]
     },
@@ -25017,11 +25029,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Legal Practice scales to an intermediate three-card cost"
+          ],
+          "mutation": "Do not treat Legal Practice's labeled action as a thwart of the selected scheme; its threat remains at six."
         }
       ]
     },
@@ -27973,11 +27987,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Spider-Sense follows the attacked player when an ally defends"
+          ],
+          "mutation": "Resolve attack-you against the defending ally rather than its attacked player; Spider-Sense fails to draw for seat 1."
         }
       ]
     },
@@ -27995,11 +28011,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Legal Practice scales to an intermediate three-card cost"
+          ],
+          "mutation": "Discard Legal Practice's chosen cards from a hand other than the resolving player's; seat 1's three named cards remain in hand."
         }
       ]
     },

@@ -272,7 +272,9 @@ Feature: Core villain phase
   @behavior:card:01001a:when-villain-initiates-attack-against-you-draw
   @covers:behavior:rr:attack-enemy-activation.1.4:published-result
   @covers:behavior:rr:defend-defense.5.1:published-result
+  @covers:behavior:rr:you-your.7:published-result
   @card:01001a @rr:attack-enemy-activation.1.4 @rr:defend-defense.5.1
+  @rr:you-your.7
   Scenario: Spider-Sense follows the attacked player when an ally defends
     # Spider-Sense says, "When the villain initiates an attack against you,
     # draw 1 card." Abilities that trigger when an enemy attacks "you" inspect
