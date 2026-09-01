@@ -502,6 +502,8 @@ internal sealed class CoreTranscriptRunner
         Bind("last-attack-defense", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) defended the last attack without a basic defense",
             LastAttackDefense),
+        Bind("last-attack-undefended", TranscriptStepKind.Then,
+            "the last attack was undefended", LastAttackUndefended),
         Bind("card-player-discard", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is in seat (?<seat>\d+)'s discard pile",
             CardInPlayerDiscard),
@@ -2183,6 +2185,17 @@ internal sealed class CoreTranscriptRunner
             throw new TranscriptAssertionException(
                 $"{step.Location}: card {card.ObjectId} did not defend the last attack "
                 + "with a defense-labeled ability");
+        }
+    }
+
+    private static void LastAttackUndefended(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        _ = match;
+        if (context.World.FinishedAttack is not { Defender: < 0 })
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: the last attack was defended");
         }
     }
 

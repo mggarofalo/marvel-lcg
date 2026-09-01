@@ -103,6 +103,7 @@ Feature: Core villain phase
   @covers:behavior:rr:damage.1:published-result
   @covers:behavior:rr:damage.3:published-result
   @covers:behavior:rr:damage.step.5:published-result
+  @covers:behavior:rr:defend-defense.6:published-result
   @rr:attack-enemy-activation @rr:activation
   @rr:attack-enemy-activation.1 @rr:attack-enemy-activation.1.1
   @rr:attack-enemy-activation.4 @rr:attack-enemy-activation.step.1
@@ -110,7 +111,7 @@ Feature: Core villain phase
   @rr:attack-enemy-activation.step.3.d @rr:attack-enemy-activation.step.4
   @rr:attack-enemy-activation.step.5 @rr:attack-enemy-activation.step.6
   @rr:damage.1 @rr:damage.3 @rr:damage.step.5
-  @rr:ability.8 @rr:ability.11
+  @rr:ability.8 @rr:ability.11 @rr:defend-defense.6
   Scenario: A villain attacks an undefended hero with its ATK plus boost icons
     # A villain attack targets both the player and their hero. The facedown
     # boost is flipped, its icons modify ATK, and the calculated damage is then
@@ -132,6 +133,7 @@ Feature: Core villain phase
     And card 01103 copy 0 is faceup on top of the encounter discard pile
     And card 01101 copy 0 is engaged with seat 1
     And a Boost event was emitted before a Deal_Damage event
+    And the last attack was undefended
 
   @behavior:rr:defend-defense.2:published-result
   @covers:behavior:rr:attack-enemy-activation.2:published-result
