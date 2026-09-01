@@ -42931,11 +42931,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/main-scheme.feature::Completing the final main scheme makes the villain win"
+          ],
+          "mutation": "Do not apply The Break-In!'s printed loss instruction when the stage completes; the game does not end in a villain win."
         },
         {
           "id": "behavior:card:01097b:if-stage-is-completed-players-lose-game-condition-not-met",
@@ -44498,11 +44500,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/rhino-card-abilities.feature::Explosion assigns Bomb Scares threat as damage among friendly characters"
+          ],
+          "mutation": "Do not assign Bomb Scare's three threat as damage; Spider-Man and Black Cat do not receive the asserted two-one division."
         },
         {
           "id": "behavior:card:01111:if-bomb-scare-is-in-play-assign-condition-not-met",
@@ -44510,11 +44514,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/rhino-card-abilities.feature::Explosion gains surge when Bomb Scare is not in play"
+          ],
+          "mutation": "Attempt Explosion's damage assignment without Bomb Scare in play; the surge card is not the only resulting effect."
         },
         {
           "id": "behavior:card:01111:if-bomb-scare-is-not-in-play-condition-met",
@@ -44522,11 +44528,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/rhino-card-abilities.feature::Explosion gains surge when Bomb Scare is not in play"
+          ],
+          "mutation": "Do not gain Surge without Bomb Scare; the next encounter card is not dealt."
         },
         {
           "id": "behavior:card:01111:if-bomb-scare-is-not-in-play-condition-not-met",
@@ -44534,11 +44542,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/rhino-card-abilities.feature::Explosion assigns Bomb Scares threat as damage among friendly characters"
+          ],
+          "mutation": "Gain Surge despite Bomb Scare being in play; an encounter card is dealt in addition to the damage assignment."
         }
       ]
     },

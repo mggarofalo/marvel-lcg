@@ -2448,7 +2448,7 @@ internal sealed class CoreTranscriptRunner
             new SceneCard(row["card"], TableNumber(row, "copy", step))).ObjectId)];
         if (selected.Length < targets.Min
             || selected.Length > targets.Max
-            || selected.Distinct().Count() != selected.Length
+            || !targets.AllowRepeated && selected.Distinct().Count() != selected.Length
             || selected.Any(id => !targets.Legal.Contains(id)))
         {
             throw new TranscriptException(
@@ -2766,7 +2766,7 @@ internal sealed class CoreTranscriptRunner
             || prompt.Affordances[0].Targets is not { } targets
             || targets.Min != count
             || targets.Max != count
-            || targets.Legal.Count < count)
+            || !targets.AllowRepeated && targets.Legal.Count < count)
         {
             throw new TranscriptAssertionException(
                 $"{step.Location}: seat {seat + 1} was not asked to choose {count} cards");
@@ -2784,7 +2784,7 @@ internal sealed class CoreTranscriptRunner
             || prompt.Affordances[0].Targets is not { } targets
             || targets.Min != min
             || targets.Max != max
-            || targets.Legal.Count < max)
+            || !targets.AllowRepeated && targets.Legal.Count < max)
         {
             throw new TranscriptAssertionException(
                 $"{step.Location}: seat {seat + 1} was not asked to choose between "

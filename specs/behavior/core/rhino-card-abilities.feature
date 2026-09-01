@@ -221,3 +221,44 @@ Feature: Core Rhino card abilities
     When card 01112 copy 0 is revealed to seat 1
     Then card 01001b copy 0 has 1 confused status card
     And card 01101 copy 0 is facedown in seat 1's encounter queue
+
+  @behavior:card:01111:if-bomb-scare-is-in-play-assign-condition-met
+  @covers:behavior:card:01111:if-bomb-scare-is-not-in-play-condition-not-met
+  @card:01111
+  Scenario: Explosion assigns Bomb Scares threat as damage among friendly characters
+    # Bomb Scare has three threat, so Explosion assigns exactly three damage.
+    # Two points go to Spider-Man and one to Black Cat before any is resolved.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 948  |
+    And seat 1 shows identity face 01001a
+    And card 01002 copy 0 is an ally controlled by seat 1
+    And card 01109 copy 0 is a side scheme in play
+    And card 01109 copy 0 has 3 threat counters
+    When card 01111 copy 0 is revealed to seat 1
+    Then seat 1 is asked to choose 3 cards for the pending action
+    When seat 1 chooses these cards for the pending action
+      | card   | copy |
+      | 01001a | 0    |
+      | 01001a | 0    |
+      | 01002  | 0    |
+    Then card 01001a copy 0 has 2 damage
+    And card 01002 copy 0 has 1 damage
+    And seat 1 has 0 facedown encounter cards
+
+  @behavior:card:01111:if-bomb-scare-is-not-in-play-condition-met
+  @covers:behavior:card:01111:if-bomb-scare-is-in-play-assign-condition-not-met
+  @card:01111
+  Scenario: Explosion gains surge when Bomb Scare is not in play
+    # With no Bomb Scare in play there is no damage assignment. Explosion
+    # instead gains Surge and deals the next encounter card facedown.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 949  |
+    And seat 1 shows identity face 01001a
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01101     | 0    |
+    When card 01111 copy 0 is revealed to seat 1
+    Then card 01001a copy 0 has 0 damage
+    And card 01101 copy 0 is facedown in seat 1's encounter queue

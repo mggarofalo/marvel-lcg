@@ -322,7 +322,7 @@ public sealed class CoreCardFaceTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(13, results.Count);
+        Assert.Equal(15, results.Count);
         Assert.Equal("52303ca82ba61eecfacfa708c390bf5d637fbbcf1cb51ede2ecf55abaeb1ec2c",
             results["behavior:card:01095:search-encounter-deck-and-discard-pile-for"].Digest);
         Assert.Equal("6cbf533d47f0a327837f9b9128327152208c21367b8ba8aacddc17a8fdd497f9",
@@ -349,6 +349,10 @@ public sealed class CoreCardFaceTranscriptTests
             results["behavior:card:01110:when-revealed-place-one-threat"].Digest);
         Assert.Equal("65c0a5e16448651c6dee7d9fa78eba6af77841d123aed0c6ecc843f5ebae73bf",
             results["behavior:card:01112:if-you-are-already-confused-card-gains-condition-met"].Digest);
+        Assert.Equal("d15413648737eb718319bd1139e237fbb00c53a3c27676162b00210ca6376fe2",
+            results["behavior:card:01111:if-bomb-scare-is-in-play-assign-condition-met"].Digest);
+        Assert.Equal("6c7e81f838e9c924c72db1009795168070513585007f527f978f59d6c7004c03",
+            results["behavior:card:01111:if-bomb-scare-is-not-in-play-condition-met"].Digest);
     }
 
     [Fact]

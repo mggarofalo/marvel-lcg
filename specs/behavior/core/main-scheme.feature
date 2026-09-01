@@ -36,6 +36,8 @@ Feature: Core main scheme completion
     And the game is unfinished
 
   @behavior:rr:main-scheme-main-scheme-deck.2.1:published-result
+  @covers:behavior:card:01097b:if-stage-is-completed-players-lose-game-condition-met
+  @card:01097b
   @rr:main-scheme-main-scheme-deck.2.1
   Scenario: Completing the final main scheme makes the villain win
     # If the villain completes the final stage of the main-scheme deck, the
