@@ -2814,11 +2814,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-power-restrictions.feature::Guard removes the villain but not the guarding minion from attack targets"
+          ],
+          "mutation": "CoreRuleTranscriptTests.BasicPowerRestrictionBranchesHavePinnedOutcomes distinguishes the legal target set."
         }
       ]
     },
@@ -2940,11 +2942,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-power-restrictions.feature::Guard removes the villain but not the guarding minion from attack targets"
+          ],
+          "mutation": "CoreRuleTranscriptTests.BasicPowerRestrictionBranchesHavePinnedOutcomes distinguishes the guarding minion from the prohibited villain."
         }
       ]
     },
@@ -4400,11 +4404,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/status-cards.feature::A confused hero's basic thwart is replaced by discarding confuse"
+          ],
+          "mutation": "CoreRuleTranscriptTests.StatusCardBranchesHavePinnedOutcomes distinguishes removal of confuse with no threat removed."
         }
       ]
     },
@@ -4490,11 +4496,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/status-cards.feature::A confused hero's basic thwart is replaced by discarding confuse"
+          ],
+          "mutation": "CoreRuleTranscriptTests.StatusCardBranchesHavePinnedOutcomes distinguishes the cancelled basic thwart and discarded status."
         }
       ]
     },
@@ -8797,11 +8805,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-power-restrictions.feature::Guard removes the villain but not the guarding minion from attack targets"
+          ],
+          "mutation": "CoreRuleTranscriptTests.BasicPowerRestrictionBranchesHavePinnedOutcomes distinguishes the villain's exclusion while guard is engaged."
         }
       ]
     },
@@ -8815,11 +8825,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-power-restrictions.feature::Guard removes the villain but not the guarding minion from attack targets"
+          ],
+          "mutation": "CoreRuleTranscriptTests.BasicPowerRestrictionBranchesHavePinnedOutcomes distinguishes the guard constant ability."
         }
       ]
     },
@@ -15913,11 +15925,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-power-restrictions.feature::An undamaged alter-ego cannot perform a basic recovery"
+          ],
+          "mutation": "CoreRuleTranscriptTests.BasicPowerRestrictionBranchesHavePinnedOutcomes distinguishes the unavailable recovery affordance at zero damage."
         }
       ]
     },
@@ -18449,11 +18463,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/status-cards.feature::A stunned hero's basic attack is replaced by discarding stun"
+          ],
+          "mutation": "CoreRuleTranscriptTests.StatusCardBranchesHavePinnedOutcomes distinguishes removal of stun with no attack damage."
         }
       ]
     },
@@ -18541,11 +18557,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/status-cards.feature::A stunned hero's basic attack is replaced by discarding stun"
+          ],
+          "mutation": "CoreRuleTranscriptTests.StatusCardBranchesHavePinnedOutcomes distinguishes the cancelled basic attack and discarded status."
         }
       ]
     },
@@ -19790,11 +19808,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-power-restrictions.feature::A scheme with no threat is not a basic thwart target"
+          ],
+          "mutation": "CoreRuleTranscriptTests.BasicPowerRestrictionBranchesHavePinnedOutcomes distinguishes the zero-threat target boundary."
         }
       ]
     },

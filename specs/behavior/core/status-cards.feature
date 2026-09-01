@@ -3,6 +3,39 @@ Feature: Core status cards
   Statuses are physical cards with per-type limits. Tough replaces one damage
   instance, and Toughness creates a tough card only after entry into play.
 
+  @behavior:rr:stun-stunned.5:published-result
+  @covers:behavior:rr:stun-stunned.1:published-result
+  @rr:stun-stunned.5 @rr:stun-stunned.1
+  Scenario: A stunned hero's basic attack is replaced by discarding stun
+    # "If a stunned identity or ally attempts to attack ... discard the
+    # stunned card instead."
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 313  |
+    And seat 1 shows identity face 01001a
+    And card 01001a copy 0 has a stunned status card
+    When seat 1 uses their basic attack against card 01094 copy 0
+    Then card 01001a copy 0 has 0 stunned status cards
+    And card 01001a copy 0 is exhausted
+    And card 01094 copy 0 has 0 damage
+
+  @behavior:rr:confuse-confused.5:published-result
+  @covers:behavior:rr:confuse-confused.1:published-result
+  @rr:confuse-confused.5 @rr:confuse-confused.1
+  Scenario: A confused hero's basic thwart is replaced by discarding confuse
+    # "If a confused identity or ally attempts to thwart ... discard the
+    # confused card instead."
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 314  |
+    And seat 1 shows identity face 01001a
+    And card 01001a copy 0 has a confused status card
+    And card 01097b copy 0 has 3 threat counters
+    When seat 1 uses their basic thwart against card 01097b copy 0
+    Then card 01001a copy 0 has 0 confused status cards
+    And card 01001a copy 0 is exhausted
+    And card 01097b copy 0 has 3 threat counters
+
   @behavior:rr:stun-stunned.2:published-result
   @covers:behavior:rr:status-cards:status-card-placement
   @rr:stun-stunned.2 @rr:status-cards

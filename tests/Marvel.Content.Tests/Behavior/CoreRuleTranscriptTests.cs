@@ -35,6 +35,28 @@ public sealed class CoreRuleTranscriptTests
     }
 
     [Fact]
+    public void BasicPowerRestrictionBranchesHavePinnedOutcomes()
+    {
+        var suite = new CoreTranscriptSuite(RepositoryPaths.Root);
+        var results = suite.RunPassingCorpus()
+            .Where(result => result.Scenario.StartsWith(
+                "specs/behavior/core/basic-power-restrictions.feature::",
+                StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
+
+        Assert.Equal(3, results.Count);
+        Assert.Equal(
+            "f3ac2273508e74e547cbbcbb0ea49b5340052b1d2ddfc9d6a5fa1f6961443c83",
+            results["behavior:rr:guard:published-result"].Digest);
+        Assert.Equal(
+            "0852412184728a9360eb6fa1be001946ec862cd5afa5f9d68f60cfba82c90fd0",
+            results["behavior:rr:thwart.1.1:published-result"].Digest);
+        Assert.Equal(
+            "089db7f223cf896d245e49103ba2f1588a560189d7f7abaf79c517597f1c5c9f",
+            results["behavior:rr:recover-recovery.1:published-result"].Digest);
+    }
+
+    [Fact]
     public void StatusCardBranchesHavePinnedOutcomes()
     {
         var suite = new CoreTranscriptSuite(RepositoryPaths.Root);
@@ -44,7 +66,13 @@ public sealed class CoreRuleTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(4, results.Count);
+        Assert.Equal(6, results.Count);
+        Assert.Equal(
+            "dab07315ec82d4dffa5852140b360299a47d7cc396c78e54b34be5b4c22cfe53",
+            results["behavior:rr:stun-stunned.5:published-result"].Digest);
+        Assert.Equal(
+            "2e19591503121238703885aa7b629ade053670e7e220727ce82bcf5e7b12857e",
+            results["behavior:rr:confuse-confused.5:published-result"].Digest);
         Assert.Equal(
             "7d7ced5d78722f6dd1c69d9a07e291dad214bd3037a647c5ceeab7a6933e2906",
             results["behavior:rr:stun-stunned.2:published-result"].Digest);

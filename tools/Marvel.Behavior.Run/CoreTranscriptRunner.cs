@@ -68,6 +68,10 @@ internal sealed class TranscriptContext
 
     public (int Seat, string From, string To)? LastFormChange { get; set; }
 
+    public IReadOnlySet<int>? LastCardOptions { get; set; }
+
+    public bool? LastAvailability { get; set; }
+
     public World World => Scene?.World
         ?? throw new TranscriptException("a canonical Core scene has not been constructed");
 }
@@ -309,6 +313,15 @@ internal sealed class CoreTranscriptRunner
         Bind("ally-power", TranscriptStepKind.When,
             @"card (?<ally>\d+[a-z]?) copy (?<allyCopy>\d+) uses its basic (?<power>attack|thwart) against card (?<face>\d+[a-z]?) copy (?<copy>\d+)",
             AllyPower),
+        Bind("basic-attack-targets", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) asks for their basic attack targets",
+            BasicAttackTargets),
+        Bind("basic-thwart-targets", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) asks for their basic thwart targets",
+            BasicThwartTargets),
+        Bind("basic-recovery-availability", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) asks whether basic recovery is available",
+            BasicRecoveryAvailability),
         Bind("minion-enters-play", TranscriptStepKind.When,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) enters play as a minion engaged with seat (?<seat>\d+)",
             MinionEntersPlay),
@@ -373,6 +386,12 @@ internal sealed class CoreTranscriptRunner
         Bind("card-counters", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) has (?<count>\d+) (?<type>[a-z-]+) counters?",
             CardCounters),
+        Bind("card-target-availability", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is (?<availability>available|unavailable) as a target",
+            CardTargetAvailability),
+        Bind("basic-recovery-result", TranscriptStepKind.Then,
+            @"basic recovery is (?<availability>available|unavailable)",
+            BasicRecoveryResult),
         Bind("card-removed", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is removed from the game",
             CardRemoved),
@@ -811,6 +830,40 @@ internal sealed class CoreTranscriptRunner
         FinishAgenda(context, step);
     }
 
+    private static void BasicAttackTargets(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        context.LastAvailability = null;
+        context.LastCardOptions = BasicPowers.Attackable(
+                context.World, context.Cards, Seat(match, step))
+            .Select(card => card.ObjectId)
+            .ToHashSet();
+    }
+
+    private static void BasicThwartTargets(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        context.LastAvailability = null;
+        context.LastCardOptions = BasicPowers.Thwartable(
+                context.World, context.Cards, Seat(match, step))
+            .Select(card => card.ObjectId)
+            .ToHashSet();
+    }
+
+    private static void BasicRecoveryAvailability(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        context.LastCardOptions = null;
+        context.LastAvailability = BasicPowers.CanRecover(
+            context.World, context.Cards, Seat(match, step));
+    }
+
     private static void FinishAgenda(TranscriptContext context, TranscriptStep step)
     {
         Prompt? asked = Sequence.Work(
@@ -1150,6 +1203,41 @@ internal sealed class CoreTranscriptRunner
                 .Tokens.GetValueOrDefault($"k_{match.Groups["type"].Value}")),
             $"{match.Groups["type"].Value} counters on the card",
             step);
+
+    private static void CardTargetAvailability(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        if (context.LastCardOptions is null)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: no target query has been made");
+        }
+
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        bool expected = match.Groups["availability"].Value == "available";
+        bool actual = context.LastCardOptions.Contains(card.ObjectId);
+        if (actual != expected)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected card {card.ObjectId} to be "
+                + $"{match.Groups["availability"].Value} as a target");
+        }
+    }
+
+    private static void BasicRecoveryResult(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        bool expected = match.Groups["availability"].Value == "available";
+        if (context.LastAvailability != expected)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected basic recovery to be "
+                + $"{match.Groups["availability"].Value}; was "
+                + (context.LastAvailability is null
+                    ? "not queried"
+                    : context.LastAvailability.Value ? "available" : "unavailable"));
+        }
+    }
 
     private static void CardRemoved(
         TranscriptContext context, TranscriptStep step, Match match)
