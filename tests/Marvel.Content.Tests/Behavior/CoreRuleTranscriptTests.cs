@@ -10,6 +10,21 @@ public sealed class CoreRuleTranscriptTests
         () => new CoreTranscriptSuite(RepositoryPaths.Root).RunPassingCorpus());
 
     [Fact]
+    public void CharacteristicBranchesHavePinnedOutcomes()
+    {
+        var results = Corpus.Value
+            .Where(result => result.Scenario.StartsWith(
+                "specs/behavior/core/characteristics.feature::",
+                StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
+
+        Assert.Single(results);
+        Assert.Equal(
+            "34c725e7bf00f8edee5d88a05622b4ea7331342e372910a124114a8527af9a28",
+            results["behavior:card:01039:you-get-1-hit-point"].Digest);
+    }
+
+    [Fact]
     public void MainSchemeBranchesHavePinnedOutcomes()
     {
         var results = Corpus.Value

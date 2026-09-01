@@ -15330,11 +15330,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/characteristics.feature::Rocket Boots increases maximum hit points before sustained damage"
+          ],
+          "mutation": "Ignore Rocket Boots' active hit-point modifier; Tony Stark has seven rather than eight remaining hit points."
         }
       ]
     },
@@ -23391,11 +23393,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/characteristics.feature::Rocket Boots increases maximum hit points before sustained damage"
+          ],
+          "mutation": "Do not subtract Tony Stark's two sustained damage from his modified maximum; he has ten rather than eight remaining hit points."
         }
       ]
     },
@@ -33445,11 +33449,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/characteristics.feature::Rocket Boots increases maximum hit points before sustained damage"
+          ],
+          "mutation": "Remove Rocket Boots' +1 hit-point constant ability; Tony Stark's remaining-hit-point assertion fails."
         },
         {
           "id": "behavior:card:01039:exhaust-rocket-boots-and-spend-mental-resource",
