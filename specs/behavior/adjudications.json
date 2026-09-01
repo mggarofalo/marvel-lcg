@@ -8821,11 +8821,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/form-change.feature::A form change caused by Split Personality preserves the voluntary change"
+          ],
+          "mutation": "Mark Split Personality's ability-caused flip as the round's voluntary change; taking the subsequent Change_Form affordance fails."
         }
       ]
     },
@@ -26547,11 +26549,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/form-change.feature::A form change caused by Split Personality preserves the voluntary change"
+          ],
+          "mutation": "Remove Split Personality's form change; the hero-form assertion and the subsequent hero-to-alter-ego transition fail."
         },
         {
           "key": "then-draw-up-your-printed-hand-size-minimum",

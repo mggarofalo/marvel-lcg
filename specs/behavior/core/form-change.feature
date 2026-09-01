@@ -53,3 +53,31 @@ Feature: Hero and alter-ego form changes
     Then seat 1 changed from alter-ego to hero form
     When seat 1 asks whether a voluntary form change is available
     Then a voluntary form change is unavailable
+
+  @behavior:rr:form-change-form.3:published-result
+  @covers:behavior:card:01025:change-your-form-flip-your-identity-card
+  @rr:form-change-form.3 @card:01025
+  Scenario: A form change caused by Split Personality preserves the voluntary change
+    # "If a card ability causes a player to change forms, it does not count
+    # against" the voluntary form change. Split Personality flips She-Hulk.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 810  |
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01025 | 0    |
+      | 01024 | 0    |
+      | 01024 | 1    |
+      | 01024 | 2    |
+    When game setup reaches seat 1's mulligan
+    Then seat 1 is offered a mulligan
+    When seat 1 keeps every opening-hand card at mulligan
+    Then seat 1 is in alter-ego form
+    When seat 1 initiates card 01025 copy 0's action paying with these cards
+      | card  | copy |
+      | 01024 | 0    |
+      | 01024 | 1    |
+      | 01024 | 2    |
+    Then seat 1 is in hero form
+    When seat 1 takes their voluntary form change
+    Then seat 1 changed from hero to alter-ego form

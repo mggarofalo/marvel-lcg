@@ -323,13 +323,16 @@ public sealed class CoreRuleTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(2, results.Count);
+        Assert.Equal(3, results.Count);
         Assert.Equal(
             "8ac76760febf2740557277dc71b65fbc299b5cef08e0a510bbb53a2c06a33a26",
             results["behavior:rr:form-change-form.1:flip-identity"].Digest);
         Assert.Equal(
             "7cd5c816aad3d3414b2a168c18ef54b42152f75e6301f10b17bccde0f43a243a",
             results["behavior:rr:form-change-form.1:voluntary-window-and-limit"].Digest);
+        Assert.Equal(
+            "410e4fc088da5f7bc65834761ff21efefe7c57bf7489ce0c669cabd7c2b76afa",
+            results["behavior:rr:form-change-form.3:published-result"].Digest);
     }
 
     [Fact]
