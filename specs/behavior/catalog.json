@@ -6172,11 +6172,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::An overpaid physical resource does not grant overkill"
+          ],
+          "mutation": "Reject overpayment, retain excess resources, or count overpaid physical icons as paid; a discard, resolution, or villain-damage assertion fails."
         }
       ]
     },
@@ -6194,11 +6196,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::An overpaid physical resource does not grant overkill"
+          ],
+          "mutation": "Reject overpayment, retain excess resources, or count overpaid physical icons as paid; a discard, resolution, or villain-damage assertion fails."
         }
       ]
     },
@@ -6216,11 +6220,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::An overpaid physical resource does not grant overkill"
+          ],
+          "mutation": "Reject overpayment, retain excess resources, or count overpaid physical icons as paid; a discard, resolution, or villain-damage assertion fails."
         }
       ]
     },
@@ -35652,11 +35658,14 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Relentless Assault gains overkill when physical pays its cost",
+            "specs/behavior/core/card-actions.feature::An overpaid physical resource does not grant overkill"
+          ],
+          "mutation": "Change the selected minion damage; one or both defeat and excess-damage observations fail."
         },
         {
           "id": "behavior:card:01053:if-you-paid-for-card-using-physical-condition-met",
@@ -35664,11 +35673,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Relentless Assault gains overkill when physical pays its cost"
+          ],
+          "mutation": "Remove the paid-physical condition or its overkill result; excess damage no longer reaches the villain."
         },
         {
           "id": "behavior:card:01053:if-you-paid-for-card-using-physical-condition-not-met",
@@ -35676,11 +35687,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::An overpaid physical resource does not grant overkill"
+          ],
+          "mutation": "Treat overpaid physical icons as paid for the cost; excess damage incorrectly reaches the villain."
         },
         {
           "id": "behavior:card:01053:excess-damage-from-attack-is-dealt-villain",
@@ -35688,11 +35701,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Relentless Assault gains overkill when physical pays its cost"
+          ],
+          "mutation": "Remove the paid-physical condition or its overkill result; excess damage no longer reaches the villain."
         }
       ]
     },

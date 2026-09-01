@@ -1185,9 +1185,16 @@ internal sealed class CoreTranscriptRunner
         var runner = (AbilityRunner)context.World.Abilities;
         var action = runner.Actions(context.World, seat)
             .Single(candidate => candidate.Card == source.ObjectId);
+        CostOption? price = runner.Describe(context.World, action).CostOptions.SingleOrDefault();
+        IReadOnlyList<ResourceAllocation>? allocations = price is null
+            ? null
+            : ResourcePayment.Allocate(price, payments)
+                ?? throw new TranscriptException(
+                    $"{step.Location}: the selected cards cannot be allocated to the action cost");
         context.Events.Clear();
         context.CurrentPrompt = "<none>";
-        context.Events.AddRange(runner.Act(context.World, action, payments, []));
+        context.Events.AddRange(runner.Act(
+            context.World, action, payments, [], allocations: allocations));
         SetPendingPrompt(context, Sequence.Work(
             context.World, context.Cards, runner, context.Events));
     }

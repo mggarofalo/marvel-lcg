@@ -162,6 +162,65 @@ Feature: Core card actions
     Then card 01094 copy 0 has 3 damage
     And card 01087 copy 0 is faceup on top of seat 1's discard pile
 
+  @behavior:card:01053:if-you-paid-for-card-using-physical-condition-met
+  @covers:behavior:card:01053:deal-5-damage-minion
+  @covers:behavior:card:01053:excess-damage-from-attack-is-dealt-villain
+  @card:01053
+  Scenario: Relentless Assault gains overkill when physical pays its cost
+    # "If you paid for this card using a physical resource, this attack gains
+    # overkill." Strength's two physical resources exactly pay the cost, so
+    # damage beyond the defeated minion's hit points reaches the villain.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 724  |
+    And seat 1 shows identity face 01019a
+    And card 01101 copy 0 is a minion engaged with seat 1
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01053 | 0    |
+      | 01090 | 0    |
+    When seat 1 initiates card 01053 copy 0's action paying with these cards
+      | card  | copy |
+      | 01090 | 0    |
+    Then card 01101 copy 0 is offered by the pending action
+    When seat 1 chooses card 01101 copy 0 for the pending action
+    Then card 01101 copy 0 is faceup on top of the encounter discard pile
+    And card 01094 copy 0 has 2 damage
+    And card 01053 copy 0 is faceup on top of seat 1's discard pile
+
+  @behavior:card:01053:if-you-paid-for-card-using-physical-condition-not-met
+  @covers:behavior:card:01053:deal-5-damage-minion
+  @covers:behavior:rr:cost.4:published-result
+  @covers:behavior:rr:cost.4.1:published-result
+  @covers:behavior:rr:cost.4.2:published-result
+  @card:01053 @rr:cost.4 @rr:cost.4.1 @rr:cost.4.2
+  Scenario: An overpaid physical resource does not grant overkill
+    # The effective Cost 4 authority permits overpayment but says resources
+    # beyond the cost are spent, not paid for that cost. Energy pays the
+    # two-resource cost; the later physical resources are discarded as
+    # overpayment and cannot satisfy Relentless Assault's condition.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 725  |
+    And seat 1 shows identity face 01019a
+    And card 01101 copy 0 is a minion engaged with seat 1
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01053 | 0    |
+      | 01088 | 0    |
+      | 01090 | 0    |
+    When seat 1 initiates card 01053 copy 0's action paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+      | 01090 | 0    |
+    Then card 01101 copy 0 is offered by the pending action
+    And card 01088 copy 0 is in seat 1's discard pile
+    And card 01090 copy 0 is in seat 1's discard pile
+    When seat 1 chooses card 01101 copy 0 for the pending action
+    Then card 01101 copy 0 is faceup on top of the encounter discard pile
+    And card 01094 copy 0 has 0 damage
+    And card 01053 copy 0 is faceup on top of seat 1's discard pile
+
   @behavior:card:01056:uses-3-attack-counters
   @covers:behavior:card:01056:enters-play-with-3-counters
   @covers:behavior:card:01056:when-those-are-gone-discard-card
