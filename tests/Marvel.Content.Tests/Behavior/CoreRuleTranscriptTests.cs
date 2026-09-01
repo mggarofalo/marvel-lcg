@@ -12,15 +12,19 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void OwnershipAndControlBranchesHavePinnedOutcomes()
     {
-        var result = Assert.Single(Corpus.Value, candidate =>
-            candidate.Scenario.StartsWith(
+        var results = Corpus.Value.Where(candidate =>
+                candidate.Scenario.StartsWith(
                 "specs/behavior/core/ownership-control.feature::",
-                StringComparison.Ordinal));
+                StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal("behavior:rr:cost.7:published-result", result.Obligation);
+        Assert.Equal(2, results.Count);
         Assert.Equal(
             "270b3cab1ef837a77419721764d66dbfdc9bbfe1a898cdb0b7b40993d0f3b923",
-            result.Digest);
+            results["behavior:rr:cost.7:published-result"].Digest);
+        Assert.Equal(
+            "9e5c6be4c13d55abbf6c15d1a39f6d2554daaf95d78fafbecca39b6d5928cb58",
+            results["behavior:rr:ownership-and-control.8:published-result"].Digest);
     }
 
     [Fact]

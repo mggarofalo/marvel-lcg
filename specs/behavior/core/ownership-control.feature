@@ -27,3 +27,29 @@ Feature: Core ownership and control
     Then seat 1 is the active player
     When seat 1 asks whether card 01086 copy 0 is available to play
     Then card 01086 copy 0 is unavailable to play
+
+  @behavior:rr:ownership-and-control.8:published-result
+  @covers:behavior:rr:you-your.10:published-result
+  @covers:behavior:card:01188:discard-upgrade-or-support-you-control
+  @covers:behavior:card:01188:if-no-cards-were-discarded-way-card-condition-met
+  @rr:ownership-and-control.8 @rr:you-your.10 @card:01188
+  Scenario: Caught Off Guard cannot discard another player's support
+    # "You control" refers only to cards in the resolving player's play area.
+    # Seat 1 has no upgrade or support, so Caught Off Guard cannot select seat
+    # 2's Avengers Mansion; no card is discarded and the treachery surges.
+    Given a canonical Core scene is dealt
+      | campaign | heroes                     | seed |
+      | rhino    | spider_man,captain_marvel | 828  |
+    And card 01091 copy 1 is a support controlled by seat 2
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01103     | 0    |
+      | 01105     | 0    |
+      | 01188     | 0    |
+      | 01101     | 0    |
+      | 01102     | 0    |
+    When villain phase 1 resolves with every optional choice declined
+    Then card 01091 copy 1 remains a support controlled by seat 2
+    And card 01102 copy 0 is engaged with seat 1
+    And card 01101 copy 0 is engaged with seat 2
+    And card 01188 copy 0 is faceup on top of the encounter discard pile

@@ -14442,11 +14442,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ownership-control.feature::Caught Off Guard cannot discard another player's support"
+          ],
+          "mutation": "Include cards in another player's play area in a 'you control' query; Caught Off Guard offers or discards Avengers Mansion instead of surging."
         }
       ]
     },
@@ -22828,11 +22830,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ownership-control.feature::Caught Off Guard cannot discard another player's support"
+          ],
+          "mutation": "Resolve the discard against a non-identity card outside the revealing player's play area; seat 2's Avengers Mansion incorrectly leaves play."
         }
       ]
     },
@@ -48520,11 +48524,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ownership-control.feature::Caught Off Guard cannot discard another player's support"
+          ],
+          "mutation": "Offer an upgrade or support controlled by another player; Avengers Mansion is incorrectly discarded or the no-target branch is not reached."
         },
         {
           "key": "if-no-cards-were-discarded-way-card-condition-met",
@@ -48532,11 +48538,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ownership-control.feature::Caught Off Guard cannot discard another player's support"
+          ],
+          "mutation": "Suppress surge when Caught Off Guard discards no card; Hydra Mercenary is not revealed and engaged."
         },
         {
           "key": "if-no-cards-were-discarded-way-card-condition-not-met",
