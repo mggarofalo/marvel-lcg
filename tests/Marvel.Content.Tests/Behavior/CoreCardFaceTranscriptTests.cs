@@ -943,4 +943,28 @@ public sealed class CoreCardFaceTranscriptTests
             Assert.Equal(digest, results[obligation].Digest);
         }
     }
+
+    [Fact]
+    public void CaptainMarvelNemesisBranchesHavePinnedOutcomes()
+    {
+        var results = Corpus.Value
+            .Where(candidate => candidate.Scenario.StartsWith(
+                "specs/behavior/core/captain-marvel-nemesis.feature::",
+                StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
+        var expected = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["behavior:card:01176:place-additional-1per-hero-threat-here"] = "a405a92b881813420d52ec1a41b0adccddc7a4dd6286627b5540130ef30e9b1b",
+            ["behavior:card:01177:after-yon-rogg-attacks-place-1-threat"] = "397b4fb6abcc7a0bbbe4222896c5e07517bf6a4dfcd21c52775ca0dd79663288",
+            ["behavior:card:01178:surge"] = "761ab7ef51a96cc51dd150c6da3dce21aa92972fcddf246728e796aba8dab9f4",
+            ["behavior:card:01179:discard-each-energy-resource-from-your-hand"] = "6f065b11fd459bd9d39c5163880ec40cd8b73b5b654a473427ac5f8e76814ff0",
+            ["behavior:card:01179:if-you-discarded-no-cards-way-card-condition-met"] = "bdf8f3d25f3040e23466b097be9c37a3d482066860ec0db87aa27676aa20c92c",
+        };
+
+        Assert.Equal(expected.Count, results.Count);
+        foreach ((string obligation, string digest) in expected)
+        {
+            Assert.Equal(digest, results[obligation].Digest);
+        }
+    }
 }

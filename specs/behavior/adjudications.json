@@ -48075,11 +48075,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/captain-marvel-nemesis.feature::The Psyche-Magnitron adds one threat per hero"
+          ],
+          "mutation": "Remove or alter this printed branch; the transcript's direct state assertions fail."
         }
       ]
     },
@@ -48219,11 +48221,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/captain-marvel-nemesis.feature::Yon-Rogg places threat on The Psyche-Magnitron after attacking"
+          ],
+          "mutation": "Remove or alter this printed branch; the transcript's direct state assertions fail."
         }
       ]
     },
@@ -48293,11 +48297,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/captain-marvel-nemesis.feature::Kree Manipulator places threat and surges"
+          ],
+          "mutation": "Remove or alter this printed branch; the transcript's direct state assertions fail."
         },
         {
           "key": "after-card-resolves-reveal-1-additional-encounter",
@@ -48305,11 +48311,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/captain-marvel-nemesis.feature::Kree Manipulator places threat and surges"
+          ],
+          "mutation": "Remove or alter this printed branch; the transcript's direct state assertions fail."
         },
         {
           "key": "place-1-threat-on-main-scheme",
@@ -48317,11 +48325,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/captain-marvel-nemesis.feature::Kree Manipulator places threat and surges"
+          ],
+          "mutation": "Remove or alter this printed branch; the transcript's direct state assertions fail."
         },
         {
           "key": "if-villain-is-making-undefended-attack-place-condition-met",
@@ -48419,11 +48429,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/captain-marvel-nemesis.feature::Yon-Rogg's Treason discards every energy-resource card without surging"
+          ],
+          "mutation": "Remove or alter this printed branch; the transcript's direct state assertions fail."
         },
         {
           "key": "if-you-discarded-no-cards-way-card-condition-met",
@@ -48431,11 +48443,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/captain-marvel-nemesis.feature::Yon-Rogg's Treason surges when no energy-resource card is discarded"
+          ],
+          "mutation": "Remove or alter this printed branch; the transcript's direct state assertions fail."
         },
         {
           "key": "if-you-discarded-no-cards-way-card-condition-not-met",
@@ -48443,11 +48457,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/captain-marvel-nemesis.feature::Yon-Rogg's Treason discards every energy-resource card without surging"
+          ],
+          "mutation": "Remove or alter this printed branch; the transcript's direct state assertions fail."
         }
       ]
     },
