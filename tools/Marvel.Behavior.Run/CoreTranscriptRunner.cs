@@ -544,6 +544,9 @@ internal sealed class CoreTranscriptRunner
         Bind("pending-choice-count", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) is asked to choose (?<count>\d+) cards? for the pending action",
             PendingChoiceCount),
+        Bind("pending-choice-range", TranscriptStepKind.Then,
+            @"seat (?<seat>\d+) is asked to choose between (?<min>\d+) and (?<max>\d+) cards? for the pending action",
+            PendingChoiceRange),
         Bind("pending-player-order-count", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) is asked to order (?<count>\d+) players? for the pending encounter-card decision",
             PendingPlayerOrderCount),
@@ -2747,6 +2750,25 @@ internal sealed class CoreTranscriptRunner
         {
             throw new TranscriptAssertionException(
                 $"{step.Location}: seat {seat + 1} was not asked to choose {count} cards");
+        }
+    }
+
+    private static void PendingChoiceRange(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        int min = Number(match, "min", step);
+        int max = Number(match, "max", step);
+        if (context.PendingPrompt is not { Player: var player, Affordances.Count: 1 } prompt
+            || player != seat
+            || prompt.Affordances[0].Targets is not { } targets
+            || targets.Min != min
+            || targets.Max != max
+            || targets.Legal.Count < max)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: seat {seat + 1} was not asked to choose between "
+                + $"{min} and {max} cards");
         }
     }
 

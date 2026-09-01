@@ -71,7 +71,22 @@ public sealed class CoreCardFaceTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(52, results.Count);
+        Assert.Equal(56, results.Count);
+        Assert.Equal(
+            "0363505d44f84ff8ce1c5ab5159f063ecab495c019fb2f7e52eab888ee552f41",
+            results["behavior:card:01007:attach-minion"].Digest);
+        Assert.Equal(
+            "6a3652d2e089624606ec80cf3feffe28e610f4db9d2eb1b2412272ff998bc685",
+            results[
+                "behavior:card:01042:choose-up-3-different-cards-in-your-minimum"].Digest);
+        Assert.Equal(
+            "e6cd7d491f891b13af5e7066bef432a8fed3a2a06d9280ea262c3b4f5b2d2ce5",
+            results[
+                "behavior:card:01042:choose-up-3-different-cards-in-your-intermediate"].Digest);
+        Assert.Equal(
+            "55990185045503392e5779297cb8073a1512586a29d9ff1d80f1986131eea4ed",
+            results[
+                "behavior:card:01042:choose-up-3-different-cards-in-your-maximum"].Digest);
         Assert.Equal(
             "67de81717f3b3c0dc3cca2713e200db998c3c910e61b75e2a1b49f29d50e98cb",
             results["behavior:card:01018:max-1-per-player"].Digest);

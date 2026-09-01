@@ -24334,11 +24334,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Spider-Tracer removes threat when its attached minion is defeated"
+          ],
+          "mutation": "Permit a non-minion host or fail to attach Spider-Tracer to the chosen minion; the attachment assertion fails."
         },
         {
           "key": "when-attached-minion-is-defeated-remove-3",
@@ -24346,11 +24348,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Spider-Tracer removes threat when its attached minion is defeated"
+          ],
+          "mutation": "Remove other than three threat or wait until the attachment leaves with its host; the target or threat assertion fails."
         }
       ]
     },
@@ -29685,11 +29689,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Ancestral Knowledge shuffles its minimum one different card"
+          ],
+          "mutation": "Reject the permitted one-card choice or move an unselected card; the prompt or exact zone assertions fail."
         },
         {
           "key": "choose-up-3-different-cards-in-your-maximum",
@@ -29697,11 +29703,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Ancestral Knowledge shuffles its maximum three different cards"
+          ],
+          "mutation": "Reject the permitted three-card choice or leave any selected card discarded; a prompt or zone assertion fails."
         },
         {
           "key": "choose-up-3-different-cards-in-your-intermediate",
@@ -29709,11 +29717,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-card-abilities.feature::Ancestral Knowledge shuffles an intermediate two different cards"
+          ],
+          "mutation": "Reject the permitted two-card choice or move the third unselected card; the prompt or exact zone assertions fail."
         }
       ]
     },

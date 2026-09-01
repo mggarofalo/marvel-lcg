@@ -3,6 +3,120 @@ Feature: Core player card abilities
   Player cards resolve their printed Actions and constant modifiers from legal
   Core deals, with targets and resulting zones recorded in the transcript.
 
+  @behavior:card:01007:attach-minion
+  @covers:behavior:card:01007:when-attached-minion-is-defeated-remove-3
+  @card:01007
+  Scenario: Spider-Tracer removes threat when its attached minion is defeated
+    # Spider-Tracer is played attached to Hydra Mercenary. When Spider-Man's
+    # basic attack defeats that minion, the Forced Interrupt chooses the main
+    # scheme and removes three threat before the host leaves play.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 920  |
+    And seat 1 shows identity face 01001a
+    And card 01101 copy 0 is a minion engaged with seat 1
+    And card 01101 copy 0 has 1 damage
+    And card 01097b copy 0 has 3 threat counters
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01007 | 0    |
+      | 01085 | 0    |
+    When seat 1 plays card 01007 copy 0 targeting card 01101 copy 0 paying with these cards
+      | card  | copy |
+      | 01085 | 0    |
+    Then card 01007 copy 0 is attached to card 01101 copy 0
+    When seat 1 begins their basic attack against card 01101 copy 0
+    Then card 01097b copy 0 is offered by the pending action
+    When seat 1 chooses card 01097b copy 0 for the pending action
+    Then card 01097b copy 0 has 0 threat counters
+    And card 01101 copy 0 is faceup on top of the encounter discard pile
+    And card 01007 copy 0 is in seat 1's discard pile
+
+  @behavior:card:01042:choose-up-3-different-cards-in-your-minimum
+  @card:01042
+  Scenario: Ancestral Knowledge shuffles its minimum one different card
+    # "Up to 3" requires at least one choice. Selecting Vibranium moves that
+    # exact card into the player deck while the two unselected cards remain in
+    # the discard pile.
+    Given a canonical Core scene is dealt
+      | campaign | heroes        | seed |
+      | rhino    | black_panther | 921  |
+    And seat 1 shows identity face 01040b
+    And card 01044 copy 0 starts in seat 1's discard pile
+    And card 01045 copy 0 starts in seat 1's discard pile
+    And card 01046 copy 0 starts in seat 1's discard pile
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01042 | 0    |
+      | 01088 | 0    |
+    When seat 1 initiates card 01042 copy 0's action paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+    Then seat 1 is asked to choose between 1 and 3 cards for the pending action
+    When seat 1 chooses these cards for the pending action
+      | card  | copy |
+      | 01044 | 0    |
+    Then card 01044 copy 0 is in seat 1's player deck
+    And card 01045 copy 0 is in seat 1's discard pile
+    And card 01046 copy 0 is in seat 1's discard pile
+
+  @behavior:card:01042:choose-up-3-different-cards-in-your-intermediate
+  @card:01042
+  Scenario: Ancestral Knowledge shuffles an intermediate two different cards
+    # Selecting two different titles moves exactly those cards into the player
+    # deck and leaves the third available discard unselected.
+    Given a canonical Core scene is dealt
+      | campaign | heroes        | seed |
+      | rhino    | black_panther | 922  |
+    And seat 1 shows identity face 01040b
+    And card 01044 copy 0 starts in seat 1's discard pile
+    And card 01045 copy 0 starts in seat 1's discard pile
+    And card 01046 copy 0 starts in seat 1's discard pile
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01042 | 0    |
+      | 01088 | 0    |
+    When seat 1 initiates card 01042 copy 0's action paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+    Then seat 1 is asked to choose between 1 and 3 cards for the pending action
+    When seat 1 chooses these cards for the pending action
+      | card  | copy |
+      | 01044 | 0    |
+      | 01045 | 0    |
+    Then card 01044 copy 0 is in seat 1's player deck
+    And card 01045 copy 0 is in seat 1's player deck
+    And card 01046 copy 0 is in seat 1's discard pile
+
+  @behavior:card:01042:choose-up-3-different-cards-in-your-maximum
+  @card:01042
+  Scenario: Ancestral Knowledge shuffles its maximum three different cards
+    # Selecting three different titles moves all three exact cards into the
+    # player deck before that deck is shuffled once.
+    Given a canonical Core scene is dealt
+      | campaign | heroes        | seed |
+      | rhino    | black_panther | 923  |
+    And seat 1 shows identity face 01040b
+    And card 01044 copy 0 starts in seat 1's discard pile
+    And card 01045 copy 0 starts in seat 1's discard pile
+    And card 01046 copy 0 starts in seat 1's discard pile
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01042 | 0    |
+      | 01088 | 0    |
+    When seat 1 initiates card 01042 copy 0's action paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+    Then seat 1 is asked to choose between 1 and 3 cards for the pending action
+    When seat 1 chooses these cards for the pending action
+      | card  | copy |
+      | 01044 | 0    |
+      | 01045 | 0    |
+      | 01046 | 0    |
+    Then card 01044 copy 0 is in seat 1's player deck
+    And card 01045 copy 0 is in seat 1's player deck
+    And card 01046 copy 0 is in seat 1's player deck
+
   @behavior:card:01018:max-1-per-player
   @card:01018
   Scenario: A player with Energy Channel cannot play another copy
