@@ -32,8 +32,11 @@ Feature: Core triggered keywords
   @covers:behavior:rr:boost-boost-icon.2:published-result
   @covers:behavior:rr:attack-enemy-activation.step.3.b:published-result
   @covers:behavior:rr:ability.step.3:published-result
+  @covers:behavior:rr:engage.2:published-result
+  @covers:behavior:rr:when-revealed-abilities.2:published-result
   @card:01121 @rr:boost-boost-icon.2
   @rr:attack-enemy-activation.step.3.b @rr:ability.step.3
+  @rr:engage.2 @rr:when-revealed-abilities.2
   Scenario: Weapons Runner resolves its Boost text instead of its reveal text
     # "Only the ability text beneath the divider line is active on a card that
     # is resolving as a boost card." Its Boost ability puts Weapons Runner into

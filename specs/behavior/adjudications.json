@@ -7655,11 +7655,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-keywords.feature::Weapons Runner resolves its Boost text instead of its reveal text"
+          ],
+          "mutation": "CoreRuleTranscriptTests.CoreKeywordBranchesHavePinnedOutcomes distinguishes the Boost ability putting Weapons Runner into play engaged with the attacked player."
         }
       ]
     },
@@ -22492,11 +22494,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/core-keywords.feature::Weapons Runner resolves its Boost text instead of its reveal text"
+          ],
+          "mutation": "CoreRuleTranscriptTests.CoreKeywordBranchesHavePinnedOutcomes distinguishes a boost card put into play without resolving its printed reveal text or Surge keyword."
         }
       ]
     },
