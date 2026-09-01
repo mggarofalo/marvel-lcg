@@ -408,6 +408,9 @@ internal sealed class CoreTranscriptRunner
         Bind("request-voluntary-form-change", TranscriptStepKind.When,
             @"seat (?<seat>\d+) asks whether a voluntary form change is available",
             RequestVoluntaryFormChange),
+        Bind("request-card-play", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) asks whether card (?<face>\d+[a-z]?) copy (?<copy>\d+) is available to play",
+            RequestCardPlay),
         Bind("take-voluntary-form-change", TranscriptStepKind.When,
             @"seat (?<seat>\d+) takes their voluntary form change",
             TakeVoluntaryFormChange),
@@ -532,6 +535,9 @@ internal sealed class CoreTranscriptRunner
         Bind("voluntary-form-change-result", TranscriptStepKind.Then,
             @"a voluntary form change is (?<availability>available|unavailable)",
             BasicRecoveryResult),
+        Bind("card-play-result", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is (?<availability>available|unavailable) to play",
+            CardPlayResult),
         Bind("card-removed", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is removed from the game",
             CardRemoved),
@@ -1558,6 +1564,25 @@ internal sealed class CoreTranscriptRunner
             option.Verb == Game.ChangeForm);
     }
 
+    private static void RequestCardPlay(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Game game = context.Game
+            ?? throw new TranscriptException($"{step.Location}: game setup has not begun");
+        int seat = Seat(match, step);
+        Prompt asked = game.Pending
+            ?? throw new TranscriptException($"{step.Location}: no turn prompt is pending");
+        if (game.Phase != GamePhase.PlayerTurn || asked.Player != seat)
+        {
+            throw new TranscriptException(
+                $"{step.Location}: seat {seat + 1} is not taking their turn");
+        }
+
+        int card = context.SceneRequired(step).Find(SceneCard(match, step)).ObjectId;
+        context.LastAvailability = asked.Affordances.Any(option =>
+            option.Verb == CardPlay.Verb && option.AnchorId == card);
+    }
+
     private static void TakeVoluntaryFormChange(
         TranscriptContext context, TranscriptStep step, Match match)
     {
@@ -2252,6 +2277,13 @@ internal sealed class CoreTranscriptRunner
                     ? "not queried"
                     : context.LastAvailability.Value ? "available" : "unavailable"));
         }
+    }
+
+    private static void CardPlayResult(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        _ = context.SceneRequired(step).Find(SceneCard(match, step));
+        BasicRecoveryResult(context, step, match);
     }
 
     private static void CardRemoved(

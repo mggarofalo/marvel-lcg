@@ -971,7 +971,8 @@ public sealed class CardPlayTests
     {
         // "Cards with the text '[type] form only' can only be played or put
         // into play by a player whose identity is in the specified form."
-        var printed = Cards().With("suited", ("Cost", "0"), ("Form", "Suit"));
+        var printed = Cards().With(
+            "suited", ("Cost", "0"), ("RequiredForm", "Suit"));
         var world = Board(printed);
         var seat = world.Seats[0];
         var card = InHand(world, "suited");
@@ -1442,6 +1443,11 @@ public sealed class CardPlayTests
 
         public string? FormKeyword(string faceId) =>
             Attributes(faceId).TryGetValue("Form", out string? form)
+                ? form.ToLowerInvariant()
+                : null;
+
+        public string? RequiredForm(string faceId) =>
+            Attributes(faceId).TryGetValue("RequiredForm", out string? form)
                 ? form.ToLowerInvariant()
                 : null;
     }

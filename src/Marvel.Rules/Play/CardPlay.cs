@@ -475,7 +475,7 @@ public static class CardPlay
                 $"ally {ally.ObjectId} is already in play and cannot be put into play again");
         }
 
-        if (facts.FormKeyword(ally.FaceId) is { } form
+        if (facts.RequiredForm(ally.FaceId) is { } form
             && !Forms.In(world, world.Seats[controller], facts, form))
         {
             throw new RulesNotImplementedException(
@@ -764,7 +764,7 @@ public static class CardPlay
         // `rr:play-put-into-play.1` and `rr:form-change-form.7`: cards with the
         // text "[type] form only" can only be played by a player whose identity
         // is in that form.
-        if (facts.FormKeyword(card.FaceId) is { } form
+        if (facts.RequiredForm(card.FaceId) is { } form
             && !Forms.In(world, seat, facts, form))
         {
             return false;

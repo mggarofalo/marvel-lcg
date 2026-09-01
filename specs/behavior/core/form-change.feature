@@ -124,3 +124,29 @@ Feature: Hero and alter-ego form changes
     Then card 01010b copy 0 does not have the AERIAL trait
     When seat 1 changes form by flipping their identity
     Then card 01010a copy 0 has the AERIAL trait
+
+  @behavior:rr:form-change-form.7:published-result
+  @covers:behavior:card:01009:hero-form-only
+  @rr:form-change-form.7 @card:01009
+  Scenario: A hero-form-only card is playable only while the hero face is active
+    # Cards with "[type] form only" can only be played by a player in that
+    # form. Webbed Up is not offered to Peter Parker and is offered after he
+    # changes to Spider-Man.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 813  |
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01009 | 0    |
+      | 01088 | 0    |
+      | 01089 | 0    |
+    When game setup reaches seat 1's mulligan
+    Then seat 1 is offered a mulligan
+    When seat 1 keeps every opening-hand card at mulligan
+    Then seat 1 is in alter-ego form
+    When seat 1 asks whether card 01009 copy 0 is available to play
+    Then card 01009 copy 0 is unavailable to play
+    When seat 1 takes their voluntary form change
+    Then seat 1 changed from alter-ego to hero form
+    When seat 1 asks whether card 01009 copy 0 is available to play
+    Then card 01009 copy 0 is available to play

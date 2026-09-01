@@ -109,6 +109,24 @@ public sealed class FormDataTests
         Assert.Equal(form, CardCatalog.FormOf(printed));
     }
 
+    [Rule("rr:form-change-form.7")]
+    [Theory]
+    [InlineData("Hero form only.", "hero")]
+    [InlineData("Alter-Ego form only.\nAction: Draw 1 card.", "alter-ego")]
+    public void AFormOnlySentenceIsReadAsAPlayRestriction(string printed, string form)
+    {
+        Assert.Equal(form, CardCatalog.RequiredFormOf(printed));
+    }
+
+    [Theory]
+    [InlineData("Energy form. Permanent.")]
+    [InlineData("If you are in Hero form, draw 1 card.")]
+    [InlineData("hero form only.")]
+    public void OtherFormReferencesAreNotPlayRestrictions(string printed)
+    {
+        Assert.Null(CardCatalog.RequiredFormOf(printed));
+    }
+
     [Rule("rr:identity")]
     [Fact]
     public void AHeroFaceRegistersTheFieldsAHeroPrints()
