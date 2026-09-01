@@ -36,6 +36,28 @@ Feature: Core character calculations
     When the villain schemes against seat 1 with every optional choice declined
     Then card 01137b copy 0 has 4 threat counters
 
+  @behavior:rr:modifiers.6.1:published-result
+  @covers:behavior:rr:modifiers:published-result
+  @rr:modifiers @rr:modifiers.6.1 @card:01099
+  Scenario: A statistic reverts when the modifier granting it expires
+    # When an active statistic modifier expires, the statistic "reverts to the
+    # value it would have without the modifier." Charge gives Rhino +3 ATK for
+    # the first attack and discards itself before the second attack.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 814  |
+    And seat 1 shows identity face 01001a
+    And card 01099 copy 0 is attached to card 01094 copy 0
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01104     | 0    |
+      | 01105     | 0    |
+    When the villain attacks seat 1 with every optional choice declined
+    Then card 01001a copy 0 has 5 damage
+    And card 01099 copy 0 is faceup on top of the encounter discard pile
+    When the villain attacks seat 1 with every optional choice declined
+    Then card 01001a copy 0 has 7 damage
+
   @behavior:card:01039:exhaust-rocket-boots-and-spend-mental-resource
   @covers:behavior:rr:mental-resource.2:published-result
   @covers:behavior:rr:lasting-effects.1:published-result

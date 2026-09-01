@@ -13140,11 +13140,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/characteristics.feature::A statistic reverts when the modifier granting it expires"
+          ],
+          "mutation": "Cache Rhino's modified ATK after Charge leaves play; the second attack's cumulative-damage assertion fails."
         }
       ]
     },
@@ -13155,10 +13157,10 @@
         {
           "key": "published-result",
           "summary": "The “per player” icon ([per-player]) is not considered a modifier and is applied before any modifiers are applied.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "outside-core",
+          "reason": "No Core Set card modifies a value that also carries a per-player icon, so a legal Core game cannot distinguish applying that icon before modifiers.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -13173,10 +13175,10 @@
         {
           "key": "published-result",
           "summary": "The calculation of a value treats all modifiers as being applied simultaneously.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "outside-core",
+          "reason": "The Core Set has no doubling or halving statistic modifier to combine with an additive or subtractive modifier, so modifier ordering has no distinguishable Core branch.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -13209,10 +13211,10 @@
         {
           "key": "published-result",
           "summary": "After all active modifiers have been taken into account, if a value is below zero, it is treated as zero: a card cannot have “negative” icons, attributes, traits, cost, or keywords.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "outside-core",
+          "reason": "No Core Set card can apply enough negative modifiers to make an icon, attribute, trait, cost, or keyword value fall below zero.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -13266,11 +13268,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/characteristics.feature::A statistic reverts when the modifier granting it expires"
+          ],
+          "mutation": "Keep Charge's +3 ATK after Charge is discarded; the second attack deals five instead of two damage."
         }
       ]
     },
@@ -13281,10 +13285,10 @@
         {
           "key": "published-result",
           "summary": "A value of a dash (–) cannot be modified.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "outside-core",
+          "reason": "No Core Set card legally applies a modifier to a printed dash value; every Core attachment modifier targets a statistic its legal host has.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
