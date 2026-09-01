@@ -76,6 +76,8 @@ internal sealed class TranscriptContext
 
     public Prompt? PendingPrompt { get; set; }
 
+    public Game? Game { get; set; }
+
     public World World => Scene?.World
         ?? throw new TranscriptException("a canonical Core scene has not been constructed");
 }
@@ -379,6 +381,10 @@ internal sealed class CoreTranscriptRunner
             RequestCardActions),
         Bind("inspect-core-scene", TranscriptStepKind.When,
             "the dealt Core scene is inspected", InspectCoreScene),
+        Bind("begin-mulligan", TranscriptStepKind.When,
+            @"game setup reaches seat (?<seat>\d+)'s mulligan", BeginMulligan),
+        Bind("resolve-mulligan", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) mulligans these cards", ResolveMulligan),
         Bind("choose-pending-card", TranscriptStepKind.When,
             @"seat (?<seat>\d+) chooses card (?<face>\d+[a-z]?) copy (?<copy>\d+) for the pending action",
             ChoosePendingCard),
@@ -387,6 +393,11 @@ internal sealed class CoreTranscriptRunner
             ChoosePendingCardAndDiscard),
         Bind("hand-count", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) has (?<count>\d+) cards? in hand", HandCount),
+        Bind("mulligan-offered", TranscriptStepKind.Then,
+            @"seat (?<seat>\d+) is offered a mulligan", MulliganOffered),
+        Bind("card-player-hand", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is in seat (?<seat>\d+)'s hand",
+            CardInPlayerHand),
         Bind("player-deck-count", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) has (?<count>\d+) cards? in their player deck", PlayerDeckCount),
         Bind("player-discard-count", TranscriptStepKind.Then,
@@ -1333,6 +1344,45 @@ internal sealed class CoreTranscriptRunner
         context.CurrentPrompt = "<none>";
     }
 
+    private static void BeginMulligan(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        context.Events.Clear();
+        context.Game = Game.Begin(context.World, context.Cards, context.World.Abilities);
+        SetPendingPrompt(context, context.Game.Pending);
+        if (context.Game.Phase != GamePhase.Mulligan
+            || context.Game.Active != Seat(match, step))
+        {
+            throw new TranscriptException(
+                $"${step.Location}: setup did not reach the requested player's mulligan");
+        }
+    }
+
+    private static void ResolveMulligan(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Game game = context.Game
+            ?? throw new TranscriptException($"${step.Location}: game setup has not begun");
+        int seat = Seat(match, step);
+        if (game.Phase != GamePhase.Mulligan || game.Active != seat)
+        {
+            throw new TranscriptException(
+                $"${step.Location}: seat ${seat + 1} is not resolving a mulligan");
+        }
+
+        Prompt asked = game.Pending
+            ?? throw new TranscriptException($"${step.Location}: no mulligan prompt is pending");
+        Affordance option = asked.Affordances.Single(candidate =>
+            candidate.Verb == Game.ResolveMulligans);
+        TranscriptTable table = Table(step, "card", "copy");
+        int[] selected = [.. table.Rows.Select(row => context.SceneRequired(step).Find(
+            new SceneCard(row["card"], TableNumber(row, "copy", step))).ObjectId)];
+        context.Events.Clear();
+        Resolution resolution = game.Resolve(Decision.Take(option.Id, selected, []));
+        context.Events.AddRange(resolution.Events);
+        SetPendingPrompt(context, resolution.Prompt);
+    }
+
     private static void InitiateAction(
         TranscriptContext context,
         TranscriptStep step,
@@ -1428,6 +1478,35 @@ internal sealed class CoreTranscriptRunner
         Equal(Number(match, "count", step),
             context.World.Seats[Seat(match, step)].Hand.Cards.Count,
             "cards in hand", step);
+
+    private static void MulliganOffered(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Game game = context.Game
+            ?? throw new TranscriptException($"${step.Location}: game setup has not begun");
+        int seat = Seat(match, step);
+        if (game.Phase != GamePhase.Mulligan
+            || game.Active != seat
+            || game.Pending is not { Cancellable: false } prompt
+            || !prompt.Affordances.Any(option => option.Verb == Game.ResolveMulligans))
+        {
+            throw new TranscriptException(
+                $"${step.Location}: seat ${seat + 1} was not offered its mulligan");
+        }
+    }
+
+    private static void CardInPlayerHand(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        int seat = Seat(match, step);
+        if (!ReferenceEquals(card.Area, context.World.Seats[seat].Hand))
+        {
+            throw new TranscriptException(
+                $"${step.Location}: expected card ${card.ObjectId} in seat ${seat + 1}'s hand; "
+                + $"was ${card.Area.Type}");
+        }
+    }
 
     private static void PlayerDeckCount(
         TranscriptContext context, TranscriptStep step, Match match) =>

@@ -80,3 +80,32 @@ Feature: Canonical Core setup
       | 01152 | 1     |
       | 01153 | 1     |
       | 01154 | 2     |
+
+  @behavior:rr:appendix-ii-setup.step.15:published-result
+  @rr:appendix-ii-setup.step.15
+  Scenario: A player may replace selected opening-hand cards during mulligan
+    # "Each player may discard any number of cards from hand, and then draw up
+    # to their starting hand size." The discarded card stays in the discard
+    # pile rather than being shuffled back into the deck.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 804  |
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01002 | 0    |
+      | 01003 | 0    |
+      | 01004 | 0    |
+      | 01005 | 0    |
+      | 01006 | 0    |
+      | 01007 | 0    |
+    And these cards are next on seat 1's player deck
+      | next card | copy |
+      | 01008     | 0    |
+    When game setup reaches seat 1's mulligan
+    Then seat 1 is offered a mulligan
+    When seat 1 mulligans these cards
+      | card  | copy |
+      | 01002 | 0    |
+    Then seat 1 has 6 cards in hand
+    And card 01002 copy 0 is in seat 1's discard pile
+    And card 01008 copy 0 is in seat 1's hand

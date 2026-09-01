@@ -213,8 +213,8 @@ public sealed class CoreTranscriptRunnerTests
         "@behavior:rr:player-deck.2:published-result @rr:draw-drawing-cards",
         "primary obligation derives from 'rr:player-deck.2'")]
     [InlineData(
-        "@behavior:rr:player-deck.1:published-result @rr:player-deck.1",
-        "not executable with a completed implementation status")]
+        "@behavior:rr:campaign-specific-card:source-disposition @rr:campaign-specific-card",
+        "outside-Core direct authorities: rr:campaign-specific-card")]
     [InlineData(
         "@behavior:rr:player-deck.2:published-result @rr:player-deck.2 @rr:campaign-specific-card",
         "outside-Core direct authorities: rr:campaign-specific-card")]
