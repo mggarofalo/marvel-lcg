@@ -6,10 +6,11 @@ The presentation architecture has 3 layers:
 2. `Marvel.Server` hosts games behind one transport-neutral protocol.
 3. The Godot client renders those descriptors on macOS and Windows.
 
-The Godot project opens a deterministic Rhino-versus-Spider-Man development
-game through `InProcessTransport`. It retains the initial visibility-safe
-response for board rendering; the board itself is still a placeholder. The
-same app-facing bootstrap is exercised over the socket transport in tests.
+The Godot project reads the authored Core Set setup surface through
+`IEngineTransport`, lets the player select an offered assignment, and opens it
+through `InProcessTransport`. It retains the initial visibility-safe response
+for board rendering; the board itself is still a placeholder. The same
+app-facing setup and open path is exercised over the socket transport in tests.
 
 ## Build boundary
 
@@ -111,8 +112,14 @@ The socket protocol uses source-generated JSON inside a 4-byte big-endian length
 frame. Frames are bounded. Unknown operations, unsupported protocol versions and
 unknown JSON members fail before they reach the engine.
 
-The protocol supports opening, attaching, synchronizing, resolving and closing
-a game. Game ids and correlation ids are bounded client labels. A random session
+The protocol supports discovering setup choices, opening, attaching,
+synchronizing, resolving and closing a game. Setup discovery is a read-only,
+session-free query over the same transport as play. Its scenario records carry
+their authored keys and mode, and its modular-set list is classified by the
+same content rule that validates an open request. The client groups and renders
+those records; it does not infer valid products from keys or card text.
+
+Game ids and correlation ids are bounded client labels. A random session
 capability authorizes game operations; it never enters gameplay state or the
 seeded RNG stream.
 

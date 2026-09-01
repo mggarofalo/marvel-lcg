@@ -1,22 +1,37 @@
+using System.Globalization;
 using Marvel.Server;
 
 namespace Marvel.Godot;
 
-/// <summary>The stable Core Set game used while building the local-play client.</summary>
-public static class DevelopmentGame
+/// <summary>The client-owned label for the one local table.</summary>
+public static class LocalGameSession
 {
-    /// <summary>A small, deterministic game that every development launch opens.</summary>
-    public static GameSpecification Specification { get; } =
-        new("rhino", ["spider_man"], ModularSets: null, Seed: 7);
-
-    /// <summary>The client-chosen label for the one local table.</summary>
+    /// <summary>The opaque game id sent through either transport.</summary>
     public const string GameId = "local-core-game";
 }
 
-/// <summary>A bounded product-level startup failure suitable for display.</summary>
+/// <summary>A bounded product-level failure suitable for display.</summary>
 public sealed record ClientStartupError(string Code, string Message);
 
-/// <summary>The result of trying to open the development game.</summary>
+/// <summary>A locally composed client, or why committed content could not be loaded.</summary>
+public sealed record LocalClientConnection(
+    LocalGameClient? Client,
+    ClientStartupError? Error)
+{
+    /// <summary>Whether the local engine transport is available.</summary>
+    public bool Succeeded => Client is not null && Error is null;
+}
+
+/// <summary>The result of discovering the authored setup surface.</summary>
+public sealed record ClientSetupResult(
+    SetupChoices? Choices,
+    ClientStartupError? Error)
+{
+    /// <summary>Whether complete choices were returned.</summary>
+    public bool Succeeded => Choices is not null && Error is null;
+}
+
+/// <summary>The result of trying to open one selected game.</summary>
 public sealed record ClientStartupResult(
     EngineResponse? Response,
     ClientStartupError? Error)
@@ -25,7 +40,28 @@ public sealed record ClientStartupResult(
     public bool Succeeded => Response is not null && Error is null;
 }
 
-/// <summary>Opens the local game through the same protocol used by a remote client.</summary>
+/// <summary>How the player wants to fill the scenario's modular-set slot.</summary>
+public enum ModularConfiguration
+{
+    /// <summary>Use the scenario's authored recommendation.</summary>
+    Recommended,
+
+    /// <summary>Deliberately include no modular set.</summary>
+    None,
+
+    /// <summary>Use one explicitly selected authored modular set.</summary>
+    Selected,
+}
+
+/// <summary>Raw values selected by the setup screen.</summary>
+public sealed record GameSetupSelection(
+    string HeroKey,
+    string ScenarioKey,
+    ModularConfiguration Modular,
+    string? ModularKey,
+    string Seed);
+
+/// <summary>Uses the engine protocol for both local and remote game setup.</summary>
 public sealed class LocalGameClient
 {
     private const int MaximumDisplayedErrorLength = 240;
@@ -35,19 +71,55 @@ public sealed class LocalGameClient
     public LocalGameClient(IEngineTransport transport) =>
         this.transport = transport ?? throw new ArgumentNullException(nameof(transport));
 
-    /// <summary>
-    /// Loads committed content at the host boundary and opens the development game
-    /// through <see cref="InProcessTransport"/>.
-    /// </summary>
-    public static async ValueTask<ClientStartupResult> OpenLocalAsync(
-        string dataRoot,
-        CancellationToken cancellationToken = default)
+    /// <summary>Composes the local host while keeping dataset access at its boundary.</summary>
+    public static LocalClientConnection ConnectLocal(string dataRoot)
     {
         try
         {
             var host = new EngineHost(DatasetGameFactory.Load(dataRoot));
-            return await new LocalGameClient(new InProcessTransport(host))
-                .OpenAsync(cancellationToken).ConfigureAwait(false);
+            return new LocalClientConnection(
+                new LocalGameClient(new InProcessTransport(host)), Error: null);
+        }
+        catch (Exception)
+        {
+            return new LocalClientConnection(
+                Client: null,
+                Error(
+                    "content_unavailable",
+                    "The local game could not load its committed Core Set content."));
+        }
+    }
+
+    /// <summary>Reads the exact product choices accepted by the host.</summary>
+    public async ValueTask<ClientSetupResult> ReadSetupAsync(
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            EngineResponse response = await transport.ExchangeAsync(
+                EngineRequest.ReadSetup("local-setup"), cancellationToken)
+                .ConfigureAwait(false);
+            if (response.Error is not null)
+            {
+                return SetupFailed(response.Error.Code, response.Error.Message);
+            }
+
+            SetupChoices? choices = response.Setup;
+            if (choices?.Heroes is not { Count: > 0 }
+                || choices.Scenarios is not { Count: > 0 }
+                || choices.ModularSets is not { Count: > 0 }
+                || choices.Scenarios
+                    .SelectMany(scenario => scenario.RecommendedModularSets)
+                    .Any(recommended => !choices.ModularSets.Any(
+                        modular => modular.Key == recommended))
+                || response.Events is null)
+            {
+                return SetupFailed(
+                    "invalid_response",
+                    "The game service did not return complete setup choices.");
+            }
+
+            return new ClientSetupResult(choices, Error: null);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -55,23 +127,79 @@ public sealed class LocalGameClient
         }
         catch (Exception)
         {
-            return Failed(
-                "content_unavailable",
-                "The local game could not be opened. Check that the committed datasets are available.");
+            return SetupFailed(
+                "transport_unavailable",
+                "The game service could not be reached. Try loading setup again.");
         }
+    }
+
+    /// <summary>Validates a screen selection and sends exactly one open request.</summary>
+    public ValueTask<ClientStartupResult> OpenAsync(
+        SetupChoices available,
+        GameSetupSelection selection,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(available);
+        ArgumentNullException.ThrowIfNull(selection);
+
+        if (!available.Heroes.Any(hero => hero.Key == selection.HeroKey)
+            || !available.Scenarios.Any(scenario => scenario.Key == selection.ScenarioKey))
+        {
+            return ValueTask.FromResult(Failed(
+                "invalid_selection",
+                "Choose a hero and scenario offered by this game service."));
+        }
+
+        IReadOnlyList<string>? modularSets;
+        switch (selection.Modular)
+        {
+            case ModularConfiguration.Recommended:
+                modularSets = null;
+                break;
+            case ModularConfiguration.None:
+                modularSets = [];
+                break;
+            case ModularConfiguration.Selected
+                when selection.ModularKey is not null
+                     && available.ModularSets.Any(set => set.Key == selection.ModularKey):
+                modularSets = [selection.ModularKey];
+                break;
+            default:
+                return ValueTask.FromResult(Failed(
+                    "invalid_selection",
+                    "Choose a modular-set option offered by this game service."));
+        }
+
+        if (!uint.TryParse(
+                selection.Seed,
+                NumberStyles.None,
+                CultureInfo.InvariantCulture,
+                out uint seed))
+        {
+            return ValueTask.FromResult(Failed(
+                "invalid_seed",
+                "Enter a whole-number seed from 0 through 4294967295."));
+        }
+
+        return OpenAsync(
+            new GameSpecification(
+                selection.ScenarioKey,
+                [selection.HeroKey],
+                modularSets,
+                seed),
+            cancellationToken);
     }
 
     /// <summary>Sends the canonical open request through the configured transport.</summary>
     public async ValueTask<ClientStartupResult> OpenAsync(
+        GameSpecification specification,
         CancellationToken cancellationToken = default)
     {
         try
         {
             EngineResponse response = await transport.ExchangeAsync(
                 EngineRequest.OpenGame(
-                    "local-open",
-                    DevelopmentGame.GameId,
-                    DevelopmentGame.Specification),
+                    "local-open", LocalGameSession.GameId, specification),
                 cancellationToken).ConfigureAwait(false);
 
             if (response.Error is not null)
@@ -98,14 +226,18 @@ public sealed class LocalGameClient
         {
             return Failed(
                 "transport_unavailable",
-                "The game service could not be reached. Try opening the local game again.");
+                "The game service could not be reached. Try starting the game again.");
         }
     }
 
+    private static ClientSetupResult SetupFailed(string code, string message) =>
+        new(Choices: null, Error(code, message));
+
     private static ClientStartupResult Failed(string code, string message) =>
-        new(
-            Response: null,
-            new ClientStartupError(Bounded(code), Bounded(message)));
+        new(Response: null, Error(code, message));
+
+    private static ClientStartupError Error(string code, string message) =>
+        new(Bounded(code), Bounded(message));
 
     private static string Bounded(string value) =>
         value.Length <= MaximumDisplayedErrorLength

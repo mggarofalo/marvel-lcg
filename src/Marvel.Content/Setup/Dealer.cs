@@ -135,26 +135,12 @@ public static class Dealer
     {
         foreach (string name in selected)
         {
-            var cards = catalog.EncounterSet(name);
-            var setIcons = cards.SelectMany(spec => spec.Split(','))
-                .Select(facts.EncounterSet)
-                .Distinct(StringComparer.Ordinal)
-                .ToList();
-            if (setIcons.Count != 1)
-            {
-                throw new ArgumentException(
-                    $"encounter set '{name}' contains {setIcons.Count} printed set icons",
-                    nameof(selected));
-            }
-
-            string icon = setIcons[0];
-            if (icon.StartsWith("standard", StringComparison.Ordinal)
-                || icon.StartsWith("expert", StringComparison.Ordinal))
+            if (!ModularEncounterSets.IsModular(catalog, facts, name))
             {
                 // `rr:standard-set.1` and `rr:expert-set.1`: neither set is a
                 // modular encounter set and neither can be selected as one.
                 throw new ArgumentException(
-                    $"encounter set '{name}' is the printed {icon} set, not a modular set",
+                    $"encounter set '{name}' is not a modular set",
                     nameof(selected));
             }
         }

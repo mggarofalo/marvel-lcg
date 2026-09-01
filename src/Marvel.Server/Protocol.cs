@@ -10,9 +10,9 @@ public static class EngineProtocol
 {
     /// <summary>
     /// The only protocol version this host accepts. It includes independently
-    /// scoped seat capabilities and emitted-only play-area topology events.
+    /// scoped seat capabilities, play-area topology events, and setup discovery.
     /// </summary>
-    public const int Version = 3;
+    public const int Version = 4;
 
     /// <summary>The largest request or game id accepted or echoed.</summary>
     public const int MaximumIdentifierLength = 256;
@@ -22,6 +22,9 @@ public static class EngineProtocol
 
     /// <summary>Starts a game from the named, vendored content.</summary>
     public const string Open = "open";
+
+    /// <summary>Reads the authored choices from which a game can be opened.</summary>
+    public const string Setup = "setup";
 
     /// <summary>Redeems a server-issued one-time invitation to a seat.</summary>
     public const string Attach = "attach";
@@ -50,6 +53,25 @@ public sealed record GameSpecification(
     IReadOnlyList<string>? ModularSets,
     uint Seed);
 
+/// <summary>One authored hero choice.</summary>
+public sealed record HeroSetupChoice(string Key, string Name);
+
+/// <summary>One authored scenario and mode choice.</summary>
+public sealed record ScenarioSetupChoice(
+    string Key,
+    string Name,
+    bool Expert,
+    IReadOnlyList<string> RecommendedModularSets);
+
+/// <summary>One authored encounter set selectable as a modular set.</summary>
+public sealed record ModularSetupChoice(string Key, string Name);
+
+/// <summary>The complete product-selection surface exposed by this host.</summary>
+public sealed record SetupChoices(
+    IReadOnlyList<HeroSetupChoice> Heroes,
+    IReadOnlyList<ScenarioSetupChoice> Scenarios,
+    IReadOnlyList<ModularSetupChoice> ModularSets);
+
 /// <summary>The five fields the engine accepts as a decision, and no derived properties.</summary>
 /// <remarks>
 /// This DTO is separate from <see cref="Decision"/> because that domain type
@@ -73,7 +95,7 @@ public sealed record EngineDecision(
 /// <summary>One command sent through either engine transport.</summary>
 /// <param name="Version">The protocol version.</param>
 /// <param name="RequestId">An opaque client correlation id.</param>
-/// <param name="Operation"><c>open</c>, <c>attach</c>, <c>sync</c>, <c>resolve</c>, or <c>close</c>.</param>
+/// <param name="Operation"><c>setup</c>, <c>open</c>, <c>attach</c>, <c>sync</c>, <c>resolve</c>, or <c>close</c>.</param>
 /// <param name="GameId">An opaque id chosen by the client for this game.</param>
 /// <param name="Capability">The server-issued session capability; absent only for <c>open</c>.</param>
 /// <param name="Game">Present only for <c>open</c>.</param>
@@ -92,6 +114,10 @@ public sealed record EngineRequest(
     EngineDecision? Decision = null,
     ViewerClaim? Viewer = null)
 {
+    /// <summary>Builds a read-only setup-discovery request.</summary>
+    public static EngineRequest ReadSetup(string requestId) =>
+        new(EngineProtocol.Version, requestId, EngineProtocol.Setup, GameId: string.Empty);
+
     /// <summary>Builds an open-game request for the current protocol.</summary>
     public static EngineRequest OpenGame(
         string requestId,
@@ -144,6 +170,7 @@ public sealed record SeatInvitation(int Seat, string Invitation);
 /// <param name="World">The client-safe table snapshot, or null on close/failure.</param>
 /// <param name="Error">Why the request failed, or null on success.</param>
 /// <param name="Invitations">One-time seat invitations returned only to the game opener.</param>
+/// <param name="Setup">Authored setup choices returned only by <c>setup</c>.</param>
 public sealed record EngineResponse(
     int Version,
     string RequestId,
@@ -153,4 +180,5 @@ public sealed record EngineResponse(
     IReadOnlyList<GameEvent> Events,
     WorldDescriptor? World = null,
     EngineError? Error = null,
-    IReadOnlyList<SeatInvitation>? Invitations = null);
+    IReadOnlyList<SeatInvitation>? Invitations = null,
+    SetupChoices? Setup = null);
