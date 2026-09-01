@@ -95,6 +95,8 @@ Feature: Core villain phase
   @covers:behavior:rr:attack-enemy-activation.step.4:published-result
   @covers:behavior:rr:attack-enemy-activation.step.5:published-result
   @covers:behavior:rr:attack-enemy-activation.step.6:published-result
+  @covers:behavior:rr:ability.8:published-result
+  @covers:behavior:rr:ability.11:published-result
   @covers:behavior:rr:damage.1:published-result
   @covers:behavior:rr:damage.3:published-result
   @covers:behavior:rr:damage.step.5:published-result
@@ -105,6 +107,7 @@ Feature: Core villain phase
   @rr:attack-enemy-activation.step.3.d @rr:attack-enemy-activation.step.4
   @rr:attack-enemy-activation.step.5 @rr:attack-enemy-activation.step.6
   @rr:damage.1 @rr:damage.3 @rr:damage.step.5
+  @rr:ability.8 @rr:ability.11
   Scenario: A villain attacks an undefended hero with its ATK plus boost icons
     # A villain attack targets both the player and their hero. The facedown
     # boost is flipped, its icons modify ATK, and the calculated damage is then
@@ -121,6 +124,7 @@ Feature: Core villain phase
       | 01101     | 0    |
     When villain phase 1 resolves with every optional choice declined
     Then card 01001a copy 0 has 4 damage
+    And seat 1 has 6 cards in hand
     And card 01097b copy 0 has 1 threat counter
     And card 01103 copy 0 is faceup on top of the encounter discard pile
     And card 01101 copy 0 is engaged with seat 1
@@ -214,9 +218,13 @@ Feature: Core villain phase
   @behavior:card:01099:when-rhino-attacks-attack-gains-overkill
   @covers:behavior:card:01099:excess-damage-ally-from-attack-is-dealt
   @covers:behavior:rr:attack-enemy-activation.5:published-result
+  @covers:behavior:rr:ability.7:published-result
+  @covers:behavior:rr:ability.12:published-result
+  @covers:behavior:rr:ability.step.2.b:published-result
   @covers:behavior:rr:overkill:published-result
   @covers:behavior:rr:overkill.1:published-result
-  @card:01099 @rr:attack-enemy-activation.5 @rr:overkill @rr:overkill.1
+  @card:01099 @rr:attack-enemy-activation.5 @rr:ability.7 @rr:ability.12
+  @rr:ability.step.2.b @rr:overkill @rr:overkill.1
   Scenario: Charge gives Rhino overkill before a defending ally takes damage
     # Charge's forced interrupt says, "When Rhino attacks, the attack gains
     # overkill." Overkill deals damage beyond the defeated ally's hit points to

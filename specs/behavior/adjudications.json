@@ -65,11 +65,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::A villain attacks an undefended hero with its ATK plus boost icons"
+          ],
+          "mutation": "Force the optional Spider-Sense interrupt or make it unavailable to decline; the unchanged hand-count assertion fails."
         }
       ]
     },
@@ -83,11 +85,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Charge gives Rhino overkill before a defending ally takes damage"
+          ],
+          "mutation": "Make the forced interrupt optional, skip it, or resolve it outside the forced-interrupt tier; Charge does not grant overkill before damage and the transcript fails."
         }
       ]
     },
@@ -245,11 +249,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Charge gives Rhino overkill before a defending ally takes damage"
+          ],
+          "mutation": "Make the forced interrupt optional, skip it, or resolve it outside the forced-interrupt tier; Charge does not grant overkill before damage and the transcript fails."
         }
       ]
     },
@@ -281,11 +287,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::A villain attacks an undefended hero with its ATK plus boost icons"
+          ],
+          "mutation": "Force the optional Spider-Sense interrupt or make it unavailable to decline; the unchanged hand-count assertion fails."
         }
       ]
     },
@@ -407,11 +415,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Charge gives Rhino overkill before a defending ally takes damage"
+          ],
+          "mutation": "Make the forced interrupt optional, skip it, or resolve it outside the forced-interrupt tier; Charge does not grant overkill before damage and the transcript fails."
         }
       ]
     },
