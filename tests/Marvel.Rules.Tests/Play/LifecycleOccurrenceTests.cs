@@ -89,6 +89,34 @@ public sealed class LifecycleOccurrenceTests
     }
 
     [Rule("rr:enters-play")]
+    [Rule("rr:play-put-into-play.3")]
+    [Rule("rr:response")]
+    [Fact]
+    public void PuttingAnAllyIntoPlayOffersItsEntersPlayResponse()
+    {
+        // "Putting a card into play by using a card ability" makes it enter
+        // play, so its response is offered. It is not considered played, so
+        // the occurrence contains only the enters-play condition.
+        var facts = new Facts();
+        var world = Board(facts);
+        var ally = world.CreateCard(
+            "ally", world.AreaOf(
+                DeckType.DiscardPile, PlayArea.Of(0), cardOwner: 0));
+        var abilities = new EntryResponse(ally.ObjectId);
+
+        CardPlay.PutAllyIntoPlay(
+            world, facts, abilities, ally, 0, "Make_The_Call", []);
+        var asked = Sequence.Work(world, facts, abilities, []);
+
+        Assert.NotNull(asked);
+        Assert.True(asked.Cancellable);
+        Assert.Equal(TimingPriority.Response, asked.When);
+        Assert.Equal(ally.ObjectId, Assert.Single(asked.Affordances).AnchorId);
+        Assert.True(world.Agenda.Occurrence!.Is(Steps.CardEntersPlay));
+        Assert.False(world.Agenda.Occurrence.Is(Steps.CardPlayed));
+    }
+
+    [Rule("rr:enters-play")]
     [Fact]
     public void ARevealedCardAddsEntryToTheRevealOccurrence()
     {

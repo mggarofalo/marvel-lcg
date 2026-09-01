@@ -31,14 +31,16 @@ internal static class Program
     private static int Write()
     {
         Catalog.Write();
-        Console.WriteLine("wrote specs/behavior/catalog.json");
+        CardFaceSpecifications.Write();
+        Console.WriteLine("wrote behavior catalog and generated Core card-face specification");
         return 0;
     }
 
     private static int Check()
     {
         Catalog.Check();
-        Console.WriteLine("behavior catalog is current");
+        CardFaceSpecifications.Check();
+        Console.WriteLine("behavior catalog and generated Core card-face specification are current");
         return 0;
     }
 

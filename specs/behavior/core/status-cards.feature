@@ -1,0 +1,165 @@
+@core
+Feature: Core status cards
+  Statuses are physical cards with per-type limits. Tough replaces one damage
+  instance, and Toughness creates a tough card only after entry into play.
+
+  @behavior:rr:stun-stunned.5:published-result
+  @covers:behavior:rr:stun-stunned.1:published-result
+  @rr:stun-stunned.5 @rr:stun-stunned.1
+  Scenario: A stunned hero's basic attack is replaced by discarding stun
+    # "If a stunned identity or ally attempts to attack ... discard the
+    # stunned card instead."
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 313  |
+    And seat 1 shows identity face 01001a
+    And card 01001a copy 0 has a stunned status card
+    When seat 1 uses their basic attack against card 01094 copy 0
+    Then card 01001a copy 0 has 0 stunned status cards
+    And card 01001a copy 0 is exhausted
+    And card 01094 copy 0 has 0 damage
+
+  @behavior:rr:stun-stunned.5.1:published-result
+  @rr:stun-stunned.5.1 @card:01053
+  Scenario: A stunned hero can play an attack event without a valid attack target
+    # Stun permits an attack attempt even with no valid attack target because
+    # the status replacement discards stun instead of resolving that attack.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 836  |
+    And seat 1 shows identity face 01019a
+    And card 01019a copy 0 has a stunned status card
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01053 | 0    |
+      | 01090 | 0    |
+    When seat 1 asks for available card actions
+    Then card 01053 copy 0's action is available
+    When seat 1 initiates card 01053 copy 0's action paying with these cards
+      | card  | copy |
+      | 01090 | 0    |
+    Then card 01019a copy 0 has 0 stunned status cards
+    And card 01094 copy 0 has 0 damage
+    And card 01053 copy 0 is faceup on top of seat 1's discard pile
+
+  @behavior:rr:confuse-confused.5:published-result
+  @covers:behavior:rr:confuse-confused.1:published-result
+  @rr:confuse-confused.5 @rr:confuse-confused.1
+  Scenario: A confused hero's basic thwart is replaced by discarding confuse
+    # "If a confused identity or ally attempts to thwart ... discard the
+    # confused card instead."
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 314  |
+    And seat 1 shows identity face 01001a
+    And card 01001a copy 0 has a confused status card
+    And card 01097b copy 0 has 3 threat counters
+    When seat 1 uses their basic thwart against card 01097b copy 0
+    Then card 01001a copy 0 has 0 confused status cards
+    And card 01001a copy 0 is exhausted
+    And card 01097b copy 0 has 3 threat counters
+
+  @behavior:rr:stun-stunned.2:published-result
+  @covers:behavior:rr:status-cards:status-card-placement
+  @covers:behavior:rr:stun-stunned.3:published-result
+  @rr:stun-stunned.2 @rr:stun-stunned.3 @rr:status-cards
+  Scenario: A stun ability gives the character a stunned status card
+    # "If an ability 'stuns' a character, give that character a stunned status
+    # card."
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 305  |
+    When an ability stuns card 01094 copy 0
+    Then card 01094 copy 0 has 1 stunned status card
+    And card 01094 copy 0 is stunned
+
+  @behavior:rr:confuse-confused.2:published-result
+  @rr:confuse-confused.2
+  Scenario: A confuse ability gives the character a confused status card
+    # "If an ability 'confuses' a character, give that character a confused
+    # status card."
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 315  |
+    When an ability confuses card 01094 copy 0
+    Then card 01094 copy 0 has 1 confused status card
+    And card 01094 copy 0 is confused
+
+  @behavior:rr:confuse-confused.6:published-result
+  @covers:behavior:rr:confuse-confused.7:published-result
+  @rr:confuse-confused.6 @rr:confuse-confused.7
+  Scenario: A confused villain discards confuse instead of scheming
+    # "If a confused villain or minion would scheme, discard the confused
+    # status card instead." The replaced activation is not a scheme.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 316  |
+    And card 01094 copy 0 has a confused status card
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01101     | 0    |
+    When villain phase 1 resolves with every optional choice declined
+    Then card 01094 copy 0 has 0 confused status cards
+    And card 01097b copy 0 has 1 threat counters
+    And card 01001b copy 0 has 0 damage
+
+  @behavior:rr:stun-stunned.6:published-result
+  @covers:behavior:rr:stun-stunned.7:published-result
+  @covers:behavior:rr:replacement-effect:published-result
+  @covers:behavior:rr:replacement-effect.1:published-result
+  @rr:stun-stunned.6 @rr:stun-stunned.7
+  @rr:replacement-effect @rr:replacement-effect.1
+  Scenario: A stunned villain discards stun instead of attacking
+    # "If a stunned villain or minion would attack, discard the stunned status
+    # card instead." The replaced activation is not an attack.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 317  |
+    And seat 1 shows identity face 01001a
+    And card 01094 copy 0 has a stunned status card
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01101     | 0    |
+    When villain phase 1 resolves with every optional choice declined
+    Then card 01094 copy 0 has 0 stunned status cards
+    And card 01001a copy 0 has 0 damage
+
+  @behavior:rr:status-cards.1:published-result @rr:status-cards.1
+  Scenario: A character cannot receive a second status card of the same type
+    # "A character cannot have more than one status card of each type at a
+    # time."
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 305  |
+    And card 01094 copy 0 has a stunned status card
+    When an ability stuns card 01094 copy 0
+    Then card 01094 copy 0 has 1 stunned status card
+
+  @behavior:rr:tough.2:published-result
+  @covers:behavior:rr:tough.3:published-result
+  @covers:behavior:rr:damage.step.2:tough-prevents-damage
+  @rr:tough.2 @rr:tough.3 @rr:damage.step.2
+  Scenario: Tough prevents the entire damage instance and is discarded
+    # "Prevent all of that damage and discard a tough status card from that
+    # character instead." The character is not considered to have taken damage.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 305  |
+    And card 01094 copy 0 has a tough status card
+    When card 01005 copy 0 deals 8 damage to card 01094 copy 0
+    Then card 01094 copy 0 has 0 damage
+    And card 01094 copy 0 has 0 tough status cards
+    And 0 Damage events were emitted
+
+  @behavior:rr:toughness:published-result
+  @covers:behavior:rr:toughness.1:published-result
+  @rr:toughness @rr:toughness.1
+  Scenario: A character with Toughness gains tough after entering play
+    # "Forced Response: After this character enters play, give it a tough
+    # status card."
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 305  |
+    When card 01102 copy 0 enters play as a minion engaged with seat 1
+    Then card 01102 copy 0 is engaged with seat 1
+    And card 01102 copy 0 has 1 tough status card

@@ -55,6 +55,7 @@
       "abilities": [
         {
           "trigger": { "event": "WhenDamageWouldBeDealt", "timing": "Interrupt", "target": "you" },
+          "labels": [ "defense" ],
           "when": { "isYourIdentity": "trigger.target" },
           "effect": { "preventDamage": "trigger.target" }
         }
@@ -159,7 +160,12 @@
       "abilities": [
         {
           "trigger": { "timing": "Constant", "subject": "this" },
-          "effect": { "grant": { "card": "you", "trait": "AERIAL" } }
+          "effect": {
+            "if": {
+              "test": { "isTitle": { "card": "you", "title": "Captain Marvel" } },
+              "then": { "grant": { "card": "you", "trait": "AERIAL" } }
+            }
+          }
         },
         {
           "trigger": { "event": "WhenDamageWouldBeDealt", "timing": "Interrupt", "target": "you", "form": "hero" },
@@ -209,7 +215,7 @@
           "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
           "cost": { "seq": [
             { "exhaust": "this" },
-            { "dealDamage": { "cards": "you", "amount": 1 } }
+            { "takeDamage": { "cards": "you", "amount": 1 } }
           ] },
           "effect": { "draw": { "player": "you", "count": 1 } }
         }
@@ -508,7 +514,9 @@
       "abilities": [
         {
           "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed", "subject": "this" },
-          "effect": { "discardTop": { "from": "yourDeck", "player": "each", "count": 3 } }
+          "effect": { "eachPlayer": { "effect":
+            { "discardTop": { "from": "yourDeck", "count": 3 } }
+          } }
         }
       ]
     },
@@ -590,6 +598,7 @@
       "abilities": [
         {
           "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "this", "form": "hero" },
+          "labels": [ "attack" ],
           "effect": { "chooseCard": {
             "from": { "query": "attackableMinions" },
             "effect": { "attack": { "target": "chosen", "effect":
@@ -1397,10 +1406,10 @@
     {
       "card": "01011",
       "name": "Spider-Woman",
-      "note": "Response: after Spider-Woman enters play, confuse the villain. Playing the ally produces WhenCardPlayed after it enters play; the response remains optional under rr:response.",
+      "note": "Response: after Spider-Woman enters play, confuse the villain. Putting her into play also satisfies the printed condition; the response remains optional under rr:response.",
       "abilities": [
         {
-          "trigger": { "event": "WhenCardPlayed", "timing": "Response", "subject": "this" },
+          "trigger": { "event": "WhenCardEntersPlay", "timing": "Response", "subject": "this" },
           "effect": { "giveStatus": { "card": { "query": "villain" }, "status": "confused" } }
         }
       ]
@@ -1554,7 +1563,7 @@
       "card": "01074",
       "name": "Inspired",
       "note": "Attach to an ally. The attached ally gets +1 THW and +1 ATK while this upgrade remains attached.",
-      "attachTo": { "withoutAnotherCopyAttached": { "query": "alliesYouControl" } },
+      "attachTo": { "withoutAnotherCopyAttached": { "query": "allies" } },
       "abilities": [
         {
           "trigger": { "timing": "Constant", "subject": "this" },
@@ -1604,7 +1613,7 @@
       "note": "Response: after Mockingbird enters play, stun an enemy. The response asks the resolving player which enemy receives the status.",
       "abilities": [
         {
-          "trigger": { "event": "WhenCardPlayed", "timing": "Response", "subject": "this" },
+          "trigger": { "event": "WhenCardEntersPlay", "timing": "Response", "subject": "this" },
           "effect": { "chooseCard": { "from": { "query": "enemies" }, "effect": { "giveStatus": { "card": "chosen", "status": "stunned" } } } }
         }
       ]
@@ -2091,7 +2100,7 @@
       "note": "After Maria Hill enters play, her optional response has each player draw 1 card in player order.",
       "abilities": [
         {
-          "trigger": { "event": "WhenCardPlayed", "timing": "Response", "subject": "this" },
+          "trigger": { "event": "WhenCardEntersPlay", "timing": "Response", "subject": "this" },
           "effect": { "draw": { "player": "each", "count": 1 } }
         }
       ]
@@ -2102,7 +2111,7 @@
       "note": "After Nick Fury enters play, choose one printed effect. The same response records the delayed end-of-round discard, which does nothing if he has already left play.",
       "abilities": [
         {
-          "trigger": { "event": "WhenCardPlayed", "timing": "ForcedResponse", "subject": "this" },
+          "trigger": { "event": "WhenCardEntersPlay", "timing": "ForcedResponse", "subject": "this" },
           "effect": { "seq": [
             { "choose": { "options": [
               { "chooseCard": { "from": { "query": "schemes" }, "effect": { "removeThreat": { "scheme": "chosen", "amount": 2 } } } },

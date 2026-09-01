@@ -59,10 +59,21 @@ internal static class TranscriptParser
                     $"scenario must name exactly one @behavior: obligation; found {obligations.Count}");
             }
 
+            var covered = tags
+                .Where(tag => tag.StartsWith("@covers:behavior:", StringComparison.Ordinal))
+                .Select(tag => tag[8..])
+                .ToList();
+            if (covered.Contains(obligations[0], StringComparer.Ordinal))
+            {
+                throw At(relative, scenario.Location,
+                    $"primary obligation '{obligations[0]}' cannot also be a @covers obligation");
+            }
+
             var parsed = ParseSteps(relative, prefix.Concat(scenario.Steps));
             scenarios.Add(new TranscriptScenario(
                 scenario.Name,
                 obligations[0],
+                covered,
                 [.. tags.Where(IsAuthority).Select(tag => tag[1..])],
                 parsed,
                 Locate(relative, scenario.Location)));

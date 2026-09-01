@@ -944,7 +944,12 @@ public sealed partial class AbilityRunner
         // whose trigger is optional would be able to tell them apart -- the
         // prompt would appear -- and that is the case to change this for.
         "attackDamaged" => cast.World.FinishedAttack is { Damaged: true } landed
-            && landed.Enemy == cast.Source.ObjectId,
+            // The ability may be printed on an attachment such as Sonic
+            // Converter, so its source is not necessarily the attacker. The
+            // trigger already names the attacking actor and damaged target;
+            // compare the completed attack with that occurrence instead.
+            && landed.Enemy == cast.Occurrence.Actor
+            && landed.Target == cast.Occurrence.Target,
 
         // `rr:modes-of-play` -- "in expert mode" on a card, which 86 cards in
         // the pool print. Not a property of the card or of anything on the
@@ -987,7 +992,7 @@ public sealed partial class AbilityRunner
         "wasDefeated" => Find(node.Argument, cast) is { } defeatedCard
             && cast.Occurrence.Defeats.Any(defeat => defeat.Card == defeatedCard.ObjectId),
 
-        "heroDefended" => cast.World.FinishedAttack is { BasicDefense: true } defended
+        "heroDefended" => cast.World.FinishedAttack is { } defended
             && defended.Defender == cast.World.Seats[Resolver(cast)].IdentityCard.ObjectId,
 
         "undefendedAttack" => cast.World.Attack is { IsDefended: false },

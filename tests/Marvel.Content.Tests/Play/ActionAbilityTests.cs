@@ -167,30 +167,30 @@ public sealed partial class ActionAbilityTests
     [Fact]
     public void DealingDamageAsACostIsPaidWhenTheDamageIsPrevented()
     {
-        // Focused Rage deals one damage as its cost. "That cost is considered
-        // paid even if some or all of that damage is prevented," so Tough can
-        // prevent all of it and the post-arrow draw still resolves.
-        Card? rage = null;
+        // War Machine deals two damage to himself as its cost. "That cost is
+        // considered paid even if some or all of that damage is prevented,"
+        // so Tough can prevent all of it and the post-arrow damage still
+        // resolves against every enemy.
+        Card? warMachine = null;
         var (game, world) = Playing(
             board =>
             {
-                board.Seats[0].IdentityCard.TurnTo("01019a");
-                rage = board.CreateCard(
-                    "01027",
-                    board.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
-                Statuses.Give(board, board.Seats[0].IdentityCard, Statuses.Tough);
+                warMachine = board.CreateCard(
+                    "01030",
+                    board.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+                Statuses.Give(board, warMachine, Statuses.Tough);
             },
-            heroes: ["she_hulk"]);
-        int held = world.Seats[0].Hand.Cards.Count;
+            heroes: ["iron_man"]);
         var action = Assert.Single(
             game.Pending!.Affordances,
-            option => option.AnchorId == rage!.ObjectId);
+            option => option.Verb == Game.ActionVerb
+                && option.AnchorId == warMachine!.ObjectId);
 
         game.Resolve(Decision.Take(action.Id));
 
-        Assert.False(Statuses.Has(world, world.Seats[0].IdentityCard, Statuses.Tough));
-        Assert.Equal(0, world.Seats[0].IdentityCard.Damage);
-        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+        Assert.False(Statuses.Has(world, warMachine!, Statuses.Tough));
+        Assert.Equal(0, warMachine!.Damage);
+        Assert.Equal(1, world.TheCardIn(DeckType.VillainArea)!.Damage);
     }
 
     [Rule("rr:cost.12")]

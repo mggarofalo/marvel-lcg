@@ -164,5 +164,3 @@ gap in the digest rather than a reason to invent a key for it.
   operation and Spectrum's Forced Response as a row in
   `datasets/abilities/abilities.json`. See [card-dsl.md](card-dsl.md).
 - **Flipping a three-faced identity**, above.
-- **`rr:form-change-form.7`**, "[type] form only" as a play restriction. There
-  is no cost-and-restriction layer for it to live in yet.

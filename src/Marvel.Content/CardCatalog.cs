@@ -119,6 +119,40 @@ public sealed class CardCatalog : ICardFacts
     }
 
     /// <inheritdoc />
+    public string? RequiredForm(string faceId) => RequiredFormOf(Find(faceId).Text);
+
+    /// <summary>Reads a printed "[type] form only" play restriction.</summary>
+    /// <param name="printed">The card's printed text, or null.</param>
+    public static string? RequiredFormOf(string? printed)
+    {
+        if (printed is null)
+        {
+            return null;
+        }
+
+        const string suffix = " form only";
+        foreach (string line in printed.Split('\n'))
+        {
+            foreach (string sentence in line.Split('.'))
+            {
+                string trimmed = sentence.Trim();
+                if (!trimmed.EndsWith(suffix, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                string form = trimmed[..^suffix.Length];
+                if (form.Length > 0 && char.IsUpper(form[0]))
+                {
+                    return form.ToLowerInvariant();
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /// <inheritdoc />
     public string Title(string faceId) => Find(faceId).Title;
 
     /// <inheritdoc/>

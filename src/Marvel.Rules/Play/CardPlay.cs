@@ -475,7 +475,7 @@ public static class CardPlay
                 $"ally {ally.ObjectId} is already in play and cannot be put into play again");
         }
 
-        if (facts.FormKeyword(ally.FaceId) is { } form
+        if (facts.RequiredForm(ally.FaceId) is { } form
             && !Forms.In(world, world.Seats[controller], facts, form))
         {
             throw new RulesNotImplementedException(
@@ -518,6 +518,7 @@ public static class CardPlay
         else
         {
             Reveal.EnterPlay(world, facts, ally, events, abilities: abilities);
+            Entered(world, ally, controller);
         }
     }
 
@@ -764,7 +765,7 @@ public static class CardPlay
         // `rr:play-put-into-play.1` and `rr:form-change-form.7`: cards with the
         // text "[type] form only" can only be played by a player whose identity
         // is in that form.
-        if (facts.FormKeyword(card.FaceId) is { } form
+        if (facts.RequiredForm(card.FaceId) is { } form
             && !Forms.In(world, seat, facts, form))
         {
             return false;
@@ -1207,6 +1208,21 @@ public static class CardPlay
             Subject: ally.ObjectId,
             Seat: player,
             Plan: true));
+
+    /// <summary>Schedules the response window for an ally put into play.</summary>
+    internal static void Entered(World world, Card ally, int player)
+    {
+        // `rr:enters-play`: putting a card into play by a card ability is one
+        // way it enters play. The transition therefore creates the same
+        // after-entry response window as a card played from hand, but not the
+        // `WhenCardPlayed` condition that rr:play-put-into-play.3 excludes.
+        world.Agenda.Then(new PhaseStep(
+            Steps.CardEntersPlay,
+            world.Agenda.Current?.Round ?? 0,
+            0,
+            Subject: ally.ObjectId,
+            Seat: player));
+    }
 
     private static void Played(World world, Seat seat, Card card)
     {

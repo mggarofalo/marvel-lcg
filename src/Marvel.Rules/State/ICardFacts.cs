@@ -165,6 +165,13 @@ public interface ICardFacts
     string? FormKeyword(string faceId) => null;
 
     /// <summary>
+    /// The form required by printed "[type] form only" text, or null when the
+    /// card has no such play restriction.
+    /// </summary>
+    /// <param name="faceId">A printed card id.</param>
+    string? RequiredForm(string faceId) => null;
+
+    /// <summary>
     /// How many consequential damage icons sit beneath one of an ally's
     /// powers — <c>rr:consequential-damage</c>.
     /// </summary>

@@ -1,6 +1,7 @@
 using Marvel.Content.Behavior;
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
+using Marvel.Rules.Play;
 using Marvel.Rules.State;
 using Marvel.Tests;
 using Xunit;
@@ -30,6 +31,30 @@ public sealed class CanonicalCoreSceneTests
     }
 
     [Fact]
+    public void APublishedCustomizationBlockCanBuildAnotherHerosLegalDeck()
+    {
+        // The source name is this engine's compact recipe. DeckConstruction
+        // remains the authority-backed gate for the resulting 40-card deck.
+        var scene = CanonicalCoreScene.Deal(
+            new CoreSceneRequest(
+                "behavior:card:01082:after-your-hero-defends-discard-indomitable-ready",
+                "rhino",
+                ["spider_man"],
+                302,
+                PlayerDecks: ["black_panther"]),
+            Setup,
+            Cards,
+            AuthoredCards.Runner());
+
+        Assert.Equal("01001b", scene.World.Seats[0].IdentityCard.FaceId);
+        Assert.Equal(0, scene.Find(new SceneCard("01082")).Owner);
+        Assert.Equal(
+            40,
+            scene.World.Seats[0].Deck.Cards.Count
+            + scene.World.Seats[0].Hand.Cards.Count);
+    }
+
+    [Fact]
     public void OneCardBoundaryAccountsForEveryOtherDeckCardInALegalZone()
     {
         var scene = OneCardDeck();
@@ -56,6 +81,52 @@ public sealed class CanonicalCoreSceneTests
     }
 
     [Fact]
+    public void OneCardBoundaryCanKeepTheDiscardPileEmpty()
+    {
+        var scene = Deal(
+                "behavior:rr:player-deck.4:published-result",
+                "rhino",
+                ["spider_man"])
+            .Apply(new StackPlayerDeck(
+                0,
+                [new SceneCard("01006")],
+                PlayerDeckRemainder.Hand));
+
+        Assert.Single(scene.World.Seats[0].Deck.Cards);
+        Assert.Equal(39, scene.World.Seats[0].Hand.Cards.Count);
+        Assert.Empty(scene.World.AreaOf(
+            DeckType.DiscardPile,
+            PlayArea.Of(0),
+            cardOwner: 0).Cards);
+        Assert.Equal(
+            40,
+            scene.World.Seats[0].Deck.Cards.Count
+            + scene.World.Seats[0].Hand.Cards.Count);
+    }
+
+    [Fact]
+    public void AnExactHandUsesOnlyOwnedPlayerDeckCardsAndAccountsForTheRemainder()
+    {
+        var scene = Deal(
+                "behavior:rr:hand-size:below-limit",
+                "rhino",
+                ["spider_man"])
+            .Apply(new SetPlayerHand(
+                0,
+                [new SceneCard("01002"), new SceneCard("01003")]));
+
+        Assert.Equal(["01002", "01003"],
+            scene.World.Seats[0].Hand.Cards.Select(card => card.FaceId));
+        Assert.Equal(
+            scene.World.Cards.Count,
+            scene.World.Areas.Sum(area => area.Cards.Count + area.Removed.Count));
+
+        var wrongOwner = Assert.Throws<CoreSceneConstructionException>(() => scene.Apply(
+            new SetPlayerHand(0, [new SceneCard("01012")])));
+        Assert.Contains("no copy 0", wrongOwner.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void InvasiveAiCanBeStackedOnlyFromTheLegalUltronEncounterDeck()
     {
         var scene = Deal(
@@ -69,6 +140,33 @@ public sealed class CanonicalCoreSceneTests
         Assert.Equal(World.Scenario, scene.Find(new SceneCard("01149")).Owner);
         Assert.Equal(DeckType.EnvironmentArea, scene.Find(new SceneCard("01140")).Area.Type);
         Assert.Contains(scene.World.Cards, FacedownDrones.Is);
+    }
+
+    [Theory]
+    [InlineData(EncounterDeckRemainder.Discard, DeckType.EncounterDiscardPile)]
+    [InlineData(EncounterDeckRemainder.Dealt, DeckType.DealtEncounterCardsDeck)]
+    public void EncounterDeckBoundaryAccountsForEveryOtherCardInALegalZone(
+        EncounterDeckRemainder remainder,
+        DeckType destination)
+    {
+        var scene = Deal(
+                "behavior:rr:encounter-deck.1:empty-with-discard",
+                "rhino",
+                ["spider_man"])
+            .Apply(new StackEncounterDeck(
+                [new SceneCard("01186")],
+                remainder));
+        var deck = scene.World.AreaOf(DeckType.EncounterDeck);
+        var moved = destination is DeckType.DealtEncounterCardsDeck
+            ? scene.World.AreaOf(destination, PlayArea.Of(0))
+            : scene.World.AreaOf(destination);
+
+        Assert.Single(deck.Cards);
+        Assert.Equal("01186", deck.Cards[^1].FaceId);
+        Assert.NotEmpty(moved.Cards);
+        Assert.Equal(
+            scene.World.Cards.Count,
+            scene.World.Areas.Sum(area => area.Cards.Count + area.Removed.Count));
     }
 
     [Fact]
@@ -148,6 +246,27 @@ public sealed class CanonicalCoreSceneTests
         scene.Apply(new SetSceneCounters(new SceneCard("01018"), "energy", 4));
 
         Assert.Equal(4, scene.Find(new SceneCard("01018")).Tokens["c_energy"]);
+    }
+
+    [Rule("rr:acceleration-token")]
+    [Fact]
+    public void RulesProvidedAccelerationTokensCanBeArrangedOnTheMainScheme()
+    {
+        // "They are placed next to the main scheme as a reminder to add X
+        // additional threat to the main scheme during step one."
+        var scene = Deal(
+            "behavior:rr:main-scheme-main-scheme-deck.5:published-result",
+            "klaw",
+            ["spider_man"]);
+
+        scene.Apply(new SetSceneAccelerationTokens(2));
+
+        Card scheme = scene.World.TheCardIn(DeckType.MainSchemesArea)!;
+        Assert.Equal(2, scheme.Tokens[EncounterDeck.AccelerationToken]);
+        var thrown = Assert.Throws<CoreSceneConstructionException>(() =>
+            scene.Apply(new SetSceneAccelerationTokens(-1)));
+        Assert.Equal("set-acceleration-tokens", thrown.Operation);
+        Assert.Equal(2, scheme.Tokens[EncounterDeck.AccelerationToken]);
     }
 
     [Fact]
@@ -537,7 +656,7 @@ public sealed class CanonicalCoreSceneTests
             ["spider_man"]);
 
         var thrown = Assert.Throws<CoreSceneConstructionException>(() => scene.Apply(
-            new StackPlayerDeck(0, [], DiscardOthers: true)));
+            new StackPlayerDeck(0, [], PlayerDeckRemainder.Discard)));
 
         Assert.Contains("leave at least one card", thrown.Message, StringComparison.Ordinal);
         Assert.NotEmpty(scene.World.Seats[0].Deck.Cards);
@@ -550,7 +669,7 @@ public sealed class CanonicalCoreSceneTests
         .Apply(new StackPlayerDeck(
             Seat: 0,
             TopFirst: [new SceneCard("01006")],
-            DiscardOthers: true));
+            PlayerDeckRemainder.Discard));
 
     private static CanonicalCoreScene Deal(
         string authority,

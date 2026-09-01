@@ -332,7 +332,10 @@ public sealed partial class AbilityRunner
         {
             return
             [
-                .. cast.World.AreaOf(DeckType.UpgradesArea, PlayArea.Of(cast.Player)).Cards
+                .. cast.World.Areas
+                    .Where(area => area.Type == DeckType.UpgradesArea
+                        && area.PlayArea == PlayArea.Of(cast.Player))
+                    .SelectMany(area => area.Cards)
                     .Where(card => Rules.State.Traits.Has(
                         cast.World, card, "BLACK_PANTHER", cast.World.Facts)),
             ];
@@ -359,6 +362,21 @@ public sealed partial class AbilityRunner
             // minion. Not `heroesAndAllies`, which is every player's: Boomerang
             // hits the allies of the player it attacked and nobody else's.
             return [.. cast.World.AreaOf(DeckType.AlliesArea, PlayArea.Of(cast.Player)).Cards];
+        }
+
+        if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } friendlyAllies
+            && friendlyAllies.Argument is AbilityValue.Word { Value: "allies" })
+        {
+            // Inspired prints "Attach to an ally," not "an ally you control."
+            // `rr:friendly` makes every player-controlled card friendly, and
+            // `rr:upgrade.3.1` expressly gives the host's controller control of
+            // an upgrade another player owns.
+            return
+            [
+                .. cast.World.Areas
+                    .Where(area => area.Type == DeckType.AlliesArea)
+                    .SelectMany(area => area.Cards),
+            ];
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } heroes

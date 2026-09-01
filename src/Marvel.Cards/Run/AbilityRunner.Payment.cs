@@ -81,7 +81,11 @@ public sealed partial class AbilityRunner
             { Kind: "takeDamage" } => CostTarget(
                     world, card, player, cost.Require("cards")) is { } takingTarget
                 && Number(cost.Require("amount")) > 0
-                && world.Abilities.CanTakeDamage(world, takingTarget, card),
+                && world.Abilities.CanTakeDamage(world, takingTarget, card)
+                // `rr:cost.12`: "that cost is not considered paid unless all
+                // of that damage was taken." Tough necessarily prevents the
+                // next instance, so this cost cannot be paid at initiation.
+                && !Statuses.Has(world, takingTarget, Statuses.Tough),
 
             _ => throw new RulesNotImplementedException(
                 $"'{card.FaceId}' has a cost of '{cost.Kind}', which is not implemented"),

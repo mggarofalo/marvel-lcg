@@ -74,6 +74,31 @@ public sealed class CoreTranscriptRunnerTests
     }
 
     [Fact]
+    public void ATranscriptCanDeclareNecessarilyObservedSecondaryObligations()
+    {
+        using var feature = TemporaryFeature.Create("""
+            Feature: Declare co-coverage
+              @behavior:rr:encounter-deck.1:empty-with-discard
+              @covers:behavior:rr:acceleration-token.1:published-result
+              @rr:encounter-deck.1 @rr:acceleration-token.1
+              Scenario: one decision observes both rules
+                Given a canonical Core scene is dealt
+                  | campaign | heroes     | seed |
+                  | rhino    | spider_man | 303  |
+                When seat 1 draws 1 card
+                Then the game is unfinished
+            """);
+
+        TranscriptScenario scenario = Assert.Single(
+            TranscriptParser.Parse(feature.Root, feature.Path).Scenarios);
+
+        Assert.Equal("behavior:rr:encounter-deck.1:empty-with-discard", scenario.Obligation);
+        Assert.Equal(
+            ["behavior:rr:acceleration-token.1:published-result"],
+            scenario.CoveredObligations);
+    }
+
+    [Fact]
     public void UnknownStepsFailAtTheirFeatureLine()
     {
         TranscriptException failure = ExecuteSynthetic(
@@ -188,8 +213,8 @@ public sealed class CoreTranscriptRunnerTests
         "@behavior:rr:player-deck.2:published-result @rr:draw-drawing-cards",
         "primary obligation derives from 'rr:player-deck.2'")]
     [InlineData(
-        "@behavior:rr:player-deck.3:published-result @rr:player-deck.3",
-        "not executable with a completed implementation status")]
+        "@behavior:rr:campaign-specific-card:source-disposition @rr:campaign-specific-card",
+        "outside-Core direct authorities: rr:campaign-specific-card")]
     [InlineData(
         "@behavior:rr:player-deck.2:published-result @rr:player-deck.2 @rr:campaign-specific-card",
         "outside-Core direct authorities: rr:campaign-specific-card")]
