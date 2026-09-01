@@ -5647,11 +5647,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Preventing War Machine's dealt-damage cost does not prevent its effect"
+          ],
+          "mutation": "Reduce the amount War Machine deals when Tough reduces the amount he takes; his dealt-damage cost is no longer paid and the enemy damage effect does not resolve."
         }
       ]
     },
@@ -16289,11 +16291,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Preventing War Machine's dealt-damage cost does not prevent its effect"
+          ],
+          "mutation": "Treat Tough's reduction of damage taken as a reduction of damage dealt; War Machine's two-damage cost fails and his action does not damage the enemies."
         }
       ]
     },
@@ -16327,11 +16331,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::Preventing all attack damage does not count as attacking and damaging"
+          ],
+          "mutation": "Treat a fully prevented attack as having attacked and damaged its target; Sonic Converter stuns Spider-Man after Backflip prevents all damage."
         }
       ]
     },

@@ -315,7 +315,7 @@ public sealed class CoreRuleTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(20, results.Count);
+        Assert.Equal(21, results.Count);
         Assert.Equal(
             "aadbff792b4caca6a6ecbb13041865133c3e9ce1d588d1a9c6a59834d8a97fc8",
             results["behavior:rr:villain-phase:published-result"].Digest);

@@ -490,6 +490,29 @@ Feature: Core villain phase
     And card 01003 copy 0 is faceup on top of seat 1's discard pile
     And 0 Damage events were emitted
 
+  @behavior:rr:prevent.1.3:published-result
+  @rr:prevent.1.3 @card:01003 @card:01118
+  Scenario: Preventing all attack damage does not count as attacking and damaging
+    # Klaw still deals an attack-damage instance, but Backflip prevents every
+    # point taken. Sonic Converter therefore does not see Klaw as having
+    # "attacked and damaged" Spider-Man and does not stun him.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | klaw     | spider_man | 839  |
+    And seat 1 shows identity face 01001a
+    And card 01118 copy 0 is attached to card 01113 copy 0
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01003 | 0    |
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01119     | 0    |
+      | 01120     | 0    |
+    When the villain attacks seat 1 accepting "Backflip"
+    Then card 01001a copy 0 has 0 damage
+    And card 01001a copy 0 has 0 stunned status cards
+    And card 01003 copy 0 is faceup on top of seat 1's discard pile
+
   @behavior:card:01082:after-your-hero-defends-discard-indomitable-ready
   @covers:behavior:rr:defend-defense.4.2:published-result
   @covers:behavior:rr:defend-defense.7:published-result

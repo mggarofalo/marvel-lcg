@@ -493,8 +493,11 @@ Feature: Core card actions
   @behavior:card:01030:exhaust-war-machine-and-deal-2-damage
   @covers:behavior:rr:cost.11:damage-prevented
   @covers:behavior:rr:prevent.1.4:published-result
+  @covers:behavior:rr:damage.3.2:published-result
+  @covers:behavior:rr:prevent.1.1:published-result
   @covers:behavior:rr:enemy:villain-or-minion
-  @card:01030 @rr:cost.11 @rr:prevent.1.4 @rr:enemy
+  @card:01030 @rr:cost.11 @rr:prevent.1.1 @rr:prevent.1.4
+  @rr:damage.3.2 @rr:enemy
   Scenario: Preventing War Machine's dealt-damage cost does not prevent its effect
     # "If dealing damage is a cost, that cost is considered paid even if some
     # or all of that damage is prevented." Tough prevents both damage, but the
