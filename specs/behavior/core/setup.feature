@@ -112,11 +112,12 @@ Feature: Canonical Core setup
 
   @behavior:card:01040b:search-your-deck-for-black-panther-upgrade
   @covers:behavior:card:01040b:shuffle-your-deck
+  @covers:behavior:rr:ability.6:published-result
   @covers:behavior:rr:appendix-ii-setup.step.16:published-result
   @covers:behavior:rr:search.1:published-result
   @covers:behavior:rr:search.2:published-result
   @covers:behavior:rr:search.3:published-result
-  @card:01040b @rr:appendix-ii-setup.step.16
+  @card:01040b @rr:ability.6 @rr:appendix-ii-setup.step.16
   @rr:search.1 @rr:search.2 @rr:search.3
   Scenario: T'Challa chooses one of his upgrades after mulligans and shuffles
     # Setup step 16 resolves player Setup abilities after mulligans. Foresight
@@ -139,6 +140,7 @@ Feature: Canonical Core setup
       | 01047     | 0    |
       | 01048     | 0    |
       | 01049     | 0    |
+    And card 01091 copy 0 is a support controlled by seat 1
     When game setup reaches seat 1's mulligan
     Then seat 1 is offered a mulligan
     When seat 1 keeps every opening-hand card at mulligan
@@ -146,6 +148,8 @@ Feature: Canonical Core setup
     And card 01047 copy 0 is offered by the pending setup ability
     And card 01048 copy 0 is offered by the pending setup ability
     And card 01049 copy 0 is offered by the pending setup ability
+    And card 01091 copy 0 is not offered by the pending setup ability
+    And card 01091 copy 0 remains a support controlled by seat 1
     And card 01047 copy 0 is in seat 1's player deck
     When seat 1 chooses card 01046 copy 0 for the pending setup ability
     Then card 01046 copy 0 is in seat 1's hand

@@ -407,6 +407,9 @@ internal sealed class CoreTranscriptRunner
         Bind("pending-setup-card-offered", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is offered by the pending setup ability",
             PendingCardOffered),
+        Bind("pending-setup-card-not-offered", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is not offered by the pending setup ability",
+            PendingCardNotOffered),
         Bind("setup-deck-shuffled", TranscriptStepKind.Then,
             @"seat (?<seat>\d+)'s player deck was shuffled by the setup ability",
             SetupDeckShuffled),
@@ -2311,6 +2314,20 @@ internal sealed class CoreTranscriptRunner
         {
             throw new TranscriptAssertionException(
                 $"{step.Location}: card {card.ObjectId} is not offered by '{asked.Label}'");
+        }
+    }
+
+    private static void PendingCardNotOffered(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Prompt asked = context.PendingPrompt
+            ?? throw new TranscriptAssertionException(
+                $"${step.Location}: expected a pending setup prompt");
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        if (asked.Affordances.Any(offer => offer.AnchorId == card.ObjectId))
+        {
+            throw new TranscriptAssertionException(
+                $"${step.Location}: card ${card.ObjectId} was offered by '${asked.Label}'");
         }
     }
 

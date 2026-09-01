@@ -232,7 +232,7 @@ public sealed class CoreRuleTranscriptTests
             "9c79668a61e30ba2e01dc4bcd26fd1082dff9e538342676341e0d9a166f3a68f",
             results["behavior:rr:appendix-ii-setup.step.15:published-result"].Digest);
         Assert.Equal(
-            "7a39113570a459798b6e157a06f18465875581cc9e3277b586ef73151defc8b0",
+            "063ebf9a425ae67894205a48cd6ac1444920d7f60a45925bdd2a533f28fc0aa6",
             results["behavior:card:01040b:search-your-deck-for-black-panther-upgrade"].Digest);
     }
 
