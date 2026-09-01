@@ -8324,16 +8324,16 @@
       ]
     },
     {
-      "id": "rr:first-player.5",
+  "id": "rr:first-player.5",
       "fingerprint": "sha256:8be5ea9a5826bde2a1587bc67422ae8a79ac26da9e3ab100627c860e7aeebcce",
       "obligations": [
         {
           "key": "published-result",
           "summary": "The first player has the first opportunity to use a response at each appropriate game moment.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+      "disposition": "outside-core",
+      "reason": "No legal supported Core state gives different players response abilities to the same triggering condition, so first-player response priority cannot be distinguished.",
+      "target": null,
+      "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -13525,15 +13525,15 @@
       ]
     },
     {
-      "id": "rr:move",
+  "id": "rr:move",
       "fingerprint": "sha256:5f05669f58a54be333495e5e5fc350d2254afb7714a4db5b0aed63583101eb7e",
       "obligations": [
         {
           "key": "published-result",
           "summary": "Some abilities allow players to move game elements, such as cards, damage, or threat.",
-          "disposition": "narrower",
-          "reason": "A directly cited child clause states the executable decision more precisely.",
-          "target": "behavior:rr:move.1:published-result",
+      "disposition": "no-independent-behavior",
+      "reason": "This record introduces the move operation; the observable Core damage-move behavior is carried by the quantity and source/destination child clauses.",
+      "target": null,
           "implementation": null,
           "work_item": null,
           "exception": null,
@@ -13543,16 +13543,16 @@
       ]
     },
     {
-      "id": "rr:move.1",
+  "id": "rr:move.1",
       "fingerprint": "sha256:d8e9a3ff335b078971fa82d029d56ab946177fb0d704fa80457a179e56de62ab",
       "obligations": [
         {
           "key": "published-result",
           "summary": "When an element moves, it cannot move to its same (current) placement.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+      "disposition": "no-independent-behavior",
+      "reason": "Vibranium Suit is the only supported Core move effect and necessarily moves damage from a hero to a distinct enemy, so its source and destination can never be the same placement.",
+      "target": null,
+      "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -22961,16 +22961,16 @@
       ]
     },
     {
-      "id": "rr:you-your.13",
+  "id": "rr:you-your.13",
       "fingerprint": "sha256:14a7553081da2ffba59c8d77720137bba29538ab98ba4e6d9d84fa55f0c7b0be",
       "obligations": [
         {
           "key": "published-result",
           "summary": "Resources — Attacks, thwarts, defenses, and triggered abilities that resolve from a player spending a resource card are also considered to be performed by that player’s identity.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+      "disposition": "outside-core",
+      "reason": "No supported Core resource card resolves an attack, thwart, defense, or triggered ability whose attribution to the spending identity produces an observable result.",
+      "target": null,
+      "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -23017,16 +23017,16 @@
       ]
     },
     {
-      "id": "rr:you-your.16",
+  "id": "rr:you-your.16",
       "fingerprint": "sha256:7b2dec7dca55d8cdaf8f8b4fce9e17053f7a44c564f1b34009bd4bcf82e01189",
       "obligations": [
         {
           "key": "published-result",
           "summary": "Encounter cards — Triggered abilities that resolve from encounter cards are not considered to be performed by that player’s identity, whether those abilities are optional or forced.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+      "disposition": "outside-core",
+      "reason": "No supported Core effect observes whether a triggered ability resolving from an encounter card was performed by the resolving player's identity.",
+      "target": null,
+      "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -23089,16 +23089,16 @@
       ]
     },
     {
-      "id": "rr:you-your.3",
+  "id": "rr:you-your.3",
       "fingerprint": "sha256:03b0546a658aa430987de2375c40d7a4c9c551b20142a311cd8b81c0f1de5cba",
       "obligations": [
         {
           "key": "published-result",
           "summary": "If a card ability deals indirect damage to “you,” or “you” take indirect damage, the player resolving that damage can assign that damage to characters in play under their control.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+      "disposition": "outside-core",
+      "reason": "No supported Core card deals indirect damage to you or instructs you to take indirect damage.",
+      "target": null,
+      "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
