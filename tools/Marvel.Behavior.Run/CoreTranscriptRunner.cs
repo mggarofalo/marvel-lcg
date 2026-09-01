@@ -426,6 +426,9 @@ internal sealed class CoreTranscriptRunner
         Bind("keep-mulligan", TranscriptStepKind.When,
             @"seat (?<seat>\d+) keeps every opening-hand card at mulligan",
             KeepMulligan),
+        Bind("end-player-turn", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) ends their turn",
+            EndPlayerTurn),
         Bind("request-voluntary-form-change", TranscriptStepKind.When,
             @"seat (?<seat>\d+) asks whether a voluntary form change is available",
             RequestVoluntaryFormChange),
@@ -448,6 +451,11 @@ internal sealed class CoreTranscriptRunner
             @"seat (?<seat>\d+) has (?<count>\d+) cards? in hand", HandCount),
         Bind("mulligan-offered", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) is offered a mulligan", MulliganOffered),
+        Bind("active-player", TranscriptStepKind.Then,
+            @"seat (?<seat>\d+) is the active player", ActivePlayer),
+        Bind("end-phase-discard-offered", TranscriptStepKind.Then,
+            @"seat (?<seat>\d+) is offered the end-of-player-phase discard",
+            EndPhaseDiscardOffered),
         Bind("pending-setup-card-offered", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is offered by the pending setup ability",
             PendingCardOffered),
@@ -1727,6 +1735,24 @@ internal sealed class CoreTranscriptRunner
         SetPendingPrompt(context, resolution.Prompt);
     }
 
+    private static void EndPlayerTurn(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Game game = context.Game
+            ?? throw new TranscriptException($"{step.Location}: game setup has not begun");
+        int seat = Seat(match, step);
+        if (game.Phase != GamePhase.PlayerTurn || game.Active != seat)
+        {
+            throw new TranscriptException(
+                $"{step.Location}: seat {seat + 1} is not taking their turn");
+        }
+
+        context.Events.Clear();
+        Resolution resolution = game.Resolve(Decision.Decline);
+        context.Events.AddRange(resolution.Events);
+        SetPendingPrompt(context, resolution.Prompt);
+    }
+
     private static void RequestVoluntaryFormChange(
         TranscriptContext context, TranscriptStep step, Match match)
     {
@@ -1935,6 +1961,39 @@ internal sealed class CoreTranscriptRunner
         {
             throw new TranscriptException(
                 $"{step.Location}: seat {seat + 1} was not offered its mulligan");
+        }
+    }
+
+    private static void ActivePlayer(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Game game = context.Game
+            ?? throw new TranscriptException($"{step.Location}: game setup has not begun");
+        int seat = Seat(match, step);
+        if (game.Phase != GamePhase.PlayerTurn
+            || game.Active != seat
+            || game.Pending is not { Player: var player }
+            || player != seat)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: seat {seat + 1} is not the active player");
+        }
+    }
+
+    private static void EndPhaseDiscardOffered(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Game game = context.Game
+            ?? throw new TranscriptException($"{step.Location}: game setup has not begun");
+        int seat = Seat(match, step);
+        if (game.Phase != GamePhase.EndPhase
+            || game.Active != seat
+            || game.Pending is not { Player: var player } prompt
+            || player != seat
+            || !prompt.Affordances.Any(option => option.Verb == Game.EndPhaseVerb))
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: seat {seat + 1} was not offered the end-of-player-phase discard");
         }
     }
 

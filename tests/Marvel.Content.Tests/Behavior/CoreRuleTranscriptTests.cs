@@ -467,6 +467,20 @@ public sealed class CoreRuleTranscriptTests
     }
 
     [Fact]
+    public void PlayerPhaseTurnOrderHasPinnedOutcome()
+    {
+        TranscriptResult result = Assert.Single(Corpus.Value, result =>
+            result.Scenario.StartsWith(
+                "specs/behavior/core/player-phase.feature::",
+                StringComparison.Ordinal));
+
+        Assert.Equal("behavior:rr:player-phase:published-result", result.Obligation);
+        Assert.Equal(
+            "2ee053592d7d1250f8e00176b90766cef5c3dd6f485bb9fb729d6b0f0ca2dc61",
+            result.Digest);
+    }
+
+    [Fact]
     public void EncounterDeckBranchesHavePinnedOutcomes()
     {
         var results = Corpus.Value

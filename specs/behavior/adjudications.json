@@ -15440,11 +15440,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-phase.feature::Each player takes one turn in player order before the phase ends"
+          ],
+          "mutation": "CoreRuleTranscriptTests.PlayerPhaseTurnOrderHasPinnedOutcome distinguishes handing the turn from seat 1 to seat 2 and entering the end phase only after both turns."
         }
       ]
     },
@@ -15826,11 +15828,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/player-phase.feature::Each player takes one turn in player order before the phase ends"
+          ],
+          "mutation": "CoreRuleTranscriptTests.PlayerPhaseTurnOrderHasPinnedOutcome distinguishes each active player's turn prompt from the phase-boundary prompt."
         }
       ]
     },
