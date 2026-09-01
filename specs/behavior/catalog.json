@@ -30,15 +30,15 @@
       "title": "ABILITY",
       "fingerprint": "sha256:a32f6ceadd329b1ab88f37ff71badd70eb5ebe433836635ba75c77778cd833cc",
       "scope": "Rules Reference v1.8",
-      "disposition": "executable",
+      "disposition": "narrower",
       "obligations": [
         {
           "id": "behavior:rr:ability.1:published-result",
           "summary": "Card abilities only interact with cards that are in play, unless the ability specifically refers to an out-of-play area or element.",
-          "disposition": "executable",
-          "reason": null,
-          "target": null,
-          "implementation": "unverified",
+          "disposition": "narrower",
+          "reason": "The player-card clause states the Core-reachable in-play restriction more precisely.",
+          "target": "behavior:rr:ability.2:in-play-player-card-ability",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -137,16 +137,18 @@
       "disposition": "executable",
       "obligations": [
         {
-          "id": "behavior:rr:ability.13:published-result",
+          "id": "behavior:rr:ability.13:hero-form-required",
           "summary": "If the bold timing trigger of an ability contains the word “Hero” or “Alter-Ego,” the ability can only be used if the player triggering the ability is in the specified form.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::A Hero Action becomes available only in hero form"
+          ],
+          "mutation": "Ignore the Hero timing qualifier; Focused Rage is incorrectly available in alter-ego form."
         }
       ]
     },
@@ -181,16 +183,18 @@
       "disposition": "executable",
       "obligations": [
         {
-          "id": "behavior:rr:ability.2:published-result",
+          "id": "behavior:rr:ability.2:in-play-player-card-ability",
           "summary": "Card abilities on hero, alter-ego, ally, upgrade, and support cards may only be used if the card is in play, unless the ability specifically refers to being used from an out-of-play state.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::An upgrade action is active in play and inactive in hand"
+          ],
+          "mutation": "Expose upgrade actions from hand or suppress them in play; one of the paired availability assertions fails."
         }
       ]
     },
@@ -450,11 +454,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-power-restrictions.feature::Guard applies only while the guarding minion remains in play"
+          ],
+          "mutation": "Keep Guard active after its minion leaves play; the villain remains incorrectly unavailable."
         }
       ]
     },
@@ -467,16 +473,32 @@
       "disposition": "executable",
       "obligations": [
         {
-          "id": "behavior:rr:ability.9:published-result",
-          "summary": "Some constant abilities continuously seek a specific condition (denoted by words such as “during”, “if”, or “while”).",
+          "id": "behavior:rr:ability.9:condition-met",
+          "summary": "A conditional constant ability applies while its stated condition is true.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-power-restrictions.feature::Guard applies only while the guarding minion remains in play"
+          ],
+          "mutation": "Do not apply Guard while its minion is engaged; the initial villain-target assertion fails."
+        },
+        {
+          "id": "behavior:rr:ability.9:condition-not-met",
+          "summary": "A conditional constant ability stops applying when its stated condition is false.",
+          "disposition": "executable",
+          "reason": null,
+          "target": null,
+          "implementation": "supported",
+          "work_item": null,
+          "exception": null,
+          "scenarios": [
+            "specs/behavior/core/basic-power-restrictions.feature::Guard applies only while the guarding minion remains in play"
+          ],
+          "mutation": "Keep Guard active after its minion is defeated; the final villain-target assertion fails."
         }
       ]
     },
@@ -3582,7 +3604,7 @@
           "work_item": null,
           "exception": null,
           "scenarios": [
-            "specs/behavior/core/basic-power-restrictions.feature::Guard removes the villain but not the guarding minion from attack targets"
+            "specs/behavior/core/basic-power-restrictions.feature::Guard applies only while the guarding minion remains in play"
           ],
           "mutation": "CoreRuleTranscriptTests.BasicPowerRestrictionBranchesHavePinnedOutcomes distinguishes the legal target set."
         }
@@ -3740,7 +3762,7 @@
           "work_item": null,
           "exception": null,
           "scenarios": [
-            "specs/behavior/core/basic-power-restrictions.feature::Guard removes the villain but not the guarding minion from attack targets"
+            "specs/behavior/core/basic-power-restrictions.feature::Guard applies only while the guarding minion remains in play"
           ],
           "mutation": "CoreRuleTranscriptTests.BasicPowerRestrictionBranchesHavePinnedOutcomes distinguishes the guarding minion from the prohibited villain."
         }
@@ -10966,7 +10988,7 @@
           "work_item": null,
           "exception": null,
           "scenarios": [
-            "specs/behavior/core/basic-power-restrictions.feature::Guard removes the villain but not the guarding minion from attack targets"
+            "specs/behavior/core/basic-power-restrictions.feature::Guard applies only while the guarding minion remains in play"
           ],
           "mutation": "CoreRuleTranscriptTests.BasicPowerRestrictionBranchesHavePinnedOutcomes distinguishes the villain's exclusion while guard is engaged."
         }
@@ -10990,7 +11012,7 @@
           "work_item": null,
           "exception": null,
           "scenarios": [
-            "specs/behavior/core/basic-power-restrictions.feature::Guard removes the villain but not the guarding minion from attack targets"
+            "specs/behavior/core/basic-power-restrictions.feature::Guard applies only while the guarding minion remains in play"
           ],
           "mutation": "CoreRuleTranscriptTests.BasicPowerRestrictionBranchesHavePinnedOutcomes distinguishes the guard constant ability."
         }

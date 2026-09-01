@@ -411,6 +411,41 @@ Feature: Core card actions
     And seat 1 has 2 cards in hand
     And card 01097b copy 0 has 0 threat counters
 
+  @behavior:rr:ability.2:in-play-player-card-ability
+  @rr:ability.2 @card:01027
+  Scenario: An upgrade action is active in play and inactive in hand
+    # Abilities on upgrades "may only be used if the card is in play," unless
+    # the text expressly refers to an out-of-play state. One Focused Rage is
+    # attached in play; its second legal copy remains in its owner's hand.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 733  |
+    And seat 1 shows identity face 01019a
+    And card 01027 copy 0 is an upgrade attached to seat 1's identity
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01027 | 1    |
+    When seat 1 asks for available card actions
+    Then card 01027 copy 0's action is available
+    And card 01027 copy 1's action is unavailable
+
+  @behavior:rr:ability.13:hero-form-required
+  @rr:ability.13 @card:01027
+  Scenario: A Hero Action becomes available only in hero form
+    # A bold trigger containing "Hero" can be used only in hero form. Focused
+    # Rage is in play throughout; changing form is the only changed condition.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 734  |
+    And seat 1 shows identity face 01019b
+    And card 01027 copy 0 is an upgrade attached to seat 1's identity
+    When seat 1 asks for available card actions
+    Then card 01027 copy 0's action is unavailable
+    When seat 1 changes form by flipping their identity
+    Then seat 1 is in hero form
+    When seat 1 asks for available card actions
+    Then card 01027 copy 0's action is available
+
   @behavior:card:01056:uses-3-attack-counters
   @covers:behavior:card:01056:enters-play-with-3-counters
   @covers:behavior:card:01056:when-those-are-gone-discard-card

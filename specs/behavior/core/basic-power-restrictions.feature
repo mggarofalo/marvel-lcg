@@ -7,19 +7,29 @@ Feature: Core basic power restrictions
   @covers:behavior:rr:guard.1:published-result
   @covers:behavior:rr:attack-player-ability-type.1.1:published-result
   @covers:behavior:rr:attack-player-ability-type.4:published-result
+  @covers:behavior:rr:ability.8.2:constant-active-while-in-play
+  @covers:behavior:rr:ability.9:condition-met
+  @covers:behavior:rr:ability.9:condition-not-met
   @rr:guard @rr:guard.1 @rr:attack-player-ability-type.1.1
-  @rr:attack-player-ability-type.4
-  Scenario: Guard removes the villain but not the guarding minion from attack targets
-    # "The engaged player cannot attack any villain." Hero and ally attacks can
-    # otherwise target any enemy.
+  @rr:attack-player-ability-type.4 @rr:ability.8.2 @rr:ability.9
+  Scenario: Guard applies only while the guarding minion remains in play
+    # "While this minion is engaged with you, you cannot attack the villain."
+    # The constant condition is true while Hydra Mercenary is engaged; after
+    # Black Cat defeats it, the condition is false and the villain is legal.
     Given a canonical Core scene is dealt
       | campaign | heroes     | seed |
-      | rhino    | spider_man | 310  |
-    And seat 1 shows identity face 01001a
+      | rhino    | she_hulk | 310  |
+    And seat 1 shows identity face 01019a
     And card 01101 copy 0 is a minion engaged with seat 1
+    And card 01101 copy 0 has 1 damage
+    And card 01051 copy 0 is an ally controlled by seat 1
     When seat 1 asks for their basic attack targets
     Then card 01094 copy 0 is unavailable as a target
     And card 01101 copy 0 is available as a target
+    When card 01051 copy 0 uses its basic attack against card 01101 copy 0
+    Then card 01101 copy 0 is faceup on top of the encounter discard pile
+    When seat 1 asks for their basic attack targets
+    Then card 01094 copy 0 is available as a target
 
   @behavior:rr:thwart.1.1:published-result @rr:thwart.1.1
   Scenario: A scheme with no threat is not a basic thwart target
