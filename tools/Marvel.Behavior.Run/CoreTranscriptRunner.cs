@@ -483,6 +483,9 @@ internal sealed class CoreTranscriptRunner
         Bind("pending-opportunity-offered", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) is offered the ""(?<label>[^""]+)"" pending opportunity",
             PendingOpportunityOffered),
+        Bind("pending-option-availability", TranscriptStepKind.Then,
+            @"option (?<option>\d+) is (?<availability>offered|not offered) by the pending decision",
+            PendingOptionAvailability),
         Bind("hand-count", TranscriptStepKind.Then,
             @"seat (?<seat>\d+) has (?<count>\d+) cards? in hand", HandCount),
         Bind("mulligan-offered", TranscriptStepKind.Then,
@@ -2328,6 +2331,22 @@ internal sealed class CoreTranscriptRunner
         {
             throw new TranscriptException(
                 $"{step.Location}: seat {seat + 1} is not offered '{label}'");
+        }
+    }
+
+    private static void PendingOptionAvailability(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Prompt asked = context.PendingPrompt
+            ?? throw new TranscriptException($"{step.Location}: no decision is pending");
+        int option = Number(match, "option", step) - 1;
+        bool offered = asked.Affordances.Any(candidate => candidate.Id == option);
+        bool expected = match.Groups["availability"].Value == "offered";
+        if (offered != expected)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: option {option + 1} was "
+                + (offered ? "offered" : "not offered"));
         }
     }
 

@@ -5324,11 +5324,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ally-limit.feature::Playing a fourth ally requires one controlled ally to be discarded"
+          ],
+          "mutation": "Offer Nick Fury's remove-threat option when no scheme has threat; the explicit option-availability assertion fails."
         }
       ]
     },
@@ -5368,11 +5370,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ally-limit.feature::Playing a fourth ally requires one controlled ally to be discarded"
+          ],
+          "mutation": "Treat a zero-threat scheme as a valid target for Nick Fury's remove-threat option; option 1 is incorrectly offered."
         }
       ]
     },

@@ -4398,7 +4398,7 @@
       ]
     },
     {
-      "id": "rr:choose-option.2",
+  "id": "rr:choose-option.2",
       "fingerprint": "sha256:41fdee2edda75188e6e85b788f59d381161910a8297a40e3791d7c03b5ccd328",
       "obligations": [
         {
@@ -4407,11 +4407,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/ally-limit.feature::Playing a fourth ally requires one controlled ally to be discarded"
+      ],
+      "mutation": "Offer Nick Fury's remove-threat option when no scheme has threat; the explicit option-availability assertion fails."
         }
       ]
     },
@@ -4434,7 +4436,7 @@
       ]
     },
     {
-      "id": "rr:choose-option.2.2",
+  "id": "rr:choose-option.2.2",
       "fingerprint": "sha256:e88dd693099defd2b57e68968c1cb5333ac1d9c749d3abb0052b2687d76d16a2",
       "obligations": [
         {
@@ -4443,11 +4445,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/ally-limit.feature::Playing a fourth ally requires one controlled ally to be discarded"
+      ],
+      "mutation": "Treat a zero-threat scheme as a valid target for Nick Fury's remove-threat option; option 1 is incorrectly offered."
         }
       ]
     },

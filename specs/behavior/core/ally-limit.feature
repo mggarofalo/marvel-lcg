@@ -4,7 +4,9 @@ Feature: Core ally limit
   they control to discard before the entering ally finishes resolving.
 
   @behavior:rr:ally-limit:published-result
-  @rr:ally-limit
+  @covers:behavior:rr:choose-option.2:published-result
+  @covers:behavior:rr:choose-option.2.2:published-result
+  @rr:ally-limit @rr:choose-option.2 @rr:choose-option.2.2
   Scenario: Playing a fourth ally requires one controlled ally to be discarded
     # "Each player is permitted to control a maximum of three allies in play at
     # any given time." Nick Fury remains playable while three allies are in
@@ -35,5 +37,7 @@ Feature: Core ally limit
     When seat 1 chooses card 01066 copy 0 for the pending action
     Then card 01066 copy 0 is in seat 1's discard pile
     And card 01084 copy 0 remains an ally controlled by seat 1
+    And option 1 is not offered by the pending decision
+    And option 2 is offered by the pending decision
     When seat 1 chooses option 2 for the pending encounter-card decision
     Then seat 1 has 3 cards in hand
