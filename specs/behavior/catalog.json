@@ -24492,11 +24492,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::A future-target discount initiates before there is a card to play"
+          ],
+          "mutation": "Require Helicarrier's future next-card target to exist at initiation; its Action is unavailable while the player's hand is empty."
         }
       ]
     },
@@ -25723,14 +25725,14 @@
       "title": "UNIQUE ICON",
       "fingerprint": "sha256:ffa10735e4c16d92eeaeadc125f0221af9556baa8818b196fe890fadc424a245",
       "scope": "Rules Reference v1.8",
-      "disposition": "narrower",
+      "disposition": "no-independent-behavior",
       "obligations": [
         {
           "id": "behavior:rr:unique-icon.1:published-result",
           "summary": "Two unique cards are considered to “match” if any of the following apply:",
-          "disposition": "narrower",
-          "reason": "A directly cited child clause states the executable decision more precisely.",
-          "target": "behavior:rr:unique-icon.1.1:published-result",
+          "disposition": "no-independent-behavior",
+          "reason": "This record introduces the matching tests; the supported Core title and identity-form distinctions are carried by its individual child clauses.",
+          "target": null,
           "implementation": null,
           "work_item": null,
           "exception": null,
@@ -25745,15 +25747,15 @@
       "title": "UNIQUE ICON",
       "fingerprint": "sha256:8f15b082438a1756db71f573a42a6810002b8ee448e9e04c3a37aefa41087df7",
       "scope": "Rules Reference v1.8",
-      "disposition": "executable",
+      "disposition": "outside-core",
       "obligations": [
         {
           "id": "behavior:rr:unique-icon.1.1:published-result",
           "summary": "The two cards share a title, and both have no subtitle and no alter-ego title.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "outside-core",
+          "reason": "The Core component pool contains no two unique player cards that share a title while both lack a subtitle and alter-ego title.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -25877,14 +25879,14 @@
       "title": "UNIQUE ICON",
       "fingerprint": "sha256:def4f8c2e43015b3a11a0c471a0b3ff36b229a887951bc0eba89fc0f6fd17731",
       "scope": "Rules Reference v1.8",
-      "disposition": "narrower",
+      "disposition": "outside-core",
       "obligations": [
         {
           "id": "behavior:rr:unique-icon.4:published-result",
           "summary": "A non-villain card in an out-of-play state that matches a card in play cannot enter play.",
-          "disposition": "narrower",
-          "reason": "The two cited child clauses state the player-card and encounter-card decisions precisely.",
-          "target": "behavior:rr:unique-icon.4.1:published-result",
+          "disposition": "outside-core",
+          "reason": "The supported Core component pool cannot produce a second matching unique non-villain card in an out-of-play area while the first is in play.",
+          "target": null,
           "implementation": null,
           "work_item": null,
           "exception": null,
@@ -25899,15 +25901,15 @@
       "title": "UNIQUE ICON",
       "fingerprint": "sha256:22b1b4fd461d1c6c0428d52eff9c4842aca9b5c275e353235aef42fff4327a1b",
       "scope": "Rules Reference v1.8",
-      "disposition": "executable",
+      "disposition": "outside-core",
       "obligations": [
         {
           "id": "behavior:rr:unique-icon.4.1:published-result",
           "summary": "A player card, it cannot be played or put into play.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "outside-core",
+          "reason": "The Core component pool contains only one physical copy of every unique player-card title, so a second matching unique player card cannot legally be played or put into play.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],

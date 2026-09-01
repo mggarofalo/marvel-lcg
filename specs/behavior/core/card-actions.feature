@@ -593,6 +593,26 @@ Feature: Core card actions
     When seat 1 asks for available card actions
     Then card 01027 copy 0's action is available
 
+  @behavior:rr:target.5:published-result
+  @rr:target.5 @card:01092
+  Scenario: A future-target discount initiates before there is a card to play
+    # Helicarrier chooses the current player but refers to "the next card" only
+    # as a future target. An empty hand therefore does not prevent its Action
+    # from initiating and creating the pending discount.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 833  |
+    And seat 1 shows identity face 01001a
+    And card 01092 copy 0 is a support controlled by seat 1
+    And seat 1's hand is empty
+    When seat 1 asks for available card actions
+    Then card 01092 copy 0's action is available
+    When seat 1 initiates card 01092 copy 0's action without payment
+    Then card 01001a copy 0 is offered by the pending action
+    When seat 1 chooses card 01001a copy 0 for the pending action
+    Then card 01092 copy 0 is exhausted
+    And seat 1 has 0 cards in hand
+
   @behavior:card:01056:uses-3-attack-counters
   @covers:behavior:card:01056:enters-play-with-3-counters
   @covers:behavior:card:01056:when-those-are-gone-discard-card

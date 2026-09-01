@@ -238,6 +238,8 @@ internal sealed class CoreTranscriptRunner
             StackPlayerDeckLeavingRemainder),
         Bind("set-player-hand", TranscriptStepKind.Given,
             @"seat (?<seat>\d+)'s hand contains exactly these cards", SetPlayerHand),
+        Bind("set-empty-player-hand", TranscriptStepKind.Given,
+            @"seat (?<seat>\d+)'s hand is empty", SetEmptyPlayerHand),
         Bind("set-card-readiness", TranscriptStepKind.Given,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is (?<state>ready|exhausted)",
             SetCardReadiness),
@@ -827,6 +829,10 @@ internal sealed class CoreTranscriptRunner
             [.. table.Rows.Select(row => new SceneCard(
                 row["card"], TableNumber(row, "copy", step)))]));
     }
+
+    private static void SetEmptyPlayerHand(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        context.SceneRequired(step).Apply(new SetPlayerHand(Seat(match, step), []));
 
     private static void SetCardReadiness(
         TranscriptContext context, TranscriptStep step, Match match) =>
