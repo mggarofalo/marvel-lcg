@@ -2233,11 +2233,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/attachments.feature::Attach-to legality is not checked again after attachment"
+          ],
+          "mutation": "Recheck Genetically Enhanced's highest-printed-hit-point condition when Titania enters play; the attachment-host assertion fails."
         }
       ]
     },
