@@ -75,7 +75,9 @@ Feature: Core defeat
     And the game is unfinished
 
   @behavior:rr:winning-the-game:published-result
-  @rr:winning-the-game
+  @covers:behavior:card:01021:deal-x-damage-enemy
+  @covers:behavior:card:01021:x-is-amount-damage-you-have-sustained
+  @rr:winning-the-game @card:01021
   Scenario: Defeating the final villain stage makes the players win
     # "If the final villain stage is defeated, the players win the game."
     # Rhino II is first defeated with no excess carrying to Rhino III. Rhino

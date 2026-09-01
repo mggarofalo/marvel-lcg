@@ -31232,7 +31232,7 @@
       "title": "Gamma Slam",
       "fingerprint": "sha256:49c370629cfd0ecfc196a67292435e01b7129664563326975e68bb8ebd050c14",
       "scope": "Core Set",
-      "disposition": "executable",
+      "disposition": "mixed",
       "obligations": [
         {
           "id": "behavior:card:01021:printed-name",
@@ -31319,12 +31319,26 @@
           "mutation": "Change or omit this printed field in CardCatalog; the generated face-table assertion fails."
         },
         {
-          "id": "behavior:card:01021:deal-x-damage-enemy-maximum-15",
-          "summary": "Hero Action (attack): Deal X damage to an enemy (to a maximum of 15).",
+          "id": "behavior:card:01021:deal-x-damage-enemy",
+          "summary": "Hero Action (attack): Deal X damage to an enemy.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
+          "work_item": null,
+          "exception": null,
+          "scenarios": [
+            "specs/behavior/core/defeat.feature::Defeating the final villain stage makes the players win"
+          ],
+          "mutation": "Change the target, attack classification, or damage effect; the offered Rhino target and fourteen-damage assertion fail."
+        },
+        {
+          "id": "behavior:card:01021:maximum-15-unreachable-in-core",
+          "summary": "The damage is limited to a maximum of 15.",
+          "disposition": "outside-core",
+          "reason": "She-Hulk has 15 maximum hit points and no Core Set card increases them, so a non-eliminated She-Hulk can sustain at most 14 damage and the printed cap cannot bind in a legal Core game.",
+          "target": null,
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -31336,11 +31350,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/defeat.feature::Defeating the final villain stage makes the players win"
+          ],
+          "mutation": "Derive X from printed hit points, remaining hit points, or target damage instead of She-Hulk's fourteen sustained damage; Rhino's asserted damage fails."
         }
       ]
     },
