@@ -10,6 +10,20 @@ public sealed class CoreRuleTranscriptTests
         () => new CoreTranscriptSuite(RepositoryPaths.Root).RunPassingCorpus());
 
     [Fact]
+    public void OwnershipAndControlBranchesHavePinnedOutcomes()
+    {
+        var result = Assert.Single(Corpus.Value, candidate =>
+            candidate.Scenario.StartsWith(
+                "specs/behavior/core/ownership-control.feature::",
+                StringComparison.Ordinal));
+
+        Assert.Equal("behavior:rr:cost.7:published-result", result.Obligation);
+        Assert.Equal(
+            "270b3cab1ef837a77419721764d66dbfdc9bbfe1a898cdb0b7b40993d0f3b923",
+            result.Digest);
+    }
+
+    [Fact]
     public void AllyLimitHasPinnedOutcome()
     {
         TranscriptResult result = Assert.Single(Corpus.Value, result =>
