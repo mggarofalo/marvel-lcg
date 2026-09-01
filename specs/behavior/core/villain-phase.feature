@@ -341,7 +341,8 @@ Feature: Core villain phase
 
   @behavior:rr:activation.2:minion-attacks-hero
   @covers:behavior:rr:minion.1:published-result
-  @rr:activation.2 @rr:minion.1
+  @covers:behavior:rr:engage.1:published-result
+  @rr:activation.2 @rr:minion.1 @rr:engage.1
   Scenario: An engaged minion attacks its hero after the villain attacks
     # During step two, each minion engaged with a player activates after the
     # villain. Against a hero, that activation is an attack and uses no boost
