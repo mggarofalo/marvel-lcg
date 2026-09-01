@@ -454,6 +454,9 @@ public sealed class VillainPhaseTests
             "friend", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         var encounter = world.AreaOf(DeckType.EncounterDeck).Cards
             .Single(card => card.FaceId == "encounter");
+        World.MoveToTop(
+            encounter,
+            world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)));
         world.Agenda.Add(new PhaseStep(
             Steps.RevealEncounterCard, 1, 4,
             Subject: encounter.ObjectId, Seat: 0));
@@ -493,6 +496,9 @@ public sealed class VillainPhaseTests
         var world = Board(printed, players: 1);
         var encounter = world.AreaOf(DeckType.EncounterDeck).Cards
             .Single(card => card.FaceId == "encounter");
+        World.MoveToTop(
+            encounter,
+            world.AreaOf(DeckType.DealtEncounterCardsDeck, PlayArea.Of(0)));
         world.Agenda.Add(new PhaseStep(
             Steps.RevealEncounterCard, 1, 4,
             Subject: encounter.ObjectId, Seat: 0));
