@@ -43,6 +43,34 @@ Feature: Core card actions
     Then card 01094 copy 0 has 8 damage
     And card 01005 copy 0 is faceup on top of seat 1's discard pile
 
+  @behavior:rr:cancel.3:published-result
+  @rr:cancel.3 @card:01005
+  Scenario: Stun cancels an event attack after the event is played and paid for
+    # "If the effects of an event card are canceled, the card is still
+    # considered played, and it is discarded." The status replacement removes
+    # stun instead of resolving Swinging Web Kick's attack effect.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 726  |
+    And seat 1 shows identity face 01001a
+    And card 01001a copy 0 has a stunned status card
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01005 | 0    |
+      | 01088 | 0    |
+      | 01089 | 0    |
+    When seat 1 initiates card 01005 copy 0's action paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+      | 01089 | 0    |
+    Then card 01094 copy 0 is offered by the pending action
+    And card 01088 copy 0 is in seat 1's discard pile
+    And card 01089 copy 0 is in seat 1's discard pile
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01001a copy 0 has 0 stunned status cards
+    And card 01094 copy 0 has 0 damage
+    And card 01005 copy 0 is faceup on top of seat 1's discard pile
+
   @behavior:card:01013:if-you-paid-for-card-using-energy-condition-met
   @covers:behavior:card:01013:deal-5-damage-enemy
   @covers:behavior:rr:ability.4:sentence-order
