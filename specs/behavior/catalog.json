@@ -24522,11 +24522,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Shuri may search a deck that contains no upgrade"
+          ],
+          "mutation": "Require a search to have a matching result before it can initiate; Shuri's response is unavailable against the searchable upgrade-free deck."
         }
       ]
     },
@@ -34442,11 +34444,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Shuri may search a deck that contains no upgrade"
+          ],
+          "mutation": "Suppress Shuri's response when her deck contains no upgrade; the response option and subsequent shuffle are absent."
         },
         {
           "id": "behavior:card:01041:shuffle-your-deck",
@@ -34454,11 +34458,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Shuri may search a deck that contains no upgrade"
+          ],
+          "mutation": "Skip Shuri's shuffle when her search finds no upgrade; the expected Shuffle event is absent."
         }
       ]
     },

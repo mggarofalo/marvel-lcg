@@ -655,6 +655,46 @@ Feature: Core card actions
     Then card 01092 copy 0 is exhausted
     And seat 1 has 0 cards in hand
 
+  @behavior:rr:target.6:published-result
+  @covers:behavior:card:01041:after-shuri-enters-play-search-your-deck
+  @covers:behavior:card:01041:shuffle-your-deck
+  @rr:target.6 @card:01041
+  Scenario: Shuri may search a deck that contains no upgrade
+    # A search needs a searchable game area, not a matching card. Shuri's
+    # response therefore initiates against this nonempty deck, finds no
+    # upgrade, and still shuffles the searched deck.
+    Given a canonical Core scene is dealt
+      | campaign | heroes        | seed |
+      | rhino    | black_panther | 835  |
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01041 | 0    |
+      | 01044 | 0    |
+    And seat 1's player deck contains only these next cards
+      | next card | copy |
+      | 01042     | 0    |
+      | 01043a    | 0    |
+      | 01043b    | 0    |
+      | 01043c    | 0    |
+      | 01043d    | 0    |
+      | 01043d    | 1    |
+      | 01044     | 1    |
+      | 01044     | 2    |
+      | 01045     | 0    |
+      | 01075     | 0    |
+    When game setup reaches seat 1's mulligan
+    Then seat 1 is offered a mulligan
+    When seat 1 keeps every opening-hand card at mulligan
+    Then seat 1 is the active player
+    When seat 1 plays card 01041 copy 0 paying with these cards
+      | card  | copy |
+      | 01044 | 0    |
+    Then card 01041 copy 0 is offered by the pending action
+    When seat 1 chooses card 01041 copy 0 for the pending action
+    Then card 01041 copy 0 remains an ally controlled by seat 1
+    And seat 1 has 6 cards in their player deck
+    And seat 1's player deck has card 01044 on top
+
   @behavior:card:01056:uses-3-attack-counters
   @covers:behavior:card:01056:enters-play-with-3-counters
   @covers:behavior:card:01056:when-those-are-gone-discard-card
