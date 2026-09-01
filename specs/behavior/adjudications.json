@@ -22271,11 +22271,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/when-defeated.feature::Highway Robbery returns its hosted cards before leaving play"
+          ],
+          "mutation": "Treat Highway Robbery's When Defeated text as an optional response; declining it strands the hosted cards and the hand assertions fail."
         }
       ]
     },
@@ -22289,11 +22291,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/when-defeated.feature::Highway Robbery returns its hosted cards before leaving play"
+          ],
+          "mutation": "Skip the side scheme's When Defeated ability; neither owner's card returns to hand."
         }
       ]
     },
@@ -22307,11 +22311,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/when-defeated.feature::Highway Robbery returns its hosted cards before leaving play"
+          ],
+          "mutation": "Move Highway Robbery out of play before resolving its When Defeated text; it cannot find the hosted cards and the hand assertions fail."
         }
       ]
     },
@@ -45549,11 +45555,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/when-defeated.feature::Highway Robbery returns its hosted cards before leaving play"
+          ],
+          "mutation": "Take no card or only one player's card in multiplayer; a facedown-host assertion fails."
         },
         {
           "key": "return-each-facedown-card-here-its-owner",
@@ -45561,11 +45569,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/when-defeated.feature::Highway Robbery returns its hosted cards before leaving play"
+          ],
+          "mutation": "Return both cards to the defeating player rather than each owner; the seat-specific hand assertions fail."
         }
       ]
     },

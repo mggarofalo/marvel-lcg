@@ -231,6 +231,23 @@ public sealed class CoreRuleTranscriptTests
     }
 
     [Fact]
+    public void WhenDefeatedBranchesHavePinnedOutcomes()
+    {
+        TranscriptResult result = Assert.Single(
+            Corpus.Value,
+            candidate => candidate.Scenario.StartsWith(
+                "specs/behavior/core/when-defeated.feature::",
+                StringComparison.Ordinal));
+
+        Assert.Equal(
+            "behavior:rr:when-defeated-abilities.2.1:published-result",
+            result.Obligation);
+        Assert.Equal(
+            "50db94cca8ba3f53f5a0f8335d5129932351b358972e815e59dfc17879401a71",
+            result.Digest);
+    }
+
+    [Fact]
     public void VillainPhaseBranchesHavePinnedOutcomes()
     {
         var results = Corpus.Value

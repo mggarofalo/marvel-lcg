@@ -336,6 +336,9 @@ internal sealed class CoreTranscriptRunner
         Bind("place-threat", TranscriptStepKind.When,
             @"(?<count>\d+) threat is placed on card (?<face>\d+[a-z]?) copy (?<copy>\d+)",
             PlaceThreat),
+        Bind("remove-threat", TranscriptStepKind.When,
+            @"(?<count>\d+) threat is removed from card (?<face>\d+[a-z]?) copy (?<copy>\d+)",
+            RemoveThreat),
         Bind("basic-attack", TranscriptStepKind.When,
             @"seat (?<seat>\d+) uses their basic attack against card (?<face>\d+[a-z]?) copy (?<copy>\d+)",
             BasicAttack),
@@ -614,6 +617,9 @@ internal sealed class CoreTranscriptRunner
         Bind("card-attached-card", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is attached to card (?<host>\d+[a-z]?) copy (?<hostCopy>\d+)",
             CardAttachedToCard),
+        Bind("facedown-card-attached-card", TranscriptStepKind.Then,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is facedown attached to card (?<host>\d+[a-z]?) copy (?<hostCopy>\d+)",
+            FacedownCardAttachedToCard),
         Bind("status-count", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) has (?<count>\d+) (?<status>stunned|confused|tough) status cards?",
             StatusCount),
@@ -1138,6 +1144,27 @@ internal sealed class CoreTranscriptRunner
             scheme,
             Number(match, "count", step),
             "behavioral transcript",
+            context.Events);
+        FinishAgenda(context, step);
+    }
+
+    private static void RemoveThreat(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Card scheme = context.SceneRequired(step).Find(SceneCard(match, step));
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        context.World.Agenda.Add(new PhaseStep(
+            Steps.DealAttackDamage, Round: 1, Number: 4, Plan: true));
+        _ = context.World.Agenda.Begin(context.World, context.Cards);
+        _ = Threat.Remove(
+            context.World,
+            context.Cards,
+            context.World.Abilities,
+            scheme,
+            Number(match, "count", step),
+            "behavioral transcript",
+            "Remove_Threat",
             context.Events);
         FinishAgenda(context, step);
     }
@@ -2678,6 +2705,18 @@ internal sealed class CoreTranscriptRunner
             throw new TranscriptAssertionException(
                 $"{step.Location}: expected card {card.ObjectId} attached to "
                 + $"card {host.ObjectId}; was {card.Area}");
+        }
+    }
+
+    private static void FacedownCardAttachedToCard(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        CardAttachedToCard(context, step, match);
+        Card card = context.SceneRequired(step).Find(SceneCard(match, step));
+        if (card.FaceUp)
+        {
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected attached card {card.ObjectId} facedown");
         }
     }
 
