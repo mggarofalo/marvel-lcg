@@ -43065,11 +43065,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-reveal.feature::Hard to Keep Down surges when Rhino has no damage to heal"
+          ],
+          "mutation": "CoreRuleTranscriptTests.EncounterRevealBranchesHavePinnedOutcomes distinguishes the no-healing branch revealing the additional minion."
         },
         {
           "id": "behavior:card:01104:if-no-damage-was-healed-way-card-condition-not-met",

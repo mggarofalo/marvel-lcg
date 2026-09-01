@@ -18,7 +18,7 @@ public sealed class CoreRuleTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(3, results.Count);
+        Assert.Equal(4, results.Count);
         Assert.Equal(
             "422b6819e211329aa2c280f68d7df90a67ae359196e4bd66a46fb775e961f6c5",
             results["behavior:rr:attach-to:published-result"].Digest);
@@ -136,6 +136,9 @@ public sealed class CoreRuleTranscriptTests
         Assert.Equal(
             "65656902d0f5ede582036eb10cae34c68f07ba12613b54ff1293fa39261cfce6",
             results["behavior:rr:treachery.1:published-result"].Digest);
+        Assert.Equal(
+            "c30f3fe43d32a554540aca1a4f0de0cc5916b311b588e8de8d549529996cc8be",
+            results["behavior:card:01104:if-no-damage-was-healed-way-card-condition-met"].Digest);
         Assert.Equal(
             "7a639c9c59a9b1327add25af8cf4807d2aaadd09c65b20effeeb5466578b078f",
             results["behavior:rr:reveal.8:published-result"].Digest);

@@ -44,6 +44,26 @@ Feature: Revealing Core encounter card types
     Then card 01094 copy 0 has 0 damage
     And card 01104 copy 0 is faceup on top of the encounter discard pile
 
+  @behavior:card:01104:if-no-damage-was-healed-way-card-condition-met
+  @card:01104
+  Scenario: Hard to Keep Down surges when Rhino has no damage to heal
+    # "If no damage was healed this way, this card gains surge." With an
+    # undamaged Rhino, Hard to Keep Down resolves and discards before its surge
+    # reveals the next encounter card.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | seed |
+      | rhino    | spider_man | 348  |
+    And card 01094 copy 0 has 0 damage
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01103     | 0    |
+      | 01104     | 0    |
+      | 01101     | 0    |
+    When villain phase 1 resolves with every optional choice declined
+    Then card 01094 copy 0 has 0 damage
+    And card 01101 copy 0 is engaged with seat 1
+    And card 01104 copy 0 is faceup on top of the encounter discard pile
+
   @behavior:rr:reveal.8:published-result
   @covers:behavior:card:01066:hawkeye-enters-play-with-4-arrow-counters
   @covers:behavior:card:01066:after-minion-enters-play-remove-1-arrow
