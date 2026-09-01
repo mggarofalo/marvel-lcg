@@ -808,4 +808,34 @@ public sealed class CoreCardFaceTranscriptTests
         Assert.Equal("85eca6d9d215f3d432566425f737a8679d718aa0dcecef376b35cd8426be1abb", results["behavior:card:01144c:choose-either-spend-physical-resource-or-put-choice-1"].Digest);
         Assert.Equal("f27de204583d55c36d530d8dd157fe6a30b01bea3257329085428ca9402b4e20", results["behavior:card:01144c:choose-either-spend-physical-resource-or-put-choice-2"].Digest);
     }
+
+    [Fact]
+    public void StandardAndExpertEncounterCardBranchesHavePinnedOutcomes()
+    {
+        var results = Corpus.Value
+            .Where(candidate => candidate.Scenario.StartsWith(
+                "specs/behavior/core/standard-expert-encounter-cards.feature::",
+                StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
+        var expected = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["behavior:card:01186:villain-schemes"] = "5e29760acd07496358216d0ad2f49c53a387161aa0caf0a8e49604918eb9f0cb",
+            ["behavior:card:01187:card-gains-surge"] = "4f9435f818a4bb99756b428a6c35581a8940f7a67b2e766264d73edfc487abca",
+            ["behavior:card:01187:villain-attacks-you"] = "a7e3e2c73c0c0e0812726e528ebf73d96d8dee6affa2a50b0a54e830e2e91da5",
+            ["behavior:card:01188:if-no-cards-were-discarded-way-card-condition-not-met"] = "c72ec9206076f32041820d8cf740c93da963c79f73fe311e4edf6eeb22c694ba",
+            ["behavior:card:01189:card-gains-surge"] = "64b5b49bdb024e44a03d782965275c21208f4791047c4e849e508c5842fe6ca7",
+            ["behavior:card:01189:villain-and-each-minion-engaged-with-you"] = "8cd208c3620ecec39b026e99f3b51e5f2a260a9c1f5530b00fb4f3d165d2ddf2",
+            ["behavior:card:01190:reveal-your-set-aside-nemesis-minion-and"] = "f2c0629cd6cdc09553d94e67e069ad3219685ef47547417df69a4e7bd9f896b7",
+            ["behavior:card:01190:if-your-nemesis-minion-does-not-enter-condition-met"] = "8a9b0e12d15e224392da4e26ae0d08947da198ab8cab9d3bdf0ca706410e16e9",
+            ["behavior:card:01192:place-4-threat-on-each-side-scheme"] = "5a7f282eaf358cbd1e3036f1bb4a0065727ca28abc4c6708409aea888429a0c7",
+            ["behavior:card:01192:if-there-are-no-side-schemes-in-condition-met"] = "3b4c7f86feca3d304a46d88322623e98543810d54860eaee87733cc6b4e1e90b",
+            ["behavior:card:01193:surge"] = "bf95a321792a592f4cb53dbffab168d525ca218aec1ebe5120a51a4da7d4f885",
+        };
+
+        Assert.Equal(expected.Count, results.Count);
+        foreach ((string obligation, string digest) in expected)
+        {
+            Assert.Equal(digest, results[obligation].Digest);
+        }
+    }
 }

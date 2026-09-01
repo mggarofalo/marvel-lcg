@@ -49223,11 +49223,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/standard-expert-encounter-cards.feature::Advance makes the villain scheme"
+          ],
+          "mutation": "Remove the scheme activation; the main-scheme threat assertion fails."
         }
       ]
     },
@@ -49269,11 +49271,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/standard-expert-encounter-cards.feature::Assault surges in alter-ego form"
+          ],
+          "mutation": "Remove this printed branch; the transcript's direct state assertion fails."
         },
         {
           "key": "villain-attacks-you",
@@ -49281,11 +49285,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/standard-expert-encounter-cards.feature::Assault makes the villain attack in hero form"
+          ],
+          "mutation": "Remove the hero-form attack; the identity damage assertion fails."
         }
       ]
     },
@@ -49369,11 +49375,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/standard-expert-encounter-cards.feature::Caught Off Guard surges when there is nothing eligible to discard"
+          ],
+          "mutation": "Remove surge when no eligible card exists; the encounter-queue assertion fails."
         }
       ]
     },
@@ -49429,11 +49437,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/standard-expert-encounter-cards.feature::Gang-Up surges in alter-ego form"
+          ],
+          "mutation": "Remove this printed branch; the transcript's direct state assertion fails."
         },
         {
           "key": "villain-and-each-minion-engaged-with-you",
@@ -49441,11 +49451,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/standard-expert-encounter-cards.feature::Gang-Up makes the villain and every engaged minion attack"
+          ],
+          "mutation": "Skip the villain or engaged minion attack; the total identity damage assertion fails."
         }
       ]
     },
@@ -49501,11 +49513,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/standard-expert-encounter-cards.feature::Shadow of the Past brings Spider-Man's nemesis set into the game"
+          ],
+          "mutation": "Do not reveal or engage the nemesis minion; its engaged-area assertion fails."
         },
         {
           "key": "reveal-your-set-aside-nemesis-side-scheme",
@@ -49513,11 +49527,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/standard-expert-encounter-cards.feature::Shadow of the Past brings Spider-Man's nemesis set into the game"
+          ],
+          "mutation": "Do not reveal the nemesis side scheme; its in-play assertion fails."
         },
         {
           "key": "shuffle-rest-your-set-aside-nemesis-encounter",
@@ -49525,11 +49541,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/standard-expert-encounter-cards.feature::Shadow of the Past brings Spider-Man's nemesis set into the game"
+          ],
+          "mutation": "Do not shuffle the remaining nemesis cards into the encounter deck; a deck-membership assertion fails."
         },
         {
           "key": "if-your-nemesis-minion-does-not-enter-condition-met",
@@ -49537,11 +49555,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/standard-expert-encounter-cards.feature::Shadow of the Past surges when the nemesis minion is already in play"
+          ],
+          "mutation": "Do not surge when the nemesis minion is already in play; the encounter-queue assertion fails."
         },
         {
           "key": "if-your-nemesis-minion-does-not-enter-condition-not-met",
@@ -49549,11 +49569,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/standard-expert-encounter-cards.feature::Shadow of the Past brings Spider-Man's nemesis set into the game"
+          ],
+          "mutation": "Surge after the nemesis minion enters; the zero-encounter-card assertion fails."
         }
       ]
     },
@@ -49699,11 +49721,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/standard-expert-encounter-cards.feature::Masterplan places four threat on every side scheme in play"
+          ],
+          "mutation": "Change the placed threat amount; the side-scheme threat assertion fails."
         },
         {
           "key": "if-there-are-no-side-schemes-in-condition-met",
@@ -49711,11 +49735,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/standard-expert-encounter-cards.feature::Masterplan discards until and reveals a side scheme when none is in play"
+          ],
+          "mutation": "Skip the no-side-scheme search; the discarded-card and revealed-scheme assertions fail."
         },
         {
           "key": "if-there-are-no-side-schemes-in-condition-not-met",
@@ -49723,11 +49749,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/standard-expert-encounter-cards.feature::Masterplan places four threat on every side scheme in play"
+          ],
+          "mutation": "Run the search despite a side scheme being in play; the existing scheme's threat assertion fails."
         },
         {
           "key": "reveal-that-side-scheme",
@@ -49735,11 +49763,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/standard-expert-encounter-cards.feature::Masterplan discards until and reveals a side scheme when none is in play"
+          ],
+          "mutation": "Discard but do not reveal the found side scheme; its in-play assertion fails."
         }
       ]
     },
@@ -49809,11 +49839,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/standard-expert-encounter-cards.feature::Under Fire reveals the top encounter card and surges"
+          ],
+          "mutation": "Remove Under Fire's surge; the queued encounter-card assertion fails."
         },
         {
           "key": "reveal-top-card-encounter-deck",
@@ -49821,11 +49853,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/standard-expert-encounter-cards.feature::Under Fire reveals the top encounter card and surges"
+          ],
+          "mutation": "Deal rather than reveal the top card; the minion-engagement assertion fails."
         }
       ]
     },
