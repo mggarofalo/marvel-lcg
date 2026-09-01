@@ -345,6 +345,29 @@ Feature: Core villain phase
     And card 01001a copy 0 has 0 damage
     And card 01101 copy 0 is engaged with seat 1
 
+  @behavior:rr:attack-enemy-activation.3.2:published-result
+  @covers:behavior:card:01154:deal-1-damage-each-character-you-control
+  @rr:attack-enemy-activation.3.2 @card:01154
+  Scenario: An ally defeated by a boost leaves the attack undefended
+    # If a defending ally leaves play before attack damage, "the attack is
+    # considered to have no character defending" and its controller's identity
+    # becomes the target. Concussive Blast defeats Mockingbird during Klaw's
+    # first boost. Klaw's attack is therefore recorded as undefended and its
+    # damage is redirected to Spider-Man.
+    Given a canonical Core scene is dealt
+      | campaign | heroes     | modular sets | seed |
+      | klaw     | spider_man | under_attack | 725  |
+    And seat 1 shows identity face 01001a
+    And card 01083 copy 0 is an ally controlled by seat 1
+    And card 01083 copy 0 has 2 damage
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01154     | 0    |
+      | 01153     | 0    |
+    When the villain attacks seat 1 with card 01083 copy 0 defending
+    Then card 01083 copy 0 is faceup on top of seat 1's discard pile
+    And the last attack was undefended
+
   @behavior:rr:activation.2:minion-attacks-hero
   @covers:behavior:rr:minion.1:published-result
   @covers:behavior:rr:engage.1:published-result

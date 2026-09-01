@@ -3152,11 +3152,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An ally defeated by a boost leaves the attack undefended"
+          ],
+          "mutation": "Keep the departed ally as the defender or fail to retarget its controller's identity; the completed Klaw attack remains incorrectly defended."
         }
       ]
     },
@@ -49869,11 +49871,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/villain-phase.feature::An ally defeated by a boost leaves the attack undefended"
+          ],
+          "mutation": "Skip Concussive Blast's boost damage or omit Mockingbird from each controlled character; she remains in play and the completed attack remains defended."
         }
       ]
     },
