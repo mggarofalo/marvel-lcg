@@ -22,9 +22,9 @@ engine would be one innocuous package away from seeing `Time.GetTicksMsec()`.
 be opted out of would make `Marvel.Godot` itself unbuildable, so the escape
 hatch is load-bearing and is tested rather than assumed.
 
-`Marvel.WallProbe.OptOut` proves that the escape hatch belongs only to the
-actual Godot presentation assembly and its tests. A rules or content project
-cannot make a new Godot reference legal by setting one property.
+`Marvel.WallProbe.OptOut` proves that the escape hatch belongs only to exact
+presentation and probe project paths. It copies both the ordinary opt-out and
+the old probe marker; neither can make a rules or content project legal.
 
 The stub is why this runs offline. Nothing here downloads the real `GodotSharp`
 package, and nothing under `datasets/` or the build may require the network —

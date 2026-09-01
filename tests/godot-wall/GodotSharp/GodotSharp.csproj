@@ -6,7 +6,6 @@
     <AssemblyName>GodotSharp</AssemblyName>
     <RootNamespace>Godot</RootNamespace>
     <MarvelMayReferenceGodot>true</MarvelMayReferenceGodot>
-    <MarvelGodotWallProbe>true</MarvelGodotWallProbe>
   </PropertyGroup>
 
 </Project>
