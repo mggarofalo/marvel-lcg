@@ -55,3 +55,31 @@ Feature: Core identity card abilities
     Then seat 2 has 1 card in hand
     When seat 1 asks for available card actions
     Then card 01010b copy 0's action is unavailable
+
+  @behavior:card:01029a:you-get-1-hand-size-for-each-zero
+  @covers:behavior:card:01029a:you-get-1-hand-size-for-each-one
+  @covers:behavior:card:01029a:you-get-1-hand-size-for-each-multiple
+  @card:01029a @card:01035 @card:01036 @card:01037
+  Scenario: Iron Man hand size counts Tech upgrades and stops at seven
+    # "You get +1 hand size for each Tech upgrade you control (to a maximum
+    # hand size of 7)." With none his printed hand size is one; one Tech makes
+    # it two, and enough Tech upgrades stop at the stated maximum.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | iron_man | 845  |
+    When seat 1 changes form by flipping their identity
+    Then card 01029a copy 0 has modified HS 1
+    When card 01035 copy 0 enters play as an upgrade controlled by seat 1
+    Then card 01029a copy 0 has modified HS 2
+    When card 01036 copy 0 enters play as an upgrade controlled by seat 1
+    Then card 01029a copy 0 has modified HS 3
+    When card 01037 copy 0 enters play as an upgrade controlled by seat 1
+    Then card 01029a copy 0 has modified HS 4
+    When card 01038 copy 0 enters play as an upgrade controlled by seat 1
+    Then card 01029a copy 0 has modified HS 5
+    When card 01038 copy 1 enters play as an upgrade controlled by seat 1
+    Then card 01029a copy 0 has modified HS 6
+    When card 01039 copy 0 enters play as an upgrade controlled by seat 1
+    Then card 01029a copy 0 has modified HS 7
+    When card 01039 copy 1 enters play as an upgrade controlled by seat 1
+    Then card 01029a copy 0 has modified HS 7

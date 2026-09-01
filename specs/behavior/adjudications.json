@@ -27577,11 +27577,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/identity-card-abilities.feature::Iron Man hand size counts Tech upgrades and stops at seven"
+          ],
+          "mutation": "Grant hand size without a controlled Tech upgrade; Iron Man's zero-Tech hand size exceeds one."
         },
         {
           "key": "you-get-1-hand-size-for-each-one",
@@ -27589,11 +27591,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/identity-card-abilities.feature::Iron Man hand size counts Tech upgrades and stops at seven"
+          ],
+          "mutation": "Ignore Arc Reactor as a controlled Tech upgrade; Iron Man's hand size remains one."
         },
         {
           "key": "you-get-1-hand-size-for-each-multiple",
@@ -27601,11 +27605,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/identity-card-abilities.feature::Iron Man hand size counts Tech upgrades and stops at seven"
+          ],
+          "mutation": "Count only one Tech or ignore the maximum; the observed multi-Tech progression or seven-card cap fails."
         }
       ]
     },

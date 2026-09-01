@@ -662,7 +662,7 @@ internal sealed class CoreTranscriptRunner
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) has modified resource cost (?<count>\d+) for seat (?<seat>\d+)",
             ModifiedCardCost),
         Bind("modified-card-statistic", TranscriptStepKind.Then,
-            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) has modified (?<field>ATK|DEF|REC|THW) (?<count>\d+)",
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) has modified (?<field>ATK|DEF|HS|REC|THW) (?<count>\d+)",
             ModifiedCardStatistic),
         Bind("card-removed", TranscriptStepKind.Then,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is removed from the game",
@@ -3186,16 +3186,30 @@ internal sealed class CoreTranscriptRunner
         {
             "ATK" => "attack",
             "DEF" => "defense",
+            "HS" => "hand_size",
             "REC" => "recover",
             "THW" => "thwart",
             _ => throw new InvalidOperationException("unsupported printed statistic"),
         };
-        Equal(
-            Number(match, "count", step),
-            checked((int)StateFields.Modified(
-                context.World, card, field, context.Cards, context.World.Players)),
-            $"modified {match.Groups["field"].Value}",
-            step);
+        int expected = Number(match, "count", step);
+        int actual = checked((int)StateFields.Modified(
+            context.World, card, field, context.Cards, context.World.Players));
+        if (expected != actual)
+        {
+            string effects = string.Join(", ", context.World.Effects.Active()
+                .Where(effect => effect.Kind == field)
+                .Select(effect => $"{effect.Kind}:{effect.Amount}:{effect.Card}:{effect.Affects}"));
+            string upgrades = string.Join(", ", context.World.Cards
+                .Where(candidate => context.Cards.Kind(candidate.FaceId) == CardKind.Upgrade
+                    && DeckTypes.IsInPlay(candidate.Area.Type))
+                .Select(candidate => $"{candidate.FaceId}:{candidate.FaceUp}:"
+                    + $"{candidate.Area.Type}:p{candidate.Area.PlayArea.Player}:"
+                    + $"h{candidate.Area.Host}:o{candidate.Owner}"));
+            throw new TranscriptAssertionException(
+                $"{step.Location}: expected {expected} modified "
+                + $"{match.Groups["field"].Value}; was {actual}; effects: [{effects}]; "
+                + $"upgrades: [{upgrades}]");
+        }
     }
 
     private static void PlayerPlayAreaRemoved(
