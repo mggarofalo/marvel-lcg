@@ -97,3 +97,24 @@ Feature: Core When Defeated timing
     And card 01097b copy 0 has 1 threat counter
     And card 01052 copy 0 is in seat 1's discard pile
     And card 01088 copy 0 is in seat 1's discard pile
+
+  @behavior:rr:you-your.15:published-result
+  @rr:you-your.15 @card:01083 @card:01052
+  Scenario: An ally defeating a minion is not the controlling hero defeating it
+    # An ally performs its own attack. Mockingbird's defeat of the minion does
+    # not satisfy Chase Them Down's "your hero attacks and defeats" condition.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 838  |
+    And card 01083 copy 0 is an ally controlled by seat 1
+    And card 01101 copy 0 is a minion engaged with seat 1
+    And card 01101 copy 0 has 2 damage
+    And card 01097b copy 0 has 3 threat counters
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01052 | 0    |
+      | 01088 | 0    |
+    When card 01083 copy 0 uses its basic attack against card 01101 copy 0
+    Then card 01101 copy 0 is faceup on top of the encounter discard pile
+    And card 01097b copy 0 has 3 threat counters
+    And card 01052 copy 0 is in seat 1's hand

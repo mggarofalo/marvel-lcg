@@ -18,7 +18,7 @@ public sealed class CoreRuleTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(2, results.Count);
+        Assert.Equal(3, results.Count);
         Assert.Equal(
             "270b3cab1ef837a77419721764d66dbfdc9bbfe1a898cdb0b7b40993d0f3b923",
             results["behavior:rr:cost.7:published-result"].Digest);
@@ -291,7 +291,7 @@ public sealed class CoreRuleTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(4, results.Count);
+        Assert.Equal(5, results.Count);
         Assert.Equal(
             "50db94cca8ba3f53f5a0f8335d5129932351b358972e815e59dfc17879401a71",
             results["behavior:rr:when-defeated-abilities.2.1:published-result"].Digest);
@@ -387,7 +387,7 @@ public sealed class CoreRuleTranscriptTests
                 StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(9, results.Count);
+        Assert.Equal(10, results.Count);
         Assert.Equal(
             "dab07315ec82d4dffa5852140b360299a47d7cc396c78e54b34be5b4c22cfe53",
             results["behavior:rr:stun-stunned.5:published-result"].Digest);

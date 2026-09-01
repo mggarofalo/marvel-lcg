@@ -745,6 +745,30 @@ Feature: Core card actions
     Then card 01094 copy 0 has 6 damage
     And card 01056 copy 0 is faceup on top of seat 1's discard pile
 
+  @behavior:rr:support.3:published-result
+  @covers:behavior:rr:you-your.18:published-result
+  @rr:support.3 @rr:you-your.18 @card:01056 @card:01052
+  Scenario: A support defeating a minion is not the controlling hero defeating it
+    # Tac Team performs its own action. Its attack-like damage is not an attack
+    # by She-Hulk, so Chase Them Down cannot respond to the minion's defeat.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 837  |
+    And card 01056 copy 0 is a support controlled by seat 1
+    And card 01101 copy 0 is a minion engaged with seat 1
+    And card 01101 copy 0 has 1 damage
+    And card 01097b copy 0 has 3 threat counters
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01052 | 0    |
+      | 01088 | 0    |
+    When seat 1 initiates card 01056 copy 0's action without payment
+    Then card 01101 copy 0 is offered by the pending action
+    When seat 1 chooses card 01101 copy 0 for the pending action
+    Then card 01101 copy 0 is faceup on top of the encounter discard pile
+    And card 01097b copy 0 has 3 threat counters
+    And card 01052 copy 0 is in seat 1's hand
+
   @behavior:card:01018:spend-x-energy-resources-put-x-energy
   @covers:behavior:card:01018:above-damage-cap
   @covers:behavior:rr:max-maximum.6:published-result
