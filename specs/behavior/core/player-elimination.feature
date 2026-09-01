@@ -72,6 +72,7 @@ Feature: Identity defeat and player elimination
     And the game is unfinished
 
   @behavior:rr:player-elimination.5:published-result
+  @covers:behavior:card:01154:deal-1-damage-each-friendly-character
   @rr:player-elimination.5 @card:01154
   Scenario: A revealed ability finishes after eliminating its resolving player
     # "If a player is eliminated partway through the resolution of an ability,
