@@ -520,7 +520,7 @@ public sealed class LocalGameClientTests
         EngineResponse opened = Host().Exchange(EngineRequest.OpenGame(
             "local-open", LocalGameSession.GameId, Specification()));
         using var cancellation = new CancellationTokenSource();
-        var transport = new CancellingTransport(
+        var transport = new CommitAwareCancellingTransport(
             opened with { RequestId = "local-resolve", Capability = null }, cancellation);
 
         ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(
@@ -528,7 +528,7 @@ public sealed class LocalGameClientTests
 
         Assert.True(result.Succeeded);
         Assert.True(cancellation.IsCancellationRequested);
-        Assert.False(transport.ReceivedToken.CanBeCanceled);
+        Assert.True(transport.ReceivedToken.CanBeCanceled);
         Assert.Single(transport.Requests);
     }
 
@@ -679,7 +679,7 @@ public sealed class LocalGameClientTests
             ValueTask.FromException<EngineResponse>(new IOException(message));
     }
 
-    private sealed class CancellingTransport(
+    private sealed class CommitAwareCancellingTransport(
         EngineResponse response,
         CancellationTokenSource cancellation) : IEngineTransport
     {

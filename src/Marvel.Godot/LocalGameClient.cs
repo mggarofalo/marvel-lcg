@@ -235,7 +235,7 @@ public sealed class LocalGameClient
             EngineResponse response = await transport.ExchangeAsync(
                 EngineRequest.OpenGame(
                     OpenRequestId, LocalGameSession.GameId, specification),
-                CancellationToken.None).ConfigureAwait(false);
+                cancellationToken).ConfigureAwait(false);
 
             ClientStartupError? envelope = EnvelopeError(
                 response, OpenRequestId, LocalGameSession.GameId);
@@ -267,6 +267,10 @@ public sealed class LocalGameClient
 
             return new ClientStartupResult(response, Error: null);
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception)
         {
             return Failed(
@@ -293,7 +297,7 @@ public sealed class LocalGameClient
             EngineResponse response = await transport.ExchangeAsync(
                 EngineRequest.ResolveGame(
                     ResolveRequestId, LocalGameSession.GameId, capability, decision),
-                CancellationToken.None).ConfigureAwait(false);
+                cancellationToken).ConfigureAwait(false);
             ClientStartupError? envelope = EnvelopeError(
                 response, ResolveRequestId, LocalGameSession.GameId);
             if (envelope is not null)
@@ -319,6 +323,10 @@ public sealed class LocalGameClient
                         "invalid_response",
                         "The game service returned an incomplete error.");
             }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception)
         {
