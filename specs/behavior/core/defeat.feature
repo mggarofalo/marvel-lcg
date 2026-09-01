@@ -6,7 +6,8 @@ Feature: Core defeat
   @behavior:rr:minion.2:published-result
   @covers:behavior:rr:defeat:published-result
   @covers:behavior:rr:defeat.1:published-result
-  @rr:minion.2 @rr:defeat @rr:defeat.1
+  @covers:behavior:rr:damage.step.8:defeated-character-discarded
+  @rr:minion.2 @rr:defeat @rr:defeat.1 @rr:damage.step.8
   Scenario: Exactly zero remaining hit points defeats and discards a minion
     # "If a minion has zero or fewer remaining hit points, it is defeated and
     # discarded."

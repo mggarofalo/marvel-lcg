@@ -5094,16 +5094,18 @@
       "fingerprint": "sha256:21374812c4af86abc7b5705b423b7bbf17c5cc0a1b56da9d56fb161709051626",
       "obligations": [
         {
-          "key": "published-result",
+          "key": "resource-paid-for-card",
           "summary": "Resources generated to pay for an ability on a card are considered to have been paid for that card.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Photonic Blast draws after damage when paid with energy"
+          ],
+          "mutation": "Do not attribute a generated energy resource to Photonic Blast; its conditional draw assertion fails."
         }
       ]
     },
@@ -5438,16 +5440,18 @@
       "fingerprint": "sha256:71cc13aae0d0ad73b323a42f05fd6be705126b77181f50d03b9f6697b70d1dca",
       "obligations": [
         {
-          "key": "published-result",
+          "key": "tracked-by-damage-tokens",
           "summary": "Damage on an ally or minion is tracked by damage tokens.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/basic-powers.feature::An ally attacks while its identity remains ready and takes consequential damage"
+          ],
+          "mutation": "Do not retain an ally's consequential damage; the ally-damage assertion fails."
         }
       ]
     },
@@ -5548,16 +5552,18 @@
       "fingerprint": "sha256:4de07f17501ac72a8c69799d3a0ab3d908f8a15d3eb05e716b974f690554b747",
       "obligations": [
         {
-          "key": "published-result",
+          "key": "tough-prevents-damage",
           "summary": "Tough status cards.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/status-cards.feature::Tough prevents the entire damage instance and is discarded"
+          ],
+          "mutation": "Skip Tough at damage step two; the damage or status-card assertion fails."
         }
       ]
     },
@@ -5658,16 +5664,18 @@
       "fingerprint": "sha256:0351260f14a976d9928c9d04b12ea32080922e2b2215e7d1704c78ec5f63d427",
       "obligations": [
         {
-          "key": "published-result",
+          "key": "defeated-character-discarded",
           "summary": "Discarding of a defeated character.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/defeat.feature::Exactly zero remaining hit points defeats and discards a minion"
+          ],
+          "mutation": "Leave a zero-hit-point minion in play instead of discarding it; the encounter-discard assertion fails."
         }
       ]
     },
@@ -7324,16 +7332,18 @@
       "fingerprint": "sha256:96f4a6e9bdee928a69f17ae5b6721406eb1bef0f996103590cc117cf32715321",
       "obligations": [
         {
-          "key": "published-result",
+          "key": "villain-or-minion",
           "summary": "An enemy is a minion or villain.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Preventing War Machine's dealt-damage cost does not prevent its effect"
+          ],
+          "mutation": "Exclude either the villain or engaged minion from the enemy query; one of their damage assertions fails."
         }
       ]
     },
@@ -7414,16 +7424,18 @@
       "fingerprint": "sha256:b8cd93148ec16f93beee82695d17454d550ebf8565040b9452bc51e3590d5072",
       "obligations": [
         {
-          "key": "published-result",
+          "key": "pays-resource-cost",
           "summary": "Energy resources can be spent to pay the resource cost of cards and abilities.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Photonic Blast draws after damage when paid with energy"
+          ],
+          "mutation": "Reject energy resources as payment; Photonic Blast cannot resolve and its state assertions fail."
         }
       ]
     },
@@ -7432,16 +7444,18 @@
       "fingerprint": "sha256:eb02d69131156d77c5aac8fd32e7722bb050c4a339c5152f72d1cf00fae6f467",
       "obligations": [
         {
-          "key": "published-result",
+          "key": "required-by-card-effect",
           "summary": "Some card abilities specifically require energy resources to be spent in order to resolve their effects.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Photonic Blast draws after damage when paid with energy"
+          ],
+          "mutation": "Ignore Photonic Blast's energy-payment condition; its conditional draw branch is no longer distinguished."
         }
       ]
     },
@@ -12580,16 +12594,18 @@
       "fingerprint": "sha256:db7fad668290284959986c3219d7177c93814bd392aa2b595c42ca739b7a6fa6",
       "obligations": [
         {
-          "key": "published-result",
+          "key": "pays-resource-cost",
           "summary": "Mental resources can be spent to pay the resource cost of cards and abilities.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Haymaker deals three damage to its chosen enemy"
+          ],
+          "mutation": "Reject mental resources as payment; Haymaker cannot resolve and its damage assertion fails."
         }
       ]
     },
@@ -14407,16 +14423,18 @@
       "fingerprint": "sha256:b9f6030a438ccf8c7641fba43949b6365fcc911c05f3c20a3731b1e63059d5d5",
       "obligations": [
         {
-          "key": "published-result",
+          "key": "pays-resource-cost",
           "summary": "Physical resources can be spent to pay the resource cost of cards and abilities.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Relentless Assault gains overkill when physical pays its cost"
+          ],
+          "mutation": "Reject physical resources as payment; Relentless Assault cannot resolve and its damage assertions fail."
         }
       ]
     },
@@ -14425,16 +14443,18 @@
       "fingerprint": "sha256:a1d585e6703b6a88e852a8c73ec84604285c894b04367a41adc82f72793694eb",
       "obligations": [
         {
-          "key": "published-result",
+          "key": "required-by-card-effect",
           "summary": "Some card abilities specifically require physical resources to be spent in order to resolve their effects.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Relentless Assault gains overkill when physical pays its cost"
+          ],
+          "mutation": "Ignore Relentless Assault's physical-payment condition; its overkill branch is no longer distinguished."
         }
       ]
     },
@@ -16673,7 +16693,7 @@
           "summary": "Resources are used to pay the cost to play cards and to pay certain ability costs.",
           "disposition": "narrower",
           "reason": "A directly cited child clause states the executable decision more precisely.",
-          "target": "behavior:rr:resource.1:published-result",
+          "target": "behavior:rr:resource.1:discard-card-generates-resource",
           "implementation": null,
           "work_item": null,
           "exception": null,
@@ -16813,16 +16833,18 @@
       "fingerprint": "sha256:82401e7d16c6cd1a39fd1b83e33eaa954a258e60fc1ae0a2da85e9a8f97a6756",
       "obligations": [
         {
-          "key": "published-result",
+          "key": "discard-card-generates-resource",
           "summary": "A player can generate resources to pay a cost by discarding cards from their hand to generate the resource or resources indicated at the bottom-left corner of the card, or by using card abilities that generate resources.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Photonic Blast draws after damage when paid with energy"
+          ],
+          "mutation": "Do not generate the printed resources of discarded payment cards; Photonic Blast cannot resolve."
         }
       ]
     },
@@ -16849,16 +16871,18 @@
       "fingerprint": "sha256:85e5438aa876c0da4b0a5ef2819e1e0fcf18698cc7e3c99998e8e7e7fcae604f",
       "obligations": [
         {
-          "key": "published-result",
+          "key": "generated-resources-pay-card-cost",
           "summary": "To pay the cost of playing a card, a number of resources equal to (or greater than) the card’s cost must be generated.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Photonic Blast draws after damage when paid with energy"
+          ],
+          "mutation": "Accept fewer than two generated resources or reject two for Photonic Blast; its payment and resolution assertions fail."
         }
       ]
     },
@@ -16885,16 +16909,18 @@
       "fingerprint": "sha256:040242042533bcb5cdf104ba72f962d90853a6a33d1bb6551591eb142378ef1f",
       "obligations": [
         {
-          "key": "published-result",
+          "key": "excess-resources-lost",
           "summary": "Excess resources generated toward any cost are lost, and do not carry over to future costs.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::An overpaid physical resource does not grant overkill"
+          ],
+          "mutation": "Retain or apply resources generated beyond Relentless Assault's cost; its payment-condition assertions fail."
         }
       ]
     },

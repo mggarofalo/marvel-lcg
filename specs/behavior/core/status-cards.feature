@@ -62,7 +62,8 @@ Feature: Core status cards
 
   @behavior:rr:tough.2:published-result
   @covers:behavior:rr:tough.3:published-result
-  @rr:tough.2 @rr:tough.3
+  @covers:behavior:rr:damage.step.2:tough-prevents-damage
+  @rr:tough.2 @rr:tough.3 @rr:damage.step.2
   Scenario: Tough prevents the entire damage instance and is discarded
     # "Prevent all of that damage and discard a tough status card from that
     # character instead." The character is not considered to have taken damage.

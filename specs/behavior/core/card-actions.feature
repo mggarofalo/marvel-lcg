@@ -46,7 +46,13 @@ Feature: Core card actions
   @behavior:card:01013:if-you-paid-for-card-using-energy-condition-met
   @covers:behavior:card:01013:deal-5-damage-enemy
   @covers:behavior:rr:ability.4:sentence-order
-  @card:01013 @rr:ability.4
+  @covers:behavior:rr:cost.3.1:resource-paid-for-card
+  @covers:behavior:rr:energy-resource.1:pays-resource-cost
+  @covers:behavior:rr:energy-resource.2:required-by-card-effect
+  @covers:behavior:rr:resource.1:discard-card-generates-resource
+  @covers:behavior:rr:resource.3:generated-resources-pay-card-cost
+  @card:01013 @rr:ability.4 @rr:cost.3.1 @rr:energy-resource.1
+  @rr:energy-resource.2 @rr:resource.1 @rr:resource.3
   Scenario: Photonic Blast draws after damage when paid with energy
     # "Deal 5 damage to an enemy. If you paid for this card using an energy
     # resource, draw 1 card."
@@ -145,7 +151,8 @@ Feature: Core card actions
     And card 01054 copy 0 is faceup on top of seat 1's discard pile
 
   @behavior:card:01087:deal-3-damage-enemy
-  @card:01087
+  @covers:behavior:rr:mental-resource.1:pays-resource-cost
+  @card:01087 @rr:mental-resource.1
   Scenario: Haymaker deals three damage to its chosen enemy
     # "Hero Action (attack): Deal 3 damage to an enemy."
     Given a canonical Core scene is dealt
@@ -167,7 +174,9 @@ Feature: Core card actions
   @behavior:card:01053:if-you-paid-for-card-using-physical-condition-met
   @covers:behavior:card:01053:deal-5-damage-minion
   @covers:behavior:card:01053:excess-damage-from-attack-is-dealt-villain
-  @card:01053
+  @covers:behavior:rr:physical-resource.1:pays-resource-cost
+  @covers:behavior:rr:physical-resource.2:required-by-card-effect
+  @card:01053 @rr:physical-resource.1 @rr:physical-resource.2
   Scenario: Relentless Assault gains overkill when physical pays its cost
     # "If you paid for this card using a physical resource, this attack gains
     # overkill." Strength's two physical resources exactly pay the cost, so
@@ -195,7 +204,8 @@ Feature: Core card actions
   @covers:behavior:rr:cost.4:published-result
   @covers:behavior:rr:cost.4.1:published-result
   @covers:behavior:rr:cost.4.2:published-result
-  @card:01053 @rr:cost.4 @rr:cost.4.1 @rr:cost.4.2
+  @covers:behavior:rr:resource.5:excess-resources-lost
+  @card:01053 @rr:cost.4 @rr:cost.4.1 @rr:cost.4.2 @rr:resource.5
   Scenario: An overpaid physical resource does not grant overkill
     # The effective Cost 4 authority permits overpayment but says resources
     # beyond the cost are spent, not paid for that cost. Energy pays the
@@ -312,7 +322,8 @@ Feature: Core card actions
 
   @behavior:card:01030:exhaust-war-machine-and-deal-2-damage
   @covers:behavior:rr:cost.11:damage-prevented
-  @card:01030 @rr:cost.11
+  @covers:behavior:rr:enemy:villain-or-minion
+  @card:01030 @rr:cost.11 @rr:enemy
   Scenario: Preventing War Machine's dealt-damage cost does not prevent its effect
     # "If dealing damage is a cost, that cost is considered paid even if some
     # or all of that damage is prevented." Tough prevents both damage, but the
