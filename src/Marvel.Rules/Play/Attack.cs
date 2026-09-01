@@ -948,6 +948,9 @@ public static class Attack
         int amount = checked((int)Math.Min(
             step.ProcedureAmount,
             candidates.Sum(card => Damage.Health(world, facts, card) - card.Damage)));
+        var maximumOccurrences = candidates.ToDictionary(
+            card => card.ObjectId,
+            card => checked((int)(Damage.Health(world, facts, card) - card.Damage)));
         return new Prompt(
             step.Seat,
             Question.Element,
@@ -960,7 +963,9 @@ public static class Attack
                 "indirectDamage",
                 new TargetRequest(
                     [.. candidates.Select(card => card.ObjectId)], amount, amount,
-                    Rule: "rr:indirect-damage.1", AllowRepeated: true))]);
+                    Rule: "rr:indirect-damage.1",
+                    AllowRepeated: true,
+                    MaximumOccurrences: maximumOccurrences))]);
     }
 
     /// <summary>Resolve an assignment without treating every recipient as attacked.</summary>

@@ -12,6 +12,120 @@ namespace Marvel.Rules.Prompts;
 public static class ResourcePayment
 {
     /// <summary>
+    /// Whether an explicit player allocation pays the selected option with
+    /// exactly the named generators and variable values.
+    /// </summary>
+    public static bool Allows(
+        CostOption option,
+        IReadOnlyList<int> paying,
+        IReadOnlyDictionary<string, long>? values,
+        IReadOnlyList<ResourceAllocation> allocations)
+    {
+        ArgumentNullException.ThrowIfNull(option);
+        ArgumentNullException.ThrowIfNull(paying);
+        ArgumentNullException.ThrowIfNull(allocations);
+
+        if (paying.Distinct().Count() != paying.Count)
+        {
+            return false;
+        }
+
+        var selected = new List<ResourceSource>(paying.Count);
+        foreach (int effect in paying)
+        {
+            List<ResourceSource> matches = option.Generators
+                .Where(source => source.Effect == effect)
+                .ToList();
+            if (matches.Count != 1)
+            {
+                return false;
+            }
+
+            selected.Add(matches[0]);
+        }
+
+        if (Allows(option.ResourceCosts, selected, values, allocations))
+        {
+            return true;
+        }
+
+        return option.Components is null
+            && option.HasAlternative
+            && Allows(
+                [new ResourceCost(option.OrCost, option.OrRule)],
+                selected,
+                values,
+                allocations);
+    }
+
+    private static bool Allows(
+        IReadOnlyList<ResourceCost> costs,
+        IReadOnlyList<ResourceSource> selected,
+        IReadOnlyDictionary<string, long>? values,
+        IReadOnlyList<ResourceAllocation> allocations)
+    {
+        var availableBySource = selected.ToDictionary(
+            source => source.Effect,
+            source => source.Generates.ToList());
+        var paid = Enumerable.Range(0, costs.Count)
+            .Select(_ => new System.Text.StringBuilder())
+            .ToList();
+        foreach (ResourceAllocation allocation in allocations)
+        {
+            if (!availableBySource.TryGetValue(
+                    allocation.Source, out List<char>? available)
+                || allocation.Cost < 0 || allocation.Cost >= costs.Count
+                || allocation.PaidAs.Length == 0)
+            {
+                return false;
+            }
+
+            ResourceCost cost = costs[allocation.Cost];
+            foreach (char declared in allocation.PaidAs)
+            {
+                if (!Resources.Types.Contains(declared))
+                {
+                    return false;
+                }
+
+                int icon = available.IndexOf(declared);
+                if (icon < 0 && !cost.Printed && declared != Resources.Wild)
+                {
+                    icon = available.IndexOf(Resources.Wild);
+                }
+                if (icon < 0)
+                {
+                    return false;
+                }
+
+                available.RemoveAt(icon);
+                paid[allocation.Cost].Append(declared);
+            }
+        }
+
+        for (int index = 0; index < costs.Count; index++)
+        {
+            ResourceCost cost = costs[index];
+            if (!Amount(cost.Cost, values, out long amount)
+                || amount < 0 || amount > int.MaxValue)
+            {
+                return false;
+            }
+
+            string assigned = paid[index].ToString();
+            string required = string.Concat(cost.Rule ?? []);
+            if (assigned.Length != amount
+                || required.Any(resource => !Resources.Types.Contains(resource))
+                || !Resources.PaysDeclared(assigned, amount, required))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
     /// Allocates icons from <paramref name="paying"/> among the simultaneous
     /// components of <paramref name="option"/>, or returns <see langword="null"/>
     /// when that payment cannot satisfy the option.

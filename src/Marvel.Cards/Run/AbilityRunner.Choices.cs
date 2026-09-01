@@ -358,7 +358,10 @@ public sealed partial class AbilityRunner
                         Min: (int)share,
                         Max: (int)share,
                         Rule: "rr:indirect-damage.1",
-                        AllowRepeated: true)),
+                        AllowRepeated: true,
+                        MaximumOccurrences: eligible.ToDictionary(
+                            card => card.ObjectId,
+                            card => checked((int)Room(cast, card))))),
             ]);
     }
 

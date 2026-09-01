@@ -156,11 +156,49 @@ public sealed class TransportTests
 
         var again = EngineJson.ReadResponse(EngineJson.Write(response));
 
-        Assert.Equal(4, again.Version);
+        Assert.Equal(5, again.Version);
         Assert.Collection(
             again.Events,
             happened => Assert.Equal(joined, Assert.IsType<PlayAreaJoined>(happened)),
             happened => Assert.Equal(detached, Assert.IsType<PlayAreaDetached>(happened)));
+    }
+
+    [Fact]
+    public void RepeatedTargetCapacitiesHaveAPinnedWireField()
+    {
+        var response = new EngineResponse(
+            EngineProtocol.Version,
+            "targets",
+            "game",
+            Capability: null,
+            Prompt: new Prompt(
+                0, Question.Element, TimingPriority.Untimed, "Indirect_Damage",
+                "Assign damage", Cancellable: false,
+                [new Affordance(
+                    7, "Choose", 7, World.Scenario, "indirectDamage",
+                    new TargetRequest(
+                        [11, 12], 3, 3,
+                        Rule: "rr:indirect-damage.1",
+                        AllowRepeated: true,
+                        MaximumOccurrences: new Dictionary<int, int>
+                        {
+                            [11] = 1,
+                            [12] = 2,
+                        }))]),
+            Events: []);
+
+        using JsonDocument document = JsonDocument.Parse(EngineJson.Write(response));
+        JsonElement targets = document.RootElement.GetProperty("prompt")
+            .GetProperty("affordances")[0]
+            .GetProperty("targets");
+
+        Assert.Equal(1, targets.GetProperty("maximum_occurrences").GetProperty("11").GetInt32());
+        Assert.Equal(2, targets.GetProperty("maximum_occurrences").GetProperty("12").GetInt32());
+
+        EngineResponse restored = EngineJson.ReadResponse(EngineJson.Write(response));
+        Assert.Equal(
+            2,
+            restored.Prompt!.Affordances[0].Targets!.MaximumOccurrences![12]);
     }
 
     [Fact]

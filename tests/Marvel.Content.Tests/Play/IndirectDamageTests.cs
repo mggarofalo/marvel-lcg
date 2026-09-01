@@ -75,6 +75,7 @@ public sealed class IndirectDamageTests
     }
 
     [Rule("rr:indirect-damage.2")]
+    [Rule("rr:indirect-damage.3.1")]
     [Rule("rr:you-your.3")]
     [Fact]
     public void WithAnAllyThePlayerIsAskedHowToDivideIt()
@@ -101,6 +102,16 @@ public sealed class IndirectDamageTests
         Assert.Equal(3, targets.Min);
         Assert.Equal(3, targets.Max);
         Assert.Equal([identity.ObjectId, ally.ObjectId], targets.Legal);
+        // "A character cannot be assigned more indirect damage than would
+        // cause it to be defeated." These exact capacities travel with the
+        // choice rather than being reconstructed by a client.
+        Assert.Equal(
+            new Dictionary<int, int>
+            {
+                [identity.ObjectId] = 10,
+                [ally.ObjectId] = 3,
+            },
+            targets.MaximumOccurrences);
 
         AuthoredCards.Runner().Chose(
             world, card, 0, waiting.Index,
@@ -194,6 +205,11 @@ public sealed class IndirectDamageTests
         var card = Reveal(world, AuthoredCards.Explosion);
         var waiting = Assert.Single(world.Agenda.Outstanding);
         var runner = AuthoredCards.Runner();
+        var prompt = runner.Choosing(world, card, 0, waiting.Index)!;
+        var targets = Assert.Single(prompt.Affordances).Targets!;
+
+        Assert.Equal(1, targets.MaximumOccurrences![ally.ObjectId]);
+        Assert.Equal(10, targets.MaximumOccurrences[identity.ObjectId]);
 
         Assert.Throws<RulesNotImplementedException>(() => runner.Chose(
             world, card, 0, waiting.Index,

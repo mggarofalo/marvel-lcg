@@ -1,4 +1,5 @@
 using System.Globalization;
+using Marvel.Rules.Prompts;
 using Marvel.Server;
 using Marvel.View;
 
@@ -39,6 +40,18 @@ public sealed record ClientStartupResult(
 {
     /// <summary>Whether a complete initial game view was returned.</summary>
     public bool Succeeded => Response is not null && Error is null;
+}
+
+/// <summary>A resolved decision, optionally paired with a recovered current view.</summary>
+public sealed record ClientResolutionResult(
+    EngineResponse? Response,
+    ClientStartupError? Error)
+{
+    /// <summary>Whether the submitted decision was accepted.</summary>
+    public bool Succeeded => Response is not null && Error is null;
+
+    /// <summary>Whether an authoritative view is available for rendering.</summary>
+    public bool HasAuthoritativeView => Response is not null;
 }
 
 /// <summary>How the player wants to fill the scenario's modular-set slot.</summary>
@@ -208,8 +221,8 @@ public sealed class LocalGameClient
                 return Failed(response.Error.Code, response.Error.Message);
             }
 
-            if (!HasCompleteBoard(response.World)
-                || response.Prompt is null || response.Events is null
+            if (!HasCompleteGameplayResponse(response)
+                || response.Prompt is null
                 || string.IsNullOrWhiteSpace(response.Capability))
             {
                 return Failed(
@@ -231,11 +244,85 @@ public sealed class LocalGameClient
         }
     }
 
+    /// <summary>
+    /// Submits one answer and, after a rejection or uncertain response, reads
+    /// the current view without ever repeating the mutation.
+    /// </summary>
+    public async ValueTask<ClientResolutionResult> ResolveAsync(
+        string capability,
+        EngineDecision decision,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(capability);
+        ArgumentNullException.ThrowIfNull(decision);
+        ClientStartupError? failure = null;
+        try
+        {
+            EngineResponse response = await transport.ExchangeAsync(
+                EngineRequest.ResolveGame(
+                    "local-resolve", LocalGameSession.GameId, capability, decision),
+                cancellationToken).ConfigureAwait(false);
+            if (response.Error is null)
+            {
+                if (HasCompleteGameplayResponse(response))
+                {
+                    return new ClientResolutionResult(response, Error: null);
+                }
+
+                failure = Error(
+                    "invalid_response",
+                    "The game service did not return a complete current table.");
+            }
+            else
+            {
+                failure = Error(response.Error.Code, response.Error.Message);
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            failure = Error(
+                "transport_unavailable",
+                "The decision response was lost. The client will read the current table without repeating it.");
+        }
+
+        return await RecoverCurrentViewAsync(capability, failure, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
     private static ClientSetupResult SetupFailed(string code, string message) =>
         new(Choices: null, Error(code, message));
 
     private static ClientStartupResult Failed(string code, string message) =>
         new(Response: null, Error(code, message));
+
+    private async ValueTask<ClientResolutionResult> RecoverCurrentViewAsync(
+        string capability,
+        ClientStartupError failure,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            EngineResponse synchronized = await transport.ExchangeAsync(
+                EngineRequest.SyncGame(
+                    "local-recover", LocalGameSession.GameId, capability),
+                cancellationToken).ConfigureAwait(false);
+            return synchronized.Error is null && HasCompleteGameplayResponse(synchronized)
+                ? new ClientResolutionResult(synchronized, failure)
+                : new ClientResolutionResult(Response: null, failure);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            return new ClientResolutionResult(Response: null, failure);
+        }
+    }
 
     private static ClientStartupError Error(string code, string message) =>
         new(Bounded(code), Bounded(message));
@@ -258,6 +345,43 @@ public sealed class LocalGameClient
                     && card.Face.Title is not null
                     && card.Face.Subtitle is not null
                     && card.Face.Fields is not null)));
+
+    private static bool HasCompleteGameplayResponse(EngineResponse response) =>
+        response.Events is not null
+        && HasCompleteBoard(response.World)
+        && (response.World!.Outcome == Marvel.Rules.Play.Outcome.Unfinished
+            ? HasCompletePrompt(response.Prompt)
+            : response.Prompt is null);
+
+    private static bool HasCompletePrompt(Prompt? prompt) =>
+        prompt?.Trigger is not null
+        && prompt.Label is not null
+        && prompt.Affordances is { Count: > 0 }
+        && prompt.Affordances.All(option =>
+            option is not null
+            && option.Verb is not null
+            && option.Label is not null
+            && (option.Targets is null
+                || option.Targets.Legal is not null
+                && (option.Targets.Groups is null
+                    || option.Targets.Groups.All(group => group is not null))
+                && (option.Targets.MustIncludeTraits is null
+                    || option.Targets.MustIncludeTraits.All(trait => trait is not null)))
+            && (option.Costs is null || option.Costs.All(cost =>
+                cost is not null
+                && cost.Cost is not null
+                && cost.OrCost is not null
+                && (cost.Rule is null || cost.Rule.All(rule => rule is not null))
+                && (cost.OrRule is null || cost.OrRule.All(rule => rule is not null))
+                && (cost.Sources is null
+                    || cost.Sources.All(source => source.Generates is not null))
+                && (cost.Variables is null
+                    || cost.Variables.All(variable => variable.Name is not null))
+                && (cost.Components is null || cost.Components.All(component =>
+                    component is not null
+                    && component.Cost is not null
+                    && (component.Rule is null
+                        || component.Rule.All(rule => rule is not null)))))));
 
     private static string Bounded(string value) =>
         value.Length <= MaximumDisplayedErrorLength

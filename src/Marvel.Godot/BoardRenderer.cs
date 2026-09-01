@@ -10,7 +10,7 @@ public static class BoardRenderer
     private static readonly Color Amber = new("e6a646");
 
     /// <summary>Replaces the visible board with one authoritative snapshot.</summary>
-    public static void Render(GridContainer destination, BoardPresentation board)
+    public static BoardRenderResult Render(GridContainer destination, BoardPresentation board)
     {
         ArgumentNullException.ThrowIfNull(destination);
         ArgumentNullException.ThrowIfNull(board);
@@ -20,13 +20,19 @@ public static class BoardRenderer
             child.QueueFree();
         }
 
+        var result = new BoardRenderResult();
         foreach (BoardAreaPresentation area in board.Areas)
         {
-            destination.AddChild(Area(area));
+            PanelContainer control = Area(area, result);
+            destination.AddChild(control);
         }
+
+        return result;
     }
 
-    private static PanelContainer Area(BoardAreaPresentation area)
+    private static PanelContainer Area(
+        BoardAreaPresentation area,
+        BoardRenderResult result)
     {
         var panel = new PanelContainer
         {
@@ -42,11 +48,11 @@ public static class BoardRenderer
         content.AddChild(Label(area.Title, 18, Ink));
         content.AddChild(Label(area.Context, 10, Amber));
         content.AddChild(new HSeparator());
-        AddCards(content, area.Cards, "CARDS");
+        AddCards(content, area.Cards, "CARDS", result);
         if (area.Removed.Count > 0)
         {
             content.AddChild(new HSeparator());
-            AddCards(content, area.Removed, "REMOVED");
+            AddCards(content, area.Removed, "REMOVED", result);
         }
 
         return panel;
@@ -55,7 +61,8 @@ public static class BoardRenderer
     private static void AddCards(
         VBoxContainer destination,
         IReadOnlyList<BoardCardPresentation> cards,
-        string section)
+        string section,
+        BoardRenderResult result)
     {
         destination.AddChild(Label($"{section}  ·  {cards.Sum(card => card.Count)}", 10, Muted));
         if (cards.Count == 0)
@@ -66,7 +73,12 @@ public static class BoardRenderer
 
         foreach (BoardCardPresentation card in cards)
         {
-            destination.AddChild(Card(card));
+            PanelContainer control = Card(card);
+            destination.AddChild(control);
+            if (card.TargetId is { } target)
+            {
+                result.Register(target, control);
+            }
         }
     }
 
@@ -161,5 +173,35 @@ public static class BoardRenderer
         label.AddThemeFontSizeOverride("font_size", size);
         label.AddThemeColorOverride("font_color", color);
         return label;
+    }
+}
+
+/// <summary>The controls addressable by prompt anchor and target ids.</summary>
+public sealed class BoardRenderResult
+{
+    private readonly Dictionary<int, List<Control>> controls = [];
+
+    internal void Register(int id, Control control)
+    {
+        if (!controls.TryGetValue(id, out List<Control>? matches))
+        {
+            matches = [];
+            controls.Add(id, matches);
+        }
+
+        matches.Add(control);
+    }
+
+    /// <summary>Highlights every visible control matching one server-provided id.</summary>
+    public void Highlight(int? id)
+    {
+        foreach ((int key, List<Control> matches) in controls)
+        {
+            Color tint = id == key ? new Color("ffe09a") : Colors.White;
+            foreach (Control control in matches)
+            {
+                control.Modulate = tint;
+            }
+        }
     }
 }

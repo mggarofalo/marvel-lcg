@@ -1,6 +1,7 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://Main.cs" id="1_main"]
+[ext_resource type="Script" path="res://DecisionPanel.cs" id="2_decision"]
 
 [sub_resource type="StyleBoxFlat" id="Style_shell"]
 bg_color = Color(0.055, 0.086, 0.125, 0.96)
@@ -396,27 +397,57 @@ theme_override_font_sizes/font_size = 16
 text = "—"
 autowrap_mode = 2
 
-[node name="Board" type="ScrollContainer" parent="Margin/Shell/Content"]
+[node name="Play" type="HSplitContainer" parent="Margin/Shell/Content"]
 visible = false
 custom_minimum_size = Vector2(0, 260)
 layout_mode = 2
+size_flags_vertical = 3
+split_offset = 620
+
+[node name="Board" type="ScrollContainer" parent="Margin/Shell/Content/Play"]
+layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 3
 focus_mode = 2
 follow_focus = true
 horizontal_scroll_mode = 0
 
-[node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Board"]
+[node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Board"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 10
 
-[node name="Areas" type="GridContainer" parent="Margin/Shell/Content/Board/Margin"]
+[node name="Areas" type="GridContainer" parent="Margin/Shell/Content/Play/Board/Margin"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/h_separation = 12
 theme_override_constants/v_separation = 12
-columns = 2
+columns = 1
+
+[node name="Prompt" type="PanelContainer" parent="Margin/Shell/Content/Play"]
+custom_minimum_size = Vector2(330, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("Style_panel")
+
+[node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Prompt"]
+layout_mode = 2
+theme_override_constants/margin_left = 0
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 0
+theme_override_constants/margin_bottom = 0
+
+[node name="Scroll" type="ScrollContainer" parent="Margin/Shell/Content/Play/Prompt/Margin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+follow_focus = true
+horizontal_scroll_mode = 0
+
+[node name="Decision" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+script = ExtResource("2_decision")
 
 [node name="Status" type="PanelContainer" parent="Margin/Shell/Content"]
 layout_mode = 2

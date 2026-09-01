@@ -235,6 +235,8 @@ public sealed class AffordanceTests
         Assert.True(request.IsGrouped);
         Assert.True(request.Allows([143, 3]));
         Assert.True(request.Allows([143, 152]));
+        Assert.False(request.Allows([143]));
+        Assert.False(request.Allows([3, 143]));
 
         // Every one of the three is in `Legal`, and there are three of them,
         // so a client reading the flat fields would accept this. It is not a
@@ -268,6 +270,7 @@ public sealed class AffordanceTests
     }
 
     [Rule("rr:indirect-damage.1")]
+    [Rule("rr:indirect-damage.3.1")]
     [Fact]
     public void IndirectDamageCanAllocateSeveralPointsToOneCharacter()
     {
@@ -275,10 +278,16 @@ public sealed class AffordanceTests
         // target. Assigning three points to one character names it three times.
         var request = new TargetRequest(
             Legal: [1, 2], Min: 3, Max: 3,
-            Rule: "rr:indirect-damage.1", AllowRepeated: true);
+            Rule: "rr:indirect-damage.1", AllowRepeated: true,
+            MaximumOccurrences: new Dictionary<int, int>
+            {
+                [1] = 2,
+                [2] = 3,
+            });
 
-        Assert.True(request.Allows([1, 1, 1]));
+        Assert.False(request.Allows([1, 1, 1]));
         Assert.True(request.Allows([1, 1, 2]));
+        Assert.True(request.Allows([2, 2, 2]));
         Assert.False(request.Allows([1, 1]));
         Assert.False(request.Allows([1, 1, 9]));
     }
@@ -292,5 +301,17 @@ public sealed class AffordanceTests
 
         Assert.False(request.Allows([1, 1]));
         Assert.True(request.Allows([1, 2]));
+    }
+
+    [Fact]
+    public void AnOrderedGroupCanContainDuplicatesOnlyWhenTheyAreAllowed()
+    {
+        var prohibited = new TargetRequest(
+            Legal: [1, 2], Min: 2, Max: 2, Groups: [[1, 1]], Rule: "Together");
+        var allowed = prohibited with { AllowRepeated = true };
+
+        Assert.False(prohibited.Allows([1, 1]));
+        Assert.True(allowed.Allows([1, 1]));
+        Assert.False(allowed.Allows([1]));
     }
 }

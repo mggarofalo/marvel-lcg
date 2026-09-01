@@ -27,6 +27,10 @@ namespace Marvel.Rules.Prompts;
 /// Whether entries are allocations that may name one object more than once.
 /// This is true for indirect damage, where each entry represents one point.
 /// </param>
+/// <param name="MaximumOccurrences">
+/// The most times each object may occur in an allocation. Null when repeated
+/// entries do not have per-object capacities.
+/// </param>
 /// <remarks>
 /// <para>
 /// <paramref name="Groups"/> exists because <paramref name="Legal"/> and the
@@ -65,7 +69,8 @@ public sealed record TargetRequest(
     IReadOnlyList<string>? MustIncludeTraits = null,
     string Rule = "",
     bool IsSearch = false,
-    bool AllowRepeated = false)
+    bool AllowRepeated = false,
+    IReadOnlyDictionary<int, int>? MaximumOccurrences = null)
 {
     /// <summary>Whether the selection rule constrains it beyond a count.</summary>
     public bool IsGrouped => Groups is { Count: > 0 };
@@ -92,9 +97,20 @@ public sealed record TargetRequest(
             return false;
         }
 
+        if (MaximumOccurrences is not null
+            && selection.GroupBy(id => id).Any(chosen =>
+                !MaximumOccurrences.TryGetValue(chosen.Key, out int maximum)
+                || chosen.Count() > maximum))
+        {
+            return false;
+        }
+
         if (IsGrouped)
         {
-            return Groups!.Any(group => selection.All(group.Contains));
+            // Groups are complete ordered answers, not pools from which a
+            // subset may be taken. Ordering is observable for rules that ask
+            // the player to order simultaneous resolutions.
+            return Groups!.Any(group => selection.SequenceEqual(group));
         }
 
         return selection.Count >= Min

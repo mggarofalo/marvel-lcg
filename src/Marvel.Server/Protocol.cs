@@ -10,9 +10,10 @@ public static class EngineProtocol
 {
     /// <summary>
     /// The only protocol version this host accepts. It includes independently
-    /// scoped seat capabilities, play-area topology events, and setup discovery.
+    /// scoped seat capabilities, play-area topology events, setup discovery,
+    /// and per-target allocation capacities.
     /// </summary>
-    public const int Version = 4;
+    public const int Version = 5;
 
     /// <summary>The largest request or game id accepted or echoed.</summary>
     public const int MaximumIdentifierLength = 256;

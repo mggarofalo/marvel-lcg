@@ -197,8 +197,9 @@ public sealed class EngineHostTests
     public void VersionOneIsRejectedBeforeItCanOpenAGame()
     {
         // The current protocol adds play-area topology kinds to the event
-        // union. A version 1 client cannot deserialize those responses, so it is
-        // rejected before the factory can create mutable game state.
+        // union and per-target allocation capacities. A version 1 client
+        // cannot deserialize those responses, so it is rejected before the
+        // factory can create mutable game state.
         var factory = new UnusedFactory();
         var host = new EngineHost(factory);
 
@@ -206,7 +207,7 @@ public sealed class EngineHostTests
             1, "old-client", EngineProtocol.Open, "game",
             Game: new GameSpecification("rhino", ["spider_man"], null, 1)));
 
-        Assert.Equal(4, EngineProtocol.Version);
+        Assert.Equal(5, EngineProtocol.Version);
         Assert.Equal(EngineProtocol.Version, rejected.Version);
         Assert.Equal("unsupported_version", rejected.Error?.Code);
         Assert.Equal(0, factory.Calls);
