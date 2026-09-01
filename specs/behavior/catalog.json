@@ -25345,11 +25345,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Tac Team enters with three uses and discards after the third action"
+          ],
+          "mutation": "Change entry counters, per-use exhaustion/removal/damage, or zero-use discard; a counter, readiness, damage, or location assertion fails."
         }
       ]
     },
@@ -25367,11 +25369,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Tac Team enters with three uses and discards after the third action"
+          ],
+          "mutation": "Change entry counters, per-use exhaustion/removal/damage, or zero-use discard; a counter, readiness, damage, or location assertion fails."
         }
       ]
     },
@@ -35914,11 +35918,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Tac Team enters with three uses and discards after the third action"
+          ],
+          "mutation": "Change entry counters, per-use exhaustion/removal/damage, or zero-use discard; a counter, readiness, damage, or location assertion fails."
         },
         {
           "id": "behavior:card:01056:enters-play-with-3-counters",
@@ -35926,11 +35932,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Tac Team enters with three uses and discards after the third action"
+          ],
+          "mutation": "Change entry counters, per-use exhaustion/removal/damage, or zero-use discard; a counter, readiness, damage, or location assertion fails."
         },
         {
           "id": "behavior:card:01056:when-those-are-gone-discard-card",
@@ -35938,11 +35946,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Tac Team enters with three uses and discards after the third action"
+          ],
+          "mutation": "Change entry counters, per-use exhaustion/removal/damage, or zero-use discard; a counter, readiness, damage, or location assertion fails."
         },
         {
           "id": "behavior:card:01056:exhaust-tac-team-and-remove-1-attack",
@@ -35950,11 +35960,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Tac Team enters with three uses and discards after the third action"
+          ],
+          "mutation": "Change entry counters, per-use exhaustion/removal/damage, or zero-use discard; a counter, readiness, damage, or location assertion fails."
         }
       ]
     },

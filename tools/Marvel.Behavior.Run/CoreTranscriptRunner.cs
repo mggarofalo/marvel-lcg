@@ -341,6 +341,9 @@ internal sealed class CoreTranscriptRunner
         Bind("minion-enters-play", TranscriptStepKind.When,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) enters play as a minion engaged with seat (?<seat>\d+)",
             MinionEntersPlay),
+        Bind("support-enters-play", TranscriptStepKind.When,
+            @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) enters play as a support controlled by seat (?<seat>\d+)",
+            SupportEntersPlay),
         Bind("request-printed-characteristics", TranscriptStepKind.When,
             @"the printed characteristics of card (?<face>\d+[a-z]?) copy (?<copy>\d+) are requested",
             RequestPrintedCharacteristics),
@@ -1060,6 +1063,16 @@ internal sealed class CoreTranscriptRunner
             new SceneDestination(SceneZone.EngagedMinion, Seat(match, step))));
     }
 
+    private static void SupportEntersPlay(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        context.SceneRequired(step).Apply(new MoveSceneCard(
+            SceneCard(match, step),
+            new SceneDestination(SceneZone.Support, Seat(match, step))));
+    }
+
     private static void RequestPrintedCharacteristics(
         TranscriptContext context, TranscriptStep step, Match match)
     {
@@ -1467,13 +1480,17 @@ internal sealed class CoreTranscriptRunner
             step);
 
     private static void CardCounters(
-        TranscriptContext context, TranscriptStep step, Match match) =>
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        string type = match.Groups["type"].Value;
+        string key = type == "threat" ? "k_threat" : $"c_{type}";
         Equal(
             Number(match, "count", step),
             checked((int)context.SceneRequired(step).Find(SceneCard(match, step))
-                .Tokens.GetValueOrDefault($"k_{match.Groups["type"].Value}")),
-            $"{match.Groups["type"].Value} counters on the card",
+                .Tokens.GetValueOrDefault(key)),
+            $"{type} counters on the card",
             step);
+    }
 
     private static void CardTargetAvailability(
         TranscriptContext context, TranscriptStep step, Match match)

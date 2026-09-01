@@ -161,3 +161,40 @@ Feature: Core card actions
     When seat 1 chooses card 01094 copy 0 for the pending action
     Then card 01094 copy 0 has 3 damage
     And card 01087 copy 0 is faceup on top of seat 1's discard pile
+
+  @behavior:card:01056:uses-3-attack-counters
+  @covers:behavior:card:01056:enters-play-with-3-counters
+  @covers:behavior:card:01056:when-those-are-gone-discard-card
+  @covers:behavior:card:01056:exhaust-tac-team-and-remove-1-attack
+  @covers:behavior:rr:uses-x-type:published-result
+  @covers:behavior:rr:uses-x-type.1:published-result
+  @card:01056 @rr:uses-x-type @rr:uses-x-type.1
+  Scenario: Tac Team enters with three uses and discards after the third action
+    # "Uses (3 attack counters)" places three counters as Tac Team enters play.
+    # Each action exhausts it, spends exactly one counter, and deals two damage;
+    # when the third counter is gone the support is discarded.
+    Given a canonical Core scene is dealt
+      | campaign | heroes   | seed |
+      | rhino    | she_hulk | 715  |
+    When card 01056 copy 0 enters play as a support controlled by seat 1
+    Then card 01056 copy 0 has 3 attack counters
+    When seat 1 initiates card 01056 copy 0's action without payment
+    Then card 01094 copy 0 is offered by the pending action
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01094 copy 0 has 2 damage
+    And card 01056 copy 0 has 2 attack counters
+    And card 01056 copy 0 is exhausted
+    When the end-of-player-phase ready step resolves
+    Then card 01056 copy 0 is ready
+    When seat 1 initiates card 01056 copy 0's action without payment
+    Then card 01094 copy 0 is offered by the pending action
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01094 copy 0 has 4 damage
+    And card 01056 copy 0 has 1 attack counter
+    When the end-of-player-phase ready step resolves
+    Then card 01056 copy 0 is ready
+    When seat 1 initiates card 01056 copy 0's action without payment
+    Then card 01094 copy 0 is offered by the pending action
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01094 copy 0 has 6 damage
+    And card 01056 copy 0 is faceup on top of seat 1's discard pile
