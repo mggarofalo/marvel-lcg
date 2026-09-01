@@ -488,7 +488,7 @@ public sealed class CoreRuleTranscriptTests
 
         Assert.Equal("behavior:rr:player-phase:published-result", result.Obligation);
         Assert.Equal(
-            "2ee053592d7d1250f8e00176b90766cef5c3dd6f485bb9fb729d6b0f0ca2dc61",
+            "6494d174d4898115b16d7ec8c75144afb6e359c98048422f56642012507e2d20",
             result.Digest);
     }
 

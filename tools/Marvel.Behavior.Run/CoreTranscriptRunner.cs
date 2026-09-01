@@ -417,6 +417,9 @@ internal sealed class CoreTranscriptRunner
         Bind("request-card-actions", TranscriptStepKind.When,
             @"seat (?<seat>\d+) asks for available card actions",
             RequestCardActions),
+        Bind("request-turn-card-actions", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) asks for card actions available during their turn",
+            RequestTurnCardActions),
         Bind("inspect-core-scene", TranscriptStepKind.When,
             "the dealt Core scene is inspected", InspectCoreScene),
         Bind("begin-mulligan", TranscriptStepKind.When,
@@ -1678,6 +1681,27 @@ internal sealed class CoreTranscriptRunner
         context.LastCardOptions = ((AbilityRunner)context.World.Abilities)
             .Actions(context.World, seat)
             .Select(action => action.Card)
+            .ToHashSet();
+    }
+
+    private static void RequestTurnCardActions(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        Game game = context.Game
+            ?? throw new TranscriptException($"{step.Location}: game setup has not begun");
+        int seat = Seat(match, step);
+        Prompt asked = game.Pending
+            ?? throw new TranscriptException($"{step.Location}: no turn prompt is pending");
+        if (game.Phase != GamePhase.PlayerTurn || game.Active != seat || asked.Player != seat)
+        {
+            throw new TranscriptException(
+                $"{step.Location}: seat {seat + 1} is not taking their turn");
+        }
+
+        context.LastCardOptions = asked.Affordances
+            .Where(option => option.Verb is not Game.ChangeForm and not Game.EndPhaseVerb
+                && option.Verb != CardPlay.Verb)
+            .Select(option => option.AnchorId)
             .ToHashSet();
     }
 

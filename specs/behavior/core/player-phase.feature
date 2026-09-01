@@ -10,12 +10,16 @@ Feature: Player-phase turns
 
   @behavior:rr:player-phase:published-result
   @covers:behavior:rr:player-turn:published-result
-  @rr:player-phase @rr:player-turn
+  @covers:behavior:rr:player-turn.6:published-result
+  @rr:player-phase @rr:player-turn @rr:player-turn.6
   Scenario: Each player takes one turn in player order before the phase ends
     # "During the player phase, each player (in player order) takes one turn."
     # "During their turn, a player may perform the following options, in any
     # order." Declining the turn prompt performs no option and ends that
-    # player's turn; the next prompt shows who may perform those options.
+    # player's turn; the next prompt shows who may perform those options. An
+    # active player may also ask another player to trigger an Action they could
+    # trigger on their own turn, so seat 2's Avengers Mansion is offered.
+    Given card 01091 copy 1 is a support controlled by seat 2
     When game setup reaches seat 1's mulligan
     Then seat 1 is offered a mulligan
 
@@ -24,6 +28,9 @@ Feature: Player-phase turns
 
     When seat 2 keeps every opening-hand card at mulligan
     Then seat 1 is the active player
+
+    When seat 1 asks for card actions available during their turn
+    Then card 01091 copy 1's action is available
 
     When seat 1 ends their turn
     Then seat 2 is the active player
