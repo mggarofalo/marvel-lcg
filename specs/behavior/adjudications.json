@@ -11973,11 +11973,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/attachments.feature::An attachment is discarded when its attached ally leaves play"
+          ],
+          "mutation": "Do not treat the defeated ally's transition to its discard pile as leaving play; Inspired remains attached and its discard assertion fails."
         }
       ]
     },
@@ -11991,11 +11993,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/defeat.feature::Removing the final threat defeats and discards a side scheme"
+          ],
+          "mutation": "Retain the defeated side scheme's old token state on reentry; its exact three-threat assertion fails."
         }
       ]
     },
@@ -12009,11 +12013,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/attachments.feature::An attachment is discarded when its attached ally leaves play"
+          ],
+          "mutation": "Skip non-villain departure cleanup for the defeated ally; Inspired does not reach its owner's discard pile."
         }
       ]
     },
@@ -12027,11 +12033,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/attachments.feature::An attachment is discarded when its attached ally leaves play"
+          ],
+          "mutation": "Leave Inspired in its hosted area when Spider-Woman leaves play; the attachment discard assertion fails."
         }
       ]
     },
@@ -12042,10 +12050,10 @@
         {
           "key": "published-result",
           "summary": "Discard each boost card given to that card.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "outside-core",
+          "reason": "No Core Set effect gives a boost card to a non-villain card, so a legal Core game cannot expose this departure cleanup branch.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -12063,11 +12071,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/defeat.feature::Removing the final threat defeats and discards a side scheme"
+          ],
+          "mutation": "Preserve the defeated side scheme's threat tokens outside play; the zero-token assertion fails."
         }
       ]
     },
@@ -37937,11 +37947,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/defeat.feature::Removing the final threat defeats and discards a side scheme"
+          ],
+          "mutation": "Omit Bomb Scare's additional per-player threat on reentry; the exact three-threat assertion fails."
         },
         {
           "key": "deal-1-encounter-card-during-villain-phase",

@@ -21,7 +21,11 @@ Feature: Core attachment lifecycle
     And card 01099 copy 0 is in the villain's play area
 
   @behavior:rr:attach-to.1:published-result
-  @rr:attach-to.1 @card:01074
+  @covers:behavior:rr:leaves-play:published-result
+  @covers:behavior:rr:leaves-play.2:published-result
+  @covers:behavior:rr:leaves-play.2.1:published-result
+  @rr:attach-to.1 @rr:leaves-play @rr:leaves-play.2
+  @rr:leaves-play.2.1 @card:01074
   Scenario: An attachment is discarded when its attached ally leaves play
     # An attached card remains in play until its host leaves play, "in which
     # case the attached card is discarded." Inspired is attached to Spider-Woman.

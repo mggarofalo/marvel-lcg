@@ -223,7 +223,7 @@ public sealed class CoreRuleTranscriptTests
             "87b20f195af0f89ca10e94890082e869d08366a336f3b3b566b1811b99744754",
             results["behavior:rr:minion.2:published-result"].Digest);
         Assert.Equal(
-            "071e9a2731b848811a847e30d8d452ecfc3195ce515e9ed2afd9397f8bbb71bd",
+            "7e0a4fc3ed4a997d5e5afda08d0606395fad4f86251d6d937d97fd5e455a8da8",
             results["behavior:rr:side-scheme.2:published-result"].Digest);
         Assert.Equal(
             "107af270de710690ab92afe8c1bd3c073593b6c171aea3c6dfd921c08b822976",

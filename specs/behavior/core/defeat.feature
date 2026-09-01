@@ -27,7 +27,11 @@ Feature: Core defeat
   @behavior:rr:side-scheme.2:published-result
   @covers:behavior:rr:defeat:published-result
   @covers:behavior:rr:defeat.1:published-result
+  @covers:behavior:rr:leaves-play.1:published-result
+  @covers:behavior:rr:leaves-play.2.3:published-result
+  @covers:behavior:card:01107:place-additional-1-per-hero-threat-here
   @rr:side-scheme.2 @rr:defeat @rr:defeat.1
+  @rr:leaves-play.1 @rr:leaves-play.2.3 @card:01107
   Scenario: Removing the final threat defeats and discards a side scheme
     # "A side scheme remains in play until there is no threat on it, which
     # causes it to be defeated and discarded."
@@ -39,6 +43,10 @@ Feature: Core defeat
     And card 01107 copy 0 has 1 threat counter
     When seat 1 uses their basic thwart against card 01107 copy 0
     Then card 01107 copy 0 is faceup on top of the encounter discard pile
+    And card 01107 copy 0 has 0 threat counters
+    When card 01107 copy 0 is revealed to seat 1
+    Then card 01107 copy 0 is in the villain's play area
+    And card 01107 copy 0 has 3 threat counters
 
   @behavior:rr:villain-defeat:published-result
   @covers:behavior:rr:defeat:published-result
