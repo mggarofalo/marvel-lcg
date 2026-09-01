@@ -421,6 +421,9 @@ internal sealed class CoreTranscriptRunner
         Bind("villain-attack-decline", TranscriptStepKind.When,
             @"the villain attacks seat (?<seat>\d+) with every optional choice declined",
             ResolveVillainAttack),
+        Bind("villain-attack-until-required", TranscriptStepKind.When,
+            @"the villain attacks seat (?<seat>\d+) with every optional choice declined until a required decision",
+            ResolveVillainAttackUntilRequired),
         Bind("enemy-attack-decline", TranscriptStepKind.When,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) attacks seat (?<seat>\d+) with every optional choice declined",
             ResolveEnemyAttack),
@@ -1723,6 +1726,44 @@ internal sealed class CoreTranscriptRunner
             Steps.Attack, Round: 1, Number: 2, Index: seat,
             Subject: villain.ObjectId, Seat: seat));
         FinishAgenda(context, step);
+    }
+
+    private static void ResolveVillainAttackUntilRequired(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        context.Events.Clear();
+        context.CurrentPrompt = "<none>";
+        Card villain = context.World.TheCardIn(DeckType.VillainArea)
+            ?? throw new TranscriptException($"{step.Location}: no villain is in play");
+        int seat = Seat(match, step);
+        context.World.Agenda.Add(new PhaseStep(
+            Steps.Attack, Round: 1, Number: 2, Index: seat,
+            Subject: villain.ObjectId, Seat: seat));
+
+        Prompt? asked = Sequence.Work(
+            context.World, context.Cards, context.World.Abilities, context.Events);
+        for (int answered = 0; asked is not null && asked.Cancellable; answered++)
+        {
+            if (answered >= 100)
+            {
+                throw new TranscriptException(
+                    $"{step.Location}: attack still asks '{asked.Label}' after 100 declines");
+            }
+
+            Sequence.Answer(
+                context.World, context.Cards, context.World.Abilities,
+                asked, Decision.Decline, context.Events);
+            asked = Sequence.Work(
+                context.World, context.Cards, context.World.Abilities, context.Events);
+        }
+
+        if (asked is null)
+        {
+            throw new TranscriptException(
+                $"{step.Location}: attack reached no required decision");
+        }
+
+        SetPendingPrompt(context, asked);
     }
 
     private static void ResolveEnemyAttack(

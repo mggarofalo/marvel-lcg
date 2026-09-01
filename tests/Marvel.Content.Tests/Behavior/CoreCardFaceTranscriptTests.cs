@@ -502,6 +502,37 @@ public sealed class CoreCardFaceTranscriptTests
     }
 
     [Fact]
+    public void UltronVillainAndDroneBranchesHavePinnedOutcomes()
+    {
+        var results = Corpus.Value
+            .Where(candidate => candidate.Scenario.StartsWith(
+                "specs/behavior/core/ultron-villain-and-drones.feature::",
+                StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
+
+        Assert.Equal(7, results.Count);
+        Assert.Equal("14b7f68ea22a1c89cf37a7afe6a75f816633825c3c327ff4872e05dc88109754",
+            results[
+                "behavior:card:01134:after-ultron-attacks-you-choose-either-place-choice-1"].Digest);
+        Assert.Equal("81cec0c68f9466374192835598e62fa7dad33fb65224c60599ace91298da95b6",
+            results[
+                "behavior:card:01134:after-ultron-attacks-you-choose-either-place-choice-2"].Digest);
+        Assert.Equal("8a655ac26702a5ecc8807c49b87bb42d0182c7a33ecc44bf988e99c76f922b1f",
+            results["behavior:card:01135:when-ultron-attacks-you-put-top-card"].Digest);
+        Assert.Equal("dadd3f08acbd2823f5fd5956b96c068a97436d351b896e355642370ed5b57fec",
+            results[
+                "behavior:card:01135:until-end-his-attack-ultron-gets-1-multiple"].Digest);
+        Assert.Equal("24db3571d46d1a2a0b2cde54951cbf21ba460d7bc8e6c4557cd9ce0c0c2722d7",
+            results[
+                "behavior:card:01136:search-encounter-deck-and-discard-pile-for"].Digest);
+        Assert.Equal("0b45906b669baac8f23393da4ed791e7af2630add6a332b6e2989ddb7006d848",
+            results[
+                "behavior:card:01140:each-facedown-drone-minion-engaged-with-player"].Digest);
+        Assert.Equal("23e7c732110aff9c63ee0b7e1f7aff153a4fb8b0500a44f8381b0f8eb8c205f5",
+            results["behavior:card:01143:guard"].Digest);
+    }
+
+    [Fact]
     public void CardActionBranchesHavePinnedOutcomes()
     {
         var results = Corpus.Value

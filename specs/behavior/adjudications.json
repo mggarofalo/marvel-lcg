@@ -42155,11 +42155,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-villain-and-drones.feature::Ultron I can place threat after attacking"
+          ],
+          "mutation": "Remove or change the threat consequence; the offered-option or main-scheme threat assertion fails."
         },
         {
           "key": "after-ultron-attacks-you-choose-either-place-choice-2",
@@ -42167,11 +42169,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-villain-and-drones.feature::Ultron I can create a Drone after attacking"
+          ],
+          "mutation": "Remove or change the Drone consequence; the offered-option, threat, or Drone-count assertion fails."
         }
       ]
     },
@@ -42297,19 +42301,21 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-villain-and-drones.feature::Ultron II creates and counts one Drone for an attack"
+          ],
+          "mutation": "Skip the attack interrupt or take a card from another zone; the Drone-count or pinned-digest assertion fails."
         },
         {
           "key": "until-end-his-attack-ultron-gets-1-zero",
           "summary": "Zero qualifying elements: Until the end of his attack, Ultron gets +1 ATK for each Drone minion engaged with you.",
-          "disposition": "executable",
-          "reason": null,
+          "disposition": "not-representable",
+          "reason": "Ultron II creates a Drone before counting Drones engaged with the attacked player, so the count cannot be zero in a valid attack.",
           "target": null,
-          "implementation": "unverified",
+          "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
@@ -42321,11 +42327,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-villain-and-drones.feature::Ultron II creates and counts one Drone for an attack"
+          ],
+          "mutation": "Count zero or two Drones in the one-Drone scene; the identity-damage assertion fails."
         },
         {
           "key": "until-end-his-attack-ultron-gets-1-multiple",
@@ -42333,11 +42341,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-villain-and-drones.feature::Ultron II counts multiple engaged Drones for an attack"
+          ],
+          "mutation": "Count fewer or more than both engaged Drones; the identity-damage assertion fails."
         }
       ]
     },
@@ -42463,11 +42473,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-villain-and-drones.feature::Ultron III reveals his Imperative and is protected by enhanced Drones"
+          ],
+          "mutation": "Remove either Drone characteristic grant or change its amount; the ATK or hit-points assertion fails."
         },
         {
           "key": "ultron-cannot-take-damage-while-drone-minion",
@@ -42475,11 +42487,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-villain-and-drones.feature::Ultron III reveals his Imperative and is protected by enhanced Drones"
+          ],
+          "mutation": "Permit damage while any Drone is in play; the zero-villain-damage assertion fails."
         },
         {
           "key": "search-encounter-deck-and-discard-pile-for",
@@ -42487,11 +42501,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-villain-and-drones.feature::Ultron III reveals his Imperative and is protected by enhanced Drones"
+          ],
+          "mutation": "Skip the search or fail to reveal Ultron's Imperative; the side-scheme and Drone-count assertions fail."
         },
         {
           "key": "then-shuffle-encounter-deck",
@@ -42499,11 +42515,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-villain-and-drones.feature::Ultron III reveals his Imperative and is protected by enhanced Drones"
+          ],
+          "mutation": "Omit the post-search shuffle; the pinned world digest fails."
         }
       ]
     },
@@ -43225,11 +43243,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-villain-and-drones.feature::A facedown Drone has base-one characteristics and returns to its owner's discard"
+          ],
+          "mutation": "Change a facedown Drone's base ATK or hit points; a characteristic assertion fails."
         },
         {
           "key": "after-facedown-drone-minion-is-defeated-place",
@@ -43237,11 +43257,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-villain-and-drones.feature::A facedown Drone has base-one characteristics and returns to its owner's discard"
+          ],
+          "mutation": "Discard the defeated Drone to the encounter discard or another player's discard; the owner-discard assertion fails."
         }
       ]
     },
@@ -43575,11 +43597,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-villain-and-drones.feature::Advanced Ultron Drone guards and replaces itself with a facedown Drone"
+          ],
+          "mutation": "Remove Guard; the villain target-availability assertion fails."
         },
         {
           "key": "when-advanced-ultron-drone-is-defeated-engaged",
@@ -43587,11 +43611,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-villain-and-drones.feature::Advanced Ultron Drone guards and replaces itself with a facedown Drone"
+          ],
+          "mutation": "Remove the forced interrupt or use another player's deck; the Drone-count or pinned-digest assertion fails."
         }
       ]
     },
