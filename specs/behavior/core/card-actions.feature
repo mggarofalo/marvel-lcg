@@ -439,8 +439,11 @@ Feature: Core card actions
   @covers:behavior:rr:event.3:requires-valid-target
   @covers:behavior:rr:target.2:requires-valid-target
   @covers:behavior:rr:target.2.2:choose-requires-target
+  @covers:behavior:rr:initiating-abilities.step.2:published-result
+  @covers:behavior:rr:play-restrictions-and-permissions.1:published-result
   @rr:ability.3 @rr:choose-game-element.2 @rr:cost.6 @rr:event.3
-  @rr:target.2 @rr:target.2.2 @card:01023
+  @rr:target.2 @rr:target.2.2 @rr:initiating-abilities.step.2
+  @rr:play-restrictions-and-permissions.1 @card:01023
   Scenario: A targeted event is unavailable when no scheme can be affected
     # An ability that "requires one or more targets" can be initiated only
     # when at least one valid target exists. Legal Practice must choose a

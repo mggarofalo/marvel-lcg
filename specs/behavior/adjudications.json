@@ -10833,11 +10833,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::A targeted event is unavailable when no scheme can be affected"
+          ],
+          "mutation": "CoreCardFaceTranscriptTests.CardActionBranchesHavePinnedOutcomes distinguishes the target restriction being checked before Legal Practice is offered or paid."
         }
       ]
     },
@@ -14986,11 +14988,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::A targeted event is unavailable when no scheme can be affected"
+          ],
+          "mutation": "CoreCardFaceTranscriptTests.CardActionBranchesHavePinnedOutcomes distinguishes Legal Practice's required affectable scheme being observed before initiation."
         }
       ]
     },
