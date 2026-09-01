@@ -4,6 +4,7 @@
        because it said so out loud. -->
   <PropertyGroup>
     <MarvelMayReferenceGodot>true</MarvelMayReferenceGodot>
+    <MarvelGodotWallProbe>true</MarvelGodotWallProbe>
   </PropertyGroup>
 
   <ItemGroup>

@@ -9,6 +9,7 @@ __pycache__/
 # C# engine (src/)
 [Bb]in/
 [Oo]bj/
+.godot/
 *.user
 .vs/
 

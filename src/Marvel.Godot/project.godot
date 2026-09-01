@@ -1,0 +1,29 @@
+; Engine configuration file.
+; Edit through the Godot editor when possible: unfamiliar properties are not
+; self-documenting, and the editor preserves the format it consumes.
+
+config_version=5
+
+[application]
+
+config/name="Marvel Champions"
+run/main_scene="res://Main.tscn"
+config/features=PackedStringArray("4.7", "C#", "GL Compatibility")
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/size/window_width_override=1280
+window/size/window_height_override=720
+window/stretch/mode="canvas_items"
+
+[dotnet]
+
+project/assembly_name="Marvel.Godot"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.035, 0.055, 0.082, 1)

@@ -110,9 +110,10 @@ parse strings or streams supplied by a host.
 
 ## Presentation boundary
 
-The client direction is Godot for macOS and Windows. A Godot project does not yet
-ship in this repository. `Marvel.View` and `Marvel.Server` provide the client-safe
-projection and transport boundary that already exist.
+The client is a Godot .NET project for macOS and Windows. Its launchable shell
+ships in this repository; opening games and rendering the visible board remain
+presentation work. `Marvel.View` and `Marvel.Server` provide the client-safe
+projection and transport boundary.
 
 The client must use `IEngineTransport` in both deployments:
 

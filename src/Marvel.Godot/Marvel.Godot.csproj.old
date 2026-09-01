@@ -1,0 +1,18 @@
+<Project Sdk="Godot.NET.Sdk/4.7.0">
+
+  <!-- The desktop presentation assembly. Godot is allowed here and nowhere
+       below this point; Directory.Build.targets enforces both sides. -->
+  <PropertyGroup>
+    <RootNamespace>Marvel.Godot</RootNamespace>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <MarvelMayReferenceGodot>true</MarvelMayReferenceGodot>
+  </PropertyGroup>
+
+  <!-- The client enters gameplay only through the visibility-safe projection
+       and transport boundary. It never references Game or World directly. -->
+  <ItemGroup>
+    <ProjectReference Include="../Marvel.Server/Marvel.Server.csproj" />
+    <ProjectReference Include="../Marvel.View/Marvel.View.csproj" />
+  </ItemGroup>
+
+</Project>

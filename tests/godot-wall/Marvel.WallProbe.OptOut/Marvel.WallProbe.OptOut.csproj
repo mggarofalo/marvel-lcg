@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The tempting escape: an ordinary project sets the presentation opt-out.
+       This must fail even without a Godot reference, because the opt-out is
+       itself part of the dependency boundary. -->
+  <PropertyGroup>
+    <MarvelMayReferenceGodot>true</MarvelMayReferenceGodot>
+  </PropertyGroup>
+
+</Project>

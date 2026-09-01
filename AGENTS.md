@@ -13,7 +13,7 @@ remain available for research without making expansion content playable. See
 [docs/scope.md](docs/scope.md).
 
 ```
-src/        the engine — `Marvel.Core`, `Marvel.Rules`, `Marvel.Cards`, `Marvel.Content`
+src/        engine and hosts — through `Marvel.Server`, plus the `Marvel.Godot` client
 tests/      the test suite, plus `godot-wall/` (projects that must fail to build)
 tools/      repo-level scripts, and the six that read a dataset in or out
 datasets/   the rules, the cards, and what a scenario is dealt from

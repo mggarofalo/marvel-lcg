@@ -5,6 +5,7 @@
        happens one level further down. -->
   <PropertyGroup>
     <MarvelMayReferenceGodot>true</MarvelMayReferenceGodot>
+    <MarvelGodotWallProbe>true</MarvelGodotWallProbe>
   </PropertyGroup>
 
   <ItemGroup>

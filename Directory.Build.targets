@@ -27,6 +27,22 @@
     <MarvelMayReferenceGodot Condition="'$(MarvelMayReferenceGodot)' == ''">false</MarvelMayReferenceGodot>
   </PropertyGroup>
 
+  <!-- An opt-out is part of the wall, not a way around it. The product's
+       Godot assembly and its tests are the only ordinary projects allowed to
+       set it. The throwaway wall probes identify themselves separately so the
+       negative and positive cases remain offline and isolated from product
+       code. -->
+  <Target Name="MarvelGodotOptOut"
+          BeforeTargets="ResolveReferences"
+          Condition="'$(MarvelMayReferenceGodot)' == 'true' and
+                     '$(MSBuildProjectName)' != 'Marvel.Godot' and
+                     '$(MSBuildProjectName)' != 'Marvel.Godot.Tests' and
+                     '$(MarvelGodotWallProbe)' != 'true'">
+
+    <Error Code="MARVELWALLOPT"
+           Text="$(MSBuildProjectName) opts out of the Godot wall, but only Marvel.Godot and its tests may do that. Remove MarvelMayReferenceGodot or prove the wall through tests/godot-wall." />
+  </Target>
+
   <!-- Resolved references, not declared ones. `ReferencePath` is what the
        compiler will actually be handed after `ResolveReferences` has walked
        every ProjectReference, every PackageReference and their transitive

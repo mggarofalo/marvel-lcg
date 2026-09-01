@@ -7,6 +7,7 @@
     <Project Path="src/Marvel.Sim/Marvel.Sim.csproj" />
     <Project Path="src/Marvel.View/Marvel.View.csproj" />
     <Project Path="src/Marvel.Server/Marvel.Server.csproj" />
+    <Project Path="src/Marvel.Godot/Marvel.Godot.csproj" />
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/Marvel.Behavior.Index/Marvel.Behavior.Index.csproj" />

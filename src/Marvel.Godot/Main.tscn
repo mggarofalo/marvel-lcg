@@ -1,0 +1,162 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://Main.cs" id="1_main"]
+
+[sub_resource type="StyleBoxFlat" id="Style_shell"]
+bg_color = Color(0.055, 0.086, 0.125, 0.94)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.35, 0.46, 0.55, 0.36)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+content_margin_left = 44.0
+content_margin_top = 40.0
+content_margin_right = 44.0
+content_margin_bottom = 40.0
+
+[sub_resource type="StyleBoxFlat" id="Style_slot"]
+bg_color = Color(0.09, 0.14, 0.18, 0.78)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.48, 0.61, 0.67, 0.28)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="Style_status"]
+bg_color = Color(0.79, 0.52, 0.17, 0.13)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.9, 0.65, 0.27, 0.5)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+content_margin_left = 14.0
+content_margin_top = 9.0
+content_margin_right = 14.0
+content_margin_bottom = 9.0
+
+[sub_resource type="LabelSettings" id="Label_title"]
+font_size = 42
+font_color = Color(0.93, 0.91, 0.84, 1)
+outline_size = 8
+outline_color = Color(0.02, 0.03, 0.05, 0.45)
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_main")
+
+[node name="Table" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.055, 0.13, 0.13, 1)
+mouse_filter = 2
+
+[node name="TopRule" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 5.0
+grow_horizontal = 2
+color = Color(0.79, 0.29, 0.27, 1)
+mouse_filter = 2
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 56.0
+offset_top = 48.0
+offset_right = -56.0
+offset_bottom = -48.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Shell" type="PanelContainer" parent="Margin"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("Style_shell")
+
+[node name="Content" type="VBoxContainer" parent="Margin/Shell"]
+layout_mode = 2
+theme_override_constants/separation = 28
+
+[node name="Eyebrow" type="Label" parent="Margin/Shell/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.65, 0.27, 1)
+theme_override_font_sizes/font_size = 14
+text = "CORE SET  /  LOCAL TABLE"
+
+[node name="Title" type="Label" parent="Margin/Shell/Content"]
+layout_mode = 2
+text = "Assemble the table."
+label_settings = SubResource("Label_title")
+
+[node name="Description" type="Label" parent="Margin/Shell/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.69, 0.75, 0.77, 1)
+theme_override_font_sizes/font_size = 18
+text = "The client boundary is ready. Game setup and the visible board arrive next."
+autowrap_mode = 2
+
+[node name="Slots" type="HBoxContainer" parent="Margin/Shell/Content"]
+custom_minimum_size = Vector2(0, 190)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 18
+
+[node name="Hero" type="PanelContainer" parent="Margin/Shell/Content/Slots"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("Style_slot")
+
+[node name="Label" type="Label" parent="Margin/Shell/Content/Slots/Hero"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.48, 0.61, 0.67, 0.85)
+theme_override_font_sizes/font_size = 15
+text = "HERO AREA"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Encounter" type="PanelContainer" parent="Margin/Shell/Content/Slots"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("Style_slot")
+
+[node name="Label" type="Label" parent="Margin/Shell/Content/Slots/Encounter"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.48, 0.61, 0.67, 0.85)
+theme_override_font_sizes/font_size = 15
+text = "ENCOUNTER AREA"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Status" type="PanelContainer" parent="Margin/Shell/Content"]
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_styles/panel = SubResource("Style_status")
+
+[node name="Text" type="Label" parent="Margin/Shell/Content/Status"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.93, 0.78, 0.48, 1)
+theme_override_font_sizes/font_size = 14
+text = "SHELL READY  ·  NO GAME OPEN"
