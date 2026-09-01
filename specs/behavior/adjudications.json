@@ -24484,11 +24484,14 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Photonic Blast draws after damage when paid with energy",
+            "specs/behavior/core/card-actions.feature::Photonic Blast does not draw when paid without energy"
+          ],
+          "mutation": "Change the base attack damage from five; both villain-damage assertions fail."
         },
         {
           "key": "if-you-paid-for-card-using-energy-condition-met",
@@ -24496,11 +24499,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Photonic Blast draws after damage when paid with energy"
+          ],
+          "mutation": "Ignore an energy resource used for payment; the hand-count assertion fails."
         },
         {
           "key": "if-you-paid-for-card-using-energy-condition-not-met",
@@ -24508,11 +24513,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Photonic Blast does not draw when paid without energy"
+          ],
+          "mutation": "Draw without an energy resource in the payment; the zero-card hand assertion fails."
         }
       ]
     },

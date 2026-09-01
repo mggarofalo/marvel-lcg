@@ -42,3 +42,59 @@ Feature: Core card actions
     When seat 1 chooses card 01094 copy 0 for the pending action
     Then card 01094 copy 0 has 8 damage
     And card 01005 copy 0 is faceup on top of seat 1's discard pile
+
+  @behavior:card:01013:if-you-paid-for-card-using-energy-condition-met
+  @covers:behavior:card:01013:deal-5-damage-enemy
+  @card:01013
+  Scenario: Photonic Blast draws after damage when paid with energy
+    # "Deal 5 damage to an enemy. If you paid for this card using an energy
+    # resource, draw 1 card."
+    Given a canonical Core scene is dealt
+      | campaign | heroes        | seed |
+      | rhino    | captain_marvel | 710  |
+    And seat 1 shows identity face 01010a
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01013 | 0    |
+      | 01088 | 0    |
+      | 01089 | 0    |
+    And these cards are next on seat 1's player deck
+      | next card | copy |
+      | 01014     | 0    |
+    When seat 1 initiates card 01013 copy 0's action paying with these cards
+      | card  | copy |
+      | 01088 | 0    |
+      | 01089 | 0    |
+    Then card 01094 copy 0 is offered by the pending action
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01094 copy 0 has 5 damage
+    And seat 1 has 1 card in hand
+    And card 01013 copy 0 is faceup on top of seat 1's discard pile
+
+  @behavior:card:01013:if-you-paid-for-card-using-energy-condition-not-met
+  @covers:behavior:card:01013:deal-5-damage-enemy
+  @card:01013
+  Scenario: Photonic Blast does not draw when paid without energy
+    # The conditional draw occurs only when an energy resource paid for the
+    # event; physical and mental resources still pay its cost but not its rider.
+    Given a canonical Core scene is dealt
+      | campaign | heroes         | seed |
+      | rhino    | captain_marvel | 711  |
+    And seat 1 shows identity face 01010a
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01013 | 0    |
+      | 01089 | 0    |
+      | 01090 | 0    |
+    And these cards are next on seat 1's player deck
+      | next card | copy |
+      | 01014     | 0    |
+    When seat 1 initiates card 01013 copy 0's action paying with these cards
+      | card  | copy |
+      | 01089 | 0    |
+      | 01090 | 0    |
+    Then card 01094 copy 0 is offered by the pending action
+    When seat 1 chooses card 01094 copy 0 for the pending action
+    Then card 01094 copy 0 has 5 damage
+    And seat 1 has 0 cards in hand
+    And card 01013 copy 0 is faceup on top of seat 1's discard pile

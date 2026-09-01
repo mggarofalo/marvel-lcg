@@ -41,14 +41,20 @@ public sealed class CoreCardFaceTranscriptTests
     [Fact]
     public void CardActionBranchesHavePinnedOutcomes()
     {
-        TranscriptResult result = Assert.Single(
-            Corpus.Value,
-            candidate => candidate.Scenario.StartsWith(
-                "specs/behavior/core/card-actions.feature::", StringComparison.Ordinal));
+        var results = Corpus.Value
+            .Where(candidate => candidate.Scenario.StartsWith(
+                "specs/behavior/core/card-actions.feature::", StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal("behavior:card:01005:deal-8-damage-enemy", result.Obligation);
+        Assert.Equal(3, results.Count);
         Assert.Equal(
             "560775a73450c5e08a03a8e7c97f7ca5e35754ab02a0d978febf300ff5d24298",
-            result.Digest);
+            results["behavior:card:01005:deal-8-damage-enemy"].Digest);
+        Assert.Equal(
+            "0ab18f084fbb35a22ec1b1a61328a1a80dfd6943e52647e0086002d2208d043b",
+            results["behavior:card:01013:if-you-paid-for-card-using-energy-condition-met"].Digest);
+        Assert.Equal(
+            "6e04ae4193f3ea1915a59534947894e2df0f360c0e54e6f8e92de1efa3e0b51d",
+            results["behavior:card:01013:if-you-paid-for-card-using-energy-condition-not-met"].Digest);
     }
 }
