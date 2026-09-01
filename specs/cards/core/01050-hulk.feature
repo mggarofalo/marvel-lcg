@@ -1,4 +1,4 @@
-# Hulk. MARVEL-68, the first card of the core shard.
+# Hulk. the original investigation, the first card of the core shard.
 #
 # > Forced Response: After Hulk attacks, discard the top card of your deck. If
 # > that card's printed resource has:
@@ -8,7 +8,7 @@
 # > [wild]     - All of the above.
 #
 # Four branches off one attack, chosen by a card the scenario controls entirely:
-# `my deck is` writes the deck top-first (MARVEL-82), so the first card named is
+# `my deck is` writes the deck top-first (the original investigation), so the first card named is
 # the one discarded and the branch is deterministic. Without that this card would
 # need the RNG pinned; with it, each branch is one scenario.
 #
@@ -92,7 +92,7 @@ Feature: Hulk
 
   @card:01050
   Scenario: an empty deck discards nothing and the response still finishes
-    # MARVEL-119. A puzzle board starts with no player deck, and with the
+    # the original investigation. A puzzle board starts with no player deck, and with the
     # discard pile empty as well there is nothing to reshuffle -- so the forced
     # response is asked to discard a card that does not exist. The rule is that
     # the ability does as much as it can: nothing is discarded, no printed

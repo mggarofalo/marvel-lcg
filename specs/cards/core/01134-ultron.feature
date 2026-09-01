@@ -95,7 +95,7 @@ Feature: Ultron
     And "Pepper Potts in EngagedEnemiesArea" is in play
     # The name the game displays, and the same string the validator itself
     # prints when it lists the legal targets of the minion activation prompt.
-    # Until MARVEL-102 the harness would not accept a name it was already
+    # Until the original investigation the harness would not accept a name it was already
     # printing: refs matched printed faces only, and a facedown drone has no
     # printed face called this.
     And "Drone Minion" is in the "EngagedEnemiesArea"

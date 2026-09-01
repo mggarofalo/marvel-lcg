@@ -4,9 +4,9 @@
 # search their deck and discard pile for an ally and put it into play.
 # (Shuffle.)"
 #
-# 40018 (NeXt Evolution) and 59022 (Hercules) are the reprint pair MARVEL-106
+# 40018 (NeXt Evolution) and 59022 (Hercules) are the reprint pair the original investigation
 # confirmed cosmetic -- the two scripts differ only in local names. Both spell
-# the opt-in as `Search.PlayerCard(..., may=True)`, and until MARVEL-112 that
+# the opt-in as `Search.PlayerCard(..., may=True)`, and until the original investigation that
 # spelling could not be accepted by any automated player: `may` widened the
 # selector to (0, max), and picking the minimum -- what `BotCommand.Build` and
 # the engine's own forced-effect path both do -- meant taking no card at all.

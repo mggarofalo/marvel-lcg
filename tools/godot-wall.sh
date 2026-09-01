@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# MARVEL-162 — prove the wall.
+# the original investigation — prove the wall.
 #
 # `Directory.Build.targets` refuses to build any assembly below `Marvel.Godot`
 # that can see `GodotSharp`, and refuses to build one that targets a framework

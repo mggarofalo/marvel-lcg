@@ -1,4 +1,4 @@
-# Status cards: stunned, confused, tough. Rulebook behavior. MARVEL-23.
+# Status cards: stunned, confused, tough. Rulebook behavior. the original investigation.
 #
 # Toughness is a printed keyword as well as a status, so the keyword half lives
 # in keywords.feature; what is here is the status a card holds.
@@ -10,7 +10,7 @@
 # option -- it empties the option's legal targets, so the restriction shows up
 # in neither the option set nor any card's state, and both `I am prompted to
 # choose one` and every `Then` about the board pass straight over it. `I cannot
-# attack "<card>"` is the step that sees it (MARVEL-84).
+# attack "<card>"` is the step that sees it (the original investigation).
 #
 # Each restriction is written next to the action it does *not* touch. "A stunned
 # hero cannot attack" is only worth asserting alongside "a stunned hero can

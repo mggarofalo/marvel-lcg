@@ -24,7 +24,7 @@ namespace Marvel.Content.Tests.Play;
 /// <para>
 /// <b>The board after each decision is not checked, and should be.</b> Folding
 /// a sequence of answers and asserting the resulting board and prompts at each
-/// step is the coverage this file is missing — MARVEL-251.
+/// step is the coverage this file is missing — the original investigation.
 /// </para>
 /// <para>
 /// <b>Affordance ids are deliberately not asserted on.</b> They are session
@@ -344,7 +344,7 @@ public sealed class PlayerPhaseTests
         // their hand size." Two clauses, and the second is a floor the offer
         // has to carry: `PhaseEnd.DiscardToHandSize` refuses an answer that
         // leaves the hand over its size, so an affordance saying `min: 0` is
-        // the engine offering a move it will then reject. MARVEL-245.
+        // the engine offering a move it will then reject. the original investigation.
         //
         // Spider-Man holds five and Peter Parker six, so a player who mulligans
         // nothing, flips down, and ends their turn is holding one too many
@@ -393,7 +393,7 @@ public sealed class PlayerPhaseTests
         // Sooner or later a card play and an action carry the same id, and
         // `Resolve` finds the answer with `First` -- so the player asks for the
         // ability and the engine plays a card, with nothing anywhere saying so.
-        // MARVEL-244.
+        // the original investigation.
         //
         // The stub does the worst case on purpose: it claims the id `Change_Form`
         // already holds. Whatever the real interpreter numbers its options with

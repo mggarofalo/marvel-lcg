@@ -1,6 +1,6 @@
 <Project>
 
-  <!-- The wall (MARVEL-162).
+  <!-- The dependency wall.
 
        docs/presentation-layer.md draws a line: everything below `Marvel.Godot`
        is engine, everything at or above it is presentation. The line is only

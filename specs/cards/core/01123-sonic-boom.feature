@@ -46,7 +46,7 @@ Feature: Sonic Boom
     #
     # The hand pays [energy][mental][physical] so that both options are on
     # offer: an option that cannot be paid for is not offered at all
-    # (MARVEL-109), and a five-Backflip hand -- which is what this scenario used
+    # (the original investigation), and a five-Backflip hand -- which is what this scenario used
     # to hold -- makes the spend branch disappear and leaves nothing to choose.
     Given I am in hero form
     And "Black Cat" is in play
@@ -116,7 +116,7 @@ Feature: Sonic Boom
     # that *can* be paid, and the prompt says so -- it names
     # [[mental]][[physical]], not the printed three.
     #
-    # Declining is what this scenario exists to rule out. Before MARVEL-109 the
+    # Declining is what this scenario exists to rule out. Before the original investigation the
     # engine accepted a decline here and the treachery resolved to nothing at
     # all: hand still three cards, board untouched.
     Given I am in hero form

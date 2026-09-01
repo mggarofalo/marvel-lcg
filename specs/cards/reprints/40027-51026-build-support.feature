@@ -20,11 +20,11 @@
 # So the reprint was right and the original was the broken one. 40027 now uses
 # the same shape. The two files also used to differ over `cost_equal_or_less=3`
 # versus `cost_less_than=3`, which was never a difference -- both compiled to
-# `printed_cost.val > 3`. MARVEL-115 deleted the misnamed spelling, so both now
+# `printed_cost.val > 3`. the original investigation deleted the misnamed spelling, so both now
 # read `cost_equal_or_less=3`, which is what "a cost of 3 or less" prints.
 #
 # The same `may=True` no-op affects six other cards -- see the report on
-# MARVEL-106.
+# the original investigation.
 #
 # ---------------------------------------------------------------------------
 # Board notes.

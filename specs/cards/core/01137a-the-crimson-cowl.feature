@@ -19,7 +19,7 @@
 # nothing into play. Not because the card is optional in a real game, but because
 # there was no way to hand the scene a card before setup.
 #
-# MARVEL-121 added one (the same step 01116a needs, for the same reason):
+# the original investigation added one (the same step 01116a needs, for the same reason):
 #
 #     Given the encounter deck at setup is "Ultron Drones", ...
 #

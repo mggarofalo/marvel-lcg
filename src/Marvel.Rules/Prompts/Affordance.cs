@@ -17,7 +17,7 @@ namespace Marvel.Rules.Prompts;
 /// </param>
 /// <param name="AnchorPlayer">Whose board the anchor sits on.</param>
 /// <param name="Label">
-/// The domain-level label, unchanged from what MARVEL-41 requires of the prompt
+/// The domain-level label, unchanged from what the original investigation requires of the prompt
 /// so the spec suite is unaffected.
 /// </param>
 /// <param name="Targets">
@@ -35,7 +35,7 @@ namespace Marvel.Rules.Prompts;
 /// <para>
 /// <b><paramref name="Id"/> is a handle, not a name.</b> Ids are allocated per
 /// session, so an id written down in one run does not necessarily name the same
-/// option in another. MARVEL-164 measured the drift and found it real but
+/// option in another. the original investigation measured the drift and found it real but
 /// narrow — nine of 5,809 recorded inputs, all of one ability kind, every one of
 /// the nine <b>exactly 25 too high</b>, across four scenes in four different
 /// campaigns. A recorded id therefore has to be re-resolved rather than
@@ -93,7 +93,7 @@ public sealed record Affordance(
     /// </para>
     /// <para>
     /// Not observed once in 6,351 sampled options, nor in the <b>19,103</b>
-    /// MARVEL-164 rendered from a larger sample drawn differently. A player who
+    /// the original investigation rendered from a larger sample drawn differently. A player who
     /// only takes what they can afford does not surface many.
     /// </para>
     /// <para>

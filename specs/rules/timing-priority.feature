@@ -1,5 +1,5 @@
 # Timing priority: which of two things that want to happen at the same moment
-# happens first. MARVEL-23.
+# happens first. the original investigation.
 #
 # The order is `TimingPriority` in game/ability/ability_type.py:
 #
@@ -31,7 +31,7 @@
 # scenario can put two of them in a race deliberately. Their *effects* are still
 # specifiable -- consequential damage to an attacking ally is a rule a scenario
 # can pin -- but that pins the effect, not its position in this list. See
-# MARVEL-23 for the finding.
+# the original investigation for the finding.
 #
 # The remaining pairs are covered as follows:
 #
@@ -41,9 +41,9 @@
 #     ForcedInterrupt -> Interrupt   not observable in the core set: no board
 #                                    makes 01098 and 01003 simultaneous.
 #                                    21 events elsewhere carry both; see
-#                                    MARVEL-83
+#                                    the original investigation
 #     Interrupt -> Boost             proven below, decisively (unblocked by
-#                                    MARVEL-91)
+#                                    the original investigation)
 #     Boost -> ForcedResponse        not observable: the single candidate is a
 #                                    mistyped card. See the end of this file.
 #
@@ -357,7 +357,7 @@ Feature: Timing priority
   # takes it to 1. Verified decisive by mutation -- remapping AbilityType.Interrupt
   # to a priority after Boost gives exactly 1, while both controls keep passing.
   #
-  # This section was recorded as BLOCKED until MARVEL-91. Playing Gatekeeper used
+  # This section was recorded as BLOCKED until the original investigation. Playing Gatekeeper used
   # to stop the game with a two-option prompt whose options had no names, because
   # `TimingPriority.Constant` reached the simultaneous-forced-ability ordering
   # prompt -- and a constant applies continuously, so there is no moment to
@@ -422,7 +422,7 @@ Feature: Timing priority
   # When Defeated, a When Revealed or a boost, so a scenario built on it would
   # have pinned the typo as the rule.
   #
-  # MARVEL-89 has since retyped it to `ForcedResponse`, so no event carries both
+  # the original investigation has since retyped it to `ForcedResponse`, so no event carries both
   # priorities at all now and the pair is not merely unobserved but structurally
   # unreachable. `test_card_dataset.py` guards the class of mistake: a
   # Boost-priority ability type may only be registered on a defeat event.

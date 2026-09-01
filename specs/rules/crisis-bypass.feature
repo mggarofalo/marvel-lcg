@@ -1,5 +1,5 @@
 # The crisis-icon bypass: the branch `specs/rules/damage-and-threat.feature`
-# names and cannot reach. MARVEL-90.
+# names and cannot reach. the original investigation.
 #
 # The crisis rule itself is specified there: while a card bearing the icon is in
 # play, threat cannot be removed from the main scheme. `scheme_main.py` guards

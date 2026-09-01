@@ -216,7 +216,7 @@ public static class Elimination
         {
             // `.1` and `.2`. A non-attachment permanent is removed from the
             // game; an attachment resolves its "attach to" text first, and that
-            // text is not modelled -- see MARVEL-193's note on the keyword.
+            // text is not modelled -- see the original investigation's note on the keyword.
             if (facts.Kind(card.FaceId) == CardKind.Attachment)
             {
                 throw new RulesNotImplementedException(

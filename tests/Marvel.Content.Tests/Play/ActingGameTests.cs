@@ -17,16 +17,16 @@ namespace Marvel.Content.Tests.Play;
 /// deck never advances, because nobody ever attacks. So eighty
 /// green games proved that the <i>encounter deck</i> resolves, and nothing at
 /// all about playing a card, paying for it, attacking, thwarting, recovering,
-/// or triggering an action. MARVEL-230.
+/// or triggering an action. the original investigation.
 /// </para>
 /// <para>
 /// This is the other half of that coverage and it is not a better player —
 /// <see cref="ActingPolicy"/> takes a random legal option. What it is, is a
 /// player who reaches the parts of the engine a passer cannot, and the two
 /// bugs it found on its first run are both of that kind: an end-of-phase
-/// prompt that offered an answer the engine then refused (MARVEL-245), and two
+/// prompt that offered an answer the engine then refused (the original investigation), and two
 /// options in one turn prompt sharing an id, where taking one silently
-/// resolved the other (MARVEL-244).
+/// resolved the other (the original investigation).
 /// </para>
 /// <para>
 /// <b>Two decline rates, and the second earns its runtime.</b> A player who
@@ -42,7 +42,7 @@ namespace Marvel.Content.Tests.Play;
 /// random player loses this game — it spends its whole hand on the first card
 /// it can afford and attacks whatever it happens to pick. Reaching
 /// <see cref="Outcome.PlayersWin"/> through play needs a policy that plans, and
-/// that is MARVEL-14 rather than something to assert here. What is asserted
+/// that is the original investigation rather than something to assert here. What is asserted
 /// instead is that the play actually happened, so this cannot quietly decay
 /// into the passing policy it exists to complement.
 /// </para>
@@ -117,7 +117,7 @@ public sealed class ActingGameTests
         // `Game.Resolve` finds the answer with `First(option => option.Id ==
         // input.Affordance)`, so two options sharing an id in one prompt do not
         // fail -- they resolve the wrong one, and the player sees a card played
-        // where they asked for an ability. MARVEL-244 was exactly that, between
+        // where they asked for an ability. the original investigation was exactly that, between
         // an ability's affordance (numbered by its card's object id) and a card
         // play (numbered from a counter).
         //

@@ -31,7 +31,7 @@ Feature: Tony Stark
   Scenario: exactly the top three cards are offered, and the fourth is not
     # "Look at the top 3 cards of your deck" is a claim about the option's legal
     # targets, not about the option set -- the engine offers one option named
-    # Futurist and the three cards are its targets. Before MARVEL-94 there was
+    # Futurist and the three cards are its targets. Before the original investigation there was
     # no step that could say this and the scenario had to be dropped.
     Given I am in alter-ego form
     And my deck is "Repulsor Blast", "Mark V Armor", "Pepper Potts", "Backflip"

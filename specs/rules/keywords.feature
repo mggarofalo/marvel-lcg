@@ -1,7 +1,7 @@
-# Keyword and icon semantics. MARVEL-23, MARVEL-84.
+# Keyword and icon semantics. the original investigation, the original investigation.
 #
 # The core-set shard first covered the five keywords it prints -- Toughness,
-# Guard, Retaliate, Surge and Quickstrike. MARVEL-84 adds the seven keyword
+# Guard, Retaliate, Surge and Quickstrike. the original investigation adds the seven keyword
 # behaviors that first appear in later products: Steady, Stalwart, Patrol,
 # Peril, Hinder, Incite and Villainous.
 #
@@ -22,12 +22,12 @@
 # that is dealt and revealed. So in a three-card list the first is the boost
 # card, the second is the one revealed, and the third is what a surge reaches.
 #
-# It read the other way round until MARVEL-82 and cost an hour of MARVEL-23 to
+# It read the other way round until the original investigation and cost an hour of the original investigation to
 # work out from behaviour, so it is worth stating wherever scenarios depend on
 # it -- which every one below does.
 #
 # ---------------------------------------------------------------------------
-# Why a rules file carries `@card:` tags. MARVEL-120.
+# Why a rules file carries `@card:` tags. the original investigation.
 #
 # It did not until now, and that was an under-count rather than a policy.
 # `docs/spec-campaign.md` argues the campaign's denominator is 3,996 and not
@@ -36,12 +36,12 @@
 # `game/card/face/attribute/`, and the scenarios below pin it. So the campaign
 # counted them in the denominator on the strength of these scenarios while
 # `tools.spec.coverage` -- which joins on `@card:` -- credited them to nobody.
-# The denominator moved and the numerator did not, which is the MARVEL-16 shape
+# The denominator moved and the numerator did not, which is the the original investigation shape
 # and the direction a coverage number must never drift on its own. The tag is a
 # join key, not a claim: every scenario here already existed, already passed,
 # and already said what it says.
 #
-# `specs/rules/crisis-bypass.feature` has tagged five card ids since MARVEL-90,
+# `specs/rules/crisis-bypass.feature` has tagged five card ids since the original investigation,
 # so the practice is settled; this file was simply written before it.
 #
 # **The rule applied here**: tag the card whose *printed text the scenario is
@@ -101,7 +101,7 @@ Feature: Keywords
   # The engine enforces this by filtering the Attack option's legal targets
   # rather than by removing the option, so the restriction shows up in neither
   # the option set nor any card's state. `Then I cannot attack "<card>"` is the
-  # step that can see it (MARVEL-84).
+  # step that can see it (the original investigation).
 
   @card:01101
   @rr:guard.1

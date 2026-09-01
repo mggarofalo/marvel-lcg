@@ -8,14 +8,14 @@
 # ---------------------------------------------------------------------------
 # The third X-cost card, and the one with a printed conditional that nothing
 # could reach. "3 threat instead if you overpaid" needs a payment larger than
-# the number of schemes chosen, and before MARVEL-135 the payment was always
+# the number of schemes chosen, and before the original investigation the payment was always
 # zero, so the branch was dead code on a shipped card.
 #
 # It also carried a defect of its own, which only became visible once it could
 # be paid for: the script read X as `GetPaidResources().GetResourceIconTypes()`
 # -- how many *kinds* of resource were spent, capped at four. That is Jubilee's
 # mechanic, not this card's. Two [[mental]] resources bought one scheme rather
-# than two, and "overpaid" meant "spent two colours". MARVEL-137.
+# than two, and "overpaid" meant "spent two colours". the original investigation.
 #
 # ## Falcon, and the pass
 #
@@ -74,7 +74,7 @@ Feature: Everywhere All at Once
 
   @card:58018
   Scenario: two resources of one type are still two resources
-    # MARVEL-137 in one scenario. Both fillers print [[mental]], so a reading of
+    # the original investigation in one scenario. Both fillers print [[mental]], so a reading of
     # X as "how many kinds of resource" makes this board X = 1: one scheme
     # chosen, not overpaid, 2 threat off the main scheme and none off the side
     # one. The reading that matches the printed card is the one above.

@@ -101,7 +101,7 @@ public sealed class GherkinFormatTests
     {
         // The `@card:` and `@rr:` tags are how a scenario is joined to the card
         // dataset and to the Rules Reference. A parser that dropped or mangled
-        // them would take the whole citation graph with it (MARVEL-154).
+        // them would take the whole citation graph with it (the original investigation).
         var parser = new Parser();
         var tags = new HashSet<string>(StringComparer.Ordinal);
 

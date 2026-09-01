@@ -25,7 +25,7 @@ namespace Marvel.Content.Tests.Setup;
 /// <para>
 /// <c>WorldSetup</c> flipped at its own step 4, before the villain entered play
 /// and long before anything could read side 1A. Nothing turned on it while no
-/// setup ability ran at all — MARVEL-242 pinned it as a divergence rather than
+/// setup ability ran at all — the original investigation pinned it as a divergence rather than
 /// a bug for exactly that reason — and running one is what makes it a bug.
 /// </para>
 /// </remarks>

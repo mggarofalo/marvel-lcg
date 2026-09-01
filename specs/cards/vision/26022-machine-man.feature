@@ -6,7 +6,7 @@
 # [[physical]]. Trait: ANDROID.
 #
 # ---------------------------------------------------------------------------
-# The card that says MARVEL-135 was never only about the three X-cost cards.
+# The card that says the original investigation was never only about the three X-cost cards.
 #
 # "Spend up to 3" is a ceiling on an effect, not a price, and spending nothing
 # satisfies it -- so the bot spent nothing, every time, and this ally's only
@@ -85,7 +85,7 @@ Feature: Machine Man
     # A puzzle scene deals no opening hand, so this is the empty-hand board.
     # The interrupt is still offered -- an `UpTo` cost is affordable with
     # nothing -- and taking it changes nothing at all. This is what every
-    # generated game did with this card before MARVEL-135.
+    # generated game did with this card before the original investigation.
 
     When I choose "Attack" on "Machine Man" targeting "Rhino"
     When I choose "Interrupt" on "Machine Man"

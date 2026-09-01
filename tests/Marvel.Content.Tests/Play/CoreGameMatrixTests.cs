@@ -55,7 +55,7 @@ public sealed class CoreGameMatrixTests
                         // prompt boundary. Seed 285 puts Hydra Bomber into play
                         // during Klaw setup; rr:when-revealed-abilities.1 now
                         // correctly defers its mandatory choice to setup, where
-                        // MARVEL-275 owns making that choice resumable.
+                        // the original investigation owns making that choice resumable.
                         ("iron_man", "klaw") => 1285,
                         ("she_hulk", "ultron") => 1281,
                         ("she_hulk", "ultron_expert") => 1282,

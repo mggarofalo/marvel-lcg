@@ -2252,7 +2252,7 @@ public static class VillainPhase
         // boost cards remaining, repeat these steps with the next boost card."
         // That sentence cannot be true of a card drawn and discarded inside one
         // call, which is what this was: exactly one, with nowhere to put a
-        // second. MARVEL-250.
+        // second. the original investigation.
         //
         // So the card goes where the rule puts it, on the enemy, and steps 1
         // and 2 become the two steps `rr:attack-enemy-activation` writes the

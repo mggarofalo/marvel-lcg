@@ -41,8 +41,8 @@ public sealed record CardBlueprint(string Spec, SetupSlot Slot, int Seat);
 /// <para>
 /// The order of operations matters twice over: card creation order fixes every
 /// <c>object_id</c>, and the <b>two shuffles</b> draw from one seeded stream, so
-/// swapping them changes every card's position. Nothing currently checks the
-/// result — MARVEL-251 — so treat any change here as changing every game.
+/// swapping them changes every card's position. The deterministic setup and
+/// digest tests pin the result, so treat any change here as changing every game.
 /// </para>
 /// <para>
 /// Exactly two RNG calls happen during setup, measured on
@@ -305,7 +305,7 @@ public static class WorldSetup
             throw new Play.RulesNotImplementedException(
                 $"card '{card.FaceId}' has the setup keyword and "
                 + "rr:appendix-ii-setup.step.11 puts it into play, and this engine has "
-                + "nowhere to put it. MARVEL-247");
+                + "nowhere to put it");
         }
 
         // `rr:when-revealed-abilities.1`: encounter cards that entered play
@@ -379,7 +379,7 @@ public static class WorldSetup
 
                 throw new Play.RulesNotImplementedException(
                     $"card '{faceId}' is a {kind}, and this engine does not "
-                    + $"yet support {missing}. MARVEL-257");
+                    + $"yet support {missing}");
             }
         }
     }

@@ -12,7 +12,7 @@ namespace Marvel.Content.Tests.Setup;
 /// <remarks>
 /// <para>
 /// <c>WorldSetup.Deal</c> has seven numbered steps and the Rules Reference has
-/// sixteen, and until MARVEL-241 the sixteen were not in this repository — the
+/// sixteen, and until the original investigation the sixteen were not in this repository — the
 /// snapshot stopped at the glossary and Appendix II is page 51. So the engine's
 /// setup had never been held against the thing it implements.
 /// </para>

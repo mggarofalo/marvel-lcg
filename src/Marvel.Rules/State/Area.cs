@@ -8,7 +8,7 @@ namespace Marvel.Rules.State;
 /// <b>An area is identified, not described.</b> <c>(zone, owner, host)</c> does
 /// not name an area uniquely — over a 6,554-step sample of recorded play it
 /// collided on 5,969 of them — so the area carries an <see cref="Id"/> that the
-/// engine hands out. MARVEL-175 and <c>docs/event-stream.md</c>.
+/// engine hands out. the original investigation and <c>docs/event-stream.md</c>.
 /// </para>
 /// <para>
 /// <b>Two seat-shaped fields, and they are different questions.</b>
@@ -54,7 +54,7 @@ public sealed class Area
     /// <remarks>
     /// <para>
     /// This is what <c>AreaRef.Owner</c> carries on the wire, and it is not the
-    /// card's controller. MARVEL-163 measured the difference: answering with
+    /// card's controller. the original investigation measured the difference: answering with
     /// the controller alone names the scenario for every player's engagement
     /// area, which mislabelled 380 of 621 ambiguous steps — a minion engaged
     /// with you is in <i>your</i> play area and controlled by the scenario.

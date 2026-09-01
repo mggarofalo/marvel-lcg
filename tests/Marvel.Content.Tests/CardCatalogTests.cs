@@ -111,12 +111,9 @@ public sealed class CardCatalogTests
     [Fact]
     public void EveryCardInTheSnapshotHasItsPrintedTraits()
     {
-        // The dataset this replaced held an engine-side record for 3,999 of its
-        // 4,344 cards and gave the other 345 no traits at all -- 200 of them
-        // with printed ones. A card the engine has never dealt is still a card
-        // it can be asked to deal.
-        //
-        // 21180b Cosmo prints GUARDIAN; 21187a Norn Stone prints two.
+        // Printed traits remain available even for research-only cards outside
+        // the executable product boundary. 21180b Cosmo prints GUARDIAN;
+        // 21187a Norn Stone prints two.
         Assert.Equal(["GUARDIAN"], Cards.Traits("21180b"));
         Assert.Equal(["ASGARD", "ARTIFACT"], Cards.Traits("21187a"));
     }

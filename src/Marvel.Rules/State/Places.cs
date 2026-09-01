@@ -33,7 +33,7 @@ namespace Marvel.Rules.State;
 /// </para>
 /// <para>
 /// <b>Nothing but the rulebook can check this.</b> The digest cannot see a play
-/// area at all (MARVEL-174): moving 47 cards into a freshly created game area
+/// area at all (the original investigation): moving 47 cards into a freshly created game area
 /// left it byte-identical. So these are held against the published rules,
 /// quoted at each one, and the tests cite the rule they come from.
 /// </para>
@@ -45,7 +45,7 @@ public static class Places
     /// <para>
     /// <b><c>AreaRef.Owner</c> is the play area, not the card's controller and
     /// not <c>Area.CardOwner</c>.</b> The wire type has said so in prose since
-    /// MARVEL-163; this is the one conversion, so the two cannot drift into
+    /// the original investigation; this is the one conversion, so the two cannot drift into
     /// disagreeing about which of three seat-shaped numbers it carries.
     /// </para>
     /// <para>

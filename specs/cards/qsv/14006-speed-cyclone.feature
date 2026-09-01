@@ -3,7 +3,7 @@
 # Printed cost: X. Resource icon: [[energy]]. Trait: SUPERPOWER.
 #
 # ---------------------------------------------------------------------------
-# The first scenarios this card has ever had, because until MARVEL-135 it could
+# The first scenarios this card has ever had, because until the original investigation it could
 # not be made to do anything.
 #
 # X is not a number the engine holds. `Cost.FromText` reads "X" as zero -- it is
@@ -53,7 +53,7 @@ Feature: Speed Cyclone
 
   @card:14006
   Scenario: one resource spent stuns only the first enemy named
-    # The floor and the ceiling of MARVEL-133 in one board. The card asks for
+    # The floor and the ceiling of the original investigation in one board. The card asks for
     # `range=(1, "All")` because a selector cannot be bounded by a cost that has
     # not been paid yet, so both enemies are legal targets and both are chosen
     # -- and then `effect.targets[:cost]` throws the second one away.
@@ -87,7 +87,7 @@ Feature: Speed Cyclone
     # The card is still played and still discarded -- it is not withheld for
     # being unaffordable, because a cost of X is affordable with an empty hand.
     #
-    # This is exactly what every game did before MARVEL-135, on every board.
+    # This is exactly what every game did before the original investigation, on every board.
     Given my hand is "Speed Cyclone", "Always Be Running"
 
     When I choose "Play" on "Speed Cyclone" paying 0 resources targeting "Rhino"

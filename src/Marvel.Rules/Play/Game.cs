@@ -217,7 +217,7 @@ public sealed class Game
         // answer was reaching the verb table below and being told that taking
         // 'Defense' is not implemented, which was true only in the sense that
         // it had nowhere to go: `Sequence.Answer` has handled a step's own
-        // question since it was written. MARVEL-246.
+        // question since it was written. the original investigation.
         if (Phase is GamePhase.PlayerSetup or GamePhase.PlayerTurn
             && asking == Asker.Sequence)
         {
@@ -987,7 +987,7 @@ public sealed class Game
     /// <remarks>
     /// <para>
     /// Only what is offered <i>and</i> can be taken. An affordance that would
-    /// throw when taken is worse than an absent one — MARVEL-130 is that same
+    /// throw when taken is worse than an absent one — the original investigation is that same
     /// defect on the action menu.
     /// </para>
     /// <para>
@@ -1073,7 +1073,7 @@ public sealed class Game
             // counter. Both are valid handles and they are different number
             // spaces, so an unstamped one collides with a card play sooner or
             // later -- and `Resolve` would then take the play instead of the
-            // ability, with nothing anywhere saying so. MARVEL-244.
+            // ability, with nothing anywhere saying so. the original investigation.
             var described = abilities.Describe(world, action);
             options.Add(described with
             {
@@ -1284,7 +1284,7 @@ public sealed class Game
     /// they silently resolve the wrong one. An ability's own affordance arrives
     /// carrying the card's object id (<c>ICardAbilities.Describe</c> has no
     /// allocator to ask), and a card play carries a counter, and the two number
-    /// spaces overlap. MARVEL-244.
+    /// spaces overlap. the original investigation.
     /// </remarks>
     /// <param name="verb">What kind of option it is.</param>
     /// <param name="anchor">The board object it hangs on.</param>

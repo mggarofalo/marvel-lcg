@@ -42,7 +42,7 @@ Feature: Stampede
 
   @card:01106
   Scenario: revealed to an alter-ego it surges and nobody is attacked
-    # The encounter deck is written top-first (MARVEL-82) and a villain
+    # The encounter deck is written top-first (the original investigation) and a villain
     # activation takes two cards: the mercenary boosts, Stampede is revealed,
     # and Shocker is what the surge reaches. 3 threat on the main scheme is the
     # activation against an alter-ego -- Rhino's printed SCH 1, 1 for the boost

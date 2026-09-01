@@ -589,7 +589,7 @@ public static class StateFields
         }
     }
 
-    // The engine's `CardFace.MergeInfo` guard (MARVEL-49): two sources claiming
+    // The engine's `CardFace.MergeInfo` guard (the original investigation): two sources claiming
     // one key is a fault, because the loser would vanish from the wire and a
     // missing field is invisible in a diff in a way a changed one is not.
     private static void Merge(Dictionary<string, long> fields, string key, long value)

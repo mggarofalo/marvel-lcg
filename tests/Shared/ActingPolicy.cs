@@ -12,7 +12,7 @@ namespace Marvel.Tests;
 /// good at walking the encounter deck: a hero who never acts meets more of it
 /// than one who wins. The cost is that half the engine never runs — no card is
 /// ever played, no attack is ever made, no cost is ever paid, and the villain
-/// deck never advances. MARVEL-230.
+/// deck never advances. the original investigation.
 /// </para>
 /// <para>
 /// This is the other half. It takes a random legal option, chooses random legal
@@ -26,8 +26,8 @@ namespace Marvel.Tests;
 /// </para>
 /// <para>
 /// <b>What it found.</b> The end-of-phase prompt offered an answer the engine
-/// then refused (MARVEL-245), and two affordances in one turn prompt shared an
-/// id, so taking one silently resolved the other (MARVEL-244). Neither is
+/// then refused (the original investigation), and two affordances in one turn prompt shared an
+/// id, so taking one silently resolved the other (the original investigation). Neither is
 /// reachable by a policy that declines.
 /// </para>
 /// </remarks>
@@ -50,7 +50,7 @@ public sealed class ActingPolicy(int seed, int declineOneIn = 4)
         ArgumentNullException.ThrowIfNull(asked);
         Answered++;
 
-        // The invariant that MARVEL-244 broke, checked on every prompt of every
+        // The invariant that the original investigation broke, checked on every prompt of every
         // game rather than in a test of its own: `Game.Resolve` looks the answer
         // up by id with `First`, so two options sharing one in a single prompt
         // do not fail -- they resolve the wrong option.

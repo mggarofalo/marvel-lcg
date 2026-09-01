@@ -44,14 +44,14 @@ namespace Marvel.Rules.Prompts;
 /// <b>22.1% of priced affordances offer five ways to pay and 21.6% offer six</b>;
 /// only 7.3% offer exactly one. An interface that picked for the player would be
 /// wrong most of the time, and one that modelled payment as a single number
-/// could not express the choice at all. See MARVEL-169.
+/// could not express the choice at all. See the original investigation.
 /// </para>
 /// <para>
 /// <paramref name="OrCost"/> is additive on purpose: <paramref name="Cost"/> and
 /// <paramref name="Rule"/> keep describing the primary reading, so a reader that
 /// ignores the alternative is merely conservative rather than wrong. A reader
 /// planning a payment needs both — flattening an alternative cost to a bare
-/// number is what MARVEL-158 found breaking games, because the payer met the
+/// number is what the original investigation found breaking games, because the payer met the
 /// number with resources of the wrong type and the ability failed
 /// mid-resolution.
 /// </para>

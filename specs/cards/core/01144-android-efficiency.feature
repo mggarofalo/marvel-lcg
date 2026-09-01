@@ -63,7 +63,7 @@ Feature: Android Efficiency
     # The "each" in "each player puts the top card of their deck into play". The
     # single-player scenario above is equally consistent with an engine that
     # resolved this once, for whoever revealed it -- which is exactly the class
-    # of bug MARVEL-16 says self-play will not find, because a bot game that
+    # of bug the original investigation says self-play will not find, because a bot game that
     # reaches this card at all still only ever sees one board.
     #
     # The two decks are stocked with different cards on top on purpose. Two
@@ -82,11 +82,11 @@ Feature: Android Efficiency
     And "Pepper Potts" is in the "EngagedEnemiesArea"
     # ...and both under the name the game displays for a facedown drone, which
     # needs an ordinal because there are now two of them. `#N` is creation order,
-    # so #1 is the card written first -- mine (MARVEL-102).
+    # so #1 is the card written first -- mine (the original investigation).
     And "Drone Minion #1" is in the "EngagedEnemiesArea"
     And "Drone Minion #2" is in the "EngagedEnemiesArea"
     # One card off each deck, not two off one. This is the assertion the
-    # vocabulary could not make before MARVEL-101: the second player's deck had
+    # vocabulary could not make before the original investigation: the second player's deck had
     # no step that could stock it and none that could count it.
     And player 1 has 2 cards in their deck
     And player 2 has 2 cards in their deck
@@ -198,7 +198,7 @@ Feature: Android Efficiency
     # else. "Choose to either spend a [energy] resource or put the top card of
     # the deck into play" has one branch this player can fulfill, so there is no
     # choice to make: the option that cannot be paid for is withheld the way a
-    # targetless option is, and the drone is made without a prompt (MARVEL-109).
+    # targetless option is, and the drone is made without a prompt (the original investigation).
     #
     # There is no `Then I am prompted to choose one` here on purpose. The step
     # after the Defense is the *drone's* attack, which is only reachable if the
@@ -276,7 +276,7 @@ Feature: Android Efficiency
   @card:01144 @card:01144b
   Scenario: a [mental] cost this player cannot pay is not offered on the [mental] face
     # The hand holds one Strength and nothing else, so the spend branch has no
-    # payment and is withheld the way a targetless option is (MARVEL-109). One
+    # payment and is withheld the way a targetless option is (the original investigation). One
     # branch left is no choice, so the drone is made with no prompt in between --
     # and there is deliberately no `Then I am prompted to choose one` here: the
     # next decision the transcript answers is the *drone's* attack, which is only

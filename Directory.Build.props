@@ -6,7 +6,7 @@
     <!-- net8.0, not net10.0, and this is a hard external constraint rather
          than conservatism: `GodotSharp` 4.7.0 ships `net8.0`, so a Godot C#
          project targets `net8.0`, and a `net8.0` project cannot reference a
-         `net10.0` library. Godot is the presentation layer (MARVEL-159), so
+         `net10.0` library. Godot is the presentation layer, so
          every assembly it consumes has to sit at or below its floor.
 
          Targeting .NET 10 from Godot is not an available alternative today:

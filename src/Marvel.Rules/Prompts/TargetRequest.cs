@@ -40,7 +40,7 @@ namespace Marvel.Rules.Prompts;
 /// <para>
 /// <b>A grouped request's <see cref="Min"/> and <see cref="Max"/> describe the
 /// pooled candidate list, not a legal selection, and a client that enforced
-/// them would reject legal play.</b> Measured in MARVEL-164: the bot played
+/// them would reject legal play.</b> Measured in the original investigation: the bot played
 /// Explosive Arrow — <i>"choose a player → deal 3 damage to the villain and
 /// each minion engaged with that player"</i> — against a player with one
 /// minion. Two groups were offered, <c>[villain, minion A]</c> and
@@ -76,7 +76,7 @@ public sealed record TargetRequest(
     /// present they are authoritative and the count is not applied at all;
     /// when they are absent the flat list and the count are. Encoding it here
     /// rather than describing it is deliberate: the rule was stated in prose
-    /// on this type from the start, and MARVEL-164 still found a real
+    /// on this type from the start, and the original investigation still found a real
     /// selection that prose would have rejected.
     /// </remarks>
     public bool Allows(IReadOnlyList<int> selection)

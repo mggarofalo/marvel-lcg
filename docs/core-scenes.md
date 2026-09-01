@@ -1,7 +1,7 @@
 # Canonical Core scenes
 
-Tracked as `MARVEL-302`. `Marvel.Content.Behavior.CanonicalCoreScene` constructs
-the legal state used by executable behavioral transcripts.
+`Marvel.Content.Behavior.CanonicalCoreScene` constructs the legal state used by
+executable behavioral transcripts.
 
 ## The boundary
 

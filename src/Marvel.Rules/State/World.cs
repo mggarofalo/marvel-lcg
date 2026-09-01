@@ -409,7 +409,7 @@ public sealed class World
     /// </para>
     /// <para>
     /// <b>This event is emitted, not derived.</b> A game area is invisible to
-    /// the v2 digest (MARVEL-174), so a before/after comparison can never find
+    /// the v2 digest (the original investigation), so a before/after comparison can never find
     /// the change. This method knows it performed the join and emits one
     /// <see cref="PlayAreaJoined"/> for it.
     /// </para>

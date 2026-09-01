@@ -7,7 +7,7 @@
 # make a 2/2 drone. Keeping them apart is the point of this file: a scenario
 # that only asserted "2 hit points" could not tell a +1 on top of a base 1 from
 # a base grant of 2, and the engine has had a bug in each of those shapes
-# (MARVEL-108, MARVEL-111).
+# (the original investigation, the original investigation).
 #
 # Two things are asserted that the card does *not* do, because both are printed
 # restrictions rather than omissions:

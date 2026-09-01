@@ -48,17 +48,12 @@ than the comment quietly going stale.
 
 ## The report
 
+```bash
+dotnet run --project tools/Marvel.Rules.Index -- citations
 ```
-$ dotnet run --project tools/Marvel.Rules.Index -- citations
 
-Rules Reference v1.8
-
-  entries             186 / 262   cited (71.0%)
-  citable records     867 / 1221  cited (71.0%)
-  modifications         2 / 3     cited (66.7%)
-
-  citations made  2571
-```
+The command reports the live counts from the current test tree and vendored
+Rules Reference. The documentation does not copy those changing measurements.
 
 ```
 $ dotnet run --project tools/Marvel.Rules.Index -- citations --uncited --sort
@@ -74,9 +69,10 @@ surface an entry touches. It is a reading order, not a backlog: a good deal of
 the glossary is vocabulary (`rr:you-your`, `rr:and`) that no test should be
 expected to assert. Triage is a person's job.
 
-[`rules-reference-v18-record-audit.md`](rules-reference-v18-record-audit.md)
-records that triage for all 1,218 records. It is a work list, not another
-coverage gate.
+The authority-derived behavior catalog under `specs/behavior/` records the
+current disposition of every Rules Reference source unit and obligation. See
+[`behavioral-specification.md`](behavioral-specification.md). It replaces the
+earlier ticket-oriented record audits.
 
 Two things this deliberately does not do:
 

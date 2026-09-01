@@ -43,7 +43,7 @@ namespace Marvel.Rules.Events;
 /// that player; the engine records the second as <c>play_area</c>. Reading only
 /// the first answers <c>-1</c> for every player's engagement area at once, and
 /// that mistake alone accounted for 380 of the 621 ambiguous steps in the first
-/// measurement of MARVEL-163.
+/// measurement of the original investigation.
 /// </para>
 /// <para>
 /// <b><see cref="Owner"/> is a play area, and that is load-bearing for more
@@ -61,11 +61,11 @@ namespace Marvel.Rules.Events;
 /// a confusingly similar name: a grouping <b>over</b> play areas that cards
 /// cannot affect across. That grouping is not expressible here and should not
 /// be — it belongs to the engine's state, and a player joins one. See
-/// <c>docs/event-stream.md</c>, "Play areas and game areas", and MARVEL-175.
+/// <c>docs/event-stream.md</c>, "Play areas and game areas", and the original investigation.
 /// </para>
 /// <para>
 /// <b>Why <see cref="Id"/> exists.</b> The three fields above were the whole
-/// type until MARVEL-163 counted how often they collide. They are not a key:
+/// type until the original investigation counted how often they collide. They are not a key:
 /// two areas share a triple for <c>AsideDeck</c> — a
 /// three-hero game has three set-aside nemesis decks, all owned by the
 /// scenario, all hanging off nothing — and again for <c>RemovedArea</c>. So the

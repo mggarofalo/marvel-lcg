@@ -30,10 +30,10 @@ action is taken during a player's turn, a resource ability while a cost is being
 paid, a setup ability during setup. Giving them a tier would put them in windows
 they do not belong in.
 
-## Two places the Python engine has this wrong
+## Two ordering traps
 
-Both produce a board that looks entirely plausible, which is why they are worth
-naming rather than quietly fixing.
+Both produce a board that looks plausible when placed in the wrong tier, so the
+distinction is explicit in the model.
 
 **"When Defeated" and "When Completed" are forced interrupts.**
 `rr:when-defeated-abilities.1` and `rr:when-completed-abilities.1` define each as
@@ -255,15 +255,8 @@ in two tiers, not two questions.
 | `Discard` | `rr:end-of-player-phase.step.1` |
 | `Defender` | `rr:attack-enemy-activation.step.2` |
 
-The four members this replaced were a census of what one sampled corpus happened
-to contain, which is a sample rather than a domain — and they flattened the two
-questions the rules keep apart.
-
-The recording spells a prompt's kind with the name of a member of the Python
-engine's `TimingPriority`, four of whose twelve members name nothing in the
-rulebook. That is a corpus spelling, so the translation lives at the corpus
-boundary — `PlayerPhaseTests.RecordedKind` — rather than in the engine's
-vocabulary.
+The question kind and timing priority remain separate because they answer
+different things: what decision is being made and when it is being made.
 
 ## Working a window
 
@@ -308,8 +301,8 @@ through three parts — `Interrupts`, `Apply`, `Responses`. `Sequence.Work` walk
 it until something needs an answer and returns; the next answer picks it up
 exactly where it was. Nothing is on a call stack, so all of it survives a save.
 
-It also makes `rr:villain-phase`'s six steps **visible**. They used to be the
-order of six method calls, which a reader has to reconstruct:
+It also makes `rr:villain-phase`'s six steps **visible** rather than leaving the
+order implicit in nested calls:
 
 ```
 PlaceThreat            rr:villain-phase.step.1
@@ -345,8 +338,7 @@ read would forget across the answer that suspended the step.
 `Agenda.Then` puts a scheduled step after the current one's *response* window,
 not before it: a step that schedules another has not itself finished happening.
 `rr:villain-phase.step.3` deals the cards and `.step.4` reveals them, in that
-order and not interleaved — and the recorded discard pile is what catches it if
-they are.
+order and not interleaved. Tests assert the resulting queue and discard order.
 
 An Action continuation is the deliberate exception. A choice inside an
 accepted Action suspends the ability rather than finishing its occurrence, so
@@ -407,22 +399,15 @@ to ask**. A player with no ready character cannot defend (`rr:defend-defense.2`
 and `.3` both require exhausting one), so the step passes in silence exactly as
 an empty window does.
 
-## What this does not do yet
+## Supported boundary
 
-- **Steps 1 to 3 of `rr:end-of-player-phase`** — discard down to hand size, draw
-  up to it, ready every card — are not implemented. `rr:player-phase.1` puts
-  them before the expiry point, and the recorded game cannot say when they
-  happen: its hand is full at every step and its one player readies nothing.
-- **One delayed effect kind resolves; the rest throw.** `DiscardFromPlay` is
-  written because Charge needs it. The vocabulary beyond that is
-  `docs/card-dsl.md`'s business.
-- **Three cards register continuous effects, and no more.** The list is real —
-  Charge grants overkill, boost icons raise an enemy's ATK — but three authored
-  cards is the whole card pool. Growing it is adding rows to
-  `datasets/abilities/abilities.json` and, where a row names a node nothing has,
-  one case in the interpreter.
+The timing spine, nested windows, agenda continuations, player-phase ending,
+and the lasting and delayed effects required by the Core Set are executable.
+Ability definitions are data in `datasets/abilities/abilities.json`; the
+interpreter raises when a definition reaches an unsupported operation.
 
-What this **does** do now is [enemy-attacks.md](enemy-attacks.md): two authored
-cards waiting in one window on the real Rhino board, one forced and one
-optional, and the lasting and delayed effects the forced one creates. Neither is
-code — see [card-dsl.md](card-dsl.md).
+The model was shaped to accommodate timing patterns found in later cards, but
+only Core Set abilities are admitted to runtime. Adding a later product means
+adding its authority, setup, ability rows, behavioral scenes, and any missing
+interpreter operations as one coherent boundary. See [scope.md](scope.md) and
+[card-dsl.md](card-dsl.md).
