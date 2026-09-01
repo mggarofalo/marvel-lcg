@@ -42728,19 +42728,19 @@
           "mutation": "Change or omit this printed field in CardCatalog; the generated face-table assertion fails."
         },
         {
-          "key": "each-player-puts-top-card-their-deck-one-player",
+      "key": "each-player-puts-top-card-their-deck-one-player",
           "summary": "One-player game: When Revealed: Each player puts the top card of their deck into play facedown, engaged with them as a Drone minion.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "unverified",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [],
+      "mutation": null
         },
         {
-          "key": "each-player-puts-top-card-their-deck-multiple-players",
+      "key": "each-player-puts-top-card-their-deck-multiple-players",
           "summary": "Multiplayer game: When Revealed: Each player puts the top card of their deck into play facedown, engaged with them as a Drone minion.",
           "disposition": "executable",
           "reason": null,
@@ -42807,11 +42807,11 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "unverified",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [],
+      "mutation": null
         },
         {
           "key": "each-player-puts-top-card-their-deck-multiple-players",
@@ -44293,11 +44293,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-side-schemes.feature::Drone Factory creates and counts one Drone in a one-player game"
+          ],
+          "mutation": "Create no Drone or more than one for the only player; the Drone-count or pinned-digest assertion fails."
         },
         {
           "key": "each-player-puts-top-card-their-deck-multiple-players",
@@ -44305,47 +44307,53 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/ultron-side-schemes.feature::Drone Factory creates and counts Drones for every player"
+          ],
+          "mutation": "Omit either active player or create the wrong count; a per-seat Drone-count assertion fails."
         },
         {
-          "key": "place-1-threat-here-for-each-drone-zero",
+      "key": "place-1-threat-here-for-each-drone-zero",
           "summary": "Zero qualifying elements: Place 1 threat here for each Drone minion in play.",
-          "disposition": "executable",
-          "reason": null,
+      "disposition": "not-representable",
+      "reason": "The effect creates one Drone for every active player before counting Drones, so a valid game with at least one active player cannot reach a zero-Drone branch.",
           "target": null,
-          "implementation": "unverified",
+      "implementation": null,
           "work_item": null,
           "exception": null,
           "scenarios": [],
           "mutation": null
         },
         {
-          "key": "place-1-threat-here-for-each-drone-one",
+      "key": "place-1-threat-here-for-each-drone-one",
           "summary": "One qualifying element: Place 1 threat here for each Drone minion in play.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/ultron-side-schemes.feature::Drone Factory creates and counts one Drone in a one-player game"
+      ],
+      "mutation": "Count zero or two Drones in the one-Drone scene; the side-scheme threat assertion fails."
         },
         {
-          "key": "place-1-threat-here-for-each-drone-multiple",
+      "key": "place-1-threat-here-for-each-drone-multiple",
           "summary": "Multiple qualifying elements: Place 1 threat here for each Drone minion in play.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/ultron-side-schemes.feature::Drone Factory creates and counts Drones for every player"
+      ],
+      "mutation": "Count fewer or more than all four Drones; the side-scheme threat assertion fails."
         }
       ]
     },
@@ -44528,16 +44536,18 @@
           "mutation": "Change or omit this printed field in CardCatalog; the generated face-table assertion fails."
         },
         {
-          "key": "first-player-puts-top-2-cards-their",
+      "key": "first-player-puts-top-2-cards-their",
           "summary": "When Revealed: The first player puts the top 2 cards of their deck into play facedown, engaged with them as Drone minions.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/ultron-side-schemes.feature::Ultron's Imperative gives two Drones to the first player"
+      ],
+      "mutation": "Create the wrong number of Drones or give them to the revealing player; a per-seat Drone-count assertion fails."
         }
       ]
     },
@@ -44616,52 +44626,60 @@
           "mutation": "Change or omit this printed field in CardCatalog; the generated face-table assertion fails."
         },
         {
-          "key": "each-player-chooses-either-place-2-threat-choice-1",
+      "key": "each-player-chooses-either-place-2-threat-choice-1",
           "summary": "Choice 1: When Revealed: Each player chooses to either place 2 threat here or deal 3 damage to their hero.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/ultron-side-schemes.feature::One player chooses to place threat on Under Attack"
+      ],
+      "mutation": "Remove or change the threat choice; the offered-option or side-scheme threat assertion fails."
         },
         {
-          "key": "each-player-chooses-either-place-2-threat-choice-2",
+      "key": "each-player-chooses-either-place-2-threat-choice-2",
           "summary": "Choice 2: When Revealed: Each player chooses to either place 2 threat here or deal 3 damage to their hero.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/ultron-side-schemes.feature::Multiple players resolve different Under Attack choices"
+      ],
+      "mutation": "Remove or change the hero-damage choice; the offered-option or identity-damage assertion fails."
         },
         {
-          "key": "each-player-chooses-either-place-2-threat-one-player",
+      "key": "each-player-chooses-either-place-2-threat-one-player",
           "summary": "One-player game: When Revealed: Each player chooses to either place 2 threat here or deal 3 damage to their hero.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/ultron-side-schemes.feature::One player chooses to place threat on Under Attack"
+      ],
+      "mutation": "Skip the only active player or resolve more than one choice; the threat, damage, or pinned-digest assertion fails."
         },
         {
-          "key": "each-player-chooses-either-place-2-threat-multiple-players",
+      "key": "each-player-chooses-either-place-2-threat-multiple-players",
           "summary": "Multiplayer game: When Revealed: Each player chooses to either place 2 threat here or deal 3 damage to their hero.",
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+      "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+      "scenarios": [
+        "specs/behavior/core/ultron-side-schemes.feature::Multiple players resolve different Under Attack choices"
+      ],
+      "mutation": "Skip either active player or change player order; the threat, damage, or pinned-digest assertion fails."
         }
       ]
     },

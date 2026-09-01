@@ -476,6 +476,32 @@ public sealed class CoreCardFaceTranscriptTests
     }
 
     [Fact]
+    public void UltronSideSchemeBranchesHavePinnedOutcomes()
+    {
+        var results = Corpus.Value
+            .Where(candidate => candidate.Scenario.StartsWith(
+                "specs/behavior/core/ultron-side-schemes.feature::",
+                StringComparison.Ordinal))
+            .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
+
+        Assert.Equal(5, results.Count);
+        Assert.Equal("15182d7b20034383f0fcee26f99b5a717d0c34513fd0b28df80f179932ec1482",
+            results[
+                "behavior:card:01148:each-player-puts-top-card-their-deck-one-player"].Digest);
+        Assert.Equal("40d50cf79876f08ca7c6acf06752056ca7482bcaf825b940e8dfaa1a06901161",
+            results[
+                "behavior:card:01148:each-player-puts-top-card-their-deck-multiple-players"].Digest);
+        Assert.Equal("509e4c8ea52c707e7082fa4796e6714a8a4f2faf0b9d9bcb8d010cbeb795f001",
+            results["behavior:card:01150:first-player-puts-top-2-cards-their"].Digest);
+        Assert.Equal("199cecce94f6b83408ce890e9c6c9fff3136810a45dd179beb85c8163859e7ad",
+            results[
+                "behavior:card:01151:each-player-chooses-either-place-2-threat-one-player"].Digest);
+        Assert.Equal("a48a69c162c298bface9be536e5c3faa0dbbd95db2c08c21aeabe465e2aaab83",
+            results[
+                "behavior:card:01151:each-player-chooses-either-place-2-threat-multiple-players"].Digest);
+    }
+
+    [Fact]
     public void CardActionBranchesHavePinnedOutcomes()
     {
         var results = Corpus.Value

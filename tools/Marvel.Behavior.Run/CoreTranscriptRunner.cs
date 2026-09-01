@@ -270,6 +270,9 @@ internal sealed class CoreTranscriptRunner
         Bind("engage-facedown-drone", TranscriptStepKind.Given,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is a facedown Drone minion engaged with seat (?<seat>\d+)",
             EngageFacedownDrone),
+        Bind("clear-facedown-drones", TranscriptStepKind.Given,
+            @"seat (?<seat>\d+) has no facedown Drone minions",
+            ClearFacedownDrones),
         Bind("place-side-scheme", TranscriptStepKind.Given,
             @"card (?<face>\d+[a-z]?) copy (?<copy>\d+) is a side scheme in play",
             PlaceSideScheme),
@@ -974,6 +977,18 @@ internal sealed class CoreTranscriptRunner
         {
             throw new TranscriptException(
                 $"{step.Location}: card {card.FaceId} copy {card.Copy} was not the created Drone");
+        }
+    }
+
+    private static void ClearFacedownDrones(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        int seat = Seat(match, step);
+        foreach (Card drone in FacedownDrones.EngagedWith(context.World, seat))
+        {
+            drone.TurnFaceUp();
+            World.MoveToTop(drone, context.World.AreaOf(
+                DeckType.DiscardPile, PlayArea.Of(drone.Owner), cardOwner: drone.Owner));
         }
     }
 
