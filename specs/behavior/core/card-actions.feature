@@ -415,7 +415,11 @@ Feature: Core card actions
     And card 01097b copy 0 has 0 threat counters
 
   @behavior:rr:ability.2:in-play-player-card-ability
-  @rr:ability.2 @card:01027
+  @covers:behavior:rr:in-play-and-out-of-play.5:published-result
+  @covers:behavior:rr:in-play-and-out-of-play.8:published-result
+  @covers:behavior:rr:upgrade.1:published-result
+  @rr:ability.2 @rr:in-play-and-out-of-play.5
+  @rr:in-play-and-out-of-play.8 @rr:upgrade.1 @card:01027
   Scenario: An upgrade action is active in play and inactive in hand
     # Abilities on upgrades "may only be used if the card is in play," unless
     # the text expressly refers to an out-of-play state. One Focused Rage is
@@ -431,9 +435,12 @@ Feature: Core card actions
     When seat 1 asks for available card actions
     Then card 01027 copy 0's action is available
     And card 01027 copy 1's action is unavailable
+    And card 01027 copy 0 remains attached to seat 1's identity
 
   @behavior:rr:ability.13:hero-form-required
-  @rr:ability.13 @card:01027
+  @covers:behavior:rr:in-play-and-out-of-play.1:published-result
+  @covers:behavior:rr:identity.4:published-result
+  @rr:ability.13 @rr:in-play-and-out-of-play.1 @rr:identity.4 @card:01027
   Scenario: A Hero Action becomes available only in hero form
     # A bold trigger containing "Hero" can be used only in hero form. Focused
     # Rage is in play throughout; changing form is the only changed condition.
@@ -459,8 +466,9 @@ Feature: Core card actions
   @covers:behavior:rr:ready:published-result
   @covers:behavior:rr:support.1:published-result
   @covers:behavior:rr:support.2:published-result
+  @covers:behavior:rr:in-play-and-out-of-play.3:published-result
   @card:01056 @rr:uses-x-type @rr:uses-x-type.1 @rr:cost.1
-  @rr:ready @rr:support.1 @rr:support.2
+  @rr:ready @rr:support.1 @rr:support.2 @rr:in-play-and-out-of-play.3
   Scenario: Tac Team enters with three uses and discards after the third action
     # "Uses (3 attack counters)" places three counters as Tac Team enters play.
     # Each action exhausts it, spends exactly one counter, and deals two damage;

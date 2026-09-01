@@ -13,12 +13,14 @@ Feature: Canonical Core setup
   @covers:behavior:rr:appendix-ii-setup.step.10:published-result
   @covers:behavior:rr:appendix-ii-setup.step.14:published-result
   @covers:behavior:rr:modes-of-play.1:published-result
+  @covers:behavior:rr:first-player:published-result
   @rr:appendix-ii-setup.step.1 @rr:appendix-ii-setup.step.2
   @rr:appendix-ii-setup.step.3 @rr:appendix-ii-setup.step.4
   @rr:appendix-ii-setup.step.5 @rr:appendix-ii-setup.step.8
   @rr:appendix-ii-setup.step.9 @rr:appendix-ii-setup.step.10
   @rr:appendix-ii-setup.step.14
   @rr:modes-of-play.1
+  @rr:first-player
   Scenario: The printed Spider-Man and Rhino deal reaches its opening state
     # Setup selects identities, sets their hit points, chooses a first player,
     # sets aside obligations and nemesis sets, selects the scenario, sets the
