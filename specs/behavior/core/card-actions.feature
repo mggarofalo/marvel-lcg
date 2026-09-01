@@ -253,6 +253,7 @@ Feature: Core card actions
   @covers:behavior:rr:target.3.7:published-result
   @covers:behavior:rr:target.4:published-result
   @covers:behavior:rr:target.4.1:published-result
+  @covers:behavior:card:01181:madame-hydra-cannot-take-damage-while-legions
   @rr:cannot @rr:cannot.1 @rr:target.3.7 @rr:target.4 @rr:target.4.1
   @card:01022 @card:01180 @card:01181
   Scenario: An each-enemy effect skips an enemy that cannot take damage
@@ -884,6 +885,7 @@ Feature: Core card actions
   @behavior:rr:max-maximum.3:published-result
   @covers:behavior:rr:max-maximum:published-result
   @covers:behavior:card:01057:max-1-per-player
+  @covers:behavior:card:01057:your-hero-gets-1-atk
   @rr:max-maximum @rr:max-maximum.3 @card:01057
   Scenario: Max one per player prevents a second controlled copy
     # "Max 1 per player" restricts how many copies of that title a player may
@@ -892,6 +894,7 @@ Feature: Core card actions
     Given a canonical Core scene is dealt
       | campaign | heroes   | seed |
       | rhino    | she_hulk | 717  |
+    And seat 1 shows identity face 01019a
     And card 01057 copy 0 is attached to card 01019a copy 0
     And seat 1's hand contains exactly these cards
       | card  | copy |
@@ -905,6 +908,7 @@ Feature: Core card actions
     When seat 1 asks whether card 01057 copy 1 is available to play
     Then card 01057 copy 1 is unavailable to play
     And card 01057 copy 0 remains attached to seat 1's identity
+    And card 01019a copy 0 has modified ATK 4
 
   @behavior:card:01010a:spend-energy-resource-and-heal-1-damage
   @covers:behavior:card:01010a:limit-once-per-round-within-limit

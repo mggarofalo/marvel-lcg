@@ -31960,11 +31960,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Max one per player prevents a second controlled copy"
+          ],
+          "mutation": "Ignore Combat Training's constant modifier; She-Hulk's modified ATK is three instead of four."
         }
       ]
     },
@@ -38484,11 +38486,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-icons.feature::One hazard icon deals one additional encounter card total"
+          ],
+          "mutation": "Ignore The Doomsday Chair's Hazard icon; only one Hydra Mercenary enters play."
         }
       ]
     },
@@ -38572,11 +38576,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-icons.feature::A crisis icon prevents a player card from thwarting the main scheme"
+          ],
+          "mutation": "Ignore Crowd Control's Crisis icon; the main scheme becomes a legal basic-thwart target."
         }
       ]
     },
@@ -38674,11 +38680,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/encounter-icons.feature::An acceleration icon adds one threat during the villain phase"
+          ],
+          "mutation": "Ignore Bomb Scare's Acceleration icon; the main scheme receives two threat instead of three."
         }
       ]
     },
@@ -48100,11 +48108,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::An each-enemy effect skips an enemy that cannot take damage"
+          ],
+          "mutation": "Remove Madame Hydra's damage prohibition while Legions of Hydra is in play; Ground Stomp places one damage on her."
         },
         {
           "key": "after-madame-hydra-schemes-or-attacks-place",

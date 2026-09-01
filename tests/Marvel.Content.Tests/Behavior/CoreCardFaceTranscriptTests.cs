@@ -135,7 +135,7 @@ public sealed class CoreCardFaceTranscriptTests
             "6a4fab8891cf347c0cd6a2139abd2368717352443f795de7ad3cf3230d97cbb5",
             results["behavior:card:01018:spend-x-energy-resources-put-x-energy"].Digest);
         Assert.Equal(
-            "606a1a59097e3878efd219c2d7b728d6521759bf8beb637495f4af9940a717db",
+            "e77741d2a3f0e8064585270598f6b6d74a8d0d34c38a33fcb711d9c71b68144a",
             results["behavior:rr:max-maximum.3:published-result"].Digest);
         Assert.Equal(
             "643ee63aa56eff09e853e2c13c3271abb35ed093b7f2020eae529bf5f8b14041",

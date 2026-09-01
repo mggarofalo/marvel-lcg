@@ -5,7 +5,8 @@ Feature: Core encounter icons
 
   @behavior:rr:acceleration-icon.1:published-result
   @covers:behavior:rr:acceleration-icon:published-result
-  @rr:acceleration-icon @rr:acceleration-icon.1
+  @covers:behavior:card:01109:place-1-threat-on-main-scheme-at
+  @rr:acceleration-icon @rr:acceleration-icon.1 @card:01109
   Scenario: An acceleration icon adds one threat during the villain phase
     # Each acceleration icon is a constant ability that places one additional
     # threat during the villain phase's Place Threat step.
@@ -68,7 +69,8 @@ Feature: Core encounter icons
   @behavior:rr:crisis-icon.1:published-result
   @covers:behavior:rr:crisis-icon:published-result
   @covers:behavior:rr:target.3.9:published-result
-  @rr:crisis-icon @rr:crisis-icon.1 @rr:target.3.9
+  @covers:behavior:card:01108:while-scheme-is-in-play-you-cannot
+  @rr:crisis-icon @rr:crisis-icon.1 @rr:target.3.9 @card:01108
   Scenario: A crisis icon prevents a player card from thwarting the main scheme
     # While a crisis icon is in play, player cards cannot remove threat from
     # the main scheme; the crisis side scheme remains a legal thwart target.
@@ -85,7 +87,8 @@ Feature: Core encounter icons
   @behavior:rr:hazard-icon:published-result
   @covers:behavior:rr:hazard-icon.1:published-result
   @covers:behavior:rr:deal-deal-an-encounter-card.1:published-result
-  @rr:hazard-icon @rr:hazard-icon.1 @rr:deal-deal-an-encounter-card.1
+  @covers:behavior:card:01107:deal-1-encounter-card-during-villain-phase
+  @rr:hazard-icon @rr:hazard-icon.1 @rr:deal-deal-an-encounter-card.1 @card:01107
   Scenario: One hazard icon deals one additional encounter card total
     # Each hazard icon deals one additional encounter card during step three;
     # it does not deal one additional card per player.
