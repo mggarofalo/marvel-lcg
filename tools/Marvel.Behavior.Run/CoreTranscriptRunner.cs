@@ -417,6 +417,12 @@ internal sealed class CoreTranscriptRunner
         Bind("initiate-action-with-discard", TranscriptStepKind.When,
             @"seat (?<seat>\d+) initiates card (?<face>\d+[a-z]?) copy (?<copy>\d+)'s action discarding these cards",
             InitiateActionWithDiscard),
+        Bind("initiate-indexed-action-with-variable", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) initiates card (?<face>\d+[a-z]?) copy (?<copy>\d+)'s (?<ordinal>first|second) printed action defining X as (?<value>\d+) paying with these cards",
+            InitiateIndexedActionWithVariable),
+        Bind("initiate-indexed-action-without-payment", TranscriptStepKind.When,
+            @"seat (?<seat>\d+) initiates card (?<face>\d+[a-z]?) copy (?<copy>\d+)'s (?<ordinal>first|second) printed action without payment",
+            InitiateIndexedActionWithoutPayment),
         Bind("play-card-with-payment", TranscriptStepKind.When,
             @"seat (?<seat>\d+) plays card (?<face>\d+[a-z]?) copy (?<copy>\d+) paying with these cards",
             PlayCardWithPayment),
@@ -1758,6 +1764,37 @@ internal sealed class CoreTranscriptRunner
                 row["card"], TableNumber(row, "copy", step))).ObjectId)]);
     }
 
+    private static void InitiateIndexedActionWithVariable(
+        TranscriptContext context, TranscriptStep step, Match match)
+    {
+        TranscriptTable table = Table(step, "card", "copy");
+        InitiateAction(
+            context,
+            step,
+            match,
+            [.. table.Rows.Select(row => context.SceneRequired(step).Find(new SceneCard(
+                row["card"], TableNumber(row, "copy", step))).ObjectId)],
+            ordinal: PrintedOrdinal(match, step),
+            values: new Dictionary<string, long>(StringComparer.Ordinal)
+            {
+                ["X"] = Number(match, "value", step),
+            });
+    }
+
+    private static void InitiateIndexedActionWithoutPayment(
+        TranscriptContext context, TranscriptStep step, Match match) =>
+        InitiateAction(
+            context, step, match, [], ordinal: PrintedOrdinal(match, step));
+
+    private static int PrintedOrdinal(Match match, TranscriptStep step) =>
+        match.Groups["ordinal"].Value switch
+        {
+            "first" => 0,
+            "second" => 1,
+            _ => throw new TranscriptException(
+                $"{step.Location}: unknown printed action ordinal '{match.Groups["ordinal"].Value}'"),
+        };
+
     private static void PlayCardWithPayment(
         TranscriptContext context, TranscriptStep step, Match match)
     {
@@ -2010,23 +2047,30 @@ internal sealed class CoreTranscriptRunner
         TranscriptStep step,
         Match match,
         IReadOnlyList<int> payments,
-        IReadOnlyList<int>? chosen = null)
+        IReadOnlyList<int>? chosen = null,
+        int? ordinal = null,
+        IReadOnlyDictionary<string, long>? values = null)
     {
         int seat = Seat(match, step);
         Card source = context.SceneRequired(step).Find(SceneCard(match, step));
         var runner = (AbilityRunner)context.World.Abilities;
-        var action = runner.Actions(context.World, seat)
-            .Single(candidate => candidate.Card == source.ObjectId);
+        var actions = runner.Actions(context.World, seat)
+            .Where(candidate => candidate.Card == source.ObjectId);
+        var action = ordinal is null
+            ? actions.Single()
+            : actions.Single(candidate => candidate.Ordinal == ordinal.Value);
         CostOption? price = runner.Describe(context.World, action).CostOptions.SingleOrDefault();
         IReadOnlyList<ResourceAllocation>? allocations = price is null
             ? null
-            : ResourcePayment.Allocate(price, payments)
+            : values is not null
+                ? null
+                : ResourcePayment.Allocate(price, payments)
                 ?? throw new TranscriptException(
                     $"{step.Location}: the selected cards cannot be allocated to the action cost");
         context.Events.Clear();
         context.CurrentPrompt = "<none>";
         context.Events.AddRange(runner.Act(
-            context.World, action, payments, chosen ?? [], allocations: allocations));
+            context.World, action, payments, chosen ?? [], values, allocations));
         SetPendingPrompt(context, Sequence.Work(
             context.World, context.Cards, runner, context.Events));
     }

@@ -591,3 +591,35 @@ Feature: Core card actions
     When seat 1 chooses card 01094 copy 0 for the pending action
     Then card 01094 copy 0 has 6 damage
     And card 01056 copy 0 is faceup on top of seat 1's discard pile
+
+  @behavior:card:01018:spend-x-energy-resources-put-x-energy
+  @covers:behavior:card:01018:above-damage-cap
+  @covers:behavior:rr:max-maximum.6:published-result
+  @covers:behavior:rr:non-numerical-variable.1:published-result
+  @card:01018 @rr:max-maximum.6 @rr:non-numerical-variable.1
+  Scenario: Energy Channel remembers X and caps damage above five counters
+    # "Spend X [energy] resources → put X energy counters here." Two Energy
+    # Absorptions generate six energy and define X as six. The later attack
+    # deals two damage per counter "to a maximum of 10," so six counters still
+    # deal ten rather than twelve.
+    Given a canonical Core scene is dealt
+      | campaign | heroes         | seed |
+      | ultron   | captain_marvel | 716  |
+    And seat 1 shows identity face 01010a
+    And card 01018 copy 0 is an upgrade attached to seat 1's identity
+    And seat 1's hand contains exactly these cards
+      | card  | copy |
+      | 01014 | 0    |
+      | 01014 | 1    |
+    When seat 1 initiates card 01018 copy 0's first printed action defining X as 6 paying with these cards
+      | card  | copy |
+      | 01014 | 0    |
+      | 01014 | 1    |
+    Then card 01018 copy 0 has 6 energy counters
+    And card 01014 copy 0 is in seat 1's discard pile
+    And card 01014 copy 1 is in seat 1's discard pile
+    When seat 1 initiates card 01018 copy 0's second printed action without payment
+    Then card 01134 copy 0 is offered by the pending action
+    When seat 1 chooses card 01134 copy 0 for the pending action
+    Then card 01134 copy 0 has 10 damage
+    And card 01018 copy 0 is faceup on top of seat 1's discard pile

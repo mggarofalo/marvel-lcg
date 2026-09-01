@@ -46,7 +46,7 @@ public sealed class CoreCardFaceTranscriptTests
                 "specs/behavior/core/card-actions.feature::", StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
-        Assert.Equal(20, results.Count);
+        Assert.Equal(21, results.Count);
         Assert.Equal(
             "5a3c519fb8e602123a5186bc67ab95ff553eb67080b527c327b8f3974ae6f2a4",
             results["behavior:card:01005:deal-8-damage-enemy"].Digest);
@@ -107,6 +107,9 @@ public sealed class CoreCardFaceTranscriptTests
         Assert.Equal(
             "950eedb06dc1e8f1260ddb00deac232e94da07ebc99018474f5bcb439810d3f6",
             results["behavior:rr:ability.13:hero-form-required"].Digest);
+        Assert.Equal(
+            "6a4fab8891cf347c0cd6a2139abd2368717352443f795de7ad3cf3230d97cbb5",
+            results["behavior:card:01018:spend-x-energy-resources-put-x-energy"].Digest);
     }
 
     [Fact]

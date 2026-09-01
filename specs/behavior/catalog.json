@@ -15456,11 +15456,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Energy Channel remembers X and caps damage above five counters"
+          ],
+          "mutation": "Remove or raise Energy Channel's parenthetical maximum; Ultron takes twelve damage instead of the asserted ten."
         }
       ]
     },
@@ -16675,11 +16677,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Energy Channel remembers X and caps damage above five counters"
+          ],
+          "mutation": "Let the six generated resources redefine X after the player declares it; the counter-count assertion fails."
         }
       ]
     },
@@ -30702,11 +30706,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Energy Channel remembers X and caps damage above five counters"
+          ],
+          "mutation": "Spend the resources without placing exactly X counters, or derive X from cards rather than generated energy; the payment and six-counter assertions fail."
         },
         {
           "id": "behavior:card:01018:zero-counters",
@@ -30750,11 +30756,13 @@
           "disposition": "executable",
           "reason": null,
           "target": null,
-          "implementation": "unverified",
+          "implementation": "supported",
           "work_item": null,
           "exception": null,
-          "scenarios": [],
-          "mutation": null
+          "scenarios": [
+            "specs/behavior/core/card-actions.feature::Energy Channel remembers X and caps damage above five counters"
+          ],
+          "mutation": "Deal two damage for all six counters without applying the maximum, or retain Energy Channel after its attack; the ten-damage and discard assertions fail."
         }
       ]
     },
