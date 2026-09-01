@@ -295,6 +295,30 @@ Feature: Core villain phase
     And card 01010a copy 0 has 3 damage
     And card 01001a copy 0 has 0 damage
 
+  @behavior:rr:defend-defense.5.2:published-result
+  @rr:defend-defense.5.2 @card:01154
+  Scenario: A boost ability's you follows the defending player
+    # "Any constant or boost abilities that refer to 'you' refer to the
+    # defending player." Spider-Man defends Rhino's attack on Captain Marvel,
+    # so Concussive Blast damages Spider-Man and Black Cat, not Captain Marvel
+    # or Spider-Woman. Its boost area has only a star, and Spider-Man's DEF 3
+    # prevents Rhino's printed ATK 2, leaving exactly the one boost damage.
+    Given a canonical Core scene is dealt
+      | campaign | heroes                    | modular sets | seed |
+      | rhino    | captain_marvel,spider_man | under_attack | 839  |
+    And seat 1 shows identity face 01010a
+    And seat 2 shows identity face 01001a
+    And card 01011 copy 0 is an ally controlled by seat 1
+    And card 01002 copy 0 is an ally controlled by seat 2
+    And these cards are next on the encounter deck
+      | next card | copy |
+      | 01154     | 0    |
+    When the villain attacks seat 1 with card 01001a copy 0 defending
+    Then card 01010a copy 0 has 0 damage
+    And card 01011 copy 0 has 0 damage
+    And card 01001a copy 0 has 1 damage
+    And card 01002 copy 0 has 1 damage
+
   @behavior:card:01001a:when-villain-initiates-attack-against-you-draw
   @covers:behavior:rr:attack-enemy-activation.1.4:published-result
   @covers:behavior:rr:defend-defense.5.1:published-result
