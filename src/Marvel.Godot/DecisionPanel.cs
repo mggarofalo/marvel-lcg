@@ -10,7 +10,7 @@ namespace Marvel.Godot;
 public sealed partial class DecisionPanel : VBoxContainer
 {
     private static readonly int MinimumControlHeight =
-        VisualSystem.Controls(InterfaceScale.Standard).MinimumHeight;
+        VisualSystem.Controls(ClientTheme.ConfiguredScale()).MinimumHeight;
     private DecisionComposer? composer;
     private bool submitting;
     private WorldDescriptor? world;
@@ -319,15 +319,19 @@ public sealed partial class DecisionPanel : VBoxContainer
             int costIndex = index;
             CostOption cost = selected.CostOptions[index];
             bool targetMatches = composer!.CostApplies(cost);
+            bool unavailable = submitting || !targetMatches;
+            bool isSelected = composer.SelectedCost == index;
             var choose = new Button
             {
-                Text = composer!.SelectedCost == index
+                Text = unavailable
+                    ? $"— UNAVAILABLE  ·  {CostLabel(cost)}"
+                    : isSelected
                     ? $"✓ SELECTED  ·  {CostLabel(cost)}"
                     : $"◇ CHOOSE  ·  {CostLabel(cost)}",
                 Alignment = HorizontalAlignment.Left,
                 ToggleMode = true,
-                ButtonPressed = composer!.SelectedCost == index,
-                Disabled = submitting || !targetMatches,
+                ButtonPressed = isSelected,
+                Disabled = unavailable,
             };
             StyleButton(
                 choose,

@@ -44,7 +44,8 @@ public sealed partial class Main : Control
     /// <inheritdoc />
     public override void _Ready()
     {
-        Theme = ClientTheme.Create(ClientTheme.ConfiguredScale());
+        InterfaceScale scale = ClientTheme.ConfiguredScale();
+        Theme = ClientTheme.Create(scale);
         GetNode<ColorRect>("Table").Color = ClientTheme.ToGodot(VisualSystem.Palette.Canvas);
         GetNode<ColorRect>("TopRule").Color = ClientTheme.ToGodot(VisualSystem.Palette.Danger);
         GetNode<ColorRect>(
@@ -52,6 +53,7 @@ public sealed partial class Main : Control
             ClientTheme.ToGodot(VisualSystem.Palette.Danger);
         GetWindow().MinSize = new Vector2I(1040, 680);
         BindNodes();
+        ApplyInterfaceScale(scale);
         hero.ItemSelected += _ => RefreshBriefing();
         scenario.ItemSelected += OnScenarioSelected;
         mode.ItemSelected += _ =>
@@ -63,6 +65,21 @@ public sealed partial class Main : Control
         seed.TextChanged += _ => RefreshStartAvailability();
         start.Pressed += OnStartPressed;
         _ = LoadSetupAsync();
+    }
+
+    private void ApplyInterfaceScale(InterfaceScale scale)
+    {
+        float minimumHeight = VisualSystem.Controls(scale).MinimumHeight;
+        foreach (Control control in new Control[] { hero, scenario, mode, modular, seed })
+        {
+            control.CustomMinimumSize = new Vector2(
+                control.CustomMinimumSize.X,
+                minimumHeight);
+        }
+
+        start.CustomMinimumSize = new Vector2(
+            start.CustomMinimumSize.X,
+            Math.Max(start.CustomMinimumSize.Y, minimumHeight));
     }
 
     private void BindNodes()

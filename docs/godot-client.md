@@ -40,7 +40,7 @@ no console or debug action is part of play.
 
 ## Native smoke
 
-The native smoke loads the real scene, selects Spider-Man and Rhino, enters seed
+The native smoke loads the real scene at each supported UI scale, selects Spider-Man and Rhino, enters seed
 `1`, opens the table and activates only visible buttons until the UI reports the
 seeded villain win. It exercises both submit and pass paths across seven
 authoritative responses, checks that the event log is populated, and prints

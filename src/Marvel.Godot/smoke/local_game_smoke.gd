@@ -105,11 +105,18 @@ func _visual_system_is_resolved() -> bool:
 		return false
 
 	var start := _button_named("Start game")
+	var scale := OS.get_environment("MARVEL_UI_SCALE")
+	var expected_height := 66 if scale == "extra-large" else 55 if scale == "large" else 44
+	var expected_body := 24 if scale == "extra-large" else 20 if scale == "large" else 16
+	var expected_focus := 5 if scale == "extra-large" else 4 if scale == "large" else 3
 	if start.theme_type_variation != &"PrimaryButton":
 		_fail("the primary action does not use its semantic theme role")
 		return false
-	if start.custom_minimum_size.y < 44:
+	if start.custom_minimum_size.y < expected_height:
 		_fail("the primary action is smaller than the pointer-target floor")
+		return false
+	if start.get_theme_font_size("font_size") < expected_body:
+		_fail("the primary action did not adopt the selected type scale")
 		return false
 
 	var focus := start.get_theme_stylebox("focus") as StyleBoxFlat
@@ -119,7 +126,7 @@ func _visual_system_is_resolved() -> bool:
 	if focus == null or normal == null or hover == null or disabled == null:
 		_fail("the primary action is missing a required interaction style")
 		return false
-	if focus.border_width_left < 3 or focus.expand_margin_left < 2:
+	if focus.border_width_left < expected_focus or focus.expand_margin_left < expected_focus:
 		_fail("keyboard focus has no structural focus ring")
 		return false
 	if hover.border_width_bottom == normal.border_width_bottom:
@@ -151,7 +158,7 @@ func _visual_system_is_resolved() -> bool:
 		"Setup/Selections/Fields/Grid/Seed",
 	]:
 		var control := _node(path) as Control
-		if control.custom_minimum_size.y < 44:
+		if control.custom_minimum_size.y < expected_height:
 			_fail("setup control '%s' is smaller than the pointer-target floor" % path)
 			return false
 
