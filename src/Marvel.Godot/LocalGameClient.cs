@@ -162,6 +162,7 @@ public sealed class LocalGameClient
     private const string ResolveRequestId = "local-resolve";
     private const string SetupRequestId = "local-setup";
     private const string SynchronizeRequestId = "local-sync";
+    private readonly Dictionary<ClientSession, long> revisions = [];
     private readonly IEngineTransport transport;
 
     /// <summary>Creates an app client over an embedded or remote transport.</summary>
@@ -512,11 +513,16 @@ public sealed class LocalGameClient
         cancellationToken.ThrowIfCancellationRequested();
         ClientStartupError? failure = null;
         ClientMutationDisposition mutation = ClientMutationDisposition.Uncertain;
+        long expectedRevision = RevisionFor(session);
         try
         {
             EngineResponse response = await transport.ExchangeAsync(
                 EngineRequest.ResolveGame(
-                    ResolveRequestId, session.GameId, session.Capability, decision),
+                    ResolveRequestId,
+                    session.GameId,
+                    session.Capability,
+                    decision,
+                    expectedRevision),
                 cancellationToken).ConfigureAwait(false);
             ClientStartupError? envelope = EnvelopeError(
                 response, ResolveRequestId, session.GameId);
@@ -526,8 +532,11 @@ public sealed class LocalGameClient
             }
             else if (response.Error is null)
             {
-                if (HasCompleteGameplayResponse(response, allowWaiting: true))
+                if (HasCompleteGameplayResponse(response, allowWaiting: true)
+                    && expectedRevision < long.MaxValue
+                    && response.Revision == expectedRevision + 1)
                 {
+                    RememberRevision(session, response);
                     return new ClientResolutionResult(
                         Sanitize(response),
                         Error: null,
@@ -631,12 +640,17 @@ public sealed class LocalGameClient
                         ClientSessionDisposition.Active);
             }
 
-            return HasCompleteSynchronizationResponse(response)
-                ? new ClientSynchronizationResult(
-                    Sanitize(response), Error: null, ClientSessionDisposition.Active)
-                : SynchronizationFailed(
+            if (!HasCompleteSynchronizationResponse(response)
+                || response.Revision < RevisionFor(session))
+            {
+                return SynchronizationFailed(
                     "invalid_response",
                     "The game service did not return a complete current table.");
+            }
+
+            RememberRevision(session, response);
+            return new ClientSynchronizationResult(
+                Sanitize(response), Error: null, ClientSessionDisposition.Active);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -659,7 +673,7 @@ public sealed class LocalGameClient
     private static ClientEntryResult EntryFailed(ClientStartupError error) =>
         new(Session: null, Response: null, Invitations: [], error);
 
-    private static ClientEntryResult EntryResponse(
+    private ClientEntryResult EntryResponse(
         EngineResponse response,
         string requestId,
         string gameId,
@@ -696,6 +710,7 @@ public sealed class LocalGameClient
 
         if (!HasCompleteGameplayResponse(response, allowWaiting)
             || !allowWaiting && response.Prompt is null
+            || requestId == OpenRequestId && response.Revision != 0
             || !ValidIdentifier(response.Capability)
             || !CompleteInvitations(response.Invitations)
             || allowWaiting && response.Invitations is { Count: > 0 })
@@ -706,8 +721,10 @@ public sealed class LocalGameClient
         }
 
         IReadOnlyList<SeatInvitation> invitations = response.Invitations ?? [];
+        var session = new ClientSession(gameId, response.Capability!);
+        RememberRevision(session, response);
         return new ClientEntryResult(
-            new ClientSession(gameId, response.Capability!),
+            session,
             Sanitize(response),
             invitations,
             Error: null);
@@ -739,12 +756,17 @@ public sealed class LocalGameClient
                 return UnavailableResolution(mutation);
             }
 
-            return synchronized.Error is null
+            if (synchronized.Error is null
                 && HasCompleteSynchronizationResponse(synchronized)
-                ? new ClientResolutionResult(
-                    Sanitize(synchronized), failure, mutation, ClientSessionDisposition.Active)
-                : new ClientResolutionResult(
-                    Response: null, failure, mutation, ClientSessionDisposition.Active);
+                && synchronized.Revision >= RevisionFor(session))
+            {
+                RememberRevision(session, synchronized);
+                return new ClientResolutionResult(
+                    Sanitize(synchronized), failure, mutation, ClientSessionDisposition.Active);
+            }
+
+            return new ClientResolutionResult(
+                Response: null, failure, mutation, ClientSessionDisposition.Active);
         }
         catch (Exception)
         {
@@ -803,6 +825,12 @@ public sealed class LocalGameClient
 
     private static EngineResponse Sanitize(EngineResponse response) =>
         response with { Capability = null, Invitations = null };
+
+    private long RevisionFor(ClientSession session) =>
+        revisions.TryGetValue(session, out long revision) ? revision : 0;
+
+    private void RememberRevision(ClientSession session, EngineResponse response) =>
+        revisions[session] = response.Revision;
 
     private static bool ValidHeroSelection(
         SetupChoices available,
@@ -865,7 +893,8 @@ public sealed class LocalGameClient
     private static bool HasCompleteGameplayResponse(
         EngineResponse response,
         bool allowWaiting = false) =>
-        HasCompleteEvents(response.Events)
+        response.Revision >= 0
+        && HasCompleteEvents(response.Events)
         && HasCompleteBoard(response.World)
         && Enum.IsDefined(response.World!.Outcome)
         && (response.World.Outcome == Outcome.Unfinished

@@ -4,6 +4,13 @@
 client. It serves one length-prefixed request and response per TCP connection.
 Use it for local development or on a trusted private network.
 
+## Support boundary
+
+The Linux container below is the supported standalone deployment and is built,
+played through, and stopped cleanly by CI. Direct
+`dotnet run` launch on macOS, Windows and Linux is the development path; live
+sessions are in-memory and are not a production persistence service.
+
 ## Start a local server
 
 Run this command from the repository root:
@@ -20,6 +27,16 @@ Then launch the Godot client with the matching endpoint:
 
 ```bash
 MARVEL_ENGINE_ENDPOINT=tcp://127.0.0.1:41923 "$GODOT_BIN" --path src/Marvel.Godot
+```
+
+The equivalent Windows PowerShell development launch is:
+
+```powershell
+dotnet run --project src/Marvel.Server/Marvel.Server.csproj -- `
+  --listen 127.0.0.1 `
+  --port 41923 `
+  --data-root . `
+  --visibility cooperative
 ```
 
 To listen on a private network, replace `127.0.0.1` with the server's private
@@ -106,8 +123,9 @@ accepted connections use a 30-second receive and send timeout.
 All games, capabilities and unused invitations live only in memory. Stopping or
 restarting the process removes them, so connected clients must open a new game.
 
-A complete request write is the mutation boundary for a socket client. Once the
-client sends the full request, cancelling its response wait does not prove the
-server rolled the mutation back. The transport therefore keeps reading the
-authoritative response after that point. Do not retry a mutation after an
-ambiguous disconnect; synchronize with the existing capability when possible.
+Once transmission of a mutation begins, a client-side write or response failure
+cannot prove that the server did not apply it. The client therefore never
+repeats an ambiguous decision; it synchronizes with the existing capability.
+Every prompt and snapshot also carries a host revision. A resolve echoes the
+revision it answers, and the server rejects an older revision as
+`stale_decision` before gameplay code runs.

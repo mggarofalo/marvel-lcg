@@ -195,7 +195,7 @@ public sealed class TransportTests
 
         var again = EngineJson.ReadResponse(EngineJson.Write(response));
 
-        Assert.Equal(6, again.Version);
+        Assert.Equal(7, again.Version);
         Assert.Collection(
             again.Events,
             happened => Assert.Equal(joined, Assert.IsType<PlayAreaJoined>(happened)),
@@ -624,7 +624,11 @@ public sealed class TransportTests
         EngineResponse afterOne = await ExchangeOverSocket(
             server,
             EngineRequest.ResolveGame(
-                "one-mulligan", "shared", attached.Capability!, EngineDecision.Decline));
+                "one-mulligan",
+                "shared",
+                attached.Capability!,
+                EngineDecision.Decline,
+                expectedRevision: forOne.Revision));
         Assert.Null(afterOne.Error);
         Assert.Null(afterOne.Prompt);
         EngineResponse resumedZero = await ExchangeOverSocket(

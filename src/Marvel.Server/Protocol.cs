@@ -11,9 +11,10 @@ public static class EngineProtocol
     /// <summary>
     /// The only protocol version this host accepts. It includes independently
     /// scoped seat capabilities, play-area topology events, setup discovery,
-    /// per-target allocation capacities, and procedural-card face facts.
+    /// per-target allocation capacities, procedural-card face facts, and
+    /// host revisions that bind decisions to prompts.
     /// </summary>
-    public const int Version = 6;
+    public const int Version = 7;
 
     /// <summary>The largest request or game id accepted or echoed.</summary>
     public const int MaximumIdentifierLength = 256;
@@ -101,6 +102,11 @@ public sealed record EngineDecision(
 /// <param name="Capability">The server-issued session capability; absent only for <c>open</c>.</param>
 /// <param name="Game">Present only for <c>open</c>.</param>
 /// <param name="Decision">Present only for <c>resolve</c>.</param>
+/// <param name="ExpectedRevision">
+/// The host revision of the prompt answered by <c>resolve</c>. This is an
+/// engine wire choice, not a game rule; it prevents an answer composed for an
+/// earlier prompt from being applied to a later prompt with reusable ids.
+/// </param>
 /// <param name="Viewer">
 /// What the opening client says it displays. The server's visibility policy is
 /// the authority; this assertion can never widen it.
@@ -113,7 +119,8 @@ public sealed record EngineRequest(
     string? Capability = null,
     GameSpecification? Game = null,
     EngineDecision? Decision = null,
-    ViewerClaim? Viewer = null)
+    ViewerClaim? Viewer = null,
+    long? ExpectedRevision = null)
 {
     /// <summary>Builds a read-only setup-discovery request.</summary>
     public static EngineRequest ReadSetup(string requestId) =>
@@ -131,9 +138,15 @@ public sealed record EngineRequest(
 
     /// <summary>Builds a resolve request for the current protocol.</summary>
     public static EngineRequest ResolveGame(
-        string requestId, string gameId, string capability, EngineDecision decision) =>
+        string requestId,
+        string gameId,
+        string capability,
+        EngineDecision decision,
+        long expectedRevision = 0) =>
         new(EngineProtocol.Version, requestId, EngineProtocol.Resolve, gameId,
-            Capability: capability, Decision: decision);
+            Capability: capability,
+            Decision: decision,
+            ExpectedRevision: expectedRevision);
 
     /// <summary>Builds a request that redeems a one-time seat invitation.</summary>
     public static EngineRequest AttachGame(
@@ -172,6 +185,10 @@ public sealed record SeatInvitation(int Seat, string Invitation);
 /// <param name="Error">Why the request failed, or null on success.</param>
 /// <param name="Invitations">One-time seat invitations returned only to the game opener.</param>
 /// <param name="Setup">Authored setup choices returned only by <c>setup</c>.</param>
+/// <param name="Revision">
+/// The host revision of the returned prompt and world. A resolve must echo it
+/// as <see cref="EngineRequest.ExpectedRevision"/>.
+/// </param>
 public sealed record EngineResponse(
     int Version,
     string RequestId,
@@ -182,4 +199,5 @@ public sealed record EngineResponse(
     WorldDescriptor? World = null,
     EngineError? Error = null,
     IReadOnlyList<SeatInvitation>? Invitations = null,
-    SetupChoices? Setup = null);
+    SetupChoices? Setup = null,
+    long Revision = 0);

@@ -108,6 +108,50 @@ jobs:
         shell: pwsh
         run: tools/godot-smoke.ps1 -GodotBin $env:GODOT_BIN
 
+      - name: Two restricted clients complete a hosted game (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: bash tools/godot-hosted-multiplayer-smoke.sh "$GODOT_BIN"
+
+      - name: Two restricted clients complete a hosted game (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: tools/godot-hosted-multiplayer-smoke.ps1 -GodotBin $env:GODOT_BIN
+
+      - name: The supported Linux server container hosts a restricted game
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          image=marvel-server-ci
+          container=marvel-server-ci-${{ github.run_id }}
+          docker build --file src/Marvel.Server/Dockerfile --tag "$image" .
+          docker run --detach --name "$container" \
+            --publish 127.0.0.1:41924:41923 \
+            "$image" --visibility restricted --seat 0
+          for attempt in {1..300}; do
+            if docker logs "$container" 2>&1 | grep -q "listening on"; then
+              break
+            fi
+            if [[ $(docker inspect --format '{{.State.Running}}' "$container") != true ]]; then
+              docker logs "$container"
+              exit 1
+            fi
+            sleep 0.1
+          done
+          set +e
+          MARVEL_HOSTED_SMOKE_EXTERNAL_SERVER=true \
+            MARVEL_HOSTED_SMOKE_PORT=41924 \
+            bash tools/godot-hosted-multiplayer-smoke.sh "$GODOT_BIN"
+          smoke_status=$?
+          set -e
+          docker stop "$container"
+          server_status=$(docker inspect --format '{{.State.ExitCode}}' "$container")
+          docker logs "$container"
+          docker rm "$container"
+          if [[ $smoke_status -ne 0 || $server_status -ne 0 ]]; then
+            exit 1
+          fi
+
       - name: Representative Godot states render correctly (Linux)
         if: runner.os == 'Linux'
         shell: bash
