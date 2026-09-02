@@ -321,10 +321,53 @@ script = ExtResource("2_decision")
 [node name="Rule" type="HSeparator" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
 layout_mode = 2
 
-[node name="EventHeading" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
+[node name="EventHeader" type="HFlowContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
+layout_mode = 2
+
+[node name="Heading" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/EventHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"Eyebrow"
+text = "RECENT HISTORY"
+
+[node name="Motion" type="CheckButton" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/EventHeader"]
+layout_mode = 2
+button_pressed = true
+text = "Motion"
+tooltip_text = "Show short visual cues for new game events."
+
+[node name="Skip" type="Button" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/EventHeader"]
+layout_mode = 2
+disabled = true
+text = "Skip"
+tooltip_text = "Finish the current event presentation immediately."
+
+[node name="EventCue" type="PanelContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
+custom_minimum_size = Vector2(0, 68)
+layout_mode = 2
+theme_type_variation = &"StatusPanel"
+
+[node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/EventCue"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 8
+
+[node name="Copy" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/EventCue/Margin"]
+layout_mode = 2
+theme_type_variation = &"TightStack"
+
+[node name="Kind" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/EventCue/Margin/Copy"]
 layout_mode = 2
 theme_type_variation = &"Eyebrow"
-text = "EVENT LOG"
+text = "EVENT"
+
+[node name="Summary" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/EventCue/Margin/Copy"]
+layout_mode = 2
+theme_type_variation = &"Body"
+text = "The authoritative board is current."
+autowrap_mode = 2
 
 [node name="EventLog" type="RichTextLabel" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
 custom_minimum_size = Vector2(0, 150)

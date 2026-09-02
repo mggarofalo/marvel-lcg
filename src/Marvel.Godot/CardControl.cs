@@ -6,6 +6,8 @@ namespace Marvel.Godot;
 public sealed partial class CardControl : PanelContainer
 {
     private string baseVariation = GodotThemeVariations.BoardCard;
+    private bool highlighted;
+    private bool presented;
 
     private CardControl()
     {
@@ -41,8 +43,21 @@ public sealed partial class CardControl : PanelContainer
     }
 
     /// <summary>Applies or clears the prompt-anchor focus treatment.</summary>
-    public void SetHighlighted(bool highlighted) =>
-        ThemeTypeVariation = highlighted
+    public void SetHighlighted(bool value)
+    {
+        highlighted = value;
+        RefreshTreatment();
+    }
+
+    /// <summary>Applies or clears a transient event cue independently of prompt focus.</summary>
+    public void SetPresented(bool value)
+    {
+        presented = value;
+        RefreshTreatment();
+    }
+
+    private void RefreshTreatment() =>
+        ThemeTypeVariation = highlighted || presented
             ? GodotThemeVariations.FocusedCard
             : baseVariation;
 

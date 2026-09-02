@@ -193,6 +193,24 @@ public sealed class BoardRenderResult
         }
     }
 
+    /// <summary>Marks cards for a transient event cue without disturbing prompt focus.</summary>
+    public void Present(IEnumerable<int> ids)
+    {
+        ArgumentNullException.ThrowIfNull(ids);
+        HashSet<int> presented = ids.ToHashSet();
+        foreach ((int key, List<CardControl> matches) in controls)
+        {
+            foreach (CardControl match in matches)
+            {
+                match.SetPresented(presented.Contains(key));
+                if (presented.Contains(key))
+                {
+                    EnsureVisible(match);
+                }
+            }
+        }
+    }
+
     private static void EnsureVisible(Control control)
     {
         Node? ancestor = control.GetParent();

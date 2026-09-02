@@ -60,6 +60,9 @@ public sealed class EventPresentationTests
             ["Pay Cost · When Player In Turn", "Attack · When Damage Dealt", "Engine resolution"],
             result.Select(entry => entry.Cause));
         Assert.Equal([7], result[0].Anchors);
+        Assert.Equal(
+            [EventMotionKind.Move, EventMotionKind.Damage, EventMotionKind.Flip],
+            result.Select(entry => entry.Motion));
     }
 
     [Fact]
@@ -103,6 +106,145 @@ public sealed class EventPresentationTests
         EventPresentation only = Assert.Single(chronology.Entries);
         Assert.Equal("Peter Parker's play area joined game area 4.", only.Summary);
         Assert.Equal("Begin Game", only.Cause);
+    }
+
+    [Theory]
+    [InlineData("health", 10, 8, EventMotionKind.Damage)]
+    [InlineData("health", 8, 10, EventMotionKind.Heal)]
+    [InlineData("k_damage", 1, 2, EventMotionKind.Damage)]
+    [InlineData("k_damage", 2, 1, EventMotionKind.Heal)]
+    [InlineData("c_energy", 1, 2, EventMotionKind.Counter)]
+    [InlineData("k_threat", 1, 2, EventMotionKind.State)]
+    [InlineData("is_exhaust", 0, 1, EventMotionKind.State)]
+    [InlineData("attack", 2, 3, EventMotionKind.State)]
+    public void FieldChangesChooseASemanticMotion(
+        string field,
+        long from,
+        long to,
+        EventMotionKind expected)
+    {
+        EventPresentation presentation = EventPresenter.Present(
+            new FieldSet(7, field, from, to), World());
+
+        Assert.Equal(expected, presentation.Motion);
+    }
+
+    [Fact]
+    public void RegisteringAFieldIsStateRatherThanDamageOrHealing()
+    {
+        EventPresentation presentation = EventPresenter.Present(
+            new FieldSet(7, "health", null, 10), World());
+
+        Assert.Equal(EventMotionKind.State, presentation.Motion);
+    }
+
+    [Fact]
+    public void TerminalOutcomesHaveExplicitPresentation()
+    {
+        EventPresentation presentation = EventPresenter.Terminal(Outcome.PlayersWin);
+
+        Assert.Equal("The players won the game.", presentation.Summary);
+        Assert.Equal(EventMotionKind.Terminal, presentation.Motion);
+        Assert.Empty(presentation.Anchors);
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            EventPresenter.Terminal(Outcome.Unfinished));
+    }
+
+    [Fact]
+    public void StatusGainKeepsHistoryAndFoldsItsAttachmentIntoOneCue()
+    {
+        GameEvent[] happened =
+        [
+            new CardsCreated(
+                new AreaRef("StatusArea", -1, 9),
+                [new CreatedCard(12, "status-stunned")])
+            {
+                Verb = "Give_Status",
+            },
+            new CardAttached(12, 9) { Verb = "Give_Status" },
+            new CardAttached(12, 9) { Verb = "Give_Status" },
+        ];
+
+        EventBatchPresentation batch = EventCuePlanner.Plan(
+            happened, World(), Outcome.Unfinished);
+
+        Assert.Equal(3, batch.History.Count);
+        EventPresentation cue = Assert.Single(batch.Cues);
+        Assert.Equal(EventMotionKind.Status, cue.Motion);
+        Assert.Equal([9, 12], cue.Anchors.Order());
+    }
+
+    [Fact]
+    public void SpentStatusKeepsHistoryAndFoldsItsDetachmentIntoOneCue()
+    {
+        GameEvent[] happened =
+        [
+            new CardsMoved(
+                new AreaRef("StatusArea", -1, 9),
+                AreaRef.Scenario("RemovedArea"),
+                [new Landing(12, 0)])
+            {
+                Verb = "Discard",
+            },
+            new CardDetached(12, 9) { Verb = "Discard" },
+        ];
+
+        EventBatchPresentation batch = EventCuePlanner.Plan(
+            happened, World(), Outcome.Unfinished);
+
+        Assert.Equal(2, batch.History.Count);
+        Assert.Equal(EventMotionKind.Status, Assert.Single(batch.Cues).Motion);
+    }
+
+    [Fact]
+    public void OrdinaryCreationAndAttachmentRemainSeparateCues()
+    {
+        GameEvent[] happened =
+        [
+            new CardsCreated(
+                AreaRef.Player("UpgradesArea", 0),
+                [new CreatedCard(7, "01001")]),
+            new CardAttached(7, 9),
+        ];
+
+        EventBatchPresentation batch = EventCuePlanner.Plan(
+            happened, World(), Outcome.Unfinished);
+
+        Assert.Equal(
+            [EventMotionKind.Create, EventMotionKind.Move],
+            batch.Cues.Select(cue => cue.Motion));
+    }
+
+    [Fact]
+    public void TerminalCueFollowsSemanticEvents()
+    {
+        WorldDescriptor finished = World() with { Outcome = Outcome.PlayersWin };
+
+        EventBatchPresentation batch = EventCuePlanner.Plan(
+            [new FieldSet(9, "health", 1, 0)],
+            finished,
+            Outcome.Unfinished);
+
+        Assert.Equal(
+            [EventMotionKind.Damage, EventMotionKind.Terminal],
+            batch.Cues.Select(cue => cue.Motion));
+        Assert.Equal(batch.Cues, batch.History);
+    }
+
+    [Fact]
+    public void ChronologyKeepsOnlyTheMostRecentHundredEntries()
+    {
+        var chronology = new EventChronology();
+        EventPresentation[] entries = Enumerable.Range(1, 105)
+            .Select(index => new EventPresentation(
+                $"Event {index}", "Test", [], EventMotionKind.Counter))
+            .ToArray();
+
+        chronology.Append(entries);
+
+        Assert.Equal(100, chronology.Entries.Count);
+        Assert.Equal("Event 6", chronology.Entries[0].Summary);
+        Assert.Equal("Event 105", chronology.Entries[^1].Summary);
     }
 
     private static GameEvent[] Events() =>
