@@ -52,9 +52,12 @@ public sealed class OperationalLoggingTests
         Assert.Null(resolved.Error);
         Assert.Equal("stale_decision", stale.Error?.Code);
         Assert.Equal("invalid_request", invalid.Error?.Code);
-        WaitForRecords(sink, 4);
+        WaitForRecords(sink, 7);
+        IReadOnlyList<OperationalRecord> requests = sink.Records
+            .Where(record => record.EventId == OperationalEventIds.RequestCompleted)
+            .ToList();
         Assert.Collection(
-            sink.Records,
+            requests,
             record =>
             {
                 Assert.Equal(OperationalEventIds.RequestCompleted, record.EventId);

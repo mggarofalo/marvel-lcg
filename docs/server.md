@@ -62,6 +62,7 @@ The process accepts these options:
 | `--save-root PATH` | OS local application data under `MarvelLCG/sessions` | Private directory containing committed session generations and credential verifiers. |
 | `--visibility cooperative` | `cooperative` | Shows the whole cooperative table. Client viewer claims cannot hide or reveal seats. |
 | `--visibility restricted --seat NUMBER` | None | Binds the opening session to one non-negative seat number. |
+| `--telemetry-endpoint URL` | Disabled | Posts redacted metric and trace envelopes to explicit HTTPS, or loopback HTTP for development. |
 
 For example, this server authorizes the opening client as seat 0:
 
@@ -110,6 +111,11 @@ is a bounded, asynchronous observer: failure or delay while writing a record
 cannot fail, retry, or delay a game command. Wall-clock timestamps, process ids
 and durations exist only in these operational records and never enter a save,
 replay, RNG stream or state digest.
+
+Telemetry is off by default. Supplying `--telemetry-endpoint` adds a no-retry,
+two-second HTTP exporter behind the same bounded observer dispatcher. See
+[telemetry.md](telemetry.md) for its schema, privacy boundary and retention
+policy.
 
 ## Run the container
 

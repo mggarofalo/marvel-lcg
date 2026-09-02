@@ -22,6 +22,7 @@ public sealed class ProgramTests
                 "sessions"),
             options.SaveRoot);
         Assert.IsType<PermissiveVisibilityPolicy>(options.Visibility);
+        Assert.Null(options.TelemetryEndpoint);
     }
 
     [Fact]
@@ -35,6 +36,7 @@ public sealed class ProgramTests
                 "--save-root", "save-root",
                 "--visibility", "restricted",
                 "--seat", "7",
+                "--telemetry-endpoint", "https://telemetry.example.test/v1",
             ]);
 
         Assert.Equal(IPAddress.IPv6Loopback, options.Address);
@@ -42,6 +44,9 @@ public sealed class ProgramTests
         Assert.Equal("content-root", options.DataRoot);
         Assert.Equal("save-root", options.SaveRoot);
         Assert.IsType<RestrictedVisibilityPolicy>(options.Visibility);
+        Assert.Equal(
+            new Uri("https://telemetry.example.test/v1"),
+            options.TelemetryEndpoint);
     }
 
     [Theory]
@@ -67,6 +72,11 @@ public sealed class ProgramTests
     [InlineData("--seat", "+1")]
     [InlineData("--seat", "one")]
     [InlineData("--seat", "0")]
+    [InlineData("--telemetry-endpoint")]
+    [InlineData("--telemetry-endpoint", "http://telemetry.example.test/v1")]
+    [InlineData("--telemetry-endpoint", "file:///tmp/telemetry")]
+    [InlineData("--telemetry-endpoint", "https://user:secret@telemetry.example.test/v1")]
+    [InlineData("--telemetry-endpoint", "https://telemetry.example.test/v1?token=secret")]
     public void InvalidServerOptionsAreRejected(params string[] args)
     {
         Assert.Throws<ArgumentException>(() => Program.ServerOptions.Parse(args));

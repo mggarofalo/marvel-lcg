@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -26,6 +27,15 @@ public static class OperationalEventIds
 
     /// <summary>One client transport exchange reached a final disposition.</summary>
     public const string TransportCompleted = "transport.exchange.completed";
+
+    /// <summary>A client synchronized after an uncertain mutation outcome.</summary>
+    public const string ReconnectCompleted = "client.reconnect.completed";
+
+    /// <summary>One replay stage reached a final operational disposition.</summary>
+    public const string ReplayCompleted = "session.replay.completed";
+
+    /// <summary>One persistence stage reached a final operational disposition.</summary>
+    public const string PersistenceCompleted = "session.persistence.completed";
 }
 
 /// <summary>
@@ -46,6 +56,8 @@ public sealed record OperationalRecord(
     int? AuthorizedSeat = null,
     bool? SaveCommitted = null,
     bool? ReplayVerified = null,
+    bool? ReplayDiverged = null,
+    bool? SessionRetired = null,
     string? ErrorCode = null);
 
 /// <summary>A destination for already-redacted structured operational records.</summary>
@@ -53,6 +65,11 @@ public interface IOperationalSink
 {
     /// <summary>Consumes one complete record.</summary>
     void Write(OperationalRecord record);
+}
+
+internal interface IOperationalFlushable
+{
+    void Flush(TimeSpan timeout);
 }
 
 /// <summary>
@@ -91,6 +108,8 @@ public sealed class OperationalLog
         int? authorizedSeat = null,
         bool? saveCommitted = null,
         bool? replayVerified = null,
+        bool? replayDiverged = null,
+        bool? sessionRetired = null,
         string? errorCode = null)
     {
         if (sink is null)
@@ -114,6 +133,8 @@ public sealed class OperationalLog
                 authorizedSeat,
                 saveCommitted,
                 replayVerified,
+                replayDiverged,
+                sessionRetired,
                 SafeErrorCode(errorCode));
             Dispatcher.Enqueue(sink, record);
         }
@@ -132,7 +153,13 @@ public sealed class OperationalLog
             return;
         }
 
+        var elapsed = Stopwatch.StartNew();
         Dispatcher.Flush(timeout);
+        TimeSpan remaining = timeout - elapsed.Elapsed;
+        if (remaining > TimeSpan.Zero && sink is IOperationalFlushable flushable)
+        {
+            flushable.Flush(remaining);
+        }
     }
 
     private static string Bound(string? value) =>
@@ -146,7 +173,8 @@ public sealed class OperationalLog
         EngineProtocol.Setup or EngineProtocol.Open or EngineProtocol.Attach
             or EngineProtocol.Sync or EngineProtocol.Resolve or EngineProtocol.Undo
             or EngineProtocol.Redo or EngineProtocol.Reorder or EngineProtocol.Close
-            or "listen" or "start" or "embedded_start" => value,
+            or "listen" or "start" or "embedded_start" or "reconnect"
+            or "replay" or "persistence" => value,
         _ => "unknown",
     };
 
@@ -159,7 +187,9 @@ public sealed class OperationalLog
             or "invalid_decision" or "invalid_frame" or "invalid_request"
             or "not_your_turn" or "reorder_failed" or "reorder_kind"
             or "reorder_shape" or "response_failed"
-            or "restore_failed" or "save_failed" or "server_start_failed"
+            or "persistence_failed" or "replay_diverged" or "replay_failed"
+            or "restore_failed" or "save_failed"
+            or "server_start_failed"
             or "session_not_found" or "setup_unavailable" or "stale_decision"
             or "stale_history" or "transport_cancelled" or "transport_failed"
             or "unsupported_version" => value,

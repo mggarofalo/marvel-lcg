@@ -31,8 +31,9 @@ Schema 2 save, atomic generation commit, strict load, verified replay, the
 information frontier, linear undo and redo, legal action reordering, and the
 redacted structured operational-log boundary are implemented for hosted
 sessions. The embedded host uses the same ledger and replay path with an
-isolated memory store. Metrics and traces remain planned. No client snapshot or
-simulation record is a player save.
+isolated memory store. Opt-in bounded metrics and correlated traces consume the
+same redacted operational signals. No client snapshot or simulation record is a
+player save.
 
 ## Boundary
 
