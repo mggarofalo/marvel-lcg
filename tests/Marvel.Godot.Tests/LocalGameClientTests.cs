@@ -203,54 +203,87 @@ public sealed class LocalGameClientTests
     }
 
     [Fact]
-    public async Task AppSetupAndOpenUseTheSameRequestsOverLocalAndRemoteTransports()
+    public async Task ACompleteJourneyIsIdenticalOverLocalAndRemoteComposition()
     {
-        var local = new LocalGameClient(new InProcessTransport(Host()));
+        LocalGameClient local = ClientComposition.Connect(
+            RepositoryPaths.Root, configuredEndpoint: null).Client!;
         ClientSetupResult localSetup = await local.ReadSetupAsync(
             TestContext.Current.CancellationToken);
         ClientStartupResult localOpen = await local.OpenAsync(
             localSetup.Choices!,
-            DefaultSelection(localSetup.Choices!),
+            DefaultSelection(localSetup.Choices!) with { Seed = "1" },
             TestContext.Current.CancellationToken);
 
         using var listener = new TcpListener(IPAddress.Loopback, 0);
         listener.Start();
         int port = ((IPEndPoint)listener.LocalEndpoint).Port;
         var server = new SocketEngineServer(Host(), IPAddress.Loopback, port: 0);
+        int exchanges = 0;
         Task serving = Task.Run(() =>
         {
-            for (int exchange = 0; exchange < 2; exchange++)
+            while (true)
             {
                 using TcpClient accepted = listener.AcceptTcpClient();
                 server.Serve(accepted);
+                Interlocked.Increment(ref exchanges);
             }
         }, TestContext.Current.CancellationToken);
 
-        ClientStartupResult remoteOpen;
         try
         {
-            var remote = new LocalGameClient(
-                new SocketTransport(IPAddress.Loopback.ToString(), port));
+            LocalGameClient remote = ClientComposition.Connect(
+                dataRoot: "content-must-not-be-read-for-remote-composition",
+                $"tcp://127.0.0.1:{port}").Client!;
             ClientSetupResult remoteSetup = await remote.ReadSetupAsync(
                 TestContext.Current.CancellationToken);
             Assert.Equal(
                 localSetup.Choices!.Heroes.Select(choice => (choice.Key, choice.Name)),
                 remoteSetup.Choices!.Heroes.Select(choice => (choice.Key, choice.Name)));
-            remoteOpen = await remote.OpenAsync(
+            ClientStartupResult remoteOpen = await remote.OpenAsync(
                 remoteSetup.Choices,
-                DefaultSelection(remoteSetup.Choices),
+                DefaultSelection(remoteSetup.Choices) with { Seed = "1" },
                 TestContext.Current.CancellationToken);
+
+            Assert.True(localOpen.Succeeded);
+            Assert.True(remoteOpen.Succeeded);
+            EngineResponse localCurrent = localOpen.Response!;
+            EngineResponse remoteCurrent = remoteOpen.Response!;
+            string localCapability = localCurrent.Capability!;
+            string remoteCapability = remoteCurrent.Capability!;
+            AssertEquivalentResponses(localCurrent, remoteCurrent);
+
+            int decisions = 0;
+            while (localCurrent.Prompt is not null)
+            {
+                EngineDecision decision = VisibleDecision(localCurrent.Prompt);
+                ClientResolutionResult localResolved = await local.ResolveAsync(
+                    localCapability, decision,
+                    TestContext.Current.CancellationToken);
+                ClientResolutionResult remoteResolved = await remote.ResolveAsync(
+                    remoteCapability, decision,
+                    TestContext.Current.CancellationToken);
+                localCurrent = Assert.IsType<EngineResponse>(localResolved.Response);
+                remoteCurrent = Assert.IsType<EngineResponse>(remoteResolved.Response);
+                AssertEquivalentResponses(localCurrent, remoteCurrent);
+                decisions++;
+            }
+
+            Assert.Equal(7, decisions);
+            Assert.Equal(Outcome.VillainWins, remoteCurrent.World?.Outcome);
         }
         finally
         {
-            await serving;
+            listener.Stop();
+            try
+            {
+                await serving;
+            }
+            catch (SocketException) when (!listener.Server.IsBound)
+            {
+            }
         }
 
-        Assert.True(localOpen.Succeeded);
-        Assert.True(remoteOpen.Succeeded);
-        Assert.Equal(
-            EngineJson.Write(localOpen.Response!),
-            EngineJson.Write(remoteOpen.Response!));
+        Assert.Equal(9, Volatile.Read(ref exchanges));
     }
 
     [Fact]
@@ -667,6 +700,30 @@ public sealed class LocalGameClientTests
             ModularConfiguration.Recommended,
             ModularKey: null,
             Seed: "7");
+
+    private static EngineDecision VisibleDecision(Prompt prompt)
+    {
+        var composer = new DecisionComposer(prompt);
+        if (prompt.Cancellable)
+        {
+            Assert.True(composer.TryDecline(out EngineDecision? declined, out _));
+            return declined!;
+        }
+
+        Affordance offered = prompt.Affordances.First(option => option.IsLegal);
+        composer.SelectAffordance(offered.Id);
+        Assert.True(
+            composer.TryBuild(out EngineDecision? submitted, out string? error),
+            error);
+        return submitted!;
+    }
+
+    private static void AssertEquivalentResponses(
+        EngineResponse local,
+        EngineResponse remote) =>
+        Assert.Equal(
+            EngineJson.Write(local with { Capability = null }),
+            EngineJson.Write(remote with { Capability = null }));
 
     private static GameSpecification Specification() =>
         new("rhino", ["spider_man"], ModularSets: null, Seed: 7);

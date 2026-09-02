@@ -38,6 +38,25 @@ standard Rhino, the recommended modular set and any unsigned 32-bit seed open a
 local game. All subsequent decisions are made in the right-hand decision rail;
 no console or debug action is part of play.
 
+The embedded engine is the default. To use an already-running standalone engine
+on a trusted private network, set one explicit TCP endpoint before launch:
+
+```bash
+MARVEL_ENGINE_ENDPOINT=tcp://127.0.0.1:41923 "$GODOT_BIN" --path src/Marvel.Godot
+```
+
+```powershell
+$env:MARVEL_ENGINE_ENDPOINT = "tcp://127.0.0.1:41923"
+& $GodotBin --path src/Marvel.Godot
+```
+
+The value must be an absolute `tcp://host:port` endpoint with no credentials,
+path, query or fragment. Invalid configuration is reported as
+`invalid_endpoint`; a valid but unreachable service is reported as
+`transport_unavailable`. The socket protocol and its bearer capabilities are
+plaintext, so this option is for development and trusted private networks, not
+for exposure to the Internet.
+
 ## Native smoke
 
 The native smoke loads the real scene at each supported UI scale, selects

@@ -79,6 +79,45 @@ public sealed class TransportTests
     }
 
     [Fact]
+    public async Task SocketTransportPreservesAnUnknownFutureResponseVersion()
+    {
+        int futureVersion = EngineProtocol.Version + 1;
+        byte[] futureResponse = Encoding.UTF8.GetBytes(
+            "{\"version\":" + futureVersion
+            + ",\"request_id\":\"future\",\"game_id\":\"\",\"capability\":null,"
+            + "\"prompt\":null,\"events\":[],\"future_field\":{\"shape\":\"unknown\"}}");
+        Assert.Throws<JsonException>(() => EngineJson.ReadResponse(futureResponse));
+
+        using var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        Task serving = Task.Run(() =>
+        {
+            using TcpClient accepted = listener.AcceptTcpClient();
+            using NetworkStream stream = accepted.GetStream();
+            Assert.NotNull(SocketFrame.Read(stream));
+            SocketFrame.Write(stream, futureResponse);
+        }, TestContext.Current.CancellationToken);
+
+        var transport = new SocketTransport(IPAddress.Loopback.ToString(), port);
+        EngineResponse response;
+        try
+        {
+            response = await transport.ExchangeAsync(
+                EngineRequest.ReadSetup("future"),
+                TestContext.Current.CancellationToken);
+        }
+        finally
+        {
+            await serving;
+        }
+
+        Assert.Equal(futureVersion, response.Version);
+        Assert.Equal("future", response.RequestId);
+        Assert.Equal(string.Empty, response.GameId);
+    }
+
+    [Fact]
     public void DecisionsHaveFiveWireFieldsAndNoConvenienceGetters()
     {
         var request = EngineRequest.ResolveGame(

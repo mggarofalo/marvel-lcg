@@ -19,6 +19,20 @@ internal static class EngineJson
     public static EngineResponse ReadResponse(ReadOnlySpan<byte> json) =>
         JsonSerializer.Deserialize(json, EngineJsonContext.Default.EngineResponse)
         ?? throw new JsonException("response document was null");
+
+    public static int ReadResponseVersion(ReadOnlyMemory<byte> json)
+    {
+        using JsonDocument document = JsonDocument.Parse(json);
+        JsonElement root = document.RootElement;
+        if (root.ValueKind != JsonValueKind.Object
+            || !root.TryGetProperty("version", out JsonElement version)
+            || !version.TryGetInt32(out int value))
+        {
+            throw new JsonException("response version was missing or invalid");
+        }
+
+        return value;
+    }
 }
 
 [JsonSourceGenerationOptions(

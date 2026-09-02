@@ -8,11 +8,13 @@ The presentation architecture has 3 layers:
 
 The Godot project reads the authored Core Set setup surface through
 `IEngineTransport`, lets the player select an offered assignment, and opens it
-through `InProcessTransport`. Each complete response replaces the prior
+through the embedded `InProcessTransport` by default. An explicit
+`MARVEL_ENGINE_ENDPOINT=tcp://host:port` selects `SocketTransport` at the same
+composition boundary. Each complete response replaces the prior
 visibility-safe snapshot, while its semantic events are appended in engine order
 to a diagnostic chronology. The client renders the board and every admitted
-prompt shape from those contracts. The same app-facing setup and open path is
-exercised over the socket transport in tests.
+prompt shape from those contracts. Tests run a complete deterministic journey
+through both compositions and compare every authoritative response.
 
 ## Build boundary
 
@@ -107,6 +109,10 @@ one interface a client uses in either deployment:
 The in-process path does not create a second gameplay API. The socket path may
 use asynchronous network input, but game-state mutation remains synchronous and
 single-threaded inside the host.
+
+The current socket framing and bearer capabilities are plaintext. A remote
+endpoint is therefore for development and trusted private networks only; it is
+not an Internet-safe deployment boundary.
 
 ## Wire protocol
 

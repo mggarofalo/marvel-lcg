@@ -184,8 +184,9 @@ public sealed partial class Main : Control
     {
         try
         {
-            LocalClientConnection connection = LocalGameClient.ConnectLocal(
-                ProjectSettings.GlobalizePath("res://../.."));
+            LocalClientConnection connection = ClientComposition.Connect(
+                ProjectSettings.GlobalizePath("res://../.."),
+                OS.GetEnvironment("MARVEL_ENGINE_ENDPOINT"));
             if (!connection.Succeeded)
             {
                 ShowFailure(connection.Error!);
