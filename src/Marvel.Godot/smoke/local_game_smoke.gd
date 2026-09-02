@@ -190,6 +190,9 @@ func _run() -> void:
 		decisions,
 		"enabled" if motion_enabled else "disabled",
 	])
+	main.queue_free()
+	await process_frame
+	await process_frame
 	quit(0)
 
 

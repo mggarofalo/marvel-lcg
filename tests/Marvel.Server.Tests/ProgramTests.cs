@@ -15,6 +15,12 @@ public sealed class ProgramTests
         Assert.Equal(IPAddress.Loopback, options.Address);
         Assert.Equal(41923, options.Port);
         Assert.Equal(Environment.CurrentDirectory, options.DataRoot);
+        Assert.Equal(
+            Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "MarvelLCG",
+                "sessions"),
+            options.SaveRoot);
         Assert.IsType<PermissiveVisibilityPolicy>(options.Visibility);
     }
 
@@ -26,6 +32,7 @@ public sealed class ProgramTests
                 "--listen", "::1",
                 "--port", "65535",
                 "--data-root", "content-root",
+                "--save-root", "save-root",
                 "--visibility", "restricted",
                 "--seat", "7",
             ]);
@@ -33,6 +40,7 @@ public sealed class ProgramTests
         Assert.Equal(IPAddress.IPv6Loopback, options.Address);
         Assert.Equal(65535, options.Port);
         Assert.Equal("content-root", options.DataRoot);
+        Assert.Equal("save-root", options.SaveRoot);
         Assert.IsType<RestrictedVisibilityPolicy>(options.Visibility);
     }
 
@@ -50,6 +58,7 @@ public sealed class ProgramTests
     [InlineData("--port", "+1")]
     [InlineData("--port", "1.0")]
     [InlineData("--data-root")]
+    [InlineData("--save-root")]
     [InlineData("--visibility")]
     [InlineData("--visibility", "private")]
     [InlineData("--visibility", "restricted")]
@@ -163,7 +172,8 @@ public sealed class ProgramTests
                     IPAddress.Loopback,
                     Port: 0,
                     Marvel.Tests.RepositoryPaths.Root,
-                    new PermissiveVisibilityPolicy()),
+                    new PermissiveVisibilityPolicy(),
+                    Path.Combine(Path.GetTempPath(), $"marvel-server-{Guid.NewGuid():N}")),
                 error,
                 listening.SetResult,
                 stopping.Token),

@@ -20,6 +20,7 @@ fi
 dotnet build "$repo_root/src/Marvel.Godot/Marvel.Godot.csproj" --nologo
 server_log=$(mktemp)
 smoke_log=$(mktemp)
+save_root=$(mktemp -d)
 server_pid=
 cleanup() {
   if [[ -n "$server_pid" ]] && kill -0 "$server_pid" 2>/dev/null; then
@@ -27,6 +28,7 @@ cleanup() {
     wait "$server_pid" 2>/dev/null || true
   fi
   rm -f "$server_log" "$smoke_log"
+  rm -rf "$save_root"
 }
 trap cleanup EXIT
 
@@ -35,6 +37,7 @@ if [[ "$external_server" != true ]]; then
     --listen 127.0.0.1 \
     --port "$smoke_port" \
     --data-root "$repo_root" \
+    --save-root "$save_root" \
     --visibility restricted \
     --seat 0 \
     2>"$server_log" &

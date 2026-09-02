@@ -124,7 +124,7 @@ endpoint is therefore for development and trusted private networks only; it is
 not an Internet-safe deployment boundary.
 
 The [standalone server guide](server.md) documents process and container launch,
-visibility configuration, in-memory sessions and shutdown behavior.
+visibility configuration, durable sessions and shutdown behavior.
 
 ## Wire protocol
 

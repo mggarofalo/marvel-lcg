@@ -88,7 +88,8 @@ internal static class Program
     {
         var host = new EngineHost(
             DatasetGameFactory.Load(options.DataRoot),
-            visibility: options.Visibility);
+            visibility: options.Visibility,
+            store: new FileSessionStore(options.SaveRoot));
         return new SocketEngineServer(host, options.Address, options.Port);
     }
 
@@ -118,13 +119,18 @@ internal static class Program
         IPAddress Address,
         int Port,
         string DataRoot,
-        IVisibilityPolicy Visibility)
+        IVisibilityPolicy Visibility,
+        string SaveRoot)
     {
         public static ServerOptions Parse(string[] args)
         {
             IPAddress address = IPAddress.Loopback;
             int port = DefaultPort;
             string dataRoot = Environment.CurrentDirectory;
+            string saveRoot = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "MarvelLCG",
+                "sessions");
             string visibility = "cooperative";
             int? seat = null;
 
@@ -151,6 +157,9 @@ internal static class Program
                         break;
                     case "--data-root":
                         dataRoot = Value(args, ref index, "--data-root");
+                        break;
+                    case "--save-root":
+                        saveRoot = Value(args, ref index, "--save-root");
                         break;
                     case "--visibility":
                         visibility = Value(args, ref index, "--visibility");
@@ -182,7 +191,7 @@ internal static class Program
                 _ => throw new ArgumentException(
                     "--visibility must be cooperative or restricted"),
             };
-            return new ServerOptions(address, port, dataRoot, policy);
+            return new ServerOptions(address, port, dataRoot, policy, saveRoot);
         }
 
         private static string Value(

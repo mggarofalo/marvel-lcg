@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
@@ -18,6 +19,7 @@ public static class JournalJson
             PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
             WriteIndented = false,
         };
+        options.Converters.Add(new ResourceAllocationJsonConverter());
         options.MakeReadOnly(populateMissingResolver: true);
         return options;
     }
@@ -30,15 +32,76 @@ public static class JournalJson
     }
 }
 
+/// <summary>Strict schema JSON for one per-cost resource allocation.</summary>
+public sealed class ResourceAllocationJsonConverter : JsonConverter<ResourceAllocation>
+{
+    /// <inheritdoc />
+    public override ResourceAllocation Read(
+        ref Utf8JsonReader reader,
+        Type typeToConvert,
+        JsonSerializerOptions options)
+    {
+        using JsonDocument document = JsonDocument.ParseValue(ref reader);
+        JsonElement root = document.RootElement;
+        if (root.ValueKind != JsonValueKind.Object)
+        {
+            throw new JsonException("resource allocation must be an object");
+        }
+
+        int? source = null;
+        int? cost = null;
+        string? paidAs = null;
+        foreach (JsonProperty property in root.EnumerateObject())
+        {
+            switch (property.Name)
+            {
+                case "source" when source is null:
+                    source = property.Value.GetInt32();
+                    break;
+                case "cost" when cost is null:
+                    cost = property.Value.GetInt32();
+                    break;
+                case "paid_as" when paidAs is null:
+                    paidAs = property.Value.GetString()
+                        ?? throw new JsonException("resource allocation paid_as is null");
+                    break;
+                default:
+                    throw new JsonException(
+                        $"resource allocation member '{property.Name}' is not allowed");
+            }
+        }
+
+        if (source is null || cost is null || paidAs is null)
+        {
+            throw new JsonException("resource allocation is missing a required member");
+        }
+
+        return new ResourceAllocation(source.Value, cost.Value, paidAs);
+    }
+
+    /// <inheritdoc />
+    public override void Write(
+        Utf8JsonWriter writer,
+        ResourceAllocation value,
+        JsonSerializerOptions options)
+    {
+        writer.WriteStartObject();
+        writer.WriteNumber("source", value.Source);
+        writer.WriteNumber("cost", value.Cost);
+        writer.WriteString("paid_as", value.PaidAs);
+        writer.WriteEndObject();
+    }
+}
+
 /// <summary>A stable, affordance-handle-free snapshot of one engine prompt.</summary>
 public sealed record PromptRecord(
-    int Player,
-    string Asking,
-    string When,
-    string Trigger,
-    string Label,
-    bool Cancellable,
-    IReadOnlyList<AffordanceRecord> Affordances)
+    [property: JsonRequired] int Player,
+    [property: JsonRequired] string Asking,
+    [property: JsonRequired] string When,
+    [property: JsonRequired] string Trigger,
+    [property: JsonRequired] string Label,
+    [property: JsonRequired] bool Cancellable,
+    [property: JsonRequired] IReadOnlyList<AffordanceRecord> Affordances)
 {
     /// <summary>Captures every ordered prompt field except ephemeral affordance ids.</summary>
     public static PromptRecord From(Prompt prompt)
@@ -57,13 +120,13 @@ public sealed record PromptRecord(
 
 /// <summary>A stable snapshot of an offered choice, excluding its live handle.</summary>
 public sealed record AffordanceRecord(
-    string Verb,
-    int AnchorId,
-    int AnchorPlayer,
-    string Label,
-    JsonElement? Targets,
-    IReadOnlyList<JsonElement> Costs,
-    string? Illegal)
+    [property: JsonRequired] string Verb,
+    [property: JsonRequired] int AnchorId,
+    [property: JsonRequired] int AnchorPlayer,
+    [property: JsonRequired] string Label,
+    [property: JsonRequired] JsonElement? Targets,
+    [property: JsonRequired] IReadOnlyList<JsonElement> Costs,
+    [property: JsonRequired] string? Illegal)
 {
     /// <summary>Captures an affordance in domain order.</summary>
     public static AffordanceRecord From(Affordance affordance)
@@ -89,12 +152,12 @@ public sealed record AffordanceRecord(
 /// define no persistent command identifier.
 /// </summary>
 public sealed record DecisionSelector(
-    bool Decline,
-    int? AnchorId,
-    int? AnchorPlayer,
-    string? Verb,
-    string? Label,
-    int Occurrence)
+    [property: JsonRequired] bool Decline,
+    [property: JsonRequired] int? AnchorId,
+    [property: JsonRequired] int? AnchorPlayer,
+    [property: JsonRequired] string? Verb,
+    [property: JsonRequired] string? Label,
+    [property: JsonRequired] int Occurrence)
 {
     /// <summary>Captures a decision without retaining <see cref="Affordance.Id"/>.</summary>
     public static DecisionSelector From(Prompt prompt, Decision decision)
@@ -226,12 +289,12 @@ public sealed record DecisionSelector(
 
 /// <summary>One complete, ordered answer that can be resolved against a fresh prompt.</summary>
 public sealed record DurableDecision(
-    int Actor,
-    DecisionSelector Selector,
-    IReadOnlyList<int> Targets,
-    IReadOnlyList<int> Resources,
-    IReadOnlyDictionary<string, long> Values,
-    IReadOnlyList<ResourceAllocation> Allocations)
+    [property: JsonRequired] int Actor,
+    [property: JsonRequired] DecisionSelector Selector,
+    [property: JsonRequired] IReadOnlyList<int> Targets,
+    [property: JsonRequired] IReadOnlyList<int> Resources,
+    [property: JsonRequired] IReadOnlyDictionary<string, long> Values,
+    [property: JsonRequired] IReadOnlyList<ResourceAllocation> Allocations)
 {
     /// <summary>Captures the prompt-authorized actor and every ordered answer field.</summary>
     public static DurableDecision From(int actor, Prompt prompt, Decision decision)
@@ -300,10 +363,12 @@ public sealed record DurableDecision(
 
 /// <summary>One durable answer together with the derived facts replay verifies.</summary>
 public sealed record JournalStep(
-    PromptRecord Prompt,
-    DurableDecision Decision,
-    IReadOnlyList<JsonElement> Events,
-    string StateFingerprint)
+    [property: JsonRequired] PromptRecord Prompt,
+    [property: JsonRequired] DurableDecision Decision,
+    [property: JsonRequired] IReadOnlyList<JsonElement> Events,
+    [property: JsonRequired] long RngWords,
+    [property: JsonRequired] string StateFingerprint,
+    [property: JsonRequired] EngineResultRecord? Result = null)
 {
     /// <summary>Captures engine output in event order after a resolved answer.</summary>
     public static JournalStep From(
@@ -311,7 +376,9 @@ public sealed record JournalStep(
         Prompt prompt,
         Decision decision,
         IReadOnlyList<GameEvent> events,
-        string stateFingerprint)
+        long rngWords,
+        string stateFingerprint,
+        EngineResultRecord? result = null)
     {
         ArgumentNullException.ThrowIfNull(events);
         ArgumentException.ThrowIfNullOrEmpty(stateFingerprint);
@@ -319,9 +386,16 @@ public sealed record JournalStep(
             PromptRecord.From(prompt),
             DurableDecision.From(actor, prompt, decision),
             [.. events.Select(JournalJson.Event)],
-            stateFingerprint);
+            rngWords,
+            stateFingerprint,
+            result);
     }
 }
+
+/// <summary>The terminal meaning that a state digest alone cannot express.</summary>
+public sealed record EngineResultRecord(
+    [property: JsonRequired] string Outcome,
+    [property: JsonRequired] int Round);
 
 /// <summary>Deterministic comparisons used by every journal replay consumer.</summary>
 public static class JournalReplay
@@ -363,6 +437,10 @@ public static class JournalReplay
 
     /// <summary>Requires the exact hidden-state fingerprint produced after a decision.</summary>
     public static void RequireFingerprint(string expected, string actual, string context) =>
+        RequireEqual(expected, actual, context);
+
+    /// <summary>Requires cumulative gameplay RNG consumption to remain exact.</summary>
+    public static void RequireRng(long expected, long actual, string context) =>
         RequireEqual(expected, actual, context);
 
     private static void RequireEqual<T>(T expected, T actual, string context)

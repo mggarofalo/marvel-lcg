@@ -769,6 +769,7 @@ public sealed partial class ActionAbilityTests
         // player turn and the only answer is to resolve the Forced Action.
         game.Resolve(Decision.Decline);
         Assert.Equal(GamePhase.PlayerTurn, game.Phase);
+        Assert.True(game.IsForcedResolutionPrompt);
         Assert.False(game.Pending!.Cancellable);
         var forced = Assert.Single(game.Pending.Affordances);
 
@@ -776,6 +777,7 @@ public sealed partial class ActionAbilityTests
         game.Resolve(Decision.Take(forced.Id));
 
         Assert.False(source!.Ready);
+        Assert.False(game.IsForcedResolutionPrompt);
         Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
 
         // Its exhaust cost is now unpayable, so resolution continues directly

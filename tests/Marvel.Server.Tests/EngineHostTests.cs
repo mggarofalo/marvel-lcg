@@ -4,6 +4,7 @@ using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
+using Marvel.Session;
 using Marvel.View;
 using Xunit;
 
@@ -533,6 +534,175 @@ public sealed class EngineHostTests
     }
 
     [Fact]
+    public void ACommittedGameRestartsFromItsSaveWithTheSameCapabilityAndRevision()
+    {
+        var store = new MemorySessionStore();
+        var factory = DatasetGameFactory.Load(RepositoryPaths.Root);
+        var first = new EngineHost(
+            factory,
+            new SequenceCapabilities("restart-owner"),
+            store: store);
+        EngineResponse opened = first.Exchange(EngineRequest.OpenGame(
+            "open",
+            "restart-table",
+            new GameSpecification("rhino", ["spider_man"], [], Seed: 73)));
+        EngineResponse advanced = first.Exchange(EngineRequest.ResolveGame(
+            "resolve",
+            "restart-table",
+            opened.Capability!,
+            TakeOnly(opened),
+            opened.Revision));
+
+        var restarted = new EngineHost(factory, store: store);
+        EngineResponse restored = restarted.Exchange(EngineRequest.SyncGame(
+            "sync", "restart-table", opened.Capability!));
+
+        Assert.Null(advanced.Error);
+        Assert.Null(restored.Error);
+        Assert.Equal(advanced.Revision, restored.Revision);
+        Assert.Equal(
+            EngineJson.Write(advanced with { RequestId = "same", Events = [] }),
+            EngineJson.Write(restored with { RequestId = "same" }));
+        StoredSession persisted = Assert.Single(store.Load());
+        string save = SessionSaveJson.Write(persisted.Save);
+        Assert.DoesNotContain("restart-owner", save, StringComparison.Ordinal);
+        Assert.DoesNotContain("capability", save, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(64, persisted.Save.Compatibility.CardsSha256.Length);
+        Assert.Equal(1, persisted.Save.Revision);
+        Assert.Single(persisted.Save.Units);
+    }
+
+    [Fact]
+    public void AFailedSaveCommitDoesNotAdvanceOrInvalidateTheLiveGame()
+    {
+        var inner = new MemorySessionStore();
+        var store = new FailingSessionStore(inner, failAtCommit: 2);
+        var host = new EngineHost(
+            DatasetGameFactory.Load(RepositoryPaths.Root),
+            new SequenceCapabilities("atomic-owner"),
+            store: store);
+        EngineResponse opened = host.Exchange(EngineRequest.OpenGame(
+            "open",
+            "atomic-table",
+            new GameSpecification("rhino", ["spider_man"], [], Seed: 73)));
+
+        EngineResponse failed = host.Exchange(EngineRequest.ResolveGame(
+            "resolve",
+            "atomic-table",
+            opened.Capability!,
+            TakeOnly(opened),
+            opened.Revision));
+        EngineResponse current = host.Exchange(EngineRequest.SyncGame(
+            "sync", "atomic-table", opened.Capability!));
+
+        Assert.Equal("save_failed", failed.Error?.Code);
+        Assert.Null(current.Error);
+        Assert.Equal(opened.Revision, current.Revision);
+        Assert.Equal(
+            EngineJson.Write(opened with
+            {
+                RequestId = "same",
+                Capability = null,
+                Invitations = null,
+                Events = [],
+            }),
+            EngineJson.Write(current with { RequestId = "same" }));
+        Assert.Equal(0, Assert.Single(inner.Load()).Save.Revision);
+    }
+
+    [Theory]
+    [InlineData("rng")]
+    [InlineData("digest")]
+    [InlineData("prompt")]
+    [InlineData("compatibility")]
+    public void RestartRejectsTheFirstDivergentAuthorityRecord(string field)
+    {
+        var store = new MemorySessionStore();
+        var factory = DatasetGameFactory.Load(RepositoryPaths.Root);
+        var host = new EngineHost(
+            factory,
+            new SequenceCapabilities("divergence-owner"),
+            store: store);
+        _ = host.Exchange(EngineRequest.OpenGame(
+            "open",
+            "divergence-table",
+            new GameSpecification("rhino", ["spider_man"], [], Seed: 73)));
+        StoredSession stored = Assert.Single(store.Load());
+        SessionSave changed = field switch
+        {
+            "rng" => stored.Save with
+            {
+                Initial = stored.Save.Initial with
+                {
+                    RngWords = stored.Save.Initial.RngWords + 1,
+                },
+            },
+            "digest" => stored.Save with
+            {
+                Initial = stored.Save.Initial with { StateDigest = "changed" },
+            },
+            "prompt" => stored.Save with { CurrentPrompt = null },
+            "compatibility" => stored.Save with
+            {
+                Compatibility = stored.Save.Compatibility with
+                {
+                    ReplayContract = "future-contract",
+                },
+            },
+            _ => throw new InvalidOperationException(field),
+        };
+
+        Assert.ThrowsAny<Exception>(() => new EngineHost(
+            factory,
+            store: new FixedSessionStore(stored with { Save = changed })));
+    }
+
+    [Theory]
+    [InlineData("event")]
+    [InlineData("rng")]
+    [InlineData("state")]
+    public void RestartRejectsTheFirstDivergentCommittedDecision(string field)
+    {
+        var store = new MemorySessionStore();
+        var factory = DatasetGameFactory.Load(RepositoryPaths.Root);
+        var host = new EngineHost(
+            factory,
+            new SequenceCapabilities("step-owner"),
+            store: store);
+        EngineResponse opened = host.Exchange(EngineRequest.OpenGame(
+            "open",
+            "step-table",
+            new GameSpecification("rhino", ["spider_man"], [], Seed: 73)));
+        _ = host.Exchange(EngineRequest.ResolveGame(
+            "resolve",
+            "step-table",
+            opened.Capability!,
+            TakeOnly(opened),
+            opened.Revision));
+        StoredSession stored = Assert.Single(store.Load());
+        JournalUnit unit = Assert.Single(stored.Save.Units);
+        JournalStep step = Assert.Single(unit.Decisions);
+        JournalStep changedStep = field switch
+        {
+            "event" => step with
+            {
+                Events = [JournalJson.Event(new FieldSet(0, "damage", 0, 1))],
+            },
+            "rng" => step with { RngWords = step.RngWords + 1 },
+            "state" => step with { StateFingerprint = "changed" },
+            _ => throw new InvalidOperationException(field),
+        };
+        SessionSave changed = stored.Save with
+        {
+            Units = [unit with { Decisions = [changedStep] }],
+        };
+
+        Assert.Throws<ReplayDivergenceException>(() => new EngineHost(
+            factory,
+            store: new FixedSessionStore(stored with { Save = changed })));
+    }
+
+    [Fact]
     public void FileReadingAndCheatOperationsHaveNoServedSurface()
     {
         var factory = new UnusedFactory();
@@ -575,6 +745,33 @@ public sealed class EngineHostTests
             Calls++;
             throw new InvalidOperationException("should not be called");
         }
+    }
+
+    private sealed class FailingSessionStore(ISessionStore inner, int failAtCommit)
+        : ISessionStore
+    {
+        private int commits;
+
+        public IReadOnlyList<StoredSession> Load() => inner.Load();
+
+        public void Commit(StoredSession session)
+        {
+            commits++;
+            if (commits == failAtCommit)
+            {
+                throw new IOException("simulated interrupted write");
+            }
+
+            inner.Commit(session);
+        }
+    }
+
+    private sealed class FixedSessionStore(params StoredSession[] sessions) : ISessionStore
+    {
+        public IReadOnlyList<StoredSession> Load() => sessions;
+
+        public void Commit(StoredSession session) =>
+            throw new InvalidOperationException("not used");
     }
 
     private sealed class SequenceCapabilities(params string[] capabilities)

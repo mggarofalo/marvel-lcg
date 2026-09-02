@@ -104,6 +104,7 @@ internal static class SimulationHarness
                         prompt,
                         durable,
                         [.. resolved.Events.Select(JournalJson.Event)],
+                        game.State.Random.Generator.WordsConsumed,
                         game.State.Digest().Fingerprint());
                     var recordedStep = new StepRecord(
                         "step", gameIndex, step, journal.Prompt, journal.Decision.Selector,

@@ -21,6 +21,8 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 $serverOut = [System.IO.Path]::GetTempFileName()
 $serverError = [System.IO.Path]::GetTempFileName()
+$saveRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("marvel-smoke-" + [Guid]::NewGuid().ToString("N"))
+[System.IO.Directory]::CreateDirectory($saveRoot) | Out-Null
 $server = $null
 try {
     $arguments = @(
@@ -28,6 +30,7 @@ try {
         "--project", "$repoRoot/src/Marvel.Server/Marvel.Server.csproj",
         "--", "--listen", "127.0.0.1", "--port", $Port,
         "--data-root", $repoRoot,
+        "--save-root", $saveRoot,
         "--visibility", "restricted", "--seat", "0"
     )
     $server = Start-Process -FilePath "dotnet" -ArgumentList $arguments `
@@ -65,5 +68,6 @@ finally {
         $server.WaitForExit()
     }
     Remove-Item $serverOut, $serverError -Force -ErrorAction SilentlyContinue
+    Remove-Item $saveRoot -Recurse -Force -ErrorAction SilentlyContinue
 }
 exit 0

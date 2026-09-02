@@ -35,6 +35,13 @@ public interface IGameFactory
     OpenedGame Create(GameSpecification specification);
 }
 
+/// <summary>A game factory whose dataset identities make durable replay meaningful.</summary>
+public interface IDurableGameFactory : IGameFactory
+{
+    /// <summary>The replay contracts and dataset hashes used by this factory.</summary>
+    SessionCompatibility Compatibility { get; }
+}
+
 /// <summary>Exposes the authored choices a client may use to open a game.</summary>
 public interface ISetupDiscovery
 {
@@ -64,6 +71,8 @@ public sealed class EngineHost : IEngineEndpoint
     private readonly IGameFactory factory;
     private readonly ISessionCapabilityIssuer capabilities;
     private readonly IVisibilityPolicy visibility;
+    private readonly ISessionStore store;
+    private readonly SessionCompatibility compatibility;
     private readonly Dictionary<string, SessionAccess> sessions = new(StringComparer.Ordinal);
     private readonly Dictionary<string, PendingInvitation> invitations = new(StringComparer.Ordinal);
 
@@ -71,11 +80,24 @@ public sealed class EngineHost : IEngineEndpoint
     public EngineHost(
         IGameFactory factory,
         ISessionCapabilityIssuer? capabilities = null,
-        IVisibilityPolicy? visibility = null)
+        IVisibilityPolicy? visibility = null,
+        ISessionStore? store = null)
     {
         this.factory = factory ?? throw new ArgumentNullException(nameof(factory));
         this.capabilities = capabilities ?? new CryptographicCapabilityIssuer();
         this.visibility = visibility ?? new PermissiveVisibilityPolicy();
+        this.store = store ?? new MemorySessionStore();
+        if (store is not null && factory is not IDurableGameFactory)
+        {
+            throw new ArgumentException(
+                "persistent hosts require a factory with replay compatibility identities",
+                nameof(factory));
+        }
+
+        compatibility = factory is IDurableGameFactory durable
+            ? durable.Compatibility
+            : TestCompatibility();
+        Restore();
     }
 
     /// <inheritdoc />
@@ -233,7 +255,15 @@ public sealed class EngineHost : IEngineEndpoint
         }
 
         var opened = factory.Create(request.Game);
-        var session = new HostedSession(request.GameId, opened.Game);
+        string storageId = NewStorageId();
+        SessionSave save = SessionSave.Open(
+            compatibility,
+            storageId,
+            request.GameId,
+            ToSessionSetup(request.Game),
+            opened.Game,
+            opened.SetupEvents);
+        var session = new HostedSession(request.GameId, opened.Game, save);
         string capability = IssueCapability();
         var reserved = new HashSet<string>(StringComparer.Ordinal) { capability };
         var issuedInvitations = additionalScopes
@@ -253,10 +283,18 @@ public sealed class EngineHost : IEngineEndpoint
             capability,
             issuedInvitations.Select(pair =>
                 new SeatInvitation(pair.grant.Seat, pair.token)).ToList());
-        sessions.Add(capability, new SessionAccess(session, scope, Owner: true));
+        var proposedAuthorities = new List<StoredAuthority>
+        {
+            Authority(capability, scope, request.Game.Heroes.Count, owner: true, invitation: false),
+        };
+        proposedAuthorities.AddRange(issuedInvitations.Select(pair =>
+            Authority(pair.token, pair.grant.Scope, request.Game.Heroes.Count,
+                owner: false, invitation: true)));
+        store.Commit(new StoredSession(save, proposedAuthorities));
+        sessions.Add(Verifier(capability), new SessionAccess(session, scope, Owner: true));
         foreach (var (grant, token) in issuedInvitations)
         {
-            invitations.Add(token, new PendingInvitation(session, grant.Scope));
+            invitations.Add(Verifier(token), new PendingInvitation(session, grant.Scope));
         }
 
         return response;
@@ -317,8 +355,9 @@ public sealed class EngineHost : IEngineEndpoint
         }
 
         string invitation = request.Capability ?? string.Empty;
+        string invitationVerifier = Verifier(invitation);
         if (invitation.Length is <= 0 or > EngineProtocol.MaximumIdentifierLength
-            || !invitations.TryGetValue(invitation, out PendingInvitation? pending)
+            || !invitations.TryGetValue(invitationVerifier, out PendingInvitation? pending)
             || !string.Equals(
                 pending.Session.GameId, request.GameId, StringComparison.Ordinal))
         {
@@ -334,9 +373,20 @@ public sealed class EngineHost : IEngineEndpoint
             pending.Scope,
             capability,
             revision: pending.Session.Revision);
-        invitations.Remove(invitation);
+        var authorities = Authorities(pending.Session)
+            .Where(authority => authority.Verifier != invitationVerifier)
+            .Append(Authority(
+                capability,
+                pending.Scope,
+                pending.Session.Game.State.Players,
+                owner: false,
+                invitation: false))
+            .ToList();
+        store.Commit(new StoredSession(pending.Session.Save, authorities));
+        invitations.Remove(invitationVerifier);
         sessions.Add(
-            capability, new SessionAccess(pending.Session, pending.Scope, Owner: false));
+            Verifier(capability),
+            new SessionAccess(pending.Session, pending.Scope, Owner: false));
         return response;
     }
 
@@ -440,28 +490,70 @@ public sealed class EngineHost : IEngineEndpoint
 
         try
         {
-            var resolved = access.Session.Game.Resolve(decision);
-            access.Session.Revision++;
+            Game candidate = SessionReplay.Verify(
+                access.Session.Save,
+                compatibility,
+                ReplayOpen);
+            Prompt candidatePrompt = candidate.Pending
+                ?? throw new ReplayDivergenceException("candidate has no pending prompt");
+            JournalReplay.RequirePrompt(
+                PromptRecord.From(pending), candidatePrompt, "live prompt");
+            Decision replayDecision = DurableDecision.From(actor, pending, decision)
+                .Resolve(candidatePrompt);
+            bool root = candidate.IsRootPrompt;
+            int active = candidate.Active;
+            int round = candidate.Round;
+            string phase = candidate.Phase.ToString();
+            string role = UnitRole(candidate, candidatePrompt, replayDecision);
+            var resolved = candidate.Resolve(replayDecision);
+            var step = JournalStep.From(
+                actor,
+                candidatePrompt,
+                replayDecision,
+                resolved.Events,
+                candidate.State.Random.Generator.WordsConsumed,
+                SessionReplay.Fingerprint(candidate),
+                SessionReplay.Result(candidate));
+            SessionSave proposed = Append(
+                access.Session.Save,
+                step,
+                root,
+                candidate.IsRootPrompt || candidate.Pending is null,
+                role,
+                actor,
+                active,
+                round,
+                phase,
+                candidate.Pending);
+            store.Commit(new StoredSession(proposed, Authorities(access.Session)));
+            access.Session.Game = candidate;
+            access.Session.Save = proposed;
             return Succeeded(
                 request,
-                access.Session.Game,
+                candidate,
                 resolved.Prompt,
                 resolved.Events,
                 access.Scope,
-                revision: access.Session.Revision);
+                revision: proposed.Revision);
+        }
+        catch (Exception failure) when (failure is IOException
+            or UnauthorizedAccessException
+            or SessionSaveException
+            or ReplayDivergenceException)
+        {
+            return Failed(
+                request,
+                "save_failed",
+                "the decision was not committed and the prior game remains authoritative");
         }
         catch (Exception)
         {
-            // The rules promise their named unimplemented boundaries throw
-            // before mutation, but an unexpected failure has no such contract.
-            // The host chooses to fail closed: a session that might now hold a
-            // partial resolve is removed rather than serving a plausible wrong
-            // board on the next request.
-            Remove(access.Session);
+            // Resolution runs only on a freshly replayed candidate. Even an
+            // unexpected engine failure cannot partially mutate the live game.
             return Failed(
                 request,
                 "game_aborted",
-                "the game was aborted after an engine failure");
+                "the candidate decision failed and the prior game remains authoritative");
         }
     }
 
@@ -484,11 +576,21 @@ public sealed class EngineHost : IEngineEndpoint
 
         if (access.Owner)
         {
+            SessionSave retired = access.Session.Save with
+            {
+                Session = access.Session.Save.Session with { Lifecycle = "retired" },
+            };
+            store.Commit(new StoredSession(retired, []));
             Remove(access.Session);
         }
         else
         {
-            sessions.Remove(capability);
+            string verifier = Verifier(capability);
+            var authorities = Authorities(access.Session)
+                .Where(authority => authority.Verifier != verifier)
+                .ToList();
+            store.Commit(new StoredSession(access.Session.Save, authorities));
+            sessions.Remove(verifier);
         }
 
         return Succeeded(request);
@@ -498,9 +600,10 @@ public sealed class EngineHost : IEngineEndpoint
         EngineRequest request, out string capability, out SessionAccess session)
     {
         capability = request.Capability ?? string.Empty;
+        string verifier = Verifier(capability);
         session = null!;
         if (capability.Length is <= 0 or > EngineProtocol.MaximumIdentifierLength
-            || !sessions.TryGetValue(capability, out SessionAccess? found)
+            || !sessions.TryGetValue(verifier, out SessionAccess? found)
             || !string.Equals(found.Session.GameId, request.GameId, StringComparison.Ordinal))
         {
             return false;
@@ -515,9 +618,10 @@ public sealed class EngineHost : IEngineEndpoint
         for (int attempt = 0; attempt < 16; attempt++)
         {
             string capability = capabilities.Issue();
+            string verifier = Verifier(capability);
             if (capability.Length is > 0 and <= EngineProtocol.MaximumIdentifierLength
-                && !sessions.ContainsKey(capability)
-                && !invitations.ContainsKey(capability)
+                && !sessions.ContainsKey(verifier)
+                && !invitations.ContainsKey(verifier)
                 && !(reserved?.Contains(capability) ?? false))
             {
                 return capability;
@@ -545,6 +649,179 @@ public sealed class EngineHost : IEngineEndpoint
             invitations.Remove(invitation);
         }
     }
+
+    private void Restore()
+    {
+        foreach (StoredSession stored in store.Load())
+        {
+            if (stored.Save.Session.Lifecycle == "retired")
+            {
+                continue;
+            }
+
+            Game game = SessionReplay.Verify(stored.Save, compatibility, ReplayOpen);
+            var session = new HostedSession(stored.Save.Session.Label, game, stored.Save);
+            foreach (StoredAuthority authority in stored.Authorities)
+            {
+                if (authority.Seats.Any(seat => seat >= game.State.Players))
+                {
+                    throw new SessionSaveException("stored authority seat is outside its game");
+                }
+
+                var scope = new ViewScope(authority.Seats);
+                if (authority.Invitation)
+                {
+                    invitations.Add(authority.Verifier, new PendingInvitation(session, scope));
+                }
+                else
+                {
+                    sessions.Add(
+                        authority.Verifier,
+                        new SessionAccess(session, scope, authority.Owner));
+                }
+            }
+        }
+    }
+
+    private ReplayOpenedGame ReplayOpen(SessionSetup setup)
+    {
+        OpenedGame opened = factory.Create(new GameSpecification(
+            setup.Scenario, setup.Heroes, setup.ModularSets, setup.Seed));
+        return new ReplayOpenedGame(opened.Game, opened.SetupEvents);
+    }
+
+    private List<StoredAuthority> Authorities(HostedSession session)
+    {
+        var authorities = sessions
+            .Where(pair => ReferenceEquals(pair.Value.Session, session))
+            .Select(pair => new StoredAuthority(
+                pair.Key,
+                ScopeSeats(pair.Value.Scope, session.Game.State.Players),
+                pair.Value.Owner,
+                Invitation: false))
+            .Concat(invitations
+                .Where(pair => ReferenceEquals(pair.Value.Session, session))
+                .Select(pair => new StoredAuthority(
+                    pair.Key,
+                    ScopeSeats(pair.Value.Scope, session.Game.State.Players),
+                    Owner: false,
+                    Invitation: true)))
+            .OrderBy(authority => authority.Verifier, StringComparer.Ordinal)
+            .ToList();
+        return authorities;
+    }
+
+    private static StoredAuthority Authority(
+        string capability,
+        ViewScope scope,
+        int players,
+        bool owner,
+        bool invitation) =>
+        new(Verifier(capability), ScopeSeats(scope, players), owner, invitation);
+
+    private static IReadOnlyList<int> ScopeSeats(ViewScope scope, int players) =>
+        [.. Enumerable.Range(0, players).Where(scope.Includes)];
+
+    private static string Verifier(string capability)
+    {
+        byte[] bytes = System.Text.Encoding.UTF8.GetBytes(capability);
+        return Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
+    }
+
+    private static string NewStorageId() =>
+        Convert.ToHexString(RandomNumberGenerator.GetBytes(16)).ToLowerInvariant();
+
+    private static SessionSetup ToSessionSetup(GameSpecification setup) =>
+        new(setup.Scenario, [.. setup.Heroes],
+            setup.ModularSets is null ? null : [.. setup.ModularSets], setup.Seed);
+
+    private static SessionSave Append(
+        SessionSave save,
+        JournalStep step,
+        bool startsUnit,
+        bool completesUnit,
+        string role,
+        int actor,
+        int active,
+        int round,
+        string phase,
+        Prompt? currentPrompt)
+    {
+        var units = save.Units.Select(unit => unit with
+        {
+            Decisions = [.. unit.Decisions],
+        }).ToList();
+        if (startsUnit)
+        {
+            units.Add(new JournalUnit(
+                role,
+                completesUnit ? "complete" : "open",
+                actor,
+                active,
+                round,
+                phase,
+                [step]));
+        }
+        else
+        {
+            if (units.Count == 0 || units[^1].Status != "open")
+            {
+                throw new ReplayDivergenceException(
+                    "a dependent decision has no open history unit");
+            }
+
+            JournalUnit open = units[^1];
+            units[^1] = open with
+            {
+                Status = completesUnit ? "complete" : "open",
+                Decisions = [.. open.Decisions, step],
+            };
+        }
+
+        if (currentPrompt is null)
+        {
+            units[^1] = units[^1] with { Role = "terminal", Status = "complete" };
+        }
+
+        return save with
+        {
+            Revision = save.Revision + 1,
+            Cursor = units.Count,
+            CurrentPrompt = currentPrompt is null ? null : PromptRecord.From(currentPrompt),
+            Units = units,
+        };
+    }
+
+    private static string UnitRole(Game game, Prompt prompt, Decision decision)
+    {
+        if (game.IsForcedResolutionPrompt)
+        {
+            return "forced_resolution";
+        }
+
+        if (game.Phase != GamePhase.PlayerTurn)
+        {
+            return "phase_step";
+        }
+
+        string? verb = decision.IsDecline
+            ? null
+            : prompt.Affordances.Single(option => option.Id == decision.Affordance).Verb;
+        return string.Equals(verb, Game.ChangeForm, StringComparison.Ordinal)
+            || string.Equals(verb, Game.EndPhaseVerb, StringComparison.Ordinal)
+            || decision.IsDecline
+                ? "turn_control"
+                : "turn_action";
+    }
+
+    private static SessionCompatibility TestCompatibility() => new(
+        Application: "test",
+        ReplayContract: "engine-replay-v1",
+        RngContract: "mt19937-iso-cxx",
+        StateDigest: "state-digest-v2",
+        CardsSha256: new string('0', 64),
+        SetupSha256: new string('0', 64),
+        AbilitiesSha256: new string('0', 64));
 
     private static EngineResponse Succeeded(
         EngineRequest request,
@@ -614,9 +891,15 @@ public sealed class EngineHost : IEngineEndpoint
         _ => value[..maximum],
     };
 
-    private sealed record HostedSession(string GameId, Game Game)
+    private sealed class HostedSession(string gameId, Game game, SessionSave save)
     {
-        public long Revision { get; set; }
+        public string GameId { get; } = gameId;
+
+        public Game Game { get; set; } = game;
+
+        public SessionSave Save { get; set; } = save;
+
+        public long Revision => Save.Revision;
     }
 
     private sealed record SessionAccess(HostedSession Session, ViewScope Scope, bool Owner);
@@ -631,28 +914,47 @@ public sealed class EngineHost : IEngineEndpoint
 }
 
 /// <summary>Loads the repository's canonical datasets and deals games from them.</summary>
-public sealed class DatasetGameFactory : IGameFactory, ISetupDiscovery
+public sealed class DatasetGameFactory : IDurableGameFactory, ISetupDiscovery
 {
     private readonly SetupCatalog setup;
     private readonly CardCatalog cards;
     private readonly AbilityBook abilities;
 
-    private DatasetGameFactory(SetupCatalog setup, CardCatalog cards, AbilityBook abilities)
+    private DatasetGameFactory(
+        SetupCatalog setup,
+        CardCatalog cards,
+        AbilityBook abilities,
+        SessionCompatibility compatibility)
     {
         this.setup = setup;
         this.cards = cards;
         this.abilities = abilities;
+        Compatibility = compatibility;
     }
+
+    /// <inheritdoc />
+    public SessionCompatibility Compatibility { get; }
 
     /// <summary>Loads the three datasets beneath <paramref name="dataRoot"/>.</summary>
     public static DatasetGameFactory Load(string dataRoot)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(dataRoot);
         string root = Path.GetFullPath(dataRoot);
+        byte[] setupBytes = ReadBytes(root, "setup", "setup.json");
+        byte[] cardBytes = ReadBytes(root, "cards", "cards.json");
+        byte[] abilityBytes = ReadBytes(root, "abilities", "abilities.json");
         return new DatasetGameFactory(
-            SetupCatalog.Parse(Read(root, "setup", "setup.json")),
-            CardCatalog.Parse(Read(root, "cards", "cards.json")),
-            AbilityCatalog.Parse(Read(root, "abilities", "abilities.json")));
+            SetupCatalog.Parse(System.Text.Encoding.UTF8.GetString(setupBytes)),
+            CardCatalog.Parse(System.Text.Encoding.UTF8.GetString(cardBytes)),
+            AbilityCatalog.Parse(System.Text.Encoding.UTF8.GetString(abilityBytes)),
+            new SessionCompatibility(
+                typeof(DatasetGameFactory).Assembly.GetName().Version?.ToString() ?? "unknown",
+                "engine-replay-v1",
+                "mt19937-iso-cxx",
+                "state-digest-v2",
+                Hash(cardBytes),
+                Hash(setupBytes),
+                Hash(abilityBytes)));
     }
 
     /// <inheritdoc />
@@ -704,7 +1006,10 @@ public sealed class DatasetGameFactory : IGameFactory, ISetupDiscovery
                     key, setup.EncounterSetDisplayName(key))),
         ]);
 
-    private static string Read(string root, string dataset, string file) =>
-        File.ReadAllText(Path.Combine(root, "datasets", dataset, file));
+    private static byte[] ReadBytes(string root, string dataset, string file) =>
+        File.ReadAllBytes(Path.Combine(root, "datasets", dataset, file));
+
+    private static string Hash(byte[] bytes) =>
+        Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
 
 }

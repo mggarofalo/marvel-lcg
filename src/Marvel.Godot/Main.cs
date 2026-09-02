@@ -124,6 +124,12 @@ public sealed partial class Main : Control
         _ = LoadSetupAsync();
     }
 
+    /// <inheritdoc />
+    public override void _ExitTree()
+    {
+        ReleaseEventTween();
+    }
+
     private void ApplyInterfaceScale(InterfaceScale scale)
     {
         float minimumHeight = VisualSystem.Controls(scale).MinimumHeight;
@@ -1007,13 +1013,15 @@ public sealed partial class Main : Control
         eventTween = CreateTween();
         foreach (EventPresentation entry in presented)
         {
-            eventTween.TweenCallback(Callable.From(() => BeginEventCue(entry, generation)));
-            eventTween.TweenProperty(eventCue, "modulate:a", 1.0f, 0.10);
-            eventTween.TweenInterval(0.30);
-            eventTween.TweenProperty(eventCue, "modulate:a", 0.35f, 0.10);
+            eventTween.TweenCallback(
+                Callable.From(() => BeginEventCue(entry, generation))).Dispose();
+            eventTween.TweenProperty(eventCue, "modulate:a", 1.0f, 0.10).Dispose();
+            eventTween.TweenInterval(0.30).Dispose();
+            eventTween.TweenProperty(eventCue, "modulate:a", 0.35f, 0.10).Dispose();
         }
 
-        eventTween.TweenCallback(Callable.From(() => FinishEventPresentation(generation)));
+        eventTween.TweenCallback(
+            Callable.From(() => FinishEventPresentation(generation))).Dispose();
     }
 
     private void BeginEventCue(EventPresentation entry, int generation)
@@ -1040,9 +1048,21 @@ public sealed partial class Main : Control
     private void SkipEventPresentation()
     {
         eventGeneration++;
-        eventTween?.Kill();
-        eventTween = null;
+        ReleaseEventTween();
         SetEventPresentationSettled();
+    }
+
+    private void ReleaseEventTween()
+    {
+        Tween? tween = eventTween;
+        eventTween = null;
+        if (tween is null)
+        {
+            return;
+        }
+
+        tween.Kill();
+        tween.Dispose();
     }
 
     private void FinishEventPresentation(int generation)
@@ -1052,7 +1072,6 @@ public sealed partial class Main : Control
             return;
         }
 
-        eventTween = null;
         SetEventPresentationSettled();
     }
 

@@ -15,6 +15,7 @@ src/Marvel.Core          seeded MT19937 and canonical digest primitives
 src/Marvel.Rules         state, phases, timing, prompts, events, and the fold
 src/Marvel.Cards         authored ability DSL and interpreter
 src/Marvel.Content       printed cards and scenario setup readers
+src/Marvel.Session       deterministic save records and verified replay
 src/Marvel.Sim           non-Godot headless driver and replay harness
 src/Marvel.View          engine-agnostic visible-state projection
 src/Marvel.Server        engine host; embedded or a standalone socket process

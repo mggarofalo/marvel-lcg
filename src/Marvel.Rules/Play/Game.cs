@@ -160,6 +160,19 @@ public sealed class Game
     /// <summary>The open decision, or <c>null</c> when the game is over.</summary>
     public Prompt? Pending { get; private set; }
 
+    /// <summary>Whether the pending prompt begins a root game operation.</summary>
+    /// <remarks>
+    /// Persistence uses this engine-owned distinction to keep dependent
+    /// payment, target and timing answers in the unit that opened them. Prompt
+    /// shape cannot provide the answer because a sequence may ask the same
+    /// question kind as the root menu.
+    /// </remarks>
+    public bool IsRootPrompt => Pending is not null && asking == Asker.Game;
+
+    /// <summary>Whether the root prompt is a deferred mandatory resolution.</summary>
+    public bool IsForcedResolutionPrompt =>
+        Pending is not null && asking == Asker.Game && endingPlayerPhase;
+
     /// <summary>Projects the open decision into the options one seat may submit.</summary>
     /// <remarks>
     /// <para>
