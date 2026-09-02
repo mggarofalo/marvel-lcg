@@ -32,6 +32,8 @@ func _run() -> void:
 		return
 	if not await _visual_system_is_resolved():
 		return
+	if not await _entry_modes_are_explicit():
+		return
 	if not await _capture_checkpoint("setup"):
 		return
 
@@ -154,6 +156,13 @@ func _run() -> void:
 	if "VILLAIN WINS" not in _status().text:
 		_fail("the terminal UI did not report the seeded villain win")
 		return
+	var terminal_decision := _visible_text(_decision()).to_upper()
+	var terminal_prompt := _visible_text(
+		_node("Play/Prompt/Margin/Stack/PromptHeader")).to_upper()
+	if "DEFEAT" not in terminal_decision or "VILLAIN WON" not in terminal_decision \
+			or "VILLAIN WON" not in terminal_prompt:
+		_fail("the null-prompt terminal decision copy does not identify the villain outcome")
+		return
 	if _node("Status").theme_type_variation != &"DangerStatusPanel":
 		_fail("the villain win did not receive the semantic danger treatment")
 		return
@@ -236,7 +245,10 @@ func _visual_system_is_resolved() -> bool:
 		_fail("the scaled page has no outer scroll container")
 		return false
 	for path in [
+		"Setup/Selections/Fields/ConnectionGrid/Endpoint",
+		"Setup/Selections/Fields/ConnectionGrid/GameId",
 		"Setup/Selections/Fields/Grid/Hero",
+		"Setup/Selections/Fields/Grid/SecondHero",
 		"Setup/Selections/Fields/Grid/Scenario",
 		"Setup/Selections/Fields/Grid/Mode",
 		"Setup/Selections/Fields/Grid/Modular",
@@ -269,6 +281,95 @@ func _visual_system_is_resolved() -> bool:
 			])
 			return false
 
+	return true
+
+
+func _entry_modes_are_explicit() -> bool:
+	var endpoint := _node("Setup/Selections/Fields/ConnectionGrid/Endpoint") as LineEdit
+	var game_id := _node("Setup/Selections/Fields/ConnectionGrid/GameId") as LineEdit
+	var second_hero := _node("Setup/Selections/Fields/Grid/SecondHero") as OptionButton
+	var reload_setup := _button_named("Reload setup options")
+	var join_flow := _button_named("Join a game")
+	if endpoint == null or endpoint.max_length != 512:
+		_fail("the engine endpoint is not visibly bounded to 512 characters")
+		return false
+	if game_id == null or game_id.text.is_empty():
+		_fail("the start flow has no opaque game label")
+		return false
+	if second_hero == null or second_hero.item_count < 2 \
+			or not second_hero.get_item_text(0).begins_with("Solo table"):
+		_fail("the start flow does not offer an optional second hero (items=%d selected=%d)" % [
+			second_hero.item_count if second_hero != null else -1,
+			second_hero.selected if second_hero != null else -1,
+		])
+		return false
+	if reload_setup == null or reload_setup.disabled:
+		_fail("the start flow has no operable setup reload action")
+		return false
+
+	var host_name := (_node("Setup/Briefing/Frame/Copy/Hero") as Label).text
+	second_hero.select(1)
+	second_hero.item_selected.emit(1)
+	await process_frame
+	var guest_name := second_hero.get_item_text(1)
+	var briefing_heroes := (_node("Setup/Briefing/Frame/Copy/Hero") as Label).text
+	if host_name not in briefing_heroes or guest_name not in briefing_heroes:
+		_fail("selecting a second hero did not refresh the encounter briefing")
+		return false
+	second_hero.select(0)
+	second_hero.item_selected.emit(0)
+	await process_frame
+	if (_node("Setup/Briefing/Frame/Copy/Hero") as Label).text != host_name:
+		_fail("returning to solo did not refresh the encounter briefing")
+		return false
+
+	endpoint.text = "not-an-endpoint"
+	endpoint.text_changed.emit(endpoint.text)
+	await process_frame
+	if reload_setup.disabled or not (_button_named("Start game") as Button).disabled:
+		_fail("changing the endpoint did not require an explicit setup reload")
+		return false
+	endpoint.text = ""
+	endpoint.text_changed.emit(endpoint.text)
+	reload_setup.pressed.emit()
+	if not await _wait_for(func() -> bool:
+		return not reload_setup.disabled and not (_button_named("Start game") as Button).disabled):
+		_fail("correcting the endpoint and retrying did not restore setup options")
+		return false
+	if (_node("Title") as Label).text != "Assemble the table." \
+			or _node("Status").theme_type_variation != &"StatusPanel":
+		_fail("a successful setup retry did not clear the unavailable presentation")
+		return false
+	if join_flow == null:
+		_fail("the setup screen has no explicit Join a game action")
+		return false
+
+	join_flow.pressed.emit()
+	await process_frame
+	var invitation := _node(
+		"Setup/Selections/Fields/JoinFields/Invitation") as LineEdit
+	var join := _button_named("Join game")
+	if invitation == null or not invitation.secret or invitation.max_length != 256:
+		_fail("the join invitation is not a bounded masked secret")
+		return false
+	if join == null or not join.disabled:
+		_fail("join is available without an explicit remote endpoint and invitation")
+		return false
+	if _node("Setup/Selections/Fields/Grid").visible:
+		_fail("the join flow exposes unrelated start-game assignment controls")
+		return false
+	if not await _capture_checkpoint("join-setup"):
+		return false
+
+	var start_flow := _button_named("Start a game")
+	if start_flow == null:
+		_fail("the setup screen cannot return to the explicit start flow")
+		return false
+	start_flow.pressed.emit()
+	await process_frame
+	if not _node("Setup/Selections/Fields/Grid").visible:
+		_fail("returning to start did not restore assignment controls")
+		return false
 	return true
 
 

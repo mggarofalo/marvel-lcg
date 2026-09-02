@@ -9,6 +9,9 @@ public enum GameProgressKind
     /// <summary>The authoritative prompt is accepting one decision.</summary>
     AwaitingDecision,
 
+    /// <summary>The authoritative game is waiting for another player's decision.</summary>
+    WaitingForOtherPlayer,
+
     /// <summary>One mutation was sent and its outcome is not yet known.</summary>
     Resolving,
 
@@ -46,6 +49,13 @@ public sealed record GameProgressPresentation(
         ArgumentNullException.ThrowIfNull(response.World);
         return response.World.Outcome switch
         {
+            Outcome.Unfinished when response.Prompt is null => new(
+                GameProgressKind.WaitingForOtherPlayer,
+                "Waiting for another player.",
+                $"{response.World.Areas.Count} visible areas · "
+                    + $"{response.Events.Count} new events",
+                "GAME IN PROGRESS  ·  WAITING FOR ANOTHER PLAYER",
+                LocksDecisions: true),
             Outcome.Unfinished => new(
                 GameProgressKind.AwaitingDecision,
                 "Your move.",
@@ -92,18 +102,25 @@ public sealed record GameProgressPresentation(
     {
         ArgumentNullException.ThrowIfNull(error);
         GameProgressPresentation current = FromResponse(response);
-        return current.Kind == GameProgressKind.AwaitingDecision
-            ? new GameProgressPresentation(
+        return current.Kind switch
+        {
+            GameProgressKind.AwaitingDecision => new GameProgressPresentation(
                 GameProgressKind.Recovered,
                 "Table recovered.",
                 error.Message,
                 $"CURRENT DECISION RESTORED  ·  {error.Code.ToUpperInvariant()}",
-                LocksDecisions: false)
-            : current with
+                LocksDecisions: false),
+            GameProgressKind.WaitingForOtherPlayer => current with
+            {
+                Description = current.Description + " The table was recovered after: "
+                    + error.Message,
+            },
+            _ => current with
             {
                 Description = current.Description + " The final table was recovered after: "
                     + error.Message,
-            };
+            },
+        };
     }
 
     /// <summary>Locks a table whose sent mutation could not be reconciled.</summary>

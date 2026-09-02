@@ -7,12 +7,13 @@ The presentation architecture has 3 layers:
 3. The Godot client renders those descriptors on macOS and Windows.
 
 The Godot project reads the authored Core Set setup surface through
-`IEngineTransport`, lets the player select an offered assignment, and opens it
-through the embedded `InProcessTransport` by default. An explicit
-`MARVEL_ENGINE_ENDPOINT=tcp://host:port` selects `SocketTransport` at the same
-composition boundary. Each complete response replaces the prior
-visibility-safe snapshot, while its semantic events are appended in engine order
-to a diagnostic chronology. The client renders the board and every admitted
+`IEngineTransport`. Its Start flow opens one or 2 ordered hero seats under an
+explicit game label. Its Join flow attaches once with a masked seat invitation.
+The embedded `InProcessTransport` remains the default. An explicit
+`tcp://host:port` endpoint selects `SocketTransport` at the same composition
+boundary. Each complete response replaces the prior visibility-safe snapshot,
+while its semantic events are appended in engine order to a diagnostic
+chronology. The client renders the board, waiting state and every admitted
 prompt shape from those contracts. Tests run a complete deterministic journey
 through both compositions and compare every authoritative response.
 
@@ -136,6 +137,11 @@ those records; it does not infer valid products from keys or card text.
 Game ids and correlation ids are bounded client labels. A random session
 capability authorizes game operations; it never enters gameplay state or the
 seeded RNG stream.
+
+The client keeps its game id and session capability together in memory. It
+removes capabilities and invitations from responses before those responses
+reach rendering code. A host may copy one returned invitation once; an attaching
+client masks and clears the invitation field before sending the request.
 
 Once a complete mutation request has been sent, cancelling the response read
 cannot imply that the mutation was rolled back. The client must consume the

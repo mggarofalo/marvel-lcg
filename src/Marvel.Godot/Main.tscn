@@ -84,10 +84,65 @@ theme_type_variation = &"SurfacePanel"
 layout_mode = 2
 theme_type_variation = &"Stack"
 
+[node name="EntryModes" type="HBoxContainer" parent="Margin/Shell/Content/Setup/Selections/Fields"]
+layout_mode = 2
+theme_type_variation = &"WideRow"
+
+[node name="StartFlow" type="Button" parent="Margin/Shell/Content/Setup/Selections/Fields/EntryModes"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"PrimaryButton"
+text = "Start a game"
+
+[node name="JoinFlow" type="Button" parent="Margin/Shell/Content/Setup/Selections/Fields/EntryModes"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Join a game"
+
+[node name="ConnectionGrid" type="GridContainer" parent="Margin/Shell/Content/Setup/Selections/Fields"]
+layout_mode = 2
+theme_type_variation = &"DataGrid"
+columns = 2
+
+[node name="EndpointLabel" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields/ConnectionGrid"]
+layout_mode = 2
+theme_type_variation = &"Caption"
+text = "ENGINE ENDPOINT"
+vertical_alignment = 1
+
+[node name="Endpoint" type="LineEdit" parent="Margin/Shell/Content/Setup/Selections/Fields/ConnectionGrid"]
+custom_minimum_size = Vector2(240, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Blank for embedded · tcp://host:port"
+max_length = 512
+
+[node name="GameIdLabel" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields/ConnectionGrid"]
+layout_mode = 2
+theme_type_variation = &"Caption"
+text = "GAME LABEL"
+vertical_alignment = 1
+
+[node name="GameId" type="LineEdit" parent="Margin/Shell/Content/Setup/Selections/Fields/ConnectionGrid"]
+custom_minimum_size = Vector2(240, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "core-table"
+placeholder_text = "An opaque label shared with invited players"
+max_length = 256
+
 [node name="Heading" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields"]
 layout_mode = 2
 theme_type_variation = &"Heading"
-text = "Choose your assignment"
+text = "Start a game"
+
+[node name="ReloadSetup" type="Button" parent="Margin/Shell/Content/Setup/Selections/Fields"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "Reload setup options"
+tooltip_text = "Read setup choices again after changing the engine endpoint."
 
 [node name="Grid" type="GridContainer" parent="Margin/Shell/Content/Setup/Selections/Fields"]
 layout_mode = 2
@@ -102,6 +157,18 @@ text = "HERO"
 vertical_alignment = 1
 
 [node name="Hero" type="OptionButton" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid"]
+custom_minimum_size = Vector2(240, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+
+[node name="SecondHeroLabel" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid"]
+layout_mode = 2
+theme_type_variation = &"Caption"
+text = "SECOND HERO"
+vertical_alignment = 1
+
+[node name="SecondHero" type="OptionButton" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid"]
 custom_minimum_size = Vector2(240, 44)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -168,6 +235,38 @@ layout_mode = 2
 disabled = true
 theme_type_variation = &"PrimaryButton"
 text = "Start game"
+
+[node name="JoinFields" type="VBoxContainer" parent="Margin/Shell/Content/Setup/Selections/Fields"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = &"Stack"
+
+[node name="Heading" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields/JoinFields"]
+layout_mode = 2
+theme_type_variation = &"Heading"
+text = "Join a game"
+
+[node name="Help" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields/JoinFields"]
+layout_mode = 2
+theme_type_variation = &"BodyMuted"
+text = "Paste the one-time invitation sent by the host. It is cleared as soon as you join."
+autowrap_mode = 2
+
+[node name="Invitation" type="LineEdit" parent="Margin/Shell/Content/Setup/Selections/Fields/JoinFields"]
+custom_minimum_size = Vector2(240, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Secret invitation"
+secret = true
+max_length = 256
+
+[node name="Join" type="Button" parent="Margin/Shell/Content/Setup/Selections/Fields/JoinFields"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+disabled = true
+theme_type_variation = &"PrimaryButton"
+text = "Join game"
 
 [node name="Briefing" type="PanelContainer" parent="Margin/Shell/Content/Setup"]
 custom_minimum_size = Vector2(280, 0)
@@ -269,6 +368,35 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_type_variation = &"Stack"
+
+[node name="InvitationOffer" type="PanelContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
+visible = false
+layout_mode = 2
+theme_type_variation = &"StatusPanel"
+
+[node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/InvitationOffer"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 8
+
+[node name="Row" type="HBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/InvitationOffer/Margin"]
+layout_mode = 2
+theme_type_variation = &"WideRow"
+
+[node name="Copy" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/InvitationOffer/Margin/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"Body"
+text = "A one-time seat invitation is ready."
+autowrap_mode = 2
+
+[node name="CopyInvitation" type="Button" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/InvitationOffer/Margin/Row"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_type_variation = &"PrimaryButton"
+text = "Copy invitation"
 
 [node name="PromptHeader" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
 layout_mode = 2

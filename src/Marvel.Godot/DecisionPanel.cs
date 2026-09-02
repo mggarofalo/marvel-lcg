@@ -56,9 +56,25 @@ public sealed partial class DecisionPanel : VBoxContainer
         if (composer is null || world is null)
         {
             ProgressChanged?.Invoke(null);
-            AddChild(Text("GAME COMPLETE", GodotThemeVariations.Eyebrow));
+            (string heading, string detail) = world?.Outcome switch
+            {
+                Outcome.Unfinished => (
+                    "WAITING FOR ANOTHER PLAYER",
+                    "Another player has the current decision."),
+                Outcome.PlayersWin => (
+                    "VICTORY",
+                    "The players won. No further decision is waiting."),
+                Outcome.VillainWins => (
+                    "DEFEAT",
+                    "The villain won. No further decision is waiting."),
+                Outcome.PlayersLose => (
+                    "DEFEAT",
+                    "The players lost. No further decision is waiting."),
+                _ => ("NO DECISION", "No decision is available."),
+            };
+            AddChild(Text(heading, GodotThemeVariations.Eyebrow));
             AddChild(Text(
-                "No further decision is waiting.",
+                detail,
                 GodotThemeVariations.Body,
                 wrap: true));
             return;
