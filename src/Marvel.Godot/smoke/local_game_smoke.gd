@@ -52,10 +52,13 @@ func _run() -> void:
 		return
 	if not await _keyboard_selection_is_operable():
 		return
+	if not await _event_presentation_is_nonblocking():
+		return
 
 	var saw_mulligan := false
 	var saw_pass := false
 	var saw_end_phase := false
+	var saw_nonblocking_motion := false
 	var decisions := 0
 	while not _is_complete():
 		if decisions >= MAX_DECISIONS:
@@ -92,9 +95,15 @@ func _run() -> void:
 			return _is_complete() or not _status().text.begins_with("DECISION SENT")):
 			_fail("the engine did not reconcile decision %d" % decisions)
 			return
+		var event_skip := _node("Play/Prompt/Margin/Stack/EventHeader/Skip") as Button
+		if not event_skip.disabled and (_is_complete() or _first_enabled_choice() != null):
+			saw_nonblocking_motion = true
 
 	if not saw_mulligan or not saw_pass or not saw_end_phase:
 		_fail("the journey missed a required visible decision path")
+		return
+	if not saw_nonblocking_motion:
+		_fail("the journey never exposed an operable prompt while event motion was active")
 		return
 	if "VILLAIN WINS" not in _status().text:
 		_fail("the terminal UI did not report the seeded villain win")
@@ -106,6 +115,9 @@ func _run() -> void:
 	var event_text := event_log.get_parsed_text().strip_edges()
 	if event_text.is_empty() or event_text == "No events yet.":
 		_fail("the visible event log is empty")
+		return
+	if "villain won the game" not in event_text.to_lower():
+		_fail("the terminal outcome did not remain in recent history")
 		return
 
 	print("LOCAL_GAME_SMOKE_OK decisions=%d" % decisions)
@@ -343,6 +355,49 @@ func _keyboard_selection_is_operable() -> bool:
 			and "NO TARGETS" not in progress.text):
 		_fail("the pinned prompt summary did not update target and readiness progress")
 		return false
+	return true
+
+
+func _event_presentation_is_nonblocking() -> bool:
+	var cue := _node("Play/Prompt/Margin/Stack/EventCue") as Control
+	var motion := _node("Play/Prompt/Margin/Stack/EventHeader/Motion") as CheckButton
+	var skip := _node("Play/Prompt/Margin/Stack/EventHeader/Skip") as Button
+	var log := _node("Play/Prompt/Margin/Stack/EventLog") as RichTextLabel
+	var scale := OS.get_environment("MARVEL_UI_SCALE")
+	var expected_height := 66 if scale == "extra-large" else 55 if scale == "large" else 44
+	if cue == null or not cue.visible or cue.custom_minimum_size.y < 68.0:
+		_fail("event presentation has no fixed reserved cue region")
+		return false
+	if motion == null or skip == null \
+			or motion.custom_minimum_size.y < expected_height \
+			or skip.custom_minimum_size.y < expected_height:
+		_fail("event presentation controls miss the pointer-target floor")
+		return false
+	var action := _first_enabled_choice()
+	if action == null or action.disabled:
+		_fail("event presentation blocked the current engine decision")
+		return false
+
+	var history := log.text
+	if not skip.disabled:
+		skip.pressed.emit()
+		await process_frame
+	if not skip.disabled or log.text != history:
+		_fail("skipping motion changed or cleared event history")
+		return false
+	var cue_text := _visible_text(cue)
+	if "TABLE SYNCED" not in cue_text or "authoritative board" not in cue_text:
+		_fail("skipping motion did not settle on the authoritative snapshot")
+		return false
+
+	motion.button_pressed = false
+	motion.toggled.emit(false)
+	await process_frame
+	if not skip.disabled or log.text != history:
+		_fail("disabling motion changed history or left playback active")
+		return false
+	motion.button_pressed = true
+	motion.toggled.emit(true)
 	return true
 
 

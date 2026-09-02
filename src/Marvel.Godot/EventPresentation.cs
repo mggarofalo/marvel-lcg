@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using Marvel.Rules.Events;
+using Marvel.Rules.Play;
 using Marvel.View;
 
 namespace Marvel.Godot;
@@ -9,7 +10,27 @@ namespace Marvel.Godot;
 public sealed record EventPresentation(
     string Summary,
     string Cause,
-    IReadOnlyList<int> Anchors);
+    IReadOnlyList<int> Anchors,
+    EventMotionKind Motion);
+
+/// <summary>The restrained visual treatment a client may apply to an event.</summary>
+public enum EventMotionKind
+{
+    Create,
+    Move,
+    Flip,
+    Damage,
+    Heal,
+    Counter,
+    Status,
+    State,
+    Terminal,
+}
+
+/// <summary>Persistent entries and replaceable transient cues for one response.</summary>
+public sealed record EventBatchPresentation(
+    IReadOnlyList<EventPresentation> History,
+    IReadOnlyList<EventPresentation> Cues);
 
 /// <summary>Formats the closed semantic-event vocabulary without consulting engine state.</summary>
 public static class EventPresenter
@@ -30,47 +51,104 @@ public static class EventPresenter
         ArgumentNullException.ThrowIfNull(happened);
         ArgumentNullException.ThrowIfNull(world);
 
-        (string summary, IReadOnlyList<int> anchors) = happened switch
+        (string summary, IReadOnlyList<int> anchors, EventMotionKind motion) = happened switch
         {
             CardsCreated created => (
                 $"Created {Cards(created.Cards.Select(card => card.Id), world)} in {Area(created.Area, world)}.",
-                created.Cards.Select(card => card.Id).ToArray()),
+                created.Cards.Select(card => card.Id).ToArray(),
+                IsStatus(created.Area) ? EventMotionKind.Status : EventMotionKind.Create),
             CardsMoved moved => (
                 $"Moved {Cards(moved.Cards.Select(card => card.Card), world)} from {Area(moved.From, world)} to {Area(moved.To, world)}.",
-                moved.Cards.Select(card => card.Card).ToArray()),
+                moved.Cards.Select(card => card.Card).ToArray(),
+                IsStatus(moved.From) || IsStatus(moved.To)
+                    ? EventMotionKind.Status
+                    : EventMotionKind.Move),
             AreaReordered reordered => (
                 $"Reordered {Area(reordered.Area, world)}.",
-                Array.Empty<int>()),
+                Array.Empty<int>(),
+                EventMotionKind.Move),
             CardFormChanged changed => (
                 $"{Card(changed.Card, world)} changed form.",
-                [changed.Card]),
+                [changed.Card],
+                EventMotionKind.Flip),
             CardsFlipped flipped => (
                 $"Turned {Cards(flipped.Cards, world)} face {(flipped.FaceUp ? "up" : "down")}.",
-                flipped.Cards.ToArray()),
+                flipped.Cards.ToArray(),
+                EventMotionKind.Flip),
             CardAttached attached => (
                 $"Attached {Card(attached.Card, world)} to {Card(attached.Host, world)}.",
-                [attached.Card, attached.Host]),
+                [attached.Card, attached.Host],
+                EventMotionKind.Move),
             CardDetached detached => (
                 $"Detached {Card(detached.Card, world)} from {Card(detached.Host, world)}.",
-                [detached.Card, detached.Host]),
+                [detached.Card, detached.Host],
+                EventMotionKind.Move),
             ControlChanged changed => (
                 $"{Card(changed.Card, world)} changed control from {Player(changed.From, world)} to {Player(changed.To, world)}.",
-                [changed.Card]),
+                [changed.Card],
+                EventMotionKind.Move),
             PlayAreaJoined joined => (
                 $"{PlayArea(joined.PlayArea, world)} joined game area {joined.GameArea.ToString(CultureInfo.InvariantCulture)}.",
-                Array.Empty<int>()),
+                Array.Empty<int>(),
+                EventMotionKind.Move),
             PlayAreaDetached detached => (
                 $"{PlayArea(detached.PlayArea, world)} left game area {detached.GameArea.ToString(CultureInfo.InvariantCulture)}.",
-                Array.Empty<int>()),
+                Array.Empty<int>(),
+                EventMotionKind.Move),
             FieldSet set => (
                 FieldSummary(set, world),
-                [set.Card]),
+                [set.Card],
+                FieldMotion(set)),
             _ => throw new InvalidOperationException(
                 $"event kind {happened.GetType().Name} has no presentation"),
         };
 
-        return new EventPresentation(summary, Cause(happened), anchors);
+        return new EventPresentation(summary, Cause(happened), anchors, motion);
     }
+
+    /// <summary>Describes a newly reached terminal state without inventing a game event.</summary>
+    public static EventPresentation Terminal(Outcome outcome) => outcome switch
+    {
+        Outcome.VillainWins => new(
+            "The villain won the game.", "Game outcome", [], EventMotionKind.Terminal),
+        Outcome.PlayersLose => new(
+            "The players lost the game.", "Game outcome", [], EventMotionKind.Terminal),
+        Outcome.PlayersWin => new(
+            "The players won the game.", "Game outcome", [], EventMotionKind.Terminal),
+        _ => throw new ArgumentOutOfRangeException(
+            nameof(outcome), outcome, "unfinished games have no terminal presentation"),
+    };
+
+    private static EventMotionKind FieldMotion(FieldSet set)
+    {
+        string field = set.Field.ToLowerInvariant();
+        long? change = set.From is null || set.To is null ? null : set.To - set.From;
+        if (change is null or 0)
+        {
+            return EventMotionKind.State;
+        }
+
+        if (field is "health" or "hitpoints" or "hit_points")
+        {
+            return change > 0 ? EventMotionKind.Heal : EventMotionKind.Damage;
+        }
+
+        if (field is "damage" or "k_damage")
+        {
+            return change < 0 ? EventMotionKind.Heal : EventMotionKind.Damage;
+        }
+
+        if (field.StartsWith("c_", StringComparison.Ordinal)
+            || field == EncounterDeck.AccelerationToken)
+        {
+            return EventMotionKind.Counter;
+        }
+
+        return EventMotionKind.State;
+    }
+
+    private static bool IsStatus(AreaRef area) =>
+        string.Equals(area.Zone, "StatusArea", StringComparison.Ordinal);
 
     private static string FieldSummary(FieldSet set, WorldDescriptor world)
     {
@@ -188,9 +266,77 @@ public static class EventPresenter
     }
 }
 
+/// <summary>Plans response-scoped cues without changing event order or game state.</summary>
+public static class EventCuePlanner
+{
+    /// <summary>
+    /// Keeps every event in history while folding a status card's companion
+    /// attachment event into one visual beat. This is a client presentation choice.
+    /// </summary>
+    public static EventBatchPresentation Plan(
+        IReadOnlyList<GameEvent> happened,
+        WorldDescriptor world,
+        Outcome previousOutcome)
+    {
+        ArgumentNullException.ThrowIfNull(happened);
+        ArgumentNullException.ThrowIfNull(world);
+        var history = EventPresenter.Present(happened, world).ToList();
+        var cues = new List<EventPresentation>(history.Count + 1);
+        for (int index = 0; index < history.Count; index++)
+        {
+            EventPresentation current = history[index];
+            if (current.Motion == EventMotionKind.Status
+                && StatusCardIds(happened[index]) is { Count: > 0 } statusCards)
+            {
+                var anchors = current.Anchors.ToList();
+                while (index + 1 < history.Count
+                    && CompanionCard(happened[index + 1]) is { } companionCard
+                    && statusCards.Contains(companionCard))
+                {
+                    anchors.AddRange(history[++index].Anchors);
+                }
+
+                current = current with { Anchors = anchors.Distinct().ToArray() };
+            }
+
+            cues.Add(current);
+        }
+
+        if (previousOutcome == Outcome.Unfinished && world.Outcome != Outcome.Unfinished)
+        {
+            EventPresentation terminal = EventPresenter.Terminal(world.Outcome);
+            history.Add(terminal);
+            cues.Add(terminal);
+        }
+
+        return new EventBatchPresentation(history, cues);
+    }
+
+    private static HashSet<int> StatusCardIds(GameEvent status) =>
+        status switch
+        {
+            CardsCreated created when IsStatus(created.Area) =>
+                created.Cards.Select(card => card.Id).ToHashSet(),
+            CardsMoved moved when IsStatus(moved.From) || IsStatus(moved.To) =>
+                moved.Cards.Select(card => card.Card).ToHashSet(),
+            _ => new HashSet<int>(),
+        };
+
+    private static int? CompanionCard(GameEvent companion) => companion switch
+    {
+        CardAttached value => value.Card,
+        CardDetached value => value.Card,
+        _ => null,
+    };
+
+    private static bool IsStatus(AreaRef area) =>
+        string.Equals(area.Zone, "StatusArea", StringComparison.Ordinal);
+}
+
 /// <summary>An ordered, resettable chronology of semantic events across responses.</summary>
 public sealed class EventChronology
 {
+    private const int MaximumEntries = 100;
     private readonly List<EventPresentation> entries = [];
 
     /// <summary>All entries in response and event order.</summary>
@@ -203,7 +349,25 @@ public sealed class EventChronology
         Append(events, world);
     }
 
+    /// <summary>Clears the prior game and records already-presented entries.</summary>
+    public void Reset(IEnumerable<EventPresentation> presented)
+    {
+        entries.Clear();
+        Append(presented);
+    }
+
     /// <summary>Appends one response's events without changing earlier entries.</summary>
     public void Append(IReadOnlyList<GameEvent> events, WorldDescriptor world) =>
-        entries.AddRange(EventPresenter.Present(events, world));
+        Append(EventPresenter.Present(events, world));
+
+    /// <summary>Appends already-presented entries and retains the latest readable history.</summary>
+    public void Append(IEnumerable<EventPresentation> presented)
+    {
+        ArgumentNullException.ThrowIfNull(presented);
+        entries.AddRange(presented);
+        if (entries.Count > MaximumEntries)
+        {
+            entries.RemoveRange(0, entries.Count - MaximumEntries);
+        }
+    }
 }

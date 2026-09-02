@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using Godot;
+using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Server;
 using Marvel.View;
@@ -23,7 +24,14 @@ public sealed partial class Main : Control
     private Label description = null!;
     private DecisionPanel decisions = null!;
     private Label eyebrow = null!;
+    private PanelContainer eventCue = null!;
+    private Label eventCueKind = null!;
+    private Label eventCueSummary = null!;
     private RichTextLabel eventLog = null!;
+    private CheckButton eventMotion = null!;
+    private Button eventSkip = null!;
+    private Tween? eventTween;
+    private int eventGeneration;
     private readonly EventChronology events = new();
     private OptionButton hero = null!;
     private LocalGameClient? localClient;
@@ -89,6 +97,12 @@ public sealed partial class Main : Control
         start.CustomMinimumSize = new Vector2(
             start.CustomMinimumSize.X,
             Math.Max(start.CustomMinimumSize.Y, minimumHeight));
+        foreach (Control control in new Control[] { eventMotion, eventSkip })
+        {
+            control.CustomMinimumSize = new Vector2(
+                control.CustomMinimumSize.X,
+                minimumHeight);
+        }
     }
 
     private void BindNodes()
@@ -116,6 +130,24 @@ public sealed partial class Main : Control
             $"{content}/Play/Prompt/Margin/Stack/DecisionScroll/Decision");
         eventLog = GetNode<RichTextLabel>(
             $"{content}/Play/Prompt/Margin/Stack/EventLog");
+        eventCue = GetNode<PanelContainer>(
+            $"{content}/Play/Prompt/Margin/Stack/EventCue");
+        eventCueKind = GetNode<Label>(
+            $"{content}/Play/Prompt/Margin/Stack/EventCue/Margin/Copy/Kind");
+        eventCueSummary = GetNode<Label>(
+            $"{content}/Play/Prompt/Margin/Stack/EventCue/Margin/Copy/Summary");
+        eventMotion = GetNode<CheckButton>(
+            $"{content}/Play/Prompt/Margin/Stack/EventHeader/Motion");
+        eventSkip = GetNode<Button>(
+            $"{content}/Play/Prompt/Margin/Stack/EventHeader/Skip");
+        eventMotion.Toggled += enabled =>
+        {
+            if (!enabled)
+            {
+                SkipEventPresentation();
+            }
+        };
+        eventSkip.Pressed += SkipEventPresentation;
         decisions.Submitted += OnDecisionSubmitted;
         decisions.AnchorFocused += ids => boardRender?.Highlight(ids);
         decisions.ProgressChanged += RenderDecisionProgress;
@@ -376,22 +408,27 @@ public sealed partial class Main : Control
 
     private void RenderGame(EngineResponse response, bool resetEvents = false)
     {
+        Outcome previousOutcome = CurrentGame?.World?.Outcome ?? Outcome.Unfinished;
         CurrentGame = response;
         WorldDescriptor world = response.World!;
         boardRender = BoardRenderer.Render(boardAreas, BoardPresentation.From(world));
         RenderPromptSummary(response.Prompt, world);
         decisions.Render(response.Prompt, world);
+        EventBatchPresentation presented = EventCuePlanner.Plan(
+            response.Events, world, previousOutcome);
+
         if (resetEvents)
         {
-            events.Reset(response.Events, world);
+            events.Reset(presented.History);
         }
         else
         {
-            events.Append(response.Events, world);
+            events.Append(presented.History);
         }
 
         RenderEvents();
         ApplyProgress(GameProgressPresentation.FromResponse(response));
+        PresentEvents(presented.Cues);
     }
 
     private void RenderPromptSummary(Prompt? prompt, WorldDescriptor world)
@@ -480,6 +517,78 @@ public sealed partial class Main : Control
 
         eventLog.Text = text.ToString();
         eventLog.ScrollToLine(eventLog.GetLineCount());
+    }
+
+    private void PresentEvents(IReadOnlyList<EventPresentation> presented)
+    {
+        SkipEventPresentation();
+        if (!eventMotion.ButtonPressed || presented.Count == 0)
+        {
+            return;
+        }
+
+        eventSkip.Disabled = false;
+        int generation = eventGeneration;
+        eventTween = CreateTween();
+        foreach (EventPresentation entry in presented)
+        {
+            eventTween.TweenCallback(Callable.From(() => BeginEventCue(entry, generation)));
+            eventTween.TweenProperty(eventCue, "modulate:a", 1.0f, 0.10);
+            eventTween.TweenInterval(0.30);
+            eventTween.TweenProperty(eventCue, "modulate:a", 0.35f, 0.10);
+        }
+
+        eventTween.TweenCallback(Callable.From(() => FinishEventPresentation(generation)));
+    }
+
+    private void BeginEventCue(EventPresentation entry, int generation)
+    {
+        if (generation != eventGeneration)
+        {
+            return;
+        }
+
+        eventCueKind.Text = entry.Motion.ToString().ToUpperInvariant();
+        eventCueSummary.Text = entry.Summary;
+        eventCueKind.ThemeTypeVariation = entry.Motion switch
+        {
+            EventMotionKind.Damage or EventMotionKind.Terminal =>
+                GodotThemeVariations.DangerText,
+            EventMotionKind.Create or EventMotionKind.Heal =>
+                GodotThemeVariations.StatusText,
+            _ => GodotThemeVariations.Eyebrow,
+        };
+        eventCue.Modulate = new Color(1f, 1f, 1f, 0.20f);
+        boardRender?.Present(entry.Anchors);
+    }
+
+    private void SkipEventPresentation()
+    {
+        eventGeneration++;
+        eventTween?.Kill();
+        eventTween = null;
+        SetEventPresentationSettled();
+    }
+
+    private void FinishEventPresentation(int generation)
+    {
+        if (generation != eventGeneration)
+        {
+            return;
+        }
+
+        eventTween = null;
+        SetEventPresentationSettled();
+    }
+
+    private void SetEventPresentationSettled()
+    {
+        eventCueKind.Text = "TABLE SYNCED";
+        eventCueKind.ThemeTypeVariation = GodotThemeVariations.StatusText;
+        eventCueSummary.Text = "The authoritative board is current.";
+        eventCue.Modulate = Colors.White;
+        eventSkip.Disabled = true;
+        boardRender?.Present([]);
     }
 
     private void ApplyProgress(GameProgressPresentation progress)
