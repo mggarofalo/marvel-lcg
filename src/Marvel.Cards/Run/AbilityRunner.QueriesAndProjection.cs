@@ -513,6 +513,11 @@ public sealed partial class AbilityRunner
     /// </remarks>
     private static IReadOnlyList<Card> CardsIn(AbilityNode node, Cast cast)
     {
+        if (cast.ObservingInformation && IsConcealedCardsIn(node))
+        {
+            cast.World.RecordInformation(InformationKind.Search);
+        }
+
         var areas = node.Field("areas") is AbilityValue.List several
             ? several.Values.Select(named => Area(Word(named), cast)).ToList()
             : [Area(Word(node.Require("area")), cast)];

@@ -1185,6 +1185,33 @@ public sealed class TargetReferenceTests
             signal => signal.Kind == InformationKind.Search);
     }
 
+    [Fact]
+    public void AShortCircuitedConcealedQueryDoesNotRecordASearch()
+    {
+        var runner = Runner(
+            "01006",
+            """
+            { "if": {
+              "test": { "and": [
+                { "exists": { "query": "minions" } },
+                { "exists": { "cardsIn": { "area": "yourDeck", "kind": "Upgrade" } } }
+              ] },
+              "then": { "placeCounters": { "card": "this", "counter": "test", "count": 1 } },
+              "else": { "placeCounters": { "card": "this", "counter": "test", "count": 1 } }
+            } }
+            """);
+        Card? source = null;
+        var (game, _) = Playing(
+            board => source = InPlay(board, "01006", DeckType.SupportsArea),
+            runner);
+
+        Resolution resolved = ResolveAction(game, source!);
+
+        Assert.DoesNotContain(
+            resolved.Information,
+            signal => signal.Kind == InformationKind.Search);
+    }
+
     private static AbilityRunner Runner(string card, string effect) =>
         new(AbilityCatalog.Parse(
             $$"""

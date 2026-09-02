@@ -308,10 +308,7 @@ public sealed partial class AbilityRunner
         if (value is AbilityValue.Map map)
         {
             if (map.Entries.TryGetValue("cardsIn", out AbilityValue? argument)
-                && argument is AbilityValue.Map fields
-                && (IsConcealedArea(fields.Entry("area"))
-                    || fields.Entry("areas") is AbilityValue.List areas
-                    && areas.Values.Any(IsConcealedArea)))
+                && IsConcealedCardsIn(new AbilityNode("cardsIn", argument)))
             {
                 return true;
             }
@@ -325,6 +322,13 @@ public sealed partial class AbilityRunner
 
     private static bool IsConcealedArea(AbilityValue? value) =>
         value is AbilityValue.Word { Value: "yourDeck" or "encounterDeck" };
+
+    private static bool IsConcealedCardsIn(AbilityNode node) =>
+        node.Kind == "cardsIn"
+        && node.Argument is AbilityValue.Map fields
+        && (IsConcealedArea(fields.Entry("area"))
+            || fields.Entry("areas") is AbilityValue.List areas
+            && areas.Values.Any(IsConcealedArea));
 
     private static AbilityNode Tree(AbilityValue value) => AbilityNode.Of(value);
 

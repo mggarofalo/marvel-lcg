@@ -597,11 +597,18 @@ public sealed partial class AbilityRunner
 
             case "if":
                 AbilityValue tested = node.Require("test");
-                if (InspectsConcealedPile(tested))
+                bool wasObserving = cast.ObservingInformation;
+                cast.SetObservingInformation(true);
+                bool condition;
+                try
                 {
-                    cast.World.RecordInformation(InformationKind.Search);
+                    condition = Test(Tree(tested), cast);
                 }
-                var branch = Test(Tree(tested), cast) ? "then" : "else";
+                finally
+                {
+                    cast.SetObservingInformation(wasObserving);
+                }
+                var branch = condition ? "then" : "else";
                 if (node.Field(branch) is { } taken)
                 {
                     RunChild(Tree(taken), $"if:{branch}", cast);

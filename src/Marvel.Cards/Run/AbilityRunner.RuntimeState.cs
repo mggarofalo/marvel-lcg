@@ -137,6 +137,11 @@ public sealed partial class AbilityRunner
         public void SetPriorBindingMayBeEmpty(bool value) =>
             PriorBindingMayBeEmpty = value;
 
+        /// <summary>Whether an executing condition should record concealed queries.</summary>
+        public bool ObservingInformation { get; private set; }
+
+        public void SetObservingInformation(bool value) => ObservingInformation = value;
+
         /// <summary>Cards discarded earlier in this resolution, in order.</summary>
         public List<Card> Discarded { get; } = [];
 
