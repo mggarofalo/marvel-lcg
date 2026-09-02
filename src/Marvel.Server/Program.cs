@@ -1,5 +1,7 @@
 using System.Globalization;
 using System.Net;
+using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using Marvel.View;
 
 namespace Marvel.Server;
@@ -10,31 +12,106 @@ internal static class Program
 
     public static int Main(string[] args)
     {
+        using var stopping = new CancellationTokenSource();
+        ConsoleCancelEventHandler stop = (_, signal) =>
+        {
+            signal.Cancel = true;
+            stopping.Cancel();
+        };
+        bool subscribed = false;
         try
         {
-            var options = ServerOptions.Parse(args);
-            var host = new EngineHost(
-                DatasetGameFactory.Load(options.DataRoot),
-                visibility: options.Visibility);
-            var server = new SocketEngineServer(host, options.Address, options.Port);
-            using var stopping = new CancellationTokenSource();
-            Console.CancelKeyPress += (_, signal) =>
-            {
-                signal.Cancel = true;
-                stopping.Cancel();
-            };
-
-            Console.Error.WriteLine(
-                $"Marvel.Server protocol {EngineProtocol.Version} listening on "
-                + $"{options.Address}:{options.Port}");
-            server.Run(stopping.Token);
-            return 0;
+            SocketEngineServer server = Prepare(ServerOptions.Parse(args));
+            Console.CancelKeyPress += stop;
+            subscribed = true;
+            using PosixSignalRegistration? terminate = OperatingSystem.IsWindows()
+                ? null
+                : PosixSignalRegistration.Create(PosixSignal.SIGTERM, signal =>
+                {
+                    signal.Cancel = true;
+                    stopping.Cancel();
+                });
+            return Serve(server, Console.Error, onListening: null, stopping.Token);
         }
         catch (Exception failure)
         {
-            Console.Error.WriteLine(failure.Message);
-            return 2;
+            return Failed(Console.Error, failure);
         }
+        finally
+        {
+            if (subscribed)
+            {
+                Console.CancelKeyPress -= stop;
+            }
+        }
+    }
+
+    internal static int Run(
+        string[] args,
+        TextWriter error,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(args);
+        return Run(() => Prepare(ServerOptions.Parse(args)), error,
+            onListening: null, cancellationToken);
+    }
+
+    internal static int Run(
+        ServerOptions options,
+        TextWriter error,
+        Action<IPEndPoint> onListening,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(onListening);
+        return Run(() => Prepare(options), error, onListening, cancellationToken);
+    }
+
+    private static int Run(
+        Func<SocketEngineServer> prepare,
+        TextWriter error,
+        Action<IPEndPoint>? onListening,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(error);
+        try
+        {
+            return Serve(prepare(), error, onListening, cancellationToken);
+        }
+        catch (Exception failure)
+        {
+            return Failed(error, failure);
+        }
+    }
+
+    private static SocketEngineServer Prepare(ServerOptions options)
+    {
+        var host = new EngineHost(
+            DatasetGameFactory.Load(options.DataRoot),
+            visibility: options.Visibility);
+        return new SocketEngineServer(host, options.Address, options.Port);
+    }
+
+    private static int Serve(
+        SocketEngineServer server,
+        TextWriter error,
+        Action<IPEndPoint>? onListening,
+        CancellationToken cancellationToken)
+    {
+        server.Run(endpoint =>
+        {
+            error.WriteLine(
+                $"Marvel.Server protocol {EngineProtocol.Version} listening on "
+                + endpoint);
+            onListening?.Invoke(endpoint);
+        }, cancellationToken);
+        return 0;
+    }
+
+    private static int Failed(TextWriter error, Exception failure)
+    {
+        error.WriteLine(failure.Message);
+        return 2;
     }
 
     internal sealed record ServerOptions(
@@ -57,7 +134,7 @@ internal static class Program
                 {
                     case "--listen":
                         string printed = Value(args, ref index, "--listen");
-                        address = IPAddress.TryParse(printed, out var parsed)
+                        address = TryAddress(printed, out IPAddress? parsed)
                             ? parsed
                             : throw new ArgumentException(
                                 $"--listen requires an IP address, got '{printed}'");
@@ -113,5 +190,37 @@ internal static class Program
             ++index < args.Length
                 ? args[index]
                 : throw new ArgumentException($"{option} requires a value");
+
+        private static bool TryAddress(string printed, out IPAddress address)
+        {
+            address = null!;
+            if (!IPAddress.TryParse(printed, out IPAddress? parsed))
+            {
+                return false;
+            }
+
+            if (parsed.AddressFamily == AddressFamily.InterNetworkV6)
+            {
+                address = parsed;
+                return printed.Contains(':');
+            }
+
+            string[] octets = printed.Split('.');
+            if (parsed.AddressFamily != AddressFamily.InterNetwork
+                || octets.Length != 4
+                || octets.Any(octet =>
+                    !byte.TryParse(
+                        octet,
+                        NumberStyles.None,
+                        CultureInfo.InvariantCulture,
+                        out byte value)
+                    || octet != value.ToString(CultureInfo.InvariantCulture)))
+            {
+                return false;
+            }
+
+            address = parsed;
+            return true;
+        }
     }
 }
