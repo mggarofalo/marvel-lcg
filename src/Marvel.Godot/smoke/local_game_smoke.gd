@@ -6,6 +6,7 @@ const MAX_DECISIONS := 20
 var main: Control
 var failed := false
 var motion_enabled := true
+var render_viewport: Viewport
 
 
 func _initialize() -> void:
@@ -14,8 +15,13 @@ func _initialize() -> void:
 	var viewport := OS.get_environment("MARVEL_SMOKE_VIEWPORT").split("x")
 	if viewport.size() == 2:
 		var requested := Vector2i(int(viewport[0]), int(viewport[1]))
-		root.content_scale_size = requested
-		root.size = requested
+		var fixed_viewport := SubViewport.new()
+		fixed_viewport.size = requested
+		fixed_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+		root.add_child(fixed_viewport)
+		render_viewport = fixed_viewport
+	else:
+		render_viewport = root
 	_run.call_deferred()
 
 
@@ -26,7 +32,7 @@ func _run() -> void:
 		return
 
 	main = packed.instantiate() as Control
-	root.add_child(main)
+	render_viewport.add_child(main)
 	if not await _wait_for(func() -> bool: return _button_named("Start game") != null):
 		_fail("setup never became ready")
 		return
@@ -181,7 +187,19 @@ func _run() -> void:
 	if not await _wait_for(func() -> bool:
 		return _control_text_is_visible(_node("Title") as Control) \
 			and _control_text_is_visible(_node("Description") as Control)):
-		_fail("the terminal page did not reveal its outcome and explanation")
+		var terminal_title := _node("Title") as Control
+		var terminal_description := _node("Description") as Control
+		var page := main.get_node("Margin") as ScrollContainer
+		_fail("the terminal page did not reveal its outcome and explanation" \
+			+ "\nPage rect: %s scroll: %d" % [page.get_global_rect(), page.scroll_vertical] \
+			+ "\nTitle rect: %s visible: %s" % [
+				terminal_title.get_global_rect(),
+				_visible_control_rect(terminal_title),
+			] \
+			+ "\nDescription rect: %s visible: %s" % [
+				terminal_description.get_global_rect(),
+				_visible_control_rect(terminal_description),
+			])
 		return
 	if not await _capture_checkpoint("terminal"):
 		return
@@ -283,6 +301,15 @@ func _visual_system_is_resolved() -> bool:
 	if page_scroll == null:
 		_fail("the scaled page has no outer scroll container")
 		return false
+	var page_bounds := Rect2(Vector2.ZERO, _viewport_size())
+	var setup_bounds: Rect2 = (_node("Setup") as Control).get_global_rect()
+	if setup_bounds.position.x < page_bounds.position.x - 1.0 \
+			or setup_bounds.end.x > page_bounds.end.x + 1.0:
+		_fail("the setup layout is horizontally inaccessible: setup=%s page=%s" % [
+			setup_bounds,
+			page_bounds,
+		])
+		return false
 	for path in [
 		"Setup/Selections/Fields/ConnectionGrid/Endpoint",
 		"Setup/Selections/Fields/ConnectionGrid/GameId",
@@ -362,6 +389,28 @@ func _entry_modes_are_explicit() -> bool:
 		_fail("returning to solo did not refresh the encounter briefing")
 		return false
 
+	var modular := _node("Setup/Selections/Fields/Grid/Modular") as MenuButton
+	var seed := _node("Setup/Selections/Fields/Grid/Seed") as LineEdit
+	if modular == null or modular.get_popup().item_count < 7:
+		_fail("the start flow has no complete modular-set multi-select menu")
+		return false
+	if seed == null or not seed.text.is_empty() or (_button_named("Start game") as Button).disabled:
+		_fail("a blank seed does not remain an available random-deal choice")
+		return false
+	modular.get_popup().id_pressed.emit(2)
+	modular.get_popup().id_pressed.emit(3)
+	await process_frame
+	if modular.text.count(",") < 1 \
+			or not modular.get_popup().is_item_checked(3) \
+			or not modular.get_popup().is_item_checked(4):
+		_fail("modular encounter sets cannot be selected together")
+		return false
+	modular.get_popup().id_pressed.emit(0)
+	await process_frame
+	if not modular.text.begins_with("Use recommended"):
+		_fail("the modular menu cannot return to the authored recommendation")
+		return false
+
 	endpoint.text = "not-an-endpoint"
 	endpoint.text_changed.emit(endpoint.text)
 	await process_frame
@@ -419,7 +468,7 @@ func _procedural_cards_are_safe() -> bool:
 		return false
 
 	var scale := OS.get_environment("MARVEL_UI_SCALE")
-	var expected_width := 450 if scale == "extra-large" else 375 if scale == "large" else 300
+	var expected_width := 360 if scale == "extra-large" else 300 if scale == "large" else 240
 	var saw_face := false
 	var saw_back := false
 	var saw_rules := false
@@ -435,10 +484,29 @@ func _procedural_cards_are_safe() -> bool:
 		if face != null:
 			saw_face = true
 			var title := face.find_child("Title", true, false) as Label
-			if title == null or title.max_lines_visible != 2:
-				_fail("a board card title has no predictable two-line degradation")
+			if title == null or title.max_lines_visible != -1:
+				_fail("a board card title is truncated")
 				return false
-			saw_rules = saw_rules or face.find_child("RulesText", true, false) != null
+			if title.size.y < title.get_theme_font_size("font_size"):
+				_fail("a board card title collapsed out of its card: %s title=%s face=%s card=%s parent=%s" % [
+					title.text,
+					title.size,
+					face.size,
+					card.size,
+					card.get_parent().size,
+				])
+				return false
+			var rules := face.find_child("RulesText", true, false) as Label
+			saw_rules = saw_rules or rules != null
+			if rules != null and rules.max_lines_visible != -1:
+				_fail("a board card rules box is truncated")
+				return false
+			if rules != null and rules.size.y < rules.get_theme_font_size("font_size"):
+				_fail("a board card rules box collapsed out of its card: %s size=%s" % [
+					title.text,
+					rules.size,
+				])
+				return false
 			saw_current = saw_current or face.find_child("LiveValues", true, false) != null
 			if title.text == "Peter Parker":
 				saw_local_art = face.find_child("Illustration", true, false) is TextureRect
@@ -518,22 +586,35 @@ func _board_layout_is_resolved() -> bool:
 		_fail("the opened table has no rendered areas")
 		return false
 
-	var area_scroll := scenario_lane.find_child("AreaScroll", true, false) as ScrollContainer
+	var area_flow := scenario_lane.find_child("AreaFlow", true, false) as HFlowContainer
 	var card_scroll := main.find_child("CARDSScroll", true, false) as ScrollContainer
 	var decision_scroll := _node("Play/Prompt/Margin/Stack/DecisionScroll") as ScrollContainer
-	if area_scroll == null or card_scroll == null or decision_scroll == null:
-		_fail("the table is missing an area, card, or decision overflow rail")
+	if area_flow == null or card_scroll == null or decision_scroll == null:
+		_fail("the table is missing its wrapped areas or bounded overflow rails")
 		return false
-	if area_scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED \
-			or card_scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED \
+	if card_scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED \
 			or decision_scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED:
-		_fail("a dense table or prompt rail cannot scroll horizontally")
+		_fail("a dense card or prompt rail cannot scroll horizontally")
+		return false
+	if scenario_lane.find_child("AreaScroll", true, false) != null:
+		_fail("the finite area layout still requires its own scrollbar")
 		return false
 
 	await process_frame
 	await process_frame
 	var board := _node("Play/Board") as Control
 	var prompt := _node("Play/Prompt") as Control
+	var page := main.get_node("Margin") as ScrollContainer
+	if OS.get_environment("MARVEL_UI_SCALE") == "standard" \
+			and (page.scroll_vertical != 0 \
+			or not _control_text_is_visible(_node("Eyebrow") as Control) \
+			or not _control_text_is_visible(_node("Title") as Control) \
+			or not _control_text_is_visible(_node("Description") as Control)):
+		_fail("the play layout moved its fixed header outside the viewport: page=%s scroll=%d" % [
+			page.get_global_rect(),
+			page.scroll_vertical,
+		])
+		return false
 	if board.size.x < 480.0 or prompt.size.x < 330.0 or prompt.size.x > board.size.x:
 		_fail("the responsive table did not preserve usable board and prompt widths: %s/%s" % [
 			board.size.x,
@@ -566,7 +647,7 @@ func _keyboard_selection_is_operable() -> bool:
 
 	await process_frame
 	await process_frame
-	var focused := root.gui_get_focus_owner() as Button
+	var focused := render_viewport.gui_get_focus_owner() as Button
 	if focused == null or not _decision().is_ancestor_of(focused) or focused.disabled:
 		_fail("a fresh prompt did not focus its first keyboard-operable action")
 		return false
@@ -574,15 +655,15 @@ func _keyboard_selection_is_operable() -> bool:
 	var press := InputEventAction.new()
 	press.action = &"ui_accept"
 	press.pressed = true
-	Input.parse_input_event(press)
+	render_viewport.push_input(press)
 	await process_frame
 	var release := InputEventAction.new()
 	release.action = &"ui_accept"
 	release.pressed = false
-	Input.parse_input_event(release)
+	render_viewport.push_input(release)
 	await process_frame
 	await process_frame
-	var restored := root.gui_get_focus_owner() as Button
+	var restored := render_viewport.gui_get_focus_owner() as Button
 	if restored == null or restored.name != focus_name or not _decision().is_ancestor_of(restored):
 		_fail("keyboard focus was lost when the selected decision control rebuilt")
 		return false
@@ -647,8 +728,7 @@ func _visible_control_rect(control: Control) -> Rect2:
 
 
 func _viewport_size() -> Vector2:
-	return Vector2(root.content_scale_size) if root.content_scale_size != Vector2i.ZERO \
-		else Vector2(root.size)
+	return Vector2(render_viewport.size)
 
 
 func _focused_board_area_is_visible() -> bool:
@@ -662,19 +742,28 @@ func _focused_board_area_is_visible() -> bool:
 		var area := card.get_parent()
 		while area != null and not (area is PanelContainer and area.name.begins_with("Area")):
 			area = area.get_parent()
-		var area_scroll := area.get_parent() if area != null else null
-		while area_scroll != null and not (area_scroll is ScrollContainer \
-				and area_scroll.name == "AreaScroll"):
-			area_scroll = area_scroll.get_parent()
-		if area == null or area_scroll == null:
-			_fail("a focused board card is not contained by an area rail")
+		var board := _node("Play/Board") as ScrollContainer
+		if area == null or board == null:
+			_fail("a focused board card is not contained by the board viewport")
 			return false
 		var area_rect: Rect2 = area.get_global_rect()
-		var scroll_rect: Rect2 = area_scroll.get_global_rect()
-		if area_rect.position.x < scroll_rect.position.x - 1.0 \
-				or area_rect.end.x > scroll_rect.end.x + 1.0:
+		var board_rect: Rect2 = board.get_global_rect()
+		if area_rect.position.x < board_rect.position.x - 1.0 \
+				or area_rect.end.x > board_rect.end.x + 1.0:
 			_fail("keyboard highlighting clipped the focused board area's heading")
 			return false
+		var title := card.find_child("Title", true, false) as Label
+		if title != null:
+			var title_rect := title.get_global_rect()
+			if title_rect.position.y < board_rect.position.y - 1.0 \
+					or title_rect.end.y > board_rect.end.y + 1.0:
+				_fail("keyboard highlighting did not reveal the focused card title: title=%s board=%s scroll=%d/%d" % [
+					title_rect,
+					board_rect,
+					board.scroll_vertical,
+					board.get_v_scroll_bar().max_value,
+				])
+				return false
 	if not saw_focused_card:
 		_fail("keyboard selection did not highlight its board anchor")
 		return false
@@ -738,9 +827,22 @@ func _capture_checkpoint(checkpoint: String) -> bool:
 		return true
 	await process_frame
 	await process_frame
-	var image := root.get_texture().get_image()
+	if checkpoint == "open-table-prompt-dense-concealed" \
+			and not await _focused_board_area_is_visible():
+		return false
+	var image := render_viewport.get_texture().get_image()
 	if image == null or image.is_empty():
 		_fail("visual checkpoint '%s' needs a non-headless rendering driver" % checkpoint)
+		return false
+	var requested_viewport := OS.get_environment("MARVEL_SMOKE_VIEWPORT").split("x")
+	if requested_viewport.size() == 2 \
+			and image.get_size() != Vector2i(
+				int(requested_viewport[0]), int(requested_viewport[1])):
+		_fail("visual checkpoint '%s' has size %s instead of %s" % [
+			checkpoint,
+			image.get_size(),
+			OS.get_environment("MARVEL_SMOKE_VIEWPORT"),
+		])
 		return false
 
 	var colors: Dictionary = {}

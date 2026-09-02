@@ -29,18 +29,51 @@ public sealed partial class CardControl : PanelContainer
         {
             Name = "ProceduralCard",
             TargetId = card.TargetId,
-            CustomMinimumSize = new Vector2(layout.Width, layout.MinimumHeight),
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            CustomMinimumSize = new Vector2(
+                layout.Width,
+                card.Concealed ? layout.Width * 0.72f : EstimatedFaceHeight(card, layout)),
+            SizeFlagsHorizontal = SizeFlags.ShrinkBegin,
             TooltipText = card.Title,
             baseVariation = card.Concealed
                 ? GodotThemeVariations.ConcealedCard
                 : GodotThemeVariations.BoardCard,
         };
         control.ThemeTypeVariation = control.baseVariation;
-        control.AddChild(card.Concealed
+        Control body = card.Concealed
             ? Back(card)
-            : Face(card, layout, art));
+            : Face(card, layout, art);
+        // Wrapped labels report a one-pixel minimum width before their parent
+        // has laid them out. Give the procedural body the known card width so
+        // Godot can calculate every name and rules-text line instead of
+        // collapsing them during the first container pass.
+        body.CustomMinimumSize = new Vector2(
+            Math.Max(1, layout.Width - 22),
+            Math.Max(1, control.CustomMinimumSize.Y - 18));
+        control.AddChild(body);
         return control;
+    }
+
+    private static float EstimatedFaceHeight(
+        BoardCardPresentation card,
+        CardLayoutMetrics layout)
+    {
+        int rulesLines = string.IsNullOrWhiteSpace(card.RulesText)
+            ? 0
+            : card.RulesText.Split('\n').Sum(line =>
+                Math.Max(1, (int)Math.Ceiling(line.Length / 24.0)));
+        int valueRows = card.PrintedStats.Count
+            + card.Fields.Count
+            + card.Counters.Count
+            + (card.Cost is null ? 0 : 1);
+        int textRows = 6
+            + (string.IsNullOrWhiteSpace(card.Subtitle) ? 0 : 1)
+            + (card.Traits.Count == 0 ? 0 : 1)
+            + card.Keywords.Count
+            + rulesLines
+            + valueRows;
+        float scale = layout.Width / 250.0f;
+        float artHeight = card.FaceId is { Length: > 0 } ? layout.Width * 0.34f : 0;
+        return Math.Max(layout.MinimumHeight, textRows * 24 * scale + artHeight + 64 * scale);
     }
 
     /// <summary>Applies or clears the prompt-anchor focus treatment.</summary>
@@ -88,6 +121,18 @@ public sealed partial class CardControl : PanelContainer
         var content = Stack();
         content.Name = "CardFace";
         content.AddChild(Label(card.Kind, GodotThemeVariations.Eyebrow, "Kind"));
+        content.AddChild(Label(
+            card.Title,
+            GodotThemeVariations.CardTitle,
+            "Title",
+            wrap: true));
+
+        if (layout.ShowSubtitle && !string.IsNullOrWhiteSpace(card.Subtitle))
+        {
+            content.AddChild(Label(
+                card.Subtitle, GodotThemeVariations.MutedText, "Subtitle", wrap: true));
+        }
+
         Texture2D? illustration = card.FaceId is { Length: > 0 } faceId
             ? art?.Find(faceId)
             : null;
@@ -97,24 +142,11 @@ public sealed partial class CardControl : PanelContainer
             {
                 Name = "Illustration",
                 Texture = illustration,
-                CustomMinimumSize = new Vector2(0, layout.Width * 0.46f),
+                CustomMinimumSize = new Vector2(0, layout.Width * 0.34f),
                 ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
                 StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered,
                 MouseFilter = MouseFilterEnum.Ignore,
             });
-        }
-
-        content.AddChild(Label(
-            card.Title,
-            GodotThemeVariations.CardTitle,
-            "Title",
-            wrap: true,
-            maximumLines: layout.TitleLines));
-
-        if (layout.ShowSubtitle && !string.IsNullOrWhiteSpace(card.Subtitle))
-        {
-            content.AddChild(Label(
-                card.Subtitle, GodotThemeVariations.MutedText, "Subtitle", wrap: true));
         }
 
         if (layout.ShowTraits && card.Traits.Count > 0)
@@ -158,8 +190,7 @@ public sealed partial class CardControl : PanelContainer
                 card.RulesText,
                 GodotThemeVariations.CardRules,
                 "RulesText",
-                wrap: true,
-                maximumLines: layout.RulesLines));
+                wrap: true));
         }
 
         var live = card.Fields.ToList();
@@ -183,6 +214,8 @@ public sealed partial class CardControl : PanelContainer
     private static VBoxContainer Stack() => new()
     {
         ThemeTypeVariation = GodotThemeVariations.TightStack,
+        SizeFlagsHorizontal = SizeFlags.ExpandFill,
+        SizeFlagsVertical = SizeFlags.ExpandFill,
     };
 
     private static VBoxContainer ValueStrip(
@@ -197,14 +230,21 @@ public sealed partial class CardControl : PanelContainer
             ThemeTypeVariation = GodotThemeVariations.TightStack,
         };
         section.AddChild(Label(heading, GodotThemeVariations.Eyebrow, $"{name}Heading"));
-        var flow = new HFlowContainer();
+        var valuesList = new VBoxContainer
+        {
+            Name = $"{name}Values",
+            ThemeTypeVariation = GodotThemeVariations.TightStack,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+        };
         foreach (BoardFieldPresentation value in values)
         {
-            flow.AddChild(Label(
-                $"{value.Name}  {value.Value}", variation, $"{name}{value.Name}", wrap: true));
+            Label field = Label(
+                $"{value.Name}  {value.Value}", variation, $"{name}{value.Name}", wrap: true);
+            field.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+            valuesList.AddChild(field);
         }
 
-        section.AddChild(flow);
+        section.AddChild(valuesList);
         return section;
     }
 
@@ -213,14 +253,24 @@ public sealed partial class CardControl : PanelContainer
         string variation,
         string name,
         bool wrap = false,
-        int maximumLines = -1) => new()
+        int maximumLines = -1)
     {
-        Name = name,
-        Text = text,
-        AutowrapMode = wrap ? TextServer.AutowrapMode.WordSmart : TextServer.AutowrapMode.Off,
-        TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
-        MaxLinesVisible = maximumLines,
-        ClipText = maximumLines > 0,
-        ThemeTypeVariation = variation,
-    };
+        int estimatedLines = wrap
+            ? text.Split('\n').Sum(line =>
+                Math.Max(1, (int)Math.Ceiling(line.Length / 24.0)))
+            : 1;
+        return new Label
+        {
+            Name = name,
+            Text = text,
+            AutowrapMode = wrap
+                ? TextServer.AutowrapMode.WordSmart
+                : TextServer.AutowrapMode.Off,
+            TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
+            MaxLinesVisible = maximumLines,
+            ClipText = maximumLines > 0,
+            ThemeTypeVariation = variation,
+            CustomMinimumSize = new Vector2(0, wrap ? estimatedLines * 30 : 0),
+        };
+    }
 }

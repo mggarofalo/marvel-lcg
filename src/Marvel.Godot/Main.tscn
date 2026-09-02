@@ -34,10 +34,10 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 48.0
-offset_top = 38.0
-offset_right = -48.0
-offset_bottom = -38.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
 grow_horizontal = 2
 grow_vertical = 2
 follow_focus = true
@@ -70,7 +70,6 @@ text = "Loading the supported Core Set assignments…"
 autowrap_mode = 2
 
 [node name="Setup" type="HBoxContainer" parent="Margin/Shell/Content"]
-custom_minimum_size = Vector2(0, 355)
 layout_mode = 2
 size_flags_vertical = 3
 theme_type_variation = &"WideRow"
@@ -148,7 +147,7 @@ tooltip_text = "Read setup choices again after changing the engine endpoint."
 layout_mode = 2
 size_flags_vertical = 3
 theme_type_variation = &"DataGrid"
-columns = 2
+columns = 4
 
 [node name="HeroLabel" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid"]
 layout_mode = 2
@@ -201,14 +200,18 @@ disabled = true
 [node name="ModularLabel" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid"]
 layout_mode = 2
 theme_type_variation = &"Caption"
-text = "MODULAR SET"
+text = "MODULAR SETS"
 vertical_alignment = 1
 
-[node name="Modular" type="OptionButton" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid"]
+[node name="Modular" type="MenuButton" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid"]
 custom_minimum_size = Vector2(240, 44)
 layout_mode = 2
 size_flags_horizontal = 3
+focus_mode = 2
 disabled = true
+flat = false
+theme_type_variation = &"MultiSelectButton"
+text = "Recommended"
 
 [node name="SeedLabel" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid"]
 layout_mode = 2
@@ -220,14 +223,13 @@ vertical_alignment = 1
 custom_minimum_size = Vector2(240, 44)
 layout_mode = 2
 size_flags_horizontal = 3
-text = "7"
-placeholder_text = "0–4294967295"
+placeholder_text = "Blank for random · 0–4294967295"
 max_length = 10
 
 [node name="SeedHelp" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields"]
 layout_mode = 2
 theme_type_variation = &"Caption"
-text = "The same assignment and seed always deal the same game."
+text = "Leave seed blank for a fresh deal. The chosen seed remains visible for replay."
 
 [node name="Start" type="Button" parent="Margin/Shell/Content/Setup/Selections/Fields"]
 custom_minimum_size = Vector2(0, 48)
@@ -269,7 +271,7 @@ theme_type_variation = &"PrimaryButton"
 text = "Join game"
 
 [node name="Briefing" type="PanelContainer" parent="Margin/Shell/Content/Setup"]
-custom_minimum_size = Vector2(280, 0)
+custom_minimum_size = Vector2(270, 0)
 layout_mode = 2
 size_flags_horizontal = 2
 theme_type_variation = &"SurfacePanel"
@@ -506,7 +508,7 @@ text = "The authoritative board is current."
 autowrap_mode = 2
 
 [node name="EventLog" type="RichTextLabel" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
-custom_minimum_size = Vector2(0, 150)
+custom_minimum_size = Vector2(0, 96)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 1

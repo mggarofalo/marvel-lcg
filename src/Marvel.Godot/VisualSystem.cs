@@ -83,8 +83,6 @@ public enum CardDisplaySize
 public sealed record CardLayoutMetrics(
     int Width,
     int MinimumHeight,
-    int TitleLines,
-    int RulesLines,
     bool ShowSubtitle,
     bool ShowTraits,
     bool ShowPrintedStats);
@@ -245,10 +243,10 @@ public static class VisualSystem
     public static CardLayoutMetrics Card(CardDisplaySize size, InterfaceScale scale) => size switch
     {
         CardDisplaySize.Full => new(
-            Scale(360, scale), Scale(500, scale), 3, 16,
+            Scale(360, scale), Scale(720, scale),
             ShowSubtitle: true, ShowTraits: true, ShowPrintedStats: true),
         CardDisplaySize.Board => new(
-            Scale(300, scale), Scale(250, scale), 2, 5,
+            Scale(250, scale), Scale(520, scale),
             ShowSubtitle: true, ShowTraits: true, ShowPrintedStats: true),
         _ => throw new ArgumentOutOfRangeException(nameof(size), size, "unsupported card size"),
     };
@@ -309,6 +307,7 @@ public static class GodotThemeVariations
     public const string WideRow = nameof(WideRow);
     public const string CompactRow = nameof(CompactRow);
     public const string DataGrid = nameof(DataGrid);
+    public const string MultiSelectButton = nameof(MultiSelectButton);
     public const string BoardArea = nameof(BoardArea);
     public const string BoardCard = nameof(BoardCard);
     public const string ConcealedCard = nameof(ConcealedCard);

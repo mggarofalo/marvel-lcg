@@ -45,26 +45,17 @@ public static class BoardRenderer
         };
         section.AddChild(Label(lane.Title, GodotThemeVariations.Heading));
 
-        var scroll = new ScrollContainer
+        var areas = new HFlowContainer
         {
-            Name = "AreaScroll",
-            HorizontalScrollMode = ScrollContainer.ScrollMode.Auto,
-            VerticalScrollMode = ScrollContainer.ScrollMode.Disabled,
-            FollowFocus = true,
+            Name = "AreaFlow",
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
-        var areas = new HBoxContainer
-        {
-            Name = "AreaRail",
-            ThemeTypeVariation = GodotThemeVariations.WideRow,
-        };
-        scroll.AddChild(areas);
         foreach (BoardAreaPresentation area in lane.Areas)
         {
             areas.AddChild(Area(area, result, art));
         }
 
-        section.AddChild(scroll);
+        section.AddChild(areas);
         return section;
     }
 
@@ -76,8 +67,8 @@ public static class BoardRenderer
         var panel = new PanelContainer
         {
             Name = $"Area{area.Id}",
-            CustomMinimumSize = new Vector2(380, 120),
-            SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin,
+            CustomMinimumSize = new Vector2(290, 120),
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             TooltipText = $"{area.Title}. {area.Context}",
             ThemeTypeVariation = GodotThemeVariations.BoardArea,
         };
@@ -209,10 +200,6 @@ public sealed class BoardRenderResult
             foreach (CardControl match in matches)
             {
                 match.SetPresented(presented.Contains(key));
-                if (presented.Contains(key))
-                {
-                    EnsureVisible(match);
-                }
             }
         }
     }
@@ -224,8 +211,21 @@ public sealed class BoardRenderResult
         {
             if (ancestor is ScrollContainer scroll)
             {
-                Control target = AreaContaining(scroll, control) ?? control;
-                scroll.CallDeferred(ScrollContainer.MethodName.EnsureControlVisible, target);
+                Control target = scroll.Name == "Board"
+                    ? control.GetNodeOrNull<Control>("CardFace/Title") ?? control
+                    : AreaContaining(scroll, control) ?? control;
+                if (scroll.Name == "Board")
+                {
+                    Callable.From(() =>
+                    {
+                        scroll.EnsureControlVisible(target);
+                        Callable.From(() => AlignBoardToTitle(scroll, target, 3)).CallDeferred();
+                    }).CallDeferred();
+                }
+                else
+                {
+                    scroll.CallDeferred(ScrollContainer.MethodName.EnsureControlVisible, target);
+                }
                 // The board owns card navigation. Continuing into the outer
                 // page would hide the table heading whenever prompt focus
                 // highlights a card below the fold.
@@ -236,6 +236,20 @@ public sealed class BoardRenderResult
             }
 
             ancestor = ancestor.GetParent();
+        }
+    }
+
+    private static void AlignBoardToTitle(
+        ScrollContainer board,
+        Control title,
+        int remainingPasses)
+    {
+        Rect2 viewport = board.GetGlobalRect();
+        Rect2 titleRect = title.GetGlobalRect();
+        board.ScrollVertical += Mathf.RoundToInt(titleRect.Position.Y - viewport.Position.Y);
+        if (remainingPasses > 0)
+        {
+            Callable.From(() => AlignBoardToTitle(board, title, remainingPasses - 1)).CallDeferred();
         }
     }
 

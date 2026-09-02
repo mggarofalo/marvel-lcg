@@ -661,7 +661,16 @@ public sealed partial class DecisionPanel : VBoxContainer
             {
                 if (scroll.Name == "Margin")
                 {
-                    EnsurePromptContextVisible(scroll, control);
+                    if (scroll.VerticalScrollMode == ScrollContainer.ScrollMode.Disabled)
+                    {
+                        // The table and decision rail own their scrolling in play.
+                        // A focused decision must not move the fixed page header.
+                        scroll.ScrollVertical = 0;
+                    }
+                    else
+                    {
+                        EnsurePromptContextVisible(scroll, control);
+                    }
                 }
                 else
                 {

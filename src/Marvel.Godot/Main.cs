@@ -23,6 +23,7 @@ public sealed partial class Main : Control
     private Label briefingModular = null!;
     private Label briefingScenario = null!;
     private Label description = null!;
+    private ScrollContainer decisionScroll = null!;
     private DecisionPanel decisions = null!;
     private Label eyebrow = null!;
     private PanelContainer eventCue = null!;
@@ -40,16 +41,21 @@ public sealed partial class Main : Control
     private PanelContainer invitationOffer = null!;
     private Button invitationCopy = null!;
     private LineEdit invitation = null!;
+    private InterfaceScale interfaceScale = InterfaceScale.Standard;
     private Button join = null!;
     private VBoxContainer joinFields = null!;
     private Button joinFlow = null!;
     private LocalGameClient? client;
     private ClientSession? session;
+    private VBoxContainer contentStack = null!;
     private GameProgressPresentation? currentProgress;
     private OptionButton mode = null!;
-    private OptionButton modular = null!;
+    private MenuButton modular = null!;
+    private ModularConfiguration modularConfiguration = ModularConfiguration.Recommended;
+    private readonly HashSet<string> selectedModularKeys = new(StringComparer.Ordinal);
     private ScrollContainer pageScroll = null!;
     private PanelContainer promptPanel = null!;
+    private VBoxContainer promptStack = null!;
     private Label promptContext = null!;
     private Label promptEyebrow = null!;
     private Label promptHeading = null!;
@@ -86,6 +92,7 @@ public sealed partial class Main : Control
     public override void _Ready()
     {
         InterfaceScale scale = ClientTheme.ConfiguredScale();
+        interfaceScale = scale;
         Theme = ClientTheme.Create(scale);
         GetNode<ColorRect>("Table").Color = ClientTheme.ToGodot(VisualSystem.Palette.Canvas);
         GetNode<ColorRect>("TopRule").Color = ClientTheme.ToGodot(VisualSystem.Palette.Danger);
@@ -108,7 +115,7 @@ public sealed partial class Main : Control
             PopulateModularChoices();
             RefreshBriefing();
         };
-        modular.ItemSelected += _ => RefreshBriefing();
+        modular.GetPopup().IdPressed += OnModularChoicePressed;
         seed.TextChanged += _ => RefreshStartAvailability();
         endpoint.TextChanged += _ => OnEndpointChanged();
         gameId.TextChanged += _ => RefreshEntryAvailability();
@@ -167,13 +174,17 @@ public sealed partial class Main : Control
     {
         const string content = "Margin/Shell/Content";
         pageScroll = GetNode<ScrollContainer>("Margin");
+        contentStack = GetNode<VBoxContainer>($"{content}");
         description = GetNode<Label>($"{content}/Description");
         eyebrow = GetNode<Label>($"{content}/Eyebrow");
         title = GetNode<Label>($"{content}/Title");
         setupPanel = GetNode<Control>($"{content}/Setup");
         board = GetNode<Control>($"{content}/Play");
         playLayout = GetNode<HSplitContainer>($"{content}/Play");
+        decisionScroll = GetNode<ScrollContainer>(
+            $"{content}/Play/Prompt/Margin/Stack/DecisionScroll");
         promptPanel = GetNode<PanelContainer>($"{content}/Play/Prompt");
+        promptStack = GetNode<VBoxContainer>($"{content}/Play/Prompt/Margin/Stack");
         promptEyebrow = GetNode<Label>(
             $"{content}/Play/Prompt/Margin/Stack/PromptHeader/Eyebrow");
         promptHeading = GetNode<Label>(
@@ -227,7 +238,7 @@ public sealed partial class Main : Control
             $"{content}/Setup/Selections/Fields/Grid/SecondHero");
         scenario = GetNode<OptionButton>($"{content}/Setup/Selections/Fields/Grid/Scenario");
         mode = GetNode<OptionButton>($"{content}/Setup/Selections/Fields/Grid/Mode");
-        modular = GetNode<OptionButton>($"{content}/Setup/Selections/Fields/Grid/Modular");
+        modular = GetNode<MenuButton>($"{content}/Setup/Selections/Fields/Grid/Modular");
         seed = GetNode<LineEdit>($"{content}/Setup/Selections/Fields/Grid/Seed");
         seedHelp = GetNode<Label>($"{content}/Setup/Selections/Fields/SeedHelp");
         start = GetNode<Button>($"{content}/Setup/Selections/Fields/Start");
@@ -275,6 +286,8 @@ public sealed partial class Main : Control
         eyebrow.Text = joinMode
             ? "CORE SET  /  JOIN TABLE"
             : "CORE SET  /  MISSION BRIEFING";
+        title.ThemeTypeVariation = GodotThemeVariations.DisplayTitle;
+        description.Visible = true;
         description.Text = joinMode
             ? "Connect to an already-running engine and use a one-time seat invitation."
             : "Choose an authored Core Set assignment. The engine validates it again when play starts.";
@@ -286,8 +299,35 @@ public sealed partial class Main : Control
         // This is a presentation choice: keep the prompt rail stable and give
         // the scrollable table every remaining pixel at desktop window sizes.
         float promptWidth = Math.Clamp(Size.X * 0.30f, 330f, 440f);
+        bool compactHeight = Size.Y < 800;
+        float compactDecisionHeight = interfaceScale switch
+        {
+            InterfaceScale.Standard => 64,
+            InterfaceScale.Large => 110,
+            InterfaceScale.ExtraLarge => 140,
+            _ => 64,
+        };
         promptPanel.CustomMinimumSize = new Vector2(promptWidth, 0);
+        setupGrid.Columns = Size.X >= 1500 ? 4 : 2;
+        contentStack.ThemeTypeVariation = board.Visible && compactHeight
+            ? GodotThemeVariations.TightStack
+            : GodotThemeVariations.Stack;
+        promptStack.ThemeTypeVariation = compactHeight
+            ? GodotThemeVariations.TightStack
+            : GodotThemeVariations.Stack;
+        decisionScroll.CustomMinimumSize = new Vector2(
+            0,
+            compactHeight ? compactDecisionHeight : 132);
+        eventCue.CustomMinimumSize = new Vector2(0, 68);
+        eventLog.CustomMinimumSize = new Vector2(0, compactHeight ? 0 : 96);
         playLayout.SplitOffsets = [0];
+        pageScroll.HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled;
+        pageScroll.FollowFocus = !board.Visible;
+        pageScroll.VerticalScrollMode = board.Visible
+            ? interfaceScale == InterfaceScale.Standard
+                ? ScrollContainer.ScrollMode.Disabled
+                : ScrollContainer.ScrollMode.Auto
+            : ScrollContainer.ScrollMode.Auto;
     }
 
     private async Task LoadSetupAsync()
@@ -448,20 +488,89 @@ public sealed partial class Main : Control
             return;
         }
 
-        modular.Clear();
         ScenarioSetupChoice campaign = SelectedCampaign();
         string recommended = string.Join(
             ", ",
             campaign.RecommendedModularSets.Select(key =>
                 setupChoices.ModularSets.Single(set => set.Key == key).Name));
-        modular.AddItem($"Recommended · {recommended}");
-        modular.AddItem("No modular set");
-        foreach (ModularSetupChoice choice in setupChoices.ModularSets)
+        PopupMenu popup = modular.GetPopup();
+        popup.Clear();
+        popup.AddCheckItem($"Use recommended · {recommended}", 0);
+        popup.AddCheckItem("No modular set", 1);
+        popup.AddSeparator();
+        for (int index = 0; index < setupChoices.ModularSets.Count; index++)
         {
-            modular.AddItem(choice.Name);
+            popup.AddCheckItem(setupChoices.ModularSets[index].Name, index + 2);
         }
 
-        modular.Select(0);
+        modularConfiguration = ModularConfiguration.Recommended;
+        selectedModularKeys.Clear();
+        RefreshModularControl();
+    }
+
+    private void OnModularChoicePressed(long id)
+    {
+        if (setupChoices is null)
+        {
+            return;
+        }
+
+        if (id == 0)
+        {
+            modularConfiguration = ModularConfiguration.Recommended;
+            selectedModularKeys.Clear();
+        }
+        else if (id == 1)
+        {
+            modularConfiguration = ModularConfiguration.None;
+            selectedModularKeys.Clear();
+        }
+        else if (id - 2 < setupChoices.ModularSets.Count)
+        {
+            string key = setupChoices.ModularSets[(int)id - 2].Key;
+            if (!selectedModularKeys.Add(key))
+            {
+                selectedModularKeys.Remove(key);
+            }
+
+            modularConfiguration = selectedModularKeys.Count == 0
+                ? ModularConfiguration.None
+                : ModularConfiguration.Selected;
+        }
+
+        RefreshModularControl();
+        RefreshBriefing();
+    }
+
+    private void RefreshModularControl()
+    {
+        PopupMenu popup = modular.GetPopup();
+        for (int index = 0; index < popup.ItemCount; index++)
+        {
+            long id = popup.GetItemId(index);
+            bool selected = id switch
+            {
+                0 => modularConfiguration == ModularConfiguration.Recommended,
+                1 => modularConfiguration == ModularConfiguration.None,
+                >= 2 when setupChoices is not null
+                    && id - 2 < setupChoices.ModularSets.Count =>
+                    selectedModularKeys.Contains(setupChoices.ModularSets[(int)id - 2].Key),
+                _ => false,
+            };
+            if (popup.IsItemCheckable(index))
+            {
+                popup.SetItemChecked(index, selected);
+            }
+        }
+
+        modular.Text = modularConfiguration switch
+        {
+            ModularConfiguration.Recommended => popup.GetItemText(0),
+            ModularConfiguration.None => "No modular set",
+            _ => string.Join(", ", setupChoices!.ModularSets
+                .Where(set => selectedModularKeys.Contains(set.Key))
+                .Select(set => set.Name)),
+        };
     }
 
     private void RefreshBriefing()
@@ -477,21 +586,21 @@ public sealed partial class Main : Control
         briefingHero.Text = secondHero.Selected <= 0
             ? setupChoices.Heroes[hero.Selected].Name
             : $"{setupChoices.Heroes[hero.Selected].Name} + {secondHero.GetItemText(secondHero.Selected)}";
-        briefingModular.Text = modular.GetItemText(modular.Selected);
+        briefingModular.Text = modular.Text;
         RefreshStartAvailability();
     }
 
     private void RefreshStartAvailability()
     {
-        bool validSeed = uint.TryParse(
-            seed.Text,
+        bool validSeed = string.IsNullOrWhiteSpace(seed.Text) || uint.TryParse(
+            seed.Text.Trim(),
             NumberStyles.None,
             CultureInfo.InvariantCulture,
             out _);
         start.Disabled = setupChoices is null || !validSeed || gameId.Text.Length == 0;
         if (setupChoices is not null && !validSeed)
         {
-            status.Text = "SEED REQUIRED  ·  ENTER A WHOLE NUMBER FROM 0 THROUGH 4294967295";
+            status.Text = "SEED INVALID  ·  ENTER 0 THROUGH 4294967295 OR LEAVE IT BLANK";
         }
         else if (setupChoices is not null && CurrentGame is null)
         {
@@ -531,6 +640,11 @@ public sealed partial class Main : Control
             SetSetupControlsEnabled(false);
             status.Text = "DEALING GAME  ·  ONE MOMENT";
 
+            if (string.IsNullOrWhiteSpace(seed.Text))
+            {
+                seed.Text = GameSeed.Create().ToString(CultureInfo.InvariantCulture);
+            }
+
             GameSetupSelection selection = SelectedSetup();
             LocalClientConnection connection = ClientComposition.Connect(
                 ProjectSettings.GlobalizePath("res://../.."),
@@ -566,8 +680,13 @@ public sealed partial class Main : Control
             setupPanel.Visible = false;
             board.Visible = true;
             eyebrow.Text = endpoint.Text.Length == 0
-                ? "CORE SET  /  EMBEDDED TABLE"
-                : "CORE SET  /  HOSTED TABLE";
+                ? $"CORE SET  /  EMBEDDED TABLE  /  SEED {seed.Text}"
+                : $"CORE SET  /  HOSTED TABLE  /  SEED {seed.Text}";
+            title.ThemeTypeVariation = GodotThemeVariations.BriefingTitle;
+            ApplyResponsivePlayLayout();
+            description.Visible = true;
+            pageScroll.ScrollVertical = 0;
+            pageScroll.SetDeferred("scroll_vertical", 0);
         }
         catch (Exception)
         {
@@ -616,6 +735,11 @@ public sealed partial class Main : Control
             setupPanel.Visible = false;
             board.Visible = true;
             eyebrow.Text = "CORE SET  /  JOINED TABLE";
+            title.ThemeTypeVariation = GodotThemeVariations.BriefingTitle;
+            ApplyResponsivePlayLayout();
+            description.Visible = true;
+            pageScroll.ScrollVertical = 0;
+            pageScroll.SetDeferred("scroll_vertical", 0);
         }
         catch (Exception)
         {
@@ -884,6 +1008,8 @@ public sealed partial class Main : Control
         // A synchronized snapshot is authoritative but is not a new
         // transition, so it does not alter the diagnostic chronology.
         ApplyProgress(GameProgressPresentation.FromResponse(response));
+        pageScroll.ScrollVertical = 0;
+        pageScroll.SetDeferred("scroll_vertical", 0);
         RefreshSynchronizeAvailability();
         if (response.Prompt is null && world.Outcome != Outcome.Unfinished)
         {
@@ -891,7 +1017,11 @@ public sealed partial class Main : Control
         }
     }
 
-    private void RevealOutcome() => pageScroll.ScrollVertical = 0;
+    private void RevealOutcome()
+    {
+        pageScroll.ScrollVertical = 0;
+        pageScroll.SetDeferred("scroll_vertical", 0);
+    }
 
     private void RenderPromptSummary(Prompt? prompt, WorldDescriptor world)
     {
@@ -1112,15 +1242,6 @@ public sealed partial class Main : Control
 
     private GameSetupSelection SelectedSetup()
     {
-        ModularConfiguration configuration = modular.Selected switch
-        {
-            0 => ModularConfiguration.Recommended,
-            1 => ModularConfiguration.None,
-            _ => ModularConfiguration.Selected,
-        };
-        string? modularKey = modular.Selected >= 2
-            ? setupChoices!.ModularSets[modular.Selected - 2].Key
-            : null;
         var heroes = new List<string> { setupChoices!.Heroes[hero.Selected].Key };
         if (secondHero.Selected > 0)
         {
@@ -1130,8 +1251,11 @@ public sealed partial class Main : Control
         return new GameSetupSelection(
             heroes,
             SelectedCampaign().Key,
-            configuration,
-            modularKey,
+            modularConfiguration,
+            setupChoices.ModularSets
+                .Where(set => selectedModularKeys.Contains(set.Key))
+                .Select(set => set.Key)
+                .ToArray(),
             seed.Text);
     }
 
