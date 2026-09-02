@@ -370,7 +370,9 @@ public sealed class LocalGameClientTests
 
         ClientResolutionResult resolved = await client.ResolveAsync(
             opened.Response!.Capability!,
-            EngineDecision.Decline,
+            new EngineDecision(
+                Assert.Single(opened.Response.Prompt!.Affordances).Id,
+                []),
             TestContext.Current.CancellationToken);
 
         Assert.True(resolved.Succeeded);

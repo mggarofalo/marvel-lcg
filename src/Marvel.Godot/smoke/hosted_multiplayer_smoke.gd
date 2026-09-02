@@ -106,7 +106,14 @@ func _run() -> void:
 				return
 			continue
 
-		var active: Control = host if _has_decision(host) else guest if _has_decision(guest) else null
+		var active: Control = null
+		if _has_decision(host) and _has_decision(guest):
+			# A root player-turn menu is cancellable; the simultaneous off-turn
+			# Action menu is not. Keep this journey's deterministic policy on the
+			# active player while still requiring both seat projections to render.
+			active = host if _can_decline(host) else guest
+		else:
+			active = host if _has_decision(host) else guest if _has_decision(guest) else null
 		if active == null:
 			if not await _synchronize(host):
 				return
@@ -124,9 +131,11 @@ func _run() -> void:
 		decisions += 1
 
 		var other := guest if active == host else host
-		if not _complete(active) and not _has_decision(active):
-			if not await _synchronize(other):
-				return
+		# Every accepted command advances the shared revision. Refresh the peer
+		# even when it still displays a simultaneous menu, because that menu is
+		# now stale by definition.
+		if not _complete(other) and not await _synchronize(other):
+			return
 
 	if not host_acted or not guest_acted:
 		_fail("both independently authorized clients did not answer a decision")
@@ -208,6 +217,11 @@ func _has_decision(main: Control) -> bool:
 	return decline != null and not decline.disabled \
 		or submit != null and not submit.disabled \
 		or _first_enabled_choice(decision) != null
+
+
+func _can_decline(main: Control) -> bool:
+	var decline := _button(_decision(main), "Pass / decline")
+	return decline != null and not decline.disabled
 
 
 func _decision_is_terminal(main: Control) -> bool:

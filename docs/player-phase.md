@@ -24,6 +24,19 @@ enemy, thwart requires a legal scheme with threat, recovery requires damage,
 and a cost must be payable before a card or ability is offered. After a choice
 resolves, the engine derives the next affordances from the new board.
 
+For multiplayer, `rr:player-turn.6` is projected as a direct Action rather than
+an ask/accept handshake. At the root turn menu, each non-active seat can see and
+submit only the printed Actions that seat could trigger if asked. The active
+seat keeps its own Actions and all of its ordinary turn options. Card play,
+change form, ending the turn, identity attack/thwart/recovery, and ally
+attack/thwart never cross seats. An off-turn Action menu cannot be declined,
+because it is a simultaneous invitation rather than a sequential question;
+doing nothing leaves the active player's turn untouched.
+
+Dependent questions keep their ordinary owner. Payment, targeting, ordering,
+interrupt, response, and other suspended-resolution prompts do not acquire a
+new off-turn Action menu.
+
 ### Actions and resources
 
 An Action is initiated during a turn, not from an interrupt or response window.

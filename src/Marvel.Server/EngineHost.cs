@@ -6,6 +6,7 @@ using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
+using Marvel.Session;
 using Marvel.View;
 using System.Security.Cryptography;
 
@@ -380,10 +381,9 @@ public sealed class EngineHost : IEngineEndpoint
             return Failed(request, "session_not_found", "the session capability is not valid");
         }
 
-        if (access.Session.Game.Pending is not { } pending
-            || !access.Scope.Includes(pending.Player))
+        if (request.Decision.Targets is null)
         {
-            return Failed(request, "not_your_turn", "this capability cannot answer the pending prompt");
+            return Failed(request, "invalid_request", "decision.targets is required");
         }
 
         if (request.ExpectedRevision != access.Session.Revision)
@@ -394,14 +394,53 @@ public sealed class EngineHost : IEngineEndpoint
                 "the decision was composed for an earlier table revision");
         }
 
-        if (request.Decision.Targets is null)
+        if (access.Session.Game.Pending is not { } pending)
         {
-            return Failed(request, "invalid_request", "decision.targets is required");
+            return Failed(request, "not_your_turn", "this capability cannot answer the pending prompt");
+        }
+
+        Decision decision = request.Decision.ToDomain();
+        Affordance? selected = decision.IsDecline
+            ? null
+            : pending.Affordances.SingleOrDefault(option => option.Id == decision.Affordance);
+        if (!decision.IsDecline && selected is null)
+        {
+            return Failed(request, "invalid_decision", "the selected affordance is not pending");
+        }
+
+        int actor = selected is not null
+            && string.Equals(selected.Verb, Game.ActionVerb, StringComparison.Ordinal)
+            ? selected.AnchorPlayer
+            : pending.Player;
+        if (!access.Scope.Includes(actor))
+        {
+            return Failed(request, "not_your_turn", "this capability cannot submit that decision");
+        }
+
+        Prompt? authorized = access.Session.Game.PromptFor(actor);
+        if (authorized is null
+            || (!decision.IsDecline
+                && !authorized.Affordances.Any(option => option.Id == decision.Affordance)))
+        {
+            return Failed(request, "invalid_decision", "the decision is not available to that seat");
         }
 
         try
         {
-            var resolved = access.Session.Game.Resolve(request.Decision.ToDomain());
+            // This is a validation pass over immutable prompt values. It
+            // rejects forged targets, payments, variables, allocations and
+            // actor seats before the engine can mutate the world.
+            _ = DurableDecision.From(actor, pending, decision).Resolve(pending);
+        }
+        catch (Exception failure) when (failure is InvalidOperationException
+            or ReplayDivergenceException)
+        {
+            return Failed(request, "invalid_decision", "the decision is not legal for that seat");
+        }
+
+        try
+        {
+            var resolved = access.Session.Game.Resolve(decision);
             access.Session.Revision++;
             return Succeeded(
                 request,
@@ -540,7 +579,10 @@ public sealed class EngineHost : IEngineEndpoint
                 Revision: revision);
         }
 
-        VisibleResult visible = WorldProjection.For(game.State, prompt, events, scope);
+        Prompt? scopedPrompt = scope.SoleSeat is int seat
+            ? game.PromptFor(seat)
+            : prompt;
+        VisibleResult visible = WorldProjection.For(game.State, scopedPrompt, events, scope);
         return new EngineResponse(
             EngineProtocol.Version, request.RequestId, request.GameId,
             capability,

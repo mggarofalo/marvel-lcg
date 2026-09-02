@@ -525,7 +525,7 @@ public sealed class TransportTests
         var resolveFirst = await ExchangeOverSocket(
             server,
             EngineRequest.ResolveGame(
-                "resolve-first", "same-id", first.Capability!, EngineDecision.Decline));
+                "resolve-first", "same-id", first.Capability!, TakeOnly(first)));
 
         Assert.NotEqual(first.Capability, second.Capability);
         Assert.Equal("session_not_found", guessed.Error?.Code);
@@ -603,7 +603,7 @@ public sealed class TransportTests
         EngineResponse forZero = await ExchangeOverSocket(
             server,
             EngineRequest.ResolveGame(
-                "zero-mulligan", "shared", opened.Capability!, EngineDecision.Decline));
+                "zero-mulligan", "shared", opened.Capability!, TakeOnly(opened)));
         Assert.Null(forZero.Error);
         Assert.Null(forZero.Prompt);
 
@@ -611,7 +611,7 @@ public sealed class TransportTests
             server,
             EngineRequest.ResolveGame(
                 "steal-one", "shared", opened.Capability!, EngineDecision.Decline));
-        Assert.Equal("not_your_turn", forbidden.Error?.Code);
+        Assert.Equal("stale_decision", forbidden.Error?.Code);
 
         EngineResponse forOne = await ExchangeOverSocket(
             server, EngineRequest.SyncGame("sync-one", "shared", attached.Capability!));
@@ -627,10 +627,15 @@ public sealed class TransportTests
                 "one-mulligan",
                 "shared",
                 attached.Capability!,
-                EngineDecision.Decline,
+                TakeOnly(forOne),
                 expectedRevision: forOne.Revision));
         Assert.Null(afterOne.Error);
-        Assert.Null(afterOne.Prompt);
+        Assert.Equal(1, afterOne.Prompt?.Player);
+        Assert.All(afterOne.Prompt!.Affordances, option =>
+        {
+            Assert.Equal(Game.ActionVerb, option.Verb);
+            Assert.Equal(1, option.AnchorPlayer);
+        });
         EngineResponse resumedZero = await ExchangeOverSocket(
             server, EngineRequest.SyncGame("sync-zero", "shared", opened.Capability!));
         Assert.Equal(0, resumedZero.Prompt?.Player);
@@ -792,6 +797,10 @@ public sealed class TransportTests
         Assert.Single(
             Assert.IsType<WorldDescriptor>(response.World).Areas,
             area => area.Zone == "HandsArea" && area.Owner == seat).Cards;
+
+    private static EngineDecision TakeOnly(EngineResponse response) =>
+        new(Assert.Single(Assert.IsType<Marvel.Rules.Prompts.Prompt>(response.Prompt)
+            .Affordances).Id, []);
 
     private sealed class EchoEndpoint(
         EngineRequest expectedRequest,

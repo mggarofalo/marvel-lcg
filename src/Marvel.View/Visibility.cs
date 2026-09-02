@@ -28,6 +28,9 @@ public sealed class ViewScope
     /// <summary>Whether private information belonging to a seat may be returned.</summary>
     public bool Includes(int seat) => seats.Contains(seat);
 
+    /// <summary>The sole authorized seat, or null for a broader or empty scope.</summary>
+    internal int? SoleSeat => seats.Count == 1 ? seats.Single() : null;
+
     /// <summary>Whether this scope authorizes exactly one specified seat.</summary>
     internal bool IsExactly(int seat) => seats.Count == 1 && seats.Contains(seat);
 }
