@@ -426,7 +426,15 @@ public sealed class DecisionComposer
     }
 
     /// <summary>Defines one value requested by the selected cost.</summary>
-    public void Define(string name, long value) => values[name] = value;
+    public void Define(string name, long value)
+    {
+        values[name] = value;
+        if (UsesAutomaticResourceAllocation)
+        {
+            assignments.Clear();
+            ApplyAutomaticResourceAllocation();
+        }
+    }
 
     /// <summary>Builds the wire decline only when this prompt permits it.</summary>
     public bool TryDecline(out EngineDecision? decision, out string? error)

@@ -28,7 +28,19 @@ public sealed partial class DecisionPanel : VBoxContainer
     public event Action<DecisionProgressPresentation?>? ProgressChanged;
 
     /// <summary>Applies the current presentation-only desktop scale.</summary>
-    public void SetInterfaceScale(InterfaceScale scale) => interfaceScale = scale;
+    public void SetInterfaceScale(InterfaceScale scale)
+    {
+        if (interfaceScale == scale)
+        {
+            return;
+        }
+
+        interfaceScale = scale;
+        if (composer is not null)
+        {
+            Rebuild();
+        }
+    }
 
     /// <summary>Discards the old draft and renders the response's current prompt.</summary>
     public void Render(Prompt? prompt, WorldDescriptor currentWorld)
@@ -189,11 +201,14 @@ public sealed partial class DecisionPanel : VBoxContainer
 
         if (composer!.UsesAutomaticTargetSelection)
         {
-            AddChild(Text(
+            Label automatic = Text(
                 "TARGET  ·  " + string.Join(" → ", composer.Targets.Select(id =>
                     PromptPresentation.Describe(id, world!))) + "  ·  automatic",
                 GodotThemeVariations.StatusText,
-                wrap: true));
+                wrap: true);
+            automatic.Name = "AutomaticTargets";
+            BindAnchors(automatic, [.. composer.Targets]);
+            AddChild(automatic);
             return;
         }
 

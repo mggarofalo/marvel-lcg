@@ -62,6 +62,8 @@ func _run() -> void:
 	if not await _wait_for(func() -> bool: return _play().visible and _decision() != null):
 		_fail("the opened table never became visible")
 		return
+	if not await _live_scale_rebuilds_the_decision():
+		return
 	if not await _procedural_cards_are_safe():
 		return
 	if not await _board_layout_is_resolved():
@@ -365,6 +367,27 @@ func _visual_system_is_resolved() -> bool:
 			])
 			return false
 
+	return true
+
+
+func _live_scale_rebuilds_the_decision() -> bool:
+	var slider := _node("Toolbar/InterfaceScale") as HSlider
+	var original := slider.value
+	var choice := _first_enabled_choice()
+	if choice == null:
+		_fail("the live scale check has no decision action")
+		return false
+	var original_height := choice.custom_minimum_size.y
+	slider.value = 60.0 if original == 50.0 else 50.0
+	await process_frame
+	await process_frame
+	var resized_choice := _first_enabled_choice()
+	if resized_choice == null or resized_choice.custom_minimum_size.y == original_height:
+		_fail("changing scale did not rebuild the open decision controls")
+		return false
+	slider.value = original
+	await process_frame
+	await process_frame
 	return true
 
 

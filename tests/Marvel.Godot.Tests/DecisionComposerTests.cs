@@ -147,6 +147,41 @@ public sealed class DecisionComposerTests
     }
 
     [Fact]
+    public void AutomaticResourceAllocationTracksVariableCostChanges()
+    {
+        var composer = new DecisionComposer(Prompt(
+            cancellable: false,
+            new Affordance(
+                7,
+                "Play",
+                20,
+                0,
+                "Variable-cost action",
+                Costs:
+                [
+                    new CostOption(
+                        20,
+                        "X",
+                        Sources: [new ResourceSource(40, "YY")],
+                        Variables: [new VariableRequest("X", 1, 2)]),
+                ])));
+        composer.SelectAffordance(7);
+        composer.Define("X", 1);
+        composer.ToggleResource(40);
+
+        Assert.Single(composer.Assignments);
+
+        composer.Define("X", 2);
+
+        Assert.Equal(2, composer.Assignments.Count);
+        Assert.True(composer.TryBuild(out EngineDecision? decision, out string? error), error);
+        Assert.Equal([new ResourceAllocation(40, 0, "YY")], decision!.Allocations);
+
+        composer.Define("X", 1);
+        Assert.Single(composer.Assignments);
+    }
+
+    [Fact]
     public void UnobservedWildDeclarationIsSentWithoutAskingThePlayer()
     {
         var composer = new DecisionComposer(Prompt(
