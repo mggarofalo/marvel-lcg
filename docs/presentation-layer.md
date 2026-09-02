@@ -130,8 +130,12 @@ visibility configuration, durable sessions and shutdown behavior.
 
 The socket protocol uses source-generated JSON inside a 4-byte big-endian length
 frame. Frames are bounded. Unknown operations, unsupported protocol versions and
-unknown JSON members fail before they reach the engine. Protocol 7 adds the
-host revision that binds a decision to the prompt it answers. Protocol 6 added
+unknown JSON members fail before they reach the engine. Protocol 8 adds
+replay-verified undo and redo commands that name an expected revision and a
+retained history cursor. Each authorized game response carries only the cursor
+boundaries that capability may currently request; it does not expose journal
+decisions, information signals, or state digests. Protocol 7 added the host revision that binds a
+decision to the prompt it answers. Protocol 6 added
 the printed and live face facts used by procedural cards. Protocol 5 added per-target
 maximum occurrences to repeated target allocations, allowing clients to render
 indirect-damage capacities without deriving remaining hit points.

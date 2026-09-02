@@ -151,6 +151,27 @@ public sealed class TransportTests
     }
 
     [Fact]
+    public void HistoryCommandsHaveAnExplicitDirectionRevisionAndCursor()
+    {
+        EngineRequest undo = EngineRequest.UndoGame(
+            "undo", "game", "capability", cursor: 2, expectedRevision: 11);
+        EngineRequest redo = EngineRequest.RedoGame(
+            "redo", "game", "capability", cursor: 4, expectedRevision: 12);
+
+        EngineRequest undoAgain = EngineJson.ReadRequest(EngineJson.Write(undo));
+        EngineRequest redoAgain = EngineJson.ReadRequest(EngineJson.Write(redo));
+
+        Assert.Equal(EngineProtocol.Undo, undoAgain.Operation);
+        Assert.Equal(11, undoAgain.ExpectedRevision);
+        Assert.Equal(2, undoAgain.Cursor);
+        Assert.Null(undoAgain.Decision);
+        Assert.Equal(EngineProtocol.Redo, redoAgain.Operation);
+        Assert.Equal(12, redoAgain.ExpectedRevision);
+        Assert.Equal(4, redoAgain.Cursor);
+        Assert.Null(redoAgain.Decision);
+    }
+
+    [Fact]
     public void TheWireCarriesAFilteredWorldAndNeverAStateDigest()
     {
         var response = new EngineResponse(
@@ -195,7 +216,7 @@ public sealed class TransportTests
 
         var again = EngineJson.ReadResponse(EngineJson.Write(response));
 
-        Assert.Equal(7, again.Version);
+        Assert.Equal(8, again.Version);
         Assert.Collection(
             again.Events,
             happened => Assert.Equal(joined, Assert.IsType<PlayAreaJoined>(happened)),

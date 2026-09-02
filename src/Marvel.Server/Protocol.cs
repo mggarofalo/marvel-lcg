@@ -11,10 +11,10 @@ public static class EngineProtocol
     /// <summary>
     /// The only protocol version this host accepts. It includes independently
     /// scoped seat capabilities, play-area topology events, setup discovery,
-    /// per-target allocation capacities, procedural-card face facts, and
-    /// host revisions that bind decisions to prompts.
+    /// per-target allocation capacities, procedural-card face facts, host
+    /// revisions, and replay-verified history cursor commands.
     /// </summary>
-    public const int Version = 7;
+    public const int Version = 8;
 
     /// <summary>The largest request or game id accepted or echoed.</summary>
     public const int MaximumIdentifierLength = 256;
@@ -36,6 +36,12 @@ public static class EngineProtocol
 
     /// <summary>Applies one decision to an open game.</summary>
     public const string Resolve = "resolve";
+
+    /// <summary>Reconstructs the table at an earlier editable history boundary.</summary>
+    public const string Undo = "undo";
+
+    /// <summary>Reconstructs the table through retained inactive history.</summary>
+    public const string Redo = "redo";
 
     /// <summary>Releases an open game.</summary>
     public const string Close = "close";
@@ -97,19 +103,23 @@ public sealed record EngineDecision(
 /// <summary>One command sent through either engine transport.</summary>
 /// <param name="Version">The protocol version.</param>
 /// <param name="RequestId">An opaque client correlation id.</param>
-/// <param name="Operation"><c>setup</c>, <c>open</c>, <c>attach</c>, <c>sync</c>, <c>resolve</c>, or <c>close</c>.</param>
+/// <param name="Operation"><c>setup</c>, <c>open</c>, <c>attach</c>, <c>sync</c>, <c>resolve</c>, <c>undo</c>, <c>redo</c>, or <c>close</c>.</param>
 /// <param name="GameId">An opaque id chosen by the client for this game.</param>
 /// <param name="Capability">The server-issued session capability; absent only for <c>open</c>.</param>
 /// <param name="Game">Present only for <c>open</c>.</param>
 /// <param name="Decision">Present only for <c>resolve</c>.</param>
 /// <param name="ExpectedRevision">
-/// The host revision of the prompt answered by <c>resolve</c>. This is an
+/// The host revision of the prompt or history position being changed. This is an
 /// engine wire choice, not a game rule; it prevents an answer composed for an
 /// earlier prompt from being applied to a later prompt with reusable ids.
 /// </param>
 /// <param name="Viewer">
 /// What the opening client says it displays. The server's visibility policy is
 /// the authority; this assertion can never widen it.
+/// </param>
+/// <param name="Cursor">
+/// The desired active history-unit count for <c>undo</c> or <c>redo</c>.
+/// The cursor is a server ledger position, not a game rule.
 /// </param>
 public sealed record EngineRequest(
     int Version,
@@ -120,7 +130,8 @@ public sealed record EngineRequest(
     GameSpecification? Game = null,
     EngineDecision? Decision = null,
     ViewerClaim? Viewer = null,
-    long? ExpectedRevision = null)
+    long? ExpectedRevision = null,
+    int? Cursor = null)
 {
     /// <summary>Builds a read-only setup-discovery request.</summary>
     public static EngineRequest ReadSetup(string requestId) =>
@@ -160,6 +171,30 @@ public sealed record EngineRequest(
         new(EngineProtocol.Version, requestId, EngineProtocol.Sync, gameId,
             Capability: capability);
 
+    /// <summary>Builds a request to replace the live table with an earlier prefix.</summary>
+    public static EngineRequest UndoGame(
+        string requestId,
+        string gameId,
+        string capability,
+        int cursor,
+        long expectedRevision) =>
+        new(EngineProtocol.Version, requestId, EngineProtocol.Undo, gameId,
+            Capability: capability,
+            ExpectedRevision: expectedRevision,
+            Cursor: cursor);
+
+    /// <summary>Builds a request to restore retained history after an undo.</summary>
+    public static EngineRequest RedoGame(
+        string requestId,
+        string gameId,
+        string capability,
+        int cursor,
+        long expectedRevision) =>
+        new(EngineProtocol.Version, requestId, EngineProtocol.Redo, gameId,
+            Capability: capability,
+            ExpectedRevision: expectedRevision,
+            Cursor: cursor);
+
     /// <summary>Builds a close-game request for the current protocol.</summary>
     public static EngineRequest CloseGame(
         string requestId, string gameId, string capability) =>
@@ -173,6 +208,12 @@ public sealed record EngineError(string Code, string Message);
 
 /// <summary>A one-time bearer invitation to one server-authorized seat.</summary>
 public sealed record SeatInvitation(int Seat, string Invitation);
+
+/// <summary>Visibility-safe history boundaries currently editable by this capability.</summary>
+public sealed record HistoryDescriptor(
+    int Cursor,
+    IReadOnlyList<int> Undo,
+    IReadOnlyList<int> Redo);
 
 /// <summary>What the engine host returns after opening, resolving, or closing a game.</summary>
 /// <param name="Version">The protocol version.</param>
@@ -189,6 +230,10 @@ public sealed record SeatInvitation(int Seat, string Invitation);
 /// The host revision of the returned prompt and world. A resolve must echo it
 /// as <see cref="EngineRequest.ExpectedRevision"/>.
 /// </param>
+/// <param name="History">
+/// The replay boundaries this capability may currently request. It contains no
+/// decisions, card identities, digests, or information-frontier reasons.
+/// </param>
 public sealed record EngineResponse(
     int Version,
     string RequestId,
@@ -200,4 +245,5 @@ public sealed record EngineResponse(
     EngineError? Error = null,
     IReadOnlyList<SeatInvitation>? Invitations = null,
     SetupChoices? Setup = null,
-    long Revision = 0);
+    long Revision = 0,
+    HistoryDescriptor? History = null);

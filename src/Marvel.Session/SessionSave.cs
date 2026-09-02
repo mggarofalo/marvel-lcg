@@ -343,6 +343,30 @@ public static class SessionReplay
     }
 
     /// <summary>
+    /// Verifies the canonical save and reconstructs one retained unit boundary.
+    /// </summary>
+    /// <remarks>
+    /// History editing is a product operation. It replays from setup instead of
+    /// reversing rules mutations in place.
+    /// </remarks>
+    public static Game VerifyAtCursor(
+        SessionSave save,
+        SessionCompatibility expected,
+        Func<SessionSetup, ReplayOpenedGame> open,
+        int cursor)
+    {
+        Game current = Verify(save, expected, open);
+        if (cursor < 0 || cursor > save.Units.Count)
+        {
+            throw new SessionSaveException("history cursor is outside the retained trace");
+        }
+
+        return cursor == save.Cursor
+            ? current
+            : Replay(save, cursor, open, requireExposures: true).Game;
+    }
+
+    /// <summary>
     /// Replays the strict predecessor format and derives schema 2's knowledge records.
     /// </summary>
     public static SessionSave MigrateSchemaOne(
@@ -444,6 +468,13 @@ public static class SessionReplay
                         resolved.Events,
                         game.Pending));
                 decisionIndex++;
+            }
+
+            bool reachedBoundary = game.Pending is null || game.IsRootPrompt;
+            if ((unit.Status == "complete") != reachedBoundary)
+            {
+                throw new ReplayDivergenceException(
+                    $"unit {unitIndex} completion status diverged");
             }
 
             if (requireExposures)

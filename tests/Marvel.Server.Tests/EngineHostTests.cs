@@ -13,6 +13,334 @@ namespace Marvel.Server.Tests;
 public sealed class EngineHostTests
 {
     [Fact]
+    public void UndoAndRedoReplaceTheLiveGameByVerifiedReplayAndAdvanceRevision()
+    {
+        var store = new MemorySessionStore();
+        var host = new EngineHost(
+            DatasetGameFactory.Load(RepositoryPaths.Root),
+            new SequenceCapabilities("history-owner"),
+            store: store);
+        EngineResponse opened = host.Exchange(EngineRequest.OpenGame(
+            "open",
+            "history-table",
+            new GameSpecification("rhino", ["spider_man"], [], Seed: 73)));
+        EngineResponse kept = host.Exchange(EngineRequest.ResolveGame(
+            "keep",
+            "history-table",
+            RequiredCapability(opened),
+            TakeOnly(opened),
+            opened.Revision));
+
+        EngineResponse undone = host.Exchange(EngineRequest.UndoGame(
+            "undo", "history-table", RequiredCapability(opened),
+            cursor: 0, expectedRevision: kept.Revision));
+        SessionSave inactive = Assert.Single(store.Load()).Save;
+
+        Assert.Null(undone.Error);
+        Assert.Empty(undone.Events);
+        Assert.Equal(kept.Revision + 1, undone.Revision);
+        Assert.Equal(0, undone.History?.Cursor);
+        Assert.Empty(undone.History!.Undo);
+        Assert.Equal([1], undone.History.Redo);
+        Assert.Equal(0, inactive.Cursor);
+        Assert.Single(inactive.Units);
+        Assert.Equal(
+            EngineJson.Write(opened with
+            {
+                RequestId = "same",
+                Capability = null,
+                Invitations = null,
+                Revision = 0,
+                History = null,
+            }),
+            EngineJson.Write(undone with
+            {
+                RequestId = "same",
+                Capability = null,
+                Invitations = null,
+                Revision = 0,
+                History = null,
+            }));
+
+        EngineResponse stale = host.Exchange(EngineRequest.ResolveGame(
+            "stale", "history-table", RequiredCapability(opened),
+            new EngineDecision(Assert.IsType<Prompt>(kept.Prompt).Affordances[0].Id, []),
+            kept.Revision));
+        Assert.Equal("stale_decision", stale.Error?.Code);
+        EngineResponse staleRedo = host.Exchange(EngineRequest.RedoGame(
+            "stale-redo", "history-table", RequiredCapability(opened),
+            cursor: 1, expectedRevision: kept.Revision));
+        Assert.Equal("stale_history", staleRedo.Error?.Code);
+
+        var restarted = new EngineHost(
+            DatasetGameFactory.Load(RepositoryPaths.Root),
+            store: store);
+        EngineResponse redone = restarted.Exchange(EngineRequest.RedoGame(
+            "redo", "history-table", RequiredCapability(opened),
+            cursor: 1, expectedRevision: undone.Revision));
+        SessionSave active = Assert.Single(store.Load()).Save;
+
+        Assert.Null(redone.Error);
+        Assert.Empty(redone.Events);
+        Assert.Equal(undone.Revision + 1, redone.Revision);
+        Assert.Equal([0], redone.History?.Undo);
+        Assert.Empty(redone.History!.Redo);
+        Assert.Equal(1, active.Cursor);
+        Assert.Equal(
+            EngineJson.Write(kept with
+            {
+                RequestId = "same", Revision = 0, History = null,
+            }),
+            EngineJson.Write(redone with
+            {
+                RequestId = "same", Revision = 0, History = null,
+            }));
+    }
+
+    [Fact]
+    public void ANewDecisionAfterUndoTruncatesTheRedoSuffix()
+    {
+        var store = new MemorySessionStore();
+        var host = new EngineHost(
+            DatasetGameFactory.Load(RepositoryPaths.Root),
+            new SequenceCapabilities("branch-owner"),
+            store: store);
+        EngineResponse opened = host.Exchange(EngineRequest.OpenGame(
+            "open", "branch-table",
+            new GameSpecification("rhino", ["spider_man"], [], Seed: 73)));
+        EngineResponse kept = host.Exchange(EngineRequest.ResolveGame(
+            "keep", "branch-table", RequiredCapability(opened),
+            TakeOnly(opened), opened.Revision));
+        EngineResponse undone = host.Exchange(EngineRequest.UndoGame(
+            "undo", "branch-table", RequiredCapability(opened),
+            cursor: 0, expectedRevision: kept.Revision));
+        Prompt mulligan = Assert.IsType<Prompt>(undone.Prompt);
+        Affordance option = Assert.Single(mulligan.Affordances);
+        int card = Assert.IsType<TargetRequest>(option.Targets).Legal[0];
+
+        EngineResponse branched = host.Exchange(EngineRequest.ResolveGame(
+            "replace", "branch-table", RequiredCapability(opened),
+            new EngineDecision(option.Id, [card]), undone.Revision));
+        SessionSave save = Assert.Single(store.Load()).Save;
+        EngineResponse noRedo = host.Exchange(EngineRequest.RedoGame(
+            "redo", "branch-table", RequiredCapability(opened),
+            cursor: 1, expectedRevision: branched.Revision));
+
+        Assert.Null(branched.Error);
+        Assert.Equal(1, save.Cursor);
+        Assert.Single(save.Units);
+        Assert.Equal(1, save.EditFrontier);
+        Assert.Equal("history_direction", noRedo.Error?.Code);
+        Assert.Empty(branched.History!.Redo);
+    }
+
+    [Fact]
+    public void ACardPlayThatExposesNoNewInformationIsReversible()
+    {
+        var store = new MemorySessionStore();
+        var host = new EngineHost(
+            DatasetGameFactory.Load(RepositoryPaths.Root),
+            new SequenceCapabilities("card-play-owner"),
+            store: store);
+        EngineResponse opened = host.Exchange(EngineRequest.OpenGame(
+            "open", "card-play-history",
+            new GameSpecification("rhino", ["spider_man"], [], Seed: 73)));
+        EngineResponse beforePlay = host.Exchange(EngineRequest.ResolveGame(
+            "keep", "card-play-history", RequiredCapability(opened),
+            TakeOnly(opened), opened.Revision));
+        EngineDecision play = PayFirstPlayableCard(
+            Assert.IsType<Prompt>(beforePlay.Prompt));
+
+        EngineResponse played = host.Exchange(EngineRequest.ResolveGame(
+            "play", "card-play-history", RequiredCapability(opened),
+            play, beforePlay.Revision));
+        SessionSave committed = Assert.Single(store.Load()).Save;
+        JournalUnit playedUnit = committed.Units[^1];
+        EngineResponse undone = host.Exchange(EngineRequest.UndoGame(
+            "undo", "card-play-history", RequiredCapability(opened),
+            cursor: 1, expectedRevision: played.Revision));
+
+        Assert.Null(played.Error);
+        Assert.Equal("turn_action", playedUnit.Role);
+        Assert.Equal("complete", playedUnit.Status);
+        Assert.Empty(playedUnit.Exposures);
+        Assert.Null(undone.Error);
+        Assert.Equal(
+            EngineJson.Write(beforePlay with
+            {
+                RequestId = "same", Revision = 0, History = null,
+            }),
+            EngineJson.Write(undone with
+            {
+                RequestId = "same", Revision = 0, History = null,
+            }));
+    }
+
+    [Fact]
+    public void NewInformationAndAnotherSeatsHistoryExplainWhyUndoIsUnavailable()
+    {
+        var store = new MemorySessionStore();
+        var host = new EngineHost(
+            DatasetGameFactory.Load(RepositoryPaths.Root),
+            new SequenceCapabilities("seat-zero", "invite-one", "seat-one"),
+            new RestrictedVisibilityPolicy(0),
+            store);
+        EngineResponse opened = host.Exchange(EngineRequest.OpenGame(
+            "open", "bounded-history",
+            new GameSpecification(
+                "rhino", ["captain_marvel", "spider_man"], [], Seed: 73)));
+        EngineResponse attached = host.Exchange(EngineRequest.AttachGame(
+            "attach", "bounded-history", Assert.Single(opened.Invitations!).Invitation));
+        EngineResponse afterZero = host.Exchange(EngineRequest.ResolveGame(
+            "zero", "bounded-history", RequiredCapability(opened),
+            TakeOnly(opened), opened.Revision));
+        EngineResponse onePrompt = host.Exchange(EngineRequest.SyncGame(
+            "one-prompt", "bounded-history", RequiredCapability(attached)));
+        EngineResponse afterOne = host.Exchange(EngineRequest.ResolveGame(
+            "one", "bounded-history", RequiredCapability(attached),
+            TakeOnly(onePrompt), onePrompt.Revision));
+
+        EngineResponse otherSeat = host.Exchange(EngineRequest.UndoGame(
+            "other-seat", "bounded-history", RequiredCapability(opened),
+            cursor: 1, expectedRevision: afterOne.Revision));
+        EngineResponse undone = host.Exchange(EngineRequest.UndoGame(
+            "own", "bounded-history", RequiredCapability(attached),
+            cursor: 1, expectedRevision: afterOne.Revision));
+        EngineResponse converged = host.Exchange(EngineRequest.SyncGame(
+            "sync", "bounded-history", RequiredCapability(opened)));
+        EngineResponse otherRedo = host.Exchange(EngineRequest.RedoGame(
+            "other-redo", "bounded-history", RequiredCapability(opened),
+            cursor: 2, expectedRevision: undone.Revision));
+
+        Assert.Null(afterZero.Error);
+        Assert.Equal([0], host.Exchange(EngineRequest.SyncGame(
+            "zero-history", "bounded-history", RequiredCapability(opened)))
+            .History!.Undo);
+        Assert.Empty(onePrompt.History!.Undo);
+        Assert.Equal([1], afterOne.History?.Undo);
+        Assert.Equal("history_authority", otherSeat.Error?.Code);
+        Assert.Null(undone.Error);
+        Assert.Equal(undone.Revision, converged.Revision);
+        Assert.Equal("history_authority", otherRedo.Error?.Code);
+
+        Prompt current = Assert.IsType<Prompt>(undone.Prompt);
+        Affordance draw = Assert.Single(current.Affordances);
+        int card = Assert.IsType<TargetRequest>(draw.Targets).Legal[0];
+        EngineResponse revealed = host.Exchange(EngineRequest.ResolveGame(
+            "draw", "bounded-history", RequiredCapability(attached),
+            new EngineDecision(draw.Id, [card]), undone.Revision));
+        EngineResponse beyondFrontier = host.Exchange(EngineRequest.UndoGame(
+            "frontier", "bounded-history", RequiredCapability(attached),
+            cursor: 1, expectedRevision: revealed.Revision));
+
+        Assert.Null(revealed.Error);
+        Assert.Equal("history_frontier", beyondFrontier.Error?.Code);
+    }
+
+    [Fact]
+    public void FailedHistoryPersistenceLeavesThePriorLiveGameAuthoritative()
+    {
+        var memory = new MemorySessionStore();
+        var host = new EngineHost(
+            DatasetGameFactory.Load(RepositoryPaths.Root),
+            new SequenceCapabilities("atomic-owner"),
+            store: new FailingSessionStore(memory, failAtCommit: 3));
+        EngineResponse opened = host.Exchange(EngineRequest.OpenGame(
+            "open", "atomic-history",
+            new GameSpecification("rhino", ["spider_man"], [], Seed: 73)));
+        EngineResponse kept = host.Exchange(EngineRequest.ResolveGame(
+            "keep", "atomic-history", RequiredCapability(opened),
+            TakeOnly(opened), opened.Revision));
+
+        EngineResponse failed = host.Exchange(EngineRequest.UndoGame(
+            "undo", "atomic-history", RequiredCapability(opened),
+            cursor: 0, expectedRevision: kept.Revision));
+        EngineResponse current = host.Exchange(EngineRequest.SyncGame(
+            "sync", "atomic-history", RequiredCapability(opened)));
+
+        Assert.Equal("history_failed", failed.Error?.Code);
+        Assert.Equal(kept.Revision, current.Revision);
+        Assert.Equal(
+            EngineJson.Write(kept with { RequestId = "same" }),
+            EngineJson.Write(current with { RequestId = "same" }));
+        Assert.Equal(1, Assert.Single(memory.Load()).Save.Cursor);
+    }
+
+    [Fact]
+    public void OpenHistoryCannotBeEditedAndForgedCompletionFailsReplay()
+    {
+        var store = new MemorySessionStore();
+        var factory = DatasetGameFactory.Load(RepositoryPaths.Root);
+        var first = new EngineHost(
+            factory,
+            new SequenceCapabilities("open-unit-owner"),
+            store: store);
+        EngineResponse opened = first.Exchange(EngineRequest.OpenGame(
+            "open", "open-unit-history",
+            new GameSpecification("rhino", ["captain_marvel"], [], Seed: 73)));
+        EngineResponse kept = first.Exchange(EngineRequest.ResolveGame(
+            "keep", "open-unit-history", RequiredCapability(opened),
+            TakeOnly(opened), opened.Revision));
+        Affordance changeForm = Assert.Single(kept.Prompt!.Affordances, option =>
+            string.Equals(option.Verb, Game.ChangeForm, StringComparison.Ordinal));
+        EngineResponse changed = first.Exchange(EngineRequest.ResolveGame(
+            "form", "open-unit-history", RequiredCapability(opened),
+            new EngineDecision(changeForm.Id, []), kept.Revision));
+        Affordance playEighteen = Assert.Single(changed.Prompt!.Affordances, option =>
+            string.Equals(option.Verb, "Play", StringComparison.Ordinal)
+            && option.AnchorId == 18);
+        EngineResponse firstPlay = first.Exchange(EngineRequest.ResolveGame(
+            "first-play", "open-unit-history", RequiredCapability(opened),
+            new EngineDecision(
+                playEighteen.Id,
+                [1],
+                [16],
+                Allocations: [new ResourceAllocation(16, 0, "YY")]),
+            changed.Revision));
+        Affordance mariaHill = Assert.Single(firstPlay.Prompt!.Affordances, option =>
+            string.Equals(option.Verb, "Play", StringComparison.Ordinal)
+            && option.AnchorId == 24);
+        EngineResponse responseWindow = first.Exchange(EngineRequest.ResolveGame(
+            "maria-hill", "open-unit-history", RequiredCapability(opened),
+            new EngineDecision(
+                mariaHill.Id,
+                [1],
+                [30, 26],
+                Allocations:
+                [
+                    new ResourceAllocation(30, 0, "B"),
+                    new ResourceAllocation(26, 0, "R"),
+                ]),
+            firstPlay.Revision));
+
+        StoredSession stored = Assert.Single(store.Load());
+        JournalUnit unit = stored.Save.Units[^1];
+        EngineResponse refused = first.Exchange(EngineRequest.UndoGame(
+            "undo", "open-unit-history", RequiredCapability(opened),
+            cursor: 3, expectedRevision: responseWindow.Revision));
+
+        Assert.Null(responseWindow.Error);
+        Assert.Equal("open", unit.Status);
+        Assert.Empty(unit.Exposures);
+        Assert.Empty(responseWindow.History!.Undo);
+        Assert.Equal("history_open", refused.Error?.Code);
+
+        store.Commit(stored with
+        {
+            Save = stored.Save with
+            {
+                Units =
+                [
+                    .. stored.Save.Units.Take(stored.Save.Units.Count - 1),
+                    unit with { Status = "complete" },
+                ],
+            },
+        });
+        Assert.Throws<ReplayDivergenceException>(() =>
+            new EngineHost(factory, store: store));
+    }
+
+    [Fact]
     public void ADecisionForAnEarlierRevisionIsRejectedWithoutAdvancingTheGame()
     {
         var host = new EngineHost(
@@ -331,7 +659,7 @@ public sealed class EngineHostTests
             1, "old-client", EngineProtocol.Open, "game",
             Game: new GameSpecification("rhino", ["spider_man"], null, 1)));
 
-        Assert.Equal(7, EngineProtocol.Version);
+        Assert.Equal(8, EngineProtocol.Version);
         Assert.Equal(EngineProtocol.Version, rejected.Version);
         Assert.Equal("unsupported_version", rejected.Error?.Code);
         Assert.Equal(0, factory.Calls);
@@ -852,6 +1180,41 @@ public sealed class EngineHostTests
     private static EngineDecision TakeOnly(EngineResponse response) =>
         new(Assert.Single(Assert.IsType<Marvel.Rules.Prompts.Prompt>(response.Prompt)
             .Affordances).Id, []);
+
+    private static EngineDecision PayFirstPlayableCard(Prompt prompt)
+    {
+        foreach (Affordance option in prompt.Affordances.Where(option =>
+                     string.Equals(option.Verb, "Play", StringComparison.Ordinal)))
+        {
+            IReadOnlyList<int> targets = option.Targets is null
+                ? []
+                : option.Targets.Legal.Take(option.Targets.Min).ToList();
+            foreach (CostOption cost in option.CostOptions.Where(cost =>
+                         cost.Target == 0
+                         || cost.Target == option.AnchorId
+                         || targets.Contains(cost.Target)))
+            {
+                var values = cost.VariableRequests.ToDictionary(
+                    request => request.Name,
+                    request => request.Min,
+                    StringComparer.Ordinal);
+                int[] generators = cost.Generators
+                    .Select(generator => generator.Effect)
+                    .Distinct()
+                    .ToArray();
+                IReadOnlyList<ResourceAllocation>? allocations =
+                    ResourcePayment.Allocate(cost, generators, values);
+                if (allocations is not null
+                    && ResourcePayment.Allows(cost, generators, values, allocations))
+                {
+                    return new EngineDecision(
+                        option.Id, targets, generators, values, allocations);
+                }
+            }
+        }
+
+        throw new Xunit.Sdk.XunitException("the deterministic hand has no payable card play");
+    }
 
     private sealed class UnusedFactory : IGameFactory
     {
