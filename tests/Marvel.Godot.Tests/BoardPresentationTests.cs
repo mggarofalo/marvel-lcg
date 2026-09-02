@@ -158,6 +158,78 @@ public sealed class BoardPresentationTests
             card => card.Title == "Swinging Web Kick");
     }
 
+    [Fact]
+    public void ScenarioAndTwoPlayerLanesFollowSeatOrderWithoutReorderingTheirAreas()
+    {
+        WorldDescriptor world = World(
+            areas:
+            [
+                Area(10, "SecondPlayerArea", 1),
+                Area(2, "VillainArea", -1),
+                Area(8, "FirstPlayerArea", 0),
+                Area(11, "SecondPlayerHandArea", 1),
+                Area(99, "FutureQuantumArea", 7),
+                Area(3, "EncounterDeck", -1),
+            ],
+            players:
+            [
+                new PlayerDescriptor(0, "Peter Parker", false),
+                new PlayerDescriptor(1, "Carol Danvers", false),
+            ]);
+
+        BoardPresentation board = BoardPresentation.From(world);
+
+        Assert.Equal(
+            ["scenario", "player-0", "player-1", "other"],
+            board.Lanes.Select(lane => lane.Key));
+        Assert.Equal([2, 3], board.Lanes[0].Areas.Select(area => area.Id));
+        Assert.Equal([8], board.Lanes[1].Areas.Select(area => area.Id));
+        Assert.Equal([10, 11], board.Lanes[2].Areas.Select(area => area.Id));
+        Assert.Equal([99], board.Lanes[3].Areas.Select(area => area.Id));
+        Assert.Equal(
+            world.Areas.Select(area => area.Id).Order(),
+            board.Lanes.SelectMany(lane => lane.Areas).Select(area => area.Id).Order());
+    }
+
+    [Fact]
+    public void HostedAreasFollowTheirVisibleHostAcrossSeatCoordinates()
+    {
+        WorldDescriptor world = World(
+            areas:
+            [
+                Area(20, "AdditionalDeck", 1, [Readable(8, "Nested Host")], host: 7),
+                Area(30, "NestedArea", 1, host: 8),
+                Area(10, "VillainArea", -1, [Readable(7, "Rhino")]),
+            ],
+            players: [new PlayerDescriptor(1, "Carol Danvers", false)]);
+
+        BoardLanePresentation lane = Assert.Single(BoardPresentation.From(world).Lanes);
+
+        Assert.Equal("scenario", lane.Key);
+        Assert.Equal([10, 20, 30], lane.Areas.Select(area => area.Id));
+        Assert.Equal([0, 1, 2], lane.Areas.Select(area => area.Depth));
+        Assert.Equal("Rhino", lane.Areas[1].HostedBy);
+        Assert.Equal("Nested Host", lane.Areas[2].HostedBy);
+    }
+
+    [Fact]
+    public void BrokenAndCyclicHostsRemainVisibleOnceInTheFallbackLane()
+    {
+        WorldDescriptor world = World(
+            areas:
+            [
+                Area(1, "FutureA", 0, [Readable(10, "A")], host: 20),
+                Area(2, "FutureB", 0, [Readable(20, "B")], host: 10),
+                Area(3, "Orphan", 0, host: 999),
+            ]);
+
+        BoardLanePresentation lane = Assert.Single(BoardPresentation.From(world).Lanes);
+
+        Assert.Equal("other", lane.Key);
+        Assert.Equal([1, 2, 3], lane.Areas.Select(area => area.Id));
+        Assert.Equal(3, lane.Areas.Select(area => area.Id).Distinct().Count());
+    }
+
     private static WorldDescriptor World(
         IReadOnlyList<AreaDescriptor> areas,
         IReadOnlyList<PlayerDescriptor>? players = null) =>

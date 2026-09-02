@@ -12,7 +12,8 @@ public sealed partial class Main : Control
     private readonly List<string> scenarioNames = [];
     private readonly List<ScenarioSetupChoice> visibleModes = [];
     private Control board = null!;
-    private GridContainer boardAreas = null!;
+    private VBoxContainer boardAreas = null!;
+    private HSplitContainer playLayout = null!;
     private BoardRenderResult? boardRender;
     private Label briefingHero = null!;
     private Label briefingMode = null!;
@@ -54,6 +55,7 @@ public sealed partial class Main : Control
         GetWindow().MinSize = new Vector2I(1040, 680);
         BindNodes();
         ApplyInterfaceScale(scale);
+        Resized += ApplyResponsivePlayLayout;
         hero.ItemSelected += _ => RefreshBriefing();
         scenario.ItemSelected += OnScenarioSelected;
         mode.ItemSelected += _ =>
@@ -90,7 +92,8 @@ public sealed partial class Main : Control
         title = GetNode<Label>($"{content}/Title");
         setupPanel = GetNode<Control>($"{content}/Setup");
         board = GetNode<Control>($"{content}/Play");
-        boardAreas = GetNode<GridContainer>($"{content}/Play/Board/Margin/Areas");
+        playLayout = GetNode<HSplitContainer>($"{content}/Play");
+        boardAreas = GetNode<VBoxContainer>($"{content}/Play/Board/Margin/Areas");
         decisions = GetNode<DecisionPanel>(
             $"{content}/Play/Prompt/Margin/Stack/DecisionScroll/Decision");
         eventLog = GetNode<RichTextLabel>(
@@ -111,6 +114,15 @@ public sealed partial class Main : Control
             $"{content}/Setup/Briefing/Frame/Copy/Modular");
         status = GetNode<Label>($"{content}/Status/Text");
         statusPanel = GetNode<PanelContainer>($"{content}/Status");
+        CallDeferred(MethodName.ApplyResponsivePlayLayout);
+    }
+
+    private void ApplyResponsivePlayLayout()
+    {
+        // This is a presentation choice: keep the prompt rail stable and give
+        // the scrollable table every remaining pixel at desktop window sizes.
+        float promptWidth = Math.Clamp(Size.X * 0.30f, 330f, 440f);
+        playLayout.SplitOffsets = [Math.Max(480, (int)(Size.X - promptWidth - 120f))];
     }
 
     private async Task LoadSetupAsync()
