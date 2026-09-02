@@ -622,7 +622,38 @@ public sealed partial class DecisionPanel : VBoxContainer
                 .FirstOrDefault(button => !button.Disabled);
         }
 
-        candidate?.GrabFocus();
+        if (candidate is not null)
+        {
+            candidate.GrabFocus();
+            Callable.From(() =>
+            {
+                EnsureFocusedControlVisible(candidate);
+                // Nested scroll containers settle from the decision rail out
+                // to the page. A second layout pass lets the outer rail use
+                // the position produced by the inner one.
+                Callable.From(() => EnsureFocusedControlVisible(candidate)).CallDeferred();
+            }).CallDeferred();
+        }
+    }
+
+    private static void EnsureFocusedControlVisible(Control control)
+    {
+        Node? ancestor = control.GetParent();
+        while (ancestor is not null)
+        {
+            if (ancestor is ScrollContainer scroll)
+            {
+                scroll.EnsureControlVisible(control);
+                if (scroll.Name == "DecisionScroll")
+                {
+                    // Focus rings expand outside the button geometry. Keep the
+                    // wrapped action label anchored at its readable left edge.
+                    scroll.ScrollHorizontal = 0;
+                }
+            }
+
+            ancestor = ancestor.GetParent();
+        }
     }
 
     private string? FocusKey(Control focused)

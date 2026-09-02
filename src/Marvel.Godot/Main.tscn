@@ -307,6 +307,7 @@ autowrap_mode = 2
 layout_mode = 2
 
 [node name="DecisionScroll" type="ScrollContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
+custom_minimum_size = Vector2(0, 132)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3

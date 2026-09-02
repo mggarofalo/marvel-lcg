@@ -41,6 +41,9 @@ func _run() -> void:
 	var seed := _node("Setup/Selections/Fields/Grid/Seed") as LineEdit
 	seed.text = "1"
 	seed.text_changed.emit(seed.text)
+	var configured_motion := _node("Play/Prompt/Margin/Stack/EventHeader/Motion") as CheckButton
+	configured_motion.button_pressed = motion_enabled
+	configured_motion.toggled.emit(motion_enabled)
 	await process_frame
 
 	var start := _button_named("Start game")
@@ -66,6 +69,7 @@ func _run() -> void:
 	var saw_pass := false
 	var saw_end_phase := false
 	var saw_nonblocking_motion := false
+	var tested_active_motion_toggle := false
 	var captured_villain_phase := false
 	var decisions := 0
 	while not _is_complete():
@@ -110,6 +114,19 @@ func _run() -> void:
 		if motion_enabled and not event_skip.disabled \
 				and (_is_complete() or _first_enabled_choice() != null):
 			saw_nonblocking_motion = true
+			if not tested_active_motion_toggle:
+				var motion_history := (_node("Play/Prompt/Margin/Stack/EventLog") as RichTextLabel).text
+				var motion := _node("Play/Prompt/Margin/Stack/EventHeader/Motion") as CheckButton
+				motion.button_pressed = false
+				motion.toggled.emit(false)
+				await process_frame
+				if not event_skip.disabled or motion_history != \
+						(_node("Play/Prompt/Margin/Stack/EventLog") as RichTextLabel).text:
+					_fail("disabling active motion did not settle without changing history")
+					return
+				motion.button_pressed = true
+				motion.toggled.emit(true)
+				tested_active_motion_toggle = true
 		if not motion_enabled and not _disabled_motion_is_settled(event_skip):
 			return
 		var history_text := (_node("Play/Prompt/Margin/Stack/EventLog") as RichTextLabel) \
@@ -127,6 +144,9 @@ func _run() -> void:
 		return
 	if motion_enabled and not saw_nonblocking_motion:
 		_fail("the journey never exposed an operable prompt while event motion was active")
+		return
+	if motion_enabled and not tested_active_motion_toggle:
+		_fail("the journey never disabled event motion during active playback")
 		return
 	if not motion_enabled and saw_nonblocking_motion:
 		_fail("the motion-disabled journey exposed active event playback")
@@ -225,7 +245,7 @@ func _visual_system_is_resolved() -> bool:
 		await process_frame
 		await process_frame
 		var page_rect := page_scroll.get_global_rect().intersection(
-			Rect2(Vector2.ZERO, Vector2(root.size)))
+			Rect2(Vector2.ZERO, _viewport_size()))
 		var control_rect := control.get_global_rect()
 		if control_rect.end.y > page_rect.end.y:
 			page_scroll.scroll_vertical += ceili(control_rect.end.y - page_rect.end.y)
@@ -384,14 +404,6 @@ func _board_layout_is_resolved() -> bool:
 	if board.get_global_rect().intersects(prompt.get_global_rect()):
 		_fail("the prompt rail overlaps the board")
 		return false
-	var page_scroll := main.get_node("Margin") as ScrollContainer
-	if page_scroll.scroll_horizontal != 0 or page_scroll.scroll_vertical != 0:
-		_fail("the table inherited the setup page's scroll position: %d/%d follow=%s" % [
-			page_scroll.scroll_horizontal,
-			page_scroll.scroll_vertical,
-			page_scroll.follow_focus,
-		])
-		return false
 	return true
 
 
@@ -429,6 +441,21 @@ func _keyboard_selection_is_operable() -> bool:
 	if restored == null or restored.name != focus_name or not _decision().is_ancestor_of(restored):
 		_fail("keyboard focus was lost when the selected decision control rebuilt")
 		return false
+	if not await _wait_for(func() -> bool: return _focused_control_is_visible(restored)):
+		var focused_scroll := _node("Play/Prompt/Margin/Stack/DecisionScroll") as ScrollContainer
+		var page_scroll := main.get_node("Margin") as ScrollContainer
+		_fail("keyboard focus moved outside the visible viewport: control=%s decision=%s page=%s root=%s scroll=%d/%d" % [
+			restored.get_global_rect(),
+			focused_scroll.get_global_rect(),
+			page_scroll.get_global_rect(),
+			_viewport_size(),
+			focused_scroll.scroll_vertical,
+			page_scroll.scroll_vertical,
+		])
+		return false
+	if decision_scroll.scroll_horizontal != 0:
+		_fail("keyboard focus horizontally clipped the selected decision label")
+		return false
 	if "SELECTED" not in restored.text:
 		_fail("ui_accept did not select the focused decision action")
 		return false
@@ -441,6 +468,23 @@ func _keyboard_selection_is_operable() -> bool:
 	if not await _focused_board_area_is_visible():
 		return false
 	return true
+
+
+func _focused_control_is_visible(control: Control) -> bool:
+	var visible_rect := control.get_global_rect().intersection(Rect2(Vector2.ZERO, _viewport_size()))
+	var ancestor := control.get_parent()
+	while ancestor != null:
+		if ancestor is ScrollContainer:
+			visible_rect = visible_rect.intersection(ancestor.get_global_rect())
+		ancestor = ancestor.get_parent()
+	var scale := OS.get_environment("MARVEL_UI_SCALE")
+	var expected := 66 if scale == "extra-large" else 55 if scale == "large" else 44
+	return visible_rect.size.x >= expected and visible_rect.size.y >= expected
+
+
+func _viewport_size() -> Vector2:
+	return Vector2(root.content_scale_size) if root.content_scale_size != Vector2i.ZERO \
+		else Vector2(root.size)
 
 
 func _focused_board_area_is_visible() -> bool:
@@ -488,13 +532,16 @@ func _event_presentation_is_nonblocking() -> bool:
 			or skip.custom_minimum_size.y < expected_height:
 		_fail("event presentation controls miss the pointer-target floor")
 		return false
+	if motion.button_pressed != motion_enabled:
+		_fail("the configured motion preference was not applied before the game opened")
+		return false
 	var action := _first_enabled_choice()
 	if action == null or action.disabled:
 		_fail("event presentation blocked the current engine decision")
 		return false
 
 	var history := log.text
-	if not skip.disabled:
+	if motion_enabled and not skip.disabled:
 		skip.pressed.emit()
 		await process_frame
 	if not skip.disabled or log.text != history:
@@ -505,12 +552,6 @@ func _event_presentation_is_nonblocking() -> bool:
 		_fail("skipping motion did not settle on the authoritative snapshot")
 		return false
 
-	motion.button_pressed = motion_enabled
-	motion.toggled.emit(motion_enabled)
-	await process_frame
-	if log.text != history:
-		_fail("selecting the smoke motion preference changed event history")
-		return false
 	if not motion_enabled and not _disabled_motion_is_settled(skip):
 		return false
 	return true
@@ -539,11 +580,11 @@ func _capture_checkpoint(checkpoint: String) -> bool:
 		return false
 
 	var colors: Dictionary = {}
-	for x_step in range(1, 8):
-		for y_step in range(1, 8):
-			var pixel := image.get_pixel(
-				int(image.get_width() * x_step / 8.0),
-				int(image.get_height() * y_step / 8.0))
+	var sample := image.duplicate()
+	sample.resize(32, 18, Image.INTERPOLATE_NEAREST)
+	for x_step in sample.get_width():
+		for y_step in sample.get_height():
+			var pixel: Color = sample.get_pixel(x_step, y_step)
 			colors[pixel.to_html()] = true
 	if colors.size() < 6:
 		_fail("visual checkpoint '%s' is blank or materially unrendered" % checkpoint)
