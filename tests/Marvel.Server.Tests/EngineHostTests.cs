@@ -477,11 +477,15 @@ public sealed class EngineHostTests
         Assert.Equal("stale_decision", staleActive.Error?.Code);
     }
 
-    [Fact]
-    public void ACompetingOffTurnActionIsStaleEvenWhenTheWinningCommandRemovesIt()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ACompetingOffTurnActionIsStaleEvenWhenTheWinningCommandRemovesIt(
+        bool winningCommandEndsGame)
     {
         var factory = new VanishingOffTurnActionFactory(
-            DatasetGameFactory.Load(RepositoryPaths.Root));
+            DatasetGameFactory.Load(RepositoryPaths.Root),
+            winningCommandEndsGame);
         var host = new EngineHost(
             factory,
             new SequenceCapabilities("seat-zero", "invite-one", "seat-one"),
@@ -521,6 +525,7 @@ public sealed class EngineHostTests
 
         Assert.Null(won.Error);
         Assert.Equal(0, factory.Game.State.Seats[1].IdentityCard.Damage);
+        Assert.Equal(winningCommandEndsGame, won.Prompt is null);
         Assert.Equal("stale_decision", lost.Error?.Code);
         EngineResponse current = host.Exchange(EngineRequest.SyncGame(
             "current", "race", RequiredCapability(attached)));
@@ -608,7 +613,9 @@ public sealed class EngineHostTests
         }
     }
 
-    private sealed class VanishingOffTurnActionFactory(IGameFactory inner) : IGameFactory
+    private sealed class VanishingOffTurnActionFactory(
+        IGameFactory inner,
+        bool winningCommandEndsGame) : IGameFactory
     {
         public Card ActiveSource { get; private set; } = null!;
 
@@ -630,12 +637,18 @@ public sealed class EngineHostTests
             Game = Game.Begin(
                 world,
                 world.Facts,
-                new CrossSeatHealingActions(ActiveSource, OffTurnSource));
+                new CrossSeatHealingActions(
+                    ActiveSource,
+                    OffTurnSource,
+                    winningCommandEndsGame));
             return opened with { Game = Game };
         }
     }
 
-    private sealed class CrossSeatHealingActions(Card active, Card offTurn)
+    private sealed class CrossSeatHealingActions(
+        Card active,
+        Card offTurn,
+        bool winningCommandEndsGame)
         : NoCardAbilities
     {
         public override IReadOnlyList<PendingAbility> Actions(World world, int player) =>
@@ -674,6 +687,10 @@ public sealed class EngineHostTests
                     trigger: "test",
                     verb: Game.ActionVerb,
                     events);
+                if (winningCommandEndsGame)
+                {
+                    world.Finish(Outcome.PlayersWin);
+                }
             }
 
             return events;

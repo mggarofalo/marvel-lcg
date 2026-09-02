@@ -381,11 +381,6 @@ public sealed class EngineHost : IEngineEndpoint
             return Failed(request, "session_not_found", "the session capability is not valid");
         }
 
-        if (access.Session.Game.Pending is not { } pending)
-        {
-            return Failed(request, "not_your_turn", "this capability cannot answer the pending prompt");
-        }
-
         if (request.Decision.Targets is null)
         {
             return Failed(request, "invalid_request", "decision.targets is required");
@@ -397,6 +392,11 @@ public sealed class EngineHost : IEngineEndpoint
                 request,
                 "stale_decision",
                 "the decision was composed for an earlier table revision");
+        }
+
+        if (access.Session.Game.Pending is not { } pending)
+        {
+            return Failed(request, "not_your_turn", "this capability cannot answer the pending prompt");
         }
 
         Decision decision = request.Decision.ToDomain();
