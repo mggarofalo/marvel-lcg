@@ -662,7 +662,7 @@ public sealed partial class DecisionPanel : VBoxContainer
         return FindChild(name, recursive: true, owned: false) switch
         {
             BaseButton { Disabled: false } button => button,
-            SpinBox { Editable: true } spin => spin,
+            SpinBox { Editable: true } spin => spin.GetLineEdit(),
             LineEdit { Editable: true } line => line,
             _ => null,
         };
