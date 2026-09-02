@@ -15,12 +15,15 @@ public sealed class JournalRecordsTests
         var original = Prompt(
             new Affordance(10, "Action", 7, 1, "Choose"),
             new Affordance(11, "Action", 7, 1, "Choose"));
-        var recorded = DurableDecision.From(original, Decision.Take(11));
+        var recorded = DurableDecision.From(1, original, Decision.Take(11));
         var replayed = Prompt(
             new Affordance(110, "Action", 7, 1, "Choose"),
             new Affordance(111, "Action", 7, 1, "Choose"));
 
         Assert.Equal(111, recorded.Resolve(replayed).Affordance);
+        Assert.Equal(1, DurableDecision.SimulationActor(original, Decision.Take(11)));
+        Assert.Throws<ReplayDivergenceException>(() =>
+            (recorded with { Actor = 0 }).Resolve(replayed));
         string json = JsonSerializer.Serialize(recorded, JournalJson.Options);
         Assert.DoesNotContain("affordance", json, StringComparison.OrdinalIgnoreCase);
     }
@@ -31,7 +34,7 @@ public sealed class JournalRecordsTests
         var original = Prompt(
             new Affordance(10, "Action", 7, 0, "Choose", Illegal: "blocked"),
             new Affordance(11, "Action", 7, 0, "Choose"));
-        var recorded = DurableDecision.From(original, Decision.Take(11));
+        var recorded = DurableDecision.From(0, original, Decision.Take(11));
         var replayed = Prompt(new Affordance(111, "Action", 7, 0, "Choose"));
 
         Assert.Equal(0, recorded.Selector.Occurrence);
@@ -60,7 +63,7 @@ public sealed class JournalRecordsTests
             new Dictionary<string, long>(StringComparer.Ordinal),
             [new ResourceAllocation(8, 0, "BY")]);
 
-        var recorded = DurableDecision.From(asked, input);
+        var recorded = DurableDecision.From(1, asked, input);
         var resolved = recorded.Resolve(asked);
 
         Assert.Equal(1, recorded.Actor);
@@ -77,13 +80,13 @@ public sealed class JournalRecordsTests
     [Fact]
     public void ActorSelectorAndAnswerAreRejectedBeforeTheyBecomeAnEngineDecision()
     {
-        var asked = Prompt(new Affordance(1, "Action", 7, 0, "Choose"));
-        var recorded = DurableDecision.From(asked, Decision.Take(1));
+        var asked = Prompt(new Affordance(1, "Play", 7, 0, "Choose"));
+        var recorded = DurableDecision.From(0, asked, Decision.Take(1));
 
         Assert.Throws<ReplayDivergenceException>(() =>
             recorded.Resolve(asked with { Player = 1 }));
         Assert.Throws<ReplayDivergenceException>(() =>
-            recorded.Resolve(Prompt(new Affordance(2, "Action", 8, 0, "Choose"))));
+            recorded.Resolve(Prompt(new Affordance(2, "Play", 8, 0, "Choose"))));
         Assert.Throws<ReplayDivergenceException>(() =>
             new DurableDecision(
                 0,
@@ -93,6 +96,18 @@ public sealed class JournalRecordsTests
                 new Dictionary<string, long>(StringComparer.Ordinal),
                 [new ResourceAllocation(1, 0, "M")])
             .Resolve(asked));
+    }
+
+    [Fact]
+    public void DeclineRequiresThePromptPlayerAndACancellablePrompt()
+    {
+        var mandatory = Prompt(new Affordance(1, "Action", 7, 0, "Required"));
+        var decline = DurableDecision.From(0, mandatory, Decision.Decline);
+
+        Assert.Throws<ReplayDivergenceException>(() => decline.Resolve(mandatory));
+        Assert.Throws<ReplayDivergenceException>(() =>
+            (decline with { Actor = 1 }).Resolve(mandatory with { Cancellable = true }));
+        Assert.True(decline.Resolve(mandatory with { Cancellable = true }).IsDecline);
     }
 
     [Fact]

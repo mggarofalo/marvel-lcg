@@ -125,6 +125,7 @@ public sealed record DecisionSelector(
 
     /// <summary>Resolves and validates a recorded answer against a fresh prompt.</summary>
     public Decision Resolve(
+        int actor,
         Prompt prompt,
         IReadOnlyList<int> targets,
         IReadOnlyList<int> resources,
@@ -139,6 +140,19 @@ public sealed record DecisionSelector(
 
         if (Decline)
         {
+            if (actor != prompt.Player)
+            {
+                throw new ReplayDivergenceException(
+                    $"prompt '{prompt.Label}' belongs to player {prompt.Player}, not recorded "
+                    + $"player {actor}");
+            }
+
+            if (!prompt.Cancellable)
+            {
+                throw new ReplayDivergenceException(
+                    $"prompt '{prompt.Label}' cannot be declined");
+            }
+
             if (targets.Count > 0 || resources.Count > 0 || values.Count > 0
                 || allocations.Count > 0)
             {
@@ -164,6 +178,14 @@ public sealed record DecisionSelector(
         }
 
         var selected = exact[Occurrence];
+        int expectedActor = ActingSeat(prompt, selected);
+        if (actor != expectedActor)
+        {
+            throw new ReplayDivergenceException(
+                $"'{selected.Label}' belongs to player {expectedActor}, not recorded "
+                + $"player {actor}");
+        }
+
         if (selected.Targets is null ? targets.Count > 0 : !selected.Targets.Allows(targets))
         {
             throw new ReplayDivergenceException(
@@ -194,6 +216,12 @@ public sealed record DecisionSelector(
 
         return Decision.Take(selected.Id, targets, resources, values, allocations);
     }
+
+    internal static int ActingSeat(Prompt prompt, Affordance selected) =>
+        string.Equals(selected.Verb, Game.ActionVerb, StringComparison.Ordinal)
+            && selected.AnchorPlayer >= 0
+            ? selected.AnchorPlayer
+            : prompt.Player;
 }
 
 /// <summary>One complete, ordered answer that can be resolved against a fresh prompt.</summary>
@@ -206,12 +234,12 @@ public sealed record DurableDecision(
     IReadOnlyList<ResourceAllocation> Allocations)
 {
     /// <summary>Captures the prompt-authorized actor and every ordered answer field.</summary>
-    public static DurableDecision From(Prompt prompt, Decision decision)
+    public static DurableDecision From(int actor, Prompt prompt, Decision decision)
     {
         ArgumentNullException.ThrowIfNull(prompt);
         ArgumentNullException.ThrowIfNull(decision);
         return new(
-            prompt.Player,
+            actor,
             DecisionSelector.From(prompt, decision),
             [.. decision.Targets],
             [.. decision.Spent],
@@ -223,14 +251,50 @@ public sealed record DurableDecision(
     public Decision Resolve(Prompt prompt)
     {
         ArgumentNullException.ThrowIfNull(prompt);
-        if (prompt.Player != Actor)
+        return Selector.Resolve(Actor, prompt, Targets, Resources, Values, Allocations);
+    }
+
+    /// <summary>
+    /// Derives the acting seat for a trusted simulation decision. A server
+    /// instead records its authenticated capability seat explicitly.
+    /// </summary>
+    public static int SimulationActor(Prompt prompt, Decision decision)
+    {
+        ArgumentNullException.ThrowIfNull(prompt);
+        ArgumentNullException.ThrowIfNull(decision);
+        if (decision.IsDecline)
         {
-            throw new ReplayDivergenceException(
-                $"prompt '{prompt.Label}' belongs to player {prompt.Player}, not recorded "
-                + $"player {Actor}");
+            return prompt.Player;
         }
 
-        return Selector.Resolve(prompt, Targets, Resources, Values, Allocations);
+        var selector = DecisionSelector.From(prompt, decision);
+        return SimulationActor(prompt, selector);
+    }
+
+    /// <summary>Derives the acting seat from a trusted simulation selector.</summary>
+    public static int SimulationActor(Prompt prompt, DecisionSelector selector)
+    {
+        ArgumentNullException.ThrowIfNull(prompt);
+        ArgumentNullException.ThrowIfNull(selector);
+        if (selector.Decline)
+        {
+            return prompt.Player;
+        }
+
+        var exact = prompt.Affordances.Where(option =>
+                option.IsLegal
+                && option.AnchorId == selector.AnchorId
+                && option.AnchorPlayer == selector.AnchorPlayer
+                && string.Equals(option.Verb, selector.Verb, StringComparison.Ordinal)
+                && string.Equals(option.Label, selector.Label, StringComparison.Ordinal))
+            .ToList();
+        if (selector.Occurrence < 0 || selector.Occurrence >= exact.Count)
+        {
+            throw new ReplayDivergenceException(
+                $"prompt '{prompt.Label}' cannot derive the recorded acting seat");
+        }
+
+        return DecisionSelector.ActingSeat(prompt, exact[selector.Occurrence]);
     }
 }
 
@@ -243,6 +307,7 @@ public sealed record JournalStep(
 {
     /// <summary>Captures engine output in event order after a resolved answer.</summary>
     public static JournalStep From(
+        int actor,
         Prompt prompt,
         Decision decision,
         IReadOnlyList<GameEvent> events,
@@ -252,7 +317,7 @@ public sealed record JournalStep(
         ArgumentException.ThrowIfNullOrEmpty(stateFingerprint);
         return new(
             PromptRecord.From(prompt),
-            DurableDecision.From(prompt, decision),
+            DurableDecision.From(actor, prompt, decision),
             [.. events.Select(JournalJson.Event)],
             stateFingerprint);
     }

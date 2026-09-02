@@ -92,7 +92,8 @@ internal static class SimulationHarness
 
                     var asked = game.Pending;
                     input = policy.Answer(game);
-                    var durable = DurableDecision.From(asked, input);
+                    var durable = DurableDecision.From(
+                        DurableDecision.SimulationActor(asked, input), asked, input);
                     prompt = PromptRecord.From(asked);
                     attempted = durable.Selector;
                     stage = "resolve";
@@ -351,7 +352,7 @@ internal static class SimulationHarness
                             policyDecision.DefinedValues, RecordJson.Options),
                         $"game {currentGame} step {step.Step} policy variables");
                     var decision = new DurableDecision(
-                        step.Prompt.Player,
+                        DurableDecision.SimulationActor(asked, step.Decision),
                         step.Decision,
                         step.Targets,
                         step.Resources,
@@ -585,6 +586,7 @@ internal static class SimulationHarness
                     try
                     {
                         var decision = failure.Decision.Resolve(
+                            DurableDecision.SimulationActor(game.Pending, failure.Decision),
                             game.Pending, failure.Targets, failure.Resources,
                             failure.Values, failure.Allocations);
                         game.Resolve(decision);
