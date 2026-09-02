@@ -58,12 +58,55 @@ jobs:
       - name: Build
         run: dotnet build --no-restore --configuration Release
 
+      # Managed tests can prove the client assembly on both runners, but not
+      # that the native editor can load Main.tscn, bind its C# scripts and drive
+      # the real control signals. Pin the official .NET editor archives and
+      # verify their hashes before the local-game smoke below.
+      - name: Install Godot 4.7 .NET (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          curl --fail --location --silent --show-error \
+            --output godot-mono.zip \
+            https://github.com/godotengine/godot-builds/releases/download/4.7.1-stable/Godot_v4.7.1-stable_mono_linux_x86_64.zip
+          echo "6ca7ff0459f1b806900be683c1b0837c607a9c16834c530dc68c81b9fc3ae1f6  godot-mono.zip" | sha256sum --check
+          unzip -q godot-mono.zip -d godot-mono
+          GODOT_BIN=$(find godot-mono -type f -name 'Godot*_mono_linux.*' | head -1)
+          chmod +x "$GODOT_BIN"
+          echo "GODOT_BIN=$GITHUB_WORKSPACE/$GODOT_BIN" >> "$GITHUB_ENV"
+
+      - name: Install Godot 4.7 .NET (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Invoke-WebRequest `
+            -Uri "https://github.com/godotengine/godot-builds/releases/download/4.7.1-stable/Godot_v4.7.1-stable_mono_win64.zip" `
+            -OutFile godot-mono.zip
+          $actual = (Get-FileHash godot-mono.zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne "764a089809fb1a6f745686ce9f6d3ca83adce8fb60fb9a4e2324b63baaebaa45") {
+            throw "Godot archive hash mismatch: $actual"
+          }
+          Expand-Archive godot-mono.zip -DestinationPath godot-mono
+          $godot = Get-ChildItem godot-mono -Recurse -Filter '*_console.exe' | Select-Object -First 1
+          if ($null -eq $godot) { throw "Godot .NET console executable was not found" }
+          "GODOT_BIN=$($godot.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
+
       # `datasets/rules-reference/entries/*.md` is what these are held to.
       # There was a time when the acceptance criteria were fixtures emitted by
       # the Python engine, and disagreeing with them meant C# was wrong; that
       # is no longer true and the fixtures are going. The rulebook decides.
       - name: Test
         run: dotnet test --no-build --configuration Release
+
+      - name: A complete local game is playable through native Godot controls (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: bash tools/godot-smoke.sh "$GODOT_BIN"
+
+      - name: A complete local game is playable through native Godot controls (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: tools/godot-smoke.ps1 -GodotBin $env:GODOT_BIN
 
       # The catalog is derived from every committed Core authority, not from
       # whichever rules and cards the implementation happens to cite. This

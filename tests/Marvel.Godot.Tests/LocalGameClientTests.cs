@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Sockets;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
 using Marvel.Server;
 using Marvel.Tests;
 using Marvel.View;
@@ -65,6 +66,65 @@ public sealed class LocalGameClientTests
         Assert.NotNull(resolved.Response?.World);
         Assert.NotNull(resolved.Response?.Prompt);
         Assert.Null(resolved.Error);
+    }
+
+    [Fact]
+    public async Task VisibleControlsCanPlayASeededLocalGameToItsEnding()
+    {
+        var client = new LocalGameClient(new InProcessTransport(Host()));
+        ClientSetupResult setup = await client.ReadSetupAsync(
+            TestContext.Current.CancellationToken);
+        ClientStartupResult opened = await client.OpenAsync(
+            setup.Choices!,
+            DefaultSelection(setup.Choices!) with { Seed = "1" },
+            TestContext.Current.CancellationToken);
+        EngineResponse current = Assert.IsType<EngineResponse>(opened.Response);
+        string capability = Assert.IsType<string>(current.Capability);
+        var labels = new List<string>();
+        bool passed = false;
+        int decisions = 0;
+
+        while (current.Prompt is not null)
+        {
+            Assert.True(
+                decisions < 20,
+                $"local UI journey is still playing at '{current.Prompt.Label}'");
+            labels.Add(current.Prompt.Label);
+            var composer = new DecisionComposer(current.Prompt);
+            EngineDecision decision;
+            if (current.Prompt.Cancellable)
+            {
+                passed = true;
+                Assert.True(composer.TryDecline(out EngineDecision? declined, out _));
+                decision = declined!;
+            }
+            else
+            {
+                Affordance offered = current.Prompt.Affordances.First(option => option.IsLegal);
+                composer.SelectAffordance(offered.Id);
+                Assert.True(
+                    composer.TryBuild(out EngineDecision? submitted, out string? error),
+                    error);
+                decision = submitted!;
+            }
+
+            ClientResolutionResult resolved = await client.ResolveAsync(
+                capability, decision, TestContext.Current.CancellationToken);
+            Assert.True(resolved.Succeeded, resolved.Error?.Message);
+            current = Assert.IsType<EngineResponse>(resolved.Response);
+            decisions++;
+        }
+
+        Assert.Equal(7, decisions);
+        Assert.True(passed, "the journey never used the visible pass control");
+        Assert.Contains(labels, label =>
+            label.Contains("Mulligan", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(labels, label =>
+            label.Contains("End", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(Outcome.VillainWins, current.World?.Outcome);
+        Assert.Equal(
+            GameProgressKind.VillainWins,
+            GameProgressPresentation.FromResponse(current).Kind);
     }
 
     [Fact]
