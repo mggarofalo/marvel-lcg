@@ -44,7 +44,7 @@ if [[ "$external_server" != true ]]; then
   server_pid=$!
 
   for _ in {1..300}; do
-    if grep -q "listening on" "$server_log"; then
+    if grep -q '"event_id":"server.listener.started"' "$server_log"; then
       break
     fi
     if ! kill -0 "$server_pid" 2>/dev/null; then
@@ -53,7 +53,7 @@ if [[ "$external_server" != true ]]; then
     fi
     sleep 0.1
   done
-  if ! grep -q "listening on" "$server_log"; then
+  if ! grep -q '"event_id":"server.listener.started"' "$server_log"; then
     cat "$server_log" >&2
     echo "restricted hosted smoke server did not become ready" >&2
     exit 1

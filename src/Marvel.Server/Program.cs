@@ -12,6 +12,8 @@ internal static class Program
 
     public static int Main(string[] args)
     {
+        var log = new OperationalLog(
+            new JsonTextOperationalSink(Console.Error), "Marvel.Server");
         using var stopping = new CancellationTokenSource();
         ConsoleCancelEventHandler stop = (_, signal) =>
         {
@@ -21,7 +23,7 @@ internal static class Program
         bool subscribed = false;
         try
         {
-            SocketEngineServer server = Prepare(ServerOptions.Parse(args));
+            SocketEngineServer server = Prepare(ServerOptions.Parse(args), log);
             Console.CancelKeyPress += stop;
             subscribed = true;
             using PosixSignalRegistration? terminate = OperatingSystem.IsWindows()
@@ -31,11 +33,11 @@ internal static class Program
                     signal.Cancel = true;
                     stopping.Cancel();
                 });
-            return Serve(server, Console.Error, onListening: null, stopping.Token);
+            return Serve(server, log, onListening: null, stopping.Token);
         }
-        catch (Exception failure)
+        catch (Exception)
         {
-            return Failed(Console.Error, failure);
+            return Failed(log);
         }
         finally
         {
@@ -52,7 +54,7 @@ internal static class Program
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(args);
-        return Run(() => Prepare(ServerOptions.Parse(args)), error,
+        return Run(log => Prepare(ServerOptions.Parse(args), log), error,
             onListening: null, cancellationToken);
     }
 
@@ -64,54 +66,65 @@ internal static class Program
     {
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(onListening);
-        return Run(() => Prepare(options), error, onListening, cancellationToken);
+        return Run(log => Prepare(options, log), error, onListening, cancellationToken);
     }
 
     private static int Run(
-        Func<SocketEngineServer> prepare,
+        Func<OperationalLog, SocketEngineServer> prepare,
         TextWriter error,
         Action<IPEndPoint>? onListening,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(error);
+        var log = new OperationalLog(
+            new JsonTextOperationalSink(error), "Marvel.Server");
         try
         {
-            return Serve(prepare(), error, onListening, cancellationToken);
+            return Serve(prepare(log), log, onListening, cancellationToken);
         }
-        catch (Exception failure)
+        catch (Exception)
         {
-            return Failed(error, failure);
+            return Failed(log);
         }
     }
 
-    private static SocketEngineServer Prepare(ServerOptions options)
+    private static SocketEngineServer Prepare(
+        ServerOptions options, OperationalLog? log = null)
     {
         var host = new EngineHost(
             DatasetGameFactory.Load(options.DataRoot),
             visibility: options.Visibility,
-            store: new FileSessionStore(options.SaveRoot));
+            store: new FileSessionStore(options.SaveRoot),
+            log: log);
         return new SocketEngineServer(host, options.Address, options.Port);
     }
 
     private static int Serve(
         SocketEngineServer server,
-        TextWriter error,
+        OperationalLog log,
         Action<IPEndPoint>? onListening,
         CancellationToken cancellationToken)
     {
         server.Run(endpoint =>
         {
-            error.WriteLine(
-                $"Marvel.Server protocol {EngineProtocol.Version} listening on "
-                + endpoint);
+            log.Write(
+                OperationalEventIds.ServerListening,
+                "accepted",
+                operation: "listen");
             onListening?.Invoke(endpoint);
         }, cancellationToken);
+        log.Flush(TimeSpan.FromMilliseconds(100));
         return 0;
     }
 
-    private static int Failed(TextWriter error, Exception failure)
+    private static int Failed(OperationalLog log)
     {
-        error.WriteLine(failure.Message);
+        log.Write(
+            OperationalEventIds.ServerStartFailed,
+            "rejected",
+            operation: "start",
+            errorCode: "server_start_failed");
+        log.Flush(TimeSpan.FromMilliseconds(100));
         return 2;
     }
 

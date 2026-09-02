@@ -8,6 +8,7 @@ using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Session;
 using Marvel.View;
+using System.Diagnostics;
 using System.Security.Cryptography;
 
 namespace Marvel.Server;
@@ -73,6 +74,7 @@ public sealed class EngineHost : IEngineEndpoint
     private readonly IVisibilityPolicy visibility;
     private readonly ISessionStore store;
     private readonly SessionCompatibility compatibility;
+    private readonly OperationalLog log;
     private readonly Dictionary<string, SessionAccess> sessions = new(StringComparer.Ordinal);
     private readonly Dictionary<string, PendingInvitation> invitations = new(StringComparer.Ordinal);
 
@@ -81,12 +83,14 @@ public sealed class EngineHost : IEngineEndpoint
         IGameFactory factory,
         ISessionCapabilityIssuer? capabilities = null,
         IVisibilityPolicy? visibility = null,
-        ISessionStore? store = null)
+        ISessionStore? store = null,
+        OperationalLog? log = null)
     {
         this.factory = factory ?? throw new ArgumentNullException(nameof(factory));
         this.capabilities = capabilities ?? new CryptographicCapabilityIssuer();
         this.visibility = visibility ?? new PermissiveVisibilityPolicy();
         this.store = store ?? new MemorySessionStore();
+        this.log = log ?? OperationalLog.None;
         if (store is not null && factory is not IDurableGameFactory)
         {
             throw new ArgumentException(
@@ -105,9 +109,14 @@ public sealed class EngineHost : IEngineEndpoint
     {
         ArgumentNullException.ThrowIfNull(request);
 
+        var elapsed = Stopwatch.StartNew();
+        int? authorizedSeat = AuthorizedSeat(request);
+        long? priorRevision = CurrentRevision(request);
+        EngineResponse response;
+
         try
         {
-            return Handle(request);
+            response = Handle(request);
         }
         catch (Exception)
         {
@@ -115,12 +124,80 @@ public sealed class EngineHost : IEngineEndpoint
             // same conversion happens here, before either transport, so local
             // play and hosted play have the same observable failure path. A
             // stack trace is server state and never crosses the boundary.
-            return Failed(
+            response = Failed(
                 request,
                 "engine_error",
                 "the engine request failed without changing an existing session");
         }
+
+        elapsed.Stop();
+        bool accepted = response.Error is null;
+        bool mutates = request.Operation is EngineProtocol.Open
+            or EngineProtocol.Attach
+            or EngineProtocol.Resolve
+            or EngineProtocol.Undo
+            or EngineProtocol.Redo
+            or EngineProtocol.Reorder
+            or EngineProtocol.Close;
+        bool replays = request.Operation is EngineProtocol.Resolve
+            or EngineProtocol.Undo
+            or EngineProtocol.Redo
+            or EngineProtocol.Reorder;
+        string disposition = accepted
+            ? "accepted"
+            : response.Error!.Code.StartsWith("stale_", StringComparison.Ordinal)
+                ? "stale"
+                : "rejected";
+        long? observedRevision = request.Operation switch
+        {
+            EngineProtocol.Setup => null,
+            EngineProtocol.Close => priorRevision,
+            _ when accepted => response.Revision,
+            _ => priorRevision,
+        };
+        log.Write(
+            OperationalEventIds.RequestCompleted,
+            disposition,
+            elapsed.ElapsedMilliseconds,
+            request.RequestId,
+            request.GameId,
+            request.Operation,
+            observedRevision,
+            authorizedSeat,
+            saveCommitted: accepted && mutates,
+            replayVerified: accepted && replays,
+            errorCode: response.Error?.Code);
+        return response;
     }
+
+    private int? AuthorizedSeat(EngineRequest request)
+    {
+        if (string.IsNullOrEmpty(request.Capability))
+        {
+            return null;
+        }
+
+        string verifier = Verifier(request.Capability);
+        return sessions.TryGetValue(verifier, out SessionAccess? access)
+            && string.Equals(
+                access.Session.GameId, request.GameId, StringComparison.Ordinal)
+            ? access.Scope.SoleSeat
+            : invitations.TryGetValue(verifier, out PendingInvitation? invitation)
+                && string.Equals(
+                    invitation.Session.GameId, request.GameId, StringComparison.Ordinal)
+                ? invitation.Scope.SoleSeat
+                : null;
+    }
+
+    private long? CurrentRevision(EngineRequest request) =>
+        string.IsNullOrEmpty(request.Capability)
+            ? null
+            : sessions.TryGetValue(
+                Verifier(request.Capability), out SessionAccess? access)
+                && string.Equals(
+                    access.Session.GameId, request.GameId, StringComparison.Ordinal)
+                ? access.Session.Revision
+                : null;
 
     private EngineResponse Handle(EngineRequest request)
     {
@@ -924,37 +1001,68 @@ public sealed class EngineHost : IEngineEndpoint
                 continue;
             }
 
-            StoredSession current = stored;
-            if (current.Save.Schema == 1)
+            var elapsed = Stopwatch.StartNew();
+            bool saveCommitted = false;
+            try
             {
-                SessionSave migrated = SessionReplay.MigrateSchemaOne(
-                    current.Save, compatibility, ReplayOpen);
-                current = current with { Save = migrated };
-                // Publish only after replay has verified the predecessor trace and
-                // the complete schema 2 generation is durable.
-                store.Commit(current);
+                StoredSession current = stored;
+                if (current.Save.Schema == 1)
+                {
+                    SessionSave migrated = SessionReplay.MigrateSchemaOne(
+                        current.Save, compatibility, ReplayOpen);
+                    current = current with { Save = migrated };
+                    // Publish only after replay has verified the predecessor trace and
+                    // the complete schema 2 generation is durable.
+                    store.Commit(current);
+                    saveCommitted = true;
+                }
+
+                Game game = SessionReplay.Verify(current.Save, compatibility, ReplayOpen);
+                var session = new HostedSession(current.Save.Session.Label, game, current.Save);
+                foreach (StoredAuthority authority in current.Authorities)
+                {
+                    if (authority.Seats.Any(seat => seat >= game.State.Players))
+                    {
+                        throw new SessionSaveException(
+                            "stored authority seat is outside its game");
+                    }
+
+                    var scope = new ViewScope(authority.Seats);
+                    if (authority.Invitation)
+                    {
+                        invitations.Add(
+                            authority.Verifier, new PendingInvitation(session, scope));
+                    }
+                    else
+                    {
+                        sessions.Add(
+                            authority.Verifier,
+                            new SessionAccess(session, scope, authority.Owner));
+                    }
+                }
+
+                elapsed.Stop();
+                log.Write(
+                    OperationalEventIds.SessionRestored,
+                    "accepted",
+                    elapsed.ElapsedMilliseconds,
+                    gameId: current.Save.Session.Label,
+                    revision: current.Save.Revision,
+                    saveCommitted: saveCommitted,
+                    replayVerified: true);
             }
-
-            Game game = SessionReplay.Verify(current.Save, compatibility, ReplayOpen);
-            var session = new HostedSession(current.Save.Session.Label, game, current.Save);
-            foreach (StoredAuthority authority in current.Authorities)
+            catch (Exception)
             {
-                if (authority.Seats.Any(seat => seat >= game.State.Players))
-                {
-                    throw new SessionSaveException("stored authority seat is outside its game");
-                }
-
-                var scope = new ViewScope(authority.Seats);
-                if (authority.Invitation)
-                {
-                    invitations.Add(authority.Verifier, new PendingInvitation(session, scope));
-                }
-                else
-                {
-                    sessions.Add(
-                        authority.Verifier,
-                        new SessionAccess(session, scope, authority.Owner));
-                }
+                elapsed.Stop();
+                log.Write(
+                    OperationalEventIds.SessionRestoreFailed,
+                    "rejected",
+                    elapsed.ElapsedMilliseconds,
+                    gameId: stored.Save.Session.Label,
+                    revision: stored.Save.Revision,
+                    saveCommitted: saveCommitted,
+                    errorCode: "restore_failed");
+                throw;
             }
         }
     }

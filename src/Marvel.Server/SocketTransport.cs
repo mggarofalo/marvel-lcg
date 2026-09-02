@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Text.Json;
@@ -29,10 +30,14 @@ public sealed class EngineTransportException : IOException
 /// without a connection monopolising its single game-state thread. Framing and
 /// the 4 MiB limit are our protocol choices, not game rules.
 /// </remarks>
-public sealed class SocketTransport(string host, int port) : IEngineTransport
+public sealed class SocketTransport(
+    string host,
+    int port,
+    OperationalLog? operationalLog = null) : IEngineTransport
 {
     private readonly Action? onRequestWriteStarting;
     private readonly Action? onRequestCommitted;
+    private readonly OperationalLog log = operationalLog ?? OperationalLog.None;
     private readonly string host =
         !string.IsNullOrWhiteSpace(host)
             ? host
@@ -43,7 +48,7 @@ public sealed class SocketTransport(string host, int port) : IEngineTransport
 
     internal SocketTransport(
         string host, int port, Action onRequestCommitted)
-        : this(host, port) =>
+        : this(host, port, operationalLog: null) =>
         this.onRequestCommitted = onRequestCommitted
             ?? throw new ArgumentNullException(nameof(onRequestCommitted));
 
@@ -52,7 +57,7 @@ public sealed class SocketTransport(string host, int port) : IEngineTransport
         int port,
         Action onRequestWriteStarting,
         Action onRequestCommitted)
-        : this(host, port)
+        : this(host, port, operationalLog: null)
     {
         this.onRequestWriteStarting = onRequestWriteStarting
             ?? throw new ArgumentNullException(nameof(onRequestWriteStarting));
@@ -67,6 +72,7 @@ public sealed class SocketTransport(string host, int port) : IEngineTransport
     {
         ArgumentNullException.ThrowIfNull(request);
         bool requestMayHaveCommitted = false;
+        var elapsed = Stopwatch.StartNew();
 
         try
         {
@@ -97,20 +103,38 @@ public sealed class SocketTransport(string host, int port) : IEngineTransport
                 // request's correlation labels so the client can report that
                 // incompatibility instead of mistaking it for an outage. This is
                 // our wire-compatibility choice, not a game rule.
-                return new EngineResponse(
+                EngineResponse mismatch = new(
                     responseVersion,
                     request.RequestId,
                     request.GameId,
                     Capability: null,
                     Prompt: null,
                     Events: []);
+                Observe(request, elapsed, "rejected", "unsupported_version");
+                return mismatch;
             }
 
-            return EngineJson.ReadResponse(response);
+            EngineResponse parsed = EngineJson.ReadResponse(response);
+            string disposition = parsed.Error is null
+                ? "accepted"
+                : parsed.Error.Code.StartsWith("stale_", StringComparison.Ordinal)
+                    ? "stale"
+                    : "rejected";
+            Observe(
+                request,
+                elapsed,
+                disposition,
+                parsed.Error?.Code,
+                parsed.Error is null
+                    && request.Operation is not (EngineProtocol.Setup or EngineProtocol.Close)
+                        ? parsed.Revision
+                        : null);
+            return parsed;
         }
         catch (OperationCanceledException) when (
             !requestMayHaveCommitted && cancellationToken.IsCancellationRequested)
         {
+            Observe(request, elapsed, "cancelled", "transport_cancelled");
             throw;
         }
         catch (OperationCanceledException failure)
@@ -118,6 +142,7 @@ public sealed class SocketTransport(string host, int port) : IEngineTransport
             // Cancellation after transmission begins cannot prove that the
             // server did not apply the request. Preserve that uncertainty so
             // mutation clients synchronize instead of retrying the decision.
+            Observe(request, elapsed, "uncertain", "transport_failed");
             throw new EngineTransportException(requestMayHaveCommitted, failure);
         }
         catch (Exception failure) when (failure is IOException
@@ -126,8 +151,32 @@ public sealed class SocketTransport(string host, int port) : IEngineTransport
                                              or JsonException
                                              or NotSupportedException)
         {
+            Observe(
+                request,
+                elapsed,
+                requestMayHaveCommitted ? "uncertain" : "rejected",
+                "transport_failed");
             throw new EngineTransportException(requestMayHaveCommitted, failure);
         }
+    }
+
+    private void Observe(
+        EngineRequest request,
+        Stopwatch elapsed,
+        string disposition,
+        string? errorCode,
+        long? revision = null)
+    {
+        elapsed.Stop();
+        log.Write(
+            OperationalEventIds.TransportCompleted,
+            disposition,
+            elapsed.ElapsedMilliseconds,
+            request.RequestId,
+            request.GameId,
+            request.Operation,
+            revision,
+            errorCode: errorCode);
     }
 }
 
