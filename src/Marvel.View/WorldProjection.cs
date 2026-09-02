@@ -61,14 +61,14 @@ public static class WorldProjection
                     card.Owner == world.FirstPlayer && card.Area.Type == DeckType.HeroArea,
                     world))
             {
-                Traits = [.. Traits.Of(world, card, world.Facts)],
+                Traits = [.. world.Facts.PrintedTraits(card.FaceId)],
                 Cost = attributes.TryGetValue("Cost", out string? cost) ? cost : null,
                 PrintedStats = PrintedStats(attributes),
                 Keywords = [.. world.Facts.Keywords(card.FaceId)],
                 RulesText = world.Facts.Text(card.FaceId),
                 Damage = card.Damage,
                 Counters = card.Tokens
-                    .Where(token => token.Key.StartsWith("k_", StringComparison.Ordinal))
+                    .Where(token => token.Key.StartsWith("c_", StringComparison.Ordinal))
                     .ToDictionary(
                         token => token.Key[2..],
                         token => token.Value,
@@ -110,8 +110,9 @@ public static class WorldProjection
     {
         string[] names =
         [
-            "REC", "THW", "ATK", "DEF", "SCH", "HP", "Stage",
-            "StartingThreat", "TargetThreat", "Boost",
+            "REC", "THW", "ATK", "DEF", "SCH", "HP", "HS", "Stage",
+            "REC+", "THW+", "ATK+", "DEF+", "SCH+", "HP+",
+            "StartingThreat", "TargetThreat", "EscalationThreat", "Boost",
         ];
         return names
             .Where(attributes.ContainsKey)

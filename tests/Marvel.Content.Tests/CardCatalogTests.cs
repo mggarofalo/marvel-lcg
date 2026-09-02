@@ -45,7 +45,12 @@ public sealed class CardCatalogTests
             StringComparison.Ordinal);
         Assert.Contains("Guard", Cards.Keywords("01101"));
         Assert.Contains("Surge", Cards.Keywords("01121"));
+        Assert.Contains("Uses (3 web counters)", Cards.Keywords("01008"));
+        Assert.Contains("Toughness", Cards.Keywords("01076"));
+        Assert.DoesNotContain("Tough", Cards.Keywords("01076"));
         Assert.DoesNotContain("Setup", Cards.Keywords("01001a"));
+        Assert.Contains("HERO FOR HIRE", Cards.PrintedTraits("01002"));
+        Assert.Contains("HERO_FOR_HIRE", Cards.Traits("01002"));
     }
 
     [Theory]

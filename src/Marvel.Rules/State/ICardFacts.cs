@@ -103,6 +103,15 @@ public interface ICardFacts
     /// <param name="faceId">A printed card id.</param>
     IReadOnlyList<string> Traits(string faceId);
 
+    /// <summary>The traits exactly as printed, for display rather than rules keys.</summary>
+    /// <remarks>
+    /// The default preserves compatibility with hand-built facts whose traits
+    /// need no normalization. Catalogs should override it when their rules keys
+    /// are a lossy spelling of the printed label.
+    /// </remarks>
+    /// <param name="faceId">A printed card id.</param>
+    IReadOnlyList<string> PrintedTraits(string faceId) => Traits(faceId);
+
     /// <summary>
     /// The printed attribute table — <c>HP</c>, <c>ATK</c>, <c>Stage</c> and so on.
     /// </summary>

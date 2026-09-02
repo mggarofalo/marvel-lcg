@@ -187,6 +187,9 @@ public sealed class CardCatalog : ICardFacts
     public IReadOnlyList<string> Traits(string faceId) => Find(faceId).Traits;
 
     /// <inheritdoc />
+    public IReadOnlyList<string> PrintedTraits(string faceId) => Find(faceId).PrintedTraits;
+
+    /// <inheritdoc />
     public IReadOnlyDictionary<string, string> Attributes(string faceId) => Find(faceId).Attributes;
 
     /// <inheritdoc />
@@ -348,6 +351,7 @@ public sealed class CardCatalog : ICardFacts
     private static Entry ReadEntry(JsonElement element)
     {
         var traits = new List<string>();
+        var printedTraitLabels = new List<string>();
         var attributes = new Dictionary<string, string>(StringComparer.Ordinal);
 
         if (element.TryGetProperty("traits", out var printedTraits)
@@ -357,6 +361,7 @@ public sealed class CardCatalog : ICardFacts
             {
                 if (trait.GetString() is { Length: > 0 } text)
                 {
+                    printedTraitLabels.Add(text);
                     traits.Add(TraitKey(text));
                 }
             }
@@ -401,7 +406,7 @@ public sealed class CardCatalog : ICardFacts
             : string.Empty;
 
         return new Entry(
-            kind, set, traits, attributes, title, subtitle, printed,
+            kind, set, traits, printedTraitLabels, attributes, title, subtitle, printed,
             KeywordsOf(attributes),
             CounterTypesOf(printed, attributes), CounterMaximumsOf(printed));
     }
@@ -432,7 +437,7 @@ public sealed class CardCatalog : ICardFacts
             ("Surge", "Surge", false),
             ("TeamUp", "Team-Up", false),
             ("Teamwork", "Teamwork", false),
-            ("Toughness", "Tough", false),
+            ("Toughness", "Toughness", false),
             ("Victory", "Victory", true),
             ("Villainous", "Villainous", false),
             ("Vulnerable", "Vulnerable", false),
@@ -446,7 +451,21 @@ public sealed class CardCatalog : ICardFacts
                 .Select(keyword => keyword.ShowsValue
                     ? $"{keyword.Label} {attributes[keyword.Attribute]}"
                     : keyword.Label),
+            .. UsesKeyword(attributes),
         ];
+    }
+
+    private static IEnumerable<string> UsesKeyword(Dictionary<string, string> attributes)
+    {
+        if (!attributes.TryGetValue("Uses", out string? uses) || uses.Length == 0)
+        {
+            yield break;
+        }
+
+        string[] parts = uses.Split(',');
+        yield return parts.Length == 2 && parts[1].Length > 0
+            ? $"Uses ({parts[0]} {parts[1]} counters)"
+            : $"Uses ({uses})";
     }
 
     private static List<string> CounterTypesOf(
@@ -623,6 +642,7 @@ public sealed class CardCatalog : ICardFacts
         CardKind Kind,
         string Set,
         IReadOnlyList<string> Traits,
+        IReadOnlyList<string> PrintedTraits,
         IReadOnlyDictionary<string, string> Attributes,
         string Title,
         string Subtitle,

@@ -163,7 +163,7 @@ public sealed class VisibilityTests
         var board = Board();
         Card villain = board.AreaOf(DeckType.VillainArea).Cards[0];
         villain.TakeDamage(2);
-        villain.PlaceTokens("k_test", 3);
+        villain.PlaceTokens("c_test", 3);
         ViewScope scope = new RestrictedVisibilityPolicy(0).Authorize(null, board.Players);
 
         WorldDescriptor visible = WorldProjection.For(board, null, [], scope).World;

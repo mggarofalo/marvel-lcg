@@ -107,6 +107,8 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
             Humanize(card.Face.Kind.ToString(), trimArea: false).ToUpperInvariant(),
             status,
             card.Face.Fields
+                .Where(field => !field.Key.StartsWith("k_", StringComparison.Ordinal)
+                    && !field.Key.StartsWith("t_", StringComparison.Ordinal))
                 .OrderBy(field => field.Key, StringComparer.Ordinal)
                 .Select(field => new BoardFieldPresentation(
                     Humanize(field.Key, trimArea: false).ToUpperInvariant(),

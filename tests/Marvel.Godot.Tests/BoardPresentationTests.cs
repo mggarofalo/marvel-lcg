@@ -95,6 +95,8 @@ public sealed class BoardPresentationTests
                 {
                     ["thwart"] = 2,
                     ["hitPoints"] = 11,
+                    ["k_energy"] = 3,
+                    ["t_avenger"] = 1,
                 })
             {
                 Traits = ["AVENGER", "AERIAL"],
