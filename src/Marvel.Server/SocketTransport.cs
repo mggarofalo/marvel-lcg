@@ -81,15 +81,31 @@ public sealed class SocketEngineServer(IEngineEndpoint endpoint, IPAddress addre
         : throw new ArgumentOutOfRangeException(nameof(port));
 
     /// <summary>Listens until cancellation, handling one request per connection.</summary>
-    public void Run(CancellationToken cancellationToken = default)
+    public void Run(CancellationToken cancellationToken = default) =>
+        Run(onListening: null, cancellationToken);
+
+    internal void Run(
+        Action<IPEndPoint>? onListening,
+        CancellationToken cancellationToken = default)
     {
         var listener = new TcpListener(address, port);
-        listener.Start();
-        using CancellationTokenRegistration stopping =
-            cancellationToken.Register(listener.Stop);
 
         try
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+
+            listener.Start();
+            using CancellationTokenRegistration stopping =
+                cancellationToken.Register(listener.Stop);
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+
+            onListening?.Invoke((IPEndPoint)listener.LocalEndpoint);
             while (!cancellationToken.IsCancellationRequested)
             {
                 using TcpClient client = listener.AcceptTcpClient();

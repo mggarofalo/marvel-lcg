@@ -57,6 +57,9 @@ path, query or fragment. Invalid configuration is reported as
 plaintext, so this option is for development and trusted private networks, not
 for exposure to the Internet.
 
+See the [standalone server guide](server.md) for launch options, restricted-seat
+configuration, Docker commands and shutdown behavior.
+
 ## Native smoke
 
 The native smoke loads the real scene at each supported UI scale, selects
