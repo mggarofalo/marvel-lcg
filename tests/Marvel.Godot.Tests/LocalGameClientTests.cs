@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 using Marvel.Rules.Events;
@@ -989,6 +990,34 @@ public sealed class LocalGameClientTests
     }
 
     [Fact]
+    public async Task UncertainMutationUsesUniqueCorrelationAndRecordsAReconnect()
+    {
+        EngineResponse current = Host().Exchange(EngineRequest.OpenGame(
+            "source", "shared-table", Specification()));
+        var transport = new RecoveringTransport(current);
+        var sink = new CollectingOperationalSink();
+        var log = new OperationalLog(sink, "client-test");
+
+        ClientResolutionResult result = await new LocalGameClient(transport, log).ResolveAsync(
+            new ClientSession("shared-table", current.Capability!),
+            EngineDecision.Decline,
+            TestContext.Current.CancellationToken);
+        log.Flush(TimeSpan.FromSeconds(2));
+
+        Assert.True(result.HasAuthoritativeView);
+        Assert.Equal(2, transport.Requests.Count);
+        Assert.StartsWith("local-resolve-", transport.Requests[0].RequestId,
+            StringComparison.Ordinal);
+        Assert.StartsWith("local-recover-", transport.Requests[1].RequestId,
+            StringComparison.Ordinal);
+        Assert.NotEqual(transport.Requests[0].RequestId, transport.Requests[1].RequestId);
+        OperationalRecord reconnect = Assert.Single(sink.Records);
+        Assert.Equal(OperationalEventIds.ReconnectCompleted, reconnect.EventId);
+        Assert.Equal("accepted", reconnect.Disposition);
+        Assert.Equal("reconnect", reconnect.Operation);
+    }
+
+    [Fact]
     public async Task SynchronizeReturnsOneSanitizedCompleteCurrentView()
     {
         EngineResponse current = Host().Exchange(EngineRequest.OpenGame(
@@ -1446,8 +1475,8 @@ public sealed class LocalGameClientTests
         EngineResponse local,
         EngineResponse remote) =>
         Assert.Equal(
-            EngineJson.Write(local with { Capability = null }),
-            EngineJson.Write(remote with { Capability = null }));
+            EngineJson.Write(local with { Capability = null, RequestId = "request" }),
+            EngineJson.Write(remote with { Capability = null, RequestId = "request" }));
 
     private static GameSpecification Specification() =>
         new("rhino", ["spider_man"], ModularSets: null, Seed: 7);
@@ -1500,6 +1529,40 @@ public sealed class LocalGameClientTests
                 Events: [],
                 Error: new EngineError("stopped", "capture complete")));
         }
+    }
+
+    private sealed class RecoveringTransport(EngineResponse current) : IEngineTransport
+    {
+        public List<EngineRequest> Requests { get; } = [];
+
+        public ValueTask<EngineResponse> ExchangeAsync(
+            EngineRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            Requests.Add(request);
+            if (Requests.Count == 1)
+            {
+                return ValueTask.FromException<EngineResponse>(
+                    new IOException("response lost"));
+            }
+
+            return ValueTask.FromResult(current with
+            {
+                RequestId = request.RequestId,
+                GameId = request.GameId,
+                Capability = null,
+                Events = [],
+            });
+        }
+    }
+
+    private sealed class CollectingOperationalSink : IOperationalSink
+    {
+        private readonly ConcurrentQueue<OperationalRecord> records = new();
+
+        public IReadOnlyList<OperationalRecord> Records => [.. records];
+
+        public void Write(OperationalRecord record) => records.Enqueue(record);
     }
 
     private sealed class ScriptedTransport(params object[] results) : IEngineTransport

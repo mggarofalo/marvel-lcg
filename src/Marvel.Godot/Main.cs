@@ -128,6 +128,7 @@ public sealed partial class Main : Control
     public override void _ExitTree()
     {
         ReleaseEventTween();
+        ClientComposition.Flush(TimeSpan.FromSeconds(3));
     }
 
     private void ApplyInterfaceScale(InterfaceScale scale)

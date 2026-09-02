@@ -164,10 +164,21 @@ public sealed class LocalGameClient
     private const string SynchronizeRequestId = "local-sync";
     private readonly Dictionary<ClientSession, long> revisions = [];
     private readonly IEngineTransport transport;
+    private readonly OperationalLog log;
+    private readonly string? requestNonce;
+    private long requestSequence;
 
     /// <summary>Creates an app client over an embedded or remote transport.</summary>
-    public LocalGameClient(IEngineTransport transport) =>
+    public LocalGameClient(IEngineTransport transport, OperationalLog? log = null)
+    {
         this.transport = transport ?? throw new ArgumentNullException(nameof(transport));
+        this.log = log ?? OperationalLog.None;
+        // Request ids are operational transport metadata and never enter the
+        // deterministic game, save, replay, or RNG state.
+        requestNonce = ReferenceEquals(this.log, OperationalLog.None)
+            ? null
+            : Guid.NewGuid().ToString("N", System.Globalization.CultureInfo.InvariantCulture);
+    }
 
     /// <summary>Composes the local host while keeping dataset access at its boundary.</summary>
     public static LocalClientConnection ConnectLocal(string dataRoot)
@@ -178,7 +189,7 @@ public sealed class LocalGameClient
             var host = new EngineHost(
                 DatasetGameFactory.Load(dataRoot), log: log);
             return new LocalClientConnection(
-                new LocalGameClient(new InProcessTransport(host)), Error: null);
+                new LocalGameClient(new InProcessTransport(host), log), Error: null);
         }
         catch (Exception)
         {
@@ -201,11 +212,12 @@ public sealed class LocalGameClient
     {
         try
         {
+            string requestId = NextRequestId(SetupRequestId);
             EngineResponse response = await transport.ExchangeAsync(
-                EngineRequest.ReadSetup(SetupRequestId), cancellationToken)
+                EngineRequest.ReadSetup(requestId), cancellationToken)
                 .ConfigureAwait(false);
             ClientStartupError? envelope = EnvelopeError(
-                response, SetupRequestId, string.Empty);
+                response, requestId, string.Empty);
             if (envelope is not null)
             {
                 return new ClientSetupResult(Choices: null, envelope);
@@ -405,10 +417,11 @@ public sealed class LocalGameClient
         cancellationToken.ThrowIfCancellationRequested();
         try
         {
+            string requestId = NextRequestId(OpenRequestId);
             EngineResponse response = await transport.ExchangeAsync(
-                EngineRequest.OpenGame(OpenRequestId, gameId, specification),
+                EngineRequest.OpenGame(requestId, gameId, specification),
                 cancellationToken).ConfigureAwait(false);
-            return EntryResponse(response, OpenRequestId, gameId, allowWaiting: false);
+            return EntryResponse(response, requestId, gameId, allowWaiting: false);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -447,10 +460,11 @@ public sealed class LocalGameClient
         cancellationToken.ThrowIfCancellationRequested();
         try
         {
+            string requestId = NextRequestId(AttachRequestId);
             EngineResponse response = await transport.ExchangeAsync(
-                EngineRequest.AttachGame(AttachRequestId, gameId, invitation),
+                EngineRequest.AttachGame(requestId, gameId, invitation),
                 cancellationToken).ConfigureAwait(false);
-            return EntryResponse(response, AttachRequestId, gameId, allowWaiting: true);
+            return EntryResponse(response, requestId, gameId, allowWaiting: true);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -523,16 +537,17 @@ public sealed class LocalGameClient
         long expectedRevision = RevisionFor(session);
         try
         {
+            string requestId = NextRequestId(ResolveRequestId);
             EngineResponse response = await transport.ExchangeAsync(
                 EngineRequest.ResolveGame(
-                    ResolveRequestId,
+                    requestId,
                     session.GameId,
                     session.Capability,
                     decision,
                     expectedRevision),
                 cancellationToken).ConfigureAwait(false);
             ClientStartupError? envelope = EnvelopeError(
-                response, ResolveRequestId, session.GameId);
+                response, requestId, session.GameId);
             if (envelope is not null)
             {
                 failure = envelope;
@@ -618,12 +633,13 @@ public sealed class LocalGameClient
         cancellationToken.ThrowIfCancellationRequested();
         try
         {
+            string requestId = NextRequestId(SynchronizeRequestId);
             EngineResponse response = await transport.ExchangeAsync(
                 EngineRequest.SyncGame(
-                    SynchronizeRequestId, session.GameId, session.Capability),
+                    requestId, session.GameId, session.Capability),
                 cancellationToken).ConfigureAwait(false);
             ClientStartupError? envelope = EnvelopeError(
-                response, SynchronizeRequestId, session.GameId);
+                response, requestId, session.GameId);
             if (envelope is not null)
             {
                 return new ClientSynchronizationResult(
@@ -701,7 +717,7 @@ public sealed class LocalGameClient
                     "The game service returned an incomplete error."));
             }
 
-            if (requestId == AttachRequestId)
+            if (HasRequestPrefix(requestId, AttachRequestId))
             {
                 return EntryFailed(response.Error.Code == "session_not_found"
                     ? Error(
@@ -717,7 +733,8 @@ public sealed class LocalGameClient
 
         if (!HasCompleteGameplayResponse(response, allowWaiting)
             || !allowWaiting && response.Prompt is null
-            || requestId == OpenRequestId && response.Revision != 0
+            || HasRequestPrefix(requestId, OpenRequestId)
+                && response.Revision != 0
             || !ValidIdentifier(response.Capability)
             || !CompleteInvitations(response.Invitations)
             || allowWaiting && response.Invitations is { Count: > 0 })
@@ -742,16 +759,20 @@ public sealed class LocalGameClient
         ClientStartupError failure,
         ClientMutationDisposition mutation)
     {
+        string disposition = "rejected";
+        string? errorCode = null;
+        string requestId = NextRequestId(RecoverRequestId);
         try
         {
             EngineResponse synchronized = await transport.ExchangeAsync(
                 EngineRequest.SyncGame(
-                    RecoverRequestId, session.GameId, session.Capability),
+                    requestId, session.GameId, session.Capability),
                 CancellationToken.None).ConfigureAwait(false);
             ClientStartupError? envelope = EnvelopeError(
-                synchronized, RecoverRequestId, session.GameId);
+                synchronized, requestId, session.GameId);
             if (envelope is not null)
             {
+                errorCode = envelope.Code;
                 return new ClientResolutionResult(
                     Response: null, failure, mutation, ClientSessionDisposition.Active);
             }
@@ -760,6 +781,7 @@ public sealed class LocalGameClient
                 && Complete(syncError)
                 && syncError.Code is "session_not_found" or "game_aborted")
             {
+                errorCode = syncError.Code;
                 return UnavailableResolution(mutation);
             }
 
@@ -767,6 +789,7 @@ public sealed class LocalGameClient
                 && HasCompleteSynchronizationResponse(synchronized)
                 && synchronized.Revision >= RevisionFor(session))
             {
+                disposition = "accepted";
                 RememberRevision(session, synchronized);
                 return new ClientResolutionResult(
                     Sanitize(synchronized), failure, mutation, ClientSessionDisposition.Active);
@@ -777,10 +800,33 @@ public sealed class LocalGameClient
         }
         catch (Exception)
         {
+            disposition = "uncertain";
+            errorCode = "transport_failed";
             return new ClientResolutionResult(
                 Response: null, failure, mutation, ClientSessionDisposition.Active);
         }
+        finally
+        {
+            if (mutation == ClientMutationDisposition.Uncertain)
+            {
+                log.Write(
+                    OperationalEventIds.ReconnectCompleted,
+                    disposition,
+                    requestId: requestId,
+                    gameId: session.GameId,
+                    operation: "reconnect",
+                    errorCode: errorCode);
+            }
+        }
     }
+
+    private string NextRequestId(string prefix) => requestNonce is null
+        ? prefix
+        : $"{prefix}-{requestNonce}-{Interlocked.Increment(ref requestSequence)}";
+
+    private static bool HasRequestPrefix(string requestId, string prefix) =>
+        string.Equals(requestId, prefix, StringComparison.Ordinal)
+        || requestId.StartsWith(prefix + "-", StringComparison.Ordinal);
 
     private static ClientResolutionResult UnavailableResolution(
         ClientMutationDisposition mutation) =>

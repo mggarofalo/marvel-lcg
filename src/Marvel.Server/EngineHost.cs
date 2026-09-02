@@ -77,6 +77,8 @@ public sealed class EngineHost : IEngineEndpoint
     private readonly OperationalLog log;
     private readonly Dictionary<string, SessionAccess> sessions = new(StringComparer.Ordinal);
     private readonly Dictionary<string, PendingInvitation> invitations = new(StringComparer.Ordinal);
+    private bool replayDiverged;
+    private bool sessionRetired;
 
     /// <summary>Creates an engine host with cryptographically random session capabilities.</summary>
     public EngineHost(
@@ -110,6 +112,8 @@ public sealed class EngineHost : IEngineEndpoint
         ArgumentNullException.ThrowIfNull(request);
 
         var elapsed = Stopwatch.StartNew();
+        replayDiverged = false;
+        sessionRetired = false;
         int? authorizedSeat = AuthorizedSeat(request);
         long? priorRevision = CurrentRevision(request);
         EngineResponse response;
@@ -166,6 +170,8 @@ public sealed class EngineHost : IEngineEndpoint
             authorizedSeat,
             saveCommitted: accepted && mutates,
             replayVerified: accepted && replays,
+            replayDiverged: replayDiverged,
+            sessionRetired: sessionRetired,
             errorCode: response.Error?.Code);
         return response;
     }
@@ -375,7 +381,8 @@ public sealed class EngineHost : IEngineEndpoint
         proposedAuthorities.AddRange(issuedInvitations.Select(pair =>
             Authority(pair.token, pair.grant.Scope, request.Game.Heroes.Count,
                 owner: false, invitation: true)));
-        store.Commit(new StoredSession(save, proposedAuthorities));
+        ObservePersistence(request, () =>
+            store.Commit(new StoredSession(save, proposedAuthorities)));
         sessions.Add(Verifier(capability), new SessionAccess(session, scope, Owner: true));
         foreach (var (grant, token) in issuedInvitations)
         {
@@ -470,7 +477,8 @@ public sealed class EngineHost : IEngineEndpoint
                 owner: false,
                 invitation: false))
             .ToList();
-        store.Commit(new StoredSession(pending.Session.Save, authorities));
+        ObservePersistence(request, () =>
+            store.Commit(new StoredSession(pending.Session.Save, authorities)));
         invitations.Remove(invitationVerifier);
         sessions.Add(
             Verifier(capability),
@@ -583,10 +591,8 @@ public sealed class EngineHost : IEngineEndpoint
 
         try
         {
-            Game candidate = SessionReplay.Verify(
-                access.Session.Save,
-                compatibility,
-                ReplayOpen);
+            Game candidate = ObserveReplay(request, () => SessionReplay.Verify(
+                access.Session.Save, compatibility, ReplayOpen));
             Prompt candidatePrompt = candidate.Pending
                 ?? throw new ReplayDivergenceException("candidate has no pending prompt");
             JournalReplay.RequirePrompt(
@@ -627,7 +633,8 @@ public sealed class EngineHost : IEngineEndpoint
                 phase,
                 candidate.Pending,
                 exposures);
-            store.Commit(new StoredSession(proposed, Authorities(access.Session)));
+            ObservePersistence(request, () =>
+                store.Commit(new StoredSession(proposed, Authorities(access.Session))));
             access.Session.Game = candidate;
             access.Session.Save = proposed;
             return Succeeded(
@@ -644,6 +651,7 @@ public sealed class EngineHost : IEngineEndpoint
             or SessionSaveException
             or ReplayDivergenceException)
         {
+            replayDiverged = failure is ReplayDivergenceException;
             return Failed(
                 request,
                 "save_failed",
@@ -730,8 +738,8 @@ public sealed class EngineHost : IEngineEndpoint
 
         try
         {
-            Game candidate = SessionReplay.VerifyAtCursor(
-                save, compatibility, ReplayOpen, target);
+            Game candidate = ObserveReplay(request, () =>
+                SessionReplay.VerifyAtCursor(save, compatibility, ReplayOpen, target));
             SessionSave proposed = save with
             {
                 Revision = save.Revision + 1,
@@ -740,8 +748,10 @@ public sealed class EngineHost : IEngineEndpoint
                     ? null
                     : PromptRecord.From(candidate.Pending),
             };
-            Game verified = SessionReplay.Verify(proposed, compatibility, ReplayOpen);
-            store.Commit(new StoredSession(proposed, Authorities(access.Session)));
+            Game verified = ObserveReplay(request, () =>
+                SessionReplay.Verify(proposed, compatibility, ReplayOpen));
+            ObservePersistence(request, () =>
+                store.Commit(new StoredSession(proposed, Authorities(access.Session))));
             access.Session.Game = verified;
             access.Session.Save = proposed;
             return Succeeded(
@@ -758,6 +768,7 @@ public sealed class EngineHost : IEngineEndpoint
             or SessionSaveException
             or ReplayDivergenceException)
         {
+            replayDiverged = failure is ReplayDivergenceException;
             return Failed(
                 request,
                 "history_failed",
@@ -872,8 +883,10 @@ public sealed class EngineHost : IEngineEndpoint
                     : PromptRecord.From(trace.Game.Pending),
                 Units = trace.Units,
             };
-            Game verified = SessionReplay.Verify(proposed, compatibility, ReplayOpen);
-            store.Commit(new StoredSession(proposed, Authorities(access.Session)));
+            Game verified = ObserveReplay(request, () =>
+                SessionReplay.Verify(proposed, compatibility, ReplayOpen));
+            ObservePersistence(request, () =>
+                store.Commit(new StoredSession(proposed, Authorities(access.Session))));
             access.Session.Game = verified;
             access.Session.Save = proposed;
             return Succeeded(
@@ -922,8 +935,10 @@ public sealed class EngineHost : IEngineEndpoint
             {
                 Session = access.Session.Save.Session with { Lifecycle = "retired" },
             };
-            store.Commit(new StoredSession(retired, []));
+            ObservePersistence(request, () =>
+                store.Commit(new StoredSession(retired, [])));
             Remove(access.Session);
+            sessionRetired = true;
         }
         else
         {
@@ -931,7 +946,8 @@ public sealed class EngineHost : IEngineEndpoint
             var authorities = Authorities(access.Session)
                 .Where(authority => authority.Verifier != verifier)
                 .ToList();
-            store.Commit(new StoredSession(access.Session.Save, authorities));
+            ObservePersistence(request, () =>
+                store.Commit(new StoredSession(access.Session.Save, authorities)));
             sessions.Remove(verifier);
         }
 
@@ -953,6 +969,56 @@ public sealed class EngineHost : IEngineEndpoint
 
         session = found;
         return true;
+    }
+
+    private T ObserveReplay<T>(EngineRequest request, Func<T> work)
+    {
+        var elapsed = Stopwatch.StartNew();
+        try
+        {
+            T result = work();
+            elapsed.Stop();
+            log.Write(
+                OperationalEventIds.ReplayCompleted, "accepted",
+                elapsed.ElapsedMilliseconds, request.RequestId, request.GameId,
+                operation: "replay", replayVerified: true);
+            return result;
+        }
+        catch (Exception failure)
+        {
+            elapsed.Stop();
+            bool diverged = failure is ReplayDivergenceException;
+            log.Write(
+                OperationalEventIds.ReplayCompleted, "rejected",
+                elapsed.ElapsedMilliseconds, request.RequestId, request.GameId,
+                operation: "replay",
+                replayDiverged: diverged,
+                errorCode: diverged ? "replay_diverged" : "replay_failed");
+            throw;
+        }
+    }
+
+    private void ObservePersistence(EngineRequest request, Action work)
+    {
+        var elapsed = Stopwatch.StartNew();
+        try
+        {
+            work();
+            elapsed.Stop();
+            log.Write(
+                OperationalEventIds.PersistenceCompleted, "accepted",
+                elapsed.ElapsedMilliseconds, request.RequestId, request.GameId,
+                operation: "persistence", saveCommitted: true);
+        }
+        catch (Exception)
+        {
+            elapsed.Stop();
+            log.Write(
+                OperationalEventIds.PersistenceCompleted, "rejected",
+                elapsed.ElapsedMilliseconds, request.RequestId, request.GameId,
+                operation: "persistence", errorCode: "persistence_failed");
+            throw;
+        }
     }
 
     private string IssueCapability(HashSet<string>? reserved = null)
@@ -1051,7 +1117,7 @@ public sealed class EngineHost : IEngineEndpoint
                     saveCommitted: saveCommitted,
                     replayVerified: true);
             }
-            catch (Exception)
+            catch (Exception failure)
             {
                 elapsed.Stop();
                 log.Write(
@@ -1061,7 +1127,10 @@ public sealed class EngineHost : IEngineEndpoint
                     gameId: stored.Save.Session.Label,
                     revision: stored.Save.Revision,
                     saveCommitted: saveCommitted,
-                    errorCode: "restore_failed");
+                    replayDiverged: failure is ReplayDivergenceException,
+                    errorCode: failure is ReplayDivergenceException
+                        ? "replay_diverged"
+                        : "restore_failed");
                 throw;
             }
         }
