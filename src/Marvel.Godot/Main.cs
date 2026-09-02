@@ -39,6 +39,7 @@ public sealed partial class Main : Control
     private string? localCapability;
     private OptionButton mode = null!;
     private OptionButton modular = null!;
+    private ScrollContainer pageScroll = null!;
     private PanelContainer promptPanel = null!;
     private Label promptContext = null!;
     private Label promptEyebrow = null!;
@@ -109,6 +110,7 @@ public sealed partial class Main : Control
     private void BindNodes()
     {
         const string content = "Margin/Shell/Content";
+        pageScroll = GetNode<ScrollContainer>("Margin");
         description = GetNode<Label>($"{content}/Description");
         eyebrow = GetNode<Label>($"{content}/Eyebrow");
         title = GetNode<Label>($"{content}/Title");
@@ -430,7 +432,13 @@ public sealed partial class Main : Control
         RenderEvents();
         ApplyProgress(GameProgressPresentation.FromResponse(response));
         PresentEvents(presented.Cues);
+        if (response.Prompt is null)
+        {
+            CallDeferred(MethodName.RevealOutcome);
+        }
     }
+
+    private void RevealOutcome() => pageScroll.ScrollVertical = 0;
 
     private void RenderPromptSummary(Prompt? prompt, WorldDescriptor world)
     {

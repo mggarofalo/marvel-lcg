@@ -224,10 +224,36 @@ public sealed class BoardRenderResult
         {
             if (ancestor is ScrollContainer scroll)
             {
-                scroll.CallDeferred(ScrollContainer.MethodName.EnsureControlVisible, control);
+                Control target = AreaContaining(scroll, control) ?? control;
+                scroll.CallDeferred(ScrollContainer.MethodName.EnsureControlVisible, target);
+                // The board owns card navigation. Continuing into the outer
+                // page would hide the table heading whenever prompt focus
+                // highlights a card below the fold.
+                if (scroll.Name == "Board")
+                {
+                    break;
+                }
             }
 
             ancestor = ancestor.GetParent();
         }
+    }
+
+    private static Control? AreaContaining(ScrollContainer scroll, Control control)
+    {
+        Node? candidate = control;
+        Control? area = null;
+        while (candidate is not null && candidate != scroll)
+        {
+            if (candidate is PanelContainer panel
+                && panel.Name.ToString().StartsWith("Area", StringComparison.Ordinal))
+            {
+                area = panel;
+            }
+
+            candidate = candidate.GetParent();
+        }
+
+        return area;
     }
 }

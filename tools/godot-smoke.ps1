@@ -21,9 +21,16 @@ foreach ($viewport in @("1040x680", "1280x720", "1600x900")) {
     foreach ($scale in @("standard", "large", "extra-large")) {
         $env:MARVEL_UI_SCALE = $scale
         $env:MARVEL_SMOKE_VIEWPORT = $viewport
+        $env:MARVEL_SMOKE_MOTION = "enabled"
         & $GodotBin --headless --path "$repoRoot/src/Marvel.Godot" `
             --script res://smoke/local_game_smoke.gd
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     }
 }
+$env:MARVEL_UI_SCALE = "standard"
+$env:MARVEL_SMOKE_VIEWPORT = "1280x720"
+$env:MARVEL_SMOKE_MOTION = "disabled"
+& $GodotBin --headless --path "$repoRoot/src/Marvel.Godot" `
+    --script res://smoke/local_game_smoke.gd
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 exit 0

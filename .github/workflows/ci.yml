@@ -108,6 +108,27 @@ jobs:
         shell: pwsh
         run: tools/godot-smoke.ps1 -GodotBin $env:GODOT_BIN
 
+      - name: Representative Godot states render correctly (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        env:
+          MARVEL_SMOKE_CAPTURE_DIR: ${{ runner.temp }}/godot-visual-qa
+        run: bash tools/godot-visual-qa.sh "$GODOT_BIN"
+
+      - name: Representative Godot states render correctly (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          MARVEL_SMOKE_CAPTURE_DIR: ${{ runner.temp }}\godot-visual-qa
+        run: tools/godot-visual-qa.ps1 -GodotBin $env:GODOT_BIN
+
+      - name: Retain Godot visual checkpoints
+        uses: actions/upload-artifact@v6
+        with:
+          name: godot-visual-qa-${{ runner.os }}
+          path: ${{ runner.temp }}/godot-visual-qa/*.png
+          if-no-files-found: error
+
       # The catalog is derived from every committed Core authority, not from
       # whichever rules and cards the implementation happens to cite. This
       # gate rejects a changed authority, an unclassified source unit, an
