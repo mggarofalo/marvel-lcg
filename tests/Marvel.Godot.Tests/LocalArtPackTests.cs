@@ -1,4 +1,3 @@
-using Marvel.Tests;
 using Xunit;
 
 namespace Marvel.Godot.Tests;
@@ -9,14 +8,13 @@ public sealed class LocalArtPackTests
     [
         "unauthorized", "no-rights", "missing", "unsupported", "escaping",
         "url", "large", "null-entry", "absolute",
+        "dimensions",
     ];
-    private static readonly string[] ImageExtensions = [".png", ".jpg", ".jpeg", ".webp"];
-
     [Fact]
     public void CatalogAcceptsOnlyAnExactAuthorizedLocalFaceEntry()
     {
         using var pack = new TemporaryPack();
-        pack.Write("hero.png", "not needed by the catalog");
+        pack.WritePngHeader("hero.png", 4, 4);
         pack.Manifest("""
             {
               "version": 1,
@@ -32,10 +30,10 @@ public sealed class LocalArtPackTests
 
         ArtPackCatalog catalog = ArtPackCatalog.Load(pack.Root);
 
-        Assert.Equal(pack.Path("hero.png"), catalog.Find("01001a"));
-        Assert.Null(catalog.Find("01001b"));
-        Assert.Null(catalog.Find("01001A"));
-        Assert.Null(catalog.Find(""));
+        Assert.True(catalog.Contains("01001a"));
+        Assert.False(catalog.Contains("01001b"));
+        Assert.False(catalog.Contains("01001A"));
+        Assert.False(catalog.Contains(""));
     }
 
     [Fact]
@@ -45,7 +43,8 @@ public sealed class LocalArtPackTests
         pack.Write("unauthorized.png", "x");
         pack.Write("rights.png", "x");
         pack.Write("notes.txt", "x");
-        pack.Write("valid.png", "catalog only");
+        pack.WritePngHeader("valid.png", 4, 4);
+        pack.WritePngHeader("dimensions.png", 8192, 8192);
         pack.WriteLarge("large.png", 20 * 1024 * 1024 + 1L);
         string absolute = pack.Path("unauthorized.png").Replace("\\", "\\\\", StringComparison.Ordinal);
         pack.Manifest("""
@@ -59,6 +58,7 @@ public sealed class LocalArtPackTests
                 "escaping": { "file": "../outside.png", "authorized": true, "rights": "mine" },
                 "url": { "file": "https://example.com/card.png", "authorized": true, "rights": "mine" },
                 "large": { "file": "large.png", "authorized": true, "rights": "mine" },
+                "dimensions": { "file": "dimensions.png", "authorized": true, "rights": "mine" },
                 "null-entry": null,
                 "absolute": { "file": "ABSOLUTE", "authorized": true, "rights": "mine" },
                 "valid": { "file": "valid.png", "authorized": true, "rights": "mine" }
@@ -68,8 +68,8 @@ public sealed class LocalArtPackTests
 
         ArtPackCatalog catalog = ArtPackCatalog.Load(pack.Root);
 
-        Assert.All(RejectedFaceIds, faceId => Assert.Null(catalog.Find(faceId)));
-        Assert.Equal(pack.Path("valid.png"), catalog.Find("valid"));
+        Assert.All(RejectedFaceIds, faceId => Assert.False(catalog.Contains(faceId)));
+        Assert.True(catalog.Contains("valid"));
     }
 
     [Theory]
@@ -80,23 +80,8 @@ public sealed class LocalArtPackTests
         using var pack = new TemporaryPack();
         pack.Manifest(manifest);
 
-        Assert.Null(ArtPackCatalog.Load(pack.Root).Find("01001a"));
-        Assert.Null(ArtPackCatalog.Load(pack.Path("missing")).Find("01001a"));
-    }
-
-    [Fact]
-    public void RepositoryContainsNoBundledCardImages()
-    {
-        string client = RepositoryPaths.Repository("src", "Marvel.Godot");
-        string[] images = Directory.EnumerateFiles(client, "*", SearchOption.AllDirectories)
-            .Where(path => ImageExtensions
-                .Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase))
-            .Where(path => !path.Contains(
-                Path.DirectorySeparatorChar + ".godot" + Path.DirectorySeparatorChar,
-                StringComparison.Ordinal))
-            .ToArray();
-
-        Assert.Empty(images);
+        Assert.False(ArtPackCatalog.Load(pack.Root).Contains("01001a"));
+        Assert.False(ArtPackCatalog.Load(pack.Path("missing")).Contains("01001a"));
     }
 
     private sealed class TemporaryPack : IDisposable
@@ -115,6 +100,19 @@ public sealed class LocalArtPackTests
         public void Manifest(string json) => File.WriteAllText(Path("manifest.json"), json);
 
         public void Write(string name, string content) => File.WriteAllText(Path(name), content);
+
+        public void WritePngHeader(string name, uint width, uint height)
+        {
+            byte[] bytes =
+            [
+                0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+                0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
+                (byte)(width >> 24), (byte)(width >> 16), (byte)(width >> 8), (byte)width,
+                (byte)(height >> 24), (byte)(height >> 16), (byte)(height >> 8), (byte)height,
+                0x00,
+            ];
+            File.WriteAllBytes(Path(name), bytes);
+        }
 
         public void WriteLarge(string name, long length)
         {

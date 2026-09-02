@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.Text.Json;
 using Godot;
 
@@ -14,21 +15,24 @@ public interface ICardArtProvider
 public sealed class ArtPackCatalog
 {
     private const long MaximumFileBytes = 20 * 1024 * 1024;
+    private const long MaximumPackBytes = 64 * 1024 * 1024;
     private const long MaximumManifestBytes = 1024 * 1024;
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
     };
-    private static readonly HashSet<string> Extensions =
-        new(StringComparer.OrdinalIgnoreCase) { ".png", ".jpg", ".jpeg", ".webp" };
-    private readonly Dictionary<string, string> files;
+    private const int MaximumDimension = 4096;
+    private const long MaximumPixels = MaximumDimension * MaximumDimension;
+    private static ReadOnlySpan<byte> PngSignature =>
+        [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+    private readonly Dictionary<string, byte[]> files;
 
-    private ArtPackCatalog(Dictionary<string, string> files) => this.files = files;
+    private ArtPackCatalog(Dictionary<string, byte[]> files) => this.files = files;
 
     /// <summary>Reads a local manifest. Missing or malformed packs are empty.</summary>
     public static ArtPackCatalog Load(string root)
     {
-        if (string.IsNullOrWhiteSpace(root))
+        if (string.IsNullOrWhiteSpace(root) || IsNetworkOrDevicePath(root))
         {
             return new ArtPackCatalog([]);
         }
@@ -50,13 +54,15 @@ public sealed class ArtPackCatalog
                 return new ArtPackCatalog([]);
             }
 
-            var accepted = new Dictionary<string, string>(StringComparer.Ordinal);
+            var accepted = new Dictionary<string, byte[]>(StringComparer.Ordinal);
+            long acceptedBytes = 0;
             foreach ((string faceId, ArtPackEntry? entry) in manifest.Entries)
             {
-                string? candidate = Resolve(fullRoot, entry);
-                if (candidate is not null)
+                byte[]? asset = ReadAsset(fullRoot, entry);
+                if (asset is not null && acceptedBytes + asset.Length <= MaximumPackBytes)
                 {
-                    accepted.TryAdd(faceId, candidate);
+                    accepted.TryAdd(faceId, asset);
+                    acceptedBytes += asset.Length;
                 }
             }
 
@@ -72,13 +78,24 @@ public sealed class ArtPackCatalog
         }
     }
 
-    /// <summary>Returns an authorized local file for the exact stable face id.</summary>
-    public string? Find(string faceId) =>
-        !string.IsNullOrWhiteSpace(faceId) && files.TryGetValue(faceId, out string? path)
-            ? path
+    private static bool IsNetworkOrDevicePath(string path) =>
+        path.Contains("://", StringComparison.Ordinal)
+        || OperatingSystem.IsWindows()
+            && (path.StartsWith("\\\\", StringComparison.Ordinal)
+                || path.StartsWith("//", StringComparison.Ordinal)
+                || path.StartsWith("\\\\?\\", StringComparison.Ordinal)
+                || path.StartsWith("\\\\.\\", StringComparison.Ordinal));
+
+    /// <summary>Whether an authorized, bounded PNG exists for the exact stable face id.</summary>
+    public bool Contains(string faceId) =>
+        !string.IsNullOrWhiteSpace(faceId) && files.ContainsKey(faceId);
+
+    internal byte[]? Find(string faceId) =>
+        !string.IsNullOrWhiteSpace(faceId) && files.TryGetValue(faceId, out byte[]? asset)
+            ? asset
             : null;
 
-    private static string? Resolve(string fullRoot, ArtPackEntry? entry)
+    private static byte[]? ReadAsset(string fullRoot, ArtPackEntry? entry)
     {
         if (entry is null
             || !entry.Authorized
@@ -97,15 +114,23 @@ public sealed class ArtPackCatalog
             if (Path.IsPathRooted(relative)
                 || relative == ".."
                 || relative.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal)
-                || !Extensions.Contains(Path.GetExtension(candidate))
+                || !string.Equals(Path.GetExtension(candidate), ".png", StringComparison.OrdinalIgnoreCase)
                 || !File.Exists(candidate)
-                || new FileInfo(candidate).Length > MaximumFileBytes
                 || HasLinkInPath(fullRoot, relative))
             {
                 return null;
             }
 
-            return candidate;
+            using FileStream stream = File.Open(
+                candidate, FileMode.Open, System.IO.FileAccess.Read, FileShare.Read);
+            if (stream.Length is <= 24 or > MaximumFileBytes)
+            {
+                return null;
+            }
+
+            var bytes = new byte[checked((int)stream.Length)];
+            stream.ReadExactly(bytes);
+            return HasBoundedPngHeader(bytes) ? bytes : null;
         }
         catch (Exception exception) when (exception is IOException
             or UnauthorizedAccessException
@@ -114,6 +139,22 @@ public sealed class ArtPackCatalog
         {
             return null;
         }
+    }
+
+    private static bool HasBoundedPngHeader(byte[] bytes)
+    {
+        ReadOnlySpan<byte> value = bytes;
+        if (!value[..8].SequenceEqual(PngSignature)
+            || !value[12..16].SequenceEqual("IHDR"u8))
+        {
+            return false;
+        }
+
+        uint width = BinaryPrimitives.ReadUInt32BigEndian(value[16..20]);
+        uint height = BinaryPrimitives.ReadUInt32BigEndian(value[20..24]);
+        return width is > 0 and <= MaximumDimension
+            && height is > 0 and <= MaximumDimension
+            && (long)width * height <= MaximumPixels;
     }
 
     private static bool HasLinkInPath(string root, string relative)
@@ -146,7 +187,7 @@ public sealed class ArtPackCatalog
 /// <summary>Loads and caches illustrations from the configured local art pack.</summary>
 public sealed class LocalArtPack : ICardArtProvider
 {
-    private const int MaximumDimension = 4096;
+    private const int MaximumTextureDimension = 1024;
     private readonly ArtPackCatalog catalog;
     private readonly Dictionary<string, Texture2D?> textures = new(StringComparer.Ordinal);
 
@@ -180,52 +221,28 @@ public sealed class LocalArtPack : ICardArtProvider
 
     private ImageTexture? Load(string faceId)
     {
-        string? path = catalog.Find(faceId);
-        if (path is null)
-        {
-            return null;
-        }
-
-        if (!LooksLikeImage(path))
+        byte[]? asset = catalog.Find(faceId);
+        if (asset is null)
         {
             return null;
         }
 
         var image = new Image();
-        if (image.Load(path) != Error.Ok
-            || image.GetWidth() is <= 0 or > MaximumDimension
-            || image.GetHeight() is <= 0 or > MaximumDimension)
+        if (image.LoadPngFromBuffer(asset) != Error.Ok)
         {
             return null;
         }
 
-        return ImageTexture.CreateFromImage(image);
-    }
+        if (Math.Max(image.GetWidth(), image.GetHeight()) > MaximumTextureDimension)
+        {
+            float scale = MaximumTextureDimension
+                / (float)Math.Max(image.GetWidth(), image.GetHeight());
+            image.Resize(
+                Math.Max(1, (int)Math.Round(image.GetWidth() * scale)),
+                Math.Max(1, (int)Math.Round(image.GetHeight() * scale)),
+                Image.Interpolation.Lanczos);
+        }
 
-    private static bool LooksLikeImage(string path)
-    {
-        Span<byte> header = stackalloc byte[12];
-        try
-        {
-            using FileStream stream = File.OpenRead(path);
-            int read = stream.Read(header);
-            string extension = Path.GetExtension(path);
-            return extension.ToLowerInvariant() switch
-            {
-                ".png" => read >= 8
-                    && header[..8].SequenceEqual(
-                        new byte[] { 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a }),
-                ".jpg" or ".jpeg" => read >= 3
-                    && header[0] == 0xff && header[1] == 0xd8 && header[2] == 0xff,
-                ".webp" => read >= 12
-                    && header[..4].SequenceEqual("RIFF"u8)
-                    && header[8..12].SequenceEqual("WEBP"u8),
-                _ => false,
-            };
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-        {
-            return false;
-        }
+        return ImageTexture.CreateFromImage(image);
     }
 }
