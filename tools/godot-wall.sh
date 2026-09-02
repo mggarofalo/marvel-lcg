@@ -69,6 +69,11 @@ check "an engine-shaped project cannot opt out of the wall" \
 check "a transitive GodotSharp reference stops the build" \
   MARVELWALL "$probes/Marvel.WallProbe/Marvel.WallProbe.csproj"
 
+# New shared projects get a named positive probe as well as the solution build.
+# This keeps the session journal available to both the server and native client.
+check "the shared session journal stays below the wall" \
+  pass "$probes/Marvel.WallProbe.Session/Marvel.WallProbe.Session.csproj"
+
 # And the escape hatch, without which Marvel.Godot could not build at all.
 check "the presentation layer may opt out" \
   pass "$probes/Marvel.WallProbe.Allowed/Marvel.WallProbe.Allowed.csproj"

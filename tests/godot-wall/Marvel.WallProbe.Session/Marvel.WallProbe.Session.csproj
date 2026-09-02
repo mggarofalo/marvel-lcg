@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- A new shared layer must remain consumable below the Godot wall. -->
+  <ItemGroup>
+    <ProjectReference Include="../../../src/Marvel.Session/Marvel.Session.csproj" />
+  </ItemGroup>
+
+</Project>

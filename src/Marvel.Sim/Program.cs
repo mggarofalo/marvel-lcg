@@ -1,3 +1,5 @@
+using Marvel.Session;
+
 namespace Marvel.Sim;
 
 /// <summary>The headless whole-game simulation entry point.</summary>

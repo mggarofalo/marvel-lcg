@@ -7,6 +7,7 @@ using Marvel.Core.Random;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
+using Marvel.Session;
 
 namespace Marvel.Sim;
 
@@ -76,7 +77,7 @@ internal static class SimulationHarness
                 lastGood = game.State.Digest().Canonical();
                 RecordJson.Write(records, new StartRecord(
                     "start", gameIndex, seed, policySeed, policySeeds, lastGood,
-                    [.. opened.SetupEvents.Select(RecordJson.Event)]));
+                    [.. opened.SetupEvents.Select(JournalJson.Event)]));
 
                 policy = new ActingPolicy(data.Cards, policySeeds);
                 while (game.Pending is not null)
@@ -90,22 +91,28 @@ internal static class SimulationHarness
                     }
 
                     var asked = game.Pending;
-                    prompt = PromptRecord.From(asked);
                     input = policy.Answer(game);
-                    attempted = DecisionSelector.From(asked, input);
+                    var durable = DurableDecision.From(
+                        DurableDecision.SimulationActor(asked, input), asked, input);
+                    prompt = PromptRecord.From(asked);
+                    attempted = durable.Selector;
                     stage = "resolve";
-                    var resolved = game.Resolve(input);
+                    var resolved = game.Resolve(durable.Resolve(asked));
                     policy.DecisionResolved();
-                    var happened = resolved.Events.Select(RecordJson.Event).ToList();
                     lastGood = game.State.Digest().Canonical();
-                    var recordedStep = new StepRecord(
-                        "step", gameIndex, step, prompt, attempted,
-                        input.Targets,
-                        input.Spent,
-                        input.DefinedValues,
-                        input.Allocated,
-                        happened,
+                    var journal = new JournalStep(
+                        prompt,
+                        durable,
+                        [.. resolved.Events.Select(JournalJson.Event)],
                         game.State.Digest().Fingerprint());
+                    var recordedStep = new StepRecord(
+                        "step", gameIndex, step, journal.Prompt, journal.Decision.Selector,
+                        journal.Decision.Targets,
+                        journal.Decision.Resources,
+                        journal.Decision.Values,
+                        journal.Decision.Allocations,
+                        journal.Events,
+                        journal.StateFingerprint);
                     recent.Enqueue(recordedStep);
                     while (recent.Count > RecentEventLimit)
                     {
@@ -305,7 +312,7 @@ internal static class SimulationHarness
                         start.SeatPolicySeeds,
                         SeatPolicySeeds(start.PolicySeed, header.Heroes.Count),
                         $"game {currentGame} seat policy seeds");
-                    RequireEvents(
+                    JournalReplay.RequireEvents(
                         start.SetupEvents,
                         opened.SetupEvents,
                         $"game {currentGame} setup events");
@@ -321,9 +328,8 @@ internal static class SimulationHarness
                     var asked = game!.Pending
                         ?? throw new ReplayDivergenceException(
                             $"game {currentGame} ended before recorded step {step.Step}");
-                    RequirePrompt(
-                        step.Prompt,
-                        PromptRecord.From(asked),
+                    JournalReplay.RequirePrompt(
+                        step.Prompt, asked,
                         $"game {currentGame} step {step.Step} prompt");
                     var policyDecision = replayPolicy!.Answer(game);
                     RequireEqual(
@@ -345,9 +351,13 @@ internal static class SimulationHarness
                         JsonSerializer.Serialize(
                             policyDecision.DefinedValues, RecordJson.Options),
                         $"game {currentGame} step {step.Step} policy variables");
-                    var decision = step.Decision.Resolve(
-                        asked, step.Targets, step.Resources, step.Values,
-                        step.Allocations);
+                    var decision = new DurableDecision(
+                        DurableDecision.SimulationActor(asked, step.Decision),
+                        step.Decision,
+                        step.Targets,
+                        step.Resources,
+                        step.Values,
+                        step.Allocations).Resolve(asked);
                     var resolved = game.Resolve(decision);
                     replayPolicy.DecisionResolved();
                     replayRecent.Enqueue(step);
@@ -355,11 +365,11 @@ internal static class SimulationHarness
                     {
                         replayRecent.Dequeue();
                     }
-                    RequireEvents(
+                    JournalReplay.RequireEvents(
                         step.Events,
                         resolved.Events,
                         $"game {currentGame} step {step.Step} events");
-                    RequireEqual(
+                    JournalReplay.RequireFingerprint(
                         step.Digest,
                         game.State.Digest().Fingerprint(),
                         $"game {currentGame} step {step.Step} digest");
@@ -576,6 +586,7 @@ internal static class SimulationHarness
                     try
                     {
                         var decision = failure.Decision.Resolve(
+                            DurableDecision.SimulationActor(game.Pending, failure.Decision),
                             game.Pending, failure.Targets, failure.Resources,
                             failure.Values, failure.Allocations);
                         game.Resolve(decision);
@@ -1037,26 +1048,6 @@ internal static class SimulationHarness
         }
     }
 
-    private static void RequireEvents(
-        IReadOnlyList<JsonElement> expected,
-        IReadOnlyList<GameEvent> actual,
-        string what)
-    {
-        var written = actual.Select(RecordJson.Event).ToList();
-        if (expected.Count != written.Count)
-        {
-            throw new ReplayDivergenceException(
-                $"{what} diverged: expected {expected.Count}, got {written.Count}");
-        }
-
-        for (int index = 0; index < expected.Count; index++)
-        {
-            RequireEqual(
-                expected[index].GetRawText(), written[index].GetRawText(),
-                $"{what}[{index}]");
-        }
-    }
-
     private static void RequireFailure(
         FailureRecord expected, Exception actual, string stage)
     {
@@ -1153,15 +1144,6 @@ internal static class SimulationHarness
         playerAttacks += metrics.PlayerAttacks;
         payments += metrics.Payments;
         resourceAbilities += metrics.ResourceAbilitiesUsed;
-    }
-
-    private static void RequirePrompt(
-        PromptRecord expected, PromptRecord actual, string what)
-    {
-        RequireEqual(
-            JsonSerializer.Serialize(expected, RecordJson.Options),
-            JsonSerializer.Serialize(actual, RecordJson.Options),
-            what);
     }
 
     private static void RequireNullablePrompt(

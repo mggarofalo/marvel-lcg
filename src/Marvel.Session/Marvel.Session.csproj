@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Deterministic, Godot-free records shared by simulation, server and save
+       tooling. This project has no filesystem or transport authority. -->
+  <PropertyGroup>
+    <RootNamespace>Marvel.Session</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Marvel.Rules/Marvel.Rules.csproj" />
+  </ItemGroup>
+
+</Project>

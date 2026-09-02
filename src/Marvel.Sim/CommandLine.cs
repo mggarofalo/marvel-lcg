@@ -297,5 +297,3 @@ internal sealed record SimulationConfig(
 internal sealed record ReplayConfig(string Path, string? RepoRoot);
 
 internal sealed class SimulationUsageException(string message) : Exception(message);
-
-internal sealed class ReplayDivergenceException(string message) : Exception(message);

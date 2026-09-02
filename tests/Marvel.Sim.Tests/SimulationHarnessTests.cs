@@ -4,6 +4,7 @@ using Marvel.Tests;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.Timing;
+using Marvel.Session;
 using Xunit;
 
 namespace Marvel.Sim.Tests;
@@ -58,10 +59,12 @@ public sealed class SimulationHarnessTests
         Assert.Equal(
             111,
             selector.Resolve(
+                1,
                 replayed, [], [],
                 new Dictionary<string, long>(StringComparer.Ordinal), []).Affordance);
         Assert.Throws<ReplayDivergenceException>(() =>
             selector.Resolve(
+                0,
                 Prompt(new Affordance(1, "Action", 8, 1, "Choose")),
                 [], [], new Dictionary<string, long>(StringComparer.Ordinal), []));
     }
@@ -113,6 +116,13 @@ public sealed class SimulationHarnessTests
 
         Assert.Equal(1, summary.ExitCode);
         var documents = Lines(record).ToList();
+        var header = Assert.Single(
+            documents, item => item.GetProperty("type").GetString() == "header");
+        Assert.Equal(2, header.GetProperty("policy_version").GetInt32());
+        var first = Assert.Single(
+            documents, item => item.GetProperty("type").GetString() == "step");
+        Assert.False(first.GetProperty("prompt").GetProperty("cancellable").GetBoolean());
+        Assert.False(first.GetProperty("decision").GetProperty("decline").GetBoolean());
         var failure = Assert.Single(
             documents, item => item.GetProperty("type").GetString() == "failure");
         Assert.Equal("decision_limit", failure.GetProperty("category").GetString());

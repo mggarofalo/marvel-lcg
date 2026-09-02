@@ -9,7 +9,7 @@ namespace Marvel.Sim;
 internal sealed class ActingPolicy(ICardFacts facts, IReadOnlyList<uint> seatSeeds)
 {
     public const string Name = "acting";
-    public const int Version = 1;
+    public const int Version = 2;
     public const string Visibility = "full_state";
 
     private readonly IReadOnlyList<EngineRandom> random =
@@ -35,7 +35,11 @@ internal sealed class ActingPolicy(ICardFacts facts, IReadOnlyList<uint> seatSee
         if (asked.Affordances.Any(option =>
                 string.Equals(option.Verb, Game.ResolveMulligans, StringComparison.Ordinal)))
         {
-            return Decision.Decline;
+            return Taking(
+                game,
+                asked.Affordances.Single(option => option.IsLegal),
+                [],
+                []);
         }
 
         if (asked.Asking == Question.Defender)
