@@ -344,20 +344,34 @@ public sealed partial class Main : Control
 
             if (result.Error is not null)
             {
-                ApplyProgress(result.HasAuthoritativeView
-                    ? GameProgressPresentation.Recovered(result.Response!, result.Error)
-                    : GameProgressPresentation.Unconfirmed(result.Error));
+                if (result.HasAuthoritativeView)
+                {
+                    ApplyProgress(GameProgressPresentation.Recovered(
+                        result.Response!, result.Error));
+                }
+                else
+                {
+                    ShowUnconfirmed(result.Error);
+                }
             }
         }
         catch (Exception)
         {
             if (IsInsideTree())
             {
-                ApplyProgress(GameProgressPresentation.Unconfirmed(new ClientStartupError(
+                ShowUnconfirmed(new ClientStartupError(
                     "display_failed",
-                    "The decision result could not be displayed.")));
+                    "The decision result could not be displayed."));
             }
         }
+    }
+
+    private void ShowUnconfirmed(ClientStartupError error)
+    {
+        promptProgress.Text =
+            $"UNCONFIRMED  ·  {error.Code.ToUpperInvariant()}  ·  RESTART OR RECONNECT";
+        promptProgress.ThemeTypeVariation = GodotThemeVariations.DangerText;
+        ApplyProgress(GameProgressPresentation.Unconfirmed(error));
     }
 
     private void RenderGame(EngineResponse response, bool resetEvents = false)

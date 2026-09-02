@@ -604,15 +604,18 @@ public sealed partial class DecisionPanel : VBoxContainer
 
     private void RestoreFocus(string? requested, bool focusFirst)
     {
-        Control? candidate = string.IsNullOrEmpty(requested)
-            ? null
-            : FindChild(requested, recursive: true, owned: false) as Control;
-        if (candidate is BaseButton { Disabled: true })
+        Control? candidate = EnabledButton(requested);
+        if (candidate is null && requested is not null)
         {
-            candidate = null;
+            string? paired = requested.EndsWith("Add", StringComparison.Ordinal)
+                ? requested[..^3] + "Remove"
+                : requested.EndsWith("Remove", StringComparison.Ordinal)
+                    ? requested[..^6] + "Add"
+                    : null;
+            candidate = EnabledButton(paired) ?? EnabledButton("Submit");
         }
 
-        if (candidate is null && focusFirst)
+        if (candidate is null && (focusFirst || requested is not null))
         {
             candidate = FindChildren("*", "BaseButton", recursive: true, owned: false)
                 .OfType<BaseButton>()
@@ -620,6 +623,21 @@ public sealed partial class DecisionPanel : VBoxContainer
         }
 
         candidate?.GrabFocus();
+    }
+
+    private BaseButton? EnabledButton(string? name)
+    {
+        if (string.IsNullOrEmpty(name))
+        {
+            return null;
+        }
+
+        return FindChild(name, recursive: true, owned: false) is BaseButton
+            {
+                Disabled: false,
+            } button
+            ? button
+            : null;
     }
 
     private void BindAnchors(Control control, params int[] ids)
