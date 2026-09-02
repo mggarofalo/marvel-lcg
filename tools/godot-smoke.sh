@@ -18,7 +18,7 @@ if [[ -z "$godot_bin" || ! -x "$godot_bin" ]]; then
   exit 2
 fi
 
-version=$($godot_bin --version)
+version=$("$godot_bin" --version)
 if [[ "$version" != 4.7.* ]]; then
   echo "Godot 4.7 .NET is required; found: $version" >&2
   exit 2
