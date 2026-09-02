@@ -80,6 +80,7 @@ in this order:
   "revision": 0,
   "cursor": 0,
   "edit_frontier": 0,
+  "current_prompt": {},
   "units": []
 }
 ```
@@ -138,6 +139,13 @@ The ledger deals from this record. It does not deserialize card objects.
 `initial` records setup semantic events, cumulative RNG words consumed and the
 complete canonical initial state digest. Replay verifies all 3 before accepting
 the first unit.
+
+`current_prompt` is the stable server-side prompt at the active cursor, or null
+for a terminal game. It is written on open and after every accepted gameplay or
+history command. It pins the initial mulligan prompt in a zero-unit save and the
+pending payment, target, interrupt, response or forced-effect prompt at the end
+of an open unit. It is not a visibility-safe client menu: publication still
+projects separate authorized views for each seat.
 
 ### Durable decisions
 
@@ -198,6 +206,9 @@ before acknowledgement. Every later dependent answer appends to the same open
 unit and is also committed before acknowledgement. Reaching the next root menu,
 phase boundary or terminal state changes the unit to `complete` in the same
 commit as the decision that reached it.
+
+Every such commit also writes the prompt returned after the accepted decision
+as `current_prompt` before acknowledgement.
 
 An open unit is canonical and replayable, but not editable. Undo, redo and
 reorder are unavailable until it completes. A server restart replays every
@@ -314,7 +325,8 @@ Candidate replay has 2 modes:
 
 - verification mode compares every recorded prompt, event list, RNG count,
   frontier signal and digest with the reproduced value. Load, restore and redo
-  use this mode;
+  use this mode, and compare the reconstructed prompt at the active cursor with
+  `current_prompt` before publication;
 - construction mode verifies the unchanged prefix, then treats decisions as
   inputs and regenerates every derived prompt, event list, RNG count, frontier
   signal and digest after the edit point. A new decision and an accepted reorder
@@ -487,7 +499,8 @@ selected save it:
 5. Replays and verifies every unit, including the inactive redo suffix.
 6. Replays through the cursor to reconstruct the active game.
 7. Verifies the saved frontier, revision and active state, including a terminal
-   result when present.
+   result when present, and requires the reconstructed pending prompt to equal
+   `current_prompt` exactly.
 8. Publishes the session and its recovered authorities only after complete
    success.
 
@@ -509,12 +522,13 @@ The subsystem requires executable examples for:
   after every close boundary and safe display-label reuse;
 - complete replay of solo and multiplayer saves;
 - rejection of a zero-unit save whose initial RNG count diverges;
+- rejection of a zero-unit save whose initial pending prompt diverges;
 - first-divergence prompt, event, RNG and digest checks;
 - rejection of a terminal replay whose outcome or terminal round diverges;
 - atomic commit failure before live-session replacement;
 - restart from the last complete save after interrupted replacement;
 - restart in the middle of an open action and restoration of its exact pending
-  prompt;
+  prompt, including rejection when only that post-decision prompt diverges;
 - a reversible card play and an irreversible draw;
 - search, reveal, shuffle and random-selection frontiers;
 - redo and future truncation after a new decision;
