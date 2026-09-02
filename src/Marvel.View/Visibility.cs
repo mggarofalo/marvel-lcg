@@ -1,3 +1,7 @@
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("Marvel.Server")]
+
 namespace Marvel.View;
 
 /// <summary>What a client says it is displaying.</summary>
@@ -23,6 +27,9 @@ public sealed class ViewScope
 
     /// <summary>Whether private information belonging to a seat may be returned.</summary>
     public bool Includes(int seat) => seats.Contains(seat);
+
+    /// <summary>Whether this scope authorizes exactly one specified seat.</summary>
+    internal bool IsExactly(int seat) => seats.Count == 1 && seats.Contains(seat);
 }
 
 /// <summary>Chooses the private seats a newly opened server session may see.</summary>
@@ -39,8 +46,7 @@ public interface IVisibilityPolicy
 public sealed record SeatScope(int Seat, ViewScope Scope);
 
 /// <summary>
-/// Cooperative-table policy: a claimed seat sees itself, while hot-seat and
-/// watch claims may see every player's private information.
+/// Cooperative-table policy in which every session sees the whole table.
 /// </summary>
 /// <remarks>
 /// Permissiveness is an explicit server choice. It does not make the assertion
@@ -54,18 +60,13 @@ public sealed class PermissiveVisibilityPolicy : IVisibilityPolicy
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(players);
         ValidateClaim(claim, players);
-
-        if (claim is null || claim.HotSeat || claim.Watch)
-        {
-            return new ViewScope(Enumerable.Range(0, players));
-        }
-
-        return claim.Seat is int seat ? new ViewScope([seat]) : ViewScope.None;
+        return new ViewScope(Enumerable.Range(0, players));
     }
 
     /// <inheritdoc />
     public IReadOnlyList<SeatScope> AdditionalScopes(ViewerClaim? claim, int players)
     {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(players);
         ValidateClaim(claim, players);
         return [];
     }
@@ -92,9 +93,9 @@ public sealed class PermissiveVisibilityPolicy : IVisibilityPolicy
 
 /// <summary>Non-cooperative policy that binds the process to one authorized seat.</summary>
 /// <remarks>
-/// A client may under-claim and receive no private information. A <c>watch</c>,
-/// <c>hot_seat</c>, or different-seat assertion cannot widen the seat configured
-/// by the server operator.
+/// Viewer claims are validated as input but never select or narrow authority.
+/// The server operator's configured seat is the only authority for the opening
+/// session, and every other seat receives a separate invitation scope.
 /// </remarks>
 public sealed class RestrictedVisibilityPolicy(int authorizedSeat) : IVisibilityPolicy
 {
@@ -113,11 +114,6 @@ public sealed class RestrictedVisibilityPolicy(int authorizedSeat) : IVisibility
         }
 
         PermissiveVisibilityPolicy.ValidateClaim(claim, players);
-        if (claim?.Seat is int claimed && claimed != authorizedSeat)
-        {
-            return ViewScope.None;
-        }
-
         return new ViewScope([authorizedSeat]);
     }
 
@@ -125,11 +121,6 @@ public sealed class RestrictedVisibilityPolicy(int authorizedSeat) : IVisibility
     public IReadOnlyList<SeatScope> AdditionalScopes(ViewerClaim? claim, int players)
     {
         _ = Authorize(claim, players);
-        if (claim?.Seat is int claimed && claimed != authorizedSeat)
-        {
-            return [];
-        }
-
         return Enumerable.Range(0, players)
             .Where(seat => seat != authorizedSeat)
             .Select(seat => new SeatScope(seat, new ViewScope([seat])))

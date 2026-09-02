@@ -29,17 +29,25 @@ public sealed class VisibilityTests
     }
 
     [Fact]
-    public void AClientSeatAssertionCannotWidenRestrictedAuthority()
+    public void ValidViewerClaimsCannotSelectOrNarrowRestrictedAuthority()
     {
         var policy = new RestrictedVisibilityPolicy(0);
+        ViewerClaim?[] claims =
+        [
+            null,
+            new ViewerClaim(),
+            new ViewerClaim(Seat: 0),
+            new ViewerClaim(Seat: 1),
+            new ViewerClaim(HotSeat: true),
+            new ViewerClaim(Watch: true),
+        ];
 
-        ViewScope claimingOne = policy.Authorize(new ViewerClaim(Seat: 1), players: 2);
-        ViewScope claimingAll = policy.Authorize(new ViewerClaim(Watch: true), players: 2);
-
-        Assert.False(claimingOne.Includes(0));
-        Assert.False(claimingOne.Includes(1));
-        Assert.True(claimingAll.Includes(0));
-        Assert.False(claimingAll.Includes(1));
+        Assert.All(claims, claim =>
+        {
+            ViewScope scope = policy.Authorize(claim, players: 2);
+            Assert.True(scope.Includes(0));
+            Assert.False(scope.Includes(1));
+        });
     }
 
     [Fact]
@@ -47,39 +55,82 @@ public sealed class VisibilityTests
     {
         var policy = new RestrictedVisibilityPolicy(0);
 
-        IReadOnlyList<SeatScope> grants = policy.AdditionalScopes(
-            new ViewerClaim(Seat: 0), players: 3);
-        IReadOnlyList<SeatScope> denied = policy.AdditionalScopes(
-            new ViewerClaim(Seat: 1), players: 3);
-        IReadOnlyList<SeatScope> watching = policy.AdditionalScopes(
-            new ViewerClaim(Watch: true), players: 3);
-        IReadOnlyList<SeatScope> hotSeat = policy.AdditionalScopes(
-            new ViewerClaim(HotSeat: true), players: 3);
-        IReadOnlyList<SeatScope> omitted = policy.AdditionalScopes(null, players: 3);
+        ViewerClaim?[] claims =
+        [
+            null,
+            new ViewerClaim(),
+            new ViewerClaim(Seat: 0),
+            new ViewerClaim(Seat: 1),
+            new ViewerClaim(Seat: 2),
+            new ViewerClaim(Watch: true),
+            new ViewerClaim(HotSeat: true),
+        ];
 
-        Assert.Equal([1, 2], grants.Select(grant => grant.Seat));
-        Assert.Equal([1, 2], watching.Select(grant => grant.Seat));
-        Assert.Equal([1, 2], hotSeat.Select(grant => grant.Seat));
-        Assert.Equal([1, 2], omitted.Select(grant => grant.Seat));
-        Assert.All(grants, grant =>
+        Assert.All(claims, claim =>
         {
-            Assert.True(grant.Scope.Includes(grant.Seat));
-            Assert.False(grant.Scope.Includes(0));
+            IReadOnlyList<SeatScope> grants = policy.AdditionalScopes(claim, players: 3);
+            Assert.Equal([1, 2], grants.Select(grant => grant.Seat));
+            Assert.All(grants, grant =>
+            {
+                Assert.True(grant.Scope.Includes(grant.Seat));
+                Assert.All(
+                    Enumerable.Range(0, 3).Where(seat => seat != grant.Seat),
+                    seat => Assert.False(grant.Scope.Includes(seat)));
+            });
         });
-        Assert.Empty(denied);
     }
 
     [Fact]
-    public void CooperativePolicyExplicitlyAllowsAWholeTableView()
+    public void ValidViewerClaimsAllReceiveTheSameCooperativeTableScope()
+    {
+        var policy = new PermissiveVisibilityPolicy();
+        ViewerClaim?[] claims =
+        [
+            null,
+            new ViewerClaim(),
+            new ViewerClaim(Seat: 0),
+            new ViewerClaim(Seat: 1),
+            new ViewerClaim(HotSeat: true),
+            new ViewerClaim(Watch: true),
+        ];
+
+        Assert.All(claims, claim =>
+        {
+            ViewScope scope = policy.Authorize(claim, players: 2);
+            Assert.True(scope.Includes(0));
+            Assert.True(scope.Includes(1));
+            Assert.Empty(policy.AdditionalScopes(claim, players: 2));
+        });
+    }
+
+    [Fact]
+    public void CooperativeTableShowsPlayerCardsButKeepsDrawPilesConcealed()
     {
         var board = Board();
         ViewScope scope = new PermissiveVisibilityPolicy().Authorize(
-            new ViewerClaim(HotSeat: true), board.Players);
+            new ViewerClaim(Seat: 0), board.Players);
 
         WorldDescriptor visible = WorldProjection.For(board, null, [], scope).World;
 
         Assert.NotNull(Hand(visible, 0).Face);
         Assert.NotNull(Hand(visible, 1).Face);
+        Assert.NotNull(Card(visible, "player-ally").Face);
+        Assert.All(
+            visible.Areas
+                .Where(area => area.Zone == nameof(DeckType.PlayerDeck))
+                .SelectMany(area => area.Cards),
+            card =>
+            {
+                Assert.Null(card.Id);
+                Assert.Null(card.Face);
+            });
+        Assert.All(
+            visible.Areas.Single(area => area.Zone == nameof(DeckType.EncounterDeck)).Cards,
+            card =>
+            {
+                Assert.Null(card.Id);
+                Assert.Null(card.Face);
+            });
     }
 
     [Fact]
@@ -278,13 +329,23 @@ public sealed class VisibilityTests
             world.Areas.SelectMany(area => area.Cards.Concat(area.Removed)),
             card => card.Id == id);
 
+    private static CardDescriptor Card(WorldDescriptor world, string faceId) =>
+        Assert.Single(
+            world.Areas.SelectMany(area => area.Cards.Concat(area.Removed)),
+            card => card.Face?.Id == faceId);
+
     private static World Board()
     {
         var world = new World(new Facts(), players: 2, seed: 7);
         Seat zero = world.CreateSeat("Zero");
         Seat one = world.CreateSeat("One");
+        world.CreateCard("zero-deck", zero.Deck);
+        world.CreateCard("one-deck", one.Deck);
         world.CreateCard("zero-hand", zero.Hand);
         world.CreateCard("one-hand", one.Hand);
+        Area allies = world.CreateArea(
+            DeckType.AlliesArea, cardOwner: 1, playArea: PlayArea.Of(1));
+        world.CreateCard("player-ally", allies);
         Area encounter = world.AreaOf(DeckType.EncounterDeck);
         world.CreateCard("secret-a", encounter);
         world.CreateCard("secret-b", encounter);

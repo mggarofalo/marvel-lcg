@@ -179,6 +179,84 @@ public sealed class EngineHostTests
     }
 
     [Fact]
+    public void InvalidAdditionalSeatGrantsFailBeforeTheyReachAFactory()
+    {
+        Func<int, ViewScope> seat = index =>
+            new RestrictedVisibilityPolicy(index).Authorize(null, players: 2);
+        ViewScope everySeat = new PermissiveVisibilityPolicy().Authorize(
+            new ViewerClaim(HotSeat: true), players: 2);
+        (string Name, IReadOnlyList<SeatScope>? Grants)[] hostile =
+        {
+            ("missing collection", null),
+            ("empty grant", new SeatScope[] { null! }),
+            ("negative seat", [new SeatScope(-1, seat(0))]),
+            ("seat past player count", [new SeatScope(2, seat(0))]),
+            ("duplicate seat", [new SeatScope(1, seat(1)), new SeatScope(1, seat(1))]),
+            ("primary seat repeated", [new SeatScope(0, seat(0))]),
+            ("different seat in scope", [new SeatScope(1, seat(0))]),
+            ("more than one seat in scope", [new SeatScope(1, everySeat)]),
+            ("empty scope", [new SeatScope(1, ViewScope.None)]),
+        };
+
+        foreach ((string name, IReadOnlyList<SeatScope>? grants) in hostile)
+        {
+            var factory = new UnusedFactory();
+            var host = new EngineHost(
+                factory,
+                visibility: new HostileVisibilityPolicy(grants));
+
+            EngineResponse response = host.Exchange(EngineRequest.OpenGame(
+                name,
+                "game",
+                new GameSpecification(
+                    "rhino", ["spider_man", "captain_marvel"], [], Seed: 7)));
+
+            Assert.Equal("invalid_request", response.Error?.Code);
+            Assert.Equal(0, factory.Calls);
+        }
+    }
+
+    [Fact]
+    public void MissingPrimaryScopeFailsBeforeItReachesAFactory()
+    {
+        var factory = new UnusedFactory();
+        var host = new EngineHost(factory, visibility: new NullPrimaryVisibilityPolicy());
+
+        EngineResponse response = host.Exchange(EngineRequest.OpenGame(
+            "missing-primary",
+            "game",
+            new GameSpecification(
+                "rhino", ["spider_man", "captain_marvel"], [], Seed: 7)));
+
+        Assert.Equal("invalid_request", response.Error?.Code);
+        Assert.Equal(0, factory.Calls);
+    }
+
+    [Fact]
+    public void AdditionalSeatGrantsAreSnapshottedBeforeValidationAndIssuance()
+    {
+        ViewScope zero = new RestrictedVisibilityPolicy(0).Authorize(null, players: 2);
+        ViewScope one = new RestrictedVisibilityPolicy(1).Authorize(null, players: 2);
+        var grants = new ChangingSeatGrants(
+            [new SeatScope(1, one)],
+            [new SeatScope(0, zero)]);
+        var host = new EngineHost(
+            DatasetGameFactory.Load(RepositoryPaths.Root),
+            new SequenceCapabilities("owner", "invitation"),
+            new HostileVisibilityPolicy(grants));
+
+        EngineResponse response = host.Exchange(EngineRequest.OpenGame(
+            "snapshot",
+            "game",
+            new GameSpecification(
+                "rhino", ["spider_man", "captain_marvel"], [], Seed: 7)));
+
+        Assert.Null(response.Error);
+        Assert.Equal(1, Assert.Single(response.Invitations!).Seat);
+        Assert.Equal(1, grants.Enumerations);
+    }
+
+    [Fact]
     public void EngineFailuresDoNotReturnInternalDiagnostics()
     {
         var host = new EngineHost(new FailingFactory("secret-card-identity"));
@@ -336,5 +414,43 @@ public sealed class EngineHostTests
     {
         public OpenedGame Create(GameSpecification specification) =>
             throw new InvalidOperationException(message);
+    }
+
+    private sealed class HostileVisibilityPolicy(IReadOnlyList<SeatScope>? grants)
+        : IVisibilityPolicy
+    {
+        public ViewScope Authorize(ViewerClaim? claim, int players) =>
+            new RestrictedVisibilityPolicy(0).Authorize(null, players);
+
+        public IReadOnlyList<SeatScope> AdditionalScopes(
+            ViewerClaim? claim, int players) => grants!;
+    }
+
+    private sealed class NullPrimaryVisibilityPolicy : IVisibilityPolicy
+    {
+        public ViewScope Authorize(ViewerClaim? claim, int players) => null!;
+
+        public IReadOnlyList<SeatScope> AdditionalScopes(
+            ViewerClaim? claim, int players) => [];
+    }
+
+    private sealed class ChangingSeatGrants(
+        IReadOnlyList<SeatScope> first,
+        IReadOnlyList<SeatScope> later) : IReadOnlyList<SeatScope>
+    {
+        public int Enumerations { get; private set; }
+
+        public int Count => first.Count;
+
+        public SeatScope this[int index] => first[index];
+
+        public IEnumerator<SeatScope> GetEnumerator()
+        {
+            Enumerations++;
+            return (Enumerations == 1 ? first : later).GetEnumerator();
+        }
+
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() =>
+            GetEnumerator();
     }
 }

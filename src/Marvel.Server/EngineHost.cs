@@ -211,8 +211,17 @@ public sealed class EngineHost : IEngineEndpoint
         try
         {
             scope = visibility.Authorize(request.Viewer, request.Game.Heroes.Count);
-            additionalScopes = visibility.AdditionalScopes(
-                request.Viewer, request.Game.Heroes.Count);
+            if (scope is null)
+            {
+                throw new ArgumentException("visibility policy returned no primary scope");
+            }
+
+            IReadOnlyList<SeatScope> policyScopes = visibility.AdditionalScopes(
+                    request.Viewer, request.Game.Heroes.Count)
+                ?? throw new ArgumentException(
+                    "visibility policy returned no additional-scope collection");
+            additionalScopes = policyScopes.ToList();
+            ValidateAdditionalScopes(scope, additionalScopes, request.Game.Heroes.Count);
         }
         catch (Exception failure) when (failure is ArgumentException or InvalidOperationException)
         {
@@ -247,6 +256,48 @@ public sealed class EngineHost : IEngineEndpoint
         }
 
         return response;
+    }
+
+    private static void ValidateAdditionalScopes(
+        ViewScope primary, IReadOnlyList<SeatScope>? grants, int players)
+    {
+        if (grants is null)
+        {
+            throw new ArgumentException("visibility policy returned no additional-scope collection");
+        }
+
+        var seats = new HashSet<int>();
+        foreach (SeatScope? grant in grants)
+        {
+            if (grant is null)
+            {
+                throw new ArgumentException("visibility policy returned an empty seat grant");
+            }
+
+            if (grant.Seat < 0 || grant.Seat >= players)
+            {
+                throw new ArgumentException(
+                    $"visibility policy seat {grant.Seat} is outside this game");
+            }
+
+            if (!seats.Add(grant.Seat))
+            {
+                throw new ArgumentException(
+                    $"visibility policy returned seat {grant.Seat} more than once");
+            }
+
+            if (primary.Includes(grant.Seat))
+            {
+                throw new ArgumentException(
+                    $"visibility policy returned primary seat {grant.Seat} as an additional grant");
+            }
+
+            if (grant.Scope is null || !grant.Scope.IsExactly(grant.Seat))
+            {
+                throw new ArgumentException(
+                    $"visibility policy grant for seat {grant.Seat} must authorize exactly that seat");
+            }
+        }
     }
 
     private EngineResponse Attach(EngineRequest request)

@@ -81,20 +81,23 @@ hidden event cannot restore a face or object id removed from the descriptor.
 
 The server supports 2 explicit policies:
 
-- `cooperative` allows the configured seat, hot-seat or watcher view expected by
-  a cooperative game; and
+- `cooperative` shows every player's cooperative private area, regardless of a
+  client viewer claim; and
 - `restricted` binds private information to a server-authorized seat.
 
-A client claim is input to the policy, not authority. The server decides the
-scope and binds it to the session capability.
+A client claim is validated input, never authority or a hide-cards setting. The
+server policy decides the scope and binds it to the session capability.
 
 Restricted multiplayer uses one-time seat invitations. Attaching consumes an
 invitation and returns a new capability bound to that seat. Another seat cannot
 answer the pending prompt, even if it can guess the game label or request body.
 
-Face-up cards in public areas remain public. Cards in a player hand remain
-private to that seat even if an engine effect left their physical `FaceUp` field
-set. Authorized searches expose only their current target set.
+Face-up cards in public areas remain public. Under restricted policy, cards in
+a player hand remain private to that seat even if an engine effect left their
+physical `FaceUp` field set. Cooperative policy authorizes every player hand by
+default. Player decks, encounter decks and other concealed piles still hide
+their identity and order. Authorized searches expose only their current target
+set.
 
 These are product and wire choices. The tabletop rules do not define remote
 viewers or network authorization.
