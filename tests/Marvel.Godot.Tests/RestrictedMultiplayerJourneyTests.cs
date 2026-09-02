@@ -1,4 +1,6 @@
+using System.Collections.Concurrent;
 using System.Net;
+using System.Text.Json;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
@@ -16,27 +18,31 @@ public sealed class RestrictedMultiplayerJourneyTests
     [Fact]
     public async Task TwoRestrictedSocketClientsCompleteOneSeededCoreGame()
     {
-        using var stopping = CancellationTokenSource.CreateLinkedTokenSource(
-            TestContext.Current.CancellationToken);
-        stopping.CancelAfter(TimeSpan.FromSeconds(30));
-        var listening = new TaskCompletionSource<IPEndPoint>(
-            TaskCreationOptions.RunContinuationsAsynchronously);
-        var server = new SocketEngineServer(
-            new EngineHost(
-                DatasetGameFactory.Load(RepositoryPaths.Root),
-                visibility: new RestrictedVisibilityPolicy(0)),
-            IPAddress.Loopback,
-            port: 0);
-        Task running = Task.Run(
-            () => server.Run(listening.SetResult, stopping.Token),
-            TestContext.Current.CancellationToken);
+        string saveRoot = Path.Combine(
+            Path.GetTempPath(), $"marvel-restricted-journey-{Guid.NewGuid():N}");
+        var diagnostics = new StringWriter(
+            System.Globalization.CultureInfo.InvariantCulture);
+        var exporter = new CollectingExporter();
+        var log = new OperationalLog(
+            new CompositeOperationalSink(
+                new JsonTextOperationalSink(diagnostics),
+                new OperationalTelemetrySink(exporter)),
+            "journey");
+        DatasetGameFactory factory = DatasetGameFactory.Load(RepositoryPaths.Root);
+        RunningServer? server = null;
 
         try
         {
-            IPEndPoint endpoint = await listening.Task.WaitAsync(
-                TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+            server = await RunningServer.StartAsync(
+                new EngineHost(
+                    factory,
+                    visibility: new RestrictedVisibilityPolicy(0),
+                    store: new FileSessionStore(saveRoot),
+                    log: log),
+                port: 0);
+            IPEndPoint endpoint = server.Endpoint;
             LocalGameClient NewClient() => new(new SocketTransport(
-                endpoint.Address.ToString(), endpoint.Port));
+                endpoint.Address.ToString(), endpoint.Port, log), log);
             LocalGameClient[] clients = [NewClient(), NewClient()];
 
             ClientEntryResult owner = await clients[0].OpenSessionAsync(
@@ -81,7 +87,7 @@ public sealed class RestrictedMultiplayerJourneyTests
             bool[] sawPrivateSearch = [false, false];
             bool testedStale = false;
             bool testedDroppedResponse = false;
-            bool reconnected = false;
+            bool restarted = false;
             EngineDecision? ownerRevisionZeroDecision = null;
             int decisions = 0;
 
@@ -184,12 +190,22 @@ public sealed class RestrictedMultiplayerJourneyTests
                 Assert.NotNull(resolved.Response);
                 decisions++;
 
-                if (!reconnected && decisions >= 2)
+                if (!restarted && decisions >= 2)
                 {
+                    await server.StopAsync();
+                    server = await RunningServer.StartAsync(
+                        new EngineHost(
+                            factory,
+                            visibility: new RestrictedVisibilityPolicy(0),
+                            store: new FileSessionStore(saveRoot),
+                            log: log),
+                        endpoint.Port);
+                    Assert.Equal(endpoint, server.Endpoint);
                     clients = [NewClient(), NewClient()];
                     views = await SynchronizeBoth(clients, sessions);
                     AssertRestrictedViews(views);
-                    reconnected = true;
+                    Assert.Equal(views[0].Revision, views[1].Revision);
+                    restarted = true;
                 }
             }
 
@@ -205,7 +221,7 @@ public sealed class RestrictedMultiplayerJourneyTests
             Assert.All(sawPrivateSearch, Assert.True);
             Assert.True(testedStale);
             Assert.True(testedDroppedResponse);
-            Assert.True(reconnected);
+            Assert.True(restarted);
             Assert.Equal(10, decisions);
             Assert.Equal(Outcome.VillainWins, ownerTerminal.Outcome);
 
@@ -214,12 +230,41 @@ public sealed class RestrictedMultiplayerJourneyTests
             Assert.Equal(views[1].Revision, terminalAgain[1].Revision);
             AssertPublicAgreement(views[0].World, terminalAgain[0].World);
             AssertPublicAgreement(views[1].World, terminalAgain[1].World);
+
+            log.Flush(TimeSpan.FromSeconds(3));
+            string renderedDiagnostics = diagnostics.ToString();
+            Assert.Contains(OperationalEventIds.SessionRestored, renderedDiagnostics,
+                StringComparison.Ordinal);
+            foreach (string secret in sessions.Select(session => session.Capability)
+                         .Append(invitation.Invitation))
+            {
+                Assert.DoesNotContain(secret, renderedDiagnostics, StringComparison.Ordinal);
+                Assert.DoesNotContain(
+                    secret,
+                    JsonSerializer.Serialize(exporter.Envelopes),
+                    StringComparison.Ordinal);
+            }
+
+            Assert.Contains(
+                exporter.Envelopes.SelectMany(envelope => envelope.Spans)
+                    .GroupBy(span => span.TraceId),
+                trace => trace.Any(span =>
+                    span.Name == OperationalEventIds.TransportCompleted)
+                    && trace.Any(span =>
+                        span.Name == OperationalEventIds.RequestCompleted));
         }
         finally
         {
-            stopping.Cancel();
-            await running.WaitAsync(
-                TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+            if (server is not null)
+            {
+                await server.StopAsync();
+            }
+
+            log.Flush(TimeSpan.FromSeconds(3));
+            if (Directory.Exists(saveRoot))
+            {
+                Directory.Delete(saveRoot, recursive: true);
+            }
         }
     }
 
@@ -411,5 +456,89 @@ public sealed class RestrictedMultiplayerJourneyTests
 
             return response;
         }
+    }
+
+    private sealed class CollectingExporter : ITelemetryExporter
+    {
+        private readonly ConcurrentQueue<TelemetryEnvelope> envelopes = new();
+
+        public IReadOnlyList<TelemetryEnvelope> Envelopes => [.. envelopes];
+
+        public void Export(TelemetryEnvelope envelope) => envelopes.Enqueue(envelope);
+    }
+
+    private sealed class RunningServer : IAsyncDisposable
+    {
+        private readonly CancellationTokenSource stopping;
+        private readonly Task running;
+        private bool stopped;
+
+        private RunningServer(
+            IPEndPoint endpoint,
+            CancellationTokenSource stopping,
+            Task running)
+        {
+            Endpoint = endpoint;
+            this.stopping = stopping;
+            this.running = running;
+        }
+
+        public IPEndPoint Endpoint { get; }
+
+        public static async Task<RunningServer> StartAsync(EngineHost host, int port)
+        {
+            var stopping = CancellationTokenSource.CreateLinkedTokenSource(
+                TestContext.Current.CancellationToken);
+            stopping.CancelAfter(TimeSpan.FromSeconds(30));
+            var listening = new TaskCompletionSource<IPEndPoint>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+            var socket = new SocketEngineServer(host, IPAddress.Loopback, port);
+            Task running = Task.Run(
+                () => socket.Run(listening.SetResult, stopping.Token),
+                TestContext.Current.CancellationToken);
+            try
+            {
+                Task completed = await Task.WhenAny(listening.Task, running).WaitAsync(
+                    TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+                if (completed == running)
+                {
+                    await running;
+                    throw new InvalidOperationException(
+                        "the socket server exited before publishing its endpoint");
+                }
+
+                return new RunningServer(await listening.Task, stopping, running);
+            }
+            catch
+            {
+                stopping.Cancel();
+                try
+                {
+                    await running.WaitAsync(TimeSpan.FromSeconds(5));
+                }
+                catch
+                {
+                }
+
+                stopping.Dispose();
+                throw;
+            }
+        }
+
+        public async ValueTask StopAsync()
+        {
+            if (stopped)
+            {
+                return;
+            }
+
+            stopped = true;
+            stopping.Cancel();
+            await running.WaitAsync(
+                TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+            stopping.Dispose();
+        }
+
+        public ValueTask DisposeAsync() => StopAsync();
     }
 }
