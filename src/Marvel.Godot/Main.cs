@@ -13,6 +13,7 @@ public sealed partial class Main : Control
 {
     private readonly List<string> scenarioNames = [];
     private readonly List<ScenarioSetupChoice> visibleModes = [];
+    private readonly ICardArtProvider art = LocalArtPack.OpenConfigured();
     private Control board = null!;
     private VBoxContainer boardAreas = null!;
     private HSplitContainer playLayout = null!;
@@ -411,7 +412,7 @@ public sealed partial class Main : Control
         Outcome previousOutcome = CurrentGame?.World?.Outcome ?? Outcome.Unfinished;
         CurrentGame = response;
         WorldDescriptor world = response.World!;
-        boardRender = BoardRenderer.Render(boardAreas, BoardPresentation.From(world));
+        boardRender = BoardRenderer.Render(boardAreas, BoardPresentation.From(world), art);
         RenderPromptSummary(response.Prompt, world);
         decisions.Render(response.Prompt, world);
         EventBatchPresentation presented = EventCuePlanner.Plan(

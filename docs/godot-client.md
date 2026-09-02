@@ -93,3 +93,41 @@ The standard scale is the default. For desktop accessibility checks or local
 use, set `MARVEL_UI_SCALE` to `large` or `extra-large` before launch. These
 select the other tested, monotonic type and spacing scales; gameplay and its
 deterministic state are unaffected.
+
+## Optional local art pack
+
+The client can place local illustrations inside the procedural card face. Art
+never replaces the title, rules text, live values or other visibility-safe
+information, and it is never fetched over the network.
+
+By default the client looks in `art-pack` beneath Godot's per-user application
+data directory. Set `MARVEL_ART_PACK` to an explicit local directory to use a
+different pack. That directory contains a `manifest.json` with this v1 shape:
+
+```json
+{
+  "version": 1,
+  "entries": {
+    "01001a": {
+      "file": "01001a.png",
+      "authorized": true,
+      "rights": "Why this local copy is authorized for use."
+    }
+  }
+}
+```
+
+Face ids are exact and case-sensitive. Files must be relative paths inside the
+pack, no path component may be a symbolic link, and the supported format is
+PNG. Manifests are limited to 1 MiB, image files to 20 MiB, total accepted
+compressed art to 64 MiB, processed entries to 2048, and PNG dimensions
+to 4096 pixels per side before decode. Authorized image bytes are loaded once
+when the client opens the pack, so later filesystem changes cannot alter play.
+`authorized` must be true and
+`rights` must be nonblank; the pack owner is responsible for that assertion.
+
+Missing entries, malformed manifests, path escapes, URLs, unauthorized entries
+and invalid images silently use the complete procedural face. Concealed cards
+carry no face id, and the renderer never asks the art pack about them. This
+repository intentionally bundles no card images; an image may be committed only
+with its redistribution rights documented alongside it.

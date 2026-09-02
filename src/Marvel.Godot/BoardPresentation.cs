@@ -134,6 +134,7 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
                 .ToArray())
         {
             Back = card.Back.ToString().ToUpperInvariant(),
+            FaceId = card.Face.Id,
             Traits = card.Face.Traits,
             Cost = card.Face.Cost,
             PrintedStats = card.Face.PrintedStats
@@ -211,6 +212,9 @@ public sealed record BoardCardPresentation(
 {
     /// <summary>The non-identifying physical back.</summary>
     public string Back { get; init; } = string.Empty;
+
+    /// <summary>The stable visible face id used only for optional local art.</summary>
+    public string? FaceId { get; init; }
 
     /// <summary>Effective traits visible on the current face.</summary>
     public IReadOnlyList<string> Traits { get; init; } = [];

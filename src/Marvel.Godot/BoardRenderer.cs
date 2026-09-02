@@ -6,7 +6,10 @@ namespace Marvel.Godot;
 public static class BoardRenderer
 {
     /// <summary>Replaces the visible board with one authoritative snapshot.</summary>
-    public static BoardRenderResult Render(VBoxContainer destination, BoardPresentation board)
+    public static BoardRenderResult Render(
+        VBoxContainer destination,
+        BoardPresentation board,
+        ICardArtProvider? art = null)
     {
         ArgumentNullException.ThrowIfNull(destination);
         ArgumentNullException.ThrowIfNull(board);
@@ -22,7 +25,7 @@ public static class BoardRenderer
             : BoardLayout.Arrange(board.Areas, []);
         foreach (BoardLanePresentation lane in lanes)
         {
-            destination.AddChild(Lane(lane, result));
+            destination.AddChild(Lane(lane, result, art));
         }
 
         return result;
@@ -30,7 +33,8 @@ public static class BoardRenderer
 
     private static VBoxContainer Lane(
         BoardLanePresentation lane,
-        BoardRenderResult result)
+        BoardRenderResult result,
+        ICardArtProvider? art)
     {
         var section = new VBoxContainer
         {
@@ -57,7 +61,7 @@ public static class BoardRenderer
         scroll.AddChild(areas);
         foreach (BoardAreaPresentation area in lane.Areas)
         {
-            areas.AddChild(Area(area, result));
+            areas.AddChild(Area(area, result, art));
         }
 
         section.AddChild(scroll);
@@ -66,7 +70,8 @@ public static class BoardRenderer
 
     private static PanelContainer Area(
         BoardAreaPresentation area,
-        BoardRenderResult result)
+        BoardRenderResult result,
+        ICardArtProvider? art)
     {
         var panel = new PanelContainer
         {
@@ -92,11 +97,11 @@ public static class BoardRenderer
                 wrap: true));
         }
         content.AddChild(new HSeparator());
-        AddCards(content, area.Cards, "CARDS", result);
+        AddCards(content, area.Cards, "CARDS", result, art);
         if (area.Removed.Count > 0)
         {
             content.AddChild(new HSeparator());
-            AddCards(content, area.Removed, "REMOVED", result);
+            AddCards(content, area.Removed, "REMOVED", result, art);
         }
 
         return panel;
@@ -106,7 +111,8 @@ public static class BoardRenderer
         VBoxContainer destination,
         IReadOnlyList<BoardCardPresentation> cards,
         string section,
-        BoardRenderResult result)
+        BoardRenderResult result,
+        ICardArtProvider? art)
     {
         destination.AddChild(Label(
             $"{section}  ·  {cards.Sum(card => card.Count)}",
@@ -136,7 +142,7 @@ public static class BoardRenderer
         foreach (BoardCardPresentation card in cards)
         {
             CardControl control = CardControl.Create(
-                card, CardDisplaySize.Board, ClientTheme.ConfiguredScale());
+                card, CardDisplaySize.Board, ClientTheme.ConfiguredScale(), art);
             control.SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin;
             rail.AddChild(control);
             if (card.TargetId is { } target)
