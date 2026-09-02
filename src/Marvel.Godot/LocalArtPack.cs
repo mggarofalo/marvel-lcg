@@ -17,6 +17,7 @@ public sealed class ArtPackCatalog
     private const long MaximumFileBytes = 20 * 1024 * 1024;
     private const long MaximumPackBytes = 64 * 1024 * 1024;
     private const long MaximumManifestBytes = 1024 * 1024;
+    private const int MaximumEntries = 2048;
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
@@ -56,10 +57,11 @@ public sealed class ArtPackCatalog
 
             var accepted = new Dictionary<string, byte[]>(StringComparer.Ordinal);
             long acceptedBytes = 0;
-            foreach ((string faceId, ArtPackEntry? entry) in manifest.Entries)
+            foreach ((string faceId, ArtPackEntry? entry) in manifest.Entries.Take(MaximumEntries))
             {
-                byte[]? asset = ReadAsset(fullRoot, entry);
-                if (asset is not null && acceptedBytes + asset.Length <= MaximumPackBytes)
+                long remaining = MaximumPackBytes - acceptedBytes;
+                byte[]? asset = ReadAsset(fullRoot, entry, remaining);
+                if (asset is not null)
                 {
                     accepted.TryAdd(faceId, asset);
                     acceptedBytes += asset.Length;
@@ -95,7 +97,10 @@ public sealed class ArtPackCatalog
             ? asset
             : null;
 
-    private static byte[]? ReadAsset(string fullRoot, ArtPackEntry? entry)
+    private static byte[]? ReadAsset(
+        string fullRoot,
+        ArtPackEntry? entry,
+        long remainingBytes)
     {
         if (entry is null
             || !entry.Authorized
@@ -123,7 +128,8 @@ public sealed class ArtPackCatalog
 
             using FileStream stream = File.Open(
                 candidate, FileMode.Open, System.IO.FileAccess.Read, FileShare.Read);
-            if (stream.Length is <= 24 or > MaximumFileBytes)
+            if (stream.Length is <= 24 or > MaximumFileBytes
+                || stream.Length > remainingBytes)
             {
                 return null;
             }

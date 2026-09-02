@@ -120,7 +120,7 @@ different pack. That directory contains a `manifest.json` with this v1 shape:
 Face ids are exact and case-sensitive. Files must be relative paths inside the
 pack, no path component may be a symbolic link, and the supported format is
 PNG. Manifests are limited to 1 MiB, image files to 20 MiB, total accepted
-compressed art to 64 MiB, and PNG dimensions
+compressed art to 64 MiB, processed entries to 2048, and PNG dimensions
 to 4096 pixels per side before decode. Authorized image bytes are loaded once
 when the client opens the pack, so later filesystem changes cannot alter play.
 `authorized` must be true and
