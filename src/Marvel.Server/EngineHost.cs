@@ -166,6 +166,8 @@ public sealed class EngineHost : IEngineEndpoint
             EngineProtocol.Attach => Attach(request),
             EngineProtocol.Sync => Sync(request),
             EngineProtocol.Resolve => Resolve(request),
+            EngineProtocol.Undo => MoveHistory(request, undo: true),
+            EngineProtocol.Redo => MoveHistory(request, undo: false),
             EngineProtocol.Close => Close(request),
             _ => Failed(
                 request, "invalid_request",
@@ -180,7 +182,8 @@ public sealed class EngineHost : IEngineEndpoint
             || request.Game is not null
             || request.Decision is not null
             || request.Viewer is not null
-            || request.ExpectedRevision is not null)
+            || request.ExpectedRevision is not null
+            || request.Cursor is not null)
         {
             return Failed(
                 request, "invalid_request",
@@ -209,7 +212,8 @@ public sealed class EngineHost : IEngineEndpoint
     {
         if (request.Game is null
             || request.Decision is not null
-            || request.ExpectedRevision is not null)
+            || request.ExpectedRevision is not null
+            || request.Cursor is not null)
         {
             return Failed(
                 request, "invalid_request",
@@ -282,7 +286,8 @@ public sealed class EngineHost : IEngineEndpoint
             scope,
             capability,
             issuedInvitations.Select(pair =>
-                new SeatInvitation(pair.grant.Seat, pair.token)).ToList());
+                new SeatInvitation(pair.grant.Seat, pair.token)).ToList(),
+            history: History(save, scope));
         var proposedAuthorities = new List<StoredAuthority>
         {
             Authority(capability, scope, request.Game.Heroes.Count, owner: true, invitation: false),
@@ -347,7 +352,8 @@ public sealed class EngineHost : IEngineEndpoint
         if (request.Game is not null
             || request.Decision is not null
             || request.Viewer is not null
-            || request.ExpectedRevision is not null)
+            || request.ExpectedRevision is not null
+            || request.Cursor is not null)
         {
             return Failed(
                 request, "invalid_request",
@@ -372,7 +378,8 @@ public sealed class EngineHost : IEngineEndpoint
             [],
             pending.Scope,
             capability,
-            revision: pending.Session.Revision);
+            revision: pending.Session.Revision,
+            history: History(pending.Session.Save, pending.Scope));
         var authorities = Authorities(pending.Session)
             .Where(authority => authority.Verifier != invitationVerifier)
             .Append(Authority(
@@ -395,7 +402,8 @@ public sealed class EngineHost : IEngineEndpoint
         if (request.Game is not null
             || request.Decision is not null
             || request.Viewer is not null
-            || request.ExpectedRevision is not null)
+            || request.ExpectedRevision is not null
+            || request.Cursor is not null)
         {
             return Failed(request, "invalid_request", "sync accepts only a session capability");
         }
@@ -411,7 +419,8 @@ public sealed class EngineHost : IEngineEndpoint
             access.Session.Game.Pending,
             [],
             access.Scope,
-            revision: access.Session.Revision);
+            revision: access.Session.Revision,
+            history: History(access.Session.Save, access.Scope));
     }
 
     private EngineResponse Resolve(EngineRequest request)
@@ -419,7 +428,8 @@ public sealed class EngineHost : IEngineEndpoint
         if (request.Decision is null
             || request.Game is not null
             || request.Viewer is not null
-            || request.ExpectedRevision is null or < 0)
+            || request.ExpectedRevision is null or < 0
+            || request.Cursor is not null)
         {
             return Failed(
                 request, "invalid_request",
@@ -543,7 +553,8 @@ public sealed class EngineHost : IEngineEndpoint
                 resolved.Prompt,
                 resolved.Events,
                 access.Scope,
-                revision: proposed.Revision);
+                revision: proposed.Revision,
+                history: History(proposed, access.Scope));
         }
         catch (Exception failure) when (failure is IOException
             or UnauthorizedAccessException
@@ -566,12 +577,117 @@ public sealed class EngineHost : IEngineEndpoint
         }
     }
 
+    private EngineResponse MoveHistory(EngineRequest request, bool undo)
+    {
+        string operation = undo ? EngineProtocol.Undo : EngineProtocol.Redo;
+        if (request.Game is not null
+            || request.Decision is not null
+            || request.Viewer is not null
+            || request.ExpectedRevision is null or < 0
+            || request.Cursor is null or < 0)
+        {
+            return Failed(
+                request,
+                "invalid_request",
+                $"{operation} requires an expected revision and history cursor");
+        }
+
+        if (!TrySession(request, out _, out var access))
+        {
+            return Failed(request, "session_not_found", "the session capability is not valid");
+        }
+
+        SessionSave save = access.Session.Save;
+        if (request.ExpectedRevision != save.Revision)
+        {
+            return Failed(
+                request,
+                "stale_history",
+                "the history command was composed for an earlier table revision");
+        }
+
+        int target = request.Cursor.Value;
+        if (target > save.Units.Count
+            || (undo && target >= save.Cursor)
+            || (!undo && target <= save.Cursor))
+        {
+            return Failed(
+                request,
+                "history_direction",
+                $"{operation} cursor is not an available retained boundary");
+        }
+
+        if (save.Units.Any(unit => unit.Status != "complete"))
+        {
+            return Failed(
+                request,
+                "history_open",
+                "history cannot change while an operation has dependent decisions pending");
+        }
+
+        int first = Math.Min(target, save.Cursor);
+        int count = Math.Abs(target - save.Cursor);
+        IReadOnlyList<JournalUnit> affected = save.Units.Skip(first).Take(count).ToList();
+        if (!EditableBy(affected, access.Scope))
+        {
+            return Failed(
+                request,
+                "history_authority",
+                "this capability cannot revise history submitted by another seat");
+        }
+
+        if (target < save.EditFrontier)
+        {
+            return Failed(
+                request,
+                "history_frontier",
+                "new information makes that earlier history boundary unavailable");
+        }
+
+        try
+        {
+            Game candidate = SessionReplay.VerifyAtCursor(
+                save, compatibility, ReplayOpen, target);
+            SessionSave proposed = save with
+            {
+                Revision = save.Revision + 1,
+                Cursor = target,
+                CurrentPrompt = candidate.Pending is null
+                    ? null
+                    : PromptRecord.From(candidate.Pending),
+            };
+            Game verified = SessionReplay.Verify(proposed, compatibility, ReplayOpen);
+            store.Commit(new StoredSession(proposed, Authorities(access.Session)));
+            access.Session.Game = verified;
+            access.Session.Save = proposed;
+            return Succeeded(
+                request,
+                verified,
+                verified.Pending,
+                [],
+                access.Scope,
+                revision: proposed.Revision,
+                history: History(proposed, access.Scope));
+        }
+        catch (Exception failure) when (failure is IOException
+            or UnauthorizedAccessException
+            or SessionSaveException
+            or ReplayDivergenceException)
+        {
+            return Failed(
+                request,
+                "history_failed",
+                "history replay was not committed and the prior game remains authoritative");
+        }
+    }
+
     private EngineResponse Close(EngineRequest request)
     {
         if (request.Game is not null
             || request.Decision is not null
             || request.Viewer is not null
-            || request.ExpectedRevision is not null)
+            || request.ExpectedRevision is not null
+            || request.Cursor is not null)
         {
             return Failed(
                 request, "invalid_request",
@@ -768,7 +884,7 @@ public sealed class EngineHost : IEngineEndpoint
         Prompt? currentPrompt,
         IReadOnlyList<InformationExposure> exposures)
     {
-        var units = save.Units.Select(unit => unit with
+        var units = save.Units.Take(save.Cursor).Select(unit => unit with
         {
             Decisions = [.. unit.Decisions],
         }).ToList();
@@ -816,6 +932,35 @@ public sealed class EngineHost : IEngineEndpoint
         };
     }
 
+    private static HistoryDescriptor History(SessionSave save, ViewScope scope)
+    {
+        if (save.Units.Any(unit => unit.Status != "complete"))
+        {
+            return new HistoryDescriptor(save.Cursor, [], []);
+        }
+
+        int[] undo = Enumerable.Range(save.EditFrontier, save.Cursor - save.EditFrontier)
+            .Where(target => EditableBy(
+                save.Units.Skip(target).Take(save.Cursor - target), scope))
+            .ToArray();
+        int[] redo = Enumerable.Range(save.Cursor + 1, save.Units.Count - save.Cursor)
+            .Where(target => EditableBy(
+                save.Units.Skip(save.Cursor).Take(target - save.Cursor), scope))
+            .ToArray();
+        return new HistoryDescriptor(save.Cursor, undo, redo);
+    }
+
+    private static bool EditableBy(IEnumerable<JournalUnit> units, ViewScope scope)
+    {
+        int[] actors = units
+            .SelectMany(unit => unit.Decisions
+                .Select(step => step.Decision.Actor)
+                .Prepend(unit.InitiatingSeat))
+            .Distinct()
+            .ToArray();
+        return actors.Length == 1 && scope.Includes(actors[0]);
+    }
+
     private static string UnitRole(Game game, Prompt prompt, Decision decision)
     {
         if (game.IsForcedResolutionPrompt)
@@ -855,9 +1000,11 @@ public sealed class EngineHost : IEngineEndpoint
         ViewScope? scope = null,
         string? capability = null,
         IReadOnlyList<SeatInvitation>? invitations = null,
-        long revision = 0) =>
+        long revision = 0,
+        HistoryDescriptor? history = null) =>
         Projected(
-            request, game, prompt, events ?? [], scope, capability, invitations, revision);
+            request, game, prompt, events ?? [], scope, capability, invitations, revision,
+            history);
 
     private static EngineResponse Projected(
         EngineRequest request,
@@ -867,7 +1014,8 @@ public sealed class EngineHost : IEngineEndpoint
         ViewScope? scope,
         string? capability,
         IReadOnlyList<SeatInvitation>? invitations,
-        long revision)
+        long revision,
+        HistoryDescriptor? history)
     {
         if (game is null || scope is null)
         {
@@ -877,7 +1025,8 @@ public sealed class EngineHost : IEngineEndpoint
                 Prompt: null,
                 Events: [],
                 Invitations: invitations,
-                Revision: revision);
+                Revision: revision,
+                History: history);
         }
 
         Prompt? scopedPrompt = scope.SoleSeat is int seat
@@ -891,7 +1040,8 @@ public sealed class EngineHost : IEngineEndpoint
             visible.Events,
             visible.World,
             Invitations: invitations,
-            Revision: revision);
+            Revision: revision,
+            History: history);
     }
 
     private static EngineResponse Failed(

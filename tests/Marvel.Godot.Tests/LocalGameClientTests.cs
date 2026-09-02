@@ -949,8 +949,8 @@ public sealed class LocalGameClientTests
 
     [Theory]
     [InlineData(999, "local-open", "local-core-game", "unsupported_version")]
-    [InlineData(7, "other", "local-core-game", "invalid_response")]
-    [InlineData(7, "local-open", "other-game", "invalid_response")]
+    [InlineData(8, "other", "local-core-game", "invalid_response")]
+    [InlineData(8, "local-open", "other-game", "invalid_response")]
     public async Task OpenRejectsMismatchedResponseEnvelopes(
         int version,
         string requestId,
