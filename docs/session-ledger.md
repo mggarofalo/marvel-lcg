@@ -74,6 +74,7 @@ in this order:
   "format": "marvel-session",
   "schema": 1,
   "compatibility": {},
+  "session": {},
   "setup": {},
   "initial": {},
   "revision": 0,
@@ -86,6 +87,12 @@ in this order:
 Unknown members fail loading. Missing members fail loading. A later schema uses
 a new number and an explicit migration; a reader never guesses how to interpret
 it.
+
+`session` contains a server-generated storage id and the bounded display label
+used to open the table. The storage id uses operating-system entropy outside
+gameplay and never enters the seed, RNG stream, prompt, event list or digest.
+Only that validated fixed-alphabet id names the save file. A user-supplied game
+label is data inside the envelope and is never interpreted as a path.
 
 ### Compatibility
 
@@ -123,8 +130,9 @@ looks plausible” is not a migration rule.
 
 The ledger deals from this record. It does not deserialize card objects.
 
-`initial` records setup semantic events and the complete canonical initial state
-digest. Replay verifies both before accepting the first unit.
+`initial` records setup semantic events, cumulative RNG words consumed and the
+complete canonical initial state digest. Replay verifies all 3 before accepting
+the first unit.
 
 ### Durable decisions
 
@@ -155,6 +163,11 @@ choice.
 
 Object ids are durable only inside one deterministically dealt and replayed
 game. They are not global ids and cannot identify a card across unrelated saves.
+
+Unit ids are their zero-based positions in `units`; they are not random values.
+A unit records its role, initiating seat, active seat, round, phase, ordered
+decision records and derived frontier signals. The serializer pins each nested
+record's exact member set and order with schema tests before schema 1 ships.
 
 ## History units
 
@@ -223,6 +236,12 @@ selector and revision before replay. Two simultaneous menus cannot produce 2
 commits at one revision: the first accepted command advances the revision and
 the other becomes stale.
 
+“Belongs to a player” is not a sufficient authorization rule. The Rules
+Reference distinguishes ownership from current control. Ordinary play comes
+from the active seat's hand. An in-play Action belongs to the seat that may
+currently trigger it under ownership, control, card text and encounter-card
+rules. The engine derives that seat; the client does not assign it.
+
 ## Transactional mutation
 
 Every state-changing server command follows one transaction:
@@ -241,6 +260,23 @@ Every state-changing server command follows one transaction:
 If validation, replay or persistence fails, the candidate is discarded and the
 live session remains unchanged. A response never claims a mutation succeeded
 before its canonical save is committed.
+
+Candidate replay has 2 modes:
+
+- verification mode compares every recorded prompt, event list, RNG count,
+  frontier signal and digest with the reproduced value. Load, restore and redo
+  use this mode;
+- construction mode verifies the unchanged prefix, then treats decisions as
+  inputs and regenerates every derived prompt, event list, RNG count, frontier
+  signal and digest after the edit point. A new decision and an accepted reorder
+  use this mode.
+
+Construction mode is not permission to repair an input. Every durable selector,
+actor, target, payment, value and allocation must still resolve exactly and be
+legal. Reordering can change derived damage and healing, so comparing those
+records with their old order would reject the feature by definition. The newly
+derived records replace the old suffix only after the complete candidate is
+legal.
 
 The initial implementation favors this full replay over serializing internal
 continuations or maintaining inverse mutations. Verified checkpoints may later
