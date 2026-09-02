@@ -73,6 +73,71 @@ public sealed class EngineHostTests
     }
 
     [Fact]
+    public void ThreeActionRewriteReplaysAttackExcessAndHealingInTheNewOrder()
+    {
+        var store = new MemorySessionStore();
+        var factory = new ExcessHealingFactory(
+            DatasetGameFactory.Load(RepositoryPaths.Root));
+        var host = new EngineHost(
+            factory,
+            new SequenceCapabilities("rewrite-owner"),
+            store: store);
+        EngineResponse opened = host.Exchange(EngineRequest.OpenGame(
+            "open", "rewrite-example",
+            new GameSpecification("rhino", ["spider_man"], [], Seed: 73)));
+        EngineResponse current = host.Exchange(EngineRequest.ResolveGame(
+            "keep", "rewrite-example", RequiredCapability(opened),
+            TakeOnly(opened), opened.Revision));
+
+        current = ResolveAction(host, opened, current, factory.AttackSource.ObjectId, "attack");
+        current = ResolveAction(host, opened, current, factory.HealSource.ObjectId, "heal");
+        current = ResolveAction(host, opened, current, factory.UpgradeSource.ObjectId, "upgrade");
+        Assert.Equal(4, factory.Game.State.Seats[0].IdentityCard.Damage);
+        Assert.Equal(1, factory.ExcessMeter.Damage);
+
+        EngineResponse rewritten = host.Exchange(EngineRequest.ReorderGame(
+            "rewrite", "rewrite-example", RequiredCapability(opened),
+            [3, 1, 2], current.Revision));
+        EngineResponse synchronized = host.Exchange(EngineRequest.SyncGame(
+            "sync", "rewrite-example", RequiredCapability(opened)));
+        SessionSave save = Assert.Single(store.Load()).Save;
+
+        Assert.Null(rewritten.Error);
+        Assert.Equal(
+            EngineJson.Write(rewritten with { RequestId = "same", Events = [] }),
+            EngineJson.Write(synchronized with { RequestId = "same" }));
+        Assert.Equal(2, factory.Game.State.Seats[0].IdentityCard.Damage);
+        Assert.Equal(3, factory.ExcessMeter.Damage);
+        Assert.False(DeckTypes.IsInPlay(factory.Victim.Area.Type));
+        Assert.Equal(
+            [factory.UpgradeSource.ObjectId,
+             factory.AttackSource.ObjectId,
+             factory.HealSource.ObjectId],
+            save.Units.Skip(1).Take(3)
+                .Select(unit => unit.Decisions[0].Decision.Selector.AnchorId));
+    }
+
+    private static EngineResponse ResolveAction(
+        EngineHost host,
+        EngineResponse opened,
+        EngineResponse current,
+        int source,
+        string requestId)
+    {
+        Affordance action = Assert.Single(
+            Assert.IsType<Prompt>(current.Prompt).Affordances,
+            option => option.AnchorId == source);
+        EngineResponse resolved = host.Exchange(EngineRequest.ResolveGame(
+            requestId,
+            "rewrite-example",
+            RequiredCapability(opened),
+            new EngineDecision(action.Id, []),
+            current.Revision));
+        Assert.Null(resolved.Error);
+        return resolved;
+    }
+
+    [Fact]
     public void ReorderRejectsATraceWhoseMovedActionNoLongerExists()
     {
         var store = new MemorySessionStore();
@@ -1538,6 +1603,150 @@ public sealed class EngineHostTests
                     OffTurnSource,
                     winningCommandEndsGame));
             return opened with { Game = Game };
+        }
+    }
+
+    private sealed class ExcessHealingFactory(IDurableGameFactory inner)
+        : IDurableGameFactory
+    {
+        public SessionCompatibility Compatibility => inner.Compatibility;
+
+        public Card AttackSource { get; private set; } = null!;
+
+        public Card HealSource { get; private set; } = null!;
+
+        public Card UpgradeSource { get; private set; } = null!;
+
+        public Card Victim { get; private set; } = null!;
+
+        public Card ExcessMeter { get; private set; } = null!;
+
+        public Game Game { get; private set; } = null!;
+
+        public OpenedGame Create(GameSpecification specification)
+        {
+            OpenedGame opened = inner.Create(specification);
+            World world = opened.Game.State;
+            Area supports = world.AreaOf(
+                DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0);
+            AttackSource = world.CreateCard("01006", supports);
+            HealSource = world.CreateCard("01006", supports);
+            UpgradeSource = world.CreateCard("01006", supports);
+            Area minions = world.AreaOf(
+                DeckType.EngagedEnemiesArea, PlayArea.Of(0), cardOwner: World.Scenario);
+            Victim = world.CreateCard("01101", minions);
+            ExcessMeter = world.CreateCard("01184", minions);
+            world.Seats[0].IdentityCard.TakeDamage(5);
+            Game = Game.Begin(
+                world,
+                world.Facts,
+                new ExcessHealingActions(
+                    AttackSource,
+                    HealSource,
+                    UpgradeSource,
+                    Victim,
+                    ExcessMeter));
+            return opened with { Game = Game };
+        }
+    }
+
+    private sealed class ExcessHealingActions(
+        Card attack,
+        Card heal,
+        Card upgrade,
+        Card victim,
+        Card excessMeter) : NoCardAbilities
+    {
+        public override IReadOnlyList<PendingAbility> Actions(World world, int player)
+        {
+            if (player != 0)
+            {
+                return [];
+            }
+
+            var actions = new List<PendingAbility>();
+            if (attack.Ready && DeckTypes.IsInPlay(victim.Area.Type))
+            {
+                actions.Add(new PendingAbility(attack.ObjectId, AbilityType.Action, player));
+            }
+
+            if (heal.Ready && excessMeter.Damage > 0)
+            {
+                actions.Add(new PendingAbility(heal.ObjectId, AbilityType.Action, player));
+            }
+
+            if (upgrade.Ready)
+            {
+                actions.Add(new PendingAbility(upgrade.ObjectId, AbilityType.Action, player));
+            }
+
+            return actions;
+        }
+
+        public override Affordance Describe(World world, PendingAbility ability) =>
+            new(
+                ability.Card,
+                Game.ActionVerb,
+                ability.Card,
+                ability.Player,
+                ability.Card == attack.ObjectId
+                    ? "Attack and record excess"
+                    : ability.Card == heal.ObjectId
+                        ? "Heal for recorded excess"
+                        : "Increase the later attack");
+
+        public override IReadOnlyList<GameEvent> Act(
+            World world,
+            PendingAbility ability,
+            IReadOnlyList<int> paying,
+            IReadOnlyList<int> chosen,
+            IReadOnlyDictionary<string, long>? values = null,
+            IReadOnlyList<ResourceAllocation>? allocations = null)
+        {
+            Card source = world.Cards[ability.Card];
+            source.Exhaust();
+            var events = new List<GameEvent>
+            {
+                new FieldSet(source.ObjectId, "is_exhaust", 0, 1),
+            };
+            if (source == upgrade)
+            {
+                return events;
+            }
+
+            if (source == attack)
+            {
+                long amount = upgrade.Ready ? 4 : 6;
+                Damage.AttackResult result = Damage.Attack(
+                    world,
+                    world.Facts,
+                    world.Seats[0].IdentityCard,
+                    victim,
+                    amount,
+                    "rewrite-example",
+                    Game.ActionVerb,
+                    events,
+                    retaliate: false);
+                long before = Damage.Health(world, world.Facts, excessMeter)
+                    - excessMeter.Damage;
+                excessMeter.TakeDamage(result.Excess);
+                events.Add(new FieldSet(
+                    excessMeter.ObjectId,
+                    "health",
+                    before,
+                    before - result.Excess));
+                return events;
+            }
+
+            Damage.Heal(
+                world,
+                world.Facts,
+                world.Seats[0].IdentityCard,
+                excessMeter.Damage,
+                "rewrite-example",
+                Game.ActionVerb,
+                events);
+            return events;
         }
     }
 
