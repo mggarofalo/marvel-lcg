@@ -303,6 +303,33 @@ public sealed partial class AbilityRunner
             : throw new AbilityException(
                 $"{AbilityNode.Describe(value)} is not a list of nodes");
 
+    private static bool InspectsConcealedPile(AbilityValue value)
+    {
+        if (value is AbilityValue.Map map)
+        {
+            if (map.Entries.TryGetValue("cardsIn", out AbilityValue? argument)
+                && IsConcealedCardsIn(new AbilityNode("cardsIn", argument)))
+            {
+                return true;
+            }
+
+            return map.Entries.Values.Any(InspectsConcealedPile);
+        }
+
+        return value is AbilityValue.List list
+            && list.Values.Any(InspectsConcealedPile);
+    }
+
+    private static bool IsConcealedArea(AbilityValue? value) =>
+        value is AbilityValue.Word { Value: "yourDeck" or "encounterDeck" };
+
+    private static bool IsConcealedCardsIn(AbilityNode node) =>
+        node.Kind == "cardsIn"
+        && node.Argument is AbilityValue.Map fields
+        && (IsConcealedArea(fields.Entry("area"))
+            || fields.Entry("areas") is AbilityValue.List areas
+            && areas.Values.Any(IsConcealedArea));
+
     private static AbilityNode Tree(AbilityValue value) => AbilityNode.Of(value);
 
     private static string Word(AbilityValue value) =>

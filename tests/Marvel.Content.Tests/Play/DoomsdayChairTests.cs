@@ -80,6 +80,27 @@ public sealed class DoomsdayChairTests
         Assert.Equal(before.Order(), deck.Cards.Select(card => card.ObjectId).Order());
     }
 
+    [Rule("rr:search.3")]
+    [Fact]
+    public void APluralAreaSearchRecordsInformationWithoutAMatchOrShuffleRng()
+    {
+        var world = Deal();
+        var deck = world.AreaOf(DeckType.EncounterDeck);
+        var discard = world.AreaOf(DeckType.EncounterDiscardPile);
+        foreach (Card extra in deck.Cards.Skip(1).ToList())
+        {
+            World.MoveToTop(extra, discard);
+        }
+
+        RevealChair(world);
+        var resolved = new Resolution(world, Prompt: null, Events: []);
+
+        Assert.Single(deck.Cards);
+        Assert.Contains(
+            resolved.Information,
+            signal => signal.Kind == InformationKind.Search);
+    }
+
     [Fact]
     public void ModokAlreadyInPlayStopsTheWholeSearchAndShuffle()
     {

@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Marvel.Rules.Prompts;
 
 /// <summary>
@@ -138,4 +140,16 @@ public sealed record Prompt(
     string Trigger,
     string Label,
     bool Cancellable,
-    IReadOnlyList<Affordance> Affordances);
+    IReadOnlyList<Affordance> Affordances)
+{
+    /// <summary>
+    /// Whether producing this prompt made concealed candidate identities knowable.
+    /// </summary>
+    /// <remarks>
+    /// Internal ledger metadata, not a client wire field. A target request's
+    /// search flag is only a presentation hint and may select already-public
+    /// cards, so hidden-candidate producers set this separately.
+    /// </remarks>
+    [JsonIgnore]
+    public bool ExposesConcealedCandidates { get; init; }
+}

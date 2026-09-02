@@ -410,12 +410,14 @@ public sealed class EngineHostTests
     [Fact]
     public void RestrictedSeatsReceiveOnlyTheirTurnOptionsAndMaySubmitTheirOwnOffTurnAction()
     {
+        var store = new MemorySessionStore();
         var factory = new OffTurnActionFactory(
             DatasetGameFactory.Load(RepositoryPaths.Root));
         var host = new EngineHost(
             factory,
             new SequenceCapabilities("seat-zero", "invite-one", "seat-one"),
-            new RestrictedVisibilityPolicy(0));
+            new RestrictedVisibilityPolicy(0),
+            store);
         var specification = new GameSpecification(
             "rhino", ["captain_marvel", "spider_man"], [], Seed: 7);
 
@@ -430,6 +432,7 @@ public sealed class EngineHostTests
         EngineResponse afterOne = host.Exchange(EngineRequest.ResolveGame(
             "one-mulligan", "actions", RequiredCapability(attached),
             TakeOnly(oneMulligan), oneMulligan.Revision));
+        int frontierBeforeAction = Assert.Single(store.Load()).Save.EditFrontier;
 
         Assert.Null(afterZero.Prompt);
         Assert.Equal(1, afterOne.Prompt?.Player);
@@ -471,6 +474,9 @@ public sealed class EngineHostTests
         Assert.Null(acted.Error);
         Assert.False(factory.AuntMay.Ready);
         Assert.Equal(1, factory.Game.State.Seats[1].IdentityCard.Damage);
+        SessionSave save = Assert.Single(store.Load()).Save;
+        Assert.Equal(frontierBeforeAction, save.EditFrontier);
+        Assert.Empty(save.Units[^1].Exposures);
 
         EngineResponse staleActive = host.Exchange(EngineRequest.ResolveGame(
             "stale-active", "actions", RequiredCapability(opened),
@@ -703,6 +709,117 @@ public sealed class EngineHostTests
     }
 
     [Fact]
+    public void DrawingDuringAUnitAdvancesItsPersistedInformationFrontier()
+    {
+        var store = new MemorySessionStore();
+        var host = new EngineHost(
+            DatasetGameFactory.Load(RepositoryPaths.Root),
+            new SequenceCapabilities("frontier-owner"),
+            store: store);
+        EngineResponse opened = host.Exchange(EngineRequest.OpenGame(
+            "open",
+            "frontier-table",
+            new GameSpecification("rhino", ["spider_man"], [], Seed: 73)));
+        Prompt prompt = Assert.IsType<Prompt>(opened.Prompt);
+        Affordance mulligan = Assert.Single(prompt.Affordances);
+        int card = Assert.IsType<TargetRequest>(mulligan.Targets).Legal[0];
+
+        EngineResponse resolved = host.Exchange(EngineRequest.ResolveGame(
+            "mulligan",
+            "frontier-table",
+            opened.Capability!,
+            new EngineDecision(mulligan.Id, [card]),
+            opened.Revision));
+
+        Assert.Null(resolved.Error);
+        SessionSave save = Assert.Single(store.Load()).Save;
+        Assert.Equal(1, save.EditFrontier);
+        JournalUnit unit = Assert.Single(save.Units);
+        InformationExposure draw = Assert.Single(
+            unit.Exposures,
+            exposure => exposure.Reason == InformationFrontier.Draw);
+        Assert.Equal([0], draw.Seats);
+        StoredSession stored = Assert.Single(store.Load());
+        Assert.ThrowsAny<Exception>(() => new EngineHost(
+            DatasetGameFactory.Load(RepositoryPaths.Root),
+            store: new FixedSessionStore(new StoredSession(
+                save with { EditFrontier = 0 },
+                stored.Authorities))));
+        Assert.Throws<ReplayDivergenceException>(() => new EngineHost(
+            DatasetGameFactory.Load(RepositoryPaths.Root),
+            store: new FixedSessionStore(stored with
+            {
+                Save = save with
+                {
+                    Units =
+                    [
+                        unit with
+                        {
+                            Exposures =
+                            [
+                                new InformationExposure(
+                                    InformationFrontier.Search,
+                                    [0]),
+                            ],
+                        },
+                    ],
+                },
+            })));
+
+        var migrationStore = new MigrationSessionStore(stored with
+        {
+            Save = save with
+            {
+                Schema = 1,
+                EditFrontier = 0,
+                Units = [unit with { Exposures = [] }],
+            },
+        });
+        var restarted = new EngineHost(
+            DatasetGameFactory.Load(RepositoryPaths.Root),
+            store: migrationStore);
+
+        StoredSession migrated = Assert.Single(migrationStore.Load());
+        Assert.Equal(1, migrationStore.Commits);
+        Assert.Equal(SessionSave.CurrentSchema, migrated.Save.Schema);
+        Assert.Equal(1, migrated.Save.EditFrontier);
+        Assert.Equal(
+            InformationFrontier.Draw,
+            Assert.Single(Assert.Single(migrated.Save.Units).Exposures).Reason);
+        Assert.Null(restarted.Exchange(EngineRequest.SyncGame(
+            "sync", "frontier-table", opened.Capability!)).Error);
+    }
+
+    [Fact]
+    public void ChoosingNoMulliganCardsBeforeAnotherPlayersPromptRevealsNothingNew()
+    {
+        var store = new MemorySessionStore();
+        var host = new EngineHost(
+            DatasetGameFactory.Load(RepositoryPaths.Root),
+            new SequenceCapabilities("seat-zero", "invite-one", "seat-one"),
+            store: store);
+        EngineResponse opened = host.Exchange(EngineRequest.OpenGame(
+            "open",
+            "zero-mulligan-frontier",
+            new GameSpecification(
+                "rhino", ["captain_marvel", "spider_man"], [], Seed: 73)));
+
+        EngineResponse resolved = host.Exchange(EngineRequest.ResolveGame(
+            "keep",
+            "zero-mulligan-frontier",
+            RequiredCapability(opened),
+            TakeOnly(opened),
+            opened.Revision));
+
+        Assert.Null(resolved.Error);
+        SessionSave save = Assert.Single(store.Load()).Save;
+        Assert.Equal(0, save.EditFrontier);
+        Assert.Empty(Assert.Single(save.Units).Exposures);
+        Assert.Equal(1, resolved.Prompt?.Player);
+        Assert.True(Assert.Single(resolved.Prompt!.Affordances).Targets?.IsSearch);
+    }
+
+    [Fact]
     public void FileReadingAndCheatOperationsHaveNoServedSurface()
     {
         var factory = new UnusedFactory();
@@ -774,6 +891,22 @@ public sealed class EngineHostTests
             throw new InvalidOperationException("not used");
     }
 
+    private sealed class MigrationSessionStore(StoredSession session) : ISessionStore
+    {
+        private StoredSession session = session;
+
+        public int Commits { get; private set; }
+
+        public IReadOnlyList<StoredSession> Load() => [session];
+
+        public void Commit(StoredSession replacement)
+        {
+            SessionSaveJson.Validate(replacement.Save);
+            session = replacement;
+            Commits++;
+        }
+    }
+
     private sealed class SequenceCapabilities(params string[] capabilities)
         : ISessionCapabilityIssuer
     {
@@ -788,8 +921,10 @@ public sealed class EngineHostTests
             throw new InvalidOperationException(message);
     }
 
-    private sealed class OffTurnActionFactory(IGameFactory inner) : IGameFactory
+    private sealed class OffTurnActionFactory(IDurableGameFactory inner) : IDurableGameFactory
     {
+        public SessionCompatibility Compatibility => inner.Compatibility;
+
         public Card AuntMay { get; private set; } = null!;
 
         public Game Game { get; private set; } = null!;

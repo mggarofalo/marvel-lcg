@@ -4,6 +4,19 @@ using Marvel.Rules.State;
 
 namespace Marvel.Rules.Play;
 
+/// <summary>A bounded kind of concealed information observed while resolving.</summary>
+public enum InformationKind
+{
+    /// <summary>A concealed card identity became readable.</summary>
+    Reveal,
+
+    /// <summary>A game effect inspected a concealed search area.</summary>
+    Search,
+}
+
+/// <summary>Internal resolution metadata that never carries concealed identities.</summary>
+public sealed record InformationSignal(InformationKind Kind);
+
 /// <summary>
 /// What one resolve produces: the state, the next question, and what happened.
 /// </summary>
@@ -42,6 +55,10 @@ public sealed record Resolution(
     Prompt? Prompt,
     IReadOnlyList<GameEvent> Events)
 {
+    /// <summary>Knowledge changes derived inside rules primitives, separate from wire events.</summary>
+    public IReadOnlyList<InformationSignal> Information { get; } =
+        State.TakeInformationSignals();
+
     /// <summary>Whether the game ended on this resolve.</summary>
     public bool IsOver => Prompt is null;
 }

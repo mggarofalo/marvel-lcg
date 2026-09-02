@@ -643,6 +643,7 @@ public static class Attack
         // card's token pools, and the discarded card's `k_threat` key is on
         // the wire.
         World.MoveToTop(boost, world.AreaOf(DeckType.BoostingArea));
+        world.RecordInformation(InformationKind.Reveal);
         events.Add(new CardsFlipped([boost.ObjectId], true)
         {
             Trigger = trigger, Verb = "Boost",

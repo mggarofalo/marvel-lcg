@@ -102,7 +102,7 @@ public sealed class FileSessionStore : ISessionStore
                 ReadStrict(Path.Combine(
                     directory, generation + ".authority.json")));
             var session = new StoredSession(save, authorities);
-            _ = StoredSessionJson.Write(session);
+            StoredSessionJson.ValidateLoaded(session);
             if (!string.Equals(
                     storageId, session.Save.Session.StorageId, StringComparison.Ordinal))
             {
@@ -417,7 +417,7 @@ internal static class StoredSessionJson
         {
             var session = JsonSerializer.Deserialize<StoredSession>(json, Options)
                 ?? throw new SessionSaveException("stored generation is empty");
-            Validate(session);
+            Validate(session, readable: true);
             return session;
         }
         catch (JsonException failure)
@@ -426,10 +426,20 @@ internal static class StoredSessionJson
         }
     }
 
-    private static void Validate(StoredSession session)
+    public static void ValidateLoaded(StoredSession session) =>
+        Validate(session, readable: true);
+
+    private static void Validate(StoredSession session, bool readable = false)
     {
         ArgumentNullException.ThrowIfNull(session);
-        SessionSaveJson.Validate(session.Save);
+        if (readable)
+        {
+            SessionSaveJson.ValidateReadable(session.Save);
+        }
+        else
+        {
+            SessionSaveJson.Validate(session.Save);
+        }
         if (session.Authorities is null
             || session.Authorities.Any(authority => authority is null
                 || authority.Verifier.Length != 64

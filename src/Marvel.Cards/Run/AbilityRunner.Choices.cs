@@ -183,7 +183,10 @@ public sealed partial class AbilityRunner
                 Steps.TurnAction, $"{source.FaceId}: choose a top card",
                 Cancellable: false,
                 top.Select(card => new Affordance(
-                    card.ObjectId, ChooseVerb, card.ObjectId, player, card.FaceId)).ToList());
+                    card.ObjectId, ChooseVerb, card.ObjectId, player, card.FaceId)).ToList())
+            {
+                ExposesConcealedCandidates = true,
+            };
         }
         if (choice.Kind == "chooseDiscardToShuffle")
         {
@@ -308,7 +311,11 @@ public sealed partial class AbilityRunner
             // Neither rule gives a way out. The ability is resolving, and one
             // of the things it offers is going to happen.
             Cancellable: false,
-            Affordances: offered);
+            Affordances: offered)
+        {
+            ExposesConcealedCandidates = cards
+                && InspectsConcealedPile(choice.Require("from")),
+        };
     }
 
     /// <inheritdoc/>

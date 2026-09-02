@@ -292,6 +292,9 @@ public sealed class CoreActivationAbilityTests
         runner.WhenRevealed(world, card, 0);
         var choice = Assert.Single(
             world.Agenda.Outstanding, step => step.What == Steps.ChooseOption);
+        Prompt prompt = runner.Choosing(
+            world, card, 0, choice.Index, choice.Tier)!;
+        Assert.True(prompt.ExposesConcealedCandidates);
         runner.Chose(
             world, card, 0, choice.Index, Decision.Take(found.ObjectId), choice.Tier);
 

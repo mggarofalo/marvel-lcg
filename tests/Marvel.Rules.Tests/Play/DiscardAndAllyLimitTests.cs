@@ -11,6 +11,24 @@ namespace Marvel.Rules.Tests.Play;
 /// <summary>Discard destinations and the choice imposed by the ally limit.</summary>
 public sealed class DiscardAndAllyLimitTests
 {
+    [Rule("rr:discard-pile.1")]
+    [Fact]
+    public void DiscardingFromAConcealedDeckRecordsTheRevealedIdentity()
+    {
+        // "The contents of a player's discard pile are open information."
+        // The internal signal survives even if the same resolution later puts
+        // the card into a face-down hand, as Black Cat does.
+        var world = Board(new Facts());
+        Card top = world.CreateCard("resource", world.Seats[0].Deck);
+
+        Discard.Card(world, top, "Discard_Top", []);
+        var resolved = new Resolution(world, Prompt: null, Events: []);
+
+        Assert.Contains(
+            resolved.Information,
+            signal => signal.Kind == InformationKind.Reveal);
+    }
+
     [Rule("rr:attach-to.2")]
     [Fact]
     public void AnAttachedCardExhaustsIndependentlyOfItsHost()

@@ -505,7 +505,15 @@ public sealed class EngineHost : IEngineEndpoint
             int round = candidate.Round;
             string phase = candidate.Phase.ToString();
             string role = UnitRole(candidate, candidatePrompt, replayDecision);
+            long rngBefore = candidate.State.Random.Generator.WordsConsumed;
             var resolved = candidate.Resolve(replayDecision);
+            IReadOnlyList<InformationExposure> exposures = InformationFrontier.Classify(
+                candidate.State.Players,
+                rngBefore,
+                candidate.State.Random.Generator.WordsConsumed,
+                resolved.Information,
+                resolved.Events,
+                candidate.Pending);
             var step = JournalStep.From(
                 actor,
                 candidatePrompt,
@@ -524,7 +532,8 @@ public sealed class EngineHost : IEngineEndpoint
                 active,
                 round,
                 phase,
-                candidate.Pending);
+                candidate.Pending,
+                exposures);
             store.Commit(new StoredSession(proposed, Authorities(access.Session)));
             access.Session.Game = candidate;
             access.Session.Save = proposed;
@@ -659,9 +668,20 @@ public sealed class EngineHost : IEngineEndpoint
                 continue;
             }
 
-            Game game = SessionReplay.Verify(stored.Save, compatibility, ReplayOpen);
-            var session = new HostedSession(stored.Save.Session.Label, game, stored.Save);
-            foreach (StoredAuthority authority in stored.Authorities)
+            StoredSession current = stored;
+            if (current.Save.Schema == 1)
+            {
+                SessionSave migrated = SessionReplay.MigrateSchemaOne(
+                    current.Save, compatibility, ReplayOpen);
+                current = current with { Save = migrated };
+                // Publish only after replay has verified the predecessor trace and
+                // the complete schema 2 generation is durable.
+                store.Commit(current);
+            }
+
+            Game game = SessionReplay.Verify(current.Save, compatibility, ReplayOpen);
+            var session = new HostedSession(current.Save.Session.Label, game, current.Save);
+            foreach (StoredAuthority authority in current.Authorities)
             {
                 if (authority.Seats.Any(seat => seat >= game.State.Players))
                 {
@@ -745,7 +765,8 @@ public sealed class EngineHost : IEngineEndpoint
         int active,
         int round,
         string phase,
-        Prompt? currentPrompt)
+        Prompt? currentPrompt,
+        IReadOnlyList<InformationExposure> exposures)
     {
         var units = save.Units.Select(unit => unit with
         {
@@ -760,7 +781,8 @@ public sealed class EngineHost : IEngineEndpoint
                 active,
                 round,
                 phase,
-                [step]));
+                [step],
+                exposures));
         }
         else
         {
@@ -775,6 +797,7 @@ public sealed class EngineHost : IEngineEndpoint
             {
                 Status = completesUnit ? "complete" : "open",
                 Decisions = [.. open.Decisions, step],
+                Exposures = InformationFrontier.Merge(open.Exposures, exposures),
             };
         }
 
@@ -787,6 +810,7 @@ public sealed class EngineHost : IEngineEndpoint
         {
             Revision = save.Revision + 1,
             Cursor = units.Count,
+            EditFrontier = exposures.Count > 0 ? units.Count : save.EditFrontier,
             CurrentPrompt = currentPrompt is null ? null : PromptRecord.From(currentPrompt),
             Units = units,
         };

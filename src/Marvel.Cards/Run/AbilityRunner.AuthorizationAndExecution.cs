@@ -596,7 +596,19 @@ public sealed partial class AbilityRunner
                 break;
 
             case "if":
-                var branch = Test(Tree(node.Require("test")), cast) ? "then" : "else";
+                AbilityValue tested = node.Require("test");
+                bool wasObserving = cast.ObservingInformation;
+                cast.SetObservingInformation(true);
+                bool condition;
+                try
+                {
+                    condition = Test(Tree(tested), cast);
+                }
+                finally
+                {
+                    cast.SetObservingInformation(wasObserving);
+                }
+                var branch = condition ? "then" : "else";
                 if (node.Field(branch) is { } taken)
                 {
                     RunChild(Tree(taken), $"if:{branch}", cast);

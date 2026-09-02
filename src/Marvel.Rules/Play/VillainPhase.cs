@@ -2460,6 +2460,7 @@ public static class VillainPhase
             card,
             world.AreaOf(DeckType.RevealingArea, PlayArea.Of(player)));
         card.TurnFaceUp();
+        world.RecordInformation(InformationKind.Reveal);
         events.Add(new CardsFlipped([card.ObjectId], true)
         {
             Trigger = "villain phase", Verb = "Reveal",

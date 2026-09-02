@@ -1,6 +1,7 @@
 using Marvel.Core.Digest;
 using Marvel.Core.Random;
 using Marvel.Rules.Events;
+using Marvel.Rules.Play;
 
 namespace Marvel.Rules.State;
 
@@ -27,7 +28,21 @@ public sealed class World
     private readonly List<Area> areas = [];
     private readonly List<Seat> seats = [];
     private readonly List<GameArea> gameAreas = [];
+    private readonly List<InformationSignal> informationSignals = [];
     private readonly ICardFacts facts;
+
+    /// <summary>Records concealed knowledge without putting identities on the event wire.</summary>
+    public void RecordInformation(InformationKind kind) =>
+        informationSignals.Add(new InformationSignal(kind));
+
+    internal void ClearInformationSignals() => informationSignals.Clear();
+
+    internal IReadOnlyList<InformationSignal> TakeInformationSignals()
+    {
+        InformationSignal[] taken = [.. informationSignals];
+        informationSignals.Clear();
+        return taken;
+    }
 
     /// <summary>Creates an empty world.</summary>
     /// <param name="facts">The printed card data this game is played with.</param>

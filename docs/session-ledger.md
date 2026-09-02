@@ -27,11 +27,11 @@ The engine already has the determinism, stable decision selectors and replay
 checks needed by this design. `Marvel.Sim` records setup, prompts, decisions,
 events and digests, then deals and resolves the game again to find divergence.
 
-Schema 1 save, atomic generation commit, strict load and verified replay are
-implemented for hosted sessions. The embedded host uses the same ledger and
-replay path with an isolated memory store. Undo, redo, reorder and their
-information frontier remain planned; no client snapshot or simulation record
-is a player save.
+Schema 2 save, atomic generation commit, strict load, verified replay and the
+information frontier are implemented for hosted sessions. The embedded host
+uses the same ledger and replay path with an isolated memory store. Undo, redo
+and reorder remain planned; no client snapshot or simulation record is a player
+save.
 
 ## Boundary
 
@@ -68,13 +68,13 @@ server replay but must never cross the client boundary. A visibility-safe
 
 ## The save is a decision trace
 
-A save is one strict UTF-8 JSON document. Schema 1 has these top-level members
+A save is one strict UTF-8 JSON document. Schema 2 has these top-level members
 in this order:
 
 ```json
 {
   "format": "marvel-session",
-  "schema": 1,
+  "schema": 2,
   "compatibility": {},
   "session": {},
   "setup": {},
@@ -86,6 +86,13 @@ in this order:
   "units": []
 }
 ```
+
+Schema 1 is the single readable predecessor. On startup the server parses it
+with its original strict shape, replays the complete trace to derive every
+information signal, and atomically commits a schema 2 generation before making
+the session available. It never rewrites the active generation in place and
+never publishes a partially migrated session. New saves and every later commit
+write schema 2 only.
 
 Unknown members fail loading. Missing members fail loading. A later schema uses
 a new number and an explicit migration; a reader never guesses how to interpret
@@ -172,7 +179,7 @@ It also records:
 - the engine result after resolution, which is null until the game is terminal
   and otherwise includes the outcome and terminal round.
 
-Schema 1 defines the state fingerprint as `World.Digest()` plus the recorded
+Schema 2 defines the state fingerprint as `World.Digest()` plus the recorded
 engine result. `World.Digest()` alone contains card state and cannot distinguish
 a win from a loss on an otherwise identical terminal board. Replay verifies
 both parts after every decision.
@@ -190,7 +197,7 @@ Unit ids are their zero-based positions in `units`; they are not random values.
 A unit records its role, `open` or `complete` status, initiating seat, active
 seat, round, phase, ordered decision records and derived frontier signals. The
 serializer pins each nested record's exact member set and order with schema
-tests before schema 1 ships.
+tests before schema 2 ships.
 
 ## History units
 
@@ -383,7 +390,9 @@ they then erase. The server therefore persists `edit_frontier` in unit space.
 Undo and reorder cannot cross it. Replay also derives the frontier and requires
 it to equal the saved value.
 
-Rules primitives emit internal ledger signals when a transition:
+The shared ledger derives internal signals from authoritative rules-resolution
+metadata, prompts, semantic events and gameplay RNG consumption when a
+transition:
 
 - draws a card;
 - looks at or searches concealed cards;
@@ -392,23 +401,30 @@ Rules primitives emit internal ledger signals when a transition:
 - shuffles or otherwise consumes gameplay RNG for hidden state; or
 - performs an equivalent operation added later.
 
-Each signal records a bounded reason and the seats for whom information became
-knowable. The server derives those seats from game and visibility authority. It
-does not trust a client claim that nobody looked, and disconnecting a client
-does not weaken the boundary.
+Each signal records one of the bounded reasons `draw`, `search`, `reveal` or
+`random`, plus a sorted set of seats for whom information became knowable. The
+current cooperative product makes player-controlled cards readable to the
+table, so every current signal names every seat. The explicit audience remains
+part of the save so a later concealed-hand PvP policy can narrow it without
+changing the frontier model. The server does not trust a client claim that
+nobody looked, and disconnecting a client does not weaken the boundary.
 
 RNG consumption advances the frontier even when its result remains concealed.
 This is deliberately conservative. It prevents a trace edit from becoming a
 way to reroll hidden state by changing which earlier operation consumed the
 stream.
 
-A unit is indivisible. Playing a card with no exposure may remain undoable. If
-that play also draws, searches, reveals or randomly selects, the complete unit
-advances the frontier and cannot be undone.
+A unit is indivisible. Playing a card with no exposure remains on the editable
+side of the frontier. If that play also draws, searches, reveals or randomly
+selects, the complete unit advances the frontier and cannot be undone.
 
 These internal signals are not public semantic events. Public events explain
 board changes and pass through visibility filtering. Frontier signals protect
-server history and may name information that must never reach a client.
+server history and may name information that must never reach a client. Rules
+primitives record a bounded signal without concealed card identities when an
+operation such as a no-result search or a transient deck-to-discard-to-hand
+sequence cannot be recovered safely from the final board and public event
+stream alone.
 
 ## Undo and redo
 
@@ -515,7 +531,7 @@ their respective interfaces. A client cache is not a backup.
 
 The subsystem requires executable examples for:
 
-- byte-stable schema 1 records and strict parsing;
+- byte-stable schema 2 records and strict parsing;
 - atomic open with its initial save and owner authority, including crashes at
   each persistence boundary;
 - durable attach, credential revocation and owner retirement, including restart

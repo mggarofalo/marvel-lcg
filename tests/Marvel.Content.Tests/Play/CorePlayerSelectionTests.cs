@@ -103,6 +103,10 @@ public sealed class CorePlayerSelectionTests
 
         Assert.Equal(GamePhase.PlayerSetup, game.Phase);
         Assert.Equal(Question.Element, setup.Prompt!.Asking);
+        Assert.True(setup.Prompt.ExposesConcealedCandidates);
+        Assert.Contains(
+            setup.Information,
+            signal => signal.Kind == InformationKind.Search);
         Assert.Equal(
             [chosen.ObjectId, other.ObjectId],
             setup.Prompt.Affordances.Select(option => option.AnchorId).Order());

@@ -40,6 +40,29 @@ public sealed class SessionPersistenceTests
             SeatInvitation invitation = Assert.Single(opened.Invitations!);
             EngineResponse attached = first.Exchange(EngineRequest.AttachGame(
                 "attach", "persistent-table", invitation.Invitation));
+            var mulligan = Assert.Single(Assert.IsType<Marvel.Rules.Prompts.Prompt>(
+                opened.Prompt).Affordances);
+            Assert.Null(first.Exchange(EngineRequest.ResolveGame(
+                "keep",
+                "persistent-table",
+                opened.Capability!,
+                new EngineDecision(mulligan.Id, []),
+                opened.Revision)).Error);
+
+            // Simulate the exact predecessor generation written before schema 2.
+            // The next host must verify it and atomically publish the migrated save.
+            string directory = Assert.Single(Directory.GetDirectories(root));
+            string generation = File.ReadAllText(Path.Combine(directory, "current")).Trim();
+            string predecessor = Path.Combine(directory, generation + ".session.json");
+            File.WriteAllText(
+                predecessor,
+                File.ReadAllText(predecessor).Replace(
+                    "\"schema\":2",
+                    "\"schema\":1",
+                    StringComparison.Ordinal).Replace(
+                    ",\"exposures\":[]",
+                    string.Empty,
+                    StringComparison.Ordinal));
 
             var restarted = new EngineHost(
                 factory,
@@ -52,6 +75,10 @@ public sealed class SessionPersistenceTests
 
             Assert.Null(owner.Error);
             Assert.Null(seat.Error);
+            Assert.Equal(
+                SessionSave.CurrentSchema,
+                Assert.Single(new FileSessionStore(root).Load()).Save.Schema);
+            Assert.Single(Assert.Single(new FileSessionStore(root).Load()).Save.Units);
             Assert.NotEqual(
                 EngineJson.Write(owner with { RequestId = "same" }),
                 EngineJson.Write(seat with { RequestId = "same" }));

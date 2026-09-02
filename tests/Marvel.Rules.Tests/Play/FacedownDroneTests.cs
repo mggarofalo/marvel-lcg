@@ -76,6 +76,7 @@ public sealed class FacedownDroneTests
 
         bool defeated = Damage.Deal(
             world, facts, drone, drone, 1, "test", "Deal_Damage", []);
+        var resolved = new Resolution(world, Prompt: null, Events: []);
 
         Assert.True(defeated);
         Assert.Same(underneath, drone);
@@ -85,6 +86,9 @@ public sealed class FacedownDroneTests
         Assert.False(FacedownDrones.Is(drone));
         Assert.Equal(CardKind.Ally, FacedownDrones.Kind(drone, facts));
         Assert.Equal(["AVENGER"], Traits.Of(world, drone, facts));
+        Assert.Contains(
+            resolved.Information,
+            signal => signal.Kind == InformationKind.Reveal);
     }
 
     [Rule("rr:engage.1")]
