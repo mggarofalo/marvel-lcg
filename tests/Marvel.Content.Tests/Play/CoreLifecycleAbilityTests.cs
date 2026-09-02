@@ -54,10 +54,39 @@ public sealed class CoreLifecycleAbilityTests
             runner.Waiting(world, occurrence, WindowKind.Response));
         runner.Resolve(world, occurrence, response, [], []);
         var choice = Assert.Single(world.Agenda.Outstanding);
+        Prompt prompt = runner.Choosing(
+            world, shuri, 0, choice.Index, choice.Tier)!;
+        Assert.True(prompt.ExposesConcealedCandidates);
         runner.Chose(
             world, shuri, 0, choice.Index, Decision.Take(upgrade.ObjectId), choice.Tier);
 
         Assert.Contains(upgrade, world.Seats[0].Hand.Cards);
+    }
+
+    [Rule("rr:search.3")]
+    [Fact]
+    public void ShurisNoResultOneCardSearchStillRecordsInformation()
+    {
+        // Searching happens even when no Upgrade matches and a one-card deck
+        // needs no Fisher-Yates step, so neither a choice nor RNG can stand in
+        // for the knowledge signal.
+        var world = Board("01040a");
+        var shuri = world.CreateCard(
+            "01041", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        world.CreateCard("01044", world.Seats[0].Deck);
+        var runner = AuthoredCards.Runner();
+        var occurrence = new Occurrence(
+            1, [Steps.CardEntersPlay], Subject: shuri.ObjectId, Player: 0);
+
+        PendingAbility response = Assert.Single(
+            runner.Waiting(world, occurrence, WindowKind.Response));
+        runner.Resolve(world, occurrence, response, [], []);
+        var resolved = new Resolution(world, Prompt: null, Events: []);
+
+        Assert.Empty(world.Agenda.Outstanding);
+        Assert.Contains(
+            resolved.Information,
+            signal => signal.Kind == InformationKind.Search);
     }
 
     [Rule("rr:enters-play")]

@@ -269,6 +269,7 @@ public sealed class Game
     public Resolution Resolve(Decision input)
     {
         ArgumentNullException.ThrowIfNull(input);
+        world.ClearInformationSignals();
 
         if (Pending is null)
         {
@@ -1334,9 +1335,10 @@ public sealed class Game
                 Legal: hand,
                 Min: least,
                 Max: hand.Length,
-                // Looking through your own hand is a search: the cards are
-                // hidden from everyone else, so a client presents this as
-                // opening the hand rather than as clicking the table.
+                // This is a presentation marker for choosing from a card
+                // collection rather than clicking cards already laid out on
+                // the table. The cooperative product exposes player hands by
+                // default, so it is not itself an information boundary.
                 IsSearch: true),
         };
     }

@@ -853,6 +853,11 @@ public sealed partial class AbilityRunner
                 + "not implemented");
         }
 
+        // The identities inspected by a search never enter the public event
+        // wire. The resolution still records that knowledge was acquired even
+        // when no card matches and a one-card deck consumes no shuffle RNG.
+        cast.World.RecordInformation(InformationKind.Search);
+
         // The found card is added to the revealing area before the searched
         // deck is shuffled. `rr:search` says the found card is added to the
         // indicated area, and the shuffle therefore applies to the cards that

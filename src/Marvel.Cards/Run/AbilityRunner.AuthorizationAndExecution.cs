@@ -596,7 +596,12 @@ public sealed partial class AbilityRunner
                 break;
 
             case "if":
-                var branch = Test(Tree(node.Require("test")), cast) ? "then" : "else";
+                AbilityValue tested = node.Require("test");
+                if (InspectsConcealedPile(tested))
+                {
+                    cast.World.RecordInformation(InformationKind.Search);
+                }
+                var branch = Test(Tree(tested), cast) ? "then" : "else";
                 if (node.Field(branch) is { } taken)
                 {
                     RunChild(Tree(taken), $"if:{branch}", cast);

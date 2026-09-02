@@ -34,9 +34,13 @@ public sealed class SpiderManCardsTests
         runner.Resolve(
             world, occurrence,
             new PendingAbility(cat.ObjectId, AbilityType.ForcedResponse, 0), [], []);
+        var resolved = new Resolution(world, Prompt: null, Events: []);
 
         Assert.Equal(DeckType.DiscardPile, energy.Area.Type);
         Assert.Equal(DeckType.HandsArea, genius.Area.Type);
+        Assert.Contains(
+            resolved.Information,
+            signal => signal.Kind == InformationKind.Reveal);
     }
 
     [Rule("rr:player-turn.5")]

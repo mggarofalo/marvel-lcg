@@ -43,9 +43,13 @@ public sealed class EvictionNoticeTests
         int before = seat.FormChangedInRound;
 
         AuthoredCards.Runner().Chose(world, card, 0, First, Decision.Take(0));
+        var resolved = new Resolution(world, Prompt: null, Events: []);
 
         Assert.True(Forms.In(world, seat, Cards, Forms.AlterEgo));
         Assert.Equal(before, seat.FormChangedInRound);
+        Assert.DoesNotContain(
+            resolved.Information,
+            signal => signal.Kind == InformationKind.Reveal);
     }
 
     [Rule("rr:may")]

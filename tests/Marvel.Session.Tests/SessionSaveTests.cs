@@ -8,7 +8,7 @@ namespace Marvel.Session.Tests;
 public sealed class SessionSaveTests
 {
     [Fact]
-    public void SchemaOneHasAStableStrictTopLevelDocument()
+    public void SchemaTwoHasAStableStrictTopLevelDocument()
     {
         SessionSave save = Save();
 
@@ -17,7 +17,7 @@ public sealed class SessionSaveTests
 
         Assert.Equal(json, SessionSaveJson.Write(parsed));
         Assert.StartsWith(
-            "{\"format\":\"marvel-session\",\"schema\":1,\"compatibility\":",
+            "{\"format\":\"marvel-session\",\"schema\":2,\"compatibility\":",
             json,
             StringComparison.Ordinal);
         Assert.Contains(
@@ -44,8 +44,8 @@ public sealed class SessionSaveTests
                 "\"format\":\"future-session\"",
                 StringComparison.Ordinal),
             "schema" => json.Replace(
-                "\"schema\":1",
                 "\"schema\":2",
+                "\"schema\":3",
                 StringComparison.Ordinal),
             _ => throw new InvalidOperationException(change),
         };
@@ -87,6 +87,20 @@ public sealed class SessionSaveTests
 
         Assert.Throws<JsonException>(() =>
             JsonSerializer.Deserialize<DurableDecision>(changed, SessionSaveJson.Options));
+    }
+
+    [Fact]
+    public void SchemaOneCanBeReadStrictlyButCannotBeWrittenAsCurrent()
+    {
+        string legacyJson = SessionSaveJson.Write(Save()).Replace(
+            "\"schema\":2",
+            "\"schema\":1",
+            StringComparison.Ordinal);
+
+        SessionSave legacy = SessionSaveJson.Read(legacyJson);
+
+        Assert.Equal(1, legacy.Schema);
+        Assert.Throws<SessionSaveException>(() => SessionSaveJson.Write(legacy));
     }
 
     private static SessionSave Save() => new(

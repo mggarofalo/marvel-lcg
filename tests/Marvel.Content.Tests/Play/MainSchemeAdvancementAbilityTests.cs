@@ -34,6 +34,7 @@ public sealed class MainSchemeAdvancementAbilityTests
         var action = Assert.Single(
             runner.Actions(world, 0), ability => ability.Card == source.ObjectId);
         var events = runner.Act(world, action, [], []);
+        var resolved = new Resolution(world, Prompt: null, events);
 
         Assert.Equal(DeckType.RemovedArea, old.Area.Type);
         Assert.Equal(0, old.Tokens.GetValueOrDefault("is_completed"));
@@ -43,6 +44,9 @@ public sealed class MainSchemeAdvancementAbilityTests
         Assert.DoesNotContain(
             events.OfType<Marvel.Rules.Events.FieldSet>(),
             change => change.Card == old.ObjectId && change.Field == "is_completed");
+        Assert.DoesNotContain(
+            resolved.Information,
+            signal => signal.Kind == InformationKind.Reveal);
     }
 
     [Rule("rr:main-scheme-main-scheme-deck.2.2")]

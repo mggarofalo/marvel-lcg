@@ -1178,7 +1178,11 @@ public sealed class TargetReferenceTests
             board => source = InPlay(board, "01006", DeckType.SupportsArea),
             runner);
 
-        ResolveAction(game, source!);
+        Resolution resolved = ResolveAction(game, source!);
+
+        Assert.Contains(
+            resolved.Information,
+            signal => signal.Kind == InformationKind.Search);
     }
 
     private static AbilityRunner Runner(string card, string effect) =>
@@ -1226,13 +1230,13 @@ public sealed class TargetReferenceTests
             card,
             world.AreaOf(area, PlayArea.Of(0), cardOwner: 0));
 
-    private static void ResolveAction(Game game, Card source)
+    private static Resolution ResolveAction(Game game, Card source)
     {
         var action = Assert.Single(
             game.Pending!.Affordances,
             option => option.Verb == Game.ActionVerb
                 && option.AnchorId == source.ObjectId);
-        game.Resolve(Decision.Take(action.Id));
+        return game.Resolve(Decision.Take(action.Id));
     }
 
     private static (Game Game, World World) Playing(

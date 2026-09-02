@@ -111,6 +111,14 @@ public static class DeckTypes
     /// <param name="type">The kind of place.</param>
     public static bool FaceDownOnEntry(DeckType type) =>
         type == DeckType.HandsArea || (Decks.Contains(type) && !FaceUpFlagged.Contains(type));
+
+    /// <summary>Whether the area is a concealed pile rather than a player hand.</summary>
+    public static bool IsConcealedPile(DeckType type) => type is
+        DeckType.PlayerDeck
+        or DeckType.AdditionalDeck
+        or DeckType.EncounterDeck
+        or DeckType.DealtEncounterCardsDeck
+        or DeckType.BoostCardsDeck;
     /// <summary>Whether a card in this kind of place is <i>in play</i>.</summary>
     /// <remarks>
     /// <c>rr:in-play-and-out-of-play</c>. Read off the recorded milestone board

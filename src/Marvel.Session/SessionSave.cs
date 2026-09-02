@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
@@ -43,9 +44,10 @@ public sealed record JournalUnit(
     [property: JsonRequired] int ActiveSeat,
     [property: JsonRequired] int Round,
     [property: JsonRequired] string Phase,
-    [property: JsonRequired] IReadOnlyList<JournalStep> Decisions);
+    [property: JsonRequired] IReadOnlyList<JournalStep> Decisions,
+    [property: JsonRequired] IReadOnlyList<InformationExposure> Exposures);
 
-/// <summary>Schema 1's complete, capability-free deterministic session authority.</summary>
+/// <summary>Schema 2's complete, capability-free deterministic session authority.</summary>
 public sealed record SessionSave(
     [property: JsonRequired] string Format,
     [property: JsonRequired] int Schema,
@@ -62,8 +64,8 @@ public sealed record SessionSave(
     /// <summary>The required schema family marker.</summary>
     public const string FormatName = "marvel-session";
 
-    /// <summary>The only schema this runtime reads and writes.</summary>
-    public const int CurrentSchema = 1;
+    /// <summary>The schema this runtime writes; schema 1 is read only for migration.</summary>
+    public const int CurrentSchema = 2;
 
     /// <summary>Creates the zero-decision authority for a freshly dealt game.</summary>
     public static SessionSave Open(
@@ -93,7 +95,7 @@ public sealed record SessionSave(
 /// <summary>Strict, deterministic JSON for the canonical save document.</summary>
 public static class SessionSaveJson
 {
-    /// <summary>The strict snake-case serialization contract for schema 1.</summary>
+    /// <summary>The strict snake-case serialization contract for schema 2.</summary>
     public static JsonSerializerOptions Options { get; } = CreateOptions();
 
     /// <summary>Validates and writes one canonical save document.</summary>
@@ -109,6 +111,15 @@ public static class SessionSaveJson
         ArgumentNullException.ThrowIfNull(json);
         try
         {
+            using JsonDocument document = JsonDocument.Parse(json);
+            if (document.RootElement.ValueKind == JsonValueKind.Object
+                && document.RootElement.TryGetProperty("schema", out JsonElement schema)
+                && schema.ValueKind == JsonValueKind.Number
+                && schema.GetInt32() == 1)
+            {
+                return ReadSchemaOne(json);
+            }
+
             var save = JsonSerializer.Deserialize<SessionSave>(json, Options)
                 ?? throw new SessionSaveException("save contains no session document");
             Validate(save);
@@ -118,6 +129,19 @@ public static class SessionSaveJson
         {
             throw new SessionSaveException("save is not valid schema JSON", failure);
         }
+    }
+
+    /// <summary>Validates either the current schema or the one migratable predecessor.</summary>
+    public static void ValidateReadable(SessionSave save)
+    {
+        ArgumentNullException.ThrowIfNull(save);
+        if (save.Schema == 1)
+        {
+            ValidateSchemaOne(save);
+            return;
+        }
+
+        Validate(save);
     }
 
     /// <summary>Rejects unsupported identities and structurally invalid history.</summary>
@@ -177,6 +201,7 @@ public static class SessionSaveJson
             || string.IsNullOrEmpty(save.Initial.StateDigest)
             || save.Units.Any(unit => unit is null
                 || unit.Decisions is not { Count: > 0 }
+                || unit.Exposures is null
                 || unit.Status is not ("open" or "complete")
                 || unit.Decisions.Any(step => step is null
                     || step.Prompt is null
@@ -185,16 +210,26 @@ public static class SessionSaveJson
                     || step.RngWords < 0
                     || string.IsNullOrEmpty(step.StateFingerprint)
                     || step.Result is { Outcome: null or "" }
-                    || step.Result is { Round: < 0 })))
+                    || step.Result is { Round: < 0 })
+                || unit.Exposures.Any(exposure =>
+                    !InformationFrontier.IsCanonical(exposure, save.Setup.Heroes.Count))
+                || unit.Exposures.Select(exposure => exposure.Reason)
+                    .Distinct(StringComparer.Ordinal).Count() != unit.Exposures.Count))
         {
             throw new SessionSaveException("save replay records are invalid");
         }
 
 
         int open = -1;
+        int recordedFrontier = 0;
         for (int index = 0; index < save.Units.Count; index++)
         {
             JournalUnit unit = save.Units[index];
+            if (unit.Exposures.Count > 0)
+            {
+                recordedFrontier = index + 1;
+            }
+
             if (unit.Status == "open")
             {
                 if (open >= 0 || index != save.Cursor - 1)
@@ -205,6 +240,11 @@ public static class SessionSaveJson
                 open = index;
             }
         }
+
+        if (recordedFrontier != save.EditFrontier)
+        {
+            throw new SessionSaveException("save information frontier is invalid");
+        }
     }
 
     private static bool Sha256(string? value) =>
@@ -214,6 +254,53 @@ public static class SessionSaveJson
     private static bool StorageId(string? value) =>
         value is { Length: 32 } && value.All(character =>
             character is (>= '0' and <= '9') or (>= 'a' and <= 'f'));
+
+    private static SessionSave ReadSchemaOne(string json)
+    {
+        JsonObject root = JsonNode.Parse(json) as JsonObject
+            ?? throw new JsonException("schema 1 save is not an object");
+        if (root["units"] is not JsonArray units)
+        {
+            throw new JsonException("schema 1 save has no units array");
+        }
+
+        foreach (JsonNode? node in units)
+        {
+            if (node is not JsonObject unit || unit.ContainsKey("exposures"))
+            {
+                throw new JsonException("schema 1 unit shape is invalid");
+            }
+
+            unit.Add("exposures", new JsonArray());
+        }
+
+        var save = JsonSerializer.Deserialize<SessionSave>(root.ToJsonString(), Options)
+            ?? throw new SessionSaveException("save contains no session document");
+        ValidateSchemaOne(save);
+        return save;
+    }
+
+    private static void ValidateSchemaOne(SessionSave save)
+    {
+        if (save.Schema != 1)
+        {
+            throw new SessionSaveException("schema 1 save is not migratable");
+        }
+
+        // Validate the shared document shape before inspecting collections that
+        // a malformed predecessor document could have omitted.
+        Validate(save with { Schema = SessionSave.CurrentSchema });
+        if (save.EditFrontier != 0
+            || save.Cursor != save.Units.Count
+            || save.Units.Any(unit => unit.Exposures.Count != 0))
+        {
+            throw new SessionSaveException("schema 1 save is not migratable");
+        }
+
+        // Schema 1 has the same shape except for per-unit exposure records. It
+        // predates history editing, so only the complete active trace with the
+        // original zero frontier is a state this runtime ever wrote.
+    }
 
     private static JsonSerializerOptions CreateOptions()
     {
@@ -246,21 +333,63 @@ public static class SessionReplay
         ArgumentNullException.ThrowIfNull(open);
         RequireCompatibility(expected, save.Compatibility);
 
-        Game complete = Replay(save, save.Units.Count, open);
+        ReplayResult complete = Replay(
+            save, save.Units.Count, open, requireExposures: true);
         Game active = save.Cursor == save.Units.Count
-            ? complete
-            : Replay(save, save.Cursor, open);
+            ? complete.Game
+            : Replay(save, save.Cursor, open, requireExposures: true).Game;
         RequireCurrentPrompt(save.CurrentPrompt, active.Pending);
         return active;
     }
 
-    private static Game Replay(
+    /// <summary>
+    /// Replays the strict predecessor format and derives schema 2's knowledge records.
+    /// </summary>
+    public static SessionSave MigrateSchemaOne(
+        SessionSave save,
+        SessionCompatibility expected,
+        Func<SessionSetup, ReplayOpenedGame> open)
+    {
+        SessionSaveJson.ValidateReadable(save);
+        if (save.Schema != 1)
+        {
+            throw new SessionSaveException("only schema 1 can be migrated");
+        }
+
+        ArgumentNullException.ThrowIfNull(expected);
+        ArgumentNullException.ThrowIfNull(open);
+        RequireCompatibility(expected, save.Compatibility);
+        ReplayResult replayed = Replay(
+            save, save.Units.Count, open, requireExposures: false);
+        RequireCurrentPrompt(save.CurrentPrompt, replayed.Game.Pending);
+        var units = save.Units.Select((unit, index) => unit with
+        {
+            Decisions = [.. unit.Decisions],
+            Exposures = replayed.Exposures[index],
+        }).ToList();
+        int frontier = units
+            .Select((unit, index) => unit.Exposures.Count > 0 ? index + 1 : 0)
+            .DefaultIfEmpty(0)
+            .Max();
+        SessionSave migrated = save with
+        {
+            Schema = SessionSave.CurrentSchema,
+            EditFrontier = frontier,
+            Units = units,
+        };
+        SessionSaveJson.Validate(migrated);
+        return migrated;
+    }
+
+    private static ReplayResult Replay(
         SessionSave save,
         int unitCount,
-        Func<SessionSetup, ReplayOpenedGame> open)
+        Func<SessionSetup, ReplayOpenedGame> open,
+        bool requireExposures)
     {
         ReplayOpenedGame opened = open(save.Setup);
         Game game = opened.Game;
+        var derived = new List<IReadOnlyList<InformationExposure>>(unitCount);
         JournalReplay.RequireEvents(save.Initial.Events, opened.SetupEvents, "initial events");
         JournalReplay.RequireRng(
             save.Initial.RngWords,
@@ -274,6 +403,7 @@ public static class SessionReplay
         for (int unitIndex = 0; unitIndex < unitCount; unitIndex++)
         {
             JournalUnit unit = save.Units[unitIndex];
+            IReadOnlyList<InformationExposure> exposures = [];
             if (unit.Decisions is null or { Count: 0 }
                 || unit.ActiveSeat != game.Active
                 || unit.Round != game.Round
@@ -291,6 +421,7 @@ public static class SessionReplay
                 string context = $"unit {unitIndex} decision {decisionIndex}";
                 JournalReplay.RequirePrompt(step.Prompt, prompt, $"{context} prompt");
                 Decision decision = step.Decision.Resolve(prompt);
+                long rngBefore = game.State.Random.Generator.WordsConsumed;
                 var resolved = game.Resolve(decision);
                 JournalReplay.RequireEvents(step.Events, resolved.Events, $"{context} events");
                 JournalReplay.RequireRng(
@@ -303,11 +434,38 @@ public static class SessionReplay
                 {
                     throw new ReplayDivergenceException($"{context} result diverged");
                 }
+                exposures = InformationFrontier.Merge(
+                    exposures,
+                    InformationFrontier.Classify(
+                        game.State.Players,
+                        rngBefore,
+                        game.State.Random.Generator.WordsConsumed,
+                        resolved.Information,
+                        resolved.Events,
+                        game.Pending));
                 decisionIndex++;
+            }
+
+            if (requireExposures)
+            {
+                RequireExposures(unit.Exposures, exposures, $"unit {unitIndex} exposure");
+            }
+            derived.Add(exposures);
+        }
+
+        if (requireExposures && unitCount == save.Units.Count)
+        {
+            int frontier = save.Units
+                .Select((unit, index) => unit.Exposures.Count > 0 ? index + 1 : 0)
+                .DefaultIfEmpty(0)
+                .Max();
+            if (frontier != save.EditFrontier)
+            {
+                throw new ReplayDivergenceException("information frontier diverged");
             }
         }
 
-        return game;
+        return new ReplayResult(game, derived);
     }
 
     /// <summary>Captures hidden state together with its terminal meaning.</summary>
@@ -340,6 +498,19 @@ public static class SessionReplay
         JournalReplay.RequirePrompt(expected, actual, "current prompt");
     }
 
+    private static void RequireExposures(
+        IReadOnlyList<InformationExposure> expected,
+        IReadOnlyList<InformationExposure> actual,
+        string context)
+    {
+        string expectedJson = JsonSerializer.Serialize(expected, SessionSaveJson.Options);
+        string actualJson = JsonSerializer.Serialize(actual, SessionSaveJson.Options);
+        if (!string.Equals(expectedJson, actualJson, StringComparison.Ordinal))
+        {
+            throw new ReplayDivergenceException($"{context} diverged");
+        }
+    }
+
     private static void RequireCompatibility(
         SessionCompatibility expected, SessionCompatibility actual)
     {
@@ -354,6 +525,10 @@ public static class SessionReplay
             throw new SessionSaveException("save compatibility does not match this engine and dataset");
         }
     }
+
+    private sealed record ReplayResult(
+        Game Game,
+        IReadOnlyList<IReadOnlyList<InformationExposure>> Exposures);
 }
 
 /// <summary>A save cannot be safely parsed or replayed by this runtime.</summary>

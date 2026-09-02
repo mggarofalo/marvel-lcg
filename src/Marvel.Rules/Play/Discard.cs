@@ -105,8 +105,14 @@ public static class Discard
                     DeckType.DiscardPile, PlayArea.Of(card.Owner), cardOwner: card.Owner);
 
         var from = card.Area;
+        bool exposesIdentity = DeckTypes.IsConcealedPile(from.Type)
+            || FacedownDrones.Is(card);
         int host = from.Host;
         World.MoveToTop(card, pile);
+        if (exposesIdentity && card.FaceUp)
+        {
+            world.RecordInformation(InformationKind.Reveal);
+        }
 
         events.Add(new CardsMoved(
             Places.Reference(from), Places.Reference(pile),
