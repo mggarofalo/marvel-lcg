@@ -158,6 +158,35 @@ public sealed class VisibilityTests
     }
 
     [Fact]
+    public void ReadableFaceFactsTravelTogetherAndAConcealedDeckGetsNoneOfThem()
+    {
+        var board = Board();
+        Card villain = board.AreaOf(DeckType.VillainArea).Cards[0];
+        villain.TakeDamage(2);
+        villain.PlaceTokens("c_test", 3);
+        board.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Traits.Granted + "AERIAL",
+            Affects: villain.ObjectId));
+        ViewScope scope = new RestrictedVisibilityPolicy(0).Authorize(null, board.Players);
+
+        WorldDescriptor visible = WorldProjection.For(board, null, [], scope).World;
+        CardFaceDescriptor face = Assert.IsType<CardFaceDescriptor>(
+            Card(visible, villain.ObjectId).Face);
+        CardDescriptor hidden = visible.Areas
+            .Single(area => area.Zone == nameof(DeckType.EncounterDeck)).Cards[0];
+
+        Assert.Equal(["BRUTE", "AERIAL"], face.Traits);
+        Assert.Equal("4", face.PrintedStats["SCH"]);
+        Assert.Null(face.Cost);
+        Assert.Equal(["Guard"], face.Keywords);
+        Assert.Equal("Guard.", face.RulesText);
+        Assert.Equal(2, face.Damage);
+        Assert.Equal(3, face.Counters["test"]);
+        Assert.Null(hidden.Face);
+    }
+
+    [Fact]
     public void EventsCarryOnlyCardsVisibleAfterTheDecision()
     {
         var board = Board();
@@ -269,10 +298,20 @@ public sealed class VisibilityTests
             ? CardKind.EncounterVillain
             : CardKind.Event;
 
-        public IReadOnlyList<string> Traits(string faceId) => [];
+        public IReadOnlyList<string> Traits(string faceId) => faceId == "public-villain"
+            ? ["BRUTE"]
+            : [];
 
         public IReadOnlyDictionary<string, string> Attributes(string faceId) =>
-            new Dictionary<string, string>(StringComparer.Ordinal);
+            faceId == "public-villain"
+                ? new Dictionary<string, string>(StringComparer.Ordinal) { ["SCH"] = "4" }
+                : new Dictionary<string, string>(StringComparer.Ordinal);
+
+        public IReadOnlyList<string> Keywords(string faceId) => faceId == "public-villain"
+            ? ["Guard"]
+            : [];
+
+        public string Text(string faceId) => faceId == "public-villain" ? "Guard." : string.Empty;
 
         public long PrintedValue(
             string faceId, string attribute, int players, long fallback = 0) => fallback;

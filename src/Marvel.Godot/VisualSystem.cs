@@ -72,6 +72,23 @@ public enum InterfaceScale
     ExtraLarge,
 }
 
+/// <summary>The two disclosure levels supported by a procedural card.</summary>
+public enum CardDisplaySize
+{
+    Full,
+    Board,
+}
+
+/// <summary>Deterministic card geometry and text disclosure for one display size.</summary>
+public sealed record CardLayoutMetrics(
+    int Width,
+    int MinimumHeight,
+    int TitleLines,
+    int RulesLines,
+    bool ShowSubtitle,
+    bool ShowTraits,
+    bool ShowPrintedStats);
+
 /// <summary>Font sizes in logical pixels for one supported interface scale.</summary>
 public sealed record TypeMetrics(
     int DisplayTitle,
@@ -224,6 +241,18 @@ public static class VisualSystem
         FocusRingWidth: Scale(3, scale),
         CornerRadius: Scale(8, scale));
 
+    /// <summary>Returns card geometry without shrinking type to fit content.</summary>
+    public static CardLayoutMetrics Card(CardDisplaySize size, InterfaceScale scale) => size switch
+    {
+        CardDisplaySize.Full => new(
+            Scale(360, scale), Scale(500, scale), 3, 16,
+            ShowSubtitle: true, ShowTraits: true, ShowPrintedStats: true),
+        CardDisplaySize.Board => new(
+            Scale(300, scale), Scale(250, scale), 2, 5,
+            ShowSubtitle: true, ShowTraits: true, ShowPrintedStats: true),
+        _ => throw new ArgumentOutOfRangeException(nameof(size), size, "unsupported card size"),
+    };
+
     /// <summary>Computes the WCAG contrast ratio for two sRGB colors.</summary>
     public static double ContrastRatio(VisualColor first, VisualColor second)
     {
@@ -284,6 +313,11 @@ public static class GodotThemeVariations
     public const string BoardCard = nameof(BoardCard);
     public const string ConcealedCard = nameof(ConcealedCard);
     public const string FocusedCard = nameof(FocusedCard);
+    public const string CardTitle = nameof(CardTitle);
+    public const string CardRules = nameof(CardRules);
+    public const string CardLiveValue = nameof(CardLiveValue);
+    public const string CardPrintedValue = nameof(CardPrintedValue);
+    public const string CardState = nameof(CardState);
     public const string PrimaryButton = nameof(PrimaryButton);
     public const string ChoiceButton = nameof(ChoiceButton);
     public const string LegalTargetButton = nameof(LegalTargetButton);

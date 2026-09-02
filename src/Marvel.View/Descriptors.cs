@@ -78,7 +78,31 @@ public sealed record CardFaceDescriptor(
     string Title,
     string Subtitle,
     CardKind Kind,
-    IReadOnlyDictionary<string, long> Fields);
+    IReadOnlyDictionary<string, long> Fields)
+{
+    /// <summary>The printed traits, in catalog order.</summary>
+    public IReadOnlyList<string> Traits { get; init; } = [];
+
+    /// <summary>The printed cost, or null when the face has no cost.</summary>
+    public string? Cost { get; init; }
+
+    /// <summary>The printed attributes used as card stats, without invented defaults.</summary>
+    public IReadOnlyDictionary<string, string> PrintedStats { get; init; } =
+        new Dictionary<string, string>(StringComparer.Ordinal);
+
+    /// <summary>The printed keyword labels, in catalog order.</summary>
+    public IReadOnlyList<string> Keywords { get; init; } = [];
+
+    /// <summary>The printed rules text.</summary>
+    public string RulesText { get; init; } = string.Empty;
+
+    /// <summary>Damage currently on the card.</summary>
+    public long Damage { get; init; }
+
+    /// <summary>Live counters currently on the card, by semantic counter name.</summary>
+    public IReadOnlyDictionary<string, long> Counters { get; init; } =
+        new Dictionary<string, long>(StringComparer.Ordinal);
+}
 
 /// <summary>Who may read one card face.</summary>
 internal readonly record struct CardAudience(bool Public, int Seat)

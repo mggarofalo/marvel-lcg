@@ -73,60 +73,14 @@ public static class BoardRenderer
 
         foreach (BoardCardPresentation card in cards)
         {
-            PanelContainer control = Card(card);
+            CardControl control = CardControl.Create(
+                card, CardDisplaySize.Board, ClientTheme.ConfiguredScale());
             destination.AddChild(control);
             if (card.TargetId is { } target)
             {
-                result.Register(target, control, control.ThemeTypeVariation);
+                result.Register(target, control);
             }
         }
-    }
-
-    private static PanelContainer Card(BoardCardPresentation card)
-    {
-        var panel = new PanelContainer
-        {
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            TooltipText = card.Title,
-            ThemeTypeVariation = card.Concealed
-                ? GodotThemeVariations.ConcealedCard
-                : GodotThemeVariations.BoardCard,
-        };
-
-        var content = new VBoxContainer
-        {
-            ThemeTypeVariation = GodotThemeVariations.TightStack,
-        };
-        panel.AddChild(content);
-        content.AddChild(Label(
-            card.Kind,
-            card.Concealed
-                ? GodotThemeVariations.Caption
-                : GodotThemeVariations.Eyebrow));
-        content.AddChild(Label(card.Title, GodotThemeVariations.Body, wrap: true));
-        if (!string.IsNullOrWhiteSpace(card.Subtitle))
-        {
-            content.AddChild(Label(
-                card.Subtitle,
-                GodotThemeVariations.MutedText,
-                wrap: true));
-        }
-
-        if (card.Fields.Count > 0)
-        {
-            var fields = new HFlowContainer();
-            foreach (BoardFieldPresentation field in card.Fields)
-            {
-                fields.AddChild(Label(
-                    $"{field.Name}  {field.Value}",
-                    GodotThemeVariations.Caption));
-            }
-
-            content.AddChild(fields);
-        }
-
-        content.AddChild(Label(card.Status, GodotThemeVariations.Caption));
-        return panel;
     }
 
     private static Label Label(string text, string variation, bool wrap = false)
@@ -145,32 +99,28 @@ public static class BoardRenderer
 /// <summary>The controls addressable by prompt anchor and target ids.</summary>
 public sealed class BoardRenderResult
 {
-    private readonly Dictionary<int, List<BoardControl>> controls = [];
+    private readonly Dictionary<int, List<CardControl>> controls = [];
 
-    internal void Register(int id, Control control, string variation)
+    internal void Register(int id, CardControl control)
     {
-        if (!controls.TryGetValue(id, out List<BoardControl>? matches))
+        if (!controls.TryGetValue(id, out List<CardControl>? matches))
         {
             matches = [];
             controls.Add(id, matches);
         }
 
-        matches.Add(new BoardControl(control, variation));
+        matches.Add(control);
     }
 
     /// <summary>Highlights every visible control matching one server-provided id.</summary>
     public void Highlight(int? id)
     {
-        foreach ((int key, List<BoardControl> matches) in controls)
+        foreach ((int key, List<CardControl> matches) in controls)
         {
-            foreach (BoardControl match in matches)
+            foreach (CardControl match in matches)
             {
-                match.Control.ThemeTypeVariation = id == key
-                    ? GodotThemeVariations.FocusedCard
-                    : match.Variation;
+                match.SetHighlighted(id == key);
             }
         }
     }
-
-    private sealed record BoardControl(Control Control, string Variation);
 }

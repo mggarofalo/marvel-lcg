@@ -112,9 +112,10 @@ single-threaded inside the host.
 
 The socket protocol uses source-generated JSON inside a 4-byte big-endian length
 frame. Frames are bounded. Unknown operations, unsupported protocol versions and
-unknown JSON members fail before they reach the engine. Protocol 5 adds
-per-target maximum occurrences to repeated target allocations, allowing clients
-to render indirect-damage capacities without deriving remaining hit points.
+unknown JSON members fail before they reach the engine. Protocol 6 adds the
+printed and live face facts used by procedural cards. Protocol 5 added per-target
+maximum occurrences to repeated target allocations, allowing clients to render
+indirect-damage capacities without deriving remaining hit points.
 
 The protocol supports discovering setup choices, opening, attaching,
 synchronizing, resolving and closing a game. Setup discovery is a read-only,

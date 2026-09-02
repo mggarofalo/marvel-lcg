@@ -159,6 +159,12 @@ public sealed class CardCatalog : ICardFacts
     public string Subtitle(string faceId) => Find(faceId).Subtitle;
 
     /// <inheritdoc/>
+    public string Text(string faceId) => Find(faceId).Text;
+
+    /// <inheritdoc/>
+    public IReadOnlyList<string> Keywords(string faceId) => Find(faceId).Keywords;
+
+    /// <inheritdoc/>
     /// <remarks>
     /// Read out of the text box, because the star icon survives nowhere else:
     /// 418 of the 419 cards that have one print "[star] Boost:" and `39029`
@@ -179,6 +185,9 @@ public sealed class CardCatalog : ICardFacts
 
     /// <inheritdoc />
     public IReadOnlyList<string> Traits(string faceId) => Find(faceId).Traits;
+
+    /// <inheritdoc />
+    public IReadOnlyList<string> PrintedTraits(string faceId) => Find(faceId).PrintedTraits;
 
     /// <inheritdoc />
     public IReadOnlyDictionary<string, string> Attributes(string faceId) => Find(faceId).Attributes;
@@ -342,6 +351,7 @@ public sealed class CardCatalog : ICardFacts
     private static Entry ReadEntry(JsonElement element)
     {
         var traits = new List<string>();
+        var printedTraitLabels = new List<string>();
         var attributes = new Dictionary<string, string>(StringComparer.Ordinal);
 
         if (element.TryGetProperty("traits", out var printedTraits)
@@ -351,6 +361,7 @@ public sealed class CardCatalog : ICardFacts
             {
                 if (trait.GetString() is { Length: > 0 } text)
                 {
+                    printedTraitLabels.Add(text);
                     traits.Add(TraitKey(text));
                 }
             }
@@ -395,8 +406,66 @@ public sealed class CardCatalog : ICardFacts
             : string.Empty;
 
         return new Entry(
-            kind, set, traits, attributes, title, subtitle, printed,
+            kind, set, traits, printedTraitLabels, attributes, title, subtitle, printed,
+            KeywordsOf(attributes),
             CounterTypesOf(printed, attributes), CounterMaximumsOf(printed));
+    }
+
+    private static List<string> KeywordsOf(Dictionary<string, string> attributes)
+    {
+        // The generated dataset records these printed keywords as structured
+        // attributes. Keeping the vocabulary here prevents a client from
+        // guessing rules meaning by scraping prose from the text box.
+        (string Attribute, string Label, bool ShowsValue)[] names =
+        [
+            ("Acceleration", "Acceleration", false),
+            ("Alliance", "Alliance", false),
+            ("Assault", "Assault", false),
+            ("Crisis", "Crisis", false),
+            ("Guard", "Guard", false),
+            ("Hazard", "Hazard", false),
+            ("Hinder", "Hinder", true),
+            ("Incite", "Incite", true),
+            ("Patrol", "Patrol", false),
+            ("Peril", "Peril", false),
+            ("Permanent", "Permanent", false),
+            ("Quickstrike", "Quickstrike", false),
+            ("Restricted", "Restricted", false),
+            ("Retaliate", "Retaliate", true),
+            ("Stalwart", "Stalwart", false),
+            ("Steady", "Steady", false),
+            ("Surge", "Surge", false),
+            ("TeamUp", "Team-Up", false),
+            ("Teamwork", "Teamwork", false),
+            ("Toughness", "Toughness", false),
+            ("Victory", "Victory", true),
+            ("Villainous", "Villainous", false),
+            ("Vulnerable", "Vulnerable", false),
+        ];
+        return
+        [
+            .. names
+                .Where(keyword => attributes.TryGetValue(
+                    keyword.Attribute, out string? value)
+                    && value.Length > 0 && value != "0")
+                .Select(keyword => keyword.ShowsValue
+                    ? $"{keyword.Label} {attributes[keyword.Attribute]}"
+                    : keyword.Label),
+            .. UsesKeyword(attributes),
+        ];
+    }
+
+    private static IEnumerable<string> UsesKeyword(Dictionary<string, string> attributes)
+    {
+        if (!attributes.TryGetValue("Uses", out string? uses) || uses.Length == 0)
+        {
+            yield break;
+        }
+
+        string[] parts = uses.Split(',');
+        yield return parts.Length == 2 && parts[1].Length > 0
+            ? $"Uses ({parts[0]} {parts[1]} counters)"
+            : $"Uses ({uses})";
     }
 
     private static List<string> CounterTypesOf(
@@ -573,10 +642,12 @@ public sealed class CardCatalog : ICardFacts
         CardKind Kind,
         string Set,
         IReadOnlyList<string> Traits,
+        IReadOnlyList<string> PrintedTraits,
         IReadOnlyDictionary<string, string> Attributes,
         string Title,
         string Subtitle,
         string Text,
+        IReadOnlyList<string> Keywords,
         IReadOnlyList<string> CounterTypes,
         IReadOnlyDictionary<string, long> CounterMaximums);
 }

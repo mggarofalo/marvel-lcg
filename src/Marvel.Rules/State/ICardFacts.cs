@@ -103,6 +103,15 @@ public interface ICardFacts
     /// <param name="faceId">A printed card id.</param>
     IReadOnlyList<string> Traits(string faceId);
 
+    /// <summary>The traits exactly as printed, for display rather than rules keys.</summary>
+    /// <remarks>
+    /// The default preserves compatibility with hand-built facts whose traits
+    /// need no normalization. Catalogs should override it when their rules keys
+    /// are a lossy spelling of the printed label.
+    /// </remarks>
+    /// <param name="faceId">A printed card id.</param>
+    IReadOnlyList<string> PrintedTraits(string faceId) => Traits(faceId);
+
     /// <summary>
     /// The printed attribute table — <c>HP</c>, <c>ATK</c>, <c>Stage</c> and so on.
     /// </summary>
@@ -227,6 +236,23 @@ public interface ICardFacts
     /// </remarks>
     /// <param name="faceId">A printed card id.</param>
     string Subtitle(string faceId) => string.Empty;
+
+    /// <summary>The face's printed rules text, or an empty string.</summary>
+    /// <remarks>
+    /// This is displayable printed data. Rules execution continues to use the
+    /// authored ability catalog; exposing the words does not make them executable.
+    /// </remarks>
+    /// <param name="faceId">A printed card id.</param>
+    string Text(string faceId) => string.Empty;
+
+    /// <summary>The keyword labels printed by this face, in display order.</summary>
+    /// <remarks>
+    /// Keywords are explicit catalog facts rather than words a client guesses
+    /// out of the rules text. The empty default keeps hand-built test boards
+    /// honest when they have not supplied that printed information.
+    /// </remarks>
+    /// <param name="faceId">A printed card id.</param>
+    IReadOnlyList<string> Keywords(string faceId) => [];
 
     /// <summary>
     /// Whether this face prints a "<b>Boost</b>" ability —

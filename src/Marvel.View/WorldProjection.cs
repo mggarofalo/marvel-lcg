@@ -49,6 +49,7 @@ public static class WorldProjection
             bool inPlay = DeckTypes.IsInPlay(card.Area.Type);
             CardKind kind = FacedownDrones.Kind(card, world.Facts);
             CardKind printedKind = world.Facts.Kind(card.FaceId);
+            IReadOnlyDictionary<string, string> attributes = world.Facts.Attributes(card.FaceId);
             var face = new CardFaceDescriptor(
                 card.FaceId,
                 world.Facts.Title(card.FaceId),
@@ -58,7 +59,21 @@ public static class WorldProjection
                     card, world.Facts, world.Players, inPlay,
                     card.HasRegisteredTokens,
                     card.Owner == world.FirstPlayer && card.Area.Type == DeckType.HeroArea,
-                    world));
+                    world))
+            {
+                Traits = DisplayTraits(world, card),
+                Cost = attributes.TryGetValue("Cost", out string? cost) ? cost : null,
+                PrintedStats = PrintedStats(attributes),
+                Keywords = [.. world.Facts.Keywords(card.FaceId)],
+                RulesText = world.Facts.Text(card.FaceId),
+                Damage = card.Damage,
+                Counters = card.Tokens
+                    .Where(token => token.Key.StartsWith("c_", StringComparison.Ordinal))
+                    .ToDictionary(
+                        token => token.Key[2..],
+                        token => token.Value,
+                        StringComparer.Ordinal),
+            };
             cards.Add(
                 card.ObjectId,
                 new CardDescriptor(
@@ -88,6 +103,38 @@ public static class WorldProjection
                 area.Id,
                 area.PlayAreas.Select(playArea => playArea.Player).Order().ToList())).ToList();
         return new WorldDescriptor(players, areas, gameAreas, world.Result);
+    }
+
+    private static IReadOnlyList<string> DisplayTraits(World world, Card card)
+    {
+        IReadOnlyList<string> rulesKeys = world.Facts.Traits(card.FaceId);
+        IReadOnlyList<string> printed = world.Facts.PrintedTraits(card.FaceId);
+        var labels = rulesKeys
+            .Select((key, index) => new
+            {
+                Key = key,
+                Label = index < printed.Count ? printed[index] : key.Replace('_', ' '),
+            })
+            .ToDictionary(pair => pair.Key, pair => pair.Label, StringComparer.Ordinal);
+        return
+        [
+            .. Traits.Of(world, card, world.Facts)
+                .Select(trait => labels.GetValueOrDefault(trait, trait.Replace('_', ' '))),
+        ];
+    }
+
+    private static Dictionary<string, string> PrintedStats(
+        IReadOnlyDictionary<string, string> attributes)
+    {
+        string[] names =
+        [
+            "REC", "THW", "ATK", "DEF", "SCH", "HP", "HS", "Stage",
+            "REC+", "THW+", "ATK+", "DEF+", "SCH+", "HP+",
+            "StartingThreat", "TargetThreat", "EscalationThreat", "Boost",
+        ];
+        return names
+            .Where(attributes.ContainsKey)
+            .ToDictionary(name => name, name => attributes[name], StringComparer.Ordinal);
     }
 
     private static CardBack Back(CardKind kind) => kind is
