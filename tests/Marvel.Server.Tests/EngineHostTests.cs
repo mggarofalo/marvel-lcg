@@ -7,6 +7,44 @@ namespace Marvel.Server.Tests;
 public sealed class EngineHostTests
 {
     [Fact]
+    public void ADecisionForAnEarlierRevisionIsRejectedWithoutAdvancingTheGame()
+    {
+        var host = new EngineHost(
+            DatasetGameFactory.Load(Marvel.Tests.RepositoryPaths.Root),
+            new SequenceCapabilities("owner"));
+        EngineResponse opened = host.Exchange(EngineRequest.OpenGame(
+            "open",
+            "revision-table",
+            new GameSpecification("rhino", ["spider_man"], [], Seed: 7)));
+
+        EngineResponse advanced = host.Exchange(EngineRequest.ResolveGame(
+            "mulligan",
+            "revision-table",
+            opened.Capability!,
+            EngineDecision.Decline,
+            opened.Revision));
+        EngineResponse beforeStale = host.Exchange(EngineRequest.SyncGame(
+            "before-stale", "revision-table", opened.Capability!));
+        EngineResponse stale = host.Exchange(EngineRequest.ResolveGame(
+            "stale",
+            "revision-table",
+            opened.Capability!,
+            EngineDecision.Decline,
+            opened.Revision));
+        EngineResponse afterStale = host.Exchange(EngineRequest.SyncGame(
+            "after-stale", "revision-table", opened.Capability!));
+
+        Assert.Null(advanced.Error);
+        Assert.Equal(opened.Revision + 1, advanced.Revision);
+        Assert.Equal("stale_decision", stale.Error?.Code);
+        Assert.Empty(stale.Events);
+        Assert.Equal(beforeStale.Revision, afterStale.Revision);
+        Assert.Equal(
+            EngineJson.Write(beforeStale with { RequestId = "same" }),
+            EngineJson.Write(afterStale with { RequestId = "same" }));
+    }
+
+    [Fact]
     public void AuthoredSetupChoicesAreAvailableBeforeAGameExists()
     {
         var host = new EngineHost(DatasetGameFactory.Load(RepositoryPaths.Root));
@@ -78,6 +116,7 @@ public sealed class EngineHostTests
             },
             valid with { Decision = EngineDecision.Decline },
             valid with { Viewer = new ViewerClaim(Watch: true) },
+            valid with { ExpectedRevision = 0 },
         };
 
         foreach (EngineRequest request in malformed)
@@ -285,7 +324,7 @@ public sealed class EngineHostTests
             1, "old-client", EngineProtocol.Open, "game",
             Game: new GameSpecification("rhino", ["spider_man"], null, 1)));
 
-        Assert.Equal(6, EngineProtocol.Version);
+        Assert.Equal(7, EngineProtocol.Version);
         Assert.Equal(EngineProtocol.Version, rejected.Version);
         Assert.Equal("unsupported_version", rejected.Error?.Code);
         Assert.Equal(0, factory.Calls);

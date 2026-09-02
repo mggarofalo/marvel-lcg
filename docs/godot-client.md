@@ -82,6 +82,11 @@ the frame was sent but its response was lost, the table stays locked until a
 sync succeeds. An expired or closed capability returns the client to Join and
 must be replaced with a new invitation.
 
+Each authorized snapshot includes a host revision. The client echoes that
+revision with its next decision, so a draft made for an earlier prompt is
+rejected and synchronized instead of being applied to a later prompt whose
+visible action happens to reuse the same object ids.
+
 See the [standalone server guide](server.md) for launch options, restricted-seat
 configuration, Docker commands and shutdown behavior.
 
@@ -107,6 +112,21 @@ Windows PowerShell:
 tools/godot-smoke.ps1 -GodotBin "C:\path\to\Godot_v4.7.1-stable_mono_win64_console.exe"
 ```
 
+The hosted multiplayer smoke starts a real restricted server, loads two
+independent `Main.tscn` instances, and drives the visible Start, Copy
+invitation, Join, decision, synchronization and terminal controls. It requires
+a working system clipboard, so Linux runs it under Xvfb rather than Godot's
+clipboard-free headless display:
+
+```bash
+GODOT_BIN="/path/to/Godot" bash tools/godot-hosted-multiplayer-smoke.sh
+```
+
+```powershell
+tools/godot-hosted-multiplayer-smoke.ps1 `
+  -GodotBin "C:\path\to\Godot_v4.7.1-stable_mono_win64_console.exe"
+```
+
 The smoke uses `--headless`; it does not use movie capture. The visual QA tools
 additionally check and retain rendered viewport images at
 setup, open-table/prompt, player-phase, villain-phase and terminal checkpoints.
@@ -126,16 +146,24 @@ Set `MARVEL_SMOKE_CAPTURE_DIR` to retain the PNGs at a chosen absolute path;
 otherwise the tools create a temporary directory and print it. No capture is
 written into the repository.
 
-CI downloads the
-official Godot 4.7.1 .NET archives, verifies their SHA-256 digests and runs this
-path on Windows and Linux. The macOS command is verified with the 4.7 .NET
-editor and exercises the same checked-in script.
+CI downloads the official Godot 4.7.1 .NET archives, verifies their SHA-256
+digests and runs both native paths on Windows and Linux. macOS uses the same
+checked-in scripts as a local release check because the CI matrix has no macOS
+runner.
 
 The companion managed test drives the same seed through `LocalGameClient` and
 `DecisionComposer`. It makes the deterministic gameplay path debuggable without
 turning the native smoke into a second rules implementation. The native smoke
 also synchronizes once at an ordinary prompt and once after the terminal result,
 proving the board remains operable and its event chronology is unchanged.
+
+A second managed journey runs two independent Godot-module clients against one
+persistent restricted socket server. It pins a complete two-hero Rhino game,
+seat-specific prompts and hands, concealed player and encounter decks, public
+state agreement, invitation replay, wrong-seat and stale decisions, client
+reconstruction, and repeated terminal synchronization. The exhaustive private
+information checks stay managed; the native smoke owns scene loading and real
+control signals on each declared client platform.
 
 ## Visual system
 

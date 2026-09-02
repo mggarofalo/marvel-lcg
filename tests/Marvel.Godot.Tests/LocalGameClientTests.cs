@@ -217,6 +217,7 @@ public sealed class LocalGameClientTests
             RequestId = "local-resolve",
             Capability = null,
             Prompt = null,
+            Revision = current.Revision + 1,
         });
 
         ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(
@@ -927,7 +928,13 @@ public sealed class LocalGameClientTests
             "local-open", LocalGameSession.GameId, Specification()));
         using var cancellation = new CancellationTokenSource();
         var transport = new CommitAwareCancellingTransport(
-            opened with { RequestId = "local-resolve", Capability = null }, cancellation);
+            opened with
+            {
+                RequestId = "local-resolve",
+                Capability = null,
+                Revision = opened.Revision + 1,
+            },
+            cancellation);
 
         ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(
             opened.Capability!, EngineDecision.Decline, cancellation.Token);
@@ -940,8 +947,8 @@ public sealed class LocalGameClientTests
 
     [Theory]
     [InlineData(999, "local-open", "local-core-game", "unsupported_version")]
-    [InlineData(6, "other", "local-core-game", "invalid_response")]
-    [InlineData(6, "local-open", "other-game", "invalid_response")]
+    [InlineData(7, "other", "local-core-game", "invalid_response")]
+    [InlineData(7, "local-open", "other-game", "invalid_response")]
     public async Task OpenRejectsMismatchedResponseEnvelopes(
         int version,
         string requestId,
@@ -1069,6 +1076,86 @@ public sealed class LocalGameClientTests
         Assert.Equal("invalid_response", result.Error?.Code);
         Assert.Equal(ClientSessionDisposition.Active, result.SessionDisposition);
         Assert.Single(transport.Requests);
+    }
+
+    [Fact]
+    public async Task AnOlderSynchronizationCannotRollTheRememberedRevisionBackward()
+    {
+        EngineResponse current = Host().Exchange(EngineRequest.OpenGame(
+            "source", "shared-table", Specification()));
+        var transport = new ScriptedTransport(
+            current with
+            {
+                RequestId = "local-attach",
+                Capability = "session",
+                Revision = 3,
+            },
+            current with
+            {
+                RequestId = "local-sync",
+                Capability = null,
+                Events = [],
+                Revision = 2,
+            },
+            current with
+            {
+                RequestId = "local-resolve",
+                Capability = null,
+                Revision = 4,
+            });
+        var client = new LocalGameClient(transport);
+        ClientEntryResult attached = await client.AttachAsync(
+            "shared-table", "invitation", TestContext.Current.CancellationToken);
+
+        ClientSynchronizationResult old = await client.SynchronizeAsync(
+            attached.Session!, TestContext.Current.CancellationToken);
+        ClientResolutionResult resolved = await client.ResolveAsync(
+            attached.Session!, EngineDecision.Decline,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal("invalid_response", old.Error?.Code);
+        Assert.Null(old.Response);
+        Assert.Equal(ClientMutationDisposition.Accepted, resolved.MutationDisposition);
+        Assert.Equal(3, transport.Requests[2].ExpectedRevision);
+    }
+
+    [Fact]
+    public async Task ASuccessfulResolveMustAdvanceExactlyOneRevision()
+    {
+        EngineResponse current = Host().Exchange(EngineRequest.OpenGame(
+            "source", "shared-table", Specification()));
+        var transport = new ScriptedTransport(
+            current with
+            {
+                RequestId = "local-attach",
+                Capability = "session",
+                Revision = 3,
+            },
+            current with
+            {
+                RequestId = "local-resolve",
+                Capability = null,
+                Revision = 3,
+            },
+            current with
+            {
+                RequestId = "local-recover",
+                Capability = null,
+                Events = [],
+                Revision = 3,
+            });
+        var client = new LocalGameClient(transport);
+        ClientEntryResult attached = await client.AttachAsync(
+            "shared-table", "invitation", TestContext.Current.CancellationToken);
+
+        ClientResolutionResult result = await client.ResolveAsync(
+            attached.Session!, EngineDecision.Decline,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(ClientMutationDisposition.Uncertain, result.MutationDisposition);
+        Assert.Equal("invalid_response", result.Error?.Code);
+        Assert.Equal(3, result.Response?.Revision);
+        Assert.Equal(3, transport.Requests[1].ExpectedRevision);
     }
 
     [Fact]

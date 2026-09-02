@@ -125,8 +125,9 @@ visibility configuration, in-memory sessions and shutdown behavior.
 
 The socket protocol uses source-generated JSON inside a 4-byte big-endian length
 frame. Frames are bounded. Unknown operations, unsupported protocol versions and
-unknown JSON members fail before they reach the engine. Protocol 6 adds the
-printed and live face facts used by procedural cards. Protocol 5 added per-target
+unknown JSON members fail before they reach the engine. Protocol 7 adds the
+host revision that binds a decision to the prompt it answers. Protocol 6 added
+the printed and live face facts used by procedural cards. Protocol 5 added per-target
 maximum occurrences to repeated target allocations, allowing clients to render
 indirect-damage capacities without deriving remaining hit points.
 
@@ -157,6 +158,9 @@ client never repeats the decision. It issues one read-only
 `sync` request instead. A sync response replaces the current descriptor and
 prompt, carries an empty event boundary and never replays the event chronology.
 An invalid, expired or closed capability returns the client to connection setup.
+Every successful game response carries the current host revision. Resolve
+echoes that value, and a mismatch returns `stale_decision` before the engine can
+apply the answer.
 
 The response types are stable wire records. Adding a new affordance, event or
 descriptor variant requires a protocol-version decision because older clients

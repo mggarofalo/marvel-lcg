@@ -156,7 +156,8 @@ public sealed class EngineHost : IEngineEndpoint
             || request.Capability is not null
             || request.Game is not null
             || request.Decision is not null
-            || request.Viewer is not null)
+            || request.Viewer is not null
+            || request.ExpectedRevision is not null)
         {
             return Failed(
                 request, "invalid_request",
@@ -183,7 +184,9 @@ public sealed class EngineHost : IEngineEndpoint
 
     private EngineResponse Open(EngineRequest request)
     {
-        if (request.Game is null || request.Decision is not null)
+        if (request.Game is null
+            || request.Decision is not null
+            || request.ExpectedRevision is not null)
         {
             return Failed(
                 request, "invalid_request",
@@ -302,7 +305,10 @@ public sealed class EngineHost : IEngineEndpoint
 
     private EngineResponse Attach(EngineRequest request)
     {
-        if (request.Game is not null || request.Decision is not null || request.Viewer is not null)
+        if (request.Game is not null
+            || request.Decision is not null
+            || request.Viewer is not null
+            || request.ExpectedRevision is not null)
         {
             return Failed(
                 request, "invalid_request",
@@ -325,7 +331,8 @@ public sealed class EngineHost : IEngineEndpoint
             pending.Session.Game.Pending,
             [],
             pending.Scope,
-            capability);
+            capability,
+            revision: pending.Session.Revision);
         invitations.Remove(invitation);
         sessions.Add(
             capability, new SessionAccess(pending.Session, pending.Scope, Owner: false));
@@ -334,7 +341,10 @@ public sealed class EngineHost : IEngineEndpoint
 
     private EngineResponse Sync(EngineRequest request)
     {
-        if (request.Game is not null || request.Decision is not null || request.Viewer is not null)
+        if (request.Game is not null
+            || request.Decision is not null
+            || request.Viewer is not null
+            || request.ExpectedRevision is not null)
         {
             return Failed(request, "invalid_request", "sync accepts only a session capability");
         }
@@ -349,12 +359,16 @@ public sealed class EngineHost : IEngineEndpoint
             access.Session.Game,
             access.Session.Game.Pending,
             [],
-            access.Scope);
+            access.Scope,
+            revision: access.Session.Revision);
     }
 
     private EngineResponse Resolve(EngineRequest request)
     {
-        if (request.Decision is null || request.Game is not null || request.Viewer is not null)
+        if (request.Decision is null
+            || request.Game is not null
+            || request.Viewer is not null
+            || request.ExpectedRevision is null or < 0)
         {
             return Failed(
                 request, "invalid_request",
@@ -372,6 +386,14 @@ public sealed class EngineHost : IEngineEndpoint
             return Failed(request, "not_your_turn", "this capability cannot answer the pending prompt");
         }
 
+        if (request.ExpectedRevision != access.Session.Revision)
+        {
+            return Failed(
+                request,
+                "stale_decision",
+                "the decision was composed for an earlier table revision");
+        }
+
         if (request.Decision.Targets is null)
         {
             return Failed(request, "invalid_request", "decision.targets is required");
@@ -380,12 +402,14 @@ public sealed class EngineHost : IEngineEndpoint
         try
         {
             var resolved = access.Session.Game.Resolve(request.Decision.ToDomain());
+            access.Session.Revision++;
             return Succeeded(
                 request,
                 access.Session.Game,
                 resolved.Prompt,
                 resolved.Events,
-                access.Scope);
+                access.Scope,
+                revision: access.Session.Revision);
         }
         catch (Exception)
         {
@@ -404,7 +428,10 @@ public sealed class EngineHost : IEngineEndpoint
 
     private EngineResponse Close(EngineRequest request)
     {
-        if (request.Game is not null || request.Decision is not null || request.Viewer is not null)
+        if (request.Game is not null
+            || request.Decision is not null
+            || request.Viewer is not null
+            || request.ExpectedRevision is not null)
         {
             return Failed(
                 request, "invalid_request",
@@ -487,9 +514,10 @@ public sealed class EngineHost : IEngineEndpoint
         IReadOnlyList<GameEvent>? events = null,
         ViewScope? scope = null,
         string? capability = null,
-        IReadOnlyList<SeatInvitation>? invitations = null) =>
+        IReadOnlyList<SeatInvitation>? invitations = null,
+        long revision = 0) =>
         Projected(
-            request, game, prompt, events ?? [], scope, capability, invitations);
+            request, game, prompt, events ?? [], scope, capability, invitations, revision);
 
     private static EngineResponse Projected(
         EngineRequest request,
@@ -498,13 +526,18 @@ public sealed class EngineHost : IEngineEndpoint
         IReadOnlyList<GameEvent> events,
         ViewScope? scope,
         string? capability,
-        IReadOnlyList<SeatInvitation>? invitations)
+        IReadOnlyList<SeatInvitation>? invitations,
+        long revision)
     {
         if (game is null || scope is null)
         {
             return new EngineResponse(
                 EngineProtocol.Version, request.RequestId, request.GameId,
-                capability, Prompt: null, Events: [], Invitations: invitations);
+                capability,
+                Prompt: null,
+                Events: [],
+                Invitations: invitations,
+                Revision: revision);
         }
 
         VisibleResult visible = WorldProjection.For(game.State, prompt, events, scope);
@@ -514,7 +547,8 @@ public sealed class EngineHost : IEngineEndpoint
             visible.Prompt,
             visible.Events,
             visible.World,
-            Invitations: invitations);
+            Invitations: invitations,
+            Revision: revision);
     }
 
     private static EngineResponse Failed(
@@ -538,7 +572,10 @@ public sealed class EngineHost : IEngineEndpoint
         _ => value[..maximum],
     };
 
-    private sealed record HostedSession(string GameId, Game Game);
+    private sealed record HostedSession(string GameId, Game Game)
+    {
+        public long Revision { get; set; }
+    }
 
     private sealed record SessionAccess(HostedSession Session, ViewScope Scope, bool Owner);
 
