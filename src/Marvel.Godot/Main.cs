@@ -578,8 +578,7 @@ public sealed partial class Main : Control
         }
 
         eventTween = null;
-        eventSkip.Disabled = true;
-        boardRender?.Present([]);
+        SetEventPresentationSettled();
     }
 
     private void SetEventPresentationSettled()

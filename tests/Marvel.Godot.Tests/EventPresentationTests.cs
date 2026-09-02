@@ -114,6 +114,7 @@ public sealed class EventPresentationTests
     [InlineData("k_damage", 1, 2, EventMotionKind.Damage)]
     [InlineData("k_damage", 2, 1, EventMotionKind.Heal)]
     [InlineData("c_energy", 1, 2, EventMotionKind.Counter)]
+    [InlineData("k_acceleration", 0, 1, EventMotionKind.Counter)]
     [InlineData("k_threat", 1, 2, EventMotionKind.State)]
     [InlineData("is_exhaust", 0, 1, EventMotionKind.State)]
     [InlineData("attack", 2, 3, EventMotionKind.State)]

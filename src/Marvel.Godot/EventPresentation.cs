@@ -138,7 +138,8 @@ public static class EventPresenter
             return change < 0 ? EventMotionKind.Heal : EventMotionKind.Damage;
         }
 
-        if (field.StartsWith("c_", StringComparison.Ordinal))
+        if (field.StartsWith("c_", StringComparison.Ordinal)
+            || field == EncounterDeck.AccelerationToken)
         {
             return EventMotionKind.Counter;
         }
