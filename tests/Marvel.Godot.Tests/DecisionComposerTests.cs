@@ -215,6 +215,220 @@ public sealed class DecisionComposerTests
     }
 
     [Fact]
+    public void FlatTargetProgressReportsTheOfferedRangeAndCurrentValidity()
+    {
+        var composer = new DecisionComposer(Prompt(
+            cancellable: false,
+            new Affordance(4, "Order", 10, 0, "Order enemies",
+                new TargetRequest([11, 12, 13], 2, 3))));
+        composer.SelectAffordance(4);
+        composer.SelectTargets([12]);
+
+        DecisionProgressPresentation incomplete = composer.Progress();
+
+        Assert.Equal(
+            new TargetSelectionProgress(
+                TargetSelectionMode.Ordinary, 1, 2, 3, false),
+            incomplete.Targets);
+        Assert.False(incomplete.IsReady);
+
+        composer.AddTarget(11);
+        DecisionProgressPresentation complete = composer.Progress();
+
+        Assert.Equal(2, complete.Targets.Selected);
+        Assert.True(complete.Targets.IsSatisfied);
+        Assert.True(complete.IsReady);
+    }
+
+    [Fact]
+    public void GroupedTargetProgressIsZeroOrOneByExactOfferedGroup()
+    {
+        var composer = new DecisionComposer(Prompt(
+            cancellable: false,
+            new Affordance(5, "Resolve", 10, 0, "Choose a group",
+                new TargetRequest(
+                    [11, 12, 13], 3, 3,
+                    Groups: [[11, 12], [11, 13]]))));
+        composer.SelectAffordance(5);
+        composer.SelectTargets([11]);
+
+        Assert.Equal(
+            new TargetSelectionProgress(
+                TargetSelectionMode.Grouped, 0, 1, 1, false),
+            composer.Progress().Targets);
+
+        composer.SelectTargets([11, 13]);
+
+        Assert.Equal(
+            new TargetSelectionProgress(
+                TargetSelectionMode.Grouped, 1, 1, 1, true),
+            composer.Progress().Targets);
+    }
+
+    [Fact]
+    public void RepeatedTargetProgressCountsAllocationsAndUsesTheirCapacities()
+    {
+        var composer = new DecisionComposer(Prompt(
+            cancellable: false,
+            new Affordance(6, "Allocate", 10, 0, "Deal indirect damage",
+                new TargetRequest(
+                    [11, 12], 3, 3,
+                    AllowRepeated: true,
+                    MaximumOccurrences: new Dictionary<int, int>
+                    {
+                        [11] = 1,
+                        [12] = 2,
+                    }))));
+        composer.SelectAffordance(6);
+        composer.SelectTargets([11, 11, 12]);
+
+        TargetSelectionProgress overCapacity = composer.Progress().Targets;
+
+        Assert.Equal(TargetSelectionMode.Repeated, overCapacity.Mode);
+        Assert.Equal(3, overCapacity.Selected);
+        Assert.Equal(3, overCapacity.Minimum);
+        Assert.Equal(3, overCapacity.Maximum);
+        Assert.False(overCapacity.IsSatisfied);
+
+        composer.SelectTargets([12, 11, 12]);
+        Assert.True(composer.Progress().Targets.IsSatisfied);
+    }
+
+    [Fact]
+    public void PaymentProgressCountsXDefinitionsGeneratorsAndComponentAssignments()
+    {
+        var cost = new CostOption(
+            Target: 11,
+            Cost: "X",
+            Sources:
+            [
+                new ResourceSource(40, "YY"),
+                new ResourceSource(41, "G"),
+            ],
+            Variables: [new VariableRequest("X", 1, 2)],
+            Components: [new ResourceCost("1", ["Y"]), new ResourceCost("1")]);
+        var composer = new DecisionComposer(Prompt(
+            cancellable: false,
+            new Affordance(7, "Play", 20, 0, "Paid action",
+                new TargetRequest([11], 1, 1), [cost])));
+        composer.SelectAffordance(7);
+        composer.SelectTargets([11]);
+        composer.ToggleResource(40);
+        composer.Define("X", 2);
+        composer.AssignResource(40, 0, 0, Resources.Energy);
+
+        DecisionProgressPresentation partial = composer.Progress();
+
+        Assert.Equal(CostSelectionState.Selected, partial.Payment.CostState);
+        Assert.Equal(0, partial.Payment.SelectedCost);
+        Assert.Equal(1, partial.Payment.CostOptions);
+        Assert.Equal(1, partial.Payment.SelectedGenerators);
+        Assert.Equal(2, partial.Payment.GeneratedIcons);
+        Assert.Equal(1, partial.Payment.AssignedIcons);
+        Assert.Equal(1, partial.Payment.DefinedVariables);
+        Assert.Equal(1, partial.Payment.RequestedVariables);
+        Assert.False(partial.Payment.IsSatisfied);
+        Assert.False(partial.IsReady);
+        Assert.Equal(
+            "Assign generated icons to satisfy every offered cost component.",
+            partial.Error);
+
+        composer.AssignResource(40, 1, 1, Resources.Energy);
+        DecisionProgressPresentation complete = composer.Progress();
+
+        Assert.Equal(2, complete.Payment.AssignedIcons);
+        Assert.True(complete.Payment.IsSatisfied);
+        Assert.True(complete.IsReady);
+        Assert.Null(complete.Error);
+    }
+
+    [Fact]
+    public void ProgressResetsPaymentWhenTheAffordanceOrPricedTargetChanges()
+    {
+        var composer = new DecisionComposer(Prompt(
+            cancellable: false,
+            new Affordance(7, "Play", 20, 0, "Variable price",
+                new TargetRequest([11, 12], 1, 1),
+                [
+                    new CostOption(11, "1", Sources: [new ResourceSource(40, "Y")]),
+                    new CostOption(12, "0"),
+                ]),
+            new Affordance(8, "Thwart", 21, 0, "Free action")));
+        composer.SelectAffordance(7);
+        composer.SelectTargets([11]);
+        composer.SelectCost(0);
+        composer.ToggleResource(40);
+        composer.AssignResource(40, 0, 0, Resources.Energy);
+        Assert.True(composer.Progress().Payment.IsSatisfied);
+
+        composer.SelectTargets([12]);
+        PaymentProgress changedTarget = composer.Progress().Payment;
+
+        Assert.Equal(CostSelectionState.Required, changedTarget.CostState);
+        Assert.Null(changedTarget.SelectedCost);
+        Assert.Equal(0, changedTarget.SelectedGenerators);
+        Assert.Equal(0, changedTarget.AssignedIcons);
+
+        composer.SelectAffordance(8);
+        DecisionProgressPresentation changedAffordance = composer.Progress();
+
+        Assert.Equal(TargetSelectionMode.None, changedAffordance.Targets.Mode);
+        Assert.Equal(CostSelectionState.NotRequired, changedAffordance.Payment.CostState);
+        Assert.True(changedAffordance.IsReady);
+    }
+
+    [Fact]
+    public void ChangingATargetClearsEvenAnAutomaticallySelectedSinglePayment()
+    {
+        var composer = new DecisionComposer(Prompt(
+            cancellable: false,
+            new Affordance(7, "Play", 20, 0, "Paid action",
+                new TargetRequest([11, 12], 1, 1),
+                [new CostOption(
+                    0,
+                    "1",
+                    Sources: [new ResourceSource(40, "Y")])])));
+        composer.SelectAffordance(7);
+        composer.SelectTargets([11]);
+        composer.ToggleResource(40);
+        composer.AssignResource(40, 0, 0, Resources.Energy);
+        Assert.True(composer.Progress().Payment.IsSatisfied);
+
+        composer.SelectTargets([12]);
+        PaymentProgress changedTarget = composer.Progress().Payment;
+
+        Assert.Equal(CostSelectionState.Selected, changedTarget.CostState);
+        Assert.Equal(0, changedTarget.SelectedCost);
+        Assert.Equal(0, changedTarget.SelectedGenerators);
+        Assert.Equal(0, changedTarget.AssignedIcons);
+        Assert.False(changedTarget.IsSatisfied);
+    }
+
+    [Fact]
+    public void ProgressDoesNotRetainVisibleOrConcealedObjectIdentities()
+    {
+        const int visibleTarget = 987654;
+        const int concealedGenerator = 765432;
+        var composer = new DecisionComposer(Prompt(
+            cancellable: false,
+            new Affordance(7, "Play", 20, 0, "Paid action",
+                new TargetRequest([visibleTarget], 1, 1),
+                [new CostOption(
+                    visibleTarget,
+                    "1",
+                    Sources: [new ResourceSource(concealedGenerator, "Y")])])));
+        composer.SelectAffordance(7);
+        composer.SelectTargets([visibleTarget]);
+        composer.ToggleResource(concealedGenerator);
+        composer.AssignResource(concealedGenerator, 0, 0, Resources.Energy);
+
+        string progress = composer.Progress().ToString();
+
+        Assert.DoesNotContain(visibleTarget.ToString(), progress);
+        Assert.DoesNotContain(concealedGenerator.ToString(), progress);
+    }
+
+    [Fact]
     public void IllegalAndForcedOptionsCannotCreateAuthority()
     {
         var composer = new DecisionComposer(Prompt(

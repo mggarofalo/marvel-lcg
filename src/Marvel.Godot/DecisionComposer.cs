@@ -130,6 +130,54 @@ public readonly record struct ResourceIconAssignment(
     int Cost,
     char PaidAs);
 
+/// <summary>How the current prompt represents its target selection.</summary>
+public enum TargetSelectionMode
+{
+    None,
+    Ordinary,
+    Repeated,
+    Grouped,
+}
+
+/// <summary>Count-only progress for the current visible target request.</summary>
+public sealed record TargetSelectionProgress(
+    TargetSelectionMode Mode,
+    int Selected,
+    int Minimum,
+    int Maximum,
+    bool IsSatisfied);
+
+/// <summary>Whether the current affordance needs a cost choice.</summary>
+public enum CostSelectionState
+{
+    Unavailable,
+    NotRequired,
+    Required,
+    Selected,
+}
+
+/// <summary>Count-only progress for the current offered payment.</summary>
+public sealed record PaymentProgress(
+    CostSelectionState CostState,
+    int? SelectedCost,
+    int CostOptions,
+    int SelectedGenerators,
+    int GeneratedIcons,
+    int AssignedIcons,
+    int DefinedVariables,
+    int RequestedVariables,
+    bool IsSatisfied);
+
+/// <summary>
+/// Render-ready progress derived from the exact draft and its visible prompt.
+/// No object identities are retained in this presentation record.
+/// </summary>
+public sealed record DecisionProgressPresentation(
+    TargetSelectionProgress Targets,
+    PaymentProgress Payment,
+    bool IsReady,
+    string? Error);
+
 /// <summary>
 /// A draft tied to exactly one prompt. It composes offered values without
 /// deriving an action from printed card text.
@@ -166,6 +214,21 @@ public sealed class DecisionComposer
 
     /// <summary>The selected index in the affordance's unmodified cost list.</summary>
     public int SelectedCost => selectedCost;
+
+    /// <summary>
+    /// Summarizes the current draft without interpreting card text or board state.
+    /// </summary>
+    public DecisionProgressPresentation Progress()
+    {
+        TargetSelectionProgress targetProgress = TargetProgress();
+        PaymentProgress paymentProgress = PaymentProgress();
+        bool ready = TryBuild(out _, out string? error);
+        return new DecisionProgressPresentation(
+            targetProgress,
+            paymentProgress,
+            ready,
+            error);
+    }
 
     /// <summary>Selects one offered affordance and clears the previous draft.</summary>
     public void SelectAffordance(int id)
@@ -377,9 +440,9 @@ public sealed class DecisionComposer
 
     private void ResetPaymentIfTargetChanged()
     {
-        if (Selected?.CostOptions.Count > 1)
+        if (Selected?.CostOptions.Count > 0)
         {
-            selectedCost = -1;
+            selectedCost = Selected.CostOptions.Count == 1 ? 0 : -1;
             resources.Clear();
             assignments.Clear();
             values.Clear();
@@ -415,4 +478,106 @@ public sealed class DecisionComposer
         && selectedCost < Selected.CostOptions.Count
             ? Selected.CostOptions[selectedCost]
             : null;
+
+    private TargetSelectionProgress TargetProgress()
+    {
+        TargetRequest? request = Selected?.Targets;
+        if (request is null)
+        {
+            return new TargetSelectionProgress(
+                TargetSelectionMode.None,
+                targets.Count,
+                0,
+                0,
+                targets.Count == 0);
+        }
+
+        bool satisfied = request.Allows(targets);
+        if (request.IsGrouped)
+        {
+            return new TargetSelectionProgress(
+                TargetSelectionMode.Grouped,
+                satisfied ? 1 : 0,
+                1,
+                1,
+                satisfied);
+        }
+
+        return new TargetSelectionProgress(
+            request.AllowRepeated
+                ? TargetSelectionMode.Repeated
+                : TargetSelectionMode.Ordinary,
+            targets.Count,
+            request.Min,
+            request.Max,
+            satisfied);
+    }
+
+    private PaymentProgress PaymentProgress()
+    {
+        if (Selected is null)
+        {
+            return new PaymentProgress(
+                CostSelectionState.Unavailable,
+                null,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                false);
+        }
+
+        if (Selected.CostOptions.Count == 0)
+        {
+            return new PaymentProgress(
+                CostSelectionState.NotRequired,
+                null,
+                0,
+                resources.Count,
+                0,
+                assignments.Count,
+                values.Count,
+                0,
+                resources.Count == 0 && assignments.Count == 0 && values.Count == 0);
+        }
+
+        CostOption? cost = SelectedCostOption();
+        if (cost is null)
+        {
+            return new PaymentProgress(
+                CostSelectionState.Required,
+                null,
+                Selected.CostOptions.Count,
+                resources.Count,
+                0,
+                assignments.Count,
+                values.Count,
+                0,
+                false);
+        }
+
+        int generatedIcons = resources.Sum(effect =>
+            cost.Generators
+                .Where(generator => generator.Effect == effect)
+                .Sum(generator => generator.Generates.Length));
+        VariableRequest[] requested = cost.VariableRequests.ToArray();
+        bool variablesSatisfied = values.Count == requested.Length
+            && requested.All(variable => values.TryGetValue(variable.Name, out long value)
+                && variable.Allows(value));
+        bool paymentSatisfied = CostApplies(cost)
+            && variablesSatisfied
+            && ResourcePayment.Allows(cost, resources, values, CollapseAssignments());
+        return new PaymentProgress(
+            CostSelectionState.Selected,
+            selectedCost,
+            Selected.CostOptions.Count,
+            resources.Count,
+            generatedIcons,
+            assignments.Count,
+            values.Count,
+            requested.Length,
+            paymentSatisfied);
+    }
 }

@@ -19,7 +19,10 @@ public sealed partial class DecisionPanel : VBoxContainer
     public event Action<EngineDecision>? Submitted;
 
     /// <summary>Raised when an affordance or target points at a board object.</summary>
-    public event Action<int?>? AnchorFocused;
+    public event Action<IReadOnlyList<int>>? AnchorFocused;
+
+    /// <summary>Raised whenever the visible draft's count-only progress changes.</summary>
+    public event Action<DecisionProgressPresentation?>? ProgressChanged;
 
     /// <summary>Discards the old draft and renders the response's current prompt.</summary>
     public void Render(Prompt? prompt, WorldDescriptor currentWorld)
@@ -27,7 +30,7 @@ public sealed partial class DecisionPanel : VBoxContainer
         world = currentWorld ?? throw new ArgumentNullException(nameof(currentWorld));
         composer = prompt is null ? null : new DecisionComposer(prompt);
         submitting = false;
-        Rebuild();
+        Rebuild(focusFirst: true);
     }
 
     /// <summary>Prevents a second mutation while one response is outstanding.</summary>
@@ -37,8 +40,12 @@ public sealed partial class DecisionPanel : VBoxContainer
         Rebuild();
     }
 
-    private void Rebuild()
+    private void Rebuild(bool focusFirst = false)
     {
+        Control? focused = GetViewport()?.GuiGetFocusOwner();
+        string? focusName = focused is not null && IsAncestorOf(focused)
+            ? FocusKey(focused)
+            : null;
         foreach (Node child in GetChildren())
         {
             RemoveChild(child);
@@ -48,6 +55,7 @@ public sealed partial class DecisionPanel : VBoxContainer
         ThemeTypeVariation = GodotThemeVariations.TightStack;
         if (composer is null || world is null)
         {
+            ProgressChanged?.Invoke(null);
             AddChild(Text("GAME COMPLETE", GodotThemeVariations.Eyebrow));
             AddChild(Text(
                 "No further decision is waiting.",
@@ -57,16 +65,6 @@ public sealed partial class DecisionPanel : VBoxContainer
         }
 
         PromptPresentation prompt = PromptPresentation.From(composer.Prompt, world);
-        AddChild(Text("CURRENT DECISION", GodotThemeVariations.Eyebrow));
-        AddChild(Text(prompt.Heading, GodotThemeVariations.Heading, wrap: true));
-        AddChild(Text(prompt.Context, GodotThemeVariations.Caption, wrap: true));
-        AddChild(Text(
-            prompt.Requirement,
-            composer.Prompt.Cancellable
-                ? GodotThemeVariations.Caption
-                : GodotThemeVariations.DangerText,
-            wrap: true));
-        AddChild(new HSeparator());
 
         foreach (AffordancePresentation view in prompt.Affordances)
         {
@@ -74,9 +72,13 @@ public sealed partial class DecisionPanel : VBoxContainer
                 candidate.Id == view.Id);
             bool unavailable = submitting || !option.IsLegal;
             bool isSelected = composer.Selected?.Id == option.Id;
+            bool resolving = submitting && isSelected;
             var choose = new Button
             {
-                Text = unavailable
+                Name = $"Affordance{option.Id}",
+                Text = resolving
+                    ? $"✓ RESOLVING  ·  {view.Verb}  ·  {view.Label}\n{view.Anchor}"
+                    : unavailable
                     ? $"— UNAVAILABLE  ·  {view.Verb}  ·  {view.Label}\n{view.Anchor}"
                     : isSelected
                         ? $"✓ SELECTED  ·  {view.Verb}  ·  {view.Label}\n{view.Anchor}"
@@ -89,7 +91,9 @@ public sealed partial class DecisionPanel : VBoxContainer
             };
             StyleButton(
                 choose,
-                !option.IsLegal || submitting
+                resolving
+                    ? InteractiveVisualState.Selected
+                    : !option.IsLegal || submitting
                     ? InteractiveVisualState.Unavailable
                     : choose.ButtonPressed
                         ? InteractiveVisualState.Selected
@@ -97,11 +101,10 @@ public sealed partial class DecisionPanel : VBoxContainer
             choose.Pressed += () =>
             {
                 composer.SelectAffordance(option.Id);
-                AnchorFocused?.Invoke(option.AnchorId);
+                AnchorFocused?.Invoke([option.AnchorId]);
                 Rebuild();
             };
-            choose.MouseEntered += () => AnchorFocused?.Invoke(option.AnchorId);
-            choose.FocusEntered += () => AnchorFocused?.Invoke(option.AnchorId);
+            BindAnchors(choose, option.AnchorId);
             AddChild(choose);
             if (option.Illegal is not null)
             {
@@ -114,17 +117,20 @@ public sealed partial class DecisionPanel : VBoxContainer
 
         if (composer.Selected is { } selected)
         {
+            DecisionProgressPresentation progress = composer.Progress();
             AddChild(new HSeparator());
-            AddChild(Text("SELECTION", GodotThemeVariations.Eyebrow));
-            AddTargets(selected);
+            AddChild(Text(TargetProgressText(progress.Targets), GodotThemeVariations.Eyebrow));
+            AddTargets(selected, progress.Targets);
             AddCosts(selected);
-            AddSubmit();
+            progress = composer.Progress();
+            AddSubmit(progress);
         }
 
         if (composer.Prompt.Cancellable)
         {
             var pass = new Button
             {
+                Name = "Decline",
                 Text = submitting
                     ? "— UNAVAILABLE  ·  Pass / decline"
                     : "Pass / decline",
@@ -144,9 +150,12 @@ public sealed partial class DecisionPanel : VBoxContainer
             };
             AddChild(pass);
         }
+
+        ProgressChanged?.Invoke(composer.Progress());
+        Callable.From(() => RestoreFocus(focusName, focusFirst)).CallDeferred();
     }
 
-    private void AddTargets(Affordance selected)
+    private void AddTargets(Affordance selected, TargetSelectionProgress progress)
     {
         TargetRequest? request = selected.Targets;
         if (request is null)
@@ -156,9 +165,8 @@ public sealed partial class DecisionPanel : VBoxContainer
         }
 
         string badge = request.IsSearch ? "SEARCH RESULTS" : "TARGETS";
-        AddChild(Text(
-            $"{badge}  ·  {request.Min}–{request.Max}",
-            GodotThemeVariations.Caption));
+        AddChild(Text($"{badge}  ·  " + TargetProgressText(progress),
+            GodotThemeVariations.Caption, wrap: true));
         if (!string.IsNullOrWhiteSpace(request.Rule))
         {
             AddChild(Text(request.Rule, GodotThemeVariations.Caption));
@@ -178,6 +186,7 @@ public sealed partial class DecisionPanel : VBoxContainer
                 IReadOnlyList<int> group = request.Groups[index];
                 var choose = new Button
                 {
+                    Name = $"Group{index}",
                     Text = (composer!.Targets.SequenceEqual(group)
                             ? "✓ SELECTED  ·  "
                             : "◇ LEGAL  ·  ")
@@ -199,6 +208,7 @@ public sealed partial class DecisionPanel : VBoxContainer
                     composer.SelectTargets(group);
                     Rebuild();
                 };
+                BindAnchors(choose, [.. group]);
                 AddChild(choose);
             }
 
@@ -230,6 +240,7 @@ public sealed partial class DecisionPanel : VBoxContainer
     {
         var choose = new Button
         {
+            Name = $"Target{target}",
             Text = composer!.Targets.Contains(target)
                 ? $"✓ SELECTED  ·  {PromptPresentation.Describe(target, world!)}"
                 : $"◇ LEGAL  ·  {PromptPresentation.Describe(target, world!)}",
@@ -253,11 +264,10 @@ public sealed partial class DecisionPanel : VBoxContainer
             {
                 composer.AddTarget(target);
             }
-            AnchorFocused?.Invoke(target);
+            AnchorFocused?.Invoke([target]);
             Rebuild();
         };
-        choose.MouseEntered += () => AnchorFocused?.Invoke(target);
-        choose.FocusEntered += () => AnchorFocused?.Invoke(target);
+        BindAnchors(choose, target);
         AddChild(choose);
     }
 
@@ -269,7 +279,12 @@ public sealed partial class DecisionPanel : VBoxContainer
         {
             ThemeTypeVariation = GodotThemeVariations.CompactRow,
         };
-        var remove = new Button { Text = "−", Disabled = submitting || count == 0 };
+        var remove = new Button
+        {
+            Name = $"Target{target}Remove",
+            Text = "−",
+            Disabled = submitting || count == 0,
+        };
         StyleButton(
             remove,
             remove.Disabled
@@ -281,6 +296,7 @@ public sealed partial class DecisionPanel : VBoxContainer
             composer.RemoveTarget(target);
             Rebuild();
         };
+        BindAnchors(remove, target);
         row.AddChild(remove);
         var label = Text(
             $"{count}  ·  {PromptPresentation.Describe(target, world!)}  ·  max {limit}",
@@ -289,6 +305,7 @@ public sealed partial class DecisionPanel : VBoxContainer
         row.AddChild(label);
         var add = new Button
         {
+            Name = $"Target{target}Add",
             Text = "+",
             Disabled = submitting || count >= limit || composer.Targets.Count >= request.Max,
         };
@@ -301,9 +318,10 @@ public sealed partial class DecisionPanel : VBoxContainer
         add.Pressed += () =>
         {
             composer.AddTarget(target);
-            AnchorFocused?.Invoke(target);
+            AnchorFocused?.Invoke([target]);
             Rebuild();
         };
+        BindAnchors(add, target);
         row.AddChild(add);
         AddChild(row);
     }
@@ -312,7 +330,7 @@ public sealed partial class DecisionPanel : VBoxContainer
     {
         if (selected.CostOptions.Count == 0)
         {
-            AddChild(Text("FREE", GodotThemeVariations.Caption));
+            AddChild(Text("PAYMENT  ·  FREE  ·  READY", GodotThemeVariations.StatusText));
             return;
         }
 
@@ -326,6 +344,7 @@ public sealed partial class DecisionPanel : VBoxContainer
             bool isSelected = composer.SelectedCost == index;
             var choose = new Button
             {
+                Name = $"Cost{costIndex}",
                 Text = unavailable
                     ? $"— UNAVAILABLE  ·  {CostLabel(cost)}"
                     : isSelected
@@ -352,11 +371,19 @@ public sealed partial class DecisionPanel : VBoxContainer
                 }
                 Rebuild();
             };
+            if (cost.Target != 0)
+            {
+                BindAnchors(choose, cost.Target);
+            }
             AddChild(choose);
         }
 
         if (composer!.SelectedCost < 0)
         {
+            PaymentProgress pending = composer.Progress().Payment;
+            AddChild(Text(
+                $"PAYMENT  ·  CHOOSE 1 OF {pending.CostOptions} COSTS",
+                GodotThemeVariations.Caption));
             return;
         }
 
@@ -376,6 +403,7 @@ public sealed partial class DecisionPanel : VBoxContainer
             row.AddChild(name);
             var value = new SpinBox
             {
+                Name = $"Variable{NodeKey(variable.Name)}",
                 CustomMinimumSize = new Vector2(
                     ControlMetrics.MinimumButtonWidth,
                     ControlMetrics.MinimumHeight),
@@ -400,6 +428,7 @@ public sealed partial class DecisionPanel : VBoxContainer
         {
             var choose = new Button
             {
+                Name = $"Resource{source.Effect}",
                 Text = (composer.Resources.Contains(source.Effect)
                         ? "✓ SELECTED  ·  "
                         : "◇ RESOURCE  ·  ")
@@ -420,6 +449,7 @@ public sealed partial class DecisionPanel : VBoxContainer
                 composer.ToggleResource(source.Effect);
                 Rebuild();
             };
+            BindAnchors(choose, source.Effect);
             AddChild(choose);
         }
 
@@ -433,6 +463,19 @@ public sealed partial class DecisionPanel : VBoxContainer
                         $"{index + 1}:{component.Cost}")),
                 GodotThemeVariations.Caption, wrap: true));
         }
+
+        PaymentProgress progress = composer.Progress().Payment;
+        AddChild(Text(
+            $"PAYMENT  ·  {progress.SelectedGenerators} GENERATORS"
+            + $"  ·  {progress.AssignedIcons}/{progress.GeneratedIcons} ICONS"
+            + (progress.RequestedVariables > 0
+                ? $"  ·  {progress.DefinedVariables}/{progress.RequestedVariables} VALUES"
+                : string.Empty)
+            + (progress.IsSatisfied ? "  ·  READY" : "  ·  INCOMPLETE"),
+            progress.IsSatisfied
+                ? GodotThemeVariations.StatusText
+                : GodotThemeVariations.Caption,
+            wrap: true));
     }
 
     private void AddResourceAssignments(CostOption cost)
@@ -475,6 +518,7 @@ public sealed partial class DecisionPanel : VBoxContainer
                 row.AddChild(label);
                 var allocation = new OptionButton
                 {
+                    Name = $"Allocation{source.Effect}_{iconIndex}",
                     CustomMinimumSize = new Vector2(
                         Math.Max(170, ControlMetrics.MinimumButtonWidth),
                         ControlMetrics.MinimumHeight),
@@ -501,31 +545,34 @@ public sealed partial class DecisionPanel : VBoxContainer
                         source.Effect, iconIndex, choice.Cost, choice.PaidAs);
                     Rebuild();
                 };
+                BindAnchors(allocation, source.Effect);
                 row.AddChild(allocation);
                 AddChild(row);
             }
         }
     }
 
-    private void AddSubmit()
+    private void AddSubmit(DecisionProgressPresentation progress)
     {
-        bool valid = composer!.TryBuild(out _, out string? error);
-        if (!valid && error is not null)
+        if (!progress.IsReady && progress.Error is not null)
         {
-            AddChild(Text(
-                error,
+            Label validation = Text(
+                $"! {progress.Error}",
                 GodotThemeVariations.DangerText,
-                wrap: true));
+                wrap: true);
+            validation.Name = "ValidationError";
+            AddChild(validation);
         }
 
         var submit = new Button
         {
+            Name = "Submit",
             Text = submitting
                 ? "— UNAVAILABLE  ·  Waiting for engine…"
-                : valid
+                : progress.IsReady
                     ? "Submit decision"
                     : "— UNAVAILABLE  ·  Submit decision",
-            Disabled = submitting || !valid,
+            Disabled = submitting || !progress.IsReady,
         };
         StyleButton(
             submit,
@@ -534,13 +581,121 @@ public sealed partial class DecisionPanel : VBoxContainer
                 : InteractiveVisualState.Danger);
         submit.Pressed += () =>
         {
-            if (composer.TryBuild(out EngineDecision? decision, out _))
+            if (composer!.TryBuild(out EngineDecision? decision, out _))
             {
                 Submitted?.Invoke(decision!);
             }
         };
         AddChild(submit);
     }
+
+    private static string TargetProgressText(TargetSelectionProgress progress) =>
+        progress.Mode switch
+        {
+            TargetSelectionMode.None => "NO TARGET SELECTION",
+            TargetSelectionMode.Grouped => $"GROUP  ·  {progress.Selected}/1 SELECTED"
+                + (progress.IsSatisfied ? "  ·  COMPLETE" : "  ·  INCOMPLETE"),
+            _ => $"SELECTION  ·  {progress.Selected} SELECTED"
+                + (progress.Minimum == progress.Maximum
+                    ? $"  ·  REQUIRED {progress.Minimum}"
+                    : $"  ·  REQUIRED {progress.Minimum}–{progress.Maximum}")
+                + (progress.IsSatisfied ? "  ·  COMPLETE" : "  ·  INCOMPLETE"),
+        };
+
+    private void RestoreFocus(string? requested, bool focusFirst)
+    {
+        Control? candidate = EnabledControl(requested);
+        if (candidate is null && requested is not null)
+        {
+            string? paired = requested.EndsWith("Add", StringComparison.Ordinal)
+                ? requested[..^3] + "Remove"
+                : requested.EndsWith("Remove", StringComparison.Ordinal)
+                    ? requested[..^6] + "Add"
+                    : null;
+            candidate = EnabledButton(paired) ?? EnabledButton("Submit");
+        }
+
+        if (candidate is null && (focusFirst || requested is not null))
+        {
+            candidate = FindChildren("*", "BaseButton", recursive: true, owned: false)
+                .OfType<BaseButton>()
+                .FirstOrDefault(button => !button.Disabled);
+        }
+
+        candidate?.GrabFocus();
+    }
+
+    private string? FocusKey(Control focused)
+    {
+        Node? current = focused;
+        while (current is not null && current != this)
+        {
+            string name = current.Name.ToString();
+            if (IsStableFocusName(name))
+            {
+                return name;
+            }
+
+            current = current.GetParent();
+        }
+
+        return null;
+    }
+
+    private static bool IsStableFocusName(string name) =>
+        name is "Submit" or "Decline"
+        || name.StartsWith("Affordance", StringComparison.Ordinal)
+        || name.StartsWith("Group", StringComparison.Ordinal)
+        || name.StartsWith("Target", StringComparison.Ordinal)
+        || name.StartsWith("Cost", StringComparison.Ordinal)
+        || name.StartsWith("Variable", StringComparison.Ordinal)
+        || name.StartsWith("Resource", StringComparison.Ordinal)
+        || name.StartsWith("Allocation", StringComparison.Ordinal);
+
+    private Control? EnabledControl(string? name)
+    {
+        if (string.IsNullOrEmpty(name))
+        {
+            return null;
+        }
+
+        return FindChild(name, recursive: true, owned: false) switch
+        {
+            BaseButton { Disabled: false } button => button,
+            SpinBox { Editable: true } spin => spin.GetLineEdit(),
+            LineEdit { Editable: true } line => line,
+            _ => null,
+        };
+    }
+
+    private BaseButton? EnabledButton(string? name)
+    {
+        if (string.IsNullOrEmpty(name))
+        {
+            return null;
+        }
+
+        return FindChild(name, recursive: true, owned: false) is BaseButton
+            {
+                Disabled: false,
+            } button
+            ? button
+            : null;
+    }
+
+    private void BindAnchors(Control control, params int[] ids)
+    {
+        if (ids.Length == 0)
+        {
+            return;
+        }
+
+        control.MouseEntered += () => AnchorFocused?.Invoke(ids);
+        control.FocusEntered += () => AnchorFocused?.Invoke(ids);
+    }
+
+    private static string NodeKey(string value) => new(
+        value.Select(character => char.IsLetterOrDigit(character) ? character : '_').ToArray());
 
     private string CostLabel(CostOption cost)
     {
