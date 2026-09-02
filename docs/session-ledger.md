@@ -57,7 +57,7 @@ server replay but must never cross the client boundary. A visibility-safe
 | Term | Meaning |
 |---|---|
 | Decision record | One durable answer to one prompt. |
-| History unit | One root game operation and every dependent answer needed before the next root menu. |
+| History unit | One root game operation and every dependent answer needed before the next root menu. It may be open or complete. |
 | Active prefix | The units before the ledger cursor. They produce the live game. |
 | Redo suffix | Previously committed units at or after the cursor. They are inactive but may be replayed. |
 | Edit frontier | The earliest cursor position to which the current table may move. |
@@ -93,6 +93,11 @@ used to open the table. The storage id uses operating-system entropy outside
 gameplay and never enters the seed, RNG stream, prompt, event list or digest.
 Only that validated fixed-alphabet id names the save file. A user-supplied game
 label is data inside the envelope and is never interpreted as a path.
+
+It also records the durable lifecycle state, `active` or `retired`. A retired
+session is a tombstone: startup does not publish it, and its display label may
+be reused. Retention policy may later delete its save and protected metadata,
+but deletion is not the operation that makes a close durable.
 
 ### Compatibility
 
@@ -153,7 +158,14 @@ It also records:
 - a stable prompt record before resolution;
 - semantic events after resolution;
 - the cumulative gameplay RNG words consumed after resolution; and
-- the state fingerprint after resolution.
+- the state fingerprint after resolution; and
+- the engine result after resolution, which is null until the game is terminal
+  and otherwise includes the outcome and terminal round.
+
+Schema 1 defines the state fingerprint as `World.Digest()` plus the recorded
+engine result. `World.Digest()` alone contains card state and cannot distinguish
+a win from a loss on an otherwise identical terminal board. Replay verifies
+both parts after every decision.
 
 A decline records no selector. Replay resolves a taken selector against the
 newly generated prompt and requires exactly one legal match. It then validates
@@ -165,9 +177,10 @@ Object ids are durable only inside one deterministically dealt and replayed
 game. They are not global ids and cannot identify a card across unrelated saves.
 
 Unit ids are their zero-based positions in `units`; they are not random values.
-A unit records its role, initiating seat, active seat, round, phase, ordered
-decision records and derived frontier signals. The serializer pins each nested
-record's exact member set and order with schema tests before schema 1 ships.
+A unit records its role, `open` or `complete` status, initiating seat, active
+seat, round, phase, ordered decision records and derived frontier signals. The
+serializer pins each nested record's exact member set and order with schema
+tests before schema 1 ships.
 
 ## History units
 
@@ -179,6 +192,18 @@ A history unit starts when the engine accepts a root menu decision. It ends
 when the game reaches the next root menu, a phase boundary or a terminal state.
 Every dependent answer between those points belongs to the same unit, including
 answers from another seat.
+
+The first accepted root decision creates an `open` unit and commits that save
+before acknowledgement. Every later dependent answer appends to the same open
+unit and is also committed before acknowledgement. Reaching the next root menu,
+phase boundary or terminal state changes the unit to `complete` in the same
+commit as the decision that reached it.
+
+An open unit is canonical and replayable, but not editable. Undo, redo and
+reorder are unavailable until it completes. A server restart replays every
+decision in the open unit and restores its exact pending payment, target,
+interrupt, response, ordering or forced-effect prompt. The server never rolls
+an open unit back merely because the process stopped between its decisions.
 
 Units have one of these roles:
 
@@ -214,7 +239,9 @@ The Rules Reference defines the legal distinction:
 The product collapses an accepted request or offer into the Action itself. It
 does not add `Ask`, `Offer` or `Accept` decisions. During a player turn, every
 non-eliminated seat may directly submit a currently legal printed Action for
-that seat.
+that seat while the engine is at the root turn menu. An untimed Action is not
+available while another action, payment, target choice, interrupt, response or
+forced effect is being resolved.
 
 This does not grant the other turn options. Off turn, a seat cannot:
 
@@ -244,7 +271,7 @@ rules. The engine derives that seat; the client does not assign it.
 
 ## Transactional mutation
 
-Every state-changing server command follows one transaction:
+Resolve, undo, redo and reorder follow one gameplay transaction:
 
 1. Authenticate the session and acting seat.
 2. Require the expected live revision.
@@ -260,6 +287,28 @@ Every state-changing server command follows one transaction:
 If validation, replay or persistence fails, the candidate is discarded and the
 live session remains unchanged. A response never claims a mutation succeeded
 before its canonical save is committed.
+
+Session lifecycle commands have the same save-before-ack rule:
+
+- `open` creates the initial ledger and protected owner authentication metadata
+  as one durable persistence transaction, then publishes the live session and
+  returns its credential. A crash cannot leave an acknowledged game without a
+  recoverable save or leave an unpublished active save that startup later
+  exposes without its owner authority.
+- `attach` consumes the invitation and durably records the new resumable seat
+  authority before returning it. One-time invitation state and resumable
+  credentials remain protected metadata, never deterministic game data.
+- non-owner `close` durably revokes only that credential before acknowledging;
+  it does not retire the game.
+- owner `close` atomically marks the ledger `retired`, revokes every associated
+  credential and invitation, and removes the live session before acknowledging.
+  Recovery completes either the old active bundle or the new retired bundle;
+  it never republishes a successfully closed game.
+
+The persistence abstraction treats a ledger and its protected authentication
+metadata as one recoverable bundle even when the operating system stores them
+in separate files. A small committed manifest or equivalent journal identifies
+the complete generation. Startup ignores incomplete generations.
 
 Candidate replay has 2 modes:
 
@@ -292,6 +341,10 @@ tests on every supported server platform.
 
 `cursor` is the number of units in the active prefix. A normal game has
 `cursor == units.length`.
+
+The active prefix may end with one open unit. No other unit may be open, and a
+redo suffix may contain only complete units. History editing requires every
+unit in the active prefix to be complete.
 
 Undo decrements the cursor to an allowed unit boundary and replays the shorter
 prefix. Redo increments it and replays the retained suffix. Neither operation
@@ -355,8 +408,9 @@ server accepts it only when:
 - it is not before the edit frontier; and
 - complete replay of the prefix succeeds.
 
-The first product policy lets a seat edit only units it initiated. A range that
-contains a unit initiated by another seat requires a later explicit table-wide
+The first product policy lets a seat edit only units it initiated and whose
+dependent decisions were all submitted by that same seat. A range containing a
+unit initiated or answered by another seat requires a later explicit table-wide
 authorization policy. This is a product permission, not a tabletop rule.
 
 Redo uses the same checks against the retained suffix. If code or data changed
@@ -371,7 +425,9 @@ animate guessed inverse events.
 
 Reordering accepts a permutation of contiguous `turn_action` units after the
 edit frontier. The first product policy requires every selected root unit to
-have the same initiating seat and to belong to the same active-player turn.
+have the same initiating seat, every dependent decision in those units to have
+been submitted by that seat, and every unit to belong to the same active-player
+turn.
 
 The server:
 
@@ -424,12 +480,16 @@ Server startup discovers saves only under its configured data root. For each
 selected save it:
 
 1. Parses the strict envelope and compatibility block.
-2. Deals from the recorded setup.
-3. Verifies initial events and digest.
-4. Replays and verifies every unit, including the inactive redo suffix.
-5. Replays through the cursor to reconstruct the active game.
-6. Verifies the saved frontier, revision and active state.
-7. Publishes the session only after complete success.
+2. Excludes a retired session from publication and completes any pending
+   lifecycle recovery.
+3. Deals from the recorded setup.
+4. Verifies initial events, cumulative RNG word count and digest.
+5. Replays and verifies every unit, including the inactive redo suffix.
+6. Replays through the cursor to reconstruct the active game.
+7. Verifies the saved frontier, revision and active state, including a terminal
+   result when present.
+8. Publishes the session and its recovered authorities only after complete
+   success.
 
 A corrupt, unsupported or divergent save is quarantined from play and reported
 with a bounded diagnostic. The server does not skip a bad decision, discard a
@@ -443,10 +503,18 @@ their respective interfaces. A client cache is not a backup.
 The subsystem requires executable examples for:
 
 - byte-stable schema 1 records and strict parsing;
+- atomic open with its initial save and owner authority, including crashes at
+  each persistence boundary;
+- durable attach, credential revocation and owner retirement, including restart
+  after every close boundary and safe display-label reuse;
 - complete replay of solo and multiplayer saves;
+- rejection of a zero-unit save whose initial RNG count diverges;
 - first-divergence prompt, event, RNG and digest checks;
+- rejection of a terminal replay whose outcome or terminal round diverges;
 - atomic commit failure before live-session replacement;
 - restart from the last complete save after interrupted replacement;
+- restart in the middle of an open action and restoration of its exact pending
+  prompt;
 - a reversible card play and an irreversible draw;
 - search, reveal, shuffle and random-selection frontiers;
 - redo and future truncation after a new decision;
@@ -455,6 +523,8 @@ The subsystem requires executable examples for:
   dependent prompts after reorder;
 - direct off-turn printed Actions submitted by their controlling seat;
 - rejection of off-turn ordinary play and identity or ally basic powers;
+- rejection of single-seat undo, redo or reorder when an affected unit contains
+  a dependent decision submitted by another seat;
 - simultaneous seat commands at one revision accepting exactly one;
 - structured-log and telemetry redaction; and
 - no gameplay difference when every observer is disabled or failing.
