@@ -52,6 +52,7 @@ public sealed class BoardPresentationTests
         Assert.Equal("2 concealed encounter cards", pile.Title);
         Assert.Equal("Identity and order hidden", pile.Subtitle);
         Assert.Empty(pile.Fields);
+        Assert.Null(pile.FaceId);
         Assert.DoesNotContain("READY", pile.Status);
     }
 
@@ -75,6 +76,7 @@ public sealed class BoardPresentationTests
         Assert.Equal("Face-down player card", card.Title);
         Assert.Equal("EXHAUSTED  ·  FACE DOWN  ·  HOST 7", card.Status);
         Assert.Empty(card.Fields);
+        Assert.Null(card.FaceId);
     }
 
     [Fact]
@@ -118,6 +120,8 @@ public sealed class BoardPresentationTests
         BoardCardPresentation card = Assert.Single(
             Assert.Single(BoardPresentation.From(
                 World(areas: [Area(1, "IdentityArea", 0, [readable])])).Areas).Cards);
+
+        Assert.Equal("01010", card.FaceId);
 
         Assert.False(card.Concealed);
         Assert.Equal("Captain Marvel", card.Title);

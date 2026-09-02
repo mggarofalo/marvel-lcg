@@ -20,7 +20,8 @@ public sealed partial class CardControl : PanelContainer
     public static CardControl Create(
         BoardCardPresentation card,
         CardDisplaySize size = CardDisplaySize.Board,
-        InterfaceScale scale = InterfaceScale.Standard)
+        InterfaceScale scale = InterfaceScale.Standard,
+        ICardArtProvider? art = null)
     {
         ArgumentNullException.ThrowIfNull(card);
         CardLayoutMetrics layout = VisualSystem.Card(size, scale);
@@ -38,7 +39,7 @@ public sealed partial class CardControl : PanelContainer
         control.ThemeTypeVariation = control.baseVariation;
         control.AddChild(card.Concealed
             ? Back(card)
-            : Face(card, layout));
+            : Face(card, layout, art));
         return control;
     }
 
@@ -79,11 +80,30 @@ public sealed partial class CardControl : PanelContainer
         return content;
     }
 
-    private static VBoxContainer Face(BoardCardPresentation card, CardLayoutMetrics layout)
+    private static VBoxContainer Face(
+        BoardCardPresentation card,
+        CardLayoutMetrics layout,
+        ICardArtProvider? art)
     {
         var content = Stack();
         content.Name = "CardFace";
         content.AddChild(Label(card.Kind, GodotThemeVariations.Eyebrow, "Kind"));
+        Texture2D? illustration = card.FaceId is { Length: > 0 } faceId
+            ? art?.Find(faceId)
+            : null;
+        if (illustration is not null)
+        {
+            content.AddChild(new TextureRect
+            {
+                Name = "Illustration",
+                Texture = illustration,
+                CustomMinimumSize = new Vector2(0, layout.Width * 0.46f),
+                ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+                StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered,
+                MouseFilter = MouseFilterEnum.Ignore,
+            });
+        }
+
         content.AddChild(Label(
             card.Title,
             GodotThemeVariations.CardTitle,

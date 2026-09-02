@@ -154,8 +154,9 @@ and rules text from the visibility-safe descriptor. It avoids treating a scan of
 printed state as the current state and then layering separate rules badges over
 it.
 
-`Marvel.View` does not yet contain card layout or art-pack loading. Those are
-client tasks, not engine or DSL fields. Presentation hints must not enter
+`Marvel.View` does not contain card layout or art-pack loading. Those are client
+tasks, not engine or DSL fields. The descriptor supplies the already-authorized
+visible face id; presentation hints must not enter
 `datasets/abilities/abilities.json`.
 
 ## Client delivery
