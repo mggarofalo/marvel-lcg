@@ -13,6 +13,36 @@ namespace Marvel.Content.Tests.Play;
 
 public sealed partial class ActionAbilityTests
 {
+    [Rule("rr:player-turn.6")]
+    [Rule("rr:initiating-abilities")]
+    [Fact]
+    public void OffTurnActionsAreNotInjectedIntoADependentAbilityQuestion()
+    {
+        // The other player's permission exists “during the active player's
+        // turn,” but it is permission to initiate an Action at the turn menu.
+        // Once an ability has initiated, its target and option questions are
+        // the ordered sequence in rr:initiating-abilities, not fresh turn
+        // menus into which another untimed Action may be inserted.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "choose": { "options": [ { "draw": { "player": "you", "count": 1 } }, { "heal": { "card": "you", "amount": 1 } } ] } }""");
+        Card? source = null;
+        var (game, _) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            heroes: ["spider_man", "captain_marvel"],
+            abilities: runner);
+        Affordance action = Assert.Single(
+            game.PromptFor(0)!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.Equal(Question.Option, game.Pending!.Asking);
+        Assert.Same(game.Pending, game.PromptFor(0));
+        Assert.Null(game.PromptFor(1));
+    }
+
     [Rule("rr:cost")]
     [Rule("rr:player-turn.5")]
     [Fact]

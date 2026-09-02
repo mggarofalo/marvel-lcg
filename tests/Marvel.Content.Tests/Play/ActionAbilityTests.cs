@@ -748,6 +748,9 @@ public sealed partial class ActionAbilityTests
 
     [Rule("rr:player-turn.5")]
     [Rule("rr:action.1")]
+    [Rule("rr:player-turn.3")]
+    [Rule("rr:player-turn.4")]
+    [Rule("rr:player-turn.6")]
     [Fact]
     public void AnotherPlayersActionIsOfferedDirectlyAndResolvedByThem()
     {
@@ -767,8 +770,25 @@ public sealed partial class ActionAbilityTests
             },
             heroes: ["spider_man", "she_hulk"]);
 
+        Prompt activeMenu = Assert.IsType<Prompt>(game.PromptFor(0));
+        Prompt otherMenu = Assert.IsType<Prompt>(game.PromptFor(1));
+
+        // Options 3 and 4 say that the player taking their turn uses “their”
+        // identity or an ally “they control.” Only option 6 crosses seats, and
+        // it names an Action specifically. The second seat cannot inherit card
+        // play, form change, end turn, or either kind of basic power.
+        Assert.DoesNotContain(
+            activeMenu.Affordances, option => option.AnchorPlayer == 1);
+        Assert.All(otherMenu.Affordances, option =>
+        {
+            Assert.Equal(Game.ActionVerb, option.Verb);
+            Assert.Equal(1, option.AnchorPlayer);
+        });
+        Assert.False(otherMenu.Cancellable);
+
         var action = Assert.Single(
-            game.Pending!.Affordances, option => option.Verb == Game.ActionVerb);
+            otherMenu.Affordances,
+            option => option.Verb == Game.ActionVerb && option.AnchorId == may!.ObjectId);
         Assert.Equal(may!.ObjectId, action.AnchorId);
         Assert.Equal(1, action.AnchorPlayer);
 

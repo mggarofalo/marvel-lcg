@@ -95,11 +95,25 @@ public sealed class RestrictedMultiplayerJourneyTests
                     break;
                 }
 
-                int actor = views[0].Prompt is not null ? 0 : 1;
+                int[] prompted = Enumerable.Range(0, views.Length)
+                    .Where(seat => views[seat].Prompt is not null)
+                    .ToArray();
+                int actor = prompted.Length == 2
+                    ? Assert.Single(prompted, seat => views[seat].Prompt!.Cancellable)
+                    : Assert.Single(prompted);
                 int peer = 1 - actor;
                 Prompt prompt = Assert.IsType<Prompt>(views[actor].Prompt);
                 Assert.Equal(actor, prompt.Player);
-                Assert.Null(views[peer].Prompt);
+                if (views[peer].Prompt is { } offTurn)
+                {
+                    Assert.Equal(peer, offTurn.Player);
+                    Assert.False(offTurn.Cancellable);
+                    Assert.All(offTurn.Affordances, option =>
+                    {
+                        Assert.Equal(Game.ActionVerb, option.Verb);
+                        Assert.Equal(peer, option.AnchorPlayer);
+                    });
+                }
                 TargetRequest? search = prompt.Affordances
                     .Select(option => option.Targets)
                     .FirstOrDefault(targets => targets?.IsSearch == true);
@@ -317,11 +331,15 @@ public sealed class RestrictedMultiplayerJourneyTests
 
     private static EngineDecision VisibleDecision(Prompt prompt)
     {
-        if (prompt.Cancellable
-            || prompt.Affordances.Any(option => string.Equals(
-                option.Verb, Game.ResolveMulligans, StringComparison.Ordinal)))
+        if (prompt.Cancellable)
         {
             return EngineDecision.Decline;
+        }
+
+        if (prompt.Affordances.SingleOrDefault(option => string.Equals(
+                option.Verb, Game.ResolveMulligans, StringComparison.Ordinal)) is { } mulligan)
+        {
+            return new EngineDecision(mulligan.Id, []);
         }
 
         foreach (Affordance offered in prompt.Affordances

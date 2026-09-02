@@ -160,6 +160,64 @@ public sealed class Game
     /// <summary>The open decision, or <c>null</c> when the game is over.</summary>
     public Prompt? Pending { get; private set; }
 
+    /// <summary>Projects the open decision into the options one seat may submit.</summary>
+    /// <remarks>
+    /// <para>
+    /// <c>rr:player-turn.6</c> lets another player trigger an Action during the
+    /// active player's turn. The product represents the accepted request or
+    /// offer as that player's Action itself, without a request handshake.
+    /// </para>
+    /// <para>
+    /// That exception is deliberately narrow. <c>rr:player-turn.1-.4</c> make
+    /// changing form, ordinary card play, identity basic powers, and ally basic
+    /// powers options of the player taking their turn. A non-active seat
+    /// therefore receives only its own printed Actions, and receives them only
+    /// at the root turn menu rather than inside a dependent question.
+    /// </para>
+    /// </remarks>
+    public Prompt? PromptFor(int player)
+    {
+        if (player < 0 || player >= world.Players)
+        {
+            throw new ArgumentOutOfRangeException(nameof(player));
+        }
+
+        if (Pending is not { } pending || world.Seats[player].Eliminated)
+        {
+            return null;
+        }
+
+        bool rootTurn = Phase == GamePhase.PlayerTurn
+            && asking == Asker.Game
+            && !endingPlayerPhase;
+        if (!rootTurn)
+        {
+            return pending.Player == player ? pending : null;
+        }
+
+        var options = pending.Affordances.Where(option =>
+            string.Equals(option.Verb, ActionVerb, StringComparison.Ordinal)
+                ? option.AnchorPlayer == player
+                : pending.Player == player).ToList();
+        if (options.Count == 0 && pending.Player != player)
+        {
+            return null;
+        }
+
+        return pending with
+        {
+            Player = player,
+            Label = pending.Player == player
+                ? pending.Label
+                : $"{world.Seats[player].Name} may act during "
+                    + $"{world.Seats[pending.Player].Name}'s turn",
+            // An off-turn menu is an invitation to act, not a sequential
+            // question. Declining it must not end the active player's turn.
+            Cancellable = pending.Player == player && pending.Cancellable,
+            Affordances = options,
+        };
+    }
+
     /// <summary>Opens a dealt board and asks the first question.</summary>
     /// <param name="world">A world from <see cref="WorldSetup.Deal"/>.</param>
     /// <param name="facts">The printed card data.</param>
