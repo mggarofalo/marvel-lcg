@@ -163,7 +163,7 @@ func _answer_visible_decision(main: Control) -> bool:
 	if decline != null and not decline.disabled:
 		decline.pressed.emit()
 	else:
-		var submit := _button(decision, "Submit decision")
+		var submit := _submit_button(decision)
 		if submit == null or submit.disabled:
 			var choice := _first_enabled_choice(decision)
 			if choice == null:
@@ -171,7 +171,7 @@ func _answer_visible_decision(main: Control) -> bool:
 				return false
 			choice.pressed.emit()
 			await process_frame
-			submit = _button(decision, "Submit decision")
+			submit = _submit_button(decision)
 		if submit == null or submit.disabled:
 			_fail("the active client's selected decision cannot be submitted")
 			return false
@@ -191,9 +191,7 @@ func _answer_visible_decision(main: Control) -> bool:
 func _synchronize(main: Control) -> bool:
 	if _complete(main):
 		return true
-	var sync := _button(main, "Synchronize table")
-	if sync == null:
-		sync = _button(main, "Reconnect table")
+	var sync := main.find_child("Synchronize", true, false) as Button
 	if sync == null or sync.disabled:
 		_fail("a waiting client cannot synchronize its hosted table")
 		return false
@@ -213,7 +211,7 @@ func _has_decision(main: Control) -> bool:
 		return false
 	var decision := _decision(main)
 	var decline := _button(decision, "Pass / decline")
-	var submit := _button(decision, "Submit decision")
+	var submit := _submit_button(decision)
 	return decline != null and not decline.disabled \
 		or submit != null and not submit.disabled \
 		or _first_enabled_choice(decision) != null
@@ -245,10 +243,15 @@ func _select_option(node: Node, wanted: String) -> void:
 func _first_enabled_choice(decision: Control) -> Button:
 	for button in _visible_buttons(decision):
 		if not button.disabled \
-				and button.text != "Submit decision" \
+				and button.name != "Submit" \
 				and button.text != "Pass / decline":
 			return button
 	return null
+
+
+func _submit_button(decision: Control) -> Button:
+	var submit := decision.find_child("Submit", true, false) as Button
+	return submit if submit != null and submit.is_visible_in_tree() else null
 
 
 func _button(node: Node, wanted: String) -> Button:
@@ -287,7 +290,7 @@ func _play(main: Control) -> Control:
 
 
 func _decision(main: Control) -> Control:
-	return _node(main, "Play/Prompt/Margin/Stack/DecisionScroll/Decision") as Control
+	return _node(main, "Play/Prompt/Margin/Stack/Workbench/Action/DecisionScroll/Decision") as Control
 
 
 func _status(main: Control) -> Label:

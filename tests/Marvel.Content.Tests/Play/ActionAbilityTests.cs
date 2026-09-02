@@ -1335,8 +1335,10 @@ public sealed partial class ActionAbilityTests
 
         var action = Assert.Single(
             runner.Actions(world, 0), pending => pending.Card == card!.ObjectId);
+        var price = Assert.Single(runner.Describe(world, action).CostOptions);
+        Assert.True(price.DeclarationSensitive);
         Assert.Contains(
-            Assert.Single(runner.Describe(world, action).CostOptions).Generators,
+            price.Generators,
             source => source.Effect == doubleWild!.ObjectId);
         Assert.Throws<RulesNotImplementedException>(() => runner.Act(
             world,

@@ -164,11 +164,24 @@ public static class WorldProjection
         return CardAudience.Nobody;
     }
 
-    private static HashSet<int> SearchResults(Prompt prompt) => prompt.Affordances
-        .Select(option => option.Targets)
-        .Where(targets => targets?.IsSearch == true)
-        .SelectMany(targets => targets!.Legal)
-        .ToHashSet();
+    private static HashSet<int> SearchResults(Prompt prompt)
+    {
+        var visible = prompt.Affordances
+            .Select(option => option.Targets)
+            .Where(targets => targets?.IsSearch == true)
+            .SelectMany(targets => targets!.Legal)
+            .ToHashSet();
+        if (prompt.ExposesConcealedCandidates)
+        {
+            // Some choices, including Futurist, expose each looked-at card as
+            // its own affordance instead of wrapping the candidates in a
+            // target request. This metadata is the server's explicit signal
+            // that those otherwise-concealed anchors are readable now.
+            visible.UnionWith(prompt.Affordances.Select(option => option.AnchorId));
+        }
+
+        return visible;
+    }
 
     private static WorldDescriptor Filter(WorldDescriptor descriptor, ViewScope scope)
     {

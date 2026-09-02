@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using Marvel.Rules.State;
 using Marvel.View;
 
 namespace Marvel.Godot;
@@ -15,8 +16,16 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
     {
         ArgumentNullException.ThrowIfNull(world);
         var players = world.Players.ToDictionary(player => player.Seat);
+        var asideOrdinals = world.Areas
+            .Where(area => area.Zone == nameof(DeckType.AsideDeck))
+            .GroupBy(area => area.Owner)
+            .SelectMany(group => group.Select((area, ordinal) => (area.Id, ordinal)))
+            .ToDictionary(pair => pair.Id, pair => pair.ordinal);
         BoardAreaPresentation[] areas =
-            [.. world.Areas.Select(area => Present(area, players))];
+            [.. world.Areas.Select(area => Present(
+                area,
+                players,
+                asideOrdinals.GetValueOrDefault(area.Id, -1)))];
         BoardPlayerPresentation[] seats =
             [.. world.Players.Select(player => new BoardPlayerPresentation(
                 player.Seat, player.Name))];
@@ -28,12 +37,24 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
 
     private static BoardAreaPresentation Present(
         AreaDescriptor area,
-        Dictionary<int, PlayerDescriptor> players)
+        Dictionary<int, PlayerDescriptor> players,
+        int asideOrdinal)
     {
         string owner = players.TryGetValue(area.Owner, out PlayerDescriptor? player)
             ? player.Name
             : area.Owner < 0 ? "Scenario" : $"Seat {area.Owner}";
-        string context = $"AREA {area.Id}  ·  OWNER {owner.ToUpperInvariant()}";
+        // These labels are a client choice. The tabletop rules define the zone,
+        // not the diagnostic wording that distinguishes it from set-aside cards.
+        string title = area.Zone switch
+        {
+            "VillainDeck" => "UPCOMING VILLAIN STAGES",
+            "AsideDeck" when asideOrdinal == 1 => $"{owner.ToUpperInvariant()}'S NEMESIS SET",
+            "AsideDeck" => $"{owner.ToUpperInvariant()}'S SET-ASIDE AREA",
+            _ => Humanize(area.Zone, trimArea: true).ToUpperInvariant(),
+        };
+        string context = area.Zone == "VillainDeck"
+            ? $"OUT OF PLAY  ·  ENTERS AFTER THE CURRENT STAGE  ·  AREA {area.Id}"
+            : $"AREA {area.Id}  ·  OWNER {owner.ToUpperInvariant()}";
         if (area.Host >= 0)
         {
             context += $"  ·  HOST {area.Host}";
@@ -41,10 +62,10 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
 
         return new BoardAreaPresentation(
             area.Id,
-            Humanize(area.Zone, trimArea: true).ToUpperInvariant(),
+            title,
             context,
-            Present(area.Cards),
-            Present(area.Removed))
+            Present(area.Cards, area.Zone),
+            Present(area.Removed, area.Zone))
         {
             Zone = area.Zone,
             Seat = area.Owner,
@@ -53,7 +74,8 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
     }
 
     private static List<BoardCardPresentation> Present(
-        IReadOnlyList<CardDescriptor> cards)
+        IReadOnlyList<CardDescriptor> cards,
+        string zone)
     {
         var presented = new List<BoardCardPresentation>();
         var concealed = new Dictionary<CardBack, int>();
@@ -65,7 +87,7 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
                 continue;
             }
 
-            presented.Add(Present(card));
+            presented.Add(Present(card, zone));
         }
 
         foreach ((CardBack back, int count) in concealed)
@@ -88,15 +110,8 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
         return presented;
     }
 
-    private static BoardCardPresentation Present(CardDescriptor card)
+    private static BoardCardPresentation Present(CardDescriptor card, string zone)
     {
-        string status = card.Ready ? "READY" : "EXHAUSTED";
-        status += card.FaceUp ? "  ·  FACE UP" : "  ·  FACE DOWN";
-        if (card.Host >= 0)
-        {
-            status += $"  ·  HOST {card.Host}";
-        }
-
         if (card.Face is null)
         {
             return new BoardCardPresentation(
@@ -106,13 +121,14 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
                 Title: $"Face-down {card.Back.ToString().ToLowerInvariant()} card",
                 Subtitle: "Identity hidden",
                 Kind: "CONCEALED CARD",
-                Status: status,
+                Status: Status(card, zone, kind: null),
                 Fields: [])
             {
                 Back = card.Back.ToString().ToUpperInvariant(),
             };
         }
 
+        bool inPlay = IsInPlay(zone);
         return new BoardCardPresentation(
             card.Id,
             Count: 1,
@@ -120,9 +136,11 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
             card.Face.Title,
             card.Face.Subtitle,
             Humanize(card.Face.Kind.ToString(), trimArea: false).ToUpperInvariant(),
-            status,
+            Status(card, zone, card.Face.Kind),
             card.Face.Fields
                 .Where(field => !field.Key.StartsWith("t_", StringComparison.Ordinal))
+                .Where(field => field.Value != 0
+                    || inPlay && field.Key is "health" or "k_threat")
                 .OrderBy(field => field.Key, StringComparer.Ordinal)
                 .Select(field => new BoardFieldPresentation(
                     Humanize(
@@ -130,7 +148,9 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
                             ? field.Key[2..]
                             : field.Key,
                         trimArea: false).ToUpperInvariant(),
-                    field.Value.ToString(CultureInfo.InvariantCulture)))
+                    field.Key == "health"
+                        ? $"{field.Value.ToString(CultureInfo.InvariantCulture)}/{(field.Value + card.Face.Damage).ToString(CultureInfo.InvariantCulture)}"
+                        : field.Value.ToString(CultureInfo.InvariantCulture)))
                 .ToArray())
         {
             Back = card.Back.ToString().ToUpperInvariant(),
@@ -151,6 +171,28 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
                 .ToArray(),
         };
     }
+
+    private static string Status(CardDescriptor card, string zone, CardKind? kind)
+    {
+        bool inPlay = IsInPlay(zone);
+        bool canExhaust = kind is null or CardKind.AlterEgo or CardKind.Hero
+            or CardKind.Ally or CardKind.Support or CardKind.Upgrade;
+        string status = inPlay && canExhaust
+            ? card.Ready ? "READY" : "EXHAUSTED"
+            : string.Empty;
+        if (inPlay && !card.FaceUp)
+        {
+            status += status.Length == 0 ? "FACE DOWN" : "  ·  FACE DOWN";
+        }
+        if (card.Host >= 0)
+        {
+            status += status.Length == 0 ? $"HOST {card.Host}" : $"  ·  HOST {card.Host}";
+        }
+        return status;
+    }
+
+    private static bool IsInPlay(string zone) =>
+        Enum.TryParse(zone, out DeckType deckType) && DeckTypes.IsInPlay(deckType);
 
     private static string Humanize(string value, bool trimArea)
     {

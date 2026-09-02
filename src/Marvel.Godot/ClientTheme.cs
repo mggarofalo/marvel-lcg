@@ -39,9 +39,18 @@ public static class ClientTheme
     public static InterfaceScale ConfiguredScale() =>
         OS.GetEnvironment("MARVEL_UI_SCALE").Trim().ToLowerInvariant() switch
         {
-            "large" => InterfaceScale.Large,
-            "extra-large" => InterfaceScale.ExtraLarge,
-            _ => InterfaceScale.Standard,
+            "50" or "50%" => InterfaceScale.Percent50,
+            "60" or "60%" => InterfaceScale.Percent60,
+            "70" or "70%" => InterfaceScale.Percent70,
+            "80" or "80%" or "compact" => InterfaceScale.Percent80,
+            "90" or "90%" => InterfaceScale.Percent90,
+            "100" or "100%" or "standard" => InterfaceScale.Percent100,
+            "110" or "110%" => InterfaceScale.Percent110,
+            "120" or "120%" or "large" => InterfaceScale.Percent120,
+            "130" or "130%" => InterfaceScale.Percent130,
+            "140" or "140%" => InterfaceScale.Percent140,
+            "150" or "150%" or "extra-large" => InterfaceScale.Percent150,
+            _ => InterfaceScale.Compact,
         };
 
     private static void DefineText(Theme theme, TypeMetrics type)
@@ -129,14 +138,19 @@ public static class ClientTheme
             theme.SetColor("font_disabled_color", type, Muted);
             theme.SetColor("font_uneditable_color", type, Muted);
             theme.SetColor("caret_color", type, Amber);
-            theme.SetStylebox("normal", type, normal.Duplicate() as StyleBoxFlat);
-            theme.SetStylebox("hover", type, hover.Duplicate() as StyleBoxFlat);
-            theme.SetStylebox("pressed", type, hover.Duplicate() as StyleBoxFlat);
-            theme.SetStylebox("hover_pressed", type, hover.Duplicate() as StyleBoxFlat);
-            theme.SetStylebox("focus", type, focus.Duplicate() as StyleBoxFlat);
-            theme.SetStylebox("disabled", type, disabled.Duplicate() as StyleBoxFlat);
-            theme.SetStylebox("read_only", type, disabled.Duplicate() as StyleBoxFlat);
+            SetStylebox(theme, "normal", type, normal.Duplicate() as StyleBoxFlat);
+            SetStylebox(theme, "hover", type, hover.Duplicate() as StyleBoxFlat);
+            SetStylebox(theme, "pressed", type, hover.Duplicate() as StyleBoxFlat);
+            SetStylebox(theme, "hover_pressed", type, hover.Duplicate() as StyleBoxFlat);
+            SetStylebox(theme, "focus", type, focus.Duplicate() as StyleBoxFlat);
+            SetStylebox(theme, "disabled", type, disabled.Duplicate() as StyleBoxFlat);
+            SetStylebox(theme, "read_only", type, disabled.Duplicate() as StyleBoxFlat);
         }
+
+        normal.Dispose();
+        hover.Dispose();
+        focus.Dispose();
+        disabled.Dispose();
     }
 
     private static void DefineButtons(
@@ -165,21 +179,21 @@ public static class ClientTheme
         {
             theme.SetColor(colorName, selected, OnAccent);
         }
-        theme.SetStylebox("normal", selected, Flat(
+        SetStylebox(theme, "normal", selected, Flat(
             Amber, Amber.Darkened(0.22f), 2, controls.CornerRadius,
             12, 10, 12, 10, left: 7));
-        theme.SetStylebox("hover", selected, Flat(
+        SetStylebox(theme, "hover", selected, Flat(
             Amber.Lightened(0.08f), OnAccent, 2, controls.CornerRadius,
             12, 9, 12, 11, left: 8));
-        theme.SetStylebox("pressed", selected, Flat(
+        SetStylebox(theme, "pressed", selected, Flat(
             Amber, OnAccent, 2, controls.CornerRadius,
             12, 12, 12, 8, left: 8));
-        theme.SetStylebox("hover_pressed", selected, Flat(
+        SetStylebox(theme, "hover_pressed", selected, Flat(
             Amber.Lightened(0.08f), OnAccent, 3, controls.CornerRadius,
             12, 12, 12, 8, left: 8));
 
         string unavailable = GodotThemeVariations.UnavailableButton;
-        theme.SetStylebox("disabled", unavailable, Flat(
+        SetStylebox(theme, "disabled", unavailable, Flat(
             Surface.Darkened(0.08f), Alpha(Outline, 0.42f),
             1, controls.CornerRadius, 12, 10, 12, 10, left: 2));
 
@@ -190,20 +204,20 @@ public static class ClientTheme
         theme.SetColor("font_pressed_color", primary, OnAccent);
         theme.SetColor("font_disabled_color", primary, Muted);
         theme.SetFontSize("font_size", primary, type.Body);
-        theme.SetStylebox("normal", primary, Flat(
+        SetStylebox(theme, "normal", primary, Flat(
             Encounter.Darkened(0.14f), Encounter, 1, controls.CornerRadius,
             18, 11, 18, 11, bottom: 4));
-        theme.SetStylebox("hover", primary, Flat(
+        SetStylebox(theme, "hover", primary, Flat(
             Encounter, Amber, 2, controls.CornerRadius,
             18, 10, 18, 12, bottom: 5));
-        theme.SetStylebox("pressed", primary, Flat(
+        SetStylebox(theme, "pressed", primary, Flat(
             Encounter.Darkened(0.28f), Amber, 1, controls.CornerRadius,
             18, 13, 18, 9, left: 5));
-        theme.SetStylebox("hover_pressed", primary, Flat(
+        SetStylebox(theme, "hover_pressed", primary, Flat(
             Encounter.Darkened(0.18f), Amber, 2, controls.CornerRadius,
             18, 13, 18, 9, left: 5));
-        theme.SetStylebox("focus", primary, FocusBox(controls));
-        theme.SetStylebox("disabled", primary, Flat(
+        SetStylebox(theme, "focus", primary, FocusBox(controls));
+        SetStylebox(theme, "disabled", primary, Flat(
             Surface.Darkened(0.08f), Alpha(Outline, 0.42f),
             1, controls.CornerRadius, 18, 11, 18, 11));
     }
@@ -213,11 +227,11 @@ public static class ClientTheme
         theme.SetColor("font_color", "PopupMenu", Ink);
         theme.SetColor("font_hover_color", "PopupMenu", Ink);
         theme.SetColor("font_disabled_color", "PopupMenu", Muted);
-        theme.SetStylebox("panel", "PopupMenu", Flat(
+        SetStylebox(theme, "panel", "PopupMenu", Flat(
             Surface, Alpha(Outline, 0.62f), 1, 7, 8, 8, 8, 8));
-        theme.SetStylebox("hover", "PopupMenu", Flat(
+        SetStylebox(theme, "hover", "PopupMenu", Flat(
             Raised, Amber, 2, 5, 8, 6, 8, 6, left: 4));
-        theme.SetStylebox("separator", "HSeparator", new StyleBoxLine
+        SetStylebox(theme, "separator", "HSeparator", new StyleBoxLine
         {
             Color = Alpha(Outline, 0.46f),
             Thickness = 1,
@@ -247,7 +261,7 @@ public static class ClientTheme
     private static void Panel(Theme theme, string variation, StyleBoxFlat style)
     {
         Variation(theme, variation, "PanelContainer");
-        theme.SetStylebox("panel", variation, style);
+        SetStylebox(theme, "panel", variation, style);
     }
 
     private static void ButtonSet(
@@ -269,28 +283,41 @@ public static class ClientTheme
         theme.SetColor("font_pressed_color", variation, Ink);
         theme.SetColor("font_focus_color", variation, Ink);
         theme.SetColor("font_disabled_color", variation, Muted);
-        theme.SetStylebox("normal", variation, Flat(
+        SetStylebox(theme, "normal", variation, Flat(
             background, border, 1, controls.CornerRadius,
             12, 10, 12, 10, left: left, bottom: 3));
-        theme.SetStylebox("hover", variation, Flat(
+        SetStylebox(theme, "hover", variation, Flat(
             background.Lightened(0.08f), Amber, 2, controls.CornerRadius,
             12, 9, 12, 11,
             left: Math.Max(2, left), bottom: 4));
-        theme.SetStylebox("pressed", variation, Flat(
+        SetStylebox(theme, "pressed", variation, Flat(
             background.Darkened(0.08f), Amber, 1, controls.CornerRadius,
             12, 12, 12, 8,
             left: Math.Max(6, left)));
-        theme.SetStylebox("hover_pressed", variation, Flat(
+        SetStylebox(theme, "hover_pressed", variation, Flat(
             background, Amber, 2, controls.CornerRadius, 12, 12, 12, 8,
             left: Math.Max(6, left)));
-        theme.SetStylebox("focus", variation, FocusBox(controls));
-        theme.SetStylebox("disabled", variation, Flat(
+        SetStylebox(theme, "focus", variation, FocusBox(controls));
+        SetStylebox(theme, "disabled", variation, Flat(
             Surface.Darkened(0.08f), Alpha(Outline, 0.42f),
             1, 7, 12, 10, 12, 10));
     }
 
     private static void Variation(Theme theme, string variation, string basis) =>
         theme.SetTypeVariation(variation, basis);
+
+    private static void SetStylebox(
+        Theme theme,
+        string name,
+        string type,
+        StyleBox? style)
+    {
+        ArgumentNullException.ThrowIfNull(style);
+        theme.SetStylebox(name, type, style);
+        // Theme retains the native resource. Release this temporary managed
+        // wrapper now so live theme replacement cannot defer it to shutdown.
+        style.Dispose();
+    }
 
     private static StyleBoxFlat FocusBox(ControlMetrics controls) => new()
     {

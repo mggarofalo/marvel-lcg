@@ -304,6 +304,38 @@ public sealed class VisibilityTests
     }
 
     [Fact]
+    public void ConcealedCardsOfferedAsIndividualChoicesAreReadableToTheAskedPlayer()
+    {
+        var board = Board();
+        Card lookedAt = board.AreaOf(DeckType.EncounterDeck).Cards[0];
+        var prompt = new Prompt(
+            1,
+            Question.Element,
+            TimingPriority.Untimed,
+            "Choose",
+            "choose one",
+            false,
+            [new Affordance(
+                lookedAt.ObjectId,
+                "Choose",
+                lookedAt.ObjectId,
+                1,
+                lookedAt.FaceId)])
+        {
+            ExposesConcealedCandidates = true,
+        };
+
+        VisibleResult visible = WorldProjection.For(
+            board,
+            prompt,
+            [],
+            new RestrictedVisibilityPolicy(1).Authorize(null, board.Players));
+
+        CardDescriptor offered = Card(visible.World, lookedAt.ObjectId);
+        Assert.Equal(lookedAt.FaceId, offered.Face?.Id);
+    }
+
+    [Fact]
     public void EveryCardFieldIsEitherRedactedOrExplicitlyPublic()
     {
         string[] publicWhileHidden = ["Back", "FaceUp", "Ready", "Host"];

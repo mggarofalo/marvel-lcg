@@ -144,6 +144,7 @@ internal static class Program
                 Kind: kind,
                 Traits: Printed.Traits(card.Text("traits")),
                 Attributes: Printed.Attributes(card, kind, nemeses),
+                LinkedTo: [],
                 Text: card.Text("text") ?? "",
                 Pack: card.Text("pack_code") ?? "",
                 Set: card.Text("set_code") ?? "")));
@@ -151,6 +152,7 @@ internal static class Program
 
         written.AddRange(supplement.Only);
         written.Sort((left, right) => string.CompareOrdinal(left.Id, right.Id));
+        written = [.. LinkedCards.Resolve(written)];
 
         return Cards.Write(written, supplement);
     }

@@ -29,6 +29,11 @@ namespace Marvel.Rules.Prompts;
 /// The simultaneous resource costs represented by this one payment. Empty for
 /// an ordinary single cost.
 /// </param>
+/// <param name="DeclarationSensitive">
+/// Whether a later effect can distinguish which type a generated wild resource
+/// was declared as. False lets a client choose an equivalent declaration
+/// without asking the player; it does not remove the declaration from the answer.
+/// </param>
 /// <remarks>
 /// <para>
 /// <b>Generation and payment are two things, and this record only describes the
@@ -64,7 +69,8 @@ public sealed record CostOption(
     IReadOnlyList<string>? OrRule = null,
     IReadOnlyList<ResourceSource>? Sources = null,
     IReadOnlyList<VariableRequest>? Variables = null,
-    IReadOnlyList<ResourceCost>? Components = null)
+    IReadOnlyList<ResourceCost>? Components = null,
+    bool DeclarationSensitive = false)
 {
     /// <summary>Whether the cost has a second legal reading.</summary>
     public bool HasAlternative => OrCost.Length > 0;

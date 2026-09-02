@@ -87,6 +87,7 @@ internal sealed class Supplement
                     kind.GetString() ?? "",
                     traits,
                     attributes,
+                    [],
                     Field(element, "text"),
                     Field(element, "pack"),
                     Field(element, "set")));

@@ -9,13 +9,25 @@ public static class BoardRenderer
     public static BoardRenderResult Render(
         VBoxContainer destination,
         BoardPresentation board,
+        HBoxContainer hand,
+        Label handHeading,
+        InterfaceScale scale,
+        IDictionary<int, bool> expandedAreas,
         ICardArtProvider? art = null)
     {
         ArgumentNullException.ThrowIfNull(destination);
         ArgumentNullException.ThrowIfNull(board);
+        ArgumentNullException.ThrowIfNull(hand);
+        ArgumentNullException.ThrowIfNull(handHeading);
+        ArgumentNullException.ThrowIfNull(expandedAreas);
         foreach (Node child in destination.GetChildren())
         {
             destination.RemoveChild(child);
+            child.QueueFree();
+        }
+        foreach (Node child in hand.GetChildren())
+        {
+            hand.RemoveChild(child);
             child.QueueFree();
         }
 
@@ -25,8 +37,16 @@ public static class BoardRenderer
             : BoardLayout.Arrange(board.Areas, []);
         foreach (BoardLanePresentation lane in lanes)
         {
-            destination.AddChild(Lane(lane, result, art));
+            BoardAreaPresentation[] visibleAreas =
+                [.. lane.Areas.Where(area => area.Zone != "HandsArea")];
+            if (visibleAreas.Length > 0)
+            {
+                destination.AddChild(Lane(
+                    lane with { Areas = visibleAreas }, result, scale, expandedAreas, art));
+            }
         }
+
+        RenderHand(board, hand, handHeading, result, scale, art);
 
         return result;
     }
@@ -34,6 +54,8 @@ public static class BoardRenderer
     private static VBoxContainer Lane(
         BoardLanePresentation lane,
         BoardRenderResult result,
+        InterfaceScale scale,
+        IDictionary<int, bool> expandedAreas,
         ICardArtProvider? art)
     {
         var section = new VBoxContainer
@@ -52,7 +74,7 @@ public static class BoardRenderer
         };
         foreach (BoardAreaPresentation area in lane.Areas)
         {
-            areas.AddChild(Area(area, result, art));
+            areas.AddChild(Area(area, result, scale, expandedAreas, art));
         }
 
         section.AddChild(areas);
@@ -62,13 +84,25 @@ public static class BoardRenderer
     private static PanelContainer Area(
         BoardAreaPresentation area,
         BoardRenderResult result,
+        InterfaceScale scale,
+        IDictionary<int, bool> expandedAreas,
         ICardArtProvider? art)
     {
+        DesktopPlayMetrics layout = VisualSystem.DesktopPlay(
+            Math.Max(1, DisplayServer.ScreenGetSize().X),
+            Math.Max(1, DisplayServer.ScreenGetSize().Y),
+            scale);
+        int cardCount = area.Cards.Sum(card => card.Count)
+            + area.Removed.Sum(card => card.Count);
+        bool expanded = expandedAreas.TryGetValue(area.Id, out bool remembered)
+            ? remembered
+            : cardCount > 0;
         var panel = new PanelContainer
         {
             Name = $"Area{area.Id}",
-            CustomMinimumSize = new Vector2(290, 120),
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+            CustomMinimumSize = new Vector2(layout.BoardAreaWidth, 0),
+            SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin,
+            SizeFlagsVertical = Control.SizeFlags.ShrinkBegin,
             TooltipText = $"{area.Title}. {area.Context}",
             ThemeTypeVariation = GodotThemeVariations.BoardArea,
         };
@@ -78,21 +112,48 @@ public static class BoardRenderer
             ThemeTypeVariation = GodotThemeVariations.TightStack,
         };
         panel.AddChild(content);
-        content.AddChild(Label(area.Title, GodotThemeVariations.Heading));
-        content.AddChild(Label(area.Context, GodotThemeVariations.Eyebrow));
+        var disclosure = new Button
+        {
+            Name = $"Area{area.Id}Disclosure",
+            Text = $"{(expanded ? "▾" : "▸")}  {area.Title}  ·  {cardCount}",
+            Alignment = HorizontalAlignment.Left,
+            ToggleMode = true,
+            ButtonPressed = expanded,
+            TooltipText = $"Show or hide {area.Title.ToLowerInvariant()}.",
+        };
+        content.AddChild(disclosure);
+        var body = new VBoxContainer
+        {
+            Name = "Body",
+            Visible = expanded,
+            ThemeTypeVariation = GodotThemeVariations.TightStack,
+        };
+        content.AddChild(body);
+        void SetExpanded(bool value)
+        {
+            expandedAreas[area.Id] = value;
+            body.Visible = value;
+            disclosure.Text = $"{(value ? "▾" : "▸")}  {area.Title}  ·  {cardCount}";
+        }
+        disclosure.Pressed += () => SetExpanded(disclosure.ButtonPressed);
+        result.RegisterArea(body, () =>
+        {
+            disclosure.SetPressedNoSignal(true);
+            SetExpanded(true);
+        });
+        body.AddChild(Label(area.Context, GodotThemeVariations.Caption));
         if (area.Depth > 0)
         {
-            content.AddChild(Label(
+            body.AddChild(Label(
                 $"↳ HOSTED BY {area.HostedBy.ToUpperInvariant()}",
                 GodotThemeVariations.StatusText,
                 wrap: true));
         }
-        content.AddChild(new HSeparator());
-        AddCards(content, area.Cards, "CARDS", result, art);
+        AddCards(body, area.Cards, "CARDS", result, scale, art);
         if (area.Removed.Count > 0)
         {
-            content.AddChild(new HSeparator());
-            AddCards(content, area.Removed, "REMOVED", result, art);
+            body.AddChild(new HSeparator());
+            AddCards(body, area.Removed, "REMOVED", result, scale, art);
         }
 
         return panel;
@@ -103,6 +164,7 @@ public static class BoardRenderer
         IReadOnlyList<BoardCardPresentation> cards,
         string section,
         BoardRenderResult result,
+        InterfaceScale scale,
         ICardArtProvider? art)
     {
         destination.AddChild(Label(
@@ -133,13 +195,46 @@ public static class BoardRenderer
         foreach (BoardCardPresentation card in cards)
         {
             CardControl control = CardControl.Create(
-                card, CardDisplaySize.Board, ClientTheme.ConfiguredScale(), art);
+                card, CardDisplaySize.Board, scale, art);
             control.SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin;
             rail.AddChild(control);
             if (card.TargetId is { } target)
             {
                 result.Register(target, control);
             }
+            result.TrackHover(control, card);
+        }
+    }
+
+    private static void RenderHand(
+        BoardPresentation board,
+        HBoxContainer destination,
+        Label heading,
+        BoardRenderResult result,
+        InterfaceScale scale,
+        ICardArtProvider? art)
+    {
+        BoardAreaPresentation? handArea = board.Areas
+            .Where(area => area.Zone == "HandsArea")
+            .FirstOrDefault(area => area.Cards.Any(card => !card.Concealed));
+        IReadOnlyList<BoardCardPresentation> cards = handArea?.Cards ?? [];
+        heading.Text = $"HAND  ·  {cards.Sum(card => card.Count)}";
+        if (cards.Count == 0)
+        {
+            destination.AddChild(Label("No visible cards in hand.", GodotThemeVariations.MutedText));
+            return;
+        }
+
+        foreach (BoardCardPresentation card in cards)
+        {
+            CardControl control = CardControl.Create(
+                card, CardDisplaySize.Hand, scale, art);
+            destination.AddChild(control);
+            if (card.TargetId is { } target)
+            {
+                result.Register(target, control);
+            }
+            result.TrackHover(control, card);
         }
     }
 
@@ -160,6 +255,10 @@ public static class BoardRenderer
 public sealed class BoardRenderResult
 {
     private readonly Dictionary<int, List<CardControl>> controls = [];
+    private readonly Dictionary<Control, Action> areaExpanders = [];
+
+    /// <summary>Raised with the card under the pointer, or null when it leaves.</summary>
+    public event Action<BoardCardPresentation?>? CardHovered;
 
     internal void Register(int id, CardControl control)
     {
@@ -170,6 +269,15 @@ public sealed class BoardRenderResult
         }
 
         matches.Add(control);
+    }
+
+    internal void RegisterArea(Control body, Action expand) =>
+        areaExpanders.Add(body, expand);
+
+    internal void TrackHover(Control control, BoardCardPresentation card)
+    {
+        control.MouseEntered += () => CardHovered?.Invoke(card);
+        control.MouseExited += () => CardHovered?.Invoke(null);
     }
 
     /// <summary>Highlights every visible control matching server-provided ids.</summary>
@@ -200,21 +308,31 @@ public sealed class BoardRenderResult
             foreach (CardControl match in matches)
             {
                 match.SetPresented(presented.Contains(key));
+                if (presented.Contains(key))
+                {
+                    EnsureVisible(match);
+                }
             }
         }
     }
 
-    private static void EnsureVisible(Control control)
+    private void EnsureVisible(Control control)
     {
         Node? ancestor = control.GetParent();
         while (ancestor is not null)
         {
+            if (ancestor is Control areaBody
+                && areaExpanders.TryGetValue(areaBody, out Action? expand))
+            {
+                expand();
+            }
             if (ancestor is ScrollContainer scroll)
             {
-                Control target = scroll.Name == "Board"
+                bool table = scroll.Name == "TableScroll";
+                Control target = table
                     ? control.GetNodeOrNull<Control>("CardFace/Title") ?? control
                     : AreaContaining(scroll, control) ?? control;
-                if (scroll.Name == "Board")
+                if (table)
                 {
                     Callable.From(() =>
                     {
@@ -229,7 +347,7 @@ public sealed class BoardRenderResult
                 // The board owns card navigation. Continuing into the outer
                 // page would hide the table heading whenever prompt focus
                 // highlights a card below the fold.
-                if (scroll.Name == "Board")
+                if (table)
                 {
                     break;
                 }

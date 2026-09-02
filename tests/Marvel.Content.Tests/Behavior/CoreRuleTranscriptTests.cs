@@ -180,7 +180,7 @@ public sealed class CoreRuleTranscriptTests
 
         Assert.Equal(4, results.Count);
         Assert.Equal(
-            "a0c29f1591b4fc8d736a64e76d9109a4f899a21a278cc4d2760cdd5a4c1f8b70",
+            "f7e6aa3540fa3483267f71004045e833c9a48d2f6c1d4077bb34dabf48c876d0",
             results["behavior:rr:main-scheme-main-scheme-deck.2:published-result"].Digest);
         Assert.Equal(
             "2cab030ee937e52952f66bbb62a1380d8d71faf78ecf985a28b78b00322921c6",
@@ -189,7 +189,7 @@ public sealed class CoreRuleTranscriptTests
             "ba88421ca03e246a89956e9b1cdee1b9d9d7694cd0bb60256362aceb668c99d9",
             results["behavior:rr:main-scheme-main-scheme-deck.6:published-result"].Digest);
         Assert.Equal(
-            "56841b2578c161b58b1ad09cbeaad5210b315d8f1b03c6b2119e7326562cec38",
+            "dd354d457fd349e13e8c04eb46e5e4a7eab48adedce309584e706f5181e375b3",
             results[
                 "behavior:card:01117b:if-stage-is-completed-players-lose-game-condition-met"].Digest);
     }
@@ -418,8 +418,8 @@ public sealed class CoreRuleTranscriptTests
 
         Assert.Equal(
             [
-                "1ad66f20a225b596a40a5616b4e07758c0393fea73b6ef6452b91e50924ca032",
-                "8fdd75885f6d9a5ae593edee39872f64856f97ae8bf3d7a5bd4324544602fead",
+                "49eb772980a26105d0be9d2f5ce03d075f2fbc4b90f6d6c45dce95d92267df57",
+                "cc8fc6aed38dad39c031bb36a3292ac6fe9483d6bffe253dc8893028ee5b764a",
             ],
             transcripts
                 .Where(result => result.Obligation
@@ -441,7 +441,7 @@ public sealed class CoreRuleTranscriptTests
             "885c3b3e7d2c026365646e9da2b7b9477f460466ef8af776f5a8528745d0b88d",
             results["behavior:rr:boost-boost-icon.1:published-result"].Digest);
         Assert.Equal(
-            "68ede43f99981dfc77fb4e887a38158c28cc95f0453bee33a638677e52c0f0d7",
+            "cc618f9fdb3b61d223305a55351a10708c636e022166d0427903152db1d3a260",
             results["behavior:rr:boost-boost-icon.4:published-result"].Digest);
         Assert.Equal(
             "2381a42f79604d5412ae489d215fc55ad0e6b8c10a9601b5cc099e52752f3b30",
@@ -560,13 +560,13 @@ public sealed class CoreRuleTranscriptTests
             "063ebf9a425ae67894205a48cd6ac1444920d7f60a45925bdd2a533f28fc0aa6",
             results["behavior:card:01040b:search-your-deck-for-black-panther-upgrade"].Digest);
         Assert.Equal(
-            "12469af423d842a404f38f0fa679e05f1686d269e7f30d2b820c184a4381e1e0",
+            "54c2bb02467e434575b767f841c9e99797e185436585685909b148dba160dd7a",
             results["behavior:card:01116a:search-encounter-deck-for-defense-network-side"].Digest);
         Assert.Equal(
             "06aa63dd18da1c434ba94187777bbcc4255d9ef0615767a157e6735757674f84",
             results["behavior:card:01137a:put-ultron-drones-environment-into-play"].Digest);
         Assert.Equal(
-            "4579d062a0a07070c81b283aa5303fe8c6c8da5b4c820d1edb893897988d98c2",
+            "da08994da99e4acd226173b829814a8f0df15b7707bfe6f89f1db11194e194df",
             results["behavior:card:01116a:klaw-ii-and-klaw-iii-instead-for"].Digest);
         Assert.Equal(
             "81235bf82be267f8c5d4698982d2599205fdbc61020006db754755dddb52f40c",

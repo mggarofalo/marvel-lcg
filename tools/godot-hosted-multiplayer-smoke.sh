@@ -71,7 +71,7 @@ fi
 
 set +e
 MARVEL_ENGINE_ENDPOINT="tcp://127.0.0.1:$smoke_port" \
-  MARVEL_UI_SCALE=standard \
+  MARVEL_UI_SCALE=compact \
   "${smoke_command[@]}" \
   --path "$repo_root/src/Marvel.Godot" \
   --script res://smoke/hosted_multiplayer_smoke.gd \

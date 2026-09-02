@@ -4,6 +4,7 @@ using System.Net.Sockets;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
+using Marvel.Rules.Timing;
 using Marvel.Server;
 using Marvel.Tests;
 using Marvel.View;
@@ -988,8 +989,8 @@ public sealed class LocalGameClientTests
 
     [Theory]
     [InlineData(999, "local-open", "local-core-game", "unsupported_version")]
-    [InlineData(9, "other", "local-core-game", "invalid_response")]
-    [InlineData(9, "local-open", "other-game", "invalid_response")]
+    [InlineData(EngineProtocol.Version, "other", "local-core-game", "invalid_response")]
+    [InlineData(EngineProtocol.Version, "local-open", "other-game", "invalid_response")]
     public async Task OpenRejectsMismatchedResponseEnvelopes(
         int version,
         string requestId,
@@ -1081,6 +1082,38 @@ public sealed class LocalGameClientTests
         EngineRequest request = Assert.Single(transport.Requests);
         Assert.Equal(EngineProtocol.Sync, request.Operation);
         Assert.Equal(current.Capability, request.Capability);
+    }
+
+    [Fact]
+    public async Task ResolveAcceptsACancellablePromptWithNoLegalActions()
+    {
+        EngineResponse current = Host().Exchange(EngineRequest.OpenGame(
+            "source", LocalGameSession.GameId, Specification()));
+        var emptyTurn = new Prompt(
+            0,
+            Question.TurnOption,
+            TimingPriority.Untimed,
+            "WhenPlayerInTurn",
+            "Player turn",
+            Cancellable: true,
+            Affordances: []);
+        var transport = new ScriptedTransport(current with
+        {
+            RequestId = "local-resolve",
+            Revision = 1,
+            Capability = null,
+            Prompt = emptyTurn,
+            Events = [],
+        });
+
+        ClientResolutionResult result = await new LocalGameClient(transport).ResolveAsync(
+            current.Capability!,
+            EngineDecision.Decline,
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.Succeeded, result.Error?.Message);
+        Assert.Equal(ClientMutationDisposition.Accepted, result.MutationDisposition);
+        Assert.Empty(result.Response!.Prompt!.Affordances);
     }
 
     [Fact]

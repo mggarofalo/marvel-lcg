@@ -53,6 +53,25 @@ public sealed class CardCatalogTests
         Assert.Contains("HERO_FOR_HIRE", Cards.Traits("01002"));
     }
 
+    [Rule("rr:linked-card-title.3")]
+    [Fact]
+    public void LinkedCardsUseTheExactRelationsResolvedInTheDataset()
+    {
+        // "The number of linked cards set aside during setup is equal to the
+        // number of those cards included in the product from which the linked
+        // card came." The generated data resolves the printed title and this
+        // product boundary to exact face ids; runtime does not match by name.
+        Assert.Empty(Cards.LinkedCards("01130"));
+        Assert.Equal(["43034", "43035", "43036", "43037"], Cards.LinkedCards("43021"));
+        Assert.Equal(["49033", "49034", "49035", "49036"], Cards.LinkedCards("49020"));
+        Assert.Equal(["51036"], Cards.LinkedCards("51017"));
+        Assert.Equal(["53034"], Cards.LinkedCards("53023"));
+        Assert.Equal(["55063"], Cards.LinkedCards("55056"));
+        Assert.Equal(["55064"], Cards.LinkedCards("55057"));
+        Assert.Equal(["55065"], Cards.LinkedCards("55058"));
+        Assert.Equal(["55066"], Cards.LinkedCards("55059"));
+    }
+
     [Theory]
     // Already upper-case in the engine's data, so nothing to resolve.
     [InlineData("CRIMINAL", "CRIMINAL")]

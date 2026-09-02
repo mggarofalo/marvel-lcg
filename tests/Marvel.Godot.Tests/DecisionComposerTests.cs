@@ -12,6 +12,27 @@ namespace Marvel.Godot.Tests;
 public sealed class DecisionComposerTests
 {
     [Fact]
+    public void SelectingAnAffordanceAutomaticallyChoosesItsOnlyRequiredTarget()
+    {
+        var composer = new DecisionComposer(Prompt(
+            cancellable: false,
+            new Affordance(
+                7,
+                "Play",
+                20,
+                0,
+                "Play",
+                new TargetRequest([11], 1, 1))));
+
+        composer.SelectAffordance(7);
+
+        Assert.True(composer.UsesAutomaticTargetSelection);
+        Assert.Equal([11], composer.Targets);
+        Assert.True(composer.TryBuild(out EngineDecision? decision, out string? error), error);
+        Assert.Equal([11], decision!.Targets);
+    }
+
+    [Fact]
     public void PresentationUsesOnlyAuthorizedFacesAndOpaqueFallbacks()
     {
         var prompt = Prompt(
@@ -87,6 +108,134 @@ public sealed class DecisionComposerTests
     }
 
     [Fact]
+    public void OneComponentPaymentAutomaticallyUsesPrintedNonWildResources()
+    {
+        var composer = new DecisionComposer(Prompt(
+            cancellable: false,
+            new Affordance(
+                7,
+                "Play",
+                20,
+                0,
+                "Paid action",
+                Costs:
+                [
+                    new CostOption(
+                        20,
+                        "1",
+                        Sources:
+                        [
+                            new ResourceSource(40, "YY"),
+                            new ResourceSource(41, "G"),
+                        ],
+                        DeclarationSensitive: true),
+                ])));
+        composer.SelectAffordance(7);
+
+        composer.ToggleResource(40);
+
+        Assert.True(composer.UsesAutomaticResourceAllocation);
+        Assert.True(composer.TryBuild(out EngineDecision? decision, out string? error), error);
+        Assert.Equal([40], decision!.Resources);
+        Assert.Equal([new ResourceAllocation(40, 0, "Y")], decision.Allocations);
+
+        composer.ToggleResource(41);
+
+        Assert.False(composer.UsesAutomaticResourceAllocation);
+        Assert.False(composer.TryBuild(out _, out _));
+        Assert.Empty(composer.Assignments);
+    }
+
+    [Fact]
+    public void AutomaticResourceAllocationTracksVariableCostChanges()
+    {
+        var composer = new DecisionComposer(Prompt(
+            cancellable: false,
+            new Affordance(
+                7,
+                "Play",
+                20,
+                0,
+                "Variable-cost action",
+                Costs:
+                [
+                    new CostOption(
+                        20,
+                        "X",
+                        Sources: [new ResourceSource(40, "YY")],
+                        Variables: [new VariableRequest("X", 1, 2)]),
+                ])));
+        composer.SelectAffordance(7);
+        composer.Define("X", 1);
+        composer.ToggleResource(40);
+
+        Assert.Single(composer.Assignments);
+
+        composer.Define("X", 2);
+
+        Assert.Equal(2, composer.Assignments.Count);
+        Assert.True(composer.TryBuild(out EngineDecision? decision, out string? error), error);
+        Assert.Equal([new ResourceAllocation(40, 0, "YY")], decision!.Allocations);
+
+        composer.Define("X", 1);
+        Assert.Single(composer.Assignments);
+    }
+
+    [Fact]
+    public void UnobservedWildDeclarationIsSentWithoutAskingThePlayer()
+    {
+        var composer = new DecisionComposer(Prompt(
+            cancellable: false,
+            new Affordance(
+                7,
+                "Play",
+                20,
+                0,
+                "Ordinary card cost",
+                Costs:
+                [
+                    new CostOption(
+                        20,
+                        "1",
+                        Sources: [new ResourceSource(41, "G")]),
+                ])));
+        composer.SelectAffordance(7);
+
+        composer.ToggleResource(41);
+
+        Assert.True(composer.UsesAutomaticResourceAllocation);
+        Assert.True(composer.TryBuild(out EngineDecision? decision, out string? error), error);
+        Assert.Equal([new ResourceAllocation(41, 0, "G")], decision!.Allocations);
+    }
+
+    [Fact]
+    public void ACostRequirementForcesTheAutomaticWildDeclaration()
+    {
+        var composer = new DecisionComposer(Prompt(
+            cancellable: false,
+            new Affordance(
+                7,
+                "Play",
+                20,
+                0,
+                "Required resource",
+                Costs:
+                [
+                    new CostOption(
+                        20,
+                        "1",
+                        Rule: ["R"],
+                        Sources: [new ResourceSource(41, "G")]),
+                ])));
+        composer.SelectAffordance(7);
+
+        composer.ToggleResource(41);
+
+        Assert.True(composer.TryBuild(out EngineDecision? decision, out string? error), error);
+        Assert.Equal([new ResourceAllocation(41, 0, "R")], decision!.Allocations);
+    }
+
+    [Fact]
     public void TargetSpecificCostsMustMatchTheSelectedTarget()
     {
         var composer = new DecisionComposer(Prompt(
@@ -157,7 +306,10 @@ public sealed class DecisionComposerTests
                 Costs:
                 [
                     new CostOption(
-                        20, "1", Sources: [new ResourceSource(40, "G")]),
+                        20,
+                        "1",
+                        Sources: [new ResourceSource(40, "G")],
+                        DeclarationSensitive: true),
                 ])));
         composer.SelectAffordance(9);
         composer.ToggleResource(40);

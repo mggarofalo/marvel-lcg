@@ -301,7 +301,7 @@ public sealed class OperationalLoggingTests
             using NetworkStream stream = accepted.GetStream();
             Assert.NotNull(SocketFrame.Read(stream));
             SocketFrame.Write(stream, System.Text.Encoding.UTF8.GetBytes(
-                "{\"version\":9,\"request_id\":\"request\",\"game_id\":\"\","
+                $"{{\"version\":{EngineProtocol.Version},\"request_id\":\"request\",\"game_id\":\"\","
                 + "\"capability\":null,\"prompt\":null,\"events\":[],"
                 + "\"error\":{\"code\":null,\"message\":\"owner-secret\"}}"));
         }, TestContext.Current.CancellationToken);
