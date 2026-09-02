@@ -66,3 +66,30 @@ editor and exercises the same checked-in script.
 The companion managed test drives the same seed through `LocalGameClient` and
 `DecisionComposer`. It makes the deterministic gameplay path debuggable without
 turning the native smoke into a second rules implementation.
+
+## Visual system
+
+`VisualSystem` is the presentation-only contract for color, type, spacing,
+control size and interactive states. `ClientTheme` maps those semantic tokens
+to one inherited Godot theme. Authored scene controls and controls created by
+the board and decision renderers use named theme variations instead of local
+colors, font sizes or style boxes.
+
+The direction is a dark tabletop mission dossier: warm paper text, an amber
+briefing signal, blue legal-target markers and a red encounter rail. The thick
+left rail is the signature cue shared by cards, status notices and selected
+targets; it evokes a divided encounter file without copying a printed card
+frame or requiring scanned art.
+
+State never depends on hue alone. Hover raises the lower edge, keyboard focus
+adds an expanded three-pixel ring, legal targets carry a diamond marker and
+left rail, selections carry a checkmark and heavier rail, and unavailable
+actions say `UNAVAILABLE` as well as using a disabled treatment. Standard body
+text is at least 16 logical pixels, captions are at least 14, and interactive
+targets have a 44-pixel floor. Managed tests pin the declared contrast and
+metric contracts; the native smoke resolves the actual Godot styles.
+
+The standard scale is the default. For desktop accessibility checks or local
+use, set `MARVEL_UI_SCALE` to `large` or `extra-large` before launch. These
+select the other tested, monotonic type and spacing scales; gameplay and its
+deterministic state are unaffected.

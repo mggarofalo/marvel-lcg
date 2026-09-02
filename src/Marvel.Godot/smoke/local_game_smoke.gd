@@ -22,6 +22,8 @@ func _run() -> void:
 	if not await _wait_for(func() -> bool: return _button_named("Start game") != null):
 		_fail("setup never became ready")
 		return
+	if not _visual_system_is_resolved():
+		return
 
 	_select_named_option(_node("Setup/Selections/Fields/Grid/Hero"), "Spider-Man")
 	_select_named_option(_node("Setup/Selections/Fields/Grid/Scenario"), "Rhino")
@@ -84,6 +86,9 @@ func _run() -> void:
 	if "VILLAIN WINS" not in _status().text:
 		_fail("the terminal UI did not report the seeded villain win")
 		return
+	if _node("Status").theme_type_variation != &"DangerStatusPanel":
+		_fail("the villain win did not receive the semantic danger treatment")
+		return
 	var event_log := _node("Play/Prompt/Margin/Stack/EventLog") as RichTextLabel
 	var event_text := event_log.get_parsed_text().strip_edges()
 	if event_text.is_empty() or event_text == "No events yet.":
@@ -92,6 +97,65 @@ func _run() -> void:
 
 	print("LOCAL_GAME_SMOKE_OK decisions=%d" % decisions)
 	quit(0)
+
+
+func _visual_system_is_resolved() -> bool:
+	if main.theme == null:
+		_fail("the root scene has no reusable client theme")
+		return false
+
+	var start := _button_named("Start game")
+	if start.theme_type_variation != &"PrimaryButton":
+		_fail("the primary action does not use its semantic theme role")
+		return false
+	if start.custom_minimum_size.y < 44:
+		_fail("the primary action is smaller than the pointer-target floor")
+		return false
+
+	var focus := start.get_theme_stylebox("focus") as StyleBoxFlat
+	var normal := start.get_theme_stylebox("normal") as StyleBoxFlat
+	var hover := start.get_theme_stylebox("hover") as StyleBoxFlat
+	var disabled := start.get_theme_stylebox("disabled") as StyleBoxFlat
+	if focus == null or normal == null or hover == null or disabled == null:
+		_fail("the primary action is missing a required interaction style")
+		return false
+	if focus.border_width_left < 3 or focus.expand_margin_left < 2:
+		_fail("keyboard focus has no structural focus ring")
+		return false
+	if hover.border_width_bottom == normal.border_width_bottom:
+		_fail("pointer hover differs from rest by color alone")
+		return false
+	if disabled.border_width_bottom == normal.border_width_bottom:
+		_fail("unavailable actions differ from rest by color alone")
+		return false
+
+	var theme := main.theme
+	var legal := theme.get_stylebox("normal", &"LegalTargetButton") as StyleBoxFlat
+	var selected := theme.get_stylebox("normal", &"SelectedTargetButton") as StyleBoxFlat
+	var unavailable := theme.get_stylebox("normal", &"UnavailableButton") as StyleBoxFlat
+	if legal == null or selected == null or unavailable == null:
+		_fail("the theme does not define every semantic action state")
+		return false
+	if legal.border_width_left == selected.border_width_left:
+		_fail("legal and selected targets differ by color alone")
+		return false
+	if unavailable.border_width_left == legal.border_width_left:
+		_fail("unavailable and legal actions differ by color alone")
+		return false
+
+	for path in [
+		"Setup/Selections/Fields/Grid/Hero",
+		"Setup/Selections/Fields/Grid/Scenario",
+		"Setup/Selections/Fields/Grid/Mode",
+		"Setup/Selections/Fields/Grid/Modular",
+		"Setup/Selections/Fields/Grid/Seed",
+	]:
+		var control := _node(path) as Control
+		if control.custom_minimum_size.y < 44:
+			_fail("setup control '%s' is smaller than the pointer-target floor" % path)
+			return false
+
+	return true
 
 
 func _first_enabled_choice() -> Button:
