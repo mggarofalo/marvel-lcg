@@ -598,6 +598,9 @@ public sealed class LocalGameClientTests
             catch (SocketException) when (!listener.Server.IsBound)
             {
             }
+            catch (InvalidOperationException) when (!listener.Server.IsBound)
+            {
+            }
         }
 
         Assert.Equal(9, Volatile.Read(ref exchanges));
@@ -832,27 +835,45 @@ public sealed class LocalGameClientTests
             DefaultSelection(choices) with
             {
                 Modular = ModularConfiguration.Selected,
-                ModularKey = "mojo_mania",
+                ModularKeys = ["mojo_mania"],
             },
             TestContext.Current.CancellationToken);
         ClientStartupResult invalidSeed = await client.OpenAsync(
             choices,
             DefaultSelection(choices) with { Seed = "-1" },
             TestContext.Current.CancellationToken);
+        ClientStartupResult duplicateModular = await client.OpenAsync(
+            choices,
+            DefaultSelection(choices) with
+            {
+                Modular = ModularConfiguration.Selected,
+                ModularKeys = ["bomb_scare", "bomb_scare"],
+            },
+            TestContext.Current.CancellationToken);
+        ClientStartupResult nullModular = await client.OpenAsync(
+            choices,
+            DefaultSelection(choices) with { ModularKeys = null! },
+            TestContext.Current.CancellationToken);
+        ClientStartupResult nullSeed = await client.OpenAsync(
+            choices,
+            DefaultSelection(choices) with { Seed = null! },
+            TestContext.Current.CancellationToken);
 
         Assert.Equal("invalid_selection", invalidHero.Error?.Code);
         Assert.Equal("invalid_selection", invalidModular.Error?.Code);
         Assert.Equal("invalid_seed", invalidSeed.Error?.Code);
+        Assert.Equal("invalid_selection", duplicateModular.Error?.Code);
+        Assert.Equal("invalid_selection", nullModular.Error?.Code);
+        Assert.Equal("invalid_seed", nullSeed.Error?.Code);
         Assert.Empty(transport.Requests);
     }
 
     [Theory]
-    [InlineData(ModularConfiguration.Recommended, null, null)]
-    [InlineData(ModularConfiguration.None, null, "")]
-    [InlineData(ModularConfiguration.Selected, "bomb_scare", "bomb_scare")]
+    [InlineData(ModularConfiguration.Recommended, null)]
+    [InlineData(ModularConfiguration.None, "")]
+    [InlineData(ModularConfiguration.Selected, "bomb_scare,masters_of_evil")]
     public async Task ModularConfigurationPreservesTheThreeProtocolMeanings(
         ModularConfiguration configuration,
-        string? selected,
         string? expected)
     {
         SetupChoices choices = Choices();
@@ -863,7 +884,9 @@ public sealed class LocalGameClientTests
             DefaultSelection(choices) with
             {
                 Modular = configuration,
-                ModularKey = selected,
+                ModularKeys = expected is { Length: > 0 }
+                    ? Enumerable.Reverse(expected.Split(',')).ToArray()
+                    : [],
                 Seed = uint.MaxValue.ToString(),
             },
             TestContext.Current.CancellationToken);
@@ -881,8 +904,23 @@ public sealed class LocalGameClientTests
         }
         else
         {
-            Assert.Equal([expected], request.Game?.ModularSets);
+            Assert.Equal(expected.Split(','), request.Game?.ModularSets);
         }
+    }
+
+    [Fact]
+    public async Task BlankSeedUsesPreGameEntropyAsAnExplicitReplayableSeed()
+    {
+        SetupChoices choices = Choices();
+        var transport = new CapturingTransport();
+        var client = new LocalGameClient(transport, seedSource: () => 4294967290);
+
+        await client.OpenAsync(
+            choices,
+            DefaultSelection(choices) with { Seed = "  " },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(4294967290u, Assert.Single(transport.Requests).Game?.Seed);
     }
 
     [Fact]
@@ -1451,7 +1489,7 @@ public sealed class LocalGameClientTests
             [choices.Heroes.Single(choice => choice.Key == "spider_man").Key],
             choices.Scenarios.Single(choice => choice.Key == "rhino").Key,
             ModularConfiguration.Recommended,
-            ModularKey: null,
+            ModularKeys: [],
             Seed: "7");
 
     private static EngineDecision VisibleDecision(Prompt prompt)

@@ -30,26 +30,30 @@ if [[ "$(uname -s)" == Linux ]]; then
 fi
 
 mkdir -p "$capture_dir"
-for motion in enabled disabled; do
-  if [[ "$use_xvfb" == true ]]; then
-    MARVEL_UI_SCALE=standard \
-      MARVEL_SMOKE_VIEWPORT=1280x720 \
-      MARVEL_SMOKE_MOTION="$motion" \
-      MARVEL_SMOKE_CAPTURE_DIR="$capture_dir" \
+for viewport in 1280x720 1920x1080; do
+  for motion in enabled disabled; do
+    if [[ "$use_xvfb" == true ]]; then
+      MARVEL_UI_SCALE=standard \
+        MARVEL_SMOKE_VIEWPORT="$viewport" \
+        MARVEL_SMOKE_MOTION="$motion" \
+        MARVEL_SMOKE_CAPTURE_DIR="$capture_dir" \
       xvfb-run -a "$godot_bin" \
         --rendering-method gl_compatibility \
+        --resolution "$viewport" \
         --path "$repo_root/src/Marvel.Godot" \
-        --script res://smoke/local_game_smoke.gd
-  else
-    MARVEL_UI_SCALE=standard \
-      MARVEL_SMOKE_VIEWPORT=1280x720 \
-      MARVEL_SMOKE_MOTION="$motion" \
-      MARVEL_SMOKE_CAPTURE_DIR="$capture_dir" \
+          --script res://smoke/local_game_smoke.gd
+    else
+      MARVEL_UI_SCALE=standard \
+        MARVEL_SMOKE_VIEWPORT="$viewport" \
+        MARVEL_SMOKE_MOTION="$motion" \
+        MARVEL_SMOKE_CAPTURE_DIR="$capture_dir" \
       "$godot_bin" \
         --rendering-method gl_compatibility \
+        --resolution "$viewport" \
         --path "$repo_root/src/Marvel.Godot" \
-        --script res://smoke/local_game_smoke.gd
-  fi
+          --script res://smoke/local_game_smoke.gd
+    fi
+  done
 done
 
 echo "Rendered visual checkpoints: $capture_dir"

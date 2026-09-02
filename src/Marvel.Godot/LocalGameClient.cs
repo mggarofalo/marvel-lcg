@@ -1,4 +1,6 @@
+using System.Buffers.Binary;
 using System.Globalization;
+using System.Security.Cryptography;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
@@ -119,7 +121,7 @@ public sealed record ClientSynchronizationResult(
     public bool HasAuthoritativeView => Response is not null;
 }
 
-/// <summary>How the player wants to fill the scenario's modular-set slot.</summary>
+/// <summary>How the player wants to fill the scenario's modular-set selection.</summary>
 public enum ModularConfiguration
 {
     /// <summary>Use the scenario's authored recommendation.</summary>
@@ -128,7 +130,7 @@ public enum ModularConfiguration
     /// <summary>Deliberately include no modular set.</summary>
     None,
 
-    /// <summary>Use one explicitly selected authored modular set.</summary>
+    /// <summary>Use one or more explicitly selected authored modular sets.</summary>
     Selected,
 }
 
@@ -137,7 +139,7 @@ public sealed record GameSetupSelection(
     IReadOnlyList<string> HeroKeys,
     string ScenarioKey,
     ModularConfiguration Modular,
-    string? ModularKey,
+    IReadOnlyList<string> ModularKeys,
     string Seed)
 {
     /// <summary>Creates the single-hero selection used by the local-play screen.</summary>
@@ -145,10 +147,25 @@ public sealed record GameSetupSelection(
         string heroKey,
         string scenarioKey,
         ModularConfiguration modular,
-        string? modularKey,
+        IReadOnlyList<string> modularKeys,
         string seed)
-        : this([heroKey], scenarioKey, modular, modularKey, seed)
+        : this([heroKey], scenarioKey, modular, modularKeys, seed)
     {
+    }
+}
+
+/// <summary>Creates replayable game seeds at the pre-game client boundary.</summary>
+public static class GameSeed
+{
+    /// <summary>
+    /// Returns operating-system entropy which becomes an explicit seed before
+    /// any deterministic gameplay state is constructed.
+    /// </summary>
+    public static uint Create()
+    {
+        Span<byte> bytes = stackalloc byte[sizeof(uint)];
+        RandomNumberGenerator.Fill(bytes);
+        return BinaryPrimitives.ReadUInt32LittleEndian(bytes);
     }
 }
 
@@ -166,13 +183,18 @@ public sealed class LocalGameClient
     private readonly IEngineTransport transport;
     private readonly OperationalLog log;
     private readonly string? requestNonce;
+    private readonly Func<uint> seedSource;
     private long requestSequence;
 
     /// <summary>Creates an app client over an embedded or remote transport.</summary>
-    public LocalGameClient(IEngineTransport transport, OperationalLog? log = null)
+    public LocalGameClient(
+        IEngineTransport transport,
+        OperationalLog? log = null,
+        Func<uint>? seedSource = null)
     {
         this.transport = transport ?? throw new ArgumentNullException(nameof(transport));
         this.log = log ?? OperationalLog.None;
+        this.seedSource = seedSource ?? GameSeed.Create;
         // Request ids are operational transport metadata and never enter the
         // deterministic game, save, replay, or RNG state.
         requestNonce = ReferenceEquals(this.log, OperationalLog.None)
@@ -281,35 +303,29 @@ public sealed class LocalGameClient
                 "Choose a hero and scenario offered by this game service."));
         }
 
-        IReadOnlyList<string>? modularSets;
-        switch (selection.Modular)
+        if (!TryResolveModularSets(available, selection, out IReadOnlyList<string>? modularSets))
         {
-            case ModularConfiguration.Recommended:
-                modularSets = null;
-                break;
-            case ModularConfiguration.None:
-                modularSets = [];
-                break;
-            case ModularConfiguration.Selected
-                when selection.ModularKey is not null
-                     && available.ModularSets.Any(set => set.Key == selection.ModularKey):
-                modularSets = [selection.ModularKey];
-                break;
-            default:
-                return ValueTask.FromResult(Failed(
-                    "invalid_selection",
-                    "Choose a modular-set option offered by this game service."));
+            return ValueTask.FromResult(Failed(
+                "invalid_selection",
+                "Choose modular sets offered by this game service."));
         }
 
         if (!uint.TryParse(
-                selection.Seed,
+                selection.Seed?.Trim(),
                 NumberStyles.None,
                 CultureInfo.InvariantCulture,
                 out uint seed))
         {
-            return ValueTask.FromResult(Failed(
-                "invalid_seed",
-                "Enter a whole-number seed from 0 through 4294967295."));
+            if (selection.Seed is not null && string.IsNullOrWhiteSpace(selection.Seed))
+            {
+                seed = seedSource();
+            }
+            else
+            {
+                return ValueTask.FromResult(Failed(
+                    "invalid_seed",
+                    "Enter a whole-number seed from 0 through 4294967295, or leave it blank."));
+            }
         }
 
         return OpenAsync(
@@ -349,35 +365,29 @@ public sealed class LocalGameClient
                 "Choose one or two distinct heroes and a scenario offered by this game service.")));
         }
 
-        IReadOnlyList<string>? modularSets;
-        switch (selection.Modular)
+        if (!TryResolveModularSets(available, selection, out IReadOnlyList<string>? modularSets))
         {
-            case ModularConfiguration.Recommended:
-                modularSets = null;
-                break;
-            case ModularConfiguration.None:
-                modularSets = [];
-                break;
-            case ModularConfiguration.Selected
-                when selection.ModularKey is not null
-                     && available.ModularSets.Any(set => set.Key == selection.ModularKey):
-                modularSets = [selection.ModularKey];
-                break;
-            default:
-                return ValueTask.FromResult(EntryFailed(Error(
-                    "invalid_selection",
-                    "Choose a modular-set option offered by this game service.")));
+            return ValueTask.FromResult(EntryFailed(Error(
+                "invalid_selection",
+                "Choose modular sets offered by this game service.")));
         }
 
         if (!uint.TryParse(
-                selection.Seed,
+                selection.Seed?.Trim(),
                 NumberStyles.None,
                 CultureInfo.InvariantCulture,
                 out uint seed))
         {
-            return ValueTask.FromResult(EntryFailed(Error(
-                "invalid_seed",
-                "Enter a whole-number seed from 0 through 4294967295.")));
+            if (selection.Seed is not null && string.IsNullOrWhiteSpace(selection.Seed))
+            {
+                seed = seedSource();
+            }
+            else
+            {
+                return ValueTask.FromResult(EntryFailed(Error(
+                    "invalid_seed",
+                    "Enter a whole-number seed from 0 through 4294967295, or leave it blank.")));
+            }
         }
 
         return OpenSessionAsync(
@@ -884,6 +894,47 @@ public sealed class LocalGameClient
 
     private void RememberRevision(ClientSession session, EngineResponse response) =>
         revisions[session] = response.Revision;
+
+    private static bool TryResolveModularSets(
+        SetupChoices available,
+        GameSetupSelection selection,
+        out IReadOnlyList<string>? modularSets)
+    {
+        if (selection.ModularKeys is null)
+        {
+            modularSets = null;
+            return false;
+        }
+
+        switch (selection.Modular)
+        {
+            case ModularConfiguration.Recommended when selection.ModularKeys.Count == 0:
+                modularSets = null;
+                return true;
+            case ModularConfiguration.None when selection.ModularKeys.Count == 0:
+                modularSets = [];
+                return true;
+            case ModularConfiguration.Selected when selection.ModularKeys.Count > 0:
+                var selected = selection.ModularKeys.ToHashSet(StringComparer.Ordinal);
+                if (selected.Count != selection.ModularKeys.Count
+                    || selected.Any(key =>
+                        !available.ModularSets.Any(set => set.Key == key)))
+                {
+                    break;
+                }
+
+                // Catalog order is the client wire choice. It keeps the game
+                // specification stable regardless of click order in a multi-select menu.
+                modularSets = available.ModularSets
+                    .Where(set => selected.Contains(set.Key))
+                    .Select(set => set.Key)
+                    .ToArray();
+                return true;
+        }
+
+        modularSets = null;
+        return false;
+    }
 
     private static bool ValidHeroSelection(
         SetupChoices available,

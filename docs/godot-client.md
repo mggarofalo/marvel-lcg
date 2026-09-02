@@ -35,9 +35,17 @@ $GodotBin = "C:\Tools\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_wi
 
 The first screen has separate Start and Join flows. Start offers the committed
 Core assignments, an explicit game label and one or 2 distinct heroes in seat
-order. Spider-Man, standard Rhino, the recommended modular set and any unsigned
-32-bit seed open a local game. All subsequent decisions are made in the
-right-hand decision rail; no console or debug action is part of play.
+order. Spider-Man, standard Rhino, the recommended selection, no modular set,
+or one or more authored modular sets and an optional unsigned 32-bit seed open
+a local game. Leaving the seed blank
+chooses one before setup and displays it throughout play, so the resulting deal
+can be replayed. All subsequent decisions are made in the right-hand decision
+rail; no console or debug action is part of play.
+
+The project opens at 1920x1080 by default. Its compact layout remains supported
+down to 1040x680, but the large desktop canvas is the intended play profile: it
+keeps setup controls and the decision rail visible while leaving the table room
+for complete card names, printed text, traits, statistics and live values.
 
 Leave the endpoint blank to start against the embedded engine. Enter a trusted
 private-network endpoint to host through a standalone engine. A 2-hero game on
@@ -132,7 +140,7 @@ additionally check and retain rendered viewport images at
 setup, open-table/prompt, player-phase, villain-phase and terminal checkpoints.
 The open-table checkpoint includes the dense horizontal rails and both visible
 player cards and concealed deck cards. They run both motion preferences at the
-representative 1280×720 standard-scale profile:
+default 1920x1080 profile and the compact 1280x720 regression profile:
 
 ```bash
 GODOT_BIN="/path/to/Godot" bash tools/godot-visual-qa.sh

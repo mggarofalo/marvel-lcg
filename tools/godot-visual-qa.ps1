@@ -22,15 +22,18 @@ if ($LASTEXITCODE -ne 0 -or -not $version.StartsWith("4.7.")) {
 dotnet build "$repoRoot/src/Marvel.Godot/Marvel.Godot.csproj" --nologo
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 New-Item -ItemType Directory -Force -Path $CaptureDir | Out-Null
-foreach ($motion in @("enabled", "disabled")) {
-    $env:MARVEL_UI_SCALE = "standard"
-    $env:MARVEL_SMOKE_VIEWPORT = "1280x720"
-    $env:MARVEL_SMOKE_MOTION = $motion
-    $env:MARVEL_SMOKE_CAPTURE_DIR = $CaptureDir
-    & $GodotBin --rendering-method gl_compatibility `
-        --path "$repoRoot/src/Marvel.Godot" `
-        --script res://smoke/local_game_smoke.gd
-    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+foreach ($viewport in @("1280x720", "1920x1080")) {
+    foreach ($motion in @("enabled", "disabled")) {
+        $env:MARVEL_UI_SCALE = "standard"
+        $env:MARVEL_SMOKE_VIEWPORT = $viewport
+        $env:MARVEL_SMOKE_MOTION = $motion
+        $env:MARVEL_SMOKE_CAPTURE_DIR = $CaptureDir
+        & $GodotBin --rendering-method gl_compatibility `
+            --resolution $viewport `
+            --path "$repoRoot/src/Marvel.Godot" `
+            --script res://smoke/local_game_smoke.gd
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    }
 }
 
 Write-Output "Rendered visual checkpoints: $CaptureDir"

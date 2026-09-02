@@ -73,9 +73,9 @@ public static class ClientTheme
     private static void DefineSurfaces(Theme theme)
     {
         Panel(theme, GodotThemeVariations.ShellPanel, Flat(
-            Surface, Alpha(Outline, 0.46f), 1, 18, 44, 36, 44, 34));
+            Surface, Alpha(Outline, 0.46f), 1, 18, 22, 18, 22, 18));
         Panel(theme, GodotThemeVariations.SurfacePanel, Flat(
-            Raised, Alpha(Outline, 0.38f), 1, 12, 24, 22, 24, 22));
+            Raised, Alpha(Outline, 0.38f), 1, 12, 16, 14, 16, 14));
         Panel(theme, GodotThemeVariations.StatusPanel, Flat(
             Alpha(Amber, 0.14f), Alpha(Amber, 0.62f),
             1, 8, 14, 9, 14, 9, left: 5));
@@ -145,6 +145,8 @@ public static class ClientTheme
         ControlMetrics controls)
     {
         ButtonSet(theme, "Button", Raised, Alpha(Outline, 0.58f), controls);
+        ButtonSet(theme, GodotThemeVariations.MultiSelectButton,
+            Input, Alpha(Outline, 0.62f), controls, basis: "MenuButton");
         ButtonSet(theme, GodotThemeVariations.ChoiceButton,
             Raised, Alpha(Outline, 0.58f), controls);
         ButtonSet(theme, GodotThemeVariations.LegalTargetButton,
@@ -254,11 +256,12 @@ public static class ClientTheme
         Color background,
         Color border,
         ControlMetrics controls,
-        int left = 1)
+        int left = 1,
+        string basis = "Button")
     {
-        if (variation != "Button")
+        if (variation != basis)
         {
-            Variation(theme, variation, "Button");
+            Variation(theme, variation, basis);
         }
 
         theme.SetColor("font_color", variation, Ink);

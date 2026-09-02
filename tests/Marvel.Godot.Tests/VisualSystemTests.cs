@@ -122,7 +122,7 @@ public sealed class VisualSystemTests
     }
 
     [Fact]
-    public void CardSizesHavePredictableDisclosureAndScaleWithoutShrinkingType()
+    public void CardSizesHavePredictableGeometryAndCompleteDisclosure()
     {
         foreach (InterfaceScale scale in VisualSystem.SupportedScales)
         {
@@ -131,8 +131,6 @@ public sealed class VisualSystemTests
 
             Assert.True(full.Width > board.Width);
             Assert.True(full.MinimumHeight > board.MinimumHeight);
-            Assert.True(full.TitleLines >= board.TitleLines);
-            Assert.True(full.RulesLines > board.RulesLines);
             Assert.True(board.ShowSubtitle);
             Assert.True(board.ShowTraits);
             Assert.True(board.ShowPrintedStats);
@@ -171,6 +169,7 @@ public sealed class VisualSystemTests
             GodotThemeVariations.WideRow,
             GodotThemeVariations.CompactRow,
             GodotThemeVariations.DataGrid,
+            GodotThemeVariations.MultiSelectButton,
             GodotThemeVariations.BoardArea,
             GodotThemeVariations.BoardCard,
             GodotThemeVariations.ConcealedCard,
