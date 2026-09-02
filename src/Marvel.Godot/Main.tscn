@@ -29,7 +29,7 @@ offset_bottom = 5.0
 grow_horizontal = 2
 mouse_filter = 2
 
-[node name="Margin" type="MarginContainer" parent="."]
+[node name="Margin" type="ScrollContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -40,9 +40,13 @@ offset_right = -48.0
 offset_bottom = -38.0
 grow_horizontal = 2
 grow_vertical = 2
+follow_focus = true
+horizontal_scroll_mode = 0
 
 [node name="Shell" type="PanelContainer" parent="Margin"]
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 theme_type_variation = &"ShellPanel"
 
 [node name="Content" type="VBoxContainer" parent="Margin/Shell"]

@@ -9,8 +9,8 @@ namespace Marvel.Godot;
 /// <summary>Renders one current prompt and composes its typed decision.</summary>
 public sealed partial class DecisionPanel : VBoxContainer
 {
-    private static readonly int MinimumControlHeight =
-        VisualSystem.Controls(ClientTheme.ConfiguredScale()).MinimumHeight;
+    private static readonly ControlMetrics ControlMetrics =
+        VisualSystem.Controls(ClientTheme.ConfiguredScale());
     private DecisionComposer? composer;
     private bool submitting;
     private WorldDescriptor? world;
@@ -273,7 +273,8 @@ public sealed partial class DecisionPanel : VBoxContainer
             remove,
             remove.Disabled
                 ? InteractiveVisualState.Unavailable
-                : InteractiveVisualState.Resting);
+                : InteractiveVisualState.Resting,
+            compact: true);
         remove.Pressed += () =>
         {
             composer.RemoveTarget(target);
@@ -294,7 +295,8 @@ public sealed partial class DecisionPanel : VBoxContainer
             add,
             add.Disabled
                 ? InteractiveVisualState.Unavailable
-                : InteractiveVisualState.Legal);
+                : InteractiveVisualState.Legal,
+            compact: true);
         add.Pressed += () =>
         {
             composer.AddTarget(target);
@@ -373,7 +375,9 @@ public sealed partial class DecisionPanel : VBoxContainer
             row.AddChild(name);
             var value = new SpinBox
             {
-                CustomMinimumSize = new Vector2(0, MinimumControlHeight),
+                CustomMinimumSize = new Vector2(
+                    ControlMetrics.MinimumButtonWidth,
+                    ControlMetrics.MinimumHeight),
                 MinValue = variable.Min,
                 MaxValue = variable.Max,
                 Step = 1,
@@ -470,7 +474,9 @@ public sealed partial class DecisionPanel : VBoxContainer
                 row.AddChild(label);
                 var allocation = new OptionButton
                 {
-                    CustomMinimumSize = new Vector2(170, MinimumControlHeight),
+                    CustomMinimumSize = new Vector2(
+                        Math.Max(170, ControlMetrics.MinimumButtonWidth),
+                        ControlMetrics.MinimumHeight),
                     Disabled = submitting,
                 };
                 foreach (AllocationChoice choice in choices)
@@ -569,13 +575,20 @@ public sealed partial class DecisionPanel : VBoxContainer
         };
     }
 
-    private static void StyleButton(Button button, InteractiveVisualState state)
+    private static void StyleButton(
+        Button button,
+        InteractiveVisualState state,
+        bool compact = false)
     {
         InteractiveStyle style = VisualSystem.For(state);
         button.ThemeTypeVariation = style.ThemeVariation;
         button.CustomMinimumSize = new Vector2(
-            button.CustomMinimumSize.X,
-            MinimumControlHeight);
+            Math.Max(
+                button.CustomMinimumSize.X,
+                compact
+                    ? ControlMetrics.MinimumPointerTarget
+                    : ControlMetrics.MinimumButtonWidth),
+            ControlMetrics.MinimumHeight);
     }
 
     private static string ResourceName(char resource) => resource switch
