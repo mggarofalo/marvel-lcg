@@ -27,9 +27,11 @@ The engine already has the determinism, stable decision selectors and replay
 checks needed by this design. `Marvel.Sim` records setup, prompts, decisions,
 events and digests, then deals and resolves the game again to find divergence.
 
-The production session ledger is not implemented yet. Until it is, hosted
-sessions remain in memory and the client has no undo, redo or reorder command.
-No current snapshot or simulation record should be presented as a player save.
+Schema 1 save, atomic generation commit, strict load and verified replay are
+implemented for hosted sessions. The embedded host uses the same ledger and
+replay path with an isolated memory store. Undo, redo, reorder and their
+information frontier remain planned; no client snapshot or simulation record
+is a player save.
 
 ## Boundary
 
@@ -337,8 +339,6 @@ actor, target, payment, value and allocation must still resolve exactly and be
 legal. Reordering can change derived damage and healing, so comparing those
 records with their old order would reject the feature by definition. The newly
 derived records replace the old suffix only after the complete candidate is
-legal.
-
 The initial implementation favors this full replay over serializing internal
 continuations or maintaining inverse mutations. Verified checkpoints may later
 improve performance, but they are caches. Losing a checkpoint cannot lose or

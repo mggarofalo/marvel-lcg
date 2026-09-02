@@ -13,5 +13,6 @@ COPY --from=build /out/ ./
 COPY datasets/cards/cards.json datasets/cards/cards.json
 COPY datasets/setup/setup.json datasets/setup/setup.json
 COPY datasets/abilities/abilities.json datasets/abilities/abilities.json
+VOLUME ["/var/lib/marvel/sessions"]
 EXPOSE 41923
-ENTRYPOINT ["dotnet", "Marvel.Server.dll", "--listen", "0.0.0.0", "--port", "41923", "--data-root", "/app"]
+ENTRYPOINT ["dotnet", "Marvel.Server.dll", "--listen", "0.0.0.0", "--port", "41923", "--data-root", "/app", "--save-root", "/var/lib/marvel/sessions"]

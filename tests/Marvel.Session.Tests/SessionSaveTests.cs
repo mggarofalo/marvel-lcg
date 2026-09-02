@@ -1,0 +1,111 @@
+using System.Text.Json;
+using Marvel.Rules.Play;
+using Marvel.Session;
+using Xunit;
+
+namespace Marvel.Session.Tests;
+
+public sealed class SessionSaveTests
+{
+    [Fact]
+    public void SchemaOneHasAStableStrictTopLevelDocument()
+    {
+        SessionSave save = Save();
+
+        string json = SessionSaveJson.Write(save);
+        SessionSave parsed = SessionSaveJson.Read(json);
+
+        Assert.Equal(json, SessionSaveJson.Write(parsed));
+        Assert.StartsWith(
+            "{\"format\":\"marvel-session\",\"schema\":1,\"compatibility\":",
+            json,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "\"revision\":0,\"cursor\":0,\"edit_frontier\":0,"
+            + "\"current_prompt\":null,\"units\":[]}",
+            json,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("capability", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("invitation", json, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Theory]
+    [InlineData("unknown")]
+    [InlineData("format")]
+    [InlineData("schema")]
+    public void UnknownMembersFormatsAndSchemasFailClosed(string change)
+    {
+        string json = SessionSaveJson.Write(Save());
+        string changed = change switch
+        {
+            "unknown" => "{\"unknown\":true," + json[1..],
+            "format" => json.Replace(
+                "\"format\":\"marvel-session\"",
+                "\"format\":\"future-session\"",
+                StringComparison.Ordinal),
+            "schema" => json.Replace(
+                "\"schema\":1",
+                "\"schema\":2",
+                StringComparison.Ordinal),
+            _ => throw new InvalidOperationException(change),
+        };
+
+        Assert.Throws<SessionSaveException>(() => SessionSaveJson.Read(changed));
+    }
+
+    [Fact]
+    public void MissingRequiredRecordsAndInvalidHistoryBoundsFailClosed()
+    {
+        SessionSave save = Save();
+
+        Assert.Throws<SessionSaveException>(() =>
+            SessionSaveJson.Read(SessionSaveJson.Write(save).Replace(
+                "\"setup\":{",
+                "\"removed_setup\":{",
+                StringComparison.Ordinal)));
+        Assert.Throws<SessionSaveException>(() =>
+            SessionSaveJson.Write(save with { Cursor = 1 }));
+        Assert.Throws<SessionSaveException>(() =>
+            SessionSaveJson.Read(SessionSaveJson.Write(save).Replace(
+                "\"revision\":0,",
+                string.Empty,
+                StringComparison.Ordinal)));
+    }
+
+    [Fact]
+    public void MissingResourceAllocationMembersFailClosed()
+    {
+        var decision = new DurableDecision(
+            0,
+            new DecisionSelector(false, 0, 0, "Action", "Pay", 0),
+            [],
+            [],
+            new Dictionary<string, long>(StringComparer.Ordinal),
+            [new ResourceAllocation(0, 0, "M")]);
+        string json = JsonSerializer.Serialize(decision, SessionSaveJson.Options);
+        string changed = json.Replace("\"cost\":0,", string.Empty, StringComparison.Ordinal);
+
+        Assert.Throws<JsonException>(() =>
+            JsonSerializer.Deserialize<DurableDecision>(changed, SessionSaveJson.Options));
+    }
+
+    private static SessionSave Save() => new(
+        SessionSave.FormatName,
+        SessionSave.CurrentSchema,
+        new SessionCompatibility(
+            "1.0.0",
+            "engine-replay-v1",
+            "mt19937-iso-cxx",
+            "state-digest-v2",
+            new string('a', 64),
+            new string('b', 64),
+            new string('c', 64)),
+        new SessionIdentity(new string('d', 32), "table", "active"),
+        new SessionSetup("rhino", ["spider_man"], [], 7),
+        new InitialRecord([], 0, "digest"),
+        Revision: 0,
+        Cursor: 0,
+        EditFrontier: 0,
+        CurrentPrompt: null,
+        Units: []);
+}

@@ -8,8 +8,9 @@ Use it for local development or on a trusted private network.
 
 The Linux container below is the supported standalone deployment and is built,
 played through, and stopped cleanly by CI. Direct
-`dotnet run` launch on macOS, Windows and Linux is the development path; live
-sessions are in-memory and are not a production persistence service.
+`dotnet run` launch on macOS, Windows and Linux is the development path. The
+server commits every accepted decision to its configured save root before it
+acknowledges the command.
 
 ## Start a local server
 
@@ -20,6 +21,7 @@ dotnet run --project src/Marvel.Server/Marvel.Server.csproj -- \
   --listen 127.0.0.1 \
   --port 41923 \
   --data-root . \
+  --save-root "$HOME/Library/Application Support/MarvelLCG/sessions" \
   --visibility cooperative
 ```
 
@@ -36,6 +38,7 @@ dotnet run --project src/Marvel.Server/Marvel.Server.csproj -- `
   --listen 127.0.0.1 `
   --port 41923 `
   --data-root . `
+  --save-root "$env:LOCALAPPDATA\MarvelLCG\sessions" `
   --visibility cooperative
 ```
 
@@ -45,7 +48,7 @@ The operator must also allow the selected TCP port through the host firewall.
 
 Do not expose this service to the Internet. The protocol is not encrypted, and
 session capabilities and seat invitations are bearer credentials. Anyone who
-obtains one can use its authority until that session closes or the server stops.
+obtains one can use its authority until that credential or session is closed.
 
 ## Choose server options
 
@@ -56,6 +59,7 @@ The process accepts these options:
 | `--listen IP` | `127.0.0.1` | Local IP address on which the server listens. Host names are not accepted. |
 | `--port NUMBER` | `41923` | TCP port from 1 to 65535. |
 | `--data-root PATH` | Current directory | Repository or published-data root containing the required datasets. |
+| `--save-root PATH` | OS local application data under `MarvelLCG/sessions` | Private directory containing committed session generations and credential verifiers. |
 | `--visibility cooperative` | `cooperative` | Shows the whole cooperative table. Client viewer claims cannot hide or reveal seats. |
 | `--visibility restricted --seat NUMBER` | None | Binds the opening session to one non-negative seat number. |
 
@@ -109,8 +113,13 @@ docker run --rm --publish 127.0.0.1:41923:41923 marvel-server \
   --visibility restricted --seat 0
 ```
 
-The container has no persistent game volume. Mounting a volume does not add
-session persistence because live sessions exist only in process memory.
+The image writes saves under `/var/lib/marvel/sessions`. Mount that directory
+to retain games across container replacement:
+
+```bash
+docker run --rm --publish 127.0.0.1:41923:41923 \
+  --volume marvel-sessions:/var/lib/marvel/sessions marvel-server
+```
 
 ## Stop and restart safely
 
@@ -120,8 +129,11 @@ accepting connections and allows the request it is currently serving to finish.
 A client that does not finish its frame cannot hold the server indefinitely;
 accepted connections use a 30-second receive and send timeout.
 
-All games, capabilities and unused invitations live only in memory. Stopping or
-restarting the process removes them, so connected clients must open a new game.
+Active games, hashed capability verifiers and unused invitation verifiers are
+restored from the last committed generation. Plaintext bearer credentials are
+never written; clients retain their existing capability and synchronize after
+the server restarts. A corrupt, incompatible or divergent generation prevents
+that table from being published rather than guessing at a plausible board.
 
 Once transmission of a mutation begins, a client-side write or response failure
 cannot prove that the server did not apply it. The client therefore never
