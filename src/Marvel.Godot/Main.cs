@@ -34,9 +34,17 @@ public sealed partial class Main : Control
     private Tween? eventTween;
     private int eventGeneration;
     private readonly EventChronology events = new();
+    private LineEdit endpoint = null!;
+    private LineEdit gameId = null!;
     private OptionButton hero = null!;
-    private LocalGameClient? localClient;
-    private string? localCapability;
+    private PanelContainer invitationOffer = null!;
+    private Button invitationCopy = null!;
+    private LineEdit invitation = null!;
+    private Button join = null!;
+    private VBoxContainer joinFields = null!;
+    private Button joinFlow = null!;
+    private LocalGameClient? client;
+    private ClientSession? session;
     private OptionButton mode = null!;
     private OptionButton modular = null!;
     private ScrollContainer pageScroll = null!;
@@ -46,15 +54,25 @@ public sealed partial class Main : Control
     private Label promptHeading = null!;
     private Label promptProgress = null!;
     private Label promptRequirement = null!;
+    private Button reloadSetup = null!;
     private OptionButton scenario = null!;
+    private OptionButton secondHero = null!;
     private LineEdit seed = null!;
+    private GridContainer setupGrid = null!;
+    private Label setupHeading = null!;
+    private Label seedHelp = null!;
     private Control setupPanel = null!;
     private SetupChoices? setupChoices;
     private Button start = null!;
+    private Button startFlow = null!;
     private Label status = null!;
     private PanelContainer statusPanel = null!;
     private Label title = null!;
+    private string? transientInvitation;
     private bool decisionPending;
+    private bool joining;
+    private int setupLoadGeneration;
+    private bool setupLoading;
 
     /// <summary>The latest complete visibility-safe response accepted as authoritative.</summary>
     public EngineResponse? CurrentGame { get; private set; }
@@ -73,7 +91,12 @@ public sealed partial class Main : Control
         BindNodes();
         ApplyInterfaceScale(scale);
         Resized += ApplyResponsivePlayLayout;
-        hero.ItemSelected += _ => RefreshBriefing();
+        hero.ItemSelected += _ =>
+        {
+            PopulateSecondHeroChoices();
+            RefreshBriefing();
+        };
+        secondHero.ItemSelected += _ => RefreshBriefing();
         scenario.ItemSelected += OnScenarioSelected;
         mode.ItemSelected += _ =>
         {
@@ -82,23 +105,42 @@ public sealed partial class Main : Control
         };
         modular.ItemSelected += _ => RefreshBriefing();
         seed.TextChanged += _ => RefreshStartAvailability();
+        endpoint.TextChanged += _ => OnEndpointChanged();
+        gameId.TextChanged += _ => RefreshEntryAvailability();
+        invitation.TextChanged += _ => RefreshEntryAvailability();
+        startFlow.Pressed += () => ShowEntryMode(joinMode: false);
+        joinFlow.Pressed += () => ShowEntryMode(joinMode: true);
         start.Pressed += OnStartPressed;
+        join.Pressed += OnJoinPressed;
+        invitationCopy.Pressed += CopyInvitation;
+        reloadSetup.Pressed += () => _ = LoadSetupAsync();
+        endpoint.Text = OS.GetEnvironment("MARVEL_ENGINE_ENDPOINT");
         _ = LoadSetupAsync();
     }
 
     private void ApplyInterfaceScale(InterfaceScale scale)
     {
         float minimumHeight = VisualSystem.Controls(scale).MinimumHeight;
-        foreach (Control control in new Control[] { hero, scenario, mode, modular, seed })
+        foreach (Control control in new Control[]
+                 {
+                     endpoint, gameId, hero, secondHero, scenario, mode, modular, seed,
+                     invitation,
+                 })
         {
             control.CustomMinimumSize = new Vector2(
                 control.CustomMinimumSize.X,
                 minimumHeight);
         }
 
-        start.CustomMinimumSize = new Vector2(
-            start.CustomMinimumSize.X,
-            Math.Max(start.CustomMinimumSize.Y, minimumHeight));
+        foreach (Control control in new Control[]
+                 {
+                     startFlow, joinFlow, reloadSetup, start, join, invitationCopy,
+                 })
+        {
+            control.CustomMinimumSize = new Vector2(
+                control.CustomMinimumSize.X,
+                Math.Max(control.CustomMinimumSize.Y, minimumHeight));
+        }
         foreach (Control control in new Control[] { eventMotion, eventSkip })
         {
             control.CustomMinimumSize = new Vector2(
@@ -154,12 +196,36 @@ public sealed partial class Main : Control
         decisions.Submitted += OnDecisionSubmitted;
         decisions.AnchorFocused += ids => boardRender?.Highlight(ids);
         decisions.ProgressChanged += RenderDecisionProgress;
+        endpoint = GetNode<LineEdit>(
+            $"{content}/Setup/Selections/Fields/ConnectionGrid/Endpoint");
+        gameId = GetNode<LineEdit>(
+            $"{content}/Setup/Selections/Fields/ConnectionGrid/GameId");
+        startFlow = GetNode<Button>(
+            $"{content}/Setup/Selections/Fields/EntryModes/StartFlow");
+        joinFlow = GetNode<Button>(
+            $"{content}/Setup/Selections/Fields/EntryModes/JoinFlow");
+        setupHeading = GetNode<Label>($"{content}/Setup/Selections/Fields/Heading");
+        reloadSetup = GetNode<Button>(
+            $"{content}/Setup/Selections/Fields/ReloadSetup");
+        setupGrid = GetNode<GridContainer>($"{content}/Setup/Selections/Fields/Grid");
         hero = GetNode<OptionButton>($"{content}/Setup/Selections/Fields/Grid/Hero");
+        secondHero = GetNode<OptionButton>(
+            $"{content}/Setup/Selections/Fields/Grid/SecondHero");
         scenario = GetNode<OptionButton>($"{content}/Setup/Selections/Fields/Grid/Scenario");
         mode = GetNode<OptionButton>($"{content}/Setup/Selections/Fields/Grid/Mode");
         modular = GetNode<OptionButton>($"{content}/Setup/Selections/Fields/Grid/Modular");
         seed = GetNode<LineEdit>($"{content}/Setup/Selections/Fields/Grid/Seed");
+        seedHelp = GetNode<Label>($"{content}/Setup/Selections/Fields/SeedHelp");
         start = GetNode<Button>($"{content}/Setup/Selections/Fields/Start");
+        joinFields = GetNode<VBoxContainer>(
+            $"{content}/Setup/Selections/Fields/JoinFields");
+        invitation = GetNode<LineEdit>(
+            $"{content}/Setup/Selections/Fields/JoinFields/Invitation");
+        join = GetNode<Button>($"{content}/Setup/Selections/Fields/JoinFields/Join");
+        invitationOffer = GetNode<PanelContainer>(
+            $"{content}/Play/Prompt/Margin/Stack/InvitationOffer");
+        invitationCopy = GetNode<Button>(
+            $"{content}/Play/Prompt/Margin/Stack/InvitationOffer/Margin/Row/CopyInvitation");
         briefingScenario = GetNode<Label>(
             $"{content}/Setup/Briefing/Frame/Copy/Scenario");
         briefingMode = GetNode<Label>($"{content}/Setup/Briefing/Frame/Copy/Mode");
@@ -168,7 +234,35 @@ public sealed partial class Main : Control
             $"{content}/Setup/Briefing/Frame/Copy/Modular");
         status = GetNode<Label>($"{content}/Status/Text");
         statusPanel = GetNode<PanelContainer>($"{content}/Status");
+        ShowEntryMode(joinMode: false);
         CallDeferred(MethodName.ApplyResponsivePlayLayout);
+    }
+
+    private void ShowEntryMode(bool joinMode)
+    {
+        joining = joinMode;
+        setupHeading.Visible = !joinMode;
+        reloadSetup.Visible = !joinMode;
+        setupGrid.Visible = !joinMode;
+        seedHelp.Visible = !joinMode;
+        start.Visible = !joinMode;
+        joinFields.Visible = joinMode;
+        GetNode<Control>("Margin/Shell/Content/Setup/Briefing").Visible = !joinMode;
+        startFlow.Disabled = false;
+        joinFlow.Disabled = false;
+        startFlow.ThemeTypeVariation = joinMode
+            ? string.Empty
+            : GodotThemeVariations.PrimaryButton;
+        joinFlow.ThemeTypeVariation = joinMode
+            ? GodotThemeVariations.PrimaryButton
+            : string.Empty;
+        eyebrow.Text = joinMode
+            ? "CORE SET  /  JOIN TABLE"
+            : "CORE SET  /  MISSION BRIEFING";
+        description.Text = joinMode
+            ? "Connect to an already-running engine and use a one-time seat invitation."
+            : "Choose an authored Core Set assignment. The engine validates it again when play starts.";
+        RefreshEntryAvailability();
     }
 
     private void ApplyResponsivePlayLayout()
@@ -182,37 +276,87 @@ public sealed partial class Main : Control
 
     private async Task LoadSetupAsync()
     {
+        int generation = ++setupLoadGeneration;
+        string requestedEndpoint = endpoint.Text;
+        setupLoading = true;
+        setupChoices = null;
+        client = null;
+        reloadSetup.Disabled = true;
+        start.Disabled = true;
+        SetAssignmentControlsEnabled(false);
+        status.Text = "LOADING ASSIGNMENTS  ·  WAITING FOR ENGINE";
         try
         {
             LocalClientConnection connection = ClientComposition.Connect(
                 ProjectSettings.GlobalizePath("res://../.."),
-                OS.GetEnvironment("MARVEL_ENGINE_ENDPOINT"));
+                requestedEndpoint);
             if (!connection.Succeeded)
             {
-                ShowFailure(connection.Error!);
+                ApplySetupFailure(generation, requestedEndpoint, connection.Error!);
                 return;
             }
 
-            localClient = connection.Client;
-            ClientSetupResult setup = await localClient!.ReadSetupAsync();
+            LocalGameClient candidate = connection.Client!;
+            ClientSetupResult setup = await candidate.ReadSetupAsync();
+            if (!IsCurrentSetupLoad(generation, requestedEndpoint))
+            {
+                return;
+            }
+
             if (!setup.Succeeded)
             {
-                ShowFailure(setup.Error!);
+                ApplySetupFailure(generation, requestedEndpoint, setup.Error!);
                 return;
             }
 
+            client = candidate;
             setupChoices = setup.Choices;
             PopulateSetupChoices();
+            setupLoading = false;
+            reloadSetup.Disabled = false;
+            title.Text = "Assemble the table.";
             description.Text =
                 "Choose an authored Core Set assignment. The engine validates it again when play starts.";
             status.Text = "ASSIGNMENT READY  ·  CHOOSE A HERO AND ENCOUNTER";
+            statusPanel.ThemeTypeVariation = GodotThemeVariations.StatusPanel;
+            status.ThemeTypeVariation = GodotThemeVariations.StatusText;
         }
         catch (Exception)
         {
-            ShowFailure(new ClientStartupError(
+            ApplySetupFailure(generation, requestedEndpoint, new ClientStartupError(
                 "startup_failed",
-                "The setup screen could not be displayed. Restart the client to try again."));
+                "The setup options could not be loaded. Check the endpoint and try again."));
         }
+    }
+
+    private bool IsCurrentSetupLoad(int generation, string requestedEndpoint) =>
+        generation == setupLoadGeneration
+        && endpoint.Text == requestedEndpoint;
+
+    private void ApplySetupFailure(
+        int generation,
+        string requestedEndpoint,
+        ClientStartupError error)
+    {
+        if (!IsCurrentSetupLoad(generation, requestedEndpoint))
+        {
+            return;
+        }
+
+        setupLoading = false;
+        reloadSetup.Disabled = false;
+        ShowFailure(error);
+    }
+
+    private void OnEndpointChanged()
+    {
+        setupLoadGeneration++;
+        setupLoading = false;
+        setupChoices = null;
+        SetAssignmentControlsEnabled(false);
+        reloadSetup.Disabled = false;
+        status.Text = "ENDPOINT CHANGED  ·  RELOAD SETUP OPTIONS";
+        RefreshEntryAvailability();
     }
 
     private void PopulateSetupChoices()
@@ -222,6 +366,8 @@ public sealed partial class Main : Control
         {
             hero.AddItem(choice.Name);
         }
+        hero.Select(0);
+        PopulateSecondHeroChoices();
 
         scenarioNames.Clear();
         scenarioNames.AddRange(
@@ -233,11 +379,29 @@ public sealed partial class Main : Control
             scenario.AddItem(name);
         }
 
-        hero.Disabled = false;
-        scenario.Disabled = false;
-        mode.Disabled = false;
-        modular.Disabled = false;
+        SetAssignmentControlsEnabled(true);
         OnScenarioSelected(0);
+    }
+
+    private void PopulateSecondHeroChoices()
+    {
+        secondHero.Clear();
+        secondHero.AddItem("Solo table · one hero");
+        if (setupChoices is null || setupChoices.Heroes.Count == 0)
+        {
+            return;
+        }
+
+        int primary = Math.Max(hero.Selected, 0);
+        string primaryKey = setupChoices.Heroes[primary].Key;
+        foreach (HeroSetupChoice choice in setupChoices.Heroes.Where(
+                     choice => choice.Key != primaryKey))
+        {
+            secondHero.AddItem(choice.Name);
+            secondHero.SetItemMetadata(secondHero.ItemCount - 1, choice.Key);
+        }
+
+        secondHero.Select(0);
     }
 
     private void OnScenarioSelected(long selected)
@@ -294,7 +458,9 @@ public sealed partial class Main : Control
         ScenarioSetupChoice campaign = SelectedCampaign();
         briefingScenario.Text = campaign.Name;
         briefingMode.Text = campaign.Expert ? "EXPERT MODE" : "STANDARD MODE";
-        briefingHero.Text = setupChoices.Heroes[hero.Selected].Name;
+        briefingHero.Text = secondHero.Selected <= 0
+            ? setupChoices.Heroes[hero.Selected].Name
+            : $"{setupChoices.Heroes[hero.Selected].Name} + {secondHero.GetItemText(secondHero.Selected)}";
         briefingModular.Text = modular.GetItemText(modular.Selected);
         RefreshStartAvailability();
     }
@@ -306,7 +472,7 @@ public sealed partial class Main : Control
             NumberStyles.None,
             CultureInfo.InvariantCulture,
             out _);
-        start.Disabled = setupChoices is null || !validSeed;
+        start.Disabled = setupChoices is null || !validSeed || gameId.Text.Length == 0;
         if (setupChoices is not null && !validSeed)
         {
             status.Text = "SEED REQUIRED  ·  ENTER A WHOLE NUMBER FROM 0 THROUGH 4294967295";
@@ -314,6 +480,30 @@ public sealed partial class Main : Control
         else if (setupChoices is not null && CurrentGame is null)
         {
             status.Text = "ASSIGNMENT READY  ·  START WHEN THE TABLE IS SET";
+        }
+    }
+
+    private void RefreshEntryAvailability()
+    {
+        RefreshStartAvailability();
+        join.Disabled = endpoint.Text.Length == 0
+            || gameId.Text.Length == 0
+            || invitation.Text.Length == 0;
+        if (joining && endpoint.Text.Length == 0)
+        {
+            status.Text = "REMOTE ENDPOINT REQUIRED  ·  JOIN AN ALREADY-RUNNING ENGINE";
+        }
+        else if (joining && gameId.Text.Length == 0)
+        {
+            status.Text = "GAME LABEL REQUIRED  ·  USE THE LABEL SHARED BY THE HOST";
+        }
+        else if (joining && invitation.Text.Length == 0)
+        {
+            status.Text = "INVITATION REQUIRED  ·  PASTE THE ONE-TIME SEAT SECRET";
+        }
+        else if (joining)
+        {
+            status.Text = "INVITATION READY  ·  JOIN WHEN THE ENDPOINT AND LABEL MATCH";
         }
     }
 
@@ -325,21 +515,43 @@ public sealed partial class Main : Control
             SetSetupControlsEnabled(false);
             status.Text = "DEALING GAME  ·  ONE MOMENT";
 
-            ClientStartupResult startup = await localClient!.OpenAsync(
-                setupChoices!, SelectedSetup());
-            if (!startup.Succeeded)
+            GameSetupSelection selection = SelectedSetup();
+            LocalClientConnection connection = ClientComposition.Connect(
+                ProjectSettings.GlobalizePath("res://../.."),
+                endpoint.Text);
+            if (!connection.Succeeded)
             {
-                SetSetupControlsEnabled(true);
-                RefreshStartAvailability();
-                ShowFailure(startup.Error!);
+                RestoreEntryAfterFailure(connection.Error!);
                 return;
             }
 
-            localCapability = startup.Response!.Capability;
-            RenderGame(startup.Response, resetEvents: true);
+            client = connection.Client;
+            ClientSetupResult available = await client!.ReadSetupAsync();
+            if (!available.Succeeded)
+            {
+                RestoreEntryAfterFailure(available.Error!);
+                return;
+            }
+
+            ClientEntryResult startup = await client.OpenSessionAsync(
+                gameId.Text, available.Choices!, selection);
+            if (!startup.Succeeded)
+            {
+                RestoreEntryAfterFailure(startup.Error!);
+                return;
+            }
+
+            session = startup.Session;
+            transientInvitation = startup.Invitations.Count == 0
+                ? null
+                : startup.Invitations[0].Invitation;
+            invitationOffer.Visible = transientInvitation is not null;
+            RenderGame(startup.Response!, resetEvents: true);
             setupPanel.Visible = false;
             board.Visible = true;
-            eyebrow.Text = "CORE SET  /  LOCAL TABLE";
+            eyebrow.Text = endpoint.Text.Length == 0
+                ? "CORE SET  /  EMBEDDED TABLE"
+                : "CORE SET  /  HOSTED TABLE";
         }
         catch (Exception)
         {
@@ -349,6 +561,73 @@ public sealed partial class Main : Control
                 "startup_failed",
                 "The selected game could not be displayed. Check the assignment and try again."));
         }
+    }
+
+    private async void OnJoinPressed()
+    {
+        if (join.Disabled)
+        {
+            return;
+        }
+
+        string secret = invitation.Text;
+        invitation.Clear();
+        try
+        {
+            join.Disabled = true;
+            SetSetupControlsEnabled(false);
+            status.Text = "JOINING GAME  ·  ONE MOMENT";
+            LocalClientConnection connection = ClientComposition.Connect(
+                ProjectSettings.GlobalizePath("res://../.."),
+                endpoint.Text);
+            if (!connection.Succeeded)
+            {
+                RestoreEntryAfterFailure(connection.Error!);
+                return;
+            }
+
+            client = connection.Client;
+            ClientEntryResult attached = await client!.AttachAsync(gameId.Text, secret);
+            secret = string.Empty;
+            if (!attached.Succeeded)
+            {
+                RestoreEntryAfterFailure(attached.Error!);
+                return;
+            }
+
+            session = attached.Session;
+            RenderGame(attached.Response!, resetEvents: true);
+            setupPanel.Visible = false;
+            board.Visible = true;
+            eyebrow.Text = "CORE SET  /  JOINED TABLE";
+        }
+        catch (Exception)
+        {
+            secret = string.Empty;
+            RestoreEntryAfterFailure(new ClientStartupError(
+                "startup_failed",
+                "The invitation could not be attached. Check the endpoint and ask the host for a new invitation."));
+        }
+    }
+
+    private void CopyInvitation()
+    {
+        if (transientInvitation is null)
+        {
+            return;
+        }
+
+        DisplayServer.ClipboardSet(transientInvitation);
+        transientInvitation = null;
+        invitationOffer.Visible = false;
+        status.Text = "INVITATION COPIED  ·  THE ONE-TIME SECRET WAS REMOVED FROM THIS SCREEN";
+    }
+
+    private void RestoreEntryAfterFailure(ClientStartupError error)
+    {
+        SetSetupControlsEnabled(true);
+        RefreshEntryAvailability();
+        ShowFailure(error);
     }
 
     private async void OnDecisionSubmitted(EngineDecision decision)
@@ -365,8 +644,8 @@ public sealed partial class Main : Control
             promptProgress.Text = "RESOLVING  ·  WAITING FOR ENGINE";
             promptProgress.ThemeTypeVariation = GodotThemeVariations.StatusText;
             ApplyProgress(GameProgressPresentation.Resolving());
-            ClientResolutionResult result = await localClient!.ResolveAsync(
-                localCapability!, decision);
+            ClientResolutionResult result = await client!.ResolveAsync(
+                session!, decision);
             if (!IsInsideTree())
             {
                 return;
@@ -433,7 +712,7 @@ public sealed partial class Main : Control
         RenderEvents();
         ApplyProgress(GameProgressPresentation.FromResponse(response));
         PresentEvents(presented.Cues);
-        if (response.Prompt is null)
+        if (response.Prompt is null && world.Outcome != Outcome.Unfinished)
         {
             CallDeferred(MethodName.RevealOutcome);
         }
@@ -445,10 +724,30 @@ public sealed partial class Main : Control
     {
         if (prompt is null)
         {
-            promptEyebrow.Text = "GAME COMPLETE";
-            promptHeading.Text = "No further decision is waiting.";
-            promptContext.Text = "THE TABLE IS SETTLED";
-            promptRequirement.Text = "RESOLVED";
+            (promptEyebrow.Text, promptHeading.Text, promptContext.Text) =
+                world.Outcome switch
+                {
+                    Outcome.Unfinished => (
+                        "OTHER PLAYER'S DECISION",
+                        "Waiting for another player.",
+                        "THE GAME IS STILL IN PROGRESS"),
+                    Outcome.PlayersWin => (
+                        "VICTORY",
+                        "The players won.",
+                        "THE FINAL VILLAIN STAGE WAS DEFEATED"),
+                    Outcome.VillainWins => (
+                        "DEFEAT",
+                        "The villain won.",
+                        "THE FINAL MAIN SCHEME WAS COMPLETED"),
+                    Outcome.PlayersLose => (
+                        "DEFEAT",
+                        "The players lost.",
+                        "THE ENCOUNTER COULD NOT CONTINUE"),
+                    _ => ("GAME COMPLETE", "The game ended.", "THE TABLE IS SETTLED"),
+                };
+            promptRequirement.Text = world.Outcome == Outcome.Unfinished
+                ? "WAITING"
+                : "RESOLVED";
             promptRequirement.ThemeTypeVariation = GodotThemeVariations.StatusText;
             promptProgress.Text = "NO INPUT PENDING";
             return;
@@ -629,8 +928,14 @@ public sealed partial class Main : Control
         string? modularKey = modular.Selected >= 2
             ? setupChoices!.ModularSets[modular.Selected - 2].Key
             : null;
+        var heroes = new List<string> { setupChoices!.Heroes[hero.Selected].Key };
+        if (secondHero.Selected > 0)
+        {
+            heroes.Add(secondHero.GetItemMetadata(secondHero.Selected).AsString());
+        }
+
         return new GameSetupSelection(
-            setupChoices!.Heroes[hero.Selected].Key,
+            heroes,
             SelectedCampaign().Key,
             configuration,
             modularKey,
@@ -641,7 +946,19 @@ public sealed partial class Main : Control
 
     private void SetSetupControlsEnabled(bool enabled)
     {
+        SetAssignmentControlsEnabled(enabled);
+        endpoint.Editable = enabled;
+        gameId.Editable = enabled;
+        invitation.Editable = enabled;
+        startFlow.Disabled = !enabled;
+        joinFlow.Disabled = !enabled;
+        reloadSetup.Disabled = !enabled || setupLoading;
+    }
+
+    private void SetAssignmentControlsEnabled(bool enabled)
+    {
         hero.Disabled = !enabled;
+        secondHero.Disabled = !enabled;
         scenario.Disabled = !enabled;
         mode.Disabled = !enabled;
         modular.Disabled = !enabled;

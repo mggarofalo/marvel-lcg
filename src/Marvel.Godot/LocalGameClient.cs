@@ -35,6 +35,23 @@ public sealed record ClientSetupResult(
     public bool Succeeded => Choices is not null && Error is null;
 }
 
+/// <summary>The opaque identifiers required to continue one authorized game view.</summary>
+public sealed record ClientSession(string GameId, string Capability);
+
+/// <summary>
+/// A newly opened or attached session, its render-safe view, and any invitations
+/// that the entry screen must hand off before discarding them.
+/// </summary>
+public sealed record ClientEntryResult(
+    ClientSession? Session,
+    EngineResponse? Response,
+    IReadOnlyList<SeatInvitation> Invitations,
+    ClientStartupError? Error)
+{
+    /// <summary>Whether a complete authorized game view was returned.</summary>
+    public bool Succeeded => Session is not null && Response is not null && Error is null;
+}
+
 /// <summary>The result of trying to open one selected game.</summary>
 public sealed record ClientStartupResult(
     EngineResponse? Response,
@@ -71,16 +88,29 @@ public enum ModularConfiguration
 
 /// <summary>Raw values selected by the setup screen.</summary>
 public sealed record GameSetupSelection(
-    string HeroKey,
+    IReadOnlyList<string> HeroKeys,
     string ScenarioKey,
     ModularConfiguration Modular,
     string? ModularKey,
-    string Seed);
+    string Seed)
+{
+    /// <summary>Creates the single-hero selection used by the local-play screen.</summary>
+    public GameSetupSelection(
+        string heroKey,
+        string scenarioKey,
+        ModularConfiguration modular,
+        string? modularKey,
+        string seed)
+        : this([heroKey], scenarioKey, modular, modularKey, seed)
+    {
+    }
+}
 
 /// <summary>Uses the engine protocol for both local and remote game setup.</summary>
 public sealed class LocalGameClient
 {
     private const int MaximumDisplayedErrorLength = 240;
+    private const string AttachRequestId = "local-attach";
     private const string OpenRequestId = "local-open";
     private const string RecoverRequestId = "local-recover";
     private const string ResolveRequestId = "local-resolve";
@@ -176,7 +206,7 @@ public sealed class LocalGameClient
         ArgumentNullException.ThrowIfNull(available);
         ArgumentNullException.ThrowIfNull(selection);
 
-        if (!available.Heroes.Any(hero => hero.Key == selection.HeroKey)
+        if (!ValidHeroSelection(available, selection.HeroKeys)
             || !available.Scenarios.Any(scenario => scenario.Key == selection.ScenarioKey))
         {
             return ValueTask.FromResult(Failed(
@@ -218,54 +248,112 @@ public sealed class LocalGameClient
         return OpenAsync(
             new GameSpecification(
                 selection.ScenarioKey,
-                [selection.HeroKey],
+                selection.HeroKeys,
                 modularSets,
                 seed),
             cancellationToken);
     }
 
-    /// <summary>Sends the canonical open request through the configured transport.</summary>
-    public async ValueTask<ClientStartupResult> OpenAsync(
+    /// <summary>
+    /// Validates a setup selection and opens the explicitly named one- or
+    /// two-seat game with exactly one mutation request.
+    /// </summary>
+    public ValueTask<ClientEntryResult> OpenSessionAsync(
+        string gameId,
+        SetupChoices available,
+        GameSetupSelection selection,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(available);
+        ArgumentNullException.ThrowIfNull(selection);
+
+        ClientStartupError? gameIdFailure = IdentifierError(
+            gameId, "invalid_game_id", "Enter a game id from 1 through 256 characters.");
+        if (gameIdFailure is not null)
+        {
+            return ValueTask.FromResult(EntryFailed(gameIdFailure));
+        }
+
+        if (!ValidHeroSelection(available, selection.HeroKeys)
+            || !available.Scenarios.Any(scenario => scenario.Key == selection.ScenarioKey))
+        {
+            return ValueTask.FromResult(EntryFailed(Error(
+                "invalid_selection",
+                "Choose one or two distinct heroes and a scenario offered by this game service.")));
+        }
+
+        IReadOnlyList<string>? modularSets;
+        switch (selection.Modular)
+        {
+            case ModularConfiguration.Recommended:
+                modularSets = null;
+                break;
+            case ModularConfiguration.None:
+                modularSets = [];
+                break;
+            case ModularConfiguration.Selected
+                when selection.ModularKey is not null
+                     && available.ModularSets.Any(set => set.Key == selection.ModularKey):
+                modularSets = [selection.ModularKey];
+                break;
+            default:
+                return ValueTask.FromResult(EntryFailed(Error(
+                    "invalid_selection",
+                    "Choose a modular-set option offered by this game service.")));
+        }
+
+        if (!uint.TryParse(
+                selection.Seed,
+                NumberStyles.None,
+                CultureInfo.InvariantCulture,
+                out uint seed))
+        {
+            return ValueTask.FromResult(EntryFailed(Error(
+                "invalid_seed",
+                "Enter a whole-number seed from 0 through 4294967295.")));
+        }
+
+        return OpenSessionAsync(
+            gameId,
+            new GameSpecification(
+                selection.ScenarioKey,
+                selection.HeroKeys,
+                modularSets,
+                seed),
+            cancellationToken);
+    }
+
+    /// <summary>Sends one canonical open request for an explicit opaque game id.</summary>
+    public async ValueTask<ClientEntryResult> OpenSessionAsync(
+        string gameId,
         GameSpecification specification,
         CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(specification);
+        ClientStartupError? gameIdFailure = IdentifierError(
+            gameId, "invalid_game_id", "Enter a game id from 1 through 256 characters.");
+        if (gameIdFailure is not null)
+        {
+            return EntryFailed(gameIdFailure);
+        }
+
+        if (specification.Heroes is not { Count: 1 or 2 }
+            || specification.Heroes.Any(string.IsNullOrWhiteSpace)
+            || specification.Heroes.Distinct(StringComparer.Ordinal).Count()
+                != specification.Heroes.Count)
+        {
+            return EntryFailed(Error(
+                "invalid_selection",
+                "Choose one or two distinct heroes in seat order."));
+        }
+
         cancellationToken.ThrowIfCancellationRequested();
         try
         {
             EngineResponse response = await transport.ExchangeAsync(
-                EngineRequest.OpenGame(
-                    OpenRequestId, LocalGameSession.GameId, specification),
+                EngineRequest.OpenGame(OpenRequestId, gameId, specification),
                 cancellationToken).ConfigureAwait(false);
-
-            ClientStartupError? envelope = EnvelopeError(
-                response, OpenRequestId, LocalGameSession.GameId);
-            if (envelope is not null)
-            {
-                return new ClientStartupResult(Response: null, envelope);
-            }
-
-            if (response.Error is not null)
-            {
-                if (!Complete(response.Error))
-                {
-                    return Failed(
-                        "invalid_response",
-                        "The game service returned an incomplete error.");
-                }
-
-                return Failed(response.Error.Code, response.Error.Message);
-            }
-
-            if (!HasCompleteGameplayResponse(response)
-                || response.Prompt is null
-                || string.IsNullOrWhiteSpace(response.Capability))
-            {
-                return Failed(
-                    "invalid_response",
-                    "The engine did not return a complete initial game view.");
-            }
-
-            return new ClientStartupResult(response, Error: null);
+            return EntryResponse(response, OpenRequestId, gameId, allowWaiting: false);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -273,10 +361,69 @@ public sealed class LocalGameClient
         }
         catch (Exception)
         {
-            return Failed(
+            return EntryFailed(Error(
                 "transport_unavailable",
-                "The game service could not be reached. Try starting the game again.");
+                "The game service could not be reached. Try starting the game again."));
         }
+    }
+
+    /// <summary>Redeems a one-time seat invitation with exactly one request.</summary>
+    public async ValueTask<ClientEntryResult> AttachAsync(
+        string gameId,
+        string invitation,
+        CancellationToken cancellationToken = default)
+    {
+        ClientStartupError? gameIdFailure = IdentifierError(
+            gameId, "invalid_game_id", "Enter a game id from 1 through 256 characters.");
+        if (gameIdFailure is not null)
+        {
+            return EntryFailed(gameIdFailure);
+        }
+
+        ClientStartupError? invitationFailure = IdentifierError(
+            invitation,
+            "invalid_invitation",
+            "Enter a seat invitation from 1 through 256 characters.");
+        if (invitationFailure is not null)
+        {
+            return EntryFailed(invitationFailure);
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        try
+        {
+            EngineResponse response = await transport.ExchangeAsync(
+                EngineRequest.AttachGame(AttachRequestId, gameId, invitation),
+                cancellationToken).ConfigureAwait(false);
+            return EntryResponse(response, AttachRequestId, gameId, allowWaiting: true);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            return EntryFailed(Error(
+                "transport_unavailable",
+                "The game service could not be reached. The invitation was not retried."));
+        }
+    }
+
+    /// <summary>Sends the canonical open request through the configured transport.</summary>
+    public async ValueTask<ClientStartupResult> OpenAsync(
+        GameSpecification specification,
+        CancellationToken cancellationToken = default)
+    {
+        ClientEntryResult entry = await OpenSessionAsync(
+            LocalGameSession.GameId, specification, cancellationToken).ConfigureAwait(false);
+        EngineResponse? legacyResponse = entry.Response is null || entry.Session is null
+            ? null
+            : entry.Response with
+            {
+                Capability = entry.Session.Capability,
+                Invitations = entry.Invitations,
+            };
+        return new ClientStartupResult(legacyResponse, entry.Error);
     }
 
     /// <summary>
@@ -288,27 +435,48 @@ public sealed class LocalGameClient
         EngineDecision decision,
         CancellationToken cancellationToken = default)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(capability);
+        return await ResolveAsync(
+            new ClientSession(LocalGameSession.GameId, capability),
+            decision,
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Submits one answer for an explicit session and recovers that same
+    /// session without ever repeating the mutation.
+    /// </summary>
+    public async ValueTask<ClientResolutionResult> ResolveAsync(
+        ClientSession session,
+        EngineDecision decision,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(session);
         ArgumentNullException.ThrowIfNull(decision);
+        ClientStartupError? sessionFailure = SessionError(session);
+        if (sessionFailure is not null)
+        {
+            return new ClientResolutionResult(Response: null, sessionFailure);
+        }
+
         cancellationToken.ThrowIfCancellationRequested();
         ClientStartupError? failure = null;
         try
         {
             EngineResponse response = await transport.ExchangeAsync(
                 EngineRequest.ResolveGame(
-                    ResolveRequestId, LocalGameSession.GameId, capability, decision),
+                    ResolveRequestId, session.GameId, session.Capability, decision),
                 cancellationToken).ConfigureAwait(false);
             ClientStartupError? envelope = EnvelopeError(
-                response, ResolveRequestId, LocalGameSession.GameId);
+                response, ResolveRequestId, session.GameId);
             if (envelope is not null)
             {
                 failure = envelope;
             }
             else if (response.Error is null)
             {
-                if (HasCompleteGameplayResponse(response))
+                if (HasCompleteGameplayResponse(response, allowWaiting: true))
                 {
-                    return new ClientResolutionResult(response, Error: null);
+                    return new ClientResolutionResult(Sanitize(response), Error: null);
                 }
 
                 failure = Error(
@@ -335,7 +503,7 @@ public sealed class LocalGameClient
                 "The decision response was lost. The client will read the current table without repeating it.");
         }
 
-        return await RecoverCurrentViewAsync(capability, failure)
+        return await RecoverCurrentViewAsync(session, failure)
             .ConfigureAwait(false);
     }
 
@@ -345,21 +513,78 @@ public sealed class LocalGameClient
     private static ClientStartupResult Failed(string code, string message) =>
         new(Response: null, Error(code, message));
 
+    private static ClientEntryResult EntryFailed(ClientStartupError error) =>
+        new(Session: null, Response: null, Invitations: [], error);
+
+    private static ClientEntryResult EntryResponse(
+        EngineResponse response,
+        string requestId,
+        string gameId,
+        bool allowWaiting)
+    {
+        ClientStartupError? envelope = EnvelopeError(response, requestId, gameId);
+        if (envelope is not null)
+        {
+            return EntryFailed(envelope);
+        }
+
+        if (response.Error is not null)
+        {
+            if (!Complete(response.Error))
+            {
+                return EntryFailed(Error(
+                    "invalid_response",
+                    "The game service returned an incomplete error."));
+            }
+
+            if (requestId == AttachRequestId)
+            {
+                return EntryFailed(response.Error.Code == "session_not_found"
+                    ? Error(
+                    "invitation_unavailable",
+                    "That seat invitation is unavailable. Ask the host for a new invitation.")
+                    : Error(
+                        "attach_failed",
+                        "The game service could not accept that seat invitation."));
+            }
+
+            return EntryFailed(Error(response.Error.Code, response.Error.Message));
+        }
+
+        if (!HasCompleteGameplayResponse(response, allowWaiting)
+            || !allowWaiting && response.Prompt is null
+            || !ValidIdentifier(response.Capability)
+            || !CompleteInvitations(response.Invitations)
+            || allowWaiting && response.Invitations is { Count: > 0 })
+        {
+            return EntryFailed(Error(
+                "invalid_response",
+                "The engine did not return a complete initial game view."));
+        }
+
+        IReadOnlyList<SeatInvitation> invitations = response.Invitations ?? [];
+        return new ClientEntryResult(
+            new ClientSession(gameId, response.Capability!),
+            Sanitize(response),
+            invitations,
+            Error: null);
+    }
+
     private async ValueTask<ClientResolutionResult> RecoverCurrentViewAsync(
-        string capability,
+        ClientSession session,
         ClientStartupError failure)
     {
         try
         {
             EngineResponse synchronized = await transport.ExchangeAsync(
                 EngineRequest.SyncGame(
-                    RecoverRequestId, LocalGameSession.GameId, capability),
+                    RecoverRequestId, session.GameId, session.Capability),
                 CancellationToken.None).ConfigureAwait(false);
             return EnvelopeError(
-                    synchronized, RecoverRequestId, LocalGameSession.GameId) is null
+                    synchronized, RecoverRequestId, session.GameId) is null
                 && synchronized.Error is null
-                && HasCompleteGameplayResponse(synchronized)
-                ? new ClientResolutionResult(synchronized, failure)
+                && HasCompleteGameplayResponse(synchronized, allowWaiting: true)
+                ? new ClientResolutionResult(Sanitize(synchronized), failure)
                 : new ClientResolutionResult(Response: null, failure);
         }
         catch (Exception)
@@ -370,6 +595,51 @@ public sealed class LocalGameClient
 
     private static ClientStartupError Error(string code, string message) =>
         new(Bounded(code), Bounded(message));
+
+    private static ClientStartupError? IdentifierError(
+        string? value,
+        string code,
+        string message) =>
+        !ValidIdentifier(value)
+            ? Error(code, message)
+            : null;
+
+    private static bool ValidIdentifier(string? value) =>
+        !string.IsNullOrWhiteSpace(value)
+        && value.Length <= EngineProtocol.MaximumIdentifierLength;
+
+    private static ClientStartupError? SessionError(ClientSession session) =>
+        IdentifierError(
+            session.GameId,
+            "invalid_session",
+            "The saved game session is incomplete.")
+        ?? IdentifierError(
+            session.Capability,
+            "invalid_session",
+            "The saved game session is incomplete.");
+
+    private static EngineResponse Sanitize(EngineResponse response) =>
+        response with { Capability = null, Invitations = null };
+
+    private static bool ValidHeroSelection(
+        SetupChoices available,
+        IReadOnlyList<string>? heroKeys) =>
+        heroKeys is { Count: 1 or 2 }
+        && heroKeys.All(key =>
+            !string.IsNullOrWhiteSpace(key)
+            && available.Heroes.Any(hero => hero.Key == key))
+        && heroKeys.Distinct(StringComparer.Ordinal).Count() == heroKeys.Count;
+
+    private static bool CompleteInvitations(IReadOnlyList<SeatInvitation>? invitations) =>
+        invitations is null
+        || invitations.All(invitation =>
+            invitation is not null
+            && invitation.Seat >= 0
+            && ValidIdentifier(invitation.Invitation))
+        && invitations.Select(invitation => invitation.Seat).Distinct().Count()
+            == invitations.Count
+        && invitations.Select(invitation => invitation.Invitation)
+            .Distinct(StringComparer.Ordinal).Count() == invitations.Count;
 
     private static ClientStartupError? EnvelopeError(
         EngineResponse response,
@@ -409,12 +679,14 @@ public sealed class LocalGameClient
                     && card.Face.Subtitle is not null
                     && card.Face.Fields is not null)));
 
-    private static bool HasCompleteGameplayResponse(EngineResponse response) =>
+    private static bool HasCompleteGameplayResponse(
+        EngineResponse response,
+        bool allowWaiting = false) =>
         HasCompleteEvents(response.Events)
         && HasCompleteBoard(response.World)
         && Enum.IsDefined(response.World!.Outcome)
         && (response.World.Outcome == Outcome.Unfinished
-            ? HasCompletePrompt(response.Prompt)
+            ? (allowWaiting && response.Prompt is null) || HasCompletePrompt(response.Prompt)
             : response.Prompt is null);
 
     private static bool HasCompleteEvents(IReadOnlyList<GameEvent>? events) =>

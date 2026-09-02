@@ -33,6 +33,20 @@ public sealed class GameProgressPresentationTests
     }
 
     [Fact]
+    public void AnUnfinishedGameWithoutALocalPromptWaitsForAnotherPlayer()
+    {
+        GameProgressPresentation waiting = GameProgressPresentation.FromResponse(
+            Response(Outcome.Unfinished, hasPrompt: false));
+
+        Assert.Equal(GameProgressKind.WaitingForOtherPlayer, waiting.Kind);
+        Assert.Equal("Waiting for another player.", waiting.Title);
+        Assert.Contains("GAME IN PROGRESS", waiting.Status);
+        Assert.Contains("WAITING FOR ANOTHER PLAYER", waiting.Status);
+        Assert.DoesNotContain("GAME COMPLETE", waiting.Status);
+        Assert.True(waiting.LocksDecisions);
+    }
+
+    [Fact]
     public void RecoveredAndUnconfirmedErrorsHaveDifferentInputPolicies()
     {
         var error = new ClientStartupError("stale_decision", "The prompt changed.");
@@ -64,9 +78,23 @@ public sealed class GameProgressPresentationTests
         Assert.Contains("recovered", recovered.Description, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static EngineResponse Response(Outcome outcome)
+    [Fact]
+    public void ARecoveredWaitingTableRemainsAnUnfinishedLockedTable()
     {
-        Prompt? prompt = outcome == Outcome.Unfinished
+        GameProgressPresentation recovered = GameProgressPresentation.Recovered(
+            Response(Outcome.Unfinished, hasPrompt: false),
+            new ClientStartupError("transport_unavailable", "The response was lost."));
+
+        Assert.Equal(GameProgressKind.WaitingForOtherPlayer, recovered.Kind);
+        Assert.Contains("recovered", recovered.Description, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("final table", recovered.Description, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("GAME COMPLETE", recovered.Status);
+        Assert.True(recovered.LocksDecisions);
+    }
+
+    private static EngineResponse Response(Outcome outcome, bool hasPrompt = true)
+    {
+        Prompt? prompt = outcome == Outcome.Unfinished && hasPrompt
             ? new Prompt(
                 0,
                 Question.TurnOption,

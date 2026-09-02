@@ -33,13 +33,24 @@ $GodotBin = "C:\Tools\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_wi
 & $GodotBin --path src/Marvel.Godot
 ```
 
-The first screen should offer the committed Core assignments. Spider-Man,
-standard Rhino, the recommended modular set and any unsigned 32-bit seed open a
-local game. All subsequent decisions are made in the right-hand decision rail;
-no console or debug action is part of play.
+The first screen has separate Start and Join flows. Start offers the committed
+Core assignments, an explicit game label and one or 2 distinct heroes in seat
+order. Spider-Man, standard Rhino, the recommended modular set and any unsigned
+32-bit seed open a local game. All subsequent decisions are made in the
+right-hand decision rail; no console or debug action is part of play.
 
-The embedded engine is the default. To use an already-running standalone engine
-on a trusted private network, set one explicit TCP endpoint before launch:
+Leave the endpoint blank to start against the embedded engine. Enter a trusted
+private-network endpoint to host through a standalone engine. A 2-hero game on
+a restricted server provides one copy action for the second seat's invitation.
+The client never displays or logs that bearer secret. It removes the in-memory
+copy after placing the secret on the system clipboard.
+
+Changing the endpoint invalidates the displayed setup catalog. Choose Reload
+setup options to read the assignments from the new service before starting.
+
+The embedded engine is the default. To prefill an already-running standalone
+engine on a trusted private network, set one explicit TCP endpoint before
+launch:
 
 ```bash
 MARVEL_ENGINE_ENDPOINT=tcp://127.0.0.1:41923 "$GODOT_BIN" --path src/Marvel.Godot
@@ -56,6 +67,12 @@ path, query or fragment. Invalid configuration is reported as
 `transport_unavailable`. The socket protocol and its bearer capabilities are
 plaintext, so this option is for development and trusted private networks, not
 for exposure to the Internet.
+
+Join requires the server endpoint, the host's game label and a one-time seat
+invitation. The invitation field is masked and cleared before the attach request
+is sent. A used, expired or unknown invitation is not retried; ask the host for
+a new one. While another seat owns the current decision, the joined client
+renders the table as an in-progress waiting view.
 
 See the [standalone server guide](server.md) for launch options, restricted-seat
 configuration, Docker commands and shutdown behavior.

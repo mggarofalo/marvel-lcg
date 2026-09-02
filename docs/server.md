@@ -58,6 +58,13 @@ the other seats. Redeeming an invitation creates a separate capability that can
 see and answer only for its assigned seat. The opening capability remains bound
 to seat 0.
 
+In the Godot client, choose Start, enter this server's endpoint and select a
+second hero. After the game opens, use Copy invitation once and send the copied
+secret to the second player through a trusted channel. That player chooses Join
+and enters the same endpoint and game label. The client masks and clears the
+invitation before redeeming it. It never shows the secret in status or error
+text.
+
 The server rejects unknown options, missing values, invalid IP addresses,
 out-of-range ports and invalid visibility combinations before listening. It
 also loads and validates the required datasets before opening the socket. A
