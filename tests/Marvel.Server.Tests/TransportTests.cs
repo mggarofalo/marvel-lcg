@@ -611,7 +611,7 @@ public sealed class TransportTests
             server,
             EngineRequest.ResolveGame(
                 "steal-one", "shared", opened.Capability!, EngineDecision.Decline));
-        Assert.Equal("not_your_turn", forbidden.Error?.Code);
+        Assert.Equal("stale_decision", forbidden.Error?.Code);
 
         EngineResponse forOne = await ExchangeOverSocket(
             server, EngineRequest.SyncGame("sync-one", "shared", attached.Capability!));

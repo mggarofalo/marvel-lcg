@@ -1,7 +1,9 @@
 using Marvel.Tests;
+using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 using Marvel.View;
 using Xunit;
 
@@ -476,6 +478,56 @@ public sealed class EngineHostTests
     }
 
     [Fact]
+    public void ACompetingOffTurnActionIsStaleEvenWhenTheWinningCommandRemovesIt()
+    {
+        var factory = new VanishingOffTurnActionFactory(
+            DatasetGameFactory.Load(RepositoryPaths.Root));
+        var host = new EngineHost(
+            factory,
+            new SequenceCapabilities("seat-zero", "invite-one", "seat-one"),
+            new RestrictedVisibilityPolicy(0));
+        var specification = new GameSpecification(
+            "rhino", ["captain_marvel", "spider_man"], [], Seed: 7);
+        EngineResponse opened = host.Exchange(EngineRequest.OpenGame(
+            "open", "race", specification));
+        EngineResponse attached = host.Exchange(EngineRequest.AttachGame(
+            "attach", "race", Assert.Single(opened.Invitations!).Invitation));
+        _ = host.Exchange(EngineRequest.ResolveGame(
+            "zero-mulligan", "race", RequiredCapability(opened), TakeOnly(opened)));
+        EngineResponse oneMulligan = host.Exchange(EngineRequest.SyncGame(
+            "one-mulligan-menu", "race", RequiredCapability(attached)));
+        _ = host.Exchange(EngineRequest.ResolveGame(
+            "one-mulligan", "race", RequiredCapability(attached),
+            TakeOnly(oneMulligan), oneMulligan.Revision));
+
+        EngineResponse active = host.Exchange(EngineRequest.SyncGame(
+            "active", "race", RequiredCapability(opened)));
+        EngineResponse offTurn = host.Exchange(EngineRequest.SyncGame(
+            "off-turn", "race", RequiredCapability(attached)));
+        Affordance healing = Assert.Single(
+            active.Prompt!.Affordances,
+            option => option.AnchorId == factory.ActiveSource.ObjectId);
+        Affordance disappearing = Assert.Single(
+            offTurn.Prompt!.Affordances,
+            option => option.AnchorId == factory.OffTurnSource.ObjectId);
+        Assert.Equal(active.Revision, offTurn.Revision);
+
+        EngineResponse won = host.Exchange(EngineRequest.ResolveGame(
+            "winner", "race", RequiredCapability(opened),
+            new EngineDecision(healing.Id, []), active.Revision));
+        EngineResponse lost = host.Exchange(EngineRequest.ResolveGame(
+            "loser", "race", RequiredCapability(attached),
+            new EngineDecision(disappearing.Id, []), offTurn.Revision));
+
+        Assert.Null(won.Error);
+        Assert.Equal(0, factory.Game.State.Seats[1].IdentityCard.Damage);
+        Assert.Equal("stale_decision", lost.Error?.Code);
+        EngineResponse current = host.Exchange(EngineRequest.SyncGame(
+            "current", "race", RequiredCapability(attached)));
+        Assert.Equal(won.Revision, current.Revision);
+    }
+
+    [Fact]
     public void FileReadingAndCheatOperationsHaveNoServedSurface()
     {
         var factory = new UnusedFactory();
@@ -553,6 +605,78 @@ public sealed class EngineHostTests
                     cardOwner: 1));
             world.Seats[1].IdentityCard.TakeDamage(5);
             return opened;
+        }
+    }
+
+    private sealed class VanishingOffTurnActionFactory(IGameFactory inner) : IGameFactory
+    {
+        public Card ActiveSource { get; private set; } = null!;
+
+        public Card OffTurnSource { get; private set; } = null!;
+
+        public Game Game { get; private set; } = null!;
+
+        public OpenedGame Create(GameSpecification specification)
+        {
+            OpenedGame opened = inner.Create(specification);
+            World world = opened.Game.State;
+            ActiveSource = world.CreateCard(
+                "01006",
+                world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+            OffTurnSource = world.CreateCard(
+                "01006",
+                world.AreaOf(DeckType.SupportsArea, PlayArea.Of(1), cardOwner: 1));
+            world.Seats[1].IdentityCard.TakeDamage(1);
+            Game = Game.Begin(
+                world,
+                world.Facts,
+                new CrossSeatHealingActions(ActiveSource, OffTurnSource));
+            return opened with { Game = Game };
+        }
+    }
+
+    private sealed class CrossSeatHealingActions(Card active, Card offTurn)
+        : NoCardAbilities
+    {
+        public override IReadOnlyList<PendingAbility> Actions(World world, int player) =>
+            player switch
+            {
+                0 => [new PendingAbility(active.ObjectId, AbilityType.Action, player)],
+                1 when world.Seats[1].IdentityCard.Damage > 0 =>
+                    [new PendingAbility(offTurn.ObjectId, AbilityType.Action, player)],
+                _ => [],
+            };
+
+        public override Affordance Describe(World world, PendingAbility ability) =>
+            new(
+                ability.Card,
+                Game.ActionVerb,
+                ability.Card,
+                ability.Player,
+                ability.Player == 0 ? "Heal player 2" : "Use player 2 action");
+
+        public override IReadOnlyList<GameEvent> Act(
+            World world,
+            PendingAbility ability,
+            IReadOnlyList<int> paying,
+            IReadOnlyList<int> chosen,
+            IReadOnlyDictionary<string, long>? values = null,
+            IReadOnlyList<ResourceAllocation>? allocations = null)
+        {
+            var events = new List<GameEvent>();
+            if (ability.Player == 0)
+            {
+                Damage.Heal(
+                    world,
+                    world.Facts,
+                    world.Seats[1].IdentityCard,
+                    amount: 1,
+                    trigger: "test",
+                    verb: Game.ActionVerb,
+                    events);
+            }
+
+            return events;
         }
     }
 

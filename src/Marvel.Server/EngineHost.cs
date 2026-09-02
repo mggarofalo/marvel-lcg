@@ -391,28 +391,20 @@ public sealed class EngineHost : IEngineEndpoint
             return Failed(request, "invalid_request", "decision.targets is required");
         }
 
+        if (request.ExpectedRevision != access.Session.Revision)
+        {
+            return Failed(
+                request,
+                "stale_decision",
+                "the decision was composed for an earlier table revision");
+        }
+
         Decision decision = request.Decision.ToDomain();
         Affordance? selected = decision.IsDecline
             ? null
             : pending.Affordances.SingleOrDefault(option => option.Id == decision.Affordance);
         if (!decision.IsDecline && selected is null)
         {
-            if (!access.Scope.Includes(pending.Player))
-            {
-                return Failed(
-                    request,
-                    "not_your_turn",
-                    "this capability cannot submit that decision");
-            }
-
-            if (request.ExpectedRevision != access.Session.Revision)
-            {
-                return Failed(
-                    request,
-                    "stale_decision",
-                    "the decision was composed for an earlier table revision");
-            }
-
             return Failed(request, "invalid_decision", "the selected affordance is not pending");
         }
 
@@ -423,14 +415,6 @@ public sealed class EngineHost : IEngineEndpoint
         if (!access.Scope.Includes(actor))
         {
             return Failed(request, "not_your_turn", "this capability cannot submit that decision");
-        }
-
-        if (request.ExpectedRevision != access.Session.Revision)
-        {
-            return Failed(
-                request,
-                "stale_decision",
-                "the decision was composed for an earlier table revision");
         }
 
         Prompt? authorized = access.Session.Game.PromptFor(actor);
