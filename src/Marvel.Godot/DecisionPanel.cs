@@ -44,7 +44,7 @@ public sealed partial class DecisionPanel : VBoxContainer
     {
         Control? focused = GetViewport()?.GuiGetFocusOwner();
         string? focusName = focused is not null && IsAncestorOf(focused)
-            ? focused.Name.ToString()
+            ? FocusKey(focused)
             : null;
         foreach (Node child in GetChildren())
         {
@@ -604,7 +604,7 @@ public sealed partial class DecisionPanel : VBoxContainer
 
     private void RestoreFocus(string? requested, bool focusFirst)
     {
-        Control? candidate = EnabledButton(requested);
+        Control? candidate = EnabledControl(requested);
         if (candidate is null && requested is not null)
         {
             string? paired = requested.EndsWith("Add", StringComparison.Ordinal)
@@ -623,6 +623,49 @@ public sealed partial class DecisionPanel : VBoxContainer
         }
 
         candidate?.GrabFocus();
+    }
+
+    private string? FocusKey(Control focused)
+    {
+        Node? current = focused;
+        while (current is not null && current != this)
+        {
+            string name = current.Name.ToString();
+            if (IsStableFocusName(name))
+            {
+                return name;
+            }
+
+            current = current.GetParent();
+        }
+
+        return null;
+    }
+
+    private static bool IsStableFocusName(string name) =>
+        name is "Submit" or "Decline"
+        || name.StartsWith("Affordance", StringComparison.Ordinal)
+        || name.StartsWith("Group", StringComparison.Ordinal)
+        || name.StartsWith("Target", StringComparison.Ordinal)
+        || name.StartsWith("Cost", StringComparison.Ordinal)
+        || name.StartsWith("Variable", StringComparison.Ordinal)
+        || name.StartsWith("Resource", StringComparison.Ordinal)
+        || name.StartsWith("Allocation", StringComparison.Ordinal);
+
+    private Control? EnabledControl(string? name)
+    {
+        if (string.IsNullOrEmpty(name))
+        {
+            return null;
+        }
+
+        return FindChild(name, recursive: true, owned: false) switch
+        {
+            BaseButton { Disabled: false } button => button,
+            SpinBox { Editable: true } spin => spin,
+            LineEdit { Editable: true } line => line,
+            _ => null,
+        };
     }
 
     private BaseButton? EnabledButton(string? name)
