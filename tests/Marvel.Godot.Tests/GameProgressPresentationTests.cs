@@ -67,6 +67,59 @@ public sealed class GameProgressPresentationTests
     }
 
     [Fact]
+    public void SynchronizingAndANotSentDecisionHaveDistinctInputPolicies()
+    {
+        var error = new ClientStartupError(
+            "transport_unavailable",
+            "The engine could not be reached.");
+
+        GameProgressPresentation synchronizing =
+            GameProgressPresentation.Synchronizing();
+        GameProgressPresentation notSent =
+            GameProgressPresentation.DecisionNotSent(error);
+
+        Assert.Equal(GameProgressKind.Synchronizing, synchronizing.Kind);
+        Assert.True(synchronizing.LocksDecisions);
+        Assert.Contains("SYNCHRONIZING", synchronizing.Status);
+        Assert.Equal(GameProgressKind.DecisionNotSent, notSent.Kind);
+        Assert.False(notSent.LocksDecisions);
+        Assert.Contains("safe to retry", notSent.Description, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("RETRY SAFE", notSent.Status);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void AReadOnlySynchronizationFailurePreservesThePriorInputPolicy(bool locked)
+    {
+        GameProgressPresentation unavailable =
+            GameProgressPresentation.SynchronizationUnavailable(
+                new ClientStartupError(
+                    "transport_unavailable",
+                    "The current table could not be read."),
+                locked);
+
+        Assert.Equal(GameProgressKind.SynchronizationUnavailable, unavailable.Kind);
+        Assert.Equal(locked, unavailable.LocksDecisions);
+        Assert.Contains("SYNC READ FAILED", unavailable.Status);
+        Assert.DoesNotContain("MUTATION", unavailable.Status);
+        Assert.DoesNotContain("mutation", unavailable.Description, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void ARejectedDecisionWithoutARecoveredTableIsLockedButNotUnconfirmed()
+    {
+        GameProgressPresentation rejected = GameProgressPresentation.DecisionRejected(
+            new ClientStartupError("stale_decision", "The prompt changed."));
+
+        Assert.Equal(GameProgressKind.DecisionRejected, rejected.Kind);
+        Assert.True(rejected.LocksDecisions);
+        Assert.Contains("DECISION REJECTED", rejected.Status);
+        Assert.Contains("SYNCHRONIZATION REQUIRED", rejected.Status);
+        Assert.DoesNotContain("MUTATION NOT REPEATED", rejected.Status);
+    }
+
+    [Fact]
     public void ARecoveredTerminalTableStillPresentsTheEnding()
     {
         GameProgressPresentation recovered = GameProgressPresentation.Recovered(

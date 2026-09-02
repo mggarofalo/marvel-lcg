@@ -61,12 +61,58 @@ public sealed record ClientStartupResult(
     public bool Succeeded => Response is not null && Error is null;
 }
 
+/// <summary>
+/// What the client can prove happened to one submitted mutation. These states
+/// are a client contract chosen by this project; the game rules do not define transport recovery.
+/// </summary>
+public enum ClientMutationDisposition
+{
+    /// <summary>The request did not reach the game service.</summary>
+    NotSent,
+
+    /// <summary>The game service accepted the decision.</summary>
+    Accepted,
+
+    /// <summary>The game service refused the decision without applying it.</summary>
+    Rejected,
+
+    /// <summary>The client cannot prove whether the decision was applied.</summary>
+    Uncertain,
+}
+
+/// <summary>Whether the bearer session can still be used.</summary>
+public enum ClientSessionDisposition
+{
+    /// <summary>The session remains available for requests.</summary>
+    Active,
+
+    /// <summary>The service has established that the session is unavailable.</summary>
+    Unavailable,
+}
+
 /// <summary>A resolved decision, optionally paired with a recovered current view.</summary>
 public sealed record ClientResolutionResult(
     EngineResponse? Response,
-    ClientStartupError? Error)
+    ClientStartupError? Error,
+    ClientMutationDisposition MutationDisposition = ClientMutationDisposition.Accepted,
+    ClientSessionDisposition SessionDisposition = ClientSessionDisposition.Active)
 {
     /// <summary>Whether the submitted decision was accepted.</summary>
+    public bool Succeeded => MutationDisposition == ClientMutationDisposition.Accepted
+        && Response is not null
+        && Error is null;
+
+    /// <summary>Whether an authoritative view is available for rendering.</summary>
+    public bool HasAuthoritativeView => Response is not null;
+}
+
+/// <summary>The result of reading the current authoritative session view.</summary>
+public sealed record ClientSynchronizationResult(
+    EngineResponse? Response,
+    ClientStartupError? Error,
+    ClientSessionDisposition SessionDisposition)
+{
+    /// <summary>Whether a complete current view was returned.</summary>
     public bool Succeeded => Response is not null && Error is null;
 
     /// <summary>Whether an authoritative view is available for rendering.</summary>
@@ -115,6 +161,7 @@ public sealed class LocalGameClient
     private const string RecoverRequestId = "local-recover";
     private const string ResolveRequestId = "local-resolve";
     private const string SetupRequestId = "local-setup";
+    private const string SynchronizeRequestId = "local-sync";
     private readonly IEngineTransport transport;
 
     /// <summary>Creates an app client over an embedded or remote transport.</summary>
@@ -455,11 +502,16 @@ public sealed class LocalGameClient
         ClientStartupError? sessionFailure = SessionError(session);
         if (sessionFailure is not null)
         {
-            return new ClientResolutionResult(Response: null, sessionFailure);
+            return new ClientResolutionResult(
+                Response: null,
+                sessionFailure,
+                ClientMutationDisposition.NotSent,
+                ClientSessionDisposition.Unavailable);
         }
 
         cancellationToken.ThrowIfCancellationRequested();
         ClientStartupError? failure = null;
+        ClientMutationDisposition mutation = ClientMutationDisposition.Uncertain;
         try
         {
             EngineResponse response = await transport.ExchangeAsync(
@@ -476,7 +528,11 @@ public sealed class LocalGameClient
             {
                 if (HasCompleteGameplayResponse(response, allowWaiting: true))
                 {
-                    return new ClientResolutionResult(Sanitize(response), Error: null);
+                    return new ClientResolutionResult(
+                        Sanitize(response),
+                        Error: null,
+                        ClientMutationDisposition.Accepted,
+                        ClientSessionDisposition.Active);
                 }
 
                 failure = Error(
@@ -485,16 +541,41 @@ public sealed class LocalGameClient
             }
             else
             {
-                failure = Complete(response.Error)
-                    ? Error(response.Error.Code, response.Error.Message)
-                    : Error(
+                if (!Complete(response.Error))
+                {
+                    failure = Error(
                         "invalid_response",
                         "The game service returned an incomplete error.");
+                }
+                else if (response.Error.Code == "session_not_found")
+                {
+                    return UnavailableResolution(ClientMutationDisposition.Rejected);
+                }
+                else if (response.Error.Code == "game_aborted")
+                {
+                    return UnavailableResolution(ClientMutationDisposition.Uncertain);
+                }
+                else
+                {
+                    mutation = ClientMutationDisposition.Rejected;
+                    failure = Error(response.Error.Code, response.Error.Message);
+                }
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             throw;
+        }
+        catch (EngineTransportException failureBeforeResponse)
+            when (!failureBeforeResponse.RequestMayHaveCommitted)
+        {
+            return new ClientResolutionResult(
+                Response: null,
+                Error(
+                    "transport_unavailable",
+                    "The decision was not sent. Try it again when the game service is available."),
+                ClientMutationDisposition.NotSent,
+                ClientSessionDisposition.Active);
         }
         catch (Exception)
         {
@@ -503,8 +584,70 @@ public sealed class LocalGameClient
                 "The decision response was lost. The client will read the current table without repeating it.");
         }
 
-        return await RecoverCurrentViewAsync(session, failure)
+        return await RecoverCurrentViewAsync(session, failure, mutation)
             .ConfigureAwait(false);
+    }
+
+    /// <summary>Reads one complete current view without mutating game state.</summary>
+    public async ValueTask<ClientSynchronizationResult> SynchronizeAsync(
+        ClientSession session,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(session);
+        if (SessionError(session) is not null)
+        {
+            return UnavailableSynchronization();
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        try
+        {
+            EngineResponse response = await transport.ExchangeAsync(
+                EngineRequest.SyncGame(
+                    SynchronizeRequestId, session.GameId, session.Capability),
+                cancellationToken).ConfigureAwait(false);
+            ClientStartupError? envelope = EnvelopeError(
+                response, SynchronizeRequestId, session.GameId);
+            if (envelope is not null)
+            {
+                return new ClientSynchronizationResult(
+                    Response: null, envelope, ClientSessionDisposition.Active);
+            }
+
+            if (response.Error is not null)
+            {
+                if (!Complete(response.Error))
+                {
+                    return SynchronizationFailed(
+                        "invalid_response",
+                        "The game service returned an incomplete error.");
+                }
+
+                return response.Error.Code is "session_not_found" or "game_aborted"
+                    ? UnavailableSynchronization()
+                    : new ClientSynchronizationResult(
+                        Response: null,
+                        Error(response.Error.Code, response.Error.Message),
+                        ClientSessionDisposition.Active);
+            }
+
+            return HasCompleteSynchronizationResponse(response)
+                ? new ClientSynchronizationResult(
+                    Sanitize(response), Error: null, ClientSessionDisposition.Active)
+                : SynchronizationFailed(
+                    "invalid_response",
+                    "The game service did not return a complete current table.");
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            return SynchronizationFailed(
+                "transport_unavailable",
+                "The current table could not be read. Try reconnecting again.");
+        }
     }
 
     private static ClientSetupResult SetupFailed(string code, string message) =>
@@ -572,7 +715,8 @@ public sealed class LocalGameClient
 
     private async ValueTask<ClientResolutionResult> RecoverCurrentViewAsync(
         ClientSession session,
-        ClientStartupError failure)
+        ClientStartupError failure,
+        ClientMutationDisposition mutation)
     {
         try
         {
@@ -580,18 +724,57 @@ public sealed class LocalGameClient
                 EngineRequest.SyncGame(
                     RecoverRequestId, session.GameId, session.Capability),
                 CancellationToken.None).ConfigureAwait(false);
-            return EnvelopeError(
-                    synchronized, RecoverRequestId, session.GameId) is null
-                && synchronized.Error is null
-                && HasCompleteGameplayResponse(synchronized, allowWaiting: true)
-                ? new ClientResolutionResult(Sanitize(synchronized), failure)
-                : new ClientResolutionResult(Response: null, failure);
+            ClientStartupError? envelope = EnvelopeError(
+                synchronized, RecoverRequestId, session.GameId);
+            if (envelope is not null)
+            {
+                return new ClientResolutionResult(
+                    Response: null, failure, mutation, ClientSessionDisposition.Active);
+            }
+
+            if (synchronized.Error is { } syncError
+                && Complete(syncError)
+                && syncError.Code is "session_not_found" or "game_aborted")
+            {
+                return UnavailableResolution(mutation);
+            }
+
+            return synchronized.Error is null
+                && HasCompleteSynchronizationResponse(synchronized)
+                ? new ClientResolutionResult(
+                    Sanitize(synchronized), failure, mutation, ClientSessionDisposition.Active)
+                : new ClientResolutionResult(
+                    Response: null, failure, mutation, ClientSessionDisposition.Active);
         }
         catch (Exception)
         {
-            return new ClientResolutionResult(Response: null, failure);
+            return new ClientResolutionResult(
+                Response: null, failure, mutation, ClientSessionDisposition.Active);
         }
     }
+
+    private static ClientResolutionResult UnavailableResolution(
+        ClientMutationDisposition mutation) =>
+        new(
+            Response: null,
+            Error(
+                "session_unavailable",
+                "This game session is unavailable. Return to the connection screen."),
+            mutation,
+            ClientSessionDisposition.Unavailable);
+
+    private static ClientSynchronizationResult UnavailableSynchronization() =>
+        new(
+            Response: null,
+            Error(
+                "session_unavailable",
+                "This game session is unavailable. Return to the connection screen."),
+            ClientSessionDisposition.Unavailable);
+
+    private static ClientSynchronizationResult SynchronizationFailed(
+        string code,
+        string message) =>
+        new(Response: null, Error(code, message), ClientSessionDisposition.Active);
 
     private static ClientStartupError Error(string code, string message) =>
         new(Bounded(code), Bounded(message));
@@ -688,6 +871,10 @@ public sealed class LocalGameClient
         && (response.World.Outcome == Outcome.Unfinished
             ? (allowWaiting && response.Prompt is null) || HasCompletePrompt(response.Prompt)
             : response.Prompt is null);
+
+    private static bool HasCompleteSynchronizationResponse(EngineResponse response) =>
+        response.Events is { Count: 0 }
+        && HasCompleteGameplayResponse(response, allowWaiting: true);
 
     private static bool HasCompleteEvents(IReadOnlyList<GameEvent>? events) =>
         events is not null && events.All(happened =>

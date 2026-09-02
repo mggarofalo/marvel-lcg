@@ -150,6 +150,14 @@ Once a complete mutation request has been sent, cancelling the response read
 cannot imply that the mutation was rolled back. The client must consume the
 authoritative response unless a future protocol adds idempotent retries.
 
+The socket transport reports whether request transmission began. Only a failure
+before writing begins is safe to retry. Once writing begins the result is
+uncertain, even if the client did not observe the write completing, so the
+client never repeats the decision. It issues one read-only
+`sync` request instead. A sync response replaces the current descriptor and
+prompt, carries an empty event boundary and never replays the event chronology.
+An invalid, expired or closed capability returns the client to connection setup.
+
 The response types are stable wire records. Adding a new affordance, event or
 descriptor variant requires a protocol-version decision because older clients
 cannot infer an unknown union member.

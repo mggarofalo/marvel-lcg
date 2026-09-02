@@ -369,6 +369,13 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_type_variation = &"Stack"
 
+[node name="Synchronize" type="Button" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+disabled = true
+text = "Synchronize table"
+tooltip_text = "Request the current authoritative table without repeating a decision."
+
 [node name="InvitationOffer" type="PanelContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
 visible = false
 layout_mode = 2

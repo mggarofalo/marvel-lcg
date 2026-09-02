@@ -45,6 +45,7 @@ public sealed partial class Main : Control
     private Button joinFlow = null!;
     private LocalGameClient? client;
     private ClientSession? session;
+    private GameProgressPresentation? currentProgress;
     private OptionButton mode = null!;
     private OptionButton modular = null!;
     private ScrollContainer pageScroll = null!;
@@ -67,12 +68,16 @@ public sealed partial class Main : Control
     private Button startFlow = null!;
     private Label status = null!;
     private PanelContainer statusPanel = null!;
+    private Button synchronize = null!;
     private Label title = null!;
     private string? transientInvitation;
     private bool decisionPending;
+    private bool resolveInFlight;
     private bool joining;
     private int setupLoadGeneration;
     private bool setupLoading;
+    private bool synchronizing;
+    private ClientStartupError? uncertainMutationError;
 
     /// <summary>The latest complete visibility-safe response accepted as authoritative.</summary>
     public EngineResponse? CurrentGame { get; private set; }
@@ -113,6 +118,7 @@ public sealed partial class Main : Control
         start.Pressed += OnStartPressed;
         join.Pressed += OnJoinPressed;
         invitationCopy.Pressed += CopyInvitation;
+        synchronize.Pressed += OnSynchronizePressed;
         reloadSetup.Pressed += () => _ = LoadSetupAsync();
         endpoint.Text = OS.GetEnvironment("MARVEL_ENGINE_ENDPOINT");
         _ = LoadSetupAsync();
@@ -135,6 +141,7 @@ public sealed partial class Main : Control
         foreach (Control control in new Control[]
                  {
                      startFlow, joinFlow, reloadSetup, start, join, invitationCopy,
+                     synchronize,
                  })
         {
             control.CustomMinimumSize = new Vector2(
@@ -226,6 +233,8 @@ public sealed partial class Main : Control
             $"{content}/Play/Prompt/Margin/Stack/InvitationOffer");
         invitationCopy = GetNode<Button>(
             $"{content}/Play/Prompt/Margin/Stack/InvitationOffer/Margin/Row/CopyInvitation");
+        synchronize = GetNode<Button>(
+            $"{content}/Play/Prompt/Margin/Stack/Synchronize");
         briefingScenario = GetNode<Label>(
             $"{content}/Setup/Briefing/Frame/Copy/Scenario");
         briefingMode = GetNode<Label>($"{content}/Setup/Briefing/Frame/Copy/Mode");
@@ -632,18 +641,18 @@ public sealed partial class Main : Control
 
     private async void OnDecisionSubmitted(EngineDecision decision)
     {
-        if (decisionPending)
+        if (decisionPending || resolveInFlight)
         {
             return;
         }
 
-        decisionPending = true;
+        resolveInFlight = true;
+        RefreshSynchronizeAvailability();
         try
         {
-            decisions.SetSubmitting(true);
+            ApplyProgress(GameProgressPresentation.Resolving());
             promptProgress.Text = "RESOLVING  ·  WAITING FOR ENGINE";
             promptProgress.ThemeTypeVariation = GodotThemeVariations.StatusText;
-            ApplyProgress(GameProgressPresentation.Resolving());
             ClientResolutionResult result = await client!.ResolveAsync(
                 session!, decision);
             if (!IsInsideTree())
@@ -651,45 +660,195 @@ public sealed partial class Main : Control
                 return;
             }
 
+            if (result.SessionDisposition == ClientSessionDisposition.Unavailable)
+            {
+                ReturnToJoinAfterSessionLoss(result.Error ?? new ClientStartupError(
+                    "session_unavailable",
+                    "This table session is no longer available. Join again with a new invitation."));
+                return;
+            }
+
+            if (result.MutationDisposition == ClientMutationDisposition.NotSent)
+            {
+                decisionPending = false;
+                uncertainMutationError = null;
+                ApplyProgress(GameProgressPresentation.DecisionNotSent(
+                    result.Error ?? new ClientStartupError(
+                        "decision_not_sent",
+                        "The decision did not reach the game service.")));
+                promptProgress.Text = "NOT SENT  ·  RETRY SAFE";
+                promptProgress.ThemeTypeVariation = GodotThemeVariations.StatusText;
+                return;
+            }
+
             if (result.HasAuthoritativeView)
             {
                 RenderGame(result.Response!);
                 decisionPending = false;
-            }
-
-            if (result.Error is not null)
-            {
-                if (result.HasAuthoritativeView)
+                uncertainMutationError = null;
+                if (result.Error is not null)
                 {
                     ApplyProgress(GameProgressPresentation.Recovered(
                         result.Response!, result.Error));
                 }
-                else
-                {
-                    ShowUnconfirmed(result.Error);
-                }
+                return;
+            }
+
+            ClientStartupError failure = result.Error ?? new ClientStartupError(
+                "decision_unresolved",
+                "The decision result could not be reconciled with the current table.");
+            if (result.MutationDisposition == ClientMutationDisposition.Rejected)
+            {
+                decisionPending = false;
+                uncertainMutationError = null;
+                ApplyProgress(GameProgressPresentation.DecisionRejected(failure));
+                promptProgress.Text = "REJECTED  ·  SYNCHRONIZE TABLE";
+                promptProgress.ThemeTypeVariation = GodotThemeVariations.DangerText;
+                synchronize.Text = "Synchronize table";
+            }
+            else
+            {
+                decisionPending = true;
+                uncertainMutationError = failure;
+                ShowUnconfirmed(failure);
             }
         }
         catch (Exception)
         {
             if (IsInsideTree())
             {
-                ShowUnconfirmed(new ClientStartupError(
+                decisionPending = true;
+                uncertainMutationError = new ClientStartupError(
                     "display_failed",
-                    "The decision result could not be displayed."));
+                    "The decision result could not be displayed.");
+                ShowUnconfirmed(uncertainMutationError);
+            }
+        }
+        finally
+        {
+            resolveInFlight = false;
+            if (IsInsideTree())
+            {
+                RefreshSynchronizeAvailability();
             }
         }
     }
 
     private void ShowUnconfirmed(ClientStartupError error)
     {
+        ApplyProgress(GameProgressPresentation.Unconfirmed(error));
         promptProgress.Text =
             $"UNCONFIRMED  ·  {error.Code.ToUpperInvariant()}  ·  RESTART OR RECONNECT";
         promptProgress.ThemeTypeVariation = GodotThemeVariations.DangerText;
-        ApplyProgress(GameProgressPresentation.Unconfirmed(error));
+        synchronize.Text = "Reconnect table";
     }
 
-    private void RenderGame(EngineResponse response, bool resetEvents = false)
+    private async void OnSynchronizePressed()
+    {
+        if (synchronizing || resolveInFlight || client is null || session is null)
+        {
+            return;
+        }
+
+        GameProgressPresentation prior = currentProgress
+            ?? GameProgressPresentation.FromResponse(CurrentGame!);
+        bool hadUncertainMutation = decisionPending;
+        synchronizing = true;
+        RefreshSynchronizeAvailability();
+        ApplyProgress(GameProgressPresentation.Synchronizing());
+        try
+        {
+            ClientSynchronizationResult result = await client.SynchronizeAsync(session);
+            if (!IsInsideTree())
+            {
+                return;
+            }
+
+            if (result.Succeeded)
+            {
+                decisionPending = false;
+                uncertainMutationError = null;
+                RenderGame(result.Response!, preserveEvents: true);
+                synchronize.Text = "Synchronize table";
+            }
+            else if (result.SessionDisposition == ClientSessionDisposition.Unavailable)
+            {
+                ReturnToJoinAfterSessionLoss(result.Error!);
+            }
+            else
+            {
+                ApplySynchronizationFailure(
+                    result.Error!, prior, hadUncertainMutation);
+            }
+        }
+        catch (Exception)
+        {
+            if (IsInsideTree())
+            {
+                ApplySynchronizationFailure(new ClientStartupError(
+                    "synchronization_failed",
+                    "The current table could not be read. Try reconnecting again."),
+                    prior,
+                    hadUncertainMutation);
+            }
+        }
+        finally
+        {
+            synchronizing = false;
+            if (IsInsideTree())
+            {
+                RefreshSynchronizeAvailability();
+            }
+        }
+    }
+
+    private void ApplySynchronizationFailure(
+        ClientStartupError error,
+        GameProgressPresentation prior,
+        bool hadUncertainMutation)
+    {
+        if (hadUncertainMutation)
+        {
+            decisionPending = true;
+            ShowUnconfirmed(uncertainMutationError ?? error);
+        }
+        else
+        {
+            ApplyProgress(GameProgressPresentation.SynchronizationUnavailable(
+                error,
+                prior.LocksDecisions));
+        }
+        synchronize.Text = "Reconnect table";
+    }
+
+    private void ReturnToJoinAfterSessionLoss(ClientStartupError error)
+    {
+        session = null;
+        client = null;
+        CurrentGame = null;
+        transientInvitation = null;
+        invitation.Clear();
+        invitationOffer.Visible = false;
+        boardRender = null;
+        events.Reset([]);
+        RenderEvents();
+        boardAreas.GetChildren().ToList().ForEach(node => node.QueueFree());
+        board.Visible = false;
+        setupPanel.Visible = true;
+        decisionPending = false;
+        resolveInFlight = false;
+        uncertainMutationError = null;
+        synchronize.Text = "Synchronize table";
+        synchronize.Disabled = true;
+        SetSetupControlsEnabled(true);
+        ShowEntryMode(joinMode: true);
+        ShowFailure(error);
+    }
+
+    private void RenderGame(
+        EngineResponse response,
+        bool resetEvents = false,
+        bool preserveEvents = false)
     {
         Outcome previousOutcome = CurrentGame?.World?.Outcome ?? Outcome.Unfinished;
         CurrentGame = response;
@@ -697,21 +856,28 @@ public sealed partial class Main : Control
         boardRender = BoardRenderer.Render(boardAreas, BoardPresentation.From(world), art);
         RenderPromptSummary(response.Prompt, world);
         decisions.Render(response.Prompt, world);
-        EventBatchPresentation presented = EventCuePlanner.Plan(
-            response.Events, world, previousOutcome);
-
-        if (resetEvents)
+        if (!preserveEvents)
         {
-            events.Reset(presented.History);
-        }
-        else
-        {
-            events.Append(presented.History);
-        }
+            EventBatchPresentation presented = EventCuePlanner.Plan(
+                response.Events,
+                world,
+                previousOutcome);
+            if (resetEvents)
+            {
+                events.Reset(presented.History);
+            }
+            else
+            {
+                events.Append(presented.History);
+            }
 
-        RenderEvents();
+            RenderEvents();
+            PresentEvents(presented.Cues);
+        }
+        // A synchronized snapshot is authoritative but is not a new
+        // transition, so it does not alter the diagnostic chronology.
         ApplyProgress(GameProgressPresentation.FromResponse(response));
-        PresentEvents(presented.Cues);
+        RefreshSynchronizeAvailability();
         if (response.Prompt is null && world.Outcome != Outcome.Unfinished)
         {
             CallDeferred(MethodName.RevealOutcome);
@@ -902,11 +1068,14 @@ public sealed partial class Main : Control
 
     private void ApplyProgress(GameProgressPresentation progress)
     {
+        currentProgress = progress;
         title.Text = progress.Title;
         description.Text = progress.Description;
         status.Text = progress.Status;
         bool danger = progress.Kind is GameProgressKind.VillainWins
             or GameProgressKind.PlayersLose
+            or GameProgressKind.DecisionRejected
+            or GameProgressKind.SynchronizationUnavailable
             or GameProgressKind.Unconfirmed
             or GameProgressKind.Unavailable;
         statusPanel.ThemeTypeVariation = danger
@@ -915,7 +1084,11 @@ public sealed partial class Main : Control
         status.ThemeTypeVariation = danger
             ? GodotThemeVariations.DangerText
             : GodotThemeVariations.StatusText;
+        decisions.SetSubmitting(progress.LocksDecisions);
     }
+
+    private void RefreshSynchronizeAvailability() =>
+        synchronize.Disabled = session is null || synchronizing || resolveInFlight;
 
     private GameSetupSelection SelectedSetup()
     {

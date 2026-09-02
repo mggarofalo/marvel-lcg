@@ -310,6 +310,154 @@ public sealed class TransportTests
     }
 
     [Fact]
+    public async Task CallerCancellationBeforeCommitRemainsOperationCanceledException()
+    {
+        using var cancelled = new CancellationTokenSource();
+        await cancelled.CancelAsync();
+        var transport = new SocketTransport(IPAddress.Loopback.ToString(), 1);
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            async () => await transport.ExchangeAsync(
+                EngineRequest.CloseGame("cancelled", "game", "capability"),
+                cancelled.Token));
+    }
+
+    [Fact]
+    public async Task CallerCancellationAfterTransmissionBeginsIsReportedAsUncertain()
+    {
+        using var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        using var cancelled = new CancellationTokenSource();
+        var transport = new SocketTransport(
+            IPAddress.Loopback.ToString(),
+            port,
+            cancelled.Cancel,
+            () => { });
+        Task accepting = Task.Run(() =>
+        {
+            using TcpClient accepted = listener.AcceptTcpClient();
+        }, TestContext.Current.CancellationToken);
+
+        EngineTransportException failure =
+            await Assert.ThrowsAsync<EngineTransportException>(
+                async () => await transport.ExchangeAsync(
+                    EngineRequest.CloseGame("cancelled", "game", "capability"),
+                    cancelled.Token));
+
+        await accepting;
+        Assert.True(failure.RequestMayHaveCommitted);
+        Assert.IsAssignableFrom<OperationCanceledException>(failure.InnerException);
+    }
+
+    [Fact]
+    public async Task OversizedRequestIsRejectedBeforeTransmissionBegins()
+    {
+        string oversizedGameId = new('g', SocketFrame.MaximumPayload);
+        var transport = new SocketTransport(IPAddress.Loopback.ToString(), 1);
+
+        EngineTransportException failure =
+            await Assert.ThrowsAsync<EngineTransportException>(
+                async () => await transport.ExchangeAsync(
+                    EngineRequest.CloseGame("oversized", oversizedGameId, "capability"),
+                    TestContext.Current.CancellationToken));
+
+        Assert.False(failure.RequestMayHaveCommitted);
+        Assert.IsType<InvalidDataException>(failure.InnerException);
+    }
+
+    [Fact]
+    public async Task CommitStateIsSetBeforeTheCompletedRequestHook()
+    {
+        using var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        var request = EngineRequest.CloseGame("hook", "game", "capability");
+        Task serving = Task.Run(() =>
+        {
+            using TcpClient accepted = listener.AcceptTcpClient();
+            using NetworkStream stream = accepted.GetStream();
+            Assert.Equal(EngineJson.Write(request), SocketFrame.Read(stream));
+        }, TestContext.Current.CancellationToken);
+        var transport = new SocketTransport(
+            IPAddress.Loopback.ToString(), port,
+            () => throw new IOException("test hook failed"));
+
+        EngineTransportException failure;
+        try
+        {
+            failure = await Assert.ThrowsAsync<EngineTransportException>(
+                async () => await transport.ExchangeAsync(
+                    request, TestContext.Current.CancellationToken));
+        }
+        finally
+        {
+            await serving;
+        }
+
+        Assert.True(failure.RequestMayHaveCommitted);
+    }
+
+    [Fact]
+    public async Task RefusedConnectionIsReportedBeforeRequestCommitWithoutDiagnostics()
+    {
+        int port;
+        using (var unavailable = new TcpListener(IPAddress.Loopback, 0))
+        {
+            unavailable.Start();
+            port = ((IPEndPoint)unavailable.LocalEndpoint).Port;
+            unavailable.Stop();
+        }
+
+        const string secret = "capability-that-must-not-enter-the-message";
+        var transport = new SocketTransport(IPAddress.Loopback.ToString(), port);
+
+        EngineTransportException failure = await Assert.ThrowsAsync<EngineTransportException>(
+            async () => await transport.ExchangeAsync(
+                EngineRequest.CloseGame("refused", "game", secret),
+                TestContext.Current.CancellationToken));
+
+        Assert.False(failure.RequestMayHaveCommitted);
+        Assert.IsType<SocketException>(failure.InnerException);
+        Assert.Equal("the engine transport exchange failed", failure.Message);
+        Assert.DoesNotContain(secret, failure.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ClosedResponseConnectionIsReportedAfterRequestCommitWithoutDiagnostics()
+    {
+        using var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        const string secret = "capability-that-must-not-enter-the-message";
+        var request = EngineRequest.CloseGame("closed", "game", secret);
+        Task serving = Task.Run(() =>
+        {
+            using TcpClient accepted = listener.AcceptTcpClient();
+            using NetworkStream stream = accepted.GetStream();
+            Assert.Equal(EngineJson.Write(request), SocketFrame.Read(stream));
+        }, TestContext.Current.CancellationToken);
+        var transport = new SocketTransport(IPAddress.Loopback.ToString(), port);
+
+        EngineTransportException failure;
+        try
+        {
+            failure = await Assert.ThrowsAsync<EngineTransportException>(
+                async () => await transport.ExchangeAsync(
+                    request, TestContext.Current.CancellationToken));
+        }
+        finally
+        {
+            await serving;
+        }
+
+        Assert.True(failure.RequestMayHaveCommitted);
+        Assert.IsType<EndOfStreamException>(failure.InnerException);
+        Assert.Equal("the engine transport exchange failed", failure.Message);
+        Assert.DoesNotContain(secret, failure.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task LargeClientIdsAreBoundedAndTheNextConnectionStillWorks()
     {
         var server = new SocketEngineServer(

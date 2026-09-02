@@ -64,6 +64,8 @@ func _run() -> void:
 		return
 	if not await _event_presentation_is_nonblocking():
 		return
+	if not await _synchronization_preserves_history(false):
+		return
 	if not await _capture_checkpoint("open-table-prompt-dense-concealed"):
 		return
 
@@ -156,6 +158,8 @@ func _run() -> void:
 	if "VILLAIN WINS" not in _status().text:
 		_fail("the terminal UI did not report the seeded villain win")
 		return
+	if not await _synchronization_preserves_history(true):
+		return
 	var terminal_decision := _visible_text(_decision()).to_upper()
 	var terminal_prompt := _visible_text(
 		_node("Play/Prompt/Margin/Stack/PromptHeader")).to_upper()
@@ -187,6 +191,38 @@ func _run() -> void:
 		"enabled" if motion_enabled else "disabled",
 	])
 	quit(0)
+
+
+func _synchronization_preserves_history(expect_terminal: bool) -> bool:
+	var synchronize := _button_named("Synchronize table")
+	if synchronize == null:
+		synchronize = _button_named("Reconnect table")
+	if synchronize == null or not synchronize.visible or synchronize.disabled:
+		_fail("the table has no operable always-visible synchronization control")
+		return false
+	if synchronize.custom_minimum_size.y < 44:
+		_fail("the synchronization control is smaller than the pointer-target floor")
+		return false
+
+	var event_log := _node("Play/Prompt/Margin/Stack/EventLog") as RichTextLabel
+	var history_before := event_log.text
+	synchronize.pressed.emit()
+	if not await _wait_for(func() -> bool:
+		return not _status().text.begins_with("SYNCHRONIZING")):
+		_fail("the explicit table synchronization did not settle")
+		return false
+	if history_before != event_log.text:
+		_fail("synchronization replayed or cleared the visible event history")
+		return false
+	if expect_terminal:
+		if "VILLAIN WINS" not in _status().text:
+			_fail("synchronizing the terminal table lost its authoritative outcome")
+			return false
+	elif _first_enabled_choice() == null \
+			and _visible_button(_decision(), "Pass / decline") == null:
+		_fail("synchronizing an ordinary prompt left the decision inoperable")
+		return false
+	return true
 
 
 func _visual_system_is_resolved() -> bool:
