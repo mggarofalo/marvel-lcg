@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using Godot;
+using Marvel.Rules.Prompts;
 using Marvel.Server;
 using Marvel.View;
 
@@ -30,6 +31,11 @@ public sealed partial class Main : Control
     private OptionButton mode = null!;
     private OptionButton modular = null!;
     private PanelContainer promptPanel = null!;
+    private Label promptContext = null!;
+    private Label promptEyebrow = null!;
+    private Label promptHeading = null!;
+    private Label promptProgress = null!;
+    private Label promptRequirement = null!;
     private OptionButton scenario = null!;
     private LineEdit seed = null!;
     private Control setupPanel = null!;
@@ -95,13 +101,24 @@ public sealed partial class Main : Control
         board = GetNode<Control>($"{content}/Play");
         playLayout = GetNode<HSplitContainer>($"{content}/Play");
         promptPanel = GetNode<PanelContainer>($"{content}/Play/Prompt");
+        promptEyebrow = GetNode<Label>(
+            $"{content}/Play/Prompt/Margin/Stack/PromptHeader/Eyebrow");
+        promptHeading = GetNode<Label>(
+            $"{content}/Play/Prompt/Margin/Stack/PromptHeader/Heading");
+        promptContext = GetNode<Label>(
+            $"{content}/Play/Prompt/Margin/Stack/PromptHeader/Context");
+        promptRequirement = GetNode<Label>(
+            $"{content}/Play/Prompt/Margin/Stack/PromptHeader/Requirement");
+        promptProgress = GetNode<Label>(
+            $"{content}/Play/Prompt/Margin/Stack/PromptHeader/Progress");
         boardAreas = GetNode<VBoxContainer>($"{content}/Play/Board/Margin/Areas");
         decisions = GetNode<DecisionPanel>(
             $"{content}/Play/Prompt/Margin/Stack/DecisionScroll/Decision");
         eventLog = GetNode<RichTextLabel>(
             $"{content}/Play/Prompt/Margin/Stack/EventLog");
         decisions.Submitted += OnDecisionSubmitted;
-        decisions.AnchorFocused += id => boardRender?.Highlight(id);
+        decisions.AnchorFocused += ids => boardRender?.Highlight(ids);
+        decisions.ProgressChanged += RenderDecisionProgress;
         hero = GetNode<OptionButton>($"{content}/Setup/Selections/Fields/Grid/Hero");
         scenario = GetNode<OptionButton>($"{content}/Setup/Selections/Fields/Grid/Scenario");
         mode = GetNode<OptionButton>($"{content}/Setup/Selections/Fields/Grid/Mode");
@@ -309,6 +326,8 @@ public sealed partial class Main : Control
         try
         {
             decisions.SetSubmitting(true);
+            promptProgress.Text = "RESOLVING  ·  WAITING FOR ENGINE";
+            promptProgress.ThemeTypeVariation = GodotThemeVariations.StatusText;
             ApplyProgress(GameProgressPresentation.Resolving());
             ClientResolutionResult result = await localClient!.ResolveAsync(
                 localCapability!, decision);
@@ -346,6 +365,7 @@ public sealed partial class Main : Control
         CurrentGame = response;
         WorldDescriptor world = response.World!;
         boardRender = BoardRenderer.Render(boardAreas, BoardPresentation.From(world));
+        RenderPromptSummary(response.Prompt, world);
         decisions.Render(response.Prompt, world);
         if (resetEvents)
         {
@@ -358,6 +378,63 @@ public sealed partial class Main : Control
 
         RenderEvents();
         ApplyProgress(GameProgressPresentation.FromResponse(response));
+    }
+
+    private void RenderPromptSummary(Prompt? prompt, WorldDescriptor world)
+    {
+        if (prompt is null)
+        {
+            promptEyebrow.Text = "GAME COMPLETE";
+            promptHeading.Text = "No further decision is waiting.";
+            promptContext.Text = "THE TABLE IS SETTLED";
+            promptRequirement.Text = "RESOLVED";
+            promptRequirement.ThemeTypeVariation = GodotThemeVariations.StatusText;
+            promptProgress.Text = "NO INPUT PENDING";
+            return;
+        }
+
+        PromptPresentation view = PromptPresentation.From(prompt, world);
+        promptEyebrow.Text = "CURRENT DECISION";
+        promptHeading.Text = view.Heading;
+        promptContext.Text = view.Context;
+        promptRequirement.Text = view.Requirement;
+        promptRequirement.ThemeTypeVariation = prompt.Cancellable
+            ? GodotThemeVariations.Caption
+            : GodotThemeVariations.DangerText;
+    }
+
+    private void RenderDecisionProgress(DecisionProgressPresentation? progress)
+    {
+        if (progress is null)
+        {
+            promptProgress.Text = "NO INPUT PENDING";
+            promptProgress.ThemeTypeVariation = GodotThemeVariations.StatusText;
+            return;
+        }
+
+        string targets = progress.Targets.Mode switch
+        {
+            TargetSelectionMode.None => "NO TARGETS",
+            TargetSelectionMode.Grouped => $"GROUP {progress.Targets.Selected}/1",
+            _ => progress.Targets.Minimum == progress.Targets.Maximum
+                ? $"TARGETS {progress.Targets.Selected}/{progress.Targets.Minimum}"
+                : $"TARGETS {progress.Targets.Selected} · NEED {progress.Targets.Minimum}–{progress.Targets.Maximum}",
+        };
+        string payment = progress.Payment.CostState switch
+        {
+            CostSelectionState.Unavailable => "CHOOSE AN ACTION",
+            CostSelectionState.NotRequired => "FREE",
+            CostSelectionState.Required => $"CHOOSE 1 OF {progress.Payment.CostOptions} COSTS",
+            _ => $"PAYMENT {progress.Payment.AssignedIcons}/{progress.Payment.GeneratedIcons} ICONS"
+                + (progress.Payment.RequestedVariables > 0
+                    ? $" · VALUES {progress.Payment.DefinedVariables}/{progress.Payment.RequestedVariables}"
+                    : string.Empty),
+        };
+        promptProgress.Text = $"{targets}  ·  {payment}  ·  "
+            + (progress.IsReady ? "READY" : "INCOMPLETE");
+        promptProgress.ThemeTypeVariation = progress.IsReady
+            ? GodotThemeVariations.StatusText
+            : GodotThemeVariations.Caption;
     }
 
     private void RenderEvents()

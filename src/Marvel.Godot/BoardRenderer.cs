@@ -175,15 +175,17 @@ public sealed class BoardRenderResult
         matches.Add(control);
     }
 
-    /// <summary>Highlights every visible control matching one server-provided id.</summary>
-    public void Highlight(int? id)
+    /// <summary>Highlights every visible control matching server-provided ids.</summary>
+    public void Highlight(IEnumerable<int> ids)
     {
+        ArgumentNullException.ThrowIfNull(ids);
+        HashSet<int> highlighted = ids.ToHashSet();
         foreach ((int key, List<CardControl> matches) in controls)
         {
             foreach (CardControl match in matches)
             {
-                match.SetHighlighted(id == key);
-                if (id == key)
+                match.SetHighlighted(highlighted.Contains(key));
+                if (highlighted.Contains(key))
                 {
                     EnsureVisible(match);
                 }

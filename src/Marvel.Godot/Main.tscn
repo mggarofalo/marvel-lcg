@@ -270,6 +270,42 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_type_variation = &"Stack"
 
+[node name="PromptHeader" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
+layout_mode = 2
+theme_type_variation = &"TightStack"
+
+[node name="Eyebrow" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader"]
+layout_mode = 2
+theme_type_variation = &"Eyebrow"
+text = "CURRENT DECISION"
+
+[node name="Heading" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader"]
+layout_mode = 2
+theme_type_variation = &"Heading"
+text = "Waiting for the engine…"
+autowrap_mode = 2
+
+[node name="Context" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader"]
+layout_mode = 2
+theme_type_variation = &"Caption"
+text = "PLAYER · QUESTION · TIMING"
+autowrap_mode = 2
+
+[node name="Requirement" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader"]
+layout_mode = 2
+theme_type_variation = &"DangerText"
+text = "DECISION REQUIRED"
+autowrap_mode = 2
+
+[node name="Progress" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader"]
+layout_mode = 2
+theme_type_variation = &"StatusText"
+text = "CHOOSE AN ACTION"
+autowrap_mode = 2
+
+[node name="HeaderRule" type="HSeparator" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
+layout_mode = 2
+
 [node name="DecisionScroll" type="ScrollContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
 layout_mode = 2
 size_flags_horizontal = 3

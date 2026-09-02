@@ -50,6 +50,8 @@ func _run() -> void:
 		return
 	if not await _board_layout_is_resolved():
 		return
+	if not await _keyboard_selection_is_operable():
+		return
 
 	var saw_mulligan := false
 	var saw_pass := false
@@ -294,6 +296,52 @@ func _board_layout_is_resolved() -> bool:
 		return false
 	if board.get_global_rect().intersects(prompt.get_global_rect()):
 		_fail("the prompt rail overlaps the board")
+		return false
+	return true
+
+
+func _keyboard_selection_is_operable() -> bool:
+	var header := _node("Play/Prompt/Margin/Stack/PromptHeader") as Control
+	var decision_scroll := _node("Play/Prompt/Margin/Stack/DecisionScroll") as ScrollContainer
+	if header == null or decision_scroll == null or decision_scroll.is_ancestor_of(header):
+		_fail("the active seat and question are not pinned above the decision body")
+		return false
+	var header_text := _visible_text(header)
+	if "PLAYER 1" not in header_text or "MULLIGAN" not in header_text.to_upper() \
+			or ("DECISION REQUIRED" not in header_text and "PASS AVAILABLE" not in header_text):
+		_fail("the pinned prompt summary omits seat, question, or cancellability")
+		return false
+
+	await process_frame
+	await process_frame
+	var focused := root.gui_get_focus_owner() as Button
+	if focused == null or not _decision().is_ancestor_of(focused) or focused.disabled:
+		_fail("a fresh prompt did not focus its first keyboard-operable action")
+		return false
+	var focus_name := focused.name
+	var press := InputEventAction.new()
+	press.action = &"ui_accept"
+	press.pressed = true
+	Input.parse_input_event(press)
+	await process_frame
+	var release := InputEventAction.new()
+	release.action = &"ui_accept"
+	release.pressed = false
+	Input.parse_input_event(release)
+	await process_frame
+	await process_frame
+	var restored := root.gui_get_focus_owner() as Button
+	if restored == null or restored.name != focus_name or not _decision().is_ancestor_of(restored):
+		_fail("keyboard focus was lost when the selected decision control rebuilt")
+		return false
+	if "SELECTED" not in restored.text:
+		_fail("ui_accept did not select the focused decision action")
+		return false
+	var progress := _node("Play/Prompt/Margin/Stack/PromptHeader/Progress") as Label
+	if progress == null or ("READY" not in progress.text and "INCOMPLETE" not in progress.text) \
+			or ("TARGETS" not in progress.text and "GROUP" not in progress.text \
+			and "NO TARGETS" not in progress.text):
+		_fail("the pinned prompt summary did not update target and readiness progress")
 		return false
 	return true
 
