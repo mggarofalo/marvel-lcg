@@ -470,6 +470,13 @@ public static class SessionReplay
                 decisionIndex++;
             }
 
+            bool reachedBoundary = game.Pending is null || game.IsRootPrompt;
+            if ((unit.Status == "complete") != reachedBoundary)
+            {
+                throw new ReplayDivergenceException(
+                    $"unit {unitIndex} completion status diverged");
+            }
+
             if (requireExposures)
             {
                 RequireExposures(unit.Exposures, exposures, $"unit {unitIndex} exposure");

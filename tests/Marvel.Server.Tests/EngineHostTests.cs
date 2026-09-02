@@ -267,7 +267,7 @@ public sealed class EngineHostTests
     }
 
     [Fact]
-    public void HistoryEditingWaitsForEveryDependentDecisionInAnOpenUnit()
+    public void OpenHistoryCannotBeEditedAndForgedCompletionFailsReplay()
     {
         var store = new MemorySessionStore();
         var factory = DatasetGameFactory.Load(RepositoryPaths.Root);
@@ -277,24 +277,67 @@ public sealed class EngineHostTests
             store: store);
         EngineResponse opened = first.Exchange(EngineRequest.OpenGame(
             "open", "open-unit-history",
-            new GameSpecification("rhino", ["spider_man"], [], Seed: 73)));
+            new GameSpecification("rhino", ["captain_marvel"], [], Seed: 73)));
         EngineResponse kept = first.Exchange(EngineRequest.ResolveGame(
             "keep", "open-unit-history", RequiredCapability(opened),
             TakeOnly(opened), opened.Revision));
+        Affordance changeForm = Assert.Single(kept.Prompt!.Affordances, option =>
+            string.Equals(option.Verb, Game.ChangeForm, StringComparison.Ordinal));
+        EngineResponse changed = first.Exchange(EngineRequest.ResolveGame(
+            "form", "open-unit-history", RequiredCapability(opened),
+            new EngineDecision(changeForm.Id, []), kept.Revision));
+        Affordance playEighteen = Assert.Single(changed.Prompt!.Affordances, option =>
+            string.Equals(option.Verb, "Play", StringComparison.Ordinal)
+            && option.AnchorId == 18);
+        EngineResponse firstPlay = first.Exchange(EngineRequest.ResolveGame(
+            "first-play", "open-unit-history", RequiredCapability(opened),
+            new EngineDecision(
+                playEighteen.Id,
+                [1],
+                [16],
+                Allocations: [new ResourceAllocation(16, 0, "YY")]),
+            changed.Revision));
+        Affordance mariaHill = Assert.Single(firstPlay.Prompt!.Affordances, option =>
+            string.Equals(option.Verb, "Play", StringComparison.Ordinal)
+            && option.AnchorId == 24);
+        EngineResponse responseWindow = first.Exchange(EngineRequest.ResolveGame(
+            "maria-hill", "open-unit-history", RequiredCapability(opened),
+            new EngineDecision(
+                mariaHill.Id,
+                [1],
+                [30, 26],
+                Allocations:
+                [
+                    new ResourceAllocation(30, 0, "B"),
+                    new ResourceAllocation(26, 0, "R"),
+                ]),
+            firstPlay.Revision));
+
         StoredSession stored = Assert.Single(store.Load());
-        JournalUnit unit = Assert.Single(stored.Save.Units);
+        JournalUnit unit = stored.Save.Units[^1];
+        EngineResponse refused = first.Exchange(EngineRequest.UndoGame(
+            "undo", "open-unit-history", RequiredCapability(opened),
+            cursor: 3, expectedRevision: responseWindow.Revision));
+
+        Assert.Null(responseWindow.Error);
+        Assert.Equal("open", unit.Status);
+        Assert.Empty(unit.Exposures);
+        Assert.Empty(responseWindow.History!.Undo);
+        Assert.Equal("history_open", refused.Error?.Code);
+
         store.Commit(stored with
         {
-            Save = stored.Save with { Units = [unit with { Status = "open" }] },
+            Save = stored.Save with
+            {
+                Units =
+                [
+                    .. stored.Save.Units.Take(stored.Save.Units.Count - 1),
+                    unit with { Status = "complete" },
+                ],
+            },
         });
-        var restarted = new EngineHost(factory, store: store);
-
-        EngineResponse refused = restarted.Exchange(EngineRequest.UndoGame(
-            "undo", "open-unit-history", RequiredCapability(opened),
-            cursor: 0, expectedRevision: kept.Revision));
-
-        Assert.Equal("history_open", refused.Error?.Code);
-        Assert.Equal(1, Assert.Single(store.Load()).Save.Cursor);
+        Assert.Throws<ReplayDivergenceException>(() =>
+            new EngineHost(factory, store: store));
     }
 
     [Fact]
