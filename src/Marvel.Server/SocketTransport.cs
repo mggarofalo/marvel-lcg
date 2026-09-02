@@ -5,6 +5,23 @@ using System.Text.Json;
 
 namespace Marvel.Server;
 
+/// <summary>A socket exchange failed before or after request transmission could begin.</summary>
+public sealed class EngineTransportException : IOException
+{
+    /// <summary>Creates a transport failure without exposing its diagnostic as the message.</summary>
+    public EngineTransportException(bool requestMayHaveCommitted, Exception innerException)
+        : base("the engine transport exchange failed", innerException)
+    {
+        ArgumentNullException.ThrowIfNull(innerException);
+        RequestMayHaveCommitted = requestMayHaveCommitted;
+    }
+
+    /// <summary>
+    /// Whether request transmission began before the failure occurred.
+    /// </summary>
+    public bool RequestMayHaveCommitted { get; }
+}
+
 /// <summary>A TCP transport for the same request/response contract used in-process.</summary>
 /// <remarks>
 /// Each exchange is one connection and one length-prefixed UTF-8 JSON frame in
@@ -14,6 +31,7 @@ namespace Marvel.Server;
 /// </remarks>
 public sealed class SocketTransport(string host, int port) : IEngineTransport
 {
+    private readonly Action? onRequestWriteStarting;
     private readonly Action? onRequestCommitted;
     private readonly string host =
         !string.IsNullOrWhiteSpace(host)
@@ -29,42 +47,87 @@ public sealed class SocketTransport(string host, int port) : IEngineTransport
         this.onRequestCommitted = onRequestCommitted
             ?? throw new ArgumentNullException(nameof(onRequestCommitted));
 
+    internal SocketTransport(
+        string host,
+        int port,
+        Action onRequestWriteStarting,
+        Action onRequestCommitted)
+        : this(host, port)
+    {
+        this.onRequestWriteStarting = onRequestWriteStarting
+            ?? throw new ArgumentNullException(nameof(onRequestWriteStarting));
+        this.onRequestCommitted = onRequestCommitted
+            ?? throw new ArgumentNullException(nameof(onRequestCommitted));
+    }
+
     /// <inheritdoc />
     public async ValueTask<EngineResponse> ExchangeAsync(
         EngineRequest request,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
-        using var client = new TcpClient();
-        await client.ConnectAsync(host, port, cancellationToken).ConfigureAwait(false);
-        using NetworkStream stream = client.GetStream();
-        await SocketFrame.WriteAsync(
-            stream, EngineJson.Write(request), cancellationToken).ConfigureAwait(false);
-        onRequestCommitted?.Invoke();
-        // The completed write is the transport's commit boundary. The server
-        // may already have mutated game state, so cancellation after this
-        // point cannot discard the only authoritative prompt and event list.
-        byte[] response = await SocketFrame.ReadAsync(stream, CancellationToken.None)
-            .ConfigureAwait(false)
-            ?? throw new EndOfStreamException("the engine host closed without a response");
-        int responseVersion = EngineJson.ReadResponseVersion(response);
-        if (responseVersion != EngineProtocol.Version)
-        {
-            // A future response schema cannot be decoded strictly. The
-            // transport preserves only its version mismatch and uses the
-            // request's correlation labels so the client can report that
-            // incompatibility instead of mistaking it for an outage. This is
-            // our wire-compatibility choice, not a game rule.
-            return new EngineResponse(
-                responseVersion,
-                request.RequestId,
-                request.GameId,
-                Capability: null,
-                Prompt: null,
-                Events: []);
-        }
+        bool requestMayHaveCommitted = false;
 
-        return EngineJson.ReadResponse(response);
+        try
+        {
+            byte[] requestFrame = EngineJson.Write(request);
+            SocketFrame.ValidatePayloadLength(requestFrame.Length);
+            using var client = new TcpClient();
+            await client.ConnectAsync(host, port, cancellationToken).ConfigureAwait(false);
+            using NetworkStream stream = client.GetStream();
+            // A frame is written in more than one socket operation. Once the
+            // first operation can begin, a later client-side failure cannot
+            // prove that the server did not receive and apply the whole frame.
+            requestMayHaveCommitted = true;
+            onRequestWriteStarting?.Invoke();
+            await SocketFrame.WriteAsync(
+                stream, requestFrame, cancellationToken).ConfigureAwait(false);
+            onRequestCommitted?.Invoke();
+            // The server may already have mutated game state, so cancellation
+            // after transmission begins cannot discard the only authoritative
+            // prompt and event list.
+            byte[] response = await SocketFrame.ReadAsync(stream, CancellationToken.None)
+                .ConfigureAwait(false)
+                ?? throw new EndOfStreamException("the engine host closed without a response");
+            int responseVersion = EngineJson.ReadResponseVersion(response);
+            if (responseVersion != EngineProtocol.Version)
+            {
+                // A future response schema cannot be decoded strictly. The
+                // transport preserves only its version mismatch and uses the
+                // request's correlation labels so the client can report that
+                // incompatibility instead of mistaking it for an outage. This is
+                // our wire-compatibility choice, not a game rule.
+                return new EngineResponse(
+                    responseVersion,
+                    request.RequestId,
+                    request.GameId,
+                    Capability: null,
+                    Prompt: null,
+                    Events: []);
+            }
+
+            return EngineJson.ReadResponse(response);
+        }
+        catch (OperationCanceledException) when (
+            !requestMayHaveCommitted && cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (OperationCanceledException failure)
+        {
+            // Cancellation after transmission begins cannot prove that the
+            // server did not apply the request. Preserve that uncertainty so
+            // mutation clients synchronize instead of retrying the decision.
+            throw new EngineTransportException(requestMayHaveCommitted, failure);
+        }
+        catch (Exception failure) when (failure is IOException
+                                             or SocketException
+                                             or InvalidDataException
+                                             or JsonException
+                                             or NotSupportedException)
+        {
+            throw new EngineTransportException(requestMayHaveCommitted, failure);
+        }
     }
 }
 
@@ -207,14 +270,19 @@ internal static class SocketFrame
 {
     internal const int MaximumPayload = 4 * 1024 * 1024;
 
+    internal static void ValidatePayloadLength(int payloadLength)
+    {
+        if (payloadLength > MaximumPayload)
+        {
+            throw new InvalidDataException(
+                $"socket payload is {payloadLength} bytes; maximum is {MaximumPayload}");
+        }
+    }
+
     public static void Write(Stream stream, ReadOnlySpan<byte> payload)
     {
         ArgumentNullException.ThrowIfNull(stream);
-        if (payload.Length > MaximumPayload)
-        {
-            throw new InvalidDataException(
-                $"socket payload is {payload.Length} bytes; maximum is {MaximumPayload}");
-        }
+        ValidatePayloadLength(payload.Length);
 
         Span<byte> header = stackalloc byte[sizeof(int)];
         BinaryPrimitives.WriteInt32BigEndian(header, payload.Length);
@@ -253,11 +321,7 @@ internal static class SocketFrame
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(stream);
-        if (payload.Length > MaximumPayload)
-        {
-            throw new InvalidDataException(
-                $"socket payload is {payload.Length} bytes; maximum is {MaximumPayload}");
-        }
+        ValidatePayloadLength(payload.Length);
 
         var header = new byte[sizeof(int)];
         BinaryPrimitives.WriteInt32BigEndian(header, payload.Length);

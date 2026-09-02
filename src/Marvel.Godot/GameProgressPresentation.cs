@@ -15,6 +15,18 @@ public enum GameProgressKind
     /// <summary>One mutation was sent and its outcome is not yet known.</summary>
     Resolving,
 
+    /// <summary>The client is reading the current authoritative table.</summary>
+    Synchronizing,
+
+    /// <summary>A mutation was rejected before it could reach the engine.</summary>
+    DecisionNotSent,
+
+    /// <summary>A read-only synchronization failed without changing mutation certainty.</summary>
+    SynchronizationUnavailable,
+
+    /// <summary>A rejected mutation needs a fresh table before input resumes.</summary>
+    DecisionRejected,
+
     /// <summary>The players defeated the final villain stage.</summary>
     PlayersWin,
 
@@ -94,6 +106,52 @@ public sealed record GameProgressPresentation(
         "The engine is committing the selected action.",
         "DECISION SENT  ·  WAITING FOR THE AUTHORITATIVE TABLE",
         LocksDecisions: true);
+
+    /// <summary>Locks decisions while the current authoritative table is requested.</summary>
+    public static GameProgressPresentation Synchronizing() => new(
+        GameProgressKind.Synchronizing,
+        "Synchronizing table…",
+        "The client is requesting the current authoritative table.",
+        "SYNCHRONIZING  ·  WAITING FOR THE AUTHORITATIVE TABLE",
+        LocksDecisions: true);
+
+    /// <summary>Unlocks a preserved draft when the mutation was never sent.</summary>
+    public static GameProgressPresentation DecisionNotSent(ClientStartupError error)
+    {
+        ArgumentNullException.ThrowIfNull(error);
+        return new(
+            GameProgressKind.DecisionNotSent,
+            "Decision not sent.",
+            error.Message + " Your selection is preserved and is safe to retry.",
+            $"NOT SENT  ·  RETRY SAFE  ·  {error.Code.ToUpperInvariant()}",
+            LocksDecisions: false);
+    }
+
+    /// <summary>Preserves the prior input policy after a read-only sync failure.</summary>
+    public static GameProgressPresentation SynchronizationUnavailable(
+        ClientStartupError error,
+        bool locksDecisions)
+    {
+        ArgumentNullException.ThrowIfNull(error);
+        return new(
+            GameProgressKind.SynchronizationUnavailable,
+            "Table not synchronized.",
+            error.Message + " The last authoritative table remains displayed.",
+            $"SYNC READ FAILED  ·  {error.Code.ToUpperInvariant()}",
+            locksDecisions);
+    }
+
+    /// <summary>Locks a rejected decision until its current table can be read.</summary>
+    public static GameProgressPresentation DecisionRejected(ClientStartupError error)
+    {
+        ArgumentNullException.ThrowIfNull(error);
+        return new(
+            GameProgressKind.DecisionRejected,
+            "Decision rejected.",
+            error.Message + " Synchronize the current table before taking another action.",
+            $"DECISION REJECTED  ·  SYNCHRONIZATION REQUIRED  ·  {error.Code.ToUpperInvariant()}",
+            LocksDecisions: true);
+    }
 
     /// <summary>Preserves an authoritative recovered table while explaining its error.</summary>
     public static GameProgressPresentation Recovered(

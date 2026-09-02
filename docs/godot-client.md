@@ -74,6 +74,14 @@ is sent. A used, expired or unknown invitation is not retried; ask the host for
 a new one. While another seat owns the current decision, the joined client
 renders the table as an in-progress waiting view.
 
+The play rail keeps a Synchronize table action available at prompts, while
+waiting for another player and after the game ends. It reads one authoritative
+snapshot without repeating a decision or replaying event history. If a decision
+frame was never sent, the client preserves the draft and says retry is safe. If
+the frame was sent but its response was lost, the table stays locked until a
+sync succeeds. An expired or closed capability returns the client to Join and
+must be replaced with a new invitation.
+
 See the [standalone server guide](server.md) for launch options, restricted-seat
 configuration, Docker commands and shutdown behavior.
 
@@ -125,7 +133,9 @@ editor and exercises the same checked-in script.
 
 The companion managed test drives the same seed through `LocalGameClient` and
 `DecisionComposer`. It makes the deterministic gameplay path debuggable without
-turning the native smoke into a second rules implementation.
+turning the native smoke into a second rules implementation. The native smoke
+also synchronizes once at an ordinary prompt and once after the terminal result,
+proving the board remains operable and its event chronology is unchanged.
 
 ## Visual system
 
