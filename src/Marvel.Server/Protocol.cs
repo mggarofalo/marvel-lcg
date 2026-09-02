@@ -12,9 +12,10 @@ public static class EngineProtocol
     /// The only protocol version this host accepts. It includes independently
     /// scoped seat capabilities, play-area topology events, setup discovery,
     /// per-target allocation capacities, procedural-card face facts, host
-    /// revisions, and replay-verified history cursor commands.
+    /// revisions, replay-verified history cursor commands, and legal trace
+    /// rewriting for committed action units.
     /// </summary>
-    public const int Version = 8;
+    public const int Version = 9;
 
     /// <summary>The largest request or game id accepted or echoed.</summary>
     public const int MaximumIdentifierLength = 256;
@@ -42,6 +43,9 @@ public static class EngineProtocol
 
     /// <summary>Reconstructs the table through retained inactive history.</summary>
     public const string Redo = "redo";
+
+    /// <summary>Rewrites committed action units in the requested legal order.</summary>
+    public const string Reorder = "reorder";
 
     /// <summary>Releases an open game.</summary>
     public const string Close = "close";
@@ -103,7 +107,7 @@ public sealed record EngineDecision(
 /// <summary>One command sent through either engine transport.</summary>
 /// <param name="Version">The protocol version.</param>
 /// <param name="RequestId">An opaque client correlation id.</param>
-/// <param name="Operation"><c>setup</c>, <c>open</c>, <c>attach</c>, <c>sync</c>, <c>resolve</c>, <c>undo</c>, <c>redo</c>, or <c>close</c>.</param>
+/// <param name="Operation"><c>setup</c>, <c>open</c>, <c>attach</c>, <c>sync</c>, <c>resolve</c>, <c>undo</c>, <c>redo</c>, <c>reorder</c>, or <c>close</c>.</param>
 /// <param name="GameId">An opaque id chosen by the client for this game.</param>
 /// <param name="Capability">The server-issued session capability; absent only for <c>open</c>.</param>
 /// <param name="Game">Present only for <c>open</c>.</param>
@@ -121,6 +125,10 @@ public sealed record EngineDecision(
 /// The desired active history-unit count for <c>undo</c> or <c>redo</c>.
 /// The cursor is a server ledger position, not a game rule.
 /// </param>
+/// <param name="Order">
+/// Original active unit positions in their desired contiguous order for
+/// <c>reorder</c>. The client names no decisions or derived state.
+/// </param>
 public sealed record EngineRequest(
     int Version,
     string RequestId,
@@ -131,7 +139,8 @@ public sealed record EngineRequest(
     EngineDecision? Decision = null,
     ViewerClaim? Viewer = null,
     long? ExpectedRevision = null,
-    int? Cursor = null)
+    int? Cursor = null,
+    IReadOnlyList<int>? Order = null)
 {
     /// <summary>Builds a read-only setup-discovery request.</summary>
     public static EngineRequest ReadSetup(string requestId) =>
@@ -194,6 +203,18 @@ public sealed record EngineRequest(
             Capability: capability,
             ExpectedRevision: expectedRevision,
             Cursor: cursor);
+
+    /// <summary>Builds a request to rewrite contiguous committed action units.</summary>
+    public static EngineRequest ReorderGame(
+        string requestId,
+        string gameId,
+        string capability,
+        IReadOnlyList<int> order,
+        long expectedRevision) =>
+        new(EngineProtocol.Version, requestId, EngineProtocol.Reorder, gameId,
+            Capability: capability,
+            ExpectedRevision: expectedRevision,
+            Order: order);
 
     /// <summary>Builds a close-game request for the current protocol.</summary>
     public static EngineRequest CloseGame(

@@ -13,6 +13,138 @@ namespace Marvel.Server.Tests;
 public sealed class EngineHostTests
 {
     [Fact]
+    public void ReorderRebuildsCommittedActionUnitsAndReplacesTheLiveTrace()
+    {
+        var store = new MemorySessionStore();
+        var host = new EngineHost(
+            DatasetGameFactory.Load(RepositoryPaths.Root),
+            new SequenceCapabilities("reorder-owner"),
+            store: store);
+        EngineResponse opened = host.Exchange(EngineRequest.OpenGame(
+            "open", "reorder-table",
+            new GameSpecification("rhino", ["spider_man"], [], Seed: 73)));
+        EngineResponse kept = host.Exchange(EngineRequest.ResolveGame(
+            "keep", "reorder-table", RequiredCapability(opened),
+            TakeOnly(opened), opened.Revision));
+        Affordance changeForm = Assert.Single(kept.Prompt!.Affordances, option =>
+            string.Equals(option.Verb, Game.ChangeForm, StringComparison.Ordinal));
+        EngineResponse changed = host.Exchange(EngineRequest.ResolveGame(
+            "form", "reorder-table", RequiredCapability(opened),
+            new EngineDecision(changeForm.Id, []), kept.Revision));
+        EngineResponse first = host.Exchange(EngineRequest.ResolveGame(
+            "first", "reorder-table", RequiredCapability(opened),
+            PayFirstPlayableCard(Assert.IsType<Prompt>(changed.Prompt)), changed.Revision));
+        Affordance attack = Assert.Single(first.Prompt!.Affordances, option =>
+            string.Equals(option.Verb, BasicPowers.AttackVerb, StringComparison.Ordinal)
+            && option.AnchorPlayer == 0);
+        IReadOnlyList<int> attackTargets = Assert.IsType<TargetRequest>(attack.Targets)
+            .Legal.Take(attack.Targets.Min).ToList();
+        EngineResponse second = host.Exchange(EngineRequest.ResolveGame(
+            "second", "reorder-table", RequiredCapability(opened),
+            new EngineDecision(attack.Id, attackTargets), first.Revision));
+        SessionSave before = Assert.Single(store.Load()).Save;
+        int? firstAnchor = before.Units[2].Decisions[0].Decision.Selector.AnchorId;
+        int? secondAnchor = before.Units[3].Decisions[0].Decision.Selector.AnchorId;
+
+        EngineResponse reordered = host.Exchange(EngineRequest.ReorderGame(
+            "reorder", "reorder-table", RequiredCapability(opened),
+            [3, 2], second.Revision));
+        SessionSave after = Assert.Single(store.Load()).Save;
+
+        Assert.Null(reordered.Error);
+        Assert.Empty(reordered.Events);
+        Assert.Equal(second.Revision + 1, reordered.Revision);
+        Assert.Equal(4, after.Cursor);
+        Assert.Equal(secondAnchor, after.Units[2].Decisions[0].Decision.Selector.AnchorId);
+        Assert.Equal(firstAnchor, after.Units[3].Decisions[0].Decision.Selector.AnchorId);
+        Assert.Empty(after.Units.Skip(2).SelectMany(unit => unit.Exposures));
+        Assert.NotEqual(
+            before.Units[3].Decisions[0].StateFingerprint,
+            after.Units[2].Decisions[0].StateFingerprint);
+
+        var restarted = new EngineHost(
+            DatasetGameFactory.Load(RepositoryPaths.Root),
+            store: store);
+        EngineResponse restored = restarted.Exchange(EngineRequest.SyncGame(
+            "restored", "reorder-table", RequiredCapability(opened)));
+        Assert.Equal(
+            EngineJson.Write(reordered with { RequestId = "same" }),
+            EngineJson.Write(restored with { RequestId = "same" }));
+    }
+
+    [Fact]
+    public void ReorderRejectsATraceWhoseMovedActionNoLongerExists()
+    {
+        var store = new MemorySessionStore();
+        var factory = new InHandActionFactory(
+            DatasetGameFactory.Load(RepositoryPaths.Root));
+        var host = new EngineHost(
+            factory,
+            new SequenceCapabilities("invalid-reorder-owner"),
+            store: store);
+        EngineResponse opened = host.Exchange(EngineRequest.OpenGame(
+            "open", "invalid-reorder",
+            new GameSpecification("rhino", ["spider_man"], [], Seed: 73)));
+        EngineResponse kept = host.Exchange(EngineRequest.ResolveGame(
+            "keep", "invalid-reorder", RequiredCapability(opened),
+            TakeOnly(opened), opened.Revision));
+        EngineResponse played = host.Exchange(EngineRequest.ResolveGame(
+            "play", "invalid-reorder", RequiredCapability(opened),
+            PayCard(Assert.IsType<Prompt>(kept.Prompt), factory.AuntMay.ObjectId),
+            kept.Revision));
+        Affordance action = Assert.Single(played.Prompt!.Affordances, option =>
+            option.AnchorId == factory.AuntMay.ObjectId
+            && string.Equals(option.Verb, Game.ActionVerb, StringComparison.Ordinal));
+        EngineResponse acted = host.Exchange(EngineRequest.ResolveGame(
+            "act", "invalid-reorder", RequiredCapability(opened),
+            new EngineDecision(action.Id, []), played.Revision));
+        string before = SessionSaveJson.Write(Assert.Single(store.Load()).Save);
+
+        EngineResponse rejected = host.Exchange(EngineRequest.ReorderGame(
+            "reorder", "invalid-reorder", RequiredCapability(opened),
+            [2, 1], acted.Revision));
+        EngineResponse current = host.Exchange(EngineRequest.SyncGame(
+            "current", "invalid-reorder", RequiredCapability(opened)));
+
+        Assert.Equal("reorder_failed", rejected.Error?.Code);
+        Assert.Equal(before, SessionSaveJson.Write(Assert.Single(store.Load()).Save));
+        Assert.Equal(
+            EngineJson.Write(acted with { RequestId = "same", Events = [] }),
+            EngineJson.Write(current with { RequestId = "same" }));
+    }
+
+    [Fact]
+    public void ReorderCannotMoveTurnControlAsThoughItWereAnAction()
+    {
+        var store = new MemorySessionStore();
+        var host = new EngineHost(
+            DatasetGameFactory.Load(RepositoryPaths.Root),
+            new SequenceCapabilities("control-reorder-owner"),
+            store: store);
+        EngineResponse opened = host.Exchange(EngineRequest.OpenGame(
+            "open", "control-reorder",
+            new GameSpecification("rhino", ["spider_man"], [], Seed: 73)));
+        EngineResponse kept = host.Exchange(EngineRequest.ResolveGame(
+            "keep", "control-reorder", RequiredCapability(opened),
+            TakeOnly(opened), opened.Revision));
+        Affordance changeForm = Assert.Single(kept.Prompt!.Affordances, option =>
+            string.Equals(option.Verb, Game.ChangeForm, StringComparison.Ordinal));
+        EngineResponse changed = host.Exchange(EngineRequest.ResolveGame(
+            "form", "control-reorder", RequiredCapability(opened),
+            new EngineDecision(changeForm.Id, []), kept.Revision));
+        EngineResponse played = host.Exchange(EngineRequest.ResolveGame(
+            "play", "control-reorder", RequiredCapability(opened),
+            PayFirstPlayableCard(Assert.IsType<Prompt>(changed.Prompt)), changed.Revision));
+
+        EngineResponse rejected = host.Exchange(EngineRequest.ReorderGame(
+            "reorder", "control-reorder", RequiredCapability(opened),
+            [2, 1], played.Revision));
+
+        Assert.Equal("reorder_kind", rejected.Error?.Code);
+        Assert.Equal(played.Revision, Assert.Single(store.Load()).Save.Revision);
+    }
+
+    [Fact]
     public void UndoAndRedoReplaceTheLiveGameByVerifiedReplayAndAdvanceRevision()
     {
         var store = new MemorySessionStore();
@@ -659,7 +791,7 @@ public sealed class EngineHostTests
             1, "old-client", EngineProtocol.Open, "game",
             Game: new GameSpecification("rhino", ["spider_man"], null, 1)));
 
-        Assert.Equal(8, EngineProtocol.Version);
+        Assert.Equal(9, EngineProtocol.Version);
         Assert.Equal(EngineProtocol.Version, rejected.Version);
         Assert.Equal("unsupported_version", rejected.Error?.Code);
         Assert.Equal(0, factory.Calls);
@@ -818,13 +950,15 @@ public sealed class EngineHostTests
     public void ACompetingOffTurnActionIsStaleEvenWhenTheWinningCommandRemovesIt(
         bool winningCommandEndsGame)
     {
+        var store = new MemorySessionStore();
         var factory = new VanishingOffTurnActionFactory(
             DatasetGameFactory.Load(RepositoryPaths.Root),
             winningCommandEndsGame);
         var host = new EngineHost(
             factory,
             new SequenceCapabilities("seat-zero", "invite-one", "seat-one"),
-            new RestrictedVisibilityPolicy(0));
+            new RestrictedVisibilityPolicy(0),
+            store);
         var specification = new GameSpecification(
             "rhino", ["captain_marvel", "spider_man"], [], Seed: 7);
         EngineResponse opened = host.Exchange(EngineRequest.OpenGame(
@@ -865,6 +999,21 @@ public sealed class EngineHostTests
         EngineResponse current = host.Exchange(EngineRequest.SyncGame(
             "current", "race", RequiredCapability(attached)));
         Assert.Equal(won.Revision, current.Revision);
+
+        if (winningCommandEndsGame)
+        {
+            var restarted = new EngineHost(
+                new VanishingOffTurnActionFactory(
+                    DatasetGameFactory.Load(RepositoryPaths.Root),
+                    winningCommandEndsGame: true),
+                visibility: new RestrictedVisibilityPolicy(0),
+                store: store);
+            EngineResponse restored = restarted.Exchange(EngineRequest.SyncGame(
+                "restored", "race", RequiredCapability(attached)));
+            Assert.Null(restored.Error);
+            Assert.Null(restored.Prompt);
+            Assert.Equal(Outcome.PlayersWin, restored.World?.Outcome);
+        }
     }
 
     [Fact]
@@ -1216,6 +1365,40 @@ public sealed class EngineHostTests
         throw new Xunit.Sdk.XunitException("the deterministic hand has no payable card play");
     }
 
+    private static EngineDecision PayCard(Prompt prompt, int anchor)
+    {
+        Affordance option = Assert.Single(prompt.Affordances, option =>
+            string.Equals(option.Verb, "Play", StringComparison.Ordinal)
+            && option.AnchorId == anchor);
+        IReadOnlyList<int> targets = option.Targets is null
+            ? []
+            : option.Targets.Legal.Take(option.Targets.Min).ToList();
+        foreach (CostOption cost in option.CostOptions.Where(cost =>
+                     cost.Target == 0
+                     || cost.Target == option.AnchorId
+                     || targets.Contains(cost.Target)))
+        {
+            var values = cost.VariableRequests.ToDictionary(
+                request => request.Name,
+                request => request.Min,
+                StringComparer.Ordinal);
+            int[] generators = cost.Generators
+                .Select(generator => generator.Effect)
+                .Distinct()
+                .ToArray();
+            IReadOnlyList<ResourceAllocation>? allocations =
+                ResourcePayment.Allocate(cost, generators, values);
+            if (allocations is not null
+                && ResourcePayment.Allows(cost, generators, values, allocations))
+            {
+                return new EngineDecision(
+                    option.Id, targets, generators, values, allocations);
+            }
+        }
+
+        throw new Xunit.Sdk.XunitException("the requested card has no legal payment");
+    }
+
     private sealed class UnusedFactory : IGameFactory
     {
         public int Calls { get; private set; }
@@ -1308,10 +1491,28 @@ public sealed class EngineHostTests
         }
     }
 
-    private sealed class VanishingOffTurnActionFactory(
-        IGameFactory inner,
-        bool winningCommandEndsGame) : IGameFactory
+    private sealed class InHandActionFactory(IDurableGameFactory inner) : IDurableGameFactory
     {
+        public SessionCompatibility Compatibility => inner.Compatibility;
+
+        public Card AuntMay { get; private set; } = null!;
+
+        public OpenedGame Create(GameSpecification specification)
+        {
+            OpenedGame opened = inner.Create(specification);
+            World world = opened.Game.State;
+            AuntMay = world.CreateCard("01006", world.Seats[0].Hand);
+            world.Seats[0].IdentityCard.TakeDamage(5);
+            return opened;
+        }
+    }
+
+    private sealed class VanishingOffTurnActionFactory(
+        IDurableGameFactory inner,
+        bool winningCommandEndsGame) : IDurableGameFactory
+    {
+        public SessionCompatibility Compatibility => inner.Compatibility;
+
         public Card ActiveSource { get; private set; } = null!;
 
         public Card OffTurnSource { get; private set; } = null!;
