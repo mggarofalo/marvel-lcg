@@ -165,6 +165,11 @@ func _run() -> void:
 	if "villain won the game" not in event_text.to_lower():
 		_fail("the terminal outcome did not remain in recent history")
 		return
+	if not await _wait_for(func() -> bool:
+		return _control_text_is_visible(_node("Title") as Control) \
+			and _control_text_is_visible(_node("Description") as Control)):
+		_fail("the terminal page did not reveal its outcome and explanation")
+		return
 	if not await _capture_checkpoint("terminal"):
 		return
 
@@ -456,6 +461,14 @@ func _keyboard_selection_is_operable() -> bool:
 	if decision_scroll.scroll_horizontal != 0:
 		_fail("keyboard focus horizontally clipped the selected decision label")
 		return false
+	for prompt_path in [
+		"Play/Prompt/Margin/Stack/PromptHeader/Eyebrow",
+		"Play/Prompt/Margin/Stack/PromptHeader/Heading",
+		"Play/Prompt/Margin/Stack/PromptHeader/Context",
+	]:
+		if not _control_text_is_visible(_node(prompt_path) as Control):
+			_fail("keyboard focus hid active prompt context: %s" % prompt_path)
+			return false
 	if "SELECTED" not in restored.text:
 		_fail("ui_accept did not select the focused decision action")
 		return false
@@ -471,15 +484,26 @@ func _keyboard_selection_is_operable() -> bool:
 
 
 func _focused_control_is_visible(control: Control) -> bool:
+	var visible_rect := _visible_control_rect(control)
+	var scale := OS.get_environment("MARVEL_UI_SCALE")
+	var expected := 66 if scale == "extra-large" else 55 if scale == "large" else 44
+	return visible_rect.size.x >= expected and visible_rect.size.y >= expected
+
+
+func _control_text_is_visible(control: Control) -> bool:
+	var visible_rect := _visible_control_rect(control)
+	return visible_rect.size.x >= minf(100.0, control.size.x) \
+		and visible_rect.size.y >= control.size.y - 1.0
+
+
+func _visible_control_rect(control: Control) -> Rect2:
 	var visible_rect := control.get_global_rect().intersection(Rect2(Vector2.ZERO, _viewport_size()))
 	var ancestor := control.get_parent()
 	while ancestor != null:
 		if ancestor is ScrollContainer:
 			visible_rect = visible_rect.intersection(ancestor.get_global_rect())
 		ancestor = ancestor.get_parent()
-	var scale := OS.get_environment("MARVEL_UI_SCALE")
-	var expected := 66 if scale == "extra-large" else 55 if scale == "large" else 44
-	return visible_rect.size.x >= expected and visible_rect.size.y >= expected
+	return visible_rect
 
 
 func _viewport_size() -> Vector2:

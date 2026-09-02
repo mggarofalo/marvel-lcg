@@ -643,17 +643,65 @@ public sealed partial class DecisionPanel : VBoxContainer
         {
             if (ancestor is ScrollContainer scroll)
             {
-                scroll.EnsureControlVisible(control);
-                if (scroll.Name == "DecisionScroll")
+                if (scroll.Name == "Margin")
                 {
-                    // Focus rings expand outside the button geometry. Keep the
-                    // wrapped action label anchored at its readable left edge.
-                    scroll.ScrollHorizontal = 0;
+                    EnsurePromptContextVisible(scroll, control);
+                }
+                else
+                {
+                    scroll.EnsureControlVisible(control);
+                    if (scroll.Name == "DecisionScroll")
+                    {
+                        // Focus rings expand outside the button geometry. Keep the
+                        // wrapped action label anchored at its readable left edge.
+                        scroll.ScrollHorizontal = 0;
+                    }
                 }
             }
 
             ancestor = ancestor.GetParent();
         }
+    }
+
+    private static void EnsurePromptContextVisible(
+        ScrollContainer page,
+        Control control)
+    {
+        Control? header = PromptHeader(control);
+        if (header is null)
+        {
+            page.EnsureControlVisible(control);
+            return;
+        }
+
+        Rect2 viewport = page.GetGlobalRect();
+        Rect2 headerRect = header.GetGlobalRect();
+        Rect2 controlRect = control.GetGlobalRect();
+        float top = Math.Min(headerRect.Position.Y, controlRect.Position.Y);
+        float bottom = Math.Max(headerRect.End.Y, controlRect.End.Y);
+        if (bottom - top > viewport.Size.Y)
+        {
+            page.EnsureControlVisible(control);
+            return;
+        }
+
+        page.ScrollVertical += Mathf.RoundToInt(top - viewport.Position.Y);
+    }
+
+    private static Control? PromptHeader(Control control)
+    {
+        Node? ancestor = control.GetParent();
+        while (ancestor is not null)
+        {
+            if (ancestor.Name == "Stack")
+            {
+                return ancestor.GetNodeOrNull<Control>("PromptHeader");
+            }
+
+            ancestor = ancestor.GetParent();
+        }
+
+        return null;
     }
 
     private string? FocusKey(Control focused)
