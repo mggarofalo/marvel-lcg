@@ -61,7 +61,7 @@ public static class WorldProjection
                     card.Owner == world.FirstPlayer && card.Area.Type == DeckType.HeroArea,
                     world))
             {
-                Traits = [.. world.Facts.PrintedTraits(card.FaceId)],
+                Traits = DisplayTraits(world, card),
                 Cost = attributes.TryGetValue("Cost", out string? cost) ? cost : null,
                 PrintedStats = PrintedStats(attributes),
                 Keywords = [.. world.Facts.Keywords(card.FaceId)],
@@ -103,6 +103,24 @@ public static class WorldProjection
                 area.Id,
                 area.PlayAreas.Select(playArea => playArea.Player).Order().ToList())).ToList();
         return new WorldDescriptor(players, areas, gameAreas, world.Result);
+    }
+
+    private static IReadOnlyList<string> DisplayTraits(World world, Card card)
+    {
+        IReadOnlyList<string> rulesKeys = world.Facts.Traits(card.FaceId);
+        IReadOnlyList<string> printed = world.Facts.PrintedTraits(card.FaceId);
+        var labels = rulesKeys
+            .Select((key, index) => new
+            {
+                Key = key,
+                Label = index < printed.Count ? printed[index] : key.Replace('_', ' '),
+            })
+            .ToDictionary(pair => pair.Key, pair => pair.Label, StringComparer.Ordinal);
+        return
+        [
+            .. Traits.Of(world, card, world.Facts)
+                .Select(trait => labels.GetValueOrDefault(trait, trait.Replace('_', ' '))),
+        ];
     }
 
     private static Dictionary<string, string> PrintedStats(

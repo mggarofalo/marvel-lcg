@@ -107,11 +107,14 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
             Humanize(card.Face.Kind.ToString(), trimArea: false).ToUpperInvariant(),
             status,
             card.Face.Fields
-                .Where(field => !field.Key.StartsWith("k_", StringComparison.Ordinal)
-                    && !field.Key.StartsWith("t_", StringComparison.Ordinal))
+                .Where(field => !field.Key.StartsWith("t_", StringComparison.Ordinal))
                 .OrderBy(field => field.Key, StringComparer.Ordinal)
                 .Select(field => new BoardFieldPresentation(
-                    Humanize(field.Key, trimArea: false).ToUpperInvariant(),
+                    Humanize(
+                        field.Key.StartsWith("k_", StringComparison.Ordinal)
+                            ? field.Key[2..]
+                            : field.Key,
+                        trimArea: false).ToUpperInvariant(),
                     field.Value.ToString(CultureInfo.InvariantCulture)))
                 .ToArray())
         {

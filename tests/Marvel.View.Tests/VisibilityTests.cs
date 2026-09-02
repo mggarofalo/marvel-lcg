@@ -164,6 +164,10 @@ public sealed class VisibilityTests
         Card villain = board.AreaOf(DeckType.VillainArea).Cards[0];
         villain.TakeDamage(2);
         villain.PlaceTokens("c_test", 3);
+        board.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect,
+            Traits.Granted + "AERIAL",
+            Affects: villain.ObjectId));
         ViewScope scope = new RestrictedVisibilityPolicy(0).Authorize(null, board.Players);
 
         WorldDescriptor visible = WorldProjection.For(board, null, [], scope).World;
@@ -172,7 +176,7 @@ public sealed class VisibilityTests
         CardDescriptor hidden = visible.Areas
             .Single(area => area.Zone == nameof(DeckType.EncounterDeck)).Cards[0];
 
-        Assert.Equal(["BRUTE"], face.Traits);
+        Assert.Equal(["BRUTE", "AERIAL"], face.Traits);
         Assert.Equal("4", face.PrintedStats["SCH"]);
         Assert.Null(face.Cost);
         Assert.Equal(["Guard"], face.Keywords);
