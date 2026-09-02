@@ -4,6 +4,7 @@
     <Project Path="src/Marvel.Rules/Marvel.Rules.csproj" />
     <Project Path="src/Marvel.Cards/Marvel.Cards.csproj" />
     <Project Path="src/Marvel.Content/Marvel.Content.csproj" />
+    <Project Path="src/Marvel.Session/Marvel.Session.csproj" />
     <Project Path="src/Marvel.Sim/Marvel.Sim.csproj" />
     <Project Path="src/Marvel.View/Marvel.View.csproj" />
     <Project Path="src/Marvel.Server/Marvel.Server.csproj" />
@@ -23,6 +24,7 @@
     <Project Path="tests/Marvel.Core.Tests/Marvel.Core.Tests.csproj" />
     <Project Path="tests/Marvel.Rules.Tests/Marvel.Rules.Tests.csproj" />
     <Project Path="tests/Marvel.Content.Tests/Marvel.Content.Tests.csproj" />
+    <Project Path="tests/Marvel.Session.Tests/Marvel.Session.Tests.csproj" />
     <Project Path="tests/Marvel.Sim.Tests/Marvel.Sim.Tests.csproj" />
     <Project Path="tests/Marvel.View.Tests/Marvel.View.Tests.csproj" />
     <Project Path="tests/Marvel.Server.Tests/Marvel.Server.Tests.csproj" />

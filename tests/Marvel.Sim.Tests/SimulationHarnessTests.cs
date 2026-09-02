@@ -4,6 +4,7 @@ using Marvel.Tests;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.Timing;
+using Marvel.Session;
 using Xunit;
 
 namespace Marvel.Sim.Tests;
