@@ -39,6 +39,7 @@ public sealed partial class Main : Control
     private string? localCapability;
     private OptionButton mode = null!;
     private OptionButton modular = null!;
+    private ScrollContainer pageScroll = null!;
     private PanelContainer promptPanel = null!;
     private Label promptContext = null!;
     private Label promptEyebrow = null!;
@@ -109,6 +110,7 @@ public sealed partial class Main : Control
     private void BindNodes()
     {
         const string content = "Margin/Shell/Content";
+        pageScroll = GetNode<ScrollContainer>("Margin");
         description = GetNode<Label>($"{content}/Description");
         eyebrow = GetNode<Label>($"{content}/Eyebrow");
         title = GetNode<Label>($"{content}/Title");
@@ -333,10 +335,16 @@ public sealed partial class Main : Control
             }
 
             localCapability = startup.Response!.Capability;
+            // The setup page follows focus so every scaled field can be reached.
+            // Play owns focus scrolling inside its board and decision rails; letting
+            // the outer page follow the prompt would hide the table heading.
+            pageScroll.FollowFocus = false;
             RenderGame(startup.Response, resetEvents: true);
             setupPanel.Visible = false;
             board.Visible = true;
             eyebrow.Text = "CORE SET  /  LOCAL TABLE";
+            ResetPlayScrolls();
+            CallDeferred(MethodName.ResetPlayScrolls);
         }
         catch (Exception)
         {
@@ -590,6 +598,12 @@ public sealed partial class Main : Control
         eventCue.Modulate = Colors.White;
         eventSkip.Disabled = true;
         boardRender?.Present([]);
+    }
+
+    private void ResetPlayScrolls()
+    {
+        pageScroll.ScrollHorizontal = 0;
+        pageScroll.ScrollVertical = 0;
     }
 
     private void ApplyProgress(GameProgressPresentation progress)

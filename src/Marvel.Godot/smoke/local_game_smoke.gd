@@ -5,10 +5,12 @@ const MAX_DECISIONS := 20
 
 var main: Control
 var failed := false
+var motion_enabled := true
 
 
 func _initialize() -> void:
 	_prepare_art_pack()
+	motion_enabled = OS.get_environment("MARVEL_SMOKE_MOTION") != "disabled"
 	var viewport := OS.get_environment("MARVEL_SMOKE_VIEWPORT").split("x")
 	if viewport.size() == 2:
 		var requested := Vector2i(int(viewport[0]), int(viewport[1]))
@@ -29,6 +31,8 @@ func _run() -> void:
 		_fail("setup never became ready")
 		return
 	if not await _visual_system_is_resolved():
+		return
+	if not await _capture_checkpoint("setup"):
 		return
 
 	_select_named_option(_node("Setup/Selections/Fields/Grid/Hero"), "Spider-Man")
@@ -55,11 +59,14 @@ func _run() -> void:
 		return
 	if not await _event_presentation_is_nonblocking():
 		return
+	if not await _capture_checkpoint("open-table-prompt-dense-concealed"):
+		return
 
 	var saw_mulligan := false
 	var saw_pass := false
 	var saw_end_phase := false
 	var saw_nonblocking_motion := false
+	var captured_villain_phase := false
 	var decisions := 0
 	while not _is_complete():
 		if decisions >= MAX_DECISIONS:
@@ -71,6 +78,9 @@ func _run() -> void:
 		var decision_text := _visible_text(_decision())
 		saw_mulligan = saw_mulligan or "Mulligan" in decision_text
 		saw_end_phase = saw_end_phase or "End Phase" in decision_text
+		var ending_player_phase := "End Phase" in decision_text
+		if ending_player_phase and not await _capture_checkpoint("player-phase"):
+			return
 		var pass_button := _visible_button(_decision(), "Pass / decline")
 		if pass_button != null and not pass_button.disabled:
 			saw_pass = true
@@ -97,14 +107,29 @@ func _run() -> void:
 			_fail("the engine did not reconcile decision %d" % decisions)
 			return
 		var event_skip := _node("Play/Prompt/Margin/Stack/EventHeader/Skip") as Button
-		if not event_skip.disabled and (_is_complete() or _first_enabled_choice() != null):
+		if motion_enabled and not event_skip.disabled \
+				and (_is_complete() or _first_enabled_choice() != null):
 			saw_nonblocking_motion = true
+		if not motion_enabled and not _disabled_motion_is_settled(event_skip):
+			return
+		var history_text := (_node("Play/Prompt/Margin/Stack/EventLog") as RichTextLabel) \
+			.get_parsed_text().to_lower()
+		if not captured_villain_phase and not _is_complete() and "villain phase" in history_text:
+			if not await _capture_checkpoint("villain-phase"):
+				return
+			captured_villain_phase = true
 
 	if not saw_mulligan or not saw_pass or not saw_end_phase:
 		_fail("the journey missed a required visible decision path")
 		return
-	if not saw_nonblocking_motion:
+	if not captured_villain_phase:
+		_fail("the journey never reached a non-terminal villain-phase checkpoint")
+		return
+	if motion_enabled and not saw_nonblocking_motion:
 		_fail("the journey never exposed an operable prompt while event motion was active")
+		return
+	if not motion_enabled and saw_nonblocking_motion:
+		_fail("the motion-disabled journey exposed active event playback")
 		return
 	if "VILLAIN WINS" not in _status().text:
 		_fail("the terminal UI did not report the seeded villain win")
@@ -120,8 +145,13 @@ func _run() -> void:
 	if "villain won the game" not in event_text.to_lower():
 		_fail("the terminal outcome did not remain in recent history")
 		return
+	if not await _capture_checkpoint("terminal"):
+		return
 
-	print("LOCAL_GAME_SMOKE_OK decisions=%d" % decisions)
+	print("LOCAL_GAME_SMOKE_OK decisions=%d motion=%s" % [
+		decisions,
+		"enabled" if motion_enabled else "disabled",
+	])
 	quit(0)
 
 
@@ -354,6 +384,14 @@ func _board_layout_is_resolved() -> bool:
 	if board.get_global_rect().intersects(prompt.get_global_rect()):
 		_fail("the prompt rail overlaps the board")
 		return false
+	var page_scroll := main.get_node("Margin") as ScrollContainer
+	if page_scroll.scroll_horizontal != 0 or page_scroll.scroll_vertical != 0:
+		_fail("the table inherited the setup page's scroll position: %d/%d follow=%s" % [
+			page_scroll.scroll_horizontal,
+			page_scroll.scroll_vertical,
+			page_scroll.follow_focus,
+		])
+		return false
 	return true
 
 
@@ -400,6 +438,38 @@ func _keyboard_selection_is_operable() -> bool:
 			and "NO TARGETS" not in progress.text):
 		_fail("the pinned prompt summary did not update target and readiness progress")
 		return false
+	if not await _focused_board_area_is_visible():
+		return false
+	return true
+
+
+func _focused_board_area_is_visible() -> bool:
+	await process_frame
+	await process_frame
+	var saw_focused_card := false
+	for card in main.find_children("ProceduralCard", "PanelContainer", true, false):
+		if card.theme_type_variation != &"FocusedCard":
+			continue
+		saw_focused_card = true
+		var area := card.get_parent()
+		while area != null and not (area is PanelContainer and area.name.begins_with("Area")):
+			area = area.get_parent()
+		var area_scroll := area.get_parent() if area != null else null
+		while area_scroll != null and not (area_scroll is ScrollContainer \
+				and area_scroll.name == "AreaScroll"):
+			area_scroll = area_scroll.get_parent()
+		if area == null or area_scroll == null:
+			_fail("a focused board card is not contained by an area rail")
+			return false
+		var area_rect: Rect2 = area.get_global_rect()
+		var scroll_rect: Rect2 = area_scroll.get_global_rect()
+		if area_rect.position.x < scroll_rect.position.x - 1.0 \
+				or area_rect.end.x > scroll_rect.end.x + 1.0:
+			_fail("keyboard highlighting clipped the focused board area's heading")
+			return false
+	if not saw_focused_card:
+		_fail("keyboard selection did not highlight its board anchor")
+		return false
 	return true
 
 
@@ -435,14 +505,67 @@ func _event_presentation_is_nonblocking() -> bool:
 		_fail("skipping motion did not settle on the authoritative snapshot")
 		return false
 
-	motion.button_pressed = false
-	motion.toggled.emit(false)
+	motion.button_pressed = motion_enabled
+	motion.toggled.emit(motion_enabled)
 	await process_frame
-	if not skip.disabled or log.text != history:
-		_fail("disabling motion changed history or left playback active")
+	if log.text != history:
+		_fail("selecting the smoke motion preference changed event history")
 		return false
-	motion.button_pressed = true
-	motion.toggled.emit(true)
+	if not motion_enabled and not _disabled_motion_is_settled(skip):
+		return false
+	return true
+
+
+func _disabled_motion_is_settled(skip: Button) -> bool:
+	if not skip.disabled:
+		_fail("motion-disabled presentation left playback active")
+		return false
+	var cue := _node("Play/Prompt/Margin/Stack/EventCue") as Control
+	if "TABLE SYNCED" not in _visible_text(cue):
+		_fail("motion-disabled presentation did not settle on the authoritative snapshot")
+		return false
+	return true
+
+
+func _capture_checkpoint(checkpoint: String) -> bool:
+	var capture_dir := OS.get_environment("MARVEL_SMOKE_CAPTURE_DIR")
+	if capture_dir.is_empty():
+		return true
+	await process_frame
+	await process_frame
+	var image := root.get_texture().get_image()
+	if image == null or image.is_empty():
+		_fail("visual checkpoint '%s' needs a non-headless rendering driver" % checkpoint)
+		return false
+
+	var colors: Dictionary = {}
+	for x_step in range(1, 8):
+		for y_step in range(1, 8):
+			var pixel := image.get_pixel(
+				int(image.get_width() * x_step / 8.0),
+				int(image.get_height() * y_step / 8.0))
+			colors[pixel.to_html()] = true
+	if colors.size() < 6:
+		_fail("visual checkpoint '%s' is blank or materially unrendered" % checkpoint)
+		return false
+
+	var absolute_dir := ProjectSettings.globalize_path(capture_dir)
+	var error := DirAccess.make_dir_recursive_absolute(absolute_dir)
+	if error != OK:
+		_fail("visual checkpoint directory could not be created: %s" % absolute_dir)
+		return false
+	var viewport := OS.get_environment("MARVEL_SMOKE_VIEWPORT")
+	var scale := OS.get_environment("MARVEL_UI_SCALE")
+	var motion := "motion" if motion_enabled else "reduced-motion"
+	var path := absolute_dir.path_join("%s-%s-%s-%s.png" % [
+		viewport,
+		scale,
+		motion,
+		checkpoint,
+	])
+	if image.save_png(path) != OK:
+		_fail("visual checkpoint could not be saved: %s" % path)
+		return false
 	return true
 
 

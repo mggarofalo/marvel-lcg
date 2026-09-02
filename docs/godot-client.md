@@ -40,11 +40,13 @@ no console or debug action is part of play.
 
 ## Native smoke
 
-The native smoke loads the real scene at each supported UI scale, selects Spider-Man and Rhino, enters seed
-`1`, opens the table and activates only visible buttons until the UI reports the
-seeded villain win. It exercises both submit and pass paths across seven
-authoritative responses, checks that the event log is populated, and prints
-`LOCAL_GAME_SMOKE_OK` on success.
+The native smoke loads the real scene at each supported UI scale, selects
+Spider-Man and Rhino, enters seed `1`, opens the table and activates only
+visible buttons until the UI reports the seeded villain win. It exercises both
+submit and pass paths across seven authoritative responses, checks that the
+event log is populated, and prints `LOCAL_GAME_SMOKE_OK` on success. The full
+matrix runs with event motion enabled; a representative desktop profile also
+completes the same game with motion disabled.
 
 macOS and Linux:
 
@@ -58,7 +60,26 @@ Windows PowerShell:
 tools/godot-smoke.ps1 -GodotBin "C:\path\to\Godot_v4.7.1-stable_mono_win64_console.exe"
 ```
 
-The smoke uses `--headless`; it does not use movie capture. CI downloads the
+The smoke uses `--headless`; it does not use movie capture. The visual QA tools
+additionally check and retain rendered viewport images at
+setup, open-table/prompt, player-phase, villain-phase and terminal checkpoints.
+The open-table checkpoint includes the dense horizontal rails and both visible
+player cards and concealed deck cards. They run both motion preferences at the
+representative 1280×720 standard-scale profile:
+
+```bash
+GODOT_BIN="/path/to/Godot" bash tools/godot-visual-qa.sh
+```
+
+```powershell
+tools/godot-visual-qa.ps1 -GodotBin "C:\path\to\Godot.exe"
+```
+
+Set `MARVEL_SMOKE_CAPTURE_DIR` to retain the PNGs at a chosen absolute path;
+otherwise the tools create a temporary directory and print it. No capture is
+written into the repository.
+
+CI downloads the
 official Godot 4.7.1 .NET archives, verifies their SHA-256 digests and runs this
 path on Windows and Linux. The macOS command is verified with the 4.7 .NET
 editor and exercises the same checked-in script.
