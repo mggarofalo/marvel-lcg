@@ -1,6 +1,9 @@
 extends SceneTree
 
-const TIMEOUT_MILLISECONDS := 15000
+# The Windows CI runner falls back to software-rendered ANGLE. Socket decisions
+# must still complete there, but rendering two live Main scenes can take longer
+# than the headless local-game smoke's per-action budget.
+const TIMEOUT_MILLISECONDS := 60000
 const MAX_DECISIONS := 600
 const GAME_LABEL := "hosted-multiplayer-smoke"
 
@@ -167,7 +170,7 @@ func _answer_visible_decision(main: Control) -> bool:
 
 	if not await _wait_for(func() -> bool:
 		return not _status(main).text.begins_with("DECISION SENT")):
-		_fail("the hosted decision did not settle")
+		_fail("the hosted decision did not settle: %s" % _status(main).text)
 		return false
 	if _status(main).text.begins_with("MUTATION NOT REPEATED") \
 			or _status(main).text.begins_with("DECISION REJECTED"):
