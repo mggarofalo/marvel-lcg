@@ -47,6 +47,23 @@ public sealed class SocketTransport(string host, int port) : IEngineTransport
         byte[] response = await SocketFrame.ReadAsync(stream, CancellationToken.None)
             .ConfigureAwait(false)
             ?? throw new EndOfStreamException("the engine host closed without a response");
+        int responseVersion = EngineJson.ReadResponseVersion(response);
+        if (responseVersion != EngineProtocol.Version)
+        {
+            // A future response schema cannot be decoded strictly. The
+            // transport preserves only its version mismatch and uses the
+            // request's correlation labels so the client can report that
+            // incompatibility instead of mistaking it for an outage. This is
+            // our wire-compatibility choice, not a game rule.
+            return new EngineResponse(
+                responseVersion,
+                request.RequestId,
+                request.GameId,
+                Capability: null,
+                Prompt: null,
+                Events: []);
+        }
+
         return EngineJson.ReadResponse(response);
     }
 }

@@ -17,12 +17,12 @@ public static class LocalGameSession
 /// <summary>A bounded product-level failure suitable for display.</summary>
 public sealed record ClientStartupError(string Code, string Message);
 
-/// <summary>A locally composed client, or why committed content could not be loaded.</summary>
+/// <summary>A composed client, or why its engine connection could not be configured.</summary>
 public sealed record LocalClientConnection(
     LocalGameClient? Client,
     ClientStartupError? Error)
 {
-    /// <summary>Whether the local engine transport is available.</summary>
+    /// <summary>Whether the configured engine transport is available.</summary>
     public bool Succeeded => Client is not null && Error is null;
 }
 
