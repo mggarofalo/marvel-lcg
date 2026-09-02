@@ -168,6 +168,7 @@ public sealed class EngineHost : IEngineEndpoint
             EngineProtocol.Resolve => Resolve(request),
             EngineProtocol.Undo => MoveHistory(request, undo: true),
             EngineProtocol.Redo => MoveHistory(request, undo: false),
+            EngineProtocol.Reorder => ReorderHistory(request),
             EngineProtocol.Close => Close(request),
             _ => Failed(
                 request, "invalid_request",
@@ -183,7 +184,8 @@ public sealed class EngineHost : IEngineEndpoint
             || request.Decision is not null
             || request.Viewer is not null
             || request.ExpectedRevision is not null
-            || request.Cursor is not null)
+            || request.Cursor is not null
+            || request.Order is not null)
         {
             return Failed(
                 request, "invalid_request",
@@ -213,7 +215,8 @@ public sealed class EngineHost : IEngineEndpoint
         if (request.Game is null
             || request.Decision is not null
             || request.ExpectedRevision is not null
-            || request.Cursor is not null)
+            || request.Cursor is not null
+            || request.Order is not null)
         {
             return Failed(
                 request, "invalid_request",
@@ -353,7 +356,8 @@ public sealed class EngineHost : IEngineEndpoint
             || request.Decision is not null
             || request.Viewer is not null
             || request.ExpectedRevision is not null
-            || request.Cursor is not null)
+            || request.Cursor is not null
+            || request.Order is not null)
         {
             return Failed(
                 request, "invalid_request",
@@ -403,7 +407,8 @@ public sealed class EngineHost : IEngineEndpoint
             || request.Decision is not null
             || request.Viewer is not null
             || request.ExpectedRevision is not null
-            || request.Cursor is not null)
+            || request.Cursor is not null
+            || request.Order is not null)
         {
             return Failed(request, "invalid_request", "sync accepts only a session capability");
         }
@@ -429,7 +434,8 @@ public sealed class EngineHost : IEngineEndpoint
             || request.Game is not null
             || request.Viewer is not null
             || request.ExpectedRevision is null or < 0
-            || request.Cursor is not null)
+            || request.Cursor is not null
+            || request.Order is not null)
         {
             return Failed(
                 request, "invalid_request",
@@ -514,7 +520,7 @@ public sealed class EngineHost : IEngineEndpoint
             int active = candidate.Active;
             int round = candidate.Round;
             string phase = candidate.Phase.ToString();
-            string role = UnitRole(candidate, candidatePrompt, replayDecision);
+            string role = SessionReplay.UnitRole(candidate, candidatePrompt, replayDecision);
             long rngBefore = candidate.State.Random.Generator.WordsConsumed;
             var resolved = candidate.Resolve(replayDecision);
             IReadOnlyList<InformationExposure> exposures = InformationFrontier.Classify(
@@ -584,7 +590,8 @@ public sealed class EngineHost : IEngineEndpoint
             || request.Decision is not null
             || request.Viewer is not null
             || request.ExpectedRevision is null or < 0
-            || request.Cursor is null or < 0)
+            || request.Cursor is null or < 0
+            || request.Order is not null)
         {
             return Failed(
                 request,
@@ -681,13 +688,146 @@ public sealed class EngineHost : IEngineEndpoint
         }
     }
 
+    private EngineResponse ReorderHistory(EngineRequest request)
+    {
+        if (request.Game is not null
+            || request.Decision is not null
+            || request.Viewer is not null
+            || request.ExpectedRevision is null or < 0
+            || request.Cursor is not null
+            || request.Order is not { Count: >= 2 })
+        {
+            return Failed(
+                request,
+                "invalid_request",
+                "reorder requires an expected revision and at least two unit positions");
+        }
+
+        if (!TrySession(request, out _, out var access))
+        {
+            return Failed(request, "session_not_found", "the session capability is not valid");
+        }
+
+        SessionSave save = access.Session.Save;
+        if (request.ExpectedRevision != save.Revision)
+        {
+            return Failed(
+                request,
+                "stale_history",
+                "the history command was composed for an earlier table revision");
+        }
+
+        int[] order = [.. request.Order];
+        if (order.Any(index => index < 0 || index >= save.Cursor)
+            || order.Distinct().Count() != order.Length)
+        {
+            return Failed(
+                request,
+                "reorder_shape",
+                "reorder positions must name distinct active history units");
+        }
+
+        int first = order.Min();
+        int last = order.Max();
+        if (last - first + 1 != order.Length
+            || order.SequenceEqual(Enumerable.Range(first, order.Length)))
+        {
+            return Failed(
+                request,
+                "reorder_shape",
+                "reorder must change one contiguous range of history units");
+        }
+
+        if (save.Units.Any(unit => unit.Status != "complete"))
+        {
+            return Failed(
+                request,
+                "history_open",
+                "history cannot change while an operation has dependent decisions pending");
+        }
+
+        List<JournalUnit> affected = save.Units.Skip(first).Take(order.Length).ToList();
+        if (!EditableBy(affected, access.Scope))
+        {
+            return Failed(
+                request,
+                "history_authority",
+                "this capability cannot revise history submitted by another seat");
+        }
+
+        if (first < save.EditFrontier)
+        {
+            return Failed(
+                request,
+                "history_frontier",
+                "new information makes that history range unavailable");
+        }
+
+        JournalUnit position = affected[0];
+        if (affected.Any(unit => unit.Role != "turn_action"
+                || unit.ActiveSeat != position.ActiveSeat
+                || unit.Round != position.Round
+                || !string.Equals(unit.Phase, position.Phase, StringComparison.Ordinal)))
+        {
+            return Failed(
+                request,
+                "reorder_kind",
+                "only action units from one active-player turn can be reordered");
+        }
+
+        try
+        {
+            int[] sourceOrder =
+            [
+                .. Enumerable.Range(0, first),
+                .. order,
+                .. Enumerable.Range(last + 1, save.Cursor - last - 1),
+            ];
+            RewrittenTrace trace = SessionReplay.Rewrite(
+                save, compatibility, ReplayOpen, sourceOrder);
+            SessionSave proposed = save with
+            {
+                Revision = save.Revision + 1,
+                Cursor = trace.Units.Count,
+                EditFrontier = trace.EditFrontier,
+                CurrentPrompt = trace.Game.Pending is null
+                    ? null
+                    : PromptRecord.From(trace.Game.Pending),
+                Units = trace.Units,
+            };
+            Game verified = SessionReplay.Verify(proposed, compatibility, ReplayOpen);
+            store.Commit(new StoredSession(proposed, Authorities(access.Session)));
+            access.Session.Game = verified;
+            access.Session.Save = proposed;
+            return Succeeded(
+                request,
+                verified,
+                verified.Pending,
+                [],
+                access.Scope,
+                revision: proposed.Revision,
+                history: History(proposed, access.Scope));
+        }
+        catch (Exception failure) when (failure is IOException
+            or UnauthorizedAccessException
+            or SessionSaveException
+            or ReplayDivergenceException)
+        {
+            return Failed(
+                request,
+                "reorder_failed",
+                "the rewritten trace was not committed and the prior game remains authoritative");
+        }
+    }
+
     private EngineResponse Close(EngineRequest request)
     {
         if (request.Game is not null
             || request.Decision is not null
             || request.Viewer is not null
             || request.ExpectedRevision is not null
-            || request.Cursor is not null)
+            || request.Cursor is not null
+            || request.Order is not null)
         {
             return Failed(
                 request, "invalid_request",
@@ -959,28 +1099,6 @@ public sealed class EngineHost : IEngineEndpoint
             .Distinct()
             .ToArray();
         return actors.Length == 1 && scope.Includes(actors[0]);
-    }
-
-    private static string UnitRole(Game game, Prompt prompt, Decision decision)
-    {
-        if (game.IsForcedResolutionPrompt)
-        {
-            return "forced_resolution";
-        }
-
-        if (game.Phase != GamePhase.PlayerTurn)
-        {
-            return "phase_step";
-        }
-
-        string? verb = decision.IsDecline
-            ? null
-            : prompt.Affordances.Single(option => option.Id == decision.Affordance).Verb;
-        return string.Equals(verb, Game.ChangeForm, StringComparison.Ordinal)
-            || string.Equals(verb, Game.EndPhaseVerb, StringComparison.Ordinal)
-            || decision.IsDecline
-                ? "turn_control"
-                : "turn_action";
     }
 
     private static SessionCompatibility TestCompatibility() => new(

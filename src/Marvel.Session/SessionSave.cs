@@ -319,6 +319,12 @@ public static class SessionSaveJson
 /// <summary>The game and setup events freshly produced by a replay factory.</summary>
 public sealed record ReplayOpenedGame(Game Game, IReadOnlyList<GameEvent> SetupEvents);
 
+/// <summary>A newly derived active trace and the game it produces.</summary>
+public sealed record RewrittenTrace(
+    Game Game,
+    IReadOnlyList<JournalUnit> Units,
+    int EditFrontier);
+
 /// <summary>Reconstructs and verifies a save without mutating a live game.</summary>
 public static class SessionReplay
 {
@@ -364,6 +370,111 @@ public static class SessionReplay
         return cursor == save.Cursor
             ? current
             : Replay(save, cursor, open, requireExposures: true).Game;
+    }
+
+    /// <summary>
+    /// Rebuilds a complete active trace from durable inputs in a proposed order.
+    /// </summary>
+    /// <remarks>
+    /// Reordering is a product operation. Derived prompts, events, RNG counts,
+    /// fingerprints, results, positions and information signals are generated
+    /// again; none are copied from the prior order.
+    /// </remarks>
+    public static RewrittenTrace Rewrite(
+        SessionSave save,
+        SessionCompatibility expected,
+        Func<SessionSetup, ReplayOpenedGame> open,
+        IReadOnlyList<int> sourceOrder)
+    {
+        _ = Verify(save, expected, open);
+        ArgumentNullException.ThrowIfNull(sourceOrder);
+        if (sourceOrder.Count != save.Cursor
+            || !sourceOrder.Order().SequenceEqual(Enumerable.Range(0, save.Cursor)))
+        {
+            throw new SessionSaveException(
+                "rewrite order is not a permutation of the active trace");
+        }
+
+        Game game = Replay(save, 0, open, requireExposures: true).Game;
+        var rewritten = new List<JournalUnit>(sourceOrder.Count);
+        int frontier = 0;
+        foreach (int sourceIndex in sourceOrder)
+        {
+            JournalUnit source = save.Units[sourceIndex];
+            if (source.Status != "complete")
+            {
+                throw new ReplayDivergenceException(
+                    $"unit {sourceIndex} is not complete for rewriting");
+            }
+
+            int active = game.Active;
+            int round = game.Round;
+            string phase = game.Phase.ToString();
+            string? role = null;
+            var steps = new List<JournalStep>(source.Decisions.Count);
+            IReadOnlyList<InformationExposure> exposures = [];
+            for (int decisionIndex = 0;
+                decisionIndex < source.Decisions.Count;
+                decisionIndex++)
+            {
+                if (decisionIndex > 0 && (game.Pending is null || game.IsRootPrompt))
+                {
+                    throw new ReplayDivergenceException(
+                        $"unit {sourceIndex} reached a boundary before its dependent decisions ended");
+                }
+
+                JournalStep input = source.Decisions[decisionIndex];
+                Prompt prompt = game.Pending ?? throw new ReplayDivergenceException(
+                    $"unit {sourceIndex} decision {decisionIndex} has no prompt");
+                Decision decision = input.Decision.Resolve(prompt);
+                role ??= UnitRole(game, prompt, decision);
+                long rngBefore = game.State.Random.Generator.WordsConsumed;
+                var resolved = game.Resolve(decision);
+                exposures = InformationFrontier.Merge(
+                    exposures,
+                    InformationFrontier.Classify(
+                        game.State.Players,
+                        rngBefore,
+                        game.State.Random.Generator.WordsConsumed,
+                        resolved.Information,
+                        resolved.Events,
+                        game.Pending));
+                steps.Add(JournalStep.From(
+                    input.Decision.Actor,
+                    prompt,
+                    decision,
+                    resolved.Events,
+                    game.State.Random.Generator.WordsConsumed,
+                    Fingerprint(game),
+                    Result(game)));
+            }
+
+            if (game.Pending is not null && !game.IsRootPrompt)
+            {
+                throw new ReplayDivergenceException(
+                    $"unit {sourceIndex} did not reach its complete boundary");
+            }
+
+            string rewrittenRole = game.Pending is null
+                ? "terminal"
+                : role ?? throw new ReplayDivergenceException(
+                    $"unit {sourceIndex} has no root decision");
+            rewritten.Add(new JournalUnit(
+                rewrittenRole,
+                "complete",
+                source.Decisions[0].Decision.Actor,
+                active,
+                round,
+                phase,
+                steps,
+                exposures));
+            if (exposures.Count > 0)
+            {
+                frontier = rewritten.Count;
+            }
+        }
+
+        return new RewrittenTrace(game, rewritten, frontier);
     }
 
     /// <summary>
@@ -438,13 +549,26 @@ public static class SessionReplay
             }
 
             int decisionIndex = 0;
+            string? derivedRole = null;
             foreach (JournalStep step in unit.Decisions)
             {
+                if (decisionIndex > 0 && (game.Pending is null || game.IsRootPrompt))
+                {
+                    throw new ReplayDivergenceException(
+                        $"unit {unitIndex} crossed a root boundary");
+                }
+
                 Prompt prompt = game.Pending ?? throw new ReplayDivergenceException(
                     $"unit {unitIndex} decision {decisionIndex} has no prompt");
                 string context = $"unit {unitIndex} decision {decisionIndex}";
                 JournalReplay.RequirePrompt(step.Prompt, prompt, $"{context} prompt");
                 Decision decision = step.Decision.Resolve(prompt);
+                if (decisionIndex == 0 && unit.InitiatingSeat != step.Decision.Actor)
+                {
+                    throw new ReplayDivergenceException(
+                        $"unit {unitIndex} root metadata diverged");
+                }
+                derivedRole ??= UnitRole(game, prompt, decision);
                 long rngBefore = game.State.Random.Generator.WordsConsumed;
                 var resolved = game.Resolve(decision);
                 JournalReplay.RequireEvents(step.Events, resolved.Events, $"{context} events");
@@ -477,6 +601,16 @@ public static class SessionReplay
                     $"unit {unitIndex} completion status diverged");
             }
 
+            string expectedRole = game.Pending is null
+                ? "terminal"
+                : derivedRole ?? throw new ReplayDivergenceException(
+                    $"unit {unitIndex} has no root decision");
+            if (!string.Equals(unit.Role, expectedRole, StringComparison.Ordinal))
+            {
+                throw new ReplayDivergenceException(
+                    $"unit {unitIndex} role diverged");
+            }
+
             if (requireExposures)
             {
                 RequireExposures(unit.Exposures, exposures, $"unit {unitIndex} exposure");
@@ -497,6 +631,32 @@ public static class SessionReplay
         }
 
         return new ReplayResult(game, derived);
+    }
+
+    /// <summary>Derives the history role of a root decision from engine truth.</summary>
+    public static string UnitRole(Game game, Prompt prompt, Decision decision)
+    {
+        ArgumentNullException.ThrowIfNull(game);
+        ArgumentNullException.ThrowIfNull(prompt);
+        ArgumentNullException.ThrowIfNull(decision);
+        if (game.IsForcedResolutionPrompt)
+        {
+            return "forced_resolution";
+        }
+
+        if (game.Phase != GamePhase.PlayerTurn)
+        {
+            return "phase_step";
+        }
+
+        string? verb = decision.IsDecline
+            ? null
+            : prompt.Affordances.Single(option => option.Id == decision.Affordance).Verb;
+        return string.Equals(verb, Game.ChangeForm, StringComparison.Ordinal)
+            || string.Equals(verb, Game.EndPhaseVerb, StringComparison.Ordinal)
+            || decision.IsDecline
+                ? "turn_control"
+                : "turn_action";
     }
 
     /// <summary>Captures hidden state together with its terminal meaning.</summary>

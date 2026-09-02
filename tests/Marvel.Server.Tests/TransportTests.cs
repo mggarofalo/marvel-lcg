@@ -172,6 +172,21 @@ public sealed class TransportTests
     }
 
     [Fact]
+    public void ReorderCarriesOnlyRevisionAndOriginalUnitPositions()
+    {
+        EngineRequest request = EngineRequest.ReorderGame(
+            "reorder", "game", "capability", [4, 2, 3], expectedRevision: 17);
+
+        EngineRequest again = EngineJson.ReadRequest(EngineJson.Write(request));
+
+        Assert.Equal(EngineProtocol.Reorder, again.Operation);
+        Assert.Equal(17, again.ExpectedRevision);
+        Assert.Equal([4, 2, 3], again.Order);
+        Assert.Null(again.Cursor);
+        Assert.Null(again.Decision);
+    }
+
+    [Fact]
     public void TheWireCarriesAFilteredWorldAndNeverAStateDigest()
     {
         var response = new EngineResponse(
@@ -216,7 +231,7 @@ public sealed class TransportTests
 
         var again = EngineJson.ReadResponse(EngineJson.Write(response));
 
-        Assert.Equal(8, again.Version);
+        Assert.Equal(9, again.Version);
         Assert.Collection(
             again.Events,
             happened => Assert.Equal(joined, Assert.IsType<PlayAreaJoined>(happened)),

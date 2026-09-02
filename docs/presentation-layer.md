@@ -130,7 +130,9 @@ visibility configuration, durable sessions and shutdown behavior.
 
 The socket protocol uses source-generated JSON inside a 4-byte big-endian length
 frame. Frames are bounded. Unknown operations, unsupported protocol versions and
-unknown JSON members fail before they reach the engine. Protocol 8 adds
+unknown JSON members fail before they reach the engine. Protocol 9 adds legal
+trace rewriting for a permutation of contiguous committed action-unit positions.
+The client sends no decisions or derived state in that command. Protocol 8 added
 replay-verified undo and redo commands that name an expected revision and a
 retained history cursor. Each authorized game response carries only the cursor
 boundaries that capability may currently request; it does not expose journal
