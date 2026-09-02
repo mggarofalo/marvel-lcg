@@ -17,10 +17,13 @@ if ($LASTEXITCODE -ne 0 -or -not $version.StartsWith("4.7.")) {
 dotnet build "$repoRoot/src/Marvel.Godot/Marvel.Godot.csproj" --nologo
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-foreach ($scale in @("standard", "large", "extra-large")) {
-    $env:MARVEL_UI_SCALE = $scale
-    & $GodotBin --headless --path "$repoRoot/src/Marvel.Godot" `
-        --script res://smoke/local_game_smoke.gd
-    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+foreach ($viewport in @("1040x680", "1280x720", "1600x900")) {
+    foreach ($scale in @("standard", "large", "extra-large")) {
+        $env:MARVEL_UI_SCALE = $scale
+        $env:MARVEL_SMOKE_VIEWPORT = $viewport
+        & $GodotBin --headless --path "$repoRoot/src/Marvel.Godot" `
+            --script res://smoke/local_game_smoke.gd
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    }
 }
 exit 0

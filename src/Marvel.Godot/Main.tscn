@@ -232,7 +232,6 @@ visible = false
 custom_minimum_size = Vector2(0, 260)
 layout_mode = 2
 size_flags_vertical = 3
-split_offset = 620
 
 [node name="Board" type="ScrollContainer" parent="Margin/Shell/Content/Play"]
 layout_mode = 2
@@ -248,11 +247,10 @@ size_flags_horizontal = 3
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 10
 
-[node name="Areas" type="GridContainer" parent="Margin/Shell/Content/Play/Board/Margin"]
+[node name="Areas" type="VBoxContainer" parent="Margin/Shell/Content/Play/Board/Margin"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_type_variation = &"DataGrid"
-columns = 1
+theme_type_variation = &"Stack"
 
 [node name="Prompt" type="PanelContainer" parent="Margin/Shell/Content/Play"]
 custom_minimum_size = Vector2(330, 0)
@@ -277,7 +275,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 follow_focus = true
-horizontal_scroll_mode = 0
+horizontal_scroll_mode = 1
 
 [node name="Decision" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/DecisionScroll"]
 layout_mode = 2

@@ -8,6 +8,11 @@ var failed := false
 
 
 func _initialize() -> void:
+	var viewport := OS.get_environment("MARVEL_SMOKE_VIEWPORT").split("x")
+	if viewport.size() == 2:
+		var requested := Vector2i(int(viewport[0]), int(viewport[1]))
+		root.content_scale_size = requested
+		root.size = requested
 	_run.call_deferred()
 
 
@@ -42,6 +47,8 @@ func _run() -> void:
 		_fail("the opened table never became visible")
 		return
 	if not _procedural_cards_are_safe():
+		return
+	if not await _board_layout_is_resolved():
 		return
 
 	var saw_mulligan := false
@@ -233,6 +240,60 @@ func _procedural_cards_are_safe() -> bool:
 
 	if not saw_face or not saw_back or not saw_rules or not saw_current:
 		_fail("the table did not exercise face, back, rules, and current-value card regions")
+		return false
+	return true
+
+
+func _board_layout_is_resolved() -> bool:
+	var scenario_lane := _node("Play/Board/Margin/Areas").find_child(
+		"ScenarioLane", true, false) as Control
+	var player_lane := _node("Play/Board/Margin/Areas").find_child(
+		"PlayerLane0", true, false) as Control
+	if scenario_lane == null or player_lane == null:
+		_fail("the opened table does not expose scenario and player lanes")
+		return false
+
+	var areas := main.find_children("Area*", "PanelContainer", true, false)
+	var area_ids: Dictionary = {}
+	for area in areas:
+		if area.name in area_ids:
+			_fail("a board area was rendered more than once: %s" % area.name)
+			return false
+		area_ids[area.name] = true
+	if areas.is_empty():
+		_fail("the opened table has no rendered areas")
+		return false
+
+	var area_scroll := scenario_lane.find_child("AreaScroll", true, false) as ScrollContainer
+	var card_scroll := main.find_child("CARDSScroll", true, false) as ScrollContainer
+	var decision_scroll := _node("Play/Prompt/Margin/Stack/DecisionScroll") as ScrollContainer
+	if area_scroll == null or card_scroll == null or decision_scroll == null:
+		_fail("the table is missing an area, card, or decision overflow rail")
+		return false
+	if area_scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED \
+			or card_scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED \
+			or decision_scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED:
+		_fail("a dense table or prompt rail cannot scroll horizontally")
+		return false
+
+	await process_frame
+	await process_frame
+	var board := _node("Play/Board") as Control
+	var prompt := _node("Play/Prompt") as Control
+	if board.size.x < 480.0 or prompt.size.x < 330.0 or prompt.size.x > board.size.x:
+		_fail("the responsive table did not preserve usable board and prompt widths: %s/%s" % [
+			board.size.x,
+			prompt.size.x,
+		])
+		return false
+	var viewport := OS.get_environment("MARVEL_SMOKE_VIEWPORT")
+	var scale := OS.get_environment("MARVEL_UI_SCALE")
+	if viewport == "1600x900" and scale == "standard" \
+			and (prompt.size.x < 435.0 or prompt.size.x > 445.0):
+		_fail("the wide desktop prompt did not grow to its 440px cap: %s" % prompt.size.x)
+		return false
+	if board.get_global_rect().intersects(prompt.get_global_rect()):
+		_fail("the prompt rail overlaps the board")
 		return false
 	return true
 

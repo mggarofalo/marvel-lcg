@@ -7,13 +7,23 @@ namespace Marvel.Godot;
 /// <summary>A display-only board derived from one visibility-safe snapshot.</summary>
 public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Areas)
 {
+    /// <summary>Scenario, player, and fallback lanes used by the tabletop renderer.</summary>
+    public IReadOnlyList<BoardLanePresentation> Lanes { get; init; } = [];
+
     /// <summary>Builds a fresh presentation without retaining or enriching engine state.</summary>
     public static BoardPresentation From(WorldDescriptor world)
     {
         ArgumentNullException.ThrowIfNull(world);
         var players = world.Players.ToDictionary(player => player.Seat);
-        return new BoardPresentation(
-            world.Areas.Select(area => Present(area, players)).ToArray());
+        BoardAreaPresentation[] areas =
+            [.. world.Areas.Select(area => Present(area, players))];
+        BoardPlayerPresentation[] seats =
+            [.. world.Players.Select(player => new BoardPlayerPresentation(
+                player.Seat, player.Name))];
+        return new BoardPresentation(areas)
+        {
+            Lanes = BoardLayout.Arrange(areas, seats),
+        };
     }
 
     private static BoardAreaPresentation Present(
@@ -34,7 +44,12 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
             Humanize(area.Zone, trimArea: true).ToUpperInvariant(),
             context,
             Present(area.Cards),
-            Present(area.Removed));
+            Present(area.Removed))
+        {
+            Zone = area.Zone,
+            Seat = area.Owner,
+            Host = area.Host,
+        };
     }
 
     private static List<BoardCardPresentation> Present(
@@ -165,7 +180,23 @@ public sealed record BoardAreaPresentation(
     string Title,
     string Context,
     IReadOnlyList<BoardCardPresentation> Cards,
-    IReadOnlyList<BoardCardPresentation> Removed);
+    IReadOnlyList<BoardCardPresentation> Removed)
+{
+    /// <summary>The descriptor zone name, retained for diagnostics and generic rendering.</summary>
+    public string Zone { get; init; } = string.Empty;
+
+    /// <summary>The scenario or player table coordinate, not card ownership.</summary>
+    public int Seat { get; init; } = -1;
+
+    /// <summary>The visible host card id, or -1.</summary>
+    public int Host { get; init; } = -1;
+
+    /// <summary>Nesting depth beneath a visible host area.</summary>
+    public int Depth { get; init; }
+
+    /// <summary>The visible host title, or empty when unhosted.</summary>
+    public string HostedBy { get; init; } = string.Empty;
+}
 
 /// <summary>One readable card, face-down object, or concealed pile summary.</summary>
 public sealed record BoardCardPresentation(
