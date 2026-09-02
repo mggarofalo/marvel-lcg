@@ -7,6 +7,8 @@ public static class ClientComposition
 {
     private const int MaximumEndpointLength = 512;
     private const int MaximumHostLength = 253;
+    private static readonly OperationalLog Log = new(
+        new JsonTextOperationalSink(Console.Error), "Marvel.Godot");
 
     /// <summary>Connects to the embedded engine by default or an explicitly configured socket.</summary>
     public static LocalClientConnection Connect(string dataRoot, string? configuredEndpoint)
@@ -26,9 +28,11 @@ public static class ClientComposition
         }
 
         return new LocalClientConnection(
-            new LocalGameClient(new SocketTransport(host, port)),
+            new LocalGameClient(new SocketTransport(host, port, Log)),
             Error: null);
     }
+
+    internal static OperationalLog ProcessLog => Log;
 
     private static bool TryReadEndpoint(
         string configuredEndpoint,

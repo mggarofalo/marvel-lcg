@@ -28,10 +28,11 @@ checks needed by this design. `Marvel.Sim` records setup, prompts, decisions,
 events and digests, then deals and resolves the game again to find divergence.
 
 Schema 2 save, atomic generation commit, strict load, verified replay, the
-information frontier, linear undo and redo, and legal action reordering are
-implemented for hosted sessions. The embedded host uses the same ledger and
-replay path with an isolated memory store. No client snapshot or simulation
-record is a player save.
+information frontier, linear undo and redo, legal action reordering, and the
+redacted structured operational-log boundary are implemented for hosted
+sessions. The embedded host uses the same ledger and replay path with an
+isolated memory store. Metrics and traces remain planned. No client snapshot or
+simulation record is a player save.
 
 ## Boundary
 

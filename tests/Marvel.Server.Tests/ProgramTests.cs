@@ -93,7 +93,11 @@ public sealed class ProgramTests
 
         Assert.Equal(2, result);
         Assert.DoesNotContain("listening on", error.ToString(), StringComparison.Ordinal);
-        Assert.Contains(missingRoot, error.ToString(), StringComparison.Ordinal);
+        Assert.Contains(
+            OperationalEventIds.ServerStartFailed,
+            error.ToString(),
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(missingRoot, error.ToString(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -115,6 +119,10 @@ public sealed class ProgramTests
 
         Assert.Equal(2, result);
         Assert.DoesNotContain("listening on", error.ToString(), StringComparison.Ordinal);
+        Assert.Contains(
+            OperationalEventIds.ServerStartFailed,
+            error.ToString(),
+            StringComparison.Ordinal);
         Assert.Single(error.ToString().Split(Environment.NewLine,
             StringSplitOptions.RemoveEmptyEntries));
     }
@@ -197,7 +205,10 @@ public sealed class ProgramTests
                 await running.WaitAsync(
                     TimeSpan.FromSeconds(5),
                     TestContext.Current.CancellationToken));
-            Assert.Contains("listening on", error.ToString(), StringComparison.Ordinal);
+            Assert.Contains(
+                OperationalEventIds.ServerListening,
+                error.ToString(),
+                StringComparison.Ordinal);
         }
         finally
         {

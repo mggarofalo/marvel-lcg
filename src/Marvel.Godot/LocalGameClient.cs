@@ -172,14 +172,21 @@ public sealed class LocalGameClient
     /// <summary>Composes the local host while keeping dataset access at its boundary.</summary>
     public static LocalClientConnection ConnectLocal(string dataRoot)
     {
+        OperationalLog log = ClientComposition.ProcessLog;
         try
         {
-            var host = new EngineHost(DatasetGameFactory.Load(dataRoot));
+            var host = new EngineHost(
+                DatasetGameFactory.Load(dataRoot), log: log);
             return new LocalClientConnection(
                 new LocalGameClient(new InProcessTransport(host)), Error: null);
         }
         catch (Exception)
         {
+            log.Write(
+                OperationalEventIds.ServerStartFailed,
+                "rejected",
+                operation: "embedded_start",
+                errorCode: "content_unavailable");
             return new LocalClientConnection(
                 Client: null,
                 Error(

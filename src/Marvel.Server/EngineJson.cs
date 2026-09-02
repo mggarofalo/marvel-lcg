@@ -16,9 +16,19 @@ internal static class EngineJson
         JsonSerializer.Deserialize(json, EngineJsonContext.Default.EngineRequest)
         ?? throw new JsonException("request document was null");
 
-    public static EngineResponse ReadResponse(ReadOnlySpan<byte> json) =>
-        JsonSerializer.Deserialize(json, EngineJsonContext.Default.EngineResponse)
-        ?? throw new JsonException("response document was null");
+    public static EngineResponse ReadResponse(ReadOnlySpan<byte> json)
+    {
+        EngineResponse response =
+            JsonSerializer.Deserialize(json, EngineJsonContext.Default.EngineResponse)
+            ?? throw new JsonException("response document was null");
+        if (response.Error is not null
+            && string.IsNullOrWhiteSpace(response.Error.Code))
+        {
+            throw new JsonException("response error code was missing or invalid");
+        }
+
+        return response;
+    }
 
     public static int ReadResponseVersion(ReadOnlyMemory<byte> json)
     {

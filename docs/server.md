@@ -89,7 +89,27 @@ text.
 The server rejects unknown options, missing values, invalid IP addresses,
 out-of-range ports and invalid visibility combinations before listening. It
 also loads and validates the required datasets before opening the socket. A
-startup failure prints one diagnostic to standard error and exits with code 2.
+startup failure prints one bounded structured record to standard error and
+exits with code 2. The record never includes the rejected path or exception
+message.
+
+## Read operational logs
+
+The standalone server and desktop composition write the same JSON-lines record
+shape to standard error. Stable `event_id` values identify request completion,
+session restore, listener readiness, startup failure and client transport
+completion. Named fields correlate the process, timestamp, duration,
+pseudonymous request and game identifiers, operation, revision, authorized seat, disposition, save commit,
+replay verification and bounded error code.
+
+The schema has no field for capabilities, invitations, cards, payments, save
+bodies or exception text. Request and game correlations are one-way 32-character
+digests; other string fields are bounded to 256 characters, and unknown
+operation names are not copied into records. A process-wide logging dispatcher
+is a bounded, asynchronous observer: failure or delay while writing a record
+cannot fail, retry, or delay a game command. Wall-clock timestamps, process ids
+and durations exist only in these operational records and never enter a save,
+replay, RNG stream or state digest.
 
 ## Run the container
 

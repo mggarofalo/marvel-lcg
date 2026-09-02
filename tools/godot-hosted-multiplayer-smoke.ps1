@@ -42,7 +42,7 @@ try {
         if ($server.HasExited) {
             throw "Restricted hosted smoke server exited: $(Get-Content $serverError -Raw)"
         }
-        if ((Get-Content $serverError -Raw) -match "listening on") {
+        if ((Get-Content $serverError -Raw) -match '"event_id":"server.listener.started"') {
             $ready = $true
             break
         }

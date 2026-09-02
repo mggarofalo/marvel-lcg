@@ -129,7 +129,7 @@ jobs:
             --publish 127.0.0.1:41924:41923 \
             "$image" --visibility restricted --seat 0
           for attempt in {1..300}; do
-            if docker logs "$container" 2>&1 | grep -q "listening on"; then
+            if docker logs "$container" 2>&1 | grep -q '"event_id":"server.listener.started"'; then
               break
             fi
             if [[ $(docker inspect --format '{{.State.Running}}' "$container") != true ]]; then
