@@ -129,12 +129,18 @@ public static class BoardRenderer
             ThemeTypeVariation = GodotThemeVariations.TightStack,
         };
         content.AddChild(body);
-        disclosure.Pressed += () =>
+        void SetExpanded(bool value)
         {
-            expandedAreas[area.Id] = disclosure.ButtonPressed;
-            body.Visible = disclosure.ButtonPressed;
-            disclosure.Text = $"{(disclosure.ButtonPressed ? "▾" : "▸")}  {area.Title}  ·  {cardCount}";
-        };
+            expandedAreas[area.Id] = value;
+            body.Visible = value;
+            disclosure.Text = $"{(value ? "▾" : "▸")}  {area.Title}  ·  {cardCount}";
+        }
+        disclosure.Pressed += () => SetExpanded(disclosure.ButtonPressed);
+        result.RegisterArea(body, () =>
+        {
+            disclosure.SetPressedNoSignal(true);
+            SetExpanded(true);
+        });
         body.AddChild(Label(area.Context, GodotThemeVariations.Caption));
         if (area.Depth > 0)
         {
@@ -249,6 +255,7 @@ public static class BoardRenderer
 public sealed class BoardRenderResult
 {
     private readonly Dictionary<int, List<CardControl>> controls = [];
+    private readonly Dictionary<Control, Action> areaExpanders = [];
 
     /// <summary>Raised with the card under the pointer, or null when it leaves.</summary>
     public event Action<BoardCardPresentation?>? CardHovered;
@@ -263,6 +270,9 @@ public sealed class BoardRenderResult
 
         matches.Add(control);
     }
+
+    internal void RegisterArea(Control body, Action expand) =>
+        areaExpanders.Add(body, expand);
 
     internal void TrackHover(Control control, BoardCardPresentation card)
     {
@@ -298,15 +308,24 @@ public sealed class BoardRenderResult
             foreach (CardControl match in matches)
             {
                 match.SetPresented(presented.Contains(key));
+                if (presented.Contains(key))
+                {
+                    EnsureVisible(match);
+                }
             }
         }
     }
 
-    private static void EnsureVisible(Control control)
+    private void EnsureVisible(Control control)
     {
         Node? ancestor = control.GetParent();
         while (ancestor is not null)
         {
+            if (ancestor is Control areaBody
+                && areaExpanders.TryGetValue(areaBody, out Action? expand))
+            {
+                expand();
+            }
             if (ancestor is ScrollContainer scroll)
             {
                 bool table = scroll.Name == "TableScroll";

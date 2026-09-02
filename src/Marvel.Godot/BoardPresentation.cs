@@ -128,6 +128,7 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
             };
         }
 
+        bool inPlay = IsInPlay(zone);
         return new BoardCardPresentation(
             card.Id,
             Count: 1,
@@ -138,7 +139,8 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
             Status(card, zone, card.Face.Kind),
             card.Face.Fields
                 .Where(field => !field.Key.StartsWith("t_", StringComparison.Ordinal))
-                .Where(field => field.Value != 0)
+                .Where(field => field.Value != 0
+                    || inPlay && field.Key is "health" or "k_threat")
                 .OrderBy(field => field.Key, StringComparer.Ordinal)
                 .Select(field => new BoardFieldPresentation(
                     Humanize(
@@ -172,8 +174,7 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
 
     private static string Status(CardDescriptor card, string zone, CardKind? kind)
     {
-        bool inPlay = Enum.TryParse(zone, out DeckType deckType)
-            && DeckTypes.IsInPlay(deckType);
+        bool inPlay = IsInPlay(zone);
         bool canExhaust = kind is null or CardKind.AlterEgo or CardKind.Hero
             or CardKind.Ally or CardKind.Support or CardKind.Upgrade;
         string status = inPlay && canExhaust
@@ -189,6 +190,9 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
         }
         return status;
     }
+
+    private static bool IsInPlay(string zone) =>
+        Enum.TryParse(zone, out DeckType deckType) && DeckTypes.IsInPlay(deckType);
 
     private static string Humanize(string value, bool trimArea)
     {

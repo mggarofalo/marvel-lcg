@@ -182,6 +182,59 @@ public sealed class BoardPresentationTests
     }
 
     [Fact]
+    public void InPlayZeroHealthAndThreatRemainVisibleWhileEmptyFlagsDoNot()
+    {
+        CardDescriptor defeated = new(
+            7,
+            CardBack.Encounter,
+            FaceUp: true,
+            Ready: true,
+            Host: -1,
+            new CardFaceDescriptor(
+                "01094",
+                "Rhino",
+                "",
+                CardKind.EncounterVillain,
+                new Dictionary<string, long>(StringComparer.Ordinal)
+                {
+                    ["health"] = 0,
+                    ["amplify"] = 0,
+                })
+            {
+                Damage = 14,
+            });
+        CardDescriptor scheme = new(
+            8,
+            CardBack.Encounter,
+            FaceUp: true,
+            Ready: true,
+            Host: -1,
+            new CardFaceDescriptor(
+                "01097b",
+                "The Break-In!",
+                "",
+                CardKind.MainScheme,
+                new Dictionary<string, long>(StringComparer.Ordinal)
+                {
+                    ["k_threat"] = 0,
+                    ["acceleration_icon"] = 0,
+                }));
+
+        BoardPresentation board = BoardPresentation.From(World(areas:
+        [
+            Area(1, "VillainArea", -1, [defeated]),
+            Area(2, "MainSchemesArea", -1, [scheme]),
+        ]));
+
+        Assert.Equal(
+            new BoardFieldPresentation("HEALTH", "0/14"),
+            Assert.Single(board.Areas[0].Cards).Fields.Single());
+        Assert.Equal(
+            new BoardFieldPresentation("THREAT", "0"),
+            Assert.Single(board.Areas[1].Cards).Fields.Single());
+    }
+
+    [Fact]
     public void RebuildingFromANewerSnapshotDoesNotRetainEarlierFaces()
     {
         WorldDescriptor visible = World(
