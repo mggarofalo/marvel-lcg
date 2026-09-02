@@ -275,7 +275,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 follow_focus = true
-horizontal_scroll_mode = 0
+horizontal_scroll_mode = 1
 
 [node name="Decision" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/DecisionScroll"]
 layout_mode = 2

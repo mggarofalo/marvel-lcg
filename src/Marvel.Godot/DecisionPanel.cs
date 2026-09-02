@@ -64,7 +64,8 @@ public sealed partial class DecisionPanel : VBoxContainer
             prompt.Requirement,
             composer.Prompt.Cancellable
                 ? GodotThemeVariations.Caption
-                : GodotThemeVariations.DangerText));
+                : GodotThemeVariations.DangerText,
+            wrap: true));
         AddChild(new HSeparator());
 
         foreach (AffordancePresentation view in prompt.Affordances)
@@ -582,6 +583,7 @@ public sealed partial class DecisionPanel : VBoxContainer
     {
         InteractiveStyle style = VisualSystem.For(state);
         button.ThemeTypeVariation = style.ThemeVariation;
+        button.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         button.CustomMinimumSize = new Vector2(
             Math.Max(
                 button.CustomMinimumSize.X,

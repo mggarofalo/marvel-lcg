@@ -266,12 +266,14 @@ func _board_layout_is_resolved() -> bool:
 
 	var area_scroll := scenario_lane.find_child("AreaScroll", true, false) as ScrollContainer
 	var card_scroll := main.find_child("CARDSScroll", true, false) as ScrollContainer
-	if area_scroll == null or card_scroll == null:
-		_fail("the table is missing an area or card overflow rail")
+	var decision_scroll := _node("Play/Prompt/Margin/Stack/DecisionScroll") as ScrollContainer
+	if area_scroll == null or card_scroll == null or decision_scroll == null:
+		_fail("the table is missing an area, card, or decision overflow rail")
 		return false
 	if area_scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED \
-			or card_scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED:
-		_fail("a dense table rail cannot scroll horizontally")
+			or card_scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED \
+			or decision_scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED:
+		_fail("a dense table or prompt rail cannot scroll horizontally")
 		return false
 
 	await process_frame
