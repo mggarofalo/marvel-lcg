@@ -34,6 +34,7 @@ public sealed partial class Main : Control
     private SetupChoices? setupChoices;
     private Button start = null!;
     private Label status = null!;
+    private PanelContainer statusPanel = null!;
     private Label title = null!;
     private bool decisionPending;
 
@@ -43,8 +44,16 @@ public sealed partial class Main : Control
     /// <inheritdoc />
     public override void _Ready()
     {
+        InterfaceScale scale = ClientTheme.ConfiguredScale();
+        Theme = ClientTheme.Create(scale);
+        GetNode<ColorRect>("Table").Color = ClientTheme.ToGodot(VisualSystem.Palette.Canvas);
+        GetNode<ColorRect>("TopRule").Color = ClientTheme.ToGodot(VisualSystem.Palette.Danger);
+        GetNode<ColorRect>(
+            "Margin/Shell/Content/Setup/Briefing/Frame/EncounterRail").Color =
+            ClientTheme.ToGodot(VisualSystem.Palette.Danger);
         GetWindow().MinSize = new Vector2I(1040, 680);
         BindNodes();
+        ApplyInterfaceScale(scale);
         hero.ItemSelected += _ => RefreshBriefing();
         scenario.ItemSelected += OnScenarioSelected;
         mode.ItemSelected += _ =>
@@ -56,6 +65,21 @@ public sealed partial class Main : Control
         seed.TextChanged += _ => RefreshStartAvailability();
         start.Pressed += OnStartPressed;
         _ = LoadSetupAsync();
+    }
+
+    private void ApplyInterfaceScale(InterfaceScale scale)
+    {
+        float minimumHeight = VisualSystem.Controls(scale).MinimumHeight;
+        foreach (Control control in new Control[] { hero, scenario, mode, modular, seed })
+        {
+            control.CustomMinimumSize = new Vector2(
+                control.CustomMinimumSize.X,
+                minimumHeight);
+        }
+
+        start.CustomMinimumSize = new Vector2(
+            start.CustomMinimumSize.X,
+            Math.Max(start.CustomMinimumSize.Y, minimumHeight));
     }
 
     private void BindNodes()
@@ -86,6 +110,7 @@ public sealed partial class Main : Control
         briefingModular = GetNode<Label>(
             $"{content}/Setup/Briefing/Frame/Copy/Modular");
         status = GetNode<Label>($"{content}/Status/Text");
+        statusPanel = GetNode<PanelContainer>($"{content}/Status");
     }
 
     private async Task LoadSetupAsync()
@@ -328,15 +353,21 @@ public sealed partial class Main : Control
             return;
         }
 
+        string accent = ClientTheme.ToGodot(VisualSystem.Palette.Accent).ToHtml(false);
+        string muted = ClientTheme.ToGodot(VisualSystem.Palette.MutedText).ToHtml(false);
         var text = new StringBuilder();
         for (int index = 0; index < events.Entries.Count; index++)
         {
             EventPresentation entry = events.Entries[index];
-            text.Append("[color=#edc77a]")
+            text.Append("[color=#")
+                .Append(accent)
+                .Append(']')
                 .Append((index + 1).ToString("000", CultureInfo.InvariantCulture))
                 .Append("[/color]  ")
                 .AppendLine(entry.Summary)
-                .Append("     [color=#858b98]")
+                .Append("     [color=#")
+                .Append(muted)
+                .Append(']')
                 .Append(entry.Cause)
                 .AppendLine("[/color]");
         }
@@ -350,6 +381,16 @@ public sealed partial class Main : Control
         title.Text = progress.Title;
         description.Text = progress.Description;
         status.Text = progress.Status;
+        bool danger = progress.Kind is GameProgressKind.VillainWins
+            or GameProgressKind.PlayersLose
+            or GameProgressKind.Unconfirmed
+            or GameProgressKind.Unavailable;
+        statusPanel.ThemeTypeVariation = danger
+            ? GodotThemeVariations.DangerStatusPanel
+            : GodotThemeVariations.StatusPanel;
+        status.ThemeTypeVariation = danger
+            ? GodotThemeVariations.DangerText
+            : GodotThemeVariations.StatusText;
     }
 
     private GameSetupSelection SelectedSetup()

@@ -1,141 +1,7 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://Main.cs" id="1_main"]
 [ext_resource type="Script" path="res://DecisionPanel.cs" id="2_decision"]
-
-[sub_resource type="StyleBoxFlat" id="Style_shell"]
-bg_color = Color(0.055, 0.086, 0.125, 0.96)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.35, 0.46, 0.55, 0.36)
-corner_radius_top_left = 18
-corner_radius_top_right = 18
-corner_radius_bottom_right = 18
-corner_radius_bottom_left = 18
-content_margin_left = 44.0
-content_margin_top = 36.0
-content_margin_right = 44.0
-content_margin_bottom = 34.0
-
-[sub_resource type="StyleBoxFlat" id="Style_panel"]
-bg_color = Color(0.075, 0.112, 0.145, 0.9)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.48, 0.61, 0.67, 0.24)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-content_margin_left = 24.0
-content_margin_top = 22.0
-content_margin_right = 24.0
-content_margin_bottom = 22.0
-
-[sub_resource type="StyleBoxFlat" id="Style_input"]
-bg_color = Color(0.035, 0.061, 0.086, 0.95)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.48, 0.61, 0.67, 0.48)
-corner_radius_top_left = 7
-corner_radius_top_right = 7
-corner_radius_bottom_right = 7
-corner_radius_bottom_left = 7
-content_margin_left = 13.0
-content_margin_top = 9.0
-content_margin_right = 13.0
-content_margin_bottom = 9.0
-
-[sub_resource type="StyleBoxFlat" id="Style_input_hover"]
-bg_color = Color(0.055, 0.09, 0.12, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.9, 0.65, 0.27, 0.7)
-corner_radius_top_left = 7
-corner_radius_top_right = 7
-corner_radius_bottom_right = 7
-corner_radius_bottom_left = 7
-content_margin_left = 13.0
-content_margin_top = 9.0
-content_margin_right = 13.0
-content_margin_bottom = 9.0
-
-[sub_resource type="StyleBoxFlat" id="Style_focus"]
-bg_color = Color(0.035, 0.061, 0.086, 0.2)
-border_width_left = 3
-border_width_top = 3
-border_width_right = 3
-border_width_bottom = 3
-border_color = Color(0.95, 0.76, 0.32, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-expand_margin_left = 2.0
-expand_margin_top = 2.0
-expand_margin_right = 2.0
-expand_margin_bottom = 2.0
-
-[sub_resource type="StyleBoxFlat" id="Style_button"]
-bg_color = Color(0.73, 0.18, 0.19, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 3
-border_color = Color(0.93, 0.42, 0.31, 0.9)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-content_margin_left = 18.0
-content_margin_top = 11.0
-content_margin_right = 18.0
-content_margin_bottom = 11.0
-
-[sub_resource type="StyleBoxFlat" id="Style_button_hover"]
-bg_color = Color(0.86, 0.24, 0.21, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 3
-border_color = Color(1, 0.64, 0.37, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-content_margin_left = 18.0
-content_margin_top = 11.0
-content_margin_right = 18.0
-content_margin_bottom = 11.0
-
-[sub_resource type="StyleBoxFlat" id="Style_status"]
-bg_color = Color(0.79, 0.52, 0.17, 0.13)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.9, 0.65, 0.27, 0.5)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-content_margin_left = 14.0
-content_margin_top = 9.0
-content_margin_right = 14.0
-content_margin_bottom = 9.0
-
-[sub_resource type="LabelSettings" id="Label_title"]
-font_size = 40
-font_color = Color(0.93, 0.91, 0.84, 1)
-outline_size = 8
-outline_color = Color(0.02, 0.03, 0.05, 0.45)
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -153,7 +19,6 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.04, 0.115, 0.115, 1)
 mouse_filter = 2
 
 [node name="TopRule" type="ColorRect" parent="."]
@@ -162,10 +27,9 @@ anchors_preset = 10
 anchor_right = 1.0
 offset_bottom = 5.0
 grow_horizontal = 2
-color = Color(0.79, 0.29, 0.27, 1)
 mouse_filter = 2
 
-[node name="Margin" type="MarginContainer" parent="."]
+[node name="Margin" type="ScrollContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -176,30 +40,32 @@ offset_right = -48.0
 offset_bottom = -38.0
 grow_horizontal = 2
 grow_vertical = 2
+follow_focus = true
+horizontal_scroll_mode = 0
 
 [node name="Shell" type="PanelContainer" parent="Margin"]
 layout_mode = 2
-theme_override_styles/panel = SubResource("Style_shell")
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_type_variation = &"ShellPanel"
 
 [node name="Content" type="VBoxContainer" parent="Margin/Shell"]
 layout_mode = 2
-theme_override_constants/separation = 15
+theme_type_variation = &"Stack"
 
 [node name="Eyebrow" type="Label" parent="Margin/Shell/Content"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.9, 0.65, 0.27, 1)
-theme_override_font_sizes/font_size = 13
+theme_type_variation = &"Eyebrow"
 text = "CORE SET  /  MISSION BRIEFING"
 
 [node name="Title" type="Label" parent="Margin/Shell/Content"]
 layout_mode = 2
+theme_type_variation = &"DisplayTitle"
 text = "Assemble the table."
-label_settings = SubResource("Label_title")
 
 [node name="Description" type="Label" parent="Margin/Shell/Content"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.69, 0.75, 0.77, 1)
-theme_override_font_sizes/font_size = 16
+theme_type_variation = &"BodyMuted"
 text = "Loading the supported Core Set assignments…"
 autowrap_mode = 2
 
@@ -207,166 +73,134 @@ autowrap_mode = 2
 custom_minimum_size = Vector2(0, 355)
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 18
+theme_type_variation = &"WideRow"
 
 [node name="Selections" type="PanelContainer" parent="Margin/Shell/Content/Setup"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_styles/panel = SubResource("Style_panel")
+theme_type_variation = &"SurfacePanel"
 
 [node name="Fields" type="VBoxContainer" parent="Margin/Shell/Content/Setup/Selections"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_type_variation = &"Stack"
 
 [node name="Heading" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.93, 0.91, 0.84, 1)
-theme_override_font_sizes/font_size = 18
+theme_type_variation = &"Heading"
 text = "Choose your assignment"
 
 [node name="Grid" type="GridContainer" parent="Margin/Shell/Content/Setup/Selections/Fields"]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/h_separation = 18
-theme_override_constants/v_separation = 10
+theme_type_variation = &"DataGrid"
 columns = 2
 
 [node name="HeroLabel" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.58, 0.67, 0.7, 1)
+theme_type_variation = &"Caption"
 text = "HERO"
 vertical_alignment = 1
 
 [node name="Hero" type="OptionButton" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid"]
-custom_minimum_size = Vector2(240, 42)
+custom_minimum_size = Vector2(240, 44)
 layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
-theme_override_colors/font_color = Color(0.9, 0.9, 0.85, 1)
-theme_override_styles/normal = SubResource("Style_input")
-theme_override_styles/hover = SubResource("Style_input_hover")
-theme_override_styles/focus = SubResource("Style_focus")
 
 [node name="ScenarioLabel" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.58, 0.67, 0.7, 1)
+theme_type_variation = &"Caption"
 text = "SCENARIO"
 vertical_alignment = 1
 
 [node name="Scenario" type="OptionButton" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid"]
-custom_minimum_size = Vector2(240, 42)
+custom_minimum_size = Vector2(240, 44)
 layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
-theme_override_colors/font_color = Color(0.9, 0.9, 0.85, 1)
-theme_override_styles/normal = SubResource("Style_input")
-theme_override_styles/hover = SubResource("Style_input_hover")
-theme_override_styles/focus = SubResource("Style_focus")
 
 [node name="ModeLabel" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.58, 0.67, 0.7, 1)
+theme_type_variation = &"Caption"
 text = "MODE"
 vertical_alignment = 1
 
 [node name="Mode" type="OptionButton" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid"]
-custom_minimum_size = Vector2(240, 42)
+custom_minimum_size = Vector2(240, 44)
 layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
-theme_override_colors/font_color = Color(0.9, 0.9, 0.85, 1)
-theme_override_styles/normal = SubResource("Style_input")
-theme_override_styles/hover = SubResource("Style_input_hover")
-theme_override_styles/focus = SubResource("Style_focus")
 
 [node name="ModularLabel" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.58, 0.67, 0.7, 1)
+theme_type_variation = &"Caption"
 text = "MODULAR SET"
 vertical_alignment = 1
 
 [node name="Modular" type="OptionButton" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid"]
-custom_minimum_size = Vector2(240, 42)
+custom_minimum_size = Vector2(240, 44)
 layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
-theme_override_colors/font_color = Color(0.9, 0.9, 0.85, 1)
-theme_override_styles/normal = SubResource("Style_input")
-theme_override_styles/hover = SubResource("Style_input_hover")
-theme_override_styles/focus = SubResource("Style_focus")
 
 [node name="SeedLabel" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.58, 0.67, 0.7, 1)
+theme_type_variation = &"Caption"
 text = "SEED"
 vertical_alignment = 1
 
 [node name="Seed" type="LineEdit" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid"]
-custom_minimum_size = Vector2(240, 42)
+custom_minimum_size = Vector2(240, 44)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.9, 0.9, 0.85, 1)
-theme_override_colors/caret_color = Color(0.95, 0.76, 0.32, 1)
-theme_override_styles/normal = SubResource("Style_input")
-theme_override_styles/focus = SubResource("Style_focus")
 text = "7"
 placeholder_text = "0–4294967295"
 max_length = 10
 
 [node name="SeedHelp" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.48, 0.61, 0.67, 1)
-theme_override_font_sizes/font_size = 12
+theme_type_variation = &"Caption"
 text = "The same assignment and seed always deal the same game."
 
 [node name="Start" type="Button" parent="Margin/Shell/Content/Setup/Selections/Fields"]
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 disabled = true
-theme_override_colors/font_color = Color(1, 0.95, 0.84, 1)
-theme_override_colors/font_disabled_color = Color(0.5, 0.54, 0.55, 1)
-theme_override_font_sizes/font_size = 16
-theme_override_styles/normal = SubResource("Style_button")
-theme_override_styles/hover = SubResource("Style_button_hover")
-theme_override_styles/focus = SubResource("Style_focus")
+theme_type_variation = &"PrimaryButton"
 text = "Start game"
 
 [node name="Briefing" type="PanelContainer" parent="Margin/Shell/Content/Setup"]
 custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 size_flags_horizontal = 2
-theme_override_styles/panel = SubResource("Style_panel")
+theme_type_variation = &"SurfacePanel"
 
 [node name="Frame" type="HBoxContainer" parent="Margin/Shell/Content/Setup/Briefing"]
 layout_mode = 2
-theme_override_constants/separation = 20
+theme_type_variation = &"WideRow"
 
 [node name="EncounterRail" type="ColorRect" parent="Margin/Shell/Content/Setup/Briefing/Frame"]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
-color = Color(0.79, 0.29, 0.27, 1)
 
 [node name="Copy" type="VBoxContainer" parent="Margin/Shell/Content/Setup/Briefing/Frame"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 14
+theme_type_variation = &"Stack"
 
 [node name="Kicker" type="Label" parent="Margin/Shell/Content/Setup/Briefing/Frame/Copy"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.9, 0.65, 0.27, 1)
-theme_override_font_sizes/font_size = 12
+theme_type_variation = &"Eyebrow"
 text = "ENCOUNTER DOSSIER"
 
 [node name="Scenario" type="Label" parent="Margin/Shell/Content/Setup/Briefing/Frame/Copy"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.96, 0.93, 0.84, 1)
-theme_override_font_sizes/font_size = 27
+theme_type_variation = &"BriefingTitle"
 text = "—"
 
 [node name="Mode" type="Label" parent="Margin/Shell/Content/Setup/Briefing/Frame/Copy"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.86, 0.38, 0.31, 1)
-theme_override_font_sizes/font_size = 15
+theme_type_variation = &"EncounterText"
 text = "AWAITING ASSIGNMENT"
 
 [node name="Divider" type="HSeparator" parent="Margin/Shell/Content/Setup/Briefing/Frame/Copy"]
@@ -374,26 +208,22 @@ layout_mode = 2
 
 [node name="HeroCaption" type="Label" parent="Margin/Shell/Content/Setup/Briefing/Frame/Copy"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.48, 0.61, 0.67, 1)
-theme_override_font_sizes/font_size = 11
+theme_type_variation = &"Caption"
 text = "HERO"
 
 [node name="Hero" type="Label" parent="Margin/Shell/Content/Setup/Briefing/Frame/Copy"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.9, 0.9, 0.85, 1)
-theme_override_font_sizes/font_size = 18
+theme_type_variation = &"Heading"
 text = "—"
 
 [node name="ModularCaption" type="Label" parent="Margin/Shell/Content/Setup/Briefing/Frame/Copy"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.48, 0.61, 0.67, 1)
-theme_override_font_sizes/font_size = 11
+theme_type_variation = &"Caption"
 text = "ENCOUNTER MODULE"
 
 [node name="Modular" type="Label" parent="Margin/Shell/Content/Setup/Briefing/Frame/Copy"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.9, 0.9, 0.85, 1)
-theme_override_font_sizes/font_size = 16
+theme_type_variation = &"Body"
 text = "—"
 autowrap_mode = 2
 
@@ -421,14 +251,13 @@ theme_override_constants/margin_bottom = 10
 [node name="Areas" type="GridContainer" parent="Margin/Shell/Content/Play/Board/Margin"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/h_separation = 12
-theme_override_constants/v_separation = 12
+theme_type_variation = &"DataGrid"
 columns = 1
 
 [node name="Prompt" type="PanelContainer" parent="Margin/Shell/Content/Play"]
 custom_minimum_size = Vector2(330, 0)
 layout_mode = 2
-theme_override_styles/panel = SubResource("Style_panel")
+theme_type_variation = &"SurfacePanel"
 
 [node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Prompt"]
 layout_mode = 2
@@ -441,7 +270,7 @@ theme_override_constants/margin_bottom = 0
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_constants/separation = 12
+theme_type_variation = &"Stack"
 
 [node name="DecisionScroll" type="ScrollContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
 layout_mode = 2
@@ -460,8 +289,7 @@ layout_mode = 2
 
 [node name="EventHeading" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.93, 0.78, 0.48, 1)
-theme_override_font_sizes/font_size = 12
+theme_type_variation = &"Eyebrow"
 text = "EVENT LOG"
 
 [node name="EventLog" type="RichTextLabel" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
@@ -469,8 +297,6 @@ custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 1
-theme_override_colors/default_color = Color(0.76, 0.78, 0.82, 1)
-theme_override_font_sizes/normal_font_size = 12
 bbcode_enabled = true
 fit_content = false
 scroll_active = true
@@ -480,10 +306,9 @@ text = "No events yet."
 [node name="Status" type="PanelContainer" parent="Margin/Shell/Content"]
 layout_mode = 2
 size_flags_horizontal = 0
-theme_override_styles/panel = SubResource("Style_status")
+theme_type_variation = &"StatusPanel"
 
 [node name="Text" type="Label" parent="Margin/Shell/Content/Status"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.93, 0.78, 0.48, 1)
-theme_override_font_sizes/font_size = 13
+theme_type_variation = &"StatusText"
 text = "LOADING ASSIGNMENTS"

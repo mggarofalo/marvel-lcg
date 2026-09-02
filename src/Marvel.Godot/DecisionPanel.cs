@@ -9,10 +9,8 @@ namespace Marvel.Godot;
 /// <summary>Renders one current prompt and composes its typed decision.</summary>
 public sealed partial class DecisionPanel : VBoxContainer
 {
-    private static readonly Color Ink = new("e8e4d8");
-    private static readonly Color Muted = new("91a4a8");
-    private static readonly Color Amber = new("e6a646");
-    private static readonly Color Red = new("df6257");
+    private static readonly ControlMetrics ControlMetrics =
+        VisualSystem.Controls(ClientTheme.ConfiguredScale());
     private DecisionComposer? composer;
     private bool submitting;
     private WorldDescriptor? world;
@@ -47,35 +45,54 @@ public sealed partial class DecisionPanel : VBoxContainer
             child.QueueFree();
         }
 
-        AddThemeConstantOverride("separation", 9);
+        ThemeTypeVariation = GodotThemeVariations.TightStack;
         if (composer is null || world is null)
         {
-            AddChild(Text("GAME COMPLETE", 11, Amber));
-            AddChild(Text("No further decision is waiting.", 16, Ink, wrap: true));
+            AddChild(Text("GAME COMPLETE", GodotThemeVariations.Eyebrow));
+            AddChild(Text(
+                "No further decision is waiting.",
+                GodotThemeVariations.Body,
+                wrap: true));
             return;
         }
 
         PromptPresentation prompt = PromptPresentation.From(composer.Prompt, world);
-        AddChild(Text("CURRENT DECISION", 10, Amber));
-        AddChild(Text(prompt.Heading, 20, Ink, wrap: true));
-        AddChild(Text(prompt.Context, 9, Muted, wrap: true));
-        AddChild(Text(prompt.Requirement, 9,
-            composer.Prompt.Cancellable ? Muted : Red));
+        AddChild(Text("CURRENT DECISION", GodotThemeVariations.Eyebrow));
+        AddChild(Text(prompt.Heading, GodotThemeVariations.Heading, wrap: true));
+        AddChild(Text(prompt.Context, GodotThemeVariations.Caption, wrap: true));
+        AddChild(Text(
+            prompt.Requirement,
+            composer.Prompt.Cancellable
+                ? GodotThemeVariations.Caption
+                : GodotThemeVariations.DangerText));
         AddChild(new HSeparator());
 
         foreach (AffordancePresentation view in prompt.Affordances)
         {
             Affordance option = composer.Prompt.Affordances.Single(candidate =>
                 candidate.Id == view.Id);
+            bool unavailable = submitting || !option.IsLegal;
+            bool isSelected = composer.Selected?.Id == option.Id;
             var choose = new Button
             {
-                Text = $"{view.Verb}  ·  {view.Label}\n{view.Anchor}",
+                Text = unavailable
+                    ? $"— UNAVAILABLE  ·  {view.Verb}  ·  {view.Label}\n{view.Anchor}"
+                    : isSelected
+                        ? $"✓ SELECTED  ·  {view.Verb}  ·  {view.Label}\n{view.Anchor}"
+                        : $"{view.Verb}  ·  {view.Label}\n{view.Anchor}",
                 Alignment = HorizontalAlignment.Left,
-                Disabled = submitting || !option.IsLegal,
+                Disabled = unavailable,
                 ToggleMode = true,
-                ButtonPressed = composer.Selected?.Id == option.Id,
+                ButtonPressed = isSelected,
                 TooltipText = option.Illegal ?? $"Anchor {option.AnchorId}, player {option.AnchorPlayer}",
             };
+            StyleButton(
+                choose,
+                !option.IsLegal || submitting
+                    ? InteractiveVisualState.Unavailable
+                    : choose.ButtonPressed
+                        ? InteractiveVisualState.Selected
+                        : InteractiveVisualState.Resting);
             choose.Pressed += () =>
             {
                 composer.SelectAffordance(option.Id);
@@ -87,14 +104,17 @@ public sealed partial class DecisionPanel : VBoxContainer
             AddChild(choose);
             if (option.Illegal is not null)
             {
-                AddChild(Text(option.Illegal, 10, Red, wrap: true));
+                AddChild(Text(
+                    $"! {option.Illegal}",
+                    GodotThemeVariations.DangerText,
+                    wrap: true));
             }
         }
 
         if (composer.Selected is { } selected)
         {
             AddChild(new HSeparator());
-            AddChild(Text("SELECTION", 10, Amber));
+            AddChild(Text("SELECTION", GodotThemeVariations.Eyebrow));
             AddTargets(selected);
             AddCosts(selected);
             AddSubmit();
@@ -104,9 +124,16 @@ public sealed partial class DecisionPanel : VBoxContainer
         {
             var pass = new Button
             {
-                Text = "Pass / decline",
+                Text = submitting
+                    ? "— UNAVAILABLE  ·  Pass / decline"
+                    : "Pass / decline",
                 Disabled = submitting,
             };
+            StyleButton(
+                pass,
+                submitting
+                    ? InteractiveVisualState.Unavailable
+                    : InteractiveVisualState.Resting);
             pass.Pressed += () =>
             {
                 if (composer.TryDecline(out EngineDecision? decision, out _))
@@ -123,22 +150,24 @@ public sealed partial class DecisionPanel : VBoxContainer
         TargetRequest? request = selected.Targets;
         if (request is null)
         {
-            AddChild(Text("No target selection", 11, Muted));
+            AddChild(Text("No target selection", GodotThemeVariations.MutedText));
             return;
         }
 
         string badge = request.IsSearch ? "SEARCH RESULTS" : "TARGETS";
-        AddChild(Text($"{badge}  ·  {request.Min}–{request.Max}", 9, Muted));
+        AddChild(Text(
+            $"{badge}  ·  {request.Min}–{request.Max}",
+            GodotThemeVariations.Caption));
         if (!string.IsNullOrWhiteSpace(request.Rule))
         {
-            AddChild(Text(request.Rule, 9, Muted));
+            AddChild(Text(request.Rule, GodotThemeVariations.Caption));
         }
 
         if (request.MustIncludeTraits is { Count: > 0 })
         {
             AddChild(Text(
                 $"MUST INCLUDE  ·  {string.Join(", ", request.MustIncludeTraits)}",
-                9, Muted, wrap: true));
+                GodotThemeVariations.Caption, wrap: true));
         }
 
         if (request.IsGrouped)
@@ -148,7 +177,10 @@ public sealed partial class DecisionPanel : VBoxContainer
                 IReadOnlyList<int> group = request.Groups[index];
                 var choose = new Button
                 {
-                    Text = $"Group {index + 1}  ·  "
+                    Text = (composer!.Targets.SequenceEqual(group)
+                            ? "✓ SELECTED  ·  "
+                            : "◇ LEGAL  ·  ")
+                        + $"Group {index + 1}  ·  "
                         + string.Join(" → ", group.Select(id =>
                             PromptPresentation.Describe(id, world!))),
                     Alignment = HorizontalAlignment.Left,
@@ -156,6 +188,11 @@ public sealed partial class DecisionPanel : VBoxContainer
                     ButtonPressed = composer!.Targets.SequenceEqual(group),
                     Disabled = submitting,
                 };
+                StyleButton(
+                    choose,
+                    choose.ButtonPressed
+                        ? InteractiveVisualState.Selected
+                        : InteractiveVisualState.Legal);
                 choose.Pressed += () =>
                 {
                     composer.SelectTargets(group);
@@ -184,7 +221,7 @@ public sealed partial class DecisionPanel : VBoxContainer
             AddChild(Text(
                 "ORDER  ·  " + string.Join(" → ", composer.Targets.Select(id =>
                     PromptPresentation.Describe(id, world!))),
-                9, Amber, wrap: true));
+                GodotThemeVariations.Eyebrow, wrap: true));
         }
     }
 
@@ -192,12 +229,19 @@ public sealed partial class DecisionPanel : VBoxContainer
     {
         var choose = new Button
         {
-            Text = PromptPresentation.Describe(target, world!),
+            Text = composer!.Targets.Contains(target)
+                ? $"✓ SELECTED  ·  {PromptPresentation.Describe(target, world!)}"
+                : $"◇ LEGAL  ·  {PromptPresentation.Describe(target, world!)}",
             Alignment = HorizontalAlignment.Left,
             ToggleMode = true,
             ButtonPressed = composer!.Targets.Contains(target),
             Disabled = submitting,
         };
+        StyleButton(
+            choose,
+            choose.ButtonPressed
+                ? InteractiveVisualState.Selected
+                : InteractiveVisualState.Legal);
         choose.Pressed += () =>
         {
             if (composer.Targets.Contains(target))
@@ -220,9 +264,17 @@ public sealed partial class DecisionPanel : VBoxContainer
     {
         int count = composer!.Targets.Count(chosen => chosen == target);
         int limit = request.MaximumOccurrences?.GetValueOrDefault(target) ?? request.Max;
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", 5);
+        var row = new HBoxContainer
+        {
+            ThemeTypeVariation = GodotThemeVariations.CompactRow,
+        };
         var remove = new Button { Text = "−", Disabled = submitting || count == 0 };
+        StyleButton(
+            remove,
+            remove.Disabled
+                ? InteractiveVisualState.Unavailable
+                : InteractiveVisualState.Resting,
+            compact: true);
         remove.Pressed += () =>
         {
             composer.RemoveTarget(target);
@@ -231,7 +283,7 @@ public sealed partial class DecisionPanel : VBoxContainer
         row.AddChild(remove);
         var label = Text(
             $"{count}  ·  {PromptPresentation.Describe(target, world!)}  ·  max {limit}",
-            11, Ink, wrap: true);
+            GodotThemeVariations.Body, wrap: true);
         label.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         row.AddChild(label);
         var add = new Button
@@ -239,6 +291,12 @@ public sealed partial class DecisionPanel : VBoxContainer
             Text = "+",
             Disabled = submitting || count >= limit || composer.Targets.Count >= request.Max,
         };
+        StyleButton(
+            add,
+            add.Disabled
+                ? InteractiveVisualState.Unavailable
+                : InteractiveVisualState.Legal,
+            compact: true);
         add.Pressed += () =>
         {
             composer.AddTarget(target);
@@ -253,24 +311,37 @@ public sealed partial class DecisionPanel : VBoxContainer
     {
         if (selected.CostOptions.Count == 0)
         {
-            AddChild(Text("FREE", 9, Muted));
+            AddChild(Text("FREE", GodotThemeVariations.Caption));
             return;
         }
 
-        AddChild(Text("COST", 9, Muted));
+        AddChild(Text("COST", GodotThemeVariations.Caption));
         for (int index = 0; index < selected.CostOptions.Count; index++)
         {
             int costIndex = index;
             CostOption cost = selected.CostOptions[index];
             bool targetMatches = composer!.CostApplies(cost);
+            bool unavailable = submitting || !targetMatches;
+            bool isSelected = composer.SelectedCost == index;
             var choose = new Button
             {
-                Text = CostLabel(cost),
+                Text = unavailable
+                    ? $"— UNAVAILABLE  ·  {CostLabel(cost)}"
+                    : isSelected
+                    ? $"✓ SELECTED  ·  {CostLabel(cost)}"
+                    : $"◇ CHOOSE  ·  {CostLabel(cost)}",
                 Alignment = HorizontalAlignment.Left,
                 ToggleMode = true,
-                ButtonPressed = composer!.SelectedCost == index,
-                Disabled = submitting || !targetMatches,
+                ButtonPressed = isSelected,
+                Disabled = unavailable,
             };
+            StyleButton(
+                choose,
+                choose.Disabled
+                    ? InteractiveVisualState.Unavailable
+                    : choose.ButtonPressed
+                        ? InteractiveVisualState.Selected
+                        : InteractiveVisualState.Legal);
             choose.Pressed += () =>
             {
                 composer.SelectCost(costIndex);
@@ -297,11 +368,16 @@ public sealed partial class DecisionPanel : VBoxContainer
             }
 
             var row = new HBoxContainer();
-            var name = Text($"{variable.Name}  ·  {variable.Min}–{variable.Max}", 11, Ink);
+            var name = Text(
+                $"{variable.Name}  ·  {variable.Min}–{variable.Max}",
+                GodotThemeVariations.Body);
             name.SizeFlagsHorizontal = SizeFlags.ExpandFill;
             row.AddChild(name);
             var value = new SpinBox
             {
+                CustomMinimumSize = new Vector2(
+                    ControlMetrics.MinimumButtonWidth,
+                    ControlMetrics.MinimumHeight),
                 MinValue = variable.Min,
                 MaxValue = variable.Max,
                 Step = 1,
@@ -323,13 +399,21 @@ public sealed partial class DecisionPanel : VBoxContainer
         {
             var choose = new Button
             {
-                Text = $"{PromptPresentation.Describe(source.Effect, world!)}"
+                Text = (composer.Resources.Contains(source.Effect)
+                        ? "✓ SELECTED  ·  "
+                        : "◇ RESOURCE  ·  ")
+                    + $"{PromptPresentation.Describe(source.Effect, world!)}"
                     + $"  ·  {source.Generates}",
                 Alignment = HorizontalAlignment.Left,
                 ToggleMode = true,
                 ButtonPressed = composer.Resources.Contains(source.Effect),
                 Disabled = submitting,
             };
+            StyleButton(
+                choose,
+                choose.ButtonPressed
+                    ? InteractiveVisualState.Selected
+                    : InteractiveVisualState.Legal);
             choose.Pressed += () =>
             {
                 composer.ToggleResource(source.Effect);
@@ -346,7 +430,7 @@ public sealed partial class DecisionPanel : VBoxContainer
                 "COMPONENTS  ·  " + string.Join(" + ",
                     selectedCost.ResourceCosts.Select((component, index) =>
                         $"{index + 1}:{component.Cost}")),
-                9, Muted, wrap: true));
+                GodotThemeVariations.Caption, wrap: true));
         }
     }
 
@@ -385,12 +469,14 @@ public sealed partial class DecisionPanel : VBoxContainer
                 var row = new HBoxContainer();
                 var label = Text(
                     $"Icon {icon + 1} · {ResourceName(printed)}",
-                    10, Ink);
+                    GodotThemeVariations.Body);
                 label.SizeFlagsHorizontal = SizeFlags.ExpandFill;
                 row.AddChild(label);
                 var allocation = new OptionButton
                 {
-                    CustomMinimumSize = new Vector2(170, 0),
+                    CustomMinimumSize = new Vector2(
+                        Math.Max(170, ControlMetrics.MinimumButtonWidth),
+                        ControlMetrics.MinimumHeight),
                     Disabled = submitting,
                 };
                 foreach (AllocationChoice choice in choices)
@@ -425,14 +511,26 @@ public sealed partial class DecisionPanel : VBoxContainer
         bool valid = composer!.TryBuild(out _, out string? error);
         if (!valid && error is not null)
         {
-            AddChild(Text(error, 10, Muted, wrap: true));
+            AddChild(Text(
+                error,
+                GodotThemeVariations.DangerText,
+                wrap: true));
         }
 
         var submit = new Button
         {
-            Text = submitting ? "Waiting for engine…" : "Submit decision",
+            Text = submitting
+                ? "— UNAVAILABLE  ·  Waiting for engine…"
+                : valid
+                    ? "Submit decision"
+                    : "— UNAVAILABLE  ·  Submit decision",
             Disabled = submitting || !valid,
         };
+        StyleButton(
+            submit,
+            submit.Disabled
+                ? InteractiveVisualState.Unavailable
+                : InteractiveVisualState.Danger);
         submit.Pressed += () =>
         {
             if (composer.TryBuild(out EngineDecision? decision, out _))
@@ -465,18 +563,32 @@ public sealed partial class DecisionPanel : VBoxContainer
         return primary;
     }
 
-    private static Label Text(string text, int size, Color color, bool wrap = false)
+    private static Label Text(string text, string variation, bool wrap = false)
     {
-        var label = new Label
+        return new Label
         {
             Text = text,
             AutowrapMode = wrap
                 ? TextServer.AutowrapMode.WordSmart
                 : TextServer.AutowrapMode.Off,
+            ThemeTypeVariation = variation,
         };
-        label.AddThemeFontSizeOverride("font_size", size);
-        label.AddThemeColorOverride("font_color", color);
-        return label;
+    }
+
+    private static void StyleButton(
+        Button button,
+        InteractiveVisualState state,
+        bool compact = false)
+    {
+        InteractiveStyle style = VisualSystem.For(state);
+        button.ThemeTypeVariation = style.ThemeVariation;
+        button.CustomMinimumSize = new Vector2(
+            Math.Max(
+                button.CustomMinimumSize.X,
+                compact
+                    ? ControlMetrics.MinimumPointerTarget
+                    : ControlMetrics.MinimumButtonWidth),
+            ControlMetrics.MinimumHeight);
     }
 
     private static string ResourceName(char resource) => resource switch

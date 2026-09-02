@@ -25,5 +25,8 @@ if [[ "$version" != 4.7.* ]]; then
 fi
 
 dotnet build "$repo_root/src/Marvel.Godot/Marvel.Godot.csproj" --nologo
-"$godot_bin" --headless --path "$repo_root/src/Marvel.Godot" \
-  --script res://smoke/local_game_smoke.gd
+for scale in standard large extra-large; do
+  MARVEL_UI_SCALE="$scale" "$godot_bin" --headless \
+    --path "$repo_root/src/Marvel.Godot" \
+    --script res://smoke/local_game_smoke.gd
+done

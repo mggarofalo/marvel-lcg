@@ -17,6 +17,10 @@ if ($LASTEXITCODE -ne 0 -or -not $version.StartsWith("4.7.")) {
 dotnet build "$repoRoot/src/Marvel.Godot/Marvel.Godot.csproj" --nologo
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-& $GodotBin --headless --path "$repoRoot/src/Marvel.Godot" `
-    --script res://smoke/local_game_smoke.gd
-exit $LASTEXITCODE
+foreach ($scale in @("standard", "large", "extra-large")) {
+    $env:MARVEL_UI_SCALE = $scale
+    & $GodotBin --headless --path "$repoRoot/src/Marvel.Godot" `
+        --script res://smoke/local_game_smoke.gd
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+}
+exit 0
