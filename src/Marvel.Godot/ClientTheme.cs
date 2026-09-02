@@ -60,6 +60,11 @@ public static class ClientTheme
         Label(theme, GodotThemeVariations.EncounterText, Ink, type.Body);
         Label(theme, GodotThemeVariations.DangerText, Ink, type.Caption);
         Label(theme, GodotThemeVariations.StatusText, Amber, type.Eyebrow);
+        Label(theme, GodotThemeVariations.CardTitle, Ink, type.Heading);
+        Label(theme, GodotThemeVariations.CardRules, Ink, type.Body);
+        Label(theme, GodotThemeVariations.CardLiveValue, Amber, type.Caption);
+        Label(theme, GodotThemeVariations.CardPrintedValue, Muted, type.Caption);
+        Label(theme, GodotThemeVariations.CardState, Amber, type.Eyebrow);
 
         theme.SetColor("default_color", "RichTextLabel", Muted);
         theme.SetFontSize("normal_font_size", "RichTextLabel", type.Caption);

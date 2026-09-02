@@ -64,7 +64,10 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
                 Subtitle: "Identity and order hidden",
                 Kind: "CONCEALED PILE",
                 Status: $"{back.ToString().ToUpperInvariant()} BACK",
-                Fields: []));
+                Fields: [])
+            {
+                Back = back.ToString().ToUpperInvariant(),
+            });
         }
 
         return presented;
@@ -89,7 +92,10 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
                 Subtitle: "Identity hidden",
                 Kind: "CONCEALED CARD",
                 Status: status,
-                Fields: []);
+                Fields: [])
+            {
+                Back = card.Back.ToString().ToUpperInvariant(),
+            };
         }
 
         return new BoardCardPresentation(
@@ -105,7 +111,24 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
                 .Select(field => new BoardFieldPresentation(
                     Humanize(field.Key, trimArea: false).ToUpperInvariant(),
                     field.Value.ToString(CultureInfo.InvariantCulture)))
-                .ToArray());
+                .ToArray())
+        {
+            Back = card.Back.ToString().ToUpperInvariant(),
+            Traits = card.Face.Traits,
+            Cost = card.Face.Cost,
+            PrintedStats = card.Face.PrintedStats
+                .Select(field => new BoardFieldPresentation(field.Key, field.Value))
+                .ToArray(),
+            Keywords = card.Face.Keywords,
+            RulesText = card.Face.RulesText,
+            Damage = card.Face.Damage,
+            Counters = card.Face.Counters
+                .OrderBy(counter => counter.Key, StringComparer.Ordinal)
+                .Select(counter => new BoardFieldPresentation(
+                    Humanize(counter.Key, trimArea: false).ToUpperInvariant(),
+                    counter.Value.ToString(CultureInfo.InvariantCulture)))
+                .ToArray(),
+        };
     }
 
     private static string Humanize(string value, bool trimArea)
@@ -148,7 +171,32 @@ public sealed record BoardCardPresentation(
     string Subtitle,
     string Kind,
     string Status,
-    IReadOnlyList<BoardFieldPresentation> Fields);
+    IReadOnlyList<BoardFieldPresentation> Fields)
+{
+    /// <summary>The non-identifying physical back.</summary>
+    public string Back { get; init; } = string.Empty;
+
+    /// <summary>Effective traits visible on the current face.</summary>
+    public IReadOnlyList<string> Traits { get; init; } = [];
+
+    /// <summary>The printed cost, or null when none is printed.</summary>
+    public string? Cost { get; init; }
+
+    /// <summary>Printed stats, kept separate from current live values.</summary>
+    public IReadOnlyList<BoardFieldPresentation> PrintedStats { get; init; } = [];
+
+    /// <summary>Printed keyword labels.</summary>
+    public IReadOnlyList<string> Keywords { get; init; } = [];
+
+    /// <summary>Printed rules text.</summary>
+    public string RulesText { get; init; } = string.Empty;
+
+    /// <summary>Damage currently on the card.</summary>
+    public long Damage { get; init; }
+
+    /// <summary>Live counters currently on the card.</summary>
+    public IReadOnlyList<BoardFieldPresentation> Counters { get; init; } = [];
+}
 
 /// <summary>One live public field rendered on a readable card.</summary>
 public sealed record BoardFieldPresentation(string Name, string Value);

@@ -41,6 +41,8 @@ func _run() -> void:
 	if not await _wait_for(func() -> bool: return _play().visible and _decision() != null):
 		_fail("the opened table never became visible")
 		return
+	if not _procedural_cards_are_safe():
+		return
 
 	var saw_mulligan := false
 	var saw_pass := false
@@ -190,6 +192,48 @@ func _visual_system_is_resolved() -> bool:
 			])
 			return false
 
+	return true
+
+
+func _procedural_cards_are_safe() -> bool:
+	var cards := main.find_children("ProceduralCard", "PanelContainer", true, false)
+	if cards.is_empty():
+		_fail("the opened table has no procedural card controls")
+		return false
+
+	var scale := OS.get_environment("MARVEL_UI_SCALE")
+	var expected_width := 450 if scale == "extra-large" else 375 if scale == "large" else 300
+	var saw_face := false
+	var saw_back := false
+	var saw_rules := false
+	var saw_current := false
+	for card in cards:
+		if card.custom_minimum_size.x < expected_width:
+			_fail("a board card does not honor the selected card geometry")
+			return false
+		var face := card.find_child("CardFace", true, false)
+		var back := card.find_child("CardBack", true, false)
+		if face != null:
+			saw_face = true
+			var title := face.find_child("Title", true, false) as Label
+			if title == null or title.max_lines_visible != 2:
+				_fail("a board card title has no predictable two-line degradation")
+				return false
+			saw_rules = saw_rules or face.find_child("RulesText", true, false) != null
+			saw_current = saw_current or face.find_child("LiveValues", true, false) != null
+		elif back != null:
+			saw_back = true
+			if back.find_child("Title", true, false) != null or back.find_child("RulesText", true, false) != null:
+				_fail("a concealed card back contains face-identifying controls")
+				return false
+			var back_text := _visible_text(back)
+			if "secret" in back_text.to_lower() or "face-" in back_text.to_lower():
+				_fail("a concealed card back leaked an identity")
+				return false
+
+	if not saw_face or not saw_back or not saw_rules or not saw_current:
+		_fail("the table did not exercise face, back, rules, and current-value card regions")
+		return false
 	return true
 
 

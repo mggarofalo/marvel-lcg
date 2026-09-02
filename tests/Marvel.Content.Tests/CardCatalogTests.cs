@@ -36,6 +36,18 @@ public sealed class CardCatalogTests
         Assert.Null(Cards.CounterMaximum("01018", "energy"));
     }
 
+    [Fact]
+    public void DisplayFactsComeFromTheGeneratedPrintedCard()
+    {
+        Assert.StartsWith(
+            "Hero Action (attack): Deal 8 damage",
+            Cards.Text("01005"),
+            StringComparison.Ordinal);
+        Assert.Contains("Guard", Cards.Keywords("01101"));
+        Assert.Contains("Surge", Cards.Keywords("01121"));
+        Assert.DoesNotContain("Setup", Cards.Keywords("01001a"));
+    }
+
     [Theory]
     // Already upper-case in the engine's data, so nothing to resolve.
     [InlineData("CRIMINAL", "CRIMINAL")]

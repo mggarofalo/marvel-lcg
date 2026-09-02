@@ -49,6 +49,7 @@ public static class WorldProjection
             bool inPlay = DeckTypes.IsInPlay(card.Area.Type);
             CardKind kind = FacedownDrones.Kind(card, world.Facts);
             CardKind printedKind = world.Facts.Kind(card.FaceId);
+            IReadOnlyDictionary<string, string> attributes = world.Facts.Attributes(card.FaceId);
             var face = new CardFaceDescriptor(
                 card.FaceId,
                 world.Facts.Title(card.FaceId),
@@ -58,7 +59,21 @@ public static class WorldProjection
                     card, world.Facts, world.Players, inPlay,
                     card.HasRegisteredTokens,
                     card.Owner == world.FirstPlayer && card.Area.Type == DeckType.HeroArea,
-                    world));
+                    world))
+            {
+                Traits = [.. Traits.Of(world, card, world.Facts)],
+                Cost = attributes.TryGetValue("Cost", out string? cost) ? cost : null,
+                PrintedStats = PrintedStats(attributes),
+                Keywords = [.. world.Facts.Keywords(card.FaceId)],
+                RulesText = world.Facts.Text(card.FaceId),
+                Damage = card.Damage,
+                Counters = card.Tokens
+                    .Where(token => token.Key.StartsWith("k_", StringComparison.Ordinal))
+                    .ToDictionary(
+                        token => token.Key[2..],
+                        token => token.Value,
+                        StringComparer.Ordinal),
+            };
             cards.Add(
                 card.ObjectId,
                 new CardDescriptor(
@@ -88,6 +103,19 @@ public static class WorldProjection
                 area.Id,
                 area.PlayAreas.Select(playArea => playArea.Player).Order().ToList())).ToList();
         return new WorldDescriptor(players, areas, gameAreas, world.Result);
+    }
+
+    private static Dictionary<string, string> PrintedStats(
+        IReadOnlyDictionary<string, string> attributes)
+    {
+        string[] names =
+        [
+            "REC", "THW", "ATK", "DEF", "SCH", "HP", "Stage",
+            "StartingThreat", "TargetThreat", "Boost",
+        ];
+        return names
+            .Where(attributes.ContainsKey)
+            .ToDictionary(name => name, name => attributes[name], StringComparer.Ordinal);
     }
 
     private static CardBack Back(CardKind kind) => kind is

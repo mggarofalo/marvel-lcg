@@ -122,6 +122,31 @@ public sealed class VisualSystemTests
     }
 
     [Fact]
+    public void CardSizesHavePredictableDisclosureAndScaleWithoutShrinkingType()
+    {
+        foreach (InterfaceScale scale in VisualSystem.SupportedScales)
+        {
+            CardLayoutMetrics full = VisualSystem.Card(CardDisplaySize.Full, scale);
+            CardLayoutMetrics board = VisualSystem.Card(CardDisplaySize.Board, scale);
+
+            Assert.True(full.Width > board.Width);
+            Assert.True(full.MinimumHeight > board.MinimumHeight);
+            Assert.True(full.TitleLines >= board.TitleLines);
+            Assert.True(full.RulesLines > board.RulesLines);
+            Assert.True(board.ShowSubtitle);
+            Assert.True(board.ShowTraits);
+            Assert.True(board.ShowPrintedStats);
+        }
+
+        Assert.True(
+            VisualSystem.Card(CardDisplaySize.Board, InterfaceScale.Standard).Width
+            < VisualSystem.Card(CardDisplaySize.Board, InterfaceScale.Large).Width);
+        Assert.True(
+            VisualSystem.Card(CardDisplaySize.Board, InterfaceScale.Large).Width
+            < VisualSystem.Card(CardDisplaySize.Board, InterfaceScale.ExtraLarge).Width);
+    }
+
+    [Fact]
     public void GodotVariationsAreStableAndUnique()
     {
         string[] variations =
@@ -150,6 +175,11 @@ public sealed class VisualSystemTests
             GodotThemeVariations.BoardCard,
             GodotThemeVariations.ConcealedCard,
             GodotThemeVariations.FocusedCard,
+            GodotThemeVariations.CardTitle,
+            GodotThemeVariations.CardRules,
+            GodotThemeVariations.CardLiveValue,
+            GodotThemeVariations.CardPrintedValue,
+            GodotThemeVariations.CardState,
             GodotThemeVariations.PrimaryButton,
             GodotThemeVariations.ChoiceButton,
             GodotThemeVariations.LegalTargetButton,
