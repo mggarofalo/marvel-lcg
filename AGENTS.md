@@ -131,6 +131,7 @@ Seven, all run by hand and none on any path a game takes.
 | the card ability DSL, `src/Marvel.Cards`, adding a card to `datasets/abilities/` | [card-dsl.md](docs/card-dsl.md) |
 | what the engine tells a client changed | [event-stream.md](docs/event-stream.md) |
 | what the engine tells a client the player can do | [affordances.md](docs/affordances.md) |
+| saves, deterministic replay, undo, redo, action reordering, session logs or telemetry | [session-ledger.md](docs/session-ledger.md) |
 | the supported product boundary | [scope.md](docs/scope.md) |
 | the client, the engine's return signature, `Marvel.Server` | [presentation-layer.md](docs/presentation-layer.md) |
 | launching or smoke-testing the Godot client | [godot-client.md](docs/godot-client.md) |

@@ -29,6 +29,8 @@ plane module add-work-items --module-id "Corpus and Oracle" --issues "$ID" -p MA
 | **Card DSL and Port** | Data-only card ability DSL, then the card ports |
 | **Client and Integration** | Reconnecting the existing web client |
 | **Rules Reference Coverage** | Classify every v1.8 record, add missing citations, and implement executable gaps |
+| **Session Integrity and Observability** | Server-owned saves and replay, information-bounded history editing, structured logs and telemetry |
+| **Desktop and Server Delivery** | Signed desktop artifacts, a persistent server package, installation, upgrades and operator guidance |
 | **Maintenance Backlog** | Default bucket for small hardening and fixes that fit no phase |
 
 If no phase fits, use **Maintenance Backlog**.

@@ -17,6 +17,11 @@ chronology. The client renders the board, waiting state and every admitted
 prompt shape from those contracts. Tests run a complete deterministic journey
 through both compositions and compare every authoritative response.
 
+The planned deterministic session layer sits behind both transports. It makes
+the server-owned setup and accepted decision trace authoritative for save,
+restore, undo, redo and legal action reordering. Clients continue to submit
+decisions rather than state. See [session-ledger.md](session-ledger.md).
+
 ## Build boundary
 
 Godot is the only UI framework planned for the client. No engine, card, content,
