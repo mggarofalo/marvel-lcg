@@ -231,7 +231,7 @@ public sealed class TransportTests
 
         var again = EngineJson.ReadResponse(EngineJson.Write(response));
 
-        Assert.Equal(9, again.Version);
+        Assert.Equal(EngineProtocol.Version, again.Version);
         Assert.Collection(
             again.Events,
             happened => Assert.Equal(joined, Assert.IsType<PlayAreaJoined>(happened)),
@@ -274,6 +274,40 @@ public sealed class TransportTests
         Assert.Equal(
             2,
             restored.Prompt!.Affordances[0].Targets!.MaximumOccurrences![12]);
+    }
+
+    [Fact]
+    public void WildDeclarationSensitivityHasAPinnedWireField()
+    {
+        var response = new EngineResponse(
+            EngineProtocol.Version,
+            "wild-declaration",
+            "game",
+            Capability: null,
+            Prompt: new Prompt(
+                0, Question.Element, TimingPriority.Untimed, "PlayCard",
+                "Pay", Cancellable: false,
+                [new Affordance(
+                    7, "Play", 20, World.Scenario, "Play card",
+                    Costs:
+                    [
+                        new CostOption(
+                            20,
+                            "1",
+                            Sources: [new ResourceSource(40, "W")],
+                            DeclarationSensitive: true),
+                    ])]),
+            Events: []);
+
+        using JsonDocument document = JsonDocument.Parse(EngineJson.Write(response));
+        JsonElement cost = document.RootElement.GetProperty("prompt")
+            .GetProperty("affordances")[0]
+            .GetProperty("costs")[0];
+
+        Assert.True(cost.GetProperty("declaration_sensitive").GetBoolean());
+
+        EngineResponse restored = EngineJson.ReadResponse(EngineJson.Write(response));
+        Assert.True(restored.Prompt!.Affordances[0].CostOptions[0].DeclarationSensitive);
     }
 
     [Fact]

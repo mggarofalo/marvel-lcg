@@ -91,6 +91,19 @@ public sealed class CoreSetupTests
         }
     }
 
+    [Rule("rr:linked-card-title.3")]
+    [Fact]
+    public void IronManAgainstKlawDoesNotSetAsideTheTricksterTakeoverWhirlwindAlly()
+    {
+        // Linked cards are limited to "the product from which the linked card
+        // came." Core Whirlwind cannot bring an ally from Trickster Takeover.
+        var order = Dealer.DealOrder(Setup, "klaw", ["iron_man"]);
+        var blueprints = Blueprints.From(order, Cards);
+
+        Assert.DoesNotContain(blueprints, card => card.Spec == "55065");
+        Assert.Contains(blueprints, card => card.Spec == "01130");
+    }
+
     [Rule("rr:modes-of-play.2")]
     [Rule("rr:modes-of-play.1")]
     [Rule("rr:classifications.4")]

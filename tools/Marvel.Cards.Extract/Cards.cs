@@ -33,7 +33,7 @@ internal static class Cards
         using (var writer = new Utf8JsonWriter(buffer, options))
         {
             writer.WriteStartObject();
-            writer.WriteNumber("dataset_version"u8, 2);
+            writer.WriteNumber("dataset_version"u8, 3);
             writer.WriteString("generated_from"u8, "datasets/marvelsdb/");
             writer.WriteString(
                 "generated_by"u8,
@@ -74,6 +74,16 @@ internal static class Cards
                 }
 
                 writer.WriteEndObject();
+
+                if (card.LinkedTo.Count > 0)
+                {
+                    writer.WriteStartArray("linked_to"u8);
+                    foreach (string faceId in card.LinkedTo)
+                    {
+                        writer.WriteStringValue(faceId);
+                    }
+                    writer.WriteEndArray();
+                }
 
                 writer.WriteString("text"u8, card.Text);
                 writer.WriteString("text_plain"u8, card.Plain);
@@ -150,6 +160,13 @@ internal static class Cards
                 traits.AddRange(written.EnumerateArray().Select(trait => trait.GetString()!));
             }
 
+            var linkedTo = new List<string>();
+            if (facts.TryGetProperty("linked_to", out var linked)
+                && linked.ValueKind == JsonValueKind.Array)
+            {
+                linkedTo.AddRange(linked.EnumerateArray().Select(face => face.GetString()!));
+            }
+
             found[id] = new Card(
                 id,
                 Field(element, "name"),
@@ -157,6 +174,7 @@ internal static class Cards
                 facts.TryGetProperty("type", out var kind) ? kind.GetString() ?? "" : "",
                 traits,
                 attributes,
+                linkedTo,
                 Field(element, "text"),
                 Field(element, "pack"),
                 Field(element, "set"));
@@ -196,6 +214,12 @@ internal static class Cards
             if (!old.Traits.SequenceEqual(built.Traits, StringComparer.Ordinal))
             {
                 Note("traits", $"{id} [{string.Join(' ', old.Traits)}] -> [{string.Join(' ', built.Traits)}]");
+            }
+            if (!old.LinkedTo.SequenceEqual(built.LinkedTo, StringComparer.Ordinal))
+            {
+                Note(
+                    "linked faces",
+                    $"{id} [{string.Join(' ', old.LinkedTo)}] -> [{string.Join(' ', built.LinkedTo)}]");
             }
 
             foreach (string key in old.Attributes.Keys

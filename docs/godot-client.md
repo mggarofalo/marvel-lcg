@@ -82,13 +82,43 @@ is sent. A used, expired or unknown invitation is not retried; ask the host for
 a new one. While another seat owns the current decision, the joined client
 renders the table as an in-progress waiting view.
 
-The play rail keeps a Synchronize table action available at prompts, while
-waiting for another player and after the game ends. It reads one authoritative
+The compact sync control in the top-right toolbar remains available at prompts,
+while waiting for another player and after the game ends. It reads one authoritative
 snapshot without repeating a decision or replaying event history. If a decision
 frame was never sent, the client preserves the draft and says retry is safe. If
 the frame was sent but its response was lost, the table stays locked until a
 sync succeeds. An expired or closed capability returns the client to Join and
 must be replaced with a new invitation.
+
+The rail is a desktop workbench rather than a summary card. Its Action tab owns
+the available height and shows several affordances at once; the complete
+diagnostic chronology remains in the adjacent History tab. At wide desktop
+sizes the rail grows to 680–720 logical pixels. Board areas use fixed shelves so
+multiple areas wrap into each lane instead of stretching one area across the
+whole remaining table. Every area is a disclosure section, empty areas begin
+collapsed, and scenario and player-owned sections remain grouped in separate
+lanes. A player's visible hand is pinned below the table scroll so it does not
+disappear while inspecting another area.
+
+Compact is the default interface scale. The toolbar slider switches among the
+eleven supported scales immediately, including card geometry and the prompt rail,
+and the adjacent motion toggle controls event animation. Table and hand cards
+expose a concise summary; hovering a readable card or card-backed action opens
+the full card inspector immediately to the roomier side of the pointer. The
+inspector remains open while its source or the inspector is hovered or focused,
+and closes 300 milliseconds after both pointer and focus leave it. Character
+health is one current/maximum value rather than separate hit-point and damage
+values.
+Settled synchronization uses the toolbar indicator rather than reserving a
+large event-cue box, and the History tab gives its log a readable minimum height.
+
+For a single resource-cost component, selecting a generator applies its icons
+deterministically and leaves excess icons unused. An ordinary wild resource is
+still declared on the wire, as the rules require, but the client does not ask
+which equivalent declaration to use. The selector remains when an offered card
+effect observes which resource type was paid, and payments with simultaneous
+components retain explicit destination controls. The prompt carries that
+observability; the client does not infer it from card text.
 
 Each authorized snapshot includes a host revision. The client echoes that
 revision with its next decision, so a draft made for an earlier prompt is
@@ -188,17 +218,17 @@ targets; it evokes a divided encounter file without copying a printed card
 frame or requiring scanned art.
 
 State never depends on hue alone. Hover raises the lower edge, keyboard focus
-adds an expanded three-pixel ring, legal targets carry a diamond marker and
-left rail, selections carry a checkmark and heavier rail, and unavailable
-actions say `UNAVAILABLE` as well as using a disabled treatment. Standard body
-text is at least 16 logical pixels, captions are at least 14, and interactive
-targets have a 44-pixel floor. Managed tests pin the declared contrast and
-metric contracts; the native smoke resolves the actual Godot styles.
+adds an expanded focus ring, legal targets carry a diamond marker and left
+rail, selections carry a checkmark and heavier rail, and unavailable actions
+say `UNAVAILABLE` as well as using a disabled treatment. Managed tests pin the
+declared contrast and metric contracts; the native smoke resolves the actual
+Godot styles.
 
-The standard scale is the default. For desktop accessibility checks or local
-use, set `MARVEL_UI_SCALE` to `large` or `extra-large` before launch. These
-select the other tested, monotonic type and spacing scales; gameplay and its
-deterministic state are unaffected.
+The toolbar scale control offers every ten-percent step from 50% through 150%
+and defaults to 80%. For automated desktop checks or local use,
+`MARVEL_UI_SCALE` accepts those percentages, with or without `%`; `compact`,
+`standard`, `large`, and `extra-large` remain aliases for 80%, 100%, 120%, and
+150%. Gameplay and its deterministic state are unaffected.
 
 ## Optional local art pack
 

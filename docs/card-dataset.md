@@ -56,6 +56,13 @@ is our choice**: the Rules Reference names the values and not the spelling of a
 JSON key, and `StateFields.PrintedFrom` is written against these. The only
 property they have to keep is holding still.
 
+`linked_to` is present only on a linked card and contains the exact face id of
+the card that brings it. The printed parenthetical supplies the title and
+optional type; `rr:linked-card-title.3` supplies the product boundary. The
+extractor resolves those facts to an id while generating the dataset and fails
+if the result is not unique. Runtime code therefore follows a stable id rather
+than repeating a title-and-product inference.
+
 ## Where the attributes come from
 
 Two places on the card, so two readers.

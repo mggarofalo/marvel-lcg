@@ -33,7 +33,7 @@ mkdir -p "$capture_dir"
 for viewport in 1280x720 1920x1080; do
   for motion in enabled disabled; do
     if [[ "$use_xvfb" == true ]]; then
-      MARVEL_UI_SCALE=standard \
+      MARVEL_UI_SCALE=compact \
         MARVEL_SMOKE_VIEWPORT="$viewport" \
         MARVEL_SMOKE_MOTION="$motion" \
         MARVEL_SMOKE_CAPTURE_DIR="$capture_dir" \
@@ -43,7 +43,7 @@ for viewport in 1280x720 1920x1080; do
         --path "$repo_root/src/Marvel.Godot" \
           --script res://smoke/local_game_smoke.gd
     else
-      MARVEL_UI_SCALE=standard \
+      MARVEL_UI_SCALE=compact \
         MARVEL_SMOKE_VIEWPORT="$viewport" \
         MARVEL_SMOKE_MOTION="$motion" \
         MARVEL_SMOKE_CAPTURE_DIR="$capture_dir" \

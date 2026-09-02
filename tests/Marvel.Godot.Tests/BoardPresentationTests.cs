@@ -57,6 +57,45 @@ public sealed class BoardPresentationTests
     }
 
     [Fact]
+    public void VillainDeckIsPresentedAsUpcomingRatherThanSetAside()
+    {
+        BoardAreaPresentation area = Assert.Single(BoardPresentation.From(
+            World(areas: [Area(2, "VillainDeck", -1, [Readable(7, "Rhino II")])]))
+            .Areas);
+
+        Assert.Equal("UPCOMING VILLAIN STAGES", area.Title);
+        Assert.Contains("OUT OF PLAY", area.Context);
+        Assert.Contains("ENTERS AFTER THE CURRENT STAGE", area.Context);
+    }
+
+    [Fact]
+    public void PlayerAsideAreasUseSetAsideAndNemesisTableNames()
+    {
+        BoardPresentation board = BoardPresentation.From(World(
+            areas:
+            [
+                Area(1, "AsideDeck", 0),
+                Area(2, "AsideDeck", 0, [Readable(7, "Vulture")]),
+                Area(3, "AsideDeck", 0),
+            ],
+            players: [new PlayerDescriptor(0, "Spider-Man", Eliminated: false)]));
+
+        Assert.Equal("SPIDER-MAN'S SET-ASIDE AREA", board.Areas[0].Title);
+        Assert.Equal("SPIDER-MAN'S NEMESIS SET", board.Areas[1].Title);
+        Assert.Equal("SPIDER-MAN'S SET-ASIDE AREA", board.Areas[2].Title);
+    }
+
+    [Fact]
+    public void AReadableCardInHandDoesNotClaimToBeReadyOrFaceDown()
+    {
+        BoardCardPresentation card = Assert.Single(Assert.Single(BoardPresentation.From(
+            World(areas: [Area(1, "HandsArea", 0, [Readable(7, "Backflip")])]))
+            .Areas).Cards);
+
+        Assert.Equal(string.Empty, card.Status);
+    }
+
+    [Fact]
     public void AFaceDownCardInPlayRetainsOnlyItsAuthorizedHandleAndPublicState()
     {
         CardDescriptor hidden = new(
@@ -96,7 +135,9 @@ public sealed class BoardPresentationTests
                 new Dictionary<string, long>(StringComparer.Ordinal)
                 {
                     ["thwart"] = 2,
-                    ["hitPoints"] = 11,
+                    ["amplify"] = 0,
+                    ["is_exhaust"] = 0,
+                    ["health"] = 11,
                     ["k_threat"] = 3,
                     ["t_avenger"] = 1,
                 })
@@ -119,7 +160,7 @@ public sealed class BoardPresentationTests
 
         BoardCardPresentation card = Assert.Single(
             Assert.Single(BoardPresentation.From(
-                World(areas: [Area(1, "IdentityArea", 0, [readable])])).Areas).Cards);
+                World(areas: [Area(1, "HeroArea", 0, [readable])])).Areas).Cards);
 
         Assert.Equal("01010", card.FaceId);
 
@@ -127,9 +168,9 @@ public sealed class BoardPresentationTests
         Assert.Equal("Captain Marvel", card.Title);
         Assert.Equal("Carol Danvers", card.Subtitle);
         Assert.Equal("HERO", card.Kind);
-        Assert.Equal("EXHAUSTED  ·  FACE UP", card.Status);
-        Assert.Equal(["HIT POINTS", "THREAT", "THWART"], card.Fields.Select(field => field.Name));
-        Assert.Equal(["11", "3", "2"], card.Fields.Select(field => field.Value));
+        Assert.Equal("EXHAUSTED", card.Status);
+        Assert.Equal(["HEALTH", "THREAT", "THWART"], card.Fields.Select(field => field.Name));
+        Assert.Equal(["11/13", "3", "2"], card.Fields.Select(field => field.Value));
         Assert.Equal(["AVENGER", "AERIAL"], card.Traits);
         Assert.Equal("3", card.Cost);
         Assert.Equal(["THW", "ATK"], card.PrintedStats.Select(field => field.Name));

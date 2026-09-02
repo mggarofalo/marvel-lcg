@@ -471,7 +471,9 @@ public sealed partial class AbilityRunner
             Rule: Resources.Required(world, card, world.Facts) is { Length: > 0 } required
                 ? [required]
                 : null,
-            Sources: EventGenerators(world, card, player, effect));
+            Sources: EventGenerators(world, card, player, effect),
+            DeclarationSensitive: PaidResourceQueries(effect.Argument).Any()
+                || effect.Kind == "paidWithResource");
     }
 
     private static List<ResourceSource> EventGenerators(

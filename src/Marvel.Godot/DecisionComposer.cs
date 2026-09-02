@@ -215,6 +215,53 @@ public sealed class DecisionComposer
     /// <summary>The selected index in the affordance's unmodified cost list.</summary>
     public int SelectedCost => selectedCost;
 
+    /// <summary>Whether the only legal required target was selected without asking.</summary>
+    public bool UsesAutomaticTargetSelection => Selected?.Targets is { } request
+        && targets.Count > 0
+        && (request.IsGrouped
+            ? request.Groups is { Count: 1 } && targets.SequenceEqual(request.Groups[0])
+            : !request.AllowRepeated
+                && request.Min == 1
+                && request.Max == 1
+                && request.Legal.Distinct().Count() == 1
+                && targets[0] == request.Legal[0]);
+
+    /// <summary>
+    /// Whether the selected generators have one deterministic printed-resource allocation.
+    /// </summary>
+    /// <remarks>
+    /// A single cost component gives every printed icon the same destination. A wild
+    /// declaration is automatic only when the prompt says no later effect observes it;
+    /// simultaneous cost components retain their explicit player choice.
+    /// </remarks>
+    public bool UsesAutomaticResourceAllocation
+    {
+        get
+        {
+            CostOption? cost = SelectedCostOption();
+            if (cost is null || cost.ResourceCosts.Count != 1 || resources.Count == 0)
+            {
+                return false;
+            }
+
+            bool hasWild = false;
+            bool valid = resources.All(effect =>
+            {
+                ResourceSource[] matches =
+                    [.. cost.Generators.Where(source => source.Effect == effect)];
+                if (matches.Length != 1)
+                {
+                    return false;
+                }
+
+                hasWild |= matches[0].Generates.Contains(
+                    Marvel.Rules.Play.Resources.Wild);
+                return true;
+            });
+            return valid && (!hasWild || !cost.DeclarationSensitive);
+        }
+    }
+
     /// <summary>
     /// Summarizes the current draft without interpreting card text or board state.
     /// </summary>
@@ -240,6 +287,26 @@ public sealed class DecisionComposer
         assignments.Clear();
         values.Clear();
         selectedCost = Selected.CostOptions.Count == 1 ? 0 : -1;
+        SelectOnlyRequiredTarget();
+    }
+
+    private void SelectOnlyRequiredTarget()
+    {
+        TargetRequest? request = Selected?.Targets;
+        if (request?.IsGrouped == true && request.Groups is { Count: 1 })
+        {
+            targets.AddRange(request.Groups[0]);
+            return;
+        }
+
+        if (request is not null
+            && !request.AllowRepeated
+            && request.Min == 1
+            && request.Max == 1
+            && request.Legal.Distinct().Take(2).Count() == 1)
+        {
+            targets.Add(request.Legal[0]);
+        }
     }
 
     /// <summary>Replaces the ordered selection with values offered by the prompt.</summary>
@@ -295,6 +362,7 @@ public sealed class DecisionComposer
     /// <summary>Toggles one generator offered by the selected cost.</summary>
     public void ToggleResource(int effect)
     {
+        bool wasAutomatic = UsesAutomaticResourceAllocation;
         int index = resources.IndexOf(effect);
         if (index >= 0)
         {
@@ -304,6 +372,17 @@ public sealed class DecisionComposer
         else
         {
             resources.Add(effect);
+        }
+
+        bool isAutomatic = UsesAutomaticResourceAllocation;
+        if (wasAutomatic || isAutomatic)
+        {
+            assignments.Clear();
+        }
+
+        if (isAutomatic)
+        {
+            ApplyAutomaticResourceAllocation();
         }
     }
 
@@ -470,6 +549,35 @@ public sealed class DecisionComposer
 
         return [.. order.Select(key =>
             new ResourceAllocation(key.Source, key.Cost, paid[key].ToString()))];
+    }
+
+    private void ApplyAutomaticResourceAllocation()
+    {
+        CostOption cost = SelectedCostOption()!;
+        IReadOnlyList<ResourceAllocation>? allocation =
+            ResourcePayment.Allocate(cost, resources, values);
+        if (allocation is null)
+        {
+            return;
+        }
+
+        foreach (ResourceAllocation payment in allocation)
+        {
+            ResourceSource source = cost.Generators.Single(candidate =>
+                candidate.Effect == payment.Source);
+            var used = new HashSet<int>();
+            foreach (char paidAs in payment.PaidAs)
+            {
+                int icon = Enumerable.Range(0, source.Generates.Length)
+                    .Where(index => !used.Contains(index))
+                    .OrderBy(index => source.Generates[index] == paidAs ? 0 : 1)
+                    .First(index => source.Generates[index] == paidAs
+                        || source.Generates[index] == Marvel.Rules.Play.Resources.Wild);
+                used.Add(icon);
+                assignments.Add(new ResourceIconAssignment(
+                    source.Effect, icon, payment.Cost, paidAs));
+            }
+        }
     }
 
     private CostOption? SelectedCostOption() =>

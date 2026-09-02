@@ -53,6 +53,47 @@ theme_type_variation = &"ShellPanel"
 layout_mode = 2
 theme_type_variation = &"Stack"
 
+[node name="Toolbar" type="HBoxContainer" parent="Margin/Shell/Content"]
+layout_mode = 2
+theme_type_variation = &"CompactRow"
+
+[node name="Spacer" type="Control" parent="Margin/Shell/Content/Toolbar"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SyncStatus" type="Label" parent="Margin/Shell/Content/Toolbar"]
+visible = false
+layout_mode = 2
+theme_type_variation = &"StatusText"
+text = "✓ Synced"
+
+[node name="Synchronize" type="Button" parent="Margin/Shell/Content/Toolbar"]
+visible = false
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+disabled = true
+text = "↻"
+tooltip_text = "Read the current authoritative table without repeating a decision."
+
+[node name="ScaleValue" type="Label" parent="Margin/Shell/Content/Toolbar"]
+layout_mode = 2
+theme_type_variation = &"Caption"
+text = "Scale 80%"
+
+[node name="InterfaceScale" type="HSlider" parent="Margin/Shell/Content/Toolbar"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+min_value = 50.0
+max_value = 150.0
+step = 10.0
+tooltip_text = "Adjust interface scale."
+
+[node name="Motion" type="CheckButton" parent="Margin/Shell/Content/Toolbar"]
+layout_mode = 2
+button_pressed = true
+text = "Motion"
+tooltip_text = "Show short visual cues for new game events."
+
 [node name="Eyebrow" type="Label" parent="Margin/Shell/Content"]
 layout_mode = 2
 theme_type_variation = &"Eyebrow"
@@ -334,7 +375,12 @@ custom_minimum_size = Vector2(0, 260)
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Board" type="ScrollContainer" parent="Margin/Shell/Content/Play"]
+[node name="Board" type="VBoxContainer" parent="Margin/Shell/Content/Play"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="TableScroll" type="ScrollContainer" parent="Margin/Shell/Content/Play/Board"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -342,16 +388,47 @@ focus_mode = 2
 follow_focus = true
 horizontal_scroll_mode = 0
 
-[node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Board"]
+[node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Board/TableScroll"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 10
 
-[node name="Areas" type="VBoxContainer" parent="Margin/Shell/Content/Play/Board/Margin"]
+[node name="Areas" type="VBoxContainer" parent="Margin/Shell/Content/Play/Board/TableScroll/Margin"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"Stack"
+
+[node name="HandShelf" type="PanelContainer" parent="Margin/Shell/Content/Play/Board"]
+custom_minimum_size = Vector2(0, 84)
+layout_mode = 2
+theme_type_variation = &"SurfacePanel"
+
+[node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Board/HandShelf"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 6
+
+[node name="Stack" type="VBoxContainer" parent="Margin/Shell/Content/Play/Board/HandShelf/Margin"]
+layout_mode = 2
+theme_type_variation = &"TightStack"
+
+[node name="Heading" type="Label" parent="Margin/Shell/Content/Play/Board/HandShelf/Margin/Stack"]
+layout_mode = 2
+theme_type_variation = &"Heading"
+text = "HAND  ·  0"
+
+[node name="Scroll" type="ScrollContainer" parent="Margin/Shell/Content/Play/Board/HandShelf/Margin/Stack"]
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_scroll_mode = 2
+vertical_scroll_mode = 0
+
+[node name="Rail" type="HBoxContainer" parent="Margin/Shell/Content/Play/Board/HandShelf/Margin/Stack/Scroll"]
+layout_mode = 2
+theme_type_variation = &"CompactRow"
 
 [node name="Prompt" type="PanelContainer" parent="Margin/Shell/Content/Play"]
 custom_minimum_size = Vector2(330, 0)
@@ -370,13 +447,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_type_variation = &"Stack"
-
-[node name="Synchronize" type="Button" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
-custom_minimum_size = Vector2(0, 44)
-layout_mode = 2
-disabled = true
-text = "Synchronize table"
-tooltip_text = "Request the current authoritative table without repeating a decision."
 
 [node name="InvitationOffer" type="PanelContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
 visible = false
@@ -443,75 +513,84 @@ autowrap_mode = 2
 [node name="HeaderRule" type="HSeparator" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
 layout_mode = 2
 
-[node name="DecisionScroll" type="ScrollContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
-custom_minimum_size = Vector2(0, 132)
+[node name="Workbench" type="TabContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="Action" type="MarginContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench"]
+layout_mode = 2
+metadata/_tab_name = "Action"
+
+[node name="DecisionScroll" type="ScrollContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/Action"]
+custom_minimum_size = Vector2(0, 180)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 follow_focus = true
 horizontal_scroll_mode = 1
 
-[node name="Decision" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/DecisionScroll"]
+[node name="Decision" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/Action/DecisionScroll"]
 layout_mode = 2
 size_flags_horizontal = 3
 script = ExtResource("2_decision")
 
-[node name="Rule" type="HSeparator" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
+[node name="History" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench"]
+layout_mode = 2
+theme_type_variation = &"TightStack"
+metadata/_tab_name = "History"
+
+[node name="Rule" type="HSeparator" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History"]
 layout_mode = 2
 
-[node name="EventHeader" type="HFlowContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
+[node name="EventHeader" type="HFlowContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History"]
 layout_mode = 2
 
-[node name="Heading" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/EventHeader"]
+[node name="Heading" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History/EventHeader"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"Eyebrow"
 text = "RECENT HISTORY"
 
-[node name="Motion" type="CheckButton" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/EventHeader"]
-layout_mode = 2
-button_pressed = true
-text = "Motion"
-tooltip_text = "Show short visual cues for new game events."
-
-[node name="Skip" type="Button" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/EventHeader"]
+[node name="Skip" type="Button" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History/EventHeader"]
 layout_mode = 2
 disabled = true
 text = "Skip"
 tooltip_text = "Finish the current event presentation immediately."
 
-[node name="EventCue" type="PanelContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
+[node name="EventCue" type="PanelContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History"]
+visible = false
 custom_minimum_size = Vector2(0, 68)
 layout_mode = 2
 theme_type_variation = &"StatusPanel"
 
-[node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/EventCue"]
+[node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History/EventCue"]
 layout_mode = 2
 theme_override_constants/margin_left = 12
 theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 8
 
-[node name="Copy" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/EventCue/Margin"]
+[node name="Copy" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History/EventCue/Margin"]
 layout_mode = 2
 theme_type_variation = &"TightStack"
 
-[node name="Kind" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/EventCue/Margin/Copy"]
+[node name="Kind" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History/EventCue/Margin/Copy"]
 layout_mode = 2
 theme_type_variation = &"Eyebrow"
 text = "EVENT"
 
-[node name="Summary" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/EventCue/Margin/Copy"]
+[node name="Summary" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History/EventCue/Margin/Copy"]
 layout_mode = 2
 theme_type_variation = &"Body"
 text = "The authoritative board is current."
 autowrap_mode = 2
 
-[node name="EventLog" type="RichTextLabel" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
-custom_minimum_size = Vector2(0, 96)
+[node name="EventLog" type="RichTextLabel" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History"]
+custom_minimum_size = Vector2(0, 260)
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_vertical = 1
+size_flags_vertical = 3
 bbcode_enabled = true
 fit_content = false
 scroll_active = true
@@ -527,3 +606,22 @@ theme_type_variation = &"StatusPanel"
 layout_mode = 2
 theme_type_variation = &"StatusText"
 text = "LOADING ASSIGNMENTS"
+
+[node name="CardInspector" type="PanelContainer" parent="."]
+visible = false
+z_index = 20
+mouse_filter = 1
+focus_mode = 0
+custom_minimum_size = Vector2(280, 480)
+theme_type_variation = &"SurfacePanel"
+
+[node name="Scroll" type="ScrollContainer" parent="CardInspector"]
+layout_mode = 2
+mouse_filter = 0
+focus_mode = 0
+horizontal_scroll_mode = 0
+
+[node name="Content" type="VBoxContainer" parent="CardInspector/Scroll"]
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"TightStack"

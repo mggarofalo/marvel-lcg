@@ -13,9 +13,10 @@ public static class EngineProtocol
     /// scoped seat capabilities, play-area topology events, setup discovery,
     /// per-target allocation capacities, procedural-card face facts, host
     /// revisions, replay-verified history cursor commands, and legal trace
-    /// rewriting for committed action units.
+    /// rewriting for committed action units. Version 10 also tells clients
+    /// when a wild-resource declaration is observable by the resolving effect.
     /// </summary>
-    public const int Version = 9;
+    public const int Version = 10;
 
     /// <summary>The largest request or game id accepted or echoed.</summary>
     public const int MaximumIdentifierLength = 256;

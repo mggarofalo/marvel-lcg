@@ -18,7 +18,7 @@ dotnet build "$repoRoot/src/Marvel.Godot/Marvel.Godot.csproj" --nologo
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 foreach ($viewport in @("1040x680", "1280x720", "1600x900", "1920x1080")) {
-    foreach ($scale in @("standard", "large", "extra-large")) {
+    foreach ($scale in @("50", "60", "70", "80", "90", "100", "110", "120", "130", "140", "150")) {
         $env:MARVEL_UI_SCALE = $scale
         $env:MARVEL_SMOKE_VIEWPORT = $viewport
         $env:MARVEL_SMOKE_MOTION = "enabled"
@@ -27,7 +27,7 @@ foreach ($viewport in @("1040x680", "1280x720", "1600x900", "1920x1080")) {
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     }
 }
-$env:MARVEL_UI_SCALE = "standard"
+$env:MARVEL_UI_SCALE = "100"
 $env:MARVEL_SMOKE_VIEWPORT = "1280x720"
 $env:MARVEL_SMOKE_MOTION = "disabled"
 & $GodotBin --headless --path "$repoRoot/src/Marvel.Godot" `

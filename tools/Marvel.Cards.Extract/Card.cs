@@ -23,6 +23,7 @@ namespace Marvel.Cards.Extract;
 /// <param name="Kind">The engine's name for the card type.</param>
 /// <param name="Traits">The printed traits, upper-cased.</param>
 /// <param name="Attributes">Everything printed on the card the engine reads.</param>
+/// <param name="LinkedTo">Exact face ids resolved from a printed Linked title.</param>
 /// <param name="Text">The text box, with upstream's markup.</param>
 /// <param name="Pack">The product it was printed in.</param>
 /// <param name="Set">The hero or encounter set it belongs to.</param>
@@ -33,6 +34,7 @@ internal sealed record Card(
     string Kind,
     IReadOnlyList<string> Traits,
     IReadOnlyDictionary<string, string> Attributes,
+    IReadOnlyList<string> LinkedTo,
     string Text,
     string Pack,
     string Set)

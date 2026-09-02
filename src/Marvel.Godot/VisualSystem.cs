@@ -67,9 +67,22 @@ public sealed record InteractiveStyle(
 /// <summary>The discrete UI sizes supported by the desktop client.</summary>
 public enum InterfaceScale
 {
-    Standard,
-    Large,
-    ExtraLarge,
+    Percent50 = 50,
+    Percent60 = 60,
+    Percent70 = 70,
+    Percent80 = 80,
+    Percent90 = 90,
+    Percent100 = 100,
+    Percent110 = 110,
+    Percent120 = 120,
+    Percent130 = 130,
+    Percent140 = 140,
+    Percent150 = 150,
+
+    Compact = Percent80,
+    Standard = Percent100,
+    Large = Percent120,
+    ExtraLarge = Percent150,
 }
 
 /// <summary>The two disclosure levels supported by a procedural card.</summary>
@@ -77,6 +90,7 @@ public enum CardDisplaySize
 {
     Full,
     Board,
+    Hand,
 }
 
 /// <summary>Deterministic card geometry and text disclosure for one display size.</summary>
@@ -112,6 +126,15 @@ public sealed record ControlMetrics(
     int FocusRingWidth,
     int CornerRadius);
 
+/// <summary>Desktop workbench dimensions derived from the current viewport and scale.</summary>
+public sealed record DesktopPlayMetrics(
+    int DecisionWidth,
+    int DecisionMinimumHeight,
+    int BoardAreaWidth);
+
+/// <summary>A viewport-safe origin for a floating inspector.</summary>
+public sealed record FloatingPanelPosition(int X, int Y);
+
 /// <summary>
 /// Framework-independent visual tokens for the Godot client.
 ///
@@ -121,7 +144,19 @@ public sealed record ControlMetrics(
 public static class VisualSystem
 {
     private static readonly InterfaceScale[] Scales =
-        [InterfaceScale.Standard, InterfaceScale.Large, InterfaceScale.ExtraLarge];
+    [
+        InterfaceScale.Percent50,
+        InterfaceScale.Percent60,
+        InterfaceScale.Percent70,
+        InterfaceScale.Percent80,
+        InterfaceScale.Percent90,
+        InterfaceScale.Percent100,
+        InterfaceScale.Percent110,
+        InterfaceScale.Percent120,
+        InterfaceScale.Percent130,
+        InterfaceScale.Percent140,
+        InterfaceScale.Percent150,
+    ];
 
     public static VisualPalette Palette { get; } = new(
         Canvas: VisualColor.FromRgb(0x092A2C),
@@ -140,6 +175,45 @@ public static class VisualSystem
 
     /// <summary>Every scale the client promises to render and test.</summary>
     public static IReadOnlyList<InterfaceScale> SupportedScales => Scales;
+
+    /// <summary>The user-facing percentage for a discrete interface scale.</summary>
+    public static double ScalePercent(InterfaceScale scale)
+    {
+        _ = ScaleFactor(scale);
+        return (int)scale;
+    }
+
+    /// <summary>
+    /// Places a floating panel on the roomier horizontal side of the pointer
+    /// and clamps it to the visible desktop.
+    /// </summary>
+    public static FloatingPanelPosition PlaceFloatingPanel(
+        int viewportWidth,
+        int viewportHeight,
+        int pointerX,
+        int pointerY,
+        int panelWidth,
+        int panelHeight,
+        int margin = 12,
+        int pointerGap = 16)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(viewportWidth);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(viewportHeight);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(panelWidth);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(panelHeight);
+
+        int maximumX = Math.Max(margin, viewportWidth - panelWidth - margin);
+        int maximumY = Math.Max(margin, viewportHeight - panelHeight - margin);
+        int roomOnRight = viewportWidth - pointerX - margin;
+        int roomOnLeft = pointerX - margin;
+        int desiredX = roomOnRight >= roomOnLeft
+            ? pointerX + pointerGap
+            : pointerX - pointerGap - panelWidth;
+        int desiredY = pointerY - panelHeight / 2;
+        return new FloatingPanelPosition(
+            Math.Clamp(desiredX, margin, maximumX),
+            Math.Clamp(desiredY, margin, maximumY));
+    }
 
     /// <summary>Returns the semantic treatment for one interactive state.</summary>
     public static InteractiveStyle For(InteractiveVisualState state) => state switch
@@ -218,11 +292,11 @@ public static class VisualSystem
     };
 
     public static TypeMetrics Type(InterfaceScale scale) => new(
-        Scale(40, scale),
-        Scale(20, scale),
-        Scale(16, scale),
-        Scale(14, scale),
-        Scale(13, scale));
+        Scale(36, scale),
+        Scale(18, scale),
+        Scale(15, scale),
+        Scale(13, scale),
+        Scale(10, scale));
 
     public static SpacingMetrics Spacing(InterfaceScale scale) => new(
         Scale(4, scale),
@@ -239,15 +313,42 @@ public static class VisualSystem
         FocusRingWidth: Scale(3, scale),
         CornerRadius: Scale(8, scale));
 
+    /// <summary>Keeps the active decision dominant while preserving a usable table.</summary>
+    public static DesktopPlayMetrics DesktopPlay(
+        int viewportWidth,
+        int viewportHeight,
+        InterfaceScale scale)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(viewportWidth);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(viewportHeight);
+
+        int decisionWidth = viewportWidth switch
+        {
+            >= 1800 => Math.Clamp((int)Math.Ceiling(viewportWidth * 0.37), 680, 720),
+            >= 1500 => 600,
+            >= 1200 => Math.Clamp((int)Math.Ceiling(viewportWidth * 0.42), 500, 560),
+            _ => Math.Clamp((int)Math.Ceiling(viewportWidth * 0.39), 390, 440),
+        };
+        CardLayoutMetrics card = Card(CardDisplaySize.Board, scale);
+        SpacingMetrics spacing = Spacing(scale);
+        return new DesktopPlayMetrics(
+            decisionWidth,
+            DecisionMinimumHeight: Scale(viewportHeight < 800 ? 180 : 260, scale),
+            BoardAreaWidth: checked(card.Width * 2));
+    }
+
     /// <summary>Returns card geometry without shrinking type to fit content.</summary>
     public static CardLayoutMetrics Card(CardDisplaySize size, InterfaceScale scale) => size switch
     {
         CardDisplaySize.Full => new(
-            Scale(360, scale), Scale(720, scale),
+            Scale(320, scale), Scale(520, scale),
             ShowSubtitle: true, ShowTraits: true, ShowPrintedStats: true),
         CardDisplaySize.Board => new(
-            Scale(250, scale), Scale(520, scale),
-            ShowSubtitle: true, ShowTraits: true, ShowPrintedStats: true),
+            Scale(210, scale), Scale(190, scale),
+            ShowSubtitle: false, ShowTraits: false, ShowPrintedStats: true),
+        CardDisplaySize.Hand => new(
+            Scale(125, scale), Scale(52, scale),
+            ShowSubtitle: false, ShowTraits: false, ShowPrintedStats: false),
         _ => throw new ArgumentOutOfRangeException(nameof(size), size, "unsupported card size"),
     };
 
@@ -262,13 +363,13 @@ public static class VisualSystem
     private static int Scale(int value, InterfaceScale scale) =>
         (int)Math.Ceiling(value * ScaleFactor(scale));
 
-    private static double ScaleFactor(InterfaceScale scale) => scale switch
+    private static double ScaleFactor(InterfaceScale scale)
     {
-        InterfaceScale.Standard => 1.0,
-        InterfaceScale.Large => 1.25,
-        InterfaceScale.ExtraLarge => 1.5,
-        _ => throw new ArgumentOutOfRangeException(nameof(scale), scale, "unsupported interface scale"),
-    };
+        int percentage = (int)scale;
+        if (percentage is < 50 or > 150 || percentage % 10 != 0)
+            throw new ArgumentOutOfRangeException(nameof(scale), scale, "unsupported interface scale");
+        return percentage / 100.0;
+    }
 
     private static double Luminance(VisualColor color) =>
         0.2126 * Linear(color.Red)

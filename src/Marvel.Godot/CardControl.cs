@@ -31,7 +31,7 @@ public sealed partial class CardControl : PanelContainer
             TargetId = card.TargetId,
             CustomMinimumSize = new Vector2(
                 layout.Width,
-                card.Concealed ? layout.Width * 0.72f : EstimatedFaceHeight(card, layout)),
+                card.Concealed ? layout.Width * 0.72f : EstimatedFaceHeight(card, layout, size)),
             SizeFlagsHorizontal = SizeFlags.ShrinkBegin,
             TooltipText = card.Title,
             baseVariation = card.Concealed
@@ -41,7 +41,7 @@ public sealed partial class CardControl : PanelContainer
         control.ThemeTypeVariation = control.baseVariation;
         Control body = card.Concealed
             ? Back(card)
-            : Face(card, layout, art);
+            : Face(card, layout, art, size);
         // Wrapped labels report a one-pixel minimum width before their parent
         // has laid them out. Give the procedural body the known card width so
         // Godot can calculate every name and rules-text line instead of
@@ -55,24 +55,35 @@ public sealed partial class CardControl : PanelContainer
 
     private static float EstimatedFaceHeight(
         BoardCardPresentation card,
-        CardLayoutMetrics layout)
+        CardLayoutMetrics layout,
+        CardDisplaySize size)
     {
+        if (size == CardDisplaySize.Hand)
+        {
+            return layout.MinimumHeight;
+        }
+
         int rulesLines = string.IsNullOrWhiteSpace(card.RulesText)
+            || size != CardDisplaySize.Full
             ? 0
             : card.RulesText.Split('\n').Sum(line =>
                 Math.Max(1, (int)Math.Ceiling(line.Length / 24.0)));
-        int valueRows = card.PrintedStats.Count
-            + card.Fields.Count
-            + card.Counters.Count
-            + (card.Cost is null ? 0 : 1);
-        int textRows = 6
+        int valueRows = size == CardDisplaySize.Hand
+            ? 0
+            : card.PrintedStats.Count
+                + card.Fields.Count
+                + card.Counters.Count
+                + (card.Cost is null ? 0 : 1);
+        int textRows = 3
             + (string.IsNullOrWhiteSpace(card.Subtitle) ? 0 : 1)
             + (card.Traits.Count == 0 ? 0 : 1)
             + card.Keywords.Count
             + rulesLines
             + valueRows;
         float scale = layout.Width / 250.0f;
-        float artHeight = card.FaceId is { Length: > 0 } ? layout.Width * 0.34f : 0;
+        float artHeight = size == CardDisplaySize.Full && card.FaceId is { Length: > 0 }
+            ? layout.Width * 0.34f
+            : 0;
         return Math.Max(layout.MinimumHeight, textRows * 24 * scale + artHeight + 64 * scale);
     }
 
@@ -116,11 +127,15 @@ public sealed partial class CardControl : PanelContainer
     private static VBoxContainer Face(
         BoardCardPresentation card,
         CardLayoutMetrics layout,
-        ICardArtProvider? art)
+        ICardArtProvider? art,
+        CardDisplaySize size)
     {
         var content = Stack();
         content.Name = "CardFace";
-        content.AddChild(Label(card.Kind, GodotThemeVariations.Eyebrow, "Kind"));
+        if (size != CardDisplaySize.Hand)
+        {
+            content.AddChild(Label(card.Kind, GodotThemeVariations.Eyebrow, "Kind"));
+        }
         content.AddChild(Label(
             card.Title,
             GodotThemeVariations.CardTitle,
@@ -133,7 +148,8 @@ public sealed partial class CardControl : PanelContainer
                 card.Subtitle, GodotThemeVariations.MutedText, "Subtitle", wrap: true));
         }
 
-        Texture2D? illustration = card.FaceId is { Length: > 0 } faceId
+        Texture2D? illustration = size == CardDisplaySize.Full
+            && card.FaceId is { Length: > 0 } faceId
             ? art?.Find(faceId)
             : null;
         if (illustration is not null)
@@ -159,14 +175,20 @@ public sealed partial class CardControl : PanelContainer
         }
 
         var printed = new List<BoardFieldPresentation>();
-        if (card.Cost is not null)
+        if (size != CardDisplaySize.Hand && card.Cost is not null)
         {
             printed.Add(new BoardFieldPresentation("COST", card.Cost));
         }
 
+        bool hasCurrentHealth = card.Fields.Any(field => field.Name == "HEALTH");
         if (layout.ShowPrintedStats)
         {
-            printed.AddRange(card.PrintedStats);
+            printed.AddRange(size == CardDisplaySize.Board
+                ? card.PrintedStats.Where(stat => stat.Name is
+                    "REC" or "THW" or "ATK" or "DEF" or "SCH" or "HP"
+                    or "Stage" or "StartingThreat" or "TargetThreat")
+                    .Where(stat => stat.Name != "HP" || !hasCurrentHealth)
+                : card.PrintedStats.Where(stat => stat.Name != "HP" || !hasCurrentHealth));
         }
 
         if (printed.Count > 0)
@@ -175,7 +197,7 @@ public sealed partial class CardControl : PanelContainer
                 "PRINTED", printed, GodotThemeVariations.CardPrintedValue, "PrintedValues"));
         }
 
-        if (card.Keywords.Count > 0)
+        if (size == CardDisplaySize.Full && card.Keywords.Count > 0)
         {
             content.AddChild(Label(
                 string.Join("  ·  ", card.Keywords),
@@ -184,7 +206,7 @@ public sealed partial class CardControl : PanelContainer
                 wrap: true));
         }
 
-        if (!string.IsNullOrWhiteSpace(card.RulesText))
+        if (size == CardDisplaySize.Full && !string.IsNullOrWhiteSpace(card.RulesText))
         {
             content.AddChild(Label(
                 card.RulesText,
@@ -193,8 +215,12 @@ public sealed partial class CardControl : PanelContainer
                 wrap: true));
         }
 
-        var live = card.Fields.ToList();
-        if (card.Damage > 0)
+        List<BoardFieldPresentation> live = size == CardDisplaySize.Hand
+            ? []
+            : size == CardDisplaySize.Board
+                ? card.Fields.Where(field => field.Name is "HEALTH" or "THREAT").ToList()
+                : card.Fields.ToList();
+        if (card.Damage > 0 && !hasCurrentHealth)
         {
             live.Add(new BoardFieldPresentation("DAMAGE", card.Damage.ToString()));
         }
@@ -206,8 +232,11 @@ public sealed partial class CardControl : PanelContainer
                 "CURRENT", live, GodotThemeVariations.CardLiveValue, "LiveValues"));
         }
 
-        content.AddChild(Label(
-            card.Status, GodotThemeVariations.CardState, "StateStrip", wrap: true));
+        if (!string.IsNullOrWhiteSpace(card.Status) && size != CardDisplaySize.Hand)
+        {
+            content.AddChild(Label(
+                card.Status, GodotThemeVariations.CardState, "StateStrip", wrap: true));
+        }
         return content;
     }
 

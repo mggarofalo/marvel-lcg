@@ -73,27 +73,15 @@ public sealed class CardCatalog : ICardFacts
     public IReadOnlyList<string> LinkedCards(string bringingFaceId)
     {
         ArgumentNullException.ThrowIfNull(bringingFaceId);
-        var bringing = Find(bringingFaceId);
-        string typed = $"{bringing.Title} {KindWord(bringing.Kind)}";
         return
         [
             .. cards
-                .Where(entry => entry.Value.Attributes.TryGetValue(
-                        "Linked", out string? linked)
-                    && (string.Equals(linked, bringingFaceId, StringComparison.Ordinal)
-                        || string.Equals(linked, bringing.Title, StringComparison.Ordinal)
-                        || string.Equals(linked, typed, StringComparison.OrdinalIgnoreCase)))
+                .Where(entry => entry.Value.LinkedTo.Contains(
+                    bringingFaceId, StringComparer.Ordinal))
                 .OrderBy(entry => entry.Key, StringComparer.Ordinal)
                 .Select(entry => entry.Key),
         ];
     }
-
-    private static string KindWord(CardKind kind) => kind switch
-    {
-        CardKind.EncounterVillain => "villain",
-        CardKind.EncounterSideScheme => "side scheme",
-        _ => kind.ToString().ToLowerInvariant(),
-    };
 
     /// <inheritdoc />
     public CardKind Kind(string faceId) => Find(faceId).Kind;
@@ -375,6 +363,10 @@ public sealed class CardCatalog : ICardFacts
         string set = element.TryGetProperty("set", out var printedSet)
             ? printedSet.GetString() ?? string.Empty
             : string.Empty;
+        IReadOnlyList<string> linkedTo = element.TryGetProperty("linked_to", out var linked)
+            && linked.ValueKind == JsonValueKind.Array
+            ? [.. linked.EnumerateArray().Select(face => face.GetString()!)]
+            : [];
 
         if (element.TryGetProperty("attributes", out var printedAttributes)
             && printedAttributes.ValueKind == JsonValueKind.Object)
@@ -406,7 +398,7 @@ public sealed class CardCatalog : ICardFacts
             : string.Empty;
 
         return new Entry(
-            kind, set, traits, printedTraitLabels, attributes, title, subtitle, printed,
+            kind, set, linkedTo, traits, printedTraitLabels, attributes, title, subtitle, printed,
             KeywordsOf(attributes),
             CounterTypesOf(printed, attributes), CounterMaximumsOf(printed));
     }
@@ -641,6 +633,7 @@ public sealed class CardCatalog : ICardFacts
     private sealed record Entry(
         CardKind Kind,
         string Set,
+        IReadOnlyList<string> LinkedTo,
         IReadOnlyList<string> Traits,
         IReadOnlyList<string> PrintedTraits,
         IReadOnlyDictionary<string, string> Attributes,

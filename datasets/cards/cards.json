@@ -1,5 +1,5 @@
 {
-  "dataset_version": 2,
+  "dataset_version": 3,
   "generated_from": "datasets/marvelsdb/",
   "generated_by": "dotnet run --project tools/Marvel.Cards.Extract -- write",
   "note": "Printed card text and stats, derived from the vendored MarvelSDB snapshot and from datasets/cards/supplement.json where MarvelSDB records nothing. Regenerate rather than edit: `-- check` fails the build on a hand edit.",
@@ -52868,6 +52868,9 @@
         "RES": "G",
         "Unique": "1"
       },
+      "linked_to": [
+        "43021"
+      ],
       "text": "Linked (Specialized Training).\nYour hero gets +1 ATK.\n<b>Hero Response</b>: After your hero performs a basic attack, exhaust this card → draw 1 card.",
       "text_plain": "Linked (Specialized Training).\nYour hero gets +1 ATK.\nHero Response: After your hero performs a basic attack, exhaust this card → draw 1 card.",
       "pack": "x23",
@@ -52888,6 +52891,9 @@
         "RES": "G",
         "Unique": "1"
       },
+      "linked_to": [
+        "43021"
+      ],
       "text": "Linked (Specialized Training).\nYour hero gets +1 DEF.\n<b>Hero Response</b>: After your hero performs a basic defense, exhaust this card → draw 1 card.",
       "text_plain": "Linked (Specialized Training).\nYour hero gets +1 DEF.\nHero Response: After your hero performs a basic defense, exhaust this card → draw 1 card.",
       "pack": "x23",
@@ -52908,6 +52914,9 @@
         "RES": "G",
         "Unique": "1"
       },
+      "linked_to": [
+        "43021"
+      ],
       "text": "Linked (Specialized Training).\nYour identity gets +4 hit points.\n<b>Response</b>: After your identity takes damage from an enemy attack, exhaust this card → draw 1 card.",
       "text_plain": "Linked (Specialized Training).\nYour identity gets +4 hit points.\nResponse: After your identity takes damage from an enemy attack, exhaust this card → draw 1 card.",
       "pack": "x23",
@@ -52928,6 +52937,9 @@
         "RES": "G",
         "Unique": "1"
       },
+      "linked_to": [
+        "43021"
+      ],
       "text": "Linked (Specialized Training).\nYour hero gets +1 THW.\n<b>Hero Response</b>: After your hero performs a basic thwart, exhaust this card → draw 1 card.",
       "text_plain": "Linked (Specialized Training).\nYour hero gets +1 THW.\nHero Response: After your hero performs a basic thwart, exhaust this card → draw 1 card.",
       "pack": "x23",
@@ -60824,6 +60836,9 @@
         "THW": "2*",
         "Unique": "1"
       },
+      "linked_to": [
+        "49020"
+      ],
       "text": "Linked (New Recruits).\nIf you have the [[Mutant]] or [[X-Men]] trait, Surge gets +1 ATK and does not count against your ally limit.",
       "text_plain": "Linked (New Recruits).\nIf you have the Mutant or X-Men trait, Surge gets +1 ATK and does not count against your ally limit.",
       "pack": "magneto",
@@ -60848,6 +60863,9 @@
         "THW": "2*",
         "Unique": "1"
       },
+      "linked_to": [
+        "49020"
+      ],
       "text": "Linked (New Recruits).\nIf you have the [[Mutant]] or [[X-Men]] trait, Anole gets +1 THW and does not count against your ally limit.",
       "text_plain": "Linked (New Recruits).\nIf you have the Mutant or X-Men trait, Anole gets +1 THW and does not count against your ally limit.",
       "pack": "magneto",
@@ -60872,6 +60890,9 @@
         "THW": "2*",
         "Unique": "1"
       },
+      "linked_to": [
+        "49020"
+      ],
       "text": "Linked (New Recruits).\nIf you have the [[Mutant]] or [[X-Men]] trait, Bling! gains toughness and does not count against your ally limit.",
       "text_plain": "Linked (New Recruits).\nIf you have the Mutant or X-Men trait, Bling! gains toughness and does not count against your ally limit.",
       "pack": "magneto",
@@ -60896,6 +60917,9 @@
         "THW": "2*",
         "Unique": "1"
       },
+      "linked_to": [
+        "49020"
+      ],
       "text": "Linked (New Recruits).\nIf you have the [[Mutant]] or [[X-Men]] trait, Indra gets +2 hit points and does not count against your ally limit.",
       "text_plain": "Linked (New Recruits).\nIf you have the Mutant or X-Men trait, Indra gets +2 hit points and does not count against your ally limit.",
       "pack": "magneto",
@@ -65589,6 +65613,9 @@
         "RES": "B",
         "Victory": "0"
       },
+      "linked_to": [
+        "51017"
+      ],
       "text": "Linked (Show of Empathy). Victory 0.\nTake control of attached minion and treat it as a [[Redeemed]] ally with a blank text box. Its THW is equal to its printed SCH and it takes 1 consequential damage after it thwarts or attacks.",
       "text_plain": "Linked (Show of Empathy). Victory 0.\nTake control of attached minion and treat it as a Redeemed ally with a blank text box. Its THW is equal to its printed SCH and it takes 1 consequential damage after it thwarts or attacks.",
       "pack": "bp",
@@ -67117,6 +67144,9 @@
         "Restricted": "1",
         "Unique": "1"
       },
+      "linked_to": [
+        "53023"
+      ],
       "text": "Linked (Captain America upgrade). Restricted.\nYour hero gets +1 DEF and gains retaliate 1.",
       "text_plain": "Linked (Captain America upgrade). Restricted.\nYour hero gets +1 DEF and gains retaliate 1.",
       "pack": "falcon",
@@ -69375,6 +69405,9 @@
         "Unique": "1",
         "Victory": "0"
       },
+      "linked_to": [
+        "55056"
+      ],
       "text": "Linked (Absorbing Man minion). Victory 0. Does not count against your ally limit.\n[star] <b>Interrupt</b>: When Absorbing Man attacks or thwarts, exhaust an upgrade or support you control. Absorbing Man gets +X to that power for this use, where X is that card's printed cost (to a maximum of +3).",
       "text_plain": "Linked (Absorbing Man minion). Victory 0. Does not count against your ally limit.\nstar Interrupt: When Absorbing Man attacks or thwarts, exhaust an upgrade or support you control. Absorbing Man gets +X to that power for this use, where X is that card's printed cost (to a maximum of +3).",
       "pack": "tt",
@@ -69399,6 +69432,9 @@
         "Unique": "1",
         "Victory": "0"
       },
+      "linked_to": [
+        "55057"
+      ],
       "text": "Linked (Titania minion). Victory 0. Does not count against your ally limit.\n[star] Titania's attacks gain overkill and piercing.",
       "text_plain": "Linked (Titania minion). Victory 0. Does not count against your ally limit.\nstar Titania's attacks gain overkill and piercing.",
       "pack": "tt",
@@ -69423,6 +69459,9 @@
         "Unique": "1",
         "Victory": "0"
       },
+      "linked_to": [
+        "55058"
+      ],
       "text": "Linked (Whirlwind minion). Victory 0. Does not count against your ally limit.\n[star] <b>Interrupt</b>: When Whirlwind attacks, remove 1 threat from each scheme in play. For each threat removed this way, Whirlwind gets +1 ATK for that attack.",
       "text_plain": "Linked (Whirlwind minion). Victory 0. Does not count against your ally limit.\nstar Interrupt: When Whirlwind attacks, remove 1 threat from each scheme in play. For each threat removed this way, Whirlwind gets +1 ATK for that attack.",
       "pack": "tt",
@@ -69447,6 +69486,9 @@
         "Unique": "1",
         "Victory": "0"
       },
+      "linked_to": [
+        "55059"
+      ],
       "text": "Linked (Zzzax minion). Victory 0. Does not count against your ally limit.\n<b>Response</b>: After Zzzax enters play, search the top 5 cards of your deck for a card with a printed [energy] resource and add it to your hand. <i>(Shuffle.)</i>",
       "text_plain": "Linked (Zzzax minion). Victory 0. Does not count against your ally limit.\nResponse: After Zzzax enters play, search the top 5 cards of your deck for a card with a printed energy resource and add it to your hand. (Shuffle.)",
       "pack": "tt",

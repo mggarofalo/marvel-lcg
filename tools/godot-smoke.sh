@@ -26,7 +26,7 @@ fi
 
 dotnet build "$repo_root/src/Marvel.Godot/Marvel.Godot.csproj" --nologo
 for viewport in 1040x680 1280x720 1600x900 1920x1080; do
-  for scale in standard large extra-large; do
+  for scale in 50 60 70 80 90 100 110 120 130 140 150; do
     MARVEL_UI_SCALE="$scale" MARVEL_SMOKE_VIEWPORT="$viewport" MARVEL_SMOKE_MOTION=enabled \
       "$godot_bin" --headless \
       --path "$repo_root/src/Marvel.Godot" \
@@ -34,7 +34,7 @@ for viewport in 1040x680 1280x720 1600x900 1920x1080; do
   done
 done
 
-MARVEL_UI_SCALE=standard MARVEL_SMOKE_VIEWPORT=1280x720 MARVEL_SMOKE_MOTION=disabled \
+MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1280x720 MARVEL_SMOKE_MOTION=disabled \
   "$godot_bin" --headless \
   --path "$repo_root/src/Marvel.Godot" \
   --script res://smoke/local_game_smoke.gd

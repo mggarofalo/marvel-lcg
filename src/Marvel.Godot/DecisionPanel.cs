@@ -9,8 +9,8 @@ namespace Marvel.Godot;
 /// <summary>Renders one current prompt and composes its typed decision.</summary>
 public sealed partial class DecisionPanel : VBoxContainer
 {
-    private static readonly ControlMetrics ControlMetrics =
-        VisualSystem.Controls(ClientTheme.ConfiguredScale());
+    private InterfaceScale interfaceScale = ClientTheme.ConfiguredScale();
+    private ControlMetrics ControlMetrics => VisualSystem.Controls(interfaceScale);
     private DecisionComposer? composer;
     private bool submitting;
     private WorldDescriptor? world;
@@ -21,8 +21,14 @@ public sealed partial class DecisionPanel : VBoxContainer
     /// <summary>Raised when an affordance or target points at a board object.</summary>
     public event Action<IReadOnlyList<int>>? AnchorFocused;
 
+    /// <summary>Raised with the visible card whose action or target is under the pointer.</summary>
+    public event Action<int?>? CardHovered;
+
     /// <summary>Raised whenever the visible draft's count-only progress changes.</summary>
     public event Action<DecisionProgressPresentation?>? ProgressChanged;
+
+    /// <summary>Applies the current presentation-only desktop scale.</summary>
+    public void SetInterfaceScale(InterfaceScale scale) => interfaceScale = scale;
 
     /// <summary>Discards the old draft and renders the response's current prompt.</summary>
     public void Render(Prompt? prompt, WorldDescriptor currentWorld)
@@ -89,16 +95,17 @@ public sealed partial class DecisionPanel : VBoxContainer
             bool unavailable = submitting || !option.IsLegal;
             bool isSelected = composer.Selected?.Id == option.Id;
             bool resolving = submitting && isSelected;
+            string action = ActionText(view);
             var choose = new Button
             {
                 Name = $"Affordance{option.Id}",
                 Text = resolving
-                    ? $"✓ RESOLVING  ·  {view.Verb}  ·  {view.Label}\n{view.Anchor}"
+                    ? $"✓ {action}  ·  resolving"
                     : unavailable
-                    ? $"— UNAVAILABLE  ·  {view.Verb}  ·  {view.Label}\n{view.Anchor}"
+                    ? $"— Unavailable  ·  {action}"
                     : isSelected
-                        ? $"✓ SELECTED  ·  {view.Verb}  ·  {view.Label}\n{view.Anchor}"
-                        : $"{view.Verb}  ·  {view.Label}\n{view.Anchor}",
+                        ? $"✓ {action}"
+                        : action,
                 Alignment = HorizontalAlignment.Left,
                 Disabled = unavailable,
                 ToggleMode = true,
@@ -180,6 +187,16 @@ public sealed partial class DecisionPanel : VBoxContainer
             return;
         }
 
+        if (composer!.UsesAutomaticTargetSelection)
+        {
+            AddChild(Text(
+                "TARGET  ·  " + string.Join(" → ", composer.Targets.Select(id =>
+                    PromptPresentation.Describe(id, world!))) + "  ·  automatic",
+                GodotThemeVariations.StatusText,
+                wrap: true));
+            return;
+        }
+
         string badge = request.IsSearch ? "SEARCH RESULTS" : "TARGETS";
         AddChild(Text($"{badge}  ·  " + TargetProgressText(progress),
             GodotThemeVariations.Caption, wrap: true));
@@ -258,8 +275,8 @@ public sealed partial class DecisionPanel : VBoxContainer
         {
             Name = $"Target{target}",
             Text = composer!.Targets.Contains(target)
-                ? $"✓ SELECTED  ·  {PromptPresentation.Describe(target, world!)}"
-                : $"◇ LEGAL  ·  {PromptPresentation.Describe(target, world!)}",
+                ? $"✓ {TargetAction(selected: true)}  ·  {PromptPresentation.Describe(target, world!)}"
+                : $"◇ {TargetAction(selected: false)}  ·  {PromptPresentation.Describe(target, world!)}",
             Alignment = HorizontalAlignment.Left,
             ToggleMode = true,
             ButtonPressed = composer!.Targets.Contains(target),
@@ -496,8 +513,29 @@ public sealed partial class DecisionPanel : VBoxContainer
 
     private void AddResourceAssignments(CostOption cost)
     {
+        if (composer!.UsesAutomaticResourceAllocation)
+        {
+            foreach (ResourceSource source in cost.Generators.Where(generator =>
+                         composer.Resources.Contains(generator.Effect)))
+            {
+                int assigned = composer.Assignments.Count(assignment =>
+                    assignment.Source == source.Effect);
+                AddChild(Text(
+                    $"{PromptPresentation.Describe(source.Effect, world!)}"
+                    + $"  ·  PRINTED {string.Join(" + ", source.Generates.Select(ResourceName))}"
+                    + $"  ·  {assigned} APPLIED"
+                    + (source.Generates.Length > assigned
+                        ? $"  ·  {source.Generates.Length - assigned} EXCESS"
+                        : string.Empty),
+                    GodotThemeVariations.StatusText,
+                    wrap: true));
+            }
+
+            return;
+        }
+
         foreach (ResourceSource source in cost.Generators.Where(generator =>
-                     composer!.Resources.Contains(generator.Effect)))
+                     composer.Resources.Contains(generator.Effect)))
         {
             for (int icon = 0; icon < source.Generates.Length; icon++)
             {
@@ -586,8 +624,8 @@ public sealed partial class DecisionPanel : VBoxContainer
             Text = submitting
                 ? "— UNAVAILABLE  ·  Waiting for engine…"
                 : progress.IsReady
-                    ? "Submit decision"
-                    : "— UNAVAILABLE  ·  Submit decision",
+                    ? SubmitAction()
+                    : $"— Unavailable  ·  {SubmitAction()}",
             Disabled = submitting || !progress.IsReady,
         };
         StyleButton(
@@ -605,18 +643,65 @@ public sealed partial class DecisionPanel : VBoxContainer
         AddChild(submit);
     }
 
-    private static string TargetProgressText(TargetSelectionProgress progress) =>
-        progress.Mode switch
+    private string TargetProgressText(TargetSelectionProgress progress) =>
+        composer?.Selected?.Verb == "Resolve Mulligans"
+            ? $"DISCARD AND REDRAW  ·  {progress.Selected} CHOSEN"
+                + (progress.IsSatisfied ? "  ·  READY" : "  ·  INCOMPLETE")
+            : progress.Mode switch
         {
             TargetSelectionMode.None => "NO TARGET SELECTION",
-            TargetSelectionMode.Grouped => $"GROUP  ·  {progress.Selected}/1 SELECTED"
+            TargetSelectionMode.Grouped => $"GROUP  ·  {progress.Selected}/1 CHOSEN"
                 + (progress.IsSatisfied ? "  ·  COMPLETE" : "  ·  INCOMPLETE"),
-            _ => $"SELECTION  ·  {progress.Selected} SELECTED"
+            _ => $"TARGETS  ·  {progress.Selected} CHOSEN"
                 + (progress.Minimum == progress.Maximum
                     ? $"  ·  REQUIRED {progress.Minimum}"
                     : $"  ·  REQUIRED {progress.Minimum}–{progress.Maximum}")
                 + (progress.IsSatisfied ? "  ·  COMPLETE" : "  ·  INCOMPLETE"),
         };
+
+    private static string ActionText(AffordancePresentation view)
+    {
+        if (!string.Equals(view.Verb, view.Label, StringComparison.OrdinalIgnoreCase))
+        {
+            return $"{view.Label}  ·  {view.Anchor}";
+        }
+
+        return view.Verb switch
+        {
+            "Play" => $"Play {view.Anchor}",
+            "Attack" or "Thwart" or "Recover" => $"{view.Verb} with {view.Anchor}",
+            "Resolve Mulligans" => "Choose cards to discard and redraw",
+            _ => $"{view.Verb}  ·  {view.Anchor}",
+        };
+    }
+
+    private string TargetAction(bool selected) => composer!.Selected?.Verb switch
+    {
+        "Resolve Mulligans" => "DISCARD AND REDRAW",
+        "End Phase" => "DISCARD",
+        "Attack" => "ATTACK",
+        "Thwart" => "THWART",
+        _ => selected ? "CHOSEN" : "TARGET",
+    };
+
+    private string SubmitAction()
+    {
+        Affordance selected = composer!.Selected!;
+        int count = composer.Targets.Count;
+        return selected.Verb switch
+        {
+            "Resolve Mulligans" when count == 0 => "Keep hand",
+            "Resolve Mulligans" => $"Discard {count} and redraw",
+            "End Phase" when count == 0 => "End player phase",
+            "End Phase" => $"Discard {count} and end player phase",
+            "Play" => $"Play {PromptPresentation.Describe(selected.AnchorId, world!)}",
+            "Attack" when count == 1 =>
+                $"Attack {PromptPresentation.Describe(composer.Targets[0], world!)}",
+            "Thwart" when count == 1 =>
+                $"Thwart {PromptPresentation.Describe(composer.Targets[0], world!)}",
+            _ => PromptPresentation.Words(selected.Verb),
+        };
+    }
 
     private void RestoreFocus(string? requested, bool focusFirst)
     {
@@ -794,8 +879,29 @@ public sealed partial class DecisionPanel : VBoxContainer
             return;
         }
 
-        control.MouseEntered += () => AnchorFocused?.Invoke(ids);
+        bool pointerInside = false;
+        control.MouseEntered += () =>
+        {
+            pointerInside = true;
+            AnchorFocused?.Invoke(ids);
+            CardHovered?.Invoke(ids[0]);
+        };
+        control.MouseExited += () =>
+        {
+            pointerInside = false;
+            if (!control.HasFocus())
+            {
+                CardHovered?.Invoke(null);
+            }
+        };
         control.FocusEntered += () => AnchorFocused?.Invoke(ids);
+        control.FocusExited += () =>
+        {
+            if (!pointerInside)
+            {
+                CardHovered?.Invoke(null);
+            }
+        };
     }
 
     private static string NodeKey(string value) => new(
@@ -835,7 +941,7 @@ public sealed partial class DecisionPanel : VBoxContainer
         };
     }
 
-    private static void StyleButton(
+    private void StyleButton(
         Button button,
         InteractiveVisualState state,
         bool compact = false)

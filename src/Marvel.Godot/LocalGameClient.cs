@@ -1045,7 +1045,11 @@ public sealed class LocalGameClient
     private static bool HasCompletePrompt(Prompt? prompt) =>
         prompt?.Trigger is not null
         && prompt.Label is not null
-        && prompt.Affordances is { Count: > 0 }
+        // A cancellable turn prompt may have no legal actions left. Passing is
+        // still a complete decision, so the empty option list is not a broken
+        // response and must remain synchronizable after the last action.
+        && prompt.Affordances is not null
+        && (prompt.Cancellable || prompt.Affordances.Count > 0)
         && prompt.Affordances.All(option =>
             option is not null
             && option.Verb is not null

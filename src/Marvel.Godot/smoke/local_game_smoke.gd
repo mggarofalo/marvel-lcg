@@ -49,7 +49,7 @@ func _run() -> void:
 	var seed := _node("Setup/Selections/Fields/Grid/Seed") as LineEdit
 	seed.text = "1"
 	seed.text_changed.emit(seed.text)
-	var configured_motion := _node("Play/Prompt/Margin/Stack/EventHeader/Motion") as CheckButton
+	var configured_motion := _node("Toolbar/Motion") as CheckButton
 	configured_motion.button_pressed = motion_enabled
 	configured_motion.toggled.emit(motion_enabled)
 	await process_frame
@@ -62,7 +62,7 @@ func _run() -> void:
 	if not await _wait_for(func() -> bool: return _play().visible and _decision() != null):
 		_fail("the opened table never became visible")
 		return
-	if not _procedural_cards_are_safe():
+	if not await _procedural_cards_are_safe():
 		return
 	if not await _board_layout_is_resolved():
 		return
@@ -90,7 +90,7 @@ func _run() -> void:
 			return
 
 		var decision_text := _visible_text(_decision())
-		saw_mulligan = saw_mulligan or "Mulligan" in decision_text
+		saw_mulligan = saw_mulligan or "discard and redraw" in decision_text.to_lower()
 		saw_end_phase = saw_end_phase or "End Phase" in decision_text
 		var ending_player_phase := "End Phase" in decision_text
 		if ending_player_phase and not await _capture_checkpoint("player-phase"):
@@ -100,7 +100,7 @@ func _run() -> void:
 			saw_pass = true
 			pass_button.pressed.emit()
 		else:
-			var submit := _visible_button(_decision(), "Submit decision")
+			var submit := _submit_button()
 			if submit == null or submit.disabled:
 				var choice := _first_enabled_choice()
 				if choice == null:
@@ -108,7 +108,7 @@ func _run() -> void:
 					return
 				choice.pressed.emit()
 				await process_frame
-				submit = _visible_button(_decision(), "Submit decision")
+				submit = _submit_button()
 			if submit == null or submit.disabled:
 				_fail("the selected visible decision cannot be submitted")
 				return
@@ -120,18 +120,18 @@ func _run() -> void:
 			return _is_complete() or not _status().text.begins_with("DECISION SENT")):
 			_fail("the engine did not reconcile decision %d" % decisions)
 			return
-		var event_skip := _node("Play/Prompt/Margin/Stack/EventHeader/Skip") as Button
+		var event_skip := _node("Play/Prompt/Margin/Stack/Workbench/History/EventHeader/Skip") as Button
 		if motion_enabled and not event_skip.disabled \
 				and (_is_complete() or _first_enabled_choice() != null):
 			saw_nonblocking_motion = true
 			if not tested_active_motion_toggle:
-				var motion_history := (_node("Play/Prompt/Margin/Stack/EventLog") as RichTextLabel).text
-				var motion := _node("Play/Prompt/Margin/Stack/EventHeader/Motion") as CheckButton
+				var motion_history := (_node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel).text
+				var motion := _node("Toolbar/Motion") as CheckButton
 				motion.button_pressed = false
 				motion.toggled.emit(false)
 				await process_frame
 				if not event_skip.disabled or motion_history != \
-						(_node("Play/Prompt/Margin/Stack/EventLog") as RichTextLabel).text:
+						(_node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel).text:
 					_fail("disabling active motion did not settle without changing history")
 					return
 				motion.button_pressed = true
@@ -139,7 +139,7 @@ func _run() -> void:
 				tested_active_motion_toggle = true
 		if not motion_enabled and not _disabled_motion_is_settled(event_skip):
 			return
-		var history_text := (_node("Play/Prompt/Margin/Stack/EventLog") as RichTextLabel) \
+		var history_text := (_node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel) \
 			.get_parsed_text().to_lower()
 		if not captured_villain_phase and not _is_complete() and "villain phase" in history_text:
 			if not await _capture_checkpoint("villain-phase"):
@@ -176,7 +176,7 @@ func _run() -> void:
 	if _node("Status").theme_type_variation != &"DangerStatusPanel":
 		_fail("the villain win did not receive the semantic danger treatment")
 		return
-	var event_log := _node("Play/Prompt/Margin/Stack/EventLog") as RichTextLabel
+	var event_log := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel
 	var event_text := event_log.get_parsed_text().strip_edges()
 	if event_text.is_empty() or event_text == "No events yet.":
 		_fail("the visible event log is empty")
@@ -215,17 +215,15 @@ func _run() -> void:
 
 
 func _synchronization_preserves_history(expect_terminal: bool) -> bool:
-	var synchronize := _button_named("Synchronize table")
-	if synchronize == null:
-		synchronize = _button_named("Reconnect table")
+	var synchronize := main.find_child("Synchronize", true, false) as Button
 	if synchronize == null or not synchronize.visible or synchronize.disabled:
 		_fail("the table has no operable always-visible synchronization control")
 		return false
-	if synchronize.custom_minimum_size.y < 44:
-		_fail("the synchronization control is smaller than the pointer-target floor")
+	if synchronize.custom_minimum_size.y < 32:
+		_fail("the compact synchronization control is too small to operate")
 		return false
 
-	var event_log := _node("Play/Prompt/Margin/Stack/EventLog") as RichTextLabel
+	var event_log := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel
 	var history_before := event_log.text
 	synchronize.pressed.emit()
 	if not await _wait_for(func() -> bool:
@@ -252,10 +250,9 @@ func _visual_system_is_resolved() -> bool:
 		return false
 
 	var start := _button_named("Start game")
-	var scale := OS.get_environment("MARVEL_UI_SCALE")
-	var expected_height := 66 if scale == "extra-large" else 55 if scale == "large" else 44
-	var expected_body := 24 if scale == "extra-large" else 20 if scale == "large" else 16
-	var expected_focus := 5 if scale == "extra-large" else 4 if scale == "large" else 3
+	var expected_height := _scaled_metric(44)
+	var expected_body := _scaled_metric(15)
+	var expected_focus := _scaled_metric(3)
 	if start.theme_type_variation != &"PrimaryButton":
 		_fail("the primary action does not use its semantic theme role")
 		return false
@@ -264,6 +261,26 @@ func _visual_system_is_resolved() -> bool:
 		return false
 	if start.get_theme_font_size("font_size") < expected_body:
 		_fail("the primary action did not adopt the selected type scale")
+		return false
+	var slider := _node("Toolbar/InterfaceScale") as HSlider
+	var scale_value := _node("Toolbar/ScaleValue") as Label
+	if slider == null or scale_value == null:
+		_fail("the density toolbar has no interface scale control")
+		return false
+	if slider.min_value != 50.0 or slider.max_value != 150.0 or slider.step != 10.0:
+		_fail("the interface scale slider does not expose 50–150% in ten-percent steps")
+		return false
+	var original_scale := slider.value
+	var original_font := start.get_theme_font_size("font_size")
+	slider.value = 50.0 if original_scale != 50.0 else 60.0
+	await process_frame
+	if start.get_theme_font_size("font_size") == original_font:
+		_fail("the interface scale slider did not update the live theme")
+		return false
+	slider.value = original_scale
+	await process_frame
+	if "Scale" not in scale_value.text:
+		_fail("the interface scale slider has no readable value")
 		return false
 
 	var focus := start.get_theme_stylebox("focus") as StyleBoxFlat
@@ -305,11 +322,12 @@ func _visual_system_is_resolved() -> bool:
 	var setup_bounds: Rect2 = (_node("Setup") as Control).get_global_rect()
 	if setup_bounds.position.x < page_bounds.position.x - 1.0 \
 			or setup_bounds.end.x > page_bounds.end.x + 1.0:
-		_fail("the setup layout is horizontally inaccessible: setup=%s page=%s" % [
-			setup_bounds,
-			page_bounds,
-		])
-		return false
+		if page_scroll.horizontal_scroll_mode != ScrollContainer.SCROLL_MODE_AUTO:
+			_fail("the scaled setup overflow is not horizontally accessible: setup=%s page=%s" % [
+				setup_bounds,
+				page_bounds,
+			])
+			return false
 	for path in [
 		"Setup/Selections/Fields/ConnectionGrid/Endpoint",
 		"Setup/Selections/Fields/ConnectionGrid/GameId",
@@ -467,14 +485,11 @@ func _procedural_cards_are_safe() -> bool:
 		_fail("the opened table has no procedural card controls")
 		return false
 
-	var scale := OS.get_environment("MARVEL_UI_SCALE")
-	var expected_width := 360 if scale == "extra-large" else 300 if scale == "large" else 240
+	var expected_width := _scaled_metric(125)
 	var saw_face := false
 	var saw_back := false
-	var saw_rules := false
 	var saw_current := false
-	var saw_local_art := false
-	var saw_invalid_art_fallback := false
+	var saw_health := false
 	for card in cards:
 		if card.custom_minimum_size.x < expected_width:
 			_fail("a board card does not honor the selected card geometry")
@@ -497,21 +512,20 @@ func _procedural_cards_are_safe() -> bool:
 				])
 				return false
 			var rules := face.find_child("RulesText", true, false) as Label
-			saw_rules = saw_rules or rules != null
-			if rules != null and rules.max_lines_visible != -1:
-				_fail("a board card rules box is truncated")
-				return false
-			if rules != null and rules.size.y < rules.get_theme_font_size("font_size"):
-				_fail("a board card rules box collapsed out of its card: %s size=%s" % [
-					title.text,
-					rules.size,
-				])
+			if rules != null:
+				_fail("a compact board or hand card exposed full rules text")
 				return false
 			saw_current = saw_current or face.find_child("LiveValues", true, false) != null
-			if title.text == "Peter Parker":
-				saw_local_art = face.find_child("Illustration", true, false) is TextureRect
-			if title.text == "Rhino" and face.find_child("Illustration", true, false) == null:
-				saw_invalid_art_fallback = true
+			var health := face.find_child("LiveValuesHEALTH", true, false) as Label
+			if health != null:
+				saw_health = true
+				if "/" not in health.text:
+					_fail("current health is not represented as current/maximum")
+					return false
+				if face.find_child("LiveValuesDAMAGE", true, false) != null \
+						or face.find_child("PrintedValuesHP", true, false) != null:
+					_fail("a character splits health across multiple displayed values")
+					return false
 		elif back != null:
 			saw_back = true
 			if back.find_child("Title", true, false) != null or back.find_child("RulesText", true, false) != null:
@@ -525,15 +539,86 @@ func _procedural_cards_are_safe() -> bool:
 				_fail("a concealed card back leaked an identity")
 				return false
 
-	if not saw_face or not saw_back or not saw_rules or not saw_current:
-		_fail("the table did not exercise face, back, rules, and current-value card regions")
+	if not saw_face or not saw_back or not saw_current or not saw_health:
+		_fail("the table did not exercise face, back, health, and current-value card regions")
 		return false
-	if not saw_local_art:
-		_fail("an authorized local illustration did not load by stable face id")
+
+	var action := _first_enabled_choice()
+	if action == null:
+		_fail("the action rail has no card action to inspect")
 		return false
-	if not saw_invalid_art_fallback:
-		_fail("invalid local art did not retain Rhino's procedural face")
+	action.mouse_entered.emit()
+	await process_frame
+	var inspector := main.get_node("CardInspector") as PanelContainer
+	if inspector == null or not inspector.visible:
+		_fail("hovering a card action did not open the card inspector")
 		return false
+	var inspected_face := inspector.find_child("CardFace", true, false)
+	if inspected_face == null \
+			or inspected_face.find_child("RulesText", true, false) == null \
+			or inspected_face.find_child("Illustration", true, false) == null:
+		_fail("the card inspector did not render full authorized card data and local art")
+		return false
+	var pointer := main.get_viewport().get_mouse_position()
+	if inspector.get_global_rect().has_point(pointer):
+		_fail("the card inspector opened underneath the pointer")
+		return false
+	if inspector.get_global_rect().intersection(
+			Rect2(Vector2.ZERO, _viewport_size())).size != inspector.size:
+		_fail("the pointer-aware card inspector left the visible viewport")
+		return false
+	if not await _capture_checkpoint("card-inspector"):
+		return false
+	action.grab_focus()
+	action.mouse_exited.emit()
+	await main.get_tree().create_timer(0.35).timeout
+	if not inspector.visible:
+		_fail("the card inspector closed while its source retained keyboard focus")
+		return false
+	action.release_focus()
+	await main.get_tree().create_timer(0.35).timeout
+	if inspector.visible:
+		_fail("the card inspector remained open after its focused source lost focus")
+		return false
+	action.mouse_entered.emit()
+	await process_frame
+	action.mouse_exited.emit()
+	inspector.mouse_entered.emit()
+	await main.get_tree().create_timer(0.4).timeout
+	if not inspector.visible:
+		_fail("the card inspector closed while the pointer was over its scrollable content")
+		return false
+	var inspector_scroll := inspector.get_node("Scroll") as ScrollContainer
+	if inspector_scroll.mouse_filter == Control.MOUSE_FILTER_IGNORE:
+		_fail("the card inspector cannot receive scrolling input")
+		return false
+	inspector.mouse_exited.emit()
+	inspector.grab_focus()
+	await main.get_tree().create_timer(0.35).timeout
+	if not inspector.visible:
+		_fail("the focused card inspector did not remain open")
+		return false
+	inspector.release_focus()
+	await main.get_tree().create_timer(0.35).timeout
+	if inspector.visible:
+		_fail("the card inspector remained open after focus left it")
+		return false
+	var hand_card := _node("Play/Board/HandShelf").find_child(
+		"ProceduralCard", true, false) as Control
+	if hand_card == null:
+		_fail("the pinned hand has no readable card name")
+		return false
+	hand_card.mouse_entered.emit()
+	await process_frame
+	if not inspector.visible or inspector.find_child("RulesText", true, false) == null:
+		_fail("hovering a card name in hand did not open the full card inspector")
+		return false
+	hand_card.mouse_exited.emit()
+	await main.get_tree().create_timer(0.35).timeout
+	var restore_focus := _first_enabled_choice()
+	if restore_focus != null:
+		restore_focus.grab_focus()
+		await process_frame
 	return true
 
 
@@ -567,9 +652,9 @@ func _prepare_art_pack() -> void:
 
 
 func _board_layout_is_resolved() -> bool:
-	var scenario_lane := _node("Play/Board/Margin/Areas").find_child(
+	var scenario_lane := _node("Play/Board/TableScroll/Margin/Areas").find_child(
 		"ScenarioLane", true, false) as Control
-	var player_lane := _node("Play/Board/Margin/Areas").find_child(
+	var player_lane := _node("Play/Board/TableScroll/Margin/Areas").find_child(
 		"PlayerLane0", true, false) as Control
 	if scenario_lane == null or player_lane == null:
 		_fail("the opened table does not expose scenario and player lanes")
@@ -585,10 +670,34 @@ func _board_layout_is_resolved() -> bool:
 	if areas.is_empty():
 		_fail("the opened table has no rendered areas")
 		return false
+	var disclosures := main.find_children("Area*Disclosure", "Button", true, false)
+	var saw_empty_collapsed := false
+	var toggled_nonempty := false
+	for disclosure_node in disclosures:
+		var disclosure := disclosure_node as Button
+		if not disclosure.toggle_mode:
+			_fail("a table section is not collapsible: %s" % disclosure.name)
+			return false
+		if disclosure.text.ends_with("·  0"):
+			saw_empty_collapsed = saw_empty_collapsed or not disclosure.button_pressed
+		elif not toggled_nonempty:
+			var body := disclosure.get_parent().get_node("Body") as Control
+			disclosure.button_pressed = false
+			disclosure.pressed.emit()
+			await process_frame
+			if body.visible:
+				_fail("collapsing a populated table section left its cards visible")
+				return false
+			disclosure.button_pressed = true
+			disclosure.pressed.emit()
+			toggled_nonempty = true
+	if not saw_empty_collapsed or not toggled_nonempty:
+		_fail("table disclosures did not cover empty and populated sections")
+		return false
 
 	var area_flow := scenario_lane.find_child("AreaFlow", true, false) as HFlowContainer
 	var card_scroll := main.find_child("CARDSScroll", true, false) as ScrollContainer
-	var decision_scroll := _node("Play/Prompt/Margin/Stack/DecisionScroll") as ScrollContainer
+	var decision_scroll := _node("Play/Prompt/Margin/Stack/Workbench/Action/DecisionScroll") as ScrollContainer
 	if area_flow == null or card_scroll == null or decision_scroll == null:
 		_fail("the table is missing its wrapped areas or bounded overflow rails")
 		return false
@@ -605,7 +714,7 @@ func _board_layout_is_resolved() -> bool:
 	var board := _node("Play/Board") as Control
 	var prompt := _node("Play/Prompt") as Control
 	var page := main.get_node("Margin") as ScrollContainer
-	if OS.get_environment("MARVEL_UI_SCALE") == "standard" \
+	if _scale_percentage() <= 100 \
 			and (page.scroll_vertical != 0 \
 			or not _control_text_is_visible(_node("Eyebrow") as Control) \
 			or not _control_text_is_visible(_node("Title") as Control) \
@@ -624,18 +733,22 @@ func _board_layout_is_resolved() -> bool:
 	var viewport := OS.get_environment("MARVEL_SMOKE_VIEWPORT")
 	var scale := OS.get_environment("MARVEL_UI_SCALE")
 	if viewport == "1600x900" and scale == "standard" \
-			and (prompt.size.x < 435.0 or prompt.size.x > 445.0):
-		_fail("the wide desktop prompt did not grow to its 440px cap: %s" % prompt.size.x)
+			and (prompt.size.x < 595.0 or prompt.size.x > 605.0):
+		_fail("the wide desktop prompt did not grow to its 600px workbench width: %s" % prompt.size.x)
 		return false
 	if board.get_global_rect().intersects(prompt.get_global_rect()):
 		_fail("the prompt rail overlaps the board")
+		return false
+	var hand := _node("Play/Board/HandShelf") as Control
+	if hand == null or not hand.visible or "HAND" not in _visible_text(hand):
+		_fail("the player's hand is not pinned to the bottom of the table viewport")
 		return false
 	return true
 
 
 func _keyboard_selection_is_operable() -> bool:
 	var header := _node("Play/Prompt/Margin/Stack/PromptHeader") as Control
-	var decision_scroll := _node("Play/Prompt/Margin/Stack/DecisionScroll") as ScrollContainer
+	var decision_scroll := _node("Play/Prompt/Margin/Stack/Workbench/Action/DecisionScroll") as ScrollContainer
 	if header == null or decision_scroll == null or decision_scroll.is_ancestor_of(header):
 		_fail("the active seat and question are not pinned above the decision body")
 		return false
@@ -647,9 +760,10 @@ func _keyboard_selection_is_operable() -> bool:
 
 	await process_frame
 	await process_frame
-	var focused := render_viewport.gui_get_focus_owner() as Button
+	var focus_owner := render_viewport.gui_get_focus_owner()
+	var focused := focus_owner as Button
 	if focused == null or not _decision().is_ancestor_of(focused) or focused.disabled:
-		_fail("a fresh prompt did not focus its first keyboard-operable action")
+		_fail("a fresh prompt did not focus its first keyboard-operable action: %s" % focus_owner)
 		return false
 	var focus_name := focused.name
 	var press := InputEventAction.new()
@@ -668,7 +782,7 @@ func _keyboard_selection_is_operable() -> bool:
 		_fail("keyboard focus was lost when the selected decision control rebuilt")
 		return false
 	if not await _wait_for(func() -> bool: return _focused_control_is_visible(restored)):
-		var focused_scroll := _node("Play/Prompt/Margin/Stack/DecisionScroll") as ScrollContainer
+		var focused_scroll := _node("Play/Prompt/Margin/Stack/Workbench/Action/DecisionScroll") as ScrollContainer
 		var page_scroll := main.get_node("Margin") as ScrollContainer
 		_fail("keyboard focus moved outside the visible viewport: control=%s decision=%s page=%s root=%s scroll=%d/%d" % [
 			restored.get_global_rect(),
@@ -690,7 +804,7 @@ func _keyboard_selection_is_operable() -> bool:
 		if not _control_text_is_visible(_node(prompt_path) as Control):
 			_fail("keyboard focus hid active prompt context: %s" % prompt_path)
 			return false
-	if "SELECTED" not in restored.text:
+	if not restored.text.begins_with("✓"):
 		_fail("ui_accept did not select the focused decision action")
 		return false
 	var progress := _node("Play/Prompt/Margin/Stack/PromptHeader/Progress") as Label
@@ -706,8 +820,7 @@ func _keyboard_selection_is_operable() -> bool:
 
 func _focused_control_is_visible(control: Control) -> bool:
 	var visible_rect := _visible_control_rect(control)
-	var scale := OS.get_environment("MARVEL_UI_SCALE")
-	var expected := 66 if scale == "extra-large" else 55 if scale == "large" else 44
+	var expected := _scaled_metric(44)
 	return visible_rect.size.x >= expected and visible_rect.size.y >= expected
 
 
@@ -742,7 +855,7 @@ func _focused_board_area_is_visible() -> bool:
 		var area := card.get_parent()
 		while area != null and not (area is PanelContainer and area.name.begins_with("Area")):
 			area = area.get_parent()
-		var board := _node("Play/Board") as ScrollContainer
+		var board := _node("Play/Board/TableScroll") as ScrollContainer
 		if area == null or board == null:
 			_fail("a focused board card is not contained by the board viewport")
 			return false
@@ -771,14 +884,13 @@ func _focused_board_area_is_visible() -> bool:
 
 
 func _event_presentation_is_nonblocking() -> bool:
-	var cue := _node("Play/Prompt/Margin/Stack/EventCue") as Control
-	var motion := _node("Play/Prompt/Margin/Stack/EventHeader/Motion") as CheckButton
-	var skip := _node("Play/Prompt/Margin/Stack/EventHeader/Skip") as Button
-	var log := _node("Play/Prompt/Margin/Stack/EventLog") as RichTextLabel
-	var scale := OS.get_environment("MARVEL_UI_SCALE")
-	var expected_height := 66 if scale == "extra-large" else 55 if scale == "large" else 44
-	if cue == null or not cue.visible or cue.custom_minimum_size.y < 68.0:
-		_fail("event presentation has no fixed reserved cue region")
+	var cue := _node("Play/Prompt/Margin/Stack/Workbench/History/EventCue") as Control
+	var motion := _node("Toolbar/Motion") as CheckButton
+	var skip := _node("Play/Prompt/Margin/Stack/Workbench/History/EventHeader/Skip") as Button
+	var log := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel
+	var expected_height := _scaled_metric(44)
+	if cue == null:
+		_fail("event presentation has no cue region")
 		return false
 	if motion == null or skip == null \
 			or motion.custom_minimum_size.y < expected_height \
@@ -800,9 +912,9 @@ func _event_presentation_is_nonblocking() -> bool:
 	if not skip.disabled or log.text != history:
 		_fail("skipping motion changed or cleared event history")
 		return false
-	var cue_text := _visible_text(cue)
-	if "TABLE SYNCED" not in cue_text or "authoritative board" not in cue_text:
-		_fail("skipping motion did not settle on the authoritative snapshot")
+	var sync_status := _node("Toolbar/SyncStatus") as Label
+	if cue.visible or sync_status == null or not sync_status.text.begins_with("✓ Synced"):
+		_fail("settled motion did not collapse its cue or retain the compact sync status")
 		return false
 
 	if not motion_enabled and not _disabled_motion_is_settled(skip):
@@ -814,9 +926,10 @@ func _disabled_motion_is_settled(skip: Button) -> bool:
 	if not skip.disabled:
 		_fail("motion-disabled presentation left playback active")
 		return false
-	var cue := _node("Play/Prompt/Margin/Stack/EventCue") as Control
-	if "TABLE SYNCED" not in _visible_text(cue):
-		_fail("motion-disabled presentation did not settle on the authoritative snapshot")
+	var cue := _node("Play/Prompt/Margin/Stack/Workbench/History/EventCue") as Control
+	var sync_status := _node("Toolbar/SyncStatus") as Label
+	if cue.visible or sync_status == null or not sync_status.text.begins_with("✓ Synced"):
+		_fail("motion-disabled presentation did not retain the compact sync status")
 		return false
 	return true
 
@@ -878,14 +991,19 @@ func _capture_checkpoint(checkpoint: String) -> bool:
 
 func _first_enabled_choice() -> Button:
 	for button in _visible_buttons(_decision()):
-		if not button.disabled and button.text not in ["Submit decision", "Pass / decline", "+", "−"]:
+		if not button.disabled and button.name != "Submit" \
+				and button.text not in ["Pass / decline", "+", "−"]:
 			return button
 	return null
 
 
+func _submit_button() -> Button:
+	var submit := _decision().find_child("Submit", true, false) as Button
+	return submit if submit != null and submit.is_visible_in_tree() else null
+
+
 func _visible_buttons_meet_pointer_floor() -> bool:
-	var scale := OS.get_environment("MARVEL_UI_SCALE")
-	var expected := 66 if scale == "extra-large" else 55 if scale == "large" else 44
+	var expected := _scaled_metric(44)
 	for button in _visible_buttons(_decision()):
 		if button.size.x < expected or button.size.y < expected:
 			_fail("visible decision control '%s' misses the pointer-target floor" % button.text)
@@ -900,6 +1018,24 @@ func _select_named_option(option: OptionButton, wanted: String) -> void:
 			option.item_selected.emit(index)
 			return
 	_fail("visible option '%s' is unavailable" % wanted)
+
+
+func _scale_percentage() -> int:
+	var configured := OS.get_environment("MARVEL_UI_SCALE").strip_edges().to_lower()
+	match configured:
+		"compact", "":
+			return 80
+		"standard":
+			return 100
+		"large":
+			return 120
+		"extra-large":
+			return 150
+	return int(configured.trim_suffix("%"))
+
+
+func _scaled_metric(base: int) -> int:
+	return ceili(base * _scale_percentage() / 100.0)
 
 
 func _button_named(wanted: String) -> Button:
@@ -955,7 +1091,7 @@ func _play() -> Control:
 
 
 func _decision() -> Control:
-	return _node("Play/Prompt/Margin/Stack/DecisionScroll/Decision") as Control
+	return _node("Play/Prompt/Margin/Stack/Workbench/Action/DecisionScroll/Decision") as Control
 
 
 func _status() -> Label:

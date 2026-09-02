@@ -14,10 +14,18 @@ public sealed partial class Main : Control
     private readonly List<string> scenarioNames = [];
     private readonly List<ScenarioSetupChoice> visibleModes = [];
     private readonly ICardArtProvider art = LocalArtPack.OpenConfigured();
+    private readonly Dictionary<int, bool> expandedAreas = [];
     private Control board = null!;
     private VBoxContainer boardAreas = null!;
+    private BoardPresentation? boardPresentation;
     private HSplitContainer playLayout = null!;
     private BoardRenderResult? boardRender;
+    private PanelContainer cardInspector = null!;
+    private ScrollContainer cardInspectorScroll = null!;
+    private VBoxContainer cardInspectorContent = null!;
+    private int cardInspectorGeneration;
+    private bool cardInspectorHovered;
+    private int? inspectedCardId;
     private Label briefingHero = null!;
     private Label briefingMode = null!;
     private Label briefingModular = null!;
@@ -42,6 +50,8 @@ public sealed partial class Main : Control
     private Button invitationCopy = null!;
     private LineEdit invitation = null!;
     private InterfaceScale interfaceScale = InterfaceScale.Standard;
+    private HSlider interfaceScaleSlider = null!;
+    private Label interfaceScaleValue = null!;
     private Button join = null!;
     private VBoxContainer joinFields = null!;
     private Button joinFlow = null!;
@@ -75,6 +85,9 @@ public sealed partial class Main : Control
     private Label status = null!;
     private PanelContainer statusPanel = null!;
     private Button synchronize = null!;
+    private Label syncStatus = null!;
+    private HBoxContainer handRail = null!;
+    private Label handHeading = null!;
     private Label title = null!;
     private string? transientInvitation;
     private bool decisionPending;
@@ -101,6 +114,9 @@ public sealed partial class Main : Control
             ClientTheme.ToGodot(VisualSystem.Palette.Danger);
         GetWindow().MinSize = new Vector2I(1040, 680);
         BindNodes();
+        interfaceScaleSlider.SetValueNoSignal((double)scale);
+        interfaceScaleSlider.ValueChanged += value =>
+            ApplyInterfaceScale((InterfaceScale)(Mathf.RoundToInt(value / 10) * 10));
         ApplyInterfaceScale(scale);
         Resized += ApplyResponsivePlayLayout;
         hero.ItemSelected += _ =>
@@ -140,6 +156,10 @@ public sealed partial class Main : Control
 
     private void ApplyInterfaceScale(InterfaceScale scale)
     {
+        interfaceScale = scale;
+        Theme = ClientTheme.Create(scale);
+        interfaceScaleValue.Text = $"Scale {Mathf.RoundToInt(VisualSystem.ScalePercent(scale))}%";
+        decisions.SetInterfaceScale(scale);
         float minimumHeight = VisualSystem.Controls(scale).MinimumHeight;
         foreach (Control control in new Control[]
                  {
@@ -155,12 +175,11 @@ public sealed partial class Main : Control
         foreach (Control control in new Control[]
                  {
                      startFlow, joinFlow, reloadSetup, start, join, invitationCopy,
-                     synchronize,
                  })
         {
             control.CustomMinimumSize = new Vector2(
                 control.CustomMinimumSize.X,
-                Math.Max(control.CustomMinimumSize.Y, minimumHeight));
+                minimumHeight);
         }
         foreach (Control control in new Control[] { eventMotion, eventSkip })
         {
@@ -168,6 +187,11 @@ public sealed partial class Main : Control
                 control.CustomMinimumSize.X,
                 minimumHeight);
         }
+        if (CurrentGame?.World is { } world)
+        {
+            RenderBoard(world);
+        }
+        ApplyResponsivePlayLayout();
     }
 
     private void BindNodes()
@@ -182,7 +206,7 @@ public sealed partial class Main : Control
         board = GetNode<Control>($"{content}/Play");
         playLayout = GetNode<HSplitContainer>($"{content}/Play");
         decisionScroll = GetNode<ScrollContainer>(
-            $"{content}/Play/Prompt/Margin/Stack/DecisionScroll");
+            $"{content}/Play/Prompt/Margin/Stack/Workbench/Action/DecisionScroll");
         promptPanel = GetNode<PanelContainer>($"{content}/Play/Prompt");
         promptStack = GetNode<VBoxContainer>($"{content}/Play/Prompt/Margin/Stack");
         promptEyebrow = GetNode<Label>(
@@ -195,21 +219,23 @@ public sealed partial class Main : Control
             $"{content}/Play/Prompt/Margin/Stack/PromptHeader/Requirement");
         promptProgress = GetNode<Label>(
             $"{content}/Play/Prompt/Margin/Stack/PromptHeader/Progress");
-        boardAreas = GetNode<VBoxContainer>($"{content}/Play/Board/Margin/Areas");
+        boardAreas = GetNode<VBoxContainer>($"{content}/Play/Board/TableScroll/Margin/Areas");
+        handHeading = GetNode<Label>($"{content}/Play/Board/HandShelf/Margin/Stack/Heading");
+        handRail = GetNode<HBoxContainer>(
+            $"{content}/Play/Board/HandShelf/Margin/Stack/Scroll/Rail");
         decisions = GetNode<DecisionPanel>(
-            $"{content}/Play/Prompt/Margin/Stack/DecisionScroll/Decision");
+            $"{content}/Play/Prompt/Margin/Stack/Workbench/Action/DecisionScroll/Decision");
         eventLog = GetNode<RichTextLabel>(
-            $"{content}/Play/Prompt/Margin/Stack/EventLog");
+            $"{content}/Play/Prompt/Margin/Stack/Workbench/History/EventLog");
         eventCue = GetNode<PanelContainer>(
-            $"{content}/Play/Prompt/Margin/Stack/EventCue");
+            $"{content}/Play/Prompt/Margin/Stack/Workbench/History/EventCue");
         eventCueKind = GetNode<Label>(
-            $"{content}/Play/Prompt/Margin/Stack/EventCue/Margin/Copy/Kind");
+            $"{content}/Play/Prompt/Margin/Stack/Workbench/History/EventCue/Margin/Copy/Kind");
         eventCueSummary = GetNode<Label>(
-            $"{content}/Play/Prompt/Margin/Stack/EventCue/Margin/Copy/Summary");
-        eventMotion = GetNode<CheckButton>(
-            $"{content}/Play/Prompt/Margin/Stack/EventHeader/Motion");
+            $"{content}/Play/Prompt/Margin/Stack/Workbench/History/EventCue/Margin/Copy/Summary");
+        eventMotion = GetNode<CheckButton>($"{content}/Toolbar/Motion");
         eventSkip = GetNode<Button>(
-            $"{content}/Play/Prompt/Margin/Stack/EventHeader/Skip");
+            $"{content}/Play/Prompt/Margin/Stack/Workbench/History/EventHeader/Skip");
         eventMotion.Toggled += enabled =>
         {
             if (!enabled)
@@ -220,7 +246,28 @@ public sealed partial class Main : Control
         eventSkip.Pressed += SkipEventPresentation;
         decisions.Submitted += OnDecisionSubmitted;
         decisions.AnchorFocused += ids => boardRender?.Highlight(ids);
+        decisions.CardHovered += InspectCard;
         decisions.ProgressChanged += RenderDecisionProgress;
+        cardInspector = GetNode<PanelContainer>("CardInspector");
+        cardInspectorScroll = GetNode<ScrollContainer>("CardInspector/Scroll");
+        cardInspectorContent = GetNode<VBoxContainer>("CardInspector/Scroll/Content");
+        cardInspector.MouseEntered += () =>
+        {
+            cardInspectorHovered = true;
+            cardInspectorGeneration++;
+            cardInspector.FocusMode = FocusModeEnum.Click;
+            cardInspectorScroll.FocusMode = FocusModeEnum.Click;
+        };
+        cardInspector.MouseExited += () =>
+        {
+            cardInspectorHovered = false;
+            ScheduleCardInspectorHide();
+        };
+        BindCardInspectorFocus(cardInspector);
+        BindCardInspectorFocus(cardInspectorScroll);
+        interfaceScaleSlider = GetNode<HSlider>($"{content}/Toolbar/InterfaceScale");
+        interfaceScaleValue = GetNode<Label>($"{content}/Toolbar/ScaleValue");
+        syncStatus = GetNode<Label>($"{content}/Toolbar/SyncStatus");
         endpoint = GetNode<LineEdit>(
             $"{content}/Setup/Selections/Fields/ConnectionGrid/Endpoint");
         gameId = GetNode<LineEdit>(
@@ -251,8 +298,7 @@ public sealed partial class Main : Control
             $"{content}/Play/Prompt/Margin/Stack/InvitationOffer");
         invitationCopy = GetNode<Button>(
             $"{content}/Play/Prompt/Margin/Stack/InvitationOffer/Margin/Row/CopyInvitation");
-        synchronize = GetNode<Button>(
-            $"{content}/Play/Prompt/Margin/Stack/Synchronize");
+        synchronize = GetNode<Button>($"{content}/Toolbar/Synchronize");
         briefingScenario = GetNode<Label>(
             $"{content}/Setup/Briefing/Frame/Copy/Scenario");
         briefingMode = GetNode<Label>($"{content}/Setup/Briefing/Frame/Copy/Mode");
@@ -298,16 +344,12 @@ public sealed partial class Main : Control
     {
         // This is a presentation choice: keep the prompt rail stable and give
         // the scrollable table every remaining pixel at desktop window sizes.
-        float promptWidth = Math.Clamp(Size.X * 0.30f, 330f, 440f);
+        DesktopPlayMetrics layout = VisualSystem.DesktopPlay(
+            Math.Max(1, Mathf.RoundToInt(Size.X)),
+            Math.Max(1, Mathf.RoundToInt(Size.Y)),
+            interfaceScale);
         bool compactHeight = Size.Y < 800;
-        float compactDecisionHeight = interfaceScale switch
-        {
-            InterfaceScale.Standard => 64,
-            InterfaceScale.Large => 110,
-            InterfaceScale.ExtraLarge => 140,
-            _ => 64,
-        };
-        promptPanel.CustomMinimumSize = new Vector2(promptWidth, 0);
+        promptPanel.CustomMinimumSize = new Vector2(layout.DecisionWidth, 0);
         setupGrid.Columns = Size.X >= 1500 ? 4 : 2;
         contentStack.ThemeTypeVariation = board.Visible && compactHeight
             ? GodotThemeVariations.TightStack
@@ -317,14 +359,16 @@ public sealed partial class Main : Control
             : GodotThemeVariations.Stack;
         decisionScroll.CustomMinimumSize = new Vector2(
             0,
-            compactHeight ? compactDecisionHeight : 132);
+            layout.DecisionMinimumHeight);
         eventCue.CustomMinimumSize = new Vector2(0, 68);
-        eventLog.CustomMinimumSize = new Vector2(0, compactHeight ? 0 : 96);
+        eventLog.CustomMinimumSize = new Vector2(0, compactHeight ? 180 : 300);
         playLayout.SplitOffsets = [0];
-        pageScroll.HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled;
+        pageScroll.HorizontalScrollMode = board.Visible
+            ? ScrollContainer.ScrollMode.Disabled
+            : ScrollContainer.ScrollMode.Auto;
         pageScroll.FollowFocus = !board.Visible;
         pageScroll.VerticalScrollMode = board.Visible
-            ? interfaceScale == InterfaceScale.Standard
+            ? (int)interfaceScale <= 100
                 ? ScrollContainer.ScrollMode.Disabled
                 : ScrollContainer.ScrollMode.Auto
             : ScrollContainer.ScrollMode.Auto;
@@ -835,7 +879,7 @@ public sealed partial class Main : Control
                 ApplyProgress(GameProgressPresentation.DecisionRejected(failure));
                 promptProgress.Text = "REJECTED  ·  SYNCHRONIZE TABLE";
                 promptProgress.ThemeTypeVariation = GodotThemeVariations.DangerText;
-                synchronize.Text = "Synchronize table";
+                synchronize.TooltipText = "Read the current authoritative table.";
             }
             else
             {
@@ -871,7 +915,8 @@ public sealed partial class Main : Control
         promptProgress.Text =
             $"UNCONFIRMED  ·  {error.Code.ToUpperInvariant()}  ·  RESTART OR RECONNECT";
         promptProgress.ThemeTypeVariation = GodotThemeVariations.DangerText;
-        synchronize.Text = "Reconnect table";
+        syncStatus.Text = "⚠ Sync needed";
+        synchronize.TooltipText = "Reconnect to the current authoritative table.";
     }
 
     private async void OnSynchronizePressed()
@@ -900,7 +945,7 @@ public sealed partial class Main : Control
                 decisionPending = false;
                 uncertainMutationError = null;
                 RenderGame(result.Response!, preserveEvents: true);
-                synchronize.Text = "Synchronize table";
+                synchronize.TooltipText = "Read the current authoritative table.";
             }
             else if (result.SessionDisposition == ClientSessionDisposition.Unavailable)
             {
@@ -949,7 +994,8 @@ public sealed partial class Main : Control
                 error,
                 prior.LocksDecisions));
         }
-        synchronize.Text = "Reconnect table";
+        syncStatus.Text = "⚠ Sync needed";
+        synchronize.TooltipText = "Reconnect to the current authoritative table.";
     }
 
     private void ReturnToJoinAfterSessionLoss(ClientStartupError error)
@@ -969,8 +1015,11 @@ public sealed partial class Main : Control
         decisionPending = false;
         resolveInFlight = false;
         uncertainMutationError = null;
-        synchronize.Text = "Synchronize table";
+        synchronize.TooltipText = "Read the current authoritative table.";
         synchronize.Disabled = true;
+        synchronize.Visible = false;
+        syncStatus.Visible = false;
+        cardInspector.Visible = false;
         SetSetupControlsEnabled(true);
         ShowEntryMode(joinMode: true);
         ShowFailure(error);
@@ -984,7 +1033,10 @@ public sealed partial class Main : Control
         Outcome previousOutcome = CurrentGame?.World?.Outcome ?? Outcome.Unfinished;
         CurrentGame = response;
         WorldDescriptor world = response.World!;
-        boardRender = BoardRenderer.Render(boardAreas, BoardPresentation.From(world), art);
+        RenderBoard(world);
+        syncStatus.Visible = true;
+        syncStatus.Text = $"✓ Synced · r{response.Revision}";
+        synchronize.Visible = true;
         RenderPromptSummary(response.Prompt, world);
         decisions.Render(response.Prompt, world);
         if (!preserveEvents)
@@ -1014,6 +1066,130 @@ public sealed partial class Main : Control
         if (response.Prompt is null && world.Outcome != Outcome.Unfinished)
         {
             CallDeferred(MethodName.RevealOutcome);
+        }
+    }
+
+    private void RenderBoard(WorldDescriptor world)
+    {
+        boardPresentation = BoardPresentation.From(world);
+        boardRender = BoardRenderer.Render(
+            boardAreas,
+            boardPresentation,
+            handRail,
+            handHeading,
+            interfaceScale,
+            expandedAreas,
+            art);
+        boardRender.CardHovered += card => ShowCardInspector(card);
+        HideCardInspector();
+    }
+
+    private void InspectCard(int? id)
+    {
+        BoardCardPresentation? card = id is null
+            ? null
+            : boardPresentation?.Areas
+                .SelectMany(area => area.Cards.Concat(area.Removed))
+                .FirstOrDefault(candidate => candidate.TargetId == id);
+        ShowCardInspector(card);
+    }
+
+    private void ShowCardInspector(BoardCardPresentation? card)
+    {
+        if (card is null || card.Concealed)
+        {
+            ScheduleCardInspectorHide();
+            return;
+        }
+
+        if (cardInspector.Visible && inspectedCardId == card.TargetId)
+        {
+            cardInspectorGeneration++;
+            return;
+        }
+
+        cardInspectorGeneration++;
+        inspectedCardId = card.TargetId;
+        Control? priorFocus = GetViewport()?.GuiGetFocusOwner();
+
+        foreach (Node child in cardInspectorContent.GetChildren())
+        {
+            cardInspectorContent.RemoveChild(child);
+            child.QueueFree();
+        }
+
+        CardControl detail = CardControl.Create(
+            card, CardDisplaySize.Full, interfaceScale, art);
+        IgnoreMouseRecursively(detail);
+        cardInspectorContent.AddChild(detail);
+        float width = detail.CustomMinimumSize.X + 24;
+        float height = Math.Min(Size.Y - 48, detail.CustomMinimumSize.Y + 24);
+        cardInspector.Size = new Vector2(width, Math.Max(240, height));
+        Vector2 pointer = GetViewport().GetMousePosition();
+        FloatingPanelPosition position = VisualSystem.PlaceFloatingPanel(
+            Mathf.RoundToInt(Size.X),
+            Mathf.RoundToInt(Size.Y),
+            Mathf.RoundToInt(pointer.X),
+            Mathf.RoundToInt(pointer.Y),
+            Mathf.RoundToInt(width),
+            Mathf.RoundToInt(height));
+        cardInspector.Position = new Vector2(position.X, position.Y);
+        cardInspector.Visible = true;
+        if (priorFocus is not null && !cardInspector.IsAncestorOf(priorFocus))
+        {
+            Callable.From(priorFocus.GrabFocus).CallDeferred();
+        }
+    }
+
+    private void ScheduleCardInspectorHide()
+    {
+        int generation = ++cardInspectorGeneration;
+        GetTree().CreateTimer(0.3).Timeout += () =>
+        {
+            if (generation == cardInspectorGeneration
+                && !cardInspectorHovered
+                && !CardInspectorHasFocus())
+            {
+                cardInspector.FocusMode = FocusModeEnum.None;
+                cardInspectorScroll.FocusMode = FocusModeEnum.None;
+                inspectedCardId = null;
+                cardInspector.Visible = false;
+            }
+        };
+    }
+
+    private void BindCardInspectorFocus(Control control)
+    {
+        control.FocusEntered += () => cardInspectorGeneration++;
+        control.FocusExited += ScheduleCardInspectorHide;
+    }
+
+    private bool CardInspectorHasFocus()
+    {
+        Control? focused = GetViewport()?.GuiGetFocusOwner();
+        return focused is not null
+            && (focused == cardInspector || cardInspector.IsAncestorOf(focused));
+    }
+
+    private void HideCardInspector()
+    {
+        cardInspectorGeneration++;
+        cardInspectorHovered = false;
+        cardInspector.FocusMode = FocusModeEnum.None;
+        cardInspectorScroll.FocusMode = FocusModeEnum.None;
+        inspectedCardId = null;
+        cardInspector.Visible = false;
+    }
+
+    private static void IgnoreMouseRecursively(Node node)
+    {
+        if (node is Control control)
+        {
+            control.MouseFilter = Control.MouseFilterEnum.Ignore;
+        }
+        foreach (Node child in node.GetChildren())
+        {
+            IgnoreMouseRecursively(child);
         }
     }
 
@@ -1163,6 +1339,7 @@ public sealed partial class Main : Control
         }
 
         eventCueKind.Text = entry.Motion.ToString().ToUpperInvariant();
+        eventCue.Visible = true;
         eventCueSummary.Text = entry.Summary;
         eventCueKind.ThemeTypeVariation = entry.Motion switch
         {
@@ -1208,9 +1385,7 @@ public sealed partial class Main : Control
 
     private void SetEventPresentationSettled()
     {
-        eventCueKind.Text = "TABLE SYNCED";
-        eventCueKind.ThemeTypeVariation = GodotThemeVariations.StatusText;
-        eventCueSummary.Text = "The authoritative board is current.";
+        eventCue.Visible = false;
         eventCue.Modulate = Colors.White;
         eventSkip.Disabled = true;
         boardRender?.Present([]);

@@ -33,6 +33,7 @@ public sealed class PlayingCardsTests
         var play = Offer(game, "01083");
 
         Assert.Equal("3", play.CostOptions[0].Cost);
+        Assert.False(play.CostOptions[0].DeclarationSensitive);
 
         int mockingbird = play.AnchorId;
         var spent = Pay(play, cost: 3);
