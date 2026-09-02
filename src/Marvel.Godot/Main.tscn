@@ -232,7 +232,6 @@ visible = false
 custom_minimum_size = Vector2(0, 260)
 layout_mode = 2
 size_flags_vertical = 3
-split_offset = 620
 
 [node name="Board" type="ScrollContainer" parent="Margin/Shell/Content/Play"]
 layout_mode = 2

@@ -10,7 +10,9 @@ var failed := false
 func _initialize() -> void:
 	var viewport := OS.get_environment("MARVEL_SMOKE_VIEWPORT").split("x")
 	if viewport.size() == 2:
-		root.size = Vector2i(int(viewport[0]), int(viewport[1]))
+		var requested := Vector2i(int(viewport[0]), int(viewport[1]))
+		root.content_scale_size = requested
+		root.size = requested
 	_run.call_deferred()
 
 
@@ -281,6 +283,12 @@ func _board_layout_is_resolved() -> bool:
 			board.size.x,
 			prompt.size.x,
 		])
+		return false
+	var viewport := OS.get_environment("MARVEL_SMOKE_VIEWPORT")
+	var scale := OS.get_environment("MARVEL_UI_SCALE")
+	if viewport == "1600x900" and scale == "standard" \
+			and (prompt.size.x < 435.0 or prompt.size.x > 445.0):
+		_fail("the wide desktop prompt did not grow to its 440px cap: %s" % prompt.size.x)
 		return false
 	if board.get_global_rect().intersects(prompt.get_global_rect()):
 		_fail("the prompt rail overlaps the board")

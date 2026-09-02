@@ -29,6 +29,7 @@ public sealed partial class Main : Control
     private string? localCapability;
     private OptionButton mode = null!;
     private OptionButton modular = null!;
+    private PanelContainer promptPanel = null!;
     private OptionButton scenario = null!;
     private LineEdit seed = null!;
     private Control setupPanel = null!;
@@ -93,6 +94,7 @@ public sealed partial class Main : Control
         setupPanel = GetNode<Control>($"{content}/Setup");
         board = GetNode<Control>($"{content}/Play");
         playLayout = GetNode<HSplitContainer>($"{content}/Play");
+        promptPanel = GetNode<PanelContainer>($"{content}/Play/Prompt");
         boardAreas = GetNode<VBoxContainer>($"{content}/Play/Board/Margin/Areas");
         decisions = GetNode<DecisionPanel>(
             $"{content}/Play/Prompt/Margin/Stack/DecisionScroll/Decision");
@@ -122,7 +124,8 @@ public sealed partial class Main : Control
         // This is a presentation choice: keep the prompt rail stable and give
         // the scrollable table every remaining pixel at desktop window sizes.
         float promptWidth = Math.Clamp(Size.X * 0.30f, 330f, 440f);
-        playLayout.SplitOffsets = [Math.Max(480, (int)(Size.X - promptWidth - 120f))];
+        promptPanel.CustomMinimumSize = new Vector2(promptWidth, 0);
+        playLayout.SplitOffsets = [0];
     }
 
     private async Task LoadSetupAsync()
