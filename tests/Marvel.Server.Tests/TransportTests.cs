@@ -387,6 +387,7 @@ public sealed class TransportTests
 
     [Theory]
     [InlineData("omitted")]
+    [InlineData("other-seat")]
     [InlineData("watch")]
     [InlineData("hot-seat")]
     public async Task RestrictedSeatsAdvanceOneSharedGameWithIndependentCapabilities(
@@ -404,6 +405,7 @@ public sealed class TransportTests
         ViewerClaim? viewer = viewerMode switch
         {
             "omitted" => null,
+            "other-seat" => new ViewerClaim(Seat: 1),
             "watch" => new ViewerClaim(Watch: true),
             "hot-seat" => new ViewerClaim(HotSeat: true),
             _ => throw new InvalidOperationException($"unknown test mode {viewerMode}"),
@@ -414,11 +416,24 @@ public sealed class TransportTests
         EngineResponse capabilityCannotAttach = await ExchangeOverSocket(
             server,
             EngineRequest.AttachGame("steal-seat", "shared", opened.Capability!));
+        EngineResponse assertionCannotAttach = await ExchangeOverSocket(
+            server,
+            EngineRequest.AttachGame(
+                "assert-seat", "shared", invitation.Invitation) with
+            {
+                Viewer = new ViewerClaim(Seat: 1),
+            });
+        EngineResponse wrongGameCannotAttach = await ExchangeOverSocket(
+            server,
+            EngineRequest.AttachGame(
+                "wrong-game", "different", invitation.Invitation));
         EngineResponse attached = await ExchangeOverSocket(
             server,
             EngineRequest.AttachGame("attach", "shared", invitation.Invitation));
 
         Assert.Equal("session_not_found", capabilityCannotAttach.Error?.Code);
+        Assert.Equal("invalid_request", assertionCannotAttach.Error?.Code);
+        Assert.Equal("session_not_found", wrongGameCannotAttach.Error?.Code);
         Assert.Equal(1, invitation.Seat);
         Assert.Equal("seat-zero", opened.Capability);
         Assert.Equal("seat-one", attached.Capability);
@@ -426,6 +441,16 @@ public sealed class TransportTests
         Assert.Null(attached.Prompt);
         Assert.All(Hand(attached, 0), card => Assert.Null(card.Face));
         Assert.All(Hand(attached, 1), card => Assert.NotNull(card.Face));
+
+        EngineResponse guestCannotAnswerOwner = await ExchangeOverSocket(
+            server,
+            EngineRequest.ResolveGame(
+                "guest-steal-owner", "shared", attached.Capability!, EngineDecision.Decline));
+        EngineResponse ownerPromptRemains = await ExchangeOverSocket(
+            server,
+            EngineRequest.SyncGame("owner-still-pending", "shared", opened.Capability!));
+        Assert.Equal("not_your_turn", guestCannotAnswerOwner.Error?.Code);
+        Assert.Equal(0, ownerPromptRemains.Prompt?.Player);
 
         EngineResponse forZero = await ExchangeOverSocket(
             server,
@@ -464,6 +489,66 @@ public sealed class TransportTests
         EngineResponse afterClose = await ExchangeOverSocket(
             server, EngineRequest.SyncGame("after-close", "shared", attached.Capability!));
         Assert.Equal("session_not_found", afterClose.Error?.Code);
+    }
+
+    [Fact]
+    public async Task OwnerCloseInvalidatesPendingSeatInvitations()
+    {
+        var host = new EngineHost(
+            DatasetGameFactory.Load(Marvel.Tests.RepositoryPaths.Root),
+            new SequenceCapabilities("owner", "invitation"),
+            new RestrictedVisibilityPolicy(0));
+        var server = new SocketEngineServer(host, IPAddress.Loopback, port: 0);
+        var specification = new GameSpecification(
+            "rhino", ["spider_man", "captain_marvel"], ModularSets: [], Seed: 7);
+
+        EngineResponse opened = await ExchangeOverSocket(
+            server, EngineRequest.OpenGame("open", "shared", specification));
+        SeatInvitation invitation = Assert.Single(opened.Invitations!);
+
+        EngineResponse closed = await ExchangeOverSocket(
+            server,
+            EngineRequest.CloseGame("close", "shared", opened.Capability!));
+        EngineResponse attachAfterClose = await ExchangeOverSocket(
+            server,
+            EngineRequest.AttachGame("attach", "shared", invitation.Invitation));
+
+        Assert.Null(closed.Error);
+        Assert.Equal("session_not_found", attachAfterClose.Error?.Code);
+    }
+
+    [Fact]
+    public async Task GuestCloseRevokesOnlyTheGuestSession()
+    {
+        var host = new EngineHost(
+            DatasetGameFactory.Load(Marvel.Tests.RepositoryPaths.Root),
+            new SequenceCapabilities("owner", "invitation", "guest"),
+            new RestrictedVisibilityPolicy(0));
+        var server = new SocketEngineServer(host, IPAddress.Loopback, port: 0);
+        var specification = new GameSpecification(
+            "rhino", ["spider_man", "captain_marvel"], ModularSets: [], Seed: 7);
+
+        EngineResponse opened = await ExchangeOverSocket(
+            server, EngineRequest.OpenGame("open", "shared", specification));
+        SeatInvitation invitation = Assert.Single(opened.Invitations!);
+        EngineResponse attached = await ExchangeOverSocket(
+            server,
+            EngineRequest.AttachGame("attach", "shared", invitation.Invitation));
+
+        EngineResponse closed = await ExchangeOverSocket(
+            server,
+            EngineRequest.CloseGame("close-guest", "shared", attached.Capability!));
+        EngineResponse guestAfterClose = await ExchangeOverSocket(
+            server,
+            EngineRequest.SyncGame("sync-guest", "shared", attached.Capability!));
+        EngineResponse ownerAfterClose = await ExchangeOverSocket(
+            server,
+            EngineRequest.SyncGame("sync-owner", "shared", opened.Capability!));
+
+        Assert.Null(closed.Error);
+        Assert.Equal("session_not_found", guestAfterClose.Error?.Code);
+        Assert.Null(ownerAfterClose.Error);
+        Assert.Equal(0, ownerAfterClose.Prompt?.Player);
     }
 
     [Fact]

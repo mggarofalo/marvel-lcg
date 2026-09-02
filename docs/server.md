@@ -39,7 +39,7 @@ The process accepts these options:
 | `--listen IP` | `127.0.0.1` | Local IP address on which the server listens. Host names are not accepted. |
 | `--port NUMBER` | `41923` | TCP port from 1 to 65535. |
 | `--data-root PATH` | Current directory | Repository or published-data root containing the required datasets. |
-| `--visibility cooperative` | `cooperative` | Allows the cooperative table, a claimed seat or a watcher view. |
+| `--visibility cooperative` | `cooperative` | Shows the whole cooperative table. Client viewer claims cannot hide or reveal seats. |
 | `--visibility restricted --seat NUMBER` | None | Binds the opening session to one non-negative seat number. |
 
 For example, this server authorizes the opening client as seat 0:
