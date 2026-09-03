@@ -22,6 +22,9 @@ public static class OperationalEventIds
     /// <summary>The standalone socket listener began accepting connections.</summary>
     public const string ServerListening = "server.listener.started";
 
+    /// <summary>The standalone listener completed an intentional shutdown.</summary>
+    public const string ServerStopped = "server.listener.stopped";
+
     /// <summary>The process could not start its server composition.</summary>
     public const string ServerStartFailed = "server.start.failed";
 

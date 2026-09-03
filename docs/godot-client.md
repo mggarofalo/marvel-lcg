@@ -210,6 +210,15 @@ visible action happens to reuse the same object ids.
 See the [standalone server guide](server.md) for launch options, restricted-seat
 configuration, Docker commands and shutdown behavior.
 
+Operational failures use bounded, distinct presentation states. `SERVICE
+UNAVAILABLE` means the endpoint cannot currently be reached; `VERSION MISMATCH`
+means the client and server wire versions differ; `SESSION UNAVAILABLE` returns
+the player to Join; and `STORAGE FAILURE` requires operator attention. A decision
+marked `NOT SENT · RETRY SAFE` may be submitted again. A decision marked
+`MUTATION NOT REPEATED` remains locked until the client reads the authoritative
+table, including after a server restart. The UI derives these states only from
+transport and protocol evidence; it does not infer whether a server restarted.
+
 ## Native smoke
 
 The native smoke loads the real scene at each supported UI scale, selects

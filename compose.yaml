@@ -1,0 +1,30 @@
+services:
+  server:
+    container_name: marvel-server
+    image: "${MARVEL_SERVER_IMAGE:-marvel-server-image-must-be-a-verified-release-digest}"
+    command: ["--visibility", "cooperative"]
+    restart: unless-stopped
+    stop_grace_period: 40s
+    ports:
+      - "${MARVEL_SERVER_BIND:-127.0.0.1}:${MARVEL_SERVER_PORT:-41923}:41923"
+    volumes:
+      - marvel-sessions:/var/lib/marvel/sessions
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 512m
+    cpus: 1
+    pids_limit: 128
+    networks:
+      - marvel-server
+
+volumes:
+  marvel-sessions:
+    name: marvel-sessions
+
+networks:
+  marvel-server:
+    name: marvel-server
+    driver: bridge

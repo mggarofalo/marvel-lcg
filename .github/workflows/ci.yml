@@ -139,6 +139,9 @@ jobs:
           }
           trap cleanup EXIT
           docker build --file src/Marvel.Server/Dockerfile --tag "$image" .
+          compose=$(MARVEL_SERVER_IMAGE="$image" docker compose config)
+          grep -q 'container_name: marvel-server' <<<"$compose"
+          grep -q 'name: marvel-sessions' <<<"$compose"
           [[ $(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.version"}}' "$image") == 0.1.0-dev.0 ]]
           docker run --rm --entrypoint dotnet "$image" Marvel.Server.dll --version |
             grep -F 'v0.1.0-dev.0 · engine engine-replay-v1 · protocol 11 · save 2'

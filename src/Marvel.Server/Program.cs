@@ -165,6 +165,10 @@ internal static class Program
                 operation: "listen");
             onListening?.Invoke(endpoint);
         }, cancellationToken);
+        log.Write(
+            OperationalEventIds.ServerStopped,
+            "accepted",
+            operation: "listen");
         log.Flush(OperationalShutdownBudget);
         return 0;
     }

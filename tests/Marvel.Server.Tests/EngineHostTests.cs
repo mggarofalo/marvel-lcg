@@ -1169,6 +1169,28 @@ public sealed class EngineHostTests
         Assert.Equal(0, Assert.Single(inner.Load()).Save.Revision);
     }
 
+    [Fact]
+    public void AFailedOpenCommitReturnsABoundedStorageFailureWithoutPublishingAGame()
+    {
+        var inner = new MemorySessionStore();
+        var host = new EngineHost(
+            DatasetGameFactory.Load(RepositoryPaths.Root),
+            new SequenceCapabilities("unpublished-owner"),
+            store: new FailingSessionStore(inner, failAtCommit: 1));
+
+        EngineResponse failed = host.Exchange(EngineRequest.OpenGame(
+            "open",
+            "unpublished-table",
+            new GameSpecification("rhino", ["spider_man"], [], Seed: 73)));
+        EngineResponse absent = host.Exchange(EngineRequest.SyncGame(
+            "sync", "unpublished-table", "unpublished-owner"));
+
+        Assert.Equal("save_failed", failed.Error?.Code);
+        Assert.Null(failed.Capability);
+        Assert.Equal("session_not_found", absent.Error?.Code);
+        Assert.Empty(inner.Load());
+    }
+
     [Theory]
     [InlineData("rng")]
     [InlineData("digest")]

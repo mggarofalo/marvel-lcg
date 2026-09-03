@@ -724,6 +724,7 @@ public sealed partial class Main : Control
             }
 
             session = startup.Session;
+            currentProgress = null;
             transientInvitation = startup.Invitations.Count == 0
                 ? null
                 : startup.Invitations[0].Invitation;
@@ -783,6 +784,7 @@ public sealed partial class Main : Control
             }
 
             session = attached.Session;
+            currentProgress = null;
             RenderGame(attached.Response!, resetEvents: true);
             setupPanel.Visible = false;
             board.Visible = true;
@@ -952,7 +954,10 @@ public sealed partial class Main : Control
             {
                 decisionPending = false;
                 uncertainMutationError = null;
-                RenderGame(result.Response!, preserveEvents: true);
+                RenderGame(
+                    result.Response!,
+                    preserveEvents: true,
+                    priorProgress: prior);
                 synchronize.TooltipText = "Read the current authoritative table.";
             }
             else if (result.SessionDisposition == ClientSessionDisposition.Unavailable)
@@ -1000,7 +1005,8 @@ public sealed partial class Main : Control
         {
             ApplyProgress(GameProgressPresentation.SynchronizationUnavailable(
                 error,
-                prior.LocksDecisions));
+                prior.LocksDecisions,
+                prior.OperationalLock));
         }
         syncStatus.Text = "⚠ Sync needed";
         synchronize.TooltipText = "Reconnect to the current authoritative table.";
@@ -1036,7 +1042,8 @@ public sealed partial class Main : Control
     private void RenderGame(
         EngineResponse response,
         bool resetEvents = false,
-        bool preserveEvents = false)
+        bool preserveEvents = false,
+        GameProgressPresentation? priorProgress = null)
     {
         Outcome previousOutcome = CurrentGame?.World?.Outcome ?? Outcome.Unfinished;
         CurrentGame = response;
@@ -1067,7 +1074,9 @@ public sealed partial class Main : Control
         }
         // A synchronized snapshot is authoritative but is not a new
         // transition, so it does not alter the diagnostic chronology.
-        ApplyProgress(GameProgressPresentation.FromResponse(response));
+        ApplyProgress(GameProgressPresentation.FromSynchronization(
+            response,
+            priorProgress ?? currentProgress));
         pageScroll.ScrollVertical = 0;
         pageScroll.SetDeferred("scroll_vertical", 0);
         RefreshSynchronizeAvailability();
@@ -1474,7 +1483,11 @@ public sealed partial class Main : Control
             or GameProgressKind.DecisionRejected
             or GameProgressKind.SynchronizationUnavailable
             or GameProgressKind.Unconfirmed
-            or GameProgressKind.Unavailable;
+            or GameProgressKind.Unavailable
+            or GameProgressKind.ServiceUnavailable
+            or GameProgressKind.VersionMismatch
+            or GameProgressKind.SessionUnavailable
+            or GameProgressKind.StorageFailure;
         statusPanel.ThemeTypeVariation = danger
             ? GodotThemeVariations.DangerStatusPanel
             : GodotThemeVariations.StatusPanel;

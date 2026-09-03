@@ -221,6 +221,10 @@ public sealed class ProgramTests
                 OperationalEventIds.ServerListening,
                 error.ToString(),
                 StringComparison.Ordinal);
+            Assert.Contains(
+                OperationalEventIds.ServerStopped,
+                error.ToString(),
+                StringComparison.Ordinal);
         }
         finally
         {

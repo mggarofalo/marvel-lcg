@@ -44,6 +44,18 @@ public enum GameProgressKind
 
     /// <summary>The product could not open or load a table.</summary>
     Unavailable,
+
+    /// <summary>The configured game service cannot currently be reached.</summary>
+    ServiceUnavailable,
+
+    /// <summary>The service rejected this client's wire protocol.</summary>
+    VersionMismatch,
+
+    /// <summary>The service established that the held session is no longer usable.</summary>
+    SessionUnavailable,
+
+    /// <summary>The service could not durably store the requested change.</summary>
+    StorageFailure,
 }
 
 /// <summary>Copy and input policy for one current table state.</summary>
@@ -52,7 +64,8 @@ public sealed record GameProgressPresentation(
     string Title,
     string Description,
     string Status,
-    bool LocksDecisions)
+    bool LocksDecisions,
+    ClientStartupError? OperationalLock = null)
 {
     /// <summary>Describes one complete authoritative response.</summary>
     public static GameProgressPresentation FromResponse(EngineResponse response)
@@ -99,6 +112,14 @@ public sealed record GameProgressPresentation(
         };
     }
 
+    /// <summary>Applies a read-only snapshot without clearing an operator lock.</summary>
+    public static GameProgressPresentation FromSynchronization(
+        EngineResponse response,
+        GameProgressPresentation? prior) =>
+        prior?.OperationalLock is { } blocked
+            ? Recovered(response, blocked)
+            : FromResponse(response);
+
     /// <summary>Shows that one mutation is in flight and cannot be repeated.</summary>
     public static GameProgressPresentation Resolving() => new(
         GameProgressKind.Resolving,
@@ -130,9 +151,24 @@ public sealed record GameProgressPresentation(
     /// <summary>Preserves the prior input policy after a read-only sync failure.</summary>
     public static GameProgressPresentation SynchronizationUnavailable(
         ClientStartupError error,
-        bool locksDecisions)
+        bool locksDecisions,
+        ClientStartupError? operationalLock = null)
     {
         ArgumentNullException.ThrowIfNull(error);
+        if (operationalLock is not null)
+        {
+            return Unavailable(operationalLock) with
+            {
+                Description = operationalLock.Message + " " + error.Message
+                    + " The last authoritative table remains displayed.",
+            };
+        }
+
+        if (error.Code == "unsupported_version" || IsStorageFailure(error.Code))
+        {
+            return Unavailable(error);
+        }
+
         return new(
             GameProgressKind.SynchronizationUnavailable,
             "Table not synchronized.",
@@ -145,6 +181,15 @@ public sealed record GameProgressPresentation(
     public static GameProgressPresentation DecisionRejected(ClientStartupError error)
     {
         ArgumentNullException.ThrowIfNull(error);
+        if (IsStorageFailure(error.Code))
+        {
+            return Unavailable(error) with
+            {
+                Description = error.Message
+                    + " Input remains locked while the last displayed table is preserved.",
+            };
+        }
+
         return new(
             GameProgressKind.DecisionRejected,
             "Decision rejected.",
@@ -159,6 +204,16 @@ public sealed record GameProgressPresentation(
         ClientStartupError error)
     {
         ArgumentNullException.ThrowIfNull(error);
+        if (IsStorageFailure(error.Code))
+        {
+            return Unavailable(error) with
+            {
+                Description = error.Message
+                    + " The last authoritative table was recovered, but input remains locked.",
+                OperationalLock = error,
+            };
+        }
+
         GameProgressPresentation current = FromResponse(response);
         return current.Kind switch
         {
@@ -197,13 +252,47 @@ public sealed record GameProgressPresentation(
     public static GameProgressPresentation Unavailable(ClientStartupError error)
     {
         ArgumentNullException.ThrowIfNull(error);
-        return new(
-            GameProgressKind.Unavailable,
-            "Game unavailable.",
-            error.Message,
-            $"PRODUCT ERROR  ·  {error.Code.ToUpperInvariant()}",
-            LocksDecisions: true);
+        // These are product-operational states chosen by this project. They
+        // describe evidence in the wire response, never inferred game state.
+        return error.Code switch
+        {
+            "transport_unavailable" => new(
+                GameProgressKind.ServiceUnavailable,
+                "Game service unavailable.",
+                error.Message,
+                "SERVICE UNAVAILABLE  ·  RECONNECT WHEN THE SERVER IS READY",
+                LocksDecisions: true),
+            "unsupported_version" => new(
+                GameProgressKind.VersionMismatch,
+                "Client and server versions do not match.",
+                error.Message,
+                "VERSION MISMATCH  ·  UPDATE THE CLIENT OR SERVER",
+                LocksDecisions: true),
+            "session_unavailable" or "session_not_found" or "invitation_unavailable" => new(
+                GameProgressKind.SessionUnavailable,
+                "Session or invitation unavailable.",
+                error.Message,
+                "SESSION UNAVAILABLE  ·  RETURN TO JOIN",
+                LocksDecisions: true),
+            _ when IsStorageFailure(error.Code) => new(
+                    GameProgressKind.StorageFailure,
+                "Server storage unavailable.",
+                error.Message,
+                "STORAGE FAILURE  ·  OPERATOR ACTION REQUIRED",
+                    LocksDecisions: true,
+                    OperationalLock: error),
+            _ => new(
+                GameProgressKind.Unavailable,
+                "Game unavailable.",
+                error.Message,
+                $"PRODUCT ERROR  ·  {error.Code.ToUpperInvariant()}",
+                LocksDecisions: true),
+        };
     }
+
+    private static bool IsStorageFailure(string code) => code is
+        "save_failed" or "persistence_failed" or "restore_failed"
+        or "unsupported_downgrade";
 
     internal static string Humanize(string value)
     {

@@ -66,6 +66,25 @@ public sealed class GameProgressPresentationTests
         Assert.Contains("PRODUCT ERROR", unavailable.Status);
     }
 
+    [Theory]
+    [InlineData("transport_unavailable", GameProgressKind.ServiceUnavailable, "SERVICE UNAVAILABLE")]
+    [InlineData("unsupported_version", GameProgressKind.VersionMismatch, "VERSION MISMATCH")]
+    [InlineData("session_unavailable", GameProgressKind.SessionUnavailable, "SESSION UNAVAILABLE")]
+    [InlineData("invitation_unavailable", GameProgressKind.SessionUnavailable, "SESSION UNAVAILABLE")]
+    [InlineData("save_failed", GameProgressKind.StorageFailure, "STORAGE FAILURE")]
+    public void OperationalFailuresHaveDistinctBoundedStates(
+        string code,
+        GameProgressKind expected,
+        string status)
+    {
+        GameProgressPresentation presented = GameProgressPresentation.Unavailable(
+            new ClientStartupError(code, "A bounded explanation."));
+
+        Assert.Equal(expected, presented.Kind);
+        Assert.Contains(status, presented.Status);
+        Assert.True(presented.LocksDecisions);
+    }
+
     [Fact]
     public void SynchronizingAndANotSentDecisionHaveDistinctInputPolicies()
     {
@@ -106,6 +125,58 @@ public sealed class GameProgressPresentationTests
         Assert.DoesNotContain("mutation", unavailable.Description, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Theory]
+    [InlineData("unsupported_version", GameProgressKind.VersionMismatch)]
+    [InlineData("save_failed", GameProgressKind.StorageFailure)]
+    public void SynchronizationCannotResumeAcrossAnOperationalBoundary(
+        string code,
+        GameProgressKind expected)
+    {
+        GameProgressPresentation unavailable =
+            GameProgressPresentation.SynchronizationUnavailable(
+                new ClientStartupError(code, "The boundary changed."),
+                locksDecisions: false);
+
+        Assert.Equal(expected, unavailable.Kind);
+        Assert.True(unavailable.LocksDecisions);
+    }
+
+    [Fact]
+    public void ARecoveredTableRemainsLockedAfterAStorageFailure()
+    {
+        GameProgressPresentation recovered = GameProgressPresentation.Recovered(
+            Response(Outcome.Unfinished),
+            new ClientStartupError("save_failed", "The save did not commit."));
+
+        Assert.Equal(GameProgressKind.StorageFailure, recovered.Kind);
+        Assert.True(recovered.LocksDecisions);
+        Assert.Contains("recovered", recovered.Description, StringComparison.OrdinalIgnoreCase);
+
+        GameProgressPresentation synchronized =
+            GameProgressPresentation.FromSynchronization(
+                Response(Outcome.Unfinished),
+                recovered);
+
+        Assert.Equal(GameProgressKind.StorageFailure, synchronized.Kind);
+        Assert.True(synchronized.LocksDecisions);
+
+        GameProgressPresentation failedSync =
+            GameProgressPresentation.SynchronizationUnavailable(
+                new ClientStartupError(
+                    "transport_unavailable",
+                    "The current table could not be read."),
+                synchronized.LocksDecisions,
+                synchronized.OperationalLock);
+        GameProgressPresentation synchronizedAgain =
+            GameProgressPresentation.FromSynchronization(
+                Response(Outcome.Unfinished),
+                failedSync);
+
+        Assert.Equal(GameProgressKind.StorageFailure, failedSync.Kind);
+        Assert.Equal(GameProgressKind.StorageFailure, synchronizedAgain.Kind);
+        Assert.True(synchronizedAgain.LocksDecisions);
+    }
+
     [Fact]
     public void ARejectedDecisionWithoutARecoveredTableIsLockedButNotUnconfirmed()
     {
@@ -117,6 +188,18 @@ public sealed class GameProgressPresentationTests
         Assert.Contains("DECISION REJECTED", rejected.Status);
         Assert.Contains("SYNCHRONIZATION REQUIRED", rejected.Status);
         Assert.DoesNotContain("MUTATION NOT REPEATED", rejected.Status);
+    }
+
+    [Fact]
+    public void AStorageRejectedDecisionRequiresOperatorActionWithoutARecoveredTable()
+    {
+        GameProgressPresentation rejected = GameProgressPresentation.DecisionRejected(
+            new ClientStartupError("save_failed", "The save did not commit."));
+
+        Assert.Equal(GameProgressKind.StorageFailure, rejected.Kind);
+        Assert.True(rejected.LocksDecisions);
+        Assert.Contains("OPERATOR ACTION REQUIRED", rejected.Status);
+        Assert.Contains("preserved", rejected.Description, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

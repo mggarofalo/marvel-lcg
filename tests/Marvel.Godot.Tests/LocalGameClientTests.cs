@@ -143,6 +143,28 @@ public sealed class LocalGameClientTests
         Assert.Single(transport.Requests);
     }
 
+    [Fact]
+    public async Task AttachPersistenceFailureKeepsItsBoundedOperationalClassification()
+    {
+        const string secret = "one-time-seat-secret";
+        var transport = new ScriptedTransport(new EngineResponse(
+            EngineProtocol.Version,
+            "local-attach",
+            "shared-table",
+            Capability: null,
+            Prompt: null,
+            Events: [],
+            Error: new EngineError("save_failed", "private storage diagnostic")));
+
+        ClientEntryResult result = await new LocalGameClient(transport).AttachAsync(
+            "shared-table", secret, TestContext.Current.CancellationToken);
+
+        Assert.Equal("save_failed", result.Error?.Code);
+        Assert.DoesNotContain("private", result.Error?.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(secret, result.Error?.Message, StringComparison.Ordinal);
+        Assert.Single(transport.Requests);
+    }
+
     [Theory]
     [InlineData("", "invitation", "invalid_game_id")]
     [InlineData("   ", "invitation", "invalid_game_id")]
