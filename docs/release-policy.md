@@ -64,7 +64,7 @@ Release filenames use the product version without the leading tag `v`:
 
 ```text
 MarvelChampions-MAJOR.MINOR.PATCH[-PRERELEASE]-macos.zip
-MarvelChampions-MAJOR.MINOR.PATCH[-PRERELEASE]-windows-x64.zip
+MarvelChampions-MAJOR.MINOR.PATCH[-PRERELEASE]-windows-x64.msix
 marvel-server:MAJOR.MINOR.PATCH[-PRERELEASE]
 ```
 
@@ -257,10 +257,14 @@ The protected Windows job requires:
 - an approved RFC 3161 timestamp service URL, which is configuration rather
   than a credential.
 
-The job signs the final executable/package, requests a trusted timestamp, and
-verifies the signature, publisher and timestamp with the Windows trust tools.
-Temporary certificate material is removed even on failure. Command echo and
-diagnostic upload must not expose a key password, token or certificate blob.
+The job signs the application executable and other signable binaries before it
+builds the MSIX. It then signs and timestamps the final MSIX package. The MSIX
+signature authenticates every packaged DLL, PCK, dataset and executable; a
+signed executable inside an unauthenticated ZIP would not. The job verifies the
+package signature, publisher and timestamp with the Windows trust tools before
+publication. Temporary certificate material is removed even on failure.
+Command echo and diagnostic upload must not expose a key password, token or
+certificate blob.
 
 ### Linux server image
 
