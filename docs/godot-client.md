@@ -63,8 +63,13 @@ clock identity.
 
 Preview and stable delivery is automated by
 `.github/workflows/release-desktop.yml` from an exact protected `v*` tag. The
-ordinary jobs create and retain hashed unsigned inputs. Only the
-`desktop-release` environment jobs can receive signing credentials:
+workflow refuses an otherwise valid tag unless GitHub reports that an active
+tag ruleset protects it, and it invokes the ordinary CI workflow for that exact
+tag before packaging. Repository setup must protect `refs/tags/v*` against
+updates and deletion. The ordinary jobs create and retain hashed unsigned
+inputs. Only the `desktop-release` environment jobs can receive signing
+credentials; that environment requires an explicit reviewer before any signing
+or publication job starts:
 
 - secrets `MACOS_CERTIFICATE_P12_BASE64`, `MACOS_CERTIFICATE_PASSWORD`,
   `MACOS_SIGNING_IDENTITY`, `APPLE_API_KEY_P8_BASE64`,

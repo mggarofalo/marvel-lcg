@@ -238,6 +238,10 @@ No certificate, private key, password, API key, provisioning credential or
 notarization token belongs in the repository, build cache, unsigned artifact,
 save, log or telemetry record. Protected release jobs receive the minimum
 secret only after tag, environment and approval policy has authorized them.
+The repository enforces that statement with an active `refs/tags/v*` ruleset
+that prevents tag updates and deletion, a workflow check of
+`GITHUB_REF_PROTECTED`, and a `desktop-release` environment with a required
+reviewer. Merely naming an environment in workflow YAML is not protection.
 
 ### macOS
 
