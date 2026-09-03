@@ -1653,7 +1653,7 @@ public sealed class EngineHostTests
 
         public IReadOnlyList<StoredSession> Load() => inner.Load();
 
-        public void Commit(StoredSession session)
+        public string? Commit(StoredSession session)
         {
             commits++;
             if (commits == failAtCommit)
@@ -1661,7 +1661,7 @@ public sealed class EngineHostTests
                 throw new IOException("simulated interrupted write");
             }
 
-            inner.Commit(session);
+            return inner.Commit(session);
         }
     }
 
@@ -1669,7 +1669,7 @@ public sealed class EngineHostTests
     {
         public IReadOnlyList<StoredSession> Load() => sessions;
 
-        public void Commit(StoredSession session) =>
+        public string? Commit(StoredSession session) =>
             throw new InvalidOperationException("not used");
     }
 
@@ -1692,11 +1692,12 @@ public sealed class EngineHostTests
 
         public IReadOnlyList<StoredSession> Load() => [session];
 
-        public void Commit(StoredSession replacement)
+        public string? Commit(StoredSession replacement)
         {
             SessionSaveJson.Validate(replacement.Save);
             session = replacement;
             Commits++;
+            return null;
         }
     }
 

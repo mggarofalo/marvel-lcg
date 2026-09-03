@@ -30,11 +30,9 @@ public interface ISessionStore
     IReadOnlyList<SessionLoadResult> LoadForRestore() =>
         [.. Load().Select(session => new SessionLoadResult(session, null, null))];
 
-    /// <summary>Commits a complete generation before returning.</summary>
-    void Commit(StoredSession session);
+    /// <summary>Commits a complete generation and returns its opaque id when available.</summary>
+    string? Commit(StoredSession session);
 
-    /// <summary>Returns the selected opaque generation, when the store exposes one.</summary>
-    string? CurrentGeneration(string storageId) => null;
 }
 
 /// <summary>One independently loadable session or its bounded quarantine result.</summary>
@@ -55,7 +53,7 @@ public sealed class MemorySessionStore : ISessionStore
             .Select(pair => StoredSessionJson.Read(pair.Value))];
 
     /// <inheritdoc />
-    public void Commit(StoredSession session)
+    public string? Commit(StoredSession session)
     {
         ArgumentNullException.ThrowIfNull(session);
         if (session.Save is null)
@@ -64,6 +62,7 @@ public sealed class MemorySessionStore : ISessionStore
         }
 
         generations[session.Save.Session.StorageId] = StoredSessionJson.Write(session);
+        return null;
     }
 }
 
@@ -202,7 +201,7 @@ public sealed class FileSessionStore : ISessionStore
     }
 
     /// <inheritdoc />
-    public void Commit(StoredSession session)
+    public string? Commit(StoredSession session)
     {
         ArgumentNullException.ThrowIfNull(session);
         string storageId = session.Save.Session.StorageId;
@@ -241,20 +240,7 @@ public sealed class FileSessionStore : ISessionStore
         WriteFlushed(temporaryManifest, generation + "\n");
         MoveDurably(temporaryManifest, manifest, overwrite: true);
         RemoveObsoleteGenerationsBestEffort(directory, generation, previous);
-    }
-
-    /// <inheritdoc />
-    public string? CurrentGeneration(string storageId)
-    {
-        RequireStorageId(storageId);
-        string manifest = Path.Combine(root, storageId, Current);
-        if (!File.Exists(manifest))
-        {
-            return null;
-        }
-
-        string generation = ReadStrict(manifest).Trim();
-        return ValidGeneration(generation) ? generation : null;
+        return generation;
     }
 
     private static void WriteFlushed(string path, string value)

@@ -7,13 +7,12 @@ namespace Marvel.Server.Tests;
 public sealed class IncidentExportTests
 {
     [Fact]
-    public void ExportIncludesRedactedLogsRuntimeAndGenerationHashesWithoutChangingSources()
+    public void ManifestIncludesRedactedLogsRuntimeAndGenerationHashesWithoutChangingSources()
     {
         string root = Path.Combine(
             Path.GetTempPath(), $"marvel-incident-{Guid.NewGuid():N}");
         string saves = Path.Combine(root, "sessions");
         string diagnostics = Path.Combine(root, "diagnostics");
-        string output = Path.Combine(root, "incident.json");
         Directory.CreateDirectory(root);
         try
         {
@@ -28,55 +27,97 @@ public sealed class IncidentExportTests
             Assert.Null(opened.Error);
             using (var sink = new RotatingJsonFileOperationalSink(diagnostics))
             {
-                sink.Write(new OperationalRecord(
+                var emittedLog = new OperationalLog(
+                    sink, "Marvel.Server", () => DateTimeOffset.UnixEpoch);
+                emittedLog.Write(
                     OperationalEventIds.RequestCompleted,
-                    "Marvel.Server",
-                    DateTimeOffset.UnixEpoch,
-                    7,
-                    1,
                     "accepted",
-                    RequestId: "pseudonymous-request",
-                    GameId: "pseudonymous-game",
-                    Operation: EngineProtocol.Open,
-                    Revision: 0,
-                    SaveCommitted: true));
+                    durationMilliseconds: 1,
+                    requestId: "pseudonymous-request",
+                    gameId: "pseudonymous-game",
+                    operation: EngineProtocol.Open,
+                    revision: 0,
+                    saveCommitted: true);
+                emittedLog.Flush(TimeSpan.FromSeconds(2));
             }
             File.AppendAllText(
                 Path.Combine(diagnostics, "operational.jsonl"),
-                "not-json owner-secret private-table-label\n");
+                OperationalJson.Serialize(new OperationalRecord(
+                    OperationalEventIds.TransportCompleted,
+                    "Marvel.Server",
+                    DateTimeOffset.UnixEpoch,
+                    Environment.ProcessId,
+                    0,
+                    "uncertain",
+                    ProductVersion: "0.0.9",
+                    Commit: new string('a', 40),
+                    Runtime: "v0.0.9 · engine engine-replay-v1 · protocol 1 · save 2"))
+                + "\n" + OperationalJson.Serialize(new OperationalRecord(
+                    OperationalEventIds.RequestCompleted,
+                    "Marvel.Server",
+                    DateTimeOffset.UnixEpoch,
+                    Environment.ProcessId,
+                    0,
+                    "stale",
+                    ProductVersion: EngineBuildIdentity.ProductVersion,
+                    Commit: EngineBuildIdentity.Commit,
+                    Runtime: EngineBuildIdentity.Display))
+                + "\n" + OperationalJson.Serialize(new OperationalRecord(
+                    OperationalEventIds.TransportCompleted,
+                    "Marvel.Godot",
+                    DateTimeOffset.UnixEpoch,
+                    Environment.ProcessId,
+                    0,
+                    "cancelled",
+                    ProductVersion: EngineBuildIdentity.ProductVersion,
+                    Commit: EngineBuildIdentity.Commit,
+                    Runtime: EngineBuildIdentity.Display))
+                + "\n" + OperationalJson.Serialize(new OperationalRecord(
+                    OperationalEventIds.RequestCompleted,
+                    "owner-secret",
+                    DateTimeOffset.UnixEpoch,
+                    Environment.ProcessId,
+                    0,
+                    "accepted",
+                    ProductVersion: EngineBuildIdentity.ProductVersion,
+                    Commit: EngineBuildIdentity.Commit,
+                    Runtime: EngineBuildIdentity.Display))
+                + "\n" + OperationalJson.Serialize(new OperationalRecord(
+                    OperationalEventIds.RequestCompleted,
+                    "Marvel.Server",
+                    DateTimeOffset.UnixEpoch,
+                    Environment.ProcessId,
+                    0,
+                    "accepted",
+                    ProductVersion: EngineBuildIdentity.ProductVersion,
+                    Commit: new string('b', 64),
+                    Runtime: EngineBuildIdentity.Display))
+                + "\n{}\nnot-json owner-secret private-table-label\n");
             Dictionary<string, string> before = Snapshot(saves, diagnostics);
 
-            IncidentExporter.Export(
-                output,
+            string exported = IncidentExporter.Serialize(IncidentExporter.Build(
                 Marvel.Tests.RepositoryPaths.Root,
                 saves,
                 diagnostics,
-                () => DateTimeOffset.UnixEpoch);
+                () => DateTimeOffset.UnixEpoch));
 
             Assert.Equal(before, Snapshot(saves, diagnostics));
-            using JsonDocument document = JsonDocument.Parse(File.ReadAllText(output));
+            using JsonDocument document = JsonDocument.Parse(exported);
             JsonElement manifest = document.RootElement;
             Assert.Equal("marvel-incident", manifest.GetProperty("format").GetString());
             Assert.Equal(EngineBuildIdentity.ProductVersion,
                 manifest.GetProperty("runtime").GetProperty("product_version").GetString());
             JsonElement log = Assert.Single(
                 manifest.GetProperty("diagnostics").EnumerateArray());
-            Assert.Equal(1, log.GetProperty("invalid_records").GetInt32());
-            Assert.Single(log.GetProperty("records").EnumerateArray());
+            Assert.Equal(4, log.GetProperty("invalid_records").GetInt32());
+            Assert.Equal(4, log.GetProperty("records").GetArrayLength());
             JsonElement generation = Assert.Single(
                 manifest.GetProperty("save_generations").EnumerateArray(),
                 item => item.GetProperty("selected").GetBoolean());
             Assert.Equal(64, generation.GetProperty("session_sha256").GetString()!.Length);
             Assert.Equal(64, generation.GetProperty("authority_sha256").GetString()!.Length);
-            string exported = File.ReadAllText(output);
             Assert.DoesNotContain("owner-secret", exported, StringComparison.Ordinal);
             Assert.DoesNotContain("private-table-label", exported, StringComparison.Ordinal);
-            if (!OperatingSystem.IsWindows())
-            {
-                Assert.Equal(
-                    UnixFileMode.UserRead | UnixFileMode.UserWrite,
-                    File.GetUnixFileMode(output));
-            }
         }
         finally
         {
@@ -85,7 +126,7 @@ public sealed class IncidentExportTests
     }
 
     [Fact]
-    public void ExportRefusesToOverwriteAndTheCommandDoesNotStartAServer()
+    public void CommandRefusesAFileDestinationAndDoesNotStartAServer()
     {
         string root = Path.Combine(
             Path.GetTempPath(), $"marvel-incident-{Guid.NewGuid():N}");

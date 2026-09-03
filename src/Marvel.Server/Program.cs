@@ -99,22 +99,14 @@ internal static class Program
         try
         {
             IncidentExportOptions options = IncidentExportOptions.Parse(args);
-            if (options.Output == "-")
+            if (options.Output != "-")
             {
-                output.Write(IncidentExporter.Serialize(IncidentExporter.Build(
-                    options.DataRoot,
-                    options.SaveRoot,
-                    options.DiagnosticsRoot)));
+                throw new ArgumentException("incident export writes only to standard output");
             }
-            else
-            {
-                IncidentExporter.Export(
-                    options.Output,
-                    options.DataRoot,
-                    options.SaveRoot,
-                    options.DiagnosticsRoot);
-                output.WriteLine(options.Output);
-            }
+            output.Write(IncidentExporter.Serialize(IncidentExporter.Build(
+                options.DataRoot,
+                options.SaveRoot,
+                options.DiagnosticsRoot)));
             return 0;
         }
         catch (Exception)

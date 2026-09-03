@@ -165,9 +165,9 @@ public sealed class ProgramTests
     {
         string root = Path.Combine(
             Path.GetTempPath(), $"marvel-diagnostics-failure-{Guid.NewGuid():N}");
-        string unavailable = Path.Combine(root, "not-a-directory");
+        string unavailable = Path.Combine(root, "diagnostics");
         Directory.CreateDirectory(root);
-        File.WriteAllText(unavailable, "occupied");
+        Directory.CreateDirectory(Path.Combine(unavailable, "operational.jsonl"));
         using var cancelled = new CancellationTokenSource();
         cancelled.Cancel();
         using var error = new StringWriter();

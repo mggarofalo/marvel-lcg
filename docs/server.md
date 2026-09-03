@@ -152,8 +152,8 @@ docker run --detach --name marvel-server \
 ```
 
 The image runs as the .NET base image's unprivileged application user. Its
-application and dataset layers are read-only; `/var/lib/marvel/sessions` is the
-only persistent write location. It contains the cards, setup and ability
+application and dataset layers are read-only; `/var/lib/marvel/sessions` and
+`/var/lib/marvel/diagnostics` are its persistent write locations. It contains the cards, setup and ability
 datasets needed at runtime, listens on `0.0.0.0:41923`, and uses `/app` as the
 data root. The host mapping above keeps the service reachable only through host
 loopback. The resource limits are the supported starting point for one small
@@ -350,11 +350,13 @@ then run the exact installed image with both source volumes read-only. The
 destination file must not already exist:
 
 ```bash
+image=ghcr.io/mggarofalo/marvel-server@sha256:RELEASE_DIGEST
+set -o noclobber
 docker run --rm \
   --volume marvel-sessions:/sessions:ro \
   --volume marvel-diagnostics:/diagnostics:ro \
   --entrypoint dotnet \
-  "$MARVEL_SERVER_IMAGE" Marvel.Server.dll \
+  "$image" Marvel.Server.dll \
   --export-incident - \
   --data-root /app \
   --save-root /sessions \

@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 
 namespace Marvel.Server;
 
@@ -188,7 +189,7 @@ public sealed class OperationalLog
             ? "unknown"
             : value[..Math.Min(value.Length, MaximumFieldLength)];
 
-    private static string? SafeOperation(string? value) => value switch
+    internal static string? SafeOperation(string? value) => value switch
     {
         null => null,
         EngineProtocol.Setup or EngineProtocol.Open or EngineProtocol.Attach
@@ -199,7 +200,7 @@ public sealed class OperationalLog
         _ => "unknown",
     };
 
-    private static string? SafeErrorCode(string? value) => value switch
+    internal static string? SafeErrorCode(string? value) => value switch
     {
         null => null,
         "content_unavailable" or "engine_error" or "game_aborted"
@@ -236,13 +237,13 @@ public sealed class OperationalLog
         return Convert.ToHexString(digest.AsSpan(0, 16)).ToLowerInvariant();
     }
 
-    private static string? SafeGeneration(string? value) =>
+    internal static string? SafeGeneration(string? value) =>
         value is { Length: 32 }
         && value.All(character => character is >= '0' and <= '9' or >= 'a' and <= 'f')
             ? value
             : value is null ? null : "unknown";
 
-    private static string? SafeStage(string? value) => value switch
+    internal static string? SafeStage(string? value) => value switch
     {
         null or "restore" or "migration" or "quarantine" => value,
         _ => "unknown",
@@ -326,6 +327,15 @@ public sealed class JsonTextOperationalSink(TextWriter writer) : IOperationalSin
 
 internal static class OperationalJson
 {
+    private static readonly Regex ProductVersion = new(
+        "^[0-9]{1,5}\\.[0-9]{1,5}\\.[0-9]{1,5}(?:-[0-9A-Za-z.-]{1,32})?(?:\\+[0-9A-Za-z.-]{1,32})?$",
+        RegexOptions.CultureInvariant);
+    private static readonly Regex Commit = new(
+        "^(?:local|[0-9a-f]{40})$",
+        RegexOptions.CultureInvariant);
+    private static readonly Regex Runtime = new(
+        "^v[0-9A-Za-z.+-]{1,96} · engine engine-replay-v[0-9]{1,5} · protocol [0-9]{1,5} · save [0-9]{1,5}$",
+        RegexOptions.CultureInvariant);
     private static readonly JsonSerializerOptions Options = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
@@ -338,6 +348,58 @@ internal static class OperationalJson
     public static OperationalRecord Read(string json) =>
         JsonSerializer.Deserialize<OperationalRecord>(json, Options)
         ?? throw new JsonException("operational record is null");
+
+    public static OperationalRecord ReadVerified(string json)
+    {
+        OperationalRecord record = Read(json);
+        if (!string.Equals(Serialize(record), json, StringComparison.Ordinal)
+            || !Valid(record))
+        {
+            throw new JsonException("operational record is not canonical");
+        }
+
+        return record;
+    }
+
+    private static bool Valid(OperationalRecord record) =>
+        record.EventId is OperationalEventIds.RequestCompleted
+            or OperationalEventIds.SessionRestored
+            or OperationalEventIds.SessionRestoreFailed
+            or OperationalEventIds.ServerListening
+            or OperationalEventIds.ServerStopped
+            or OperationalEventIds.ServerStartFailed
+            or OperationalEventIds.TransportCompleted
+            or OperationalEventIds.ReconnectCompleted
+            or OperationalEventIds.ReplayCompleted
+            or OperationalEventIds.PersistenceCompleted
+            or OperationalEventIds.DiagnosticsUnavailable
+        && record.Process is "Marvel.Server" or "Marvel.Godot"
+        && record.ProcessId > 0
+        && record.DurationMilliseconds >= 0
+        && record.Disposition is "accepted" or "rejected" or "stale"
+            or "uncertain" or "cancelled"
+        && ValidCorrelation(record.RequestId)
+        && ValidCorrelation(record.GameId)
+        && OperationalLog.SafeOperation(record.Operation) == record.Operation
+        && record.Revision is null or >= 0
+        && record.ExpectedRevision is null or >= 0
+        && record.AuthorizedSeat is null or >= 0
+        && OperationalLog.SafeErrorCode(record.ErrorCode) == record.ErrorCode
+        && record.ProductVersion is not null
+        && ProductVersion.IsMatch(record.ProductVersion)
+        && record.Commit is not null
+        && Commit.IsMatch(record.Commit)
+        && record.Runtime is not null
+        && Runtime.IsMatch(record.Runtime)
+        && record.Runtime.StartsWith("v" + record.ProductVersion + " · ",
+            StringComparison.Ordinal)
+        && OperationalLog.SafeGeneration(record.SaveGeneration) == record.SaveGeneration
+        && OperationalLog.SafeStage(record.Stage) == record.Stage;
+
+    private static bool ValidCorrelation(string? value) =>
+        value is null
+        || value is { Length: 32 }
+        && value.All(character => character is >= '0' and <= '9' or >= 'a' and <= 'f');
 }
 
 /// <summary>Retains bounded private JSON-lines diagnostics beside stderr.</summary>
@@ -374,6 +436,7 @@ public sealed class RotatingJsonFileOperationalSink : IOperationalSink, IDisposa
         Directory.CreateDirectory(this.root);
         MakePrivate(this.root, directory: true);
         Prune();
+        EnsureWriter();
     }
 
     /// <inheritdoc />
@@ -415,6 +478,10 @@ public sealed class RotatingJsonFileOperationalSink : IOperationalSink, IDisposa
         }
 
         string path = Path.Combine(root, ActiveName);
+        if (File.Exists(path))
+        {
+            MakePrivate(path, directory: false);
+        }
         var stream = new FileStream(
             path, FileMode.Append, FileAccess.Write, FileShare.Read,
             bufferSize: 4096, FileOptions.WriteThrough);

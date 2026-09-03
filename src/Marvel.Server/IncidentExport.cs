@@ -42,44 +42,6 @@ public static class IncidentExporter
         WriteIndented = true,
     };
 
-    /// <summary>Writes one new manifest while leaving both source roots unchanged.</summary>
-    public static void Export(
-        string output,
-        string dataRoot,
-        string saveRoot,
-        string diagnosticsRoot,
-        Func<DateTimeOffset>? clock = null)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(output);
-        ArgumentException.ThrowIfNullOrWhiteSpace(dataRoot);
-        ArgumentException.ThrowIfNullOrWhiteSpace(saveRoot);
-        ArgumentException.ThrowIfNullOrWhiteSpace(diagnosticsRoot);
-        string destination = Path.GetFullPath(output);
-        if (File.Exists(destination) || Directory.Exists(destination))
-        {
-            throw new IOException("incident export destination already exists");
-        }
-
-        IncidentManifest manifest = Build(dataRoot, saveRoot, diagnosticsRoot, clock);
-        string? parent = Path.GetDirectoryName(destination);
-        if (!string.IsNullOrEmpty(parent))
-        {
-            Directory.CreateDirectory(parent);
-        }
-
-        using var stream = new FileStream(
-            destination, FileMode.CreateNew, FileAccess.Write, FileShare.None);
-        JsonSerializer.Serialize(stream, manifest, Options);
-        stream.WriteByte((byte)'\n');
-        stream.Flush(flushToDisk: true);
-        if (!OperatingSystem.IsWindows())
-        {
-            File.SetUnixFileMode(
-                destination,
-                UnixFileMode.UserRead | UnixFileMode.UserWrite);
-        }
-    }
-
     /// <summary>Collects one manifest without changing either evidence root.</summary>
     public static IncidentManifest Build(
         string dataRoot,
@@ -127,7 +89,7 @@ public static class IncidentExporter
             {
                 try
                 {
-                    records.Add(OperationalJson.Read(line));
+                    records.Add(OperationalJson.ReadVerified(line));
                 }
                 catch (JsonException)
                 {
