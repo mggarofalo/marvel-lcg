@@ -130,9 +130,11 @@ A save is server-owned. A desktop client never uploads, rewrites or migrates
 one. The server evaluates compatibility before dealing or publishing a restored
 game.
 
-The application version in a save is provenance, not an equality gate. A
-runtime may restore a save only when all of the following hold:
+The application version in a save is provenance, not an equality gate. A newer
+product version may read an older save when every compatibility identity still
+matches. A runtime may restore a save only when all of the following hold:
 
+- its product version is not lower than the saved application version;
 - the save schema is the current schema or a specifically implemented readable
   predecessor;
 - the engine replay, RNG and state-digest identities are supported;
@@ -285,7 +287,7 @@ concealed card data.
 | Replay/RNG/digest identity mismatch | Quarantine before replay; name the identity category, not hidden state. |
 | Runtime dataset mismatch | Quarantine before dealing; report which dataset category differs and the expected/actual hashes in operator-only diagnostics. |
 | Replay divergence | Quarantine without mutation; report the bounded divergence stage and record position. |
-| Unsupported downgrade | Refuse to start against the affected volume; direct the operator to reinstall the newer artifact or restore the matching pre-upgrade backup. |
+| Unsupported downgrade | Quarantine sessions written by the newer product; direct the operator to reinstall it or restore the matching pre-upgrade backup. |
 | Signing or trust failure | Do not install or publish; identify the artifact and failed trust stage without printing signing-service responses verbatim. |
 
 No compatibility failure offers “continue anyway.” A recovery action changes
