@@ -18,6 +18,7 @@ if [[ "$version" != 4.7.* ]]; then
 fi
 
 dotnet build "$repo_root/src/Marvel.Godot/Marvel.Godot.csproj" --nologo
+dotnet build "$repo_root/src/Marvel.Server/Marvel.Server.csproj" --nologo
 server_log=$(mktemp)
 smoke_log=$(mktemp)
 save_root=$(mktemp -d)

@@ -18,6 +18,8 @@ if ($LASTEXITCODE -ne 0 -or -not $version.StartsWith("4.7.")) {
 
 dotnet build "$repoRoot/src/Marvel.Godot/Marvel.Godot.csproj" --nologo
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+dotnet build "$repoRoot/src/Marvel.Server/Marvel.Server.csproj" --nologo
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 $serverOut = [System.IO.Path]::GetTempFileName()
 $serverError = [System.IO.Path]::GetTempFileName()
