@@ -604,23 +604,22 @@ public static class Reveal
             });
         }
 
-        // `rr:uses-x-type`: "when a card with this keyword enters play, place X
-        // all-purpose counters from the token pool on the card. The word
-        // following the value establishes and identifies the type."
-        //
-        // Printed as `"3,web"`, so the count and the type arrive together and
-        // neither is a number `PrintedValue` could read. The counter's key is
-        // the digest's `c_<name>` namespace, which
-        // `docs/state-digest-v2.md` reserves for exactly this: "token, counter
-        // and form keys come from game data, so the key set is open-ended".
-        if (!Characteristics.IsLost(world, card, "uses")
-            && Uses(facts.Attributes(card.FaceId)) is var (count, type)
-            && count > 0)
+        // `rr:uses-x-type`: a Uses pool is placed only while that keyword is
+        // active. Ordinary card text can define the same physical starting
+        // state without gaining the discard-at-zero rule, so the card layer
+        // supplies both the pool and which printed form created it.
+        CardCounterPool? counterPool = (abilities ?? world.Abilities)
+            .CounterPool(world, card);
+        if (counterPool is { Starting: > 0 }
+            && (!counterPool.Uses
+                || !Characteristics.IsLost(world, card, "uses")))
         {
-            card.PlaceTokens("c_" + type, count);
-            events.Add(new FieldSet(card.ObjectId, "c_" + type, 0, count)
+            string key = "c_" + counterPool.Type;
+            card.PlaceTokens(key, counterPool.Starting);
+            events.Add(new FieldSet(card.ObjectId, key, 0, counterPool.Starting)
             {
-                Trigger = "uses", Verb = "Enter_Play",
+                Trigger = counterPool.Uses ? "uses" : "card text",
+                Verb = "Enter_Play",
             });
         }
 

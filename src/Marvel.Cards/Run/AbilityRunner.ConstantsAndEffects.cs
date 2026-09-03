@@ -557,30 +557,68 @@ public sealed partial class AbilityRunner
 
     private static void RemoveCounters(AbilityNode node, Cast cast)
     {
-        string type = Word(node.Argument);
-        string key = CounterKeyForRemoval(cast.Source, type)
+        var removal = CounterRemovalOf(node);
+        var card = Find(removal.Card, cast)
             ?? throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' has no {type} counter to remove");
-        long before = cast.Source.Tokens.GetValueOrDefault(key);
+                $"'{cast.Source.FaceId}' cannot find the card paying its counter cost");
+        string key = CounterKeyForRemoval(card, removal.Type, removal.Count)
+            ?? throw new RulesNotImplementedException(
+                $"'{card.FaceId}' has fewer than {removal.Count} {removal.Type} counters");
+        long before = card.Tokens.GetValueOrDefault(key);
 
-        cast.Source.PlaceTokens(key, -1);
-        cast.Events.Add(new FieldSet(cast.Source.ObjectId, key, before, before - 1)
+        card.PlaceTokens(key, -removal.Count);
+        cast.Events.Add(new FieldSet(
+            card.ObjectId, key, before, before - removal.Count)
         {
             Trigger = cast.Trigger, Verb = "Remove_Counter",
         });
 
-        if (CounterCount(cast.Source, "allPurpose") == 0
-            && !Characteristics.IsLost(cast.World, cast.Source, "uses")
-            && Reveal.Uses(cast.World.Facts.Attributes(cast.Source.FaceId)).Count > 0)
+        if (CounterCount(card, "allPurpose") == 0
+            && !Characteristics.IsLost(cast.World, card, "uses")
+            && cast.Abilities.CounterPool(cast.World, card)?.Uses == true)
         {
             if (!Defeat.ToVictoryDisplay(
-                    cast.World, cast.World.Facts, cast.Source,
+                    cast.World, cast.World.Facts, card,
                     cast.Trigger, cast.Events))
             {
                 Rules.Play.Discard.Card(
-                    cast.World, cast.Source, cast.Trigger, cast.Events);
+                    cast.World, card, cast.Trigger, cast.Events);
             }
         }
+    }
+
+    private sealed record CounterRemoval(
+        AbilityValue Card, string Type, long Count);
+
+    private static CounterRemoval CounterRemovalOf(AbilityNode node)
+    {
+        if (node.Argument is not AbilityValue.Map map)
+        {
+            throw new AbilityException(
+                "'removeCounters' needs 'card', 'counter', and 'count'");
+        }
+        string[] unknown = map.Entries.Keys
+            .Where(key => key is not ("card" or "counter" or "count"))
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+        if (unknown.Length > 0)
+        {
+            throw new AbilityException(
+                $"'removeCounters' carries fields nothing reads: {string.Join(", ", unknown)}");
+        }
+
+        var card = node.Require("card");
+        string type = Word(node.Require("counter"));
+        long count = Number(node.Require("count"));
+        if (type.Length == 0)
+        {
+            throw new AbilityException("'removeCounters' needs a non-empty 'counter'");
+        }
+        if (count <= 0)
+        {
+            throw new AbilityException("'removeCounters' needs a positive 'count'");
+        }
+        return new CounterRemoval(card, type, count);
     }
 
     /// <summary>
@@ -649,12 +687,12 @@ public sealed partial class AbilityRunner
     /// affordance, so resolution raises before changing state rather than
     /// choosing an outcome on the player's behalf.
     /// </remarks>
-    private static string? CounterKeyForRemoval(Card card, string type)
+    private static string? CounterKeyForRemoval(Card card, string type, long count)
     {
         if (!string.Equals(type, "allPurpose", StringComparison.Ordinal))
         {
             string typed = "c_" + type;
-            return card.Tokens.GetValueOrDefault(typed) > 0 ? typed : null;
+            return card.Tokens.GetValueOrDefault(typed) >= count ? typed : null;
         }
 
         string[] pools = [.. card.Tokens
@@ -665,7 +703,8 @@ public sealed partial class AbilityRunner
         return pools.Length switch
         {
             0 => null,
-            1 => pools[0],
+            1 when card.Tokens[pools[0]] >= count => pools[0],
+            1 => null,
             _ => throw new RulesNotImplementedException(
                 $"'{card.FaceId}' must choose which all-purpose counter to remove"),
         };

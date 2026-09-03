@@ -66,9 +66,24 @@ from it:
 `note` records authoring judgment. The runtime does not read it.
 
 Cards that print placement instructions can also carry `attachTo` or
-`controlledBy`. These are card properties, not triggered abilities. A card that
-uses only placement metadata is known to be silent when revealed, while its
-other printed abilities remain unauthored.
+`controlledBy`. A card whose text gives it counters as it enters play carries
+`startingCounters`:
+
+```json
+"startingCounters": { "type": "web", "count": 3, "uses": true }
+```
+
+`type` is the counter name and `count` is a positive integer. The required
+`uses` boolean distinguishes the **Uses (X “type”)** keyword from an ordinary
+“enters play with X counters” instruction. A Uses pool discards its card when
+the last all-purpose counter leaves; an ordinary pool does not. Rocket
+Raccoon's weapons are the latter shape, so they will use `uses: false` when
+their product enters the executable boundary.
+
+These are card properties, not triggered abilities. They apply before any
+response to the card entering play. A card that uses only placement metadata is
+known to be silent when revealed, while its other printed abilities remain
+unauthored.
 
 ## The ability envelope
 
@@ -139,6 +154,19 @@ An executable node is a map with exactly one entry:
 The interpreter switches on the node name and validates the argument shape it
 expects. Unknown nodes and missing arguments name the failure.
 
+Counter removal before a cost arrow is authored in `cost`, with the card that
+pays, the named pool, and the exact positive count:
+
+```json
+"cost": {
+  "removeCounters": { "card": "this", "counter": "web", "count": 1 }
+}
+```
+
+The count may be greater than one. `card` may name `this` or `you` for a cost;
+the latter covers an upgrade spending counters held by its identity. The old
+string form implicitly meant one counter and is rejected.
+
 A `choose` node may carry a `descriptions` string list parallel to `options`.
 Those strings are engine-authored affordance descriptions: clients display
 them and do not reconstruct printed choices from effect-node names.
@@ -192,7 +220,7 @@ recoverDiscardedByResource reduceNextCardCost remainingHealth removeCounters
 removeFromGame removeThreat replaceThreatWithDamage requireAllyDefender
 resolveSpecials returnOwnedToHand returnToHand revealTop scheme schemes search
 shuffle shuffleInto sideSchemes soakDamage sourceKind sourceTrait spend
-spendEnergyX takeDamage then threatCause thwartDifferentSchemes thwartSchemes
+spendEnergyX startingCounters takeDamage then threatCause thwartDifferentSchemes thwartSchemes
 thwartableSchemes titleInPlay titled tokensOn topEncounterDiscardBoostPlusOne
 topmostTechInChosenDiscard undefendedAttack until upgradesAndSupportsYouControl
 upgradesYouControl wasDefeated withTrait within withoutAnotherCopyAttached

@@ -73,6 +73,26 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
     public IReadOnlySet<string> Authored => book.Authored;
 
     /// <inheritdoc/>
+    public CardCounterPool? CounterPool(World world, Card card)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(card);
+        if (book.CounterPool(card.FaceId) is { } authored)
+        {
+            return authored;
+        }
+
+        // Rules-only and focused synthetic books may omit card-level metadata.
+        // The complete supported book is separately held to an exact account
+        // of every printed starting pool, so this compatibility path cannot
+        // conceal an omission in shipped content.
+        var (count, type) = Reveal.Uses(world.Facts.Attributes(card.FaceId));
+        return count > 0
+            ? new CardCounterPool(type, checked((int)count), Uses: true)
+            : null;
+    }
+
+    /// <inheritdoc/>
     public IReadOnlyList<GameEvent> EntersPlay(World world, Card card)
     {
         ArgumentNullException.ThrowIfNull(world);
@@ -668,6 +688,11 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
             {
                 return events;
             }
+        }
+        else if (!CounterCostsPayable(world, card, resolving, found.Cost))
+        {
+            throw new RulesNotImplementedException(
+                $"'{card.FaceId}' can no longer pay this ability's cost");
         }
 
         if (resolving >= 0 && !CanInitiate(found, cast))
@@ -1935,6 +1960,11 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
         {
             throw new RulesNotImplementedException(
                 $"'{card.FaceId}' cannot initiate this action in the current state");
+        }
+        if (!CounterCostsPayable(world, card, ability.Player, found.Cost))
+        {
+            throw new RulesNotImplementedException(
+                $"'{card.FaceId}' can no longer pay this ability's counter cost");
         }
 
         // `rr:initiating-abilities` keeps the steps apart, and step 5 pays

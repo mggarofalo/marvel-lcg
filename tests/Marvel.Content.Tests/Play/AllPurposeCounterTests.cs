@@ -20,6 +20,169 @@ public sealed class AllPurposeCounterTests
     private static readonly CardCatalog Cards = CardCatalog.Parse(
         File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
 
+    [Rule("rr:initiating-abilities.step.3")]
+    [Rule("rr:initiating-abilities.step.5")]
+    [Fact]
+    public void ExactCounterCostCanSpendSeveralCountersFromYourIdentity()
+    {
+        // Step 3 determines both the costs and the player's ability to pay;
+        // step 5 says "Pay the cost(s)." The exact two-counter payment is one
+        // state change before the damage effect begins.
+        Card? source = null;
+        var (game, world) = Playing(board =>
+        {
+            source = board.CreateCard(
+                AuthoredCards.AuntMay,
+                board.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+            board.Seats[0].IdentityCard.PlaceTokens("c_charge", 3);
+        }, Runner(
+            AuthoredCards.AuntMay,
+            """{ "removeCounters": { "card": "you", "counter": "charge", "count": 2 } }""",
+            """{ "dealDamage": { "cards": { "query": "villain" }, "amount": 1 } }"""));
+
+        var action = Assert.Single(game.Pending!.Affordances, option =>
+            option.Verb == Game.ActionVerb && option.AnchorId == source!.ObjectId);
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.Equal(1, world.Seats[0].IdentityCard.Tokens["c_charge"]);
+        Assert.Equal(1, world.TheCardIn(DeckType.VillainArea)!.Damage);
+    }
+
+    [Rule("rr:initiating-abilities.step.3")]
+    [Fact]
+    public void ExactCounterCostIsNotOfferedWhenTheFullCountCannotBePaid()
+    {
+        // Step 3 determines "the cost (or costs) ... and the player's ability
+        // to pay them." One counter cannot pay an exact cost of two, so this
+        // action never becomes an affordance and no partial payment occurs.
+        Card? source = null;
+        var (game, _) = Playing(board =>
+        {
+            source = board.CreateCard(
+                AuthoredCards.AuntMay,
+                board.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+            source.PlaceTokens("c_charge", 1);
+        }, Runner(
+            AuthoredCards.AuntMay,
+            """{ "removeCounters": { "card": "this", "counter": "charge", "count": 2 } }""",
+            """{ "dealDamage": { "cards": { "query": "villain" }, "amount": 1 } }"""));
+
+        Assert.DoesNotContain(game.Pending!.Affordances, option =>
+            option.Verb == Game.ActionVerb && option.AnchorId == source!.ObjectId);
+        Assert.Equal(1, source!.Tokens["c_charge"]);
+    }
+
+    [Rule("rr:cost.5")]
+    [Fact]
+    public void SimultaneousCounterCostsArePricedTogether()
+    {
+        // "If multiple costs for a single card or ability require payment,
+        // those costs must be paid simultaneously." Two counters cannot pay
+        // a one-plus-two cost, even though either component is payable alone.
+        Card? source = null;
+        var (game, _) = Playing(board =>
+        {
+            source = board.CreateCard(
+                AuthoredCards.AuntMay,
+                board.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+            source.PlaceTokens("c_charge", 2);
+        }, Runner(
+            AuthoredCards.AuntMay,
+            """
+            { "seq": [
+              { "removeCounters": { "card": "this", "counter": "charge", "count": 1 } },
+              { "removeCounters": { "card": "this", "counter": "charge", "count": 2 } }
+            ] }
+            """,
+            """{ "dealDamage": { "cards": { "query": "villain" }, "amount": 1 } }"""));
+
+        Assert.DoesNotContain(game.Pending!.Affordances, option =>
+            option.Verb == Game.ActionVerb && option.AnchorId == source!.ObjectId);
+        Assert.Equal(2, source!.Tokens["c_charge"]);
+    }
+
+    [Rule("rr:cost.5")]
+    [Fact]
+    public void NestedSimultaneousCounterCostsArePricedTogether()
+    {
+        // "If multiple costs for a single card or ability require payment,
+        // those costs must be paid simultaneously." Structural nesting does
+        // not divide one cost into separate payments that may partially land.
+        Card? source = null;
+        var (game, _) = Playing(board =>
+        {
+            source = board.CreateCard(
+                AuthoredCards.AuntMay,
+                board.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+            source.PlaceTokens("c_charge", 3);
+        }, Runner(
+            AuthoredCards.AuntMay,
+            """
+            { "seq": [
+              { "removeCounters": { "card": "this", "counter": "charge", "count": 2 } },
+              { "seq": [
+                { "removeCounters": { "card": "this", "counter": "charge", "count": 2 } }
+              ] }
+            ] }
+            """,
+            """{ "dealDamage": { "cards": { "query": "villain" }, "amount": 1 } }"""));
+
+        Assert.DoesNotContain(game.Pending!.Affordances, option =>
+            option.Verb == Game.ActionVerb && option.AnchorId == source!.ObjectId);
+        Assert.Equal(3, source!.Tokens["c_charge"]);
+    }
+
+    [Rule("rr:initiating-abilities.step.3")]
+    [Rule("rr:initiating-abilities.step.5")]
+    [Fact]
+    public void CounterCostIsRevalidatedBeforeAStaleActionPays()
+    {
+        // Step 3 checks the ability to pay before step 5 pays. If the board
+        // changes after the offer, the engine repeats that check and neither
+        // removes a partial cost nor begins the effect.
+        Card? source = null;
+        var (game, world) = Playing(board =>
+        {
+            source = board.CreateCard(
+                AuthoredCards.AuntMay,
+                board.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+            source.PlaceTokens("c_charge", 2);
+        }, Runner(
+            AuthoredCards.AuntMay,
+            """{ "removeCounters": { "card": "this", "counter": "charge", "count": 2 } }""",
+            """{ "dealDamage": { "cards": { "query": "villain" }, "amount": 1 } }"""));
+        var action = Assert.Single(game.Pending!.Affordances, option =>
+            option.Verb == Game.ActionVerb && option.AnchorId == source!.ObjectId);
+        source!.PlaceTokens("c_charge", -1);
+
+        Assert.Throws<RulesNotImplementedException>(
+            () => game.Resolve(Decision.Take(action.Id)));
+
+        Assert.Equal(1, source.Tokens["c_charge"]);
+        Assert.Equal(0, world.TheCardIn(DeckType.VillainArea)!.Damage);
+    }
+
+    [Theory]
+    [InlineData("""{ "removeCounters": "charge" }""", "card")]
+    [InlineData("""{ "removeCounters": { "card": "this", "counter": "charge", "count": 0 } }""", "positive")]
+    [InlineData("""{ "removeCounters": { "card": "this", "counter": "charge", "count": 1, "extra": 1 } }""", "extra")]
+    public void CounterCostsRefuseImplicitMalformedOrNonPositiveForms(
+        string cost, string says)
+    {
+        var refused = Assert.Throws<AbilityException>(() => Playing(board =>
+        {
+            var source = board.CreateCard(
+                AuthoredCards.AuntMay,
+                board.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+            source.PlaceTokens("c_charge", 3);
+        }, Runner(
+            AuthoredCards.AuntMay,
+            cost,
+            """{ "dealDamage": { "cards": { "query": "villain" }, "amount": 1 } }""")));
+
+        Assert.Contains(says, refused.Message, StringComparison.Ordinal);
+    }
+
     [Rule("rr:all-purpose-counter.1")]
     [Rule("rr:all-purpose-counter.2")]
     [Fact]
@@ -38,7 +201,7 @@ public sealed class AllPurposeCounterTests
             shooter.PlaceTokens("c_web", 1);
         }, Runner(
             "01008",
-            """{ "removeCounters": "allPurpose" }""",
+            """{ "removeCounters": { "card": "this", "counter": "allPurpose", "count": 1 } }""",
             """{ "dealDamage": { "cards": { "query": "villain" }, "amount": 1 } }"""));
 
         var action = Assert.Single(
@@ -102,7 +265,7 @@ public sealed class AllPurposeCounterTests
             shooter.PlaceTokens("c_arrow", 1);
         }, Runner(
             "01008",
-            """{ "removeCounters": "web" }""",
+            """{ "removeCounters": { "card": "this", "counter": "web", "count": 1 } }""",
             """{ "draw": { "player": "you", "count": 1 } }"""));
 
         var action = Assert.Single(
@@ -140,7 +303,7 @@ public sealed class AllPurposeCounterTests
                 Lasts: Duration.WhileInPlay));
         }, Runner(
             "01008",
-            """{ "removeCounters": "web" }""",
+            """{ "removeCounters": { "card": "this", "counter": "web", "count": 1 } }""",
             """{ "draw": { "player": "you", "count": 1 } }"""));
 
         var action = Assert.Single(game.Pending!.Affordances, option =>
@@ -174,7 +337,7 @@ public sealed class AllPurposeCounterTests
                 Lasts: Duration.WhileInPlay));
         }, Runner(
             "01008",
-            """{ "removeCounters": "web" }""",
+            """{ "removeCounters": { "card": "this", "counter": "web", "count": 1 } }""",
             """{ "discard": "this" }"""));
         var action = Assert.Single(game.Pending!.Affordances, option =>
             option.Verb == Game.ActionVerb && option.AnchorId == shooter!.ObjectId);
@@ -203,7 +366,7 @@ public sealed class AllPurposeCounterTests
                 source.PlaceTokens("c_web", 1);
             }, Runner(
                 AuthoredCards.AuntMay,
-                """{ "removeCounters": "allPurpose" }""",
+                """{ "removeCounters": { "card": "this", "counter": "allPurpose", "count": 1 } }""",
                 """{ "dealDamage": { "cards": { "query": "villain" }, "amount": 1 } }""")));
 
         Assert.Equal(1, source!.Tokens["c_arrow"]);
