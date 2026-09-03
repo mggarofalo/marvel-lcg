@@ -42,8 +42,9 @@ jobs:
       # will actually host.
       - uses: actions/setup-dotnet@v5
         with:
-          global-json-file: global.json
-          dotnet-version: 8.0.x
+          dotnet-version: |
+            8.0.424
+            10.0.400
 
       # `--locked-mode` would be better still, but central package management
       # writes no lock file by default; the pins in Directory.Packages.props
@@ -233,8 +234,9 @@ jobs:
 
       - uses: actions/setup-dotnet@v5
         with:
-          global-json-file: global.json
-          dotnet-version: 8.0.x
+          dotnet-version: |
+            8.0.424
+            10.0.400
 
       - name: Install pinned Godot editor and export templates
         shell: pwsh

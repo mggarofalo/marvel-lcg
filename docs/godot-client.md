@@ -59,7 +59,9 @@ commit mismatch, malformed identity, missing templates, incomplete datasets or
 a malformed package. The Windows script unpacks the resulting MSIX and checks
 every declared payload hash. The macOS script normalizes the unsigned ZIP to the
 source commit timestamp, so rebuilding the same clean input does not acquire a
-clock identity.
+clock identity. Both staging scripts replace the developer SDK roll-forward
+policy with `tools/release-global.json`; automation installs those exact .NET
+8 and .NET 10 SDK versions alongside the pinned Godot editor and templates.
 
 Preview and stable delivery is automated by
 `.github/workflows/release-desktop.yml` from an exact protected `v*` tag. The

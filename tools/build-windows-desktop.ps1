@@ -128,10 +128,12 @@ try {
     foreach ($file in @(
         'Directory.Build.props',
         'Directory.Build.targets',
-        'Directory.Packages.props',
-        'global.json')) {
+        'Directory.Packages.props')) {
         Copy-Item -LiteralPath (Join-Path $repository $file) -Destination $sourceRoot
     }
+    Copy-Item `
+        -LiteralPath (Join-Path $repository 'tools\release-global.json') `
+        -Destination (Join-Path $sourceRoot 'global.json')
     Copy-SourceTree (Join-Path $repository 'src') (Join-Path $sourceRoot 'src')
     New-Item -ItemType Directory -Path (Join-Path $sourceRoot 'tools') | Out-Null
     Copy-SourceTree `

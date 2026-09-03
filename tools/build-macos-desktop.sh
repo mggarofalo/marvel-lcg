@@ -52,9 +52,10 @@ mkdir -p "$source_root/src" "$source_root/tools" "$stage"
 # physical path, so give PathMap that same spelling for byte-identical builds.
 source_root=$(cd "$source_root" && pwd -P)
 
-for file in Directory.Build.props Directory.Build.targets Directory.Packages.props global.json; do
+for file in Directory.Build.props Directory.Build.targets Directory.Packages.props; do
     cp "$repository/$file" "$source_root/$file"
 done
+cp "$repository/tools/release-global.json" "$source_root/global.json"
 rsync -a --exclude bin --exclude obj --exclude .godot "$repository/src/" "$source_root/src/"
 rsync -a --exclude bin --exclude obj "$repository/tools/Marvel.Release/" "$source_root/tools/Marvel.Release/"
 /usr/bin/sed -i '' \
