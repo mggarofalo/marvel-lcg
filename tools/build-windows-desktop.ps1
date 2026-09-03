@@ -278,6 +278,15 @@ try {
 
     $makeAppx = Find-WindowsSdkTool 'makeappx.exe'
     New-Item -ItemType Directory -Path $output | Out-Null
+    $portable = Join-Path $output "MarvelChampions-$Version-windows-x64-portable-unsigned.zip"
+    Compress-Archive -LiteralPath (Get-ChildItem -LiteralPath $payload).FullName `
+        -DestinationPath $portable -CompressionLevel Optimal
+    $portableHash = (Get-FileHash $portable -Algorithm SHA256).Hash.ToLowerInvariant()
+    [IO.File]::WriteAllText(
+        "$portable.sha256",
+        "$portableHash *$(Split-Path -Leaf $portable)`n",
+        [Text.UTF8Encoding]::new($false))
+
     $package = Join-Path $output "MarvelChampions-$Version-windows-x64-unsigned.msix"
     Invoke-Checked { & $makeAppx pack /d $payload /p $package /o /h SHA256 }
 

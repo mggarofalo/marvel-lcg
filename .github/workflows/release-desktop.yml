@@ -55,7 +55,7 @@ jobs:
     uses: ./.github/workflows/ci.yml
 
   macos-input:
-    name: Reproducible unsigned macOS input
+    name: Reproducible ad-hoc macOS application
     needs: [identity, quality]
     runs-on: macos-latest
     timeout-minutes: 30
@@ -88,7 +88,7 @@ jobs:
             "$HOME/Library/Application Support/Godot/export_templates/4.7.1.stable.mono/"
           echo "GODOT_BIN=$RUNNER_TEMP/godot/Godot_mono.app/Contents/MacOS/Godot" >> "$GITHUB_ENV"
 
-      - name: Build unsigned application and release manifest
+      - name: Build ad-hoc application and release manifest
         shell: bash
         run: |
           bash tools/build-macos-desktop.sh \
@@ -99,10 +99,10 @@ jobs:
 
       - uses: actions/upload-artifact@v7
         with:
-          name: desktop-macos-unsigned-input
+          name: desktop-macos-community
           path: |
-            ${{ runner.temp }}/macos-input/*-unsigned.zip
-            ${{ runner.temp }}/macos-input/*-unsigned.zip.sha256
+            ${{ runner.temp }}/macos-input/*-adhoc.zip
+            ${{ runner.temp }}/macos-input/*-adhoc.zip.sha256
           if-no-files-found: error
           retention-days: 7
 
@@ -151,7 +151,7 @@ jobs:
             -GodotBin $env:GODOT_BIN `
             -Version '${{ needs.identity.outputs.version }}' `
             -Commit '${{ needs.identity.outputs.commit }}' `
-            -Publisher '${{ vars.WINDOWS_PUBLISHER }}' `
+            -Publisher 'CN=Marvel Champions Community' `
             -Output "$env:RUNNER_TEMP\windows-input"
 
       - uses: actions/upload-artifact@v7
@@ -160,85 +160,16 @@ jobs:
           path: |
             ${{ runner.temp }}/windows-input/*-unsigned.msix
             ${{ runner.temp }}/windows-input/*-unsigned.msix.sha256
+            ${{ runner.temp }}/windows-input/*-portable-unsigned.zip
+            ${{ runner.temp }}/windows-input/*-portable-unsigned.zip.sha256
           if-no-files-found: error
           retention-days: 7
 
-  macos-sign:
-    name: Sign and notarize macOS
-    needs: [identity, macos-input]
-    runs-on: macos-latest
-    timeout-minutes: 45
-    environment: desktop-release
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ github.ref }}
-
-      - uses: actions/download-artifact@v8
-        with:
-          name: desktop-macos-unsigned-input
-          path: ${{ runner.temp }}/macos-input
-
-      - name: Import ephemeral signing credentials
-        shell: bash
-        env:
-          CERTIFICATE_P12_BASE64: ${{ secrets.MACOS_CERTIFICATE_P12_BASE64 }}
-          CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
-          APPLE_API_KEY_P8_BASE64: ${{ secrets.APPLE_API_KEY_P8_BASE64 }}
-          MARVEL_RELEASE_KEYCHAIN: ${{ runner.temp }}/marvel-release.keychain-db
-          MARVEL_RELEASE_CERTIFICATE: ${{ runner.temp }}/marvel-release.p12
-          MARVEL_APPLE_API_KEY_FILE: ${{ runner.temp }}/marvel-release-api-key.p8
-        run: |
-          keychain_password=$(uuidgen)
-          printf '%s' "$CERTIFICATE_P12_BASE64" | base64 -D > "$MARVEL_RELEASE_CERTIFICATE"
-          printf '%s' "$APPLE_API_KEY_P8_BASE64" | base64 -D > "$MARVEL_APPLE_API_KEY_FILE"
-          security create-keychain -p "$keychain_password" "$MARVEL_RELEASE_KEYCHAIN"
-          security unlock-keychain -p "$keychain_password" "$MARVEL_RELEASE_KEYCHAIN"
-          security set-keychain-settings -lut 21600 "$MARVEL_RELEASE_KEYCHAIN"
-          security import "$MARVEL_RELEASE_CERTIFICATE" -k "$MARVEL_RELEASE_KEYCHAIN" \
-            -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple: -s \
-            -k "$keychain_password" "$MARVEL_RELEASE_KEYCHAIN"
-          security list-keychains -d user -s "$MARVEL_RELEASE_KEYCHAIN"
-
-      - name: Expand, sign, notarize, staple, and verify
-        shell: bash
-        env:
-          MARVEL_MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
-          MARVEL_APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER_ID }}
-          MARVEL_APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-          MARVEL_APPLE_API_KEY_FILE: ${{ runner.temp }}/marvel-release-api-key.p8
-        run: |
-          unsigned=$(find "$RUNNER_TEMP/macos-input" -maxdepth 1 -name '*-unsigned.zip' -type f)
-          [[ -n "$unsigned" ]] || { echo 'unsigned macOS input was not downloaded' >&2; exit 2; }
-          ditto -x -k "$unsigned" "$RUNNER_TEMP/macos-input"
-          bash tools/sign-macos-desktop.sh \
-            --input "$RUNNER_TEMP/macos-input" \
-            --output "$RUNNER_TEMP/macos-signed"
-
-      - name: Destroy signing credentials
-        if: always()
-        shell: bash
-        env:
-          MARVEL_RELEASE_KEYCHAIN: ${{ runner.temp }}/marvel-release.keychain-db
-          MARVEL_RELEASE_CERTIFICATE: ${{ runner.temp }}/marvel-release.p12
-          MARVEL_APPLE_API_KEY_FILE: ${{ runner.temp }}/marvel-release-api-key.p8
-        run: |
-          security delete-keychain "$MARVEL_RELEASE_KEYCHAIN" || true
-          rm -f "$MARVEL_RELEASE_CERTIFICATE" "$MARVEL_APPLE_API_KEY_FILE"
-
-      - uses: actions/upload-artifact@v7
-        with:
-          name: desktop-macos-signed
-          path: ${{ runner.temp }}/macos-signed/*
-          if-no-files-found: error
-
-  windows-sign:
-    name: Sign and verify Windows
+  windows-community:
+    name: Create and verify self-signed Windows package
     needs: [identity, windows-input]
     runs-on: windows-latest
     timeout-minutes: 30
-    environment: desktop-release
     steps:
       - uses: actions/checkout@v7
         with:
@@ -249,36 +180,7 @@ jobs:
           name: desktop-windows-unsigned-input
           path: ${{ runner.temp }}/windows-input
 
-      - name: Import ephemeral signing certificate
-        shell: pwsh
-        env:
-          CERTIFICATE_PFX_BASE64: ${{ secrets.WINDOWS_CERTIFICATE_PFX_BASE64 }}
-          CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
-          MARVEL_WINDOWS_CERTIFICATE: ${{ runner.temp }}\marvel-release.pfx
-        run: |
-          [IO.File]::WriteAllBytes(
-            $env:MARVEL_WINDOWS_CERTIFICATE,
-            [Convert]::FromBase64String($env:CERTIFICATE_PFX_BASE64))
-          $password = ConvertTo-SecureString $env:CERTIFICATE_PASSWORD -AsPlainText -Force
-          $flags = [Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
-          $parsed = [Security.Cryptography.X509Certificates.X509Certificate2]::new(
-            $env:MARVEL_WINDOWS_CERTIFICATE,
-            $env:CERTIFICATE_PASSWORD,
-            $flags)
-          try {
-            $thumbprint = $parsed.Thumbprint
-          }
-          finally {
-            $parsed.Dispose()
-          }
-          "MARVEL_WINDOWS_THUMBPRINT=$thumbprint" | Out-File -FilePath $env:GITHUB_ENV -Append
-          $certificate = Import-PfxCertificate `
-            -FilePath $env:MARVEL_WINDOWS_CERTIFICATE `
-            -CertStoreLocation Cert:\CurrentUser\My `
-            -Password $password
-          if ($certificate.Thumbprint -cne $thumbprint) { throw 'imported certificate identity changed' }
-
-      - name: Sign, timestamp, package, and verify
+      - name: Generate an ephemeral key, sign without a timestamp, and verify
         shell: pwsh
         run: |
           $unsigned = Get-ChildItem "$env:RUNNER_TEMP\windows-input" -Filter '*-unsigned.msix' |
@@ -286,26 +188,13 @@ jobs:
           if ($null -eq $unsigned) { throw 'unsigned Windows input was not downloaded' }
           tools/sign-windows-desktop.ps1 `
             -InputPackage $unsigned.FullName `
-            -Output "$env:RUNNER_TEMP\windows-signed" `
-            -Publisher '${{ vars.WINDOWS_PUBLISHER }}' `
-            -SigningThumbprint $env:MARVEL_WINDOWS_THUMBPRINT `
-            -TimestampUrl '${{ vars.WINDOWS_TIMESTAMP_URL }}'
-
-      - name: Destroy signing certificate
-        if: always()
-        shell: pwsh
-        env:
-          MARVEL_WINDOWS_CERTIFICATE: ${{ runner.temp }}\marvel-release.pfx
-        run: |
-          if ($env:MARVEL_WINDOWS_THUMBPRINT) {
-            Remove-Item "Cert:\CurrentUser\My\$env:MARVEL_WINDOWS_THUMBPRINT" -Force -ErrorAction SilentlyContinue
-          }
-          Remove-Item $env:MARVEL_WINDOWS_CERTIFICATE -Force -ErrorAction SilentlyContinue
+            -Output "$env:RUNNER_TEMP\windows-community" `
+            -Publisher 'CN=Marvel Champions Community'
 
       - uses: actions/upload-artifact@v7
         with:
-          name: desktop-windows-signed
-          path: ${{ runner.temp }}/windows-signed/*
+          name: desktop-windows-community
+          path: ${{ runner.temp }}/windows-community/*
           if-no-files-found: error
 
   server-sign:
@@ -432,8 +321,8 @@ jobs:
           if-no-files-found: error
 
   publish:
-    name: Publish immutable product release
-    needs: [identity, macos-sign, windows-sign, server-sign]
+    name: Publish immutable community release
+    needs: [identity, macos-input, windows-input, windows-community, server-sign]
     runs-on: ubuntu-latest
     environment: desktop-release
     permissions:
@@ -442,9 +331,14 @@ jobs:
     steps:
       - uses: actions/download-artifact@v8
         with:
-          pattern: desktop-*-signed
+          pattern: desktop-*-community
           path: release
           merge-multiple: true
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: desktop-windows-unsigned-input
+          path: release
 
       - uses: actions/download-artifact@v8
         with:
@@ -495,5 +389,6 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --verify-tag \
             --generate-notes \
+            --notes 'COMMUNITY ARTIFACTS: the macOS app is not notarized or Developer ID signed and requires a user-approved first launch. The Windows MSIX uses its attached self-signed certificate, is not publicly trusted, and has no trusted timestamp; the portable ZIP is unsigned. Verify the attached SHA-256 files before installation. See docs/release-policy.md.' \
             --title "Marvel Champions ${{ needs.identity.outputs.version }}" \
             "${preview[@]}"
