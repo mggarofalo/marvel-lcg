@@ -259,6 +259,25 @@ verifies the signature, publisher and timestamp with the Windows trust tools.
 Temporary certificate material is removed even on failure. Command echo and
 diagnostic upload must not expose a key password, token or certificate blob.
 
+### Linux server image
+
+The protected Linux release job signs the immutable OCI image digest. It uses
+keyless Sigstore signing through the job's short-lived OpenID Connect identity.
+The job receives permission to request that identity only after the protected
+tag and release environment authorize it. The repository stores no long-lived
+image-signing key.
+
+The signature binds the digest to this repository, the release workflow and
+the protected tag. The release record retains the verification bundle and its
+transparency-log evidence beside the image digest. Installation verifies the
+signature against the pinned issuer and workflow identity before it pulls or
+runs the image. Verifying only the mutable image tag or an unauthenticated
+checksum file is not sufficient.
+
+Signing adds a separate OCI signature and does not change the unsigned image
+digest. This preserves the link from the signed release record to the
+reproducible unsigned server input.
+
 ## Responsibility and verification
 
 Ordinary CI, on every pull request and supported runner, owns deterministic
