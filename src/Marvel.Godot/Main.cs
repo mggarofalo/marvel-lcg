@@ -1,6 +1,8 @@
 using System.Globalization;
 using System.Text;
 using Godot;
+using Marvel.Client;
+using Marvel.Decisions;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Server;

@@ -1,3 +1,4 @@
+using Marvel.Decisions;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
@@ -7,7 +8,7 @@ using Marvel.Tests;
 using Marvel.View;
 using Xunit;
 
-namespace Marvel.Godot.Tests;
+namespace Marvel.Decisions.Tests;
 
 public sealed class DecisionComposerTests
 {

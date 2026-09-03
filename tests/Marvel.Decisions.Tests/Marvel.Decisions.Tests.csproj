@@ -1,15 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <RootNamespace>Marvel.Godot.Tests</RootNamespace>
+    <RootNamespace>Marvel.Decisions.Tests</RootNamespace>
     <IsPackable>false</IsPackable>
-    <MarvelMayReferenceGodot>true</MarvelMayReferenceGodot>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../src/Marvel.Client/Marvel.Client.csproj" />
     <ProjectReference Include="../../src/Marvel.Decisions/Marvel.Decisions.csproj" />
-    <ProjectReference Include="../../src/Marvel.Godot/Marvel.Godot.csproj" />
+    <ProjectReference Include="../../src/Marvel.Server/Marvel.Server.csproj" />
     <ProjectReference Include="../../src/Marvel.View/Marvel.View.csproj" />
   </ItemGroup>
 

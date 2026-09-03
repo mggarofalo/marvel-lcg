@@ -1,4 +1,5 @@
 using Godot;
+using Marvel.View;
 
 namespace Marvel.Godot;
 

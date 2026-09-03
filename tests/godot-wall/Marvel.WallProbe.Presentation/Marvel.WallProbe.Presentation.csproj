@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Both reusable presentation projects must remain consumable without
+       bringing Godot into the engine, server, or another client. -->
+  <ItemGroup>
+    <ProjectReference Include="../../../src/Marvel.Client/Marvel.Client.csproj" />
+    <ProjectReference Include="../../../src/Marvel.Decisions/Marvel.Decisions.csproj" />
+    <ProjectReference Include="../../../src/Marvel.View/Marvel.View.csproj" />
+  </ItemGroup>
+
+</Project>

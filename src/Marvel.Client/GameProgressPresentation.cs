@@ -1,7 +1,7 @@
 using Marvel.Rules.Play;
 using Marvel.Server;
 
-namespace Marvel.Godot;
+namespace Marvel.Client;
 
 /// <summary>The visibly distinct state of the local table.</summary>
 public enum GameProgressKind

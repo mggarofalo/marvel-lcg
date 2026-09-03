@@ -10,6 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../Marvel.Decisions/Marvel.Decisions.csproj" />
     <ProjectReference Include="../Marvel.Cards/Marvel.Cards.csproj" />
     <ProjectReference Include="../Marvel.Content/Marvel.Content.csproj" />
     <ProjectReference Include="../Marvel.Session/Marvel.Session.csproj" />
