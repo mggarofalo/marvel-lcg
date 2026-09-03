@@ -7,21 +7,19 @@ namespace Marvel.Testing;
 
 internal static class PresentationAssemblyPolicy
 {
-    public static void AllowsOnlyMarvelAssemblies(
+    public static void MatchesReviewedMarvelAssemblies(
         Assembly assembly,
-        params string[] allowed)
+        params string[] reviewed)
     {
-        string[] unexpected = UnexpectedMarvelAssemblies(
+        string[] actual = Reviewed(
             assembly.GetReferencedAssemblies().Select(reference => reference.Name!),
-            allowed);
-        Assert.True(unexpected.Length == 0,
-            $"{assembly.GetName().Name} reached unreviewed Marvel assemblies: "
-                + string.Join(", ", unexpected));
+            "Marvel.");
+        Assert.Equal(reviewed.Order(StringComparer.Ordinal), actual);
     }
 
-    public static void AllowsOnlyMarvelTypes(
+    public static void MatchesReviewedMarvelTypes(
         Assembly assembly,
-        params string[] allowed)
+        params string[] reviewed)
     {
         using FileStream stream = File.OpenRead(assembly.Location);
         using var executable = new PEReader(stream);
@@ -31,10 +29,8 @@ internal static class PresentationAssemblyPolicy
             .Select(reference =>
                 $"{metadata.GetString(reference.Namespace)}.{metadata.GetString(reference.Name)}")
             .ToArray();
-        string[] unexpected = UnexpectedMarvelTypes(referenced, allowed);
-        Assert.True(unexpected.Length == 0,
-            $"{assembly.GetName().Name} reached unreviewed Marvel types: "
-                + string.Join(", ", unexpected));
+        string[] actual = Reviewed(referenced, "Marvel.");
+        Assert.Equal(reviewed.Order(StringComparer.Ordinal), actual);
     }
 
     public static string[] UnexpectedMarvelAssemblies(
@@ -60,4 +56,11 @@ internal static class PresentationAssemblyPolicy
             .Order(StringComparer.Ordinal)
             .ToArray();
     }
+
+    private static string[] Reviewed(IEnumerable<string> referenced, string prefix) =>
+        referenced
+            .Where(value => value.StartsWith(prefix, StringComparison.Ordinal))
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
 }

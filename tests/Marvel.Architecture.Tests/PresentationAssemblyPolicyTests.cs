@@ -11,10 +11,10 @@ public sealed class PresentationAssemblyPolicyTests
     [Fact]
     public void ViewUsesOnlyReviewedDependencies()
     {
-        PresentationAssemblyPolicy.AllowsOnlyMarvelAssemblies(
+        PresentationAssemblyPolicy.MatchesReviewedMarvelAssemblies(
             typeof(WorldDescriptor).Assembly,
             "Marvel.Rules");
-        PresentationAssemblyPolicy.AllowsOnlyMarvelTypes(
+        PresentationAssemblyPolicy.MatchesReviewedMarvelTypes(
             typeof(WorldDescriptor).Assembly,
             "Marvel.Rules.Events.AreaRef",
             "Marvel.Rules.Events.AreaReordered",
@@ -57,10 +57,10 @@ public sealed class PresentationAssemblyPolicyTests
     [Fact]
     public void DecisionsUsesOnlyReviewedDependencies()
     {
-        PresentationAssemblyPolicy.AllowsOnlyMarvelAssemblies(
+        PresentationAssemblyPolicy.MatchesReviewedMarvelAssemblies(
             typeof(DecisionComposer).Assembly,
             "Marvel.Rules");
-        PresentationAssemblyPolicy.AllowsOnlyMarvelTypes(
+        PresentationAssemblyPolicy.MatchesReviewedMarvelTypes(
             typeof(DecisionComposer).Assembly,
             "Marvel.Rules.Play.Decision",
             "Marvel.Rules.Play.ResourceAllocation",
@@ -78,13 +78,13 @@ public sealed class PresentationAssemblyPolicyTests
     [Fact]
     public void ClientUsesOnlyReviewedDependencies()
     {
-        PresentationAssemblyPolicy.AllowsOnlyMarvelAssemblies(
+        PresentationAssemblyPolicy.MatchesReviewedMarvelAssemblies(
             typeof(LocalGameClient).Assembly,
             "Marvel.Decisions",
             "Marvel.Rules",
             "Marvel.Server",
             "Marvel.View");
-        PresentationAssemblyPolicy.AllowsOnlyMarvelTypes(
+        PresentationAssemblyPolicy.MatchesReviewedMarvelTypes(
             typeof(LocalGameClient).Assembly,
             "Marvel.Rules.Events.AreaRef",
             "Marvel.Rules.Events.AreaReordered",

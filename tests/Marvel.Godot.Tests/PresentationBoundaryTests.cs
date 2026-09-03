@@ -8,14 +8,14 @@ public sealed class PresentationBoundaryTests
     [Fact]
     public void GodotUsesOnlyReviewedDependencies()
     {
-        PresentationAssemblyPolicy.AllowsOnlyMarvelAssemblies(
+        PresentationAssemblyPolicy.MatchesReviewedMarvelAssemblies(
             typeof(Main).Assembly,
             "Marvel.Client",
             "Marvel.Decisions",
             "Marvel.Rules",
             "Marvel.Server",
             "Marvel.View");
-        PresentationAssemblyPolicy.AllowsOnlyMarvelTypes(
+        PresentationAssemblyPolicy.MatchesReviewedMarvelTypes(
             typeof(Main).Assembly,
             "Marvel.Rules.Events.GameEvent",
             "Marvel.Rules.Play.Outcome",

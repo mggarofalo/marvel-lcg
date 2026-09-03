@@ -21,7 +21,9 @@ Two separate policies protect this boundary. The Godot wall prevents every
 shared project from resolving Godot assemblies. The presentation wall limits
 the project references available to each presentation assembly and disables
 transitive project references there. Compiled-assembly tests then reject
-unreviewed Marvel assemblies and types that enter emitted code.
+unreviewed Marvel assemblies and types that enter emitted code. A semantic
+source test reviews every engine member used by `Marvel.View`, including
+constants that do not survive compilation and methods on its live `World`.
 
 These checks prevent a presentation project from reaching an authoritative
 type through a direct, transitive, package or file reference. No dependency
@@ -77,6 +79,8 @@ cannot compile against `Marvel.Core`, `Marvel.Cards`, `Marvel.Content` or
 `tests/presentation-wall/` prove that every role rejects a forbidden reference.
 `PresentationAssemblyPolicyTests` check the assemblies that the compiler emits,
 including references introduced through a package or a DLL.
+`PresentationSourcePolicyTests` make a new View call to an engine mutator or
+constant an explicit review decision rather than an invisible dependency.
 
 The complete solution targets .NET 8. One target framework keeps runtime
 behavior, JSON serialization and digest tests on the same floor the client will
