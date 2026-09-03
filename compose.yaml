@@ -1,6 +1,7 @@
 services:
   server:
-    image: "${MARVEL_SERVER_IMAGE:?Set MARVEL_SERVER_IMAGE to a verified release digest}"
+    container_name: marvel-server
+    image: "${MARVEL_SERVER_IMAGE:-marvel-server-image-must-be-a-verified-release-digest}"
     command: ["--visibility", "cooperative"]
     restart: unless-stopped
     stop_grace_period: 40s
@@ -21,7 +22,9 @@ services:
 
 volumes:
   marvel-sessions:
+    name: marvel-sessions
 
 networks:
   marvel-server:
+    name: marvel-server
     driver: bridge

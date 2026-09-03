@@ -69,8 +69,8 @@ public sealed class GameProgressPresentationTests
     [Theory]
     [InlineData("transport_unavailable", GameProgressKind.ServiceUnavailable, "SERVICE UNAVAILABLE")]
     [InlineData("unsupported_version", GameProgressKind.VersionMismatch, "VERSION MISMATCH")]
-    [InlineData("session_unavailable", GameProgressKind.SessionExpired, "SESSION EXPIRED")]
-    [InlineData("invitation_unavailable", GameProgressKind.SessionExpired, "SESSION EXPIRED")]
+    [InlineData("session_unavailable", GameProgressKind.SessionUnavailable, "SESSION UNAVAILABLE")]
+    [InlineData("invitation_unavailable", GameProgressKind.SessionUnavailable, "SESSION UNAVAILABLE")]
     [InlineData("save_failed", GameProgressKind.StorageFailure, "STORAGE FAILURE")]
     public void OperationalFailuresHaveDistinctBoundedStates(
         string code,
@@ -151,6 +151,14 @@ public sealed class GameProgressPresentationTests
         Assert.Equal(GameProgressKind.StorageFailure, recovered.Kind);
         Assert.True(recovered.LocksDecisions);
         Assert.Contains("recovered", recovered.Description, StringComparison.OrdinalIgnoreCase);
+
+        GameProgressPresentation synchronized =
+            GameProgressPresentation.FromSynchronization(
+                Response(Outcome.Unfinished),
+                recovered);
+
+        Assert.Equal(GameProgressKind.StorageFailure, synchronized.Kind);
+        Assert.True(synchronized.LocksDecisions);
     }
 
     [Fact]
@@ -164,6 +172,18 @@ public sealed class GameProgressPresentationTests
         Assert.Contains("DECISION REJECTED", rejected.Status);
         Assert.Contains("SYNCHRONIZATION REQUIRED", rejected.Status);
         Assert.DoesNotContain("MUTATION NOT REPEATED", rejected.Status);
+    }
+
+    [Fact]
+    public void AStorageRejectedDecisionRequiresOperatorActionWithoutARecoveredTable()
+    {
+        GameProgressPresentation rejected = GameProgressPresentation.DecisionRejected(
+            new ClientStartupError("save_failed", "The save did not commit."));
+
+        Assert.Equal(GameProgressKind.StorageFailure, rejected.Kind);
+        Assert.True(rejected.LocksDecisions);
+        Assert.Contains("OPERATOR ACTION REQUIRED", rejected.Status);
+        Assert.Contains("preserved", rejected.Description, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

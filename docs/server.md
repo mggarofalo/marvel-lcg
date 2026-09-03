@@ -146,8 +146,10 @@ table; monitor the container and raise them deliberately for concurrent tables.
 
 After verifying the released digest, the checked-in Compose definition starts
 that same hardened service with an explicit bridge network and named save
-volume. The image variable intentionally has no default: an operator must name
-the immutable artifact that was verified.
+volume. The image variable has only a deliberately non-runnable sentinel
+default: starting the service requires an operator to name the immutable
+artifact that was verified, while later `docker compose down` remains usable
+without reconstructing that environment variable.
 
 ```bash
 MARVEL_SERVER_IMAGE=ghcr.io/mggarofalo/marvel-server@sha256:RELEASE_DIGEST \
@@ -156,8 +158,11 @@ MARVEL_SERVER_IMAGE=ghcr.io/mggarofalo/marvel-server@sha256:RELEASE_DIGEST \
 
 `MARVEL_SERVER_BIND` and `MARVEL_SERVER_PORT` may override the default
 `127.0.0.1:41923` host endpoint. `docker compose down` removes the container
-and network but retains the named volume; never add `--volumes` unless the
-saved sessions have been backed up and are deliberately being destroyed.
+and `marvel-server` network but retains the explicitly named `marvel-sessions`
+volume. The service container is explicitly named `marvel-server`, so the
+backup and troubleshooting commands below address the same resources in both
+launch forms. Never add `--volumes` unless the saved sessions have been backed
+up and are deliberately being destroyed.
 
 The release includes a Sigstore bundle named
 `MarvelServer-VERSION-linux-amd64.sigstore.json`. Verify the image before first
@@ -292,7 +297,7 @@ supported recovery paths:
 |---|---|---|
 | `SERVICE UNAVAILABLE` | The endpoint could not be reached; this does not prove whether a sent mutation committed. | Check the bind address, published port, firewall and container health. Restart the service if needed, then use Synchronize. Never repeat a mutation marked unconfirmed. |
 | `VERSION MISMATCH` or `unsupported_version` | Client and server do not share the wire protocol. | Compare the client identity toolbar with `Marvel.Server.dll --version`; update one side to the intended release. |
-| `SESSION EXPIRED` or `session_not_found` | The server established that the held capability or invitation is not usable. | For an invitation, ask the host for a new one. For a session, inspect restore records and recover a known-good volume backup if the table should exist. |
+| `SESSION UNAVAILABLE` or `session_not_found` | The server established only that the held capability or invitation is not usable; it does not disclose whether it expired, was already used, or was never valid. | Check the game label. For an invitation, ask the host for a new one. For a previously working session, inspect restore records and recover a known-good volume backup if the table should exist. |
 | `STORAGE FAILURE`, `save_failed`, or `session.persistence.completed` with `rejected` | The requested state was not durably committed. | Stop new play, verify volume space, ownership and read/write status, and preserve logs. Synchronize the last authoritative revision; do not repair save files by hand. |
 | `session.restore.completed` | A saved session replay-verified and was published after startup. | Reconnect with the existing capability and Synchronize. |
 | `session.restore.failed` | One saved table was quarantined; other tables may still be healthy. | Match its pseudonymous game correlation and bounded error code, preserve the volume, then restore a known-good backup or use a runtime that supports the recorded identity. |

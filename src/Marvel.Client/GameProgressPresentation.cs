@@ -52,7 +52,7 @@ public enum GameProgressKind
     VersionMismatch,
 
     /// <summary>The service established that the held session is no longer usable.</summary>
-    SessionExpired,
+    SessionUnavailable,
 
     /// <summary>The service could not durably store the requested change.</summary>
     StorageFailure,
@@ -64,7 +64,8 @@ public sealed record GameProgressPresentation(
     string Title,
     string Description,
     string Status,
-    bool LocksDecisions)
+    bool LocksDecisions,
+    ClientStartupError? OperationalLock = null)
 {
     /// <summary>Describes one complete authoritative response.</summary>
     public static GameProgressPresentation FromResponse(EngineResponse response)
@@ -110,6 +111,14 @@ public sealed record GameProgressPresentation(
                 nameof(response), response.World.Outcome, "unknown game outcome"),
         };
     }
+
+    /// <summary>Applies a read-only snapshot without clearing an operator lock.</summary>
+    public static GameProgressPresentation FromSynchronization(
+        EngineResponse response,
+        GameProgressPresentation? prior) =>
+        prior?.OperationalLock is { } blocked
+            ? Recovered(response, blocked)
+            : FromResponse(response);
 
     /// <summary>Shows that one mutation is in flight and cannot be repeated.</summary>
     public static GameProgressPresentation Resolving() => new(
@@ -162,6 +171,15 @@ public sealed record GameProgressPresentation(
     public static GameProgressPresentation DecisionRejected(ClientStartupError error)
     {
         ArgumentNullException.ThrowIfNull(error);
+        if (IsStorageFailure(error.Code))
+        {
+            return Unavailable(error) with
+            {
+                Description = error.Message
+                    + " Input remains locked while the last displayed table is preserved.",
+            };
+        }
+
         return new(
             GameProgressKind.DecisionRejected,
             "Decision rejected.",
@@ -182,6 +200,7 @@ public sealed record GameProgressPresentation(
             {
                 Description = error.Message
                     + " The last authoritative table was recovered, but input remains locked.",
+                OperationalLock = error,
             };
         }
 
@@ -240,17 +259,18 @@ public sealed record GameProgressPresentation(
                 "VERSION MISMATCH  ·  UPDATE THE CLIENT OR SERVER",
                 LocksDecisions: true),
             "session_unavailable" or "session_not_found" or "invitation_unavailable" => new(
-                GameProgressKind.SessionExpired,
-                "Session or invitation expired.",
+                GameProgressKind.SessionUnavailable,
+                "Session or invitation unavailable.",
                 error.Message,
-                "SESSION EXPIRED  ·  RETURN TO JOIN",
+                "SESSION UNAVAILABLE  ·  RETURN TO JOIN",
                 LocksDecisions: true),
             _ when IsStorageFailure(error.Code) => new(
                     GameProgressKind.StorageFailure,
-                    "Server storage unavailable.",
-                    error.Message,
-                    "STORAGE FAILURE  ·  OPERATOR ACTION REQUIRED",
-                    LocksDecisions: true),
+                "Server storage unavailable.",
+                error.Message,
+                "STORAGE FAILURE  ·  OPERATOR ACTION REQUIRED",
+                    LocksDecisions: true,
+                    OperationalLock: error),
             _ => new(
                 GameProgressKind.Unavailable,
                 "Game unavailable.",

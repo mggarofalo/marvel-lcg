@@ -212,8 +212,8 @@ configuration, Docker commands and shutdown behavior.
 
 Operational failures use bounded, distinct presentation states. `SERVICE
 UNAVAILABLE` means the endpoint cannot currently be reached; `VERSION MISMATCH`
-means the client and server wire versions differ; `SESSION EXPIRED` returns the
-player to Join; and `STORAGE FAILURE` requires operator attention. A decision
+means the client and server wire versions differ; `SESSION UNAVAILABLE` returns
+the player to Join; and `STORAGE FAILURE` requires operator attention. A decision
 marked `NOT SENT · RETRY SAFE` may be submitted again. A decision marked
 `MUTATION NOT REPEATED` remains locked until the client reads the authoritative
 table, including after a server restart. The UI derives these states only from
