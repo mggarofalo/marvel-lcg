@@ -252,15 +252,23 @@ jobs:
             $env:MARVEL_WINDOWS_CERTIFICATE,
             [Convert]::FromBase64String($env:CERTIFICATE_PFX_BASE64))
           $password = ConvertTo-SecureString $env:CERTIFICATE_PASSWORD -AsPlainText -Force
+          $flags = [Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
           $parsed = [Security.Cryptography.X509Certificates.X509Certificate2]::new(
             $env:MARVEL_WINDOWS_CERTIFICATE,
-            $env:CERTIFICATE_PASSWORD)
-          "MARVEL_WINDOWS_THUMBPRINT=$($parsed.Thumbprint)" | Out-File -FilePath $env:GITHUB_ENV -Append
+            $env:CERTIFICATE_PASSWORD,
+            $flags)
+          try {
+            $thumbprint = $parsed.Thumbprint
+          }
+          finally {
+            $parsed.Dispose()
+          }
+          "MARVEL_WINDOWS_THUMBPRINT=$thumbprint" | Out-File -FilePath $env:GITHUB_ENV -Append
           $certificate = Import-PfxCertificate `
             -FilePath $env:MARVEL_WINDOWS_CERTIFICATE `
             -CertStoreLocation Cert:\CurrentUser\My `
             -Password $password
-          if ($certificate.Thumbprint -cne $parsed.Thumbprint) { throw 'imported certificate identity changed' }
+          if ($certificate.Thumbprint -cne $thumbprint) { throw 'imported certificate identity changed' }
 
       - name: Sign, timestamp, package, and verify
         shell: pwsh
