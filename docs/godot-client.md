@@ -62,6 +62,8 @@ source commit timestamp, so rebuilding the same clean input does not acquire a
 clock identity. Both staging scripts replace the developer SDK roll-forward
 policy with `tools/release-global.json`; automation installs those exact .NET
 8 and .NET 10 SDK versions alongside the pinned Godot editor and templates.
+Windows packaging and signing also use the exact Windows SDK 10.0.26100.0
+`x64` tools; the runner's newest installed SDK is not a release input.
 
 Preview and stable delivery is automated by
 `.github/workflows/release-desktop.yml` from an exact protected `v*` tag. The

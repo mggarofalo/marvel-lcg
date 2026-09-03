@@ -9,6 +9,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+$WindowsSdkVersion = '10.0.26100.0'
 
 function Invoke-Checked {
     param([Parameter(Mandatory = $true)][scriptblock]$Command)
@@ -29,15 +30,12 @@ function Copy-SourceTree {
 
 function Find-WindowsSdkTool {
     param([string]$Name)
-    $root = Join-Path ${env:ProgramFiles(x86)} 'Windows Kits\10\bin'
-    $tool = Get-ChildItem -LiteralPath $root -Recurse -Filter $Name -File |
-        Where-Object { $_.DirectoryName -match '[\\/]x64$' } |
-        Sort-Object FullName -Descending |
-        Select-Object -First 1
-    if ($null -eq $tool) {
-        throw "$Name was not found in the Windows SDK"
+    $tool = Join-Path ${env:ProgramFiles(x86)} `
+        "Windows Kits\10\bin\$WindowsSdkVersion\x64\$Name"
+    if (-not (Test-Path -LiteralPath $tool -PathType Leaf)) {
+        throw "$Name was not found in pinned Windows SDK $WindowsSdkVersion"
     }
-    return $tool.FullName
+    return $tool
 }
 
 function New-Logo {
