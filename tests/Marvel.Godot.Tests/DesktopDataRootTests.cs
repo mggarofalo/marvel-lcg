@@ -22,15 +22,19 @@ public sealed class DesktopDataRootTests
     [Fact]
     public void ExportedMacUsesTheBundleResourcesDirectory()
     {
+        string bundle = Path.Combine(
+            Path.GetTempPath(),
+            "Marvel Champions.app",
+            "Contents");
+        string executable = Path.Combine(bundle, "MacOS", "Marvel Champions");
+
         string actual = DesktopDataRoot.Resolve(
             editor: false,
             macOS: true,
-            executablePath: "/Applications/Marvel Champions.app/Contents/MacOS/Marvel Champions",
+            executablePath: executable,
             editorDataRoot: "/ignored");
 
-        Assert.Equal(
-            "/Applications/Marvel Champions.app/Contents/Resources",
-            actual);
+        Assert.Equal(Path.Combine(bundle, "Resources"), actual);
     }
 
     [Fact]
