@@ -65,6 +65,12 @@ offset_bottom = 64.0
 grow_horizontal = 2
 theme_type_variation = &"CompactRow"
 
+[node name="BuildIdentity" type="Label" parent="StatusBar"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = &"Caption"
+text = "v0.1.0-dev.0 · engine engine-replay-v1 · protocol 10 · save 2"
+
 [node name="Spacer" type="Control" parent="StatusBar"]
 layout_mode = 2
 size_flags_horizontal = 3

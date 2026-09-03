@@ -1417,10 +1417,10 @@ public sealed class DatasetGameFactory : IDurableGameFactory, ISetupDiscovery
             CardCatalog.Parse(System.Text.Encoding.UTF8.GetString(cardBytes)),
             AbilityCatalog.Parse(System.Text.Encoding.UTF8.GetString(abilityBytes)),
             new SessionCompatibility(
-                typeof(DatasetGameFactory).Assembly.GetName().Version?.ToString() ?? "unknown",
-                "engine-replay-v1",
-                "mt19937-iso-cxx",
-                "state-digest-v2",
+                EngineBuildIdentity.ProductVersion,
+                EngineBuildIdentity.ReplayContract,
+                EngineBuildIdentity.RngContract,
+                EngineBuildIdentity.StateDigest,
                 Hash(cardBytes),
                 Hash(setupBytes),
                 Hash(abilityBytes)));

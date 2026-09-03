@@ -327,6 +327,12 @@ MARVEL-347 owns clean-install, upgrade, interruption and downgrade verification.
 MARVEL-349 owns the final two-client release-candidate journey. A failure in
 either is a failed release, not permission to publish with a warning.
 
+The desktop implementation and exact local commands are documented in
+[godot-client.md](godot-client.md#desktop-artifacts). The tag-only protected
+workflow is `.github/workflows/release-desktop.yml`; it keeps reproducible
+unsigned construction outside the credential-bearing jobs and refuses to
+replace an existing release.
+
 ## Required failure messages
 
 Failure is safe only when a user or operator can distinguish what to do next.

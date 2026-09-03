@@ -1,7 +1,9 @@
 # Godot client
 
-The desktop client is an editor-run Godot 4.7 .NET project. Exported application
-bundles are not part of the current local-play slice.
+The desktop client is a Godot 4.7 .NET project. It runs from the editor during
+development and exports as a macOS application ZIP or Windows x64 MSIX. The
+exported client carries the same embedded engine as editor play and can select
+the same socket transport for a separately hosted table.
 
 ## Prerequisites
 
@@ -15,6 +17,78 @@ The project and its managed dependencies build from the repository root:
 ```bash
 dotnet build src/Marvel.Godot/Marvel.Godot.csproj
 ```
+
+## Desktop artifacts
+
+The committed export presets deliberately contain no signing identity or
+credential. They export the application first; the build scripts then place the
+three runtime datasets and `release-manifest.json` beside the executable where
+the exported client resolves them. The setup toolbar displays the compiled
+product, replay-contract, protocol and save-schema identities. Its tooltip gives
+the complete source commit.
+
+An unsigned macOS developer input is built from a clean checkout with the
+official Godot 4.7.1 .NET editor and installed .NET export templates:
+
+```bash
+commit=$(git rev-parse HEAD)
+mkdir -p artifacts
+bash tools/build-macos-desktop.sh \
+  --godot "/Applications/Godot_mono.app/Contents/MacOS/Godot" \
+  --version "0.1.0-dev.0" \
+  --commit "$commit" \
+  --output artifacts/macos
+```
+
+Windows PowerShell uses the Windows .NET editor and Windows SDK. A developer
+package uses a commit-scoped unsigned identity, not the preview/stable package
+family:
+
+```powershell
+$commit = (git rev-parse HEAD).Trim()
+New-Item -ItemType Directory -Path artifacts -Force | Out-Null
+tools/build-windows-desktop.ps1 `
+  -GodotBin "C:\Tools\Godot\Godot_v4.7.1-stable_mono_win64_console.exe" `
+  -Version "0.1.0-dev.0" `
+  -Commit $commit `
+  -Output artifacts\windows
+```
+
+Both scripts reject dirty source, an output that already exists, a source
+commit mismatch, malformed identity, missing templates, incomplete datasets or
+a malformed package. The Windows script unpacks the resulting MSIX and checks
+every declared payload hash. The macOS script normalizes the unsigned ZIP to the
+source commit timestamp, so rebuilding the same clean input does not acquire a
+clock identity.
+
+Preview and stable delivery is automated by
+`.github/workflows/release-desktop.yml` from an exact protected `v*` tag. The
+ordinary jobs create and retain hashed unsigned inputs. Only the
+`desktop-release` environment jobs can receive signing credentials:
+
+- secrets `MACOS_CERTIFICATE_P12_BASE64`, `MACOS_CERTIFICATE_PASSWORD`,
+  `MACOS_SIGNING_IDENTITY`, `APPLE_API_KEY_P8_BASE64`,
+  `APPLE_API_ISSUER_ID`, and `APPLE_API_KEY_ID`;
+- secret `WINDOWS_CERTIFICATE_PFX_BASE64`; secret
+  `WINDOWS_CERTIFICATE_PASSWORD` imports it into a temporary current-user
+  certificate store; and
+- non-secret variables `WINDOWS_PUBLISHER` and `WINDOWS_TIMESTAMP_URL` define
+  the stable package identity and approved HTTPS RFC 3161 service.
+
+The macOS job signs nested Mach-O code and the outer app with the committed
+managed-runtime entitlements, verifies it, submits a temporary ZIP with
+`notarytool`, staples and validates the app, asks Gatekeeper to assess it, and
+only then creates the distribution ZIP. The Windows job checks the certificate
+subject against the manifest publisher, signs and verifies every executable and
+DLL, rebuilds and signs the complete MSIX, and verifies the final package. Both
+publish a provenance JSON record linking the signed artifact hash to the
+unsigned input hash. Credential files, keychains and imported certificates are
+removed on success or failure.
+
+The final workflow refuses to replace an existing GitHub release. A preview tag
+creates a prerelease; a stable tag creates a stable release. Windows installation
+and trust verification on a clean machine is tracked separately by MARVEL-358,
+because macOS review cannot supply a Windows trust verdict.
 
 ## Launch
 

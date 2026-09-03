@@ -19,6 +19,7 @@
     <Project Path="tools/Marvel.Cards.Extract/Marvel.Cards.Extract.csproj" />
     <Project Path="tools/Marvel.Rules.Harvest/Marvel.Rules.Harvest.csproj" />
     <Project Path="tools/Marvel.Rulings.Harvest/Marvel.Rulings.Harvest.csproj" />
+    <Project Path="tools/Marvel.Release/Marvel.Release.csproj" />
     <Project Path="tools/Marvel.Rules.Packs.Harvest/Marvel.Rules.Packs.Harvest.csproj" />
     <Project Path="tools/Marvel.MarvelCdb.Harvest/Marvel.MarvelCdb.Harvest.csproj" />
   </Folder>
@@ -33,5 +34,6 @@
     <Project Path="tests/Marvel.View.Tests/Marvel.View.Tests.csproj" />
     <Project Path="tests/Marvel.Server.Tests/Marvel.Server.Tests.csproj" />
     <Project Path="tests/Marvel.Godot.Tests/Marvel.Godot.Tests.csproj" />
+    <Project Path="tests/Marvel.Release.Tests/Marvel.Release.Tests.csproj" />
   </Folder>
 </Solution>

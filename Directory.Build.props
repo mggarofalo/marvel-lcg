@@ -39,11 +39,38 @@
          that drifts. -->
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    <PathMap Condition="'$(MarvelSourceRoot)' != ''">$(MarvelSourceRoot)=/_/</PathMap>
 
     <!-- Invariant globalization: culture must never reach a comparison or a
          number format. A digest that differs between a machine set to
          tr-TR and one set to en-US is not a digest. -->
     <InvariantGlobalization>true</InvariantGlobalization>
+
+    <!-- Product identity is build metadata, never gameplay state. Release
+         automation supplies the three Marvel* properties from a validated
+         tag; ordinary local builds remain visibly developer-only. Keeping the
+         defaults here gives every assembly one answer without invoking Git or
+         the clock during compilation. -->
+    <MarvelProductVersion Condition="'$(MarvelProductVersion)' == ''">0.1.0-dev.0</MarvelProductVersion>
+    <MarvelCommit Condition="'$(MarvelCommit)' == ''">local</MarvelCommit>
+    <MarvelVersionMajor Condition="'$(MarvelVersionMajor)' == ''">0</MarvelVersionMajor>
+    <MarvelVersionMinor Condition="'$(MarvelVersionMinor)' == ''">1</MarvelVersionMinor>
+    <MarvelVersionPatch Condition="'$(MarvelVersionPatch)' == ''">0</MarvelVersionPatch>
+    <Version>$(MarvelProductVersion)</Version>
+    <AssemblyVersion>$(MarvelVersionMajor).$(MarvelVersionMinor).$(MarvelVersionPatch).0</AssemblyVersion>
+    <FileVersion>$(MarvelVersionMajor).$(MarvelVersionMinor).$(MarvelVersionPatch).0</FileVersion>
+    <InformationalVersion>$(MarvelProductVersion)+$(MarvelCommit)</InformationalVersion>
   </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>MarvelProductVersion</_Parameter1>
+      <_Parameter2>$(MarvelProductVersion)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>MarvelCommit</_Parameter1>
+      <_Parameter2>$(MarvelCommit)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
 
 </Project>
