@@ -4,17 +4,28 @@
        process. This is an I/O boundary; none of the projects it references
        know whether their caller is embedded or remote. -->
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <OutputType Condition="'$(MarvelServerOutputType)' == ''">Exe</OutputType>
+    <OutputType Condition="'$(MarvelServerOutputType)' != ''">$(MarvelServerOutputType)</OutputType>
+    <OutputPath Condition="'$(MarvelServerOutputType)' == 'Library'">bin/embedded/$(Configuration)/</OutputPath>
+    <IntermediateOutputPath Condition="'$(MarvelServerOutputType)' == 'Library'">obj/embedded/$(Configuration)/</IntermediateOutputPath>
     <RootNamespace>Marvel.Server</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../Marvel.Decisions/Marvel.Decisions.csproj" />
-    <ProjectReference Include="../Marvel.Cards/Marvel.Cards.csproj" />
-    <ProjectReference Include="../Marvel.Content/Marvel.Content.csproj" />
-    <ProjectReference Include="../Marvel.Session/Marvel.Session.csproj" />
-    <ProjectReference Include="../Marvel.View/Marvel.View.csproj" />
+    <!-- MarvelServerOutputType distinguishes the standalone apphost from an
+         embedded host. It is irrelevant below this boundary and must not
+         create duplicate builds of shared dependencies. -->
+    <ProjectReference Include="../Marvel.Decisions/Marvel.Decisions.csproj"
+                      GlobalPropertiesToRemove="MarvelServerOutputType" />
+    <ProjectReference Include="../Marvel.Cards/Marvel.Cards.csproj"
+                      GlobalPropertiesToRemove="MarvelServerOutputType" />
+    <ProjectReference Include="../Marvel.Content/Marvel.Content.csproj"
+                      GlobalPropertiesToRemove="MarvelServerOutputType" />
+    <ProjectReference Include="../Marvel.Session/Marvel.Session.csproj"
+                      GlobalPropertiesToRemove="MarvelServerOutputType" />
+    <ProjectReference Include="../Marvel.View/Marvel.View.csproj"
+                      GlobalPropertiesToRemove="MarvelServerOutputType" />
   </ItemGroup>
 
   <ItemGroup>

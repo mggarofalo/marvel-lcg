@@ -238,6 +238,10 @@ No certificate, private key, password, API key, provisioning credential or
 notarization token belongs in the repository, build cache, unsigned artifact,
 save, log or telemetry record. Protected release jobs receive the minimum
 secret only after tag, environment and approval policy has authorized them.
+The repository enforces that statement with an active `refs/tags/v*` ruleset
+that prevents tag updates and deletion, a workflow check of
+`GITHUB_REF_PROTECTED`, and a `desktop-release` environment with a required
+reviewer. Merely naming an environment in workflow YAML is not protection.
 
 ### macOS
 
@@ -326,6 +330,12 @@ manifest and all of these checks pass:
 MARVEL-347 owns clean-install, upgrade, interruption and downgrade verification.
 MARVEL-349 owns the final two-client release-candidate journey. A failure in
 either is a failed release, not permission to publish with a warning.
+
+The desktop implementation and exact local commands are documented in
+[godot-client.md](godot-client.md#desktop-artifacts). The tag-only protected
+workflow is `.github/workflows/release-desktop.yml`; it keeps reproducible
+unsigned construction outside the credential-bearing jobs and refuses to
+replace an existing release.
 
 ## Required failure messages
 

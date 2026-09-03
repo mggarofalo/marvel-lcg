@@ -9,6 +9,7 @@ on:
     branches: [master]
   pull_request:
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
@@ -41,8 +42,9 @@ jobs:
       # will actually host.
       - uses: actions/setup-dotnet@v5
         with:
-          global-json-file: global.json
-          dotnet-version: 8.0.x
+          dotnet-version: |
+            8.0.424
+            10.0.400
 
       # `--locked-mode` would be better still, but central package management
       # writes no lock file by default; the pins in Directory.Packages.props
@@ -221,3 +223,57 @@ jobs:
       # reference is a stub. See tests/godot-wall/README.md.
       - name: The wall's gates fire
         run: bash tools/godot-wall.sh
+
+  desktop-package:
+    name: Unsigned Windows desktop package
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            8.0.424
+            10.0.400
+
+      - name: Install pinned Godot editor and export templates
+        shell: pwsh
+        run: |
+          Invoke-WebRequest `
+            -Uri "https://github.com/godotengine/godot-builds/releases/download/4.7.1-stable/Godot_v4.7.1-stable_mono_win64.zip" `
+            -OutFile "$env:RUNNER_TEMP\godot.zip"
+          $godotHash = (Get-FileHash "$env:RUNNER_TEMP\godot.zip" -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($godotHash -cne "764a089809fb1a6f745686ce9f6d3ca83adce8fb60fb9a4e2324b63baaebaa45") { throw "Godot editor hash mismatch" }
+          Expand-Archive "$env:RUNNER_TEMP\godot.zip" -DestinationPath "$env:RUNNER_TEMP\godot"
+          Invoke-WebRequest `
+            -Uri "https://github.com/godotengine/godot-builds/releases/download/4.7.1-stable/Godot_v4.7.1-stable_mono_export_templates.tpz" `
+            -OutFile "$env:RUNNER_TEMP\templates.tpz"
+          $templateHash = (Get-FileHash "$env:RUNNER_TEMP\templates.tpz" -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($templateHash -cne "ef9a708be51ecd974cd7dccdcafd7a1870da3d3e1c24c072bdbb9818c7a7db63") { throw "Godot templates hash mismatch" }
+          Expand-Archive "$env:RUNNER_TEMP\templates.tpz" -DestinationPath "$env:RUNNER_TEMP\templates"
+          $templateTarget = Join-Path $env:APPDATA "Godot\export_templates\4.7.1.stable.mono"
+          New-Item -ItemType Directory -Path $templateTarget -Force | Out-Null
+          Copy-Item "$env:RUNNER_TEMP\templates\templates\*" $templateTarget -Recurse -Force
+          $godot = Get-ChildItem "$env:RUNNER_TEMP\godot" -Recurse -Filter '*_console.exe' | Select-Object -First 1
+          if ($null -eq $godot) { throw "Godot .NET console executable was not found" }
+          "GODOT_BIN=$($godot.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: The unsigned desktop payload is a complete MSIX
+        shell: pwsh
+        run: |
+          tools/build-windows-desktop.ps1 `
+            -GodotBin $env:GODOT_BIN `
+            -Version '0.1.0-dev.0' `
+            -Commit '${{ github.sha }}' `
+            -Output "$env:RUNNER_TEMP\windows-desktop"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: windows-desktop-unsigned-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/windows-desktop/*.msix
+            ${{ runner.temp }}/windows-desktop/*.sha256
+          if-no-files-found: error
+          retention-days: 7

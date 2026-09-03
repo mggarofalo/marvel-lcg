@@ -51,6 +51,7 @@ public sealed class PresentationBoundaryTests
             "Marvel.Decisions.ResourceIconAssignment",
             "Marvel.Decisions.TargetSelectionMode",
             "Marvel.Decisions.TargetSelectionProgress",
+            "Marvel.Server.EngineBuildIdentity",
             "Marvel.Server.EngineResponse",
             "Marvel.Server.HeroSetupChoice",
             "Marvel.Server.ModularSetupChoice",

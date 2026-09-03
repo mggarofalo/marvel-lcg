@@ -19,6 +19,7 @@ public sealed partial class Main : Control
     private readonly Dictionary<int, bool> expandedAreas = [];
     private Control board = null!;
     private VBoxContainer boardAreas = null!;
+    private Label buildIdentity = null!;
     private BoardPresentation? boardPresentation;
     private HSplitContainer playLayout = null!;
     private BoardRenderResult? boardRender;
@@ -117,6 +118,8 @@ public sealed partial class Main : Control
             ClientTheme.ToGodot(VisualSystem.Palette.Danger);
         GetWindow().MinSize = new Vector2I(1040, 680);
         BindNodes();
+        buildIdentity.Text = EngineBuildIdentity.Display;
+        buildIdentity.TooltipText = $"Source commit {EngineBuildIdentity.Commit}";
         interfaceScaleSlider.SetValueNoSignal((double)scale);
         interfaceScaleSlider.ValueChanged += value =>
             ApplyInterfaceScale((InterfaceScale)(Mathf.RoundToInt(value / 10) * 10));
@@ -271,6 +274,7 @@ public sealed partial class Main : Control
         BindCardInspectorFocus(cardInspectorScroll);
         interfaceScaleSlider = GetNode<HSlider>("StatusBar/InterfaceScale");
         interfaceScaleValue = GetNode<Label>("StatusBar/ScaleValue");
+        buildIdentity = GetNode<Label>("StatusBar/BuildIdentity");
         syncStatus = GetNode<Label>("StatusBar/SyncStatus");
         endpoint = GetNode<LineEdit>(
             $"{content}/Setup/Selections/Fields/ConnectionGrid/Endpoint");
@@ -392,7 +396,7 @@ public sealed partial class Main : Control
         try
         {
             LocalClientConnection connection = ClientComposition.Connect(
-                ProjectSettings.GlobalizePath("res://../.."),
+                DesktopDataRoot.Current(),
                 requestedEndpoint);
             if (!connection.Succeeded)
             {
@@ -695,7 +699,7 @@ public sealed partial class Main : Control
 
             GameSetupSelection selection = SelectedSetup();
             LocalClientConnection connection = ClientComposition.Connect(
-                ProjectSettings.GlobalizePath("res://../.."),
+                DesktopDataRoot.Current(),
                 endpoint.Text);
             if (!connection.Succeeded)
             {
@@ -761,7 +765,7 @@ public sealed partial class Main : Control
             SetSetupControlsEnabled(false);
             status.Text = "JOINING GAME  ·  ONE MOMENT";
             LocalClientConnection connection = ClientComposition.Connect(
-                ProjectSettings.GlobalizePath("res://../.."),
+                DesktopDataRoot.Current(),
                 endpoint.Text);
             if (!connection.Succeeded)
             {

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Marvel.Release</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Marvel.Server/Marvel.Server.csproj" />
+    <ProjectReference Include="../../src/Marvel.Session/Marvel.Session.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Marvel.Release.Tests" />
+  </ItemGroup>
+
+</Project>
