@@ -364,11 +364,11 @@ jobs:
           context: .
           file: src/Marvel.Server/Dockerfile
           platforms: linux/amd64
-          push: true
-          tags: ${{ env.IMAGE }}:${{ env.STAGING_TAG }}
-          provenance: mode=max
-          sbom: true
+          outputs: type=image,name=${{ env.IMAGE }}:${{ env.STAGING_TAG }},push=true,rewrite-timestamp=true
+          provenance: false
+          sbom: false
           build-args: |
+            SOURCE_DATE_EPOCH=${{ env.SOURCE_DATE_EPOCH }}
             MARVEL_PRODUCT_VERSION=${{ needs.identity.outputs.version }}
             MARVEL_COMMIT=${{ needs.identity.outputs.commit }}
             MARVEL_VERSION_MAJOR=${{ needs.identity.outputs.major }}
