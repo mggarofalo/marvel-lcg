@@ -161,10 +161,9 @@ public sealed partial class AbilityRunner
             return true;
         }
 
-        var steps = cost.Kind == "seq" ? Nodes(cost.Argument).ToList() : [cost];
         var counterCosts = new Dictionary<(int Card, string Type), long>();
         var counterCards = new Dictionary<int, Card>();
-        foreach (var step in steps.Where(step => step.Kind == "removeCounters"))
+        foreach (var step in CounterCostSteps(cost))
         {
             var removal = CounterRemovalOf(step);
             if (CostTarget(world, card, player, removal.Card) is not { } target)
@@ -192,6 +191,26 @@ public sealed partial class AbilityRunner
             return false;
         }
         return true;
+    }
+
+    private static IEnumerable<AbilityNode> CounterCostSteps(AbilityNode cost)
+    {
+        if (cost.Kind == "removeCounters")
+        {
+            yield return cost;
+            yield break;
+        }
+        if (cost.Kind != "seq")
+        {
+            yield break;
+        }
+        foreach (var step in Nodes(cost.Argument))
+        {
+            foreach (var counterCost in CounterCostSteps(step))
+            {
+                yield return counterCost;
+            }
+        }
     }
 
     private static Card? CostTarget(World world, Card source, int player, AbilityValue value) =>

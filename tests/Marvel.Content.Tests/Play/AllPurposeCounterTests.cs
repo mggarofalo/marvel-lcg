@@ -101,6 +101,37 @@ public sealed class AllPurposeCounterTests
         Assert.Equal(2, source!.Tokens["c_charge"]);
     }
 
+    [Rule("rr:cost.5")]
+    [Fact]
+    public void NestedSimultaneousCounterCostsArePricedTogether()
+    {
+        // "If multiple costs for a single card or ability require payment,
+        // those costs must be paid simultaneously." Structural nesting does
+        // not divide one cost into separate payments that may partially land.
+        Card? source = null;
+        var (game, _) = Playing(board =>
+        {
+            source = board.CreateCard(
+                AuthoredCards.AuntMay,
+                board.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+            source.PlaceTokens("c_charge", 3);
+        }, Runner(
+            AuthoredCards.AuntMay,
+            """
+            { "seq": [
+              { "removeCounters": { "card": "this", "counter": "charge", "count": 2 } },
+              { "seq": [
+                { "removeCounters": { "card": "this", "counter": "charge", "count": 2 } }
+              ] }
+            ] }
+            """,
+            """{ "dealDamage": { "cards": { "query": "villain" }, "amount": 1 } }"""));
+
+        Assert.DoesNotContain(game.Pending!.Affordances, option =>
+            option.Verb == Game.ActionVerb && option.AnchorId == source!.ObjectId);
+        Assert.Equal(3, source!.Tokens["c_charge"]);
+    }
+
     [Rule("rr:initiating-abilities.step.3")]
     [Rule("rr:initiating-abilities.step.5")]
     [Fact]
