@@ -193,6 +193,53 @@ public sealed class IncidentExportTests
         }
     }
 
+    [Fact]
+    public void OversizedCorruptEvidenceIsBoundedWhileGenerationHashesRemainAvailable()
+    {
+        string root = Path.Combine(
+            Path.GetTempPath(), $"marvel-incident-bounds-{Guid.NewGuid():N}");
+        string saves = Path.Combine(root, "sessions");
+        string diagnostics = Path.Combine(root, "diagnostics");
+        string storage = Path.Combine(saves, new string('a', 32));
+        string generation = new('b', 32);
+        Directory.CreateDirectory(storage);
+        Directory.CreateDirectory(diagnostics);
+        try
+        {
+            File.WriteAllText(Path.Combine(storage, "current"), new string('c', 4096));
+            using (FileStream session = File.Create(
+                       Path.Combine(storage, generation + ".session.json")))
+            {
+                session.SetLength(2 * 1024 * 1024);
+            }
+            using (FileStream authority = File.Create(
+                       Path.Combine(storage, generation + ".authority.json")))
+            {
+                authority.SetLength(2 * 1024 * 1024);
+            }
+            File.WriteAllText(
+                Path.Combine(diagnostics, "operational.jsonl"),
+                new string('x', 1024 * 1024));
+
+            IncidentManifest manifest = IncidentExporter.Build(
+                Marvel.Tests.RepositoryPaths.Root, saves, diagnostics);
+
+            Assert.Equal("offline_evidence_has_invalid_selected_generation", manifest.Health);
+            Assert.Equal(1, Assert.Single(manifest.Diagnostics).InvalidRecords);
+            IncidentSaveGeneration saved = Assert.Single(
+                manifest.SaveGenerations, value => !value.Selected);
+            Assert.Equal(64, saved.SessionSha256!.Length);
+            Assert.Equal(64, saved.AuthoritySha256!.Length);
+            Assert.Contains(
+                manifest.SaveGenerations,
+                value => value.Selected && value.ErrorCode == "invalid_manifest");
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
     private static Dictionary<string, string> Snapshot(params string[] roots) =>
         roots.Where(Directory.Exists)
             .SelectMany(root => Directory.GetFiles(root, "*", SearchOption.AllDirectories))

@@ -34,6 +34,8 @@ public sealed record IncidentSaveGeneration(
 /// <summary>Builds evidence without loading, replaying, migrating, or repairing a session.</summary>
 public static class IncidentExporter
 {
+    private const int MaximumDiagnosticLineCharacters = 4096;
+    private const int MaximumManifestBytes = 64;
     private const int MaximumSelectedRecords = 2000;
     private static readonly JsonSerializerOptions Options = new()
     {
@@ -85,10 +87,14 @@ public static class IncidentExporter
         {
             var records = new List<OperationalRecord>();
             int invalid = 0;
-            foreach (string line in File.ReadLines(path))
+            foreach (string? line in ReadBoundedLines(path))
             {
                 try
                 {
+                    if (line is null)
+                    {
+                        throw new JsonException("operational record exceeds its bound");
+                    }
                     records.Add(OperationalJson.ReadVerified(line));
                 }
                 catch (JsonException)
@@ -126,9 +132,7 @@ public static class IncidentExporter
             }
 
             string manifest = Path.Combine(directory, "current");
-            string? selected = File.Exists(manifest)
-                ? File.ReadAllText(manifest).Trim()
-                : null;
+            string? selected = ReadManifest(manifest);
             bool validSelection = selected is not null && ValidToken(selected);
             string[] generations = Directory.GetFiles(directory, "*.session.json")
                 .Select(path => Path.GetFileName(path)[..^".session.json".Length])
@@ -171,6 +175,58 @@ public static class IncidentExporter
         value.Length == 32
         && value.All(character => character is >= '0' and <= '9' or >= 'a' and <= 'f');
 
-    private static string Hash(string path) =>
-        Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();
+    private static string? ReadManifest(string path)
+    {
+        if (!File.Exists(path) || new FileInfo(path).Length > MaximumManifestBytes)
+        {
+            return null;
+        }
+
+        return File.ReadAllText(path).Trim();
+    }
+
+    private static IEnumerable<string?> ReadBoundedLines(string path)
+    {
+        using var reader = new StreamReader(path, detectEncodingFromByteOrderMarks: true);
+        var line = new System.Text.StringBuilder();
+        bool exceeded = false;
+        int character;
+        while ((character = reader.Read()) >= 0)
+        {
+            if (character == '\n')
+            {
+                if (!exceeded && line.Length > 0 && line[^1] == '\r')
+                {
+                    line.Length--;
+                }
+                yield return exceeded ? null : line.ToString();
+                line.Clear();
+                exceeded = false;
+            }
+            else if (!exceeded)
+            {
+                if (line.Length < MaximumDiagnosticLineCharacters)
+                {
+                    line.Append((char)character);
+                }
+                else
+                {
+                    exceeded = true;
+                    line.Clear();
+                }
+            }
+        }
+
+        if (exceeded || line.Length > 0)
+        {
+            yield return exceeded ? null : line.ToString();
+        }
+    }
+
+    private static string Hash(string path)
+    {
+        using var stream = new FileStream(
+            path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        return Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
+    }
 }
