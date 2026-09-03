@@ -54,6 +54,11 @@ public sealed class MemorySessionStore : ISessionStore
     public void Commit(StoredSession session)
     {
         ArgumentNullException.ThrowIfNull(session);
+        if (session.Save is null)
+        {
+            throw new SessionSaveException("stored generation has no save");
+        }
+
         generations[session.Save.Session.StorageId] = StoredSessionJson.Write(session);
     }
 }
@@ -503,6 +508,11 @@ internal static class StoredSessionJson
     private static void Validate(StoredSession session, bool readable = false)
     {
         ArgumentNullException.ThrowIfNull(session);
+        if (session.Save is null)
+        {
+            throw new SessionSaveException("stored generation has no save");
+        }
+
         if (readable)
         {
             SessionSaveJson.ValidateReadable(session.Save);
@@ -513,7 +523,7 @@ internal static class StoredSessionJson
         }
         if (session.Authorities is null
             || session.Authorities.Any(authority => authority is null
-                || authority.Verifier.Length != 64
+                || authority.Verifier is not { Length: 64 }
                 || authority.Verifier.Any(character =>
                     character is not (>= '0' and <= '9')
                     and not (>= 'a' and <= 'f'))

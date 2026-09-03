@@ -125,7 +125,10 @@ public static class SessionSaveJson
             Validate(save);
             return save;
         }
-        catch (JsonException failure)
+        catch (Exception failure) when (failure is JsonException
+            or FormatException
+            or InvalidOperationException
+            or NotSupportedException)
         {
             throw new SessionSaveException("save is not valid schema JSON", failure);
         }

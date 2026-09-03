@@ -284,8 +284,11 @@ public sealed class SessionPersistenceTests
         }
     }
 
-    [Fact]
-    public void RestoreCandidatesKeepAHealthyGenerationBesideACorruptOne()
+    [Theory]
+    [InlineData("invalid-json")]
+    [InlineData("oversized-schema")]
+    [InlineData("null-verifier")]
+    public void RestoreCandidatesKeepAHealthyGenerationBesideACorruptOne(string corruption)
     {
         string root = Path.Combine(
             Path.GetTempPath(), $"marvel-session-quarantine-{Guid.NewGuid():N}");
@@ -298,7 +301,32 @@ public sealed class SessionPersistenceTests
             store.Commit(Stored(revision: 1, healthyId, "healthy-table"));
             string badSave = Assert.Single(Directory.GetFiles(
                 Path.Combine(root, badId), "*.session.json"));
-            File.WriteAllText(badSave, "not-json");
+            string badAuthority = Assert.Single(Directory.GetFiles(
+                Path.Combine(root, badId), "*.authority.json"));
+            switch (corruption)
+            {
+                case "invalid-json":
+                    File.WriteAllText(badSave, "not-json");
+                    break;
+                case "oversized-schema":
+                    File.WriteAllText(
+                        badSave,
+                        File.ReadAllText(badSave).Replace(
+                            "\"schema\":2",
+                            "\"schema\":999999999999999999999",
+                            StringComparison.Ordinal));
+                    break;
+                case "null-verifier":
+                    File.WriteAllText(
+                        badAuthority,
+                        File.ReadAllText(badAuthority).Replace(
+                            "\"verifier\":\"" + new string('f', 64) + "\"",
+                            "\"verifier\":null",
+                            StringComparison.Ordinal));
+                    break;
+                default:
+                    throw new InvalidOperationException(corruption);
+            }
 
             IReadOnlyList<SessionLoadResult> candidates = store.LoadForRestore();
 
