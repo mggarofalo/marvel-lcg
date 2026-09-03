@@ -145,6 +145,11 @@ public sealed record GameProgressPresentation(
         bool locksDecisions)
     {
         ArgumentNullException.ThrowIfNull(error);
+        if (error.Code == "unsupported_version" || IsStorageFailure(error.Code))
+        {
+            return Unavailable(error);
+        }
+
         return new(
             GameProgressKind.SynchronizationUnavailable,
             "Table not synchronized.",
@@ -171,6 +176,15 @@ public sealed record GameProgressPresentation(
         ClientStartupError error)
     {
         ArgumentNullException.ThrowIfNull(error);
+        if (IsStorageFailure(error.Code))
+        {
+            return Unavailable(error) with
+            {
+                Description = error.Message
+                    + " The last authoritative table was recovered, but input remains locked.",
+            };
+        }
+
         GameProgressPresentation current = FromResponse(response);
         return current.Kind switch
         {
@@ -231,8 +245,7 @@ public sealed record GameProgressPresentation(
                 error.Message,
                 "SESSION EXPIRED  ·  RETURN TO JOIN",
                 LocksDecisions: true),
-            "save_failed" or "persistence_failed" or "restore_failed"
-                or "unsupported_downgrade" => new(
+            _ when IsStorageFailure(error.Code) => new(
                     GameProgressKind.StorageFailure,
                     "Server storage unavailable.",
                     error.Message,
@@ -246,6 +259,10 @@ public sealed record GameProgressPresentation(
                 LocksDecisions: true),
         };
     }
+
+    private static bool IsStorageFailure(string code) => code is
+        "save_failed" or "persistence_failed" or "restore_failed"
+        or "unsupported_downgrade";
 
     internal static string Humanize(string value)
     {

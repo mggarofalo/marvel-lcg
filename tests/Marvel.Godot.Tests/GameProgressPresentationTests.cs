@@ -125,6 +125,34 @@ public sealed class GameProgressPresentationTests
         Assert.DoesNotContain("mutation", unavailable.Description, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Theory]
+    [InlineData("unsupported_version", GameProgressKind.VersionMismatch)]
+    [InlineData("save_failed", GameProgressKind.StorageFailure)]
+    public void SynchronizationCannotResumeAcrossAnOperationalBoundary(
+        string code,
+        GameProgressKind expected)
+    {
+        GameProgressPresentation unavailable =
+            GameProgressPresentation.SynchronizationUnavailable(
+                new ClientStartupError(code, "The boundary changed."),
+                locksDecisions: false);
+
+        Assert.Equal(expected, unavailable.Kind);
+        Assert.True(unavailable.LocksDecisions);
+    }
+
+    [Fact]
+    public void ARecoveredTableRemainsLockedAfterAStorageFailure()
+    {
+        GameProgressPresentation recovered = GameProgressPresentation.Recovered(
+            Response(Outcome.Unfinished),
+            new ClientStartupError("save_failed", "The save did not commit."));
+
+        Assert.Equal(GameProgressKind.StorageFailure, recovered.Kind);
+        Assert.True(recovered.LocksDecisions);
+        Assert.Contains("recovered", recovered.Description, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Fact]
     public void ARejectedDecisionWithoutARecoveredTableIsLockedButNotUnconfirmed()
     {
