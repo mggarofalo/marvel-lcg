@@ -1,13 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <RootNamespace>Marvel.Decisions</RootNamespace>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <MarvelPresentationRole>Client</MarvelPresentationRole>
     <DisableTransitiveProjectReferences>true</DisableTransitiveProjectReferences>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../Marvel.Rules/Marvel.Rules.csproj" />
+    <ProjectReference Include="../../../src/Marvel.Core/Marvel.Core.csproj" />
   </ItemGroup>
 
 </Project>

@@ -3,6 +3,7 @@
   <PropertyGroup>
     <RootNamespace>Marvel.View</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <DisableTransitiveProjectReferences>true</DisableTransitiveProjectReferences>
   </PropertyGroup>
 
   <ItemGroup>

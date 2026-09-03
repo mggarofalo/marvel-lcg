@@ -3,10 +3,12 @@
   <PropertyGroup>
     <RootNamespace>Marvel.Client</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <DisableTransitiveProjectReferences>true</DisableTransitiveProjectReferences>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="../Marvel.Decisions/Marvel.Decisions.csproj" />
+    <ProjectReference Include="../Marvel.Rules/Marvel.Rules.csproj" />
     <ProjectReference Include="../Marvel.Server/Marvel.Server.csproj" />
     <ProjectReference Include="../Marvel.View/Marvel.View.csproj" />
   </ItemGroup>

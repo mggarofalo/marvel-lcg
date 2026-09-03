@@ -13,8 +13,8 @@ remain available for research without making expansion content playable. See
 [docs/scope.md](docs/scope.md).
 
 ```
-src/        engine and hosts — through `Marvel.Server`, plus the `Marvel.Godot` client
-tests/      the test suite, plus `godot-wall/` (projects that must fail to build)
+src/        engine, projections, decision composition, clients and hosts
+tests/      the test suite, plus wall probes (projects that must fail to build)
 tools/      repo-level scripts, and the six that read a dataset in or out
 datasets/   the rules, the cards, and what a scenario is dealt from
 specs/      authority-derived executable Core Gherkin, plus inherited drafts
@@ -23,6 +23,25 @@ docs/       design documents and wire-format specifications
 
 The repository began as a fork of a Python implementation of the same game.
 None of that code remains, and **none of it is an authority on anything.**
+
+## Put presentation code in the right project
+
+The presentation boundary has five distinct jobs. Choose the project by what
+the code decides, not by which project currently calls it.
+
+| Project | Owns |
+|---|---|
+| `Marvel.View` | Visibility filtering and render-safe descriptions of authorized engine results. |
+| `Marvel.Decisions` | Drafting an answer from one prompt and calling engine-owned legality functions. |
+| `Marvel.Server` | The protocol, authoritative host and transport implementations. |
+| `Marvel.Client` | Transport selection, request lifecycle, response validation and recoverable client state. |
+| `Marvel.Godot` | Nodes, controls, gestures, animation, styling and other Godot-specific behavior. |
+
+If code decides whether a game action is legal or changes game state, it belongs
+in the engine. A client may ask an engine-owned function whether its current
+draft is accepted; it must not reproduce that rule from card text, counters or
+the visible board. Read [presentation-layer.md](docs/presentation-layer.md)
+before changing any of these five projects.
 
 ## Non-negotiables
 
@@ -133,9 +152,9 @@ Seven, all run by hand and none on any path a game takes.
 | what the engine tells a client the player can do | [affordances.md](docs/affordances.md) |
 | saves, deterministic replay, undo, redo, action reordering, session logs or telemetry | [session-ledger.md](docs/session-ledger.md) |
 | the supported product boundary | [scope.md](docs/scope.md) |
-| the client, the engine's return signature, `Marvel.Server` | [presentation-layer.md](docs/presentation-layer.md) |
+| `Marvel.View`, `Marvel.Decisions`, `Marvel.Server`, `Marvel.Client` or `Marvel.Godot` | [presentation-layer.md](docs/presentation-layer.md) |
 | launching or smoke-testing the Godot client | [godot-client.md](docs/godot-client.md) |
-| adding a C# project, or changing a `TargetFramework` | [presentation-layer.md](docs/presentation-layer.md#dependency-rules) |
+| adding a C# project, or changing a `TargetFramework` | [presentation-layer.md](docs/presentation-layer.md#build-boundary) |
 | Plane issues, modules, labels, priority | [plane.md](docs/plane.md) |
 | why the engine is shaped as it is | [migration.md](docs/migration.md) |
 
@@ -145,6 +164,7 @@ Seven, all run by hand and none on any path a game takes.
 dotnet build Marvel.slnx -c Release    # warnings are errors
 dotnet test Marvel.slnx -c Release
 bash tools/godot-wall.sh               # prove the build gates still fire
+bash tools/presentation-wall.sh        # prove project ownership gates fire
 ```
 
 The solution file is **`Marvel.slnx`**, not `.sln`.
@@ -196,7 +216,7 @@ ruling or a pack changes, is
 
 | Workflow | Runs | What |
 |---|---|---|
-| [`ci.yml`](.github/workflows/ci.yml) | every push to `master`, every PR | the build and test suite, and the Godot wall |
+| [`ci.yml`](.github/workflows/ci.yml) | every push to `master`, every PR | the build, test suite, presentation walls and native Godot checks |
 
 **Everything in `ci.yml` is verified green on Windows and Linux.** Keep it that
 way: a gate that has never passed on one OS does not belong here. A red

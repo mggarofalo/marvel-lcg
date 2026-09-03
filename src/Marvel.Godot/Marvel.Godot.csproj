@@ -1,11 +1,12 @@
 <Project Sdk="Godot.NET.Sdk/4.7.0">
 
   <!-- The desktop presentation assembly. Godot is allowed here and nowhere
-       below this point; Directory.Build.targets enforces both sides. -->
+       in the shared presentation or engine projects. -->
   <PropertyGroup>
     <RootNamespace>Marvel.Godot</RootNamespace>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <MarvelMayReferenceGodot>true</MarvelMayReferenceGodot>
+    <DisableTransitiveProjectReferences>true</DisableTransitiveProjectReferences>
     <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
 
@@ -14,6 +15,7 @@
   <ItemGroup>
     <ProjectReference Include="../Marvel.Client/Marvel.Client.csproj" />
     <ProjectReference Include="../Marvel.Decisions/Marvel.Decisions.csproj" />
+    <ProjectReference Include="../Marvel.Rules/Marvel.Rules.csproj" />
     <ProjectReference Include="../Marvel.Server/Marvel.Server.csproj" />
     <ProjectReference Include="../Marvel.View/Marvel.View.csproj" />
   </ItemGroup>

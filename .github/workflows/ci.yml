@@ -98,6 +98,12 @@ jobs:
       - name: Test
         run: dotnet test --no-build --configuration Release
 
+      # The solution build proves every allowed presentation dependency. These
+      # probes prove that each role's forbidden-reference branch also fires.
+      - name: The presentation project walls fire
+        shell: bash
+        run: bash tools/presentation-wall.sh
+
       - name: A complete local game is playable through native Godot controls (Linux)
         if: runner.os == 'Linux'
         shell: bash

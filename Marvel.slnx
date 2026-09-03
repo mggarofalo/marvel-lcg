@@ -23,6 +23,7 @@
     <Project Path="tools/Marvel.MarvelCdb.Harvest/Marvel.MarvelCdb.Harvest.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Marvel.Architecture.Tests/Marvel.Architecture.Tests.csproj" />
     <Project Path="tests/Marvel.Core.Tests/Marvel.Core.Tests.csproj" />
     <Project Path="tests/Marvel.Rules.Tests/Marvel.Rules.Tests.csproj" />
     <Project Path="tests/Marvel.Decisions.Tests/Marvel.Decisions.Tests.csproj" />

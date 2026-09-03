@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <MarvelPresentationRole>Client</MarvelPresentationRole>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../src/Marvel.Rules/Marvel.Rules.csproj" />
+  </ItemGroup>
+
+</Project>
