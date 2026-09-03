@@ -32,13 +32,17 @@ public interface ISessionStore
 
     /// <summary>Commits a complete generation before returning.</summary>
     void Commit(StoredSession session);
+
+    /// <summary>Returns the selected opaque generation, when the store exposes one.</summary>
+    string? CurrentGeneration(string storageId) => null;
 }
 
 /// <summary>One independently loadable session or its bounded quarantine result.</summary>
 public sealed record SessionLoadResult(
     StoredSession? Session,
     string? StorageId,
-    string? ErrorCode);
+    string? ErrorCode,
+    string? Generation = null);
 
 /// <summary>An isolated store used when a host has no filesystem authority.</summary>
 public sealed class MemorySessionStore : ISessionStore
@@ -144,6 +148,7 @@ public sealed class FileSessionStore : ISessionStore
                      .OrderBy(path => path, StringComparer.Ordinal))
         {
             string storageId = Path.GetFileName(directory);
+            string? generation = null;
             try
             {
                 if (storageId.StartsWith(".creating-", StringComparison.Ordinal))
@@ -158,7 +163,7 @@ public sealed class FileSessionStore : ISessionStore
                     continue;
                 }
 
-                string generation = ReadStrict(manifest).Trim();
+                generation = ReadStrict(manifest).Trim();
                 if (!ValidGeneration(generation))
                 {
                     throw new SessionSaveException(
@@ -178,14 +183,18 @@ public sealed class FileSessionStore : ISessionStore
                         $"session {storageId} generation names another storage id");
                 }
 
-                results.Add(new SessionLoadResult(session, storageId, null));
+                results.Add(new SessionLoadResult(session, storageId, null, generation));
             }
             catch (Exception failure) when (failure is IOException
                 or UnauthorizedAccessException
                 or JsonException
                 or SessionSaveException)
             {
-                results.Add(new SessionLoadResult(null, storageId, "restore_failed"));
+                results.Add(new SessionLoadResult(
+                    null,
+                    storageId,
+                    "restore_failed",
+                    ValidGeneration(generation ?? string.Empty) ? generation : null));
             }
         }
 
@@ -232,6 +241,20 @@ public sealed class FileSessionStore : ISessionStore
         WriteFlushed(temporaryManifest, generation + "\n");
         MoveDurably(temporaryManifest, manifest, overwrite: true);
         RemoveObsoleteGenerationsBestEffort(directory, generation, previous);
+    }
+
+    /// <inheritdoc />
+    public string? CurrentGeneration(string storageId)
+    {
+        RequireStorageId(storageId);
+        string manifest = Path.Combine(root, storageId, Current);
+        if (!File.Exists(manifest))
+        {
+            return null;
+        }
+
+        string generation = ReadStrict(manifest).Trim();
+        return ValidGeneration(generation) ? generation : null;
     }
 
     private static void WriteFlushed(string path, string value)

@@ -39,6 +39,9 @@ public static class OperationalEventIds
 
     /// <summary>One persistence stage reached a final operational disposition.</summary>
     public const string PersistenceCompleted = "session.persistence.completed";
+
+    /// <summary>A configured durable diagnostic destination could not be used.</summary>
+    public const string DiagnosticsUnavailable = "diagnostics.sink.unavailable";
 }
 
 /// <summary>
@@ -61,7 +64,13 @@ public sealed record OperationalRecord(
     bool? ReplayVerified = null,
     bool? ReplayDiverged = null,
     bool? SessionRetired = null,
-    string? ErrorCode = null);
+    string? ErrorCode = null,
+    string? ProductVersion = null,
+    string? Commit = null,
+    string? Runtime = null,
+    long? ExpectedRevision = null,
+    string? SaveGeneration = null,
+    string? Stage = null);
 
 /// <summary>A destination for already-redacted structured operational records.</summary>
 public interface IOperationalSink
@@ -113,7 +122,10 @@ public sealed class OperationalLog
         bool? replayVerified = null,
         bool? replayDiverged = null,
         bool? sessionRetired = null,
-        string? errorCode = null)
+        string? errorCode = null,
+        long? expectedRevision = null,
+        string? saveGeneration = null,
+        string? stage = null)
     {
         if (sink is null)
         {
@@ -138,7 +150,13 @@ public sealed class OperationalLog
                 replayVerified,
                 replayDiverged,
                 sessionRetired,
-                SafeErrorCode(errorCode));
+                SafeErrorCode(errorCode),
+                EngineBuildIdentity.ProductVersion,
+                EngineBuildIdentity.Commit,
+                EngineBuildIdentity.Display,
+                expectedRevision,
+                SafeGeneration(saveGeneration),
+                SafeStage(stage));
             Dispatcher.Enqueue(sink, record);
         }
         catch (Exception)
@@ -193,6 +211,7 @@ public sealed class OperationalLog
             or "persistence_failed" or "replay_diverged" or "replay_failed"
             or "restore_failed" or "save_failed"
             or "server_start_failed"
+            or "diagnostics_unavailable"
             or "session_not_found" or "setup_unavailable" or "stale_decision"
             or "stale_history" or "transport_cancelled" or "transport_failed"
             or "unsupported_version"
@@ -216,6 +235,18 @@ public sealed class OperationalLog
         byte[] digest = SHA256.HashData(Encoding.UTF8.GetBytes(value));
         return Convert.ToHexString(digest.AsSpan(0, 16)).ToLowerInvariant();
     }
+
+    private static string? SafeGeneration(string? value) =>
+        value is { Length: 32 }
+        && value.All(character => character is >= '0' and <= '9' or >= 'a' and <= 'f')
+            ? value
+            : value is null ? null : "unknown";
+
+    private static string? SafeStage(string? value) => value switch
+    {
+        null or "restore" or "migration" or "quarantine" => value,
+        _ => "unknown",
+    };
 
     private static class Dispatcher
     {
@@ -281,12 +312,6 @@ public sealed class OperationalLog
 /// <summary>Writes the same structured records as one JSON object per line.</summary>
 public sealed class JsonTextOperationalSink(TextWriter writer) : IOperationalSink
 {
-    private static readonly JsonSerializerOptions Options = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    };
-
     private readonly TextWriter writer =
         writer ?? throw new ArgumentNullException(nameof(writer));
 
@@ -294,7 +319,154 @@ public sealed class JsonTextOperationalSink(TextWriter writer) : IOperationalSin
     public void Write(OperationalRecord record)
     {
         ArgumentNullException.ThrowIfNull(record);
-        writer.WriteLine(JsonSerializer.Serialize(record, Options));
+        writer.WriteLine(OperationalJson.Serialize(record));
         writer.Flush();
+    }
+}
+
+internal static class OperationalJson
+{
+    private static readonly JsonSerializerOptions Options = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+    };
+
+    public static string Serialize(OperationalRecord record) =>
+        JsonSerializer.Serialize(record, Options);
+
+    public static OperationalRecord Read(string json) =>
+        JsonSerializer.Deserialize<OperationalRecord>(json, Options)
+        ?? throw new JsonException("operational record is null");
+}
+
+/// <summary>Retains bounded private JSON-lines diagnostics beside stderr.</summary>
+public sealed class RotatingJsonFileOperationalSink : IOperationalSink, IDisposable
+{
+    private const string ActiveName = "operational.jsonl";
+    private readonly Func<DateTimeOffset> clock;
+    private readonly long maximumBytes;
+    private readonly int maximumArchives;
+    private readonly TimeSpan retention;
+    private readonly string root;
+    private readonly object gate = new();
+    private StreamWriter? writer;
+
+    /// <summary>Creates a size- and age-bounded diagnostic destination.</summary>
+    public RotatingJsonFileOperationalSink(
+        string root,
+        long maximumBytes = 10 * 1024 * 1024,
+        int maximumArchives = 9,
+        TimeSpan? retention = null,
+        Func<DateTimeOffset>? clock = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(root);
+        if (maximumBytes <= 0 || maximumArchives < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maximumBytes));
+        }
+
+        this.root = Path.GetFullPath(root);
+        this.maximumBytes = maximumBytes;
+        this.maximumArchives = maximumArchives;
+        this.retention = retention ?? TimeSpan.FromDays(30);
+        this.clock = clock ?? (() => DateTimeOffset.UtcNow);
+        Directory.CreateDirectory(this.root);
+        MakePrivate(this.root, directory: true);
+        Prune();
+    }
+
+    /// <inheritdoc />
+    public void Write(OperationalRecord record)
+    {
+        ArgumentNullException.ThrowIfNull(record);
+        string line = OperationalJson.Serialize(record);
+        lock (gate)
+        {
+            EnsureWriter();
+            if (writer!.BaseStream.Length > 0
+                && writer.BaseStream.Length + System.Text.Encoding.UTF8.GetByteCount(line) + 1
+                    > maximumBytes)
+            {
+                Rotate();
+                EnsureWriter();
+            }
+
+            writer!.WriteLine(line);
+            writer.Flush();
+        }
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        lock (gate)
+        {
+            writer?.Dispose();
+            writer = null;
+        }
+    }
+
+    private void EnsureWriter()
+    {
+        if (writer is not null)
+        {
+            return;
+        }
+
+        string path = Path.Combine(root, ActiveName);
+        var stream = new FileStream(
+            path, FileMode.Append, FileAccess.Write, FileShare.Read,
+            bufferSize: 4096, FileOptions.WriteThrough);
+        MakePrivate(path, directory: false);
+        writer = new StreamWriter(stream, new System.Text.UTF8Encoding(false));
+    }
+
+    private void Rotate()
+    {
+        writer?.Dispose();
+        writer = null;
+        string active = Path.Combine(root, ActiveName);
+        for (int suffix = 0; ; suffix++)
+        {
+            string archive = Path.Combine(
+                root,
+                $"operational-{clock().UtcDateTime:yyyyMMddHHmmssfff}-{suffix:D3}.jsonl");
+            if (!File.Exists(archive))
+            {
+                File.Move(active, archive);
+                break;
+            }
+        }
+
+        Prune();
+    }
+
+    private void Prune()
+    {
+        DateTimeOffset cutoff = clock() - retention;
+        string[] archives = Directory.GetFiles(root, "operational-*.jsonl")
+            .OrderByDescending(File.GetLastWriteTimeUtc)
+            .ToArray();
+        foreach (string archive in archives
+                     .Where((path, index) => index >= maximumArchives
+                         || File.GetLastWriteTimeUtc(path) < cutoff.UtcDateTime))
+        {
+            File.Delete(archive);
+        }
+    }
+
+    private static void MakePrivate(string path, bool directory)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        File.SetUnixFileMode(
+            path,
+            directory
+                ? UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute
+                : UnixFileMode.UserRead | UnixFileMode.UserWrite);
     }
 }

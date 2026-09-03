@@ -32,8 +32,11 @@ information frontier, linear undo and redo, legal action reordering, and the
 redacted structured operational-log boundary are implemented for hosted
 sessions. The embedded host uses the same ledger and replay path with an
 isolated memory store. Opt-in bounded metrics and correlated traces consume the
-same redacted operational signals. No client snapshot or simulation record is a
-player save.
+same redacted operational signals. A configured private diagnostics volume now
+retains rotated copies, and a read-only incident manifest correlates those
+records with hashes of the opaque save generations. Neither is replay or save
+authority. No client snapshot, incident record or simulation record is a player
+save.
 
 ## Boundary
 

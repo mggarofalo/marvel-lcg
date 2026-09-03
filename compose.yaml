@@ -9,6 +9,7 @@ services:
       - "${MARVEL_SERVER_BIND:-127.0.0.1}:${MARVEL_SERVER_PORT:-41923}:41923"
     volumes:
       - marvel-sessions:/var/lib/marvel/sessions
+      - marvel-diagnostics:/var/lib/marvel/diagnostics
     read_only: true
     cap_drop:
       - ALL
@@ -23,6 +24,8 @@ services:
 volumes:
   marvel-sessions:
     name: marvel-sessions
+  marvel-diagnostics:
+    name: marvel-diagnostics
 
 networks:
   marvel-server:

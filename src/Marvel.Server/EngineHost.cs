@@ -179,7 +179,8 @@ public sealed class EngineHost : IEngineEndpoint
             replayVerified: accepted && replays,
             replayDiverged: replayDiverged,
             sessionRetired: sessionRetired,
-            errorCode: response.Error?.Code);
+            errorCode: response.Error?.Code,
+            expectedRevision: request.ExpectedRevision);
         return response;
     }
 
@@ -388,7 +389,7 @@ public sealed class EngineHost : IEngineEndpoint
         proposedAuthorities.AddRange(issuedInvitations.Select(pair =>
             Authority(pair.token, pair.grant.Scope, request.Game.Heroes.Count,
                 owner: false, invitation: true)));
-        ObservePersistence(request, () =>
+        ObservePersistence(request, save.Session.StorageId, () =>
             store.Commit(new StoredSession(save, proposedAuthorities)));
         sessions.Add(Verifier(capability), new SessionAccess(session, scope, Owner: true));
         foreach (var (grant, token) in issuedInvitations)
@@ -485,7 +486,7 @@ public sealed class EngineHost : IEngineEndpoint
                 invitation: false))
             .ToList();
         SessionSave stamped = Stamp(pending.Session.Save);
-        ObservePersistence(request, () =>
+        ObservePersistence(request, stamped.Session.StorageId, () =>
             store.Commit(new StoredSession(stamped, authorities)));
         pending.Session.Save = stamped;
         invitations.Remove(invitationVerifier);
@@ -642,7 +643,7 @@ public sealed class EngineHost : IEngineEndpoint
                 phase,
                 candidate.Pending,
                 exposures));
-            ObservePersistence(request, () =>
+            ObservePersistence(request, proposed.Session.StorageId, () =>
                 store.Commit(new StoredSession(proposed, Authorities(access.Session))));
             access.Session.Game = candidate;
             access.Session.Save = proposed;
@@ -760,7 +761,7 @@ public sealed class EngineHost : IEngineEndpoint
             };
             Game verified = ObserveReplay(request, () =>
                 SessionReplay.Verify(proposed, compatibility, ReplayOpen));
-            ObservePersistence(request, () =>
+            ObservePersistence(request, proposed.Session.StorageId, () =>
                 store.Commit(new StoredSession(proposed, Authorities(access.Session))));
             access.Session.Game = verified;
             access.Session.Save = proposed;
@@ -896,7 +897,7 @@ public sealed class EngineHost : IEngineEndpoint
             };
             Game verified = ObserveReplay(request, () =>
                 SessionReplay.Verify(proposed, compatibility, ReplayOpen));
-            ObservePersistence(request, () =>
+            ObservePersistence(request, proposed.Session.StorageId, () =>
                 store.Commit(new StoredSession(proposed, Authorities(access.Session))));
             access.Session.Game = verified;
             access.Session.Save = proposed;
@@ -947,7 +948,7 @@ public sealed class EngineHost : IEngineEndpoint
                 Compatibility = compatibility,
                 Session = access.Session.Save.Session with { Lifecycle = "retired" },
             };
-            ObservePersistence(request, () =>
+            ObservePersistence(request, retired.Session.StorageId, () =>
                 store.Commit(new StoredSession(retired, [])));
             Remove(access.Session);
             sessionRetired = true;
@@ -959,7 +960,7 @@ public sealed class EngineHost : IEngineEndpoint
                 .Where(authority => authority.Verifier != verifier)
                 .ToList();
             SessionSave stamped = Stamp(access.Session.Save);
-            ObservePersistence(request, () =>
+            ObservePersistence(request, stamped.Session.StorageId, () =>
                 store.Commit(new StoredSession(stamped, authorities)));
             access.Session.Save = stamped;
             sessions.Remove(verifier);
@@ -1012,17 +1013,23 @@ public sealed class EngineHost : IEngineEndpoint
         }
     }
 
-    private void ObservePersistence(EngineRequest request, Action work)
+    private void ObservePersistence(
+        EngineRequest request,
+        string storageId,
+        Action work)
     {
         var elapsed = Stopwatch.StartNew();
         try
         {
             work();
             elapsed.Stop();
+            string? saveGeneration = ObservedGeneration(storageId);
             log.Write(
                 OperationalEventIds.PersistenceCompleted, "accepted",
                 elapsed.ElapsedMilliseconds, request.RequestId, request.GameId,
-                operation: "persistence", saveCommitted: true);
+                operation: "persistence", saveCommitted: true,
+                expectedRevision: request.ExpectedRevision,
+                saveGeneration: saveGeneration);
         }
         catch (Exception failure)
         {
@@ -1030,8 +1037,23 @@ public sealed class EngineHost : IEngineEndpoint
             log.Write(
                 OperationalEventIds.PersistenceCompleted, "rejected",
                 elapsed.ElapsedMilliseconds, request.RequestId, request.GameId,
-                operation: "persistence", errorCode: "persistence_failed");
+                operation: "persistence", errorCode: "persistence_failed",
+                expectedRevision: request.ExpectedRevision);
             throw new PersistenceFailureException(failure);
+        }
+    }
+
+    private string? ObservedGeneration(string storageId)
+    {
+        try
+        {
+            return store.CurrentGeneration(storageId);
+        }
+        catch (Exception)
+        {
+            // Generation correlation is observation only. A failed read
+            // after commit cannot change the command's durable outcome.
+            return null;
         }
     }
 
@@ -1085,6 +1107,8 @@ public sealed class EngineHost : IEngineEndpoint
                     OperationalEventIds.SessionRestoreFailed,
                     "rejected",
                     gameId: candidate.StorageId,
+                    saveGeneration: candidate.Generation,
+                    stage: "quarantine",
                     errorCode: candidate.ErrorCode ?? "restore_failed");
                 continue;
             }
@@ -1144,7 +1168,10 @@ public sealed class EngineHost : IEngineEndpoint
                     gameId: current.Save.Session.Label,
                     revision: current.Save.Revision,
                     saveCommitted: saveCommitted,
-                    replayVerified: true);
+                    replayVerified: true,
+                    saveGeneration: ObservedGeneration(
+                        current.Save.Session.StorageId),
+                    stage: saveCommitted ? "migration" : "restore");
             }
             catch (Exception failure)
             {
@@ -1162,6 +1189,10 @@ public sealed class EngineHost : IEngineEndpoint
                     revision: stored.Save.Revision,
                     saveCommitted: saveCommitted,
                     replayDiverged: failure is ReplayDivergenceException,
+                    saveGeneration: saveCommitted
+                        ? ObservedGeneration(stored.Save.Session.StorageId)
+                        : candidate.Generation,
+                    stage: "quarantine",
                     errorCode: failure switch
                     {
                         ReplayDivergenceException => "replay_diverged",

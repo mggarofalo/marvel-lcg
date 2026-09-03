@@ -176,7 +176,8 @@ public sealed class SocketTransport(
             request.GameId,
             request.Operation,
             revision,
-            errorCode: errorCode);
+            errorCode: errorCode,
+            expectedRevision: request.ExpectedRevision);
     }
 }
 

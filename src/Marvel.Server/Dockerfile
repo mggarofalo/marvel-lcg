@@ -36,11 +36,12 @@ COPY datasets/cards/cards.json datasets/cards/cards.json
 COPY datasets/setup/setup.json datasets/setup/setup.json
 COPY datasets/abilities/abilities.json datasets/abilities/abilities.json
 
-RUN mkdir -p /var/lib/marvel/sessions && chown "$APP_UID:$APP_UID" /var/lib/marvel/sessions
-VOLUME ["/var/lib/marvel/sessions"]
+RUN mkdir -p /var/lib/marvel/sessions /var/lib/marvel/diagnostics \
+    && chown "$APP_UID:$APP_UID" /var/lib/marvel/sessions /var/lib/marvel/diagnostics
+VOLUME ["/var/lib/marvel/sessions", "/var/lib/marvel/diagnostics"]
 EXPOSE 41923
 STOPSIGNAL SIGTERM
 HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=3 \
     CMD ["dotnet", "Marvel.Server.dll", "--health-check"]
 USER $APP_UID
-ENTRYPOINT ["dotnet", "Marvel.Server.dll", "--listen", "0.0.0.0", "--port", "41923", "--data-root", "/app", "--save-root", "/var/lib/marvel/sessions"]
+ENTRYPOINT ["dotnet", "Marvel.Server.dll", "--listen", "0.0.0.0", "--port", "41923", "--data-root", "/app", "--save-root", "/var/lib/marvel/sessions", "--diagnostics-root", "/var/lib/marvel/diagnostics"]

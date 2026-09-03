@@ -133,23 +133,28 @@ jobs:
           image=marvel-server-ci
           container=marvel-server-ci-${{ github.run_id }}
           volume=marvel-server-ci-${{ github.run_id }}
+          diagnostics=marvel-diagnostics-ci-${{ github.run_id }}
           cleanup() {
             docker rm --force "$container" >/dev/null 2>&1 || true
             docker volume rm "$volume" >/dev/null 2>&1 || true
+            docker volume rm "$diagnostics" >/dev/null 2>&1 || true
           }
           trap cleanup EXIT
           docker build --file src/Marvel.Server/Dockerfile --tag "$image" .
           compose=$(MARVEL_SERVER_IMAGE="$image" docker compose config)
           grep -q 'container_name: marvel-server' <<<"$compose"
           grep -q 'name: marvel-sessions' <<<"$compose"
+          grep -q 'name: marvel-diagnostics' <<<"$compose"
           [[ $(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.version"}}' "$image") == 0.1.0-dev.0 ]]
           docker run --rm --entrypoint dotnet "$image" Marvel.Server.dll --version |
             grep -F 'v0.1.0-dev.0 · engine engine-replay-v1 · protocol 11 · save 2'
           docker volume create "$volume" >/dev/null
+          docker volume create "$diagnostics" >/dev/null
           docker run --detach --name "$container" \
             --stop-timeout 40 \
             --publish 127.0.0.1:41924:41923 \
             --volume "$volume:/var/lib/marvel/sessions" \
+            --volume "$diagnostics:/var/lib/marvel/diagnostics" \
             --read-only --cap-drop ALL --security-opt no-new-privileges \
             --memory 512m --cpus 1 --pids-limit 128 \
             "$image" --visibility restricted --seat 0
@@ -187,6 +192,10 @@ jobs:
             exit 1
           }
           docker logs "$container" 2>&1 | grep -q '"event_id":"session.restore.completed"'
+          docker run --rm \
+            --volume "$diagnostics:/diagnostics:ro" \
+            --entrypoint sh "$image" -c \
+            'grep -q session.restore.completed /diagnostics/operational.jsonl'
           docker stop "$container"
           docker logs "$container"
           if [[ $smoke_status -ne 0 || $server_status -ne 0 ]]; then

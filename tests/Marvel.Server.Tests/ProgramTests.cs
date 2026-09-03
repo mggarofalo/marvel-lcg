@@ -23,6 +23,7 @@ public sealed class ProgramTests
             options.SaveRoot);
         Assert.IsType<PermissiveVisibilityPolicy>(options.Visibility);
         Assert.Null(options.TelemetryEndpoint);
+        Assert.Null(options.DiagnosticsRoot);
     }
 
     [Fact]
@@ -37,6 +38,7 @@ public sealed class ProgramTests
                 "--visibility", "restricted",
                 "--seat", "7",
                 "--telemetry-endpoint", "https://telemetry.example.test/v1",
+                "--diagnostics-root", "diagnostics-root",
             ]);
 
         Assert.Equal(IPAddress.IPv6Loopback, options.Address);
@@ -47,6 +49,7 @@ public sealed class ProgramTests
         Assert.Equal(
             new Uri("https://telemetry.example.test/v1"),
             options.TelemetryEndpoint);
+        Assert.Equal("diagnostics-root", options.DiagnosticsRoot);
     }
 
     [Theory]
@@ -73,6 +76,7 @@ public sealed class ProgramTests
     [InlineData("--seat", "one")]
     [InlineData("--seat", "0")]
     [InlineData("--telemetry-endpoint")]
+    [InlineData("--diagnostics-root")]
     [InlineData("--telemetry-endpoint", "http://telemetry.example.test/v1")]
     [InlineData("--telemetry-endpoint", "file:///tmp/telemetry")]
     [InlineData("--telemetry-endpoint", "https://user:secret@telemetry.example.test/v1")]
@@ -154,6 +158,47 @@ public sealed class ProgramTests
         server.Run(_ => announced = true, cancelled.Token);
 
         Assert.False(announced);
+    }
+
+    [Fact]
+    public void UnavailableDurableDiagnosticsDoNotPreventServerComposition()
+    {
+        string root = Path.Combine(
+            Path.GetTempPath(), $"marvel-diagnostics-failure-{Guid.NewGuid():N}");
+        string unavailable = Path.Combine(root, "not-a-directory");
+        Directory.CreateDirectory(root);
+        File.WriteAllText(unavailable, "occupied");
+        using var cancelled = new CancellationTokenSource();
+        cancelled.Cancel();
+        using var error = new StringWriter();
+        try
+        {
+            int result = Program.Run(
+                new Program.ServerOptions(
+                    IPAddress.Loopback,
+                    Port: 0,
+                    Marvel.Tests.RepositoryPaths.Root,
+                    new PermissiveVisibilityPolicy(),
+                    Path.Combine(root, "sessions"),
+                    DiagnosticsRoot: unavailable),
+                error,
+                _ => { },
+                cancelled.Token);
+
+            Assert.Equal(0, result);
+            Assert.Contains(
+                OperationalEventIds.DiagnosticsUnavailable,
+                error.ToString(),
+                StringComparison.Ordinal);
+            Assert.Contains(
+                OperationalEventIds.ServerStopped,
+                error.ToString(),
+                StringComparison.Ordinal);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
     }
 
     [Fact]

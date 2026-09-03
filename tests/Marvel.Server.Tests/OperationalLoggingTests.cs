@@ -74,6 +74,7 @@ public sealed class OperationalLoggingTests
                 Assert.Equal(0, record.AuthorizedSeat);
                 Assert.True(record.SaveCommitted);
                 Assert.True(record.ReplayVerified);
+                Assert.Equal(opened.Revision, record.ExpectedRevision);
                 Assert.Equal(resolved.Revision, record.Revision);
             },
             record =>
@@ -128,6 +129,14 @@ public sealed class OperationalLoggingTests
         Assert.Equal("unknown_error", root.GetProperty("error_code").GetString());
         Assert.Equal(0, root.GetProperty("duration_milliseconds").GetInt64());
         Assert.Equal(DateTimeOffset.UnixEpoch, root.GetProperty("timestamp_utc").GetDateTimeOffset());
+        Assert.Equal(
+            EngineBuildIdentity.ProductVersion,
+            root.GetProperty("product_version").GetString());
+        Assert.Equal(EngineBuildIdentity.Commit, root.GetProperty("commit").GetString());
+        Assert.Contains(
+            $"protocol {EngineProtocol.Version}",
+            root.GetProperty("runtime").GetString(),
+            StringComparison.Ordinal);
         Assert.DoesNotContain(
             root.EnumerateObject().Select(property => property.Name),
             name => name.Contains("message", StringComparison.OrdinalIgnoreCase)
@@ -205,6 +214,129 @@ public sealed class OperationalLoggingTests
         finally
         {
             sink.Release.Set();
+        }
+    }
+
+    [Fact]
+    public void DurableDiagnosticsRotatePruneAndRemainPrivate()
+    {
+        string root = Path.Combine(
+            Path.GetTempPath(), $"marvel-diagnostics-{Guid.NewGuid():N}");
+        DateTimeOffset now = new(2026, 9, 3, 12, 0, 0, TimeSpan.Zero);
+        try
+        {
+            Directory.CreateDirectory(root);
+            string expired = Path.Combine(root, "operational-expired.jsonl");
+            File.WriteAllText(expired, "expired\n");
+            File.SetLastWriteTimeUtc(expired, now.AddDays(-31).UtcDateTime);
+            using (var sink = new RotatingJsonFileOperationalSink(
+                       root,
+                       maximumBytes: 400,
+                       maximumArchives: 2,
+                       retention: TimeSpan.FromDays(30),
+                       clock: () => now))
+            {
+                for (int index = 0; index < 8; index++)
+                {
+                    sink.Write(new OperationalRecord(
+                        OperationalEventIds.RequestCompleted,
+                        "test",
+                        now,
+                        1,
+                        0,
+                        "accepted",
+                        Operation: EngineProtocol.Sync,
+                        Revision: index));
+                    now = now.AddMilliseconds(1);
+                }
+            }
+
+            string[] files = Directory.GetFiles(root, "*.jsonl");
+            Assert.DoesNotContain(expired, files);
+            Assert.InRange(files.Length, 2, 3);
+            Assert.Contains(files, path => Path.GetFileName(path) == "operational.jsonl");
+            Assert.All(
+                files.SelectMany(File.ReadLines),
+                line => Assert.Equal(
+                    OperationalEventIds.RequestCompleted,
+                    OperationalJson.Read(line).EventId));
+            if (!OperatingSystem.IsWindows())
+            {
+                Assert.Equal(
+                    UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute,
+                    File.GetUnixFileMode(root));
+                foreach (string path in files)
+                {
+                    Assert.Equal(
+                        UnixFileMode.UserRead | UnixFileMode.UserWrite,
+                        File.GetUnixFileMode(path));
+                }
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void PersistenceAndRestoreRecordsNameTheSelectedGenerationAndStage()
+    {
+        string root = Path.Combine(
+            Path.GetTempPath(), $"marvel-observed-save-{Guid.NewGuid():N}");
+        try
+        {
+            var sink = new CollectingSink();
+            var log = new OperationalLog(sink, "test");
+            var store = new FileSessionStore(root);
+            var factory = DatasetGameFactory.Load(Marvel.Tests.RepositoryPaths.Root);
+            var first = new EngineHost(
+                factory,
+                new SequenceCapabilities("owner"),
+                store: store,
+                log: log);
+            EngineResponse opened = first.Exchange(EngineRequest.OpenGame(
+                "open", "observed-table",
+                new GameSpecification("rhino", ["spider_man"], [], Seed: 73)));
+            Assert.Null(opened.Error);
+            WaitForRecords(sink, 2);
+            string generation = Assert.IsType<string>(
+                Assert.Single(sink.Records,
+                    record => record.EventId == OperationalEventIds.PersistenceCompleted)
+                .SaveGeneration);
+
+            _ = new EngineHost(factory, store: store, log: log);
+
+            WaitForRecords(sink, 3);
+            OperationalRecord restored = Assert.Single(
+                sink.Records,
+                record => record.EventId == OperationalEventIds.SessionRestored);
+            Assert.Equal(generation, restored.SaveGeneration);
+            Assert.Equal("restore", restored.Stage);
+            Assert.True(restored.ReplayVerified);
+
+            string sessionFile = Assert.Single(Directory.GetFiles(
+                root, generation + ".session.json", SearchOption.AllDirectories));
+            File.WriteAllText(sessionFile, "not-json");
+            _ = new EngineHost(factory, store: store, log: log);
+
+            WaitForRecords(sink, 4);
+            OperationalRecord quarantined = Assert.Single(
+                sink.Records,
+                record => record.EventId == OperationalEventIds.SessionRestoreFailed);
+            Assert.Equal(generation, quarantined.SaveGeneration);
+            Assert.Equal("quarantine", quarantined.Stage);
+            Assert.Equal("restore_failed", quarantined.ErrorCode);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
         }
     }
 

@@ -22,6 +22,10 @@ internal static class Program
         {
             return HealthCheck(IPAddress.Loopback.ToString(), DefaultPort);
         }
+        if (args.Contains("--export-incident", StringComparer.Ordinal))
+        {
+            return ExportIncident(args, Console.Out, Console.Error);
+        }
 
         OperationalLog log = CreateLog(Console.Error, telemetryEndpoint: null);
         using var stopping = new CancellationTokenSource();
@@ -34,7 +38,8 @@ internal static class Program
         try
         {
             ServerOptions options = ServerOptions.Parse(args);
-            log = CreateLog(Console.Error, options.TelemetryEndpoint);
+            log = CreateLog(
+                Console.Error, options.TelemetryEndpoint, options.DiagnosticsRoot);
             SocketEngineServer server = Prepare(options, log);
             Console.CancelKeyPress += stop;
             subscribed = true;
@@ -86,6 +91,39 @@ internal static class Program
         }
     }
 
+    internal static int ExportIncident(
+        string[] args,
+        TextWriter output,
+        TextWriter error)
+    {
+        try
+        {
+            IncidentExportOptions options = IncidentExportOptions.Parse(args);
+            if (options.Output == "-")
+            {
+                output.Write(IncidentExporter.Serialize(IncidentExporter.Build(
+                    options.DataRoot,
+                    options.SaveRoot,
+                    options.DiagnosticsRoot)));
+            }
+            else
+            {
+                IncidentExporter.Export(
+                    options.Output,
+                    options.DataRoot,
+                    options.SaveRoot,
+                    options.DiagnosticsRoot);
+                output.WriteLine(options.Output);
+            }
+            return 0;
+        }
+        catch (Exception)
+        {
+            error.WriteLine("incident export failed without changing server state");
+            return 2;
+        }
+    }
+
     internal static int Run(
         string[] args,
         TextWriter error,
@@ -97,7 +135,7 @@ internal static class Program
         try
         {
             ServerOptions options = ServerOptions.Parse(args);
-            log = CreateLog(error, options.TelemetryEndpoint);
+            log = CreateLog(error, options.TelemetryEndpoint, options.DiagnosticsRoot);
             return Serve(Prepare(options, log), log, onListening: null, cancellationToken);
         }
         catch (Exception)
@@ -115,7 +153,8 @@ internal static class Program
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(onListening);
         ArgumentNullException.ThrowIfNull(error);
-        OperationalLog log = CreateLog(error, options.TelemetryEndpoint);
+        OperationalLog log = CreateLog(
+            error, options.TelemetryEndpoint, options.DiagnosticsRoot);
         try
         {
             return Serve(Prepare(options, log), log, onListening, cancellationToken);
@@ -126,9 +165,27 @@ internal static class Program
         }
     }
 
-    private static OperationalLog CreateLog(TextWriter error, Uri? telemetryEndpoint)
+    private static OperationalLog CreateLog(
+        TextWriter error,
+        Uri? telemetryEndpoint,
+        string? diagnosticsRoot = null)
     {
         IOperationalSink sink = new JsonTextOperationalSink(error);
+        bool diagnosticsUnavailable = false;
+        if (diagnosticsRoot is not null)
+        {
+            try
+            {
+                sink = new CompositeOperationalSink(
+                    sink,
+                    new RotatingJsonFileOperationalSink(diagnosticsRoot));
+            }
+            catch (Exception)
+            {
+                diagnosticsUnavailable = true;
+            }
+        }
+
         if (telemetryEndpoint is not null)
         {
             sink = new CompositeOperationalSink(
@@ -137,7 +194,17 @@ internal static class Program
                     new HttpTelemetryExporter(telemetryEndpoint)));
         }
 
-        return new OperationalLog(sink, "Marvel.Server");
+        var log = new OperationalLog(sink, "Marvel.Server");
+        if (diagnosticsUnavailable)
+        {
+            log.Write(
+                OperationalEventIds.DiagnosticsUnavailable,
+                "rejected",
+                operation: "start",
+                errorCode: "diagnostics_unavailable");
+        }
+
+        return log;
     }
 
     private static SocketEngineServer Prepare(
@@ -190,7 +257,8 @@ internal static class Program
         string DataRoot,
         IVisibilityPolicy Visibility,
         string SaveRoot,
-        Uri? TelemetryEndpoint = null)
+        Uri? TelemetryEndpoint = null,
+        string? DiagnosticsRoot = null)
     {
         public static ServerOptions Parse(string[] args)
         {
@@ -204,6 +272,7 @@ internal static class Program
             string visibility = "cooperative";
             int? seat = null;
             Uri? telemetryEndpoint = null;
+            string? diagnosticsRoot = null;
 
             for (int index = 0; index < args.Length; index++)
             {
@@ -252,6 +321,9 @@ internal static class Program
                             : throw new ArgumentException(
                                 "--telemetry-endpoint requires HTTPS or loopback HTTP");
                         break;
+                    case "--diagnostics-root":
+                        diagnosticsRoot = Value(args, ref index, "--diagnostics-root");
+                        break;
                     default:
                         throw new ArgumentException($"unknown option '{args[index]}'");
                 }
@@ -270,7 +342,8 @@ internal static class Program
                     "--visibility must be cooperative or restricted"),
             };
             return new ServerOptions(
-                address, port, dataRoot, policy, saveRoot, telemetryEndpoint);
+                address, port, dataRoot, policy, saveRoot, telemetryEndpoint,
+                diagnosticsRoot);
         }
 
         private static string Value(
@@ -323,5 +396,59 @@ internal static class Program
             endpoint = parsed;
             return true;
         }
+    }
+
+    internal sealed record IncidentExportOptions(
+        string Output,
+        string DataRoot,
+        string SaveRoot,
+        string DiagnosticsRoot)
+    {
+        public static IncidentExportOptions Parse(string[] args)
+        {
+            string? output = null;
+            string dataRoot = Environment.CurrentDirectory;
+            string? saveRoot = null;
+            string? diagnosticsRoot = null;
+            for (int index = 0; index < args.Length; index++)
+            {
+                string value = index + 1 < args.Length
+                    ? args[index + 1]
+                    : string.Empty;
+                switch (args[index])
+                {
+                    case "--export-incident":
+                        output = Required(value, args[index]);
+                        index++;
+                        break;
+                    case "--data-root":
+                        dataRoot = Required(value, args[index]);
+                        index++;
+                        break;
+                    case "--save-root":
+                        saveRoot = Required(value, args[index]);
+                        index++;
+                        break;
+                    case "--diagnostics-root":
+                        diagnosticsRoot = Required(value, args[index]);
+                        index++;
+                        break;
+                    default:
+                        throw new ArgumentException("unsupported incident export option");
+                }
+            }
+
+            return new IncidentExportOptions(
+                output ?? throw new ArgumentException("--export-incident is required"),
+                dataRoot,
+                saveRoot ?? throw new ArgumentException("--save-root is required"),
+                diagnosticsRoot
+                    ?? throw new ArgumentException("--diagnostics-root is required"));
+        }
+
+        private static string Required(string value, string option) =>
+            string.IsNullOrWhiteSpace(value)
+                ? throw new ArgumentException($"{option} requires a value")
+                : value;
     }
 }
