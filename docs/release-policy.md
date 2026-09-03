@@ -78,11 +78,16 @@ and OCI image labels expose that same informational version. The release
 pipeline rejects an artifact when any embedded value disagrees with the tag or
 manifest.
 
-New saves record the complete SemVer product version in
-`compatibility.application`. SemVer comparison ignores build metadata. Saves
-from the earlier developer-only runtime contain a four-part assembly version
-instead. They are not supported release inputs and remain quarantined unless a
-later issue adds and verifies an explicit migration.
+Saves record the complete SemVer product version of the runtime that last
+committed them in `compatibility.application`. Every successful gameplay,
+history, lifecycle or migration commit stamps the current version in the same
+atomic generation. Loading without a commit does not rewrite it. This makes the
+field a durable downgrade floor instead of the version that first created the
+table. SemVer comparison ignores build metadata.
+
+Saves from the earlier developer-only runtime contain a four-part assembly
+version instead. They are not supported release inputs and remain quarantined
+unless a later issue adds and verifies an explicit migration.
 
 ## Release channels
 
@@ -136,9 +141,10 @@ A save is server-owned. A desktop client never uploads, rewrites or migrates
 one. The server evaluates compatibility before dealing or publishing a restored
 game.
 
-The application version in a save is provenance, not an equality gate. A newer
-product version may read an older save when every compatibility identity still
-matches. A runtime may restore a save only when all of the following hold:
+The application version in a save is a last-writer provenance and downgrade
+gate, not an equality gate. A newer product version may read an older save when
+every compatibility identity still matches. A runtime may restore a save only
+when all of the following hold:
 
 - its product version is not lower than the saved application version;
 - the save schema is the current schema or a specifically implemented readable
