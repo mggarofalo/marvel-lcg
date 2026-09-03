@@ -50,6 +50,7 @@ Contributors should start with [AGENTS.md](AGENTS.md).
 | [State Digest v2](docs/state-digest-v2.md) | The canonical serialisation of a board |
 | [RNG Contract](docs/rng-contract.md) | The random number generator specification |
 | [Presentation Layer](docs/presentation-layer.md) | The plan for a client |
+| [Release Policy](docs/release-policy.md) | Artifact versions, compatibility, signing and upgrade rules |
 | [Plane](docs/plane.md) | How work is tracked |
 
 ## Origin

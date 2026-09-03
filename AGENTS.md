@@ -154,6 +154,7 @@ Seven, all run by hand and none on any path a game takes.
 | the supported product boundary | [scope.md](docs/scope.md) |
 | `Marvel.View`, `Marvel.Decisions`, `Marvel.Server`, `Marvel.Client` or `Marvel.Godot` | [presentation-layer.md](docs/presentation-layer.md) |
 | launching or smoke-testing the Godot client | [godot-client.md](docs/godot-client.md) |
+| releases, artifact versions, signing, compatibility, installation or upgrades | [release-policy.md](docs/release-policy.md) |
 | adding a C# project, or changing a `TargetFramework` | [presentation-layer.md](docs/presentation-layer.md#build-boundary) |
 | Plane issues, modules, labels, priority | [plane.md](docs/plane.md) |
 | why the engine is shaped as it is | [migration.md](docs/migration.md) |
