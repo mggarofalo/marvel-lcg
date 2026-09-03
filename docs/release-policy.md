@@ -78,6 +78,12 @@ and OCI image labels expose that same informational version. The release
 pipeline rejects an artifact when any embedded value disagrees with the tag or
 manifest.
 
+New saves record the complete SemVer product version in
+`compatibility.application`. SemVer comparison ignores build metadata. Saves
+from the earlier developer-only runtime contain a four-part assembly version
+instead. They are not supported release inputs and remain quarantined unless a
+later issue adds and verifies an explicit migration.
+
 ## Release channels
 
 There are three channels:
