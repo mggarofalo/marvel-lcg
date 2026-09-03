@@ -17,10 +17,33 @@ straddles the boundary deliberately: a client needs to assess a draft before it
 can enable submission, while the engine remains authoritative and validates the
 submitted answer again.
 
-The boundary is checked in both directions. The Godot wall prevents every
-shared project from resolving Godot assemblies. `PresentationBoundaryTests`
-inspect the compiled Godot assembly and reject authoritative engine assemblies
-or rule types outside the prompt, event and outcome contracts it renders.
+Two separate policies protect this boundary. The Godot wall prevents every
+shared project from resolving Godot assemblies. The presentation wall limits
+the project references available to each presentation assembly and disables
+transitive project references there. Compiled-assembly tests then reject
+unreviewed Marvel assemblies and types that enter emitted code.
+
+These checks prevent a presentation project from reaching an authoritative
+type through a direct, transitive, package or file reference. No dependency
+check can recognize a duplicated rule written with only strings and integers.
+The ownership rules below and adversarial review cover that semantic mistake.
+
+## Choose a project
+
+Place code according to the question it answers:
+
+| Question | Project |
+|---|---|
+| What may happen, and how does it change the game? | `Marvel.Rules` or another engine project. |
+| Does this prompt accept the answer currently being drafted? | An engine-owned function called by `Marvel.Decisions`. |
+| How should an authorized result be described without exposing hidden state? | `Marvel.View`. |
+| Which request is sent, and how does the client recover from failure? | `Marvel.Client`. |
+| Which control, gesture, animation or style presents that result? | `Marvel.Godot`. |
+
+For example, Godot may disable Submit from `DecisionComposer.Progress`. It may
+not count targets, inspect resources or parse card text to reach its own answer.
+`Marvel.Decisions` may call `TargetRequest.Allows` because that function remains
+engine-owned. The server validates the submitted answer again before mutation.
 
 The Godot project reads the authored Core Set setup surface through
 `IEngineTransport`. Its Start flow opens one or 2 ordered hero seats under an
@@ -41,11 +64,19 @@ decisions rather than state. See [session-ledger.md](session-ledger.md).
 ## Build boundary
 
 Godot is the only UI framework planned for the desktop client. No engine, card,
-content, view, decision or server project may reference Godot assemblies.
+content, view, decision, client or server project may reference Godot assemblies.
 
 `Directory.Build.targets` enforces that rule. The projects under
 `tests/godot-wall/` intentionally violate individual constraints, and
 `tools/godot-wall.sh` proves each violation fails the build.
+
+The same targets give each presentation project an exact project-reference
+allowlist. They also disable transitive project references, so `Marvel.Client`
+cannot compile against `Marvel.Core`, `Marvel.Cards`, `Marvel.Content` or
+`Marvel.Session` merely because `Marvel.Server` uses them. The projects under
+`tests/presentation-wall/` prove that every role rejects a forbidden reference.
+`PresentationAssemblyPolicyTests` check the assemblies that the compiler emits,
+including references introduced through a package or a DLL.
 
 The complete solution targets .NET 8. One target framework keeps runtime
 behavior, JSON serialization and digest tests on the same floor the client will
@@ -218,7 +249,7 @@ visible face id; presentation hints must not enter
 
 ## Client delivery
 
-The Godot project remains deliberately above the engine wall. It:
+The Godot project remains deliberately outside the engine. It:
 
 - depends on transport and descriptor contracts rather than `Game`;
 - renders areas, cards, prompts and events;

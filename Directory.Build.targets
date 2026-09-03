@@ -3,10 +3,10 @@
   <!-- The dependency wall.
 
        docs/presentation-layer.md draws a line around the Godot implementation.
-       Shared presentation lives below that framework boundary in `Marvel.View`
-       and `Marvel.Decisions`. The line is only worth drawing if the build
-       refuses to cross it, so these targets run on every project and deny by
-       default.
+       Shared presentation lives below that framework boundary in `Marvel.View`,
+       `Marvel.Decisions`, and `Marvel.Client`. The line is only worth drawing
+       if the build refuses to cross it, so these targets run on every project
+       and deny by default.
 
        Why it matters is determinism, not tidiness. AGENTS.md lists four things
        that must never enter a gameplay path, and Godot supplies three of them
@@ -35,6 +35,17 @@
     <MarvelGodotStubProject>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)tests/godot-wall/GodotSharp/GodotSharp.csproj'))</MarvelGodotStubProject>
     <MarvelGodotMiddleProbeProject>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)tests/godot-wall/Marvel.WallProbe.Middle/Marvel.WallProbe.Middle.csproj'))</MarvelGodotMiddleProbeProject>
     <MarvelGodotAllowedProbeProject>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)tests/godot-wall/Marvel.WallProbe.Allowed/Marvel.WallProbe.Allowed.csproj'))</MarvelGodotAllowedProbeProject>
+
+    <!-- These exact paths opt the product projects into their ownership
+         policies without relying on a marker that a project could remove.
+         Throwaway probes set MarvelPresentationRole themselves. -->
+    <MarvelViewProject>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)src/Marvel.View/Marvel.View.csproj'))</MarvelViewProject>
+    <MarvelDecisionsProject>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)src/Marvel.Decisions/Marvel.Decisions.csproj'))</MarvelDecisionsProject>
+    <MarvelClientProject>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)src/Marvel.Client/Marvel.Client.csproj'))</MarvelClientProject>
+    <MarvelPresentationRole Condition="'$(MSBuildProjectFullPath)' == '$(MarvelViewProject)'">View</MarvelPresentationRole>
+    <MarvelPresentationRole Condition="'$(MSBuildProjectFullPath)' == '$(MarvelDecisionsProject)'">Decisions</MarvelPresentationRole>
+    <MarvelPresentationRole Condition="'$(MSBuildProjectFullPath)' == '$(MarvelClientProject)'">Client</MarvelPresentationRole>
+    <MarvelPresentationRole Condition="'$(MSBuildProjectFullPath)' == '$(MarvelGodotClientProject)'">Godot</MarvelPresentationRole>
   </PropertyGroup>
 
   <!-- An opt-out is part of the wall, not a way around it. The product's
@@ -73,6 +84,48 @@
     <Error Code="MARVELWALL"
            Condition="'@(MarvelGodotReference)' != ''"
            Text="$(MSBuildProjectName) resolves @(MarvelGodotReference->'%(Filename)', ', '). It sits below the wall, so it must not see Godot: see docs/presentation-layer.md. If this project genuinely is the presentation layer, set &lt;MarvelMayReferenceGodot&gt;true&lt;/MarvelMayReferenceGodot&gt; in its .csproj." />
+  </Target>
+
+  <!-- Presentation projects receive an allowlist rather than a denylist. This
+       catches a direct engine ProjectReference before compilation. Disabling
+       transitive project references in each product .csproj prevents an
+       allowed reference such as Marvel.Server from making its own engine
+       dependencies available to presentation source. -->
+  <Target Name="MarvelPresentationWall"
+          BeforeTargets="ResolveReferences"
+          Condition="'$(MarvelPresentationRole)' != ''">
+
+    <Error Code="MARVELPRESENTATIONCONFIG"
+           Condition="'$(DisableTransitiveProjectReferences)' != 'true'"
+           Text="$(MSBuildProjectName) has presentation role $(MarvelPresentationRole) but exposes transitive project references to its source. Set DisableTransitiveProjectReferences to true and add only the direct contracts this project uses." />
+
+    <ItemGroup>
+      <MarvelAllowedPresentationReference
+          Include="$(MSBuildThisFileDirectory)src/Marvel.Rules/Marvel.Rules.csproj"
+          Condition="'$(MarvelPresentationRole)' == 'View' or '$(MarvelPresentationRole)' == 'Decisions' or '$(MarvelPresentationRole)' == 'Client' or '$(MarvelPresentationRole)' == 'Godot'" />
+      <MarvelAllowedPresentationReference
+          Include="$(MSBuildThisFileDirectory)src/Marvel.Decisions/Marvel.Decisions.csproj"
+          Condition="'$(MarvelPresentationRole)' == 'Client' or '$(MarvelPresentationRole)' == 'Godot'" />
+      <MarvelAllowedPresentationReference
+          Include="$(MSBuildThisFileDirectory)src/Marvel.Server/Marvel.Server.csproj"
+          Condition="'$(MarvelPresentationRole)' == 'Client' or '$(MarvelPresentationRole)' == 'Godot'" />
+      <MarvelAllowedPresentationReference
+          Include="$(MSBuildThisFileDirectory)src/Marvel.View/Marvel.View.csproj"
+          Condition="'$(MarvelPresentationRole)' == 'Client' or '$(MarvelPresentationRole)' == 'Godot'" />
+      <MarvelAllowedPresentationReference
+          Include="$(MSBuildThisFileDirectory)src/Marvel.Client/Marvel.Client.csproj"
+          Condition="'$(MarvelPresentationRole)' == 'Godot'" />
+
+      <MarvelUnexpectedPresentationReference Include="@(ProjectReference)" />
+      <MarvelUnexpectedPresentationReference
+          Remove="@(MarvelAllowedPresentationReference)"
+          MatchOnMetadata="FullPath"
+          MatchOnMetadataOptions="PathLike" />
+    </ItemGroup>
+
+    <Error Code="MARVELPRESENTATION"
+           Condition="'@(MarvelUnexpectedPresentationReference)' != ''"
+           Text="$(MSBuildProjectName) has presentation role $(MarvelPresentationRole) and may not reference @(MarvelUnexpectedPresentationReference->'%(Filename)', ', '). Put authoritative behavior in the engine and expose a prompt, event, descriptor, or engine-owned legality function: see docs/presentation-layer.md." />
   </Target>
 
   <!-- The runtime floor.
