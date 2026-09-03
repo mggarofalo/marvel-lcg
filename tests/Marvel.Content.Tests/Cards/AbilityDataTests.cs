@@ -45,6 +45,30 @@ public sealed class AbilityDataTests
         Assert.Empty(pepper.PrintedResources);
     }
 
+    [Rule("rr:uses-x-type")]
+    [Fact]
+    public void StartingCounterPoolsAreExplicitAbilityData()
+    {
+        // "Each card with this keyword also has an ability that references the
+        // type of use established by the keyword as part of the cost." Uses
+        // supplies both entry counters and discard-at-zero. Hawkeye's printed
+        // sentence supplies only entry counters, so the boolean is a behavior
+        // distinction rather than a spelling distinction.
+        var expected = new Dictionary<string, CardCounterPool>(StringComparer.Ordinal)
+        {
+            ["01008"] = new("web", 3, Uses: true),
+            ["01056"] = new("attack", 3, Uses: true),
+            ["01064"] = new("snoop", 3, Uses: true),
+            ["01066"] = new("arrow", 4, Uses: false),
+            ["01080"] = new("medical", 3, Uses: true),
+        };
+
+        Assert.Equal(
+            expected.OrderBy(pair => pair.Key, StringComparer.Ordinal),
+            AuthoredCards.Book.CounterPools!.OrderBy(
+                pair => pair.Key, StringComparer.Ordinal));
+    }
+
     [Fact]
     public void PrintedTextBoxResourceDataMustMatchTheResourceAbility()
     {
@@ -207,6 +231,12 @@ public sealed class AbilityDataTests
             if (card.TryGetProperty("controlledBy", out _))
             {
                 used.Add("controlledBy");
+            }
+
+            if (card.TryGetProperty("startingCounters", out var counters))
+            {
+                used.Add("startingCounters");
+                Words(counters, used);
             }
 
             if (!card.TryGetProperty("abilities", out var cardAbilities))
@@ -434,6 +464,9 @@ public sealed class AbilityDataTests
     [InlineData("""{"cards":[{"card":"01099","abilities":[{"trigger":{"event":"WhenAttackInitiated","timing":"Interrupt","actor":"this"}}]}]}""", "no 'effect'")]
     [InlineData("""{"cards":[{"card":"01099","abilities":[{"trigger":{"event":"WhenAttackInitiated","timing":"Interrupt","actor":"this"},"anyPlayer":"yes","effect":{"seq":[]}}]}]}""", "non-boolean")]
     [InlineData("""{"cards":[{"card":"01099","controlledBy":"lastPlayer"}]}""", "other than 'firstPlayer'")]
+    [InlineData("""{"cards":[{"card":"01099","startingCounters":{"type":"web","count":3,"uses":true,"extra":1}}]}""", "extra")]
+    [InlineData("""{"cards":[{"card":"01099","startingCounters":{"type":"web","count":0,"uses":true}}]}""", "positive integer")]
+    [InlineData("""{"cards":[{"card":"01099","startingCounters":{"type":"web","count":3}}]}""", "boolean 'uses'")]
     [InlineData("""{"cards":[{"card":"01099"}]}""", "neither abilities nor placement")]
     public void TheReaderRefusesWhatItDoesNotUnderstand(string json, string says)
     {

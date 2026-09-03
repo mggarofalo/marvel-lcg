@@ -523,7 +523,7 @@ public sealed class ContinuousEffects(World world)
             DeckTypes.IsInPlay(card.Area.Type)
             && !FacedownDrones.Is(card)
             && Characteristics.IsLost(world, card, "uses")
-            && Reveal.Uses(world.Facts.Attributes(card.FaceId)).Count > 0
+            && world.Abilities.CounterPool(world, card)?.Uses == true
             && card.Tokens
                 .Where(pair => pair.Key.StartsWith("c_", StringComparison.Ordinal))
                 .Sum(pair => pair.Value) == 0).ToArray();

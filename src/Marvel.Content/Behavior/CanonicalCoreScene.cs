@@ -641,16 +641,16 @@ public sealed class CanonicalCoreScene
         else if (World.Facts.CounterTypes(card.FaceId).Contains(
                      normalized, StringComparer.Ordinal))
         {
-            var uses = Reveal.Uses(World.Facts.Attributes(card.FaceId));
-            if (uses.Type.Length > 0
+            var uses = World.Abilities.CounterPool(World, card);
+            if (uses?.Uses == true
                 && string.Equals(uses.Type, normalized, StringComparison.OrdinalIgnoreCase)
                 && DeckTypes.IsInPlay(card.Area.Type)
-                && (count == 0 || count > uses.Count))
+                && (count == 0 || count > uses.Starting))
             {
                 throw new InvalidOperationException(
                     count == 0
                         ? $"'{card.FaceId}' would be discarded with no {normalized} uses remaining"
-                        : $"'{card.FaceId}' cannot hold more than its printed {uses.Count} "
+                        : $"'{card.FaceId}' cannot hold more than its printed {uses.Starting} "
                             + $"{normalized} uses");
             }
 

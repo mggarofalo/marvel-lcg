@@ -26,8 +26,10 @@ public sealed partial class AbilityRunner
             { Kind: "exhaust" } => CostTarget(world, card, player, cost.Argument)?.Ready == true,
             { Kind: "discard" } => CostTarget(world, card, player,
                 cost.Field("card") ?? cost.Argument) is not null,
-            { Kind: "removeCounters" } =>
-                CounterKeyForRemoval(card, Word(cost.Argument)) is not null,
+            { Kind: "removeCounters" } => CounterRemovalOf(cost) is var removal
+                && CostTarget(world, card, player, removal.Card) is { } counterCard
+                && CounterKeyForRemoval(
+                    counterCard, removal.Type, removal.Count) is not null,
 
             // Every other cost is somebody's, and an ability offered to every
             // seat at once has not said whose. `AbilityTrigger.Player` is where
@@ -109,6 +111,11 @@ public sealed partial class AbilityRunner
     private static bool SequencePayable(World world, Card card, int player, AbilityNode cost)
     {
         var steps = Nodes(cost.Argument).ToList();
+        if (!CounterCostsPayable(world, card, player, cost))
+        {
+            return false;
+        }
+
         var spends = steps.Where(step => step.Kind is "spend" or "spendPrinted").ToList();
         if (spends.Count > 0)
         {
@@ -141,8 +148,50 @@ public sealed partial class AbilityRunner
             }
         }
 
-        return steps.Where(step => step.Kind is not ("spend" or "spendPrinted"))
+        return steps.Where(step => step.Kind is not (
+                "spend" or "spendPrinted" or "removeCounters"))
             .All(step => Payable(world, card, player, step));
+    }
+
+    private static bool CounterCostsPayable(
+        World world, Card card, int player, AbilityNode? cost)
+    {
+        if (cost is null)
+        {
+            return true;
+        }
+
+        var steps = cost.Kind == "seq" ? Nodes(cost.Argument).ToList() : [cost];
+        var counterCosts = new Dictionary<(int Card, string Type), long>();
+        var counterCards = new Dictionary<int, Card>();
+        foreach (var step in steps.Where(step => step.Kind == "removeCounters"))
+        {
+            var removal = CounterRemovalOf(step);
+            if (CostTarget(world, card, player, removal.Card) is not { } target)
+            {
+                return false;
+            }
+            var key = (target.ObjectId, removal.Type);
+            counterCards[target.ObjectId] = target;
+            counterCosts[key] = checked(
+                counterCosts.GetValueOrDefault(key) + removal.Count);
+        }
+        foreach (var byCard in counterCosts.GroupBy(cost => cost.Key.Card))
+        {
+            if (byCard.Any(cost => cost.Key.Type == "allPurpose")
+                && byCard.Count() > 1)
+            {
+                throw new RulesNotImplementedException(
+                    $"'{card.FaceId}' mixes an all-purpose counter cost with a typed "
+                    + "counter cost on the same card");
+            }
+        }
+        if (counterCosts.Any(cost => CounterKeyForRemoval(
+                counterCards[cost.Key.Card], cost.Key.Type, cost.Value) is null))
+        {
+            return false;
+        }
+        return true;
     }
 
     private static Card? CostTarget(World world, Card source, int player, AbilityValue value) =>

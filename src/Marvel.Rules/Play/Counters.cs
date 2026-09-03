@@ -29,7 +29,8 @@ public static class Counters
             return 0;
         }
 
-        string destinationType = Reveal.Uses(facts.Attributes(to.FaceId)).Type;
+        string destinationType = world.Abilities.CounterPool(world, to)?.Type
+            ?? string.Empty;
         string destinationKey = "c_" + (destinationType.Length > 0
             ? destinationType
             : "allPurpose");

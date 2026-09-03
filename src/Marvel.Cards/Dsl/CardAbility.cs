@@ -1,3 +1,4 @@
+using Marvel.Rules.Play;
 using Marvel.Rules.Timing;
 
 namespace Marvel.Cards.Dsl;
@@ -300,12 +301,16 @@ public enum MaximumPeriod
 /// Cards whose placement text and absence of a When Revealed ability are known,
 /// while their other printed abilities remain unauthored.
 /// </param>
+/// <param name="CounterPools">
+/// Card-defined starting counter pools, including whether each is Uses.
+/// </param>
 public sealed record AbilityBook(
     IReadOnlyList<CardAbility> Abilities,
     IReadOnlySet<string> Authored,
     IReadOnlyDictionary<string, AbilityValue>? AttachTo = null,
     IReadOnlySet<string>? ControlledByFirstPlayer = null,
-    IReadOnlySet<string>? PlacementOnly = null)
+    IReadOnlySet<string>? PlacementOnly = null,
+    IReadOnlyDictionary<string, CardCounterPool>? CounterPools = null)
 {
     /// <summary>An empty book. No card has been read.</summary>
     public static AbilityBook None { get; } =
@@ -326,6 +331,12 @@ public sealed record AbilityBook(
 
     /// <summary>Whether only this card's placement and reveal silence are known.</summary>
     public bool IsPlacementOnly(string card) => PlacementOnly?.Contains(card) is true;
+
+    /// <summary>The counter pool a card enters play with, or null.</summary>
+    public CardCounterPool? CounterPool(string card) =>
+        CounterPools is { } pools && pools.TryGetValue(card, out var pool)
+            ? pool
+            : null;
 
     /// <summary>The abilities on one printed face.</summary>
     /// <param name="card">A printed face id.</param>

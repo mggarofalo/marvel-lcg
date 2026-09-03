@@ -30,7 +30,11 @@ public static class AbilityCatalog
         new(StringComparer.Ordinal)
         {
             "card", "name", "note", "abilities", "attachTo", "controlledBy",
+            "startingCounters",
         };
+
+    private static readonly HashSet<string> StartingCounterKeys =
+        new(StringComparer.Ordinal) { "type", "count", "uses" };
 
     private static readonly HashSet<string> AbilityKeys =
         new(StringComparer.Ordinal)
@@ -66,6 +70,7 @@ public static class AbilityCatalog
         var attachTo = new Dictionary<string, AbilityValue>(StringComparer.Ordinal);
         var controlledByFirstPlayer = new HashSet<string>(StringComparer.Ordinal);
         var placementOnly = new HashSet<string>(StringComparer.Ordinal);
+        var counterPools = new Dictionary<string, CardCounterPool>(StringComparer.Ordinal);
         var incomplete = new List<string>();
 
         foreach (var element in cards.EnumerateArray())
@@ -105,10 +110,16 @@ public static class AbilityCatalog
                 controlledByFirstPlayer.Add(card);
             }
 
+            if (element.TryGetProperty("startingCounters", out var counters))
+            {
+                counterPools[card] = StartingCounters(counters, card);
+            }
+
             if (!element.TryGetProperty("abilities", out var list))
             {
                 if (!element.TryGetProperty("attachTo", out _)
-                    && !element.TryGetProperty("controlledBy", out _))
+                    && !element.TryGetProperty("controlledBy", out _)
+                    && !element.TryGetProperty("startingCounters", out _))
                 {
                     incomplete.Add(card);
                     continue;
@@ -132,7 +143,42 @@ public static class AbilityCatalog
         }
 
         return new AbilityBook(
-            abilities, authored, attachTo, controlledByFirstPlayer, placementOnly);
+            abilities, authored, attachTo, controlledByFirstPlayer, placementOnly,
+            counterPools);
+    }
+
+    private static CardCounterPool StartingCounters(JsonElement element, string card)
+    {
+        if (element.ValueKind != JsonValueKind.Object)
+        {
+            throw new AbilityException(
+                $"card '{card}' gives 'startingCounters' a non-object value");
+        }
+        Refuse(element, StartingCounterKeys, $"starting counters on '{card}'");
+
+        string type = Text(element, "type")
+            ?? throw new AbilityException(
+                $"starting counters on '{card}' have no string 'type'");
+        if (type.Length == 0
+            || type.Any(letter => !char.IsLower(letter) && letter != '-'))
+        {
+            throw new AbilityException(
+                $"starting counters on '{card}' need a lower-case counter 'type'");
+        }
+        if (!element.TryGetProperty("count", out var countElement)
+            || !countElement.TryGetInt32(out int count)
+            || count <= 0)
+        {
+            throw new AbilityException(
+                $"starting counters on '{card}' need a positive integer 'count'");
+        }
+        if (!element.TryGetProperty("uses", out _))
+        {
+            throw new AbilityException(
+                $"starting counters on '{card}' need a boolean 'uses'");
+        }
+
+        return new CardCounterPool(type, count, Flag(element, "uses", card));
     }
 
     private static JsonDocument Read(string json)

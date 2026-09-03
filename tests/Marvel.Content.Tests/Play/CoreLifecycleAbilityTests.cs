@@ -97,7 +97,7 @@ public sealed class CoreLifecycleAbilityTests
         var hawkeye = world.CreateCard(
             "01066", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
         var runner = AuthoredCards.Runner();
-        runner.EntersPlay(world, hawkeye);
+        Reveal.EnterPlay(world, Cards, hawkeye, [], abilities: runner);
         var minion = world.CreateCard(
             "01120", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         var occurrence = new Occurrence(
@@ -110,6 +110,40 @@ public sealed class CoreLifecycleAbilityTests
 
         Assert.Equal(3, hawkeye.Tokens["c_arrow"]);
         Assert.Equal(2, minion.Damage);
+    }
+
+    [Rule("rr:cost.1")]
+    [Rule("rr:ability.11")]
+    [Fact]
+    public void HawkeyesOptionalCounterCostDoesNotGiveHimUses()
+    {
+        // "Unless prefaced by the word Forced, all interrupt and response
+        // abilities are optional." The cost arrow distinguishes the arrow
+        // removal as a cost from the damage effect. Hawkeye's entry sentence
+        // is not Uses, so paying his last arrow leaves him in play.
+        var world = Board("01040a");
+        var hawkeye = world.CreateCard(
+            "01066", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var runner = AuthoredCards.Runner();
+        Reveal.EnterPlay(world, Cards, hawkeye, [], abilities: runner);
+        hawkeye.PlaceTokens("c_arrow", -3);
+        var minion = world.CreateCard(
+            "01120", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        var occurrence = new Occurrence(
+            1, [Steps.CardEntersPlay], Subject: minion.ObjectId, Player: 0);
+
+        PendingAbility response = Assert.Single(
+            runner.Waiting(world, occurrence, WindowKind.Response));
+        runner.Resolve(world, occurrence, response, [], []);
+
+        Assert.Equal(0, hawkeye.Tokens.GetValueOrDefault("c_arrow"));
+        Assert.Equal(DeckType.AlliesArea, hawkeye.Area.Type);
+        Assert.Equal(2, minion.Damage);
+        Assert.Empty(runner.Waiting(
+            world,
+            new Occurrence(
+                2, [Steps.CardEntersPlay], Subject: minion.ObjectId, Player: 0),
+            WindowKind.Response));
     }
 
     private static World Board(string identity)
