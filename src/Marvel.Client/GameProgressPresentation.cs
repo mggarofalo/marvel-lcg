@@ -151,9 +151,19 @@ public sealed record GameProgressPresentation(
     /// <summary>Preserves the prior input policy after a read-only sync failure.</summary>
     public static GameProgressPresentation SynchronizationUnavailable(
         ClientStartupError error,
-        bool locksDecisions)
+        bool locksDecisions,
+        ClientStartupError? operationalLock = null)
     {
         ArgumentNullException.ThrowIfNull(error);
+        if (operationalLock is not null)
+        {
+            return Unavailable(operationalLock) with
+            {
+                Description = operationalLock.Message + " " + error.Message
+                    + " The last authoritative table remains displayed.",
+            };
+        }
+
         if (error.Code == "unsupported_version" || IsStorageFailure(error.Code))
         {
             return Unavailable(error);

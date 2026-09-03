@@ -954,7 +954,10 @@ public sealed partial class Main : Control
             {
                 decisionPending = false;
                 uncertainMutationError = null;
-                RenderGame(result.Response!, preserveEvents: true);
+                RenderGame(
+                    result.Response!,
+                    preserveEvents: true,
+                    priorProgress: prior);
                 synchronize.TooltipText = "Read the current authoritative table.";
             }
             else if (result.SessionDisposition == ClientSessionDisposition.Unavailable)
@@ -1002,7 +1005,8 @@ public sealed partial class Main : Control
         {
             ApplyProgress(GameProgressPresentation.SynchronizationUnavailable(
                 error,
-                prior.LocksDecisions));
+                prior.LocksDecisions,
+                prior.OperationalLock));
         }
         syncStatus.Text = "⚠ Sync needed";
         synchronize.TooltipText = "Reconnect to the current authoritative table.";
@@ -1038,7 +1042,8 @@ public sealed partial class Main : Control
     private void RenderGame(
         EngineResponse response,
         bool resetEvents = false,
-        bool preserveEvents = false)
+        bool preserveEvents = false,
+        GameProgressPresentation? priorProgress = null)
     {
         Outcome previousOutcome = CurrentGame?.World?.Outcome ?? Outcome.Unfinished;
         CurrentGame = response;
@@ -1071,7 +1076,7 @@ public sealed partial class Main : Control
         // transition, so it does not alter the diagnostic chronology.
         ApplyProgress(GameProgressPresentation.FromSynchronization(
             response,
-            currentProgress));
+            priorProgress ?? currentProgress));
         pageScroll.ScrollVertical = 0;
         pageScroll.SetDeferred("scroll_vertical", 0);
         RefreshSynchronizeAvailability();

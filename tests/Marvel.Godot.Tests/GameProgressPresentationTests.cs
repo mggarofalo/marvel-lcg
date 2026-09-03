@@ -159,6 +159,22 @@ public sealed class GameProgressPresentationTests
 
         Assert.Equal(GameProgressKind.StorageFailure, synchronized.Kind);
         Assert.True(synchronized.LocksDecisions);
+
+        GameProgressPresentation failedSync =
+            GameProgressPresentation.SynchronizationUnavailable(
+                new ClientStartupError(
+                    "transport_unavailable",
+                    "The current table could not be read."),
+                synchronized.LocksDecisions,
+                synchronized.OperationalLock);
+        GameProgressPresentation synchronizedAgain =
+            GameProgressPresentation.FromSynchronization(
+                Response(Outcome.Unfinished),
+                failedSync);
+
+        Assert.Equal(GameProgressKind.StorageFailure, failedSync.Kind);
+        Assert.Equal(GameProgressKind.StorageFailure, synchronizedAgain.Kind);
+        Assert.True(synchronizedAgain.LocksDecisions);
     }
 
     [Fact]
