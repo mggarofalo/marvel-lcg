@@ -185,7 +185,7 @@ public sealed partial class AbilityRunner
         node.Kind is "draw" or "drawToHandSize" or "drawToPrintedHandSize"
             or "exhaust" or "ready" or "heal" or "generate" or "giveStatus"
             or "gainSurge" or "preventDamage" or "preventThreat"
-            or "cancelWhenRevealed" or "grantUntil"
+            or "cancelWhenRevealed" or "cancelOccurrence" or "grantUntil"
             or "grantCharactersControlledBy" or "reduceNextCardCost"
         || node.Kind == "removeThreat"
             && Every(node.Require("scheme"), cast) is { Count: > 0 } schemes

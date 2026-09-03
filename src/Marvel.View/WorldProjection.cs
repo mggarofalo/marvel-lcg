@@ -49,17 +49,40 @@ public static class WorldProjection
             bool inPlay = DeckTypes.IsInPlay(card.Area.Type);
             CardKind kind = FacedownDrones.Kind(card, world.Facts);
             CardKind printedKind = world.Facts.Kind(card.FaceId);
+            // Insert pseudo-cards are engine bookkeeping, not physical game
+            // components. The client snapshot therefore does not place them
+            // in a visible area. This is a presentation-contract choice; the
+            // setup allocation and digest remain unchanged.
+            if (printedKind == CardKind.Insert)
+            {
+                continue;
+            }
             IReadOnlyDictionary<string, string> attributes = world.Facts.Attributes(card.FaceId);
+            IReadOnlyDictionary<string, long> projectedFields = StateFields.For(
+                card, world.Facts, world.Players, inPlay,
+                card.HasRegisteredTokens,
+                card.Owner == world.FirstPlayer && card.Area.Type == DeckType.HeroArea,
+                world);
+            if (inPlay && kind == CardKind.Ally)
+            {
+                // The digest deliberately retains its historical registered
+                // field shape. The view still owes players the rule-defined
+                // remaining hit points of an ally in play (rr:damage.1).
+                projectedFields = new Dictionary<string, long>(projectedFields,
+                    StringComparer.Ordinal)
+                {
+                    ["health"] = Math.Max(
+                        0,
+                        world.Facts.PrintedValue(card.FaceId, "HP", world.Players)
+                            - card.Damage),
+                };
+            }
             var face = new CardFaceDescriptor(
                 card.FaceId,
                 world.Facts.Title(card.FaceId),
                 world.Facts.Subtitle(card.FaceId),
                 kind,
-                StateFields.For(
-                    card, world.Facts, world.Players, inPlay,
-                    card.HasRegisteredTokens,
-                    card.Owner == world.FirstPlayer && card.Area.Type == DeckType.HeroArea,
-                    world))
+                projectedFields)
             {
                 Traits = DisplayTraits(world, card),
                 Cost = attributes.TryGetValue("Cost", out string? cost) ? cost : null,
@@ -94,8 +117,10 @@ public static class WorldProjection
             area.Type.ToString(),
             area.PlayArea.Player,
             area.Host,
-            area.Cards.Select(card => cards[card.ObjectId]).ToList(),
-            area.Removed.Select(card => cards[card.ObjectId]).ToList())).ToList();
+            area.Cards.Where(card => cards.ContainsKey(card.ObjectId))
+                .Select(card => cards[card.ObjectId]).ToList(),
+            area.Removed.Where(card => cards.ContainsKey(card.ObjectId))
+                .Select(card => cards[card.ObjectId]).ToList())).ToList();
         var players = world.Seats.Select(seat =>
             new PlayerDescriptor(seat.Index, seat.Name, seat.Eliminated)).ToList();
         var gameAreas = world.GameAreas.Select(area =>
@@ -130,7 +155,7 @@ public static class WorldProjection
         [
             "REC", "THW", "ATK", "DEF", "SCH", "HP", "HS", "Stage",
             "REC+", "THW+", "ATK+", "DEF+", "SCH+", "HP+",
-            "StartingThreat", "TargetThreat", "EscalationThreat", "Boost",
+            "StartingThreat", "TargetThreat", "EscalationThreat", "Boost", "Class",
         ];
         return names
             .Where(attributes.ContainsKey)

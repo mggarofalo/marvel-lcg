@@ -69,6 +69,24 @@ public sealed class BoardPresentationTests
     }
 
     [Fact]
+    public void CurrentAndUpcomingScenarioStagesShareOneArea()
+    {
+        BoardPresentation board = BoardPresentation.From(World(areas:
+        [
+            Area(1, "VillainArea", -1, [Readable(10, "Rhino I")]),
+            Area(2, "VillainDeck", -1, [Readable(11, "Rhino II")]),
+            Area(3, "MainSchemesArea", -1, [Readable(12, "The Break-In!")]),
+            Area(4, "MainSchemesDeck", -1, [Readable(13, "The Break-In! 2")]),
+        ]));
+
+        Assert.Equal(2, board.Areas.Count);
+        Assert.Equal(["Rhino I", "Rhino II"], board.Areas[0].Cards.Select(card => card.Title));
+        Assert.Equal(
+            ["The Break-In!", "The Break-In! 2"],
+            board.Areas[1].Cards.Select(card => card.Title));
+    }
+
+    [Fact]
     public void PlayerAsideAreasUseSetAsideAndNemesisTableNames()
     {
         BoardPresentation board = BoardPresentation.From(World(
@@ -148,6 +166,7 @@ public sealed class BoardPresentationTests
                 {
                     ["THW"] = "2",
                     ["ATK"] = "2",
+                    ["Class"] = "Leadership",
                 },
                 Keywords = ["Steady"],
                 RulesText = "Action: Draw a card.",
@@ -169,11 +188,12 @@ public sealed class BoardPresentationTests
         Assert.Equal("Carol Danvers", card.Subtitle);
         Assert.Equal("HERO", card.Kind);
         Assert.Equal("EXHAUSTED", card.Status);
-        Assert.Equal(["HEALTH", "THREAT", "THWART"], card.Fields.Select(field => field.Name));
-        Assert.Equal(["11/13", "3", "2"], card.Fields.Select(field => field.Value));
+        Assert.Equal(["HEALTH", "THWART"], card.Fields.Select(field => field.Name));
+        Assert.Equal(["11/13", "2"], card.Fields.Select(field => field.Value));
         Assert.Equal(["AVENGER", "AERIAL"], card.Traits);
         Assert.Equal("3", card.Cost);
         Assert.Equal(["THW", "ATK"], card.PrintedStats.Select(field => field.Name));
+        Assert.Equal("Leadership", card.Classification);
         Assert.Equal(["Steady"], card.Keywords);
         Assert.Equal("Action: Draw a card.", card.RulesText);
         Assert.Equal(2, card.Damage);

@@ -20,11 +20,15 @@ public sealed record PromptPresentation(
         return new PromptPresentation(
             prompt.Label,
             $"PLAYER {prompt.Player + 1}  ·  {Words(prompt.Asking.ToString()).ToUpperInvariant()}"
-                + $"  ·  {Words(prompt.When.ToString()).ToUpperInvariant()}",
+                + $"  ·  {Words(prompt.When.ToString()).ToUpperInvariant()}"
+                + (string.IsNullOrWhiteSpace(prompt.Description)
+                    ? string.Empty
+                    : $"\n{prompt.Description}"),
             prompt.Cancellable ? "OPTIONAL · PASS AVAILABLE" : "DECISION REQUIRED",
             prompt.Affordances.Select(option => new AffordancePresentation(
                 option.Id,
                 option.Label,
+                option.Description,
                 Words(option.Verb),
                 Describe(option.AnchorId, world),
                 option.AnchorId,
@@ -115,6 +119,7 @@ public sealed record PromptPresentation(
 public sealed record AffordancePresentation(
     int Id,
     string Label,
+    string? Description,
     string Verb,
     string Anchor,
     int AnchorId,
@@ -321,6 +326,11 @@ public sealed class DecisionComposer
     /// <summary>Adds one target or one repeated allocation entry.</summary>
     public void AddTarget(int id)
     {
+        TargetRequest? request = Selected?.Targets;
+        if (request is { IsGrouped: false, AllowRepeated: false, Max: 1 })
+        {
+            targets.Clear();
+        }
         targets.Add(id);
         ResetPaymentIfTargetChanged();
     }

@@ -101,7 +101,8 @@ public sealed class ChoosingCardsTests
 
         var asked = runner.Choosing(world, card, 0, waiting.Index, waiting.Tier)!;
         Assert.Equal(
-            ["placeThreat", "dealDamage"], asked.Affordances.Select(option => option.Label));
+            ["placeThreat", "dealDamage"],
+            asked.Affordances.Select(option => option.Label));
     }
 
     [Rule("rr:choose-option")]
@@ -157,7 +158,9 @@ public sealed class ChoosingCardsTests
         // choice between things that happen, not a chance to decline.
         Assert.Equal(2, asked.Affordances.Count);
         Assert.False(asked.Cancellable);
-        Assert.Equal(["dealDamage", "placeThreat"], asked.Affordances.Select(a => a.Label));
+        Assert.Equal(
+            ["dealDamage", "placeThreat"],
+            asked.Affordances.Select(a => a.Label));
     }
 
     [Rule("rr:choose-option.1")]
@@ -237,6 +240,7 @@ public sealed class ChoosingCardsTests
         var draw = Assert.Single(asked.Affordances);
         Assert.Equal(1, draw.Id);
         Assert.Equal("draw", draw.Label);
+        Assert.Equal("Draw 3 cards", draw.Description);
 
         // Prompt filtering is not the authority boundary: a forged answer for
         // the unavailable original index is refused too.
@@ -630,7 +634,9 @@ public sealed class ChoosingCardsTests
         { "cards": [ { "card": "01084", "abilities": [ {
           "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed",
                        "subject": "this" },
-          "effect": { "choose": { "options": [
+          "effect": { "choose": { "descriptions": [
+            "Remove 2 threat from a scheme", "Draw 3 cards"
+          ], "options": [
             { "removeThreat": {
                 "scheme": { "query": "mainScheme" }, "amount": 2 } },
             { "draw": { "player": "you", "count": 3 } }

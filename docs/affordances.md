@@ -17,6 +17,7 @@ text or duplicate engine rules.
 | `AnchorId` | Board object the player interacts with |
 | `AnchorPlayer` | Seat whose board holds the anchor |
 | `Label` | Printed or domain-level option label |
+| `Description` | Optional readable action text authored by the engine/card DSL |
 | `Targets` | What still has to be selected |
 | `Costs` | Legal resource-generation plans and variables |
 | `Illegal` | Reason the option cannot currently be taken |
@@ -61,7 +62,8 @@ domain shape.
 - `IsSearch`, which marks a choice through hidden information; and
 - `AllowRepeated`, used for allocations such as indirect damage; and
 - `MaximumOccurrences`, the maximum allocation entries permitted for each
-  candidate when repeated entries are allowed.
+  candidate when repeated entries are allowed; and
+- `Details`, engine-authored consequence text for each legal target.
 
 When `Groups` is non-empty, it is authoritative. `Min` and `Max` then describe
 the pooled candidates and must not be applied to a selected group. A selection
@@ -127,6 +129,11 @@ resolution points.
 The prompt carries the seat that may answer. `Marvel.Server` withholds it from
 other visibility scopes and rejects an answer from a capability not authorized
 for that seat.
+
+`Prompt.Description` carries readable engine-authored context that applies to
+the whole decision, such as the attacker, calculated damage, target health and
+relevant attack modifiers during a damage interrupt. Clients display it and do
+not recalculate combat state.
 
 ## Persistence and replay
 

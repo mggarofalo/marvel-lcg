@@ -96,7 +96,7 @@ public static class BoardRenderer
             + area.Removed.Sum(card => card.Count);
         bool expanded = expandedAreas.TryGetValue(area.Id, out bool remembered)
             ? remembered
-            : cardCount > 0;
+            : false;
         var panel = new PanelContainer
         {
             Name = $"Area{area.Id}",
@@ -149,11 +149,11 @@ public static class BoardRenderer
                 GodotThemeVariations.StatusText,
                 wrap: true));
         }
-        AddCards(body, area.Cards, "CARDS", result, scale, art);
+        AddCards(body, area.Cards, "CARDS", area.Zone, result, scale, art);
         if (area.Removed.Count > 0)
         {
             body.AddChild(new HSeparator());
-            AddCards(body, area.Removed, "REMOVED", result, scale, art);
+            AddCards(body, area.Removed, "REMOVED", area.Zone, result, scale, art);
         }
 
         return panel;
@@ -163,6 +163,7 @@ public static class BoardRenderer
         VBoxContainer destination,
         IReadOnlyList<BoardCardPresentation> cards,
         string section,
+        string zone,
         BoardRenderResult result,
         InterfaceScale scale,
         ICardArtProvider? art)
@@ -176,33 +177,36 @@ public static class BoardRenderer
             return;
         }
 
+        bool list = zone is "DiscardPile" or "EncounterDiscardPile";
         var scroll = new ScrollContainer
         {
             Name = $"{section}Scroll",
-            HorizontalScrollMode = ScrollContainer.ScrollMode.Auto,
-            VerticalScrollMode = ScrollContainer.ScrollMode.Disabled,
+            HorizontalScrollMode = list
+                ? ScrollContainer.ScrollMode.Disabled
+                : ScrollContainer.ScrollMode.Auto,
+            VerticalScrollMode = list
+                ? ScrollContainer.ScrollMode.Auto
+                : ScrollContainer.ScrollMode.Disabled,
             FollowFocus = true,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
-        var rail = new HBoxContainer
-        {
-            Name = $"{section}Rail",
-            ThemeTypeVariation = GodotThemeVariations.CompactRow,
-        };
+        BoxContainer rail = list ? new VBoxContainer() : new HBoxContainer();
+        rail.Name = $"{section}Rail";
+        rail.ThemeTypeVariation = GodotThemeVariations.CompactRow;
         scroll.AddChild(rail);
         destination.AddChild(scroll);
 
         foreach (BoardCardPresentation card in cards)
         {
             CardControl control = CardControl.Create(
-                card, CardDisplaySize.Board, scale, art);
+                card, list ? CardDisplaySize.Hand : CardDisplaySize.Board, scale, art);
             control.SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin;
             rail.AddChild(control);
             if (card.TargetId is { } target)
             {
                 result.Register(target, control);
             }
-            result.TrackHover(control, card);
+            result.TrackCard(control, card);
         }
     }
 
@@ -234,7 +238,7 @@ public static class BoardRenderer
             {
                 result.Register(target, control);
             }
-            result.TrackHover(control, card);
+            result.TrackCard(control, card);
         }
     }
 
@@ -258,7 +262,7 @@ public sealed class BoardRenderResult
     private readonly Dictionary<Control, Action> areaExpanders = [];
 
     /// <summary>Raised with the card under the pointer, or null when it leaves.</summary>
-    public event Action<BoardCardPresentation?>? CardHovered;
+    public event Action<BoardCardPresentation, Control>? CardActivated;
 
     internal void Register(int id, CardControl control)
     {
@@ -274,11 +278,23 @@ public sealed class BoardRenderResult
     internal void RegisterArea(Control body, Action expand) =>
         areaExpanders.Add(body, expand);
 
-    internal void TrackHover(Control control, BoardCardPresentation card)
+    internal void TrackCard(Control control, BoardCardPresentation card)
     {
-        control.MouseEntered += () => CardHovered?.Invoke(card);
-        control.MouseExited += () => CardHovered?.Invoke(null);
+        control.GuiInput += input =>
+        {
+            if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true })
+            {
+                CardActivated?.Invoke(card, control);
+                control.AcceptEvent();
+            }
+        };
     }
+
+    /// <summary>Returns the visible control for an engine-provided card id.</summary>
+    public Control? ControlFor(int id) =>
+        controls.TryGetValue(id, out List<CardControl>? matches)
+            ? matches.LastOrDefault()
+            : null;
 
     /// <summary>Highlights every visible control matching server-provided ids.</summary>
     public void Highlight(IEnumerable<int> ids)

@@ -31,6 +31,7 @@ namespace Marvel.Rules.Prompts;
 /// <param name="Illegal">
 /// Why this cannot be taken, or <c>null</c> when it can.
 /// </param>
+/// <param name="Description">Readable action text supplied by the engine.</param>
 /// <remarks>
 /// <para>
 /// <b><paramref name="Id"/> is a handle, not a name.</b> Ids are allocated per
@@ -81,7 +82,8 @@ public sealed record Affordance(
     string Label,
     TargetRequest? Targets = null,
     IReadOnlyList<CostOption>? Costs = null,
-    string? Illegal = null)
+    string? Illegal = null,
+    string? Description = null)
 {
     /// <summary>Whether the player can actually take this.</summary>
     /// <remarks>

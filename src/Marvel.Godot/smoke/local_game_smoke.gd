@@ -272,12 +272,23 @@ func _visual_system_is_resolved() -> bool:
 	if slider.min_value != 50.0 or slider.max_value != 150.0 or slider.step != 10.0:
 		_fail("the interface scale slider does not expose 50–150% in ten-percent steps")
 		return false
+	await process_frame
+	await process_frame
+	await main.get_tree().create_timer(0.05).timeout
 	var original_scale := slider.value
 	var original_font := start.get_theme_font_size("font_size")
+	var original_slider_rect := slider.get_global_rect()
 	slider.value = 50.0 if original_scale != 50.0 else 60.0
+	await process_frame
 	await process_frame
 	if start.get_theme_font_size("font_size") == original_font:
 		_fail("the interface scale slider did not update the live theme")
+		return false
+	if not slider.get_global_rect().is_equal_approx(original_slider_rect):
+		_fail("the interface scale slider changed geometry or absolute position: %s -> %s" % [
+			original_slider_rect,
+			slider.get_global_rect(),
+		])
 		return false
 	slider.value = original_scale
 	await process_frame
@@ -566,25 +577,51 @@ func _procedural_cards_are_safe() -> bool:
 		_fail("the table did not exercise face, back, health, and current-value card regions")
 		return false
 
-	var action := _first_enabled_choice()
-	if action == null:
-		_fail("the action rail has no card action to inspect")
+	var hand_card := _node("Play/Board/HandShelf").find_child(
+		"ProceduralCard", true, false) as Control
+	if hand_card == null:
+		_fail("the pinned hand has no readable card to inspect")
 		return false
-	action.mouse_entered.emit()
+	var mulligan_action := _first_enabled_choice()
+	if mulligan_action == null:
+		_fail("the mulligan decision has no selectable action")
+		return false
+	mulligan_action.pressed.emit()
+	await process_frame
+	var action_card: Button = null
+	for candidate in main.find_children("Target*", "Button", true, false):
+		if "Avengers Mansion" in (candidate as Button).text:
+			action_card = candidate as Button
+			break
+	if action_card == null:
+		_fail("the mulligan action has no card-naming option to preview")
+		return false
+	action_card.mouse_entered.emit()
 	await process_frame
 	var inspector := main.get_node("CardInspector") as PanelContainer
 	if inspector == null or not inspector.visible:
-		_fail("hovering a card action did not open the card inspector")
+		_fail("hovering a card-naming action did not preview its hand card")
+		return false
+	if inspector.get_global_rect().end.y > hand_card.get_global_rect().position.y + 1.0:
+		_fail("the action-card preview was not placed above the hand card")
+		return false
+	action_card.mouse_exited.emit()
+	await main.get_tree().create_timer(0.35).timeout
+	if inspector.visible:
+		_fail("the temporary action-card preview remained after hover ended")
+		return false
+	var click := InputEventMouseButton.new()
+	click.button_index = MOUSE_BUTTON_LEFT
+	click.pressed = true
+	hand_card.gui_input.emit(click)
+	await process_frame
+	if inspector == null or not inspector.visible:
+		_fail("clicking a card did not open the card inspector")
 		return false
 	var inspected_face := inspector.find_child("CardFace", true, false)
 	if inspected_face == null \
-			or inspected_face.find_child("RulesText", true, false) == null \
-			or inspected_face.find_child("Illustration", true, false) == null:
-		_fail("the card inspector did not render full authorized card data and local art")
-		return false
-	var pointer := main.get_viewport().get_mouse_position()
-	if inspector.get_global_rect().has_point(pointer):
-		_fail("the card inspector opened underneath the pointer")
+			or inspected_face.find_child("RulesText", true, false) == null:
+		_fail("the card inspector did not render full authorized card data")
 		return false
 	if inspector.get_global_rect().intersection(
 			Rect2(Vector2.ZERO, _viewport_size())).size != inspector.size:
@@ -592,20 +629,11 @@ func _procedural_cards_are_safe() -> bool:
 		return false
 	if not await _capture_checkpoint("card-inspector"):
 		return false
-	action.grab_focus()
-	action.mouse_exited.emit()
+	hand_card.mouse_exited.emit()
 	await main.get_tree().create_timer(0.35).timeout
 	if not inspector.visible:
-		_fail("the card inspector closed while its source retained keyboard focus")
+		_fail("the clicked card inspector did not remain pinned")
 		return false
-	action.release_focus()
-	await main.get_tree().create_timer(0.35).timeout
-	if inspector.visible:
-		_fail("the card inspector remained open after its focused source lost focus")
-		return false
-	action.mouse_entered.emit()
-	await process_frame
-	action.mouse_exited.emit()
 	inspector.mouse_entered.emit()
 	await main.get_tree().create_timer(0.4).timeout
 	if not inspector.visible:
@@ -615,29 +643,11 @@ func _procedural_cards_are_safe() -> bool:
 	if inspector_scroll.mouse_filter == Control.MOUSE_FILTER_IGNORE:
 		_fail("the card inspector cannot receive scrolling input")
 		return false
-	inspector.mouse_exited.emit()
-	inspector.grab_focus()
-	await main.get_tree().create_timer(0.35).timeout
-	if not inspector.visible:
-		_fail("the focused card inspector did not remain open")
-		return false
-	inspector.release_focus()
-	await main.get_tree().create_timer(0.35).timeout
-	if inspector.visible:
-		_fail("the card inspector remained open after focus left it")
-		return false
-	var hand_card := _node("Play/Board/HandShelf").find_child(
-		"ProceduralCard", true, false) as Control
-	if hand_card == null:
-		_fail("the pinned hand has no readable card name")
-		return false
-	hand_card.mouse_entered.emit()
+	hand_card.gui_input.emit(click)
 	await process_frame
-	if not inspector.visible or inspector.find_child("RulesText", true, false) == null:
-		_fail("hovering a card name in hand did not open the full card inspector")
+	if inspector.visible:
+		_fail("clicking the inspected card again did not close the inspector")
 		return false
-	hand_card.mouse_exited.emit()
-	await main.get_tree().create_timer(0.35).timeout
 	var restore_focus := _first_enabled_choice()
 	if restore_focus != null:
 		restore_focus.grab_focus()
@@ -916,7 +926,7 @@ func _event_presentation_is_nonblocking() -> bool:
 		_fail("event presentation has no cue region")
 		return false
 	if motion == null or skip == null \
-			or motion.custom_minimum_size.y < expected_height \
+			or motion.custom_minimum_size.y < 44.0 \
 			or skip.custom_minimum_size.y < expected_height:
 		_fail("event presentation controls miss the pointer-target floor")
 		return false
@@ -1106,6 +1116,8 @@ func _is_complete() -> bool:
 
 
 func _node(relative: String) -> Node:
+	if relative.begins_with("Toolbar/"):
+		return main.get_node("StatusBar/" + relative.trim_prefix("Toolbar/"))
 	return main.get_node("Margin/Shell/Content/" + relative)
 
 

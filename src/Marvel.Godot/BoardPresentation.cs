@@ -21,11 +21,11 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
             .GroupBy(area => area.Owner)
             .SelectMany(group => group.Select((area, ordinal) => (area.Id, ordinal)))
             .ToDictionary(pair => pair.Id, pair => pair.ordinal);
-        BoardAreaPresentation[] areas =
+        BoardAreaPresentation[] areas = CombineProgressiveAreas(
             [.. world.Areas.Select(area => Present(
                 area,
                 players,
-                asideOrdinals.GetValueOrDefault(area.Id, -1)))];
+                asideOrdinals.GetValueOrDefault(area.Id, -1)))]);
         BoardPlayerPresentation[] seats =
             [.. world.Players.Select(player => new BoardPlayerPresentation(
                 player.Seat, player.Name))];
@@ -33,6 +33,57 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
         {
             Lanes = BoardLayout.Arrange(areas, seats),
         };
+    }
+
+    private static BoardAreaPresentation[] CombineProgressiveAreas(
+        BoardAreaPresentation[] source)
+    {
+        var hidden = new HashSet<int>();
+        var result = new List<BoardAreaPresentation>(source.Length);
+        foreach (BoardAreaPresentation area in source)
+        {
+            if (hidden.Contains(area.Id))
+            {
+                continue;
+            }
+            if (area.Zone is "VillainDeck" or "MainSchemesDeck"
+                && source.Any(candidate => candidate.Seat == area.Seat
+                    && candidate.Host == area.Host
+                    && candidate.Zone == (area.Zone == "VillainDeck"
+                        ? "VillainArea"
+                        : "MainSchemesArea")))
+            {
+                continue;
+            }
+
+            string? deckZone = area.Zone switch
+            {
+                "VillainArea" => "VillainDeck",
+                "MainSchemesArea" => "MainSchemesDeck",
+                _ => null,
+            };
+            BoardAreaPresentation? upcoming = deckZone is null
+                ? null
+                : source.FirstOrDefault(candidate => candidate.Zone == deckZone
+                    && candidate.Seat == area.Seat && candidate.Host == area.Host);
+            if (upcoming is null)
+            {
+                result.Add(area);
+                continue;
+            }
+
+            hidden.Add(upcoming.Id);
+            result.Add(area with
+            {
+                Title = area.Zone == "VillainArea" ? "VILLAIN" : "MAIN SCHEME",
+                Context = $"CURRENT AND UPCOMING STAGES  ·  OWNER "
+                    + (area.Seat < 0 ? "SCENARIO" : $"SEAT {area.Seat}"),
+                Cards = [.. area.Cards, .. upcoming.Cards],
+                Removed = [.. area.Removed, .. upcoming.Removed],
+            });
+        }
+
+        return [.. result];
     }
 
     private static BoardAreaPresentation Present(
@@ -139,8 +190,13 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
             Status(card, zone, card.Face.Kind),
             card.Face.Fields
                 .Where(field => !field.Key.StartsWith("t_", StringComparison.Ordinal))
+                .Where(field => field.Key != "is_exhaust")
+                .Where(field => field.Key != "k_threat"
+                    || card.Face.Kind is CardKind.MainScheme or CardKind.EncounterSideScheme)
                 .Where(field => field.Value != 0
-                    || inPlay && field.Key is "health" or "k_threat")
+                    || inPlay && field.Key == "health"
+                    || inPlay && field.Key == "k_threat"
+                        && card.Face.Kind is CardKind.MainScheme or CardKind.EncounterSideScheme)
                 .OrderBy(field => field.Key, StringComparer.Ordinal)
                 .Select(field => new BoardFieldPresentation(
                     Humanize(
@@ -158,8 +214,10 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
             Traits = card.Face.Traits,
             Cost = card.Face.Cost,
             PrintedStats = card.Face.PrintedStats
+                .Where(field => field.Key != "Class")
                 .Select(field => new BoardFieldPresentation(field.Key, field.Value))
                 .ToArray(),
+            Classification = card.Face.PrintedStats.GetValueOrDefault("Class", string.Empty),
             Keywords = card.Face.Keywords,
             RulesText = card.Face.RulesText,
             Damage = card.Face.Damage,
@@ -260,6 +318,9 @@ public sealed record BoardCardPresentation(
 
     /// <summary>Effective traits visible on the current face.</summary>
     public IReadOnlyList<string> Traits { get; init; } = [];
+
+    /// <summary>The printed aspect or Basic classification.</summary>
+    public string Classification { get; init; } = string.Empty;
 
     /// <summary>The printed cost, or null when none is printed.</summary>
     public string? Cost { get; init; }

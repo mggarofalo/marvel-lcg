@@ -13,8 +13,8 @@ Feature: Core attachment lifecycle
   Scenario: Webbed Up replaces one enemy attack and stuns its attacker
     # Webbed Up attaches to Rhino, and its maximum prevents the second copy
     # from attaching to that same enemy. When Rhino would attack, the forced
-    # interrupt discards Webbed Up and gives Rhino stun; that new stun then
-    # replaces the attack and is itself discarded.
+    # interrupt discards Webbed Up and replaces that attack, then gives Rhino
+    # stun. The stun remains to replace Rhino's following attack.
     Given a canonical Core scene is dealt
       | campaign | heroes     | seed |
       | rhino    | spider_man | 881  |
@@ -44,9 +44,13 @@ Feature: Core attachment lifecycle
     When the villain attacks seat 1 with every optional choice declined
     Then card 01009 copy 0 is faceup on top of seat 1's discard pile
     And card 01001a copy 0 has 0 damage
-    And card 01094 copy 0 has 0 stunned status cards
+    And card 01094 copy 0 has 1 stunned status cards
     And 3 Give_Status events were emitted
     And 0 Draw_Cards events were emitted
+    And the attack has ended
+    When the villain attacks seat 1 with every optional choice declined
+    Then card 01094 copy 0 has 0 stunned status cards
+    And card 01001a copy 0 has 0 damage
     And the attack has ended
 
   @behavior:rr:attach-to:published-result

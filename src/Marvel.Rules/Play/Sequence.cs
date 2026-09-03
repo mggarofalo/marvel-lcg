@@ -131,8 +131,14 @@ public static class Sequence
                 // attacks spend their stun before they reach the agenda; this
                 // is the enemy-activation path.
                 bool statusCancelled = false;
+                bool occurrenceCancelled = false;
                 bool ResolvePriorityStatus()
                 {
+                    if (!world.Agenda.IsOutstanding(step, occurrence))
+                    {
+                        occurrenceCancelled = true;
+                        return true;
+                    }
                     statusCancelled = kind == WindowKind.Interrupt
                         && step.What == Steps.Attack
                         && BasicPowers.Cancelled(
@@ -154,8 +160,13 @@ public static class Sequence
                     world, offeredAbilities, occurrence, kind, events, scope,
                     ResolvePriorityStatus) is { } asked)
                 {
-                    return asked;
+                    return WithAttackContext(world, facts, asked);
                 }
+
+                // A replacement interrupt can cancel its containing occurrence
+                // while Offering resolves it. Re-check before advancing so the
+                // agenda cannot accidentally advance whatever followed it.
+                occurrenceCancelled |= !world.Agenda.IsOutstanding(step, occurrence);
 
                 if (statusCancelled)
                 {
@@ -166,6 +177,16 @@ public static class Sequence
                         world.Windows.Close();
                     }
                     world.Agenda.Cancel(occurrence);
+                    continue;
+                }
+                if (occurrenceCancelled)
+                {
+                    Attack.CancelPrepared(world, step.Subject);
+                    world.PendingAdditionalAttackPlayers = [];
+                    if (world.Windows.Current is not null)
+                    {
+                        world.Windows.Close();
+                    }
                     continue;
                 }
 
@@ -182,7 +203,7 @@ public static class Sequence
             var healthBefore = world.Effects.CaptureCharacterHealth();
             if (VillainPhase.Take(world, facts, abilities, step, events) is { } asking)
             {
-                return asking;
+                return WithAttackContext(world, facts, asking);
             }
 
             // State changed during the step can switch on a conditional
@@ -210,6 +231,38 @@ public static class Sequence
         }
 
         return null;
+    }
+
+    private static Prompt WithAttackContext(World world, ICardFacts facts, Prompt prompt)
+    {
+        if (world.Attack is not { CalculatedDamage: { } damage } attack
+            || attack.Enemy < 0 || attack.Target < 0)
+        {
+            return prompt;
+        }
+
+        Card enemy = world.Cards[attack.Enemy];
+        Card target = world.Cards[attack.Target];
+        long health = Math.Max(0, Damage.Health(world, facts, target) - target.Damage);
+        string[] attachments = world.Areas
+            .Where(area => area.Host == enemy.ObjectId && DeckTypes.IsInPlay(area.Type))
+            .SelectMany(area => area.Cards)
+            .Select(card => facts.Title(card.FaceId))
+            .ToArray();
+        long retaliate = StateFields.Modified(
+            world, target, "retaliate", facts, world.Players);
+        return prompt with
+        {
+            Description = $"{facts.Title(enemy.FaceId)} attacks "
+                + $"{facts.Title(target.FaceId)} for {damage} damage; "
+                + $"the target has {health}/{Damage.Health(world, facts, target)} HP"
+                + (retaliate > 0 ? $" and Retaliate {retaliate}" : string.Empty)
+                + ". "
+                + (attachments.Length > 0
+                    ? $"Attacker attachments: {string.Join(", ", attachments)}. "
+                    : string.Empty)
+                + "The damage is fixed after boost icons and defense.",
+        };
     }
 
     private sealed class OptionalDamageInterrupts(IWindowAbilities inner)

@@ -67,7 +67,7 @@ public sealed partial class AbilityRunner
         // legacy option-reachability pass. TargetLegalityOf is the authority
         // for the complete rr:target initiation rule, including players.
         "generate" or "changeForm" or "removeCounters" or "preventDamage"
-            or "cancelWhenRevealed" or "dealEncounterCards" or "revealTop"
+            or "cancelWhenRevealed" or "cancelOccurrence" or "dealEncounterCards" or "revealTop"
             or "discardAtRandom" or "discardUntil" or "discardTop"
             or "recoverDiscardedByResource" or "shuffleInto"
             or "gainSurge" or "shuffle" or "drawToHandSize"

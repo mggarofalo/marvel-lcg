@@ -58,6 +58,47 @@ public sealed class DecisionComposerTests
     }
 
     [Fact]
+    public void PresentationCarriesEngineCombatContextAndTargetDetails()
+    {
+        var prompt = Prompt(
+            cancellable: true,
+            new Affordance(4, "Attack", 10, 0, "Attack",
+                new TargetRequest([11], 1, 1)
+                {
+                    Details = new Dictionary<int, string> { [11] = "8/14 HP · Retaliate 1" },
+                })) with
+        {
+            Description = "Rhino attacks Spider-Man for 5 damage.",
+        };
+        var world = new WorldDescriptor(
+            [new PlayerDescriptor(0, "Peter Parker", false)],
+            [new AreaDescriptor(2, "HeroArea", 0, -1,
+                [Card(10, "Spider-Man"), Card(11, "Rhino")], [])],
+            [], Outcome.Unfinished);
+
+        PromptPresentation view = PromptPresentation.From(prompt, world);
+
+        Assert.Contains(prompt.Description, view.Context);
+        Assert.Equal("8/14 HP · Retaliate 1",
+            prompt.Affordances[0].Targets!.Details![11]);
+    }
+
+    [Fact]
+    public void PresentationCarriesEngineAuthoredActionDescriptionUnchanged()
+    {
+        var prompt = Prompt(
+            cancellable: false,
+            new Affordance(4, "Choose", 10, 0, "draw", Description: "Draw 3 cards"));
+
+        var world = new WorldDescriptor([], [], [], Outcome.Unfinished);
+        AffordancePresentation option = Assert.Single(
+            PromptPresentation.From(prompt, world).Affordances);
+
+        Assert.Equal("draw", option.Label);
+        Assert.Equal("Draw 3 cards", option.Description);
+    }
+
+    [Fact]
     public void FreeSelectionsKeepPlayerOrderAndRejectIncompleteTargets()
     {
         var composer = new DecisionComposer(Prompt(
@@ -73,6 +114,23 @@ public sealed class DecisionComposerTests
         Assert.True(composer.TryBuild(out EngineDecision? decision, out _));
         Assert.Equal([12, 11], decision!.Targets);
         Assert.Null(decision.Resources);
+    }
+
+    [Fact]
+    public void ChoosingAnotherSingleTargetReplacesThePriorTarget()
+    {
+        var composer = new DecisionComposer(Prompt(
+            cancellable: true,
+            new Affordance(4, "Attack", 10, 0, "Attack",
+                new TargetRequest([11, 12], 1, 1))));
+        composer.SelectAffordance(4);
+
+        composer.AddTarget(11);
+        composer.AddTarget(12);
+
+        Assert.Equal([12], composer.Targets);
+        Assert.True(composer.TryBuild(out EngineDecision? decision, out _));
+        Assert.Equal([12], decision!.Targets);
     }
 
     [Fact]

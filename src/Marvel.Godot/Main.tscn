@@ -53,46 +53,64 @@ theme_type_variation = &"ShellPanel"
 layout_mode = 2
 theme_type_variation = &"Stack"
 
-[node name="Toolbar" type="HBoxContainer" parent="Margin/Shell/Content"]
-layout_mode = 2
+[node name="StatusBar" type="HBoxContainer" parent="."]
+z_index = 10
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 64.0
+grow_horizontal = 2
 theme_type_variation = &"CompactRow"
 
-[node name="Spacer" type="Control" parent="Margin/Shell/Content/Toolbar"]
+[node name="Spacer" type="Control" parent="StatusBar"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="SyncStatus" type="Label" parent="Margin/Shell/Content/Toolbar"]
+[node name="SyncStatus" type="Label" parent="StatusBar"]
 visible = false
 layout_mode = 2
+size_flags_vertical = 3
 theme_type_variation = &"StatusText"
 text = "✓ Synced"
 
-[node name="Synchronize" type="Button" parent="Margin/Shell/Content/Toolbar"]
+[node name="Synchronize" type="Button" parent="StatusBar"]
 visible = false
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+size_flags_vertical = 3
 disabled = true
 text = "↻"
 tooltip_text = "Read the current authoritative table without repeating a decision."
 
-[node name="ScaleValue" type="Label" parent="Margin/Shell/Content/Toolbar"]
+[node name="ScaleValue" type="Label" parent="StatusBar"]
 layout_mode = 2
+size_flags_vertical = 3
 theme_type_variation = &"Caption"
 text = "Scale 80%"
 
-[node name="InterfaceScale" type="HSlider" parent="Margin/Shell/Content/Toolbar"]
-custom_minimum_size = Vector2(100, 0)
+[node name="InterfaceScale" type="HSlider" parent="StatusBar"]
+custom_minimum_size = Vector2(100, 32)
 layout_mode = 2
+size_flags_vertical = 3
 min_value = 50.0
 max_value = 150.0
 step = 10.0
 tooltip_text = "Adjust interface scale."
 
-[node name="Motion" type="CheckButton" parent="Margin/Shell/Content/Toolbar"]
+[node name="Motion" type="CheckButton" parent="StatusBar"]
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
+size_flags_vertical = 3
 button_pressed = true
 text = "Motion"
 tooltip_text = "Show short visual cues for new game events."
+
+[node name="StatusBarClearance" type="Control" parent="Margin/Shell/Content"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
 
 [node name="Eyebrow" type="Label" parent="Margin/Shell/Content"]
 layout_mode = 2
