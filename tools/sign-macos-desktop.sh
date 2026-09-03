@@ -88,7 +88,11 @@ spctl --assess --type execute --verbose=2 "$signed_app"
 mkdir -p "$output"
 archive="$output/MarvelChampions-${version}-macos.zip"
 ditto -c -k --keepParent "$signed_app" "$archive"
-shasum -a 256 "$archive" > "$archive.sha256"
+(
+    cd "$output"
+    archive_name=$(basename "$archive")
+    shasum -a 256 "$archive_name" > "$archive_name.sha256"
+)
 signed_hash=$(shasum -a 256 "$archive" | awk '{ print $1 }')
 jq -n \
     --arg product_version "$version" \

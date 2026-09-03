@@ -39,9 +39,14 @@ jobs:
           echo "commit=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
           echo "preview=$preview" >> "$GITHUB_OUTPUT"
 
+  quality:
+    name: Ordinary release gates
+    needs: identity
+    uses: ./.github/workflows/ci.yml
+
   macos-input:
     name: Reproducible unsigned macOS input
-    needs: identity
+    needs: [identity, quality]
     runs-on: macos-latest
     timeout-minutes: 30
     steps:
@@ -92,7 +97,7 @@ jobs:
 
   windows-input:
     name: Reproducible unsigned Windows input
-    needs: identity
+    needs: [identity, quality]
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
@@ -168,24 +173,21 @@ jobs:
           CERTIFICATE_P12_BASE64: ${{ secrets.MACOS_CERTIFICATE_P12_BASE64 }}
           CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
           APPLE_API_KEY_P8_BASE64: ${{ secrets.APPLE_API_KEY_P8_BASE64 }}
+          MARVEL_RELEASE_KEYCHAIN: ${{ runner.temp }}/marvel-release.keychain-db
+          MARVEL_RELEASE_CERTIFICATE: ${{ runner.temp }}/marvel-release.p12
+          MARVEL_APPLE_API_KEY_FILE: ${{ runner.temp }}/marvel-release-api-key.p8
         run: |
-          keychain="$RUNNER_TEMP/marvel-release.keychain-db"
           keychain_password=$(uuidgen)
-          certificate="$RUNNER_TEMP/marvel-release.p12"
-          api_key="$RUNNER_TEMP/AuthKey_${{ secrets.APPLE_API_KEY_ID }}.p8"
-          printf '%s' "$CERTIFICATE_P12_BASE64" | base64 -D > "$certificate"
-          printf '%s' "$APPLE_API_KEY_P8_BASE64" | base64 -D > "$api_key"
-          security create-keychain -p "$keychain_password" "$keychain"
-          security unlock-keychain -p "$keychain_password" "$keychain"
-          security set-keychain-settings -lut 21600 "$keychain"
-          security import "$certificate" -k "$keychain" \
+          printf '%s' "$CERTIFICATE_P12_BASE64" | base64 -D > "$MARVEL_RELEASE_CERTIFICATE"
+          printf '%s' "$APPLE_API_KEY_P8_BASE64" | base64 -D > "$MARVEL_APPLE_API_KEY_FILE"
+          security create-keychain -p "$keychain_password" "$MARVEL_RELEASE_KEYCHAIN"
+          security unlock-keychain -p "$keychain_password" "$MARVEL_RELEASE_KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$MARVEL_RELEASE_KEYCHAIN"
+          security import "$MARVEL_RELEASE_CERTIFICATE" -k "$MARVEL_RELEASE_KEYCHAIN" \
             -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple: -s \
-            -k "$keychain_password" "$keychain"
-          security list-keychains -d user -s "$keychain"
-          echo "MARVEL_RELEASE_KEYCHAIN=$keychain" >> "$GITHUB_ENV"
-          echo "MARVEL_RELEASE_CERTIFICATE=$certificate" >> "$GITHUB_ENV"
-          echo "MARVEL_APPLE_API_KEY_FILE=$api_key" >> "$GITHUB_ENV"
+            -k "$keychain_password" "$MARVEL_RELEASE_KEYCHAIN"
+          security list-keychains -d user -s "$MARVEL_RELEASE_KEYCHAIN"
 
       - name: Expand, sign, notarize, staple, and verify
         shell: bash
@@ -193,6 +195,7 @@ jobs:
           MARVEL_MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
           MARVEL_APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER_ID }}
           MARVEL_APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          MARVEL_APPLE_API_KEY_FILE: ${{ runner.temp }}/marvel-release-api-key.p8
         run: |
           unsigned=$(find "$RUNNER_TEMP/macos-input" -maxdepth 1 -name '*-unsigned.zip' -type f)
           [[ -n "$unsigned" ]] || { echo 'unsigned macOS input was not downloaded' >&2; exit 2; }
@@ -204,12 +207,13 @@ jobs:
       - name: Destroy signing credentials
         if: always()
         shell: bash
+        env:
+          MARVEL_RELEASE_KEYCHAIN: ${{ runner.temp }}/marvel-release.keychain-db
+          MARVEL_RELEASE_CERTIFICATE: ${{ runner.temp }}/marvel-release.p12
+          MARVEL_APPLE_API_KEY_FILE: ${{ runner.temp }}/marvel-release-api-key.p8
         run: |
-          if [[ -n ${MARVEL_RELEASE_KEYCHAIN:-} ]]; then
-            security delete-keychain "$MARVEL_RELEASE_KEYCHAIN" || true
-          fi
-          rm -f "${MARVEL_RELEASE_CERTIFICATE:-$RUNNER_TEMP/not-present}" \
-            "${MARVEL_APPLE_API_KEY_FILE:-$RUNNER_TEMP/not-present}"
+          security delete-keychain "$MARVEL_RELEASE_KEYCHAIN" || true
+          rm -f "$MARVEL_RELEASE_CERTIFICATE" "$MARVEL_APPLE_API_KEY_FILE"
 
       - uses: actions/upload-artifact@v7
         with:
@@ -238,16 +242,21 @@ jobs:
         env:
           CERTIFICATE_PFX_BASE64: ${{ secrets.WINDOWS_CERTIFICATE_PFX_BASE64 }}
           CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+          MARVEL_WINDOWS_CERTIFICATE: ${{ runner.temp }}\marvel-release.pfx
         run: |
-          $pfx = "$env:RUNNER_TEMP\marvel-release.pfx"
-          [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:CERTIFICATE_PFX_BASE64))
+          [IO.File]::WriteAllBytes(
+            $env:MARVEL_WINDOWS_CERTIFICATE,
+            [Convert]::FromBase64String($env:CERTIFICATE_PFX_BASE64))
           $password = ConvertTo-SecureString $env:CERTIFICATE_PASSWORD -AsPlainText -Force
+          $parsed = [Security.Cryptography.X509Certificates.X509Certificate2]::new(
+            $env:MARVEL_WINDOWS_CERTIFICATE,
+            $env:CERTIFICATE_PASSWORD)
+          "MARVEL_WINDOWS_THUMBPRINT=$($parsed.Thumbprint)" | Out-File -FilePath $env:GITHUB_ENV -Append
           $certificate = Import-PfxCertificate `
-            -FilePath $pfx `
+            -FilePath $env:MARVEL_WINDOWS_CERTIFICATE `
             -CertStoreLocation Cert:\CurrentUser\My `
             -Password $password
-          "MARVEL_WINDOWS_CERTIFICATE=$pfx" | Out-File -FilePath $env:GITHUB_ENV -Append
-          "MARVEL_WINDOWS_THUMBPRINT=$($certificate.Thumbprint)" | Out-File -FilePath $env:GITHUB_ENV -Append
+          if ($certificate.Thumbprint -cne $parsed.Thumbprint) { throw 'imported certificate identity changed' }
 
       - name: Sign, timestamp, package, and verify
         shell: pwsh
@@ -265,13 +274,13 @@ jobs:
       - name: Destroy signing certificate
         if: always()
         shell: pwsh
+        env:
+          MARVEL_WINDOWS_CERTIFICATE: ${{ runner.temp }}\marvel-release.pfx
         run: |
           if ($env:MARVEL_WINDOWS_THUMBPRINT) {
             Remove-Item "Cert:\CurrentUser\My\$env:MARVEL_WINDOWS_THUMBPRINT" -Force -ErrorAction SilentlyContinue
           }
-          if ($env:MARVEL_WINDOWS_CERTIFICATE) {
-            Remove-Item $env:MARVEL_WINDOWS_CERTIFICATE -Force -ErrorAction SilentlyContinue
-          }
+          Remove-Item $env:MARVEL_WINDOWS_CERTIFICATE -Force -ErrorAction SilentlyContinue
 
       - uses: actions/upload-artifact@v7
         with:

@@ -119,5 +119,9 @@ archive="$output/MarvelChampions-${version}-macos-unsigned.zip"
     cd "$output"
     find "Marvel Champions.app" -print | LC_ALL=C sort | zip -X -y -q "$archive" -@
 )
-shasum -a 256 "$archive" > "$archive.sha256"
+(
+    cd "$output"
+    archive_name=$(basename "$archive")
+    shasum -a 256 "$archive_name" > "$archive_name.sha256"
+)
 echo "$archive"
