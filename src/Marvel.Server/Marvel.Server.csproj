@@ -4,7 +4,8 @@
        process. This is an I/O boundary; none of the projects it references
        know whether their caller is embedded or remote. -->
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <OutputType Condition="'$(MarvelServerOutputType)' == ''">Exe</OutputType>
+    <OutputType Condition="'$(MarvelServerOutputType)' != ''">$(MarvelServerOutputType)</OutputType>
     <RootNamespace>Marvel.Server</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>

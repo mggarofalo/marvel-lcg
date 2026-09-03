@@ -6,6 +6,10 @@
     <RootNamespace>Marvel.Godot</RootNamespace>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <MarvelMayReferenceGodot>true</MarvelMayReferenceGodot>
+    <!-- Godot embeds the server host in-process. Publishing an executable
+         ProjectReference would also collect its apphost and runtime files,
+         which collide when Godot publishes both macOS architectures. -->
+    <MarvelServerOutputType>Library</MarvelServerOutputType>
     <DisableTransitiveProjectReferences>true</DisableTransitiveProjectReferences>
     <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
