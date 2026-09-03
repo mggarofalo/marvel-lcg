@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../Marvel.Rules/Marvel.Rules.csproj" />
+    <InternalsVisibleTo Include="Marvel.Session.Tests" />
   </ItemGroup>
 
 </Project>

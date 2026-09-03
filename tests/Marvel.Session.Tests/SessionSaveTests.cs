@@ -7,6 +7,40 @@ namespace Marvel.Session.Tests;
 
 public sealed class SessionSaveTests
 {
+    [Theory]
+    [InlineData("1.0.0", "1.0.0-preview.9")]
+    [InlineData("1.0.0-preview.10", "1.0.0-preview.2")]
+    [InlineData("1.0.0-preview.999999999999999999999", "1.0.0-preview.10")]
+    [InlineData("2.0.0", "1.999.999")]
+    [InlineData("1.1.0", "1.0.999")]
+    public void ApplicationVersionsFollowSemVerPrecedence(string newer, string older)
+    {
+        Assert.True(ApplicationVersion.Parse(newer).CompareTo(
+            ApplicationVersion.Parse(older)) > 0);
+        Assert.True(ApplicationVersion.Parse(older).CompareTo(
+            ApplicationVersion.Parse(newer)) < 0);
+    }
+
+    [Fact]
+    public void ApplicationVersionBuildMetadataDoesNotChangePrecedence()
+    {
+        Assert.Equal(
+            0,
+            ApplicationVersion.Parse("1.2.3-preview.4+first").CompareTo(
+                ApplicationVersion.Parse("1.2.3-preview.4+second")));
+    }
+
+    [Theory]
+    [InlineData("1.0")]
+    [InlineData("01.0.0")]
+    [InlineData("1.0.0-preview.01")]
+    [InlineData("1.0.0-")]
+    [InlineData("1.0.0+")]
+    public void InvalidApplicationVersionsFailClosed(string value)
+    {
+        Assert.Throws<SessionSaveException>(() => ApplicationVersion.Parse(value));
+    }
+
     [Fact]
     public void SchemaTwoHasAStableStrictTopLevelDocument()
     {

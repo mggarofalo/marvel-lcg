@@ -209,6 +209,8 @@ public sealed class ProgramTests
 
             Assert.Null(response.Error);
             Assert.NotNull(response.Setup);
+            Assert.Equal(0, Program.HealthCheck(
+                endpoint.Address.ToString(), endpoint.Port));
             stopping.Cancel();
             Assert.Equal(
                 0,
@@ -227,5 +229,16 @@ public sealed class ProgramTests
                 TimeSpan.FromSeconds(5),
                 TestContext.Current.CancellationToken);
         }
+    }
+
+    [Fact]
+    public void HealthCheckFailsClosedWhenNoCompatibleServerIsListening()
+    {
+        using var reservation = new TcpListener(IPAddress.Loopback, port: 0);
+        reservation.Start();
+        int port = ((IPEndPoint)reservation.LocalEndpoint).Port;
+        reservation.Stop();
+
+        Assert.Equal(1, Program.HealthCheck(IPAddress.Loopback.ToString(), port));
     }
 }

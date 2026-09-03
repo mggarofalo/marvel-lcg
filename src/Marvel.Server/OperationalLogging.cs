@@ -192,7 +192,14 @@ public sealed class OperationalLog
             or "server_start_failed"
             or "session_not_found" or "setup_unavailable" or "stale_decision"
             or "stale_history" or "transport_cancelled" or "transport_failed"
-            or "unsupported_version" => value,
+            or "unsupported_version"
+            or "unsupported_downgrade"
+            or "replay_identity_mismatch"
+            or "rng_identity_mismatch"
+            or "digest_identity_mismatch"
+            or "cards_dataset_mismatch"
+            or "setup_dataset_mismatch"
+            or "abilities_dataset_mismatch" => value,
         _ => "unknown_error",
     };
 

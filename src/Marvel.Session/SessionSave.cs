@@ -509,6 +509,7 @@ public static class SessionReplay
         SessionSave migrated = save with
         {
             Schema = SessionSave.CurrentSchema,
+            Compatibility = expected,
             EditFrontier = frontier,
             Units = units,
         };
@@ -705,15 +706,42 @@ public static class SessionReplay
     private static void RequireCompatibility(
         SessionCompatibility expected, SessionCompatibility actual)
     {
-        if (actual is null
-            || !string.Equals(expected.ReplayContract, actual.ReplayContract, StringComparison.Ordinal)
-            || !string.Equals(expected.RngContract, actual.RngContract, StringComparison.Ordinal)
-            || !string.Equals(expected.StateDigest, actual.StateDigest, StringComparison.Ordinal)
-            || !string.Equals(expected.CardsSha256, actual.CardsSha256, StringComparison.Ordinal)
-            || !string.Equals(expected.SetupSha256, actual.SetupSha256, StringComparison.Ordinal)
-            || !string.Equals(expected.AbilitiesSha256, actual.AbilitiesSha256, StringComparison.Ordinal))
+        ArgumentNullException.ThrowIfNull(expected);
+        if (actual is null)
         {
             throw new SessionSaveException("save compatibility does not match this engine and dataset");
+        }
+
+        if (!string.Equals(expected.Application, actual.Application, StringComparison.Ordinal)
+            && ApplicationVersion.Parse(actual.Application)
+                .CompareTo(ApplicationVersion.Parse(expected.Application)) > 0)
+        {
+            throw new SessionCompatibilityException(
+                "unsupported_downgrade",
+                "save application version is newer than this runtime");
+        }
+
+        RequireIdentity(expected.ReplayContract, actual.ReplayContract,
+            "replay_identity_mismatch");
+        RequireIdentity(expected.RngContract, actual.RngContract,
+            "rng_identity_mismatch");
+        RequireIdentity(expected.StateDigest, actual.StateDigest,
+            "digest_identity_mismatch");
+        RequireIdentity(expected.CardsSha256, actual.CardsSha256,
+            "cards_dataset_mismatch");
+        RequireIdentity(expected.SetupSha256, actual.SetupSha256,
+            "setup_dataset_mismatch");
+        RequireIdentity(expected.AbilitiesSha256, actual.AbilitiesSha256,
+            "abilities_dataset_mismatch");
+    }
+
+    private static void RequireIdentity(string expected, string actual, string category)
+    {
+        if (!string.Equals(expected, actual, StringComparison.Ordinal))
+        {
+            throw new SessionCompatibilityException(
+                category,
+                $"save compatibility differs for {category}");
         }
     }
 
@@ -723,5 +751,13 @@ public static class SessionReplay
 }
 
 /// <summary>A save cannot be safely parsed or replayed by this runtime.</summary>
-public sealed class SessionSaveException(string message, Exception? inner = null)
+public class SessionSaveException(string message, Exception? inner = null)
     : Exception(message, inner);
+
+/// <summary>A bounded compatibility category for operator quarantine diagnostics.</summary>
+public sealed class SessionCompatibilityException(string category, string message)
+    : SessionSaveException(message)
+{
+    /// <summary>The stable non-secret mismatch category.</summary>
+    public string Category { get; } = category;
+}

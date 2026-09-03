@@ -119,33 +119,126 @@ policy.
 
 ## Run the container
 
-Build from the repository root because the Docker build copies the solution and
-the required datasets:
+Preview and stable releases publish the Linux/amd64 image at
+`ghcr.io/mggarofalo/marvel-server`. Install the immutable digest recorded in the
+GitHub release rather than treating its readable version tag as an installation
+identity:
 
 ```bash
-docker build --file src/Marvel.Server/Dockerfile --tag marvel-server .
-docker run --rm --publish 127.0.0.1:41923:41923 marvel-server
+image=ghcr.io/mggarofalo/marvel-server@sha256:RELEASE_DIGEST
+docker pull "$image"
+docker run --detach --name marvel-server \
+  --publish 127.0.0.1:41923:41923 \
+  --volume marvel-sessions:/var/lib/marvel/sessions \
+  --read-only --cap-drop ALL --security-opt no-new-privileges \
+  --memory 512m --cpus 1 --pids-limit 128 \
+  "$image"
 ```
 
-The image publishes a framework-dependent .NET 8 application. It contains the
-cards, setup and ability datasets needed at runtime. Its entry point listens on
-`0.0.0.0:41923` inside the container and uses `/app` as the data root. The host
-mapping above keeps the service reachable only through host loopback.
+The image runs as the .NET base image's unprivileged application user. Its
+application and dataset layers are read-only; `/var/lib/marvel/sessions` is the
+only persistent write location. It contains the cards, setup and ability
+datasets needed at runtime, listens on `0.0.0.0:41923`, and uses `/app` as the
+data root. The host mapping above keeps the service reachable only through host
+loopback. The resource limits are the supported starting point for one small
+table; monitor the container and raise them deliberately for concurrent tables.
+
+The release includes a Sigstore bundle named
+`MarvelServer-VERSION-linux-amd64.sigstore.json`. Verify the image before first
+use, substituting the released version, digest, repository owner and tag:
+
+```bash
+cosign verify \
+  --bundle MarvelServer-VERSION-linux-amd64.sigstore.json \
+  --certificate-identity \
+    'https://github.com/OWNER/REPOSITORY/.github/workflows/release-desktop.yml@refs/tags/vVERSION' \
+  --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
+  ghcr.io/OWNER/marvel-server@sha256:RELEASE_DIGEST
+```
+
+The matching `.digest` and `.provenance.json` release files record the exact
+image, commit, protocol, replay contracts and three runtime dataset hashes. To
+inspect a running build without opening or changing a game:
+
+```bash
+docker exec marvel-server dotnet Marvel.Server.dll --version
+docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{end}}' marvel-server
+```
+
+The Docker health check makes a real setup/version request over loopback. A
+healthy result therefore means the process is listening, the runtime datasets
+loaded, and the server returned its expected protocol and product identity. It
+does not assert that any particular saved session is compatible: incompatible
+sessions are isolated while healthy sessions remain available.
+
+For a local development image, build from the repository root because the
+Docker build copies the solution and required datasets:
+
+```bash
+docker build --file src/Marvel.Server/Dockerfile --tag marvel-server-dev .
+```
 
 Append visibility options to the `docker run` command when needed:
 
 ```bash
-docker run --rm --publish 127.0.0.1:41923:41923 marvel-server \
+docker run --rm --publish 127.0.0.1:41923:41923 marvel-server-dev \
   --visibility restricted --seat 0
 ```
 
-The image writes saves under `/var/lib/marvel/sessions`. Mount that directory
-to retain games across container replacement:
+Do not mount any application or dataset path writable. Logs and diagnostics are
+JSON lines on standard error, so collect them with the container runtime rather
+than granting another filesystem write location. Capabilities and invitations
+remain client-held bearer secrets; do not put them in container environment
+variables, labels, health checks, backups of logs, or diagnostic bundles.
+
+## Back up and restore the save volume
+
+Backups are consistent only while the server is stopped. `docker stop` sends
+`SIGTERM`; the server stops accepting work, lets the current bounded request
+finish, and exits after its atomic save generation is durable. Confirm exit
+code zero before archiving the named volume:
 
 ```bash
-docker run --rm --publish 127.0.0.1:41923:41923 \
-  --volume marvel-sessions:/var/lib/marvel/sessions marvel-server
+docker stop marvel-server
+test "$(docker inspect --format '{{.State.ExitCode}}' marvel-server)" = 0
+docker run --rm \
+  --volume marvel-sessions:/source:ro \
+  --volume "$PWD":/backup \
+  alpine:3.23.3 tar -C /source -czf /backup/marvel-sessions.tgz .
 ```
+
+Pin and verify the helper image in production by digest under the operator's
+own supply-chain policy. Protect the archive as authentication data: saves hold
+hashed capability and invitation verifiers even though plaintext credentials
+are never persisted.
+
+Restore into an empty volume while no server uses it, then start the exact
+application digest that the backup is known to support:
+
+```bash
+docker volume create marvel-sessions-restored
+docker run --rm \
+  --volume marvel-sessions-restored:/target \
+  --volume "$PWD":/backup:ro \
+  alpine:3.23.3 tar -C /target -xzf /backup/marvel-sessions.tgz
+```
+
+Never overlay a backup onto a populated volume. Keep the old volume until the
+restored server is healthy and its expected tables have synchronized.
+
+Before an upgrade, stop the server and preserve both the current image digest
+and a complete volume backup. A newer version replay-verifies each session and
+atomically migrates any supported older schema. A corrupt, divergent,
+dataset-incompatible, or newer-last-writer session is quarantined and reported
+with a bounded `session.restore.failed` error code; it does not prevent other
+sessions or the listener from becoming ready. Recover that table from a known
+good backup or with a future runtime that explicitly supports its identity.
+
+Do not point an older runtime at a volume written by a newer product version.
+The last writer's SemVer is stamped on every gameplay, history, lifecycle and
+migration commit, and the older runtime quarantines that session as
+`unsupported_downgrade`. Rolling back requires restoring the matching
+pre-upgrade backup into a fresh volume as well as restoring the prior image.
 
 ## Stop and restart safely
 
@@ -159,7 +252,7 @@ Active games, hashed capability verifiers and unused invitation verifiers are
 restored from the last committed generation. Plaintext bearer credentials are
 never written; clients retain their existing capability and synchronize after
 the server restarts. A corrupt, incompatible or divergent generation prevents
-that table from being published rather than guessing at a plausible board.
+only that table from being published rather than guessing at a plausible board.
 
 Once transmission of a mutation begins, a client-side write or response failure
 cannot prove that the server did not apply it. The client therefore never

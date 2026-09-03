@@ -477,8 +477,10 @@ public sealed class EngineHost : IEngineEndpoint
                 owner: false,
                 invitation: false))
             .ToList();
+        SessionSave stamped = Stamp(pending.Session.Save);
         ObservePersistence(request, () =>
-            store.Commit(new StoredSession(pending.Session.Save, authorities)));
+            store.Commit(new StoredSession(stamped, authorities)));
+        pending.Session.Save = stamped;
         invitations.Remove(invitationVerifier);
         sessions.Add(
             Verifier(capability),
@@ -621,7 +623,7 @@ public sealed class EngineHost : IEngineEndpoint
                 candidate.State.Random.Generator.WordsConsumed,
                 SessionReplay.Fingerprint(candidate),
                 SessionReplay.Result(candidate));
-            SessionSave proposed = Append(
+            SessionSave proposed = Stamp(Append(
                 access.Session.Save,
                 step,
                 root,
@@ -632,7 +634,7 @@ public sealed class EngineHost : IEngineEndpoint
                 round,
                 phase,
                 candidate.Pending,
-                exposures);
+                exposures));
             ObservePersistence(request, () =>
                 store.Commit(new StoredSession(proposed, Authorities(access.Session))));
             access.Session.Game = candidate;
@@ -742,6 +744,7 @@ public sealed class EngineHost : IEngineEndpoint
                 SessionReplay.VerifyAtCursor(save, compatibility, ReplayOpen, target));
             SessionSave proposed = save with
             {
+                Compatibility = compatibility,
                 Revision = save.Revision + 1,
                 Cursor = target,
                 CurrentPrompt = candidate.Pending is null
@@ -875,6 +878,7 @@ public sealed class EngineHost : IEngineEndpoint
                 save, compatibility, ReplayOpen, sourceOrder);
             SessionSave proposed = save with
             {
+                Compatibility = compatibility,
                 Revision = save.Revision + 1,
                 Cursor = trace.Units.Count,
                 EditFrontier = trace.EditFrontier,
@@ -933,6 +937,7 @@ public sealed class EngineHost : IEngineEndpoint
         {
             SessionSave retired = access.Session.Save with
             {
+                Compatibility = compatibility,
                 Session = access.Session.Save.Session with { Lifecycle = "retired" },
             };
             ObservePersistence(request, () =>
@@ -946,8 +951,10 @@ public sealed class EngineHost : IEngineEndpoint
             var authorities = Authorities(access.Session)
                 .Where(authority => authority.Verifier != verifier)
                 .ToList();
+            SessionSave stamped = Stamp(access.Session.Save);
             ObservePersistence(request, () =>
-                store.Commit(new StoredSession(access.Session.Save, authorities)));
+                store.Commit(new StoredSession(stamped, authorities)));
+            access.Session.Save = stamped;
             sessions.Remove(verifier);
         }
 
@@ -1060,8 +1067,18 @@ public sealed class EngineHost : IEngineEndpoint
 
     private void Restore()
     {
-        foreach (StoredSession stored in store.Load())
+        foreach (SessionLoadResult candidate in store.LoadForRestore())
         {
+            if (candidate.Session is not StoredSession stored)
+            {
+                log.Write(
+                    OperationalEventIds.SessionRestoreFailed,
+                    "rejected",
+                    gameId: candidate.StorageId,
+                    errorCode: candidate.ErrorCode ?? "restore_failed");
+                continue;
+            }
+
             if (stored.Save.Session.Lifecycle == "retired")
             {
                 continue;
@@ -1069,6 +1086,7 @@ public sealed class EngineHost : IEngineEndpoint
 
             var elapsed = Stopwatch.StartNew();
             bool saveCommitted = false;
+            HostedSession? restoring = null;
             try
             {
                 StoredSession current = stored;
@@ -1085,6 +1103,7 @@ public sealed class EngineHost : IEngineEndpoint
 
                 Game game = SessionReplay.Verify(current.Save, compatibility, ReplayOpen);
                 var session = new HostedSession(current.Save.Session.Label, game, current.Save);
+                restoring = session;
                 foreach (StoredAuthority authority in current.Authorities)
                 {
                     if (authority.Seats.Any(seat => seat >= game.State.Players))
@@ -1119,6 +1138,11 @@ public sealed class EngineHost : IEngineEndpoint
             }
             catch (Exception failure)
             {
+                if (restoring is not null)
+                {
+                    Remove(restoring);
+                }
+
                 elapsed.Stop();
                 log.Write(
                     OperationalEventIds.SessionRestoreFailed,
@@ -1128,13 +1152,20 @@ public sealed class EngineHost : IEngineEndpoint
                     revision: stored.Save.Revision,
                     saveCommitted: saveCommitted,
                     replayDiverged: failure is ReplayDivergenceException,
-                    errorCode: failure is ReplayDivergenceException
-                        ? "replay_diverged"
-                        : "restore_failed");
-                throw;
+                    errorCode: failure switch
+                    {
+                        ReplayDivergenceException => "replay_diverged",
+                        SessionCompatibilityException mismatch => mismatch.Category,
+                        _ => "restore_failed",
+                    });
             }
         }
     }
+
+    private SessionSave Stamp(SessionSave save) => save with
+    {
+        Compatibility = compatibility,
+    };
 
     private ReplayOpenedGame ReplayOpen(SessionSetup setup)
     {
@@ -1473,7 +1504,18 @@ public sealed class DatasetGameFactory : IDurableGameFactory, ISetupDiscovery
                 .Where(key => ModularEncounterSets.IsModular(setup, cards, key))
                 .Select(key => new ModularSetupChoice(
                     key, setup.EncounterSetDisplayName(key))),
-        ]);
+        ],
+        Runtime: new RuntimeIdentity(
+            EngineBuildIdentity.ProductVersion,
+            EngineBuildIdentity.Commit,
+            Compatibility.ReplayContract,
+            Compatibility.RngContract,
+            Compatibility.StateDigest,
+            EngineProtocol.Version,
+            SessionSave.CurrentSchema,
+            Compatibility.CardsSha256,
+            Compatibility.SetupSha256,
+            Compatibility.AbilitiesSha256));
 
     private static byte[] ReadBytes(string root, string dataset, string file) =>
         File.ReadAllBytes(Path.Combine(root, "datasets", dataset, file));

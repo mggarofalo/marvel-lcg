@@ -132,12 +132,25 @@ jobs:
         run: |
           image=marvel-server-ci
           container=marvel-server-ci-${{ github.run_id }}
+          volume=marvel-server-ci-${{ github.run_id }}
+          cleanup() {
+            docker rm --force "$container" >/dev/null 2>&1 || true
+            docker volume rm "$volume" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
           docker build --file src/Marvel.Server/Dockerfile --tag "$image" .
+          [[ $(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.version"}}' "$image") == 0.1.0-dev.0 ]]
+          docker run --rm --entrypoint dotnet "$image" Marvel.Server.dll --version |
+            grep -F 'v0.1.0-dev.0 · engine engine-replay-v1 · protocol 11 · save 2'
+          docker volume create "$volume" >/dev/null
           docker run --detach --name "$container" \
             --publish 127.0.0.1:41924:41923 \
+            --volume "$volume:/var/lib/marvel/sessions" \
+            --read-only --cap-drop ALL --security-opt no-new-privileges \
+            --memory 512m --cpus 1 --pids-limit 128 \
             "$image" --visibility restricted --seat 0
           for attempt in {1..300}; do
-            if docker logs "$container" 2>&1 | grep -q '"event_id":"server.listener.started"'; then
+            if [[ $(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{end}}' "$container") == healthy ]]; then
               break
             fi
             if [[ $(docker inspect --format '{{.State.Running}}' "$container") != true ]]; then
@@ -146,6 +159,10 @@ jobs:
             fi
             sleep 0.1
           done
+          [[ $(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{end}}' "$container") == healthy ]] || {
+            docker logs "$container"
+            exit 1
+          }
           set +e
           MARVEL_HOSTED_SMOKE_EXTERNAL_SERVER=true \
             MARVEL_HOSTED_SMOKE_PORT=41924 \
@@ -154,8 +171,20 @@ jobs:
           set -e
           docker stop "$container"
           server_status=$(docker inspect --format '{{.State.ExitCode}}' "$container")
+          docker start "$container"
+          for attempt in {1..300}; do
+            if [[ $(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{end}}' "$container") == healthy ]]; then
+              break
+            fi
+            sleep 0.1
+          done
+          [[ $(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{end}}' "$container") == healthy ]] || {
+            docker logs "$container"
+            exit 1
+          }
+          docker logs "$container" 2>&1 | grep -q '"event_id":"session.restore.completed"'
+          docker stop "$container"
           docker logs "$container"
-          docker rm --volumes "$container"
           if [[ $smoke_status -ne 0 || $server_status -ne 0 ]]; then
             exit 1
           fi

@@ -21,6 +21,9 @@ jobs:
       version: ${{ steps.identity.outputs.version }}
       commit: ${{ steps.identity.outputs.commit }}
       preview: ${{ steps.identity.outputs.preview }}
+      major: ${{ steps.identity.outputs.major }}
+      minor: ${{ steps.identity.outputs.minor }}
+      patch: ${{ steps.identity.outputs.patch }}
     steps:
       - name: The tag is one supported product version
         id: identity
@@ -42,6 +45,9 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "commit=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
           echo "preview=$preview" >> "$GITHUB_OUTPUT"
+          echo "major=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
+          echo "minor=${BASH_REMATCH[2]}" >> "$GITHUB_OUTPUT"
+          echo "patch=${BASH_REMATCH[3]}" >> "$GITHUB_OUTPUT"
 
   quality:
     name: Ordinary release gates
@@ -302,9 +308,103 @@ jobs:
           path: ${{ runner.temp }}/windows-signed/*
           if-no-files-found: error
 
+  server-sign:
+    name: Publish and sign Linux server image
+    needs: [identity, quality]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: desktop-release
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    env:
+      IMAGE: ghcr.io/${{ github.repository_owner }}/marvel-server
+      VERSION: ${{ needs.identity.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref }}
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Refuse to replace a published image tag
+        shell: bash
+        run: |
+          echo '${{ github.token }}' | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          if docker buildx imagetools inspect "$IMAGE:$VERSION" >/dev/null 2>&1; then
+            echo 'server image tag already exists; published releases are immutable' >&2
+            exit 2
+          fi
+          echo "SOURCE_DATE_EPOCH=$(git show -s --format=%ct '${{ needs.identity.outputs.commit }}')" >> "$GITHUB_ENV"
+
+      - name: Build and publish the exact server image
+        id: server
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: src/Marvel.Server/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ env.IMAGE }}:${{ env.VERSION }}
+          provenance: mode=max
+          sbom: true
+          build-args: |
+            MARVEL_PRODUCT_VERSION=${{ needs.identity.outputs.version }}
+            MARVEL_COMMIT=${{ needs.identity.outputs.commit }}
+            MARVEL_VERSION_MAJOR=${{ needs.identity.outputs.major }}
+            MARVEL_VERSION_MINOR=${{ needs.identity.outputs.minor }}
+            MARVEL_VERSION_PATCH=${{ needs.identity.outputs.patch }}
+
+      - uses: sigstore/cosign-installer@v4.1.2
+        with:
+          cosign-release: v3.1.3
+
+      - name: Verify image identity, sign its digest, and retain the bundle
+        shell: bash
+        env:
+          DIGEST: ${{ steps.server.outputs.digest }}
+        run: |
+          reference="$IMAGE@$DIGEST"
+          artifact="$RUNNER_TEMP/server-signed"
+          mkdir -p "$artifact"
+          docker pull --quiet "$reference" >/dev/null
+          actual_version=$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.version"}}' \
+            "$reference")
+          [[ $actual_version == "$VERSION" ]] || { echo 'server image label differs from release version' >&2; exit 2; }
+          docker run --rm --read-only --entrypoint dotnet "$reference" \
+            Marvel.Server.dll --version | grep -F \
+            "v$VERSION · engine engine-replay-v1 · protocol 11 · save 2"
+          identity="https://github.com/$GITHUB_WORKFLOW_REF"
+          bundle="$artifact/MarvelServer-$VERSION-linux-amd64.sigstore.json"
+          cosign sign --yes --bundle "$bundle" "$reference"
+          cosign verify \
+            --bundle "$bundle" \
+            --certificate-identity "$identity" \
+            --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
+            "$reference" >/dev/null
+          printf '%s\n' "$DIGEST" > \
+            "$artifact/MarvelServer-$VERSION-linux-amd64.digest"
+          jq -n \
+            --arg product_version "$VERSION" \
+            --arg commit '${{ needs.identity.outputs.commit }}' \
+            --arg image "$IMAGE" \
+            --arg digest "$DIGEST" \
+            --arg cards "$(sha256sum datasets/cards/cards.json | cut -d' ' -f1)" \
+            --arg setup "$(sha256sum datasets/setup/setup.json | cut -d' ' -f1)" \
+            --arg abilities "$(sha256sum datasets/abilities/abilities.json | cut -d' ' -f1)" \
+            '{format:"marvel-server-release",schema:1,product_version:$product_version,commit:$commit,image:$image,digest:$digest,engine_replay:"engine-replay-v1",rng:"mt19937-iso-cxx",state_digest:"state-digest-v2",protocol:11,save_schema:2,datasets:{cards_sha256:$cards,setup_sha256:$setup,abilities_sha256:$abilities}}' \
+            > "$artifact/MarvelServer-$VERSION-linux-amd64.provenance.json"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: server-linux-signed
+          path: ${{ runner.temp }}/server-signed/*
+          if-no-files-found: error
+
   publish:
-    name: Publish immutable desktop release
-    needs: [identity, macos-sign, windows-sign]
+    name: Publish immutable product release
+    needs: [identity, macos-sign, windows-sign, server-sign]
     runs-on: ubuntu-latest
     environment: desktop-release
     permissions:
@@ -315,6 +415,11 @@ jobs:
           pattern: desktop-*-signed
           path: release
           merge-multiple: true
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: server-linux-signed
+          path: release
 
       - name: Create the release once
         shell: bash
