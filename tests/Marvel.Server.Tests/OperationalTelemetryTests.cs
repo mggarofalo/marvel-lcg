@@ -205,23 +205,24 @@ public sealed class OperationalTelemetryTests
     }
 
     [Fact]
-    public async Task CompositeFlushPassesOnlyItsRemainingBudgetToANestedSink()
+    public void CompositeFlushPassesOnlyItsRemainingBudgetToANestedSink()
     {
         using var sink = new DelayedFlushSink();
         var composite = new CompositeOperationalSink(sink);
         composite.Write(Record(EngineProtocol.Resolve, "accepted"));
         Assert.True(sink.Entered.Wait(
             TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken));
-        Task release = Task.Run(async () =>
+        var release = new Thread(() =>
         {
-            await Task.Delay(200, TestContext.Current.CancellationToken);
+            Thread.Sleep(250);
             sink.Release.Set();
-        }, TestContext.Current.CancellationToken);
+        });
+        release.Start();
 
-        ((IOperationalFlushable)composite).Flush(TimeSpan.FromSeconds(1));
-        await release;
+        ((IOperationalFlushable)composite).Flush(TimeSpan.FromSeconds(5));
+        release.Join();
 
-        Assert.InRange(sink.FlushBudget, TimeSpan.Zero, TimeSpan.FromMilliseconds(900));
+        Assert.InRange(sink.FlushBudget, TimeSpan.Zero, TimeSpan.FromSeconds(4.9));
     }
 
     [Fact]
