@@ -468,7 +468,8 @@ jobs:
               exit 2
             }
           else
-            docker buildx imagetools create --tag "$IMAGE:$VERSION" "$IMAGE@$DIGEST"
+            docker buildx imagetools create --prefer-index=false \
+              --tag "$IMAGE:$VERSION" "$IMAGE@$DIGEST"
             manifest=$(docker buildx imagetools inspect "$IMAGE:$VERSION")
             published=$(awk '$1 == "Digest:" { print $2; exit }' <<< "$manifest")
             [[ $published == "$DIGEST" ]] || {
