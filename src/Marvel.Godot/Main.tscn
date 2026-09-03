@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://Main.cs" id="1_main"]
 [ext_resource type="Script" path="res://DecisionPanel.cs" id="2_decision"]
 
-[node name="Main" type="Control"]
+[node name="Main" type="Control" unique_id=1000000001]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -12,7 +12,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_main")
 
-[node name="Table" type="ColorRect" parent="."]
+[node name="Table" type="ColorRect" parent="." unique_id=1000000002]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -21,7 +21,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="TopRule" type="ColorRect" parent="."]
+[node name="TopRule" type="ColorRect" parent="." unique_id=1000000003]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
@@ -29,7 +29,7 @@ offset_bottom = 5.0
 grow_horizontal = 2
 mouse_filter = 2
 
-[node name="Margin" type="ScrollContainer" parent="."]
+[node name="Margin" type="ScrollContainer" parent="." unique_id=1000000004]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -43,17 +43,17 @@ grow_vertical = 2
 follow_focus = true
 horizontal_scroll_mode = 0
 
-[node name="Shell" type="PanelContainer" parent="Margin"]
+[node name="Shell" type="PanelContainer" parent="Margin" unique_id=1000000005]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_type_variation = &"ShellPanel"
 
-[node name="Content" type="VBoxContainer" parent="Margin/Shell"]
+[node name="Content" type="VBoxContainer" parent="Margin/Shell" unique_id=1000000006]
 layout_mode = 2
 theme_type_variation = &"Stack"
 
-[node name="StatusBar" type="HBoxContainer" parent="."]
+[node name="StatusBar" type="HBoxContainer" parent="." unique_id=1000000007]
 z_index = 10
 layout_mode = 1
 anchors_preset = 10
@@ -65,24 +65,24 @@ offset_bottom = 64.0
 grow_horizontal = 2
 theme_type_variation = &"CompactRow"
 
-[node name="BuildIdentity" type="Label" parent="StatusBar"]
+[node name="BuildIdentity" type="Label" parent="StatusBar" unique_id=1000000008]
 layout_mode = 2
 size_flags_vertical = 3
 theme_type_variation = &"Caption"
 text = "v0.1.0-dev.0 · engine engine-replay-v1 · protocol 10 · save 2"
 
-[node name="Spacer" type="Control" parent="StatusBar"]
+[node name="Spacer" type="Control" parent="StatusBar" unique_id=1000000009]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="SyncStatus" type="Label" parent="StatusBar"]
+[node name="SyncStatus" type="Label" parent="StatusBar" unique_id=1000000010]
 visible = false
 layout_mode = 2
 size_flags_vertical = 3
 theme_type_variation = &"StatusText"
 text = "✓ Synced"
 
-[node name="Synchronize" type="Button" parent="StatusBar"]
+[node name="Synchronize" type="Button" parent="StatusBar" unique_id=1000000011]
 visible = false
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
@@ -91,13 +91,13 @@ disabled = true
 text = "↻"
 tooltip_text = "Read the current authoritative table without repeating a decision."
 
-[node name="ScaleValue" type="Label" parent="StatusBar"]
+[node name="ScaleValue" type="Label" parent="StatusBar" unique_id=1000000012]
 layout_mode = 2
 size_flags_vertical = 3
 theme_type_variation = &"Caption"
 text = "Scale 80%"
 
-[node name="InterfaceScale" type="HSlider" parent="StatusBar"]
+[node name="InterfaceScale" type="HSlider" parent="StatusBar" unique_id=1000000013]
 custom_minimum_size = Vector2(100, 32)
 layout_mode = 2
 size_flags_vertical = 3
@@ -106,7 +106,7 @@ max_value = 150.0
 step = 10.0
 tooltip_text = "Adjust interface scale."
 
-[node name="Motion" type="CheckButton" parent="StatusBar"]
+[node name="Motion" type="CheckButton" parent="StatusBar" unique_id=1000000014]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 size_flags_vertical = 3
@@ -114,82 +114,82 @@ button_pressed = true
 text = "Motion"
 tooltip_text = "Show short visual cues for new game events."
 
-[node name="StatusBarClearance" type="Control" parent="Margin/Shell/Content"]
+[node name="StatusBarClearance" type="Control" parent="Margin/Shell/Content" unique_id=1000000015]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 
-[node name="Eyebrow" type="Label" parent="Margin/Shell/Content"]
+[node name="Eyebrow" type="Label" parent="Margin/Shell/Content" unique_id=1000000016]
 layout_mode = 2
 theme_type_variation = &"Eyebrow"
 text = "CORE SET  /  MISSION BRIEFING"
 
-[node name="Title" type="Label" parent="Margin/Shell/Content"]
+[node name="Title" type="Label" parent="Margin/Shell/Content" unique_id=1000000017]
 layout_mode = 2
 theme_type_variation = &"DisplayTitle"
 text = "Assemble the table."
 
-[node name="Description" type="Label" parent="Margin/Shell/Content"]
+[node name="Description" type="Label" parent="Margin/Shell/Content" unique_id=1000000018]
 layout_mode = 2
 theme_type_variation = &"BodyMuted"
 text = "Loading the supported Core Set assignments…"
 autowrap_mode = 2
 
-[node name="Setup" type="HBoxContainer" parent="Margin/Shell/Content"]
+[node name="Setup" type="HBoxContainer" parent="Margin/Shell/Content" unique_id=1000000019]
 layout_mode = 2
 size_flags_vertical = 3
 theme_type_variation = &"WideRow"
 
-[node name="Selections" type="PanelContainer" parent="Margin/Shell/Content/Setup"]
+[node name="Selections" type="PanelContainer" parent="Margin/Shell/Content/Setup" unique_id=1000000020]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"SurfacePanel"
 
-[node name="Fields" type="VBoxContainer" parent="Margin/Shell/Content/Setup/Selections"]
+[node name="Fields" type="VBoxContainer" parent="Margin/Shell/Content/Setup/Selections" unique_id=1000000021]
 layout_mode = 2
 theme_type_variation = &"Stack"
 
-[node name="EntryModes" type="HBoxContainer" parent="Margin/Shell/Content/Setup/Selections/Fields"]
+[node name="EntryModes" type="HBoxContainer" parent="Margin/Shell/Content/Setup/Selections/Fields" unique_id=1000000022]
 layout_mode = 2
 theme_type_variation = &"WideRow"
 
-[node name="StartFlow" type="Button" parent="Margin/Shell/Content/Setup/Selections/Fields/EntryModes"]
+[node name="StartFlow" type="Button" parent="Margin/Shell/Content/Setup/Selections/Fields/EntryModes" unique_id=1000000023]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"PrimaryButton"
 text = "Start a game"
 
-[node name="JoinFlow" type="Button" parent="Margin/Shell/Content/Setup/Selections/Fields/EntryModes"]
+[node name="JoinFlow" type="Button" parent="Margin/Shell/Content/Setup/Selections/Fields/EntryModes" unique_id=1000000024]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Join a game"
 
-[node name="ConnectionGrid" type="GridContainer" parent="Margin/Shell/Content/Setup/Selections/Fields"]
+[node name="ConnectionGrid" type="GridContainer" parent="Margin/Shell/Content/Setup/Selections/Fields" unique_id=1000000025]
 layout_mode = 2
 theme_type_variation = &"DataGrid"
 columns = 2
 
-[node name="EndpointLabel" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields/ConnectionGrid"]
+[node name="EndpointLabel" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields/ConnectionGrid" unique_id=1000000026]
 layout_mode = 2
 theme_type_variation = &"Caption"
 text = "ENGINE ENDPOINT"
 vertical_alignment = 1
 
-[node name="Endpoint" type="LineEdit" parent="Margin/Shell/Content/Setup/Selections/Fields/ConnectionGrid"]
+[node name="Endpoint" type="LineEdit" parent="Margin/Shell/Content/Setup/Selections/Fields/ConnectionGrid" unique_id=1000000027]
 custom_minimum_size = Vector2(240, 44)
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Blank for embedded · tcp://host:port"
 max_length = 512
 
-[node name="GameIdLabel" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields/ConnectionGrid"]
+[node name="GameIdLabel" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields/ConnectionGrid" unique_id=1000000028]
 layout_mode = 2
 theme_type_variation = &"Caption"
 text = "GAME LABEL"
 vertical_alignment = 1
 
-[node name="GameId" type="LineEdit" parent="Margin/Shell/Content/Setup/Selections/Fields/ConnectionGrid"]
+[node name="GameId" type="LineEdit" parent="Margin/Shell/Content/Setup/Selections/Fields/ConnectionGrid" unique_id=1000000029]
 custom_minimum_size = Vector2(240, 44)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -197,78 +197,78 @@ text = "core-table"
 placeholder_text = "An opaque label shared with invited players"
 max_length = 256
 
-[node name="Heading" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields"]
+[node name="Heading" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields" unique_id=1000000030]
 layout_mode = 2
 theme_type_variation = &"Heading"
 text = "Start a game"
 
-[node name="ReloadSetup" type="Button" parent="Margin/Shell/Content/Setup/Selections/Fields"]
+[node name="ReloadSetup" type="Button" parent="Margin/Shell/Content/Setup/Selections/Fields" unique_id=1000000031]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 text = "Reload setup options"
 tooltip_text = "Read setup choices again after changing the engine endpoint."
 
-[node name="Grid" type="GridContainer" parent="Margin/Shell/Content/Setup/Selections/Fields"]
+[node name="Grid" type="GridContainer" parent="Margin/Shell/Content/Setup/Selections/Fields" unique_id=1000000032]
 layout_mode = 2
 size_flags_vertical = 3
 theme_type_variation = &"DataGrid"
 columns = 4
 
-[node name="HeroLabel" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid"]
+[node name="HeroLabel" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid" unique_id=1000000033]
 layout_mode = 2
 theme_type_variation = &"Caption"
 text = "HERO"
 vertical_alignment = 1
 
-[node name="Hero" type="OptionButton" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid"]
+[node name="Hero" type="OptionButton" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid" unique_id=1000000034]
 custom_minimum_size = Vector2(240, 44)
 layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
 
-[node name="SecondHeroLabel" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid"]
+[node name="SecondHeroLabel" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid" unique_id=1000000035]
 layout_mode = 2
 theme_type_variation = &"Caption"
 text = "SECOND HERO"
 vertical_alignment = 1
 
-[node name="SecondHero" type="OptionButton" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid"]
+[node name="SecondHero" type="OptionButton" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid" unique_id=1000000036]
 custom_minimum_size = Vector2(240, 44)
 layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
 
-[node name="ScenarioLabel" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid"]
+[node name="ScenarioLabel" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid" unique_id=1000000037]
 layout_mode = 2
 theme_type_variation = &"Caption"
 text = "SCENARIO"
 vertical_alignment = 1
 
-[node name="Scenario" type="OptionButton" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid"]
+[node name="Scenario" type="OptionButton" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid" unique_id=1000000038]
 custom_minimum_size = Vector2(240, 44)
 layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
 
-[node name="ModeLabel" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid"]
+[node name="ModeLabel" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid" unique_id=1000000039]
 layout_mode = 2
 theme_type_variation = &"Caption"
 text = "MODE"
 vertical_alignment = 1
 
-[node name="Mode" type="OptionButton" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid"]
+[node name="Mode" type="OptionButton" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid" unique_id=1000000040]
 custom_minimum_size = Vector2(240, 44)
 layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
 
-[node name="ModularLabel" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid"]
+[node name="ModularLabel" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid" unique_id=1000000041]
 layout_mode = 2
 theme_type_variation = &"Caption"
 text = "MODULAR SETS"
 vertical_alignment = 1
 
-[node name="Modular" type="MenuButton" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid"]
+[node name="Modular" type="MenuButton" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid" unique_id=1000000042]
 custom_minimum_size = Vector2(240, 44)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -278,49 +278,49 @@ flat = false
 theme_type_variation = &"MultiSelectButton"
 text = "Recommended"
 
-[node name="SeedLabel" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid"]
+[node name="SeedLabel" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid" unique_id=1000000043]
 layout_mode = 2
 theme_type_variation = &"Caption"
 text = "SEED"
 vertical_alignment = 1
 
-[node name="Seed" type="LineEdit" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid"]
+[node name="Seed" type="LineEdit" parent="Margin/Shell/Content/Setup/Selections/Fields/Grid" unique_id=1000000044]
 custom_minimum_size = Vector2(240, 44)
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "Blank for random · 0–4294967295"
 max_length = 10
 
-[node name="SeedHelp" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields"]
+[node name="SeedHelp" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields" unique_id=1000000045]
 layout_mode = 2
 theme_type_variation = &"Caption"
 text = "Leave seed blank for a fresh deal. The chosen seed remains visible for replay."
 
-[node name="Start" type="Button" parent="Margin/Shell/Content/Setup/Selections/Fields"]
+[node name="Start" type="Button" parent="Margin/Shell/Content/Setup/Selections/Fields" unique_id=1000000046]
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 disabled = true
 theme_type_variation = &"PrimaryButton"
 text = "Start game"
 
-[node name="JoinFields" type="VBoxContainer" parent="Margin/Shell/Content/Setup/Selections/Fields"]
+[node name="JoinFields" type="VBoxContainer" parent="Margin/Shell/Content/Setup/Selections/Fields" unique_id=1000000047]
 visible = false
 layout_mode = 2
 size_flags_vertical = 3
 theme_type_variation = &"Stack"
 
-[node name="Heading" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields/JoinFields"]
+[node name="Heading" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields/JoinFields" unique_id=1000000048]
 layout_mode = 2
 theme_type_variation = &"Heading"
 text = "Join a game"
 
-[node name="Help" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields/JoinFields"]
+[node name="Help" type="Label" parent="Margin/Shell/Content/Setup/Selections/Fields/JoinFields" unique_id=1000000049]
 layout_mode = 2
 theme_type_variation = &"BodyMuted"
 text = "Paste the one-time invitation sent by the host. It is cleared as soon as you join."
 autowrap_mode = 2
 
-[node name="Invitation" type="LineEdit" parent="Margin/Shell/Content/Setup/Selections/Fields/JoinFields"]
+[node name="Invitation" type="LineEdit" parent="Margin/Shell/Content/Setup/Selections/Fields/JoinFields" unique_id=1000000050]
 custom_minimum_size = Vector2(240, 44)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -328,83 +328,83 @@ placeholder_text = "Secret invitation"
 secret = true
 max_length = 256
 
-[node name="Join" type="Button" parent="Margin/Shell/Content/Setup/Selections/Fields/JoinFields"]
+[node name="Join" type="Button" parent="Margin/Shell/Content/Setup/Selections/Fields/JoinFields" unique_id=1000000051]
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 disabled = true
 theme_type_variation = &"PrimaryButton"
 text = "Join game"
 
-[node name="Briefing" type="PanelContainer" parent="Margin/Shell/Content/Setup"]
+[node name="Briefing" type="PanelContainer" parent="Margin/Shell/Content/Setup" unique_id=1000000052]
 custom_minimum_size = Vector2(270, 0)
 layout_mode = 2
 size_flags_horizontal = 2
 theme_type_variation = &"SurfacePanel"
 
-[node name="Frame" type="HBoxContainer" parent="Margin/Shell/Content/Setup/Briefing"]
+[node name="Frame" type="HBoxContainer" parent="Margin/Shell/Content/Setup/Briefing" unique_id=1000000053]
 layout_mode = 2
 theme_type_variation = &"WideRow"
 
-[node name="EncounterRail" type="ColorRect" parent="Margin/Shell/Content/Setup/Briefing/Frame"]
+[node name="EncounterRail" type="ColorRect" parent="Margin/Shell/Content/Setup/Briefing/Frame" unique_id=1000000054]
 custom_minimum_size = Vector2(8, 0)
 layout_mode = 2
 
-[node name="Copy" type="VBoxContainer" parent="Margin/Shell/Content/Setup/Briefing/Frame"]
+[node name="Copy" type="VBoxContainer" parent="Margin/Shell/Content/Setup/Briefing/Frame" unique_id=1000000055]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"Stack"
 
-[node name="Kicker" type="Label" parent="Margin/Shell/Content/Setup/Briefing/Frame/Copy"]
+[node name="Kicker" type="Label" parent="Margin/Shell/Content/Setup/Briefing/Frame/Copy" unique_id=1000000056]
 layout_mode = 2
 theme_type_variation = &"Eyebrow"
 text = "ENCOUNTER DOSSIER"
 
-[node name="Scenario" type="Label" parent="Margin/Shell/Content/Setup/Briefing/Frame/Copy"]
+[node name="Scenario" type="Label" parent="Margin/Shell/Content/Setup/Briefing/Frame/Copy" unique_id=1000000057]
 layout_mode = 2
 theme_type_variation = &"BriefingTitle"
 text = "—"
 
-[node name="Mode" type="Label" parent="Margin/Shell/Content/Setup/Briefing/Frame/Copy"]
+[node name="Mode" type="Label" parent="Margin/Shell/Content/Setup/Briefing/Frame/Copy" unique_id=1000000058]
 layout_mode = 2
 theme_type_variation = &"EncounterText"
 text = "AWAITING ASSIGNMENT"
 
-[node name="Divider" type="HSeparator" parent="Margin/Shell/Content/Setup/Briefing/Frame/Copy"]
+[node name="Divider" type="HSeparator" parent="Margin/Shell/Content/Setup/Briefing/Frame/Copy" unique_id=1000000059]
 layout_mode = 2
 
-[node name="HeroCaption" type="Label" parent="Margin/Shell/Content/Setup/Briefing/Frame/Copy"]
+[node name="HeroCaption" type="Label" parent="Margin/Shell/Content/Setup/Briefing/Frame/Copy" unique_id=1000000060]
 layout_mode = 2
 theme_type_variation = &"Caption"
 text = "HERO"
 
-[node name="Hero" type="Label" parent="Margin/Shell/Content/Setup/Briefing/Frame/Copy"]
+[node name="Hero" type="Label" parent="Margin/Shell/Content/Setup/Briefing/Frame/Copy" unique_id=1000000061]
 layout_mode = 2
 theme_type_variation = &"Heading"
 text = "—"
 
-[node name="ModularCaption" type="Label" parent="Margin/Shell/Content/Setup/Briefing/Frame/Copy"]
+[node name="ModularCaption" type="Label" parent="Margin/Shell/Content/Setup/Briefing/Frame/Copy" unique_id=1000000062]
 layout_mode = 2
 theme_type_variation = &"Caption"
 text = "ENCOUNTER MODULE"
 
-[node name="Modular" type="Label" parent="Margin/Shell/Content/Setup/Briefing/Frame/Copy"]
+[node name="Modular" type="Label" parent="Margin/Shell/Content/Setup/Briefing/Frame/Copy" unique_id=1000000063]
 layout_mode = 2
 theme_type_variation = &"Body"
 text = "—"
 autowrap_mode = 2
 
-[node name="Play" type="HSplitContainer" parent="Margin/Shell/Content"]
+[node name="Play" type="HSplitContainer" parent="Margin/Shell/Content" unique_id=1000000064]
 visible = false
 custom_minimum_size = Vector2(0, 260)
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Board" type="VBoxContainer" parent="Margin/Shell/Content/Play"]
+[node name="Board" type="VBoxContainer" parent="Margin/Shell/Content/Play" unique_id=1000000065]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="TableScroll" type="ScrollContainer" parent="Margin/Shell/Content/Play/Board"]
+[node name="TableScroll" type="ScrollContainer" parent="Margin/Shell/Content/Play/Board" unique_id=1000000066]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -412,141 +412,141 @@ focus_mode = 2
 follow_focus = true
 horizontal_scroll_mode = 0
 
-[node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Board/TableScroll"]
+[node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Board/TableScroll" unique_id=1000000067]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 10
 
-[node name="Areas" type="VBoxContainer" parent="Margin/Shell/Content/Play/Board/TableScroll/Margin"]
+[node name="Areas" type="VBoxContainer" parent="Margin/Shell/Content/Play/Board/TableScroll/Margin" unique_id=1000000068]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"Stack"
 
-[node name="HandShelf" type="PanelContainer" parent="Margin/Shell/Content/Play/Board"]
+[node name="HandShelf" type="PanelContainer" parent="Margin/Shell/Content/Play/Board" unique_id=1000000069]
 custom_minimum_size = Vector2(0, 84)
 layout_mode = 2
 theme_type_variation = &"SurfacePanel"
 
-[node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Board/HandShelf"]
+[node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Board/HandShelf" unique_id=1000000070]
 layout_mode = 2
 theme_override_constants/margin_left = 8
 theme_override_constants/margin_top = 6
 theme_override_constants/margin_right = 8
 theme_override_constants/margin_bottom = 6
 
-[node name="Stack" type="VBoxContainer" parent="Margin/Shell/Content/Play/Board/HandShelf/Margin"]
+[node name="Stack" type="VBoxContainer" parent="Margin/Shell/Content/Play/Board/HandShelf/Margin" unique_id=1000000071]
 layout_mode = 2
 theme_type_variation = &"TightStack"
 
-[node name="Heading" type="Label" parent="Margin/Shell/Content/Play/Board/HandShelf/Margin/Stack"]
+[node name="Heading" type="Label" parent="Margin/Shell/Content/Play/Board/HandShelf/Margin/Stack" unique_id=1000000072]
 layout_mode = 2
 theme_type_variation = &"Heading"
 text = "HAND  ·  0"
 
-[node name="Scroll" type="ScrollContainer" parent="Margin/Shell/Content/Play/Board/HandShelf/Margin/Stack"]
+[node name="Scroll" type="ScrollContainer" parent="Margin/Shell/Content/Play/Board/HandShelf/Margin/Stack" unique_id=1000000073]
 layout_mode = 2
 size_flags_horizontal = 3
 horizontal_scroll_mode = 2
 vertical_scroll_mode = 0
 
-[node name="Rail" type="HBoxContainer" parent="Margin/Shell/Content/Play/Board/HandShelf/Margin/Stack/Scroll"]
+[node name="Rail" type="HBoxContainer" parent="Margin/Shell/Content/Play/Board/HandShelf/Margin/Stack/Scroll" unique_id=1000000074]
 layout_mode = 2
 theme_type_variation = &"CompactRow"
 
-[node name="Prompt" type="PanelContainer" parent="Margin/Shell/Content/Play"]
+[node name="Prompt" type="PanelContainer" parent="Margin/Shell/Content/Play" unique_id=1000000075]
 custom_minimum_size = Vector2(330, 0)
 layout_mode = 2
 theme_type_variation = &"SurfacePanel"
 
-[node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Prompt"]
+[node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Prompt" unique_id=1000000076]
 layout_mode = 2
 theme_override_constants/margin_left = 0
 theme_override_constants/margin_top = 0
 theme_override_constants/margin_right = 0
 theme_override_constants/margin_bottom = 0
 
-[node name="Stack" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin"]
+[node name="Stack" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin" unique_id=1000000077]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_type_variation = &"Stack"
 
-[node name="InvitationOffer" type="PanelContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
+[node name="InvitationOffer" type="PanelContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack" unique_id=1000000078]
 visible = false
 layout_mode = 2
 theme_type_variation = &"StatusPanel"
 
-[node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/InvitationOffer"]
+[node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/InvitationOffer" unique_id=1000000079]
 layout_mode = 2
 theme_override_constants/margin_left = 12
 theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 8
 
-[node name="Row" type="HBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/InvitationOffer/Margin"]
+[node name="Row" type="HBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/InvitationOffer/Margin" unique_id=1000000080]
 layout_mode = 2
 theme_type_variation = &"WideRow"
 
-[node name="Copy" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/InvitationOffer/Margin/Row"]
+[node name="Copy" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/InvitationOffer/Margin/Row" unique_id=1000000081]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"Body"
 text = "A one-time seat invitation is ready."
 autowrap_mode = 2
 
-[node name="CopyInvitation" type="Button" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/InvitationOffer/Margin/Row"]
+[node name="CopyInvitation" type="Button" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/InvitationOffer/Margin/Row" unique_id=1000000082]
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 theme_type_variation = &"PrimaryButton"
 text = "Copy invitation"
 
-[node name="PromptHeader" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
+[node name="PromptHeader" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack" unique_id=1000000083]
 layout_mode = 2
 theme_type_variation = &"TightStack"
 
-[node name="Eyebrow" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader"]
+[node name="Eyebrow" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader" unique_id=1000000084]
 layout_mode = 2
 theme_type_variation = &"Eyebrow"
 text = "CURRENT DECISION"
 
-[node name="Heading" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader"]
+[node name="Heading" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader" unique_id=1000000085]
 layout_mode = 2
 theme_type_variation = &"Heading"
 text = "Waiting for the engine…"
 autowrap_mode = 2
 
-[node name="Context" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader"]
+[node name="Context" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader" unique_id=1000000086]
 layout_mode = 2
 theme_type_variation = &"Caption"
 text = "PLAYER · QUESTION · TIMING"
 autowrap_mode = 2
 
-[node name="Requirement" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader"]
+[node name="Requirement" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader" unique_id=1000000087]
 layout_mode = 2
 theme_type_variation = &"DangerText"
 text = "DECISION REQUIRED"
 autowrap_mode = 2
 
-[node name="Progress" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader"]
+[node name="Progress" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader" unique_id=1000000088]
 layout_mode = 2
 theme_type_variation = &"StatusText"
 text = "CHOOSE AN ACTION"
 autowrap_mode = 2
 
-[node name="HeaderRule" type="HSeparator" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
+[node name="HeaderRule" type="HSeparator" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack" unique_id=1000000089]
 layout_mode = 2
 
-[node name="Workbench" type="TabContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
+[node name="Workbench" type="TabContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack" unique_id=1000000090]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="Action" type="MarginContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench"]
+[node name="Action" type="MarginContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench" unique_id=1000000091]
 layout_mode = 2
 metadata/_tab_name = "Action"
 
-[node name="DecisionScroll" type="ScrollContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/Action"]
+[node name="DecisionScroll" type="ScrollContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/Action" unique_id=1000000092]
 custom_minimum_size = Vector2(0, 180)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -554,63 +554,63 @@ size_flags_vertical = 3
 follow_focus = true
 horizontal_scroll_mode = 1
 
-[node name="Decision" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/Action/DecisionScroll"]
+[node name="Decision" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/Action/DecisionScroll" unique_id=1000000093]
 layout_mode = 2
 size_flags_horizontal = 3
 script = ExtResource("2_decision")
 
-[node name="History" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench"]
+[node name="History" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench" unique_id=1000000094]
 layout_mode = 2
 theme_type_variation = &"TightStack"
 metadata/_tab_name = "History"
 
-[node name="Rule" type="HSeparator" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History"]
+[node name="Rule" type="HSeparator" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History" unique_id=1000000095]
 layout_mode = 2
 
-[node name="EventHeader" type="HFlowContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History"]
+[node name="EventHeader" type="HFlowContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History" unique_id=1000000096]
 layout_mode = 2
 
-[node name="Heading" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History/EventHeader"]
+[node name="Heading" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History/EventHeader" unique_id=1000000097]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_type_variation = &"Eyebrow"
 text = "RECENT HISTORY"
 
-[node name="Skip" type="Button" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History/EventHeader"]
+[node name="Skip" type="Button" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History/EventHeader" unique_id=1000000098]
 layout_mode = 2
 disabled = true
 text = "Skip"
 tooltip_text = "Finish the current event presentation immediately."
 
-[node name="EventCue" type="PanelContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History"]
+[node name="EventCue" type="PanelContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History" unique_id=1000000099]
 visible = false
 custom_minimum_size = Vector2(0, 68)
 layout_mode = 2
 theme_type_variation = &"StatusPanel"
 
-[node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History/EventCue"]
+[node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History/EventCue" unique_id=1000000100]
 layout_mode = 2
 theme_override_constants/margin_left = 12
 theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 8
 
-[node name="Copy" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History/EventCue/Margin"]
+[node name="Copy" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History/EventCue/Margin" unique_id=1000000101]
 layout_mode = 2
 theme_type_variation = &"TightStack"
 
-[node name="Kind" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History/EventCue/Margin/Copy"]
+[node name="Kind" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History/EventCue/Margin/Copy" unique_id=1000000102]
 layout_mode = 2
 theme_type_variation = &"Eyebrow"
 text = "EVENT"
 
-[node name="Summary" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History/EventCue/Margin/Copy"]
+[node name="Summary" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History/EventCue/Margin/Copy" unique_id=1000000103]
 layout_mode = 2
 theme_type_variation = &"Body"
 text = "The authoritative board is current."
 autowrap_mode = 2
 
-[node name="EventLog" type="RichTextLabel" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History"]
+[node name="EventLog" type="RichTextLabel" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History" unique_id=1000000104]
 custom_minimum_size = Vector2(0, 260)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -621,17 +621,17 @@ scroll_active = true
 selection_enabled = true
 text = "No events yet."
 
-[node name="Status" type="PanelContainer" parent="Margin/Shell/Content"]
+[node name="Status" type="PanelContainer" parent="Margin/Shell/Content" unique_id=1000000105]
 layout_mode = 2
 size_flags_horizontal = 0
 theme_type_variation = &"StatusPanel"
 
-[node name="Text" type="Label" parent="Margin/Shell/Content/Status"]
+[node name="Text" type="Label" parent="Margin/Shell/Content/Status" unique_id=1000000106]
 layout_mode = 2
 theme_type_variation = &"StatusText"
 text = "LOADING ASSIGNMENTS"
 
-[node name="CardInspector" type="PanelContainer" parent="."]
+[node name="CardInspector" type="PanelContainer" parent="." unique_id=1000000107]
 visible = false
 z_index = 20
 mouse_filter = 1
@@ -639,13 +639,13 @@ focus_mode = 0
 custom_minimum_size = Vector2(280, 480)
 theme_type_variation = &"SurfacePanel"
 
-[node name="Scroll" type="ScrollContainer" parent="CardInspector"]
+[node name="Scroll" type="ScrollContainer" parent="CardInspector" unique_id=1000000108]
 layout_mode = 2
 mouse_filter = 0
 focus_mode = 0
 horizontal_scroll_mode = 0
 
-[node name="Content" type="VBoxContainer" parent="CardInspector/Scroll"]
+[node name="Content" type="VBoxContainer" parent="CardInspector/Scroll" unique_id=1000000109]
 layout_mode = 2
 mouse_filter = 2
 theme_type_variation = &"TightStack"
