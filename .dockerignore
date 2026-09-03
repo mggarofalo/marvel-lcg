@@ -1,0 +1,17 @@
+**
+!global.json
+!Directory.Build.props
+!Directory.Build.targets
+!Directory.Packages.props
+!src/
+!src/**
+!datasets/
+!datasets/cards/
+!datasets/cards/cards.json
+!datasets/setup/
+!datasets/setup/setup.json
+!datasets/abilities/
+!datasets/abilities/abilities.json
+**/bin/
+**/obj/
+**/.godot/

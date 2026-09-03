@@ -534,8 +534,11 @@ public sealed class EngineHostTests
                 ],
             },
         });
-        Assert.Throws<ReplayDivergenceException>(() =>
-            new EngineHost(factory, store: store));
+        var restarted = new EngineHost(factory, store: store);
+        Assert.Equal(
+            "session_not_found",
+            restarted.Exchange(EngineRequest.SyncGame(
+                "quarantined", "open-unit-history", RequiredCapability(opened))).Error?.Code);
     }
 
     [Fact]
@@ -606,6 +609,13 @@ public sealed class EngineHostTests
             ],
             choices.ModularSets.Select(choice => choice.Key));
         Assert.Equal("The Doomsday Chair", choices.ModularSets[^1].Name);
+        Assert.Equal(EngineBuildIdentity.ProductVersion, choices.Runtime.ProductVersion);
+        Assert.Equal(EngineBuildIdentity.Commit, choices.Runtime.Commit);
+        Assert.Equal(EngineProtocol.Version, choices.Runtime.Protocol);
+        Assert.Equal(SessionSave.CurrentSchema, choices.Runtime.SaveSchema);
+        Assert.Equal(64, choices.Runtime.CardsSha256.Length);
+        Assert.Equal(64, choices.Runtime.SetupSha256.Length);
+        Assert.Equal(64, choices.Runtime.AbilitiesSha256.Length);
     }
 
     [Fact]
@@ -857,7 +867,7 @@ public sealed class EngineHostTests
             1, "old-client", EngineProtocol.Open, "game",
             Game: new GameSpecification("rhino", ["spider_man"], null, 1)));
 
-        Assert.Equal(10, EngineProtocol.Version);
+        Assert.Equal(11, EngineProtocol.Version);
         Assert.Equal(EngineProtocol.Version, rejected.Version);
         Assert.Equal("unsupported_version", rejected.Error?.Code);
         Assert.Equal(0, factory.Calls);
@@ -1164,7 +1174,7 @@ public sealed class EngineHostTests
     [InlineData("digest")]
     [InlineData("prompt")]
     [InlineData("compatibility")]
-    public void RestartRejectsTheFirstDivergentAuthorityRecord(string field)
+    public void RestartQuarantinesTheFirstDivergentAuthorityRecord(string field)
     {
         var store = new MemorySessionStore();
         var factory = DatasetGameFactory.Load(RepositoryPaths.Root);
@@ -1201,16 +1211,18 @@ public sealed class EngineHostTests
             _ => throw new InvalidOperationException(field),
         };
 
-        Assert.ThrowsAny<Exception>(() => new EngineHost(
+        AssertQuarantined(
             factory,
-            store: new FixedSessionStore(stored with { Save = changed })));
+            stored with { Save = changed },
+            "divergence-table",
+            "divergence-owner");
     }
 
     [Theory]
     [InlineData("event")]
     [InlineData("rng")]
     [InlineData("state")]
-    public void RestartRejectsTheFirstDivergentCommittedDecision(string field)
+    public void RestartQuarantinesTheFirstDivergentCommittedDecision(string field)
     {
         var store = new MemorySessionStore();
         var factory = DatasetGameFactory.Load(RepositoryPaths.Root);
@@ -1246,9 +1258,11 @@ public sealed class EngineHostTests
             Units = [unit with { Decisions = [changedStep] }],
         };
 
-        Assert.Throws<ReplayDivergenceException>(() => new EngineHost(
+        AssertQuarantined(
             factory,
-            store: new FixedSessionStore(stored with { Save = changed })));
+            stored with { Save = changed },
+            "step-table",
+            "step-owner");
     }
 
     [Fact]
@@ -1283,14 +1297,15 @@ public sealed class EngineHostTests
             exposure => exposure.Reason == InformationFrontier.Draw);
         Assert.Equal([0], draw.Seats);
         StoredSession stored = Assert.Single(store.Load());
-        Assert.ThrowsAny<Exception>(() => new EngineHost(
-            DatasetGameFactory.Load(RepositoryPaths.Root),
-            store: new FixedSessionStore(new StoredSession(
-                save with { EditFrontier = 0 },
-                stored.Authorities))));
-        Assert.Throws<ReplayDivergenceException>(() => new EngineHost(
-            DatasetGameFactory.Load(RepositoryPaths.Root),
-            store: new FixedSessionStore(stored with
+        IDurableGameFactory factory = DatasetGameFactory.Load(RepositoryPaths.Root);
+        AssertQuarantined(
+            factory,
+            new StoredSession(save with { EditFrontier = 0 }, stored.Authorities),
+            "frontier-table",
+            "frontier-owner");
+        AssertQuarantined(
+            factory,
+            stored with
             {
                 Save = save with
                 {
@@ -1307,7 +1322,9 @@ public sealed class EngineHostTests
                         },
                     ],
                 },
-            })));
+            },
+            "frontier-table",
+            "frontier-owner");
 
         var migrationStore = new MigrationSessionStore(stored with
         {
@@ -1363,6 +1380,122 @@ public sealed class EngineHostTests
     }
 
     [Fact]
+    public void OneIncompatibleSessionIsQuarantinedWithoutHidingAHealthySession()
+    {
+        var store = new MemorySessionStore();
+        IDurableGameFactory factory = DatasetGameFactory.Load(RepositoryPaths.Root);
+        var first = new EngineHost(
+            factory,
+            new SequenceCapabilities("bad-owner", "healthy-owner"),
+            store: store);
+        _ = first.Exchange(EngineRequest.OpenGame(
+            "bad-open",
+            "bad-table",
+            new GameSpecification("rhino", ["spider_man"], [], Seed: 73)));
+        _ = first.Exchange(EngineRequest.OpenGame(
+            "healthy-open",
+            "healthy-table",
+            new GameSpecification("rhino", ["captain_marvel"], [], Seed: 74)));
+        StoredSession[] saved = [.. store.Load()];
+        StoredSession bad = saved.Single(session => session.Save.Session.Label == "bad-table");
+        StoredSession healthy = saved.Single(
+            session => session.Save.Session.Label == "healthy-table");
+        bad = bad with
+        {
+            Save = bad.Save with
+            {
+                Compatibility = bad.Save.Compatibility with
+                {
+                    ReplayContract = "future-contract",
+                },
+            },
+        };
+
+        var restarted = new EngineHost(
+            factory,
+            store: new FixedSessionStore(bad, healthy));
+
+        Assert.Equal(
+            "session_not_found",
+            restarted.Exchange(EngineRequest.SyncGame(
+                "bad", "bad-table", "bad-owner")).Error?.Code);
+        Assert.Null(restarted.Exchange(EngineRequest.SyncGame(
+            "healthy", "healthy-table", "healthy-owner")).Error);
+    }
+
+    [Fact]
+    public void APartlyReadAuthorityListPublishesNoneOfTheQuarantinedSession()
+    {
+        var store = new MemorySessionStore();
+        IDurableGameFactory factory = DatasetGameFactory.Load(RepositoryPaths.Root);
+        var first = new EngineHost(
+            factory,
+            new SequenceCapabilities("partial-owner"),
+            store: store);
+        EngineResponse opened = first.Exchange(EngineRequest.OpenGame(
+            "open",
+            "partial-table",
+            new GameSpecification("rhino", ["spider_man"], [], Seed: 73)));
+        StoredSession stored = Assert.Single(store.Load());
+        stored = stored with
+        {
+            Authorities =
+            [
+                .. stored.Authorities,
+                new StoredAuthority(new string('f', 64), [1], Owner: false, Invitation: false),
+            ],
+        };
+
+        var restarted = new EngineHost(
+            factory,
+            store: new FixedSessionStore(stored));
+
+        Assert.Equal(
+            "session_not_found",
+            restarted.Exchange(EngineRequest.SyncGame(
+                "sync", "partial-table", RequiredCapability(opened))).Error?.Code);
+    }
+
+    [Fact]
+    public void EveryGameplayCommitStampsTheCurrentVersionAndBlocksADowngrade()
+    {
+        var store = new MemorySessionStore();
+        IDurableGameFactory inner = DatasetGameFactory.Load(RepositoryPaths.Root);
+        var first = new EngineHost(
+            new VersionedFactory(inner, "0.1.0"),
+            new SequenceCapabilities("version-owner"),
+            store: store);
+        EngineResponse opened = first.Exchange(EngineRequest.OpenGame(
+            "open",
+            "version-table",
+            new GameSpecification("rhino", ["spider_man"], [], Seed: 73)));
+
+        var upgraded = new EngineHost(
+            new VersionedFactory(inner, "0.1.1-preview.2"),
+            store: store);
+        EngineResponse current = upgraded.Exchange(EngineRequest.SyncGame(
+            "sync", "version-table", "version-owner"));
+        EngineResponse resolved = upgraded.Exchange(EngineRequest.ResolveGame(
+            "resolve",
+            "version-table",
+            "version-owner",
+            TakeOnly(current),
+            current.Revision));
+
+        Assert.Null(resolved.Error);
+        Assert.Equal(
+            "0.1.1-preview.2",
+            Assert.Single(store.Load()).Save.Compatibility.Application);
+        var downgraded = new EngineHost(
+            new VersionedFactory(inner, "0.1.1-preview.1"),
+            store: store);
+        Assert.Equal(
+            "session_not_found",
+            downgraded.Exchange(EngineRequest.SyncGame(
+                "downgrade", "version-table", "version-owner")).Error?.Code);
+    }
+
+    [Fact]
     public void FileReadingAndCheatOperationsHaveNoServedSurface()
     {
         var factory = new UnusedFactory();
@@ -1395,6 +1528,21 @@ public sealed class EngineHostTests
     private static EngineDecision TakeOnly(EngineResponse response) =>
         new(Assert.Single(Assert.IsType<Marvel.Rules.Prompts.Prompt>(response.Prompt)
             .Affordances).Id, []);
+
+    private static void AssertQuarantined(
+        IDurableGameFactory factory,
+        StoredSession stored,
+        string gameId,
+        string capability)
+    {
+        var restarted = new EngineHost(
+            factory,
+            store: new FixedSessionStore(stored));
+        Assert.Equal(
+            "session_not_found",
+            restarted.Exchange(EngineRequest.SyncGame(
+                "quarantined", gameId, capability)).Error?.Code);
+    }
 
     private static EngineDecision PayFirstPlayableCard(Prompt prompt)
     {
@@ -1501,6 +1649,17 @@ public sealed class EngineHostTests
 
         public void Commit(StoredSession session) =>
             throw new InvalidOperationException("not used");
+    }
+
+    private sealed class VersionedFactory(IDurableGameFactory inner, string application)
+        : IDurableGameFactory
+    {
+        public SessionCompatibility Compatibility => inner.Compatibility with
+        {
+            Application = application,
+        };
+
+        public OpenedGame Create(GameSpecification specification) => inner.Create(specification);
     }
 
     private sealed class MigrationSessionStore(StoredSession session) : ISessionStore

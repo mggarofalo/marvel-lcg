@@ -221,6 +221,8 @@ public sealed class SocketEngineServer(IEngineEndpoint endpoint, IPAddress addre
             while (!cancellationToken.IsCancellationRequested)
             {
                 using TcpClient client = listener.AcceptTcpClient();
+                using CancellationTokenRegistration disconnecting =
+                    cancellationToken.Register(client.Close);
                 client.ReceiveTimeout = ClientTimeoutMilliseconds;
                 client.SendTimeout = ClientTimeoutMilliseconds;
                 try
@@ -246,6 +248,9 @@ public sealed class SocketEngineServer(IEngineEndpoint endpoint, IPAddress addre
             }
         }
         catch (SocketException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (ObjectDisposedException) when (cancellationToken.IsCancellationRequested)
         {
         }
         finally

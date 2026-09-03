@@ -26,9 +26,19 @@ public interface ISessionStore
     /// <summary>Loads only complete generations selected by committed manifests.</summary>
     IReadOnlyList<StoredSession> Load();
 
+    /// <summary>Loads independent candidates so one corrupt session can be quarantined.</summary>
+    IReadOnlyList<SessionLoadResult> LoadForRestore() =>
+        [.. Load().Select(session => new SessionLoadResult(session, null, null))];
+
     /// <summary>Commits a complete generation before returning.</summary>
     void Commit(StoredSession session);
 }
+
+/// <summary>One independently loadable session or its bounded quarantine result.</summary>
+public sealed record SessionLoadResult(
+    StoredSession? Session,
+    string? StorageId,
+    string? ErrorCode);
 
 /// <summary>An isolated store used when a host has no filesystem authority.</summary>
 public sealed class MemorySessionStore : ISessionStore
@@ -44,6 +54,11 @@ public sealed class MemorySessionStore : ISessionStore
     public void Commit(StoredSession session)
     {
         ArgumentNullException.ThrowIfNull(session);
+        if (session.Save is null)
+        {
+            throw new SessionSaveException("stored generation has no save");
+        }
+
         generations[session.Save.Session.StorageId] = StoredSessionJson.Write(session);
     }
 }
@@ -114,6 +129,67 @@ public sealed class FileSessionStore : ISessionStore
         }
 
         return loaded;
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyList<SessionLoadResult> LoadForRestore()
+    {
+        if (!Directory.Exists(root))
+        {
+            return [];
+        }
+
+        var results = new List<SessionLoadResult>();
+        foreach (string directory in Directory.EnumerateDirectories(root)
+                     .OrderBy(path => path, StringComparer.Ordinal))
+        {
+            string storageId = Path.GetFileName(directory);
+            try
+            {
+                if (storageId.StartsWith(".creating-", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                RequireStorageId(storageId);
+                string manifest = Path.Combine(directory, Current);
+                if (!File.Exists(manifest))
+                {
+                    continue;
+                }
+
+                string generation = ReadStrict(manifest).Trim();
+                if (!ValidGeneration(generation))
+                {
+                    throw new SessionSaveException(
+                        $"session {storageId} has an invalid generation manifest");
+                }
+
+                SessionSave save = SessionSaveJson.Read(ReadStrict(
+                    Path.Combine(directory, generation + ".session.json")));
+                IReadOnlyList<StoredAuthority> authorities = StoredAuthorityJson.Read(
+                    ReadStrict(Path.Combine(directory, generation + ".authority.json")));
+                var session = new StoredSession(save, authorities);
+                StoredSessionJson.ValidateLoaded(session);
+                if (!string.Equals(
+                        storageId, session.Save.Session.StorageId, StringComparison.Ordinal))
+                {
+                    throw new SessionSaveException(
+                        $"session {storageId} generation names another storage id");
+                }
+
+                results.Add(new SessionLoadResult(session, storageId, null));
+            }
+            catch (Exception failure) when (failure is IOException
+                or UnauthorizedAccessException
+                or JsonException
+                or SessionSaveException)
+            {
+                results.Add(new SessionLoadResult(null, storageId, "restore_failed"));
+            }
+        }
+
+        return results;
     }
 
     /// <inheritdoc />
@@ -432,6 +508,11 @@ internal static class StoredSessionJson
     private static void Validate(StoredSession session, bool readable = false)
     {
         ArgumentNullException.ThrowIfNull(session);
+        if (session.Save is null)
+        {
+            throw new SessionSaveException("stored generation has no save");
+        }
+
         if (readable)
         {
             SessionSaveJson.ValidateReadable(session.Save);
@@ -442,7 +523,7 @@ internal static class StoredSessionJson
         }
         if (session.Authorities is null
             || session.Authorities.Any(authority => authority is null
-                || authority.Verifier.Length != 64
+                || authority.Verifier is not { Length: 64 }
                 || authority.Verifier.Any(character =>
                     character is not (>= '0' and <= '9')
                     and not (>= 'a' and <= 'f'))

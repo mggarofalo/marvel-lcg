@@ -14,10 +14,12 @@ public static class EngineProtocol
     /// scoped seat capabilities, play-area topology events, setup discovery,
     /// per-target allocation capacities, procedural-card face facts, host
     /// revisions, replay-verified history cursor commands, and legal trace
-    /// rewriting for committed action units. Version 10 also tells clients
+    /// rewriting for committed action units. Version 11 exposes the product,
+    /// replay, save and runtime-dataset identities during setup discovery.
+    /// Version 10 also tells clients
     /// when a wild-resource declaration is observable by the resolving effect.
     /// </summary>
-    public const int Version = 10;
+    public const int Version = 11;
 
     /// <summary>The largest request or game id accepted or echoed.</summary>
     public const int MaximumIdentifierLength = 256;
@@ -80,11 +82,25 @@ public sealed record ScenarioSetupChoice(
 /// <summary>One authored encounter set selectable as a modular set.</summary>
 public sealed record ModularSetupChoice(string Key, string Name);
 
+/// <summary>Non-secret runtime identities available before a game is opened.</summary>
+public sealed record RuntimeIdentity(
+    string ProductVersion,
+    string Commit,
+    string ReplayContract,
+    string RngContract,
+    string StateDigest,
+    int Protocol,
+    int SaveSchema,
+    string CardsSha256,
+    string SetupSha256,
+    string AbilitiesSha256);
+
 /// <summary>The complete product-selection surface exposed by this host.</summary>
 public sealed record SetupChoices(
     IReadOnlyList<HeroSetupChoice> Heroes,
     IReadOnlyList<ScenarioSetupChoice> Scenarios,
-    IReadOnlyList<ModularSetupChoice> ModularSets);
+    IReadOnlyList<ModularSetupChoice> ModularSets,
+    RuntimeIdentity Runtime);
 
 /// <summary>One command sent through either engine transport.</summary>
 /// <param name="Version">The protocol version.</param>

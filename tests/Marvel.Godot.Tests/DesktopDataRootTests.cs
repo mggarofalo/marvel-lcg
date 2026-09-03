@@ -57,7 +57,7 @@ public sealed class DesktopDataRootTests
         Assert.Equal("0.1.0-dev.0", EngineBuildIdentity.ProductVersion);
         Assert.Equal("local", EngineBuildIdentity.Commit);
         Assert.Equal(
-            "v0.1.0-dev.0 · engine engine-replay-v1 · protocol 10 · save 2",
+            "v0.1.0-dev.0 · engine engine-replay-v1 · protocol 11 · save 2",
             EngineBuildIdentity.Display);
     }
 }

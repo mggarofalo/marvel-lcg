@@ -13,6 +13,16 @@ internal static class Program
 
     public static int Main(string[] args)
     {
+        if (args.SequenceEqual(["--version"], StringComparer.Ordinal))
+        {
+            Console.Out.WriteLine(EngineBuildIdentity.Display);
+            return 0;
+        }
+        if (args.SequenceEqual(["--health-check"], StringComparer.Ordinal))
+        {
+            return HealthCheck(IPAddress.Loopback.ToString(), DefaultPort);
+        }
+
         OperationalLog log = CreateLog(Console.Error, telemetryEndpoint: null);
         using var stopping = new CancellationTokenSource();
         ConsoleCancelEventHandler stop = (_, signal) =>
@@ -47,6 +57,32 @@ internal static class Program
             {
                 Console.CancelKeyPress -= stop;
             }
+        }
+    }
+
+    internal static int HealthCheck(string host, int port)
+    {
+        try
+        {
+            var transport = new SocketTransport(host, port);
+            EngineResponse response = transport.ExchangeAsync(
+                    EngineRequest.ReadSetup("health"),
+                    CancellationToken.None)
+                .AsTask()
+                .GetAwaiter()
+                .GetResult();
+            return response.Error is null
+                && response.Setup?.Runtime.Protocol == EngineProtocol.Version
+                && string.Equals(
+                    response.Setup.Runtime.ProductVersion,
+                    EngineBuildIdentity.ProductVersion,
+                    StringComparison.Ordinal)
+                    ? 0
+                    : 1;
+        }
+        catch (Exception)
+        {
+            return 1;
         }
     }
 

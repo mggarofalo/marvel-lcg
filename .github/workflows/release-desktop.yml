@@ -21,6 +21,9 @@ jobs:
       version: ${{ steps.identity.outputs.version }}
       commit: ${{ steps.identity.outputs.commit }}
       preview: ${{ steps.identity.outputs.preview }}
+      major: ${{ steps.identity.outputs.major }}
+      minor: ${{ steps.identity.outputs.minor }}
+      patch: ${{ steps.identity.outputs.patch }}
     steps:
       - name: The tag is one supported product version
         id: identity
@@ -42,6 +45,9 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "commit=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
           echo "preview=$preview" >> "$GITHUB_OUTPUT"
+          echo "major=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
+          echo "minor=${BASH_REMATCH[2]}" >> "$GITHUB_OUTPUT"
+          echo "patch=${BASH_REMATCH[3]}" >> "$GITHUB_OUTPUT"
 
   quality:
     name: Ordinary release gates
@@ -302,19 +308,175 @@ jobs:
           path: ${{ runner.temp }}/windows-signed/*
           if-no-files-found: error
 
+  server-sign:
+    name: Publish and sign Linux server image
+    needs: [identity, quality]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: desktop-release
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    env:
+      IMAGE: ghcr.io/${{ github.repository_owner }}/marvel-server
+      VERSION: ${{ needs.identity.outputs.version }}
+      STAGING_TAG: staging-${{ needs.identity.outputs.version }}-${{ needs.identity.outputs.commit }}
+    outputs:
+      digest: ${{ steps.image.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref }}
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: sigstore/cosign-installer@v4.1.2
+        with:
+          cosign-release: v3.1.3
+
+      - name: Reuse only a staging image signed by this protected workflow
+        id: staged
+        shell: bash
+        run: |
+          echo '${{ github.token }}' | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          found=false
+          digest=''
+          if manifest=$(docker buildx imagetools inspect "$IMAGE:$STAGING_TAG" 2>/dev/null); then
+            digest=$(awk '$1 == "Digest:" { print $2; exit }' <<< "$manifest")
+            identity="https://github.com/$GITHUB_WORKFLOW_REF"
+            if [[ $digest == sha256:* ]] && cosign verify \
+              --certificate-identity "$identity" \
+              --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
+              "$IMAGE@$digest" >/dev/null 2>&1; then
+              found=true
+            fi
+          fi
+          echo "found=$found" >> "$GITHUB_OUTPUT"
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+          echo "SOURCE_DATE_EPOCH=$(git show -s --format=%ct '${{ needs.identity.outputs.commit }}')" >> "$GITHUB_ENV"
+
+      - name: Build and publish the exact server image
+        id: server
+        if: steps.staged.outputs.found != 'true'
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: src/Marvel.Server/Dockerfile
+          platforms: linux/amd64
+          outputs: type=image,name=${{ env.IMAGE }}:${{ env.STAGING_TAG }},push=true,rewrite-timestamp=true
+          provenance: false
+          sbom: false
+          build-args: |
+            SOURCE_DATE_EPOCH=${{ env.SOURCE_DATE_EPOCH }}
+            MARVEL_PRODUCT_VERSION=${{ needs.identity.outputs.version }}
+            MARVEL_COMMIT=${{ needs.identity.outputs.commit }}
+            MARVEL_VERSION_MAJOR=${{ needs.identity.outputs.major }}
+            MARVEL_VERSION_MINOR=${{ needs.identity.outputs.minor }}
+            MARVEL_VERSION_PATCH=${{ needs.identity.outputs.patch }}
+
+      - name: Select the built or previously verified digest
+        id: image
+        shell: bash
+        env:
+          BUILT_DIGEST: ${{ steps.server.outputs.digest }}
+          STAGED_DIGEST: ${{ steps.staged.outputs.digest }}
+        run: |
+          digest=$BUILT_DIGEST
+          if [[ '${{ steps.staged.outputs.found }}' == true ]]; then
+            digest=$STAGED_DIGEST
+          fi
+          [[ $digest == sha256:* ]] || { echo 'server image has no content digest' >&2; exit 2; }
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+
+      - name: Verify image identity, sign its digest, and retain the bundle
+        shell: bash
+        env:
+          DIGEST: ${{ steps.image.outputs.digest }}
+        run: |
+          reference="$IMAGE@$DIGEST"
+          artifact="$RUNNER_TEMP/server-signed"
+          mkdir -p "$artifact"
+          docker pull --quiet "$reference" >/dev/null
+          actual_version=$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.version"}}' \
+            "$reference")
+          [[ $actual_version == "$VERSION" ]] || { echo 'server image label differs from release version' >&2; exit 2; }
+          docker run --rm --read-only --entrypoint dotnet "$reference" \
+            Marvel.Server.dll --version | grep -F \
+            "v$VERSION · engine engine-replay-v1 · protocol 11 · save 2"
+          identity="https://github.com/$GITHUB_WORKFLOW_REF"
+          bundle="$artifact/MarvelServer-$VERSION-linux-amd64.sigstore.json"
+          cosign sign --yes --bundle "$bundle" "$reference"
+          cosign verify \
+            --bundle "$bundle" \
+            --certificate-identity "$identity" \
+            --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
+            "$reference" >/dev/null
+          printf '%s\n' "$DIGEST" > \
+            "$artifact/MarvelServer-$VERSION-linux-amd64.digest"
+          jq -n \
+            --arg product_version "$VERSION" \
+            --arg commit '${{ needs.identity.outputs.commit }}' \
+            --arg image "$IMAGE" \
+            --arg digest "$DIGEST" \
+            --arg cards "$(sha256sum datasets/cards/cards.json | cut -d' ' -f1)" \
+            --arg setup "$(sha256sum datasets/setup/setup.json | cut -d' ' -f1)" \
+            --arg abilities "$(sha256sum datasets/abilities/abilities.json | cut -d' ' -f1)" \
+            '{format:"marvel-server-release",schema:1,product_version:$product_version,commit:$commit,image:$image,digest:$digest,engine_replay:"engine-replay-v1",rng:"mt19937-iso-cxx",state_digest:"state-digest-v2",protocol:11,save_schema:2,datasets:{cards_sha256:$cards,setup_sha256:$setup,abilities_sha256:$abilities}}' \
+            > "$artifact/MarvelServer-$VERSION-linux-amd64.provenance.json"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: server-linux-signed
+          path: ${{ runner.temp }}/server-signed/*
+          if-no-files-found: error
+
   publish:
-    name: Publish immutable desktop release
-    needs: [identity, macos-sign, windows-sign]
+    name: Publish immutable product release
+    needs: [identity, macos-sign, windows-sign, server-sign]
     runs-on: ubuntu-latest
     environment: desktop-release
     permissions:
       contents: write
+      packages: write
     steps:
       - uses: actions/download-artifact@v8
         with:
           pattern: desktop-*-signed
           path: release
           merge-multiple: true
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: server-linux-signed
+          path: release
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Publish the immutable server version tag
+        shell: bash
+        env:
+          IMAGE: ghcr.io/${{ github.repository_owner }}/marvel-server
+          VERSION: ${{ needs.identity.outputs.version }}
+          DIGEST: ${{ needs.server-sign.outputs.digest }}
+        run: |
+          echo '${{ github.token }}' | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          if manifest=$(docker buildx imagetools inspect "$IMAGE:$VERSION" 2>/dev/null); then
+            published=$(awk '$1 == "Digest:" { print $2; exit }' <<< "$manifest")
+            [[ $published == "$DIGEST" ]] || {
+              echo 'server version tag already names a different immutable image' >&2
+              exit 2
+            }
+          else
+            docker buildx imagetools create --prefer-index=false \
+              --tag "$IMAGE:$VERSION" "$IMAGE@$DIGEST"
+            manifest=$(docker buildx imagetools inspect "$IMAGE:$VERSION")
+            published=$(awk '$1 == "Digest:" { print $2; exit }' <<< "$manifest")
+            [[ $published == "$DIGEST" ]] || {
+              echo 'published server tag did not preserve the signed digest' >&2
+              exit 2
+            }
+          fi
 
       - name: Create the release once
         shell: bash

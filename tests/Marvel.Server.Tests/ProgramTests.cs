@@ -209,6 +209,8 @@ public sealed class ProgramTests
 
             Assert.Null(response.Error);
             Assert.NotNull(response.Setup);
+            Assert.Equal(0, Program.HealthCheck(
+                endpoint.Address.ToString(), endpoint.Port));
             stopping.Cancel();
             Assert.Equal(
                 0,
@@ -227,5 +229,50 @@ public sealed class ProgramTests
                 TimeSpan.FromSeconds(5),
                 TestContext.Current.CancellationToken);
         }
+    }
+
+    [Fact]
+    public async Task CancellationDisconnectsAnIncompleteClientFrame()
+    {
+        using var stopping = CancellationTokenSource.CreateLinkedTokenSource(
+            TestContext.Current.CancellationToken);
+        var listening = new TaskCompletionSource<IPEndPoint>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var server = new SocketEngineServer(
+            new EngineHost(DatasetGameFactory.Load(Marvel.Tests.RepositoryPaths.Root)),
+            IPAddress.Loopback,
+            port: 0);
+        Task running = Task.Run(
+            () => server.Run(listening.SetResult, stopping.Token),
+            TestContext.Current.CancellationToken);
+
+        IPEndPoint endpoint = await listening.Task.WaitAsync(
+            TimeSpan.FromSeconds(10),
+            TestContext.Current.CancellationToken);
+        using var client = new TcpClient();
+        await client.ConnectAsync(
+            endpoint.Address,
+            endpoint.Port,
+            TestContext.Current.CancellationToken);
+        await client.GetStream().WriteAsync(
+            new byte[] { 0, 0, 0, 100 },
+            TestContext.Current.CancellationToken);
+
+        stopping.Cancel();
+
+        await running.WaitAsync(
+            TimeSpan.FromSeconds(2),
+            TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public void HealthCheckFailsClosedWhenNoCompatibleServerIsListening()
+    {
+        using var reservation = new TcpListener(IPAddress.Loopback, port: 0);
+        reservation.Start();
+        int port = ((IPEndPoint)reservation.LocalEndpoint).Port;
+        reservation.Stop();
+
+        Assert.Equal(1, Program.HealthCheck(IPAddress.Loopback.ToString(), port));
     }
 }

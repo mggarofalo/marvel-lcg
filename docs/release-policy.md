@@ -46,7 +46,7 @@ independent identities do:
 
 | Identity | Current value | Changes when |
 |---|---:|---|
-| Engine protocol | `10` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
+| Engine protocol | `11` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
 | Session schema | `2` | The strict persisted JSON shape changes. |
 | Engine replay contract | `engine-replay-v1` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |
@@ -144,11 +144,11 @@ declare the same protocol integer. Patch or minor releases may retain that
 integer when the wire is unchanged. A new optional-looking union variant still
 requires a protocol decision: an older peer cannot be assumed to understand it.
 
-The setup/version discovery response must expose the server product version,
-protocol version and runtime dataset identity before a game is opened. The
-desktop About/diagnostic surface must expose the same identities for its own
-build. MARVEL-345 and MARVEL-346 implement those artifact surfaces; this policy
-defines their values and comparison.
+The setup/version discovery response exposes the server product version,
+source commit, protocol version, replay identities, save schema and runtime
+dataset identity before a game is opened. The desktop About/diagnostic surface
+exposes the same identities for its own build. This policy defines their values
+and comparison.
 
 ## Save and dataset compatibility
 
@@ -287,8 +287,12 @@ certificate blob.
 
 ### Linux server image
 
-The protected Linux release job signs the immutable OCI image digest. It uses
-keyless Sigstore signing through the job's short-lived OpenID Connect identity.
+The protected Linux release job signs the immutable, single-platform OCI image
+digest. Build timestamps are rewritten from the tagged commit's source epoch;
+invocation-specific attestations are not embedded in that image index, and the
+compatibility provenance is a separate release record. It therefore does not
+change the reproducible installation identity. The job uses keyless
+Sigstore signing through its short-lived OpenID Connect identity.
 The job receives permission to request that identity only after the protected
 tag and release environment authorize it. The repository stores no long-lived
 image-signing key.

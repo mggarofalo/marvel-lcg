@@ -284,6 +284,70 @@ public sealed class SessionPersistenceTests
         }
     }
 
+    [Theory]
+    [InlineData("invalid-json")]
+    [InlineData("oversized-schema")]
+    [InlineData("null-verifier")]
+    public void RestoreCandidatesKeepAHealthyGenerationBesideACorruptOne(string corruption)
+    {
+        string root = Path.Combine(
+            Path.GetTempPath(), $"marvel-session-quarantine-{Guid.NewGuid():N}");
+        try
+        {
+            var store = new FileSessionStore(root);
+            string badId = new('a', 32);
+            string healthyId = new('b', 32);
+            store.Commit(Stored(revision: 0, badId, "bad-table"));
+            store.Commit(Stored(revision: 1, healthyId, "healthy-table"));
+            string badSave = Assert.Single(Directory.GetFiles(
+                Path.Combine(root, badId), "*.session.json"));
+            string badAuthority = Assert.Single(Directory.GetFiles(
+                Path.Combine(root, badId), "*.authority.json"));
+            switch (corruption)
+            {
+                case "invalid-json":
+                    File.WriteAllText(badSave, "not-json");
+                    break;
+                case "oversized-schema":
+                    File.WriteAllText(
+                        badSave,
+                        File.ReadAllText(badSave).Replace(
+                            "\"schema\":2",
+                            "\"schema\":999999999999999999999",
+                            StringComparison.Ordinal));
+                    break;
+                case "null-verifier":
+                    File.WriteAllText(
+                        badAuthority,
+                        File.ReadAllText(badAuthority).Replace(
+                            "\"verifier\":\"" + new string('f', 64) + "\"",
+                            "\"verifier\":null",
+                            StringComparison.Ordinal));
+                    break;
+                default:
+                    throw new InvalidOperationException(corruption);
+            }
+
+            IReadOnlyList<SessionLoadResult> candidates = store.LoadForRestore();
+
+            SessionLoadResult failed = Assert.Single(
+                candidates, result => result.StorageId == badId);
+            Assert.Null(failed.Session);
+            Assert.Equal("restore_failed", failed.ErrorCode);
+            SessionLoadResult loaded = Assert.Single(
+                candidates, result => result.StorageId == healthyId);
+            Assert.Equal("healthy-table", loaded.Session?.Save.Session.Label);
+            Assert.Null(loaded.ErrorCode);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
     [Fact]
     public void MissingAuthorityMembersFailClosedInsteadOfChangingOwnership()
     {
@@ -302,7 +366,10 @@ public sealed class SessionPersistenceTests
                 StringComparison.Ordinal)));
     }
 
-    private static StoredSession Stored(long revision)
+    private static StoredSession Stored(
+        long revision,
+        string? storageId = null,
+        string label = "table")
     {
         var save = new SessionSave(
             SessionSave.FormatName,
@@ -315,7 +382,7 @@ public sealed class SessionPersistenceTests
                 new string('a', 64),
                 new string('b', 64),
                 new string('c', 64)),
-            new SessionIdentity(new string('d', 32), "table", "active"),
+            new SessionIdentity(storageId ?? new string('d', 32), label, "active"),
             new SessionSetup("rhino", ["spider_man"], [], 7),
             new InitialRecord([], 0, "digest"),
             revision,
