@@ -78,6 +78,21 @@ and OCI image labels expose that same informational version. The release
 pipeline rejects an artifact when any embedded value disagrees with the tag or
 manifest.
 
+Windows preview and stable packages share one MSIX package-family name and
+publisher identity so a preview can update to its stable release. MSIX requires
+a four-part numeric version that increases for an update. The package manifest
+maps SemVer to `MAJOR+1.MINOR.PATCH.REVISION`:
+
+- preview `N` uses revision `N`, from `1` through `65534`;
+- stable uses revision `65535`; and
+- developer builds do not use the release MSIX package identity.
+
+For example, `0.1.0-preview.7` maps to `1.1.0.7`, and `0.1.0` maps to
+`1.1.0.65535`. A later `0.1.1-preview.1` maps to `1.1.1.1` and is still newer.
+The release input rejects a SemVer component outside the MSIX numeric range or
+a product major above `65534`. The signed package displays the SemVer product
+version; its numeric identity exists only for Windows update ordering.
+
 Saves record the complete SemVer product version of the runtime that last
 committed them in `compatibility.application`. Every successful gameplay,
 history, lifecycle or migration commit stamps the current version in the same
