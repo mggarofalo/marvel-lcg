@@ -237,11 +237,14 @@ The protected macOS job requires:
 - the reviewed hardened-runtime options and entitlements committed as ordinary
   non-secret build inputs.
 
-The job signs every nested executable before the outer application, verifies
-with `codesign`, submits the final archive for notarization, staples the ticket,
-and verifies Gatekeeper acceptance with `spctl`. The temporary keychain and
-credential files are destroyed even on failure. Notarization output is filtered
-before retention and may not disclose credential values.
+The job signs every nested executable before the outer application and verifies
+the application with `codesign`. It creates a temporary ZIP for notarization,
+waits for acceptance, then staples and validates the ticket on the `.app`.
+After `spctl` verifies Gatekeeper acceptance, the job creates and hashes the
+final distribution ZIP. A ZIP may carry an application for notarization but
+cannot itself receive a stapled ticket. The temporary keychain, submission ZIP
+and credential files are destroyed even on failure. Notarization output is
+filtered before retention and may not disclose credential values.
 
 ### Windows
 
