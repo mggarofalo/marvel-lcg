@@ -144,6 +144,7 @@ jobs:
             grep -F 'v0.1.0-dev.0 · engine engine-replay-v1 · protocol 11 · save 2'
           docker volume create "$volume" >/dev/null
           docker run --detach --name "$container" \
+            --stop-timeout 40 \
             --publish 127.0.0.1:41924:41923 \
             --volume "$volume:/var/lib/marvel/sessions" \
             --read-only --cap-drop ALL --security-opt no-new-privileges \

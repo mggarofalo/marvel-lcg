@@ -128,6 +128,7 @@ identity:
 image=ghcr.io/mggarofalo/marvel-server@sha256:RELEASE_DIGEST
 docker pull "$image"
 docker run --detach --name marvel-server \
+  --stop-timeout 40 \
   --publish 127.0.0.1:41923:41923 \
   --volume marvel-sessions:/var/lib/marvel/sessions \
   --read-only --cap-drop ALL --security-opt no-new-privileges \
@@ -194,9 +195,11 @@ variables, labels, health checks, backups of logs, or diagnostic bundles.
 ## Back up and restore the save volume
 
 Backups are consistent only while the server is stopped. `docker stop` sends
-`SIGTERM`; the server stops accepting work, lets the current bounded request
-finish, and exits after its atomic save generation is durable. Confirm exit
-code zero before archiving the named volume:
+`SIGTERM`; the server stops accepting work, lets the current request finish,
+and exits after its atomic save generation is durable. The supported run command
+sets a 40-second stop timeout so the 30-second connection bound and final log
+flush finish before the container runtime may send `SIGKILL`. Confirm exit code
+zero before archiving the named volume:
 
 ```bash
 docker stop marvel-server
