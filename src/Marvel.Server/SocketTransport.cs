@@ -176,7 +176,8 @@ public sealed class SocketTransport(
             request.GameId,
             request.Operation,
             revision,
-            errorCode: errorCode);
+            errorCode: errorCode,
+            expectedRevision: request.ExpectedRevision);
     }
 }
 
@@ -221,10 +222,10 @@ public sealed class SocketEngineServer(IEngineEndpoint endpoint, IPAddress addre
             while (!cancellationToken.IsCancellationRequested)
             {
                 using TcpClient client = listener.AcceptTcpClient();
-                using CancellationTokenRegistration disconnecting =
-                    cancellationToken.Register(client.Close);
                 client.ReceiveTimeout = ClientTimeoutMilliseconds;
                 client.SendTimeout = ClientTimeoutMilliseconds;
+                using CancellationTokenRegistration disconnecting =
+                    cancellationToken.Register(client.Close);
                 try
                 {
                     Serve(client);

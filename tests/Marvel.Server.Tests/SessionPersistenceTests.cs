@@ -334,6 +334,9 @@ public sealed class SessionPersistenceTests
                 candidates, result => result.StorageId == badId);
             Assert.Null(failed.Session);
             Assert.Equal("restore_failed", failed.ErrorCode);
+            Assert.Equal(
+                Path.GetFileName(badSave)[..^".session.json".Length],
+                failed.Generation);
             SessionLoadResult loaded = Assert.Single(
                 candidates, result => result.StorageId == healthyId);
             Assert.Equal("healthy-table", loaded.Session?.Save.Session.Label);

@@ -145,6 +145,25 @@ public sealed class OperationalTelemetryTests
 
         composite.Write(record);
 
+        Assert.True(SpinWait.SpinUntil(
+            () => collected.Records.Count == 1, TimeSpan.FromSeconds(2)));
+        Assert.Same(record, Assert.Single(collected.Records));
+    }
+
+    [Fact]
+    public void BlockedObserverDoesNotSuppressIndependentLocalEvidence()
+    {
+        using var blocked = new BlockingSink();
+        var collected = new CollectingSink();
+        var composite = new CompositeOperationalSink(blocked, collected);
+        OperationalRecord record = Record(EngineProtocol.Resolve, "accepted");
+
+        composite.Write(record);
+
+        Assert.True(blocked.Entered.Wait(
+            TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken));
+        Assert.True(SpinWait.SpinUntil(
+            () => collected.Records.Count == 1, TimeSpan.FromSeconds(2)));
         Assert.Same(record, Assert.Single(collected.Records));
     }
 
@@ -159,6 +178,8 @@ public sealed class OperationalTelemetryTests
 
         composite.Write(record);
 
+        Assert.True(SpinWait.SpinUntil(
+            () => collected.Records.Count == 1, TimeSpan.FromSeconds(2)));
         Assert.Same(record, Assert.Single(collected.Records));
         Assert.True(exporter.Entered.Wait(
             TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken));
@@ -181,6 +202,27 @@ public sealed class OperationalTelemetryTests
         log.Flush(TimeSpan.FromSeconds(2));
 
         Assert.Single(exporter.Envelopes);
+    }
+
+    [Fact]
+    public void CompositeFlushPassesOnlyItsRemainingBudgetToANestedSink()
+    {
+        using var sink = new DelayedFlushSink();
+        var composite = new CompositeOperationalSink(sink);
+        composite.Write(Record(EngineProtocol.Resolve, "accepted"));
+        Assert.True(sink.Entered.Wait(
+            TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken));
+        var release = new Thread(() =>
+        {
+            Thread.Sleep(250);
+            sink.Release.Set();
+        });
+        release.Start();
+
+        ((IOperationalFlushable)composite).Flush(TimeSpan.FromSeconds(5));
+        release.Join();
+
+        Assert.InRange(sink.FlushBudget, TimeSpan.Zero, TimeSpan.FromSeconds(4.9));
     }
 
     [Fact]
@@ -241,9 +283,55 @@ public sealed class OperationalTelemetryTests
 
     private sealed class CollectingSink : IOperationalSink
     {
-        public List<OperationalRecord> Records { get; } = [];
+        private readonly ConcurrentQueue<OperationalRecord> records = new();
 
-        public void Write(OperationalRecord record) => Records.Add(record);
+        public IReadOnlyList<OperationalRecord> Records => [.. records];
+
+        public void Write(OperationalRecord record) => records.Enqueue(record);
+    }
+
+    private sealed class BlockingSink : IOperationalSink, IDisposable
+    {
+        public ManualResetEventSlim Entered { get; } = new(false);
+
+        private ManualResetEventSlim Release { get; } = new(false);
+
+        public void Write(OperationalRecord record)
+        {
+            Entered.Set();
+            Release.Wait(TestContext.Current.CancellationToken);
+        }
+
+        public void Dispose()
+        {
+            Release.Set();
+            Entered.Dispose();
+            Release.Dispose();
+        }
+    }
+
+    private sealed class DelayedFlushSink : IOperationalSink, IOperationalFlushable, IDisposable
+    {
+        public ManualResetEventSlim Entered { get; } = new(false);
+
+        public ManualResetEventSlim Release { get; } = new(false);
+
+        public TimeSpan FlushBudget { get; private set; } = TimeSpan.MaxValue;
+
+        public void Write(OperationalRecord record)
+        {
+            Entered.Set();
+            Release.Wait(TestContext.Current.CancellationToken);
+        }
+
+        public void Flush(TimeSpan timeout) => FlushBudget = timeout;
+
+        public void Dispose()
+        {
+            Release.Set();
+            Entered.Dispose();
+            Release.Dispose();
+        }
     }
 
     private sealed class ThrowingSink : IOperationalSink

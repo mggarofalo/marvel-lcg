@@ -179,7 +179,8 @@ public sealed class EngineHost : IEngineEndpoint
             replayVerified: accepted && replays,
             replayDiverged: replayDiverged,
             sessionRetired: sessionRetired,
-            errorCode: response.Error?.Code);
+            errorCode: response.Error?.Code,
+            expectedRevision: request.ExpectedRevision);
         return response;
     }
 
@@ -1012,17 +1013,21 @@ public sealed class EngineHost : IEngineEndpoint
         }
     }
 
-    private void ObservePersistence(EngineRequest request, Action work)
+    private void ObservePersistence(
+        EngineRequest request,
+        Func<string?> work)
     {
         var elapsed = Stopwatch.StartNew();
         try
         {
-            work();
+            string? saveGeneration = work();
             elapsed.Stop();
             log.Write(
                 OperationalEventIds.PersistenceCompleted, "accepted",
                 elapsed.ElapsedMilliseconds, request.RequestId, request.GameId,
-                operation: "persistence", saveCommitted: true);
+                operation: "persistence", saveCommitted: true,
+                expectedRevision: request.ExpectedRevision,
+                saveGeneration: saveGeneration);
         }
         catch (Exception failure)
         {
@@ -1030,7 +1035,8 @@ public sealed class EngineHost : IEngineEndpoint
             log.Write(
                 OperationalEventIds.PersistenceCompleted, "rejected",
                 elapsed.ElapsedMilliseconds, request.RequestId, request.GameId,
-                operation: "persistence", errorCode: "persistence_failed");
+                operation: "persistence", errorCode: "persistence_failed",
+                expectedRevision: request.ExpectedRevision);
             throw new PersistenceFailureException(failure);
         }
     }
@@ -1085,6 +1091,8 @@ public sealed class EngineHost : IEngineEndpoint
                     OperationalEventIds.SessionRestoreFailed,
                     "rejected",
                     gameId: candidate.StorageId,
+                    saveGeneration: candidate.Generation,
+                    stage: "quarantine",
                     errorCode: candidate.ErrorCode ?? "restore_failed");
                 continue;
             }
@@ -1096,6 +1104,7 @@ public sealed class EngineHost : IEngineEndpoint
 
             var elapsed = Stopwatch.StartNew();
             bool saveCommitted = false;
+            string? selectedGeneration = candidate.Generation;
             HostedSession? restoring = null;
             try
             {
@@ -1107,7 +1116,7 @@ public sealed class EngineHost : IEngineEndpoint
                     current = current with { Save = migrated };
                     // Publish only after replay has verified the predecessor trace and
                     // the complete schema 2 generation is durable.
-                    store.Commit(current);
+                    selectedGeneration = store.Commit(current);
                     saveCommitted = true;
                 }
 
@@ -1144,7 +1153,9 @@ public sealed class EngineHost : IEngineEndpoint
                     gameId: current.Save.Session.Label,
                     revision: current.Save.Revision,
                     saveCommitted: saveCommitted,
-                    replayVerified: true);
+                    replayVerified: true,
+                    saveGeneration: selectedGeneration,
+                    stage: saveCommitted ? "migration" : "restore");
             }
             catch (Exception failure)
             {
@@ -1162,6 +1173,8 @@ public sealed class EngineHost : IEngineEndpoint
                     revision: stored.Save.Revision,
                     saveCommitted: saveCommitted,
                     replayDiverged: failure is ReplayDivergenceException,
+                    saveGeneration: selectedGeneration,
+                    stage: "quarantine",
                     errorCode: failure switch
                     {
                         ReplayDivergenceException => "replay_diverged",

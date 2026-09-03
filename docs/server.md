@@ -60,6 +60,7 @@ The process accepts these options:
 | `--port NUMBER` | `41923` | TCP port from 1 to 65535. |
 | `--data-root PATH` | Current directory | Repository or published-data root containing the required datasets. |
 | `--save-root PATH` | OS local application data under `MarvelLCG/sessions` | Private directory containing committed session generations and credential verifiers. |
+| `--diagnostics-root PATH` | Disabled | Private directory retaining bounded JSON-lines operational records. |
 | `--visibility cooperative` | `cooperative` | Shows the whole cooperative table. Client viewer claims cannot hide or reveal seats. |
 | `--visibility restricted --seat NUMBER` | None | Binds the opening session to one non-negative seat number. |
 | `--telemetry-endpoint URL` | Disabled | Posts redacted metric and trace envelopes to explicit HTTPS, or loopback HTTP for development. |
@@ -97,11 +98,24 @@ message.
 ## Read operational logs
 
 The standalone server and desktop composition write the same JSON-lines record
-shape to standard error. Stable `event_id` values identify request completion,
+shape to standard error. Supplying `--diagnostics-root` also writes those
+already-redacted records to `operational.jsonl`. The file rotates at 10 MiB;
+nine archives plus the active file are retained, and archives older than 30
+days are pruned on startup or rotation. On macOS and Linux the directory is
+mode `0700` and files are mode `0600`. Stable `event_id` values identify request completion,
 session restore, listener readiness, startup failure and client transport
 completion. Named fields correlate the process, timestamp, duration,
 pseudonymous request and game identifiers, operation, revision, authorized seat, disposition, save commit,
 replay verification and bounded error code.
+
+Every retained record also carries the compiled product, commit and runtime
+identity. Mutation records distinguish expected and resulting revisions;
+persistence and restore records name the selected opaque save generation and
+the restore, migration or quarantine stage. A diagnostics permission, disk-full
+or write failure cannot fail or delay gameplay: the asynchronous dispatcher
+continues writing standard error and may drop unavailable file observations.
+Monitor both volume capacity and the `diagnostics.sink.unavailable` startup
+event; absence of a file record is never evidence that a game command failed.
 
 The schema has no field for capabilities, invitations, cards, payments, save
 bodies or exception text. Request and game correlations are one-way 32-character
@@ -131,14 +145,15 @@ docker run --detach --name marvel-server \
   --stop-timeout 40 \
   --publish 127.0.0.1:41923:41923 \
   --volume marvel-sessions:/var/lib/marvel/sessions \
+  --volume marvel-diagnostics:/var/lib/marvel/diagnostics \
   --read-only --cap-drop ALL --security-opt no-new-privileges \
   --memory 512m --cpus 1 --pids-limit 128 \
   "$image"
 ```
 
 The image runs as the .NET base image's unprivileged application user. Its
-application and dataset layers are read-only; `/var/lib/marvel/sessions` is the
-only persistent write location. It contains the cards, setup and ability
+application and dataset layers are read-only; `/var/lib/marvel/sessions` and
+`/var/lib/marvel/diagnostics` are its persistent write locations. It contains the cards, setup and ability
 datasets needed at runtime, listens on `0.0.0.0:41923`, and uses `/app` as the
 data root. The host mapping above keeps the service reachable only through host
 loopback. The resource limits are the supported starting point for one small
@@ -159,7 +174,7 @@ MARVEL_SERVER_IMAGE=ghcr.io/mggarofalo/marvel-server@sha256:RELEASE_DIGEST \
 `MARVEL_SERVER_BIND` and `MARVEL_SERVER_PORT` may override the default
 `127.0.0.1:41923` host endpoint. `docker compose down` removes the container
 and `marvel-server` network but retains the explicitly named `marvel-sessions`
-volume. The service container is explicitly named `marvel-server`, so the
+and `marvel-diagnostics` volumes. The service container is explicitly named `marvel-server`, so the
 backup and troubleshooting commands below address the same resources in both
 launch forms. Never add `--volumes` unless the saved sessions have been backed
 up and are deliberately being destroyed.
@@ -206,9 +221,9 @@ docker run --rm --publish 127.0.0.1:41923:41923 marvel-server-dev \
   --visibility restricted --seat 0
 ```
 
-Do not mount any application or dataset path writable. Logs and diagnostics are
-JSON lines on standard error, so collect them with the container runtime rather
-than granting another filesystem write location. Capabilities and invitations
+Do not mount any application or dataset path writable. Only the session and
+diagnostics volumes are writable. Standard error remains available to the
+container runtime even when retained diagnostics are configured. Capabilities and invitations
 remain client-held bearer secrets; do not put them in container environment
 variables, labels, health checks, backups of logs, or diagnostic bundles.
 
@@ -315,9 +330,9 @@ docker volume inspect marvel-sessions
 Do not publish the collected files without review. The application schema
 excludes bearer credentials and concealed card state, but container metadata or
 surrounding platform logs may contain operator-added values. Standard error is
-an ephemeral runtime stream unless the container platform retains it; durable
-rotation, incident export and failure-drill requirements are tracked separately
-from this deployment workflow.
+an ephemeral runtime stream unless the container platform retains it. Use the
+private diagnostics volume and incident command below when evidence must
+survive container replacement.
 
 If a response was lost, correlate `transport.exchange.completed`,
 `server.request.completed`, and `client.reconnect.completed` by their
@@ -327,3 +342,46 @@ the mutation reached durable state even if the client never received its
 response. A rejected record proves the engine did not accept that request. If
 the server record is absent, treat the outcome as uncertain and recover only by
 reading the authoritative session.
+
+## Export incident evidence
+
+Stop the server first so the export describes one stable save/log boundary,
+then run the exact installed image with both source volumes read-only. The
+destination file must not already exist:
+
+```bash
+image=ghcr.io/mggarofalo/marvel-server@sha256:RELEASE_DIGEST
+set -o noclobber
+docker run --rm \
+  --volume marvel-sessions:/sessions:ro \
+  --volume marvel-diagnostics:/diagnostics:ro \
+  --entrypoint dotnet \
+  "$image" Marvel.Server.dll \
+  --export-incident - \
+  --data-root /app \
+  --save-root /sessions \
+  --diagnostics-root /diagnostics > marvel-incident.json
+```
+
+The schema-1 manifest contains the complete runtime identity, an explicit
+`offline_evidence_only` health assessment, hashes and selection status for save
+generation pairs, log-file hashes, and at most 2,000 parsed redacted records
+per retained file. Malformed log lines are counted but never copied. The command
+does not instantiate an engine host, replay a decision, migrate a schema,
+change a manifest, select a generation, or repair a file.
+
+Preserve the incident manifest, container inspection, image digest and the
+independent pre-incident volume backup together. The manifest can establish
+which bytes and operational outcomes were observed; it cannot recreate a
+world. Restore only a complete generation already selected by its atomic
+`current` manifest, or restore a known-good volume backup into a fresh volume.
+Never edit a generation based on a log record and never synthesize game state
+from request, event or revision observations.
+
+For a useful report, retain the approximate UTC time, visible client state,
+client and server version strings, container exit/health state, incident
+manifest, and whether the player saw `NOT SENT`, `MUTATION NOT REPEATED`, or an
+authoritative recovered revision. These distinguish a pre-game rejection,
+committed request with a lost response, persistence refusal, replay divergence,
+quarantine, and unconfirmed process interruption without collecting a bearer
+credential, invitation, save body, concealed card or exception text.
