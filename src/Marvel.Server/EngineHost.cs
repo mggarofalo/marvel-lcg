@@ -122,6 +122,13 @@ public sealed class EngineHost : IEngineEndpoint
         {
             response = Handle(request);
         }
+        catch (PersistenceFailureException)
+        {
+            response = Failed(
+                request,
+                "save_failed",
+                "the requested change was not committed and prior durable state remains authoritative");
+        }
         catch (Exception)
         {
             // A socket cannot throw a domain exception into its caller. The
@@ -1017,16 +1024,19 @@ public sealed class EngineHost : IEngineEndpoint
                 elapsed.ElapsedMilliseconds, request.RequestId, request.GameId,
                 operation: "persistence", saveCommitted: true);
         }
-        catch (Exception)
+        catch (Exception failure)
         {
             elapsed.Stop();
             log.Write(
                 OperationalEventIds.PersistenceCompleted, "rejected",
                 elapsed.ElapsedMilliseconds, request.RequestId, request.GameId,
                 operation: "persistence", errorCode: "persistence_failed");
-            throw;
+            throw new PersistenceFailureException(failure);
         }
     }
+
+    private sealed class PersistenceFailureException(Exception failure)
+        : IOException("session persistence failed", failure);
 
     private string IssueCapability(HashSet<string>? reserved = null)
     {
