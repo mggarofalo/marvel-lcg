@@ -6,10 +6,6 @@
     <RootNamespace>Marvel.Godot</RootNamespace>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <MarvelMayReferenceGodot>true</MarvelMayReferenceGodot>
-    <!-- Godot embeds the server host in-process. Publishing an executable
-         ProjectReference would also collect its apphost and runtime files,
-         which collide when Godot publishes both macOS architectures. -->
-    <MarvelServerOutputType>Library</MarvelServerOutputType>
     <DisableTransitiveProjectReferences>true</DisableTransitiveProjectReferences>
     <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
@@ -17,8 +13,7 @@
   <!-- Godot implements the presentation layer. Transport-neutral decision
        composition and visible projections live in their own projects. -->
   <ItemGroup>
-    <ProjectReference Include="../Marvel.Client/Marvel.Client.csproj"
-                      AdditionalProperties="MarvelServerOutputType=Library" />
+    <ProjectReference Include="../Marvel.Client/Marvel.Client.csproj" />
     <ProjectReference Include="../Marvel.Decisions/Marvel.Decisions.csproj" />
     <ProjectReference Include="../Marvel.Rules/Marvel.Rules.csproj" />
     <ProjectReference Include="../Marvel.Server/Marvel.Server.csproj"

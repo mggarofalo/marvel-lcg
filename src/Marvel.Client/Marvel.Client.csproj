@@ -9,7 +9,10 @@
   <ItemGroup>
     <ProjectReference Include="../Marvel.Decisions/Marvel.Decisions.csproj" />
     <ProjectReference Include="../Marvel.Rules/Marvel.Rules.csproj" />
-    <ProjectReference Include="../Marvel.Server/Marvel.Server.csproj" />
+    <!-- The transport-neutral client embeds the host API, not its executable
+         apphost and runtime configuration. -->
+    <ProjectReference Include="../Marvel.Server/Marvel.Server.csproj"
+                      AdditionalProperties="MarvelServerOutputType=Library" />
     <ProjectReference Include="../Marvel.View/Marvel.View.csproj" />
   </ItemGroup>
 
