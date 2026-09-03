@@ -730,13 +730,18 @@ public sealed class LocalGameClient
 
             if (HasRequestPrefix(requestId, AttachRequestId))
             {
-                return EntryFailed(response.Error.Code == "session_not_found"
-                    ? Error(
-                    "invitation_unavailable",
-                    "That seat invitation is unavailable. Ask the host for a new invitation.")
-                    : Error(
+                return EntryFailed(response.Error.Code switch
+                {
+                    "session_not_found" => Error(
+                        "invitation_unavailable",
+                        "That seat invitation is unavailable. Ask the host for a new invitation."),
+                    "save_failed" => Error(
+                        "save_failed",
+                        "The game service could not durably accept that seat invitation."),
+                    _ => Error(
                         "attach_failed",
-                        "The game service could not accept that seat invitation."));
+                        "The game service could not accept that seat invitation."),
+                });
             }
 
             return EntryFailed(Error(response.Error.Code, response.Error.Message));
