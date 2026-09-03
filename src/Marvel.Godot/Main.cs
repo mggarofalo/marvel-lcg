@@ -1474,7 +1474,11 @@ public sealed partial class Main : Control
             or GameProgressKind.DecisionRejected
             or GameProgressKind.SynchronizationUnavailable
             or GameProgressKind.Unconfirmed
-            or GameProgressKind.Unavailable;
+            or GameProgressKind.Unavailable
+            or GameProgressKind.ServiceUnavailable
+            or GameProgressKind.VersionMismatch
+            or GameProgressKind.SessionExpired
+            or GameProgressKind.StorageFailure;
         statusPanel.ThemeTypeVariation = danger
             ? GodotThemeVariations.DangerStatusPanel
             : GodotThemeVariations.StatusPanel;

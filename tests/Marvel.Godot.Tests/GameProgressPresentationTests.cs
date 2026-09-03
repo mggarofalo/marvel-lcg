@@ -66,6 +66,25 @@ public sealed class GameProgressPresentationTests
         Assert.Contains("PRODUCT ERROR", unavailable.Status);
     }
 
+    [Theory]
+    [InlineData("transport_unavailable", GameProgressKind.ServiceUnavailable, "SERVICE UNAVAILABLE")]
+    [InlineData("unsupported_version", GameProgressKind.VersionMismatch, "VERSION MISMATCH")]
+    [InlineData("session_unavailable", GameProgressKind.SessionExpired, "SESSION EXPIRED")]
+    [InlineData("invitation_unavailable", GameProgressKind.SessionExpired, "SESSION EXPIRED")]
+    [InlineData("save_failed", GameProgressKind.StorageFailure, "STORAGE FAILURE")]
+    public void OperationalFailuresHaveDistinctBoundedStates(
+        string code,
+        GameProgressKind expected,
+        string status)
+    {
+        GameProgressPresentation presented = GameProgressPresentation.Unavailable(
+            new ClientStartupError(code, "A bounded explanation."));
+
+        Assert.Equal(expected, presented.Kind);
+        Assert.Contains(status, presented.Status);
+        Assert.True(presented.LocksDecisions);
+    }
+
     [Fact]
     public void SynchronizingAndANotSentDecisionHaveDistinctInputPolicies()
     {

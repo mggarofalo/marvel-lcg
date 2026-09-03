@@ -44,6 +44,18 @@ public enum GameProgressKind
 
     /// <summary>The product could not open or load a table.</summary>
     Unavailable,
+
+    /// <summary>The configured game service cannot currently be reached.</summary>
+    ServiceUnavailable,
+
+    /// <summary>The service rejected this client's wire protocol.</summary>
+    VersionMismatch,
+
+    /// <summary>The service established that the held session is no longer usable.</summary>
+    SessionExpired,
+
+    /// <summary>The service could not durably store the requested change.</summary>
+    StorageFailure,
 }
 
 /// <summary>Copy and input policy for one current table state.</summary>
@@ -197,12 +209,42 @@ public sealed record GameProgressPresentation(
     public static GameProgressPresentation Unavailable(ClientStartupError error)
     {
         ArgumentNullException.ThrowIfNull(error);
-        return new(
-            GameProgressKind.Unavailable,
-            "Game unavailable.",
-            error.Message,
-            $"PRODUCT ERROR  ·  {error.Code.ToUpperInvariant()}",
-            LocksDecisions: true);
+        // These are product-operational states chosen by this project. They
+        // describe evidence in the wire response, never inferred game state.
+        return error.Code switch
+        {
+            "transport_unavailable" => new(
+                GameProgressKind.ServiceUnavailable,
+                "Game service unavailable.",
+                error.Message,
+                "SERVICE UNAVAILABLE  ·  RECONNECT WHEN THE SERVER IS READY",
+                LocksDecisions: true),
+            "unsupported_version" => new(
+                GameProgressKind.VersionMismatch,
+                "Client and server versions do not match.",
+                error.Message,
+                "VERSION MISMATCH  ·  UPDATE THE CLIENT OR SERVER",
+                LocksDecisions: true),
+            "session_unavailable" or "session_not_found" or "invitation_unavailable" => new(
+                GameProgressKind.SessionExpired,
+                "Session or invitation expired.",
+                error.Message,
+                "SESSION EXPIRED  ·  RETURN TO JOIN",
+                LocksDecisions: true),
+            "save_failed" or "persistence_failed" or "restore_failed"
+                or "unsupported_downgrade" => new(
+                    GameProgressKind.StorageFailure,
+                    "Server storage unavailable.",
+                    error.Message,
+                    "STORAGE FAILURE  ·  OPERATOR ACTION REQUIRED",
+                    LocksDecisions: true),
+            _ => new(
+                GameProgressKind.Unavailable,
+                "Game unavailable.",
+                error.Message,
+                $"PRODUCT ERROR  ·  {error.Code.ToUpperInvariant()}",
+                LocksDecisions: true),
+        };
     }
 
     internal static string Humanize(string value)

@@ -144,6 +144,21 @@ data root. The host mapping above keeps the service reachable only through host
 loopback. The resource limits are the supported starting point for one small
 table; monitor the container and raise them deliberately for concurrent tables.
 
+After verifying the released digest, the checked-in Compose definition starts
+that same hardened service with an explicit bridge network and named save
+volume. The image variable intentionally has no default: an operator must name
+the immutable artifact that was verified.
+
+```bash
+MARVEL_SERVER_IMAGE=ghcr.io/mggarofalo/marvel-server@sha256:RELEASE_DIGEST \
+  docker compose up --detach
+```
+
+`MARVEL_SERVER_BIND` and `MARVEL_SERVER_PORT` may override the default
+`127.0.0.1:41923` host endpoint. `docker compose down` removes the container
+and network but retains the named volume; never add `--volumes` unless the
+saved sessions have been backed up and are deliberately being destroyed.
+
 The release includes a Sigstore bundle named
 `MarvelServer-VERSION-linux-amd64.sigstore.json`. Verify the image before first
 use, substituting the released version, digest, repository owner and tag:
@@ -265,3 +280,45 @@ repeats an ambiguous decision; it synchronizes with the existing capability.
 Every prompt and snapshot also carries a host revision. A resolve echoes the
 revision it answers, and the server rejects an older revision as
 `stale_decision` before gameplay code runs.
+
+## Troubleshoot a hosted table
+
+Start with read-only evidence. Record the image digest, the output of
+`Marvel.Server.dll --version`, container health, and the relevant JSON lines
+before changing a volume. The client status and server record distinguish the
+supported recovery paths:
+
+| Evidence | Meaning | Safe next action |
+|---|---|---|
+| `SERVICE UNAVAILABLE` | The endpoint could not be reached; this does not prove whether a sent mutation committed. | Check the bind address, published port, firewall and container health. Restart the service if needed, then use Synchronize. Never repeat a mutation marked unconfirmed. |
+| `VERSION MISMATCH` or `unsupported_version` | Client and server do not share the wire protocol. | Compare the client identity toolbar with `Marvel.Server.dll --version`; update one side to the intended release. |
+| `SESSION EXPIRED` or `session_not_found` | The server established that the held capability or invitation is not usable. | For an invitation, ask the host for a new one. For a session, inspect restore records and recover a known-good volume backup if the table should exist. |
+| `STORAGE FAILURE`, `save_failed`, or `session.persistence.completed` with `rejected` | The requested state was not durably committed. | Stop new play, verify volume space, ownership and read/write status, and preserve logs. Synchronize the last authoritative revision; do not repair save files by hand. |
+| `session.restore.completed` | A saved session replay-verified and was published after startup. | Reconnect with the existing capability and Synchronize. |
+| `session.restore.failed` | One saved table was quarantined; other tables may still be healthy. | Match its pseudonymous game correlation and bounded error code, preserve the volume, then restore a known-good backup or use a runtime that supports the recorded identity. |
+| `server.listener.stopped` | The listener completed an intentional graceful shutdown and flushed its bounded log queue. | Archive the stopped save volume only after also confirming exit code zero. Absence of this record means shutdown was not confirmed graceful. |
+
+Useful collection commands are read-only:
+
+```bash
+docker inspect marvel-server > marvel-server.inspect.json
+docker logs --timestamps marvel-server > marvel-server.log.jsonl 2>&1
+docker exec marvel-server dotnet Marvel.Server.dll --version
+docker volume inspect marvel-sessions
+```
+
+Do not publish the collected files without review. The application schema
+excludes bearer credentials and concealed card state, but container metadata or
+surrounding platform logs may contain operator-added values. Standard error is
+an ephemeral runtime stream unless the container platform retains it; durable
+rotation, incident export and failure-drill requirements are tracked separately
+from this deployment workflow.
+
+If a response was lost, correlate `transport.exchange.completed`,
+`server.request.completed`, and `client.reconnect.completed` by their
+pseudonymous request/game identifiers, operation, revision, disposition and
+`save_committed`. A server `accepted` record with `save_committed:true` proves
+the mutation reached durable state even if the client never received its
+response. A rejected record proves the engine did not accept that request. If
+the server record is absent, treat the outcome as uncertain and recover only by
+reading the authoritative session.
