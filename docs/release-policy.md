@@ -289,8 +289,9 @@ certificate blob.
 
 The protected Linux release job signs the immutable, single-platform OCI image
 digest. Build timestamps are rewritten from the tagged commit's source epoch;
-invocation-specific attestations are separate release records and therefore do
-not change that reproducible installation identity. The job uses keyless
+invocation-specific attestations are not embedded in that image index, and the
+compatibility provenance is a separate release record. It therefore does not
+change the reproducible installation identity. The job uses keyless
 Sigstore signing through its short-lived OpenID Connect identity.
 The job receives permission to request that identity only after the protected
 tag and release environment authorize it. The repository stores no long-lived
