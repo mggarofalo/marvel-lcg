@@ -250,6 +250,9 @@ public sealed class SocketEngineServer(IEngineEndpoint endpoint, IPAddress addre
         catch (SocketException) when (cancellationToken.IsCancellationRequested)
         {
         }
+        catch (ObjectDisposedException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
         finally
         {
             listener.Stop();
