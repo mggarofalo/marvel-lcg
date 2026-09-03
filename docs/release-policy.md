@@ -63,8 +63,10 @@ the RNG stream or the state digest merely to support display or diagnostics.
 Release filenames use the product version without the leading tag `v`:
 
 ```text
-MarvelChampions-MAJOR.MINOR.PATCH[-PRERELEASE]-macos.zip
-MarvelChampions-MAJOR.MINOR.PATCH[-PRERELEASE]-windows-x64.msix
+MarvelChampions-MAJOR.MINOR.PATCH[-PRERELEASE]-macos-adhoc.zip
+MarvelChampions-MAJOR.MINOR.PATCH[-PRERELEASE]-windows-x64-community.msix
+MarvelChampions-MAJOR.MINOR.PATCH[-PRERELEASE]-windows-x64-community.cer
+MarvelChampions-MAJOR.MINOR.PATCH[-PRERELEASE]-windows-x64-portable-unsigned.zip
 marvel-server:MAJOR.MINOR.PATCH[-PRERELEASE]
 ```
 
@@ -108,11 +110,11 @@ unless a later issue adds and verifies an explicit migration.
 
 There are three channels:
 
-| Channel | Intended use | Signing | Upgrade promise |
+| Channel | Intended use | Desktop trust | Upgrade promise |
 |---|---|---|---|
 | Developer | Local work and pull-request artifacts | Unsigned | None; use disposable data. |
-| Preview | Release-candidate testing | Platform-signed and, on macOS, notarized | Forward upgrades within the same preview line only when the compatibility checks below pass. |
-| Stable | Supported installation | Platform-signed and, on macOS, notarized | Forward upgrades within the same major version when the compatibility checks below pass. |
+| Preview | Release-candidate testing | Ad-hoc macOS and unsigned portable Windows; self-signed Windows MSIX | Forward upgrades within the same preview line only when the compatibility checks below pass. |
+| Stable | Community installation | Ad-hoc macOS and unsigned portable Windows; self-signed Windows MSIX | Forward upgrades within the same major version when the compatibility checks below pass. |
 
 Preview and stable artifacts are produced only from their exact protected Git
 tag after the ordinary build, test, dataset, native-client and package gates
@@ -211,91 +213,69 @@ Changing a runtime dataset requires a new product version. Existing saves do
 not become compatible because the new dataset looks equivalent; an explicit
 replay-contract migration must prove that claim.
 
-## Unsigned build and signed outputs
+## Community desktop artifacts
 
-The release pipeline has two distinct stages:
+The project publishes desktop builds without paid trust services. Each build
+starts from a clean protected tag and pinned tools. The build embeds the release
+manifest, normalizes reproducible inputs, and publishes a SHA-256 file beside
+each artifact.
 
-1. Build from a clean tagged commit and pinned toolchain. Produce unsigned
-   desktop bundles and the server package, emit a manifest containing product
-   and compatibility identities, and hash every output.
-2. Attest and sign those identified outputs in protected platform jobs. Apply
-   signatures and notarization, verify them, and publish a release record that
-   links signed artifact hashes to the unsigned-input hashes and source commit.
+The macOS ZIP has a timestamp-free ad-hoc signature. The build replaces Godot's
+inherited template signature and seals the complete app without claiming a
+publisher identity. The app is not notarized, Developer ID signed, or accepted
+by Gatekeeper without a user decision. The release page and installation guide
+must say this before asking anyone to download or open it.
 
-Unsigned inputs are reproducible and must not depend on a certificate, signing
-timestamp or notarization service. Signed outputs are not asserted to be
-byte-reproducible: platform signatures, trusted timestamps and notarization
-tickets legitimately vary. Their provenance back to the exact unsigned input
-is the reproducibility claim.
+Windows publishes 3 related outputs:
 
-Developer builds use the first stage and are visibly marked unsigned. They are
-not uploaded under a preview or stable artifact name. No switch may label an
-unsigned bundle as signed or stable.
+- The unsigned MSIX is the reproducible package input and is useful for audit.
+- The portable ZIP is unsigned and runs without adding a certificate trust.
+- The community MSIX is signed by a release-specific self-signed certificate. The
+  matching public `.cer` file is published beside it.
 
-## Signing authority
+The Windows package family uses publisher `CN=Marvel Champions Community`.
+Release automation creates a release-specific, non-exportable private key in
+the temporary runner certificate store. It removes that key and its temporary
+trust entry even when the job fails. The private key is never uploaded, cached,
+logged, committed, or retained as a release credential.
 
-No certificate, private key, password, API key, provisioning credential or
-notarization token belongs in the repository, build cache, unsigned artifact,
-save, log or telemetry record. Protected release jobs receive the minimum
-secret only after tag, environment and approval policy has authorized them.
-The repository enforces that statement with an active `refs/tags/v*` ruleset
-that prevents tag updates and deletion, a workflow check of
-`GITHUB_REF_PROTECTED`, and a `desktop-release` environment with a required
-reviewer. Merely naming an environment in workflow YAML is not protection.
+The community MSIX has no trusted timestamp. Each release therefore gets a new
+certificate, and Windows does not trust it by default. A user must verify the
+artifact hashes, inspect the certificate subject and fingerprint, then choose
+whether to add that exact public certificate to Trusted People. Removing the
+package does not remove the certificate; the user must remove both.
 
-### macOS
+The workflow verifies the package signature, publisher, lack of timestamp,
+embedded payload hashes, and SemVer-to-MSIX mapping before publication. This
+proves integrity after the user trusts the attached certificate. It does not
+claim public identity or reputation.
 
-The protected macOS job requires:
+SignTool must reject the release certificate as publicly untrusted. Automation
+requires that exact chain verdict and rejects any other signature failure. It
+separately verifies the package publisher, signature presence and payload
+hashes. The runner removes its temporary Trusted People entry, then deletes the
+private certificate with its backing key. It verifies that both entries are
+gone.
 
-- an Apple Developer ID Application signing identity and certificate chain;
-- its private key and import password, supplied through the protected secret
-  store and a temporary job keychain;
-- the Apple team id;
-- notarization credentials, preferably an App Store Connect issuer id, key id
-  and API private key; and
-- the reviewed hardened-runtime options and entitlements committed as ordinary
-  non-secret build inputs.
+No Apple membership, commercial certificate, paid timestamp, or paid signing
+service is part of the supported release path. Adding commercial platform trust
+would be separate work with separate authorization.
 
-The job signs every nested executable before the outer application and verifies
-the application with `codesign`. It creates a temporary ZIP for notarization,
-waits for acceptance, then staples and validates the ticket on the `.app`.
-After `spctl` verifies Gatekeeper acceptance, the job creates and hashes the
-final distribution ZIP. A ZIP may carry an application for notarization but
-cannot itself receive a stapled ticket. The temporary keychain, submission ZIP
-and credential files are destroyed even on failure. Notarization output is
-filtered before retention and may not disclose credential values.
-
-### Windows
-
-The protected Windows job requires:
-
-- an Authenticode code-signing certificate whose subject is the release
-  publisher;
-- private-key access through a protected certificate file or signing service;
-- any required key password or service authentication; and
-- an approved RFC 3161 timestamp service URL, which is configuration rather
-  than a credential.
-
-The job signs the application executable and other signable binaries before it
-builds the MSIX. It then signs and timestamps the final MSIX package. The MSIX
-signature authenticates every packaged DLL, PCK, dataset and executable; a
-signed executable inside an unauthenticated ZIP would not. The job verifies the
-package signature, publisher and timestamp with the Windows trust tools before
-publication. Temporary certificate material is removed even on failure.
-Command echo and diagnostic upload must not expose a key password, token or
-certificate blob.
+No private key, password, API key, provisioning credential, or signing token
+belongs in the repository, build cache, artifact, save, log, or telemetry
+record. The active `refs/tags/v*` ruleset prevents tag updates and deletion.
+The workflow also checks `GITHUB_REF_PROTECTED` before it builds a release.
 
 ### Linux server image
 
-The protected Linux release job signs the immutable, single-platform OCI image
+The Linux release job signs the immutable, single-platform OCI image
 digest. Build timestamps are rewritten from the tagged commit's source epoch;
 invocation-specific attestations are not embedded in that image index, and the
 compatibility provenance is a separate release record. It therefore does not
 change the reproducible installation identity. The job uses keyless
 Sigstore signing through its short-lived OpenID Connect identity.
-The job receives permission to request that identity only after the protected
-tag and release environment authorize it. The repository stores no long-lived
-image-signing key.
+GitHub grants the job a short-lived identity for the protected tag. The
+repository stores no long-lived image-signing key.
 
 The signature binds the digest to this repository, the release workflow and
 the protected tag. The release record retains the verification bundle and its
@@ -312,23 +292,25 @@ reproducible unsigned server input.
 
 Ordinary CI, on every pull request and supported runner, owns deterministic
 compilation, managed tests, dependency walls, dataset checks, native Godot
-smoke tests and unsigned package construction. It has no signing authority.
+smoke tests, unsigned package construction and ephemeral Windows self-signing.
+It has no retained signing credential or public-trust authority.
 
-Protected release automation owns tag validation, clean-source verification,
-version stamping, platform signing, notarization, signature verification,
-artifact hashing, provenance and publication. macOS trust verification runs on
-macOS; Windows trust verification runs on Windows. Release credentials are not
-made available to pull requests, forks or unprotected branches.
+Release automation owns tag validation, clean-source verification, version
+stamping, artifact hashing, provenance and publication. macOS verifies the
+ad-hoc application structure and reproducibility. Windows verifies the
+self-signed package and deletes its temporary private key. The Linux job uses
+GitHub's short-lived identity for keyless server signing.
 
-A local maintainer may reproduce and inspect unsigned inputs. A signed preview
-or stable artifact is valid only when protected automation publishes its
-manifest and all of these checks pass:
+A local maintainer may reproduce and inspect unsigned inputs. A community
+preview or stable artifact is valid only when automation publishes its manifest
+and all of these checks pass:
 
 - the tag and embedded product version agree;
 - the source commit and runtime dataset hashes agree across artifacts;
 - desktop and server protocol versions agree;
 - server save/replay identities match the manifest;
-- the platform signature and timestamp/notarization chain verify; and
+- the declared desktop trust model matches the artifact; and
+- the Windows self-signature, publisher and absent timestamp verify; and
 - installation tests exercise the produced artifact rather than rebuilding it.
 
 MARVEL-347 owns clean-install, upgrade, interruption and downgrade verification.
@@ -337,9 +319,8 @@ either is a failed release, not permission to publish with a warning.
 
 The desktop implementation and exact local commands are documented in
 [godot-client.md](godot-client.md#desktop-artifacts). The tag-only protected
-workflow is `.github/workflows/release-desktop.yml`; it keeps reproducible
-unsigned construction outside the credential-bearing jobs and refuses to
-replace an existing release.
+workflow is `.github/workflows/release-desktop.yml`; it requires no paid
+credentials and refuses to replace an existing release.
 
 ## Required failure messages
 
@@ -355,7 +336,7 @@ concealed card data.
 | Runtime dataset mismatch | Quarantine before dealing; report which dataset category differs and the expected/actual hashes in operator-only diagnostics. |
 | Replay divergence | Quarantine without mutation; report the bounded divergence stage and record position. |
 | Unsupported downgrade | Quarantine sessions written by the newer product; direct the operator to reinstall it or restore the matching pre-upgrade backup. |
-| Signing or trust failure | Do not install or publish; identify the artifact and failed trust stage without printing signing-service responses verbatim. |
+| Signature or trust failure | Do not install or publish; identify the artifact and failed trust stage without exposing local certificate-store details. |
 
 No compatibility failure offers “continue anyway.” A recovery action changes
 the installed artifact or restores a matching backup; it never weakens parsing,

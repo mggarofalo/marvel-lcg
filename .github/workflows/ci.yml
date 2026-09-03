@@ -267,7 +267,7 @@ jobs:
         run: bash tools/godot-wall.sh
 
   desktop-package:
-    name: Unsigned Windows desktop package
+    name: Windows desktop community package
     runs-on: windows-latest
     timeout-minutes: 30
 
@@ -302,20 +302,34 @@ jobs:
           if ($null -eq $godot) { throw "Godot .NET console executable was not found" }
           "GODOT_BIN=$($godot.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-      - name: The unsigned desktop payload is a complete MSIX
+      - name: The unsigned desktop payload is complete
         shell: pwsh
         run: |
           tools/build-windows-desktop.ps1 `
             -GodotBin $env:GODOT_BIN `
-            -Version '0.1.0-dev.0' `
+            -Version '0.1.0-preview.1' `
             -Commit '${{ github.sha }}' `
+            -Publisher 'CN=Marvel Champions Community' `
             -Output "$env:RUNNER_TEMP\windows-desktop"
+
+      - name: The ephemeral self-signature verifies without a timestamp
+        shell: pwsh
+        run: |
+          $unsigned = Get-ChildItem "$env:RUNNER_TEMP\windows-desktop" `
+            -Filter '*-unsigned.msix' | Select-Object -First 1
+          if ($null -eq $unsigned) { throw 'unsigned Windows input was not built' }
+          tools/sign-windows-desktop.ps1 `
+            -InputPackage $unsigned.FullName `
+            -Output "$env:RUNNER_TEMP\windows-community" `
+            -Publisher 'CN=Marvel Champions Community'
 
       - uses: actions/upload-artifact@v7
         with:
-          name: windows-desktop-unsigned-${{ github.sha }}
+          name: windows-desktop-community-${{ github.sha }}
           path: |
             ${{ runner.temp }}/windows-desktop/*.msix
+            ${{ runner.temp }}/windows-desktop/*.zip
             ${{ runner.temp }}/windows-desktop/*.sha256
+            ${{ runner.temp }}/windows-community/*
           if-no-files-found: error
           retention-days: 7

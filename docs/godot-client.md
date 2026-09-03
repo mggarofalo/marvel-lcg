@@ -27,7 +27,7 @@ the exported client resolves them. The setup toolbar displays the compiled
 product, replay-contract, protocol and save-schema identities. Its tooltip gives
 the complete source commit.
 
-An unsigned macOS developer input is built from a clean checkout with the
+An ad-hoc-signed macOS developer input is built from a clean checkout with the
 official Godot 4.7.1 .NET editor and installed .NET export templates:
 
 ```bash
@@ -65,39 +65,81 @@ policy with `tools/release-global.json`; automation installs those exact .NET
 Windows packaging and signing also use the exact Windows SDK 10.0.26100.0
 `x64` tools; the runner's newest installed SDK is not a release input.
 
-Preview and stable delivery is automated by
+Preview and stable delivery runs through
 `.github/workflows/release-desktop.yml` from an exact protected `v*` tag. The
-workflow refuses an otherwise valid tag unless GitHub reports that an active
-tag ruleset protects it, and it invokes the ordinary CI workflow for that exact
-tag before packaging. Repository setup must protect `refs/tags/v*` against
-updates and deletion. The ordinary jobs create and retain hashed unsigned
-inputs. Only the `desktop-release` environment jobs can receive signing
-credentials; that environment requires an explicit reviewer before any signing
-or publication job starts:
+workflow runs ordinary CI for that tag and uses pinned Godot, .NET and Windows
+SDK versions. It requires no Apple membership, commercial certificate, paid
+timestamp or stored desktop signing secret.
 
-- secrets `MACOS_CERTIFICATE_P12_BASE64`, `MACOS_CERTIFICATE_PASSWORD`,
-  `MACOS_SIGNING_IDENTITY`, `APPLE_API_KEY_P8_BASE64`,
-  `APPLE_API_ISSUER_ID`, and `APPLE_API_KEY_ID`;
-- secret `WINDOWS_CERTIFICATE_PFX_BASE64`; secret
-  `WINDOWS_CERTIFICATE_PASSWORD` imports it into a temporary current-user
-  certificate store; and
-- non-secret variables `WINDOWS_PUBLISHER` and `WINDOWS_TIMESTAMP_URL` define
-  the stable package identity and approved HTTPS RFC 3161 service.
+The release page publishes these community artifacts with SHA-256 files:
 
-The macOS job signs nested Mach-O code and the outer app with the committed
-managed-runtime entitlements, verifies it, submits a temporary ZIP with
-`notarytool`, staples and validates the app, asks Gatekeeper to assess it, and
-only then creates the distribution ZIP. The Windows job checks the certificate
-subject against the manifest publisher, signs and verifies every executable and
-DLL, rebuilds and signs the complete MSIX, and verifies the final package. Both
-publish a provenance JSON record linking the signed artifact hash to the
-unsigned input hash. Credential files, keychains and imported certificates are
-removed on success or failure.
+- macOS receives the reproducible timestamp-free ad-hoc application ZIP.
+- Windows receives the reproducible unsigned MSIX input and unsigned portable
+  ZIP.
+- Windows also receives a self-signed MSIX, its public certificate and a
+  provenance record linking it to the unsigned input.
+- Linux receives the immutable server digest and keyless Sigstore bundle.
 
-The final workflow refuses to replace an existing GitHub release. A preview tag
-creates a prerelease; a stable tag creates a stable release. Windows installation
-and trust verification on a clean machine is tracked separately by MARVEL-358,
-because macOS review cannot supply a Windows trust verdict.
+The Windows job creates a non-exportable private key in its temporary
+CurrentUser certificate store. It signs without a timestamp and publishes only
+the public certificate. It verifies the package while that certificate is in a
+temporary CurrentUser Trusted People store. SignTool must report the exact
+expected untrusted-root verdict; any other signature failure stops the job. The
+job then removes that trust entry and deletes the private certificate with its
+backing key.
+
+The workflow refuses to replace an existing GitHub release. A preview tag
+creates a prerelease; a stable tag creates a stable release. The release notes
+lead with the desktop trust limitations. Windows installation and trust testing
+on a clean machine remains MARVEL-358 because macOS cannot supply that verdict.
+
+### Open the macOS community build
+
+The macOS app is not notarized or Developer ID signed. Verify its SHA-256 file
+before extracting it:
+
+```bash
+shasum -a 256 -c MarvelChampions-VERSION-macos-adhoc.zip.sha256
+```
+
+After extraction, open the app once. macOS will warn that it cannot verify the
+developer. If you trust the checked artifact, Control-click the app in Finder,
+choose Open, then confirm Open. On macOS versions that direct you to System
+Settings, use Privacy and Security to approve that exact blocked app. Do not
+disable Gatekeeper for the whole system.
+
+### Install the Windows community MSIX
+
+The MSIX certificate is self-signed and has no trusted timestamp. It proves
+package integrity only after you choose to trust the attached public
+certificate. It does not prove a publicly verified publisher identity.
+
+Use an elevated PowerShell window on a disposable test system:
+
+```powershell
+$package = 'MarvelChampions-VERSION-windows-x64-community.msix'
+$certificate = 'MarvelChampions-VERSION-windows-x64-community.cer'
+Get-FileHash $package -Algorithm SHA256
+Get-FileHash $certificate -Algorithm SHA256
+certutil.exe -dump $certificate
+$installedCertificate = Import-Certificate `
+  -FilePath $certificate `
+  -CertStoreLocation 'Cert:\LocalMachine\TrustedPeople'
+Add-AppxPackage -Path $package
+```
+
+Compare both hashes with their attached `.sha256` files before importing the
+certificate. Confirm that the certificate subject is `CN=Marvel Champions
+Community`. Remove both the package and the exact certificate when finished:
+
+```powershell
+Get-AppxPackage -Name 'mggarofalo.MarvelChampions' | Remove-AppxPackage
+Remove-Item "Cert:\LocalMachine\TrustedPeople\$($installedCertificate.Thumbprint)"
+```
+
+The unsigned portable ZIP avoids changing the certificate store. Verify its
+hash, extract it to a user-owned directory, and run `MarvelChampions.exe`. It is
+unsigned, so Windows may still show reputation warnings.
 
 ## Launch
 

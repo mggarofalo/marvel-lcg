@@ -110,12 +110,26 @@ dotnet run --project "$source_root/tools/Marvel.Release/Marvel.Release.csproj" \
     --data-root "$repository" \
     --output "$resources/release-manifest.json"
 
+# Godot's export template contains an upstream Developer ID signature. Replace
+# every inherited Mach-O signature, then seal the assembled application with a
+# timestamp-free ad-hoc identity. The result makes no publisher-identity claim.
+while IFS= read -r -d '' code; do
+    if file -b "$code" | grep -q 'Mach-O'; then
+        codesign --force --sign - --timestamp=none "$code"
+    fi
+done < <(find "$app/Contents" -type f -print0)
+while IFS= read -r framework; do
+    codesign --force --sign - --timestamp=none "$framework"
+done < <(find "$app/Contents" -type d -name '*.framework' -print | sort -r)
+codesign --force --deep --sign - --timestamp=none "$app"
+codesign --verify --deep --strict "$app"
+
 mkdir -p "$output"
 mv "$app" "$output/Marvel Champions.app"
 commit_epoch=$(git -C "$repository" show -s --format=%ct "$commit")
 timestamp=$(date -r "$commit_epoch" +%Y%m%d%H%M.%S)
 find "$output/Marvel Champions.app" -exec touch -h -t "$timestamp" {} +
-archive="$output/MarvelChampions-${version}-macos-unsigned.zip"
+archive="$output/MarvelChampions-${version}-macos-adhoc.zip"
 (
     cd "$output"
     find "Marvel Champions.app" -print | LC_ALL=C sort | zip -X -y -q "$archive" -@
