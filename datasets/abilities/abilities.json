@@ -120,7 +120,7 @@
     {
       "card": "01009",
       "name": "Webbed Up",
-      "note": "Hero form only. Attach to an enemy. Max 1 per enemy. Forced Interrupt: When attached enemy would attack, discard Webbed Up instead. Then, stun that enemy. The WhenAttackInitiated interrupt precedes attack application, so the newly stunned actor's attack is cancelled by rr:stun.",
+      "note": "Hero form only. Attach to an enemy. Max 1 per enemy. Forced Interrupt: When attached enemy would attack, discard Webbed Up instead. Then, stun that enemy. Webbed Up replaces the current attack occurrence; its new stunned status remains to replace the following attack, as faq:01009 requires.",
       "attachTo": { "withoutAnotherCopyAttached": { "query": "enemies" } },
       "abilities": [
         {
@@ -130,6 +130,7 @@
             "actor": "attachedTo"
           },
           "effect": { "seq": [
+            { "cancelOccurrence": "trigger" },
             { "discard": "this" },
             { "giveStatus": { "card": "trigger.actor", "status": "stunned" } }
           ] }
@@ -2113,7 +2114,11 @@
         {
           "trigger": { "event": "WhenCardEntersPlay", "timing": "ForcedResponse", "subject": "this" },
           "effect": { "seq": [
-            { "choose": { "options": [
+            { "choose": { "descriptions": [
+              "Remove 2 threat from a scheme",
+              "Draw 3 cards",
+              "Deal 4 damage to an enemy"
+            ], "options": [
               { "chooseCard": { "from": { "query": "schemes" }, "effect": { "removeThreat": { "scheme": "chosen", "amount": 2 } } } },
               { "draw": { "player": "you", "count": 3 } },
               { "chooseCard": { "from": { "query": "enemies" }, "effect": { "dealDamage": { "cards": "chosen", "amount": 4 } } } }

@@ -142,6 +142,9 @@ public sealed record Prompt(
     bool Cancellable,
     IReadOnlyList<Affordance> Affordances)
 {
+    /// <summary>Readable engine-authored context for the pending decision.</summary>
+    public string? Description { get; init; }
+
     /// <summary>
     /// Whether producing this prompt made concealed candidate identities knowable.
     /// </summary>

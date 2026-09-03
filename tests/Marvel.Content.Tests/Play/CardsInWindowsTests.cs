@@ -81,12 +81,11 @@ public sealed class CardsInWindowsTests
     [Rule("rr:status-cards.2")]
     [Rule("rr:stun-stunned.1")]
     [Fact]
-    public void WebbedUpStunCancelsBeforeSpiderSenseCanBeOffered()
+    public void WebbedUpReplacesTheAttackAndLeavesItsStunForTheNextAttack()
     {
-        // Status-card abilities have priority over conflicting triggered
-        // abilities. Webbed Up creates the stun inside the attack-initiation
-        // interrupt window; the window must recheck that priority before it
-        // offers Spider-Sense for an attack the stun replaces.
+        // faq:01009 says Webbed Up prevents the attached enemy's next attack,
+        // then its stun prevents that enemy's following attack. Because the
+        // first attack never initiates, Spider-Sense is not offered for it.
         var board = Attacking();
         var world = board.World;
         var rhino = world.TheCardIn(DeckType.VillainArea)!;
@@ -102,7 +101,7 @@ public sealed class CardsInWindowsTests
         Assert.Null(asked);
         Assert.Equal(hand, world.Seats[0].Hand.Cards.Count);
         Assert.Equal(DeckType.DiscardPile, webbed.Area.Type);
-        Assert.False(Statuses.Has(world, rhino, Statuses.Stunned));
+        Assert.True(Statuses.Has(world, rhino, Statuses.Stunned));
         Assert.Null(world.Attack);
     }
 
@@ -279,8 +278,13 @@ public sealed class CardsInWindowsTests
         var defender = Answer(world, abilities, Decision.Decline);
         Assert.Equal(Question.Defender, defender!.Asking);
 
-        Answer(world, abilities,
-               defend ? Decision.Take(identity.ObjectId) : Decision.Decline);
+        Prompt? damageInterrupt = Answer(world, abilities,
+            defend ? Decision.Take(identity.ObjectId) : Decision.Decline);
+
+        Assert.NotNull(damageInterrupt!.Description);
+        Assert.Contains($"for {expected} damage", damageInterrupt.Description);
+        Assert.Contains("Spider-Man", damageInterrupt.Description);
+        Assert.Contains("Charge", damageInterrupt.Description);
 
         // Backflip is now a real optional interrupt in the imminent-damage
         // window. This test is about ordinary defended damage, so decline it.

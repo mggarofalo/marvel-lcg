@@ -72,7 +72,7 @@ public static class EventPresenter
                 [changed.Card],
                 EventMotionKind.Flip),
             CardsFlipped flipped => (
-                $"Turned {Cards(flipped.Cards, world)} face {(flipped.FaceUp ? "up" : "down")}.",
+                FlippedSummary(flipped, world),
                 flipped.Cards.ToArray(),
                 EventMotionKind.Flip),
             CardAttached attached => (
@@ -153,6 +153,12 @@ public static class EventPresenter
     private static string FieldSummary(FieldSet set, WorldDescriptor world)
     {
         string subject = Card(set.Card, world);
+        if (set.Field == "is_exhaust")
+        {
+            return set.To == 1
+                ? $"{subject} became exhausted."
+                : $"{subject} became ready.";
+        }
         string field = Words(set.Field).ToLowerInvariant();
         if (set.From is null)
         {
@@ -169,6 +175,26 @@ public static class EventPresenter
 
     private static string Value(long? value) =>
         value?.ToString(CultureInfo.InvariantCulture) ?? "an absent value";
+
+    private static string FlippedSummary(CardsFlipped flipped, WorldDescriptor world)
+    {
+        string cards = Cards(flipped.Cards, world);
+        if (!flipped.FaceUp)
+        {
+            return $"Turned {cards} face down.";
+        }
+
+        string[] text = world.Areas
+            .SelectMany(area => area.Cards.Concat(area.Removed))
+            .Where(card => card.Id is { } id && flipped.Cards.Contains(id))
+            .Select(card => card.Face?.RulesText)
+            .Where(rules => !string.IsNullOrWhiteSpace(rules))
+            .Cast<string>()
+            .ToArray();
+        return text.Length == 0
+            ? $"Turned {cards} face up."
+            : $"Revealed {cards}: {string.Join(" ", text)}";
+    }
 
     private static string Cards(IEnumerable<int> ids, WorldDescriptor world)
     {
@@ -243,9 +269,12 @@ public static class EventPresenter
             return string.Empty;
         }
 
-        string text = trimArea && value.EndsWith("Area", StringComparison.Ordinal)
-            ? value[..^"Area".Length]
+        string normalized = value.StartsWith("k_", StringComparison.Ordinal)
+            ? value[2..]
             : value;
+        string text = trimArea && normalized.EndsWith("Area", StringComparison.Ordinal)
+            ? normalized[..^"Area".Length]
+            : normalized;
         var result = new StringBuilder(text.Length + 8);
         for (int index = 0; index < text.Length; index++)
         {

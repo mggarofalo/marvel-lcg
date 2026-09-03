@@ -25,6 +25,7 @@ public sealed partial class Main : Control
     private VBoxContainer cardInspectorContent = null!;
     private int cardInspectorGeneration;
     private bool cardInspectorHovered;
+    private bool cardInspectorPinned;
     private int? inspectedCardId;
     private Label briefingHero = null!;
     private Label briefingMode = null!;
@@ -158,6 +159,10 @@ public sealed partial class Main : Control
     {
         interfaceScale = scale;
         Theme = ClientTheme.Create(scale);
+        // The scale control is the ruler for the rest of the interface. Keep
+        // its own geometry fixed so changing the value does not move the
+        // pointer target beneath the user's hand.
+        GetNode<Control>("StatusBar").Theme = ClientTheme.Create(InterfaceScale.Compact);
         interfaceScaleValue.Text = $"Scale {Mathf.RoundToInt(VisualSystem.ScalePercent(scale))}%";
         decisions.SetInterfaceScale(scale);
         float minimumHeight = VisualSystem.Controls(scale).MinimumHeight;
@@ -181,12 +186,9 @@ public sealed partial class Main : Control
                 control.CustomMinimumSize.X,
                 minimumHeight);
         }
-        foreach (Control control in new Control[] { eventMotion, eventSkip })
-        {
-            control.CustomMinimumSize = new Vector2(
-                control.CustomMinimumSize.X,
-                minimumHeight);
-        }
+        eventSkip.CustomMinimumSize = new Vector2(
+            eventSkip.CustomMinimumSize.X,
+            minimumHeight);
         if (CurrentGame?.World is { } world)
         {
             RenderBoard(world);
@@ -233,7 +235,7 @@ public sealed partial class Main : Control
             $"{content}/Play/Prompt/Margin/Stack/Workbench/History/EventCue/Margin/Copy/Kind");
         eventCueSummary = GetNode<Label>(
             $"{content}/Play/Prompt/Margin/Stack/Workbench/History/EventCue/Margin/Copy/Summary");
-        eventMotion = GetNode<CheckButton>($"{content}/Toolbar/Motion");
+        eventMotion = GetNode<CheckButton>("StatusBar/Motion");
         eventSkip = GetNode<Button>(
             $"{content}/Play/Prompt/Margin/Stack/Workbench/History/EventHeader/Skip");
         eventMotion.Toggled += enabled =>
@@ -246,7 +248,7 @@ public sealed partial class Main : Control
         eventSkip.Pressed += SkipEventPresentation;
         decisions.Submitted += OnDecisionSubmitted;
         decisions.AnchorFocused += ids => boardRender?.Highlight(ids);
-        decisions.CardHovered += InspectCard;
+        decisions.CardHovered += PreviewHandCard;
         decisions.ProgressChanged += RenderDecisionProgress;
         cardInspector = GetNode<PanelContainer>("CardInspector");
         cardInspectorScroll = GetNode<ScrollContainer>("CardInspector/Scroll");
@@ -265,9 +267,9 @@ public sealed partial class Main : Control
         };
         BindCardInspectorFocus(cardInspector);
         BindCardInspectorFocus(cardInspectorScroll);
-        interfaceScaleSlider = GetNode<HSlider>($"{content}/Toolbar/InterfaceScale");
-        interfaceScaleValue = GetNode<Label>($"{content}/Toolbar/ScaleValue");
-        syncStatus = GetNode<Label>($"{content}/Toolbar/SyncStatus");
+        interfaceScaleSlider = GetNode<HSlider>("StatusBar/InterfaceScale");
+        interfaceScaleValue = GetNode<Label>("StatusBar/ScaleValue");
+        syncStatus = GetNode<Label>("StatusBar/SyncStatus");
         endpoint = GetNode<LineEdit>(
             $"{content}/Setup/Selections/Fields/ConnectionGrid/Endpoint");
         gameId = GetNode<LineEdit>(
@@ -298,7 +300,7 @@ public sealed partial class Main : Control
             $"{content}/Play/Prompt/Margin/Stack/InvitationOffer");
         invitationCopy = GetNode<Button>(
             $"{content}/Play/Prompt/Margin/Stack/InvitationOffer/Margin/Row/CopyInvitation");
-        synchronize = GetNode<Button>($"{content}/Toolbar/Synchronize");
+        synchronize = GetNode<Button>("StatusBar/Synchronize");
         briefingScenario = GetNode<Label>(
             $"{content}/Setup/Briefing/Frame/Copy/Scenario");
         briefingMode = GetNode<Label>($"{content}/Setup/Briefing/Frame/Copy/Mode");
@@ -1080,34 +1082,55 @@ public sealed partial class Main : Control
             interfaceScale,
             expandedAreas,
             art);
-        boardRender.CardHovered += card => ShowCardInspector(card);
+        boardRender.CardActivated += (card, control) => ToggleCardInspector(card, control);
         HideCardInspector();
     }
 
-    private void InspectCard(int? id)
+    private void PreviewHandCard(int? id)
     {
-        BoardCardPresentation? card = id is null
-            ? null
-            : boardPresentation?.Areas
-                .SelectMany(area => area.Cards.Concat(area.Removed))
-                .FirstOrDefault(candidate => candidate.TargetId == id);
-        ShowCardInspector(card);
+        if (cardInspectorPinned)
+        {
+            return;
+        }
+
+        if (id is null)
+        {
+            HideCardInspector();
+            return;
+        }
+
+        BoardCardPresentation? card = boardPresentation?.Areas
+            .Where(area => area.Zone == "HandsArea")
+            .SelectMany(area => area.Cards)
+            .FirstOrDefault(candidate => candidate.TargetId == id);
+        Control? source = boardRender?.ControlFor(id.Value);
+        if (card is null || source is null)
+        {
+            return;
+        }
+
+        ShowCardInspector(card, source, pinned: false);
     }
 
-    private void ShowCardInspector(BoardCardPresentation? card)
+    private void ToggleCardInspector(BoardCardPresentation card, Control? source)
     {
-        if (card is null || card.Concealed)
+        if (card.Concealed)
         {
-            ScheduleCardInspectorHide();
             return;
         }
 
         if (cardInspector.Visible && inspectedCardId == card.TargetId)
         {
-            cardInspectorGeneration++;
+            HideCardInspector();
             return;
         }
 
+        ShowCardInspector(card, source, pinned: true);
+    }
+
+    private void ShowCardInspector(
+        BoardCardPresentation card, Control? source, bool pinned)
+    {
         cardInspectorGeneration++;
         inspectedCardId = card.TargetId;
         Control? priorFocus = GetViewport()?.GuiGetFocusOwner();
@@ -1124,21 +1147,62 @@ public sealed partial class Main : Control
         cardInspectorContent.AddChild(detail);
         float width = detail.CustomMinimumSize.X + 24;
         float height = Math.Min(Size.Y - 48, detail.CustomMinimumSize.Y + 24);
-        cardInspector.Size = new Vector2(width, Math.Max(240, height));
-        Vector2 pointer = GetViewport().GetMousePosition();
-        FloatingPanelPosition position = VisualSystem.PlaceFloatingPanel(
-            Mathf.RoundToInt(Size.X),
-            Mathf.RoundToInt(Size.Y),
-            Mathf.RoundToInt(pointer.X),
-            Mathf.RoundToInt(pointer.Y),
-            Mathf.RoundToInt(width),
-            Mathf.RoundToInt(height));
+        Rect2 sourceRect = source?.GetGlobalRect() ?? new Rect2(
+            GetViewport().GetMousePosition(), Vector2.Zero);
+        if (!pinned)
+        {
+            height = Math.Min(height, Math.Max(160, sourceRect.Position.Y - 24));
+        }
+        cardInspector.CustomMinimumSize = Vector2.Zero;
+        cardInspector.Size = new Vector2(width, Math.Max(pinned ? 240 : 160, height));
+        Vector2 anchor = sourceRect.Position + sourceRect.Size / 2;
+        FloatingPanelPosition position = pinned
+            ? VisualSystem.PlaceFloatingPanel(
+                Mathf.RoundToInt(Size.X),
+                Mathf.RoundToInt(Size.Y),
+                Mathf.RoundToInt(anchor.X),
+                Mathf.RoundToInt(anchor.Y),
+                Mathf.RoundToInt(width),
+                Mathf.RoundToInt(height))
+            : new FloatingPanelPosition(
+                Mathf.RoundToInt(Mathf.Clamp(
+                    anchor.X - width / 2, 12, Math.Max(12, Size.X - width - 12))),
+                Mathf.RoundToInt(Mathf.Max(12, sourceRect.Position.Y - height - 12)));
         cardInspector.Position = new Vector2(position.X, position.Y);
+        cardInspectorPinned = pinned;
         cardInspector.Visible = true;
         if (priorFocus is not null && !cardInspector.IsAncestorOf(priorFocus))
         {
             Callable.From(priorFocus.GrabFocus).CallDeferred();
         }
+    }
+
+    public override void _Input(InputEvent @event)
+    {
+        if (cardInspector.Visible
+            && @event is InputEventMouseButton
+            {
+                ButtonIndex: MouseButton.Left,
+                Pressed: true,
+            } click
+            && !cardInspector.GetGlobalRect().HasPoint(click.Position)
+            && !IsInsideCard(GetViewport()?.GuiGetHoveredControl()))
+        {
+            HideCardInspector();
+        }
+    }
+
+    private static bool IsInsideCard(Node? node)
+    {
+        for (Node? current = node; current is not null; current = current.GetParent())
+        {
+            if (current is CardControl)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void ScheduleCardInspectorHide()
@@ -1147,6 +1211,7 @@ public sealed partial class Main : Control
         GetTree().CreateTimer(0.3).Timeout += () =>
         {
             if (generation == cardInspectorGeneration
+                && !cardInspectorPinned
                 && !cardInspectorHovered
                 && !CardInspectorHasFocus())
             {
@@ -1174,6 +1239,7 @@ public sealed partial class Main : Control
     private void HideCardInspector()
     {
         cardInspectorGeneration++;
+        cardInspectorPinned = false;
         cardInspectorHovered = false;
         cardInspector.FocusMode = FocusModeEnum.None;
         cardInspectorScroll.FocusMode = FocusModeEnum.None;

@@ -229,12 +229,43 @@ public sealed class VisibilityTests
 
         Assert.Equal(["BRUTE", "AERIAL"], face.Traits);
         Assert.Equal("4", face.PrintedStats["SCH"]);
+        Assert.Equal("Encounter", face.PrintedStats["Class"]);
         Assert.Null(face.Cost);
         Assert.Equal(["Guard"], face.Keywords);
         Assert.Equal("Guard.", face.RulesText);
         Assert.Equal(2, face.Damage);
         Assert.Equal(3, face.Counters["test"]);
         Assert.Null(hidden.Face);
+    }
+
+    [Fact]
+    public void AnAllyInPlayProjectsItsRemainingHealth()
+    {
+        var board = Board();
+        Card ally = Assert.Single(board.AreaOf(
+            DeckType.AlliesArea, PlayArea.Of(1)).Cards);
+        ally.TakeDamage(1);
+
+        CardFaceDescriptor face = Assert.IsType<CardFaceDescriptor>(
+            Card(WorldProjection.For(
+                board, null, [], new PermissiveVisibilityPolicy().Authorize(null, board.Players)).World,
+                ally.ObjectId).Face);
+
+        Assert.Equal(2, face.Fields["health"]);
+    }
+
+    [Fact]
+    public void EngineRuleInsertIsNotAVisibleGameComponent()
+    {
+        var board = Board();
+        Card insert = board.CreateCard("rule-insert", board.AreaOf(DeckType.RemovedArea));
+
+        WorldDescriptor visible = WorldProjection.For(
+            board, null, [], new PermissiveVisibilityPolicy().Authorize(null, board.Players)).World;
+
+        Assert.DoesNotContain(
+            visible.Areas.SelectMany(area => area.Cards.Concat(area.Removed)),
+            card => card.Id == insert.ObjectId);
     }
 
     [Fact]
@@ -387,18 +418,27 @@ public sealed class VisibilityTests
 
     private sealed class Facts : ICardFacts
     {
-        public CardKind Kind(string faceId) => faceId == "public-villain"
-            ? CardKind.EncounterVillain
-            : CardKind.Event;
+        public CardKind Kind(string faceId) => faceId switch
+        {
+            "public-villain" => CardKind.EncounterVillain,
+            "player-ally" => CardKind.Ally,
+            "rule-insert" => CardKind.Insert,
+            _ => CardKind.Event,
+        };
 
         public IReadOnlyList<string> Traits(string faceId) => faceId == "public-villain"
             ? ["BRUTE"]
             : [];
 
         public IReadOnlyDictionary<string, string> Attributes(string faceId) =>
-            faceId == "public-villain"
-                ? new Dictionary<string, string>(StringComparer.Ordinal) { ["SCH"] = "4" }
-                : new Dictionary<string, string>(StringComparer.Ordinal);
+            faceId switch
+            {
+                "public-villain" => new Dictionary<string, string>(StringComparer.Ordinal)
+                    { ["SCH"] = "4", ["Class"] = "Encounter" },
+                "player-ally" => new Dictionary<string, string>(StringComparer.Ordinal)
+                    { ["HP"] = "3" },
+                _ => new Dictionary<string, string>(StringComparer.Ordinal),
+            };
 
         public IReadOnlyList<string> Keywords(string faceId) => faceId == "public-villain"
             ? ["Guard"]
@@ -407,6 +447,8 @@ public sealed class VisibilityTests
         public string Text(string faceId) => faceId == "public-villain" ? "Guard." : string.Empty;
 
         public long PrintedValue(
-            string faceId, string attribute, int players, long fallback = 0) => fallback;
+            string faceId, string attribute, int players, long fallback = 0) =>
+            Attributes(faceId).TryGetValue(attribute, out string? value)
+                && long.TryParse(value, out long parsed) ? parsed : fallback;
     }
 }

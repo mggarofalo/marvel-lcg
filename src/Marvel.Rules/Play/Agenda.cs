@@ -482,6 +482,13 @@ public sealed class Agenda
             && ReferenceEquals(item.Occurrence, occurrence));
     }
 
+    /// <summary>Whether one exact occurrence remains on the agenda.</summary>
+    public bool IsOutstanding(Occurrence occurrence)
+    {
+        ArgumentNullException.ThrowIfNull(occurrence);
+        return items.Any(item => ReferenceEquals(item.Occurrence, occurrence));
+    }
+
     /// <summary>Remember gained Surge on every continuation of one revealed card.</summary>
     /// <remarks>
     /// A reveal can schedule a continuation and then resolve another printed

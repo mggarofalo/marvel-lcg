@@ -72,6 +72,9 @@ public sealed record TargetRequest(
     bool AllowRepeated = false,
     IReadOnlyDictionary<int, int>? MaximumOccurrences = null)
 {
+    /// <summary>Engine-authored consequence details keyed by legal target id.</summary>
+    public IReadOnlyDictionary<int, string>? Details { get; init; }
+
     /// <summary>Whether the selection rule constrains it beyond a count.</summary>
     public bool IsGrouped => Groups is { Count: > 0 };
 

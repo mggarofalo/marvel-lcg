@@ -139,6 +139,10 @@ An executable node is a map with exactly one entry:
 The interpreter switches on the node name and validates the argument shape it
 expects. Unknown nodes and missing arguments name the failure.
 
+A `choose` node may carry a `descriptions` string list parallel to `options`.
+Those strings are engine-authored affordance descriptions: clients display
+them and do not reconstruct printed choices from effect-node names.
+
 The implemented vocabulary covers these groups:
 
 - control flow such as sequences, conditions, alternatives and repetition;
@@ -166,7 +170,7 @@ language without documentation.
 addToHand afterActivation allies alliesYouControl alsoAttackEachOtherHero among
 atLeast attachedToThis attackDamaged attackableEnemies attackableMinions
 automaticTarget blackPantherUpgrades canAutomaticThwart canLegalPractice
-canMakeTheCall cancelWhenRevealed cardsIn changeForm characters
+canMakeTheCall cancelOccurrence cancelWhenRevealed cardsIn changeForm characters
 charactersYouControl choose chooseCard chooseDiscardToShuffle chooseTopForHand
 countersOn createDrones damageOn dealAttackDamage dealDamage dealEncounterCards
 deck defeatedByYou delayUntil discardAtRandom discardFromHand

@@ -77,6 +77,7 @@ public sealed partial class AbilityRunner
             // these currently expressible effects carry. Their own resolver
             // performs any further rule-specific work.
             "generate" or "soakDamage" or "preventDamage" or "cancelWhenRevealed"
+                or "cancelOccurrence"
                 or "dealEncounterCards" or "dealEncounterCard"
                 or "revealTop" or "reveal" or "placeAtRandom"
                 or "returnToHand" or "discardUntil" or "recoverDiscardedByResource"

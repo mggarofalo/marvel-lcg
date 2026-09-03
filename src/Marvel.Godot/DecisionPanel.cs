@@ -286,12 +286,16 @@ public sealed partial class DecisionPanel : VBoxContainer
 
     private void AddOrdinaryTarget(int target)
     {
+        string targetName = PromptPresentation.Describe(target, world!);
+        string detail = composer!.Selected?.Targets?.Details?.GetValueOrDefault(target) is { } text
+            ? $"  ·  {text}"
+            : string.Empty;
         var choose = new Button
         {
             Name = $"Target{target}",
             Text = composer!.Targets.Contains(target)
-                ? $"✓ {TargetAction(selected: true)}  ·  {PromptPresentation.Describe(target, world!)}"
-                : $"◇ {TargetAction(selected: false)}  ·  {PromptPresentation.Describe(target, world!)}",
+                ? $"✓ {TargetAction(selected: true)}  ·  {targetName}{detail}"
+                : $"◇ {TargetAction(selected: false)}  ·  {targetName}{detail}",
             Alignment = HorizontalAlignment.Left,
             ToggleMode = true,
             ButtonPressed = composer!.Targets.Contains(target),
@@ -676,6 +680,11 @@ public sealed partial class DecisionPanel : VBoxContainer
 
     private static string ActionText(AffordancePresentation view)
     {
+        if (!string.IsNullOrWhiteSpace(view.Description))
+        {
+            return view.Description;
+        }
+
         if (!string.Equals(view.Verb, view.Label, StringComparison.OrdinalIgnoreCase))
         {
             return $"{view.Label}  ·  {view.Anchor}";

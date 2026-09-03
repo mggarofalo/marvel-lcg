@@ -139,6 +139,19 @@ public sealed class EventPresentationTests
         Assert.Equal(EventMotionKind.State, presentation.Motion);
     }
 
+    [Theory]
+    [InlineData("k_threat", 3, 1, "Swinging Web Kick changed threat from 3 to 1.")]
+    [InlineData("is_exhaust", 0, 1, "Swinging Web Kick became exhausted.")]
+    [InlineData("is_exhaust", 1, 0, "Swinging Web Kick became ready.")]
+    public void InternalFieldNamesHaveNaturalHistorySummaries(
+        string field, long from, long to, string expected)
+    {
+        EventPresentation presentation = EventPresenter.Present(
+            new FieldSet(7, field, from, to), World());
+
+        Assert.Equal(expected, presentation.Summary);
+    }
+
     [Fact]
     public void TerminalOutcomesHaveExplicitPresentation()
     {

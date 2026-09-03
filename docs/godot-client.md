@@ -95,18 +95,17 @@ the available height and shows several affordances at once; the complete
 diagnostic chronology remains in the adjacent History tab. At wide desktop
 sizes the rail grows to 680–720 logical pixels. Board areas use fixed shelves so
 multiple areas wrap into each lane instead of stretching one area across the
-whole remaining table. Every area is a disclosure section, empty areas begin
-collapsed, and scenario and player-owned sections remain grouped in separate
+whole remaining table. Every area is a disclosure section and begins collapsed,
+and scenario and player-owned sections remain grouped in separate
 lanes. A player's visible hand is pinned below the table scroll so it does not
 disappear while inspecting another area.
 
 Compact is the default interface scale. The toolbar slider switches among the
 eleven supported scales immediately, including card geometry and the prompt rail,
 and the adjacent motion toggle controls event animation. Table and hand cards
-expose a concise summary; hovering a readable card or card-backed action opens
-the full card inspector immediately to the roomier side of the pointer. The
-inspector remains open while its source or the inspector is hovered or focused,
-and closes 300 milliseconds after both pointer and focus leave it. Character
+expose a concise summary; clicking a readable card opens the full card inspector
+beside that card. The inspector remains pinned and scrollable until the same card
+or the surrounding interface is clicked. Character
 health is one current/maximum value rather than separate hit-point and damage
 values.
 Settled synchronization uses the toolbar indicator rather than reserving a

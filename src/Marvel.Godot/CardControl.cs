@@ -136,6 +136,20 @@ public sealed partial class CardControl : PanelContainer
         {
             content.AddChild(Label(card.Kind, GodotThemeVariations.Eyebrow, "Kind"));
         }
+        if (!string.IsNullOrWhiteSpace(card.Classification))
+        {
+            content.AddChild(Label(
+                card.Classification.ToUpperInvariant(),
+                GodotThemeVariations.Eyebrow,
+                "Classification"));
+        }
+        if (card.Status is "READY" or "EXHAUSTED")
+        {
+            Label ready = Label(
+                card.Status, GodotThemeVariations.CardState, "ReadyIndicator");
+            ready.HorizontalAlignment = HorizontalAlignment.Right;
+            content.AddChild(ready);
+        }
         content.AddChild(Label(
             card.Title,
             GodotThemeVariations.CardTitle,
@@ -232,7 +246,9 @@ public sealed partial class CardControl : PanelContainer
                 "CURRENT", live, GodotThemeVariations.CardLiveValue, "LiveValues"));
         }
 
-        if (!string.IsNullOrWhiteSpace(card.Status) && size != CardDisplaySize.Hand)
+        if (!string.IsNullOrWhiteSpace(card.Status)
+            && card.Status is not ("READY" or "EXHAUSTED")
+            && size != CardDisplaySize.Hand)
         {
             content.AddChild(Label(
                 card.Status, GodotThemeVariations.CardState, "StateStrip", wrap: true));

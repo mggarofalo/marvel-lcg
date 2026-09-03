@@ -407,6 +407,17 @@ public sealed partial class AbilityRunner
                 cast.ResolveEffect();
                 break;
 
+            case "cancelOccurrence":
+                // rr:replacement-effect.1: the interrupted occurrence does
+                // not happen. Printed card data decides when this generic
+                // agenda operation is part of an ability's effect.
+                if (cast.World.Agenda.IsOutstanding(cast.Occurrence))
+                {
+                    cast.World.Agenda.Cancel(cast.Occurrence);
+                }
+                cast.ResolveEffect();
+                break;
+
             case "dealEncounterCards":
                 DealEncounterCards(node, cast);
                 break;

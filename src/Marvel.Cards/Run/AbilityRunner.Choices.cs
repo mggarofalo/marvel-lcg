@@ -266,6 +266,7 @@ public sealed partial class AbilityRunner
                     new TargetRequest([.. hand.Select(card => card.ObjectId)], 1,
                         Math.Min(5, hand.Count)))).ToList());
         }
+        string[]? descriptions = ChoiceDescriptions(choice);
         var affordances = cards
             ? LegalCardChoicesForContinuation(choice, cast)
                 .Select(card => new Affordance(
@@ -283,7 +284,8 @@ public sealed partial class AbilityRunner
                     Verb: ChooseVerb,
                     AnchorId: source.ObjectId,
                     AnchorPlayer: World.Scenario,
-                    Label: candidate.Option.Kind));
+                    Label: candidate.Option.Kind,
+                    Description: descriptions?[candidate.Index]));
 
         var offered = affordances.ToList();
         if (offered.Count == 0)
@@ -316,6 +318,33 @@ public sealed partial class AbilityRunner
             ExposesConcealedCandidates = cards
                 && InspectsConcealedPile(choice.Require("from")),
         };
+    }
+
+    private static string[]? ChoiceDescriptions(AbilityNode choice)
+    {
+        if (choice.Field("descriptions") is not { } value)
+        {
+            return null;
+        }
+
+        if (value is not AbilityValue.List list
+            || list.Values.Any(item => item is not AbilityValue.Word))
+        {
+            throw new AbilityException("'choose' descriptions must be a list of strings");
+        }
+
+        string[] descriptions = list.Values
+            .Cast<AbilityValue.Word>()
+            .Select(item => item.Value)
+            .ToArray();
+        int optionCount = Nodes(choice.Require("options")).Count();
+        if (descriptions.Length != optionCount)
+        {
+            throw new AbilityException(
+                $"'choose' has {optionCount} options but {descriptions.Length} descriptions");
+        }
+
+        return descriptions;
     }
 
     /// <inheritdoc/>
