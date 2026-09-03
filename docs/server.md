@@ -197,9 +197,11 @@ variables, labels, health checks, backups of logs, or diagnostic bundles.
 Backups are consistent only while the server is stopped. `docker stop` sends
 `SIGTERM`; the server stops accepting work, lets the current request finish,
 and exits after its atomic save generation is durable. The supported run command
-sets a 40-second stop timeout so the 30-second connection bound and final log
-flush finish before the container runtime may send `SIGKILL`. Confirm exit code
-zero before archiving the named volume:
+sets a 40-second stop timeout. Shutdown closes an incomplete client read or
+response immediately; a decision already dispatched to the sequential engine
+still reaches its synchronous atomic commit before exit, and the final log
+flush has a three-second budget. Confirm exit code zero before archiving the
+named volume:
 
 ```bash
 docker stop marvel-server
