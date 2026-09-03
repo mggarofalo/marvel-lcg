@@ -5,7 +5,7 @@ using Marvel.Rules.State;
 using Marvel.View;
 using Xunit;
 
-namespace Marvel.Godot.Tests;
+namespace Marvel.View.Tests;
 
 public sealed class EventPresentationTests
 {

@@ -2,10 +2,11 @@
 
   <!-- The dependency wall.
 
-       docs/presentation-layer.md draws a line: everything below `Marvel.Godot`
-       is engine, everything at or above it is presentation. The line is only
-       worth drawing if the build refuses to cross it, so these two targets run
-       on every project in the repository and default to denying.
+       docs/presentation-layer.md draws a line around the Godot implementation.
+       Shared presentation lives below that framework boundary in `Marvel.View`
+       and `Marvel.Decisions`. The line is only worth drawing if the build
+       refuses to cross it, so these targets run on every project and deny by
+       default.
 
        Why it matters is determinism, not tidiness. AGENTS.md lists four things
        that must never enter a gameplay path, and Godot supplies three of them

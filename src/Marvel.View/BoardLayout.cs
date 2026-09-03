@@ -1,4 +1,4 @@
-namespace Marvel.Godot;
+namespace Marvel.View;
 
 /// <summary>Presentation-only board lanes derived from the visible area graph.</summary>
 /// <remarks>

@@ -3,7 +3,7 @@ using System.Text;
 using Marvel.Rules.State;
 using Marvel.View;
 
-namespace Marvel.Godot;
+namespace Marvel.View;
 
 /// <summary>A display-only board derived from one visibility-safe snapshot.</summary>
 public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Areas)

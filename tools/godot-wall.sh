@@ -74,6 +74,11 @@ check "a transitive GodotSharp reference stops the build" \
 check "the shared session journal stays below the wall" \
   pass "$probes/Marvel.WallProbe.Session/Marvel.WallProbe.Session.csproj"
 
+# Presentation is broader than the Godot implementation. Its reusable view
+# and decision projects must remain consumable by a non-Godot host.
+check "shared presentation stays below the Godot implementation" \
+  pass "$probes/Marvel.WallProbe.Presentation/Marvel.WallProbe.Presentation.csproj"
+
 # And the escape hatch, without which Marvel.Godot could not build at all.
 check "the presentation layer may opt out" \
   pass "$probes/Marvel.WallProbe.Allowed/Marvel.WallProbe.Allowed.csproj"

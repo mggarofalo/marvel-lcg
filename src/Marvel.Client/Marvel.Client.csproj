@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Marvel.Client</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Marvel.Decisions/Marvel.Decisions.csproj" />
+    <ProjectReference Include="../Marvel.Server/Marvel.Server.csproj" />
+    <ProjectReference Include="../Marvel.View/Marvel.View.csproj" />
+  </ItemGroup>
+
+</Project>

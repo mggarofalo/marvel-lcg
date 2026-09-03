@@ -1,10 +1,26 @@
 # Presentation layer
 
-The presentation architecture has 3 layers:
+The presentation architecture has 5 layers:
 
-1. `Marvel.View` projects engine truth into visibility-safe descriptors.
-2. `Marvel.Server` hosts games behind one transport-neutral protocol.
-3. The Godot client renders those descriptors on macOS and Windows.
+1. `Marvel.View` projects engine truth into visibility-safe descriptors and
+   transport-neutral board and event presentations.
+2. `Marvel.Decisions` composes prompt-bound answers and assesses their legality
+   through engine-owned prompt functions.
+3. `Marvel.Server` hosts games behind one transport-neutral protocol.
+4. `Marvel.Client` owns transport selection, response validation and reusable
+   client progress state.
+5. `Marvel.Godot` implements the desktop controls on macOS and Windows.
+
+Godot is an implementation concern, not the whole presentation layer. Reusable
+presentation code must not reference Godot assemblies. Decision composition
+straddles the boundary deliberately: a client needs to assess a draft before it
+can enable submission, while the engine remains authoritative and validates the
+submitted answer again.
+
+The boundary is checked in both directions. The Godot wall prevents every
+shared project from resolving Godot assemblies. `PresentationBoundaryTests`
+inspect the compiled Godot assembly and reject authoritative engine assemblies
+or rule types outside the prompt, event and outcome contracts it renders.
 
 The Godot project reads the authored Core Set setup surface through
 `IEngineTransport`. Its Start flow opens one or 2 ordered hero seats under an
@@ -24,8 +40,8 @@ decisions rather than state. See [session-ledger.md](session-ledger.md).
 
 ## Build boundary
 
-Godot is the only UI framework planned for the client. No engine, card, content,
-view or server project may reference Godot assemblies.
+Godot is the only UI framework planned for the desktop client. No engine, card,
+content, view, decision or server project may reference Godot assemblies.
 
 `Directory.Build.targets` enforces that rule. The projects under
 `tests/godot-wall/` intentionally violate individual constraints, and

@@ -1,6 +1,6 @@
 using Marvel.Server;
 
-namespace Marvel.Godot;
+namespace Marvel.Client;
 
 /// <summary>Selects the desktop client's engine transport from bounded local configuration.</summary>
 public static class ClientComposition
@@ -33,7 +33,8 @@ public static class ClientComposition
 
     internal static OperationalLog ProcessLog => Log;
 
-    internal static void Flush(TimeSpan timeout) => Log.Flush(timeout);
+    /// <summary>Flushes queued desktop operational records within a bounded interval.</summary>
+    public static void Flush(TimeSpan timeout) => Log.Flush(timeout);
 
     private static OperationalLog CreateLog()
     {

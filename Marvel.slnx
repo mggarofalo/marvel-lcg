@@ -2,8 +2,10 @@
   <Folder Name="/src/">
     <Project Path="src/Marvel.Core/Marvel.Core.csproj" />
     <Project Path="src/Marvel.Rules/Marvel.Rules.csproj" />
+    <Project Path="src/Marvel.Decisions/Marvel.Decisions.csproj" />
     <Project Path="src/Marvel.Cards/Marvel.Cards.csproj" />
     <Project Path="src/Marvel.Content/Marvel.Content.csproj" />
+    <Project Path="src/Marvel.Client/Marvel.Client.csproj" />
     <Project Path="src/Marvel.Session/Marvel.Session.csproj" />
     <Project Path="src/Marvel.Sim/Marvel.Sim.csproj" />
     <Project Path="src/Marvel.View/Marvel.View.csproj" />
@@ -23,6 +25,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/Marvel.Core.Tests/Marvel.Core.Tests.csproj" />
     <Project Path="tests/Marvel.Rules.Tests/Marvel.Rules.Tests.csproj" />
+    <Project Path="tests/Marvel.Decisions.Tests/Marvel.Decisions.Tests.csproj" />
     <Project Path="tests/Marvel.Content.Tests/Marvel.Content.Tests.csproj" />
     <Project Path="tests/Marvel.Session.Tests/Marvel.Session.Tests.csproj" />
     <Project Path="tests/Marvel.Sim.Tests/Marvel.Sim.Tests.csproj" />

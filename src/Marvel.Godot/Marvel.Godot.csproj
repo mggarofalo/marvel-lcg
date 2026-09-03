@@ -9,9 +9,11 @@
     <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
 
-  <!-- The client enters gameplay only through the visibility-safe projection
-       and transport boundary. It never references Game or World directly. -->
+  <!-- Godot implements the presentation layer. Transport-neutral decision
+       composition and visible projections live in their own projects. -->
   <ItemGroup>
+    <ProjectReference Include="../Marvel.Client/Marvel.Client.csproj" />
+    <ProjectReference Include="../Marvel.Decisions/Marvel.Decisions.csproj" />
     <ProjectReference Include="../Marvel.Server/Marvel.Server.csproj" />
     <ProjectReference Include="../Marvel.View/Marvel.View.csproj" />
   </ItemGroup>

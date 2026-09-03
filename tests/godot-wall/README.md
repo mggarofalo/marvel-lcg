@@ -11,6 +11,7 @@ Marvel.WallProbe.Middle references the stub. The hop that makes it transitive.
 Marvel.WallProbe.OptOut sets the opt-out below the wall -> must FAIL (MARVELWALLOPT)
 Marvel.WallProbe        references only Middle  -> must FAIL  (MARVELWALL)
 Marvel.WallProbe.Session references Marvel.Session -> must SUCCEED
+Marvel.WallProbe.Presentation references Client, View and Decisions -> must SUCCEED
 Marvel.WallProbe.Allowed references the stub, opted out -> must SUCCEED
 Marvel.WallProbe.Future targets net10.0            -> must FAIL  (MARVELTFM)
 ```
@@ -25,6 +26,10 @@ hatch is load-bearing and is tested rather than assumed.
 
 `Marvel.WallProbe.Session` keeps the deterministic journal consumable below the
 wall. It is the named positive probe added with that shared project.
+
+`Marvel.WallProbe.Presentation` keeps the transport-neutral client, view and
+decision projects independent of the Godot implementation. Other clients can
+reuse all three.
 
 `Marvel.WallProbe.OptOut` proves that the escape hatch belongs only to exact
 presentation and probe project paths. It copies both the ordinary opt-out and
