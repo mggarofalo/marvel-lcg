@@ -49,17 +49,12 @@ signed_app="$scratch/Marvel Champions.app"
 
 # Sign Mach-O code from the leaves toward the outer application. Apple warns
 # that --deep is verification shorthand, not a correct signing strategy.
-while IFS= read -r code; do
-    codesign --force --timestamp --options runtime \
-        --sign "$MARVEL_MACOS_SIGNING_IDENTITY" "$code"
-done < <(
-    find "$signed_app/Contents" -type f -print0 \
-        | xargs -0 file \
-        | awk -F: '/Mach-O/ { print $1 }' \
-        | awk '{ print length, $0 }' \
-        | sort -rn \
-        | cut -d' ' -f2-
-)
+while IFS= read -r -d '' code; do
+    if file -b "$code" | grep -q 'Mach-O'; then
+        codesign --force --timestamp --options runtime \
+            --sign "$MARVEL_MACOS_SIGNING_IDENTITY" "$code"
+    fi
+done < <(find "$signed_app/Contents" -type f -print0)
 while IFS= read -r framework; do
     codesign --force --timestamp --options runtime \
         --sign "$MARVEL_MACOS_SIGNING_IDENTITY" "$framework"
