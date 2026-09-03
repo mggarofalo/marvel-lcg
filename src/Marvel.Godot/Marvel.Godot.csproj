@@ -17,10 +17,12 @@
   <!-- Godot implements the presentation layer. Transport-neutral decision
        composition and visible projections live in their own projects. -->
   <ItemGroup>
-    <ProjectReference Include="../Marvel.Client/Marvel.Client.csproj" />
+    <ProjectReference Include="../Marvel.Client/Marvel.Client.csproj"
+                      AdditionalProperties="MarvelServerOutputType=Library" />
     <ProjectReference Include="../Marvel.Decisions/Marvel.Decisions.csproj" />
     <ProjectReference Include="../Marvel.Rules/Marvel.Rules.csproj" />
-    <ProjectReference Include="../Marvel.Server/Marvel.Server.csproj" />
+    <ProjectReference Include="../Marvel.Server/Marvel.Server.csproj"
+                      AdditionalProperties="MarvelServerOutputType=Library" />
     <ProjectReference Include="../Marvel.View/Marvel.View.csproj" />
   </ItemGroup>
 
