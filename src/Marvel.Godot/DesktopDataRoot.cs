@@ -6,11 +6,16 @@ namespace Marvel.Godot;
 internal static class DesktopDataRoot
 {
     /// <summary>Returns the data root for the current editor or exported process.</summary>
-    public static string Current() => Resolve(
-        Engine.IsEditorHint(),
-        OS.HasFeature("macos"),
-        OS.GetExecutablePath(),
-        ProjectSettings.GlobalizePath("res://../.."));
+    public static string Current()
+    {
+        bool macOS = OS.HasFeature("macos");
+        string executablePath = OS.GetExecutablePath();
+        string editorDataRoot = ProjectSettings.GlobalizePath("res://../..");
+        string packagedDataRoot = Resolve(false, macOS, executablePath, editorDataRoot);
+        bool developerProcess = Engine.IsEditorHint()
+            || !File.Exists(Path.Combine(packagedDataRoot, "release-manifest.json"));
+        return Resolve(developerProcess, macOS, executablePath, editorDataRoot);
+    }
 
     internal static string Resolve(
         bool editor,

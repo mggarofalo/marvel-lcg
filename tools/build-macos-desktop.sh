@@ -48,6 +48,9 @@ trap cleanup EXIT
 source_root="$scratch/source"
 stage="$scratch/stage"
 mkdir -p "$source_root/src" "$source_root/tools" "$stage"
+# macOS exposes /var through the /private/var physical path. Roslyn records the
+# physical path, so give PathMap that same spelling for byte-identical builds.
+source_root=$(cd "$source_root" && pwd -P)
 
 for file in Directory.Build.props Directory.Build.targets Directory.Packages.props global.json; do
     cp "$repository/$file" "$source_root/$file"

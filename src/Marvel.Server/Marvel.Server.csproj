@@ -6,6 +6,8 @@
   <PropertyGroup>
     <OutputType Condition="'$(MarvelServerOutputType)' == ''">Exe</OutputType>
     <OutputType Condition="'$(MarvelServerOutputType)' != ''">$(MarvelServerOutputType)</OutputType>
+    <OutputPath Condition="'$(MarvelServerOutputType)' == 'Library'">bin/embedded/$(Configuration)/</OutputPath>
+    <IntermediateOutputPath Condition="'$(MarvelServerOutputType)' == 'Library'">obj/embedded/$(Configuration)/</IntermediateOutputPath>
     <RootNamespace>Marvel.Server</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
