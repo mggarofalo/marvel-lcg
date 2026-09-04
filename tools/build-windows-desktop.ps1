@@ -4,7 +4,8 @@ param(
     [Parameter(Mandatory = $true)][string]$Version,
     [Parameter(Mandatory = $true)][string]$Commit,
     [Parameter(Mandatory = $true)][string]$Output,
-    [string]$Publisher
+    [string]$Publisher,
+    [string]$WindowsSdkBin
 )
 
 $ErrorActionPreference = 'Stop'
@@ -30,8 +31,14 @@ function Copy-SourceTree {
 
 function Find-WindowsSdkTool {
     param([string]$Name)
-    $tool = Join-Path ${env:ProgramFiles(x86)} `
-        "Windows Kits\10\bin\$WindowsSdkVersion\x64\$Name"
+    $sdkBin = if ($WindowsSdkBin) {
+        [IO.Path]::GetFullPath($WindowsSdkBin)
+    }
+    else {
+        Join-Path ${env:ProgramFiles(x86)} `
+            "Windows Kits\10\bin\$WindowsSdkVersion\x64"
+    }
+    $tool = Join-Path $sdkBin $Name
     if (-not (Test-Path -LiteralPath $tool -PathType Leaf)) {
         throw "$Name was not found in pinned Windows SDK $WindowsSdkVersion"
     }
