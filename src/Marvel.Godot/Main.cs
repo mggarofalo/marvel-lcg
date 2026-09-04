@@ -44,9 +44,12 @@ public sealed partial class Main : Control
     private RichTextLabel eventLog = null!;
     private CheckButton eventMotion = null!;
     private Button eventSkip = null!;
+    private Button copyReport = null!;
+    private Button saveReport = null!;
     private Tween? eventTween;
     private int eventGeneration;
     private readonly EventChronology events = new();
+    private readonly InteractionTranscript transcript = new();
     private LineEdit endpoint = null!;
     private LineEdit gameId = null!;
     private OptionButton hero = null!;
@@ -243,6 +246,10 @@ public sealed partial class Main : Control
         eventMotion = GetNode<CheckButton>("StatusBar/Motion");
         eventSkip = GetNode<Button>(
             $"{content}/Play/Prompt/Margin/Stack/Workbench/History/EventHeader/Skip");
+        copyReport = GetNode<Button>(
+            $"{content}/Play/Prompt/Margin/Stack/Workbench/History/EventHeader/CopyReport");
+        saveReport = GetNode<Button>(
+            $"{content}/Play/Prompt/Margin/Stack/Workbench/History/EventHeader/SaveReport");
         eventMotion.Toggled += enabled =>
         {
             if (!enabled)
@@ -251,6 +258,8 @@ public sealed partial class Main : Control
             }
         };
         eventSkip.Pressed += SkipEventPresentation;
+        copyReport.Pressed += CopyInteractionReport;
+        saveReport.Pressed += SaveInteractionReport;
         decisions.Submitted += OnDecisionSubmitted;
         decisions.AnchorFocused += ids => boardRender?.Highlight(ids);
         decisions.CardHovered += PreviewHandCard;
@@ -725,11 +734,14 @@ public sealed partial class Main : Control
 
             session = startup.Session;
             currentProgress = null;
+            transcript.Reset(
+                uint.Parse(seed.Text, CultureInfo.InvariantCulture),
+                available.Choices!.Runtime);
             transientInvitation = startup.Invitations.Count == 0
                 ? null
                 : startup.Invitations[0].Invitation;
             invitationOffer.Visible = transientInvitation is not null;
-            RenderGame(startup.Response!, resetEvents: true);
+            RenderGame(startup.Response!, resetEvents: true, operation: EngineProtocol.Open);
             setupPanel.Visible = false;
             board.Visible = true;
             eyebrow.Text = endpoint.Text.Length == 0
@@ -775,6 +787,12 @@ public sealed partial class Main : Control
             }
 
             client = connection.Client;
+            ClientSetupResult available = await client!.ReadSetupAsync();
+            if (!available.Succeeded)
+            {
+                RestoreEntryAfterFailure(available.Error!);
+                return;
+            }
             ClientEntryResult attached = await client!.AttachAsync(gameId.Text, secret);
             secret = string.Empty;
             if (!attached.Succeeded)
@@ -785,7 +803,11 @@ public sealed partial class Main : Control
 
             session = attached.Session;
             currentProgress = null;
-            RenderGame(attached.Response!, resetEvents: true);
+            transcript.Reset(seed: null, runtime: available.Choices!.Runtime);
+            RenderGame(
+                attached.Response!,
+                resetEvents: true,
+                operation: EngineProtocol.Attach);
             setupPanel.Visible = false;
             board.Visible = true;
             eyebrow.Text = "CORE SET  /  JOINED TABLE";
@@ -817,6 +839,19 @@ public sealed partial class Main : Control
         status.Text = "INVITATION COPIED  ·  THE ONE-TIME SECRET WAS REMOVED FROM THIS SCREEN";
     }
 
+    private void CopyInteractionReport()
+    {
+        DisplayServer.ClipboardSet(transcript.Export());
+        status.Text = "INTERACTION REPORT COPIED  ·  AUTHORIZED GAME CONTENT INCLUDED";
+    }
+
+    private void SaveInteractionReport()
+    {
+        string path = Path.Combine(OS.GetUserDataDir(), "marvel-interaction-report.json");
+        File.WriteAllText(path, transcript.Export());
+        status.Text = $"INTERACTION REPORT SAVED  ·  {path}";
+    }
+
     private void RestoreEntryAfterFailure(ClientStartupError error)
     {
         SetSetupControlsEnabled(true);
@@ -838,6 +873,7 @@ public sealed partial class Main : Control
             ApplyProgress(GameProgressPresentation.Resolving());
             promptProgress.Text = "RESOLVING  ·  WAITING FOR ENGINE";
             promptProgress.ThemeTypeVariation = GodotThemeVariations.StatusText;
+            transcript.RecordDecision(CurrentGame!.Revision, decision);
             ClientResolutionResult result = await client!.ResolveAsync(
                 session!, decision);
             if (!IsInsideTree())
@@ -957,7 +993,8 @@ public sealed partial class Main : Control
                 RenderGame(
                     result.Response!,
                     preserveEvents: true,
-                    priorProgress: prior);
+                    priorProgress: prior,
+                    operation: EngineProtocol.Sync);
                 synchronize.TooltipText = "Read the current authoritative table.";
             }
             else if (result.SessionDisposition == ClientSessionDisposition.Unavailable)
@@ -1043,8 +1080,10 @@ public sealed partial class Main : Control
         EngineResponse response,
         bool resetEvents = false,
         bool preserveEvents = false,
-        GameProgressPresentation? priorProgress = null)
+        GameProgressPresentation? priorProgress = null,
+        string operation = EngineProtocol.Resolve)
     {
+        transcript.RecordResponse(operation, response);
         Outcome previousOutcome = CurrentGame?.World?.Outcome ?? Outcome.Unfinished;
         CurrentGame = response;
         WorldDescriptor world = response.World!;

@@ -119,10 +119,10 @@ public sealed class ObligationTests
         var events = new List<GameEvent>();
 
         var flip = Sequence.Work(world, Cards, runner, events)!;
-        Assert.Equal(2, flip.Affordances.Count);
+        var remain = Assert.Single(flip.Affordances);
         Sequence.Answer(
             world, Cards, runner, flip,
-            Decision.Take(flip.Affordances[1].Id), events);
+            Decision.Take(remain.Id), events);
 
         var consequence = Sequence.Work(world, Cards, runner, events)!;
         Assert.Equal(2, consequence.Affordances.Count);

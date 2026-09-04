@@ -165,6 +165,8 @@ public sealed class EnemyAttackDefenderTests
         var asked = Attack.DeclareDefender(world, facts, new NoCardAbilities());
 
         Assert.Equal(hero.ObjectId, Assert.Single(asked!.Affordances).AnchorId);
+        Assert.Contains("attacking", asked.Description, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(villain.FaceId, asked.Description, StringComparison.Ordinal);
         Attack.Defend(
             world, facts, new NoCardAbilities(), Decision.Take(hero.ObjectId), []);
         Assert.True(world.Attack!.BasicDefense);

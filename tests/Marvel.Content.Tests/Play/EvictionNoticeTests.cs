@@ -72,6 +72,26 @@ public sealed class EvictionNoticeTests
             step => step.What == Steps.ChooseOption && step.Index == Second);
     }
 
+    [Rule("rr:choose-option.2")]
+    [Fact]
+    public void AnOptionThatCannotChangeFormIsNotOffered()
+    {
+        // An option must be able to resolve at least partially. The same
+        // continuation filter applies to every authored choice; Eviction
+        // Notice supplies the regression because alter-ego is already its
+        // requested destination.
+        var (world, card) = Reveal(hero: false);
+        var waiting = Assert.Single(world.Agenda.Outstanding, step =>
+            step.What == Steps.ChooseOption);
+
+        var prompt = AuthoredCards.Runner().Choosing(
+            world, card, 0, waiting.Index, waiting.Tier)!;
+
+        var remain = Assert.Single(prompt.Affordances);
+        Assert.Equal(1, remain.Id);
+        Assert.Equal("Remain in your current form", remain.Description);
+    }
+
     [Rule("rr:removed-from-the-game")]
     [Fact]
     public void ExhaustingPeterParkerRemovesTheObligation()

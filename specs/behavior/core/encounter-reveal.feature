@@ -236,9 +236,9 @@ Feature: Revealing Core encounter card types
     And seat 1 shows identity face 01040b
     And seat 1's hand is empty
     When card 01155 copy 0 is revealed to seat 1
-    Then option 1 is offered by the pending decision
+    Then option 1 is not offered by the pending decision
     And option 2 is offered by the pending decision
-    When seat 1 chooses option 2 for the pending encounter-card decision
+    When seat 1 chooses option 1 for the pending encounter-card decision
     Then option 1 is offered by the pending decision
     And option 2 is not offered by the pending decision
     When seat 1 chooses option 1 for the pending encounter-card decision

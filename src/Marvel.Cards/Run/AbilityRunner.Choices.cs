@@ -267,6 +267,8 @@ public sealed partial class AbilityRunner
                         Math.Min(5, hand.Count)))).ToList());
         }
         string[]? descriptions = ChoiceDescriptions(choice);
+        bool optionalTransition = !cards
+            && Nodes(choice.Require("options")).Any(IsExplicitDecline);
         var affordances = cards
             ? LegalCardChoicesForContinuation(choice, cast)
                 .Select(card => new Affordance(
@@ -274,11 +276,12 @@ public sealed partial class AbilityRunner
                     Verb: ChooseVerb,
                     AnchorId: card.ObjectId,
                     AnchorPlayer: card.Owner,
-                    Label: card.FaceId))
+                    Label: card.FaceId,
+                    Description: ChoiceCardDescription(choice, card, cast)))
             : Nodes(choice.Require("options"))
                 .Select((option, index) => (Option: option, Index: index))
                 .Where(candidate => OptionIsLegalForContinuation(
-                    candidate.Option, cast))
+                    candidate.Option, cast, optionalTransition))
                 .Select(candidate => new Affordance(
                     Id: candidate.Index,
                     Verb: ChooseVerb,
@@ -318,6 +321,31 @@ public sealed partial class AbilityRunner
             ExposesConcealedCandidates = cards
                 && InspectsConcealedPile(choice.Require("from")),
         };
+    }
+
+    private static string ChoiceCardDescription(
+        AbilityNode choice, Card card, Cast cast)
+    {
+        string title = cast.World.Facts.Title(card.FaceId);
+        if (cast.World.Facts.Kind(card.FaceId) is CardKind.Hero or CardKind.AlterEgo)
+        {
+            return $"Select {cast.World.Seats[card.Owner].Name} → {title}";
+        }
+
+        AbilityNode effect = Tree(choice.Require("effect"));
+        if (effect.Kind == "removeThreat")
+        {
+            long current = card.Tokens.GetValueOrDefault("k_threat");
+            long removed = Math.Min(current, Amount(effect.Require("amount"), cast));
+            long result = current - removed;
+            long threshold = cast.World.Facts.PrintedValue(
+                card.FaceId, "TargetThreat", cast.World.Players);
+            return threshold > 0
+                ? $"{title} · {current}/{threshold} → {result}/{threshold} threat"
+                : $"{title} · {current} → {result} threat";
+        }
+
+        return title;
     }
 
     private static string[]? ChoiceDescriptions(AbilityNode choice)
@@ -829,7 +857,9 @@ public sealed partial class AbilityRunner
                 + $"number {input.Affordance}");
         }
 
-        if (!OptionIsLegalForContinuation(options[input.Affordance], cast))
+        bool optionalTransition = options.Any(IsExplicitDecline);
+        if (!OptionIsLegalForContinuation(
+                options[input.Affordance], cast, optionalTransition))
         {
             throw new RulesNotImplementedException(
                 $"'{source.FaceId}' cannot choose illegal option {input.Affordance}");
@@ -875,9 +905,12 @@ public sealed partial class AbilityRunner
     }
 
     private static bool OptionIsLegalForContinuation(
-        AbilityNode option, Cast cast)
+        AbilityNode option, Cast cast, bool requireStateChange = false)
     {
-        bool locallyLegal = OptionIsLegal(option, cast);
+        bool locallyLegal = OptionIsLegal(option, cast)
+            && (!requireStateChange
+                || IsExplicitDecline(option)
+                || CanPartiallyResolve(option, cast));
         if (!locallyLegal || cast.AbilityPath.Count == 0)
         {
             return locallyLegal;
@@ -907,6 +940,9 @@ public sealed partial class AbilityRunner
             cast.SetFilteringContinuationOption(priorFiltering);
         }
     }
+
+    private static bool IsExplicitDecline(AbilityNode option) =>
+        option.Kind == "seq" && !Nodes(option.Argument).Any();
 
     /// <summary>Cards that meet both a choice's selector and its nested effect.</summary>
     /// <remarks>

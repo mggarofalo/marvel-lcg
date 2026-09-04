@@ -529,7 +529,12 @@ public static class Attack
                     AnchorId: card.ObjectId,
                     AnchorPlayer: card.Area.PlayArea.Player,
                     Label: DefenseVerb)),
-            ]);
+            ])
+        {
+            Description = $"{facts.Title(world.Cards[attack.Enemy].FaceId)} is attacking "
+                + $"{facts.Title(world.Cards[attack.Target].FaceId)}. "
+                + "Choose a ready hero or ally to defend, or leave the attack undefended.",
+        };
     }
 
     /// <summary>The character that answer names becomes the defender.</summary>

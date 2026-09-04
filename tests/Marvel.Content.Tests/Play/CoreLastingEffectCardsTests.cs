@@ -58,11 +58,40 @@ public sealed class CoreLastingEffectCardsTests
 
         runner.Act(
             world, new PendingAbility(support.ObjectId, AbilityType.Action, 0), [], []);
+        var choice = Assert.Single(world.Agenda.Outstanding);
+        var prompt = runner.Choosing(world, support, 0, choice.Index, choice.Tier)!;
+        Assert.Equal(
+            "Select p1 → Spider-Man",
+            prompt.Affordances.Single(option =>
+                option.Id == world.Seats[1].IdentityCard.ObjectId).Description);
         AnswerCardChoice(world, runner, support, world.Seats[1].IdentityCard);
 
         Assert.False(support.Ready);
         Assert.Equal(3, CardPlay.CostOf(world, Cards, world.Seats[0], mine).Amount);
         Assert.Equal(2, CardPlay.CostOf(world, Cards, world.Seats[1], theirs).Amount);
+    }
+
+    [Fact]
+    public void ThreatRemovingCardChoicesDescribeTheResultingThreat()
+    {
+        // The report is a client wire choice: show current and resulting game
+        // state so the player does not have to infer the effect from card text.
+        var world = Board();
+        var scheme = world.CreateCard(
+            "01097b", world.AreaOf(DeckType.MainSchemesArea));
+        scheme.PlaceTokens("k_threat", 2);
+        var team = world.CreateCard(
+            "01064", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        team.PlaceTokens("c_snoop", 3);
+        var runner = AuthoredCards.Runner();
+
+        runner.Act(
+            world, new PendingAbility(team.ObjectId, AbilityType.Action, 0), [], []);
+        var step = Assert.Single(world.Agenda.Outstanding);
+        var prompt = runner.Choosing(world, team, 0, step.Index, step.Tier)!;
+
+        Assert.Contains("2/14 → 1/14 threat", Assert.Single(prompt.Affordances).Description,
+            StringComparison.Ordinal);
     }
 
     [Rule("rr:initiating-abilities.step.3")]
