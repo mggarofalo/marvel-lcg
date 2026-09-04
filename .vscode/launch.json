@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Play Marvel Champions",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build Marvel.Godot",
+      "program": "${env:GODOT4}",
+      "args": [
+        "--path",
+        "${workspaceFolder}/src/Marvel.Godot"
+      ],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "osx": {
+        "program": "/Applications/Godot_mono.app/Contents/MacOS/Godot"
+      }
+    }
+  ]
+}

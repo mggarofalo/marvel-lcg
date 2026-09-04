@@ -1,4 +1,7 @@
-/.vscode/**
+/.vscode/*
+!/.vscode/extensions.json
+!/.vscode/launch.json
+!/.vscode/tasks.json
 
 # Compiled Python bytecode. No Python source remains, but a stale
 # `__pycache__` outlives the file it was compiled from -- and once the tree it
