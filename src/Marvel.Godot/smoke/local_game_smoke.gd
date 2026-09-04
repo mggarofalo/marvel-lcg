@@ -86,6 +86,7 @@ func _run() -> void:
 	var tested_active_motion_toggle := false
 	var captured_villain_phase := false
 	var changed_form := false
+	var tested_undo := false
 	var saw_attack_resolution := false
 	var decisions := 0
 	while not _is_complete():
@@ -140,6 +141,27 @@ func _run() -> void:
 			return _is_complete() or not _status().text.begins_with("DECISION SENT")):
 			_fail("the engine did not reconcile decision %d" % decisions)
 			return
+		if changed_form and not tested_undo:
+			var history := _node(
+				"Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel
+			var undo := _node(
+				"Play/Prompt/Margin/Stack/Workbench/History/EventHeader/UndoLast") as Button
+			if undo.disabled or "Spider-Man changed form." not in history.get_parsed_text() \
+					or "Undo to before this action" not in history.get_parsed_text():
+				_fail("the reversible form change has no authoritative undo controls")
+				return
+			undo.pressed.emit()
+			if not await _wait_for(func() -> bool:
+				return not (_node("Play/Prompt/Margin/Stack/PromptHeader/Progress") as Label) \
+					.text.begins_with("UNDOING")):
+				_fail("undoing the form change did not settle")
+				return
+			if "Peter Parker" not in _visible_text(_play()):
+				_fail("undoing the form change did not restore alter-ego form")
+				return
+			tested_undo = true
+			changed_form = false
+			continue
 		var event_skip := _node("Play/Prompt/Margin/Stack/Workbench/History/EventHeader/Skip") as Button
 		if motion_enabled and not event_skip.disabled \
 				and (_is_complete() or _first_enabled_choice() != null):
@@ -169,6 +191,10 @@ func _run() -> void:
 					return
 				if not await _capture_checkpoint("attack-interrupt"):
 					return
+				if not captured_villain_phase:
+					if not await _capture_checkpoint("villain-phase"):
+						return
+					captured_villain_phase = true
 		var history_text := (_node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel) \
 			.get_parsed_text().to_lower()
 		if not captured_villain_phase and not _is_complete() and "villain phase" in history_text:
@@ -176,7 +202,7 @@ func _run() -> void:
 				return
 			captured_villain_phase = true
 
-	if not saw_mulligan or not saw_pass or not saw_end_phase or not changed_form:
+	if not saw_mulligan or not saw_pass or not saw_end_phase or not changed_form or not tested_undo:
 		_fail("the journey missed a required visible decision path")
 		return
 	if not saw_attack_resolution:

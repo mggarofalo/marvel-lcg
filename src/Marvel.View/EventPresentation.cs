@@ -54,6 +54,80 @@ public sealed record EventBatchPresentation(
     IReadOnlyList<EventPresentation> Cues,
     IReadOnlyList<EventPresentation> Highlights);
 
+/// <summary>Authorized engine facts for one completed player action.</summary>
+public sealed record ActionHistoryFacts(
+    int Cursor,
+    string Actor,
+    string Role,
+    string Phase,
+    string? Verb,
+    string Action,
+    IReadOnlyList<string> ResourceGenerators,
+    Outcome? Outcome = null);
+
+/// <summary>Formats completed actions without exposing raw event diagnostics.</summary>
+public static class ActionHistoryPresenter
+{
+    /// <summary>Returns one player-facing sentence for a completed history unit.</summary>
+    public static string Present(ActionHistoryFacts action)
+    {
+        ArgumentNullException.ThrowIfNull(action);
+        ArgumentException.ThrowIfNullOrWhiteSpace(action.Actor);
+        ArgumentException.ThrowIfNullOrWhiteSpace(action.Action);
+        ArgumentNullException.ThrowIfNull(action.ResourceGenerators);
+
+        if (action.Outcome is { } outcome)
+        {
+            return EventPresenter.Terminal(outcome).Summary;
+        }
+
+        if (string.Equals(action.Verb, "Play", StringComparison.Ordinal))
+        {
+            string payment = action.ResourceGenerators.Count == 0
+                ? string.Empty
+                : $", generating resources from {Names(action.ResourceGenerators)}";
+            return $"{action.Actor} played {action.Action}{payment}.";
+        }
+
+        if (string.Equals(action.Verb, Game.ChangeForm, StringComparison.Ordinal))
+        {
+            return $"{action.Actor} changed form.";
+        }
+
+        if (string.Equals(action.Verb, Game.EndPhaseVerb, StringComparison.Ordinal))
+        {
+            return $"{action.Actor} ended their turn.";
+        }
+
+        string choice = action.Action.Trim().TrimEnd('.');
+        return action.Role == "phase_step"
+            || !string.Equals(action.Phase, "PlayerTurn", StringComparison.Ordinal)
+            ? $"{action.Actor} resolved {choice} during the {Words(action.Phase)} phase."
+            : $"{action.Actor} used {choice}.";
+    }
+
+    private static string Names(IReadOnlyList<string> names) => names.Count switch
+    {
+        1 => names[0],
+        2 => $"{names[0]} and {names[1]}",
+        _ => $"{string.Join(", ", names.Take(names.Count - 1))}, and {names[^1]}",
+    };
+
+    private static string Words(string value)
+    {
+        var words = new StringBuilder(value.Length + 4);
+        for (int index = 0; index < value.Length; index++)
+        {
+            if (index > 0 && char.IsUpper(value[index]) && char.IsLower(value[index - 1]))
+            {
+                words.Append(' ');
+            }
+            words.Append(char.ToLowerInvariant(value[index]));
+        }
+        return words.ToString();
+    }
+}
+
 /// <summary>Formats the closed semantic-event vocabulary without consulting engine state.</summary>
 public static class EventPresenter
 {

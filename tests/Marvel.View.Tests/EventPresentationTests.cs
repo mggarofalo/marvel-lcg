@@ -10,6 +10,55 @@ namespace Marvel.View.Tests;
 public sealed class EventPresentationTests
 {
     [Fact]
+    public void CardPlayIsOneActionThatNamesCardsAndResourceAbilities()
+    {
+        string summary = ActionHistoryPresenter.Present(new ActionHistoryFacts(
+            4,
+            "Spider-Man",
+            "turn_action",
+            "PlayerTurn",
+            "Play",
+            "Black Cat",
+            ["Scientist", "First Aid"]));
+
+        Assert.Equal(
+            "Spider-Man played Black Cat, generating resources from Scientist and First Aid.",
+            summary);
+        Assert.DoesNotContain("Discard", summary, StringComparison.Ordinal);
+        Assert.DoesNotContain("·", summary, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void FormChangesAreActionsRatherThanWireDiagnostics()
+    {
+        string summary = ActionHistoryPresenter.Present(new ActionHistoryFacts(
+            2,
+            "Spider-Man",
+            "turn_control",
+            "PlayerTurn",
+            Game.ChangeForm,
+            "Peter Parker",
+            []));
+
+        Assert.Equal("Spider-Man changed form.", summary);
+    }
+
+    [Fact]
+    public void AutomaticStepsNameTheirPhase()
+    {
+        string summary = ActionHistoryPresenter.Present(new ActionHistoryFacts(
+            4,
+            "Rhino",
+            "forced_resolution",
+            "Villain",
+            "Resolve",
+            "Rhino activates",
+            []));
+
+        Assert.Equal("Rhino resolved Rhino activates during the villain phase.", summary);
+    }
+
+    [Fact]
     public void EveryWireEventKindHasAPresentation()
     {
         Type[] wireKinds = typeof(GameEvent)

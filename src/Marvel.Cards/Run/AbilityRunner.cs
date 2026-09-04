@@ -998,6 +998,25 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     /// <inheritdoc/>
+    public string ResourceGeneratorName(World world, int player, int card)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        Card source = world.Cards[card];
+        if (source.Area.Type == DeckType.HandsArea)
+        {
+            return world.Facts.Title(source.FaceId);
+        }
+
+        bool available = ResourceAbilities(world, player)
+            .Any(candidate => candidate.Effect == card);
+        CardAbility? ability = available
+            ? On(source).FirstOrDefault(candidate =>
+                candidate.Trigger.Timing == AbilityType.Resource)
+            : null;
+        return ability?.Name ?? world.Facts.Title(source.FaceId);
+    }
+
+    /// <inheritdoc/>
     public IReadOnlyList<ResourceSource> PrintedResourceAbilities(World world, int player)
     {
         ArgumentNullException.ThrowIfNull(world);

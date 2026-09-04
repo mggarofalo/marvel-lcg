@@ -180,6 +180,8 @@ public sealed class LocalGameClient
     private const string ResolveRequestId = "local-resolve";
     private const string SetupRequestId = "local-setup";
     private const string SynchronizeRequestId = "local-sync";
+    private const string UndoRequestId = "local-undo";
+    private readonly Dictionary<ClientSession, HistoryDescriptor> histories = [];
     private readonly Dictionary<ClientSession, long> revisions = [];
     private readonly IEngineTransport transport;
     private readonly OperationalLog log;
@@ -630,6 +632,123 @@ public sealed class LocalGameClient
             .ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Reconstructs the session at one server-advertised earlier history
+    /// boundary without ever retrying an uncertain mutation.
+    /// </summary>
+    public async ValueTask<ClientResolutionResult> UndoAsync(
+        ClientSession session,
+        int cursor,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(session);
+        ClientStartupError? sessionFailure = SessionError(session);
+        if (sessionFailure is not null)
+        {
+            return new ClientResolutionResult(
+                Response: null,
+                sessionFailure,
+                ClientMutationDisposition.NotSent,
+                ClientSessionDisposition.Unavailable);
+        }
+
+        if (!histories.TryGetValue(session, out HistoryDescriptor? history)
+            || !history.Undo.Contains(cursor))
+        {
+            return new ClientResolutionResult(
+                Response: null,
+                Error(
+                    "history_unavailable",
+                    "New information or table authority makes that history point unavailable."),
+                ClientMutationDisposition.NotSent,
+                ClientSessionDisposition.Active);
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        ClientStartupError? failure = null;
+        ClientMutationDisposition mutation = ClientMutationDisposition.Uncertain;
+        long expectedRevision = RevisionFor(session);
+        try
+        {
+            string requestId = NextRequestId(UndoRequestId);
+            EngineResponse response = await transport.ExchangeAsync(
+                EngineRequest.UndoGame(
+                    requestId,
+                    session.GameId,
+                    session.Capability,
+                    cursor,
+                    expectedRevision),
+                cancellationToken).ConfigureAwait(false);
+            ClientStartupError? envelope = EnvelopeError(
+                response, requestId, session.GameId);
+            if (envelope is not null)
+            {
+                failure = envelope;
+            }
+            else if (response.Error is null)
+            {
+                if (HasCompleteGameplayResponse(response, allowWaiting: true)
+                    && expectedRevision < long.MaxValue
+                    && response.Revision == expectedRevision + 1)
+                {
+                    RememberRevision(session, response);
+                    return new ClientResolutionResult(
+                        Sanitize(response),
+                        Error: null,
+                        ClientMutationDisposition.Accepted,
+                        ClientSessionDisposition.Active);
+                }
+
+                failure = Error(
+                    "invalid_response",
+                    "The game service did not return a complete current table.");
+            }
+            else if (!Complete(response.Error))
+            {
+                failure = Error(
+                    "invalid_response",
+                    "The game service returned an incomplete error.");
+            }
+            else if (response.Error.Code == "session_not_found")
+            {
+                return UnavailableResolution(ClientMutationDisposition.Rejected);
+            }
+            else if (response.Error.Code == "game_aborted")
+            {
+                return UnavailableResolution(ClientMutationDisposition.Uncertain);
+            }
+            else
+            {
+                mutation = ClientMutationDisposition.Rejected;
+                failure = Error(response.Error.Code, response.Error.Message);
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (EngineTransportException failureBeforeResponse)
+            when (!failureBeforeResponse.RequestMayHaveCommitted)
+        {
+            return new ClientResolutionResult(
+                Response: null,
+                Error(
+                    "transport_unavailable",
+                    "The history change was not sent. Try it again when the game service is available."),
+                ClientMutationDisposition.NotSent,
+                ClientSessionDisposition.Active);
+        }
+        catch (Exception)
+        {
+            failure = Error(
+                "transport_unavailable",
+                "The undo response was lost. The client will read the current table without repeating it.");
+        }
+
+        return await RecoverCurrentViewAsync(session, failure, mutation)
+            .ConfigureAwait(false);
+    }
+
     /// <summary>Reads one complete current view without mutating game state.</summary>
     public async ValueTask<ClientSynchronizationResult> SynchronizeAsync(
         ClientSession session,
@@ -898,8 +1017,14 @@ public sealed class LocalGameClient
     private long RevisionFor(ClientSession session) =>
         revisions.TryGetValue(session, out long revision) ? revision : 0;
 
-    private void RememberRevision(ClientSession session, EngineResponse response) =>
+    private void RememberRevision(ClientSession session, EngineResponse response)
+    {
         revisions[session] = response.Revision;
+        if (response.History is not null)
+        {
+            histories[session] = response.History;
+        }
+    }
 
     private static bool TryResolveModularSets(
         SetupChoices available,
@@ -1006,6 +1131,7 @@ public sealed class LocalGameClient
         response.Revision >= 0
         && HasCompleteEvents(response.Events)
         && HasCompleteBoard(response.World)
+        && HasCompleteHistory(response.History)
         && Enum.IsDefined(response.World!.Outcome)
         && (response.World.Outcome == Outcome.Unfinished
             ? (allowWaiting && response.Prompt is null) || HasCompletePrompt(response.Prompt)
@@ -1014,6 +1140,32 @@ public sealed class LocalGameClient
     private static bool HasCompleteSynchronizationResponse(EngineResponse response) =>
         response.Events is { Count: 0 }
         && HasCompleteGameplayResponse(response, allowWaiting: true);
+
+    private static bool HasCompleteHistory(HistoryDescriptor? history)
+    {
+        if (history is null
+            || history.Cursor < 0
+            || history.Undo is null
+            || history.Redo is null
+            || history.Entries is null
+            || history.Entries.Any(entry => entry is null
+                || entry.Cursor < 0
+                || entry.Cursor >= history.Cursor
+                || string.IsNullOrWhiteSpace(entry.Summary)))
+        {
+            return false;
+        }
+
+        int[] entryCursors = [.. history.Entries.Select(entry => entry.Cursor)];
+        return entryCursors.SequenceEqual(entryCursors.Order())
+            && entryCursors.Distinct().Count() == entryCursors.Length
+            && history.Undo.All(target => target >= 0
+                && target < history.Cursor
+                && entryCursors.Contains(target))
+            && history.Redo.All(target => target > history.Cursor)
+            && history.Undo.Distinct().Count() == history.Undo.Count
+            && history.Redo.Distinct().Count() == history.Redo.Count;
+    }
 
     private static bool HasCompleteEvents(IReadOnlyList<GameEvent>? events) =>
         events is not null && events.All(happened =>

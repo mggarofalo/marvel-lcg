@@ -14,12 +14,14 @@ public static class EngineProtocol
     /// scoped seat capabilities, play-area topology events, setup discovery,
     /// per-target allocation capacities, procedural-card face facts, host
     /// revisions, replay-verified history cursor commands, and legal trace
-    /// rewriting for committed action units. Version 11 exposes the product,
-    /// replay, save and runtime-dataset identities during setup discovery.
+    /// rewriting for committed action units. Version 12 adds visibility-safe
+    /// completed action summaries at their undo cursor boundaries. Version 11
+    /// exposes the product, replay, save and runtime-dataset identities during
+    /// setup discovery.
     /// Version 10 also tells clients
     /// when a wild-resource declaration is observable by the resolving effect.
     /// </summary>
-    public const int Version = 11;
+    public const int Version = 12;
 
     /// <summary>The largest request or game id accepted or echoed.</summary>
     public const int MaximumIdentifierLength = 256;
@@ -228,11 +230,15 @@ public sealed record EngineError(string Code, string Message);
 /// <summary>A one-time bearer invitation to one server-authorized seat.</summary>
 public sealed record SeatInvitation(int Seat, string Invitation);
 
+/// <summary>One completed active action and the cursor immediately before it.</summary>
+public sealed record HistoryEntryDescriptor(int Cursor, string Summary);
+
 /// <summary>Visibility-safe history boundaries currently editable by this capability.</summary>
 public sealed record HistoryDescriptor(
     int Cursor,
     IReadOnlyList<int> Undo,
-    IReadOnlyList<int> Redo);
+    IReadOnlyList<int> Redo,
+    IReadOnlyList<HistoryEntryDescriptor> Entries);
 
 /// <summary>What the engine host returns after opening, resolving, or closing a game.</summary>
 /// <param name="Version">The protocol version.</param>
@@ -251,7 +257,7 @@ public sealed record HistoryDescriptor(
 /// </param>
 /// <param name="History">
 /// The replay boundaries this capability may currently request. It contains no
-/// decisions, card identities, digests, or information-frontier reasons.
+/// decisions, concealed card identities, digests, or information-frontier reasons.
 /// </param>
 public sealed record EngineResponse(
     int Version,

@@ -1303,11 +1303,29 @@ public sealed class EngineHost : IEngineEndpoint
         };
     }
 
-    private static HistoryDescriptor History(SessionSave save, ViewScope scope)
+    private HistoryDescriptor History(SessionSave save, ViewScope scope)
     {
+        IReadOnlyList<HistoryEntryDescriptor> entries = SessionReplay
+            .InspectActiveHistory(save, compatibility, ReplayOpen)
+            .Select(unit => new HistoryEntryDescriptor(
+                unit.Cursor,
+                scope.Includes(unit.Actor) || unit.Outcome is not null
+                    ? ActionHistoryPresenter.Present(new ActionHistoryFacts(
+                        unit.Cursor,
+                        unit.ActorName,
+                        unit.Role,
+                        unit.Phase,
+                        unit.Verb,
+                        unit.Action,
+                        scope.Includes(unit.Actor) ? unit.ResourceGenerators : [],
+                        Enum.TryParse(unit.Outcome, out Outcome outcome)
+                            ? outcome
+                            : null))
+                    : $"{unit.ActorName} completed an action."))
+            .ToArray();
         if (save.Units.Any(unit => unit.Status != "complete"))
         {
-            return new HistoryDescriptor(save.Cursor, [], []);
+            return new HistoryDescriptor(save.Cursor, [], [], entries);
         }
 
         int[] undo = Enumerable.Range(save.EditFrontier, save.Cursor - save.EditFrontier)
@@ -1318,7 +1336,7 @@ public sealed class EngineHost : IEngineEndpoint
             .Where(target => EditableBy(
                 save.Units.Skip(save.Cursor).Take(target - save.Cursor), scope))
             .ToArray();
-        return new HistoryDescriptor(save.Cursor, undo, redo);
+        return new HistoryDescriptor(save.Cursor, undo, redo, entries);
     }
 
     private static bool EditableBy(IEnumerable<JournalUnit> units, ViewScope scope)

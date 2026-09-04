@@ -62,6 +62,8 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.Events.PlayAreaJoined.GameArea",
             "Marvel.Rules.Events.PlayAreaJoined.PlayArea",
             "Marvel.Rules.Play.EncounterDeck.AccelerationToken",
+            "Marvel.Rules.Play.Game.ChangeForm",
+            "Marvel.Rules.Play.Game.EndPhaseVerb",
             "Marvel.Rules.Play.Outcome.PlayersLose",
             "Marvel.Rules.Play.Outcome.PlayersWin",
             "Marvel.Rules.Play.Outcome.Unfinished",

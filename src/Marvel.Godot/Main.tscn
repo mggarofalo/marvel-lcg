@@ -653,6 +653,12 @@ disabled = true
 text = "Skip"
 tooltip_text = "Finish the current event presentation immediately."
 
+[node name="UndoLast" type="Button" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History/EventHeader"]
+layout_mode = 2
+disabled = true
+text = "Undo last action"
+tooltip_text = "Undo the latest action when no new information prevents it."
+
 [node name="CopyReport" type="Button" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History/EventHeader"]
 layout_mode = 2
 text = "Copy report"

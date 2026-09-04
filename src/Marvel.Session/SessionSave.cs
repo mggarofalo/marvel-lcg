@@ -328,6 +328,21 @@ public sealed record RewrittenTrace(
     IReadOnlyList<JournalUnit> Units,
     int EditFrontier);
 
+/// <summary>
+/// Engine-authored facts needed to describe one active, completed history unit.
+/// This is neither save data nor a client wire type.
+/// </summary>
+public sealed record HistoryUnitInspection(
+    int Cursor,
+    int Actor,
+    string ActorName,
+    string Role,
+    string Phase,
+    string? Verb,
+    string Action,
+    IReadOnlyList<string> ResourceGenerators,
+    string? Outcome);
+
 /// <summary>Reconstructs and verifies a save without mutating a live game.</summary>
 public static class SessionReplay
 {
@@ -373,6 +388,30 @@ public static class SessionReplay
         return cursor == save.Cursor
             ? current
             : Replay(save, cursor, open, requireExposures: true).Game;
+    }
+
+    /// <summary>
+    /// Replays the active prefix once and returns the engine facts needed for
+    /// visibility-safe history presentation. Open units remain replayed but
+    /// are not presented as completed actions.
+    /// </summary>
+    public static IReadOnlyList<HistoryUnitInspection> InspectActiveHistory(
+        SessionSave save,
+        SessionCompatibility expected,
+        Func<SessionSetup, ReplayOpenedGame> open)
+    {
+        SessionSaveJson.Validate(save);
+        ArgumentNullException.ThrowIfNull(expected);
+        ArgumentNullException.ThrowIfNull(open);
+        RequireCompatibility(expected, save.Compatibility);
+        var history = new List<HistoryUnitInspection>(save.Cursor);
+        _ = Replay(
+            save,
+            save.Cursor,
+            open,
+            requireExposures: true,
+            history);
+        return history;
     }
 
     /// <summary>
@@ -524,7 +563,8 @@ public static class SessionReplay
         SessionSave save,
         int unitCount,
         Func<SessionSetup, ReplayOpenedGame> open,
-        bool requireExposures)
+        bool requireExposures,
+        List<HistoryUnitInspection>? history = null)
     {
         ReplayOpenedGame opened = open(save.Setup);
         Game game = opened.Game;
@@ -554,6 +594,12 @@ public static class SessionReplay
 
             int decisionIndex = 0;
             string? derivedRole = null;
+            int? historyActor = null;
+            string? historyActorName = null;
+            string? historyVerb = null;
+            string? historyAction = null;
+            var historyResources = new List<string>();
+            var historyResourceIds = new HashSet<int>();
             foreach (JournalStep step in unit.Decisions)
             {
                 if (decisionIndex > 0 && (game.Pending is null || game.IsRootPrompt))
@@ -567,6 +613,35 @@ public static class SessionReplay
                 string context = $"unit {unitIndex} decision {decisionIndex}";
                 JournalReplay.RequirePrompt(step.Prompt, prompt, $"{context} prompt");
                 Decision decision = step.Decision.Resolve(prompt);
+                if (decisionIndex == 0
+                    && history is not null
+                    && unit.Status == "complete")
+                {
+                    Affordance? selected = decision.IsDecline
+                        ? null
+                        : prompt.Affordances.Single(option => option.Id == decision.Affordance);
+                    string action = unit.Role == "phase_step"
+                        ? selected?.Label ?? prompt.Label
+                        : selected?.AnchorId is int anchor
+                        && anchor >= 0
+                        && anchor < game.State.Cards.Count
+                            ? game.State.Facts.Title(game.State.Cards[anchor].FaceId)
+                            : selected?.Label ?? prompt.Label;
+                    historyActor = step.Decision.Actor;
+                    historyActorName = game.State.Seats[step.Decision.Actor].Name;
+                    historyVerb = selected?.Verb;
+                    historyAction = action;
+                }
+                if (history is not null && unit.Status == "complete")
+                {
+                    foreach (int generator in decision.Spent.Where(
+                                 historyResourceIds.Add))
+                    {
+                        historyResources.Add(
+                            game.State.Abilities.ResourceGeneratorName(
+                                game.State, step.Decision.Actor, generator));
+                    }
+                }
                 if (decisionIndex == 0 && unit.InitiatingSeat != step.Decision.Actor)
                 {
                     throw new ReplayDivergenceException(
@@ -613,6 +688,23 @@ public static class SessionReplay
             {
                 throw new ReplayDivergenceException(
                     $"unit {unitIndex} role diverged");
+            }
+
+            if (history is not null && unit.Status == "complete")
+            {
+                history.Add(new HistoryUnitInspection(
+                    unitIndex,
+                    historyActor ?? throw new ReplayDivergenceException(
+                        $"unit {unitIndex} has no history actor"),
+                    historyActorName ?? throw new ReplayDivergenceException(
+                        $"unit {unitIndex} has no history actor name"),
+                    unit.Role,
+                    unit.Phase,
+                    historyVerb,
+                    historyAction ?? throw new ReplayDivergenceException(
+                        $"unit {unitIndex} has no history action"),
+                    historyResources,
+                    unit.Decisions[^1].Result?.Outcome));
             }
 
             if (requireExposures)

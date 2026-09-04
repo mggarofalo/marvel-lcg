@@ -284,6 +284,14 @@ health is one current/maximum value rather than separate hit-point and damage
 values.
 Settled synchronization uses the toolbar indicator rather than reserving a
 large event-cue box, and the History tab gives its log a readable minimum height.
+Completed history units appear there as one player action rather than as their
+individual card movements. A card play names its payment cards and resource
+abilities in the same sentence. `Undo last action` and the eligible history-row
+links submit only cursor boundaries advertised by the server. A draw, search,
+reveal, shuffle, random selection, open action or another seat's authority can
+therefore disable an earlier boundary without the client reconstructing that
+policy. An accepted undo replaces the board and active chronology without
+animating inverse events.
 
 For a single resource-cost component, selecting a generator applies its icons
 deterministically and leaves excess icons unused. An ordinary wild resource is
