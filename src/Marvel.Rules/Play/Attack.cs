@@ -506,6 +506,9 @@ public static class Attack
         }
 
         var seat = world.Seats[attack.Player];
+        Card enemy = world.Cards[attack.Enemy];
+        long attackValue = StateFields.Modified(
+            world, enemy, "attack", facts, world.Players);
         return new Prompt(
             Player: attack.Player,
             Asking: Question.Defender,
@@ -531,8 +534,9 @@ public static class Attack
                     Label: DefenseVerb)),
             ])
         {
-            Description = $"{facts.Title(world.Cards[attack.Enemy].FaceId)} is attacking "
+            Description = $"{facts.Title(enemy.FaceId)} is attacking "
                 + $"{facts.Title(world.Cards[attack.Target].FaceId)}. "
+                + $"ATK {attackValue} before facedown boost cards. "
                 + "Choose a ready hero or ally to defend, or leave the attack undefended.",
         };
     }

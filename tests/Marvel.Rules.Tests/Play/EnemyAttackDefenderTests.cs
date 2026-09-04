@@ -167,6 +167,8 @@ public sealed class EnemyAttackDefenderTests
         Assert.Equal(hero.ObjectId, Assert.Single(asked!.Affordances).AnchorId);
         Assert.Contains("attacking", asked.Description, StringComparison.OrdinalIgnoreCase);
         Assert.Contains(villain.FaceId, asked.Description, StringComparison.Ordinal);
+        Assert.Contains("ATK 5 before facedown boost cards", asked.Description,
+            StringComparison.Ordinal);
         Attack.Defend(
             world, facts, new NoCardAbilities(), Decision.Take(hero.ObjectId), []);
         Assert.True(world.Attack!.BasicDefense);
