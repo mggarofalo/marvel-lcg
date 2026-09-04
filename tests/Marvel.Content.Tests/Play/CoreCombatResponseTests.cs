@@ -1,6 +1,7 @@
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
 using Marvel.Tests;
@@ -30,6 +31,8 @@ public sealed class CoreCombatResponseTests
         var action = runner.Actions(world, 0).Single(ability => ability.Card == blast.ObjectId);
         var events = runner.Act(world, action, [payment.ObjectId], []).ToList();
         var prompt = Sequence.Work(world, Cards, runner, events)!;
+        Assert.Contains(
+            "14/14 → 9/14 HP", Assert.Single(prompt.Affordances).Description);
         Sequence.Answer(world, Cards, runner, prompt, Decision.Take(villain.ObjectId), events);
         Sequence.Finish(world, Cards, runner, events);
 
@@ -39,6 +42,25 @@ public sealed class CoreCombatResponseTests
             moved.Cards.Any(card => card.Card == drawn.ObjectId));
         Assert.Equal(Steps.TurnAction, damage.Trigger);
         Assert.Equal(Steps.TurnAction, draw.Trigger);
+    }
+
+    [Rule("rr:damage.step.5")]
+    [Fact]
+    public void TacTeamProjectsItsNonAttackDamageBeforeTargetSelection()
+    {
+        var world = Board("01001a");
+        var team = world.CreateCard(
+            "01056", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+        Reveal.EnterPlay(world, Cards, team, [], abilities: runner);
+
+        var action = runner.Actions(world, 0).Single(ability => ability.Card == team.ObjectId);
+        runner.Act(world, action, [], []);
+        var prompt = Sequence.Work(world, Cards, runner, [])!;
+
+        Assert.Contains(
+            "14/14 → 12/14 HP", Assert.Single(prompt.Affordances).Description);
     }
 
     [Rule("rr:attack-player-ability-type.step.7")]
@@ -200,6 +222,35 @@ public sealed class CoreCombatResponseTests
 
         Assert.True(hero.Ready);
         Assert.False(DeckTypes.IsInPlay(indomitable.Area.Type));
+    }
+
+    [Rule("rr:attack-enemy-activation.step.6.a")]
+    [Fact]
+    public void EndOfAttackResponseDescribesTheCompletedAttackWithoutProjectingItAgain()
+    {
+        var world = Board("01001a");
+        var hero = world.Seats[0].IdentityCard;
+        hero.Exhaust();
+        hero.TakeDamage(3);
+        world.CreateCard(
+            "01082", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
+        var enemy = world.TheCardIn(DeckType.VillainArea)!;
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+        world.Attack = new EnemyAttack(
+            enemy.ObjectId, 0, hero.ObjectId, Defender: hero.ObjectId,
+            BasicDefense: true, Damaged: true, CalculatedDamage: 3);
+        world.Agenda.Add(new PhaseStep(
+            Steps.EndAttack, 1, 2, Subject: enemy.ObjectId, Seat: 0,
+            Character: hero.ObjectId));
+
+        Prompt prompt = Assert.IsType<Prompt>(
+            Sequence.Work(world, Cards, runner, []));
+
+        Assert.Contains("End attack · Response window", prompt.Description);
+        Assert.Contains("Rhino finished attacking Spider-Man", prompt.Description);
+        Assert.Contains("Spider-Man is now at 7/10 HP", prompt.Description);
+        Assert.DoesNotContain("→", prompt.Description);
     }
 
     [Rule("rr:target.3.8")]

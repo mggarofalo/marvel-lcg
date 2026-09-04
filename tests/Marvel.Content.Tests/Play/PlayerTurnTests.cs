@@ -115,6 +115,48 @@ public sealed class PlayerTurnTests
         Assert.True(Forms.In(world, world.Seats[1], Cards, Forms.AlterEgo));
     }
 
+    [Rule("rr:attack-player-ability-type.1")]
+    [Rule("rr:damage.step.5")]
+    [Fact]
+    public void BasicAttackTargetsProjectTheirResultBeforeCommit()
+    {
+        var (game, world) = Begin("spider_man");
+        ResolveMulligans(game);
+        var change = game.Pending!.Affordances.Single(a => a.Verb == Game.ChangeForm);
+        game.Resolve(Decision.Take(change.Id));
+
+        Affordance attack = game.Pending!.Affordances.Single(option =>
+            option.Verb == BasicPowers.AttackVerb
+            && option.AnchorId == world.Seats[0].IdentityCard.ObjectId);
+        var target = world.TheCardIn(DeckType.VillainArea)!;
+
+        Assert.Equal(
+            "14/14 → 12/14 HP",
+            attack.Targets!.Details![target.ObjectId]);
+    }
+
+    [Rule("rr:stun-stunned.1")]
+    [Rule("rr:confuse-confused.1")]
+    [Theory]
+    [InlineData(BasicPowers.AttackVerb, Statuses.Stunned, "no damage will be dealt")]
+    [InlineData(BasicPowers.ThwartVerb, Statuses.Confused, "no threat will be removed")]
+    public void CancellingStatusReplacesABasicPowerTargetPreview(
+        string verb, string status, string expected)
+    {
+        var (game, world) = Begin("spider_man");
+        ResolveMulligans(game);
+        Statuses.Give(world, world.Seats[0].IdentityCard, status);
+        var change = game.Pending!.Affordances.Single(a => a.Verb == Game.ChangeForm);
+        game.Resolve(Decision.Take(change.Id));
+
+        Affordance power = game.Pending!.Affordances.Single(option =>
+            option.Verb == verb
+            && option.AnchorId == world.Seats[0].IdentityCard.ObjectId);
+
+        Assert.All(power.Targets!.Details!.Values, detail =>
+            Assert.Contains(expected, detail));
+    }
+
     private static (Game Game, World World) Begin(params string[] heroes)
         => BeginFrom(0, heroes);
 

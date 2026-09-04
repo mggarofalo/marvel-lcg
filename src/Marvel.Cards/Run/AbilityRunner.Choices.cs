@@ -333,6 +333,26 @@ public sealed partial class AbilityRunner
         }
 
         AbilityNode effect = Tree(choice.Require("effect"));
+        if (ProjectedDamage(effect, cast) is { } projection)
+        {
+            Card attacker = cast.AbilityActor
+                ?? cast.World.Seats[Resolver(cast)].IdentityCard;
+            if (projection.IsAttack && Statuses.Afflicted(
+                cast.World, cast.World.Facts, attacker, Statuses.Stunned))
+            {
+                return $"{title} · Stunned cancels this attack; no damage will be dealt";
+            }
+
+            long amount = ProjectedDamageAmount(projection.Node, projection.IsAttack, cast);
+            string consequence = projection.IsAttack
+                ? Damage.PreviewAttack(
+                    cast.World, cast.World.Facts, attacker, cast.Source, card, amount,
+                    grantsOverkill: projection.Node.Field("overkill") is not null)
+                : Damage.PreviewDamage(
+                    cast.World, cast.World.Facts, cast.Source, card, amount);
+            return $"{title} · {consequence}";
+        }
+
         if (effect.Kind == "removeThreat")
         {
             long current = card.Tokens.GetValueOrDefault("k_threat");
@@ -346,6 +366,56 @@ public sealed partial class AbilityRunner
         }
 
         return title;
+    }
+
+    private static (AbilityNode Node, bool IsAttack)? ProjectedDamage(
+        AbilityNode node, Cast cast, bool isAttack = false)
+    {
+        if (node.Kind == "attack")
+        {
+            return ProjectedDamage(Tree(node.Require("effect")), cast, isAttack: true);
+        }
+        if (node.Kind == "if")
+        {
+            string branch = Test(Tree(node.Require("test")), cast) ? "then" : "else";
+            return node.Field(branch) is { } active
+                ? ProjectedDamage(Tree(active), cast, isAttack)
+                : null;
+        }
+        if (node.Kind == "seq")
+        {
+            // A later amount can depend on what an earlier effect discovers
+            // (Repulsor Blast is the Core example). Only the leading effect is
+            // already knowable at this decision; do not skip over state changes.
+            return Nodes(node.Argument).FirstOrDefault() is { } first
+                ? ProjectedDamage(first, cast, isAttack)
+                : null;
+        }
+        return node.Kind switch
+        {
+            "dealAttackDamage" => (node, true),
+            "dealDamage" => (node, isAttack),
+            _ => null,
+        };
+    }
+
+    private static long ProjectedDamageAmount(
+        AbilityNode damage, bool isAttack, Cast cast)
+    {
+        long amount = SaturatingSum(
+            Amount(damage.Require("amount"), cast),
+            [EventModifier(cast, "eventDamage")]);
+        if (!isAttack)
+        {
+            return amount;
+        }
+        if (damage.Kind == "dealAttackDamage")
+        {
+            return SaturatingSum(amount, [SaturatingSum(
+                0, EventModifierEffects(cast, "attackDamage")
+                    .Select(modifier => modifier.Amount))]);
+        }
+        return SaturatingSum(amount, [EventModifier(cast, "attackDamage")]);
     }
 
     private static string[]? ChoiceDescriptions(AbilityNode choice)

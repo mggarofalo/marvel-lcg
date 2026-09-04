@@ -2,6 +2,7 @@ using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
+using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
@@ -308,9 +309,12 @@ public sealed class AllPurposeCounterTests
 
         var action = Assert.Single(game.Pending!.Affordances, option =>
             option.Verb == Game.ActionVerb && option.AnchorId == shooter!.ObjectId);
-        game.Resolve(Decision.Take(action.Id));
+        var resolved = game.Resolve(Decision.Take(action.Id));
 
         Assert.Equal(DeckType.VictoryDisplay, shooter!.Area.Type);
+        Assert.Single(resolved.Events.OfType<CardsMoved>(), moved =>
+            moved.Verb == "Victory"
+            && moved.Cards.Any(card => card.Card == shooter.ObjectId));
     }
 
     [Rule("rr:in-play-and-out-of-play.4")]

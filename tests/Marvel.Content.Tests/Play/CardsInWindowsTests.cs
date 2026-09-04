@@ -68,6 +68,9 @@ public sealed class CardsInWindowsTests
         Assert.Equal(TimingPriority.Interrupt, asked.When);
         Assert.Equal(0, asked.Player);
         Assert.True(asked.Cancellable);
+        Assert.Contains("Enemy attack · Initiation · Interrupt window", asked.Description);
+        Assert.Contains("Rhino is initiating an attack against Spider-Man", asked.Description);
+        Assert.Contains("Target: Spider-Man", asked.Description);
         Assert.Equal(["Spider-Sense"], asked.Affordances.Select(a => a.Label));
         Assert.Equal(["Spider-Sense"], asked.Affordances.Select(a => a.Verb));
 

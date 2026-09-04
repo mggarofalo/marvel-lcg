@@ -534,6 +534,32 @@ theme_type_variation = &"StatusText"
 text = "CHOOSE AN ACTION"
 autowrap_mode = 2
 
+[node name="ActiveResolution" type="PanelContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack"]
+visible = false
+layout_mode = 2
+theme_type_variation = &"StatusPanel"
+
+[node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/ActiveResolution"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 8
+
+[node name="Copy" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/ActiveResolution/Margin"]
+layout_mode = 2
+theme_type_variation = &"TightStack"
+
+[node name="Kind" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/ActiveResolution/Margin/Copy"]
+layout_mode = 2
+theme_type_variation = &"Eyebrow"
+text = "CURRENT RESOLUTION"
+
+[node name="Summary" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/ActiveResolution/Margin/Copy"]
+layout_mode = 2
+theme_type_variation = &"Body"
+autowrap_mode = 2
+
 [node name="HeaderRule" type="HSeparator" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack" unique_id=1000000089]
 layout_mode = 2
 
@@ -542,9 +568,36 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="Action" type="MarginContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench" unique_id=1000000091]
+[node name="Action" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench" unique_id=1000000091]
 layout_mode = 2
+theme_type_variation = &"TightStack"
 metadata/_tab_name = "Action"
+
+[node name="LastResult" type="PanelContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/Action"]
+visible = false
+layout_mode = 2
+theme_type_variation = &"StatusPanel"
+
+[node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/Action/LastResult"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 8
+
+[node name="Copy" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/Action/LastResult/Margin"]
+layout_mode = 2
+theme_type_variation = &"TightStack"
+
+[node name="Kind" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/Action/LastResult/Margin/Copy"]
+layout_mode = 2
+theme_type_variation = &"Eyebrow"
+text = "LAST RESOLVED"
+
+[node name="Summary" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/Action/LastResult/Margin/Copy"]
+layout_mode = 2
+theme_type_variation = &"Body"
+autowrap_mode = 2
 
 [node name="Decision" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/Action" unique_id=1000000093]
 custom_minimum_size = Vector2(0, 180)

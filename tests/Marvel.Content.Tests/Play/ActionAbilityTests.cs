@@ -1060,6 +1060,38 @@ public sealed partial class ActionAbilityTests
         Assert.Same(world.Seats[0].Hand, physical!.Area);
     }
 
+    [Rule("rr:overkill")]
+    [Fact]
+    public void RelentlessAssaultPreviewsItsPaymentGrantedOverkill()
+    {
+        const string relentlessAssault = "01053";
+        Card? card = null;
+        Card? strength = null;
+        Card? shocker = null;
+        var runner = AuthoredCards.Runner();
+        var (_, world) = Playing(
+            board =>
+            {
+                card = board.CreateCard(relentlessAssault, board.Seats[0].Hand);
+                strength = board.CreateCard("01090", board.Seats[0].Hand);
+                shocker = board.CreateCard(
+                    AuthoredCards.Shocker,
+                    board.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+            },
+            hero: true,
+            abilities: runner);
+        var action = Assert.Single(
+            runner.Actions(world, 0), pending => pending.Card == card!.ObjectId);
+
+        runner.Act(world, action, [strength!.ObjectId], []);
+        Prompt prompt = Assert.IsType<Prompt>(
+            Sequence.Work(world, Cards, runner, []));
+        string? preview = Assert.Single(
+            prompt.Affordances, option => option.Id == shocker!.ObjectId).Description;
+
+        Assert.Contains("Overkill carries 2 excess damage", preview);
+    }
+
     [Fact]
     public void WildOverpaymentForAResourceSensitiveEventIsRejectedBeforePayment()
     {

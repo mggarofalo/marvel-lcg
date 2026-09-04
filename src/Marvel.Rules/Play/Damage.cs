@@ -39,6 +39,157 @@ public static class Damage
         IReadOnlyList<Card> Characters, long Amount, bool Suspended = false,
         long Excess = 0, long Dealt = 0, long Taken = 0);
 
+    /// <summary>Describes the presently knowable result of committing one attack.</summary>
+    /// <remarks>
+    /// This engine-owned preview follows constant prohibitions, forced replacement,
+    /// Piercing, Tough and active prevention. Optional future windows and
+    /// would-be-defeated abilities remain future decisions rather than guesses.
+    /// </remarks>
+    public static string PreviewAttack(
+        World world, ICardFacts facts, Card attacker, Card source, Card target, long amount,
+        bool grantsOverkill = false) => Preview(
+            world, facts, attacker, source, target, amount,
+            isAttack: true, grantsOverkill);
+
+    /// <summary>Describes presently knowable non-attack damage consequences.</summary>
+    public static string PreviewDamage(
+        World world, ICardFacts facts, Card source, Card target, long amount) => Preview(
+            world, facts, source, source, target, amount,
+            isAttack: false, grantsOverkill: false);
+
+    private static string Preview(
+        World world, ICardFacts facts, Card attacker, Card source, Card target, long amount,
+        bool isAttack, bool grantsOverkill)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(attacker);
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(target);
+
+        long maximum = Health(world, facts, target);
+        long current = Math.Max(0, maximum - target.Damage);
+        var notes = new List<string>();
+        long? taken = amount;
+
+        if (!world.Abilities.CanTakeDamage(world, target, source))
+        {
+            taken = 0;
+            notes.Add("cannot take damage from this source");
+        }
+        else
+        {
+            DamageProjection replacement = world.Abilities.PreviewDamageReplacement(
+                world, target, source, amount);
+            taken = replacement.Amount;
+            if (!string.IsNullOrWhiteSpace(replacement.Note))
+            {
+                notes.Add(replacement.Note);
+            }
+        }
+
+        bool piercing = isAttack
+            && Keywords.Has(world, attacker, Keywords.Piercing, facts);
+        bool tough = Statuses.Has(world, target, Statuses.Tough);
+        if (taken > 0 && tough && !piercing)
+        {
+            taken = 0;
+            notes.Add("Tough prevents the damage and is discarded");
+        }
+        else if (taken > 0 && tough && piercing)
+        {
+            notes.Add("Piercing discards Tough");
+        }
+
+        if (taken > 0)
+        {
+            ContinuousEffect? prevention = world.Effects.Active().FirstOrDefault(effect =>
+                string.Equals(effect.Kind, "preventDamage", StringComparison.Ordinal)
+                && effect.Affects == target.ObjectId);
+            if (prevention is not null)
+            {
+                long prevented = prevention.Amount <= 0
+                    ? taken.Value
+                    : Math.Min(taken.Value, prevention.Amount);
+                taken -= prevented;
+                string sourceName = prevention.Card is { } card
+                    ? facts.Title(world.Cards[card].FaceId)
+                    : "An active effect";
+                notes.Add($"{sourceName} prevents {prevented} damage");
+            }
+        }
+
+        string health = taken is { } known
+            ? $"{current}/{maximum} → {Math.Max(0, current - known)}/{maximum} HP"
+            : $"{current}/{maximum} HP · result depends on a forced replacement";
+        if (taken >= current && current > 0)
+        {
+            DefeatProjection? defeat = world.Abilities.PreviewDefeatReplacement(
+                world, target, maximum);
+            if (defeat is null)
+            {
+                Area? villainDeck = CardKinds.IsVillain(facts.Kind(target.FaceId))
+                    ? world.Areas.FirstOrDefault(area => area.Type == DeckType.VillainDeck)
+                    : null;
+                Card? nextVillain = villainDeck is { Cards.Count: > 0 }
+                    ? villainDeck.Cards[^1]
+                    : null;
+                if (nextVillain is not null)
+                {
+                    long nextMaximum = Health(world, facts, nextVillain);
+                    health = $"{StageName(facts, target)}: {current}/{maximum} → defeated"
+                        + $" · {StageName(facts, nextVillain)} will enter at "
+                        + $"{nextMaximum}/{nextMaximum} HP";
+                }
+                else
+                {
+                    notes.Add(CardKinds.IsVillain(facts.Kind(target.FaceId))
+                        ? "would defeat the final villain stage"
+                        : "would be defeated");
+                }
+            }
+            else
+            {
+                health = defeat.RemainingHealth is { } remaining
+                    ? $"{current}/{maximum} → {remaining}/{maximum} HP"
+                    : $"{current}/{maximum} HP · defeat result depends on a forced interrupt";
+                notes.Add(defeat.Note);
+                taken = defeat.RemainingHealth is { } saved && saved > 0 ? 0 : taken;
+            }
+        }
+
+        if (isAttack
+            && (facts.Kind(target.FaceId) is CardKind.Minion or CardKind.Ally)
+            && (grantsOverkill || Keywords.Has(world, attacker, Keywords.Overkill, facts))
+            && taken is { } overkillDamage
+            && overkillDamage > current)
+        {
+            notes.Add($"Overkill carries {overkillDamage - current} excess damage");
+        }
+
+        long retaliate = isAttack
+            ? StateFields.Modified(world, target, "retaliate", facts, world.Players)
+            : 0;
+        if (retaliate > 0 && (taken is null || taken < current))
+        {
+            bool ranged = Keywords.Has(world, attacker, Keywords.Ranged, facts);
+            notes.Add(taken is null
+                ? $"Retaliate {retaliate} applies if the target remains in play"
+                : ranged
+                ? $"Ranged ignores Retaliate {retaliate}"
+                : $"Retaliate {retaliate} will hit {facts.Title(attacker.FaceId)}");
+        }
+
+        return notes.Count == 0 ? health : $"{health} · {string.Join(" · ", notes)}";
+    }
+
+    private static string StageName(ICardFacts facts, Card card)
+    {
+        string title = facts.Title(card.FaceId);
+        string stage = facts.Attributes(card.FaceId).GetValueOrDefault("Stage", string.Empty);
+        return stage.Length == 0 ? title : $"{title} stage {stage}";
+    }
+
     /// <summary>Damage fixed through step 4, ready for simultaneous placement.</summary>
     internal sealed record PlacedDamage(Card Target, long Dealt, long Taken)
     {

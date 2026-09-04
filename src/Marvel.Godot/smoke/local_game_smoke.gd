@@ -83,6 +83,8 @@ func _run() -> void:
 	var saw_nonblocking_motion := false
 	var tested_active_motion_toggle := false
 	var captured_villain_phase := false
+	var changed_form := false
+	var saw_attack_resolution := false
 	var decisions := 0
 	while not _is_complete():
 		if decisions >= MAX_DECISIONS:
@@ -97,14 +99,28 @@ func _run() -> void:
 		var ending_player_phase := "End Phase" in decision_text
 		if ending_player_phase and not await _capture_checkpoint("player-phase"):
 			return
+		var change_form := _visible_button_beginning(_decision(), "Change Form")
 		var pass_button := _visible_button(_decision(), "Pass / decline")
-		if pass_button != null and not pass_button.disabled:
+		if not changed_form and change_form != null and not change_form.disabled:
+			change_form.pressed.emit()
+			await process_frame
+			var change_submit := _submit_button()
+			if change_submit == null or change_submit.disabled:
+				_fail("the selected form change cannot be submitted")
+				return
+			change_submit.pressed.emit()
+			changed_form = true
+		elif pass_button != null and not pass_button.disabled:
 			saw_pass = true
 			pass_button.pressed.emit()
 		else:
 			var submit := _submit_button()
-			if submit == null or submit.disabled:
-				var choice := _first_enabled_choice()
+			for selection in 3:
+				if submit != null and not submit.disabled:
+					break
+				var choice := _first_enabled_target()
+				if choice == null:
+					choice = _first_enabled_choice()
 				if choice == null:
 					_fail("no visible control can advance the current decision")
 					return
@@ -141,6 +157,16 @@ func _run() -> void:
 				tested_active_motion_toggle = true
 		if not motion_enabled and not _disabled_motion_is_settled(event_skip):
 			return
+		var active_resolution := _node("Play/Prompt/Margin/Stack/ActiveResolution") as Control
+		if active_resolution.visible:
+			var resolution_text := _visible_text(active_resolution).to_lower()
+			if "enemy attack" in resolution_text and "interrupt window" in resolution_text:
+				saw_attack_resolution = true
+				if "rhino" not in resolution_text or "spider-man" not in resolution_text:
+					_fail("the attack resolution does not name its actor and target")
+					return
+				if not await _capture_checkpoint("attack-interrupt"):
+					return
 		var history_text := (_node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel) \
 			.get_parsed_text().to_lower()
 		if not captured_villain_phase and not _is_complete() and "villain phase" in history_text:
@@ -148,8 +174,11 @@ func _run() -> void:
 				return
 			captured_villain_phase = true
 
-	if not saw_mulligan or not saw_pass or not saw_end_phase:
+	if not saw_mulligan or not saw_pass or not saw_end_phase or not changed_form:
 		_fail("the journey missed a required visible decision path")
+		return
+	if not saw_attack_resolution:
+		_fail("the journey never exposed the containing enemy attack for its interrupt")
 		return
 	if not captured_villain_phase:
 		_fail("the journey never reached a non-terminal villain-phase checkpoint")
@@ -163,28 +192,37 @@ func _run() -> void:
 	if not motion_enabled and saw_nonblocking_motion:
 		_fail("the motion-disabled journey exposed active event playback")
 		return
-	if "VILLAIN WINS" not in _status().text:
-		_fail("the terminal UI did not report the seeded villain win")
+	if "VILLAIN WINS" not in _status().text and "PLAYERS LOSE" not in _status().text:
+		_fail("the terminal UI did not report the seeded loss")
 		return
 	if not await _synchronization_preserves_history(true):
 		return
 	var terminal_decision := _visible_text(_decision()).to_upper()
 	var terminal_prompt := _visible_text(
 		_node("Play/Prompt/Margin/Stack/PromptHeader")).to_upper()
-	if "DEFEAT" not in terminal_decision or "VILLAIN WON" not in terminal_decision \
-			or "VILLAIN WON" not in terminal_prompt:
-		_fail("the null-prompt terminal decision copy does not identify the villain outcome")
+	var terminal_names_loss := "VILLAIN WON" in terminal_decision \
+			or "PLAYERS LOST" in terminal_decision
+	if "DEFEAT" not in terminal_decision or not terminal_names_loss \
+			or ("VILLAIN WON" not in terminal_prompt and "PLAYERS LOST" not in terminal_prompt):
+		_fail("the null-prompt terminal decision copy does not identify the loss")
 		return
 	if _node("Status").theme_type_variation != &"DangerStatusPanel":
-		_fail("the villain win did not receive the semantic danger treatment")
+		_fail("the loss did not receive the semantic danger treatment")
 		return
 	var event_log := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel
 	var event_text := event_log.get_parsed_text().strip_edges()
 	if event_text.is_empty() or event_text == "No events yet.":
 		_fail("the visible event log is empty")
 		return
-	if "villain won the game" not in event_text.to_lower():
+	if "villain won the game" not in event_text.to_lower() \
+			and "players lost the game" not in event_text.to_lower():
 		_fail("the terminal outcome did not remain in recent history")
+		return
+	var last_result := _node("Play/Prompt/Margin/Stack/Workbench/Action/LastResult") as Control
+	var result_text := _visible_text(last_result).to_lower()
+	if not last_result.visible or ("villain won the game" not in result_text \
+			and "players lost the game" not in result_text):
+		_fail("the terminal outcome did not remain in the primary action pane")
 		return
 	if not await _wait_for(func() -> bool:
 		return _control_text_is_visible(_node("Title") as Control) \
@@ -236,7 +274,7 @@ func _synchronization_preserves_history(expect_terminal: bool) -> bool:
 		_fail("synchronization replayed or cleared the visible event history")
 		return false
 	if expect_terminal:
-		if "VILLAIN WINS" not in _status().text:
+		if "VILLAIN WINS" not in _status().text and "PLAYERS LOSE" not in _status().text:
 			_fail("synchronizing the terminal table lost its authoritative outcome")
 			return false
 	elif _first_enabled_choice() == null \
@@ -1052,6 +1090,13 @@ func _first_enabled_choice() -> Button:
 	return null
 
 
+func _first_enabled_target() -> Button:
+	for button in _visible_buttons(_decision()):
+		if not button.disabled and button.text.begins_with("◇"):
+			return button
+	return null
+
+
 func _submit_button() -> Button:
 	var submit := _decision().find_child("Submit", true, false) as Button
 	return submit if submit != null and submit.is_visible_in_tree() else null
@@ -1100,6 +1145,13 @@ func _button_named(wanted: String) -> Button:
 func _visible_button(node: Node, wanted: String) -> Button:
 	for button in _visible_buttons(node):
 		if button.text == wanted:
+			return button
+	return null
+
+
+func _visible_button_beginning(node: Node, wanted: String) -> Button:
+	for button in _visible_buttons(node):
+		if button.text.begins_with(wanted):
 			return button
 	return null
 

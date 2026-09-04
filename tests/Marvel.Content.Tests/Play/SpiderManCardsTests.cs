@@ -71,6 +71,8 @@ public sealed class SpiderManCardsTests
 
         var waiting = Assert.Single(world.Agenda.Outstanding);
         var prompt = Sequence.Work(world, Cards, runner, events)!;
+        var target = Assert.Single(prompt.Affordances);
+        Assert.Contains("14/14 → 6/14 HP", target.Description);
         Sequence.Answer(
             world, Cards, runner, prompt, Decision.Take(villain.ObjectId), events);
         Sequence.Finish(world, Cards, runner, events);
@@ -80,6 +82,23 @@ public sealed class SpiderManCardsTests
         var damage = Assert.Single(events.OfType<FieldSet>(), change =>
             change.Card == villain.ObjectId && change.Verb == BasicPowers.AttackVerb);
         Assert.Equal(Steps.TurnAction, damage.Trigger);
+    }
+
+    [Rule("rr:villain-defeat.3")]
+    [Fact]
+    public void LethalAttackPreviewNamesTheNextVillainStage()
+    {
+        var world = Deal(hero: true);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        villain.TakeDamage(6);
+        var hero = world.Seats[0].IdentityCard;
+
+        string preview = Damage.PreviewAttack(
+            world, Cards, hero, hero, villain, 8);
+
+        Assert.Equal(
+            "Rhino stage 1: 8/14 → defeated · Rhino stage 2 will enter at 15/15 HP",
+            preview);
     }
 
     [Rule("rr:event.4")]
@@ -113,6 +132,7 @@ public sealed class SpiderManCardsTests
         var action = Assert.Single(runner.Actions(world, 0));
         runner.Act(world, action, [genius.ObjectId, energy.ObjectId], []);
         var prompt = Sequence.Work(world, Cards, runner, [])!;
+        Assert.Contains("Stunned cancels this attack", Assert.Single(prompt.Affordances).Description);
         Sequence.Answer(world, Cards, runner, prompt, Decision.Take(villain.ObjectId), []);
         Sequence.Finish(world, Cards, runner, []);
 
@@ -121,6 +141,35 @@ public sealed class SpiderManCardsTests
         Assert.Equal(DeckType.DiscardPile, kick.Area.Type);
         Assert.Equal(DeckType.DiscardPile, genius.Area.Type);
         Assert.Equal(DeckType.DiscardPile, energy.Area.Type);
+    }
+
+    [Rule("rr:replacement-effect")]
+    [Rule("rr:damage.step.1")]
+    [Fact]
+    public void SwingingWebKickPreviewNamesArmoredRhinoSuitAsTheReplacement()
+    {
+        var world = Deal(hero: true);
+        var runner = AuthoredCards.Runner();
+        world.Abilities = runner;
+        EmptyHand(world);
+        var kick = world.CreateCard(AuthoredCards.SwingingWebKick, world.Seats[0].Hand);
+        var genius = world.CreateCard("01089", world.Seats[0].Hand);
+        var energy = world.CreateCard("01088", world.Seats[0].Hand);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        world.CreateCard(
+            AuthoredCards.ArmoredSuit,
+            world.AreaOf(DeckType.UpgradesArea, villain.Area.PlayArea, villain.ObjectId));
+
+        var action = runner.Actions(world, 0).Single(ability => ability.Card == kick.ObjectId);
+        runner.Act(world, action, [genius.ObjectId, energy.ObjectId], []);
+
+        string? preview = Assert.Single(
+            Sequence.Work(world, Cards, runner, [])!.Affordances).Description;
+
+        Assert.Contains("14/14 → 14/14 HP", preview);
+        Assert.Contains(
+            "Armored Rhino Suit takes the damage instead and will be discarded", preview);
+        Assert.DoesNotContain("excess", preview, StringComparison.OrdinalIgnoreCase);
     }
 
     [Rule("rr:guard.1")]

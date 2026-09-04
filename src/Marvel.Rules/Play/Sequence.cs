@@ -160,7 +160,7 @@ public static class Sequence
                     world, offeredAbilities, occurrence, kind, events, scope,
                     ResolvePriorityStatus) is { } asked)
                 {
-                    return WithAttackContext(world, facts, asked);
+                    return WithAttackContext(world, facts, step, asked);
                 }
 
                 // A replacement interrupt can cancel its containing occurrence
@@ -203,7 +203,7 @@ public static class Sequence
             var healthBefore = world.Effects.CaptureCharacterHealth();
             if (VillainPhase.Take(world, facts, abilities, step, events) is { } asking)
             {
-                return WithAttackContext(world, facts, asking);
+                return WithAttackContext(world, facts, step, asking);
             }
 
             // State changed during the step can switch on a conditional
@@ -233,37 +233,99 @@ public static class Sequence
         return null;
     }
 
-    private static Prompt WithAttackContext(World world, ICardFacts facts, Prompt prompt)
+    private static Prompt WithAttackContext(
+        World world, ICardFacts facts, PhaseStep step, Prompt prompt)
     {
-        if (world.Attack is not { CalculatedDamage: { } damage } attack
-            || attack.Enemy < 0 || attack.Target < 0)
+        bool finished = world.Attack is null && step.What == Steps.EndAttack;
+        EnemyAttack? attack = world.Attack
+            ?? (step.What == Steps.EndAttack ? world.FinishedAttack : null);
+        if (attack is null || attack.Enemy < 0 || attack.Target < 0)
         {
             return prompt;
         }
 
         Card enemy = world.Cards[attack.Enemy];
         Card target = world.Cards[attack.Target];
-        long health = Math.Max(0, Damage.Health(world, facts, target) - target.Damage);
+        string player = attack.Player >= 0 && attack.Player < world.Seats.Count
+            ? world.Seats[attack.Player].Name
+            : $"Player {attack.Player + 1}";
         string[] attachments = world.Areas
             .Where(area => area.Host == enemy.ObjectId && DeckTypes.IsInPlay(area.Type))
             .SelectMany(area => area.Cards)
             .Select(card => facts.Title(card.FaceId))
             .ToArray();
-        long retaliate = StateFields.Modified(
-            world, target, "retaliate", facts, world.Players);
+        string stage = AttackStage(step.What);
+        string window = world.Agenda.Stage switch
+        {
+            Stage.Interrupts => "Interrupt window",
+            Stage.Responses => "Response window",
+            _ => "Resolve step",
+        };
+        long attackValue = StateFields.Modified(
+            world, enemy, "attack", facts, world.Players);
+        string situation = finished
+            ? FinishedAttackSituation(world, facts, attack, enemy, target, player)
+            : attack.CalculatedDamage is { } damage
+            ? $"{facts.Title(enemy.FaceId)} is attacking {facts.Title(target.FaceId)} "
+                + $"for {damage} damage against {player}. "
+                + Damage.PreviewAttack(world, facts, enemy, enemy, target, damage)
+            : $"{facts.Title(enemy.FaceId)} is initiating an attack against {player}. "
+                + $"Target: {facts.Title(target.FaceId)}. "
+                + $"ATK {attackValue} before boost icons and defense.";
+        if (attachments.Length > 0)
+        {
+            situation += $" Attacker attachments: {string.Join(", ", attachments)}.";
+        }
+
+        if (!string.IsNullOrWhiteSpace(prompt.Description)
+            && !situation.Contains(prompt.Description, StringComparison.Ordinal))
+        {
+            situation += $" {prompt.Description}";
+        }
+
         return prompt with
         {
-            Description = $"{facts.Title(enemy.FaceId)} attacks "
-                + $"{facts.Title(target.FaceId)} for {damage} damage; "
-                + $"the target has {health}/{Damage.Health(world, facts, target)} HP"
-                + (retaliate > 0 ? $" and Retaliate {retaliate}" : string.Empty)
-                + ". "
-                + (attachments.Length > 0
-                    ? $"Attacker attachments: {string.Join(", ", attachments)}. "
-                    : string.Empty)
-                + "The damage is fixed after boost icons and defense.",
+            Description = $"Enemy attack · {stage} · {window}\n{situation}",
         };
     }
+
+    private static string FinishedAttackSituation(
+        World world, ICardFacts facts, EnemyAttack attack, Card enemy, Card target,
+        string player)
+    {
+        string targetState;
+        if (!DeckTypes.IsInPlay(target.Area.Type))
+        {
+            targetState = $"{facts.Title(target.FaceId)} was defeated.";
+        }
+        else
+        {
+            long maximum = Damage.Health(world, facts, target);
+            long current = Math.Max(0, maximum - target.Damage);
+            targetState = $"{facts.Title(target.FaceId)} is now at {current}/{maximum} HP.";
+        }
+        string damage = attack.CalculatedDamage is { } calculated
+            ? $" Calculated attack damage: {calculated}."
+            : string.Empty;
+        return $"{facts.Title(enemy.FaceId)} finished attacking "
+            + $"{facts.Title(target.FaceId)} against {player}."
+            + damage
+            + (attack.Damaged ? " The attack dealt damage. " : " No damage was dealt. ")
+            + targetState;
+    }
+
+    private static string AttackStage(string step) => step switch
+    {
+        Steps.Attack => "Initiation",
+        Steps.GiveBoostCard => "Step 1 of 6 · Give boost card",
+        Steps.DeclareDefender => "Step 2 of 6 · Declare defender",
+        Steps.FlipBoostCards => "Step 3 of 6 · Reveal boost cards",
+        Steps.CalculateAttackDamage => "Step 4 of 6 · Calculate damage",
+        Steps.DealAttackDamage => "Step 5 of 6 · Deal damage",
+        Steps.NextAttackTarget => "Choose the next target",
+        Steps.EndAttack => "Step 6 of 6 · End attack",
+        _ => step,
+    };
 
     private sealed class OptionalDamageInterrupts(IWindowAbilities inner)
         : IWindowAbilities

@@ -1213,6 +1213,75 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
     }
 
     /// <inheritdoc/>
+    public DamageProjection PreviewDamageReplacement(
+        World world, Card target, Card source, long amount)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(target);
+        ArgumentNullException.ThrowIfNull(source);
+
+        var occurrence = new Occurrence(
+            0, [Steps.DamageWouldBeDealt], Subject: target.ObjectId, Player: target.Owner);
+        foreach (PendingAbility pending in Waiting(world, occurrence, WindowKind.Interrupt)
+                     .Where(candidate => candidate.Type == AbilityType.ForcedInterrupt))
+        {
+            Card card = world.Cards[pending.Card];
+            CardAbility ability = Pending(card, pending);
+            string name = world.Facts.Title(card.FaceId);
+            if (ContainsEffect(ability.Effect, "soakDamage"))
+            {
+                long threshold = SoakDiscardThreshold(ability.Effect);
+                bool discarded = threshold > 0
+                    && SaturatingSum(card.Damage, [amount]) >= threshold;
+                return new DamageProjection(
+                    0,
+                    $"{name} takes the damage instead"
+                    + (discarded ? " and will be discarded" : string.Empty));
+            }
+
+            return new DamageProjection(
+                null, $"{name} has a forced interrupt that modifies this damage");
+        }
+
+        return new DamageProjection(amount);
+    }
+
+    /// <inheritdoc/>
+    public DefeatProjection? PreviewDefeatReplacement(
+        World world, Card target, long maximumHealth)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(target);
+
+        var occurrence = new Occurrence(
+            0, [Steps.CardWouldBeDefeated], Subject: target.ObjectId, Player: target.Owner);
+        foreach (PendingAbility pending in Waiting(world, occurrence, WindowKind.Interrupt)
+                     .Where(candidate => candidate.Type == AbilityType.ForcedInterrupt))
+        {
+            Card card = world.Cards[pending.Card];
+            CardAbility ability = Pending(card, pending);
+            string name = world.Facts.Title(card.FaceId);
+            if (HealsAllDamage(ability.Effect))
+            {
+                return new DefeatProjection(
+                    maximumHealth,
+                    $"{name} heals all damage instead"
+                    + (ContainsEffect(ability.Effect, "discard")
+                        ? " and will be discarded"
+                        : string.Empty));
+            }
+            return new DefeatProjection(
+                null, $"{name} has a forced interrupt before defeat");
+        }
+        return null;
+    }
+
+    private static bool HealsAllDamage(AbilityNode node) =>
+        node.Kind == "heal"
+        && Tree(node.Require("amount")).Kind == "damageOn"
+        || MutationChildren(node).Any(HealsAllDamage);
+
+    /// <inheritdoc/>
     public bool CanReady(World world, Card target, Card source)
     {
         ArgumentNullException.ThrowIfNull(world);

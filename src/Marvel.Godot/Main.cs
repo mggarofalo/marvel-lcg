@@ -36,6 +36,8 @@ public sealed partial class Main : Control
     private Label briefingScenario = null!;
     private Label description = null!;
     private DecisionPanel decisions = null!;
+    private PanelContainer activeResolution = null!;
+    private Label activeResolutionSummary = null!;
     private Label eyebrow = null!;
     private PanelContainer eventCue = null!;
     private Label eventCueKind = null!;
@@ -95,6 +97,8 @@ public sealed partial class Main : Control
     private Label syncStatus = null!;
     private HBoxContainer handRail = null!;
     private Label handHeading = null!;
+    private PanelContainer lastResult = null!;
+    private Label lastResultSummary = null!;
     private Label title = null!;
     private string? transientInvitation;
     private bool decisionPending;
@@ -227,6 +231,10 @@ public sealed partial class Main : Control
             $"{content}/Play/Prompt/Margin/Stack/PromptHeader/Requirement");
         promptProgress = GetNode<Label>(
             $"{content}/Play/Prompt/Margin/Stack/PromptHeader/Progress");
+        activeResolution = GetNode<PanelContainer>(
+            $"{content}/Play/Prompt/Margin/Stack/ActiveResolution");
+        activeResolutionSummary = GetNode<Label>(
+            $"{content}/Play/Prompt/Margin/Stack/ActiveResolution/Margin/Copy/Summary");
         promptDiagnostic = GetNode<Label>(
             $"{content}/Play/Prompt/Margin/Stack/Workbench/History/PromptDiagnostic");
         boardAreas = GetNode<VBoxContainer>($"{content}/Play/Board/TableScroll/Margin/Areas");
@@ -235,6 +243,10 @@ public sealed partial class Main : Control
             $"{content}/Play/Board/HandShelf/Margin/Stack/Scroll/Rail");
         decisions = GetNode<DecisionPanel>(
             $"{content}/Play/Prompt/Margin/Stack/Workbench/Action/Decision");
+        lastResult = GetNode<PanelContainer>(
+            $"{content}/Play/Prompt/Margin/Stack/Workbench/Action/LastResult");
+        lastResultSummary = GetNode<Label>(
+            $"{content}/Play/Prompt/Margin/Stack/Workbench/Action/LastResult/Margin/Copy/Summary");
         eventLog = GetNode<RichTextLabel>(
             $"{content}/Play/Prompt/Margin/Stack/Workbench/History/EventLog");
         eventCue = GetNode<PanelContainer>(
@@ -1059,6 +1071,8 @@ public sealed partial class Main : Control
         invitationOffer.Visible = false;
         boardRender = null;
         events.Reset([]);
+        activeResolution.Visible = false;
+        lastResult.Visible = false;
         RenderEvents();
         boardAreas.GetChildren().ToList().ForEach(node => node.QueueFree());
         board.Visible = false;
@@ -1109,6 +1123,7 @@ public sealed partial class Main : Control
             }
 
             RenderEvents();
+            RenderLastResult(presented.Highlights, resetEvents);
             PresentEvents(presented.Cues);
         }
         // A synchronized snapshot is authoritative but is not a new
@@ -1323,6 +1338,7 @@ public sealed partial class Main : Control
     {
         if (prompt is null)
         {
+            activeResolution.Visible = false;
             (promptEyebrow.Text, promptHeading.Text, promptContext.Text) =
                 world.Outcome switch
                 {
@@ -1357,11 +1373,34 @@ public sealed partial class Main : Control
         promptEyebrow.Text = "CURRENT DECISION";
         promptHeading.Text = view.Heading;
         promptContext.Text = view.Context;
+        activeResolution.Visible = !string.IsNullOrWhiteSpace(view.Resolution);
+        activeResolutionSummary.Text = view.Resolution;
         promptRequirement.Text = view.Requirement;
         promptDiagnostic.Text = view.Diagnostic;
         promptRequirement.ThemeTypeVariation = prompt.Cancellable
             ? GodotThemeVariations.Caption
             : GodotThemeVariations.DangerText;
+    }
+
+    private void RenderLastResult(
+        IReadOnlyList<EventPresentation> highlights, bool reset)
+    {
+        if (highlights.Count == 0)
+        {
+            if (reset)
+            {
+                lastResult.Visible = false;
+                lastResultSummary.Text = string.Empty;
+            }
+            return;
+        }
+
+        lastResult.Visible = true;
+        lastResultSummary.Text = string.Join("\n", highlights.Select(entry => entry.Summary));
+        lastResult.ThemeTypeVariation = highlights.Any(entry => entry.Motion is
+            EventMotionKind.Defeat or EventMotionKind.Terminal)
+                ? GodotThemeVariations.DangerStatusPanel
+                : GodotThemeVariations.StatusPanel;
     }
 
     private void RenderDecisionProgress(DecisionProgressPresentation? progress)
@@ -1465,7 +1504,7 @@ public sealed partial class Main : Control
         eventCueSummary.Text = entry.Summary;
         eventCueKind.ThemeTypeVariation = entry.Motion switch
         {
-            EventMotionKind.Damage or EventMotionKind.Terminal =>
+            EventMotionKind.Damage or EventMotionKind.Defeat or EventMotionKind.Terminal =>
                 GodotThemeVariations.DangerText,
             EventMotionKind.Create or EventMotionKind.Heal =>
                 GodotThemeVariations.StatusText,
