@@ -117,7 +117,7 @@ public sealed partial class DecisionPanel : VBoxContainer
             bool unavailable = submitting || !option.IsLegal;
             bool isSelected = composer.Selected?.Id == option.Id;
             bool resolving = submitting && isSelected;
-            string action = ActionText(view);
+            string action = DecisionCopy.Choice(view);
             var choose = new Button
             {
                 Name = $"Affordance{option.Id}",
@@ -537,11 +537,16 @@ public sealed partial class DecisionPanel : VBoxContainer
         AddChild(Text(
             $"PAYMENT  ·  {progress.SelectedGenerators} GENERATORS"
             + $"  ·  {progress.AssignedIcons}/{progress.GeneratedIcons} ICONS"
+            + (progress.ExcessIcons > 0
+                ? $"  ·  {progress.ExcessIcons} EXCESS"
+                : string.Empty)
             + (progress.RequestedVariables > 0
                 ? $"  ·  {progress.DefinedVariables}/{progress.RequestedVariables} VALUES"
                 : string.Empty)
             + (progress.IsSatisfied ? "  ·  READY" : "  ·  INCOMPLETE"),
-            progress.IsSatisfied
+            progress.ExcessIcons > 0
+                ? GodotThemeVariations.DangerText
+                : progress.IsSatisfied
                 ? GodotThemeVariations.StatusText
                 : GodotThemeVariations.Caption,
             wrap: true));
@@ -654,14 +659,24 @@ public sealed partial class DecisionPanel : VBoxContainer
             AddChild(validation);
         }
 
+        if (progress.Payment.ExcessIcons > 0)
+        {
+            AddChild(Text(
+                $"! {DecisionCopy.OverpaymentWarning(progress.Payment)}",
+                GodotThemeVariations.DangerText,
+                wrap: true));
+        }
+
+        string action = DecisionCopy.WithPaymentConsequence(
+            SubmitAction(), progress.Payment);
         var submit = new Button
         {
             Name = "Submit",
             Text = submitting
                 ? "— UNAVAILABLE  ·  Waiting for engine…"
                 : progress.IsReady
-                    ? SubmitAction()
-                    : $"— Unavailable  ·  {SubmitAction()}",
+                    ? action
+                    : $"— Unavailable  ·  {action}",
             Disabled = submitting || !progress.IsReady,
         };
         StyleButton(
@@ -695,27 +710,6 @@ public sealed partial class DecisionPanel : VBoxContainer
                 + (progress.IsSatisfied ? "  ·  COMPLETE" : "  ·  INCOMPLETE"),
         };
 
-    private static string ActionText(AffordancePresentation view)
-    {
-        if (!string.IsNullOrWhiteSpace(view.Description))
-        {
-            return view.Description;
-        }
-
-        if (!string.Equals(view.Verb, view.Label, StringComparison.OrdinalIgnoreCase))
-        {
-            return $"{view.Label}  ·  {view.Anchor}";
-        }
-
-        return view.Verb switch
-        {
-            "Play" => $"Play {view.Anchor}",
-            "Attack" or "Thwart" or "Recover" => $"{view.Verb} with {view.Anchor}",
-            "Resolve Mulligans" => "Choose cards to discard and redraw",
-            _ => $"{view.Verb}  ·  {view.Anchor}",
-        };
-    }
-
     private string TargetAction(bool selected) => composer!.Selected?.Verb switch
     {
         "Resolve Mulligans" => "DISCARD AND REDRAW",
@@ -740,7 +734,10 @@ public sealed partial class DecisionPanel : VBoxContainer
                 $"Attack {PromptPresentation.Describe(composer.Targets[0], world!)}",
             "Thwart" when count == 1 =>
                 $"Thwart {PromptPresentation.Describe(composer.Targets[0], world!)}",
-            _ => PromptPresentation.Words(selected.Verb),
+            _ => DecisionCopy.GenericCommit(
+                selected.Verb,
+                selected.Label,
+                PromptPresentation.Describe(selected.AnchorId, world!)),
         };
     }
 
