@@ -1138,6 +1138,10 @@
             "seq": [
               {
                 "choose": {
+                  "descriptions": [
+                    "Change to alter-ego form",
+                    "Remain in your current form"
+                  ],
                   "options": [
                     { "changeForm": { "player": "you", "to": "alter-ego" } },
                     { "seq": [] }
@@ -1146,6 +1150,10 @@
               },
               {
                 "choose": {
+                  "descriptions": [
+                    "Exhaust Peter Parker and remove Eviction Notice from the game",
+                    "Discard 1 random card, give Eviction Notice surge, and discard it"
+                  ],
                   "options": [
                     {
                       "seq": [

@@ -100,9 +100,18 @@ public sealed partial class DecisionPanel : VBoxContainer
         }
 
         PromptPresentation prompt = PromptPresentation.From(composer.Prompt, world);
+        var basicCharacters = new HashSet<int>();
 
         foreach (AffordancePresentation view in prompt.Affordances)
         {
+            if (view.Verb is "Attack" or "Thwart" or "Recover"
+                && basicCharacters.Add(view.AnchorId))
+            {
+                AddChild(Text(
+                    $"BASIC ACTIONS  ·  {view.Anchor}",
+                    GodotThemeVariations.Eyebrow,
+                    wrap: true));
+            }
             Affordance option = composer.Prompt.Affordances.Single(candidate =>
                 candidate.Id == view.Id);
             bool unavailable = submitting || !option.IsLegal;
@@ -138,6 +147,13 @@ public sealed partial class DecisionPanel : VBoxContainer
             {
                 composer.SelectAffordance(option.Id);
                 AnchorFocused?.Invoke([option.AnchorId]);
+                if (composer.Prompt.Asking == Question.Element
+                    && composer.Prompt.Affordances.Count == 1
+                    && composer.TryBuild(out EngineDecision? automatic, out _))
+                {
+                    Submitted?.Invoke(automatic!);
+                    return;
+                }
                 Rebuild();
             };
             BindAnchors(choose, option.AnchorId);

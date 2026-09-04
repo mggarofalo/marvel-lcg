@@ -133,6 +133,7 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Server.ModularSetupChoice",
             "Marvel.Server.OperationalLog",
             "Marvel.Server.OperationalTelemetrySink",
+            "Marvel.Server.RuntimeIdentity",
             "Marvel.Server.ScenarioSetupChoice",
             "Marvel.Server.SeatInvitation",
             "Marvel.Server.SetupChoices",

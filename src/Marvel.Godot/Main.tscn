@@ -582,6 +582,16 @@ disabled = true
 text = "Skip"
 tooltip_text = "Finish the current event presentation immediately."
 
+[node name="CopyReport" type="Button" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History/EventHeader"]
+layout_mode = 2
+text = "Copy report"
+tooltip_text = "Copy the authorized game interaction transcript to the clipboard."
+
+[node name="SaveReport" type="Button" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History/EventHeader"]
+layout_mode = 2
+text = "Save report"
+tooltip_text = "Save the authorized game interaction transcript to the app data folder."
+
 [node name="EventCue" type="PanelContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History" unique_id=1000000099]
 visible = false
 custom_minimum_size = Vector2(0, 68)

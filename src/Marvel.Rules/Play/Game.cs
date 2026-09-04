@@ -1273,15 +1273,11 @@ public sealed class Game
                 ? "attack"
                 : "thwart",
             facts, world.Players);
-        string[] powerSources = AttachmentsOn(character);
         bool ranged = StateFields.Modified(world, character, "ranged", facts, world.Players) > 0;
         options.Add(Anchored(verb, character, world.Seats[Active]) with
         {
-            Description = $"{verb} for {power}"
-                + (ranged && verb == BasicPowers.AttackVerb ? " · Ranged" : string.Empty)
-                + (powerSources.Length > 0
-                    ? $" · attached: {string.Join(", ", powerSources)}"
-                    : string.Empty),
+            Description = $"{facts.Title(character.FaceId)} · {verb} for {power}"
+                + (ranged && verb == BasicPowers.AttackVerb ? " · Ranged" : string.Empty),
             // Exactly one target: `rr:attack-player-ability-type.1` and
             // `rr:thwart.1` are each one enemy or one scheme. An ability that
             // hits several is a different thing (`.5`) and is not a basic power.
@@ -1292,38 +1288,33 @@ public sealed class Game
             {
                 Details = targets.ToDictionary(
                     target => target.ObjectId,
-                    target => BasicPowerTargetDetail(target, verb, ranged)
+                    target => BasicPowerTargetDetail(target, verb, power, ranged)
                 ),
             },
         });
     }
 
-    private string BasicPowerTargetDetail(Card target, string verb, bool ranged)
+    private string BasicPowerTargetDetail(Card target, string verb, long power, bool ranged)
     {
         if (string.Equals(verb, BasicPowers.ThwartVerb, StringComparison.Ordinal))
         {
-            return $"{target.Tokens.GetValueOrDefault("k_threat")} threat";
+            long current = target.Tokens.GetValueOrDefault("k_threat");
+            long result = Math.Max(0, current - power);
+            long threshold = facts.PrintedValue(target.FaceId, "TargetThreat", world.Players);
+            return threshold > 0
+                ? $"{current}/{threshold} → {result}/{threshold} threat"
+                : $"{current} → {result} threat";
         }
 
         long health = Math.Max(0, Damage.Health(world, facts, target) - target.Damage);
         long maximum = Damage.Health(world, facts, target);
         long retaliate = StateFields.Modified(
             world, target, "retaliate", facts, world.Players);
-        string[] attachments = AttachmentsOn(target);
         return $"{health}/{maximum} HP"
             + (retaliate > 0
                 ? $" · Retaliate {retaliate}" + (ranged ? " (ignored by Ranged)" : string.Empty)
-                : string.Empty)
-            + (attachments.Length > 0
-                ? $" · attached: {string.Join(", ", attachments)}"
                 : string.Empty);
     }
-
-    private string[] AttachmentsOn(Card target) => world.Areas
-        .Where(area => area.Host == target.ObjectId && DeckTypes.IsInPlay(area.Type))
-        .SelectMany(area => area.Cards)
-        .Select(card => facts.Title(card.FaceId))
-        .ToArray();
 
     private Prompt EndPhasePrompt()
     {
