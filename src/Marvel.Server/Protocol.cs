@@ -231,14 +231,18 @@ public sealed record EngineError(string Code, string Message);
 public sealed record SeatInvitation(int Seat, string Invitation);
 
 /// <summary>One completed active action and the cursor immediately before it.</summary>
-public sealed record HistoryEntryDescriptor(int Cursor, string Summary);
+public sealed record HistoryEntryDescriptor(
+    int Cursor,
+    string Summary,
+    IReadOnlyList<string> Details);
 
 /// <summary>Visibility-safe history boundaries currently editable by this capability.</summary>
 public sealed record HistoryDescriptor(
     int Cursor,
     IReadOnlyList<int> Undo,
     IReadOnlyList<int> Redo,
-    IReadOnlyList<HistoryEntryDescriptor> Entries);
+    IReadOnlyList<HistoryEntryDescriptor> Entries,
+    bool ActionOpen);
 
 /// <summary>What the engine host returns after opening, resolving, or closing a game.</summary>
 /// <param name="Version">The protocol version.</param>

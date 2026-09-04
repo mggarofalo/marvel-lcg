@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
+using Marvel.Rules.State;
 
 namespace Marvel.Session;
 
@@ -340,7 +341,10 @@ public sealed record HistoryUnitInspection(
     string Phase,
     string? Verb,
     string Action,
+    int? Subject,
+    IReadOnlyList<int> ResourceGeneratorIds,
     IReadOnlyList<string> ResourceGenerators,
+    IReadOnlyList<GameEvent> Events,
     string? Outcome);
 
 /// <summary>Reconstructs and verifies a save without mutating a live game.</summary>
@@ -598,8 +602,11 @@ public static class SessionReplay
             string? historyActorName = null;
             string? historyVerb = null;
             string? historyAction = null;
+            int? historySubject = null;
             var historyResources = new List<string>();
+            var historyResourceIdsInOrder = new List<int>();
             var historyResourceIds = new HashSet<int>();
+            var historyEvents = new List<GameEvent>();
             foreach (JournalStep step in unit.Decisions)
             {
                 if (decisionIndex > 0 && (game.Pending is null || game.IsRootPrompt))
@@ -620,23 +627,35 @@ public static class SessionReplay
                     Affordance? selected = decision.IsDecline
                         ? null
                         : prompt.Affordances.Single(option => option.Id == decision.Affordance);
-                    string action = unit.Role == "phase_step"
-                        ? selected?.Label ?? prompt.Label
-                        : selected?.AnchorId is int anchor
+                    Card? anchorCard = selected?.AnchorId is int anchor
                         && anchor >= 0
                         && anchor < game.State.Cards.Count
-                            ? game.State.Facts.Title(game.State.Cards[anchor].FaceId)
+                            ? game.State.Cards[anchor]
+                            : null;
+                    string action = unit.Role == "phase_step"
+                        ? selected?.Label ?? prompt.Label
+                        : anchorCard is not null
+                            ? game.State.Facts.Title(anchorCard.FaceId)
                             : selected?.Label ?? prompt.Label;
                     historyActor = step.Decision.Actor;
                     historyActorName = game.State.Seats[step.Decision.Actor].Name;
-                    historyVerb = selected?.Verb;
+                    historyVerb = selected is not null
+                        && string.Equals(selected.Verb, Game.ActionVerb, StringComparison.Ordinal)
+                        && anchorCard is not null
+                        && game.State.Facts.Kind(anchorCard.FaceId) == CardKind.Event
+                            ? CardPlay.Verb
+                            : decision.IsDecline && game.Phase == GamePhase.PlayerTurn
+                                ? Game.EndPhaseVerb
+                                : selected?.Verb;
                     historyAction = action;
+                    historySubject = anchorCard?.ObjectId;
                 }
                 if (history is not null && unit.Status == "complete")
                 {
                     foreach (int generator in decision.Spent.Where(
                                  historyResourceIds.Add))
                     {
+                        historyResourceIdsInOrder.Add(generator);
                         historyResources.Add(
                             game.State.Abilities.ResourceGeneratorName(
                                 game.State, step.Decision.Actor, generator));
@@ -660,6 +679,10 @@ public static class SessionReplay
                 if (!Equals(step.Result, Result(game)))
                 {
                     throw new ReplayDivergenceException($"{context} result diverged");
+                }
+                if (history is not null && unit.Status == "complete")
+                {
+                    historyEvents.AddRange(resolved.Events);
                 }
                 exposures = InformationFrontier.Merge(
                     exposures,
@@ -703,7 +726,10 @@ public static class SessionReplay
                     historyVerb,
                     historyAction ?? throw new ReplayDivergenceException(
                         $"unit {unitIndex} has no history action"),
+                    historySubject,
+                    historyResourceIdsInOrder,
                     historyResources,
+                    historyEvents,
                     unit.Decisions[^1].Result?.Outcome));
             }
 

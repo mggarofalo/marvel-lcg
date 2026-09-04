@@ -183,8 +183,9 @@ The socket protocol uses source-generated JSON inside a 4-byte big-endian length
 frame. Frames are bounded. Unknown operations, unsupported protocol versions and
 unknown JSON members fail before they reach the engine. Protocol 12 adds
 visibility-safe completed-action summaries at the cursor immediately before each
-action, so a client can offer an authoritative history target without receiving
-journal decisions or information-frontier signals. Protocol 11 adds the
+action, their visibility-safe discard-result details, and whether an action is
+still open, so a client can offer an authoritative history target without
+receiving journal decisions or information-frontier signals. Protocol 11 adds the
 product, replay, save-schema and dataset identities to the
 setup discovery response so a client can diagnose compatibility before opening a
 game. Protocol 10 added declaration-sensitive wild-resource costs.

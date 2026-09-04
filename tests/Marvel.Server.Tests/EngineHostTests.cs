@@ -421,6 +421,96 @@ public sealed class EngineHostTests
     }
 
     [Fact]
+    public void EventActionHistoryIsACompletedCardPlayRatherThanAnAbilityUse()
+    {
+        var host = new EngineHost(
+            DatasetGameFactory.Load(RepositoryPaths.Root),
+            new SequenceCapabilities("event-history-owner"));
+        EngineResponse opened = host.Exchange(EngineRequest.OpenGame(
+            "open", "event-history",
+            new GameSpecification("rhino", ["spider_man"], [], Seed: 1)));
+        string capability = RequiredCapability(opened);
+        EngineResponse turn = host.Exchange(EngineRequest.ResolveGame(
+            "mulligan", "event-history", capability,
+            new EngineDecision(Assert.Single(opened.Prompt!.Affordances).Id, []),
+            opened.Revision));
+        Affordance changeForm = Assert.Single(turn.Prompt!.Affordances, option =>
+            option.Verb == Game.ChangeForm);
+        EngineResponse hero = host.Exchange(EngineRequest.ResolveGame(
+            "form", "event-history", capability,
+            new EngineDecision(changeForm.Id, []),
+            turn.Revision));
+        CardDescriptor kick = Hand(hero, 0).First(card =>
+            card.Face?.Title == "Swinging Web Kick");
+        Affordance play = Assert.Single(hero.Prompt!.Affordances, option =>
+            option.Verb == Game.ActionVerb && option.AnchorId == kick.Id);
+        var composer = new DecisionComposer(hero.Prompt);
+        composer.SelectAffordance(play.Id);
+        if (play.Targets is { } targets)
+        {
+            composer.SelectTargets(targets.Legal.Take(targets.Min));
+        }
+        foreach (ResourceSource source in play.CostOptions
+                     .SelectMany(cost => cost.Generators)
+                     .DistinctBy(source => source.Effect))
+        {
+            composer.ToggleResource(source.Effect);
+            if (composer.TryBuild(out _, out _))
+            {
+                break;
+            }
+        }
+        Assert.True(composer.TryBuild(out EngineDecision? decision, out string? error), error);
+
+        EngineResponse played = host.Exchange(EngineRequest.ResolveGame(
+            "play", "event-history", capability, decision!, hero.Revision));
+        Assert.True(played.History!.ActionOpen);
+        Assert.DoesNotContain(played.History.Entries, entry => entry.Cursor == 2);
+        while (played.History!.ActionOpen)
+        {
+            EngineDecision continuation = played.Prompt!.Cancellable
+                ? EngineDecision.Decline
+                : TakeOnly(played);
+            played = host.Exchange(EngineRequest.ResolveGame(
+                "finish-play", "event-history", capability,
+                continuation,
+                played.Revision));
+        }
+
+        HistoryEntryDescriptor entry = Assert.Single(
+            played.History!.Entries, item => item.Cursor == 2);
+        Assert.StartsWith("Spider-Man played Swinging Web Kick, generating resources from ",
+            entry.Summary, StringComparison.Ordinal);
+        Assert.DoesNotContain(" used ", entry.Summary, StringComparison.Ordinal);
+        Assert.Empty(entry.Details);
+    }
+
+    [Fact]
+    public void DecliningTheTurnProducesAnEndTurnHistoryAction()
+    {
+        var host = new EngineHost(
+            DatasetGameFactory.Load(RepositoryPaths.Root),
+            new SequenceCapabilities("end-turn-history-owner"));
+        EngineResponse opened = host.Exchange(EngineRequest.OpenGame(
+            "open", "end-turn-history",
+            new GameSpecification("rhino", ["spider_man"], [], Seed: 1)));
+        string capability = RequiredCapability(opened);
+        EngineResponse turn = host.Exchange(EngineRequest.ResolveGame(
+            "mulligan", "end-turn-history", capability,
+            new EngineDecision(Assert.Single(opened.Prompt!.Affordances).Id, []),
+            opened.Revision));
+
+        EngineResponse ended = host.Exchange(EngineRequest.ResolveGame(
+            "end", "end-turn-history", capability,
+            EngineDecision.Decline,
+            turn.Revision));
+
+        Assert.Equal(
+            "Spider-Man ended their turn.",
+            Assert.Single(ended.History!.Entries, entry => entry.Cursor == 1).Summary);
+    }
+
+    [Fact]
     public void NewInformationAndAnotherSeatsHistoryExplainWhyUndoIsUnavailable()
     {
         var store = new MemorySessionStore();
@@ -465,6 +555,7 @@ public sealed class EngineHostTests
         Assert.Equal(
             "Captain Marvel completed an action.",
             afterOne.History!.Entries[0].Summary);
+        Assert.Empty(afterOne.History.Entries[0].Details);
         Assert.Equal("history_authority", otherSeat.Error?.Code);
         Assert.Null(undone.Error);
         Assert.Equal(undone.Revision, converged.Revision);

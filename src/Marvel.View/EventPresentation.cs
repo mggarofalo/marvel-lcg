@@ -62,6 +62,8 @@ public sealed record ActionHistoryFacts(
     string Phase,
     string? Verb,
     string Action,
+    int? Subject,
+    IReadOnlyList<int> ResourceGeneratorIds,
     IReadOnlyList<string> ResourceGenerators,
     Outcome? Outcome = null);
 
@@ -74,36 +76,91 @@ public static class ActionHistoryPresenter
         ArgumentNullException.ThrowIfNull(action);
         ArgumentException.ThrowIfNullOrWhiteSpace(action.Actor);
         ArgumentException.ThrowIfNullOrWhiteSpace(action.Action);
+        ArgumentNullException.ThrowIfNull(action.ResourceGeneratorIds);
         ArgumentNullException.ThrowIfNull(action.ResourceGenerators);
 
-        if (action.Outcome is { } outcome)
-        {
-            return EventPresenter.Terminal(outcome).Summary;
-        }
-
-        if (string.Equals(action.Verb, "Play", StringComparison.Ordinal))
+        string summary;
+        if (string.Equals(action.Verb, CardPlay.Verb, StringComparison.Ordinal))
         {
             string payment = action.ResourceGenerators.Count == 0
                 ? string.Empty
                 : $", generating resources from {Names(action.ResourceGenerators)}";
-            return $"{action.Actor} played {action.Action}{payment}.";
+            summary = $"{action.Actor} played {action.Action}{payment}.";
         }
-
-        if (string.Equals(action.Verb, Game.ChangeForm, StringComparison.Ordinal))
+        else if (string.Equals(action.Verb, Game.ChangeForm, StringComparison.Ordinal))
         {
-            return $"{action.Actor} changed form.";
+            summary = $"{action.Actor} changed form.";
         }
-
-        if (string.Equals(action.Verb, Game.EndPhaseVerb, StringComparison.Ordinal))
+        else if (string.Equals(action.Verb, Game.EndPhaseVerb, StringComparison.Ordinal)
+            && string.Equals(action.Phase, "PlayerTurn", StringComparison.Ordinal))
         {
-            return $"{action.Actor} ended their turn.";
+            summary = $"{action.Actor} ended their turn.";
+        }
+        else if (string.Equals(action.Verb, BasicPowers.AttackVerb, StringComparison.Ordinal))
+        {
+            summary = string.Equals(action.Actor, action.Action, StringComparison.Ordinal)
+                ? $"{action.Actor} attacked."
+                : $"{action.Actor} attacked with {action.Action}.";
+        }
+        else if (string.Equals(action.Verb, BasicPowers.ThwartVerb, StringComparison.Ordinal))
+        {
+            summary = string.Equals(action.Actor, action.Action, StringComparison.Ordinal)
+                ? $"{action.Actor} thwarted."
+                : $"{action.Actor} thwarted with {action.Action}.";
+        }
+        else if (string.Equals(action.Verb, BasicPowers.RecoverVerb, StringComparison.Ordinal))
+        {
+            summary = $"{action.Actor} recovered.";
+        }
+        else
+        {
+            string choice = action.Action.Trim().TrimEnd('.');
+            string phase = Words(action.Phase);
+            string phaseName = phase.EndsWith(" phase", StringComparison.Ordinal)
+                ? phase
+                : $"{phase} phase";
+            summary = action.Role == "phase_step"
+                || !string.Equals(action.Phase, "PlayerTurn", StringComparison.Ordinal)
+                ? $"{action.Actor} resolved {choice} during the {phaseName}."
+                : $"{action.Actor} used {choice}.";
         }
 
-        string choice = action.Action.Trim().TrimEnd('.');
-        return action.Role == "phase_step"
-            || !string.Equals(action.Phase, "PlayerTurn", StringComparison.Ordinal)
-            ? $"{action.Actor} resolved {choice} during the {Words(action.Phase)} phase."
-            : $"{action.Actor} used {choice}.";
+        return action.Outcome is { } outcome
+            ? $"{summary} {EventPresenter.Terminal(outcome).Summary}"
+            : summary;
+    }
+
+    /// <summary>
+    /// Describes genuine discard results while omitting cards spent for, or
+    /// moved as part of, the summarized play action.
+    /// </summary>
+    public static IReadOnlyList<string> PresentDiscardDetails(
+        ActionHistoryFacts action,
+        IReadOnlyList<GameEvent> events,
+        WorldDescriptor world)
+    {
+        ArgumentNullException.ThrowIfNull(action);
+        ArgumentNullException.ThrowIfNull(events);
+        ArgumentNullException.ThrowIfNull(world);
+        var mechanics = action.ResourceGeneratorIds.ToHashSet();
+        if (string.Equals(action.Verb, CardPlay.Verb, StringComparison.Ordinal)
+            && action.Subject is int subject)
+        {
+            mechanics.Add(subject);
+        }
+
+        GameEvent[] discards = events
+            .OfType<CardsMoved>()
+            .Where(moved => string.Equals(moved.Verb, "Discard", StringComparison.Ordinal))
+            .Select(moved => moved with
+            {
+                Cards = moved.Cards.Where(card => !mechanics.Contains(card.Card)).ToArray(),
+            })
+            .Where(moved => moved.Cards.Count > 0)
+            .ToArray();
+        return EventPresenter.PresentNarrative(discards, world)
+            .Select(entry => entry.Summary)
+            .ToArray();
     }
 
     private static string Names(IReadOnlyList<string> names) => names.Count switch
@@ -368,6 +425,12 @@ public static class EventPresenter
             return moved.From.Owner == moved.To.Owner
                 ? $"{player} discarded {cards}."
                 : $"{player} discarded {cards} to {Possessive(moved.To.Owner, world)} discard pile.";
+        }
+
+        if (string.Equals(moved.Verb, "Discard", StringComparison.Ordinal))
+        {
+            return $"{Player(moved.From.Owner, world)} discarded {cards} from "
+                + $"{Area(moved.From, world)}.";
         }
 
         if (ZoneIs(moved.From, "HandsArea")

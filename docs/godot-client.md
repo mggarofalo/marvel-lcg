@@ -286,7 +286,11 @@ Settled synchronization uses the toolbar indicator rather than reserving a
 large event-cue box, and the History tab gives its log a readable minimum height.
 Completed history units appear there as one player action rather than as their
 individual card movements. A card play names its payment cards and resource
-abilities in the same sentence. `Undo last action` and the eligible history-row
+abilities in the same sentence; genuine discard results remain subordinate
+narrative lines. An action with dependent decisions does not enter History or
+replace Last Resolved until it completes. The shareable interaction report uses
+the same action history and omits the raw animation-event causes.
+`Undo last action` and the eligible history-row
 links submit only cursor boundaries advertised by the server. A draw, search,
 reveal, shuffle, random selection, open action or another seat's authority can
 therefore disable an earlier boundary without the client reconstructing that

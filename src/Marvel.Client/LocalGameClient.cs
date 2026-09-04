@@ -1151,7 +1151,10 @@ public sealed class LocalGameClient
             || history.Entries.Any(entry => entry is null
                 || entry.Cursor < 0
                 || entry.Cursor >= history.Cursor
-                || string.IsNullOrWhiteSpace(entry.Summary)))
+                || string.IsNullOrWhiteSpace(entry.Summary)
+                || entry.Details is null
+                || entry.Details.Any(string.IsNullOrWhiteSpace))
+            || history.ActionOpen && (history.Undo.Count > 0 || history.Redo.Count > 0))
         {
             return false;
         }

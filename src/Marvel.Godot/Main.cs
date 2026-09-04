@@ -1271,10 +1271,14 @@ public sealed partial class Main : Control
                     !priorHistory.Contains(entry.Cursor)
                     && entry.Summary.Contains(" played ", StringComparison.Ordinal))
                 : null;
-            IReadOnlyList<EventPresentation> highlights = completed is null
-                ? presented.Highlights
-                : [new EventPresentation(
-                    completed.Summary, "Action", [], EventMotionKind.State)];
+            IReadOnlyList<EventPresentation> highlights = response.History?.ActionOpen == true
+                ? []
+                : completed is null
+                    ? presented.Highlights
+                    : completed.Details.Prepend(completed.Summary)
+                        .Select(summary => new EventPresentation(
+                            summary, "Action", [], EventMotionKind.State))
+                        .ToArray();
             RenderLastResult(highlights, resetEvents);
             PresentEvents(presented.Cues);
         }
@@ -1630,7 +1634,7 @@ public sealed partial class Main : Control
     {
         IReadOnlyList<HistoryEntryDescriptor> actions =
             CurrentGame?.History?.Entries ?? [];
-        if (actions.Count > 0)
+        if (actions.Count > 0 || CurrentGame?.History?.ActionOpen == true)
         {
             string actionAccent = ClientTheme.ToGodot(
                 VisualSystem.Palette.Accent).ToHtml(false);
@@ -1644,6 +1648,10 @@ public sealed partial class Main : Control
                     .Append((entry.Cursor + 1).ToString("000", CultureInfo.InvariantCulture))
                     .Append("[/color]  ")
                     .AppendLine(entry.Summary);
+                foreach (string detail in entry.Details)
+                {
+                    actionText.Append("     ").AppendLine(detail);
+                }
                 if (undo.Contains(entry.Cursor))
                 {
                     actionText.Append("     [url=undo:")
@@ -1652,7 +1660,9 @@ public sealed partial class Main : Control
                 }
             }
 
-            eventLog.Text = actionText.ToString();
+            eventLog.Text = actionText.Length == 0
+                ? "Action in progress."
+                : actionText.ToString();
             eventLog.ScrollToLine(eventLog.GetLineCount());
             return;
         }
