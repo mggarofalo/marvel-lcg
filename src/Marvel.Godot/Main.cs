@@ -13,6 +13,7 @@ namespace Marvel.Godot;
 /// <summary>The desktop client's composition boundary and root scene.</summary>
 public sealed partial class Main : Control
 {
+    private const double LastResultLifetimeSeconds = 8.0;
     private readonly List<string> scenarioNames = [];
     private readonly List<ScenarioSetupChoice> visibleModes = [];
     private readonly ICardArtProvider art = LocalArtPack.OpenConfigured();
@@ -98,7 +99,11 @@ public sealed partial class Main : Control
     private HBoxContainer handRail = null!;
     private Label handHeading = null!;
     private PanelContainer lastResult = null!;
+    private Button lastResultDismiss = null!;
     private Label lastResultSummary = null!;
+    private Button lastResultToggle = null!;
+    private int lastResultGeneration;
+    private bool lastResultExpanded;
     private Label title = null!;
     private string? transientInvitation;
     private bool decisionPending;
@@ -192,6 +197,7 @@ public sealed partial class Main : Control
         foreach (Control control in new Control[]
                  {
                      startFlow, joinFlow, reloadSetup, start, join, invitationCopy,
+                     lastResultToggle, lastResultDismiss,
                  })
         {
             control.CustomMinimumSize = new Vector2(
@@ -245,6 +251,10 @@ public sealed partial class Main : Control
             $"{content}/Play/Prompt/Margin/Stack/Workbench/Action/Decision");
         lastResult = GetNode<PanelContainer>(
             $"{content}/Play/Prompt/Margin/Stack/Workbench/Action/LastResult");
+        lastResultToggle = GetNode<Button>(
+            $"{content}/Play/Prompt/Margin/Stack/Workbench/Action/LastResult/Margin/Copy/Header/Toggle");
+        lastResultDismiss = GetNode<Button>(
+            $"{content}/Play/Prompt/Margin/Stack/Workbench/Action/LastResult/Margin/Copy/Header/Dismiss");
         lastResultSummary = GetNode<Label>(
             $"{content}/Play/Prompt/Margin/Stack/Workbench/Action/LastResult/Margin/Copy/Summary");
         eventLog = GetNode<RichTextLabel>(
@@ -272,7 +282,10 @@ public sealed partial class Main : Control
         eventSkip.Pressed += SkipEventPresentation;
         copyReport.Pressed += CopyInteractionReport;
         saveReport.Pressed += SaveInteractionReport;
+        lastResultToggle.Pressed += ToggleLastResult;
+        lastResultDismiss.Pressed += DismissLastResult;
         decisions.Submitted += OnDecisionSubmitted;
+        decisions.DraftStarted += DismissLastResult;
         decisions.AnchorFocused += ids => boardRender?.Highlight(ids);
         decisions.CardHovered += PreviewHandCard;
         decisions.ProgressChanged += RenderDecisionProgress;
@@ -1073,6 +1086,7 @@ public sealed partial class Main : Control
         events.Reset([]);
         activeResolution.Visible = false;
         lastResult.Visible = false;
+        lastResultGeneration++;
         RenderEvents();
         boardAreas.GetChildren().ToList().ForEach(node => node.QueueFree());
         board.Visible = false;
@@ -1389,18 +1403,51 @@ public sealed partial class Main : Control
         {
             if (reset)
             {
-                lastResult.Visible = false;
-                lastResultSummary.Text = string.Empty;
+                DismissLastResult();
             }
             return;
         }
 
+        int generation = ++lastResultGeneration;
         lastResult.Visible = true;
-        lastResultSummary.Text = string.Join("\n", highlights.Select(entry => entry.Summary));
+        lastResultSummary.Text = string.Join(" ", highlights.Select(entry => entry.Summary));
         lastResult.ThemeTypeVariation = highlights.Any(entry => entry.Motion is
             EventMotionKind.Defeat or EventMotionKind.Terminal)
                 ? GodotThemeVariations.DangerStatusPanel
                 : GodotThemeVariations.StatusPanel;
+        SetLastResultExpanded(true);
+        GetTree().CreateTimer(LastResultLifetimeSeconds).Timeout += () =>
+        {
+            if (generation == lastResultGeneration && IsInsideTree())
+            {
+                DismissLastResult();
+            }
+        };
+    }
+
+    private void ToggleLastResult()
+    {
+        if (lastResult.Visible)
+        {
+            SetLastResultExpanded(!lastResultExpanded);
+        }
+    }
+
+    private void SetLastResultExpanded(bool expanded)
+    {
+        lastResultExpanded = expanded;
+        lastResultSummary.Visible = expanded;
+        lastResultToggle.Text = expanded ? "Collapse" : "Expand";
+    }
+
+    private void DismissLastResult()
+    {
+        lastResultGeneration++;
+        lastResultExpanded = false;
+        lastResult.Visible = false;
+        lastResultSummary.Visible = false;
+        lastResultSummary.Text = string.Empty;
+        lastResultToggle.Text = "Expand";
     }
 
     private void RenderDecisionProgress(DecisionProgressPresentation? progress)

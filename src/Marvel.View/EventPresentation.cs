@@ -67,6 +67,39 @@ public static class EventPresenter
         return events.Select(happened => Present(happened, world)).ToArray();
     }
 
+    /// <summary>
+    /// Presents one response as readable actions, combining adjacent pieces of
+    /// the same card movement without changing the underlying event stream.
+    /// </summary>
+    public static IReadOnlyList<EventPresentation> PresentNarrative(
+        IReadOnlyList<GameEvent> events,
+        WorldDescriptor world)
+    {
+        ArgumentNullException.ThrowIfNull(events);
+        ArgumentNullException.ThrowIfNull(world);
+        var combined = new List<GameEvent>(events.Count);
+        foreach (GameEvent happened in events)
+        {
+            if (happened is CardsMoved moved
+                && combined.LastOrDefault() is CardsMoved prior
+                && SameArea(prior.From, moved.From)
+                && SameArea(prior.To, moved.To)
+                && string.Equals(prior.Verb, moved.Verb, StringComparison.Ordinal)
+                && string.Equals(prior.Trigger, moved.Trigger, StringComparison.Ordinal))
+            {
+                combined[^1] = prior with
+                {
+                    Cards = prior.Cards.Concat(moved.Cards).ToArray(),
+                };
+                continue;
+            }
+
+            combined.Add(happened);
+        }
+
+        return Present(combined, world);
+    }
+
     /// <summary>Presents one event using only its authorized response snapshot.</summary>
     public static EventPresentation Present(GameEvent happened, WorldDescriptor world)
     {
@@ -85,7 +118,7 @@ public static class EventPresenter
                 moved.Cards.Select(card => card.Card).ToArray(),
                 EventMotionKind.Defeat),
             CardsMoved moved => (
-                $"Moved {Cards(moved.Cards.Select(card => card.Card), world)} from {Area(moved.From, world)} to {Area(moved.To, world)}.",
+                MovementSummary(moved, world),
                 moved.Cards.Select(card => card.Card).ToArray(),
                 IsStatus(moved.From) || IsStatus(moved.To)
                     ? EventMotionKind.Status
@@ -235,6 +268,55 @@ public static class EventPresenter
         };
     }
 
+    private static string MovementSummary(CardsMoved moved, WorldDescriptor world)
+    {
+        string cards = Cards(moved.Cards.Select(card => card.Card), world);
+        if (ZoneIs(moved.From, "PlayerDeck")
+            && ZoneIs(moved.To, "HandsArea")
+            && string.Equals(moved.Verb, "Draw", StringComparison.Ordinal))
+        {
+            string player = Player(moved.To.Owner, world);
+            return moved.From.Owner == moved.To.Owner
+                ? $"{player} drew {cards}."
+                : $"{player} drew {cards} from {Possessive(moved.From.Owner, world)} player deck.";
+        }
+
+        if (ZoneIs(moved.To, "HandsArea")
+            && string.Equals(moved.Verb, "Add_To_Hand", StringComparison.Ordinal))
+        {
+            return $"{Player(moved.To.Owner, world)} added {cards} to their hand"
+                + $" from {Area(moved.From, world)}.";
+        }
+
+        if (ZoneIs(moved.From, "HandsArea") && ZoneIs(moved.To, "DiscardPile"))
+        {
+            string player = Player(moved.From.Owner, world);
+            return moved.From.Owner == moved.To.Owner
+                ? $"{player} discarded {cards}."
+                : $"{player} discarded {cards} to {Possessive(moved.To.Owner, world)} discard pile.";
+        }
+
+        if (ZoneIs(moved.From, "HandsArea")
+            && string.Equals(moved.Verb, "Play", StringComparison.Ordinal)
+            && moved.From.Owner == moved.To.Owner)
+        {
+            return $"{Player(moved.From.Owner, world)} played {cards}.";
+        }
+
+        return $"Moved {cards} from {Area(moved.From, world)} to {Area(moved.To, world)}.";
+    }
+
+    private static bool ZoneIs(AreaRef area, string zone) =>
+        string.Equals(area.Zone, zone, StringComparison.Ordinal);
+
+    private static bool SameArea(AreaRef left, AreaRef right) =>
+        left.Owner == right.Owner
+        && left.Host == right.Host
+        && string.Equals(left.Zone, right.Zone, StringComparison.Ordinal);
+
+    private static string Possessive(int seat, WorldDescriptor world) =>
+        $"{Player(seat, world)}'s";
+
     private static string DefeatedSummary(CardsMoved moved, WorldDescriptor world)
     {
         string[] names = moved.Cards.Select(card =>
@@ -363,20 +445,25 @@ public static class EventCuePlanner
     {
         ArgumentNullException.ThrowIfNull(happened);
         ArgumentNullException.ThrowIfNull(world);
-        var history = EventPresenter.Present(happened, world).ToList();
-        var cues = new List<EventPresentation>(history.Count + 1);
-        for (int index = 0; index < history.Count; index++)
+        var presented = EventPresenter.Present(happened, world);
+        IReadOnlyList<EventPresentation> narrative =
+            EventPresenter.PresentNarrative(happened, world);
+        var history = narrative.Count == presented.Count
+            ? presented.ToList()
+            : narrative.ToList();
+        var cues = new List<EventPresentation>(presented.Count + 1);
+        for (int index = 0; index < presented.Count; index++)
         {
-            EventPresentation current = history[index];
+            EventPresentation current = presented[index];
             if (current.Motion == EventMotionKind.Status
                 && StatusCardIds(happened[index]) is { Count: > 0 } statusCards)
             {
                 var anchors = current.Anchors.ToList();
-                while (index + 1 < history.Count
+                while (index + 1 < presented.Count
                     && CompanionCard(happened[index + 1]) is { } companionCard
                     && statusCards.Contains(companionCard))
                 {
-                    anchors.AddRange(history[++index].Anchors);
+                    anchors.AddRange(presented[++index].Anchors);
                 }
 
                 current = current with { Anchors = anchors.Distinct().ToArray() };
@@ -392,7 +479,7 @@ public static class EventCuePlanner
             cues.Add(terminal);
         }
 
-        var highlights = Highlight(cues);
+        var highlights = Highlight(history);
         return new EventBatchPresentation(history, cues, highlights);
     }
 
@@ -473,7 +560,7 @@ public sealed class EventChronology
 
     /// <summary>Appends one response's events without changing earlier entries.</summary>
     public void Append(IReadOnlyList<GameEvent> events, WorldDescriptor world) =>
-        Append(EventPresenter.Present(events, world));
+        Append(EventPresenter.PresentNarrative(events, world));
 
     /// <summary>Appends already-presented entries and retains the latest readable history.</summary>
     public void Append(IEnumerable<EventPresentation> presented)
