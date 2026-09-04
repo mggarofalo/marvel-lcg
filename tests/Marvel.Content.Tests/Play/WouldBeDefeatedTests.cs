@@ -39,6 +39,24 @@ public sealed class WouldBeDefeatedTests
         Assert.Equal(DeckType.EncounterDiscardPile, upgrade.Area.Type);
     }
 
+    [Rule("rr:damage.step.6")]
+    [Rule("rr:would.1")]
+    [Fact]
+    public void LethalPreviewIncludesTheForcedDefeatReplacement()
+    {
+        var (world, minion, upgrade) = Board();
+
+        string preview = Damage.PreviewAttack(
+            world, Cards, minion, minion, minion, 3);
+
+        Assert.Equal(
+            "3/3 → 3/3 HP · Biomechanical Upgrades heals all damage instead "
+            + "and will be discarded",
+            preview);
+        Assert.Equal(0, minion.Damage);
+        Assert.Equal(DeckType.UpgradesArea, upgrade.Area.Type);
+    }
+
     [Rule("rr:hit-points.3.1")]
     [Rule("rr:would.1")]
     [Fact]

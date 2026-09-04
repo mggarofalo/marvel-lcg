@@ -310,10 +310,11 @@ transport and protocol evidence; it does not infer whether a server restarted.
 ## Native smoke
 
 The native smoke loads the real scene at each supported UI scale, selects
-Spider-Man and Rhino, enters seed `1`, opens the table and activates only
-visible buttons until the UI reports the seeded villain win. It exercises both
-submit and pass paths across seven authoritative responses, checks that the
-event log is populated, and prints `LOCAL_GAME_SMOKE_OK` on success. The full
+Spider-Man and Rhino, enters seed `1`, opens the table, changes to hero form and
+activates only visible buttons until the UI reports the seeded loss. It exercises
+submit, target-selection and pass paths, verifies the enemy-attack interrupt
+context, checks that history and the primary result remain populated, and prints
+`LOCAL_GAME_SMOKE_OK` on success. The full
 matrix runs with event motion enabled; a representative desktop profile also
 completes the same game with motion disabled.
 

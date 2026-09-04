@@ -80,7 +80,8 @@ public sealed class DecisionComposerTests
 
         PromptPresentation view = PromptPresentation.From(prompt, world);
 
-        Assert.Contains(prompt.Description, view.Context);
+        Assert.DoesNotContain(prompt.Description, view.Context);
+        Assert.Equal(prompt.Description, view.Resolution);
         Assert.Equal("8/14 HP · Retaliate 1",
             prompt.Affordances[0].Targets!.Details![11]);
     }

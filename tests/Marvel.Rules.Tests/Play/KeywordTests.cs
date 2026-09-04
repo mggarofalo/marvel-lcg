@@ -703,13 +703,20 @@ public sealed class KeywordTests
             "attachment", world.AreaOf(
                 DeckType.UpgradesArea, PlayArea.Of(0), minion.ObjectId));
         Agendas.Happening(world);
+        var events = new List<GameEvent>();
 
-        Damage.Deal(world, printed, minion, minion, 1, "test", "test", []);
+        Damage.Deal(world, printed, minion, minion, 1, "test", "test", events);
 
         Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
         Assert.Equal(DeckType.VictoryDisplay, attachment.Area.Type);
         Assert.False(DeckTypes.IsInPlay(attachment.Area.Type));
         Assert.Equal(2, Defeat.VictoryPoints(world, printed));
+        Assert.Contains(events.OfType<CardsMoved>(), moved =>
+            moved.Verb == "Victory"
+            && moved.Cards.Any(landing => landing.Card == attachment.ObjectId));
+        Assert.Contains(events.OfType<CardsMoved>(), moved =>
+            moved.Verb == "Defeat"
+            && moved.Cards.Any(landing => landing.Card == minion.ObjectId));
     }
 
     [Rule("rr:victory-x.1.2")]

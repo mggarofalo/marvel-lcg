@@ -165,6 +165,47 @@ public sealed class EventPresentationTests
     }
 
     [Fact]
+    public void DefeatMovesNameTheDefeatedCardAndBecomePersistentHighlights()
+    {
+        var defeated = new CardsMoved(
+            AreaRef.Scenario("VillainArea"),
+            AreaRef.Scenario("RemovedArea"),
+            [new Landing(9, 0)])
+        {
+            Verb = "Defeat",
+            Trigger = "Attack",
+        };
+
+        EventBatchPresentation batch = EventCuePlanner.Plan(
+            [defeated], World(), Outcome.Unfinished);
+
+        EventPresentation highlight = Assert.Single(batch.Highlights);
+        Assert.Equal("Rhino stage 1 was defeated.", highlight.Summary);
+        Assert.Equal(EventMotionKind.Defeat, highlight.Motion);
+        Assert.Equal(highlight, Assert.Single(batch.History));
+    }
+
+    [Theory]
+    [MemberData(nameof(OrdinaryActionResults))]
+    public void OrdinaryCommittedActionsReplaceThePersistentResult(GameEvent happened)
+    {
+        EventBatchPresentation batch = EventCuePlanner.Plan(
+            [happened], World(), Outcome.Unfinished);
+
+        Assert.Equal(Assert.Single(batch.Cues), Assert.Single(batch.Highlights));
+    }
+
+    public static TheoryData<GameEvent> OrdinaryActionResults() => new()
+    {
+        new CardFormChanged(7, "01001a", "01001b"),
+        new FieldSet(9, "k_threat", 5, 3) { Verb = "Thwart" },
+        new CardsMoved(
+            AreaRef.Player("HandsArea", 0),
+            AreaRef.Player("SupportsArea", 0),
+            [new Landing(7, 0)]) { Verb = "Play" },
+    };
+
+    [Fact]
     public void StatusGainKeepsHistoryAndFoldsItsAttachmentIntoOneCue()
     {
         GameEvent[] happened =
@@ -296,13 +337,14 @@ public sealed class EventPresentationTests
                     "VillainArea",
                     -1,
                     -1,
-                    [Readable(9, "Rhino"), Hidden(12)],
+                    [Readable(9, "Rhino", CardKind.EncounterVillain, "1"), Hidden(12)],
                     []),
             ],
             [],
             Outcome.Unfinished);
 
-    private static CardDescriptor Readable(int id, string title) =>
+    private static CardDescriptor Readable(
+        int id, string title, CardKind kind = CardKind.Hero, string? stage = null) =>
         new(
             id,
             CardBack.Player,
@@ -310,8 +352,14 @@ public sealed class EventPresentationTests
             true,
             -1,
             new CardFaceDescriptor(
-                $"face-{id}", title, string.Empty, CardKind.Hero,
-                new Dictionary<string, long>(StringComparer.Ordinal)));
+                $"face-{id}", title, string.Empty, kind,
+                new Dictionary<string, long>(StringComparer.Ordinal))
+            {
+                PrintedStats = stage is null
+                    ? new Dictionary<string, string>(StringComparer.Ordinal)
+                    : new Dictionary<string, string>(StringComparer.Ordinal)
+                        { ["Stage"] = stage },
+            });
 
     private static CardDescriptor Hidden(int id) =>
         new(id, CardBack.Encounter, false, true, -1, null);

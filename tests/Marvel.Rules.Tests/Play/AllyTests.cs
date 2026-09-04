@@ -95,12 +95,16 @@ public sealed class AllyTests
         var ally = Ally(world, "fragile");
         world.CreateCard("ally", world.Seats[0].Deck);
 
+        var events = new List<GameEvent>();
         BasicPowers.AllyPower(
             world, printed, ally, world.TheCardIn(DeckType.VillainArea)!,
-            BasicPowers.AttackVerb, []);
-        Agendas.Finish(world, printed);
+            BasicPowers.AttackVerb, events);
+        events.AddRange(Agendas.Finish(world, printed));
 
         Assert.Equal(DeckType.DiscardPile, ally.Area.Type);
+        Assert.Contains(events.OfType<CardsMoved>(), moved =>
+            moved.Verb == "Defeat"
+            && moved.Cards.Any(landing => landing.Card == ally.ObjectId));
     }
 
     [Rule("rr:exhausted.1")]

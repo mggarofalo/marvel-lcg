@@ -103,6 +103,62 @@ public sealed class DamageSourceTests
         Assert.Equal(1, attacker.Damage);
     }
 
+    [Rule("rr:tough.2")]
+    [Fact]
+    public void AttackPreviewAccountsForToughWithoutSpendingIt()
+    {
+        // The preview describes the mandatory prevention but remains a read-only
+        // question. Committing the attack is what discards the status card.
+        var facts = new Printed();
+        var world = Board(facts);
+        var attacker = world.Seats[0].IdentityCard;
+        var target = world.CreateCard(
+            "target", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        Statuses.Give(world, target, Statuses.Tough);
+        string before = world.Digest().Canonical();
+
+        string preview = Damage.PreviewAttack(
+            world, facts, attacker, attacker, target, 8);
+
+        Assert.Equal(
+            "5/5 → 5/5 HP · Tough prevents the damage and is discarded", preview);
+        Assert.Equal(before, world.Digest().Canonical());
+        Assert.True(Statuses.Has(world, target, Statuses.Tough));
+    }
+
+    [Rule("rr:excess-damage")]
+    [Rule("rr:overkill")]
+    [Rule("rr:retaliate-x")]
+    [Fact]
+    public void AttackPreviewOnlyNamesConsequencesThatCanApply()
+    {
+        // A defeated target cannot retaliate, and excess is only actionable
+        // when Overkill turns it into a consequence of the attack.
+        var facts = new Printed();
+        var world = Board(facts);
+        var attacker = world.Seats[0].IdentityCard;
+        var target = world.CreateCard(
+            "retaliator", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+
+        string ordinary = Damage.PreviewAttack(
+            world, facts, attacker, attacker, target, 8);
+
+        Assert.Equal("5/5 → 0/5 HP · would be defeated", ordinary);
+
+        world.Effects.Register(new Marvel.Rules.Timing.ContinuousEffect(
+            Marvel.Rules.Timing.EffectSource.LastingEffect,
+            Kind: Marvel.Rules.Timing.Keywords.Overkill,
+            Card: attacker.ObjectId,
+            Affects: attacker.ObjectId));
+
+        string overkill = Damage.PreviewAttack(
+            world, facts, attacker, attacker, target, 8);
+
+        Assert.Equal(
+            "5/5 → 0/5 HP · would be defeated · Overkill carries 3 excess damage",
+            overkill);
+    }
+
     private static World Board(Printed facts)
     {
         var world = new World(facts, 1);

@@ -333,7 +333,7 @@ public static class VisualSystem
         SpacingMetrics spacing = Spacing(scale);
         return new DesktopPlayMetrics(
             decisionWidth,
-            DecisionMinimumHeight: Scale(viewportHeight < 800 ? 180 : 260, scale),
+            DecisionMinimumHeight: Scale(viewportHeight < 800 ? 220 : 320, scale),
             BoardAreaWidth: checked(card.Width * 2));
     }
 

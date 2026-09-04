@@ -123,6 +123,7 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.State.CardKind.Ally",
             "Marvel.Rules.State.CardKind.AlterEgo",
             "Marvel.Rules.State.CardKind.EncounterSideScheme",
+            "Marvel.Rules.State.CardKind.EncounterVillain",
             "Marvel.Rules.State.CardKind.Event",
             "Marvel.Rules.State.CardKind.Hero",
             "Marvel.Rules.State.CardKind.Insert",

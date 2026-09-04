@@ -5,6 +5,12 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Rules.Play;
 
+/// <summary>A read-only projection of damage after forced step-1 replacements.</summary>
+public sealed record DamageProjection(long? Amount, string? Note = null);
+
+/// <summary>A read-only projection of a forced would-be-defeated interrupt.</summary>
+public sealed record DefeatProjection(long? RemainingHealth, string Note);
+
 /// <summary>
 /// What a card does when it is revealed from the encounter deck.
 /// </summary>
@@ -234,6 +240,19 @@ public interface ICardAbilities : IWindowAbilities
     /// <param name="target">Who would take the damage.</param>
     /// <param name="source">The card the damage comes from.</param>
     bool CanTakeDamage(World world, Card target, Card source);
+
+    /// <summary>Projects forced step-1 replacement effects without changing the board.</summary>
+    /// <remarks>
+    /// A preview cannot call <see cref="WouldBeDealt"/>, because resolving a
+    /// replacement spends effects and may move cards. A null amount means a forced
+    /// replacement applies but its result is not knowable before resolution.
+    /// </remarks>
+    DamageProjection PreviewDamageReplacement(
+        World world, Card target, Card source, long amount) => new(amount);
+
+    /// <summary>Projects forced defeat interrupts without changing the board.</summary>
+    DefeatProjection? PreviewDefeatReplacement(
+        World world, Card target, long maximumHealth) => null;
 
     /// <summary>Whether a card can be readied by this source.</summary>
     /// <remarks>
@@ -684,6 +703,14 @@ public class NoCardAbilities : ICardAbilities
 
     /// <inheritdoc/>
     public virtual bool CanTakeDamage(World world, Card target, Card source) => true;
+
+    /// <inheritdoc/>
+    public virtual DamageProjection PreviewDamageReplacement(
+        World world, Card target, Card source, long amount) => new(amount);
+
+    /// <inheritdoc/>
+    public virtual DefeatProjection? PreviewDefeatReplacement(
+        World world, Card target, long maximumHealth) => null;
 
     /// <inheritdoc/>
     public virtual bool CanReady(World world, Card target, Card source) => true;

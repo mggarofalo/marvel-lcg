@@ -393,8 +393,8 @@ public static class Defeat
     }
 
     /// <summary>
-    /// A defeated card worth points goes to the victory display —
-    /// <c>rr:victory-x</c>.
+    /// A card whose departure is replaced by Victory goes to the victory
+    /// display — <c>rr:victory-x</c>.
     /// </summary>
     /// <remarks>
     /// <c>rr:victory-x.2</c>: "a character or side scheme with the victory X
@@ -404,7 +404,7 @@ public static class Defeat
     /// </remarks>
     /// <param name="world">The board.</param>
     /// <param name="facts">The printed card data.</param>
-    /// <param name="card">The defeated card.</param>
+    /// <param name="card">The card moving to the victory display.</param>
     /// <param name="trigger">What caused it, for the event stream.</param>
     /// <param name="events">Where to record what moved.</param>
     /// <returns>Whether it went there.</returns>
@@ -429,7 +429,8 @@ public static class Defeat
 
     /// <summary>Commits a Victory destination already proved on the trigger board.</summary>
     private static void MoveToVictoryDisplay(
-        World world, Card card, string trigger, List<GameEvent> events)
+        World world, Card card, string trigger, List<GameEvent> events,
+        string verb = "Victory")
     {
         var display = world.AreaOf(DeckType.VictoryDisplay);
         var from = card.Area;
@@ -442,7 +443,7 @@ public static class Defeat
             Places.Reference(from), Places.Reference(display),
             [new Landing(card.ObjectId, display.Cards.Count - 1)])
         {
-            Trigger = trigger, Verb = "Victory",
+            Trigger = trigger, Verb = verb,
         });
         constantsEnding.Complete(trigger, events);
     }
@@ -509,11 +510,11 @@ public static class Defeat
         VictoryAttachments(world, victory, trigger, events);
         if (hostHasVictory)
         {
-            MoveToVictoryDisplay(world, host, trigger, events);
+            MoveToVictoryDisplay(world, host, trigger, events, verb: "Defeat");
         }
         else
         {
-            Discard.Card(world, host, trigger, events);
+            Discard.Card(world, host, trigger, events, verb: "Defeat");
         }
 
         constantsEnding.Complete(trigger, events);

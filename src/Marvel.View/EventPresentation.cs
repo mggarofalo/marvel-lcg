@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
+using Marvel.Rules.State;
 using Marvel.View;
 
 namespace Marvel.View;
@@ -31,6 +32,9 @@ public enum EventMotionKind
     /// <summary>A visible value changed in the restorative direction.</summary>
     Heal,
 
+    /// <summary>A named card was defeated and left play.</summary>
+    Defeat,
+
     /// <summary>A named counter changed.</summary>
     Counter,
 
@@ -47,7 +51,8 @@ public enum EventMotionKind
 /// <summary>Persistent entries and replaceable transient cues for one response.</summary>
 public sealed record EventBatchPresentation(
     IReadOnlyList<EventPresentation> History,
-    IReadOnlyList<EventPresentation> Cues);
+    IReadOnlyList<EventPresentation> Cues,
+    IReadOnlyList<EventPresentation> Highlights);
 
 /// <summary>Formats the closed semantic-event vocabulary without consulting engine state.</summary>
 public static class EventPresenter
@@ -74,6 +79,11 @@ public static class EventPresenter
                 $"Created {Cards(created.Cards.Select(card => card.Id), world)} in {Area(created.Area, world)}.",
                 created.Cards.Select(card => card.Id).ToArray(),
                 IsStatus(created.Area) ? EventMotionKind.Status : EventMotionKind.Create),
+            CardsMoved moved when string.Equals(
+                moved.Verb, "Defeat", StringComparison.Ordinal) => (
+                DefeatedSummary(moved, world),
+                moved.Cards.Select(card => card.Card).ToArray(),
+                EventMotionKind.Defeat),
             CardsMoved moved => (
                 $"Moved {Cards(moved.Cards.Select(card => card.Card), world)} from {Area(moved.From, world)} to {Area(moved.To, world)}.",
                 moved.Cards.Select(card => card.Card).ToArray(),
@@ -225,6 +235,33 @@ public static class EventPresenter
         };
     }
 
+    private static string DefeatedSummary(CardsMoved moved, WorldDescriptor world)
+    {
+        string[] names = moved.Cards.Select(card =>
+            DefeatedCard(card.Card, world)).ToArray();
+        string cards = names.Length switch
+        {
+            0 => "no cards",
+            1 => names[0],
+            2 => $"{names[0]} and {names[1]}",
+            _ => $"{string.Join(", ", names[..^1])}, and {names[^1]}",
+        };
+        return $"{cards} {(moved.Cards.Count == 1 ? "was" : "were")} defeated.";
+    }
+
+    private static string DefeatedCard(int id, WorldDescriptor world)
+    {
+        CardDescriptor? card = world.Areas
+            .SelectMany(area => area.Cards.Concat(area.Removed))
+            .FirstOrDefault(candidate => candidate.Id == id);
+        if (card?.Face is { Kind: CardKind.EncounterVillain } face
+            && face.PrintedStats.GetValueOrDefault("Stage") is { Length: > 0 } stage)
+        {
+            return $"{face.Title} stage {stage}";
+        }
+        return Card(id, world);
+    }
+
     private static string Card(int id, WorldDescriptor world)
     {
         CardDescriptor? card = world.Areas
@@ -355,7 +392,39 @@ public static class EventCuePlanner
             cues.Add(terminal);
         }
 
-        return new EventBatchPresentation(history, cues);
+        var highlights = Highlight(cues);
+        return new EventBatchPresentation(history, cues, highlights);
+    }
+
+    private static IReadOnlyList<EventPresentation> Highlight(
+        IReadOnlyList<EventPresentation> cues)
+    {
+        var useful = cues.Where(cue => cue.Motion is
+            EventMotionKind.Damage or EventMotionKind.Heal or EventMotionKind.Status
+            or EventMotionKind.Defeat or EventMotionKind.Terminal).ToList();
+        if (useful.Count == 0)
+        {
+            // A completed action still deserves acknowledgement when it did
+            // not cause damage or a status change. Keep the most recent beats
+            // concise while replacing a stale result from an earlier action.
+            useful.AddRange(cues.TakeLast(4));
+        }
+        if (useful.Count <= 4)
+        {
+            return useful;
+        }
+
+        var essential = useful.Where(cue => cue.Motion is
+            EventMotionKind.Defeat or EventMotionKind.Terminal).ToHashSet();
+        foreach (var cue in useful.AsEnumerable().Reverse())
+        {
+            if (essential.Count >= 4)
+            {
+                break;
+            }
+            essential.Add(cue);
+        }
+        return useful.Where(essential.Contains).ToArray();
     }
 
     private static HashSet<int> StatusCardIds(GameEvent status) =>

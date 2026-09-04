@@ -8,6 +8,7 @@ namespace Marvel.View;
 public sealed record PromptPresentation(
     string Heading,
     string Context,
+    string Resolution,
     string Requirement,
     string Diagnostic,
     IReadOnlyList<AffordancePresentation> Affordances)
@@ -22,10 +23,8 @@ public sealed record PromptPresentation(
         string? source = Source(prompt.Label, world);
         return new PromptPresentation(
             PlayerQuestion(prompt, world, player, source),
-            (source is null ? $"Decision for {player}" : $"From {source}")
-                + (string.IsNullOrWhiteSpace(prompt.Description)
-                    ? string.Empty
-                    : $"\n{prompt.Description}"),
+            source is null ? $"Decision for {player}" : $"From {source}",
+            prompt.Description?.Trim() ?? string.Empty,
             prompt.Cancellable ? "You may pass." : "Choose to continue.",
             $"Player {prompt.Player + 1} · {Words(prompt.Asking.ToString())}"
                 + $" · {Words(prompt.When.ToString())} · {Words(prompt.Trigger)}"
