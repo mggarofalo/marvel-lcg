@@ -24,10 +24,11 @@ public sealed class BoardPresentationTests
 
         Assert.Equal([4, 8], board.Areas.Select(area => area.Id));
         Assert.Equal("VILLAIN", board.Areas[0].Title);
+        Assert.Equal(BoardAreaProminence.Live, board.Areas[0].Prominence);
         Assert.Equal("Rhino", Assert.Single(board.Areas[0].Cards).Title);
         Assert.Equal("Discarded Scheme", Assert.Single(board.Areas[0].Removed).Title);
-        Assert.Contains("OWNER CAROL DANVERS", board.Areas[1].Context);
-        Assert.Contains("HOST 9", board.Areas[1].Context);
+        Assert.Contains("Carol Danvers", board.Areas[1].Context);
+        Assert.Contains("hosted area", board.Areas[1].Context);
     }
 
     [Fact]
@@ -64,8 +65,8 @@ public sealed class BoardPresentationTests
             .Areas);
 
         Assert.Equal("UPCOMING VILLAIN STAGES", area.Title);
-        Assert.Contains("OUT OF PLAY", area.Context);
-        Assert.Contains("ENTERS AFTER THE CURRENT STAGE", area.Context);
+        Assert.Contains("Out of play", area.Context);
+        Assert.Contains("enters after the current stage", area.Context);
     }
 
     [Fact]
@@ -111,6 +112,24 @@ public sealed class BoardPresentationTests
             .Areas).Cards);
 
         Assert.Equal(string.Empty, card.Status);
+        Assert.Equal(
+            BoardAreaProminence.Supporting,
+            Assert.Single(BoardPresentation.From(
+                World(areas: [Area(1, "HandsArea", 0, [Readable(7, "Backflip")])]))
+                .Areas).Prominence);
+    }
+
+    [Fact]
+    public void EmptyAreasAreDeprioritizedEvenWhenTheirZoneUsuallyCarriesLiveState()
+    {
+        BoardPresentation board = BoardPresentation.From(World(areas:
+        [
+            Area(1, "SideSchemesArea", -1),
+            Area(2, "EncounterDeck", -1, [Readable(7, "Encounter card")]),
+        ]));
+
+        Assert.Equal(BoardAreaProminence.Empty, board.Areas[0].Prominence);
+        Assert.Equal(BoardAreaProminence.Supporting, board.Areas[1].Prominence);
     }
 
     [Fact]

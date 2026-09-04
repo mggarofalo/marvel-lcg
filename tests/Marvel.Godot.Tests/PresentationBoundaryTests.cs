@@ -63,6 +63,7 @@ public sealed class PresentationBoundaryTests
             "Marvel.Server.SetupChoices",
             "Marvel.View.AffordancePresentation",
             "Marvel.View.BoardAreaPresentation",
+            "Marvel.View.BoardAreaProminence",
             "Marvel.View.BoardCardPresentation",
             "Marvel.View.BoardFieldPresentation",
             "Marvel.View.BoardLanePresentation",

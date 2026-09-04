@@ -55,7 +55,8 @@ public sealed class DecisionComposerTests
         Assert.DoesNotContain("99", option.Targets);
         Assert.DoesNotContain("Spider-Man", PromptPresentation.Describe(11, world));
         Assert.Equal("Object 99", PromptPresentation.Describe(99, world));
-        Assert.Equal("OPTIONAL · PASS AVAILABLE", view.Requirement);
+        Assert.Equal("You may pass.", view.Requirement);
+        Assert.DoesNotContain("Untimed", view.Context);
     }
 
     [Fact]
@@ -97,6 +98,74 @@ public sealed class DecisionComposerTests
 
         Assert.Equal("draw", option.Label);
         Assert.Equal("Draw 3 cards", option.Description);
+    }
+
+    [Fact]
+    public void PresentationTurnsACardChoiceIntoAPlayerQuestionAndKeepsWireDataDiagnostic()
+    {
+        var prompt = new Prompt(
+            0,
+            Question.Element,
+            TimingPriority.Untimed,
+            "CardRevealed",
+            "01092: choose a card",
+            false,
+            [new Affordance(4, "Choose", 10, 0, "01001a")]);
+        var source = new CardDescriptor(
+            9, CardBack.Player, true, false, -1,
+            new CardFaceDescriptor(
+                "01092", "Helicarrier", "", CardKind.Support,
+                new Dictionary<string, long>(StringComparer.Ordinal)));
+        var identity = new CardDescriptor(
+            10, CardBack.Player, true, true, -1,
+            new CardFaceDescriptor(
+                "01001a", "Spider-Man", "Peter Parker", CardKind.Hero,
+                new Dictionary<string, long>(StringComparer.Ordinal)));
+        var world = new WorldDescriptor(
+            [new PlayerDescriptor(0, "Peter Parker", false)],
+            [new AreaDescriptor(2, "SupportsArea", 0, -1, [source, identity], [])],
+            [], Outcome.Unfinished);
+
+        PromptPresentation view = PromptPresentation.From(prompt, world);
+
+        Assert.Equal("Choose a player for Helicarrier", view.Heading);
+        Assert.Equal("From Helicarrier", view.Context);
+        Assert.DoesNotContain("01092", view.Heading);
+        Assert.Contains("Element", view.Diagnostic);
+        Assert.Contains("01092: choose a card", view.Diagnostic);
+    }
+
+    [Fact]
+    public void PresentationExplainsWhenACardsCurrentCostDiffersFromPrintedCost()
+    {
+        var prompt = new Prompt(
+            0,
+            Question.TurnOption,
+            TimingPriority.Untimed,
+            "WhenPlayerInTurn",
+            "\n--- Peter Parker's Turn (1) ---",
+            true,
+            [new Affordance(
+                4, "Play", 10, 0, "Play", Costs: [new CostOption(10, "0")])]);
+        var card = new CardDescriptor(
+            10, CardBack.Player, true, true, -1,
+            new CardFaceDescriptor(
+                "01006", "Web-Shooter", "", CardKind.Upgrade,
+                new Dictionary<string, long>(StringComparer.Ordinal))
+            {
+                Cost = "1",
+            });
+        var world = new WorldDescriptor(
+            [new PlayerDescriptor(0, "Peter Parker", false)],
+            [new AreaDescriptor(2, "HandsArea", 0, -1, [card], [])],
+            [], Outcome.Unfinished);
+
+        PromptPresentation view = PromptPresentation.From(prompt, world);
+
+        Assert.Equal("Peter Parker's turn", view.Heading);
+        Assert.Equal(
+            "Current cost 0; printed cost 1.",
+            Assert.Single(view.Affordances).Consequence);
     }
 
     [Fact]

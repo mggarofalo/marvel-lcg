@@ -73,13 +73,15 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
             }
 
             hidden.Add(upcoming.Id);
+            BoardCardPresentation[] cards = [.. area.Cards, .. upcoming.Cards];
+            BoardCardPresentation[] removed = [.. area.Removed, .. upcoming.Removed];
             result.Add(area with
             {
                 Title = area.Zone == "VillainArea" ? "VILLAIN" : "MAIN SCHEME",
-                Context = $"CURRENT AND UPCOMING STAGES  ·  OWNER "
-                    + (area.Seat < 0 ? "SCENARIO" : $"SEAT {area.Seat}"),
-                Cards = [.. area.Cards, .. upcoming.Cards],
-                Removed = [.. area.Removed, .. upcoming.Removed],
+                Context = "Current and upcoming stages",
+                Cards = cards,
+                Removed = removed,
+                Prominence = Prominence(area.Zone, cards.Length + removed.Length),
             });
         }
 
@@ -104,11 +106,11 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
             _ => Humanize(area.Zone, trimArea: true).ToUpperInvariant(),
         };
         string context = area.Zone == "VillainDeck"
-            ? $"OUT OF PLAY  ·  ENTERS AFTER THE CURRENT STAGE  ·  AREA {area.Id}"
-            : $"AREA {area.Id}  ·  OWNER {owner.ToUpperInvariant()}";
+            ? "Out of play · enters after the current stage"
+            : area.Owner < 0 ? "Scenario" : owner;
         if (area.Host >= 0)
         {
-            context += $"  ·  HOST {area.Host}";
+            context += " · hosted area";
         }
 
         return new BoardAreaPresentation(
@@ -121,7 +123,22 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
             Zone = area.Zone,
             Seat = area.Owner,
             Host = area.Host,
+            Prominence = Prominence(area.Zone, area.Cards.Count + area.Removed.Count),
         };
+    }
+
+    private static BoardAreaProminence Prominence(string zone, int cardCount)
+    {
+        if (cardCount == 0)
+        {
+            return BoardAreaProminence.Empty;
+        }
+
+        return zone is "VillainArea" or "MainSchemesArea" or "SideSchemesArea"
+            or "EnvironmentArea" or "HeroArea" or "AlliesArea" or "SupportsArea"
+            or "UpgradesArea" or "EngagedEnemiesArea" or "StatusArea" or "RuleArea"
+            ? BoardAreaProminence.Live
+            : BoardAreaProminence.Supporting;
     }
 
     private static List<BoardCardPresentation> Present(
@@ -297,6 +314,22 @@ public sealed record BoardAreaPresentation(
 
     /// <summary>The visible host title, or empty when unhosted.</summary>
     public string HostedBy { get; init; } = string.Empty;
+
+    /// <summary>How prominently the desktop table should present this area.</summary>
+    public BoardAreaProminence Prominence { get; init; } = BoardAreaProminence.Empty;
+}
+
+/// <summary>Presentation-only table priority; it does not change area visibility.</summary>
+public enum BoardAreaProminence
+{
+    /// <summary>No card currently occupies the area.</summary>
+    Empty,
+
+    /// <summary>The area contains cards but is not part of the round-to-round tableau.</summary>
+    Supporting,
+
+    /// <summary>The area contains live state players commonly monitor each round.</summary>
+    Live,
 }
 
 /// <summary>One readable card, face-down object, or concealed pile summary.</summary>

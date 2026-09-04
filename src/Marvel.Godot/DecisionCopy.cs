@@ -34,6 +34,15 @@ internal static class DecisionCopy
         };
     }
 
+    public static string ActionSummary(AffordancePresentation view)
+    {
+        ArgumentNullException.ThrowIfNull(view);
+        string action = Choice(view);
+        return string.IsNullOrWhiteSpace(view.Consequence)
+            ? action
+            : $"{action}\n{view.Consequence}";
+    }
+
     public static string GenericCommit(string verb, string label, string anchor)
     {
         string readableVerb = PromptPresentation.Words(verb);

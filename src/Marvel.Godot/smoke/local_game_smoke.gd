@@ -728,15 +728,20 @@ func _board_layout_is_resolved() -> bool:
 		_fail("table disclosures did not cover empty and populated sections")
 		return false
 
-	var area_flow := scenario_lane.find_child("AreaFlow", true, false) as HFlowContainer
+	var area_flow := scenario_lane.find_child("LiveAreaFlow", true, false) as HFlowContainer
 	var card_scroll := main.find_child("CARDSScroll", true, false) as ScrollContainer
-	var decision_scroll := _node("Play/Prompt/Margin/Stack/Workbench/Action/DecisionScroll") as ScrollContainer
+	var decision_scroll := main.find_child(
+		"DecisionBodyScroll", true, false) as ScrollContainer
+	var commit_bar := main.find_child("CommitBar", true, false) as Control
 	if area_flow == null or card_scroll == null or decision_scroll == null:
 		_fail("the table is missing its wrapped areas or bounded overflow rails")
 		return false
 	if card_scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED \
-			or decision_scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED:
-		_fail("a dense card or prompt rail cannot scroll horizontally")
+			or decision_scroll.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED:
+		_fail("a dense card or prompt rail cannot reach its overflow")
+		return false
+	if commit_bar == null or decision_scroll.is_ancestor_of(commit_bar):
+		_fail("the decision commitment is not fixed outside the scrolling editor")
 		return false
 	if scenario_lane.find_child("AreaScroll", true, false) != null:
 		_fail("the finite area layout still requires its own scrollbar")
@@ -781,13 +786,16 @@ func _board_layout_is_resolved() -> bool:
 
 func _keyboard_selection_is_operable() -> bool:
 	var header := _node("Play/Prompt/Margin/Stack/PromptHeader") as Control
-	var decision_scroll := _node("Play/Prompt/Margin/Stack/Workbench/Action/DecisionScroll") as ScrollContainer
+	var decision_scroll := main.find_child(
+		"DecisionBodyScroll", true, false) as ScrollContainer
 	if header == null or decision_scroll == null or decision_scroll.is_ancestor_of(header):
 		_fail("the active seat and question are not pinned above the decision body")
 		return false
 	var header_text := _visible_text(header)
-	if "PLAYER 1" not in header_text or "MULLIGAN" not in header_text.to_upper() \
-			or ("DECISION REQUIRED" not in header_text and "PASS AVAILABLE" not in header_text):
+	var readable_header := header_text.to_upper()
+	if "SPIDER-MAN" not in readable_header or "OPENING HAND" not in readable_header \
+			or ("CHOOSE TO CONTINUE" not in readable_header \
+			and "MAY PASS" not in readable_header):
 		_fail("the pinned prompt summary omits seat, question, or cancellability")
 		return false
 
@@ -815,7 +823,8 @@ func _keyboard_selection_is_operable() -> bool:
 		_fail("keyboard focus was lost when the selected decision control rebuilt")
 		return false
 	if not await _wait_for(func() -> bool: return _focused_control_is_visible(restored)):
-		var focused_scroll := _node("Play/Prompt/Margin/Stack/Workbench/Action/DecisionScroll") as ScrollContainer
+		var focused_scroll := main.find_child(
+			"DecisionBodyScroll", true, false) as ScrollContainer
 		var page_scroll := main.get_node("Margin") as ScrollContainer
 		_fail("keyboard focus moved outside the visible viewport: control=%s decision=%s page=%s root=%s scroll=%d/%d" % [
 			restored.get_global_rect(),
@@ -826,6 +835,8 @@ func _keyboard_selection_is_operable() -> bool:
 			page_scroll.scroll_vertical,
 		])
 		return false
+	decision_scroll = main.find_child(
+		"DecisionBodyScroll", true, false) as ScrollContainer
 	if decision_scroll.scroll_horizontal != 0:
 		_fail("keyboard focus horizontally clipped the selected decision label")
 		return false
@@ -840,6 +851,15 @@ func _keyboard_selection_is_operable() -> bool:
 	if not restored.text.begins_with("✓"):
 		_fail("ui_accept did not select the focused decision action")
 		return false
+	var action_summary := main.find_child("ActionSummary", true, false) as Control
+	var commit_bar := main.find_child("CommitBar", true, false) as Control
+	var submit := main.find_child("Submit", true, false) as Button
+	if action_summary == null or commit_bar == null or submit == null \
+			or decision_scroll.is_ancestor_of(action_summary) \
+			or decision_scroll.is_ancestor_of(commit_bar) \
+			or not _focused_control_is_visible(submit):
+		_fail("the selected action or its commitment moved into the scrolling editor")
+		return false
 	var progress := _node("Play/Prompt/Margin/Stack/PromptHeader/Progress") as Label
 	if progress == null or ("READY" not in progress.text and "INCOMPLETE" not in progress.text) \
 			or ("TARGETS" not in progress.text and "GROUP" not in progress.text \
@@ -847,6 +867,8 @@ func _keyboard_selection_is_operable() -> bool:
 		_fail("the pinned prompt summary did not update target and readiness progress")
 		return false
 	if not await _focused_board_area_is_visible():
+		return false
+	if not await _capture_checkpoint("action-composition"):
 		return false
 	return true
 
@@ -1126,7 +1148,7 @@ func _play() -> Control:
 
 
 func _decision() -> Control:
-	return _node("Play/Prompt/Margin/Stack/Workbench/Action/DecisionScroll/Decision") as Control
+	return _node("Play/Prompt/Margin/Stack/Workbench/Action/Decision") as Control
 
 
 func _status() -> Label:

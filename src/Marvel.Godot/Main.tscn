@@ -546,23 +546,24 @@ size_flags_vertical = 3
 layout_mode = 2
 metadata/_tab_name = "Action"
 
-[node name="DecisionScroll" type="ScrollContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/Action" unique_id=1000000092]
+[node name="Decision" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/Action" unique_id=1000000093]
 custom_minimum_size = Vector2(0, 180)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-follow_focus = true
-horizontal_scroll_mode = 1
-
-[node name="Decision" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/Action/DecisionScroll" unique_id=1000000093]
-layout_mode = 2
-size_flags_horizontal = 3
 script = ExtResource("2_decision")
 
 [node name="History" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench" unique_id=1000000094]
 layout_mode = 2
 theme_type_variation = &"TightStack"
 metadata/_tab_name = "History"
+
+[node name="PromptDiagnostic" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History"]
+layout_mode = 2
+theme_type_variation = &"Caption"
+text = "No prompt is pending."
+autowrap_mode = 2
+selectable = true
 
 [node name="Rule" type="HSeparator" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History" unique_id=1000000095]
 layout_mode = 2
