@@ -1,5 +1,6 @@
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 
 namespace Marvel.View;
 
@@ -31,7 +32,7 @@ public sealed record PromptPresentation(
                 + $"\nWire label: {prompt.Label.Trim()}",
             prompt.Affordances.Select(option => new AffordancePresentation(
                 option.Id,
-                option.Label,
+                DisplayLabel(option.Label, option.AnchorId, world),
                 option.Description,
                 Words(option.Verb),
                 Describe(option.AnchorId, world),
@@ -63,6 +64,11 @@ public sealed record PromptPresentation(
                 return "Choose a Forced Action";
             }
 
+            if (string.Equals(prompt.Trigger, "End Turn", StringComparison.Ordinal))
+            {
+                return "Choose end-of-phase discards";
+            }
+
             return $"{player}'s turn";
         }
 
@@ -70,12 +76,23 @@ public sealed record PromptPresentation(
         {
             Question.Option => "Choose an option",
             Question.Order => "Choose the order",
-            Question.Opportunity => "Choose a response",
+            Question.Opportunity when prompt.When == TimingPriority.Interrupt =>
+                "Choose an interrupt",
+            Question.Opportunity when prompt.When == TimingPriority.Response =>
+                "Choose a response",
+            Question.Opportunity => "Choose an ability",
+            Question.Element when string.Equals(
+                prompt.Trigger, "ChooseAttachmentTarget", StringComparison.Ordinal) =>
+                source is null
+                    ? "Choose where to attach the revealed card"
+                    : $"Choose where to attach {source}",
             Question.Element when ChoosesPlayer(prompt, world) => "Choose a player",
             Question.Element => Instruction(prompt.Label),
             _ => Instruction(prompt.Label),
         };
-        return source is null ? action : $"{action} for {source}";
+        return source is null || action.Contains(source, StringComparison.Ordinal)
+            ? action
+            : $"{action} for {source}";
     }
 
     private static bool ChoosesPlayer(Prompt prompt, WorldDescriptor world)
@@ -112,17 +129,51 @@ public sealed record PromptPresentation(
     private static string? Source(string label, WorldDescriptor world)
     {
         int separator = label.IndexOf(':', StringComparison.Ordinal);
-        if (separator <= 0)
-        {
-            return null;
-        }
-
-        string faceId = label[..separator].Trim();
-        return world.Areas
+        string? prefixedId = separator > 0 ? label[..separator].Trim() : null;
+        CardFaceDescriptor[] faces = [.. world.Areas
             .SelectMany(area => area.Cards.Concat(area.Removed))
             .Select(card => card.Face)
-            .FirstOrDefault(face => string.Equals(face?.Id, faceId, StringComparison.Ordinal))
+            .OfType<CardFaceDescriptor>()];
+        CardFaceDescriptor? prefixed = faces.FirstOrDefault(face =>
+            string.Equals(face.Id, prefixedId, StringComparison.Ordinal));
+        if (prefixed is not null)
+        {
+            return prefixed.Title;
+        }
+
+        return faces
+            .OrderByDescending(face => face.Id.Length)
+            .FirstOrDefault(face => ContainsToken(label, face.Id))
             ?.Title;
+    }
+
+    private static bool ContainsToken(string text, string token)
+    {
+        int start = text.IndexOf(token, StringComparison.Ordinal);
+        while (start >= 0)
+        {
+            int end = start + token.Length;
+            bool beginsAtBoundary = start == 0 || !char.IsLetterOrDigit(text[start - 1]);
+            bool endsAtBoundary = end == text.Length || !char.IsLetterOrDigit(text[end]);
+            if (beginsAtBoundary && endsAtBoundary)
+            {
+                return true;
+            }
+
+            start = text.IndexOf(token, start + 1, StringComparison.Ordinal);
+        }
+
+        return false;
+    }
+
+    private static string DisplayLabel(string label, int anchorId, WorldDescriptor world)
+    {
+        CardDescriptor? anchor = world.Areas
+            .SelectMany(area => area.Cards.Concat(area.Removed))
+            .FirstOrDefault(card => card.Id == anchorId);
+        return string.Equals(label, anchor?.Face?.Id, StringComparison.Ordinal)
+            ? "Choose"
+            : label;
     }
 
     private static string? CostConsequence(Affordance option, WorldDescriptor world)

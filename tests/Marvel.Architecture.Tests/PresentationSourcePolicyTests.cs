@@ -164,6 +164,9 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.State.World.Players",
             "Marvel.Rules.State.World.Result",
             "Marvel.Rules.State.World.Seats",
+            "Marvel.Rules.Timing.TimingPriority.Interrupt",
+            "Marvel.Rules.Timing.TimingPriority.Response",
+            "Marvel.Rules.Timing.TimingPriority.operator ==(Marvel.Rules.Timing.TimingPriority, Marvel.Rules.Timing.TimingPriority)",
         ];
         Assert.Equal(reviewed, actual);
     }

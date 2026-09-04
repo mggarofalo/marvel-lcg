@@ -134,9 +134,7 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
             return BoardAreaProminence.Empty;
         }
 
-        return zone is "VillainArea" or "MainSchemesArea" or "SideSchemesArea"
-            or "EnvironmentArea" or "HeroArea" or "AlliesArea" or "SupportsArea"
-            or "UpgradesArea" or "EngagedEnemiesArea" or "StatusArea" or "RuleArea"
+        return IsInPlay(zone) || zone == "StatusArea"
             ? BoardAreaProminence.Live
             : BoardAreaProminence.Supporting;
     }

@@ -65,6 +65,16 @@ public sealed class DecisionCopyTests
             DecisionCopy.ActionSummary(action));
     }
 
+    [Fact]
+    public void AChoiceWhoseWireLabelWasRemovedUsesTheReadableCardName()
+    {
+        var action = new AffordancePresentation(
+            1, "Choose", null, "Choose", "Repulsor Blast", 40, 0, null,
+            "No selection", []);
+
+        Assert.Equal("Choose Repulsor Blast", DecisionCopy.Choice(action));
+    }
+
     [Theory]
     [InlineData(1, "Play Web-Shooter  ·  Lose 1 excess resource")]
     [InlineData(2, "Play Web-Shooter  ·  Lose 2 excess resources")]

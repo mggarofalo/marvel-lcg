@@ -168,6 +168,66 @@ public sealed class DecisionComposerTests
             Assert.Single(view.Affordances).Consequence);
     }
 
+    [Theory]
+    [InlineData(TimingPriority.Interrupt, "Choose an interrupt")]
+    [InlineData(TimingPriority.Response, "Choose a response")]
+    public void PresentationNamesTheAbilityTimingThePlayerCanUse(
+        TimingPriority timing,
+        string expected)
+    {
+        var prompt = new Prompt(
+            0, Question.Opportunity, timing, "CardRevealed", "Ability window", true,
+            [new Affordance(1, "Use", 10, 0, "Use ability")]);
+        var world = new WorldDescriptor(
+            [new PlayerDescriptor(0, "Peter Parker", false)], [], [], Outcome.Unfinished);
+
+        Assert.Equal(expected, PromptPresentation.From(prompt, world).Heading);
+    }
+
+    [Fact]
+    public void PresentationNamesTheEndPhaseDiscardInsteadOfCallingItAPlayerTurn()
+    {
+        var prompt = new Prompt(
+            0, Question.TurnOption, TimingPriority.Untimed, "End Turn",
+            "Peter Parker End Phase", false,
+            [new Affordance(1, "End Phase", 10, 0, "End Phase")]);
+        var world = new WorldDescriptor(
+            [new PlayerDescriptor(0, "Peter Parker", false)], [], [], Outcome.Unfinished);
+
+        Assert.Equal(
+            "Choose end-of-phase discards",
+            PromptPresentation.From(prompt, world).Heading);
+    }
+
+    [Fact]
+    public void PresentationReplacesAttachmentAndChoiceCardCodesWithReadableNames()
+    {
+        var prompt = new Prompt(
+            0, Question.Element, TimingPriority.Untimed, "ChooseAttachmentTarget",
+            "Spider-Man chooses where 01185 attaches", false,
+            [new Affordance(1, "Choose", 10, 0, "01031")]);
+        var source = new CardDescriptor(
+            9, CardBack.Encounter, true, true, -1,
+            new CardFaceDescriptor(
+                "01185", "Biomechanical Upgrades", "", CardKind.Attachment,
+                new Dictionary<string, long>(StringComparer.Ordinal)));
+        var target = new CardDescriptor(
+            10, CardBack.Player, true, true, -1,
+            new CardFaceDescriptor(
+                "01031", "Repulsor Blast", "", CardKind.Event,
+                new Dictionary<string, long>(StringComparer.Ordinal)));
+        var world = new WorldDescriptor(
+            [new PlayerDescriptor(0, "Peter Parker", false)],
+            [new AreaDescriptor(2, "RevealingArea", -1, -1, [source, target], [])],
+            [], Outcome.Unfinished);
+
+        PromptPresentation view = PromptPresentation.From(prompt, world);
+
+        Assert.Equal("Choose where to attach Biomechanical Upgrades", view.Heading);
+        Assert.DoesNotContain("01185", view.Heading);
+        Assert.Equal("Choose", Assert.Single(view.Affordances).Label);
+    }
+
     [Fact]
     public void FreeSelectionsKeepPlayerOrderAndRejectIncompleteTargets()
     {

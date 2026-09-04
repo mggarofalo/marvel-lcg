@@ -29,6 +29,7 @@ internal static class DecisionCopy
         {
             "Play" => $"Play {view.Anchor}",
             "Attack" or "Thwart" or "Recover" => $"{view.Verb} with {view.Anchor}",
+            "Choose" => $"Choose {view.Anchor}",
             "Resolve Mulligans" => "Choose cards to discard and redraw",
             _ => $"{view.Verb}  ·  {view.Anchor}",
         };

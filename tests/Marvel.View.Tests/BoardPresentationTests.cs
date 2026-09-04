@@ -132,6 +132,18 @@ public sealed class BoardPresentationTests
         Assert.Equal(BoardAreaProminence.Supporting, board.Areas[1].Prominence);
     }
 
+    [Theory]
+    [InlineData("ObligationsArea")]
+    [InlineData("EvidenceArea")]
+    public void OccupiedInPlayAreasRemainVisibleOnTheLiveTable(string zone)
+    {
+        BoardAreaPresentation area = Assert.Single(BoardPresentation.From(
+            World(areas: [Area(1, zone, 0, [Readable(7, "Live card")])]))
+            .Areas);
+
+        Assert.Equal(BoardAreaProminence.Live, area.Prominence);
+    }
+
     [Fact]
     public void AFaceDownCardInPlayRetainsOnlyItsAuthorizedHandleAndPublicState()
     {
