@@ -2054,14 +2054,14 @@ public sealed class KeywordTests
     [Rule("rr:delayed-effect.1")]
     [Rule("rr:damage.step.5")]
     [Rule("rr:leaves-play.1")]
-    [Rule("rr:vulnerable.2")]
+    [Rule("rr:vulnerable.1")]
     [Fact]
     public void DelayedStunDiscardsALethallyDamagedVulnerableWithoutDefeatingIt()
     {
-        // Vulnerable says the character "is discarded before the damage is
-        // applied and is not considered defeated." A delayed status comes due
-        // after damage placement, but leaving play still ends the old copy's
-        // damage procedure before it can be defeated.
+        // The delayed stun exists only after damage lands, so this is not the
+        // simultaneous case in vulnerable.2. Once stunned, Vulnerable's
+        // "Forced Interrupt" discards the character without defeating it, and
+        // leaving play ends the old copy's remaining damage procedure.
         var printed = new Printed()
             .With("minion", ("HP", "3"), ("Vulnerable", "1"), ("Victory", "2"));
         var world = Board(printed);
@@ -2080,6 +2080,9 @@ public sealed class KeywordTests
 
         Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
         Assert.Empty(world.AreaOf(DeckType.VictoryDisplay).Cards);
+        Assert.Equal([minion], result.Characters);
+        Assert.Equal(3, result.Dealt);
+        Assert.Equal(3, result.Taken);
         Assert.Equal(0, result.Excess);
     }
 
