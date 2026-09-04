@@ -263,6 +263,16 @@ Unit `[Rule]` citations are then audited in reverse: every cited behavior must
 map to an authority-derived obligation. A citation can reveal missing catalog
 work, but cannot create a behavior the authorities do not state.
 
+The catalog's `mutation` string records the proposed distinguishing change and
+why an observation should fail. The current corpus gate requires this string to
+be nonempty; it does not apply the mutation or verify a recorded test execution.
+Actual execution evidence must identify the tested revision, exact edit,
+command, and observed failure, or a specific equivalence argument. A passing
+corpus and a `supported` status alone do not establish all six completion
+conditions above. The bounded
+[architectural migration checks](architecture-behavior-contracts.md) record
+executed examples and distinguish component tests from public game-loop tests.
+
 ## Deterministic checks
 
 The completed toolchain has one offline `--check` path that fails for any of
@@ -279,7 +289,7 @@ these conditions:
 - a scene violates a legal-game invariant;
 - a code citation cannot be mapped back to the catalog;
 - generated catalog order or skeleton output differs; or
-- required mutation evidence is absent.
+- the required mutation rationale is absent.
 
 The check writes nothing. Regeneration is a deliberate command that produces a
 reviewable diff. The test suite continues to leave `git status` clean.

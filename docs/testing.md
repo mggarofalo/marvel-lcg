@@ -45,6 +45,15 @@ These tests trade speed for breadth. They still block a merge, but their separat
 CI step makes their cost and failures visible instead of charging them to the
 unit-test lane.
 
+## Behavioral evidence for refactoring
+
+[Architectural behavior contracts](architecture-behavior-contracts.md) identify
+finite rule and card scenarios at the public game-loop and component boundaries,
+with executed mutation checks. Reuse these contracts when decomposing the
+interpreter, agenda, and phase orchestration. Whole-game completion and digest
+recordings are supplementary evidence; they do not replace a distinguishing
+observation of the rule being changed.
+
 To run every test project in one command:
 
 ```bash
