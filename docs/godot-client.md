@@ -144,6 +144,23 @@ Get-AppxPackage -Name 'mggarofalo.MarvelChampions' | Remove-AppxPackage
 Remove-Item "Cert:\LocalMachine\TrustedPeople\$($installedCertificate.Thumbprint)"
 ```
 
+On a disposable clean Windows account, the repository script performs those
+hash, identity, installation, packaged-entry launch and cleanup checks. Run it
+from an elevated PowerShell window; `-Interactive` leaves the launched client
+available until you finish a bounded game smoke and press Enter:
+
+```powershell
+tools/windows-community-install-smoke.ps1 `
+  -Package '.\MarvelChampions-VERSION-windows-x64-community.msix' `
+  -Certificate '.\MarvelChampions-VERSION-windows-x64-community.cer' `
+  -Interactive
+```
+
+The script refuses a preinstalled package or pretrusted release certificate so
+its cleanup cannot remove state it did not create. Success removes the package,
+its application data and the exact public certificate, then prints
+`WINDOWS_COMMUNITY_INSTALL_SMOKE_OK`.
+
 The unsigned portable ZIP avoids changing the certificate store. Verify its
 hash, extract it to a user-owned directory, and run `MarvelChampions.exe`. It is
 unsigned, so Windows may still show reputation warnings.
