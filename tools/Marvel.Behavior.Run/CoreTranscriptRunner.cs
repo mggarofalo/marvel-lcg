@@ -4578,6 +4578,22 @@ internal sealed class CoreTranscriptSuite
         return results;
     }
 
+    public TranscriptResult RunScenario(string relativePath, string scenarioName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(relativePath);
+        ArgumentException.ThrowIfNullOrWhiteSpace(scenarioName);
+
+        string path = Path.Combine(root, relativePath);
+        TranscriptScenario scenario = TranscriptParser.Parse(
+            root, path, scenarioName).Scenarios.Single();
+        CatalogObligation obligation = ValidateAuthority(
+            scenario, requireCompletionEvidence: true);
+
+        return obligation.Implementation == "supported"
+            ? runner.Execute(scenario)
+            : RunUnimplemented(scenario, obligation);
+    }
+
     public TranscriptException RunQuarantine()
     {
         string path = Path.Combine(root, "specs", "self-test", "quarantine.feature");

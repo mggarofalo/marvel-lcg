@@ -1,3 +1,4 @@
+using Marvel.Content;
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Play;
@@ -5,7 +6,7 @@ using Marvel.Rules.State;
 using Marvel.Tests;
 using Xunit;
 
-namespace Marvel.Content.Tests.Play;
+namespace Marvel.Acceptance.Tests.Play;
 
 /// <summary>Whole games driven toward the core box's two normal outcomes.</summary>
 public sealed class GameOutcomeTests

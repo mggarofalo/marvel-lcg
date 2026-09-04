@@ -163,10 +163,16 @@ Seven, all run by hand and none on any path a game takes.
 
 ```bash
 dotnet build Marvel.slnx -c Release    # warnings are errors
-dotnet test Marvel.slnx -c Release
+dotnet test tests/Marvel.UnitTests.slnx -c Release  # fast merge preparation
+dotnet test tests/Marvel.IntegrationTests.slnx -c Release
+dotnet test tests/Marvel.Acceptance.Tests/Marvel.Acceptance.Tests.csproj -c Release
+dotnet test Marvel.slnx -c Release     # every test lane
 bash tools/godot-wall.sh               # prove the build gates still fire
 bash tools/presentation-wall.sh        # prove project ownership gates fire
 ```
+
+See [docs/testing.md](docs/testing.md) for the boundary between focused tests
+and whole-game acceptance and regression sweeps.
 
 The solution file is **`Marvel.slnx`**, not `.sln`.
 

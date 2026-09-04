@@ -1,3 +1,4 @@
+using Marvel.Content;
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Play;
@@ -5,7 +6,7 @@ using Marvel.Rules.State;
 using Marvel.Tests;
 using Xunit;
 
-namespace Marvel.Content.Tests.Play;
+namespace Marvel.Acceptance.Tests.Play;
 
 /// <summary>The complete core box, exercised as games rather than isolated cards.</summary>
 public sealed class CoreGameMatrixTests

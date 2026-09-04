@@ -19,17 +19,20 @@ plausible and wrong is worse than a board that stops.
 | Path | What |
 |---|---|
 | [`src/`](src/) | The engine. `Marvel.Core`, `Marvel.Rules`, `Marvel.Cards`, `Marvel.Content` |
-| [`tests/`](tests/) | The behavioral and contract test suites |
+| [`tests/`](tests/) | Unit, behavioral, integration and acceptance tests |
 | [`datasets/`](datasets/) | The rules, the cards, and what a scenario is dealt from |
 | [`specs/`](specs/) | Gherkin scenarios written from printed card text — drafts, see [specs/README.md](specs/README.md) |
 | [`docs/`](docs/) | Design documents and wire-format specifications |
 
 ## Running it
 
-```
+```bash
 dotnet build Marvel.slnx -c Release
-dotnet test Marvel.slnx -c Release
+dotnet test tests/Marvel.UnitTests.slnx -c Release --no-build
 ```
+
+CI also runs the integration and acceptance lanes before a merge. See
+[Test lanes](docs/testing.md) for every command and when to use it.
 
 Contributors should start with [AGENTS.md](AGENTS.md).
 
@@ -51,6 +54,7 @@ Contributors should start with [AGENTS.md](AGENTS.md).
 | [RNG Contract](docs/rng-contract.md) | The random number generator specification |
 | [Presentation Layer](docs/presentation-layer.md) | The plan for a client |
 | [Release Policy](docs/release-policy.md) | Artifact versions, compatibility, signing and upgrade rules |
+| [Test Lanes](docs/testing.md) | Fast, integration and acceptance test commands |
 | [Plane](docs/plane.md) | How work is tracked |
 
 ## Origin

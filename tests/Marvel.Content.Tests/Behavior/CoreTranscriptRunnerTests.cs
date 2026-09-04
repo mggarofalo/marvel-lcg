@@ -13,10 +13,9 @@ public sealed class CoreTranscriptRunnerTests
     {
         var suite = new CoreTranscriptSuite(RepositoryPaths.Root);
 
-        TranscriptResult result = Assert.Single(
-            suite.RunPassingCorpus(),
-            candidate => candidate.Scenario
-                == "specs/behavior/core/player-deck-empty.feature::Drawing continues through the player-deck reset");
+        TranscriptResult result = suite.RunScenario(
+            "specs/behavior/core/player-deck-empty.feature",
+            "Drawing continues through the player-deck reset");
 
         Assert.Equal("behavior:rr:player-deck.2:published-result", result.Obligation);
         Assert.Contains(result.Events, gameEvent =>
