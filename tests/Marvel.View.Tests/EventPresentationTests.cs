@@ -33,7 +33,7 @@ public sealed class EventPresentationTests
         [
             new CardsMoved(
                 AreaRef.Player("HandsArea", 0),
-                AreaRef.Player("DiscardPileArea", 0),
+                AreaRef.Player("DiscardPile", 0),
                 [new Landing(7, 0)])
             {
                 Verb = "Pay_Cost",
@@ -51,7 +51,7 @@ public sealed class EventPresentationTests
 
         Assert.Equal(
             [
-                "Moved Swinging Web Kick from Peter Parker's hands to Peter Parker's discard pile.",
+                "Peter Parker discarded Swinging Web Kick.",
                 "Rhino changed hit points from 15 to 11.",
                 "Turned face-down encounter card face down.",
             ],
@@ -183,6 +183,59 @@ public sealed class EventPresentationTests
         Assert.Equal("Rhino stage 1 was defeated.", highlight.Summary);
         Assert.Equal(EventMotionKind.Defeat, highlight.Motion);
         Assert.Equal(highlight, Assert.Single(batch.History));
+    }
+
+    [Fact]
+    public void MulliganMovementsBecomeTwoNarrativeActions()
+    {
+        GameEvent[] happened =
+        [
+            Move(7, "HandsArea", "DiscardPile", "Mulligan"),
+            Move(13, "HandsArea", "DiscardPile", "Mulligan"),
+            Move(14, "HandsArea", "DiscardPile", "Mulligan"),
+            Move(15, "PlayerDeck", "HandsArea", "Draw"),
+            Move(16, "PlayerDeck", "HandsArea", "Draw"),
+            Move(17, "PlayerDeck", "HandsArea", "Draw"),
+        ];
+
+        EventBatchPresentation batch = EventCuePlanner.Plan(
+            happened, NarrativeWorld(), Outcome.Unfinished);
+
+        Assert.Equal(
+            [
+                "Spider-Man discarded Spider-Tracer, Aunt May, and Swinging Web Kick.",
+                "Spider-Man drew Interrogation Room, Nick Fury, and Helicarrier.",
+            ],
+            batch.History.Select(entry => entry.Summary));
+        Assert.Equal(batch.History, batch.Highlights);
+        Assert.Equal(6, batch.Cues.Count);
+    }
+
+    [Fact]
+    public void CrossPlayerMovementNamesBothOwners()
+    {
+        var moved = new CardsMoved(
+            AreaRef.Player("HandsArea", 0),
+            AreaRef.Player("DiscardPile", 1),
+            [new Landing(7, 0)]);
+
+        EventPresentation presentation = EventPresenter.Present(moved, NarrativeWorld());
+
+        Assert.Equal(
+            "Spider-Man discarded Spider-Tracer to Carol Danvers's discard pile.",
+            presentation.Summary);
+    }
+
+    [Fact]
+    public void AddingADeckCardToHandIsNotDescribedAsDrawingIt()
+    {
+        CardsMoved moved = Move(15, "PlayerDeck", "HandsArea", "Add_To_Hand");
+
+        EventPresentation presentation = EventPresenter.Present(moved, NarrativeWorld());
+
+        Assert.Equal(
+            "Spider-Man added Interrogation Room to their hand from Spider-Man's player deck.",
+            presentation.Summary);
     }
 
     [Theory]
@@ -317,6 +370,49 @@ public sealed class EventPresentationTests
         new PlayAreaJoined(0, 1),
         new PlayAreaDetached(0, 1),
     ];
+
+    private static CardsMoved Move(int card, string from, string to, string verb) =>
+        new(
+            AreaRef.Player(from, 0),
+            AreaRef.Player(to, 0),
+            [new Landing(card, 0)])
+        {
+            Verb = verb,
+            Trigger = "WhenPlayerChooseAbility",
+        };
+
+    private static WorldDescriptor NarrativeWorld() =>
+        new(
+            [
+                new PlayerDescriptor(0, "Spider-Man", false),
+                new PlayerDescriptor(1, "Carol Danvers", false),
+            ],
+            [
+                new AreaDescriptor(
+                    1,
+                    "DiscardPile",
+                    0,
+                    -1,
+                    [
+                        Readable(7, "Spider-Tracer"),
+                        Readable(13, "Aunt May"),
+                        Readable(14, "Swinging Web Kick"),
+                    ],
+                    []),
+                new AreaDescriptor(
+                    2,
+                    "HandsArea",
+                    0,
+                    -1,
+                    [
+                        Readable(15, "Interrogation Room"),
+                        Readable(16, "Nick Fury"),
+                        Readable(17, "Helicarrier"),
+                    ],
+                    []),
+            ],
+            [],
+            Outcome.Unfinished);
 
     private static WorldDescriptor World() =>
         new(

@@ -589,10 +589,27 @@ theme_override_constants/margin_bottom = 8
 layout_mode = 2
 theme_type_variation = &"TightStack"
 
-[node name="Kind" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/Action/LastResult/Margin/Copy"]
+[node name="Header" type="HBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/Action/LastResult/Margin/Copy"]
 layout_mode = 2
+theme_type_variation = &"CompactRow"
+
+[node name="Kind" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/Action/LastResult/Margin/Copy/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
 theme_type_variation = &"Eyebrow"
-text = "LAST RESOLVED"
+text = "LAST RESULT"
+
+[node name="Toggle" type="Button" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/Action/LastResult/Margin/Copy/Header"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Collapse"
+tooltip_text = "Collapse or expand the latest result. Full detail remains in History."
+
+[node name="Dismiss" type="Button" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/Action/LastResult/Margin/Copy/Header"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Dismiss"
+tooltip_text = "Dismiss this result. Full detail remains in History."
 
 [node name="Summary" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/Action/LastResult/Margin/Copy"]
 layout_mode = 2

@@ -225,7 +225,7 @@ public sealed class VisualSystemTests
         Assert.InRange(desktop.DecisionWidth, 680, 720);
         Assert.True(desktop.DecisionWidth > laptop.DecisionWidth);
         Assert.True(laptop.DecisionWidth > compact.DecisionWidth);
-        Assert.True(compact.DecisionMinimumHeight >= 220);
+        Assert.True(compact.DecisionMinimumHeight >= 270);
         Assert.True(desktop.DecisionMinimumHeight > compact.DecisionMinimumHeight);
         Assert.Equal(twoCards, desktop.BoardAreaWidth);
     }

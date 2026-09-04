@@ -269,7 +269,10 @@ The decision header asks a player-facing question and names its visible card
 source. Wire label, question-kind and timing metadata remain selectable in the
 History tab. After an action is selected, its summary stays above an independently
 scrolling target and payment editor, while validation, overpayment consequences
-and the final commitment stay fixed below it.
+and the final commitment stay fixed below it. A newly resolved action appears as
+a compact narrative result above the editor. It can be collapsed or dismissed,
+clears when the next action is opened, and expires after eight seconds; the full
+chronology remains in History.
 
 Compact is the default interface scale. The toolbar slider switches among the
 eleven supported scales immediately, including card geometry and the prompt rail,
@@ -310,7 +313,9 @@ transport and protocol evidence; it does not infer whether a server restarted.
 ## Native smoke
 
 The native smoke loads the real scene at each supported UI scale, selects
-Spider-Man and Rhino, enters seed `1`, opens the table, changes to hero form and
+Spider-Man and Rhino, enters seed `1`, opens the table, mulligans three cards,
+proves the consolidated result can collapse and clear without hiding
+Web-Shooter's payment generators, changes to hero form and
 activates only visible buttons until the UI reports the seeded loss. It exercises
 submit, target-selection and pass paths, verifies the enemy-attack interrupt
 context, checks that history and the primary result remain populated, and prints

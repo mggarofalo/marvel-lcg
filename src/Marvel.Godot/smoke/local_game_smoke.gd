@@ -76,8 +76,10 @@ func _run() -> void:
 		return
 	if not await _capture_checkpoint("open-table-prompt-dense-concealed"):
 		return
+	if not await _mulligan_result_and_payment_are_operable():
+		return
 
-	var saw_mulligan := false
+	var saw_mulligan := true
 	var saw_pass := false
 	var saw_end_phase := false
 	var saw_nonblocking_motion := false
@@ -243,6 +245,13 @@ func _run() -> void:
 		return
 	if not await _capture_checkpoint("terminal"):
 		return
+	var dismiss_result := _node(
+		"Play/Prompt/Margin/Stack/Workbench/Action/LastResult/Margin/Copy/Header/Dismiss") as Button
+	dismiss_result.pressed.emit()
+	await process_frame
+	if last_result.visible:
+		_fail("the latest result cannot be dismissed")
+		return
 
 	print("LOCAL_GAME_SMOKE_OK decisions=%d motion=%s" % [
 		decisions,
@@ -252,6 +261,103 @@ func _run() -> void:
 	await process_frame
 	await process_frame
 	quit(0)
+
+
+func _mulligan_result_and_payment_are_operable() -> bool:
+	var mulligan := _visible_button_beginning(_decision(), "Choose cards to discard and redraw")
+	if mulligan == null or mulligan.disabled:
+		_fail("the seeded opening hand has no operable mulligan action")
+		return false
+	mulligan.pressed.emit()
+	await process_frame
+	var wanted := ["Avengers Mansion", "Aunt May", "Swinging Web Kick"]
+	for title in wanted:
+		var target: Button = null
+		for candidate in _visible_buttons(_decision()):
+			if candidate.text.begins_with("◇ DISCARD AND REDRAW") and title in candidate.text:
+				target = candidate
+				break
+		if target == null:
+			_fail("the seeded mulligan cannot select %s" % title)
+			return false
+		target.pressed.emit()
+		await process_frame
+
+	var submit := _submit_button()
+	if submit == null or submit.disabled or "Discard 3 and redraw" not in submit.text:
+		_fail("the three-card mulligan cannot be submitted")
+		return false
+	submit.pressed.emit()
+	if not await _wait_for(func() -> bool:
+		return "turn" in (_node("Play/Prompt/Margin/Stack/PromptHeader/Heading") as Label).text.to_lower()):
+		_fail("the seeded mulligan did not reach the player turn")
+		return false
+
+	var last_result := _node("Play/Prompt/Margin/Stack/Workbench/Action/LastResult") as Control
+	var result_summary := _node(
+		"Play/Prompt/Margin/Stack/Workbench/Action/LastResult/Margin/Copy/Summary") as Label
+	var result_text := result_summary.text
+	if not last_result.visible \
+			or "Spider-Man discarded Avengers Mansion, Aunt May, and Swinging Web Kick." not in result_text \
+			or "Spider-Man drew Daredevil, Black Cat, and Jessica Jones." not in result_text:
+		_fail("the mulligan result is not consolidated narrative copy: %s" % result_text)
+		return false
+	if not await _capture_checkpoint("mulligan-result"):
+		return false
+	var toggle := _node(
+		"Play/Prompt/Margin/Stack/Workbench/Action/LastResult/Margin/Copy/Header/Toggle") as Button
+	toggle.pressed.emit()
+	await process_frame
+	if result_summary.visible or toggle.text != "Expand":
+		_fail("the transient result cannot be collapsed")
+		return false
+	toggle.pressed.emit()
+	await process_frame
+	if not result_summary.visible or toggle.text != "Collapse":
+		_fail("the transient result cannot be expanded")
+		return false
+
+	var web_shooter := _visible_button_beginning(_decision(), "Play Web-Shooter")
+	if web_shooter == null or web_shooter.disabled:
+		_fail("Web-Shooter is not playable after the mulligan")
+		return false
+	web_shooter.pressed.emit()
+	await process_frame
+	await process_frame
+	if last_result.visible:
+		_fail("opening a new draft did not clear the transient result")
+		return false
+
+	var generators := _decision().find_children("Resource*", "Button", true, false)
+	if generators.is_empty():
+		_fail("Web-Shooter exposes no post-mulligan payment generators")
+		return false
+	var generator := generators[0] as Button
+	generator.grab_focus()
+	await process_frame
+	await process_frame
+	if render_viewport.gui_get_focus_owner() != generator \
+			or _visible_control_rect(generator).size.y < _scaled_metric(24):
+		_fail("Web-Shooter's post-mulligan resource controls cannot be reached")
+		return false
+	var press := InputEventAction.new()
+	press.action = &"ui_accept"
+	press.pressed = true
+	render_viewport.push_input(press)
+	await process_frame
+	var release := InputEventAction.new()
+	release.action = &"ui_accept"
+	release.pressed = false
+	render_viewport.push_input(release)
+	await process_frame
+	await process_frame
+	var progress := _node("Play/Prompt/Margin/Stack/PromptHeader/Progress") as Label
+	if "PAYMENT 1/1 ICONS" not in progress.text or "READY" not in progress.text:
+		_fail("Peter Parker's post-mulligan resource cannot complete Web-Shooter's payment")
+		return false
+	if not await _capture_checkpoint("post-mulligan-payment"):
+		return false
+	return true
 
 
 func _synchronization_preserves_history(expect_terminal: bool) -> bool:

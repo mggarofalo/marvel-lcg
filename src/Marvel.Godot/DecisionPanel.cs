@@ -30,6 +30,9 @@ public sealed partial class DecisionPanel : VBoxContainer
     /// <summary>Raised whenever the visible draft's count-only progress changes.</summary>
     public event Action<DecisionProgressPresentation?>? ProgressChanged;
 
+    /// <summary>Raised when a player opens one action's target and payment editor.</summary>
+    public event Action? DraftStarted;
+
     /// <summary>Applies the current presentation-only desktop scale.</summary>
     public void SetInterfaceScale(InterfaceScale scale)
     {
@@ -149,6 +152,7 @@ public sealed partial class DecisionPanel : VBoxContainer
             choose.Pressed += () =>
             {
                 composer.SelectAffordance(option.Id);
+                DraftStarted?.Invoke();
                 AnchorFocused?.Invoke([option.AnchorId]);
                 if (composer.Prompt.Asking == Question.Element
                     && composer.Prompt.Affordances.Count == 1
@@ -238,6 +242,10 @@ public sealed partial class DecisionPanel : VBoxContainer
         var scroll = new ScrollContainer
         {
             Name = "DecisionBodyScroll",
+            CustomMinimumSize = composer.Selected?.CostOptions.Any(cost =>
+                cost.Generators.Count > 0) == true
+                    ? new Vector2(0, ControlMetrics.MinimumPointerTarget)
+                    : Vector2.Zero,
             SizeFlagsHorizontal = SizeFlags.ExpandFill,
             SizeFlagsVertical = SizeFlags.ExpandFill,
             FollowFocus = true,
