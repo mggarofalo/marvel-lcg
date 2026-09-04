@@ -153,7 +153,7 @@ jobs:
           grep -q 'name: marvel-diagnostics' <<<"$compose"
           [[ $(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.version"}}' "$image") == 0.1.0-dev.0 ]]
           docker run --rm --entrypoint dotnet "$image" Marvel.Server.dll --version |
-            grep -F 'v0.1.0-dev.0 · engine engine-replay-v1 · protocol 11 · save 2'
+            grep -F 'v0.1.0-dev.0 · engine engine-replay-v1 · protocol 12 · save 2'
           docker volume create "$volume" >/dev/null
           docker volume create "$diagnostics" >/dev/null
           docker run --detach --name "$container" \
