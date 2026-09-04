@@ -6,13 +6,10 @@ namespace Marvel.Content.Tests.Behavior;
 
 public sealed class CoreRuleTranscriptTests
 {
-    private static readonly Lazy<IReadOnlyList<TranscriptResult>> Corpus = new(
-        () => new CoreTranscriptSuite(RepositoryPaths.Root).RunPassingCorpus());
-
     [Fact]
     public void OwnershipAndControlBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value.Where(candidate =>
+        var results = CoreTranscriptCorpus.All.Where(candidate =>
                 candidate.Scenario.StartsWith(
                 "specs/behavior/core/ownership-control.feature::",
                 StringComparison.Ordinal))
@@ -33,7 +30,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void ThreatPreventionBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value.Where(candidate =>
+        var results = CoreTranscriptCorpus.All.Where(candidate =>
                 candidate.Scenario.StartsWith(
                     "specs/behavior/core/threat-prevention.feature::",
                     StringComparison.Ordinal))
@@ -51,7 +48,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void TimingWindowBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value.Where(candidate =>
+        var results = CoreTranscriptCorpus.All.Where(candidate =>
                 candidate.Scenario.StartsWith(
                     "specs/behavior/core/timing-windows.feature::",
                     StringComparison.Ordinal))
@@ -81,7 +78,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void AllyLimitHasPinnedOutcome()
     {
-        TranscriptResult result = Assert.Single(Corpus.Value, result =>
+        TranscriptResult result = Assert.Single(CoreTranscriptCorpus.All, result =>
             result.Scenario.StartsWith(
                 "specs/behavior/core/ally-limit.feature::",
                 StringComparison.Ordinal));
@@ -95,7 +92,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void AttachmentBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(result => result.Scenario.StartsWith(
                 "specs/behavior/core/attachments.feature::",
                 StringComparison.Ordinal))
@@ -130,7 +127,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void CharacteristicBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(result => result.Scenario.StartsWith(
                 "specs/behavior/core/characteristics.feature::",
                 StringComparison.Ordinal))
@@ -157,7 +154,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void PlayAreaBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(result => result.Scenario.StartsWith(
                 "specs/behavior/core/play-areas.feature::",
                 StringComparison.Ordinal))
@@ -172,7 +169,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void MainSchemeBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(result => result.Scenario.StartsWith(
                 "specs/behavior/core/main-scheme.feature::",
                 StringComparison.Ordinal))
@@ -197,7 +194,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void EncounterIconBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(result => result.Scenario.StartsWith(
                 "specs/behavior/core/encounter-icons.feature::",
                 StringComparison.Ordinal))
@@ -224,7 +221,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void EncounterRevealBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(result => result.Scenario.StartsWith(
                 "specs/behavior/core/encounter-reveal.feature::",
                 StringComparison.Ordinal))
@@ -259,7 +256,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void CoreIdentityObligationBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(result => result.Scenario.StartsWith(
                 "specs/behavior/core/legal-work.feature::",
                 StringComparison.Ordinal))
@@ -311,7 +308,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void BasicPowerBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(result => result.Scenario.StartsWith(
                 "specs/behavior/core/basic-powers.feature::",
                 StringComparison.Ordinal))
@@ -338,7 +335,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void BasicPowerRestrictionBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(result => result.Scenario.StartsWith(
                 "specs/behavior/core/basic-power-restrictions.feature::",
                 StringComparison.Ordinal))
@@ -359,7 +356,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void DefeatBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(result => result.Scenario.StartsWith(
                 "specs/behavior/core/defeat.feature::",
                 StringComparison.Ordinal))
@@ -383,7 +380,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void WhenDefeatedBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(candidate => candidate.Scenario.StartsWith(
                 "specs/behavior/core/when-defeated.feature::",
                 StringComparison.Ordinal))
@@ -407,7 +404,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void VillainPhaseBranchesHavePinnedOutcomes()
     {
-        var transcripts = Corpus.Value
+        var transcripts = CoreTranscriptCorpus.All
             .Where(result => result.Scenario.StartsWith(
                 "specs/behavior/core/villain-phase.feature::",
                 StringComparison.Ordinal))
@@ -499,7 +496,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void StatusCardBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(result => result.Scenario.StartsWith(
                 "specs/behavior/core/status-cards.feature::",
                 StringComparison.Ordinal))
@@ -538,7 +535,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void SetupBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(result => result.Scenario.StartsWith(
                 "specs/behavior/core/setup.feature::", StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
@@ -576,7 +573,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void DiscardBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(result => result.Scenario.StartsWith(
                 "specs/behavior/core/discard.feature::",
                 StringComparison.Ordinal))
@@ -597,7 +594,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void FormChangeBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(candidate => candidate.Scenario.StartsWith(
                 "specs/behavior/core/form-change.feature::",
                 StringComparison.Ordinal))
@@ -635,7 +632,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void PlayerEliminationBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(result => result.Scenario.StartsWith(
                 "specs/behavior/core/player-elimination.feature::",
                 StringComparison.Ordinal))
@@ -660,7 +657,7 @@ public sealed class CoreRuleTranscriptTests
     public void SimultaneousResolutionHasAPinnedOutcome()
     {
         var result = Assert.Single(
-            Corpus.Value,
+            CoreTranscriptCorpus.All,
             result => result.Scenario.StartsWith(
                 "specs/behavior/core/simultaneous-resolution.feature::",
                 StringComparison.Ordinal));
@@ -676,7 +673,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void EndOfPlayerPhaseBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(result => result.Scenario.StartsWith(
                 "specs/behavior/core/end-of-player-phase.feature::",
                 StringComparison.Ordinal))
@@ -703,7 +700,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void PlayerPhaseTurnOrderHasPinnedOutcome()
     {
-        TranscriptResult result = Assert.Single(Corpus.Value, result =>
+        TranscriptResult result = Assert.Single(CoreTranscriptCorpus.All, result =>
             result.Scenario.StartsWith(
                 "specs/behavior/core/player-phase.feature::",
                 StringComparison.Ordinal));
@@ -717,7 +714,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void EncounterDeckBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(result => result.Scenario.StartsWith(
                 "specs/behavior/core/encounter-deck-empty.feature::",
                 StringComparison.Ordinal))
@@ -741,7 +738,7 @@ public sealed class CoreRuleTranscriptTests
     [Fact]
     public void PlayerDeckBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(result => result.Scenario.StartsWith(
                 "specs/behavior/core/player-deck-empty.feature::",
                 StringComparison.Ordinal))

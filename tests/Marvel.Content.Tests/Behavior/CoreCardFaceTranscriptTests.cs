@@ -7,9 +7,6 @@ namespace Marvel.Content.Tests.Behavior;
 
 public sealed class CoreCardFaceTranscriptTests
 {
-    private static readonly Lazy<IReadOnlyList<TranscriptResult>> Corpus = new(
-        () => new CoreTranscriptSuite(RepositoryPaths.Root).RunPassingCorpus());
-
     [Fact]
     public void EveryCanonicalCoreFaceHasAnExecutablePrintedFactTranscript()
     {
@@ -23,7 +20,7 @@ public sealed class CoreCardFaceTranscriptTests
                     $"behavior:card:{card.GetProperty("card_id").GetString()}:printed-name")
                 .Order(StringComparer.Ordinal),
         ];
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(result => result.Scenario.StartsWith(
                 "specs/behavior/core/card-faces.feature::", StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
@@ -41,7 +38,7 @@ public sealed class CoreCardFaceTranscriptTests
     [Fact]
     public void IdentityCardAbilityBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(candidate => candidate.Scenario.StartsWith(
                 "specs/behavior/core/identity-card-abilities.feature::",
                 StringComparison.Ordinal))
@@ -65,7 +62,7 @@ public sealed class CoreCardFaceTranscriptTests
     [Fact]
     public void PlayerCardAbilityBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(candidate => candidate.Scenario.StartsWith(
                 "specs/behavior/core/player-card-abilities.feature::",
                 StringComparison.Ordinal))
@@ -316,7 +313,7 @@ public sealed class CoreCardFaceTranscriptTests
     [Fact]
     public void RhinoCardAbilityBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(candidate => candidate.Scenario.StartsWith(
                 "specs/behavior/core/rhino-card-abilities.feature::",
                 StringComparison.Ordinal))
@@ -358,7 +355,7 @@ public sealed class CoreCardFaceTranscriptTests
     [Fact]
     public void KlawCardAbilityBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(candidate => candidate.Scenario.StartsWith(
                 "specs/behavior/core/klaw-card-abilities.feature::",
                 StringComparison.Ordinal))
@@ -446,7 +443,7 @@ public sealed class CoreCardFaceTranscriptTests
     [Fact]
     public void UltronAttachmentBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(candidate => candidate.Scenario.StartsWith(
                 "specs/behavior/core/ultron-attachments.feature::",
                 StringComparison.Ordinal))
@@ -478,7 +475,7 @@ public sealed class CoreCardFaceTranscriptTests
     [Fact]
     public void UltronMainSchemeBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(candidate => candidate.Scenario.StartsWith(
                 "specs/behavior/core/ultron-main-schemes.feature::",
                 StringComparison.Ordinal))
@@ -520,7 +517,7 @@ public sealed class CoreCardFaceTranscriptTests
     [Fact]
     public void UltronSideSchemeBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(candidate => candidate.Scenario.StartsWith(
                 "specs/behavior/core/ultron-side-schemes.feature::",
                 StringComparison.Ordinal))
@@ -546,7 +543,7 @@ public sealed class CoreCardFaceTranscriptTests
     [Fact]
     public void UltronVillainAndDroneBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(candidate => candidate.Scenario.StartsWith(
                 "specs/behavior/core/ultron-villain-and-drones.feature::",
                 StringComparison.Ordinal))
@@ -577,7 +574,7 @@ public sealed class CoreCardFaceTranscriptTests
     [Fact]
     public void UltronTreacheryBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(candidate => candidate.Scenario.StartsWith(
                 "specs/behavior/core/ultron-treacheries.feature::",
                 StringComparison.Ordinal))
@@ -629,7 +626,7 @@ public sealed class CoreCardFaceTranscriptTests
     [Fact]
     public void CardActionBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(candidate => candidate.Scenario.StartsWith(
                 "specs/behavior/core/card-actions.feature::", StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
@@ -762,7 +759,7 @@ public sealed class CoreCardFaceTranscriptTests
     [Fact]
     public void TriggeredKeywordBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(candidate => candidate.Scenario.StartsWith(
                 "specs/behavior/core/core-keywords.feature::", StringComparison.Ordinal))
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
@@ -788,7 +785,7 @@ public sealed class CoreCardFaceTranscriptTests
     [Fact]
     public void UltronAndroidEfficiencyBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(candidate => candidate.Scenario.StartsWith(
                 "specs/behavior/core/ultron-android-efficiency.feature::",
                 StringComparison.Ordinal))
@@ -812,7 +809,7 @@ public sealed class CoreCardFaceTranscriptTests
     [Fact]
     public void StandardAndExpertEncounterCardBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(candidate => candidate.Scenario.StartsWith(
                 "specs/behavior/core/standard-expert-encounter-cards.feature::",
                 StringComparison.Ordinal))
@@ -844,7 +841,7 @@ public sealed class CoreCardFaceTranscriptTests
     [Fact]
     public void BlackPantherNemesisBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(candidate => candidate.Scenario.StartsWith(
                 "specs/behavior/core/black-panther-nemesis.feature::",
                 StringComparison.Ordinal))
@@ -869,7 +866,7 @@ public sealed class CoreCardFaceTranscriptTests
     [Fact]
     public void SheHulkNemesisBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(candidate => candidate.Scenario.StartsWith(
                 "specs/behavior/core/she-hulk-nemesis.feature::",
                 StringComparison.Ordinal))
@@ -892,7 +889,7 @@ public sealed class CoreCardFaceTranscriptTests
     [Fact]
     public void SpiderManNemesisBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(candidate => candidate.Scenario.StartsWith(
                 "specs/behavior/core/spider-man-nemesis.feature::",
                 StringComparison.Ordinal))
@@ -919,7 +916,7 @@ public sealed class CoreCardFaceTranscriptTests
     [Fact]
     public void IronManNemesisBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(candidate => candidate.Scenario.StartsWith(
                 "specs/behavior/core/iron-man-nemesis.feature::",
                 StringComparison.Ordinal))
@@ -949,7 +946,7 @@ public sealed class CoreCardFaceTranscriptTests
     [Fact]
     public void CaptainMarvelNemesisBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(candidate => candidate.Scenario.StartsWith(
                 "specs/behavior/core/captain-marvel-nemesis.feature::",
                 StringComparison.Ordinal))
@@ -973,7 +970,7 @@ public sealed class CoreCardFaceTranscriptTests
     [Fact]
     public void CoreModularNemesisBranchesHavePinnedOutcomes()
     {
-        var results = Corpus.Value
+        var results = CoreTranscriptCorpus.All
             .Where(candidate => candidate.Scenario.StartsWith(
                 "specs/behavior/core/core-modular-nemesis.feature::",
                 StringComparison.Ordinal))

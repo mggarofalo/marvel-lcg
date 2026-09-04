@@ -30,7 +30,7 @@
     <Project Path="tests/Marvel.Decisions.Tests/Marvel.Decisions.Tests.csproj" />
     <Project Path="tests/Marvel.Content.Tests/Marvel.Content.Tests.csproj" />
     <Project Path="tests/Marvel.Session.Tests/Marvel.Session.Tests.csproj" />
-    <Project Path="tests/Marvel.Sim.Tests/Marvel.Sim.Tests.csproj" />
+    <Project Path="tests/Marvel.Acceptance.Tests/Marvel.Acceptance.Tests.csproj" />
     <Project Path="tests/Marvel.View.Tests/Marvel.View.Tests.csproj" />
     <Project Path="tests/Marvel.Server.Tests/Marvel.Server.Tests.csproj" />
     <Project Path="tests/Marvel.Godot.Tests/Marvel.Godot.Tests.csproj" />

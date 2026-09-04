@@ -1,3 +1,4 @@
+using Marvel.Content;
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Events;
@@ -6,7 +7,7 @@ using Marvel.Rules.State;
 using Marvel.Tests;
 using Xunit;
 
-namespace Marvel.Content.Tests.Play;
+namespace Marvel.Acceptance.Tests.Play;
 
 /// <summary>
 /// The two halves of a resolve agree — <c>docs/event-stream.md</c>.

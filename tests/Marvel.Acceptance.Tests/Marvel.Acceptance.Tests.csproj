@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <RootNamespace>Marvel.Sim.Tests</RootNamespace>
+    <RootNamespace>Marvel.Acceptance.Tests</RootNamespace>
     <IsPackable>false</IsPackable>
     <OutputType>Exe</OutputType>
   </PropertyGroup>
@@ -14,12 +14,18 @@
 
   <ItemGroup>
     <ProjectReference Include="../../src/Marvel.Sim/Marvel.Sim.csproj" />
+    <ProjectReference Include="../../src/Marvel.Content/Marvel.Content.csproj" />
+    <ProjectReference Include="../../src/Marvel.Cards/Marvel.Cards.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Compile Include="../Shared/RepositoryPaths.cs" Link="RepositoryPaths.cs" />
     <Compile Include="../Shared/Rule.cs" Link="Rule.cs" />
     <Compile Include="../Shared/RuleCitations.cs" Link="RuleCitations.cs" />
+    <Compile Include="../Shared/ActingPolicy.cs" Link="ActingPolicy.cs" />
+    <Compile Include="../Shared/CoreGamePolicy.cs" Link="CoreGamePolicy.cs" />
+    <Compile Include="../Shared/Agendas.cs" Link="Agendas.cs" />
+    <Compile Include="../Marvel.Content.Tests/Cards/AuthoredCards.cs" Link="Cards/AuthoredCards.cs" />
   </ItemGroup>
 
 </Project>

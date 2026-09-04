@@ -1,3 +1,4 @@
+using Marvel.Content;
 using Marvel.Content.Setup;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
@@ -5,7 +6,7 @@ using Marvel.Rules.State;
 using Marvel.Tests;
 using Xunit;
 
-namespace Marvel.Content.Tests.Play;
+namespace Marvel.Acceptance.Tests.Play;
 
 /// <summary>
 /// A whole game, played to the end.

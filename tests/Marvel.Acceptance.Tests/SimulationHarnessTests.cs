@@ -5,9 +5,10 @@ using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.Timing;
 using Marvel.Session;
+using Marvel.Sim;
 using Xunit;
 
-namespace Marvel.Sim.Tests;
+namespace Marvel.Acceptance.Tests;
 
 public sealed class SimulationHarnessTests
 {
