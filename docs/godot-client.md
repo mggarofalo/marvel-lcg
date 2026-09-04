@@ -18,6 +18,19 @@ The project and its managed dependencies build from the repository root:
 dotnet build src/Marvel.Godot/Marvel.Godot.csproj
 ```
 
+### Visual Studio Code
+
+The checked-in VS Code launch configuration builds the managed project, starts
+the Godot host at `src/Marvel.Godot`, and attaches the C# debugger. Install the
+recommended Microsoft C# extension, open the repository root in VS Code, select
+**Play Marvel Champions**, and press F5.
+
+The macOS configuration uses the standard .NET editor location at
+`/Applications/Godot_mono.app`. On Windows, set `GODOT4` to the full path of the
+main Godot 4.7 .NET executable before starting VS Code. The Godot project stays
+a library: Godot is the executable that loads it, so `dotnet run` is not part of
+the development launch path.
+
 ## Desktop artifacts
 
 The committed export presets deliberately contain no signing identity or
