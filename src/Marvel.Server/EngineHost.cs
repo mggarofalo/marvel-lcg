@@ -1336,17 +1336,10 @@ public sealed class EngineHost : IEngineEndpoint
                 unit.ResourceGeneratorIds,
                 unit.ResourceGenerators,
                 outcome);
-            string action = ActionHistoryPresenter.Present(facts);
-            IReadOnlyList<string> details = ActionHistoryPresenter.PresentDiscardDetails(
+            ActionHistoryPresentation presented = ActionHistoryPresenter.PresentEntry(
                 facts, unit.Events, world);
-            if (!string.Equals(unit.Verb, CardPlay.Verb, StringComparison.Ordinal)
-                && outcome is null
-                && details.Count > 0)
-            {
-                action = details[0];
-                details = details.Skip(1).ToArray();
-            }
-            entries.Add(new HistoryEntryDescriptor(unit.Cursor, action, details));
+            entries.Add(new HistoryEntryDescriptor(
+                unit.Cursor, presented.Summary, presented.Details));
         }
 
         bool actionOpen = save.Units.Any(unit => unit.Status != "complete");

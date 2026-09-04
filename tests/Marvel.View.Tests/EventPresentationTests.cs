@@ -141,6 +141,58 @@ public sealed class EventPresentationTests
     }
 
     [Fact]
+    public void EffectDiscardDoesNotReplaceABasicPowerHeadline()
+    {
+        var facts = new ActionHistoryFacts(
+            4,
+            "Spider-Man",
+            "turn_action",
+            "PlayerTurn",
+            BasicPowers.AttackVerb,
+            "Black Cat",
+            14,
+            [],
+            []);
+        GameEvent[] events = [Move(7, "PlayerDeck", "DiscardPile", "Discard")];
+
+        ActionHistoryPresentation entry = ActionHistoryPresenter.PresentEntry(
+            facts, events, NarrativeWorld());
+
+        Assert.Equal("Spider-Man attacked with Black Cat.", entry.Summary);
+        Assert.Contains("discarded Spider-Tracer", Assert.Single(entry.Details),
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void HistoricalDiscardNeverFallsBackToAConcealedObjectId()
+    {
+        var facts = new ActionHistoryFacts(
+            4,
+            "Spider-Man",
+            "turn_action",
+            "PlayerTurn",
+            CardPlay.Verb,
+            "Black Cat",
+            14,
+            [],
+            []);
+        GameEvent[] events = [Move(77, "PlayerDeck", "DiscardPile", "Discard")];
+        var concealed = new WorldDescriptor(
+            [new PlayerDescriptor(0, "Spider-Man", false)],
+            [],
+            [],
+            Outcome.Unfinished);
+
+        string detail = Assert.Single(ActionHistoryPresenter.PresentDiscardDetails(
+            facts, events, concealed));
+
+        Assert.Equal(
+            "Spider-Man discarded a player card from Spider-Man's player deck.",
+            detail);
+        Assert.DoesNotContain("77", detail, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void EveryWireEventKindHasAPresentation()
     {
         Type[] wireKinds = typeof(GameEvent)

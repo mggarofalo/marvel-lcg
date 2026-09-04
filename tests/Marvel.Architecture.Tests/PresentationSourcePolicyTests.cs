@@ -30,6 +30,7 @@ public sealed class PresentationSourcePolicyTests
         string[] reviewed =
         [
             "Marvel.Rules.Events.AreaRef.Host",
+            "Marvel.Rules.Events.AreaRef.Id",
             "Marvel.Rules.Events.AreaRef.Owner",
             "Marvel.Rules.Events.AreaRef.Zone",
             "Marvel.Rules.Events.AreaReordered.Area",
