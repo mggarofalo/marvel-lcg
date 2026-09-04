@@ -60,7 +60,13 @@ public sealed record PaymentProgress(
     int AssignedIcons,
     int DefinedVariables,
     int RequestedVariables,
-    bool IsSatisfied);
+    bool IsSatisfied)
+{
+    /// <summary>Generated icons that a complete payment will lose as excess.</summary>
+    public int ExcessIcons => IsSatisfied
+        ? Math.Max(0, GeneratedIcons - AssignedIcons)
+        : 0;
+}
 
 /// <summary>
 /// Render-ready progress derived from the exact draft and its visible prompt.

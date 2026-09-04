@@ -536,6 +536,7 @@ public sealed class DecisionComposerTests
         Assert.Equal(1, partial.Payment.SelectedGenerators);
         Assert.Equal(2, partial.Payment.GeneratedIcons);
         Assert.Equal(1, partial.Payment.AssignedIcons);
+        Assert.Equal(0, partial.Payment.ExcessIcons);
         Assert.Equal(1, partial.Payment.DefinedVariables);
         Assert.Equal(1, partial.Payment.RequestedVariables);
         Assert.False(partial.Payment.IsSatisfied);
@@ -548,9 +549,30 @@ public sealed class DecisionComposerTests
         DecisionProgressPresentation complete = composer.Progress();
 
         Assert.Equal(2, complete.Payment.AssignedIcons);
+        Assert.Equal(0, complete.Payment.ExcessIcons);
         Assert.True(complete.Payment.IsSatisfied);
         Assert.True(complete.IsReady);
         Assert.Null(complete.Error);
+    }
+
+    [Fact]
+    public void ACompleteOverpaymentReportsOnlyTheIconsThatWillBeLost()
+    {
+        var composer = new DecisionComposer(Prompt(
+            cancellable: false,
+            new Affordance(7, "Play", 20, 0, "Discounted card", Costs:
+            [
+                new CostOption(20, "0", Sources: [new ResourceSource(40, "YY")]),
+            ])));
+        composer.SelectAffordance(7);
+        composer.ToggleResource(40);
+
+        PaymentProgress payment = composer.Progress().Payment;
+
+        Assert.True(payment.IsSatisfied);
+        Assert.Equal(2, payment.GeneratedIcons);
+        Assert.Equal(0, payment.AssignedIcons);
+        Assert.Equal(2, payment.ExcessIcons);
     }
 
     [Fact]
