@@ -16,6 +16,53 @@ namespace Marvel.Godot.Tests;
 public sealed class LocalGameClientTests
 {
     [Fact]
+    public async Task UndoUsesAnAdvertisedBoundaryAndReturnsTheReplayedTable()
+    {
+        var client = new LocalGameClient(new InProcessTransport(Host()));
+        ClientEntryResult opened = await client.OpenSessionAsync(
+            "undo-table", Specification(), TestContext.Current.CancellationToken);
+        ClientResolutionResult kept = await client.ResolveAsync(
+            opened.Session!,
+            VisibleDecision(opened.Response!.Prompt!),
+            TestContext.Current.CancellationToken);
+        Affordance changeForm = Assert.Single(kept.Response!.Prompt!.Affordances, option =>
+            option.Verb == Game.ChangeForm);
+        ClientResolutionResult changed = await client.ResolveAsync(
+            opened.Session!,
+            new EngineDecision(changeForm.Id, []),
+            TestContext.Current.CancellationToken);
+
+        ClientResolutionResult undone = await client.UndoAsync(
+            opened.Session!,
+            changed.Response!.History!.Cursor - 1,
+            TestContext.Current.CancellationToken);
+
+        Assert.True(undone.Succeeded, undone.Error?.Message);
+        Assert.Empty(undone.Response!.Events);
+        Assert.Equal(changed.Response.Revision + 1, undone.Response.Revision);
+        Assert.Contains(undone.Response.World!.Areas
+            .SelectMany(area => area.Cards), card => card.Face?.Title == "Peter Parker");
+        Assert.DoesNotContain(undone.Response.World.Areas
+            .SelectMany(area => area.Cards), card => card.Face?.Title == "Spider-Man");
+    }
+
+    [Fact]
+    public async Task UndoRefusesAHistoryBoundaryTheServerDidNotAdvertise()
+    {
+        var transport = new CapturingTransport();
+        var client = new LocalGameClient(transport);
+
+        ClientResolutionResult result = await client.UndoAsync(
+            new ClientSession("game", "capability"),
+            0,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(ClientMutationDisposition.NotSent, result.MutationDisposition);
+        Assert.Equal("history_unavailable", result.Error?.Code);
+        Assert.Empty(transport.Requests);
+    }
+
+    [Fact]
     public async Task OpeningATwoSeatSessionPreservesHeroOrderAndSeparatesBearerMaterial()
     {
         SetupChoices choices = Choices();

@@ -56,6 +56,8 @@ public sealed class PresentationBoundaryTests
             "Marvel.Server.EngineBuildIdentity",
             "Marvel.Server.EngineResponse",
             "Marvel.Server.HeroSetupChoice",
+            "Marvel.Server.HistoryDescriptor",
+            "Marvel.Server.HistoryEntryDescriptor",
             "Marvel.Server.ModularSetupChoice",
             "Marvel.Server.RuntimeIdentity",
             "Marvel.Server.ScenarioSetupChoice",

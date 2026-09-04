@@ -1,5 +1,6 @@
 using Marvel.Client;
 using Marvel.Decisions;
+using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Server;
 using Marvel.View;
@@ -60,5 +61,44 @@ public sealed class InteractionTranscriptTests
 
         Assert.Empty(transcript.Entries);
         Assert.Equal((uint)2, transcript.Seed);
+    }
+
+    [Fact]
+    public void ExportUsesActionHistoryWithoutRawEventCauses()
+    {
+        var response = new EngineResponse(
+            EngineProtocol.Version,
+            "request",
+            "game",
+            "secret",
+            Prompt: null,
+            Events:
+            [
+                new CardsMoved(
+                    AreaRef.Player("HandsArea", 0),
+                    AreaRef.Player("DiscardPile", 0),
+                    [new Landing(7, 0)])
+                {
+                    Trigger = CardPlay.Verb,
+                    Verb = "Discard",
+                },
+            ],
+            History: new HistoryDescriptor(
+                1,
+                [0],
+                [],
+                [new HistoryEntryDescriptor(
+                    0,
+                    "Spider-Man played Black Cat, generating resources from First Aid.",
+                    [])],
+                ActionOpen: false));
+        var transcript = new InteractionTranscript();
+
+        transcript.RecordResponse(EngineProtocol.Resolve, response);
+        string report = transcript.Export();
+
+        Assert.Contains("Spider-Man played Black Cat", report, StringComparison.Ordinal);
+        Assert.DoesNotContain("trigger", report, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("CardsMoved", report, StringComparison.Ordinal);
     }
 }

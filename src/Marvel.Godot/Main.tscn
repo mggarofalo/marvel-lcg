@@ -69,7 +69,7 @@ theme_type_variation = &"CompactRow"
 layout_mode = 2
 size_flags_vertical = 3
 theme_type_variation = &"Caption"
-text = "v0.1.0-dev.0 · engine engine-replay-v1 · protocol 11 · save 2"
+text = "v0.1.0-dev.0 · engine engine-replay-v1 · protocol 12 · save 2"
 
 [node name="Spacer" type="Control" parent="StatusBar" unique_id=1000000009]
 layout_mode = 2
@@ -652,6 +652,12 @@ layout_mode = 2
 disabled = true
 text = "Skip"
 tooltip_text = "Finish the current event presentation immediately."
+
+[node name="UndoLast" type="Button" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History/EventHeader"]
+layout_mode = 2
+disabled = true
+text = "Undo last action"
+tooltip_text = "Undo the latest action when no new information prevents it."
 
 [node name="CopyReport" type="Button" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History/EventHeader"]
 layout_mode = 2

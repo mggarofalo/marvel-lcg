@@ -36,7 +36,10 @@ same redacted operational signals. A configured private diagnostics volume now
 retains rotated copies, and a read-only incident manifest correlates those
 records with hashes of the opaque save generations. Neither is replay or save
 authority. No client snapshot, incident record or simulation record is a player
-save.
+save. The desktop client presents visibility-safe completed units at their
+server-advertised cursor boundaries and can undo the latest unit or choose an
+eligible earlier point without learning the frontier signal that excluded any
+other boundary.
 
 ## Boundary
 

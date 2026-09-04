@@ -173,6 +173,42 @@ public sealed class TransportTests
     }
 
     [Fact]
+    public void HistoryResponsesCarryCompletedActionsAtTheirBeforeCursor()
+    {
+        var response = new EngineResponse(
+            EngineProtocol.Version,
+            "history",
+            "game",
+            Capability: null,
+            Prompt: null,
+            Events: [],
+            History: new HistoryDescriptor(
+                2,
+                [0, 1],
+                [],
+                [
+                    new HistoryEntryDescriptor(
+                        0, "Spider-Man kept their opening hand.", []),
+                    new HistoryEntryDescriptor(1, "Spider-Man changed form.", []),
+                ],
+                ActionOpen: false));
+
+        EngineResponse restored = EngineJson.ReadResponse(EngineJson.Write(response));
+
+        Assert.Equal(response.History!.Cursor, restored.History!.Cursor);
+        Assert.Equal(response.History.Undo, restored.History.Undo);
+        Assert.Equal(response.History.Redo, restored.History.Redo);
+        Assert.Equal(
+            response.History.Entries.Select(entry => (entry.Cursor, entry.Summary)),
+            restored.History.Entries.Select(entry => (entry.Cursor, entry.Summary)));
+        Assert.Equal(
+            response.History.Entries.SelectMany(entry => entry.Details),
+            restored.History.Entries.SelectMany(entry => entry.Details));
+        Assert.Equal(response.History.ActionOpen, restored.History.ActionOpen);
+        Assert.Equal(1, restored.History.Entries[1].Cursor);
+    }
+
+    [Fact]
     public void ReorderCarriesOnlyRevisionAndOriginalUnitPositions()
     {
         EngineRequest request = EngineRequest.ReorderGame(

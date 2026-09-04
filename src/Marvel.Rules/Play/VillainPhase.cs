@@ -339,6 +339,18 @@ public interface ICardAbilities : IWindowAbilities
     IReadOnlyList<Prompts.ResourceSource> ResourceAbilities(World world, int player);
 
     /// <summary>
+    /// Names one selected resource generator for an authorized history
+    /// presentation. A card in hand is named by its printed face; a resource
+    /// ability is named by the ability rather than by the card carrying it.
+    /// </summary>
+    /// <remarks>
+    /// History wording is a product choice. The engine still owns this fact
+    /// because only it can distinguish discarding a card from triggering a
+    /// resource ability without parsing printed text.
+    /// </remarks>
+    string ResourceGeneratorName(World world, int player, int card);
+
+    /// <summary>
     /// Uses one resource ability to help pay a cost, and answers what it made.
     /// </summary>
     /// <remarks>
@@ -738,6 +750,13 @@ public class NoCardAbilities : ICardAbilities
     /// <inheritdoc/>
     public virtual IReadOnlyList<Prompts.ResourceSource> ResourceAbilities(
         World world, int player) => [];
+
+    /// <inheritdoc/>
+    public virtual string ResourceGeneratorName(World world, int player, int card)
+    {
+        ArgumentNullException.ThrowIfNull(world);
+        return world.Facts.Title(world.Cards[card].FaceId);
+    }
 
     /// <inheritdoc/>
     public virtual string UseResource(

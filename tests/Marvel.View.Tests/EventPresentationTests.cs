@@ -10,6 +10,189 @@ namespace Marvel.View.Tests;
 public sealed class EventPresentationTests
 {
     [Fact]
+    public void CardPlayIsOneActionThatNamesCardsAndResourceAbilities()
+    {
+        string summary = ActionHistoryPresenter.Present(new ActionHistoryFacts(
+            4,
+            "Spider-Man",
+            "turn_action",
+            "PlayerTurn",
+            "Play",
+            "Black Cat",
+            12,
+            [3, 4],
+            ["Scientist", "First Aid"]));
+
+        Assert.Equal(
+            "Spider-Man played Black Cat, generating resources from Scientist and First Aid.",
+            summary);
+        Assert.DoesNotContain("Discard", summary, StringComparison.Ordinal);
+        Assert.DoesNotContain("·", summary, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void FormChangesAreActionsRatherThanWireDiagnostics()
+    {
+        string summary = ActionHistoryPresenter.Present(new ActionHistoryFacts(
+            2,
+            "Spider-Man",
+            "turn_control",
+            "PlayerTurn",
+            Game.ChangeForm,
+            "Peter Parker",
+            1,
+            [],
+            []));
+
+        Assert.Equal("Spider-Man changed form.", summary);
+    }
+
+    [Fact]
+    public void AutomaticStepsNameTheirPhase()
+    {
+        string summary = ActionHistoryPresenter.Present(new ActionHistoryFacts(
+            4,
+            "Rhino",
+            "forced_resolution",
+            "VillainPhase",
+            "Resolve",
+            "Rhino activates",
+            null,
+            [],
+            []));
+
+        Assert.Equal("Rhino resolved Rhino activates during the villain phase.", summary);
+    }
+
+    [Theory]
+    [InlineData(Game.EndPhaseVerb, "Spider-Man", "Spider-Man ended their turn.")]
+    [InlineData(BasicPowers.AttackVerb, "Spider-Man", "Spider-Man attacked.")]
+    [InlineData(BasicPowers.AttackVerb, "Black Cat", "Spider-Man attacked with Black Cat.")]
+    [InlineData(BasicPowers.ThwartVerb, "Spider-Man", "Spider-Man thwarted.")]
+    [InlineData(BasicPowers.RecoverVerb, "Peter Parker", "Spider-Man recovered.")]
+    public void TurnControlsAndBasicPowersHaveActionNames(
+        string verb,
+        string action,
+        string expected)
+    {
+        string summary = ActionHistoryPresenter.Present(new ActionHistoryFacts(
+            3,
+            "Spider-Man",
+            "turn_action",
+            "PlayerTurn",
+            verb,
+            action,
+            1,
+            [],
+            []));
+
+        Assert.Equal(expected, summary);
+    }
+
+    [Fact]
+    public void TerminalOutcomeCompletesRatherThanReplacesTheAction()
+    {
+        string summary = ActionHistoryPresenter.Present(new ActionHistoryFacts(
+            8,
+            "Spider-Man",
+            "turn_action",
+            "PlayerTurn",
+            CardPlay.Verb,
+            "Swinging Web Kick",
+            14,
+            [13],
+            ["First Aid"],
+            Outcome.PlayersWin));
+
+        Assert.Equal(
+            "Spider-Man played Swinging Web Kick, generating resources from First Aid. "
+            + "The players won the game.",
+            summary);
+    }
+
+    [Fact]
+    public void PlayDetailsSuppressPaymentButKeepEffectDrivenDiscards()
+    {
+        var facts = new ActionHistoryFacts(
+            4,
+            "Spider-Man",
+            "turn_action",
+            "PlayerTurn",
+            CardPlay.Verb,
+            "Black Cat",
+            14,
+            [13],
+            ["Aunt May"]);
+        GameEvent[] events =
+        [
+            Move(13, "HandsArea", "DiscardPile", "Discard") with
+            {
+                Trigger = CardPlay.Verb,
+            },
+            Move(7, "PlayerDeck", "DiscardPile", "Discard"),
+        ];
+
+        string detail = Assert.Single(ActionHistoryPresenter.PresentDiscardDetails(
+            facts, events, NarrativeWorld()));
+
+        Assert.Contains("discarded", detail, StringComparison.Ordinal);
+        Assert.Contains("Spider-Tracer", detail, StringComparison.Ordinal);
+        Assert.DoesNotContain("Aunt May", detail, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void EffectDiscardDoesNotReplaceABasicPowerHeadline()
+    {
+        var facts = new ActionHistoryFacts(
+            4,
+            "Spider-Man",
+            "turn_action",
+            "PlayerTurn",
+            BasicPowers.AttackVerb,
+            "Black Cat",
+            14,
+            [],
+            []);
+        GameEvent[] events = [Move(7, "PlayerDeck", "DiscardPile", "Discard")];
+
+        ActionHistoryPresentation entry = ActionHistoryPresenter.PresentEntry(
+            facts, events, NarrativeWorld());
+
+        Assert.Equal("Spider-Man attacked with Black Cat.", entry.Summary);
+        Assert.Contains("discarded Spider-Tracer", Assert.Single(entry.Details),
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void HistoricalDiscardNeverFallsBackToAConcealedObjectId()
+    {
+        var facts = new ActionHistoryFacts(
+            4,
+            "Spider-Man",
+            "turn_action",
+            "PlayerTurn",
+            CardPlay.Verb,
+            "Black Cat",
+            14,
+            [],
+            []);
+        GameEvent[] events = [Move(77, "PlayerDeck", "DiscardPile", "Discard")];
+        var concealed = new WorldDescriptor(
+            [new PlayerDescriptor(0, "Spider-Man", false)],
+            [],
+            [],
+            Outcome.Unfinished);
+
+        string detail = Assert.Single(ActionHistoryPresenter.PresentDiscardDetails(
+            facts, events, concealed));
+
+        Assert.Equal(
+            "Spider-Man discarded a player card from Spider-Man's player deck.",
+            detail);
+        Assert.DoesNotContain("77", detail, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void EveryWireEventKindHasAPresentation()
     {
         Type[] wireKinds = typeof(GameEvent)

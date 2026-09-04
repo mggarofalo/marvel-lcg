@@ -292,7 +292,7 @@ jobs:
           [[ $actual_version == "$VERSION" ]] || { echo 'server image label differs from release version' >&2; exit 2; }
           docker run --rm --read-only --entrypoint dotnet "$reference" \
             Marvel.Server.dll --version | grep -F \
-            "v$VERSION · engine engine-replay-v1 · protocol 11 · save 2"
+            "v$VERSION · engine engine-replay-v1 · protocol 12 · save 2"
           identity="https://github.com/$GITHUB_WORKFLOW_REF"
           bundle="$artifact/MarvelServer-$VERSION-linux-amd64.sigstore.json"
           cosign sign --yes --bundle "$bundle" "$reference"

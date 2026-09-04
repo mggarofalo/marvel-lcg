@@ -51,6 +51,7 @@ public sealed class InteractionTranscript
                 GameId = string.Empty,
                 Capability = null,
                 Invitations = null,
+                Events = [],
             }));
     }
 

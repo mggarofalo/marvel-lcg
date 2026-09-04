@@ -381,7 +381,7 @@ public sealed class EngineHost : IEngineEndpoint
             capability,
             issuedInvitations.Select(pair =>
                 new SeatInvitation(pair.grant.Seat, pair.token)).ToList(),
-            history: History(save, scope));
+            history: History(save, scope, opened.Game));
         var proposedAuthorities = new List<StoredAuthority>
         {
             Authority(capability, scope, request.Game.Heroes.Count, owner: true, invitation: false),
@@ -475,7 +475,7 @@ public sealed class EngineHost : IEngineEndpoint
             pending.Scope,
             capability,
             revision: pending.Session.Revision,
-            history: History(pending.Session.Save, pending.Scope));
+            history: History(pending.Session.Save, pending.Scope, pending.Session.Game));
         var authorities = Authorities(pending.Session)
             .Where(authority => authority.Verifier != invitationVerifier)
             .Append(Authority(
@@ -520,7 +520,7 @@ public sealed class EngineHost : IEngineEndpoint
             [],
             access.Scope,
             revision: access.Session.Revision,
-            history: History(access.Session.Save, access.Scope));
+            history: History(access.Session.Save, access.Scope, access.Session.Game));
     }
 
     private EngineResponse Resolve(EngineRequest request)
@@ -654,7 +654,7 @@ public sealed class EngineHost : IEngineEndpoint
                 resolved.Events,
                 access.Scope,
                 revision: proposed.Revision,
-                history: History(proposed, access.Scope));
+                history: History(proposed, access.Scope, candidate));
         }
         catch (Exception failure) when (failure is IOException
             or UnauthorizedAccessException
@@ -772,7 +772,7 @@ public sealed class EngineHost : IEngineEndpoint
                 [],
                 access.Scope,
                 revision: proposed.Revision,
-                history: History(proposed, access.Scope));
+                history: History(proposed, access.Scope, verified));
         }
         catch (Exception failure) when (failure is IOException
             or UnauthorizedAccessException
@@ -908,7 +908,7 @@ public sealed class EngineHost : IEngineEndpoint
                 [],
                 access.Scope,
                 revision: proposed.Revision,
-                history: History(proposed, access.Scope));
+                history: History(proposed, access.Scope, verified));
         }
         catch (Exception failure) when (failure is IOException
             or UnauthorizedAccessException
@@ -1303,11 +1303,49 @@ public sealed class EngineHost : IEngineEndpoint
         };
     }
 
-    private static HistoryDescriptor History(SessionSave save, ViewScope scope)
+    private HistoryDescriptor History(SessionSave save, ViewScope scope, Game game)
     {
-        if (save.Units.Any(unit => unit.Status != "complete"))
+        ArgumentNullException.ThrowIfNull(game);
+        WorldDescriptor world = WorldProjection.For(game.State, null, [], scope).World;
+        var entries = new List<HistoryEntryDescriptor>(save.Cursor);
+        foreach (HistoryUnitInspection unit in SessionReplay.InspectActiveHistory(
+                     save, compatibility, ReplayOpen))
         {
-            return new HistoryDescriptor(save.Cursor, [], []);
+            Outcome? outcome = Enum.TryParse(unit.Outcome, out Outcome parsed)
+                ? parsed
+                : null;
+            if (!scope.Includes(unit.Actor))
+            {
+                string summary = $"{unit.ActorName} completed an action.";
+                if (outcome is { } terminal)
+                {
+                    summary += $" {EventPresenter.Terminal(terminal).Summary}";
+                }
+                entries.Add(new HistoryEntryDescriptor(unit.Cursor, summary, []));
+                continue;
+            }
+
+            var facts = new ActionHistoryFacts(
+                unit.Cursor,
+                unit.ActorName,
+                unit.Role,
+                unit.Phase,
+                unit.Verb,
+                unit.Action,
+                unit.Subject,
+                unit.ResourceGeneratorIds,
+                unit.ResourceGenerators,
+                outcome);
+            ActionHistoryPresentation presented = ActionHistoryPresenter.PresentEntry(
+                facts, unit.Events, world);
+            entries.Add(new HistoryEntryDescriptor(
+                unit.Cursor, presented.Summary, presented.Details));
+        }
+
+        bool actionOpen = save.Units.Any(unit => unit.Status != "complete");
+        if (actionOpen)
+        {
+            return new HistoryDescriptor(save.Cursor, [], [], entries, ActionOpen: true);
         }
 
         int[] undo = Enumerable.Range(save.EditFrontier, save.Cursor - save.EditFrontier)
@@ -1318,7 +1356,7 @@ public sealed class EngineHost : IEngineEndpoint
             .Where(target => EditableBy(
                 save.Units.Skip(save.Cursor).Take(target - save.Cursor), scope))
             .ToArray();
-        return new HistoryDescriptor(save.Cursor, undo, redo);
+        return new HistoryDescriptor(save.Cursor, undo, redo, entries, ActionOpen: false);
     }
 
     private static bool EditableBy(IEnumerable<JournalUnit> units, ViewScope scope)

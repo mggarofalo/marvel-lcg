@@ -46,6 +46,7 @@ public sealed partial class Main : Control
     private RichTextLabel eventLog = null!;
     private CheckButton eventMotion = null!;
     private Button eventSkip = null!;
+    private Button undoLast = null!;
     private Button copyReport = null!;
     private Button saveReport = null!;
     private Tween? eventTween;
@@ -197,7 +198,7 @@ public sealed partial class Main : Control
         foreach (Control control in new Control[]
                  {
                      startFlow, joinFlow, reloadSetup, start, join, invitationCopy,
-                     lastResultToggle, lastResultDismiss,
+                     lastResultToggle, lastResultDismiss, undoLast,
                  })
         {
             control.CustomMinimumSize = new Vector2(
@@ -268,6 +269,8 @@ public sealed partial class Main : Control
         eventMotion = GetNode<CheckButton>("StatusBar/Motion");
         eventSkip = GetNode<Button>(
             $"{content}/Play/Prompt/Margin/Stack/Workbench/History/EventHeader/Skip");
+        undoLast = GetNode<Button>(
+            $"{content}/Play/Prompt/Margin/Stack/Workbench/History/EventHeader/UndoLast");
         copyReport = GetNode<Button>(
             $"{content}/Play/Prompt/Margin/Stack/Workbench/History/EventHeader/CopyReport");
         saveReport = GetNode<Button>(
@@ -280,6 +283,8 @@ public sealed partial class Main : Control
             }
         };
         eventSkip.Pressed += SkipEventPresentation;
+        undoLast.Pressed += OnUndoLastPressed;
+        eventLog.MetaClicked += OnHistoryMetaClicked;
         copyReport.Pressed += CopyInteractionReport;
         saveReport.Pressed += SaveInteractionReport;
         lastResultToggle.Pressed += ToggleLastResult;
@@ -980,6 +985,127 @@ public sealed partial class Main : Control
         }
     }
 
+    private void OnUndoLastPressed()
+    {
+        HistoryDescriptor? history = CurrentGame?.History;
+        int target = (history?.Cursor ?? 0) - 1;
+        if (history?.Undo.Contains(target) == true)
+        {
+            UndoTo(target);
+        }
+    }
+
+    private void OnHistoryMetaClicked(Variant meta)
+    {
+        const string prefix = "undo:";
+        string value = meta.AsString();
+        if (value.StartsWith(prefix, StringComparison.Ordinal)
+            && int.TryParse(
+                value.AsSpan(prefix.Length),
+                NumberStyles.None,
+                CultureInfo.InvariantCulture,
+                out int cursor)
+            && CurrentGame?.History?.Undo.Contains(cursor) == true)
+        {
+            UndoTo(cursor);
+        }
+    }
+
+    private async void UndoTo(int cursor)
+    {
+        if (decisionPending || resolveInFlight || client is null || session is null)
+        {
+            return;
+        }
+
+        resolveInFlight = true;
+        RefreshSynchronizeAvailability();
+        try
+        {
+            ApplyProgress(GameProgressPresentation.Resolving());
+            promptProgress.Text = "UNDOING  ·  VERIFYING HISTORY";
+            promptProgress.ThemeTypeVariation = GodotThemeVariations.StatusText;
+            ClientResolutionResult result = await client.UndoAsync(session, cursor);
+            if (!IsInsideTree())
+            {
+                return;
+            }
+
+            if (result.SessionDisposition == ClientSessionDisposition.Unavailable)
+            {
+                ReturnToJoinAfterSessionLoss(result.Error ?? new ClientStartupError(
+                    "session_unavailable",
+                    "This table session is no longer available. Join again with a new invitation."));
+                return;
+            }
+
+            if (result.MutationDisposition == ClientMutationDisposition.NotSent)
+            {
+                ApplyProgress(GameProgressPresentation.DecisionNotSent(
+                    result.Error ?? new ClientStartupError(
+                        "history_not_sent",
+                        "The history change did not reach the game service.")));
+                promptProgress.Text = "UNDO NOT SENT  ·  RETRY SAFE";
+                promptProgress.ThemeTypeVariation = GodotThemeVariations.StatusText;
+                return;
+            }
+
+            if (result.HasAuthoritativeView)
+            {
+                SkipEventPresentation();
+                events.Reset([]);
+                DismissLastResult();
+                RenderGame(
+                    result.Response!,
+                    resetEvents: true,
+                    operation: EngineProtocol.Undo);
+                decisionPending = false;
+                uncertainMutationError = null;
+                if (result.Error is not null)
+                {
+                    ApplyProgress(GameProgressPresentation.Recovered(
+                        result.Response!, result.Error));
+                }
+                return;
+            }
+
+            ClientStartupError failure = result.Error ?? new ClientStartupError(
+                "history_unresolved",
+                "The undo result could not be reconciled with the current table.");
+            if (result.MutationDisposition == ClientMutationDisposition.Rejected)
+            {
+                ApplyProgress(GameProgressPresentation.DecisionRejected(failure));
+                promptProgress.Text = "UNDO REJECTED  ·  SYNCHRONIZE TABLE";
+                promptProgress.ThemeTypeVariation = GodotThemeVariations.DangerText;
+            }
+            else
+            {
+                decisionPending = true;
+                uncertainMutationError = failure;
+                ShowUnconfirmed(failure);
+            }
+        }
+        catch (Exception)
+        {
+            if (IsInsideTree())
+            {
+                decisionPending = true;
+                uncertainMutationError = new ClientStartupError(
+                    "display_failed",
+                    "The undo result could not be displayed.");
+                ShowUnconfirmed(uncertainMutationError);
+            }
+        }
+        finally
+        {
+            resolveInFlight = false;
+            if (IsInsideTree())
+            {
+                RefreshSynchronizeAvailability();
+            }
+        }
+    }
+
     private void ShowUnconfirmed(ClientStartupError error)
     {
         ApplyProgress(GameProgressPresentation.Unconfirmed(error));
@@ -1113,6 +1239,9 @@ public sealed partial class Main : Control
     {
         transcript.RecordResponse(operation, response);
         Outcome previousOutcome = CurrentGame?.World?.Outcome ?? Outcome.Unfinished;
+        HashSet<int> priorHistory = CurrentGame?.History?.Entries
+            .Select(entry => entry.Cursor)
+            .ToHashSet() ?? [];
         CurrentGame = response;
         WorldDescriptor world = response.World!;
         RenderBoard(world);
@@ -1137,8 +1266,25 @@ public sealed partial class Main : Control
             }
 
             RenderEvents();
-            RenderLastResult(presented.Highlights, resetEvents);
+            HistoryEntryDescriptor? completed = operation == EngineProtocol.Resolve
+                ? response.History?.Entries.LastOrDefault(entry =>
+                    !priorHistory.Contains(entry.Cursor)
+                    && entry.Summary.Contains(" played ", StringComparison.Ordinal))
+                : null;
+            IReadOnlyList<EventPresentation> highlights = response.History?.ActionOpen == true
+                ? []
+                : completed is null
+                    ? presented.Highlights
+                    : completed.Details.Prepend(completed.Summary)
+                        .Select(summary => new EventPresentation(
+                            summary, "Action", [], EventMotionKind.State))
+                        .ToArray();
+            RenderLastResult(highlights, resetEvents);
             PresentEvents(presented.Cues);
+        }
+        else
+        {
+            RenderEvents();
         }
         // A synchronized snapshot is authoritative but is not a new
         // transition, so it does not alter the diagnostic chronology.
@@ -1486,6 +1632,41 @@ public sealed partial class Main : Control
 
     private void RenderEvents()
     {
+        IReadOnlyList<HistoryEntryDescriptor> actions =
+            CurrentGame?.History?.Entries ?? [];
+        if (actions.Count > 0 || CurrentGame?.History?.ActionOpen == true)
+        {
+            string actionAccent = ClientTheme.ToGodot(
+                VisualSystem.Palette.Accent).ToHtml(false);
+            var actionText = new StringBuilder();
+            IReadOnlyList<int> undo = CurrentGame!.History!.Undo;
+            foreach (HistoryEntryDescriptor entry in actions)
+            {
+                actionText.Append("[color=#")
+                    .Append(actionAccent)
+                    .Append(']')
+                    .Append((entry.Cursor + 1).ToString("000", CultureInfo.InvariantCulture))
+                    .Append("[/color]  ")
+                    .AppendLine(entry.Summary);
+                foreach (string detail in entry.Details)
+                {
+                    actionText.Append("     ").AppendLine(detail);
+                }
+                if (undo.Contains(entry.Cursor))
+                {
+                    actionText.Append("     [url=undo:")
+                        .Append(entry.Cursor.ToString(CultureInfo.InvariantCulture))
+                        .AppendLine("]Undo to before this action[/url]");
+                }
+            }
+
+            eventLog.Text = actionText.Length == 0
+                ? "Action in progress."
+                : actionText.ToString();
+            eventLog.ScrollToLine(eventLog.GetLineCount());
+            return;
+        }
+
         if (events.Entries.Count == 0)
         {
             eventLog.Text = "No events yet.";
@@ -1493,7 +1674,6 @@ public sealed partial class Main : Control
         }
 
         string accent = ClientTheme.ToGodot(VisualSystem.Palette.Accent).ToHtml(false);
-        string muted = ClientTheme.ToGodot(VisualSystem.Palette.MutedText).ToHtml(false);
         var text = new StringBuilder();
         for (int index = 0; index < events.Entries.Count; index++)
         {
@@ -1503,12 +1683,7 @@ public sealed partial class Main : Control
                 .Append(']')
                 .Append((index + 1).ToString("000", CultureInfo.InvariantCulture))
                 .Append("[/color]  ")
-                .AppendLine(entry.Summary)
-                .Append("     [color=#")
-                .Append(muted)
-                .Append(']')
-                .Append(entry.Cause)
-                .AppendLine("[/color]");
+                .AppendLine(entry.Summary);
         }
 
         eventLog.Text = text.ToString();
@@ -1624,8 +1799,20 @@ public sealed partial class Main : Control
         decisions.SetSubmitting(progress.LocksDecisions);
     }
 
-    private void RefreshSynchronizeAvailability() =>
+    private void RefreshSynchronizeAvailability()
+    {
         synchronize.Disabled = session is null || synchronizing || resolveInFlight;
+        HistoryDescriptor? history = CurrentGame?.History;
+        int last = (history?.Cursor ?? 0) - 1;
+        undoLast.Disabled = session is null
+            || synchronizing
+            || resolveInFlight
+            || decisionPending
+            || history?.Undo.Contains(last) != true;
+        undoLast.TooltipText = undoLast.Disabled
+            ? "New information, a pending action, or table authority prevents undoing the latest action."
+            : "Undo the latest completed action.";
+    }
 
     private GameSetupSelection SelectedSetup()
     {

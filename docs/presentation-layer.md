@@ -181,7 +181,11 @@ visibility configuration, durable sessions and shutdown behavior.
 
 The socket protocol uses source-generated JSON inside a 4-byte big-endian length
 frame. Frames are bounded. Unknown operations, unsupported protocol versions and
-unknown JSON members fail before they reach the engine. Protocol 11 adds the
+unknown JSON members fail before they reach the engine. Protocol 12 adds
+visibility-safe completed-action summaries at the cursor immediately before each
+action, their visibility-safe discard-result details, and whether an action is
+still open, so a client can offer an authoritative history target without
+receiving journal decisions or information-frontier signals. Protocol 11 adds the
 product, replay, save-schema and dataset identities to the
 setup discovery response so a client can diagnose compatibility before opening a
 game. Protocol 10 added declaration-sensitive wild-resource costs.
@@ -190,8 +194,9 @@ action-unit positions. The client sends no decisions or derived state in that
 command. Protocol 8 added
 replay-verified undo and redo commands that name an expected revision and a
 retained history cursor. Each authorized game response carries only the cursor
-boundaries that capability may currently request; it does not expose journal
-decisions, information signals, or state digests. Protocol 7 added the host revision that binds a
+boundaries that capability may currently request and the scoped summaries needed
+to name them; it does not expose journal decisions, concealed card identities,
+information signals, or state digests. Protocol 7 added the host revision that binds a
 decision to the prompt it answers. Protocol 6 added
 the printed and live face facts used by procedural cards. Protocol 5 added per-target
 maximum occurrences to repeated target allocations, allowing clients to render

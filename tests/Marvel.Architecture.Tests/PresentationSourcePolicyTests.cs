@@ -30,6 +30,7 @@ public sealed class PresentationSourcePolicyTests
         string[] reviewed =
         [
             "Marvel.Rules.Events.AreaRef.Host",
+            "Marvel.Rules.Events.AreaRef.Id",
             "Marvel.Rules.Events.AreaRef.Owner",
             "Marvel.Rules.Events.AreaRef.Zone",
             "Marvel.Rules.Events.AreaReordered.Area",
@@ -61,7 +62,13 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.Events.PlayAreaDetached.PlayArea",
             "Marvel.Rules.Events.PlayAreaJoined.GameArea",
             "Marvel.Rules.Events.PlayAreaJoined.PlayArea",
+            "Marvel.Rules.Play.BasicPowers.AttackVerb",
+            "Marvel.Rules.Play.BasicPowers.RecoverVerb",
+            "Marvel.Rules.Play.BasicPowers.ThwartVerb",
+            "Marvel.Rules.Play.CardPlay.Verb",
             "Marvel.Rules.Play.EncounterDeck.AccelerationToken",
+            "Marvel.Rules.Play.Game.ChangeForm",
+            "Marvel.Rules.Play.Game.EndPhaseVerb",
             "Marvel.Rules.Play.Outcome.PlayersLose",
             "Marvel.Rules.Play.Outcome.PlayersWin",
             "Marvel.Rules.Play.Outcome.Unfinished",
