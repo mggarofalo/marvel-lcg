@@ -24,14 +24,24 @@ public sealed class Area
 {
     private readonly List<Card> cards = [];
     private readonly List<Card> removed = [];
+    private readonly Card? hostCard;
 
-    internal Area(int id, DeckType type, int cardOwner, PlayArea playArea, int host)
+    internal Area(
+        int id, DeckType type, int cardOwner, PlayArea playArea, int host,
+        Card? hostCard = null)
     {
+        if ((host < 0) != (hostCard is null)
+            || (hostCard is not null && hostCard.ObjectId != host))
+        {
+            throw new ArgumentException("a hosted area must name its host card", nameof(hostCard));
+        }
+
         Id = id;
         Type = type;
         CardOwner = cardOwner;
         PlayArea = playArea;
         Host = host;
+        this.hostCard = hostCard;
     }
 
     /// <summary>This area's identity, unique within the world.</summary>
@@ -82,6 +92,7 @@ public sealed class Area
 
     internal void Append(Card card)
     {
+        ValidateCanAcceptCards();
         cards.Add(card);
         card.MovedTo(this);
     }
@@ -105,5 +116,24 @@ public sealed class Area
     {
         cards.Clear();
         cards.AddRange(order);
+    }
+
+    /// <summary>Refuses to populate an area whose host can no longer carry cards.</summary>
+    internal void ValidateCanAcceptCards()
+    {
+        if (hostCard is null)
+        {
+            return;
+        }
+
+        // `rr:in-play-and-out-of-play.4`: card abilities normally interact
+        // only with cards in play. A hosted area can remain after its host
+        // leaves, but putting a card back into it would attach that card to an
+        // out-of-play copy which no longer exists under `rr:leaves-play.1`.
+        if (!DeckTypes.IsInPlay(hostCard.Area.Type))
+        {
+            throw new InvalidOperationException(
+                $"area {Id} cannot receive cards because host card {Host} is not in play");
+        }
     }
 }

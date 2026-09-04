@@ -522,21 +522,23 @@ public sealed class AbilityDataTests
         // here as well as in the window that is meant to offer it.
         var world = new World(Printed, players: 1);
         world.CreateSeat("p0");
+        var hero = world.CreateCard("01001a", world.Seats[0].Hero);
+        world.Seats[0].IdentityCard = hero;
         var card = world.CreateCard("01105", world.AreaOf(DeckType.RevealingArea));
 
         var book = AbilityCatalog.Parse(
             """
             {"cards":[{"card":"01105","abilities":[
               {"trigger":{"event":"WhenCardRevealed","timing":"WhenRevealed","subject":"this"},
-               "effect":{"giveStatus":{"card":"this","status":"tough"}}},
+               "effect":{"giveStatus":{"card":"yourHero","status":"tough"}}},
               {"trigger":{"event":"WhenCardRevealed","timing":"Interrupt","subject":"this"},
-               "effect":{"giveStatus":{"card":"this","status":"stunned"}}}]}]}
+               "effect":{"giveStatus":{"card":"yourHero","status":"stunned"}}}]}]}
             """);
 
         new Marvel.Cards.Run.AbilityRunner(book).WhenRevealed(world, card, 0);
 
-        Assert.True(Statuses.Has(world, card, "tough"));
-        Assert.False(Statuses.Has(world, card, "stunned"));
+        Assert.True(Statuses.Has(world, hero, "tough"));
+        Assert.False(Statuses.Has(world, hero, "stunned"));
     }
 
     [Rule("rr:ability.8")]

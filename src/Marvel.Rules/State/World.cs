@@ -595,7 +595,20 @@ public sealed class World
     public Area CreateArea(
         DeckType type, int cardOwner = -1, PlayArea? playArea = null, int host = -1)
     {
-        var area = new Area(areas.Count, type, cardOwner, playArea ?? PlayArea.Villains, host);
+        Card? hostCard = null;
+        if (host >= 0)
+        {
+            if (host >= cards.Count)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(host), $"there is no host card {host}");
+            }
+            hostCard = cards[host];
+        }
+
+        var area = new Area(
+            areas.Count, type, cardOwner, playArea ?? PlayArea.Villains, host, hostCard);
+        area.ValidateCanAcceptCards();
         areas.Add(area);
         return area;
     }
@@ -611,6 +624,7 @@ public sealed class World
     {
         ArgumentNullException.ThrowIfNull(spec);
         ArgumentNullException.ThrowIfNull(into);
+        into.ValidateCanAcceptCards();
 
         // The engine's rule: a card belongs to whoever owns the place it was
         // made in, falling back to the scenario. Not to the seat that asked for
@@ -628,6 +642,7 @@ public sealed class World
     {
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(destination);
+        destination.ValidateCanAcceptCards();
 
         // `rr:removed-from-the-game.2`: this is a terminal game state, not a
         // set-aside pile. Effects that may later retrieve a card use

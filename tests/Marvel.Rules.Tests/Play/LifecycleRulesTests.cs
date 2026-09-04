@@ -45,6 +45,13 @@ public sealed class LifecycleRulesTests
         // and status state to the supply; if it returns, it is a new copy.
         var facts = new Facts();
         var world = Board(facts);
+        int areasBefore = world.Areas.Count;
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            world.CreateArea(
+                DeckType.StatusArea, playArea: PlayArea.Of(0),
+                host: world.Cards.Count + 1));
+        Assert.Equal(areasBefore, world.Areas.Count);
+
         var ally = world.CreateCard(
             "ally", world.AreaOf(
                 DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
@@ -73,6 +80,40 @@ public sealed class LifecycleRulesTests
         Assert.Equal(DeckType.DiscardPile, attached.Area.Type);
         Assert.Equal(DeckType.EncounterDiscardPile, boost.Area.Type);
         Assert.Equal(DeckType.RemovedArea, status.Area.Type);
+    }
+
+    [Rule("rr:in-play-and-out-of-play.4")]
+    [Rule("rr:in-play-and-out-of-play.8")]
+    [Rule("rr:leaves-play.1")]
+    [Fact]
+    public void CardsCannotEnterHostedAreasAfterTheHostLeavesPlay()
+    {
+        // The discard pile is out of play, and a card that left is a new copy.
+        // Empty areas from the former copy may remain in the world, but neither
+        // creating nor moving a card may populate them again.
+        var facts = new Facts();
+        var world = Board(facts);
+        var ally = world.CreateCard(
+            "ally", world.AreaOf(
+                DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        var statusArea = world.AreaOf(
+            DeckType.StatusArea, PlayArea.Of(0), ally.ObjectId);
+        var upgradeArea = world.AreaOf(
+            DeckType.UpgradesArea, PlayArea.Of(0), ally.ObjectId, cardOwner: 0);
+        var upgrade = world.CreateCard("upgrade", world.Seats[0].Hand);
+
+        Discard.Card(world, ally, "test", []);
+
+        int cardsBefore = world.Cards.Count;
+        Assert.Throws<InvalidOperationException>(() =>
+            world.CreateCard("status", statusArea));
+        Assert.Equal(cardsBefore, world.Cards.Count);
+
+        Assert.Throws<InvalidOperationException>(() =>
+            World.MoveToTop(upgrade, upgradeArea));
+        Assert.Same(world.Seats[0].Hand, upgrade.Area);
+        Assert.Empty(statusArea.Cards);
+        Assert.Empty(upgradeArea.Cards);
     }
 
     [Rule("rr:all-purpose-counter.3")]
