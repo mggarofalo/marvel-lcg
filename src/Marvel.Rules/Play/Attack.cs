@@ -896,20 +896,6 @@ public static class Attack
             world, facts, world.Cards[attack.Enemy], world.Cards[attack.Target], amount,
             Steps.AttackInitiated, "Deal_Damage", events);
 
-        // `rr:delayed-effect.1` -- a delayed effect resolves "immediately after
-        // [its] future condition occurs or becomes true, and **before responses
-        // to that point or condition may be used**", which is why this is here
-        // and not in the step's response window.
-        //
-        // Once per character actually damaged, and `rr:tough.3` is what makes
-        // that list shorter than "who was attacked": a character whose tough
-        // status card ate the damage "is not considered to have taken damage",
-        // so "if a character is damaged by this attack" is false for them.
-        foreach (var card in damage.Characters)
-        {
-            DelayedEffects.Occur(world, "WhenDamageDealt", card.ObjectId, events);
-        }
-
         // Recorded on the attack rather than derived later, because by the time
         // `rr:attack-enemy-activation.step.6.a`'s abilities run the damage is on
         // a dial that had damage on it before. `damaged` is the list

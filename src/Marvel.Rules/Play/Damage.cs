@@ -388,7 +388,11 @@ public static class Damage
         string trigger, string verb, List<GameEvent> events, int by = -1,
         Occurrence? recordDefeatOn = null)
     {
-        if (!placed.Landed)
+        // `rr:leaves-play.1`: after a card leaves play, it is "considered to
+        // be a new copy of the card." A delayed effect can make that happen
+        // between damage step 5 and defeat; the old copy cannot then proceed
+        // through damage steps 6 through 8.
+        if (!placed.Landed || !DeckTypes.IsInPlay(placed.Target.Area.Type))
         {
             return Outcome.NotDefeated;
         }
@@ -580,9 +584,24 @@ public static class Damage
         bool hasOverkill = Keywords.Has(world, attacker, Keywords.Overkill, facts);
         bool canRetaliate = retaliate
             && !Keywords.Has(world, attacker, Keywords.Ranged, facts);
-        var outcome = DealWithAmounts(
-            world, facts, source, target, amount, trigger, verb, events,
-            out long dealtAmount, out long takenAmount, by: attacker.Owner);
+        var placed = Place(
+            world, facts, source, target, amount, trigger, verb, events);
+        long dealtAmount = placed.Dealt;
+        long takenAmount = placed.Taken;
+
+        // `rr:delayed-effect.1`: the effect resolves immediately when damage
+        // has landed. That is after `rr:damage.step.5` places the damage and
+        // before steps 6 through 8 can defeat and discard the character. A
+        // status created here therefore leaves with a lethally damaged host.
+        if (placed.Landed)
+        {
+            DelayedEffects.Occur(
+                world, Steps.DamageDealt, target.ObjectId, events);
+        }
+
+        var outcome = FinishPlaced(
+            world, facts, source, placed, trigger, verb, events,
+            by: attacker.Owner);
         // Prevention changes what is taken without changing what was dealt,
         // but `rr:overkill.4` specifically withholds prevented excess. The
         // spill is therefore the taken amount beyond the former hit points.

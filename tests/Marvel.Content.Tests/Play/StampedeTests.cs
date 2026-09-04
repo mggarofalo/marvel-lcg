@@ -2,6 +2,7 @@ using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Tests;
 using Xunit;
@@ -53,6 +54,49 @@ public sealed class StampedeTests
 
         Assert.True(identity.Damage > 0, "the attack landed");
         Assert.True(Statuses.Has(world, identity, Statuses.Stunned));
+    }
+
+    [Rule("rr:delayed-effect.1")]
+    [Rule("rr:damage.step.5")]
+    [Rule("rr:damage.step.8")]
+    [Rule("rr:leaves-play.2.3")]
+    [Fact]
+    public void ADefeatedDefendersDelayedStunReturnsToTheSupply()
+    {
+        // Damage placement makes Stampede due before defeat. Daredevil gains
+        // the status while he is still in play, then both leave in damage step
+        // 8 instead of a status appearing under his discarded copy.
+        var world = Hero();
+        var daredevil = world.CreateCard(
+            "01058", world.AreaOf(
+                DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        daredevil.TakeDamage(2);
+
+        var events = Play(world, AuthoredCards.Stampede, daredevil);
+
+        Assert.Equal(DeckType.DiscardPile, daredevil.Area.Type);
+        var stunned = Assert.Single(
+            world.Cards, card => card.FaceId == Statuses.Stunned);
+        Assert.Equal(DeckType.RemovedArea, stunned.Area.Type);
+        Assert.Empty(world.Areas
+            .Where(area => area.Host == daredevil.ObjectId)
+            .SelectMany(area => area.Cards));
+
+        int damage = events.FindIndex(gameEvent => gameEvent is FieldSet changed
+            && changed.Card == daredevil.ObjectId
+            && changed.Field == "health");
+        int attached = events.FindIndex(gameEvent => gameEvent is CardAttached status
+            && status.Card == stunned.ObjectId
+            && status.Host == daredevil.ObjectId);
+        int statusRemoved = events.FindIndex(gameEvent => gameEvent is CardsMoved moved
+            && moved.Cards.Any(card => card.Card == stunned.ObjectId));
+        int allyDiscarded = events.FindIndex(gameEvent => gameEvent is CardsMoved moved
+            && moved.Cards.Any(card => card.Card == daredevil.ObjectId));
+
+        Assert.True(damage >= 0, "attack damage was recorded");
+        Assert.True(damage < attached, "the delayed status followed damage placement");
+        Assert.True(attached < statusRemoved, "the status existed before cleanup");
+        Assert.True(statusRemoved < allyDiscarded, "the status left before its host");
     }
 
     [Rule("rr:tough.3")]
@@ -150,15 +194,16 @@ public sealed class StampedeTests
     }
 
     /// <summary>Reveals the card and lets everything it scheduled happen.</summary>
-    private static void Play(World world, string faceId)
+    private static List<GameEvent> Play(
+        World world, string faceId, Card? defender = null)
     {
         var card = world.CreateCard(faceId, world.AreaOf(DeckType.RevealingArea));
         world.Agenda.Add(new PhaseStep(
             Steps.RevealEncounterCard, 1, 4, Subject: card.ObjectId, Seat: 0));
-        Run(world);
+        return Run(world, defender);
     }
 
-    private static void Run(World world)
+    private static List<GameEvent> Run(World world, Card? defender = null)
     {
         var abilities = AuthoredCards.Runner();
         var events = new List<GameEvent>();
@@ -166,9 +211,15 @@ public sealed class StampedeTests
         for (int answered = 0; asked is not null; answered++)
         {
             Assert.True(answered < 12, $"'{asked.Label}' is still being asked");
-            Sequence.Answer(world, Cards, abilities, asked, Decision.Decline, events);
+            Decision answer = asked.Asking == Question.Defender && defender is not null
+                ? Decision.Take(Assert.Single(
+                    asked.Affordances,
+                    option => option.AnchorId == defender.ObjectId).Id)
+                : Decision.Decline;
+            Sequence.Answer(world, Cards, abilities, asked, answer, events);
             asked = Sequence.Work(world, Cards, abilities, events);
         }
+        return events;
     }
 
     /// <summary>The Rhino board with Spider-Man standing up.</summary>
