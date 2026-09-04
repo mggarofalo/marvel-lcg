@@ -329,6 +329,7 @@ public sealed class CardsInWindowsTests
     }
 
     [Rule("rr:ability.step.2.c")]
+    [Rule("rr:forced.4")]
     [Fact]
     public void TheWholeGameStopsInTheVillainPhaseToAskAboutSpiderSense()
     {
@@ -351,6 +352,12 @@ public sealed class CardsInWindowsTests
         Assert.NotNull(result.Prompt);
         Assert.Equal(Question.Opportunity, result.Prompt.Asking);
         Assert.Equal(["Spider-Sense"], result.Prompt.Affordances.Select(a => a.Label));
+        // "Forced interrupts take priority and initiate before non-forced
+        // interrupts." The public game loop must apply Charge before offering
+        // Spider-Sense, just as the narrower agenda test requires.
+        Assert.Equal(TimingPriority.Interrupt, result.Prompt.When);
+        Assert.True(result.Prompt.Cancellable);
+        Assert.Contains(game.State.Effects.Active(), effect => effect.Kind == Keywords.Overkill);
         Assert.True(game.State.Windows.IsResolving);
     }
 
