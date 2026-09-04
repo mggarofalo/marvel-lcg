@@ -77,7 +77,8 @@ try {
 
     $applicationData = Join-Path $env:LOCALAPPDATA `
         "Packages\$($installedPackage.PackageFamilyName)"
-    $priorProcesses = @(Get-Process MarvelChampions -ErrorAction SilentlyContinue).Id
+    $priorProcesses = @(Get-Process MarvelChampions -ErrorAction SilentlyContinue |
+        Select-Object -ExpandProperty Id)
     Start-Process explorer.exe `
         "shell:AppsFolder\$($installedPackage.PackageFamilyName)!MarvelChampions"
     Start-Sleep -Seconds $SmokeSeconds
