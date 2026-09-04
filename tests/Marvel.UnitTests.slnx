@@ -1,12 +1,8 @@
 <Solution>
-  <Project Path="Marvel.Architecture.Tests/Marvel.Architecture.Tests.csproj" />
   <Project Path="Marvel.Core.Tests/Marvel.Core.Tests.csproj" />
   <Project Path="Marvel.Rules.Tests/Marvel.Rules.Tests.csproj" />
   <Project Path="Marvel.Decisions.Tests/Marvel.Decisions.Tests.csproj" />
   <Project Path="Marvel.Content.Tests/Marvel.Content.Tests.csproj" />
   <Project Path="Marvel.Session.Tests/Marvel.Session.Tests.csproj" />
   <Project Path="Marvel.View.Tests/Marvel.View.Tests.csproj" />
-  <Project Path="Marvel.Server.Tests/Marvel.Server.Tests.csproj" />
-  <Project Path="Marvel.Godot.Tests/Marvel.Godot.Tests.csproj" />
-  <Project Path="Marvel.Release.Tests/Marvel.Release.Tests.csproj" />
 </Solution>

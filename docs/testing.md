@@ -1,6 +1,6 @@
 # Test lanes
 
-The test suite has two lanes. Both block a merge in CI, but they answer different
+The test suite has three lanes. All block a merge in CI, but they answer different
 questions and run as separate steps.
 
 ## Fast merge preparation
@@ -20,6 +20,18 @@ This lane is the useful local pre-push check. It is intentionally not installed
 as a Git hook: hooks are local, bypassable and awkward to keep identical on
 Windows and Linux. A developer who wants a hook can have `pre-push` invoke the
 second command after a Release build, but CI remains authoritative.
+
+## Integration
+
+Architecture build probes, server transports, managed Godot behavior and release
+packaging have their own lane:
+
+```bash
+dotnet test tests/Marvel.IntegrationTests.slnx -c Release --no-build
+```
+
+These tests cross process, project or presentation boundaries, so their runtime
+does not make the focused unit-test result harder to see.
 
 ## Acceptance and regression
 

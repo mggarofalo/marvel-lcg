@@ -100,6 +100,9 @@ jobs:
       - name: Fast unit and behavioral tests
         run: dotnet test tests/Marvel.UnitTests.slnx --no-build --configuration Release
 
+      - name: Architecture, server, Godot and release integration tests
+        run: dotnet test tests/Marvel.IntegrationTests.slnx --no-build --configuration Release
+
       - name: Acceptance and regression sweeps
         run: dotnet test tests/Marvel.Acceptance.Tests/Marvel.Acceptance.Tests.csproj --no-build --configuration Release
 

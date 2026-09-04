@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Marvel.Architecture.Tests/Marvel.Architecture.Tests.csproj" />
+  <Project Path="Marvel.Server.Tests/Marvel.Server.Tests.csproj" />
+  <Project Path="Marvel.Godot.Tests/Marvel.Godot.Tests.csproj" />
+  <Project Path="Marvel.Release.Tests/Marvel.Release.Tests.csproj" />
+</Solution>

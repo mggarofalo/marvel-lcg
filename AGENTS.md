@@ -164,6 +164,7 @@ Seven, all run by hand and none on any path a game takes.
 ```bash
 dotnet build Marvel.slnx -c Release    # warnings are errors
 dotnet test tests/Marvel.UnitTests.slnx -c Release  # fast merge preparation
+dotnet test tests/Marvel.IntegrationTests.slnx -c Release
 dotnet test tests/Marvel.Acceptance.Tests/Marvel.Acceptance.Tests.csproj -c Release
 dotnet test Marvel.slnx -c Release     # every test lane
 bash tools/godot-wall.sh               # prove the build gates still fire
