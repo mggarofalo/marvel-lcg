@@ -388,7 +388,11 @@ public static class Damage
         string trigger, string verb, List<GameEvent> events, int by = -1,
         Occurrence? recordDefeatOn = null)
     {
-        if (!placed.Landed)
+        // `rr:leaves-play.1`: after a card leaves play, it is "considered to
+        // be a new copy of the card." A delayed effect can make that happen
+        // between damage step 5 and defeat; the old copy cannot then proceed
+        // through damage steps 6 through 8.
+        if (!placed.Landed || !DeckTypes.IsInPlay(placed.Target.Area.Type))
         {
             return Outcome.NotDefeated;
         }

@@ -608,7 +608,6 @@ public sealed class World
 
         var area = new Area(
             areas.Count, type, cardOwner, playArea ?? PlayArea.Villains, host, hostCard);
-        area.ValidateCanAcceptCards();
         areas.Add(area);
         return area;
     }

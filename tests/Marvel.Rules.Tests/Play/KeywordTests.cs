@@ -2051,6 +2051,38 @@ public sealed class KeywordTests
         Assert.Empty(world.AreaOf(DeckType.VictoryDisplay).Cards);
     }
 
+    [Rule("rr:delayed-effect.1")]
+    [Rule("rr:damage.step.5")]
+    [Rule("rr:leaves-play.1")]
+    [Rule("rr:vulnerable.2")]
+    [Fact]
+    public void DelayedStunDiscardsALethallyDamagedVulnerableWithoutDefeatingIt()
+    {
+        // Vulnerable says the character "is discarded before the damage is
+        // applied and is not considered defeated." A delayed status comes due
+        // after damage placement, but leaving play still ends the old copy's
+        // damage procedure before it can be defeated.
+        var printed = new Printed()
+            .With("minion", ("HP", "3"), ("Vulnerable", "1"), ("Victory", "2"));
+        var world = Board(printed);
+        var villain = world.TheCardIn(DeckType.VillainArea)!;
+        var minion = world.CreateCard(
+            "minion", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+        world.Effects.Register(new ContinuousEffect(
+            EffectSource.DelayedEffect,
+            Kind: DelayedEffects.StunTheSubject,
+            Card: villain.ObjectId,
+            Affects: null,
+            Lasts: Duration.NextTime(Steps.DamageDealt)));
+
+        var result = Damage.Attack(
+            world, printed, villain, minion, 3, "test", "Attack", []);
+
+        Assert.Equal(DeckType.EncounterDiscardPile, minion.Area.Type);
+        Assert.Empty(world.AreaOf(DeckType.VictoryDisplay).Cards);
+        Assert.Equal(0, result.Excess);
+    }
+
     [Rule("rr:vulnerable.3")]
     [Fact]
     public void ASteadyVulnerableCharacterSurvivesTheFirstStatusCard()

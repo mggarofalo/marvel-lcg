@@ -45,13 +45,6 @@ public sealed class LifecycleRulesTests
         // and status state to the supply; if it returns, it is a new copy.
         var facts = new Facts();
         var world = Board(facts);
-        int areasBefore = world.Areas.Count;
-        Assert.Throws<ArgumentOutOfRangeException>(() =>
-            world.CreateArea(
-                DeckType.StatusArea, playArea: PlayArea.Of(0),
-                host: world.Cards.Count + 1));
-        Assert.Equal(areasBefore, world.Areas.Count);
-
         var ally = world.CreateCard(
             "ally", world.AreaOf(
                 DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
@@ -93,6 +86,13 @@ public sealed class LifecycleRulesTests
         // creating nor moving a card may populate them again.
         var facts = new Facts();
         var world = Board(facts);
+        int areasBefore = world.Areas.Count;
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            world.CreateArea(
+                DeckType.StatusArea, playArea: PlayArea.Of(0),
+                host: world.Cards.Count + 1));
+        Assert.Equal(areasBefore, world.Areas.Count);
+
         var ally = world.CreateCard(
             "ally", world.AreaOf(
                 DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
