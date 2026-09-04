@@ -2,7 +2,8 @@
 param(
     [Parameter(Mandatory = $true)][string]$InputPackage,
     [Parameter(Mandatory = $true)][string]$Output,
-    [Parameter(Mandatory = $true)][string]$Publisher
+    [Parameter(Mandatory = $true)][string]$Publisher,
+    [string]$WindowsSdkBin
 )
 
 $ErrorActionPreference = 'Stop'
@@ -19,8 +20,18 @@ function Invoke-Checked {
 
 function Find-WindowsSdkTool {
     param([string]$Name)
-    $tool = Join-Path ${env:ProgramFiles(x86)} `
-        "Windows Kits\10\bin\$WindowsSdkVersion\x64\$Name"
+    $sdkBin = if ($WindowsSdkBin) {
+        [IO.Path]::GetFullPath($WindowsSdkBin)
+    }
+    else {
+        Join-Path ${env:ProgramFiles(x86)} `
+            "Windows Kits\10\bin\$WindowsSdkVersion\x64"
+    }
+    if ((Split-Path -Leaf $sdkBin) -cne 'x64' -or
+        (Split-Path -Leaf (Split-Path -Parent $sdkBin)) -cne $WindowsSdkVersion) {
+        throw "WindowsSdkBin must identify pinned Windows SDK $WindowsSdkVersion x64 tools"
+    }
+    $tool = Join-Path $sdkBin $Name
     if (-not (Test-Path -LiteralPath $tool -PathType Leaf)) {
         throw "$Name was not found in pinned Windows SDK $WindowsSdkVersion"
     }

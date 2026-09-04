@@ -54,6 +54,13 @@ tools/build-windows-desktop.ps1 `
   -Output artifacts\windows
 ```
 
+By default the scripts use Windows SDK 10.0.26100.0 from its machine-wide
+installation. A non-administrator may instead restore the official
+`Microsoft.Windows.SDK.BuildTools` package and pass its
+`bin\10.0.26100.0\x64` directory as `-WindowsSdkBin` to both the build and
+signing scripts. The override requires that exact version and architecture
+path, containing the pinned `makeappx.exe` and `signtool.exe` inputs.
+
 Both scripts reject dirty source, an output that already exists, a source
 commit mismatch, malformed identity, missing templates, incomplete datasets or
 a malformed package. The Windows script unpacks the resulting MSIX and checks
