@@ -70,15 +70,93 @@ public static class BoardRenderer
 
         var areas = new HFlowContainer
         {
-            Name = "AreaFlow",
+            Name = "LiveAreaFlow",
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
-        foreach (BoardAreaPresentation area in lane.Areas)
+        foreach (BoardAreaPresentation area in lane.Areas.Where(area =>
+                     area.Prominence == BoardAreaProminence.Live))
         {
             areas.AddChild(Area(area, result, scale, expandedAreas, art));
         }
 
-        section.AddChild(areas);
+        if (areas.GetChildCount() > 0)
+        {
+            section.AddChild(areas);
+        }
+
+        BoardAreaPresentation[] secondary = [.. lane.Areas.Where(area =>
+            area.Prominence != BoardAreaProminence.Live)];
+        if (secondary.Length > 0)
+        {
+            section.AddChild(SecondaryAreas(
+                lane, secondary, result, scale, expandedAreas, art));
+        }
+        return section;
+    }
+
+    private static VBoxContainer SecondaryAreas(
+        BoardLanePresentation lane,
+        BoardAreaPresentation[] areas,
+        BoardRenderResult result,
+        InterfaceScale scale,
+        IDictionary<int, bool> expandedAreas,
+        ICardArtProvider? art)
+    {
+        int stateKey = lane.Key switch
+        {
+            "scenario" => -10_001,
+            "other" => -10_002,
+            _ when lane.Seat is { } seat => -11_000 - seat,
+            _ => -10_003,
+        };
+        bool expanded = expandedAreas.TryGetValue(stateKey, out bool remembered) && remembered;
+        int occupied = areas.Count(area => area.Prominence == BoardAreaProminence.Supporting);
+        int empty = areas.Length - occupied;
+        string Summary(bool open) => $"{(open ? "▾" : "▸")}  More areas"
+            + (occupied > 0 ? $"  ·  {occupied} with cards" : string.Empty)
+            + (empty > 0 ? $"  ·  {empty} empty" : string.Empty);
+
+        var section = new VBoxContainer
+        {
+            Name = "SecondaryAreas",
+            ThemeTypeVariation = GodotThemeVariations.TightStack,
+        };
+        var disclosure = new Button
+        {
+            Name = "SecondaryAreasDisclosure",
+            Text = Summary(expanded),
+            Alignment = HorizontalAlignment.Left,
+            ToggleMode = true,
+            ButtonPressed = expanded,
+            TooltipText = "Show draw piles, discard piles, and other secondary areas.",
+        };
+        section.AddChild(disclosure);
+        var body = new HFlowContainer
+        {
+            Name = "SecondaryAreaFlow",
+            Visible = expanded,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+        };
+        section.AddChild(body);
+        void SetExpanded(bool value)
+        {
+            expandedAreas[stateKey] = value;
+            body.Visible = value;
+            disclosure.Text = Summary(value);
+        }
+        disclosure.Pressed += () => SetExpanded(disclosure.ButtonPressed);
+        result.RegisterArea(body, () =>
+        {
+            disclosure.SetPressedNoSignal(true);
+            SetExpanded(true);
+        });
+        foreach (BoardAreaPresentation area in areas
+                     .OrderByDescending(area => area.Prominence)
+                     .ThenBy(area => area.Title, StringComparer.Ordinal))
+        {
+            body.AddChild(Area(area, result, scale, expandedAreas, art));
+        }
+
         return section;
     }
 
@@ -97,7 +175,7 @@ public static class BoardRenderer
             + area.Removed.Sum(card => card.Count);
         bool expanded = expandedAreas.TryGetValue(area.Id, out bool remembered)
             ? remembered
-            : false;
+            : area.Prominence == BoardAreaProminence.Live;
         var panel = new PanelContainer
         {
             Name = $"Area{area.Id}",

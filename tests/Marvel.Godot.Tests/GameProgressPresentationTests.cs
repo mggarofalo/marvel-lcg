@@ -23,6 +23,8 @@ public sealed class GameProgressPresentationTests
 
         Assert.Equal(GameProgressKind.AwaitingDecision, pending.Kind);
         Assert.False(pending.LocksDecisions);
+        Assert.Equal("READY FOR YOUR CHOICE", pending.Status);
+        Assert.DoesNotContain("areas", pending.Description, StringComparison.OrdinalIgnoreCase);
         Assert.Equal("Victory.", won.Title);
         Assert.Contains("PLAYERS WIN", won.Status);
         Assert.Equal("Defeat.", villainWon.Title);

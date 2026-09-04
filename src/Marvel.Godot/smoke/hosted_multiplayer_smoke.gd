@@ -290,7 +290,7 @@ func _play(main: Control) -> Control:
 
 
 func _decision(main: Control) -> Control:
-	return _node(main, "Play/Prompt/Margin/Stack/Workbench/Action/DecisionScroll/Decision") as Control
+	return _node(main, "Play/Prompt/Margin/Stack/Workbench/Action/Decision") as Control
 
 
 func _status(main: Control) -> Label:

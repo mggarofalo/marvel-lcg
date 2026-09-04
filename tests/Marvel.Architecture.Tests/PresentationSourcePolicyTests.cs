@@ -90,7 +90,14 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.Prompts.Prompt.ExposesConcealedCandidates",
             "Marvel.Rules.Prompts.Prompt.Label",
             "Marvel.Rules.Prompts.Prompt.Player",
+            "Marvel.Rules.Prompts.Prompt.Trigger",
             "Marvel.Rules.Prompts.Prompt.When",
+            "Marvel.Rules.Prompts.Question.Element",
+            "Marvel.Rules.Prompts.Question.Opportunity",
+            "Marvel.Rules.Prompts.Question.Option",
+            "Marvel.Rules.Prompts.Question.Order",
+            "Marvel.Rules.Prompts.Question.TurnOption",
+            "Marvel.Rules.Prompts.Question.operator ==(Marvel.Rules.Prompts.Question, Marvel.Rules.Prompts.Question)",
             "Marvel.Rules.Prompts.TargetRequest.AllowRepeated",
             "Marvel.Rules.Prompts.TargetRequest.Groups",
             "Marvel.Rules.Prompts.TargetRequest.IsGrouped",
@@ -157,6 +164,9 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.State.World.Players",
             "Marvel.Rules.State.World.Result",
             "Marvel.Rules.State.World.Seats",
+            "Marvel.Rules.Timing.TimingPriority.Interrupt",
+            "Marvel.Rules.Timing.TimingPriority.Response",
+            "Marvel.Rules.Timing.TimingPriority.operator ==(Marvel.Rules.Timing.TimingPriority, Marvel.Rules.Timing.TimingPriority)",
         ];
         Assert.Equal(reviewed, actual);
     }

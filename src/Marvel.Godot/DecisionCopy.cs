@@ -29,9 +29,19 @@ internal static class DecisionCopy
         {
             "Play" => $"Play {view.Anchor}",
             "Attack" or "Thwart" or "Recover" => $"{view.Verb} with {view.Anchor}",
+            "Choose" => $"Choose {view.Anchor}",
             "Resolve Mulligans" => "Choose cards to discard and redraw",
             _ => $"{view.Verb}  ·  {view.Anchor}",
         };
+    }
+
+    public static string ActionSummary(AffordancePresentation view)
+    {
+        ArgumentNullException.ThrowIfNull(view);
+        string action = Choice(view);
+        return string.IsNullOrWhiteSpace(view.Consequence)
+            ? action
+            : $"{action}\n{view.Consequence}";
     }
 
     public static string GenericCommit(string verb, string label, string anchor)

@@ -347,7 +347,7 @@ public static class VisualSystem
             Scale(210, scale), Scale(190, scale),
             ShowSubtitle: false, ShowTraits: false, ShowPrintedStats: true),
         CardDisplaySize.Hand => new(
-            Scale(125, scale), Scale(52, scale),
+            Scale(210, scale), Scale(52, scale),
             ShowSubtitle: false, ShowTraits: false, ShowPrintedStats: false),
         _ => throw new ArgumentOutOfRangeException(nameof(size), size, "unsupported card size"),
     };

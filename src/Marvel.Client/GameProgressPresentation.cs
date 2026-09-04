@@ -77,17 +77,14 @@ public sealed record GameProgressPresentation(
             Outcome.Unfinished when response.Prompt is null => new(
                 GameProgressKind.WaitingForOtherPlayer,
                 "Waiting for another player.",
-                $"{response.World.Areas.Count} visible areas · "
-                    + $"{response.Events.Count} new events",
+                $"The table is current · {response.Events.Count} new events",
                 "GAME IN PROGRESS  ·  WAITING FOR ANOTHER PLAYER",
                 LocksDecisions: true),
             Outcome.Unfinished => new(
                 GameProgressKind.AwaitingDecision,
                 "Your move.",
-                $"{response.World.Areas.Count} visible areas · "
-                    + $"{response.Events.Count} new events",
-                "DECISION READY  ·  "
-                    + Humanize(response.Prompt!.Asking.ToString()).ToUpperInvariant(),
+                $"The table is current · {response.Events.Count} new events",
+                "READY FOR YOUR CHOICE",
                 LocksDecisions: false),
             Outcome.PlayersWin => new(
                 GameProgressKind.PlayersWin,

@@ -13,6 +13,8 @@ public sealed partial class DecisionPanel : VBoxContainer
     private InterfaceScale interfaceScale = ClientTheme.ConfiguredScale();
     private ControlMetrics ControlMetrics => VisualSystem.Controls(interfaceScale);
     private DecisionComposer? composer;
+    private VBoxContainer? content;
+    private VBoxContainer? commit;
     private bool submitting;
     private WorldDescriptor? world;
 
@@ -100,6 +102,7 @@ public sealed partial class DecisionPanel : VBoxContainer
         }
 
         PromptPresentation prompt = PromptPresentation.From(composer.Prompt, world);
+        CreateDecisionLayout(prompt);
         var basicCharacters = new HashSet<int>();
 
         foreach (AffordancePresentation view in prompt.Affordances)
@@ -107,7 +110,7 @@ public sealed partial class DecisionPanel : VBoxContainer
             if (view.Verb is "Attack" or "Thwart" or "Recover"
                 && basicCharacters.Add(view.AnchorId))
             {
-                AddChild(Text(
+                AddContent(Text(
                     $"BASIC ACTIONS  ·  {view.Anchor}",
                     GodotThemeVariations.Eyebrow,
                     wrap: true));
@@ -157,10 +160,10 @@ public sealed partial class DecisionPanel : VBoxContainer
                 Rebuild();
             };
             BindAnchors(choose, option.AnchorId);
-            AddChild(choose);
+            AddContent(choose);
             if (option.Illegal is not null)
             {
-                AddChild(Text(
+                AddContent(Text(
                     $"! {option.Illegal}",
                     GodotThemeVariations.DangerText,
                     wrap: true));
@@ -170,8 +173,8 @@ public sealed partial class DecisionPanel : VBoxContainer
         if (composer.Selected is { } selected)
         {
             DecisionProgressPresentation progress = composer.Progress();
-            AddChild(new HSeparator());
-            AddChild(Text(TargetProgressText(progress.Targets), GodotThemeVariations.Eyebrow));
+            AddContent(new HSeparator());
+            AddContent(Text(TargetProgressText(progress.Targets), GodotThemeVariations.Eyebrow));
             AddTargets(selected, progress.Targets);
             AddCosts(selected);
             progress = composer.Progress();
@@ -200,11 +203,64 @@ public sealed partial class DecisionPanel : VBoxContainer
                     Submitted?.Invoke(decision!);
                 }
             };
-            AddChild(pass);
+            AddCommit(pass);
         }
 
         ProgressChanged?.Invoke(composer.Progress());
         Callable.From(() => RestoreFocus(focusName, focusFirst)).CallDeferred();
+    }
+
+    private void CreateDecisionLayout(PromptPresentation prompt)
+    {
+        SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        SizeFlagsVertical = SizeFlags.ExpandFill;
+        AffordancePresentation? selected = composer!.Selected is { } option
+            ? prompt.Affordances.Single(view => view.Id == option.Id)
+            : null;
+        if (selected is not null)
+        {
+            var summary = new VBoxContainer
+            {
+                Name = "ActionSummary",
+                ThemeTypeVariation = GodotThemeVariations.TightStack,
+            };
+            summary.AddChild(Text("Preparing", GodotThemeVariations.Eyebrow));
+            summary.AddChild(Text(
+                DecisionCopy.ActionSummary(selected),
+                selected.Consequence is null
+                    ? GodotThemeVariations.StatusText
+                    : GodotThemeVariations.DangerText,
+                wrap: true));
+            AddChild(summary);
+            AddChild(new HSeparator());
+        }
+
+        var scroll = new ScrollContainer
+        {
+            Name = "DecisionBodyScroll",
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            SizeFlagsVertical = SizeFlags.ExpandFill,
+            FollowFocus = true,
+            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
+            VerticalScrollMode = ScrollContainer.ScrollMode.Auto,
+        };
+        content = new VBoxContainer
+        {
+            Name = "DecisionBody",
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            ThemeTypeVariation = GodotThemeVariations.TightStack,
+        };
+        scroll.AddChild(content);
+        AddChild(scroll);
+
+        commit = new VBoxContainer
+        {
+            Name = "CommitBar",
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            ThemeTypeVariation = GodotThemeVariations.TightStack,
+        };
+        AddChild(new HSeparator());
+        AddChild(commit);
     }
 
     private void AddTargets(Affordance selected, TargetSelectionProgress progress)
@@ -212,7 +268,7 @@ public sealed partial class DecisionPanel : VBoxContainer
         TargetRequest? request = selected.Targets;
         if (request is null)
         {
-            AddChild(Text("No target selection", GodotThemeVariations.MutedText));
+            AddContent(Text("No target selection", GodotThemeVariations.MutedText));
             return;
         }
 
@@ -225,21 +281,21 @@ public sealed partial class DecisionPanel : VBoxContainer
                 wrap: true);
             automatic.Name = "AutomaticTargets";
             BindAnchors(automatic, [.. composer.Targets]);
-            AddChild(automatic);
+            AddContent(automatic);
             return;
         }
 
         string badge = request.IsSearch ? "SEARCH RESULTS" : "TARGETS";
-        AddChild(Text($"{badge}  ·  " + TargetProgressText(progress),
+        AddContent(Text($"{badge}  ·  " + TargetProgressText(progress),
             GodotThemeVariations.Caption, wrap: true));
         if (!string.IsNullOrWhiteSpace(request.Rule))
         {
-            AddChild(Text(request.Rule, GodotThemeVariations.Caption));
+            AddContent(Text(request.Rule, GodotThemeVariations.Caption));
         }
 
         if (request.MustIncludeTraits is { Count: > 0 })
         {
-            AddChild(Text(
+            AddContent(Text(
                 $"MUST INCLUDE  ·  {string.Join(", ", request.MustIncludeTraits)}",
                 GodotThemeVariations.Caption, wrap: true));
         }
@@ -274,7 +330,7 @@ public sealed partial class DecisionPanel : VBoxContainer
                     Rebuild();
                 };
                 BindAnchors(choose, [.. group]);
-                AddChild(choose);
+                AddContent(choose);
             }
 
             return;
@@ -294,7 +350,7 @@ public sealed partial class DecisionPanel : VBoxContainer
 
         if (composer!.Targets.Count > 0)
         {
-            AddChild(Text(
+            AddContent(Text(
                 "ORDER  ·  " + string.Join(" → ", composer.Targets.Select(id =>
                     PromptPresentation.Describe(id, world!))),
                 GodotThemeVariations.Eyebrow, wrap: true));
@@ -337,7 +393,7 @@ public sealed partial class DecisionPanel : VBoxContainer
             Rebuild();
         };
         BindAnchors(choose, target);
-        AddChild(choose);
+        AddContent(choose);
     }
 
     private void AddRepeatedTarget(TargetRequest request, int target)
@@ -392,18 +448,18 @@ public sealed partial class DecisionPanel : VBoxContainer
         };
         BindAnchors(add, target);
         row.AddChild(add);
-        AddChild(row);
+        AddContent(row);
     }
 
     private void AddCosts(Affordance selected)
     {
         if (selected.CostOptions.Count == 0)
         {
-            AddChild(Text("PAYMENT  ·  FREE  ·  READY", GodotThemeVariations.StatusText));
+            AddContent(Text("PAYMENT  ·  FREE  ·  READY", GodotThemeVariations.StatusText));
             return;
         }
 
-        AddChild(Text("COST", GodotThemeVariations.Caption));
+        AddContent(Text("COST", GodotThemeVariations.Caption));
         for (int index = 0; index < selected.CostOptions.Count; index++)
         {
             int costIndex = index;
@@ -444,13 +500,13 @@ public sealed partial class DecisionPanel : VBoxContainer
             {
                 BindAnchors(choose, cost.Target);
             }
-            AddChild(choose);
+            AddContent(choose);
         }
 
         if (composer!.SelectedCost < 0)
         {
             PaymentProgress pending = composer.Progress().Payment;
-            AddChild(Text(
+            AddContent(Text(
                 $"PAYMENT  ·  CHOOSE 1 OF {pending.CostOptions} COSTS",
                 GodotThemeVariations.Caption));
             return;
@@ -490,7 +546,7 @@ public sealed partial class DecisionPanel : VBoxContainer
                 Rebuild();
             };
             row.AddChild(value);
-            AddChild(row);
+            AddContent(row);
         }
 
         foreach (ResourceSource source in selectedCost.Generators)
@@ -519,14 +575,14 @@ public sealed partial class DecisionPanel : VBoxContainer
                 Rebuild();
             };
             BindAnchors(choose, source.Effect);
-            AddChild(choose);
+            AddContent(choose);
         }
 
         AddResourceAssignments(selectedCost);
 
         if (selectedCost.ResourceCosts.Count > 1)
         {
-            AddChild(Text(
+            AddContent(Text(
                 "COMPONENTS  ·  " + string.Join(" + ",
                     selectedCost.ResourceCosts.Select((component, index) =>
                         $"{index + 1}:{component.Cost}")),
@@ -534,7 +590,7 @@ public sealed partial class DecisionPanel : VBoxContainer
         }
 
         PaymentProgress progress = composer.Progress().Payment;
-        AddChild(Text(
+        AddContent(Text(
             $"PAYMENT  ·  {progress.SelectedGenerators} GENERATORS"
             + $"  ·  {progress.AssignedIcons}/{progress.GeneratedIcons} ICONS"
             + (progress.ExcessIcons > 0
@@ -561,7 +617,7 @@ public sealed partial class DecisionPanel : VBoxContainer
             {
                 int assigned = composer.Assignments.Count(assignment =>
                     assignment.Source == source.Effect);
-                AddChild(Text(
+                AddContent(Text(
                     $"{PromptPresentation.Describe(source.Effect, world!)}"
                     + $"  ·  PRINTED {string.Join(" + ", source.Generates.Select(ResourceName))}"
                     + $"  ·  {assigned} APPLIED"
@@ -642,7 +698,7 @@ public sealed partial class DecisionPanel : VBoxContainer
                 };
                 BindAnchors(allocation, source.Effect);
                 row.AddChild(allocation);
-                AddChild(row);
+                AddContent(row);
             }
         }
     }
@@ -656,12 +712,12 @@ public sealed partial class DecisionPanel : VBoxContainer
                 GodotThemeVariations.DangerText,
                 wrap: true);
             validation.Name = "ValidationError";
-            AddChild(validation);
+            AddCommit(validation);
         }
 
         if (progress.Payment.ExcessIcons > 0)
         {
-            AddChild(Text(
+            AddCommit(Text(
                 $"! {DecisionCopy.OverpaymentWarning(progress.Payment)}",
                 GodotThemeVariations.DangerText,
                 wrap: true));
@@ -691,8 +747,16 @@ public sealed partial class DecisionPanel : VBoxContainer
                 Submitted?.Invoke(decision!);
             }
         };
-        AddChild(submit);
+        AddCommit(submit);
     }
+
+    private void AddContent(Control control) =>
+        (content ?? throw new InvalidOperationException("decision content is unavailable"))
+            .AddChild(control);
+
+    private void AddCommit(Control control) =>
+        (commit ?? throw new InvalidOperationException("decision commit bar is unavailable"))
+            .AddChild(control);
 
     private string TargetProgressText(TargetSelectionProgress progress) =>
         composer?.Selected?.Verb == "Resolve Mulligans"
@@ -798,7 +862,7 @@ public sealed partial class DecisionPanel : VBoxContainer
                 else
                 {
                     scroll.EnsureControlVisible(control);
-                    if (scroll.Name == "DecisionScroll")
+                    if (scroll.Name == "DecisionBodyScroll")
                     {
                         // Focus rings expand outside the button geometry. Keep the
                         // wrapped action label anchored at its readable left edge.

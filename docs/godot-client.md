@@ -257,10 +257,19 @@ the available height and shows several affordances at once; the complete
 diagnostic chronology remains in the adjacent History tab. At wide desktop
 sizes the rail grows to 680–720 logical pixels. Board areas use fixed shelves so
 multiple areas wrap into each lane instead of stretching one area across the
-whole remaining table. Every area is a disclosure section and begins collapsed,
-and scenario and player-owned sections remain grouped in separate
-lanes. A player's visible hand is pinned below the table scroll so it does not
-disappear while inspecting another area.
+whole remaining table. Occupied villain, scheme, identity and other live-play
+areas begin open; draw piles, discard piles and empty engine areas sit behind a
+single More areas disclosure in each scenario or player lane. A prompt target
+opens either disclosure automatically when needed. A player's visible hand is
+pinned below the table scroll so it does not disappear while inspecting another
+area, and its wider cards keep complete Core Set titles readable at the desktop
+profile.
+
+The decision header asks a player-facing question and names its visible card
+source. Wire label, question-kind and timing metadata remain selectable in the
+History tab. After an action is selected, its summary stays above an independently
+scrolling target and payment editor, while validation, overpayment consequences
+and the final commitment stay fixed below it.
 
 Compact is the default interface scale. The toolbar slider switches among the
 eleven supported scales immediately, including card geometry and the prompt rail,

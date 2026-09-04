@@ -192,7 +192,7 @@ public sealed class VisualSystemTests
 
             Assert.True(full.Width > board.Width);
             Assert.True(full.MinimumHeight > board.MinimumHeight);
-            Assert.True(board.Width > hand.Width);
+            Assert.True(board.Width >= hand.Width);
             Assert.True(board.MinimumHeight > hand.MinimumHeight);
             Assert.False(board.ShowSubtitle);
             Assert.False(board.ShowTraits);

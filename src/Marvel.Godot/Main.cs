@@ -35,7 +35,6 @@ public sealed partial class Main : Control
     private Label briefingModular = null!;
     private Label briefingScenario = null!;
     private Label description = null!;
-    private ScrollContainer decisionScroll = null!;
     private DecisionPanel decisions = null!;
     private Label eyebrow = null!;
     private PanelContainer eventCue = null!;
@@ -74,6 +73,7 @@ public sealed partial class Main : Control
     private PanelContainer promptPanel = null!;
     private VBoxContainer promptStack = null!;
     private Label promptContext = null!;
+    private Label promptDiagnostic = null!;
     private Label promptEyebrow = null!;
     private Label promptHeading = null!;
     private Label promptProgress = null!;
@@ -215,8 +215,6 @@ public sealed partial class Main : Control
         setupPanel = GetNode<Control>($"{content}/Setup");
         board = GetNode<Control>($"{content}/Play");
         playLayout = GetNode<HSplitContainer>($"{content}/Play");
-        decisionScroll = GetNode<ScrollContainer>(
-            $"{content}/Play/Prompt/Margin/Stack/Workbench/Action/DecisionScroll");
         promptPanel = GetNode<PanelContainer>($"{content}/Play/Prompt");
         promptStack = GetNode<VBoxContainer>($"{content}/Play/Prompt/Margin/Stack");
         promptEyebrow = GetNode<Label>(
@@ -229,12 +227,14 @@ public sealed partial class Main : Control
             $"{content}/Play/Prompt/Margin/Stack/PromptHeader/Requirement");
         promptProgress = GetNode<Label>(
             $"{content}/Play/Prompt/Margin/Stack/PromptHeader/Progress");
+        promptDiagnostic = GetNode<Label>(
+            $"{content}/Play/Prompt/Margin/Stack/Workbench/History/PromptDiagnostic");
         boardAreas = GetNode<VBoxContainer>($"{content}/Play/Board/TableScroll/Margin/Areas");
         handHeading = GetNode<Label>($"{content}/Play/Board/HandShelf/Margin/Stack/Heading");
         handRail = GetNode<HBoxContainer>(
             $"{content}/Play/Board/HandShelf/Margin/Stack/Scroll/Rail");
         decisions = GetNode<DecisionPanel>(
-            $"{content}/Play/Prompt/Margin/Stack/Workbench/Action/DecisionScroll/Decision");
+            $"{content}/Play/Prompt/Margin/Stack/Workbench/Action/Decision");
         eventLog = GetNode<RichTextLabel>(
             $"{content}/Play/Prompt/Margin/Stack/Workbench/History/EventLog");
         eventCue = GetNode<PanelContainer>(
@@ -374,7 +374,7 @@ public sealed partial class Main : Control
         promptStack.ThemeTypeVariation = compactHeight
             ? GodotThemeVariations.TightStack
             : GodotThemeVariations.Stack;
-        decisionScroll.CustomMinimumSize = new Vector2(
+        decisions.CustomMinimumSize = new Vector2(
             0,
             layout.DecisionMinimumHeight);
         eventCue.CustomMinimumSize = new Vector2(0, 68);
@@ -1349,6 +1349,7 @@ public sealed partial class Main : Control
                 : "RESOLVED";
             promptRequirement.ThemeTypeVariation = GodotThemeVariations.StatusText;
             promptProgress.Text = "NO INPUT PENDING";
+            promptDiagnostic.Text = "No prompt is pending.";
             return;
         }
 
@@ -1357,6 +1358,7 @@ public sealed partial class Main : Control
         promptHeading.Text = view.Heading;
         promptContext.Text = view.Context;
         promptRequirement.Text = view.Requirement;
+        promptDiagnostic.Text = view.Diagnostic;
         promptRequirement.ThemeTypeVariation = prompt.Cancellable
             ? GodotThemeVariations.Caption
             : GodotThemeVariations.DangerText;

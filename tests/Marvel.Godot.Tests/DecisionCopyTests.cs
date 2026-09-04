@@ -44,6 +44,37 @@ public sealed class DecisionCopyTests
         Assert.Equal("Change Form  ·  Spider-Man", DecisionCopy.Choice(action));
     }
 
+    [Fact]
+    public void StickyActionSummaryCarriesTheCurrentCostConsequence()
+    {
+        var action = new AffordancePresentation(
+            1,
+            "Play",
+            null,
+            "Play",
+            "Web-Shooter",
+            1,
+            0,
+            null,
+            "No selection",
+            ["Cost 0 · 5 generators"],
+            "Current cost 0; printed cost 1.");
+
+        Assert.Equal(
+            "Play Web-Shooter\nCurrent cost 0; printed cost 1.",
+            DecisionCopy.ActionSummary(action));
+    }
+
+    [Fact]
+    public void AChoiceWhoseWireLabelWasRemovedUsesTheReadableCardName()
+    {
+        var action = new AffordancePresentation(
+            1, "Choose", null, "Choose", "Repulsor Blast", 40, 0, null,
+            "No selection", []);
+
+        Assert.Equal("Choose Repulsor Blast", DecisionCopy.Choice(action));
+    }
+
     [Theory]
     [InlineData(1, "Play Web-Shooter  ·  Lose 1 excess resource")]
     [InlineData(2, "Play Web-Shooter  ·  Lose 2 excess resources")]
