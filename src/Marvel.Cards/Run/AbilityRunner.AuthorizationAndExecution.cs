@@ -274,6 +274,39 @@ public sealed partial class AbilityRunner
         var agendaOwner = cast.World.Agenda.Current;
         var agendaOccurrence = cast.World.Agenda.Occurrence;
         var healthBefore = cast.World.Effects.CaptureCharacterHealth();
+        if (!TryRunImmediateEffect(((AbilityRunner)cast.Abilities).CompiledEffect(node), cast))
+        {
+            RunRemainingEffect(node, cast);
+        }
+        if (cast.Events.Count > eventsBefore && EventMeansEffectApplied(node.Kind))
+        {
+            cast.ResolveEffect();
+        }
+
+        // A conditional constant can become Stalwart because this node changed
+        // threat, counters, traits, or another dependency. `rr:stalwart.2`
+        // removes existing stunned/confused cards at that transition, before
+        // later text in the same ability reads the board.
+        Statuses.RemoveAfflictionsIfStalwart(
+            cast.World, cast.World.Facts, "stalwart", cast.Events);
+        bool healthDefeatSuspended = cast.World.Effects.SettleLostHealth(
+            healthBefore, cast.Trigger, cast.Events);
+        if (healthDefeatSuspended && !cast.Suspended)
+        {
+            SuspendAfterProcedure(
+                node, cast, agendaOwner, agendaOccurrence);
+        }
+
+        // `rr:attack-enemy-activation.3.2`: a defending ally that leaves play
+        // immediately stops defending and exposes its controller's identity.
+        // Recheck after every node so later text in the same ability, and the
+        // next boost ability, reads the new attack roles rather than a stale
+        // defender that has already moved.
+        Attack.RefreshDefender(cast.World, cast.World.Facts);
+    }
+
+    private static void RunRemainingEffect(AbilityNode node, Cast cast)
+    {
         switch (node.Kind)
         {
             case "seq":
@@ -321,16 +354,6 @@ public sealed partial class AbilityRunner
                 cast.Suspend();
                 break;
 
-            case "generate":
-                // `rr:resource-ability` -- a resource ability is *read* while a
-                // cost is being paid rather than run like an effect, so nothing
-                // happens here. `ResourceAbilities` takes its letters and
-                // `UseResource` counts the use; running it would be a second
-                // way to generate the same resource.
-                throw new RulesNotImplementedException(
-                    $"'{cast.Source.FaceId}' generates a resource, which is read while a "
-                    + "cost is paid rather than resolved as an effect");
-
             case "changeForm":
                 ChangeForm(node, cast);
                 break;
@@ -363,30 +386,6 @@ public sealed partial class AbilityRunner
                 RemoveCounters(node, cast);
                 break;
 
-            case "placeCounters":
-                var counter = Word(node.Require("counter"));
-                var counterCard = Find(node.Require("card"), cast)
-                    ?? throw new RulesNotImplementedException(
-                        $"'{cast.Source.FaceId}' cannot find the card receiving counters");
-                long beforeCounters = counterCard.Tokens.GetValueOrDefault("c_" + counter);
-                long placedCounters = Amount(node.Require("count"), cast);
-                if (placedCounters < 0)
-                {
-                    throw new AbilityException("'placeCounters' needs a non-negative 'count'");
-                }
-                if (placedCounters == 0)
-                {
-                    break;
-                }
-                counterCard.PlaceTokens("c_" + counter, placedCounters);
-                cast.Events.Add(new FieldSet(
-                    counterCard.ObjectId, "c_" + counter,
-                    beforeCounters, beforeCounters + placedCounters)
-                {
-                    Trigger = cast.Trigger, Verb = "Place_Counters",
-                });
-                break;
-
             case "advanceMainScheme":
                 AdvanceMainScheme(node, cast);
                 break;
@@ -396,35 +395,8 @@ public sealed partial class AbilityRunner
                 cast.ResolveEffect();
                 break;
 
-            case "cancelWhenRevealed":
-                CancelWhenRevealed(cast);
-                cast.ResolveEffect();
-                break;
-
-            case "cancelOccurrence":
-                // rr:replacement-effect.1: the interrupted occurrence does
-                // not happen. Printed card data decides when this generic
-                // agenda operation is part of an ability's effect.
-                if (cast.World.Agenda.IsOutstanding(cast.Occurrence))
-                {
-                    cast.World.Agenda.Cancel(cast.Occurrence);
-                }
-                cast.ResolveEffect();
-                break;
-
             case "dealEncounterCards":
                 DealEncounterCards(node, cast);
-                break;
-
-            case "dealEncounterCard":
-                Rules.Play.Deal.EncounterCard(
-                    cast.World,
-                    Find(node.Require("card"), cast)
-                        ?? throw new RulesNotImplementedException(
-                            $"'{cast.Source.FaceId}' cannot find the encounter card to deal"),
-                    Seat(node.Require("player"), cast),
-                    cast.Trigger,
-                    cast.Events);
                 break;
 
             case "revealTop":
@@ -509,20 +481,6 @@ public sealed partial class AbilityRunner
 
             case "discardAtRandom":
                 DiscardAtRandom(node, cast);
-                break;
-
-            case "discardHandWithResource":
-                string wantedResource = Word(node.Argument);
-                foreach (var card in cast.World.Seats[cast.Player].Hand.Cards
-                             .Where(card => Resources.GeneratedBy(
-                                 card.FaceId, cast.World.Facts).Contains(
-                                     wantedResource, StringComparison.Ordinal))
-                             .ToList())
-                {
-                    Rules.Play.Discard.Card(cast.World, card, cast.Trigger, cast.Events);
-                    cast.Discarded.Add(card);
-                }
-                cast.Results["discarded"] = cast.Discarded.Count;
                 break;
 
             case "discardUntil":
@@ -633,55 +591,12 @@ public sealed partial class AbilityRunner
                 GiveStatus(node, cast);
                 break;
 
-            case "giveAdditionalBoost":
-                Attack.GiveAdditionalBoostCard(
-                    cast.World,
-                    Find(node.Require("enemy"), cast)
-                        ?? throw new AbilityException(
-                            $"'{cast.Source.FaceId}' cannot find the enemy receiving an additional boost card"),
-                    cast.Trigger,
-                    cast.Events);
-                break;
-
-            case "alsoAttackEachOtherHero":
-                Attack.AlsoResolveAgainstEachOtherHero(cast.World);
-                cast.ResolveEffect();
-                break;
-
-            case "declareDefender":
-                var declared = Find(node.Require("card"), cast)
-                    ?? throw new RulesNotImplementedException(
-                        $"'{cast.Source.FaceId}' cannot find the character it declares as defender");
-                Attack.DeclareByAbility(
-                    cast.World, cast.World.Facts, declared,
-                    ReplaceableDefenseDefender(cast));
-                cast.ResolveEffect();
-                break;
-
             case "attachTo":
                 AttachTo(node, cast);
                 break;
 
             case "grantUntil":
                 GrantUntil(node, cast);
-                cast.ResolveEffect();
-                break;
-
-            case "grantCharactersControlledBy":
-                foreach (string field in Values(node.Require("fields")).Select(Word))
-                {
-                    cast.World.Effects.GrantToCharactersControlledBy(
-                        cast.Source, Seat(node.Require("player"), cast), field,
-                        Amount(node.Require("amount"), cast),
-                        Word(node.Require("until")));
-                }
-                cast.ResolveEffect();
-                break;
-
-            case "reduceNextCardCost":
-                CardPlay.ReduceNextCardCost(
-                    cast.World, cast.Source, Seat(node.Require("player"), cast),
-                    Amount(node.Require("amount"), cast));
                 cast.ResolveEffect();
                 break;
 
@@ -694,43 +609,12 @@ public sealed partial class AbilityRunner
                 Discard(node, cast);
                 break;
 
-            case "gainSurge":
-                // `rr:surge`: "the player resolving the card deals themself a
-                // facedown encounter card from the top of the encounter deck",
-                // and `.1` writes it as "**When Revealed**: deal yourself 1
-                // facedown encounter card". A card that *gains* surge does the
-                // same thing the keyword would have.
-                //
-                // `rr:keywords.1` makes every additional non-numeric instance
-                // inert. Printed and continuously granted Surge already ran in
-                // `Reveal.Keywords`; multiple nodes and a value greater than one
-                // are multiple gained instances inside this reveal. All four
-                // shapes therefore produce at most one deal between them.
-                if (Number(node.Argument) > 0
-                    && StateFields.Modified(
-                        cast.World, cast.Source, "surge", cast.World.Facts,
-                        cast.World.Players) <= 0
-                    && cast.GainedKeywords.Add("surge"))
-                {
-                    RememberGainedSurge(cast.World, cast.Source.ObjectId);
-                    Deal.EncounterCard(
-                        cast.World, cast.Player, cast.Trigger, cast.Events);
-                }
-
-                // `.2` finishes the original card first, which the villain
-                // phase's reveal queue does without anything else here.
-                break;
-
             case "heal":
                 Heal(node, cast);
                 break;
 
             case "indirectDamage":
                 Indirect(node, cast);
-                break;
-
-            case "makeAttackIndirect":
-                Attack.MakeIndirect(cast.World);
                 break;
 
             case "dealDamage":
@@ -787,10 +671,6 @@ public sealed partial class AbilityRunner
                 PlaceThreat(node, cast);
                 break;
 
-            case "placeAccelerationToken":
-                EncounterDeck.PlaceAccelerationToken(cast.World, cast.Trigger, cast.Events);
-                break;
-
             case "preventThreat":
                 PreventThreat(node, cast);
                 cast.ResolveEffect();
@@ -820,61 +700,11 @@ public sealed partial class AbilityRunner
                 CreateDrones(node, cast);
                 break;
 
-            case "shuffle":
-                // `rr:search.3` -- "if any portion of a deck is searched, upon
-                // completion of that game step, game function, or card ability,
-                // shuffle that entire deck." A step of the card rather than
-                // part of the search, because "upon completion" is after the
-                // player has answered which card they took.
-                if (cast.World.Shuffle(Area(Word(node.Argument), cast)))
-                {
-                    cast.ResolveEffect();
-                }
-                break;
-
-            case "draw":
-                foreach (int player in Seats(node.Require("player"), cast))
-                {
-                    if (CanDraw(cast.World, player))
-                    {
-                        Draw.Cards(
-                            cast.World, player,
-                            (int)Number(node.Require("count")),
-                            cast.Trigger, cast.Events);
-                    }
-                }
-                break;
-
             default:
                 throw new RulesNotImplementedException(
                     $"'{cast.Source.FaceId}' uses the effect node '{node.Kind}', "
                     + "which is not implemented");
         }
-        if (cast.Events.Count > eventsBefore && EventMeansEffectApplied(node.Kind))
-        {
-            cast.ResolveEffect();
-        }
-
-        // A conditional constant can become Stalwart because this node changed
-        // threat, counters, traits, or another dependency. `rr:stalwart.2`
-        // removes existing stunned/confused cards at that transition, before
-        // later text in the same ability reads the board.
-        Statuses.RemoveAfflictionsIfStalwart(
-            cast.World, cast.World.Facts, "stalwart", cast.Events);
-        bool healthDefeatSuspended = cast.World.Effects.SettleLostHealth(
-            healthBefore, cast.Trigger, cast.Events);
-        if (healthDefeatSuspended && !cast.Suspended)
-        {
-            SuspendAfterProcedure(
-                node, cast, agendaOwner, agendaOccurrence);
-        }
-
-        // `rr:attack-enemy-activation.3.2`: a defending ally that leaves play
-        // immediately stops defending and exposes its controller's identity.
-        // Recheck after every node so later text in the same ability, and the
-        // next boost ability, reads the new attack roles rather than a stale
-        // defender that has already moved.
-        Attack.RefreshDefender(cast.World, cast.World.Facts);
     }
 
     private static bool EventMeansEffectApplied(string kind) => kind is not (

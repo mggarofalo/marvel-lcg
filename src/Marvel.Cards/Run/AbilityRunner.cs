@@ -47,6 +47,7 @@ public sealed partial class AbilityRunner : ICardAbilities
         {
             compiledAbilities[book.Abilities[index]] = program.Abilities[index];
         }
+        IndexEffectSyntax(book);
         constant = new HashSet<string>(program.Abilities
             .Where(ability => ability.Trigger.Timing == AbilityType.Constant)
             .Select(ability => ability.Card), StringComparer.Ordinal);
