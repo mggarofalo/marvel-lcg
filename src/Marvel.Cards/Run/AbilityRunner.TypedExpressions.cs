@@ -7,7 +7,10 @@ namespace Marvel.Cards.Run;
 public sealed partial class AbilityRunner
 {
     private bool WhenHolds(CardAbility ability, Cast cast) =>
-        compiledAbilities[ability].When is not { } condition || Test(condition, cast);
+        WhenHolds(compiledAbilities[ability], cast);
+
+    private static bool WhenHolds(CompiledCardAbility ability, Cast cast) =>
+        ability.When is not { } condition || Test(condition, cast);
 
     private static bool ContainsYouOrYour(AbilityNumber number) => number switch
     {

@@ -986,7 +986,7 @@ public sealed partial class AbilityRunner : ICardAbilities
         var sources = new List<ResourceSource>();
         foreach (var card in Triggerable(world, player).ToList())
         {
-            foreach (var ability in On(card))
+            foreach (var ability in CompiledOn(card))
             {
                 var eligibility = new Cast(
                     world,
@@ -1000,7 +1000,7 @@ public sealed partial class AbilityRunner : ICardAbilities
                     || !MayInitiate(world, ability, card, player)
                     || !Available(world, card, ability)
                     || !InForm(world, player, ability.Trigger.Form)
-                    || !Payable(world, card, player, CompiledCost(ability))
+                    || !Payable(world, card, player, ability.Cost)
                     || !WhenHolds(ability, eligibility))
                 {
                     continue;
@@ -1009,7 +1009,7 @@ public sealed partial class AbilityRunner : ICardAbilities
                 // The letters this makes, read off the effect rather than the
                 // printed `RES` field: `RES` is what discarding the card
                 // generates, and an ability is a different way to make one.
-                string generated = Generated(compiledAbilities[ability].Effect, world, player);
+                string generated = Generated(ability.Effect, world, player);
                 if (generated.Length > 0)
                 {
                     sources.Add(new ResourceSource(card.ObjectId, generated));
@@ -1032,8 +1032,8 @@ public sealed partial class AbilityRunner : ICardAbilities
 
         bool available = ResourceAbilities(world, player)
             .Any(candidate => candidate.Effect == card);
-        CardAbility? ability = available
-            ? On(source).FirstOrDefault(candidate =>
+        CompiledCardAbility? ability = available
+            ? CompiledOn(source).FirstOrDefault(candidate =>
                 candidate.Trigger.Timing == AbilityType.Resource)
             : null;
         return ability?.Name ?? world.Facts.Title(source.FaceId);
@@ -1047,7 +1047,7 @@ public sealed partial class AbilityRunner : ICardAbilities
         var available = ResourceAbilities(world, player);
         return
         [
-            .. available.Where(source => On(world.Cards[source.Effect]).Any(ability =>
+            .. available.Where(source => CompiledOn(world.Cards[source.Effect]).Any(ability =>
                 ability.Trigger.Timing == AbilityType.Resource
                 && string.Equals(
                     ability.PrintedResources, source.Generates, StringComparison.Ordinal))),
@@ -1073,7 +1073,11 @@ public sealed partial class AbilityRunner : ICardAbilities
     /// </para>
     /// </remarks>
     private bool Available(
-        World world, Card card, CardAbility ability, Occurrence? occurrence = null)
+        World world, Card card, CardAbility ability, Occurrence? occurrence = null) =>
+        Available(world, card, compiledAbilities[ability], occurrence);
+
+    private bool Available(
+        World world, Card card, CompiledCardAbility ability, Occurrence? occurrence = null)
     {
         if (ability.Limit is { } limit
             && world.Effects.Active().Count(effect =>
@@ -1101,7 +1105,11 @@ public sealed partial class AbilityRunner : ICardAbilities
 
     /// <summary>Records one use of a limited ability, until the round ends.</summary>
     private void Use(
-        World world, Card card, CardAbility ability, Occurrence? occurrence = null)
+        World world, Card card, CardAbility ability, Occurrence? occurrence = null) =>
+        Use(world, card, compiledAbilities[ability], occurrence);
+
+    private void Use(
+        World world, Card card, CompiledCardAbility ability, Occurrence? occurrence = null)
     {
         if (ability.Limit is not null)
         {
@@ -1144,9 +1152,9 @@ public sealed partial class AbilityRunner : ICardAbilities
     }
 
     /// <summary>The effect kind that stands for one use of this instance of an ability.</summary>
-    private string Spent(Card card, CardAbility ability)
+    private string Spent(Card card, CompiledCardAbility ability)
     {
-        var written = On(card).ToList();
+        var written = CompiledOn(card).ToList();
         int ordinal = written.FindIndex(candidate => ReferenceEquals(candidate, ability));
         if (ordinal < 0)
         {
@@ -1196,7 +1204,7 @@ public sealed partial class AbilityRunner : ICardAbilities
         ArgumentNullException.ThrowIfNull(world);
 
         var holder = world.Cards[card];
-        var ability = On(holder).FirstOrDefault(candidate =>
+        var ability = CompiledOn(holder).FirstOrDefault(candidate =>
         {
             var eligibility = new Cast(
                 world,
@@ -1210,7 +1218,7 @@ public sealed partial class AbilityRunner : ICardAbilities
                 && MayInitiate(world, candidate, holder, player)
                 && Available(world, holder, candidate)
                 && InForm(world, player, candidate.Trigger.Form)
-                && Payable(world, holder, player, CompiledCost(candidate))
+                && Payable(world, holder, player, candidate.Cost)
                 && WhenHolds(candidate, eligibility);
         })
             ?? throw new RulesNotImplementedException(
@@ -1223,9 +1231,9 @@ public sealed partial class AbilityRunner : ICardAbilities
         {
             Tier = ability.Trigger.Timing,
         };
-        Pay(CompiledCost(ability), [], [], cast);
+        Pay(ability.Cost, [], [], cast);
         Use(world, holder, ability);
-        return Generated(compiledAbilities[ability].Effect, world, player);
+        return Generated(ability.Effect, world, player);
     }
 
     /// <inheritdoc/>
@@ -2210,7 +2218,7 @@ public sealed partial class AbilityRunner : ICardAbilities
                 // you ask them.
                 if (ControllerOf(world, card) == player
                     || card.Owner == World.Scenario
-                    || On(card).Any(ability => ability.AnyPlayer))
+                    || CompiledOn(card).Any(ability => ability.AnyPlayer))
                 {
                     yield return card;
                 }

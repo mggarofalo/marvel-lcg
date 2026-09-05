@@ -103,7 +103,10 @@ public sealed partial class AbilityRunner
     /// from control, because an obligation remains an encounter card.
     /// </para>
     /// </remarks>
-    private int? RestrictedPlayer(World world, CardAbility ability, Card card)
+    private int? RestrictedPlayer(World world, CardAbility ability, Card card) =>
+        RestrictedPlayer(world, compiledAbilities[ability], card);
+
+    private int? RestrictedPlayer(World world, CompiledCardAbility ability, Card card)
     {
         // The Golden Rules give explicit card text precedence. Obedience
         // Potion-shaped attachments say “Any player can do this,” so that
@@ -132,14 +135,14 @@ public sealed partial class AbilityRunner
     }
 
     /// <summary>Whether the authored ability contains the printed “you/your” binding.</summary>
-    private bool UsesYouOrYour(CardAbility ability, Card card) =>
+    private bool UsesYouOrYour(CompiledCardAbility ability, Card card) =>
         ability.Trigger.Subject == AbilitySubjects.You
         || ability.Trigger.Actor == AbilityRoles.You
         || ability.Trigger.Target == AbilityRoles.You
         || ability.Trigger.Player == AbilityPlayers.You
-        || ContainsYouOrYour(compiledAbilities[ability].Effect)
-        || ContainsYouOrYour(CompiledCost(ability))
-        || (compiledAbilities[ability].When is { } when && ContainsYouOrYour(when))
+        || ContainsYouOrYour(ability.Effect)
+        || ContainsYouOrYour(ability.Cost)
+        || (ability.When is { } when && ContainsYouOrYour(when))
         || (program.AttachTo.GetValueOrDefault(card.FaceId) is { } attachment
             && ContainsYouOrYour(attachment));
 
@@ -161,7 +164,10 @@ public sealed partial class AbilityRunner
     };
 
     /// <summary>Whether this player is permitted to initiate the ability.</summary>
-    private bool MayInitiate(World world, CardAbility ability, Card card, int player)
+    private bool MayInitiate(World world, CardAbility ability, Card card, int player) =>
+        MayInitiate(world, compiledAbilities[ability], card, player);
+
+    private bool MayInitiate(World world, CompiledCardAbility ability, Card card, int player)
     {
         // `rr:player-turn.5.a-c` grants permission per ability: a player may
         // use their card, an encounter card, or the particular ability whose
