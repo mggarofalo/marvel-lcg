@@ -412,18 +412,10 @@ public sealed partial class AbilityRunner
 
             case "if":
                 var tested = ConditionalOf(node, cast).Test;
-                bool wasObserving = cast.ObservingInformation;
-                cast.SetObservingInformation(true);
-                bool condition;
-                try
-                {
-                    condition = Test(tested, cast);
-                }
-                finally
-                {
-                    cast.SetObservingInformation(wasObserving);
-                }
-                var branch = condition ? "then" : "else";
+                var condition = EvaluateCondition(tested, cast);
+                foreach (var observation in condition.Information)
+                    cast.World.RecordInformation(observation);
+                var branch = condition.Value ? "then" : "else";
                 if (ConditionalBranch(node, branch) is { } taken)
                 {
                     RunChild(taken, $"if:{branch}", cast);

@@ -137,11 +137,6 @@ public sealed partial class AbilityRunner
         public void SetPriorBindingMayBeEmpty(bool value) =>
             PriorBindingMayBeEmpty = value;
 
-        /// <summary>Whether an executing condition should record concealed queries.</summary>
-        public bool ObservingInformation { get; private set; }
-
-        public void SetObservingInformation(bool value) => ObservingInformation = value;
-
         /// <summary>Cards discarded earlier in this resolution, in order.</summary>
         public List<Card> Discarded { get; } = [];
 
@@ -247,10 +242,8 @@ public sealed partial class AbilityRunner
         public bool HasPendingDependency => AbilityPath.Any(frame =>
             frame.EndsWith(":Pending", StringComparison.Ordinal));
 
-        public sealed record CardBinding(Card Card, int Area, int Incarnation);
-
-        private CardBinding? chosenBinding;
-        private CardBinding? playerSelectionBinding;
+        private AbilityCardReference? chosenBinding;
+        private AbilityCardReference? playerSelectionBinding;
         private int sourceIncarnation = Source.Incarnation;
 
         /// <summary>The card the player picked, once they have.</summary>
@@ -259,19 +252,6 @@ public sealed partial class AbilityRunner
         /// <summary>The outer card selection used by chosen-player references.</summary>
         public Card? PlayerSelection =>
             CurrentCard(playerSelectionBinding, "player selection");
-
-        public Card? SourceReference
-        {
-            get
-            {
-                if (sourceIncarnation < 0)
-                {
-                    throw new RulesNotImplementedException(
-                        $"'{Source.FaceId}' continuation has no source-card provenance");
-                }
-                return Source.Incarnation == sourceIncarnation ? Source : null;
-            }
-        }
 
         public int SourceBindingIncarnation => sourceIncarnation;
 
@@ -293,22 +273,22 @@ public sealed partial class AbilityRunner
             playerSelectionBinding = binding;
         }
 
-        public CardBinding? CaptureChosen() => chosenBinding;
+        public AbilityCardReference? CaptureChosen() => chosenBinding;
 
-        public CardBinding? CapturePlayerSelection() => playerSelectionBinding;
+        public AbilityCardReference? CapturePlayerSelection() => playerSelectionBinding;
 
-        public CardBinding? CaptureCurrentSelection() =>
+        public AbilityCardReference? CaptureCurrentSelection() =>
             playerSelectionBinding ?? chosenBinding;
 
-        public void RestoreChosen(CardBinding? binding) => chosenBinding = binding;
+        public void RestoreChosen(AbilityCardReference? binding) => chosenBinding = binding;
 
-        public void RestorePlayerSelection(CardBinding? binding) =>
+        public void RestorePlayerSelection(AbilityCardReference? binding) =>
             playerSelectionBinding = binding;
 
         public void RestorePersistedSelection(
             Card card, int area, int incarnation, bool overwriteChosen)
         {
-            var binding = new CardBinding(card, area, incarnation);
+            var binding = new AbilityCardReference(card, area, incarnation);
             playerSelectionBinding = binding;
             if (overwriteChosen || chosenBinding is null)
             {
@@ -316,48 +296,19 @@ public sealed partial class AbilityRunner
             }
         }
 
-        public bool WasSelectedInCurrentArea(Card card) =>
-            CurrentBindingFor(card) is { } binding
-            && binding.Area == card.Area.Id
-            && binding.Incarnation == card.Incarnation;
-
-        public bool ChosenBindingIsCurrent(Card card) =>
-            chosenBinding is { } binding
-            && binding.Card.ObjectId == card.ObjectId
-            && binding.Incarnation == card.Incarnation;
-
         public bool SourceBindingIsCurrent(Card card) =>
             Source.ObjectId == card.ObjectId
             && sourceIncarnation == card.Incarnation;
 
-        private CardBinding? CurrentBindingFor(Card card) =>
-            playerSelectionBinding is { } player
-            && player.Card.ObjectId == card.ObjectId
-                ? player
-                : chosenBinding is { } chosen
-                && chosen.Card.ObjectId == card.ObjectId
-                    ? chosen
-                    : null;
-
-        private static CardBinding? Bind(Card? card) => card is null
+        private static AbilityCardReference? Bind(Card? card) => card is null
             ? null
-            : new CardBinding(card, card.Area.Id, card.Incarnation);
+            : new AbilityCardReference(card, card.Area.Id, card.Incarnation);
 
-        private Card? CurrentCard(CardBinding? binding, string name)
-        {
-            if (binding is not { } found)
-            {
-                return null;
-            }
-            if (found.Incarnation < 0 || found.Area < 0)
-            {
-                throw new RulesNotImplementedException(
-                    $"'{Source.FaceId}' continuation has no {name} provenance");
-            }
-            return found.Card.Incarnation == found.Incarnation
-                ? found.Card
-                : null;
-        }
+        private Card? CurrentCard(AbilityCardReference? binding, string name) => binding?.Resolve(Source, name);
+
+        public AbilityQueryContext QueryContext() => new(
+            World, Source, Occurrence, Player, sourceIncarnation,
+            chosenBinding, playerSelectionBinding, Altered, [.. PowerTargets]);
 
         /// <summary>
         /// Which of the card's abilities is running, or null.

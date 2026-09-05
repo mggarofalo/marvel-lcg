@@ -145,20 +145,20 @@ public sealed partial class AbilityRunner
     // players, “except for the per player icon.” Its multiplier is World.Players.
     // Result bindings read what an earlier effect actually did; an unwritten
     // result is zero, including when no damage was healed this way.
-    private static long Amount(AbilityNumber number, Cast cast) => number switch
+    private static long Amount(AbilityNumber number, Cast cast, List<InformationKind>? information = null) => number switch
     {
         AbilityNumber.Constant constant => constant.Value,
         AbilityNumber.PerPlayer perPlayer => perPlayer.Value * cast.World.Players,
         AbilityNumber.Result result => cast.Results.GetValueOrDefault(result.Name),
-        AbilityNumber.Sum sum => sum.Operands.Sum(operand => Amount(operand, cast)),
-        AbilityNumber.Product product => product.Operands.Aggregate(1L, (value, operand) => value * Amount(operand, cast)),
-        AbilityNumber.Minimum minimum => minimum.Operands.Min(operand => Amount(operand, cast)),
-        AbilityNumber.CardValue value => CardNumber(value, cast),
-        AbilityNumber.Counters counters => Find(counters.Card, cast) is { } holder ? CounterCount(holder, counters.Counter) : 0,
-        AbilityNumber.Modified modified => Find(modified.Card, cast) is { } holder
+        AbilityNumber.Sum sum => sum.Operands.Sum(operand => Amount(operand, cast, information)),
+        AbilityNumber.Product product => product.Operands.Aggregate(1L, (value, operand) => value * Amount(operand, cast, information)),
+        AbilityNumber.Minimum minimum => minimum.Operands.Min(operand => Amount(operand, cast, information)),
+        AbilityNumber.CardValue value => CardNumber(value, cast, information),
+        AbilityNumber.Counters counters => Find(counters.Card, cast, information) is { } holder ? CounterCount(holder, counters.Counter) : 0,
+        AbilityNumber.Modified modified => Find(modified.Card, cast, information) is { } holder
             ? StateFields.Modified(cast.World, holder, modified.Field, cast.World.Facts, cast.World.Players) : 0,
-        AbilityNumber.Count count => Every(count.Cards, cast).Count,
-        AbilityNumber.Conditional conditional => Amount(Test(conditional.Test, cast) ? conditional.Then : conditional.Else, cast),
+        AbilityNumber.Count count => Every(count.Cards, cast, information).Count,
+        AbilityNumber.Conditional conditional => Amount(Test(conditional.Test, cast, information) ? conditional.Then : conditional.Else, cast, information),
         AbilityNumber.PrintedResourcesDiscarded resource => Resources.PrintedCount(cast.Discarded, resource.Resource, cast.World.Facts),
         AbilityNumber.DiscardedWithResource resource => cast.Discarded.Count(card =>
             Resources.GeneratedBy(card.FaceId, cast.World.Facts).Contains(resource.Resource)),
@@ -174,9 +174,9 @@ public sealed partial class AbilityRunner
         _ => throw new InvalidOperationException("Unknown compiled numeric expression"),
     };
 
-    private static long CardNumber(AbilityNumber.CardValue value, Cast cast)
+    private static long CardNumber(AbilityNumber.CardValue value, Cast cast, List<InformationKind>? information = null)
     {
-        if (Find(value.Card, cast) is not { } card) return 0;
+        if (Find(value.Card, cast, information) is not { } card) return 0;
         return value.Property switch
         {
             AbilityCardNumberProperty.Threat => card.Tokens.GetValueOrDefault("k_threat"),
@@ -187,38 +187,45 @@ public sealed partial class AbilityRunner
         };
     }
 
-    private static bool Test(AbilityCondition condition, Cast cast) => condition switch
+    private static AbilityQueryResult<bool> EvaluateCondition(AbilityCondition condition, Cast cast)
     {
-        AbilityCondition.All all => all.Operands.All(operand => Test(operand, cast)),
-        AbilityCondition.Any any => any.Operands.Any(operand => Test(operand, cast)),
-        AbilityCondition.Negated negated => !Test(negated.Operand, cast),
+        var information = new List<InformationKind>();
+        bool value = Test(condition, cast, information);
+        return new(value, [.. information]);
+    }
+
+    private static bool Test(AbilityCondition condition, Cast cast, List<InformationKind>? information = null) => condition switch
+    {
+        AbilityCondition.All all => all.Operands.All(operand => Test(operand, cast, information)),
+        AbilityCondition.Any any => any.Operands.Any(operand => Test(operand, cast, information)),
+        AbilityCondition.Negated negated => !Test(negated.Operand, cast, information),
         AbilityCondition.Flag flag => TestFact(flag.Kind, cast),
         AbilityCondition.PaidWithResource resource => PaidWith(cast, resource.Resource.ToString()),
         AbilityCondition.DiscardedWithResource resource => cast.Discarded.Any(card =>
             Resources.GeneratedBy(card.FaceId, cast.World.Facts).Contains(resource.Resource)),
         AbilityCondition.CausedThreat threat => cast.Occurrence.Threat?.Cause == threat.Cause,
-        AbilityCondition.Exists exists => Every(exists.Cards, cast).Count > 0,
+        AbilityCondition.Exists exists => Every(exists.Cards, cast, information).Count > 0,
         AbilityCondition.LegalPractice practice => cast.World.Seats[cast.Player].Hand.Cards
             .Any(card => card.ObjectId != cast.Source.ObjectId)
-            && Every(practice.Schemes, cast).Any(card => card.Tokens.GetValueOrDefault("k_threat") > 0),
-        AbilityCondition.AutomaticThwart thwart => Find(thwart.Scheme, cast) is { } scheme
+            && Every(practice.Schemes, cast, information).Any(card => card.Tokens.GetValueOrDefault("k_threat") > 0),
+        AbilityCondition.AutomaticThwart thwart => Find(thwart.Scheme, cast, information) is { } scheme
             && BasicPowers.CanAutomaticallyThwart(cast.World, cast.World.Facts, cast.Player, scheme),
         AbilityCondition.TitleInPlay title => cast.World.Areas.Where(area => DeckTypes.IsInPlay(area.Type))
             .SelectMany(area => area.Cards).Any(card => string.Equals(cast.World.Facts.Title(card.FaceId), title.Title, StringComparison.Ordinal)),
-        AbilityCondition.AtLeast comparison => Amount(comparison.Value, cast) >= Amount(comparison.Count, cast),
+        AbilityCondition.AtLeast comparison => Amount(comparison.Value, cast, information) >= Amount(comparison.Count, cast, information),
         AbilityCondition.InForm form => Forms.In(cast.World, cast.World.Seats[Seat(form.Player, cast)], cast.World.Facts, form.Form),
         AbilityCondition.ActivationIs activation => cast.World.Activation is { } current && current.Attacking == activation.Attack,
-        AbilityCondition.CardText text => TestCardText(text, cast),
-        AbilityCondition.IsKind kind => Find(kind.Card, cast) is { } card && cast.World.Facts.Kind(card.FaceId) == kind.Kind,
-        AbilityCondition.WasDefeated defeated => Find(defeated.Card, cast) is { } card
+        AbilityCondition.CardText text => TestCardText(text, cast, information),
+        AbilityCondition.IsKind kind => Find(kind.Card, cast, information) is { } card && cast.World.Facts.Kind(card.FaceId) == kind.Kind,
+        AbilityCondition.WasDefeated defeated => Find(defeated.Card, cast, information) is { } card
             && cast.Occurrence.Defeats.Any(defeat => defeat.Card == card.ObjectId),
-        AbilityCondition.IsYourIdentity identity => Find(identity.Card, cast)?.ObjectId == cast.World.Seats[Resolver(cast)].IdentityCard.ObjectId,
+        AbilityCondition.IsYourIdentity identity => Find(identity.Card, cast, information)?.ObjectId == cast.World.Seats[Resolver(cast)].IdentityCard.ObjectId,
         _ => throw new InvalidOperationException("Unknown compiled condition"),
     };
 
-    private static bool TestCardText(AbilityCondition.CardText text, Cast cast)
+    private static bool TestCardText(AbilityCondition.CardText text, Cast cast, List<InformationKind>? information = null)
     {
-        if (Find(text.Card, cast) is not { } card) return false;
+        if (Find(text.Card, cast, information) is not { } card) return false;
         return text.Property switch
         {
             AbilityCardTextProperty.Status => Statuses.Has(cast.World, card, text.Text),

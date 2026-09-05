@@ -13,15 +13,6 @@ public sealed partial class AbilityRunner
     private static IReadOnlyList<Card> TopCards(Area deck, int count) =>
         [.. deck.Cards.TakeLast(count).Reverse()];
 
-    private static Card? OneSearchedCard(IReadOnlyList<Card> found, Cast cast) => found.Count switch
-        {
-            0 => null,
-            1 => found[0],
-            _ => throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' searched and found {found.Count} matching cards; "
-                + "rr:search.1 gives the player that choice and asking is not implemented"),
-        };
-
     private static bool SingularAreaQueryIsStable(IReadOnlySet<DeckType> areas, Cast cast)
     {
         bool priorCanChange = EffectsMayChangeAnyArea(

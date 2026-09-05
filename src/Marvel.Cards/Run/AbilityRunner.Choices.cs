@@ -1232,34 +1232,8 @@ public sealed partial class AbilityRunner
         IsPlayerCard(cast.World.Facts, cast.Source);
 
     /// <summary>Whether a card face belongs to a player rather than the scenario.</summary>
-    private static bool IsPlayerCard(ICardFacts facts, Card card)
-    {
-        var kind = facts.Kind(card.FaceId);
+    private static bool IsPlayerCard(ICardFacts facts, Card card) => AbilityCardQueries.IsPlayerCard(facts, card);
 
-        // Player side schemes are not yet a modelled kind and answer Unknown.
-        // Unlike an unknown encounter card, one created in a player's deck has
-        // that player as its owner, which preserves the rule's distinction.
-        return kind is CardKind.AlterEgo
-                or CardKind.Hero
-                or CardKind.Ally
-                or CardKind.Event
-                or CardKind.Resource
-                or CardKind.Support
-                or CardKind.Upgrade
-            || (kind == CardKind.Unknown && card.Owner != World.Scenario);
-    }
-
-    /// <summary>The card's current controller, falling back to its owner out of play.</summary>
-    /// <remarks>
-    /// <c>rr:ownership-and-control.5</c> moves a changed-control player card to
-    /// its controller's play area. Ownership remains on <see cref="Card.Owner"/>,
-    /// so the two facts must not be read from the same field.
-    /// </remarks>
-    private static int ControllerOf(World world, Card card) =>
-        IsPlayerCard(world.Facts, card)
-        && DeckTypes.IsInPlay(card.Area.Type)
-        && card.Area.PlayArea.IsPlayers
-            ? card.Area.PlayArea.Player
-            : card.Owner;
+    private static int ControllerOf(World world, Card card) => AbilityCardQueries.ControllerOf(world, card);
 
 }

@@ -1208,7 +1208,7 @@ public sealed partial class AbilityRunner
     }
 
     private static void PersistChosen(
-        Cast.CardBinding chosen, Dictionary<string, long> results)
+        AbilityCardReference chosen, Dictionary<string, long> results)
     {
         results[PersistedChosen] = chosen.Card.ObjectId;
         results[PersistedChosenArea] = chosen.Area;
