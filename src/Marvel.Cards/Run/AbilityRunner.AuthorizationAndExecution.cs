@@ -139,7 +139,7 @@ public sealed partial class AbilityRunner
         || ability.Trigger.Player == AbilityPlayers.You
         || ContainsYouOrYour(ability.Effect)
         || ContainsYouOrYour(CompiledCost(ability))
-        || (ability.When is { } when && ContainsYouOrYour(when))
+        || (compiledAbilities[ability].When is { } when && ContainsYouOrYour(when))
         || (program.AttachTo.GetValueOrDefault(card.FaceId) is { } attachment
             && ContainsYouOrYour(attachment));
 

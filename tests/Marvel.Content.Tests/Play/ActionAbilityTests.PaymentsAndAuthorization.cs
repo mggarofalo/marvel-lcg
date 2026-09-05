@@ -147,6 +147,89 @@ public sealed partial class ActionAbilityTests
     }
 
     [Fact]
+    public void AbilityGuardUsesTheCompiledNumericSnapshot()
+    {
+        var parsed = AbilityCatalog.Parse("""
+            {"cards":[{"card":"01006","abilities":[{
+              "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"game"},
+              "cost":{"exhaust":"this"},
+              "effect":{"draw":{"player":"you","count":1}}
+            }]}]}
+            """);
+        var fields = new Dictionary<string, AbilityValue>(StringComparer.Ordinal)
+        {
+            ["value"] = new AbilityValue.Map(new Dictionary<string, AbilityValue>(StringComparer.Ordinal)
+            {
+                ["add"] = new AbilityValue.List([
+                    new AbilityValue.Number(1),
+                    new AbilityValue.Map(new Dictionary<string, AbilityValue>(StringComparer.Ordinal)
+                    {
+                        ["damageOn"] = new AbilityValue.Word("you"),
+                    }),
+                ]),
+            }),
+            ["count"] = new AbilityValue.Number(2),
+        };
+        var ability = parsed.Abilities[0] with { When = new AbilityNode("atLeast", new AbilityValue.Map(fields)) };
+        var runner = new Marvel.Cards.Run.AbilityRunner(new AbilityBook([ability], parsed.Authored));
+        Card? source = null;
+        var (game, world) = Playing(board =>
+        {
+            source = InPlay(board, AuthoredCards.AuntMay);
+            board.Seats[0].IdentityCard.TakeDamage(1);
+        }, abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+
+        // Engine choice: guard evaluation reads the compiled program, not a
+        // caller-owned dictionary that can change between offering and acting.
+        fields["count"] = new AbilityValue.Number(99);
+        var action = Assert.Single(game.Pending!.Affordances,
+            option => option.Verb == Game.ActionVerb && option.AnchorId == source!.ObjectId);
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.False(source!.Ready);
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+        Assert.Equal(1, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void CompiledGuardRefusesAnAmbiguousSingleCardSearch(int copies)
+    {
+        var runner = new Marvel.Cards.Run.AbilityRunner(AbilityCatalog.Parse("""
+            {"cards":[{"card":"01006","abilities":[{
+              "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"game"},
+              "when":{"atLeast":{"value":{"damageOn":{"cardsIn":{
+                "area":"encounterDiscardPile","title":"Hawkeye"
+              }}},"count":0}},
+              "cost":{"exhaust":"this"},
+              "effect":{"draw":{"player":"you","count":1}}
+            }]}]}
+            """));
+        Card? source = null;
+        (Game Game, World World) Start() => Playing(board =>
+        {
+            source = InPlay(board, AuthoredCards.AuntMay);
+            for (int index = 0; index < copies; index++)
+                board.CreateCard("01066", board.AreaOf(DeckType.EncounterDiscardPile));
+        }, abilities: runner);
+
+        if (copies == 1)
+        {
+            var (game, _) = Start();
+            Assert.Contains(game.Pending!.Affordances,
+                option => option.Verb == Game.ActionVerb && option.AnchorId == source!.ObjectId);
+        }
+        else
+        {
+            var refused = Assert.Throws<RulesNotImplementedException>(() => Start());
+            Assert.Contains("2 matching cards", refused.Message, StringComparison.Ordinal);
+        }
+        Assert.True(source!.Ready);
+    }
+
+    [Fact]
     public void RuntimeCardMetadataUsesTheCompiledSnapshot()
     {
         var authored = new HashSet<string>(StringComparer.Ordinal) { "01080" };

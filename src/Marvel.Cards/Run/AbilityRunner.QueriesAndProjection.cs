@@ -412,8 +412,10 @@ public sealed partial class AbilityRunner
         {
             return null;
         }
-        var found = CardsIn(node, cast);
-        return found.Count switch
+        return OneSearchedCard(CardsIn(node, cast), cast);
+    }
+
+    private static Card? OneSearchedCard(IReadOnlyList<Card> found, Cast cast) => found.Count switch
         {
             0 => null,
             1 => found[0],
@@ -421,7 +423,6 @@ public sealed partial class AbilityRunner
                 $"'{cast.Source.FaceId}' searched and found {found.Count} matching cards; "
                 + "rr:search.1 gives the player that choice and asking is not implemented"),
         };
-    }
 
     private static bool SingularAreaQueryIsStable(
         AbilityNode query, Cast cast)
@@ -431,7 +432,11 @@ public sealed partial class AbilityRunner
             return true;
         }
 
-        var areas = CardsInAreaTypes(query, cast);
+        return SingularAreaQueryIsStable(CardsInAreaTypes(query, cast), cast);
+    }
+
+    private static bool SingularAreaQueryIsStable(IReadOnlySet<DeckType> areas, Cast cast)
+    {
         bool priorCanChange = EffectsMayChangeAnyArea(
             cast.PriorSteps, areas, cast);
         bool paymentCanChange = cast.PaymentCost is { } cost

@@ -444,6 +444,11 @@ public sealed partial class AbilityRunner
             return 0;
         }
 
+        return StartingHealth(identity, cast);
+    }
+
+    private static long StartingHealth(Card identity, Cast cast)
+    {
         if (FacedownDrones.Kind(identity, cast.World.Facts)
             is not (CardKind.Hero or CardKind.AlterEgo))
         {

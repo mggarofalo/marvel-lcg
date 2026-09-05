@@ -582,7 +582,7 @@ public sealed partial class AbilityRunner : ICardAbilities
                         ability.Cost is not null
                         || world.Facts.Kind(card.FaceId) == CardKind.Event,
                         CompiledCost(ability));
-                    if ((ability.When is not null && !Test(ability.When, eligibility))
+                    if (!WhenHolds(ability, eligibility)
                         || (controller >= 0 && !CanInitiate(ability, eligibility)))
                     {
                         continue;
@@ -997,7 +997,7 @@ public sealed partial class AbilityRunner : ICardAbilities
                     || !Available(world, card, ability)
                     || !InForm(world, player, ability.Trigger.Form)
                     || !Payable(world, card, player, CompiledCost(ability))
-                    || (ability.When is not null && !Test(ability.When, eligibility)))
+                    || !WhenHolds(ability, eligibility))
                 {
                     continue;
                 }
@@ -1207,7 +1207,7 @@ public sealed partial class AbilityRunner : ICardAbilities
                 && Available(world, holder, candidate)
                 && InForm(world, player, candidate.Trigger.Form)
                 && Payable(world, holder, player, CompiledCost(candidate))
-                && (candidate.When is null || Test(candidate.When, eligibility));
+                && WhenHolds(candidate, eligibility);
         })
             ?? throw new RulesNotImplementedException(
                 $"card {card} has no resource ability left to use this round");
@@ -2153,7 +2153,7 @@ public sealed partial class AbilityRunner : ICardAbilities
         return MayInitiate(world, ability, card, player)
         && Available(world, card, ability)
         && InForm(world, player, ability.Trigger.Form)
-        && (ability.When is null || Test(ability.When, eligibility))
+        && WhenHolds(ability, eligibility)
         && CanInitiate(ability, eligibility);
     }
 

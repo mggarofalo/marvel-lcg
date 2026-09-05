@@ -6,6 +6,39 @@ namespace Marvel.Cards.Run;
 
 public sealed partial class AbilityRunner
 {
+    private static Card? Find(AbilityCardSelection selector, Cast cast)
+    {
+        if (selector is AbilityCardSelection.Bound bound) return Named(bound.Binding, cast);
+        if (selector is AbilityCardSelection.Titled titled)
+        {
+            var found = ReferencedByTitle(titled.Title, cast);
+            return found.Count switch
+            {
+                0 => null,
+                1 => found[0],
+                _ => throw new RulesNotImplementedException(
+                    $"'{cast.Source.FaceId}' refers to {found.Count} cards titled '{titled.Title}' where one card is required"),
+            };
+        }
+        if (selector is AbilityCardSelection.Query { Kind:
+            AbilityCardQuery.Villain or AbilityCardQuery.MainScheme or AbilityCardQuery.YourAsideMinion
+            or AbilityCardQuery.YourAsideSideScheme or AbilityCardQuery.TopmostTechInChosenDiscard } query)
+        {
+            return QueryCards(query.Kind, cast).SingleOrDefault();
+        }
+        if (selector is AbilityCardSelection.InAreas areas)
+        {
+            if (cast.CheckingInitiation
+                && !SingularAreaQueryIsStable(areas.Areas.Select(area => Area(area, cast).Type).ToHashSet(), cast))
+            {
+                return null;
+            }
+            return OneSearchedCard(CardsIn(areas, cast), cast);
+        }
+        throw new RulesNotImplementedException(
+            $"'{cast.Source.FaceId}' uses a selector whose single-card resolution is not implemented");
+    }
+
     private static IReadOnlyList<Card> Every(AbilityCardSelection selector, Cast cast) => selector switch
     {
         AbilityCardSelection.Bound bound => Named(bound.Binding, cast) is { } card ? [card] : [],
