@@ -1142,7 +1142,7 @@ public sealed partial class AbilityRunner
             && TraceCardNamed(node.Require("card"), cast) is { } entering)
         {
             if (cast.Abilities is AbilityRunner runner
-                && runner.On(entering.Card).Any(ability =>
+                && runner.CompiledOn(entering.Card).Any(ability =>
                     ability.Trigger.Timing == AbilityType.Constant))
             {
                 // The card is intentionally not moved while eligibility is

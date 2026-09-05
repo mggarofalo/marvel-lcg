@@ -646,7 +646,7 @@ public sealed partial class AbilityRunner
                 return reachability;
             }
             if (cast.Abilities is AbilityRunner runner
-                && runner.On(card).Any(ability =>
+                && runner.CompiledOn(card).Any(ability =>
                     ability.Trigger.Timing == AbilityType.Constant))
             {
                 throw new RulesNotImplementedException(
@@ -1077,7 +1077,7 @@ public sealed partial class AbilityRunner
                     cast.World, source, new Occurrence(0, []),
                     ControllerOf(cast.World, source), [], runner);
                 traced = 0;
-                foreach (var ability in runner.On(source).Where(ability =>
+                foreach (var ability in runner.CompiledOn(source).Where(ability =>
                     ability.Trigger.Timing == AbilityType.Constant))
                 {
                     if (!TryTraceConstantHealth(
@@ -1098,16 +1098,15 @@ public sealed partial class AbilityRunner
     }
 
     private static bool TryTraceConstantHealth(
-        AbilityNode node, Card character, Dictionary<int, long> schemeThreat,
+        AbilityEffect effect, Card character, Dictionary<int, long> schemeThreat,
         Cast cast, out long amount)
     {
-        if (node.Kind is "seq" or "and")
+        if (effect is AbilityEffect.Sequence or AbilityEffect.Simultaneous)
         {
             amount = 0;
-            foreach (var child in Nodes(node.Argument))
+            foreach (var child in StructuralChildren(effect))
             {
-                if (!TryTraceConstantHealth(
-                    child, character, schemeThreat, cast, out long childAmount))
+                if (!TryTraceConstantHealth(child, character, schemeThreat, cast, out long childAmount))
                 {
                     return false;
                 }
@@ -1115,63 +1114,45 @@ public sealed partial class AbilityRunner
             }
             return true;
         }
-        if (node.Kind == "if")
+        if (effect is AbilityEffect.Conditional conditional)
         {
-            if (!TryPowerTest(
-                Tree(node.Require("test")), schemeThreat, cast, out bool branch))
+            if (!TryPowerTest(conditional.Test, schemeThreat, cast, out bool branch))
             {
                 amount = 0;
                 return false;
             }
-            if (node.Field(branch ? "then" : "else") is not { } chosen)
+            if ((branch ? conditional.Then : conditional.Else) is not { } chosen)
             {
                 amount = 0;
                 return true;
             }
-            return TryTraceConstantHealth(
-                Tree(chosen), character, schemeThreat, cast, out amount);
+            return TryTraceConstantHealth(chosen, character, schemeThreat, cast, out amount);
         }
-        if (node.Kind == "grant"
-            && node.Field("keyword") is { } keyword
-            && string.Equals(Word(keyword), "health", StringComparison.Ordinal))
+        if (effect is AbilityEffect.GrantField { Until: null, Field: "health" } grant
+            && (grant.EachCard
+                ? Every(grant.Cards, cast).Any(card => card.ObjectId == character.ObjectId)
+                : Find(grant.Cards, cast)?.ObjectId == character.ObjectId))
         {
-            if (Find(node.Require("card"), cast)?.ObjectId != character.ObjectId)
-            {
-                amount = 0;
-                return true;
-            }
-            if (node.Field("amount") is { } granted)
-            {
-                return TryPowerAmount(granted, schemeThreat, cast, out amount);
-            }
-            amount = 1;
-            return true;
-        }
-        if (node.Kind == "grantEach"
-            && node.Field("keyword") is { } eachKeyword
-            && string.Equals(Word(eachKeyword), "health", StringComparison.Ordinal)
-            && Every(node.Require("cards"), cast).Any(card =>
-                card.ObjectId == character.ObjectId))
-        {
-            if (node.Field("amount") is { } granted)
-            {
-                return TryPowerAmount(granted, schemeThreat, cast, out amount);
-            }
-            amount = 1;
-            return true;
+            return TryPowerAmount(grant.Amount, schemeThreat, cast, out amount);
         }
         amount = 0;
         return true;
     }
 
     private static bool TryPowerTest(
-        AbilityNode test, Dictionary<int, long> schemeThreat,
+        AbilityCondition test, Dictionary<int, long> schemeThreat,
         Cast cast, out bool result)
     {
-        if (test.Kind is "and" or "or")
+        var operands = test switch
+        {
+            AbilityCondition.All all => all.Operands,
+            AbilityCondition.Any any => any.Operands,
+            _ => default,
+        };
+        if (!operands.IsDefault)
         {
             var values = new List<bool>();
-            foreach (var child in Nodes(test.Argument))
+            foreach (var child in operands)
             {
                 if (!TryPowerTest(child, schemeThreat, cast, out bool value))
                 {
@@ -1180,15 +1161,12 @@ public sealed partial class AbilityRunner
                 }
                 values.Add(value);
             }
-            result = test.Kind == "and"
-                ? values.All(value => value)
-                : values.Any(value => value);
+            result = test is AbilityCondition.All ? values.All(value => value) : values.Any(value => value);
             return true;
         }
-        if (test.Kind == "not")
+        if (test is AbilityCondition.Negated negated)
         {
-            if (!TryPowerTest(
-                Tree(test.Argument), schemeThreat, cast, out bool value))
+            if (!TryPowerTest(negated.Operand, schemeThreat, cast, out bool value))
             {
                 result = false;
                 return false;
@@ -1196,16 +1174,14 @@ public sealed partial class AbilityRunner
             result = !value;
             return true;
         }
-        if (test.Kind == "atLeast"
-            && TryPowerAmount(
-                test.Require("value"), schemeThreat, cast, out long valueAt)
-            && TryPowerAmount(
-                test.Require("count"), schemeThreat, cast, out long count))
+        if (test is AbilityCondition.AtLeast comparison
+            && TryPowerAmount(comparison.Value, schemeThreat, cast, out long valueAt)
+            && TryPowerAmount(comparison.Count, schemeThreat, cast, out long count))
         {
             result = valueAt >= count;
             return true;
         }
-        if (!ReadsChangedThreat(test.Argument, schemeThreat, cast))
+        if (!ReadsChangedThreat(test, schemeThreat, cast))
         {
             result = Test(test, cast);
             return true;
@@ -1215,39 +1191,45 @@ public sealed partial class AbilityRunner
     }
 
     private static bool TryPowerAmount(
-        AbilityValue value, Dictionary<int, long> schemeThreat,
+        AbilityNumber number, Dictionary<int, long> schemeThreat,
         Cast cast, out long amount)
     {
-        if (!ReadsChangedThreat(value, schemeThreat, cast))
+        if (!ReadsChangedThreat(number, schemeThreat, cast))
         {
-            amount = Amount(value, cast);
+            amount = Amount(number, cast);
             return true;
         }
-        if (value is AbilityValue.Map)
+        if (number is AbilityNumber.CardValue { Property: AbilityCardNumberProperty.Threat } value
+            && Find(value.Card, cast) is { } scheme)
         {
-            var node = Tree(value);
-            if (node.Kind == "tokensOn"
-                && Find(node.Argument, cast) is { } scheme)
-            {
-                amount = TraceThreat(schemeThreat, scheme);
-                return true;
-            }
+            amount = TraceThreat(schemeThreat, scheme);
+            return true;
         }
         amount = 0;
         return false;
     }
 
     private static bool ReadsChangedThreat(
-        AbilityValue value, Dictionary<int, long> schemeThreat,
-        Cast cast) => value switch
+        AbilityNumber number, Dictionary<int, long> schemeThreat, Cast cast) => number switch
         {
-            AbilityValue.Map map => map.Entries.Any(pair =>
-                string.Equals(pair.Key, "tokensOn", StringComparison.Ordinal)
-                    && Find(pair.Value, cast) is { } scheme
-                    && schemeThreat.ContainsKey(scheme.ObjectId)
-                || ReadsChangedThreat(pair.Value, schemeThreat, cast)),
-            AbilityValue.List list => list.Values.Any(item =>
-                ReadsChangedThreat(item, schemeThreat, cast)),
+            AbilityNumber.CardValue { Property: AbilityCardNumberProperty.Threat } value =>
+                Find(value.Card, cast) is { } scheme && schemeThreat.ContainsKey(scheme.ObjectId),
+            AbilityNumber.Sum sum => sum.Operands.Any(value => ReadsChangedThreat(value, schemeThreat, cast)),
+            AbilityNumber.Minimum minimum => minimum.Operands.Any(value => ReadsChangedThreat(value, schemeThreat, cast)),
+            AbilityNumber.Product product => product.Operands.Any(value => ReadsChangedThreat(value, schemeThreat, cast)),
+            AbilityNumber.Conditional conditional => ReadsChangedThreat(conditional.Test, schemeThreat, cast)
+                || ReadsChangedThreat(conditional.Then, schemeThreat, cast) || ReadsChangedThreat(conditional.Else, schemeThreat, cast),
+            _ => false,
+        };
+
+    private static bool ReadsChangedThreat(
+        AbilityCondition condition, Dictionary<int, long> schemeThreat, Cast cast) => condition switch
+        {
+            AbilityCondition.All all => all.Operands.Any(test => ReadsChangedThreat(test, schemeThreat, cast)),
+            AbilityCondition.Any any => any.Operands.Any(test => ReadsChangedThreat(test, schemeThreat, cast)),
+            AbilityCondition.Negated negated => ReadsChangedThreat(negated.Operand, schemeThreat, cast),
+            AbilityCondition.AtLeast comparison => ReadsChangedThreat(comparison.Value, schemeThreat, cast)
+                || ReadsChangedThreat(comparison.Count, schemeThreat, cast),
             _ => false,
         };
 
