@@ -361,7 +361,7 @@ public sealed partial class AbilityRunner
                 break;
 
             case "resolveSpecials":
-                if (Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast).Count > 0)
+                if (ResolveCards(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast).Count > 0)
                 {
                     SuspendForChoice(node, cast);
                 }
@@ -397,12 +397,8 @@ public sealed partial class AbilityRunner
                         $"'{cast.Source.FaceId}' delays an effect and no enemy is activating");
                 }
 
-                if (!((AbilityRunner)cast.Abilities).activationEffects.TryGetValue(
-                    current.Id, out var waiting))
-                {
-                    ((AbilityRunner)cast.Abilities).activationEffects[current.Id] = waiting = [];
-                }
-                waiting.Add(new ActivationEffect(
+                ((AbilityRunner)cast.Abilities).RuntimeFor(cast.World).AfterActivation(
+                    current.Id, new ActivationEffect(
                     cast.Source.ObjectId, cast.Player, cast.Tier,
                     EffectBody(node),
                     cast.Altered?.ObjectId ?? -1,
@@ -412,18 +408,7 @@ public sealed partial class AbilityRunner
 
             case "if":
                 var tested = ConditionalOf(node, cast).Test;
-                bool wasObserving = cast.ObservingInformation;
-                cast.SetObservingInformation(true);
-                bool condition;
-                try
-                {
-                    condition = Test(tested, cast);
-                }
-                finally
-                {
-                    cast.SetObservingInformation(wasObserving);
-                }
-                var branch = condition ? "then" : "else";
+                var branch = ResolveCondition(tested, cast) ? "then" : "else";
                 if (ConditionalBranch(node, branch) is { } taken)
                 {
                     RunChild(taken, $"if:{branch}", cast);
@@ -463,7 +448,7 @@ public sealed partial class AbilityRunner
                 break;
 
             case "thwartSchemes":
-                var schemes = Every(EffectOf<AbilityEffect.ThwartGroup>(node, cast).Schemes, cast);
+                var schemes = ResolveCards(EffectOf<AbilityEffect.ThwartGroup>(node, cast).Schemes, cast);
                 if (schemes.Count > 0)
                 {
                     cast.Choose(schemes[0]);
@@ -489,11 +474,6 @@ public sealed partial class AbilityRunner
         or "attack" or "defense" or "thwart" or "thwartSchemes"
         or "placeThreat" or "enemyAttacks" or "enemySchemes");
 
-    private static bool PaidWith(Cast cast, string resource) =>
-        cast.Payment.Contains(resource[0])
-        || cast.World.Effects.Active().Any(effect =>
-            effect.Card == cast.Source.ObjectId
-            && string.Equals(effect.Kind, "paid:" + resource, StringComparison.Ordinal));
 
     /// <summary>
     /// "Deal each player a facedown encounter card" — <c>rr:deal</c>.
@@ -578,7 +558,7 @@ public sealed partial class AbilityRunner
     /// </remarks>
     private static void PutIntoPlay(AbilityEffect.PutIntoPlay placement, Cast cast)
     {
-        var card = Find(placement.Card, cast)
+        var card = ResolveCard(placement.Card, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would put a card into play that is not there");
 
@@ -641,7 +621,7 @@ public sealed partial class AbilityRunner
         // "Stun **each hero**" and "stun your hero" are the same node with a
         // different query, the way `placeThreat` names one scheme or all of
         // them: `Every` answers both.
-        foreach (var host in Every(status.Cards, cast))
+        foreach (var host in ResolveCards(status.Cards, cast))
         {
             GiveStatus(status.Status, cast, host);
         }
@@ -670,7 +650,7 @@ public sealed partial class AbilityRunner
     // card or game element".
     private static void AttachTo(AbilityCardSelection selection, Cast cast)
     {
-        var host = Find(selection, cast)
+        var host = ResolveCard(selection, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' attaches to a card that is not there");
 

@@ -157,6 +157,12 @@ These maps are syntax, not the runtime's definition of an operation.
 `AbilityProgram`. Constructing an `AbilityRunner` performs that lowering before
 the book enters gameplay.
 
+A host can lower once and pass the same `AbilityProgram` to several runners.
+The program holds definitions, not game state. Each runner associates delayed
+activation work with the exact `World` that registered it. Activation ids and
+card ids cannot identify work in another game. The association uses weak keys,
+so retaining a runner does not retain abandoned worlds.
+
 The internal vocabulary has closed types for effects, costs, selectors,
 conditions and numbers. Lowering rejects unknown names, missing arguments and
 invalid shapes throughout the tree, including branches a particular game never
@@ -269,6 +275,30 @@ This preserves the engine contract:
 No gameplay thread blocks while waiting for input. Replaying the same decisions
 against the same seed reaches the same continuation points.
 
+Delayed activation effects live in `AbilityGameRuntime`, separately from the
+compiled program. Completing an activation consumes its ordered list before
+running the effects. Continuation result maps and card bindings remain local to
+their resolution; agenda continuations capture the data needed to resume them.
+
+Card and selector evaluation uses `AbilityQueryContext`, which captures binding
+incarnations and ordered power targets while reading the board in place. The
+query services receive no event sink or execution continuation.
+`AbilityExpressionContext` also captures result bindings, discarded cards,
+payment and the current power amount. Numeric and predicate evaluation use
+these inputs through the concrete `AbilityExpressionEvaluation` collaborator.
+
+Each evaluation returns its information observations. Live effect consumers
+publish them when resolving a number, condition or card selection. Repetition
+counts and per-card alteration conditions use the same boundary. Legality,
+projection and prompt construction do not publish observations. Short-circuited
+branches neither read cards nor report exposure.
+
+Preflight can refuse a singular area lookup through a narrow admission policy.
+That policy receives only the requested area types. It cannot execute an effect
+through the evaluator. Counter-placement preflight admits its numeric reads
+before payment, using separate candidate bindings when an earlier choice is
+pending. Live resolution recomputes the amount from the resulting state.
+
 ## Costs and legality
 
 Target selection and payment are separate. A target answers what the effect will
@@ -277,6 +307,16 @@ act on. A payment records what the player spent to initiate it.
 The engine preflights an ability before offering it. It checks the printed form,
 live conditions, target availability, limits, maxima and ability to pay. An
 offered affordance must remain legal when taken against the same state.
+
+`AbilityReachabilityContext` holds immutable assumptions for one speculative
+path: possible prior effects, payment changes, form changes and selected cards.
+Sequence steps and continuation candidates receive separate snapshots. A child
+probe cannot overwrite its parent's assumptions or leave a mode set afterward.
+
+`AbilityInitiationEvidence` holds the checks that live resolution must retain,
+including label validation and scoped target exceptions. It belongs to one
+ability resolution, not the shared program. Payment or suspension cannot erase
+an exception already established before the cost.
 
 Costs are atomic where the rules require them to be. A failed component does not
 leave earlier resources, cards or exhaustions spent. When the protocol cannot

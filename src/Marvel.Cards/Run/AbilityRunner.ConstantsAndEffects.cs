@@ -136,14 +136,14 @@ public sealed partial class AbilityRunner
     private static void GrantUntil(
         AbilityCardSelection card, string kind, AbilityNumber amount, string until, Cast cast)
     {
-        var target = Find(card, cast)
+        var target = ResolveCard(card, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would grant to a card that is not there");
         EnsureLastingPeriodOpen(until, cast);
         cast.World.Effects.Register(new ContinuousEffect(
             EffectSource.LastingEffect,
             Kind: kind,
-            Amount: Amount(amount, cast),
+            Amount: ResolveAmount(amount, cast),
             Card: cast.Source.ObjectId,
             Affects: target.ObjectId,
             Lasts: Duration.UntilEndOf(until)));
@@ -185,7 +185,7 @@ public sealed partial class AbilityRunner
 
     private static void DelayUntil(AbilityEffect.DelayedDiscard delayed, Cast cast)
     {
-        var target = Find(delayed.Card, cast)
+        var target = ResolveCard(delayed.Card, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would delay a discard of a card that is not there");
 
@@ -199,7 +199,7 @@ public sealed partial class AbilityRunner
 
     private static void Discard(AbilityCardSelection selector, Cast cast)
     {
-        if (Find(selector, cast) is { } target)
+        if (ResolveCard(selector, cast) is { } target)
         {
             // rr:target.2 lets a multi-target ability initiate when at least
             // one target is valid. A different component can therefore have
@@ -270,7 +270,7 @@ public sealed partial class AbilityRunner
     /// </remarks>
     private static void RemoveFromGame(AbilityCardSelection selection, Cast cast)
     {
-        var card = Find(selection, cast)
+        var card = ResolveCard(selection, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would remove a card that is not there");
 
@@ -321,7 +321,7 @@ public sealed partial class AbilityRunner
     /// </remarks>
     private static void Soak(AbilityCardSelection card, Cast cast)
     {
-        var onto = Find(card, cast)
+        var onto = ResolveCard(card, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would soak damage onto a card that is not there");
 
@@ -343,7 +343,7 @@ public sealed partial class AbilityRunner
     /// </remarks>
     private static void Exhaust(AbilityCardSelection cards, Cast cast)
     {
-        foreach (var target in Every(cards, cast))
+        foreach (var target in ResolveCards(cards, cast))
         {
             Exhaust(target, cast);
         }
@@ -361,7 +361,7 @@ public sealed partial class AbilityRunner
 
     private static void Ready(AbilityCardSelection cards, Cast cast)
     {
-        foreach (var target in Every(cards, cast).Where(target =>
+        foreach (var target in ResolveCards(cards, cast).Where(target =>
             !target.Ready
             && cast.Abilities.CanReady(cast.World, target, cast.Source)))
         {
@@ -400,7 +400,7 @@ public sealed partial class AbilityRunner
 
     private static void RemoveCounters(AbilityEffect.RemoveCounters removal, Cast cast)
     {
-        var card = Find(removal.Card, cast)
+        var card = ResolveCard(removal.Card, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' cannot find the card paying its counter cost");
         RemoveCounters(card, removal.Counter, removal.Count, cast);
@@ -476,11 +476,7 @@ public sealed partial class AbilityRunner
     /// that physical counter.
     /// </remarks>
     private static long CounterCount(Card card, string type) =>
-        string.Equals(type, "allPurpose", StringComparison.Ordinal)
-            ? card.Tokens
-                .Where(pair => pair.Key.StartsWith("c_", StringComparison.Ordinal))
-                .Sum(pair => pair.Value)
-            : card.Tokens.GetValueOrDefault("c_" + type);
+        AbilityExpressionEvaluation.CounterCount(card, type);
 
     /// <summary>Resolves the physical counter removed by a cost.</summary>
     /// <remarks>
@@ -520,7 +516,7 @@ public sealed partial class AbilityRunner
         cast.World.Effects.Register(new ContinuousEffect(
             EffectSource.LastingEffect,
             Kind: "preventDamage",
-            Amount: Amount(prevention.Amount, cast),
+            Amount: ResolveAmount(prevention.Amount, cast),
             Card: cast.Source.ObjectId,
             Affects: target,
             Lasts: new Duration(Uses: 1)));
@@ -623,7 +619,7 @@ public sealed partial class AbilityRunner
     {
         var deck = Area(shuffle.Deck, cast);
         bool applied = false;
-        foreach (var card in Every(shuffle.Cards, cast))
+        foreach (var card in ResolveCards(shuffle.Cards, cast))
         {
             var from = card.Area;
             World.MoveToTop(card, deck);
@@ -779,7 +775,7 @@ public sealed partial class AbilityRunner
     private static void ForEach(AbilityEffect node, Cast cast)
     {
         var instruction = ForEachOf(node, cast);
-        long count = ForEachCount(node, cast);
+        long count = NonNegativeForEachCount(ResolveAmount(instruction.Count, cast));
         if (count == 0)
         {
             return;
@@ -843,7 +839,7 @@ public sealed partial class AbilityRunner
     private static void EachTime(AbilityEffect node, Cast cast)
     {
         var preceding = EachTimePreceding(node, cast);
-        long requested = Amount(preceding.Count, cast);
+        long requested = ResolveAmount(preceding.Count, cast);
         if (requested < 0)
         {
             throw new AbilityException("'eachTime' needs a non-negative discard count");
@@ -994,7 +990,7 @@ public sealed partial class AbilityRunner
             cast.Discarded.Add(discarded);
             cast.BindAlteration(discarded);
 
-            if (!Test(instruction.When, cast))
+            if (!ResolveCondition(instruction.When, cast))
             {
                 continue;
             }

@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Marvel.Cards.Dsl;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
@@ -47,29 +48,21 @@ public sealed partial class AbilityRunner
     /// <summary>Whether one authored ability can begin before any cost is paid.</summary>
     private static bool CanInitiate(CompiledCardAbility ability, Cast cast)
     {
-        bool outer = cast.CheckingInitiation;
-        cast.SetCheckingInitiation(true);
-        try
+        cast = cast.ForReachability(cast.Reachability with { CheckingInitiation = true });
+        if (!CanInitiateLabels(ability, cast))
         {
-            if (!CanInitiateLabels(ability, cast))
-            {
-                return false;
-            }
-            cast.LabelsPreflighted = true;
-            if (ability.Labels.Length > 0
-                && LabeledAbilities.WouldBeCancelled(
-                    cast.World, cast.World.Facts, Resolver(cast),
-                    cast.Source, ability.Labels!))
-            {
-                return true;
-            }
-            return CanInitiate(ability.Effect, cast)
-                && TargetLegalityOf(ability.Effect, cast) != TargetLegality.Invalid;
+            return false;
         }
-        finally
+        cast.LabelsPreflighted = true;
+        if (ability.Labels.Length > 0
+            && LabeledAbilities.WouldBeCancelled(
+                cast.World, cast.World.Facts, Resolver(cast),
+                cast.Source, ability.Labels!))
         {
-            cast.SetCheckingInitiation(outer);
+            return true;
         }
+        return CanInitiate(ability.Effect, cast)
+            && TargetLegalityOf(ability.Effect, cast) != TargetLegality.Invalid;
     }
 
     /// <summary>Whether an ability envelope can establish every labeled lifecycle.</summary>
@@ -176,14 +169,14 @@ public sealed partial class AbilityRunner
     private static bool CanInitiate(AbilityEffect node, Cast cast)
     {
         if (HasNestedEachPlayer(
-            node, cast, bindingMayChange: cast.PriorBindingMayChange))
+            node, cast, bindingMayChange: cast.Reachability.PriorBindingMayChange))
         {
             throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' nests one each-player frame inside another, "
                 + "which is not implemented");
         }
         if (ContainsUnsupportedPower(
-            node, cast, bindingMayChange: cast.PriorBindingMayChange))
+            node, cast, bindingMayChange: cast.Reachability.PriorBindingMayChange))
         {
             throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' suspends inside a labelled power, "
@@ -207,71 +200,54 @@ public sealed partial class AbilityRunner
     private static bool CanInitiateSequence(AbilityEffect node, Cast cast)
     {
         var steps = OrderedEffects(node).ToList();
-        bool outerContinuation = cast.HasContinuation;
-        bool outerPriorMutation = cast.PriorStepMayMutate;
-        var outerPriorSteps = cast.PriorSteps;
-        ulong outerPriorFormChanges = cast.PriorFormsMayChange;
-        bool outerPriorBinding = cast.PriorBindingMayChange;
-        var outerPriorCandidates = cast.PriorBindingCandidates;
-        bool outerPriorBindingMayBeEmpty = cast.PriorBindingMayBeEmpty;
-        ulong priorFormChanges = outerPriorFormChanges;
-        bool priorBinding = outerPriorBinding;
+        var before = cast.Reachability;
+        ulong priorFormChanges = before.PriorFormsMayChange;
+        bool priorBinding = before.PriorBindingMayChange;
         var priorCandidates = new BindingCandidateState(
-            outerPriorCandidates,
-            outerPriorBindingMayBeEmpty
-                || outerPriorCandidates.Count == 0 && cast.Chosen is null);
-        var priorSteps = outerPriorSteps.ToList();
-        try
+            before.PriorBindingCandidates,
+            before.PriorBindingMayBeEmpty
+                || before.PriorBindingCandidates.Count == 0 && cast.Chosen is null);
+        var priorSteps = before.PriorSteps.ToList();
+        for (int step = 0; step < steps.Count; step++)
         {
-            for (int step = 0; step < steps.Count; step++)
+            var scope = cast.ForReachability(before with
             {
-                cast.SetContinuation(outerContinuation || step < steps.Count - 1);
-                cast.SetPriorStepMayMutate(outerPriorMutation || step > 0);
-                cast.SetPriorSteps(priorSteps);
-                cast.SetPriorFormsMayChange(priorFormChanges);
-                cast.SetPriorBindingMayChange(priorBinding);
-                cast.SetPriorBindingCandidates(priorCandidates.Cards);
-                cast.SetPriorBindingMayBeEmpty(priorCandidates.MayBeEmpty);
-                if (step > 0)
-                {
-                    PreflightDependentOutcomesAfterMutation(steps[step], cast);
-                }
-                if (!CanInitiate(steps[step], cast))
-                {
-                    return false;
-                }
-                if (step + 1 < steps.Count
-                    && !ChoicesHaveStableAreaContinuation(
-                        steps[step], steps.Skip(step + 1).ToList(), cast))
-                {
-                    return false;
-                }
-                priorFormChanges = FormsMayDifferAfter(
-                    steps[step], cast, priorFormChanges, priorBinding);
-                priorBinding = BindingMayChangeAfter(
-                    steps[step], cast, priorBinding);
-                priorCandidates = steps[step].OperationName() == "choose"
-                    && step + 1 < steps.Count
-                        ? ChoiceBindingCandidatesAfter(
-                            steps[step], cast, priorCandidates,
-                            steps.Skip(step + 1).ToList())
-                        : BindingCandidatesAfter(
-                            steps[step], cast, priorCandidates);
-                priorSteps.Add(steps[step]);
+                PriorStepMayMutate = before.PriorStepMayMutate || step > 0,
+                PriorSteps = priorSteps.ToImmutableList(),
+                PriorFormsMayChange = priorFormChanges,
+                PriorBindingMayChange = priorBinding,
+                PriorBindingCandidates = priorCandidates.Cards.ToImmutableList(),
+                PriorBindingMayBeEmpty = priorCandidates.MayBeEmpty,
+            });
+            scope.SetContinuation(cast.HasContinuation || step < steps.Count - 1);
+            if (step > 0)
+            {
+                PreflightDependentOutcomesAfterMutation(steps[step], scope);
             }
-
-            return true;
+            if (!CanInitiate(steps[step], scope))
+            {
+                return false;
+            }
+            if (step + 1 < steps.Count
+                && !ChoicesHaveStableAreaContinuation(
+                    steps[step], steps.Skip(step + 1).ToList(), scope))
+            {
+                return false;
+            }
+            priorFormChanges = FormsMayDifferAfter(
+                steps[step], scope, priorFormChanges, priorBinding);
+            priorBinding = BindingMayChangeAfter(
+                steps[step], scope, priorBinding);
+            priorCandidates = steps[step].OperationName() == "choose"
+                && step + 1 < steps.Count
+                    ? ChoiceBindingCandidatesAfter(
+                        steps[step], scope, priorCandidates,
+                        steps.Skip(step + 1).ToList())
+                    : BindingCandidatesAfter(
+                        steps[step], scope, priorCandidates);
+            priorSteps.Add(steps[step]);
         }
-        finally
-        {
-            cast.SetContinuation(outerContinuation);
-            cast.SetPriorStepMayMutate(outerPriorMutation);
-            cast.SetPriorSteps(outerPriorSteps);
-            cast.SetPriorFormsMayChange(outerPriorFormChanges);
-            cast.SetPriorBindingMayChange(outerPriorBinding);
-            cast.SetPriorBindingCandidates(outerPriorCandidates);
-            cast.SetPriorBindingMayBeEmpty(outerPriorBindingMayBeEmpty);
-        }
+        return true;
     }
 
     private static bool ChoicesHaveStableAreaContinuation(
@@ -408,8 +384,8 @@ public sealed partial class AbilityRunner
         // continuation boundary now, while no cost has been paid, then use
         // only the currently active branch for ordinary target eligibility.
         var test = ConditionalOf(node, cast).Test;
-        bool paymentCanSwitch = cast.PaymentMayMutate && PaymentCanChange(test);
-        bool bindingCanSwitch = cast.PriorBindingMayChange
+        bool paymentCanSwitch = cast.Reachability.PaymentMayMutate && PaymentCanChange(test);
+        bool bindingCanSwitch = cast.Reachability.PriorBindingMayChange
             && BindingCanChange(test);
         bool stateCanSwitch = bindingCanSwitch
             || PriorStepCanChange(test, cast) || paymentCanSwitch;
@@ -455,10 +431,10 @@ public sealed partial class AbilityRunner
         AbilityCondition.Any any => any.Operands.Any(child =>
             PriorStepCanChange(child, cast)),
         AbilityCondition.Negated negated => PriorStepCanChange(negated.Operand, cast),
-        AbilityCondition.InForm form => cast.PriorBindingMayChange
+        AbilityCondition.InForm form => cast.Reachability.PriorBindingMayChange
                 && BindingCanChange(test)
-            || SeatMayChange(cast.PriorFormsMayChange, Seat(form.Player, cast)),
-        _ => cast.PriorStepMayMutate,
+            || SeatMayChange(cast.Reachability.PriorFormsMayChange, Seat(form.Player, cast)),
+        _ => cast.Reachability.PriorStepMayMutate,
     };
 
     /// <summary>Seats whose final form may differ after a reachable effect.</summary>
@@ -501,80 +477,72 @@ public sealed partial class AbilityRunner
             return after;
         }
 
-        ulong outer = cast.PriorFormsMayChange;
-        try
+        cast = cast.ForReachability(cast.Reachability with { PriorFormsMayChange = before });
+        if (node.OperationName() == "if")
         {
-            cast.SetPriorFormsMayChange(before);
-            if (node.OperationName() == "if")
+            var test = ConditionalOf(node, cast).Test;
+            bool canSwitch = bindingMayChange
+                    && BindingCanChange(test)
+                || PriorStepCanChange(test, cast)
+                || cast.Reachability.PaymentMayMutate && PaymentCanChange(test);
+            var branches = canSwitch
+                ? ConditionalBranches((AbilityEffect.Conditional)node).Where(value => value is not null)
+                : ConditionalBranch(node, Test(test, cast) ? "then" : "else") is { } active
+                    ? [active]
+                    : [];
+            return branches.Select(branch =>
+                    FormsMayDifferAfter(
+                        branch, cast, before, bindingMayChange))
+                .DefaultIfEmpty(before)
+                .Aggregate((left, right) => left | right);
+        }
+        if (node.OperationName() == "choose")
+        {
+            return ((AbilityEffect.Choose)node).Options.Select(option =>
+                    FormsMayDifferAfter(
+                        option, cast, before, bindingMayChange))
+                .DefaultIfEmpty(before)
+                .Aggregate((left, right) => left | right);
+        }
+        if (node.OperationName() == "eachPlayer")
+        {
+            int original = cast.Player;
+            try
             {
-                var test = ConditionalOf(node, cast).Test;
-                bool canSwitch = bindingMayChange
-                        && BindingCanChange(test)
-                    || PriorStepCanChange(test, cast)
-                    || cast.PaymentMayMutate && PaymentCanChange(test);
-                var branches = canSwitch
-                    ? ConditionalBranches((AbilityEffect.Conditional)node).Where(value => value is not null)
-                    : ConditionalBranch(node, Test(test, cast) ? "then" : "else") is { } active
-                        ? [active]
-                        : [];
-                return branches.Select(branch =>
-                        FormsMayDifferAfter(
-                            branch, cast, before, bindingMayChange))
-                    .DefaultIfEmpty(before)
-                    .Aggregate((left, right) => left | right);
-            }
-            if (node.OperationName() == "choose")
-            {
-                return ((AbilityEffect.Choose)node).Options.Select(option =>
-                        FormsMayDifferAfter(
-                            option, cast, before, bindingMayChange))
-                    .DefaultIfEmpty(before)
-                    .Aggregate((left, right) => left | right);
-            }
-            if (node.OperationName() == "eachPlayer")
-            {
-                int original = cast.Player;
-                try
+                ulong possible = 0;
+                foreach (var order in PlayerPermutations(
+                    cast.World.PlayerOrder.ToList()))
                 {
-                    ulong possible = 0;
-                    foreach (var order in PlayerPermutations(
-                        cast.World.PlayerOrder.ToList()))
+                    ulong after = before;
+                    foreach (int player in order)
                     {
-                        ulong after = before;
-                        foreach (int player in order)
-                        {
-                            cast.RestorePlayer(player);
-                            cast.SetPriorFormsMayChange(after);
-                            after = FormsMayDifferAfter(
-                                EffectBody(node), cast, after,
-                                bindingMayChange);
-                        }
-                        possible |= after;
+                        cast.RestorePlayer(player);
+                        cast = cast.ForReachability(cast.Reachability with { PriorFormsMayChange = after });
+                        after = FormsMayDifferAfter(
+                            EffectBody(node), cast, after,
+                            bindingMayChange);
                     }
-                    return possible;
+                    possible |= after;
                 }
-                finally
-                {
-                    cast.RestorePlayer(original);
-                }
+                return possible;
             }
-
-            ulong state = before;
-            bool childBindingMayChange = bindingMayChange
-                || node.OperationName() is "chooseCard" or "thwartSchemes"
-                    or "thwartDifferentSchemes" or "legalPractice";
-            foreach (var child in MutationChildren(node))
+            finally
             {
-                cast.SetPriorFormsMayChange(state);
-                state = FormsMayDifferAfter(
-                    child, cast, state, childBindingMayChange);
+                cast.RestorePlayer(original);
             }
-            return state;
         }
-        finally
+
+        ulong state = before;
+        bool childBindingMayChange = bindingMayChange
+            || node.OperationName() is "chooseCard" or "thwartSchemes"
+                or "thwartDifferentSchemes" or "legalPractice";
+        foreach (var child in MutationChildren(node))
         {
-            cast.SetPriorFormsMayChange(outer);
+            cast = cast.ForReachability(cast.Reachability with { PriorFormsMayChange = state });
+            state = FormsMayDifferAfter(
+                child, cast, state, childBindingMayChange);
         }
+        return state;
     }
 
     private static IEnumerable<IReadOnlyList<int>> PlayerPermutations(
@@ -613,7 +581,7 @@ public sealed partial class AbilityRunner
             var test = ConditionalOf(node, cast).Test;
             bool canSwitch = before && BindingCanChange(test)
                 || PriorStepCanChange(test, cast)
-                || cast.PaymentMayMutate && PaymentCanChange(test);
+                || cast.Reachability.PaymentMayMutate && PaymentCanChange(test);
             var branches = canSwitch
                 ? ConditionalBranches((AbilityEffect.Conditional)node).Where(value => value is not null)
                 : ConditionalBranch(node, Test(test, cast) ? "then" : "else") is { } active
@@ -684,7 +652,7 @@ public sealed partial class AbilityRunner
             bool canSwitch = before.Cards.Count > 0
                     && BindingCanChange(test)
                 || PriorStepCanChange(test, cast)
-                || cast.PaymentMayMutate && PaymentCanChange(test);
+                || cast.Reachability.PaymentMayMutate && PaymentCanChange(test);
             var branches = canSwitch
                 ? ConditionalBranches((AbilityEffect.Conditional)node).Where(value => value is not null)
                 : ConditionalBranch(node, Test(test, cast) ? "then" : "else") is { } active
@@ -825,36 +793,22 @@ public sealed partial class AbilityRunner
         Cast cast)
     {
         var suffix = new AbilityEffect.Sequence([.. continuation]);
-        var prior = cast.CaptureChosen();
-        var priorSelection = cast.CapturePlayerSelection();
-        var outerCandidates = cast.PriorBindingCandidates;
-        bool outerMayBeEmpty = cast.PriorBindingMayBeEmpty;
-        bool outerBindingMayChange = cast.PriorBindingMayChange;
-        try
+        var legal = candidates.Cards.Where(candidate =>
         {
-            var legal = candidates.Cards.Where(candidate =>
+            var scope = cast.ForReachability(cast.Reachability with
             {
-                cast.ChooseSelection(candidate);
-                cast.SetPriorBindingCandidates([candidate]);
-                cast.SetPriorBindingMayBeEmpty(false);
-                cast.SetPriorBindingMayChange(false);
-                return CanInitiateSequence(suffix, cast)
-                    && TargetLegalityOf(suffix, cast) != TargetLegality.Invalid;
-            }).ToList();
-            // An explicit empty option is the authored decline branch for
-            // “may.” It remains reachable rather than being silently removed;
-            // the enclosing sequence will reject it if the suffix needs a
-            // binding. Card-bearing alternatives can be filtered individually.
-            return new BindingCandidateState(legal, candidates.MayBeEmpty);
-        }
-        finally
-        {
-            cast.RestoreChosen(prior);
-            cast.RestorePlayerSelection(priorSelection);
-            cast.SetPriorBindingCandidates(outerCandidates);
-            cast.SetPriorBindingMayBeEmpty(outerMayBeEmpty);
-            cast.SetPriorBindingMayChange(outerBindingMayChange);
-        }
+                PriorBindingCandidates = [candidate],
+                PriorBindingMayBeEmpty = false,
+                PriorBindingMayChange = false,
+            });
+            scope.ChooseSelection(candidate);
+            return CanInitiateSequence(suffix, scope)
+                && TargetLegalityOf(suffix, scope) != TargetLegality.Invalid;
+        }).ToList();
+        // An explicit empty option is the authored decline branch for “may.”
+        // It remains reachable; the enclosing sequence rejects it if its
+        // suffix requires a binding. Card-bearing alternatives filter separately.
+        return new BindingCandidateState(legal, candidates.MayBeEmpty);
     }
 
     private static void PreflightContinuationBoundaries(AbilityEffect node, Cast cast)
@@ -1002,6 +956,7 @@ public sealed partial class AbilityRunner
         "chooseCard" => CanInitiateChooseCard(node, cast),
         "choose" => CanInitiateChoice(node, cast),
         "draw" => CanInitiateDraw(node, cast),
+        "placeCounters" => CanInitiateCounters((AbilityEffect.PlaceCounters)node, cast),
         "thwartDifferentSchemes" => Every(EffectOf<AbilityEffect.ThwartGroup>(node, cast).Schemes, cast).Count > 0,
         "legalPractice" => cast.World.Seats[cast.Player].Hand.Cards.Any(card =>
                 card.ObjectId != cast.Source.ObjectId)
@@ -1028,10 +983,39 @@ public sealed partial class AbilityRunner
         "grantUntil" => Find(GrantSelectionOf(node, cast), cast) is not null
             ? LastingPeriodIsOpen(node, cast)
             : !IsPlayerCard(cast)
-                && !cast.PaymentMayMutate
-                && !cast.PriorStepMayMutate,
+                && !cast.Reachability.PaymentMayMutate
+                && !cast.Reachability.PriorStepMayMutate,
         _ => true,
     };
+
+    private static bool CanInitiateCounters(AbilityEffect.PlaceCounters counters, Cast cast)
+    {
+        // Admit the reads before payment or preceding effects can change their
+        // candidates. Resolution computes the amount again; this is not a
+        // prediction of a result binding or of counters after payment.
+        if (BindingCanChange(counters.Count)
+            && (cast.Chosen is null || cast.Reachability.PriorBindingMayChange)
+            && cast.Reachability.PriorBindingCandidates.Count > 0)
+        {
+            foreach (var candidate in cast.Reachability.PriorBindingCandidates)
+            {
+                var probe = cast.ForReachability(cast.Reachability);
+                probe.ChooseSelection(candidate);
+                _ = Amount(counters.Count, probe);
+            }
+            if (cast.Reachability.PriorBindingMayBeEmpty)
+            {
+                var probe = cast.ForReachability(cast.Reachability);
+                probe.ChooseSelection(null);
+                _ = Amount(counters.Count, probe);
+            }
+        }
+        else
+        {
+            _ = Amount(counters.Count, cast);
+        }
+        return true;
+    }
 
     private static bool CanInitiateChooseCard(AbilityEffect node, Cast cast)
     {
@@ -1040,8 +1024,8 @@ public sealed partial class AbilityRunner
                 || (cast.PlayerSelection ?? cast.Chosen) is { Owner: >= 0 })
             && LegalCardChoices(node, cast).Count > 0;
 
-        if (cast.PriorBindingCandidates.Count == 0
-            && !cast.PriorBindingMayBeEmpty)
+        if (cast.Reachability.PriorBindingCandidates.Count == 0
+            && !cast.Reachability.PriorBindingMayBeEmpty)
         {
             return CanChooseFromCurrentBinding();
         }
@@ -1051,12 +1035,12 @@ public sealed partial class AbilityRunner
         try
         {
             bool any = false;
-            foreach (var candidate in cast.PriorBindingCandidates)
+            foreach (var candidate in cast.Reachability.PriorBindingCandidates)
             {
                 cast.ChooseSelection(candidate);
                 any |= CanChooseFromCurrentBinding();
             }
-            if (cast.PriorBindingMayBeEmpty)
+            if (cast.Reachability.PriorBindingMayBeEmpty)
             {
                 cast.ChooseSelection(null);
                 any |= CanChooseFromCurrentBinding();
@@ -1078,9 +1062,9 @@ public sealed partial class AbilityRunner
                 && CanDraw(node, cast);
 
         if (cast.Chosen is null && BindingCanChange(((AbilityEffect.Draw)node).Players)
-            && cast.PriorBindingCandidates.Count > 0)
+            && cast.Reachability.PriorBindingCandidates.Count > 0)
         {
-            if (cast.PriorBindingMayBeEmpty)
+            if (cast.Reachability.PriorBindingMayBeEmpty)
             {
                 return false;
             }
@@ -1088,7 +1072,7 @@ public sealed partial class AbilityRunner
             var priorSelection = cast.CapturePlayerSelection();
             try
             {
-                bool any = cast.PriorBindingCandidates.Any(candidate =>
+                bool any = cast.Reachability.PriorBindingCandidates.Any(candidate =>
                 {
                     cast.ChooseSelection(candidate);
                     return CanDrawFromBinding();
@@ -1108,7 +1092,7 @@ public sealed partial class AbilityRunner
     {
         var target = EffectOf<AbilityEffect.Power>(node, cast).Target!;
         if (cast.Chosen is null && BindingCanChange(target)
-            && cast.PriorBindingCandidates.Count > 0)
+            && cast.Reachability.PriorBindingCandidates.Count > 0)
         {
             return EveryCandidateCan(cast, () => CanTargetAttack(node, cast));
         }
@@ -1123,7 +1107,7 @@ public sealed partial class AbilityRunner
         var power = EffectOf<AbilityEffect.Power>(node, cast);
         var target = power.Target!;
         if (cast.Chosen is null && BindingCanChange(target)
-            && cast.PriorBindingCandidates.Count > 0)
+            && cast.Reachability.PriorBindingCandidates.Count > 0)
         {
             return EveryCandidateCan(cast, () => CanTargetThwart(node, cast));
         }
@@ -1161,7 +1145,7 @@ public sealed partial class AbilityRunner
 
     private static bool EveryCandidateCan(Cast cast, Func<bool> test)
     {
-        if (cast.PriorBindingMayBeEmpty)
+        if (cast.Reachability.PriorBindingMayBeEmpty)
         {
             return false;
         }
@@ -1169,7 +1153,7 @@ public sealed partial class AbilityRunner
         var priorSelection = cast.CapturePlayerSelection();
         try
         {
-            return cast.PriorBindingCandidates.All(candidate =>
+            return cast.Reachability.PriorBindingCandidates.All(candidate =>
             {
                 cast.ChooseSelection(candidate);
                 return test();
@@ -1264,7 +1248,7 @@ public sealed partial class AbilityRunner
             candidates.Any() ? TargetLegality.Valid : TargetLegality.Invalid;
 
         if (cast.Chosen is null
-            && cast.PriorBindingCandidates.Count > 0
+            && cast.Reachability.PriorBindingCandidates.Count > 0
             && BindingCanChange(node)
             && node.OperationName() is not ("seq" or "and" or "if" or "then" or "otherwise"
                 or "forEach" or "defense" or "choose" or "eachTime"
@@ -1395,7 +1379,7 @@ public sealed partial class AbilityRunner
     private static TargetLegality CandidateTargetLegality(
         AbilityEffect node, Cast cast)
     {
-        if (cast.PriorBindingMayBeEmpty)
+        if (cast.Reachability.PriorBindingMayBeEmpty)
         {
             return TargetLegality.Invalid;
         }
@@ -1404,7 +1388,7 @@ public sealed partial class AbilityRunner
         try
         {
             var outcomes = new List<TargetLegality>();
-            foreach (var candidate in cast.PriorBindingCandidates)
+            foreach (var candidate in cast.Reachability.PriorBindingCandidates)
             {
                 cast.ChooseSelection(candidate);
                 outcomes.Add(TargetLegalityOf(node, cast));
@@ -1427,21 +1411,14 @@ public sealed partial class AbilityRunner
     private static TargetLegality ChosenPlayerTargetLegality(
         AbilityEffect node, Cast cast)
     {
-        var outerCandidates = cast.PriorBindingCandidates;
-        try
-        {
-            if (outerCandidates.Count == 0)
+        var scope = cast.Reachability.PriorBindingCandidates.Count == 0
+            ? cast.ForReachability(cast.Reachability with
             {
-                cast.SetPriorBindingCandidates(
-                    cast.World.PlayerOrder.Select(player =>
-                        cast.World.Seats[player].IdentityCard).ToList());
-            }
-            return CandidateTargetLegality(node, cast);
-        }
-        finally
-        {
-            cast.SetPriorBindingCandidates(outerCandidates);
-        }
+                PriorBindingCandidates = cast.World.PlayerOrder.Select(player =>
+                    cast.World.Seats[player].IdentityCard).ToImmutableList(),
+            })
+            : cast;
+        return CandidateTargetLegality(node, scope);
     }
 
     private static TargetLegality SequenceTargetLegality(
@@ -1449,42 +1426,34 @@ public sealed partial class AbilityRunner
     {
         var found = new List<TargetLegality>();
         bool binding = bindingMayChange;
-        var outerCandidates = cast.PriorBindingCandidates;
-        bool outerMayBeEmpty = cast.PriorBindingMayBeEmpty;
-        var outerPriorSteps = cast.PriorSteps;
-        var priorSteps = outerPriorSteps.ToList();
+        var before = cast.Reachability;
+        var priorSteps = before.PriorSteps.ToList();
         var candidates = new BindingCandidateState(
-            outerCandidates,
-            outerMayBeEmpty
-                || outerCandidates.Count == 0 && cast.Chosen is null);
-        try
+            before.PriorBindingCandidates,
+            before.PriorBindingMayBeEmpty
+                || before.PriorBindingCandidates.Count == 0 && cast.Chosen is null);
+        var children = OrderedEffects(node).ToList();
+        for (int index = 0; index < children.Count; index++)
         {
-            var children = OrderedEffects(node).ToList();
-            for (int index = 0; index < children.Count; index++)
+            var child = children[index];
+            var scope = cast.ForReachability(before with
             {
-                var child = children[index];
-                cast.SetPriorSteps(priorSteps);
-                cast.SetPriorBindingCandidates(candidates.Cards);
-                cast.SetPriorBindingMayBeEmpty(candidates.MayBeEmpty);
-                found.Add(TargetLegalityOf(child, cast, binding));
-                binding = BindingMayChangeAfter(child, cast, binding);
-                candidates = child.OperationName() == "choose" && index + 1 < children.Count
-                    ? ChoiceBindingCandidatesAfter(
-                        child, cast, candidates,
-                        children.Skip(index + 1).ToList())
-                    : BindingCandidatesAfter(child, cast, candidates);
-                binding |= candidates.Cards.Count > 0
-                    || ContainsNode(child, "chooseCard", cast);
-                priorSteps.Add(child);
-            }
-            return CombineTargetLegality(found);
+                PriorSteps = priorSteps.ToImmutableList(),
+                PriorBindingCandidates = candidates.Cards.ToImmutableList(),
+                PriorBindingMayBeEmpty = candidates.MayBeEmpty,
+            });
+            found.Add(TargetLegalityOf(child, scope, binding));
+            binding = BindingMayChangeAfter(child, scope, binding);
+            candidates = child.OperationName() == "choose" && index + 1 < children.Count
+                ? ChoiceBindingCandidatesAfter(
+                    child, scope, candidates,
+                    children.Skip(index + 1).ToList())
+                : BindingCandidatesAfter(child, scope, candidates);
+            binding |= candidates.Cards.Count > 0
+                || ContainsNode(child, "chooseCard", scope);
+            priorSteps.Add(child);
         }
-        finally
-        {
-            cast.SetPriorBindingCandidates(outerCandidates);
-            cast.SetPriorBindingMayBeEmpty(outerMayBeEmpty);
-            cast.SetPriorSteps(outerPriorSteps);
-        }
+        return CombineTargetLegality(found);
     }
 
     private static TargetLegality CombineTargetLegality(
@@ -1539,7 +1508,7 @@ public sealed partial class AbilityRunner
 
     private static bool CanInitiateForEach(AbilityEffect node, Cast cast)
     {
-        bool stateMayChange = cast.PaymentMayMutate || cast.PriorStepMayMutate;
+        bool stateMayChange = cast.Reachability.PaymentMayMutate || cast.Reachability.PriorStepMayMutate;
         if (stateMayChange && AmountMayChange(ForEachOf(node, cast).Count))
         {
             throw new RulesNotImplementedException(
@@ -1597,7 +1566,7 @@ public sealed partial class AbilityRunner
     {
         var preceding = EachTimePreceding(node, cast);
         var authoredCount = preceding.Count;
-        if ((cast.PaymentMayMutate || cast.PriorStepMayMutate)
+        if ((cast.Reachability.PaymentMayMutate || cast.Reachability.PriorStepMayMutate)
             && AmountMayChange(authoredCount))
         {
             throw new RulesNotImplementedException(
@@ -1626,9 +1595,11 @@ public sealed partial class AbilityRunner
         || (node.OperationName() == "forEach" && AmountMayChange(ForEachOf(node, cast).Count))
         || ContinuationChildren(node).Any(child => ContainsMutableAmount(child, cast));
 
-    private static long ForEachCount(AbilityEffect node, Cast cast)
+    private static long ForEachCount(AbilityEffect node, Cast cast) =>
+        NonNegativeForEachCount(Amount(ForEachOf(node, cast).Count, cast));
+
+    private static long NonNegativeForEachCount(long count)
     {
-        long count = Amount(ForEachOf(node, cast).Count, cast);
         if (count < 0)
         {
             throw new AbilityException("'forEach' needs a non-negative 'count'");
@@ -1638,7 +1609,7 @@ public sealed partial class AbilityRunner
 
     private static bool SkipForEachPreflight(AbilityEffect node, Cast cast)
     {
-        if ((cast.PaymentMayMutate || cast.PriorStepMayMutate)
+        if ((cast.Reachability.PaymentMayMutate || cast.Reachability.PriorStepMayMutate)
             && AmountMayChange(ForEachOf(node, cast).Count))
         {
             throw new RulesNotImplementedException(
@@ -1672,7 +1643,7 @@ public sealed partial class AbilityRunner
         {
             return false;
         }
-        if ((cast.PaymentMayMutate || cast.PriorStepMayMutate)
+        if ((cast.Reachability.PaymentMayMutate || cast.Reachability.PriorStepMayMutate)
             && AmountMayChange(ForEachOf(node, cast).Count))
         {
             return false;

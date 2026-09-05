@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Marvel.Cards.Dsl;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
@@ -83,64 +84,12 @@ public sealed partial class AbilityRunner
 
         public void PaidWith(string resources) => Payment = resources;
 
-        /// <summary>Whether initiation payment may change outcome-relevant state.</summary>
-        public bool PaymentMayMutate { get; private set; }
+        public AbilityReachabilityContext Reachability { get; init; } = new();
 
-        public AbilityCost? PaymentCost { get; private set; }
-
-        public void SetPaymentMayMutate(bool value, AbilityCost? cost = null)
-        {
-            PaymentMayMutate = value;
-            PaymentCost = cost;
-        }
-
-        public bool CheckingInitiation { get; private set; }
-
-        public void SetCheckingInitiation(bool value) => CheckingInitiation = value;
-
-        public bool FilteringContinuationOption { get; private set; }
-
-        public void SetFilteringContinuationOption(bool value) =>
-            FilteringContinuationOption = value;
-
-        public IReadOnlyList<AbilityEffect> PriorSteps { get; private set; } = [];
-
-        public void SetPriorSteps(IReadOnlyList<AbilityEffect> steps) =>
-            PriorSteps = steps;
-
-        /// <summary>Whether an earlier sequence step may have changed the board.</summary>
-        public bool PriorStepMayMutate { get; private set; }
-
-        public void SetPriorStepMayMutate(bool value) => PriorStepMayMutate = value;
-
-        /// <summary>Seats whose form an earlier sequence step may change.</summary>
-        public ulong PriorFormsMayChange { get; private set; }
-
-        public void SetPriorFormsMayChange(ulong value) =>
-            PriorFormsMayChange = value;
-
-        /// <summary>Whether an earlier step may bind a selected game element.</summary>
-        public bool PriorBindingMayChange { get; private set; }
-
-        public void SetPriorBindingMayChange(bool value) =>
-            PriorBindingMayChange = value;
-
-        /// <summary>Cards an earlier unanswered selector may bind.</summary>
-        public IReadOnlyList<Card> PriorBindingCandidates { get; private set; } = [];
-
-        public void SetPriorBindingCandidates(IReadOnlyList<Card> value) =>
-            PriorBindingCandidates = value;
-
-        /// <summary>Whether a reachable binding path supplies no selected card.</summary>
-        public bool PriorBindingMayBeEmpty { get; private set; }
-
-        public void SetPriorBindingMayBeEmpty(bool value) =>
-            PriorBindingMayBeEmpty = value;
-
-        /// <summary>Whether an executing condition should record concealed queries.</summary>
-        public bool ObservingInformation { get; private set; }
-
-        public void SetObservingInformation(bool value) => ObservingInformation = value;
+        // The interpreter adapter preserves resolution-local evidence while
+        // giving every speculative branch independent scalar state and bindings.
+        public Cast ForReachability(AbilityReachabilityContext context) =>
+            this with { Reachability = context };
 
         /// <summary>Cards discarded earlier in this resolution, in order.</summary>
         public List<Card> Discarded { get; } = [];
@@ -247,10 +196,8 @@ public sealed partial class AbilityRunner
         public bool HasPendingDependency => AbilityPath.Any(frame =>
             frame.EndsWith(":Pending", StringComparison.Ordinal));
 
-        public sealed record CardBinding(Card Card, int Area, int Incarnation);
-
-        private CardBinding? chosenBinding;
-        private CardBinding? playerSelectionBinding;
+        private AbilityCardReference? chosenBinding;
+        private AbilityCardReference? playerSelectionBinding;
         private int sourceIncarnation = Source.Incarnation;
 
         /// <summary>The card the player picked, once they have.</summary>
@@ -259,19 +206,6 @@ public sealed partial class AbilityRunner
         /// <summary>The outer card selection used by chosen-player references.</summary>
         public Card? PlayerSelection =>
             CurrentCard(playerSelectionBinding, "player selection");
-
-        public Card? SourceReference
-        {
-            get
-            {
-                if (sourceIncarnation < 0)
-                {
-                    throw new RulesNotImplementedException(
-                        $"'{Source.FaceId}' continuation has no source-card provenance");
-                }
-                return Source.Incarnation == sourceIncarnation ? Source : null;
-            }
-        }
 
         public int SourceBindingIncarnation => sourceIncarnation;
 
@@ -293,22 +227,22 @@ public sealed partial class AbilityRunner
             playerSelectionBinding = binding;
         }
 
-        public CardBinding? CaptureChosen() => chosenBinding;
+        public AbilityCardReference? CaptureChosen() => chosenBinding;
 
-        public CardBinding? CapturePlayerSelection() => playerSelectionBinding;
+        public AbilityCardReference? CapturePlayerSelection() => playerSelectionBinding;
 
-        public CardBinding? CaptureCurrentSelection() =>
+        public AbilityCardReference? CaptureCurrentSelection() =>
             playerSelectionBinding ?? chosenBinding;
 
-        public void RestoreChosen(CardBinding? binding) => chosenBinding = binding;
+        public void RestoreChosen(AbilityCardReference? binding) => chosenBinding = binding;
 
-        public void RestorePlayerSelection(CardBinding? binding) =>
+        public void RestorePlayerSelection(AbilityCardReference? binding) =>
             playerSelectionBinding = binding;
 
         public void RestorePersistedSelection(
             Card card, int area, int incarnation, bool overwriteChosen)
         {
-            var binding = new CardBinding(card, area, incarnation);
+            var binding = new AbilityCardReference(card, area, incarnation);
             playerSelectionBinding = binding;
             if (overwriteChosen || chosenBinding is null)
             {
@@ -316,48 +250,23 @@ public sealed partial class AbilityRunner
             }
         }
 
-        public bool WasSelectedInCurrentArea(Card card) =>
-            CurrentBindingFor(card) is { } binding
-            && binding.Area == card.Area.Id
-            && binding.Incarnation == card.Incarnation;
-
-        public bool ChosenBindingIsCurrent(Card card) =>
-            chosenBinding is { } binding
-            && binding.Card.ObjectId == card.ObjectId
-            && binding.Incarnation == card.Incarnation;
-
         public bool SourceBindingIsCurrent(Card card) =>
             Source.ObjectId == card.ObjectId
             && sourceIncarnation == card.Incarnation;
 
-        private CardBinding? CurrentBindingFor(Card card) =>
-            playerSelectionBinding is { } player
-            && player.Card.ObjectId == card.ObjectId
-                ? player
-                : chosenBinding is { } chosen
-                && chosen.Card.ObjectId == card.ObjectId
-                    ? chosen
-                    : null;
-
-        private static CardBinding? Bind(Card? card) => card is null
+        private static AbilityCardReference? Bind(Card? card) => card is null
             ? null
-            : new CardBinding(card, card.Area.Id, card.Incarnation);
+            : new AbilityCardReference(card, card.Area.Id, card.Incarnation);
 
-        private Card? CurrentCard(CardBinding? binding, string name)
-        {
-            if (binding is not { } found)
-            {
-                return null;
-            }
-            if (found.Incarnation < 0 || found.Area < 0)
-            {
-                throw new RulesNotImplementedException(
-                    $"'{Source.FaceId}' continuation has no {name} provenance");
-            }
-            return found.Card.Incarnation == found.Incarnation
-                ? found.Card
-                : null;
-        }
+        private Card? CurrentCard(AbilityCardReference? binding, string name) => binding?.Resolve(Source, name);
+
+        public AbilityQueryContext QueryContext() => new(
+            World, Source, Occurrence, Player, sourceIncarnation,
+            chosenBinding, playerSelectionBinding, Altered, [.. PowerTargets]);
+
+        public AbilityExpressionContext ExpressionContext() => new(
+            QueryContext(), Results.ToImmutableDictionary(StringComparer.Ordinal),
+            [.. Discarded], Payment, PowerAmount, FinalStep, ProjectedPlayAreaPlayer);
 
         /// <summary>
         /// Which of the card's abilities is running, or null.
@@ -391,15 +300,21 @@ public sealed partial class AbilityRunner
         /// <summary>The performer attributed by an ability-envelope label.</summary>
         public Card? AbilityActor { get; set; }
 
+        private AbilityInitiationEvidence InitiationEvidence { get; } = new();
+
         /// <summary>Whether this fresh cast passed envelope legality before resolution.</summary>
-        public bool LabelsPreflighted { get; set; }
+        public bool LabelsPreflighted
+        {
+            get => InitiationEvidence.LabelsPreflighted;
+            set => InitiationEvidence.LabelsPreflighted = value;
+        }
 
         private const string CrisisIgnoringThwartPrefix =
             "__preflight.crisisIgnoringThwart.";
 
-        private HashSet<AbilityEffect> CrisisIgnoringThwarts { get; } = new(ReferenceEqualityComparer.Instance);
+        private HashSet<AbilityEffect> CrisisIgnoringThwarts => InitiationEvidence.CrisisIgnoringThwarts;
 
-        private HashSet<int> PersistedCrisisIgnoringThwarts { get; } = [];
+        private HashSet<int> PersistedCrisisIgnoringThwarts => InitiationEvidence.PersistedCrisisIgnoringThwarts;
 
         /// <summary>Persists a pre-payment exception to this power's target limit.</summary>
         public void ValidateCrisisIgnoringThwart(AbilityEffect node) =>
@@ -467,7 +382,4 @@ public sealed partial class AbilityRunner
         public void Replace(long amount) => Remaining = amount;
     }
 
-    private sealed record ActivationEffect(
-        int Source, int Player, AbilityType? Tier, AbilityEffect Effect, int Altered,
-        int AbilityActor);
 }

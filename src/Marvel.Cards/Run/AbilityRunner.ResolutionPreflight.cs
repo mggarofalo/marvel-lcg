@@ -253,7 +253,7 @@ public sealed partial class AbilityRunner
         PreflightResolutionBranches(effect, cast);
 
         var outcome = ResolutionOf(effect, cast);
-        bool stateMayChange = cast.PaymentMayMutate || cast.PriorStepMayMutate;
+        bool stateMayChange = cast.Reachability.PaymentMayMutate || cast.Reachability.PriorStepMayMutate;
         if ((outcome == required || stateMayChange)
             && ContainsNode(dependent, "placeThreat", cast))
         {
@@ -312,7 +312,7 @@ public sealed partial class AbilityRunner
         if (node.OperationName() == "if")
         {
             var test = ConditionalOf(node, cast).Test;
-            var branches = allBranches || cast.PriorStepMayMutate || PaymentCanChange(test)
+            var branches = allBranches || cast.Reachability.PriorStepMayMutate || PaymentCanChange(test)
                 ? ConditionalBranches((AbilityEffect.Conditional)node).Where(value => value is not null)
                 : ConditionalBranch(node, Test(test, cast) ? "then" : "else") is { } active
                     ? [active]
@@ -464,7 +464,7 @@ public sealed partial class AbilityRunner
             bool countWillBind = bindingMayChange && HasUnboundPowerAmount(node, cast);
             long? count = countWillBind ? null : ForEachCount(node, cast);
             if (!countWillBind
-                && (stateMayChange || bindingMayChange || cast.PaymentMayMutate)
+                && (stateMayChange || bindingMayChange || cast.Reachability.PaymentMayMutate)
                 && AmountMayChange(ForEachOf(node, cast).Count))
             {
                 throw new RulesNotImplementedException(
@@ -491,7 +491,7 @@ public sealed partial class AbilityRunner
         {
             var test = ConditionalOf(node, cast).Test;
             bool canSwitch = stateMayChange
-                || cast.PaymentMayMutate && PaymentCanChange(test)
+                || cast.Reachability.PaymentMayMutate && PaymentCanChange(test)
                 || bindingMayChange && BindingCanChange(test)
                 || repeatedEffect is not null
                     && RepeatedEffectCanChange(test, repeatedEffect, cast);
@@ -512,12 +512,12 @@ public sealed partial class AbilityRunner
                 : ResolutionOutcome.None;
             bool answered = ActiveChoices(effect, cast).Any();
             bool dependentCanRun = stateMayChange
-                || cast.PaymentMayMutate
+                || cast.Reachability.PaymentMayMutate
                 || bindingMayChange
                 || answered
                 || ResolutionOf(effect, cast) == required;
             bool predecessorMayMutate = stateMayChange
-                || cast.PaymentMayMutate
+                || cast.Reachability.PaymentMayMutate
                 || node.OperationName() == "then"
                 || answered;
             return dependentCanRun

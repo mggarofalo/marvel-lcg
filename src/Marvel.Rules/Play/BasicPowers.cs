@@ -104,11 +104,6 @@ public static class BasicPowers
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
 
-        // **Asked before the loop, not inside it.** `World.AreaOf` makes the
-        // area when there is none, so calling it while iterating `world.Areas`
-        // can add to the list being walked -- which it did, and the exception
-        // was the only warning.
-        //
         // `rr:patrol.1`, as a constant ability: "the engaged player cannot
         // thwart the main scheme." The main scheme only -- a side scheme is
         // still fair game, which is the difference from `rr:guard`.
@@ -988,9 +983,10 @@ public static class BasicPowers
     /// Whether a minion with <c>rr:patrol</c> is engaged with this player.
     /// </summary>
     private static bool Patrolled(World world, ICardFacts facts, int player) =>
-        world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(player)).Cards
+        world.Areas.FirstOrDefault(area => area.Type == DeckType.EngagedEnemiesArea
+                && area.PlayArea == PlayArea.Of(player) && area.Host == -1)?.Cards
             .Any(minion => StateFields.Modified(
-                world, minion, "patrol", facts, world.Players) > 0);
+                world, minion, "patrol", facts, world.Players) > 0) == true;
 
     /// <summary>Whether a scheme carries <c>rr:assault</c>.</summary>
     internal static bool Assaulted(World world, ICardFacts facts, Card scheme) =>

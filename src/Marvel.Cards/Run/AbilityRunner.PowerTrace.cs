@@ -123,7 +123,7 @@ public sealed partial class AbilityRunner
                 || SeatMayChange(
                     PowerForms(reachability), Seat(form.Player, cast)),
             _ => stateMayChange
-                || cast.PaymentMayMutate && PaymentCanChange(test)
+                || cast.Reachability.PaymentMayMutate && PaymentCanChange(test)
                 || bindingMayChange && BindingCanChange(test),
         };
 
@@ -519,7 +519,7 @@ public sealed partial class AbilityRunner
         }
 
         bool outcomeMayChange = stateMayChange
-            || cast.PaymentMayMutate
+            || cast.Reachability.PaymentMayMutate
             || bindingMayChange
             || ActiveChoices(node, cast).Any();
         return outcomeMayChange
