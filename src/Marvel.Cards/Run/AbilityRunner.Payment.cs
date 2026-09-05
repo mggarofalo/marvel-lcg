@@ -198,14 +198,6 @@ public sealed partial class AbilityRunner
         }
     }
 
-    private static Card? CostTarget(World world, Card source, int player, AbilityValue value) =>
-        Word(value) switch
-        {
-            "this" => source,
-            "you" => player >= 0 ? world.Seats[player].IdentityCard : null,
-            _ => null,
-        };
-
     private static Card? CostTarget(World world, Card source, int player, AbilityCostCard value) => value switch
     {
         AbilityCostCard.Source => source,
@@ -887,16 +879,16 @@ public sealed partial class AbilityRunner
 
     /// <summary>Pays an ability's cost — <c>rr:initiating-abilities.step.5</c>.</summary>
     private static void PayNonResourceCosts(
-        AbilityNode? cost, IReadOnlyList<int> paying, IReadOnlyList<int> chosen,
+        AbilityCost? cost, IReadOnlyList<int> paying, IReadOnlyList<int> chosen,
         IReadOnlyDictionary<string, long>? values, Cast cast)
     {
-        if (cost is null || cost.Kind is "spend" or "spendPrinted" or "spendEnergyX")
+        if (cost is null or AbilityCost.Spend or AbilityCost.SpendEnergy)
         {
             return;
         }
-        if (cost.Kind == "seq")
+        if (cost is AbilityCost.Sequence sequence)
         {
-            foreach (var step in Nodes(cost.Argument))
+            foreach (var step in sequence.Costs)
             {
                 PayNonResourceCosts(step, paying, chosen, values, cast);
             }
@@ -908,11 +900,11 @@ public sealed partial class AbilityRunner
 
     /// <summary>Pays an ability's cost — <c>rr:initiating-abilities.step.5</c>.</summary>
     private static void Pay(
-        AbilityNode? cost, IReadOnlyList<int> paying, IReadOnlyList<int> chosen, Cast cast)
+        AbilityCost? cost, IReadOnlyList<int> paying, IReadOnlyList<int> chosen, Cast cast)
         => Pay(cost, paying, chosen, values: null, cast);
 
     private static void Pay(
-        AbilityNode? cost, IReadOnlyList<int> paying, IReadOnlyList<int> chosen,
+        AbilityCost? cost, IReadOnlyList<int> paying, IReadOnlyList<int> chosen,
         IReadOnlyDictionary<string, long>? values, Cast cast)
     {
         if (cost is null)
@@ -920,46 +912,46 @@ public sealed partial class AbilityRunner
             return;
         }
 
-        if (cost.Kind == "seq")
+        if (cost is AbilityCost.Sequence sequence)
         {
-            var steps = Nodes(cost.Argument).ToList();
+            var steps = sequence.Costs;
             // A take-damage cost is not paid unless all of the damage is
             // taken. Resolve that uncertain component before any payment that
             // cannot fail after validation, so a prevention never leaves an
             // otherwise simultaneous card or resource cost paid by itself.
-            foreach (var step in steps.Where(step => step.Kind == "takeDamage"))
+            foreach (var step in steps.Where(step => step is AbilityCost.Damage { MustTakeAll: true }))
             {
                 Pay(step, paying, chosen, values, cast);
             }
-            var spends = steps.Where(step => step.Kind is "spend" or "spendPrinted").ToList();
+            var spends = steps.OfType<AbilityCost.Spend>().ToList();
             if (spends.Count > 0)
             {
-                bool printed = spends.All(step => step.Kind == "spendPrinted");
-                if (!printed && spends.Any(step => step.Kind == "spendPrinted"))
+                bool printed = spends.All(step => step.PrintedOnly);
+                if (!printed && spends.Any(step => step.PrintedOnly))
                 {
                     throw new RulesNotImplementedException(
                         $"'{cast.Source.FaceId}' mixes printed and ordinary simultaneous "
                         + "resource costs, whose allocation is not implemented");
                 }
-                string required = string.Concat(spends.Select(step => Word(step.Argument)));
+                string required = string.Concat(spends.Select(step => step.Resources));
                 SpendAbilityResources(required, paying, cast, printed);
             }
 
             foreach (var step in steps.Where(
-                         step => step.Kind is not ("spend" or "spendPrinted" or "takeDamage")))
+                         step => step is not (AbilityCost.Spend or AbilityCost.Damage { MustTakeAll: true })))
             {
                 Pay(step, paying, chosen, values, cast);
             }
             return;
         }
 
-        if (cost.Kind is "discardFromHand" or "discardUpToFromHand" or "discardAnyFromHand")
+        if (cost is AbilityCost.DiscardFromHand discard)
         {
-            DiscardToPay(cost, chosen, cast);
+            DiscardToPay(discard, chosen, cast);
             return;
         }
 
-        if (cost.Kind == "exhaustChosen")
+        if (cost is AbilityCost.ExhaustChosen)
         {
             foreach (int id in chosen)
             {
@@ -974,19 +966,13 @@ public sealed partial class AbilityRunner
             return;
         }
 
-        if (cost.Kind == "spend")
+        if (cost is AbilityCost.Spend spend)
         {
-            SpendAbilityResources(Word(cost.Argument), paying, cast);
+            SpendAbilityResources(spend.Resources, paying, cast, spend.PrintedOnly);
             return;
         }
 
-        if (cost.Kind == "spendPrinted")
-        {
-            SpendAbilityResources(Word(cost.Argument), paying, cast, printed: true);
-            return;
-        }
-
-        if (cost.Kind == "spendEnergyX")
+        if (cost is AbilityCost.SpendEnergy)
         {
             if (paying.Count == 0 || paying.Distinct().Count() != paying.Count)
             {
@@ -1008,13 +994,13 @@ public sealed partial class AbilityRunner
             return;
         }
 
-        if (cost.Kind == "takeDamage")
+        if (cost is AbilityCost.Damage { MustTakeAll: true } damage)
         {
             var target = CostTarget(
-                    cast.World, cast.Source, cast.Player, cost.Require("cards"))
+                    cast.World, cast.Source, cast.Player, damage.Card)
                 ?? throw new RulesNotImplementedException(
                     $"'{cast.Source.FaceId}' cannot find its take-damage cost target");
-            long amount = Number(cost.Require("amount"));
+            long amount = damage.Amount;
             long before = target.Damage;
             var outcome = Damage.DealOutcome(
                 cast.World, cast.World.Facts, cast.Source, target, amount,
@@ -1037,7 +1023,7 @@ public sealed partial class AbilityRunner
             return;
         }
 
-        Run(cost, cast);
+        PayPrimitiveCost(cost, cast);
     }
 
     private static void SpendAbilityResources(
@@ -1227,18 +1213,10 @@ public sealed partial class AbilityRunner
     /// any costs" if the cost cannot be paid, and an engine that picked a card
     /// for the player would be making a decision the player was asked to make.
     /// </remarks>
-    private static void DiscardToPay(AbilityNode cost, IReadOnlyList<int> chosen, Cast cast)
+    private static void DiscardToPay(AbilityCost.DiscardFromHand cost, IReadOnlyList<int> chosen, Cast cast)
     {
         var hand = cast.World.Seats[cast.Player].Hand;
-        int minimum = cost.Kind == "discardFromHand"
-            ? checked((int)Number(cost.Argument))
-            : 1;
-        int maximum = cost.Kind switch
-        {
-            "discardFromHand" => minimum,
-            "discardUpToFromHand" => checked((int)Number(cost.Argument)),
-            _ => hand.Cards.Count,
-        };
+        var (minimum, maximum) = AbilityCostSelection.Range(cost.Range, hand.Cards.Count);
 
         if (chosen.Count < minimum || chosen.Count > maximum)
         {

@@ -13,6 +13,55 @@ namespace Marvel.Content.Tests.Play;
 
 public sealed partial class ActionAbilityTests
 {
+    [Rule("rr:initiating-abilities.step.5")]
+    [Theory]
+    [InlineData("dealDamage")]
+    [InlineData("takeDamage")]
+    public void ACompiledDamageCostResumesItsPostArrowEffectExactlyOnce(string damageCost)
+    {
+        // rr:initiating-abilities.step.5: "Pay the cost(s)." An interrupt during the
+        // damage cost must finish before the post-arrow draw, without paying
+        // the cost again when the ability resumes.
+        var runner = new Marvel.Cards.Run.AbilityRunner(AbilityCatalog.Parse($$$"""
+            {"cards":[
+              {"card":"01030","abilities":[{
+                "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"game"},
+                "cost":{"seq":[{"exhaust":"this"},{"{{{damageCost}}}":{"cards":"this","amount":2}}]},
+                "effect":{"draw":{"player":"you","count":1}}
+              }]},
+              {"card":"01092","abilities":[{
+                "trigger":{"event":"WhenCardWouldBeDefeated","timing":"Interrupt","subject":"game"},
+                "effect":{"draw":{"player":"you","count":1}}
+              }]}
+            ]}
+            """));
+        Card? source = null;
+        var (game, world) = Playing(board =>
+        {
+            source = board.CreateCard("01030",
+                board.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+            source.TakeDamage(2);
+            InPlay(board, "01092");
+        }, abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(game.Pending!.Affordances,
+            option => option.Verb == Game.ActionVerb && option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.Equal(Question.Opportunity, game.Pending!.Asking);
+        Assert.False(source!.Ready);
+        Assert.Equal(4, source.Damage);
+        Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
+
+        game.Resolve(Decision.Decline);
+
+        Assert.Equal(Question.TurnOption, game.Pending!.Asking);
+        Assert.Equal(DeckType.DiscardPile, source.Area.Type);
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+        Assert.False(world.Agenda.IsBusy);
+    }
+
     [Fact]
     public void PaymentChoicesAndValidationUseTheCompiledCostSnapshot()
     {
@@ -56,6 +105,45 @@ public sealed partial class ActionAbilityTests
         runner.Act(world, pending, [], [ally.ObjectId]);
 
         Assert.False(ally.Ready);
+    }
+
+    [Fact]
+    public void PaymentExecutionUsesTheCompiledCostSnapshot()
+    {
+        var parsed = AbilityCatalog.Parse("""
+            {"cards":[{"card":"01030","abilities":[{
+              "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"game"},
+              "effect":{"draw":{"player":"you","count":1}}
+            }]}]}
+            """);
+        var fields = new Dictionary<string, AbilityValue>(StringComparer.Ordinal)
+        {
+            ["card"] = new AbilityValue.Word("this"),
+            ["amount"] = new AbilityValue.Number(1),
+        };
+        var ability = parsed.Abilities[0] with
+        {
+            Cost = new AbilityNode("heal", new AbilityValue.Map(fields)),
+        };
+        var runner = new Marvel.Cards.Run.AbilityRunner(new AbilityBook([ability], parsed.Authored));
+        Card? source = null;
+        var (game, world) = Playing(board =>
+        {
+            source = board.CreateCard("01030",
+                board.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+            source.TakeDamage(2);
+        }, abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+
+        // Engine choice: compilation snapshots authored syntax. Payment must
+        // use that program even if its caller later edits the input dictionary.
+        fields["amount"] = new AbilityValue.Number(2);
+        var action = Assert.Single(game.Pending!.Affordances,
+            option => option.Verb == Game.ActionVerb && option.AnchorId == source!.ObjectId);
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.Equal(1, source!.Damage);
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
     }
 
     [Rule("rr:printed.1")]

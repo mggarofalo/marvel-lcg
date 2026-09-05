@@ -498,14 +498,20 @@ public sealed partial class AbilityRunner
     /// </remarks>
     private static void Exhaust(AbilityNode node, Cast cast)
     {
-        foreach (var target in Every(node.Argument, cast).Where(target => target.Ready))
+        foreach (var target in Every(node.Argument, cast))
         {
-            target.Exhaust();
-            cast.Events.Add(new FieldSet(target.ObjectId, "is_exhaust", 0, 1)
-            {
-                Trigger = cast.Trigger, Verb = "Exhaust",
-            });
+            Exhaust(target, cast);
         }
+    }
+
+    private static void Exhaust(Card target, Cast cast)
+    {
+        if (!target.Ready) return;
+        target.Exhaust();
+        cast.Events.Add(new FieldSet(target.ObjectId, "is_exhaust", 0, 1)
+        {
+            Trigger = cast.Trigger, Verb = "Exhaust",
+        });
     }
 
     private static void Ready(AbilityNode node, Cast cast)
@@ -561,14 +567,19 @@ public sealed partial class AbilityRunner
         var card = Find(removal.Card, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' cannot find the card paying its counter cost");
-        string key = CounterKeyForRemoval(card, removal.Type, removal.Count)
+        RemoveCounters(card, removal.Type, removal.Count, cast);
+    }
+
+    private static void RemoveCounters(Card card, string type, long count, Cast cast)
+    {
+        string key = CounterKeyForRemoval(card, type, count)
             ?? throw new RulesNotImplementedException(
-                $"'{card.FaceId}' has fewer than {removal.Count} {removal.Type} counters");
+                $"'{card.FaceId}' has fewer than {count} {type} counters");
         long before = card.Tokens.GetValueOrDefault(key);
 
-        card.PlaceTokens(key, -removal.Count);
+        card.PlaceTokens(key, -count);
         cast.Events.Add(new FieldSet(
-            card.ObjectId, key, before, before - removal.Count)
+            card.ObjectId, key, before, before - count)
         {
             Trigger = cast.Trigger, Verb = "Remove_Counter",
         });

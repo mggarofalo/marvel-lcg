@@ -253,13 +253,8 @@ public sealed partial class AbilityRunner
     /// </remarks>
     private static void DealDamage(AbilityNode node, Cast cast, long multiplier = 1)
     {
-        long amount = SaturatingMultiply(
-            Amount(node.Require("amount"), cast), multiplier);
-        amount = SaturatingSum(amount, [EventModifier(cast, "eventDamage")]);
-        if (cast.Power == BasicPowers.AttackVerb)
-        {
-            amount = SaturatingSum(amount, [EventModifier(cast, "attackDamage")]);
-        }
+        long amount = ModifiedAbilityDamage(SaturatingMultiply(
+            Amount(node.Require("amount"), cast), multiplier), cast);
         string verb = node.Field("attack") is null ? "Deal_Damage" : "Attack";
         bool suspended = false;
         foreach (var target in Every(node.Require("cards"), cast))
@@ -277,6 +272,14 @@ public sealed partial class AbilityRunner
         {
             SuspendAfterProcedure(node, cast);
         }
+    }
+
+    private static long ModifiedAbilityDamage(long amount, Cast cast)
+    {
+        amount = SaturatingSum(amount, [EventModifier(cast, "eventDamage")]);
+        return cast.Power == BasicPowers.AttackVerb
+            ? SaturatingSum(amount, [EventModifier(cast, "attackDamage")])
+            : amount;
     }
 
     private static void MoveDamage(AbilityNode node, Cast cast)
@@ -1161,12 +1164,13 @@ public sealed partial class AbilityRunner
         cast.Suspend();
     }
 
-    /// <summary>Resume an initiated ability after its take-damage cost settles.</summary>
-    private static void SuspendAfterCost(Cast cast, int abilityOrdinal)
+    /// <summary>Resume an initiated ability after its cost procedure settles.</summary>
+    private static void SuspendAfterCost(
+        Cast cast, int abilityOrdinal, PhaseStep? owner, Occurrence? occurrence)
     {
         var results = ContinuationResults(cast, abilityOrdinal);
         results["costProcedurePending"] = 1;
-        cast.World.Agenda.Then(new PhaseStep(
+        var continuation = new PhaseStep(
             Steps.ResumeAbility,
             cast.World.Agenda.Current?.Round ?? 0,
             2,
@@ -1187,7 +1191,18 @@ public sealed partial class AbilityRunner
             AbilityFace: cast.AbilityFace,
             AbilityPlayer: cast.AbilityPlayer,
             AbilityActor: cast.AbilityActor?.ObjectId ?? -1,
-            AbilityHasContinuation: cast.HasContinuation));
+            AbilityHasContinuation: cast.HasContinuation);
+        if (owner is null)
+        {
+            cast.World.Agenda.Then(continuation);
+        }
+        else
+        {
+            cast.World.Agenda.ContinueBeforeOwner(
+                occurrence ?? throw new InvalidOperationException(
+                    "a suspended cost has no containing occurrence"),
+                owner.Value, continuation);
+        }
     }
 
     private static Dictionary<string, long> ContinuationResults(

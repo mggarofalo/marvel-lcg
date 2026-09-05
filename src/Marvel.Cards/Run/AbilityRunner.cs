@@ -732,20 +732,22 @@ public sealed partial class AbilityRunner : ICardAbilities
         // asked whether the cost could be paid at all. What it cannot check is
         // that the player named a payment that works, and `CardPlay.Spend`
         // refuses one that does not.
+        var costOwner = world.Agenda.Current;
+        var costOccurrence = world.Agenda.Occurrence;
         ValidatePayment(CompiledCost(found), paying, chosen, values, cast);
         PayEvent(card, paying, cast, found.Effect, allocations, CompiledCost(found));
         if (world.Facts.Kind(card.FaceId) == CardKind.Event
             && ResourceRequirement(CompiledCost(found), card).Length > 0)
         {
-            PayNonResourceCosts(found.Cost, paying, chosen, values, cast);
+            PayNonResourceCosts(CompiledCost(found), paying, chosen, values, cast);
         }
         else
         {
-            Pay(found.Cost, paying, chosen, values, cast);
+            Pay(CompiledCost(found), paying, chosen, values, cast);
         }
         if (cast.Suspended)
         {
-            SuspendAfterCost(cast, ability.Ordinal);
+            SuspendAfterCost(cast, ability.Ordinal, costOwner, costOccurrence);
             return events;
         }
         Use(world, card, found, occurrence);
@@ -1217,7 +1219,7 @@ public sealed partial class AbilityRunner : ICardAbilities
         {
             Tier = ability.Trigger.Timing,
         };
-        Pay(ability.Cost, [], [], cast);
+        Pay(CompiledCost(ability), [], [], cast);
         Use(world, holder, ability);
         return Generated(ability.Effect, world, player);
     }
@@ -2074,20 +2076,22 @@ public sealed partial class AbilityRunner : ICardAbilities
 
         // `rr:initiating-abilities` keeps the steps apart, and step 5 pays
         // before step 6 resolves.
+        var costOwner = world.Agenda.Current;
+        var costOccurrence = world.Agenda.Occurrence;
         ValidatePayment(CompiledCost(found), paying, chosen, values, cast);
         PayEvent(card, paying, cast, found.Effect, allocations, CompiledCost(found));
         if (world.Facts.Kind(card.FaceId) == CardKind.Event
             && ResourceRequirement(CompiledCost(found), card).Length > 0)
         {
-            PayNonResourceCosts(found.Cost, paying, chosen, values, cast);
+            PayNonResourceCosts(CompiledCost(found), paying, chosen, values, cast);
         }
         else
         {
-            Pay(found.Cost, paying, chosen, values, cast);
+            Pay(CompiledCost(found), paying, chosen, values, cast);
         }
         if (cast.Suspended)
         {
-            SuspendAfterCost(cast, ability.Ordinal);
+            SuspendAfterCost(cast, ability.Ordinal, costOwner, costOccurrence);
             return events;
         }
         Use(world, card, found, occurrence);
