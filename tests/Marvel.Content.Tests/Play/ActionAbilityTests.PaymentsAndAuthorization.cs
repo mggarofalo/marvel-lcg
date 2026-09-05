@@ -661,6 +661,70 @@ public sealed partial class ActionAbilityTests
     }
 
     [Rule("rr:ability.8.1")]
+    [Theory]
+    [InlineData("""{"placeCounters":{"card":"this","counter":"yourMarker","count":1}}""", true)]
+    [InlineData("""{"placeCounters":{"card":"you","counter":"marker","count":1}}""", false)]
+    [InlineData("""{"draw":{"player":"you","count":1}}""", false)]
+    [InlineData("""{"draw":{"player":"firstPlayer","count":1}}""", true)]
+    [InlineData("""{"choose":{"descriptions":["yourChoice","anotherChoice"],"options":[{"discard":"this"},{"discard":"this"}]}}""", true)]
+    [InlineData("""{"choose":{"options":[{"discard":"this"},{"draw":{"player":"you","count":1}}]}}""", false)]
+    [InlineData("""{"if":{"test":{"titleInPlay":"yourTitle"},"then":{"discard":"this"},"else":{"discard":"this"}}}""", true)]
+    [InlineData("""{"if":{"test":{"titleInPlay":"yourTitle"},"then":{"draw":{"player":"you","count":1}},"else":{"discard":"this"}}}""", false)]
+    [InlineData("""{"placeCounters":{"card":"this","counter":"marker","count":{"add":[1,{"countersOn":{"card":"this","counter":"yourMarker"}}]}}}""", true)]
+    [InlineData("""{"placeCounters":{"card":"this","counter":"marker","count":{"add":[1,{"countersOn":{"card":"you","counter":"marker"}}]}}}""", false)]
+    public void AttachmentEffectAuthorizationUsesBindingsNotLiteralText(string effect, bool anotherPlayerMayAct)
+    {
+        // rr:ability.8.1 restricts an attachment whose text "uses the word
+        // “you” or “your”". Engine-chosen literal counter names and choice
+        // descriptions do not represent that binding. A binding in an
+        // unchosen branch is still part of the ability's text.
+        var runner = Runner(AuthoredCards.Charge, "Action", effect);
+        Card? attachment = null;
+        var (_, world) = Playing(board => attachment = board.CreateCard(AuthoredCards.Charge,
+            board.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0),
+                host: board.Seats[0].IdentityCard.ObjectId)),
+            heroes: ["spider_man", "captain_marvel"], abilities: runner);
+
+        Assert.Contains(runner.Actions(world, 0), action => action.Card == attachment!.ObjectId);
+        Assert.Equal(anotherPlayerMayAct,
+            runner.Actions(world, 1).Any(action => action.Card == attachment!.ObjectId));
+    }
+
+    [Theory]
+    [InlineData("this", "you", true)]
+    [InlineData("you", "this", false)]
+    public void AttachmentEffectAuthorizationUsesTheCompiledSnapshot(
+        string originalBinding, string changedBinding, bool anotherPlayerMayAct)
+    {
+        var parsed = AbilityCatalog.Parse("""
+            {"cards":[{"card":"01099","abilities":[{
+              "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"game"},
+              "effect":{"discard":"this"}
+            }]}]}
+            """);
+        var fields = new Dictionary<string, AbilityValue>(StringComparer.Ordinal)
+        {
+            ["card"] = new AbilityValue.Word(originalBinding),
+            ["counter"] = new AbilityValue.Word("marker"),
+            ["count"] = new AbilityValue.Number(1),
+        };
+        var ability = parsed.Abilities[0] with { Effect = new AbilityNode("placeCounters", new AbilityValue.Map(fields)) };
+        var runner = new Marvel.Cards.Run.AbilityRunner(new AbilityBook([ability], parsed.Authored));
+        // Engine choice: editing caller-owned syntax after compilation cannot
+        // grant or revoke permission to use the compiled ability.
+        fields["card"] = new AbilityValue.Word(changedBinding);
+        Card? attachment = null;
+        var (_, world) = Playing(board => attachment = board.CreateCard(AuthoredCards.Charge,
+            board.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0),
+                host: board.Seats[0].IdentityCard.ObjectId)),
+            heroes: ["spider_man", "captain_marvel"], abilities: runner);
+
+        Assert.Contains(runner.Actions(world, 0), action => action.Card == attachment!.ObjectId);
+        Assert.Equal(anotherPlayerMayAct,
+            runner.Actions(world, 1).Any(action => action.Card == attachment!.ObjectId));
+    }
+
+    [Rule("rr:ability.8.1")]
     [Rule("rr:the-golden-rules")]
     [Fact]
     public void AnExplicitAnyPlayerPermissionOverridesTheAttachmentRestriction()

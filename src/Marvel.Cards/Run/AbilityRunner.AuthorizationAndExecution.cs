@@ -137,7 +137,7 @@ public sealed partial class AbilityRunner
         || ability.Trigger.Actor == AbilityRoles.You
         || ability.Trigger.Target == AbilityRoles.You
         || ability.Trigger.Player == AbilityPlayers.You
-        || ContainsYouOrYour(ability.Effect)
+        || ContainsYouOrYour(compiledAbilities[ability].Effect)
         || ContainsYouOrYour(CompiledCost(ability))
         || (compiledAbilities[ability].When is { } when && ContainsYouOrYour(when))
         || (program.AttachTo.GetValueOrDefault(card.FaceId) is { } attachment
@@ -159,35 +159,6 @@ public sealed partial class AbilityRunner
         AbilityCost.Spend or AbilityCost.SpendEnergy => false,
         _ => throw new InvalidOperationException("Unknown compiled cost in player-binding analysis"),
     };
-
-    private static bool ContainsYouOrYour(AbilityNode node) =>
-        IsYouOrYourBinding(node.Kind) || ContainsYouOrYour(node.Argument);
-
-    private static bool ContainsYouOrYour(AbilityValue value) => value switch
-    {
-        AbilityValue.Word word => IsYouOrYourBinding(word.Value),
-        AbilityValue.List list => list.Values.Any(ContainsYouOrYour),
-        AbilityValue.Map map => map.Entries.Any(entry =>
-            IsYouOrYourBinding(entry.Key) || ContainsYouOrYour(entry.Value)),
-        _ => false,
-    };
-
-    /// <summary>Whether one DSL identifier is relative to the resolving player.</summary>
-    private static bool IsYouOrYourBinding(string value)
-    {
-        if (string.Equals(value, "you", StringComparison.Ordinal)
-            || value.StartsWith("your", StringComparison.Ordinal))
-        {
-            return true;
-        }
-
-        // Compound DSL identifiers use camel case: alliesYouControl,
-        // isYourIdentity, identitySpecificInYourHand. A printed title can also
-        // contain the word “You”, so only identifier-shaped values count.
-        return value.All(character => char.IsLetterOrDigit(character) || character == '.')
-            && (value.Contains("You", StringComparison.Ordinal)
-                || value.Contains("Your", StringComparison.Ordinal));
-    }
 
     /// <summary>Whether this player is permitted to initiate the ability.</summary>
     private bool MayInitiate(World world, CardAbility ability, Card card, int player)

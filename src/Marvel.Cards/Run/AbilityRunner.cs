@@ -1009,7 +1009,7 @@ public sealed partial class AbilityRunner : ICardAbilities
                 // The letters this makes, read off the effect rather than the
                 // printed `RES` field: `RES` is what discarding the card
                 // generates, and an ability is a different way to make one.
-                string generated = Generated(ability.Effect, world, player);
+                string generated = Generated(compiledAbilities[ability].Effect, world, player);
                 if (generated.Length > 0)
                 {
                     sources.Add(new ResourceSource(card.ObjectId, generated));
@@ -1169,14 +1169,14 @@ public sealed partial class AbilityRunner : ICardAbilities
     }
 
     /// <summary>What letters an effect generates, if it only generates.</summary>
-    private static string Generated(AbilityNode effect, World world, int player)
+    private static string Generated(AbilityEffect effect, World world, int player)
     {
-        if (effect.Kind == "generate")
+        if (effect is AbilityEffect.Generate generate)
         {
-            return Word(effect.Argument);
+            return generate.Resources;
         }
 
-        if (effect.Kind == "generateTopDiscard")
+        if (effect is AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.GenerateTopDiscard })
         {
             var cards = world.AreaOf(
                 DeckType.DiscardPile, PlayArea.Of(player), cardOwner: player).Cards;
@@ -1186,7 +1186,7 @@ public sealed partial class AbilityRunner : ICardAbilities
         }
 
         throw new RulesNotImplementedException(
-            $"a resource ability whose effect is '{effect.Kind}' generates nothing this "
+            $"a resource ability whose compiled effect is '{effect.GetType().Name}' generates nothing this "
             + "engine can read");
     }
 
@@ -1225,7 +1225,7 @@ public sealed partial class AbilityRunner : ICardAbilities
         };
         Pay(CompiledCost(ability), [], [], cast);
         Use(world, holder, ability);
-        return Generated(ability.Effect, world, player);
+        return Generated(compiledAbilities[ability].Effect, world, player);
     }
 
     /// <inheritdoc/>
