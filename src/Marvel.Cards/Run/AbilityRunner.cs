@@ -1597,7 +1597,7 @@ public sealed partial class AbilityRunner : ICardAbilities
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(card);
 
-        if (book.Attaches(card.FaceId) is not { } element)
+        if (program.AttachTo.GetValueOrDefault(card.FaceId) is not { } element)
         {
             return null;
         }
@@ -1650,7 +1650,7 @@ public sealed partial class AbilityRunner : ICardAbilities
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(card);
-        if (book.Attaches(card.FaceId) is not { } element)
+        if (program.AttachTo.GetValueOrDefault(card.FaceId) is not { } element)
         {
             return null;
         }

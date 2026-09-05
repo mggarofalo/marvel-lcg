@@ -140,7 +140,7 @@ public sealed partial class AbilityRunner
         || ContainsYouOrYour(ability.Effect)
         || ContainsYouOrYour(CompiledCost(ability))
         || (ability.When is { } when && ContainsYouOrYour(when))
-        || (book.Attaches(card.FaceId) is { } attachment
+        || (program.AttachTo.GetValueOrDefault(card.FaceId) is { } attachment
             && ContainsYouOrYour(attachment));
 
     private static bool ContainsYouOrYour(AbilityCost? cost) => cost switch

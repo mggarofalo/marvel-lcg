@@ -158,6 +158,68 @@ public sealed class AttachToTests
         Assert.Contains("is not a node", refused.Message, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void AttachmentTargetsUseTheCompiledSelectorSnapshot()
+    {
+        var fields = new Dictionary<string, AbilityValue>(StringComparer.Ordinal)
+        {
+            ["query"] = new AbilityValue.Word("villain"),
+        };
+        var runner = new AbilityRunner(new AbilityBook([], new HashSet<string>(StringComparer.Ordinal)
+            { AuthoredCards.Charge, "01097a", "01097b", "01094" },
+            new Dictionary<string, AbilityValue>(StringComparer.Ordinal)
+            {
+                [AuthoredCards.Charge] = new AbilityValue.Map(fields),
+            }));
+        var world = Deal(runner);
+        var charge = world.Cards.First(card => card.FaceId == AuthoredCards.Charge);
+        int villain = world.TheCardIn(DeckType.VillainArea)!.ObjectId;
+
+        // Engine choice: compilation snapshots caller-owned selector syntax.
+        fields["query"] = new AbilityValue.Word("mainScheme");
+
+        Assert.Equal([villain], runner.AttachmentTargets(world, charge));
+        Assert.Equal(villain, runner.AttachesTo(world, charge));
+    }
+
+    [Theory]
+    [InlineData("""{"titled":"Hawkeye"}""", "hawkeye")]
+    [InlineData("""{"withTrait":{"cards":{"query":"allies"},"trait":"AVENGER"}}""", "hawkeye")]
+    [InlineData("""{"discardable":{"query":"allies"}}""", "both")]
+    [InlineData("""{"withoutAnotherCopyAttached":{"query":"allies"}}""", "blackcat")]
+    [InlineData("""{"maxBy":{"of":{"query":"allies"},"by":"cost"}}""", "hawkeye")]
+    [InlineData("""{"minBy":{"of":{"query":"allies"},"by":"cost"}}""", "blackcat")]
+    [InlineData("""{"maxBy":{"of":{"query":"allies"},"by":"printedHealth"}}""", "hawkeye")]
+    [InlineData("""{"maxBy":{"of":{"query":"allies"},"by":"attack"}}""", "hawkeye")]
+    [InlineData("""{"maxBy":{"of":{"query":"allies"},"by":"cost"}}""", "ties")]
+    [InlineData("""{"cardsIn":{"area":"encounterDiscardPile","kind":"Ally","title":"Hawkeye","trait":"AVENGER"}}""", "discarded")]
+    [InlineData("""{"discardable":{"cardsIn":{"area":"encounterDiscardPile","kind":"Ally","title":"Hawkeye"}}}""", "discarded")]
+    public void CompiledAttachmentSelectorsComposeAndPreserveTies(string selector, string expected)
+    {
+        var runner = Attaching(AuthoredCards.Charge, selector);
+        var world = Deal(runner);
+        var charge = world.Cards.First(card => card.FaceId == AuthoredCards.Charge);
+        var allies = world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0);
+        var hawkeye = world.CreateCard("01066", allies);
+        var blackCat = world.CreateCard("01002", allies);
+        var tied = expected == "ties" ? world.CreateCard("01083", allies) : null;
+        world.CreateCard(AuthoredCards.Charge,
+            world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), host: hawkeye.ObjectId));
+        var discarded = world.CreateCard("01066", world.AreaOf(DeckType.EncounterDiscardPile));
+        int[] ids = expected switch
+        {
+            "hawkeye" => [hawkeye.ObjectId],
+            "blackcat" => [blackCat.ObjectId],
+            "discarded" => [discarded.ObjectId],
+            "ties" => [hawkeye.ObjectId, tied!.ObjectId],
+            _ => [hawkeye.ObjectId, blackCat.ObjectId],
+        };
+
+        Assert.Equal(ids, runner.AttachmentTargets(world, charge));
+        if (ids.Length == 1) Assert.Equal(ids[0], runner.AttachesTo(world, charge));
+        else Assert.Throws<RulesNotImplementedException>(() => runner.AttachesTo(world, charge));
+    }
+
     /// <summary>
     /// A book in which one card attaches to something, and the scenario's own
     /// three cards are read and silent.
