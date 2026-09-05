@@ -59,4 +59,7 @@ public sealed class AbilityProgram
 
     /// <summary>The abilities on one printed face, in authored order.</summary>
     public ImmutableArray<CompiledCardAbility> On(string card) => byCard.GetValueOrDefault(card, []);
+
+    /// <summary>Whether the program defines this card's reveal, including known silence.</summary>
+    public bool KnowsWhenRevealed(string card) => Authored.Contains(card) || PlacementOnly.Contains(card);
 }

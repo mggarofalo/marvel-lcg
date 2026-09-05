@@ -146,6 +146,34 @@ public sealed partial class ActionAbilityTests
         Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
     }
 
+    [Fact]
+    public void RuntimeCardMetadataUsesTheCompiledSnapshot()
+    {
+        var authored = new HashSet<string>(StringComparer.Ordinal) { "01080" };
+        var firstPlayer = new HashSet<string>(StringComparer.Ordinal) { "01080" };
+        var placementOnly = new HashSet<string>(StringComparer.Ordinal);
+        var pools = new Dictionary<string, CardCounterPool>(StringComparer.Ordinal)
+        {
+            ["01080"] = new("medical", 3, Uses: true),
+        };
+        var runner = new Marvel.Cards.Run.AbilityRunner(new AbilityBook([], authored,
+            ControlledByFirstPlayer: firstPlayer, PlacementOnly: placementOnly, CounterPools: pools));
+        Card? source = null;
+        var (_, world) = Playing(board => source = InPlay(board, "01080"));
+
+        // Engine choice: caller-owned syntax cannot alter a compiled program.
+        authored.Clear();
+        firstPlayer.Clear();
+        placementOnly.Add("01080");
+        pools["01080"] = new("medical", 9, Uses: false);
+
+        Assert.Contains("01080", runner.Authored);
+        Assert.Equal(world.FirstPlayer, runner.SetupController(world, source!));
+        Assert.Equal(new CardCounterPool("medical", 3, Uses: true), runner.CounterPool(world, source!));
+        Assert.Empty(runner.WhenRevealed(world, source!, 0));
+        runner.ValidateForPlay(world);
+    }
+
     [Rule("rr:printed.1")]
     [Rule("rr:text-box.1.1")]
     [Fact]
@@ -492,6 +520,30 @@ public sealed partial class ActionAbilityTests
 
         Assert.Contains(runner.Actions(world, 0), action => action.Card == attachment!.ObjectId);
         Assert.DoesNotContain(runner.Actions(world, 1), action => action.Card == attachment!.ObjectId);
+    }
+
+    [Rule("rr:ability.8.1")]
+    [Theory]
+    [InlineData("""{ "exhaust": "you" }""", false)]
+    [InlineData("""{ "removeCounters": { "card": "this", "counter": "yourMarker", "count": 1 } }""", true)]
+    public void AttachmentCostAuthorizationUsesBindingsNotCounterNames(string cost, bool anotherPlayerMayAct)
+    {
+        // rr:ability.8.1 restricts an attachment that "uses the word “you” or
+        // “your”". A counter's engine-chosen name is not a printed
+        // player binding, even when its spelling includes "your".
+        var runner = Runner(AuthoredCards.Charge, "Action", """{ "discard": "this" }""", cost: cost);
+        Card? attachment = null;
+        var (_, world) = Playing(board =>
+        {
+            attachment = board.CreateCard(AuthoredCards.Charge,
+                board.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0),
+                    host: board.Seats[0].IdentityCard.ObjectId));
+            attachment.PlaceTokens("c_yourMarker", 1);
+        }, heroes: ["spider_man", "captain_marvel"], abilities: runner);
+
+        Assert.Contains(runner.Actions(world, 0), action => action.Card == attachment!.ObjectId);
+        Assert.Equal(anotherPlayerMayAct,
+            runner.Actions(world, 1).Any(action => action.Card == attachment!.ObjectId));
     }
 
     [Rule("rr:ability.8.1")]

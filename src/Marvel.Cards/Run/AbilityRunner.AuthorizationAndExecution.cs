@@ -138,10 +138,27 @@ public sealed partial class AbilityRunner
         || ability.Trigger.Target == AbilityRoles.You
         || ability.Trigger.Player == AbilityPlayers.You
         || ContainsYouOrYour(ability.Effect)
-        || (ability.Cost is { } cost && ContainsYouOrYour(cost))
+        || ContainsYouOrYour(CompiledCost(ability))
         || (ability.When is { } when && ContainsYouOrYour(when))
         || (book.Attaches(card.FaceId) is { } attachment
             && ContainsYouOrYour(attachment));
+
+    private static bool ContainsYouOrYour(AbilityCost? cost) => cost switch
+    {
+        null => false,
+        AbilityCost.Sequence sequence => sequence.Costs.Any(ContainsYouOrYour),
+        AbilityCost.Exhaust exhaust => exhaust.Card == AbilityCostCard.Identity,
+        AbilityCost.Discard discard => discard.Card == AbilityCostCard.Identity,
+        AbilityCost.RemoveCounters counters => counters.Card == AbilityCostCard.Identity,
+        AbilityCost.Heal heal => heal.Card == AbilityCostCard.Identity,
+        AbilityCost.Damage damage => damage.Card == AbilityCostCard.Identity,
+        AbilityCost.ExhaustChosen chosen => chosen.From is
+            AbilityCardQuery.CharactersYouControl or AbilityCardQuery.AlliesYouControl,
+        // Only the any-number spelling carries an explicit "yourHand" binding.
+        AbilityCost.DiscardFromHand discard => discard.Range is AbilityCostRange.Any,
+        AbilityCost.Spend or AbilityCost.SpendEnergy => false,
+        _ => throw new InvalidOperationException("Unknown compiled cost in player-binding analysis"),
+    };
 
     private static bool ContainsYouOrYour(AbilityNode node) =>
         IsYouOrYourBinding(node.Kind) || ContainsYouOrYour(node.Argument);

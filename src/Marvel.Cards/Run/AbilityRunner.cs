@@ -94,7 +94,7 @@ public sealed partial class AbilityRunner : ICardAbilities
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(card);
-        if (book.CounterPool(card.FaceId) is { } authored)
+        if (program.CounterPools.GetValueOrDefault(card.FaceId) is { } authored)
         {
             return authored;
         }
@@ -775,11 +775,11 @@ public sealed partial class AbilityRunner : ICardAbilities
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(card);
-        if (!book.KnowsWhenRevealed(card.FaceId))
+        if (!program.KnowsWhenRevealed(card.FaceId))
         {
             throw new RulesNotImplementedException(
                 $"card '{card.FaceId}' was revealed and no ability data is written for it; "
-                + $"this engine has {book.Authored.Count} authored card(s)");
+                + $"this engine has {program.Authored.Count} authored card(s)");
         }
 
         return [.. On(card)
@@ -798,13 +798,13 @@ public sealed partial class AbilityRunner : ICardAbilities
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(occurrence);
 
-        if (!book.KnowsWhenRevealed(card.FaceId))
+        if (!program.KnowsWhenRevealed(card.FaceId))
         {
             // Authored-and-does-nothing is a different thing from nobody having
             // read the card, and only one of them is safe to treat as silence.
             throw new RulesNotImplementedException(
                 $"card '{card.FaceId}' was revealed and no ability data is written for it; "
-                + $"this engine has {book.Authored.Count} authored card(s)");
+                + $"this engine has {program.Authored.Count} authored card(s)");
         }
 
         var reveals = On(card)
@@ -1626,7 +1626,7 @@ public sealed partial class AbilityRunner : ICardAbilities
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(card);
-        return book.FirstPlayerControls(card.FaceId) ? world.FirstPlayer : null;
+        return program.ControlledByFirstPlayer.Contains(card.FaceId) ? world.FirstPlayer : null;
     }
 
     /// <inheritdoc/>
@@ -1635,7 +1635,7 @@ public sealed partial class AbilityRunner : ICardAbilities
         ArgumentNullException.ThrowIfNull(world);
 
         var incomplete = world.Cards.FirstOrDefault(card =>
-            DeckTypes.IsInPlay(card.Area.Type) && book.IsPlacementOnly(card.FaceId));
+            DeckTypes.IsInPlay(card.Area.Type) && program.PlacementOnly.Contains(card.FaceId));
         if (incomplete is not null)
         {
             throw new RulesNotImplementedException(
@@ -1666,7 +1666,7 @@ public sealed partial class AbilityRunner : ICardAbilities
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(card);
 
-        if (!book.Authored.Contains(card.FaceId))
+        if (!program.Authored.Contains(card.FaceId))
         {
             // The same distinction `WhenRevealed` makes, and setup is where it
             // matters most: a scenario whose main scheme nobody has read would
@@ -1675,7 +1675,7 @@ public sealed partial class AbilityRunner : ICardAbilities
             // game.
             throw new RulesNotImplementedException(
                 $"card '{card.FaceId}' is being set up and no ability data is written for it; "
-                + $"this engine has {book.Authored.Count} authored card(s)");
+                + $"this engine has {program.Authored.Count} authored card(s)");
         }
 
         var events = new List<GameEvent>();
