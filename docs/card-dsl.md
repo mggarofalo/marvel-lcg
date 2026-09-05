@@ -23,8 +23,8 @@ The responsibilities are separate:
 | `datasets/cards/` | Generated printed facts for the full card catalog |
 | `datasets/abilities/` | Authored executable text for supported faces |
 | `Marvel.Rules` | Rules, state, timing, prompts and events |
-| `Marvel.Cards.Dsl` | Strict JSON parsing and typed ability values |
-| `Marvel.Cards.Run` | Ability validation, initiation and interpretation |
+| `Marvel.Cards.Dsl` | Strict JSON parsing, semantic validation and typed programs |
+| `Marvel.Cards.Run` | Initiation, legality and effect interpretation |
 | `Marvel.Content` | Card facts and supported setup data |
 
 `Marvel.Cards` takes JSON text. It performs no file or network input. The host
@@ -133,7 +133,7 @@ named relation and tests. It does not earn an arbitrary predicate.
 
 ## Effect values and nodes
 
-An ability value has exactly 4 shapes:
+A syntactic ability value has exactly 4 shapes:
 
 - a signed integer;
 - a word such as `this`, `you` or `trigger.player`;
@@ -144,15 +144,37 @@ An executable node is a map with exactly one entry:
 
 ```json
 { "gainSurge": 1 }
-{ "giveStatus": { "cards": "you", "status": "tough" } }
+{ "giveStatus": { "card": "you", "status": "tough" } }
 { "seq": [
     { "draw": { "player": "you", "count": 1 } },
-    { "heal": { "cards": "yourHero", "amount": 2 } }
+    { "heal": { "card": "yourHero", "amount": 2 } }
 ] }
 ```
 
-The interpreter switches on the node name and validates the argument shape it
-expects. Unknown nodes and missing arguments name the failure.
+These maps are syntax, not the runtime's definition of an operation.
+`AbilityCatalog.Parse` reads JSON and checks the ability envelope.
+`AbilityLowering.Book` validates every executable field and produces an immutable
+`AbilityProgram`. Constructing an `AbilityRunner` performs that lowering before
+the book enters gameplay.
+
+The internal vocabulary has closed types for effects, costs, selectors,
+conditions and numbers. Lowering rejects unknown names, missing arguments and
+invalid shapes throughout the tree, including branches a particular game never
+chooses. Diagnostics identify the card, ability ordinal and field path.
+
+Every executable property must map to engine behavior. Adding a language operation
+requires its typed representation, lowering, execution, legality checks and
+behavioral tests. Authoring another card combines those operations as JSON; it
+does not require a C# class for that card or allow executable code in the data.
+
+The program indexes effects by card face, face-local ability ordinal and explicit
+DSL paths with ordered list indexes. These are engine-chosen internal addresses,
+not CLR type names or a new session-ledger wire format.
+
+Some continuation and preflight consumers still traverse syntax. Their temporary
+adapter joins original nodes to compiled instructions during runner construction;
+it does not lower content during gameplay. MARVEL-375 removes that adapter when
+those consumers use the typed program directly.
 
 Counter removal before a cost arrow is authored in `cost`, with the card that
 pays, the named pool, and the exact positive count:
@@ -164,8 +186,8 @@ pays, the named pool, and the exact positive count:
 ```
 
 The count may be greater than one. `card` may name `this` or `you` for a cost;
-the latter covers an upgrade spending counters held by its identity. The old
-string form implicitly meant one counter and is rejected.
+the latter covers an upgrade spending counters held by its identity. A cost
+requires the explicit card, counter and count; string shorthand is rejected.
 
 A `choose` node may carry a `descriptions` string list parallel to `options`.
 Those strings are engine-authored affordance descriptions: clients display
@@ -183,9 +205,10 @@ The implemented vocabulary covers these groups:
 - setup placement and rules metadata that belongs to a printed card; and
 - result-sensitive branches such as “if no damage was healed this way.”
 
-The source under `src/Marvel.Cards/Run/` is the authoritative node vocabulary.
-Every new node needs a parser or interpreter failure test, rule-cited behavior
-tests, and a real supported card that needs it.
+`AbilityLowering` under `src/Marvel.Cards/Dsl/` defines the admitted vocabulary;
+the types describe its operations and `src/Marvel.Cards/Run/` implements them.
+Every new node needs malformed-data tests, rule-cited behavior tests and a real
+supported card that needs it.
 
 ### Current vocabulary index
 
@@ -300,7 +323,11 @@ comes from `datasets/cards/`, and rules come from the vendored authorities.
 
 ## Fail-closed contract
 
-The runtime refuses these states:
+Malformed authored data raises `AbilityException` before gameplay. A valid
+instruction can still reach a rule situation the engine cannot implement;
+that raises `RulesNotImplementedException` rather than guessing an outcome.
+
+The engine refuses these states:
 
 - a reachable face has no authored row;
 - a card row contains an unknown field or malformed node;

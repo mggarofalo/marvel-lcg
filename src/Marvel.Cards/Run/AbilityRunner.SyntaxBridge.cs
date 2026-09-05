@@ -48,4 +48,7 @@ public sealed partial class AbilityRunner
 
     private static AbilityEffect.Conditional ConditionalOf(AbilityNode node, Cast cast) =>
         (AbilityEffect.Conditional)((AbilityRunner)cast.Abilities).CompiledEffect(node);
+
+    private static T EffectOf<T>(AbilityNode node, Cast cast) where T : AbilityEffect =>
+        (T)((AbilityRunner)cast.Abilities).CompiledEffect(node);
 }

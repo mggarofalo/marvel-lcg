@@ -873,9 +873,15 @@ public sealed partial class AbilityRunner
 
             if (effect.Kind is "dealDamage" or "dealAttackDamage")
             {
+                var (cards, printedAmount) = EffectOf<AbilityEffect>(effect, cast) switch
+                {
+                    AbilityEffect.Damage damage => (damage.Cards, damage.Amount),
+                    AbilityEffect.AttackDamage damage => (damage.Cards, damage.Amount),
+                    _ => throw new InvalidOperationException("Expected a compiled damage instruction"),
+                };
                 long amount = SaturatingSum(
                     SaturatingMultiply(
-                        Amount(effect.Require("amount"), cast), baseMultiplier),
+                        Amount(printedAmount, cast), baseMultiplier),
                     [EventModifier(cast, "eventDamage"),
                      effect.Kind == "dealAttackDamage"
                          || cast.Power == BasicPowers.AttackVerb
@@ -884,7 +890,7 @@ public sealed partial class AbilityRunner
                 foreach (var state in states)
                 {
                     foreach (var target in ProjectedEvery(
-                                 effect.Require("cards"), state, cast))
+                                 cards, state, cast))
                     {
                         DealProjected(state, target, amount, repetitions);
                     }
@@ -894,12 +900,13 @@ public sealed partial class AbilityRunner
 
             if (effect.Kind is "moveDamage" or "moveAttackDamage")
             {
+                var instruction = EffectOf<AbilityEffect.MoveDamage>(effect, cast);
                 long requested = SaturatingMultiply(
-                    Amount(effect.Require("amount"), cast), baseMultiplier);
+                    Amount(instruction.Amount, cast), baseMultiplier);
                 foreach (var state in states)
                 {
-                    var from = ProjectedFind(effect.Require("from"), state, cast);
-                    var to = ProjectedFind(effect.Require("to"), state, cast);
+                    var from = ProjectedFind(instruction.From, state, cast);
+                    var to = ProjectedFind(instruction.To, state, cast);
                     if (from is null || to is null
                         || !cast.Abilities.CanTakeDamage(
                             cast.World, to, cast.Source))
@@ -920,16 +927,17 @@ public sealed partial class AbilityRunner
 
             if (effect.Kind == "heal")
             {
+                var instruction = EffectOf<AbilityEffect.Heal>(effect, cast);
                 foreach (var state in states)
                 {
-                    var healed = ProjectedFind(effect.Require("card"), state, cast);
+                    var healed = ProjectedFind(instruction.Card, state, cast);
                     if (healed is null)
                     {
                         continue;
                     }
                     long amount = SaturatingMultiply(
                         SaturatingMultiply(
-                            Amount(effect.Require("amount"), cast), baseMultiplier),
+                            Amount(instruction.Amount, cast), baseMultiplier),
                         repetitions);
                     state.Damage[healed.ObjectId] = Math.Max(
                         0, state.DamageOf(healed) - amount);
@@ -939,14 +947,15 @@ public sealed partial class AbilityRunner
 
             if (effect.Kind == "removeThreat")
             {
+                var instruction = EffectOf<AbilityEffect.RemoveThreat>(effect, cast);
                 long amount = SaturatingSum(
                     SaturatingMultiply(
-                        Amount(effect.Require("amount"), cast), baseMultiplier),
+                        Amount(instruction.Amount, cast), baseMultiplier),
                     [EventModifier(cast, "eventThreatRemoval")]);
                 foreach (var state in states)
                 {
                     foreach (var scheme in ProjectedEvery(
-                                 effect.Require("scheme"), state, cast))
+                                 instruction.Schemes, state, cast))
                     {
                         long removed = SaturatingMultiply(amount, repetitions);
                         state.Threat[scheme.ObjectId] = Math.Max(
@@ -986,11 +995,12 @@ public sealed partial class AbilityRunner
 
             if (effect.Kind == "giveStatus")
             {
-                string status = Word(effect.Require("status"));
+                var instruction = EffectOf<AbilityEffect.GiveStatus>(effect, cast);
+                string status = instruction.Status;
                 foreach (var state in states)
                 {
                     foreach (var target in ProjectedEvery(
-                                 effect.Require("card"), state, cast))
+                                 instruction.Cards, state, cast))
                     {
                         long limit = Statuses.Limit(
                             cast.World, cast.World.Facts, target, status);
@@ -1020,13 +1030,13 @@ public sealed partial class AbilityRunner
             }
 
             if (effect.Kind == "grantUntil"
-                && effect.Field("trait") is { } gainedTrait)
+                && EffectOf<AbilityEffect>(effect, cast) is AbilityEffect.GrantTrait traitGrant)
             {
-                string trait = Word(gainedTrait);
+                string trait = traitGrant.Trait;
                 foreach (var state in states)
                 {
                     var target = ProjectedFind(
-                        effect.Require("card"), state, cast);
+                        traitGrant.Cards, state, cast);
                     if (target is null)
                     {
                         continue;
@@ -1042,15 +1052,14 @@ public sealed partial class AbilityRunner
             }
 
             if (effect.Kind == "grantUntil"
-                && effect.Field("keyword") is { } grantedField)
+                && EffectOf<AbilityEffect>(effect, cast) is AbilityEffect.GrantField fieldGrant)
             {
-                string field = Word(grantedField);
-                long amount = effect.Field("amount") is { } given
-                    ? Amount(given, cast) : 0;
+                string field = fieldGrant.Field;
+                long amount = Amount(fieldGrant.Amount, cast);
                 foreach (var state in states)
                 {
                     var target = ProjectedFind(
-                        effect.Require("card"), state, cast);
+                        fieldGrant.Cards, state, cast);
                     if (target is not null)
                     {
                         var key = (target.ObjectId, field);
@@ -1136,7 +1145,7 @@ public sealed partial class AbilityRunner
 
             if (effect.Kind == "if")
             {
-                var test = Tree(effect.Require("test"));
+                var test = ConditionalOf(effect, cast).Test;
                 var branched = new List<AreaProjectionState>();
                 foreach (var state in states)
                 {
@@ -1194,11 +1203,12 @@ public sealed partial class AbilityRunner
 
             if (effect.Kind is "attack" or "thwart")
             {
+                var instruction = EffectOf<AbilityEffect.Power>(effect, cast);
                 var projected = new List<AreaProjectionState>();
                 foreach (var state in states)
                 {
                     var target = ProjectedFind(
-                        effect.Require("target"), state, cast);
+                        instruction.Target!, state, cast);
                     if (target is null)
                     {
                         projected.Add(state);
@@ -1222,11 +1232,12 @@ public sealed partial class AbilityRunner
 
             if (effect.Kind == "thwartSchemes")
             {
+                var instruction = EffectOf<AbilityEffect.ThwartGroup>(effect, cast);
                 var projected = new List<AreaProjectionState>();
                 foreach (var state in states)
                 {
                     var schemes = ProjectedEvery(
-                        effect.Require("schemes"), state, cast);
+                        instruction.Schemes, state, cast);
                     if (schemes.Count == 0)
                     {
                         projected.Add(state);
@@ -1260,10 +1271,11 @@ public sealed partial class AbilityRunner
 
             if (effect.Kind == "discard")
             {
+                var instruction = EffectOf<AbilityEffect.CardAction>(effect, cast);
                 foreach (var state in states)
                 {
                     foreach (var card in ProjectedEvery(
-                                 effect.Field("card") ?? effect.Argument,
+                                 instruction.Selection,
                                  state,
                                  cast))
                     {
@@ -1277,9 +1289,10 @@ public sealed partial class AbilityRunner
 
             if (effect.Kind == "attachTo")
             {
+                var instruction = EffectOf<AbilityEffect.CardAction>(effect, cast);
                 foreach (var state in states)
                 {
-                    var host = ProjectedFind(effect.Argument, state, cast);
+                    var host = ProjectedFind(instruction.Selection, state, cast);
                     if (host is null)
                     {
                         continue;
@@ -1295,6 +1308,7 @@ public sealed partial class AbilityRunner
 
             if (effect.Kind is "removeFromGame" or "returnToHand" or "reveal")
             {
+                var instruction = EffectOf<AbilityEffect.CardAction>(effect, cast);
                 var destination = effect.Kind switch
                 {
                     "removeFromGame" => DeckType.RemovedArea,
@@ -1304,7 +1318,7 @@ public sealed partial class AbilityRunner
                 foreach (var state in states)
                 {
                     foreach (var card in ProjectedEvery(
-                                 effect.Argument, state, cast))
+                                 instruction.Selection, state, cast))
                     {
                         couldDiscard |= queried.Contains(card.Area.Type)
                             || queried.Contains(destination)
@@ -1317,12 +1331,13 @@ public sealed partial class AbilityRunner
 
             if (effect.Kind == "putIntoPlay")
             {
+                var instruction = EffectOf<AbilityEffect.PutIntoPlay>(effect, cast);
                 foreach (var state in states)
                 {
-                    var selector = effect.Require("card");
+                    var selector = instruction.Card;
                     var cards = ProjectedEvery(selector, state, cast);
                     if (cards.Count == 0
-                        && selector is AbilityValue.Word { Value: "this" }
+                        && selector is AbilityCardSelection.Bound { Binding: AbilityCardBinding.This }
                         && state.SourceReferenceCurrent)
                     {
                         cards.Add(cast.Source);
@@ -1331,10 +1346,7 @@ public sealed partial class AbilityRunner
                     {
                         state.Departed.Remove(card.ObjectId);
                         state.Entered.Add(card.ObjectId);
-                        if (effect.Field("where") is { } where
-                            && string.Equals(
-                                Word(where), "engagedWithYou",
-                                StringComparison.Ordinal))
+                        if (!instruction.PrintedDestination)
                         {
                             state.EngagedWith[card.ObjectId] = Resolver(cast);
                         }
@@ -1345,7 +1357,7 @@ public sealed partial class AbilityRunner
                             state.Tough[card.ObjectId] = Math.Max(
                                 1, state.ToughOf(cast, card));
                         }
-                        if (selector is AbilityValue.Word { Value: "this" })
+                        if (selector is AbilityCardSelection.Bound { Binding: AbilityCardBinding.This })
                         {
                             // Moving out of play and entering play creates a
                             // new incarnation. Later `this` references retain
@@ -1544,113 +1556,70 @@ public sealed partial class AbilityRunner
     }
 
     private static List<Card> ProjectedEvery(
-        AbilityValue selector, AreaProjectionState state, Cast cast)
+        AbilityCardSelection selector, AreaProjectionState state, Cast cast)
     {
         var found = Every(selector, cast)
             .Where(card => !state.Departed.Contains(card.ObjectId))
             .ToList();
-        if (selector is AbilityValue.Word)
+        if (selector is AbilityCardSelection.Bound bound)
         {
-            if (selector is AbilityValue.Word { Value: "this" }
-                && !state.SourceReferenceCurrent)
-            {
-                return [];
-            }
-            return found;
+            return bound.Binding == AbilityCardBinding.This && !state.SourceReferenceCurrent
+                ? [] : found;
         }
-
-        var node = Tree(selector);
-        if (node.Kind == "enemiesWithTrait")
+        if (selector is AbilityCardSelection.EnemiesWithTrait enemies)
         {
-            string wanted = Word(node.Argument);
-            return
-            [
-                .. ProjectedEvery(
-                        new AbilityValue.Map(new Dictionary<string, AbilityValue>
-                        {
-                            ["query"] = new AbilityValue.Word("enemies"),
-                        }),
-                        state,
-                        cast)
-                    .Where(card => state.HasTrait(cast, card, wanted)),
-            ];
+            return [.. ProjectedEvery(new AbilityCardSelection.Query(AbilityCardQuery.Enemies), state, cast)
+                .Where(card => state.HasTrait(cast, card, enemies.Trait))];
         }
-        if (node.Kind is "minBy" or "maxBy")
+        if (selector is AbilityCardSelection.Ranked ranked)
         {
-            var among = ProjectedEvery(node.Require("of"), state, cast)
+            var among = ProjectedEvery(ranked.Cards, state, cast)
                 .Where(card => state.Entered.Contains(card.ObjectId)
-                    ? Rules.Play.Discard.EffectCanRemove(
-                        cast.World, cast.World.Facts, cast.Source, card)
-                    : CanRemoveByEffect(node.Require("of"), cast, card))
+                    ? Rules.Play.Discard.EffectCanRemove(cast.World, cast.World.Facts, cast.Source, card)
+                    : CanRemoveByEffect(ranked.Cards, cast, card))
                 .ToList();
-            if (among.Count == 0)
+            if (among.Count == 0) return [];
+            long Rank(Card card) => ranked.By switch
             {
-                return [];
-            }
-            string key = Word(node.Require("by"));
-            long Rank(Card card) => key switch
-            {
-                "cost" => cast.World.Facts.PrintedValue(
-                    card.FaceId, "Cost", cast.World.Players),
-                "attack" => state.ModifiedOf(cast, card, "attack"),
-                "printedHealth" => FacedownDrones.BaseValue(
-                    card, cast.World.Facts, "HP", cast.World.Players),
-                _ => throw new AbilityException(
-                    $"'{key}' is not a value cards can be ranked by"),
+                AbilityCardRank.Cost => cast.World.Facts.PrintedValue(card.FaceId, "Cost", cast.World.Players),
+                AbilityCardRank.Attack => state.ModifiedOf(cast, card, "attack"),
+                AbilityCardRank.PrintedHealth => FacedownDrones.BaseValue(card, cast.World.Facts, "HP", cast.World.Players),
+                _ => throw new InvalidOperationException("Unknown compiled card rank in area projection"),
             };
-            long extreme = node.Kind == "minBy"
-                ? among.Min(Rank) : among.Max(Rank);
+            long extreme = ranked.Maximum ? among.Max(Rank) : among.Min(Rank);
             return [.. among.Where(card => Rank(card) == extreme)];
         }
-        if (node.Kind == "withTrait")
+        if (selector is AbilityCardSelection.WithTrait trait)
         {
-            string wanted = Word(node.Require("trait"));
-            return
-            [
-                .. ProjectedEvery(node.Require("cards"), state, cast)
-                    .Where(card => state.HasTrait(cast, card, wanted)),
-            ];
+            return [.. ProjectedEvery(trait.Cards, state, cast)
+                .Where(card => state.HasTrait(cast, card, trait.Trait))];
         }
-        if (node.Kind == "query"
-            && string.Equals(
-                Word(node.Argument), "villain", StringComparison.Ordinal)
+        if (selector is AbilityCardSelection.Query { Kind: AbilityCardQuery.Villain }
             && state.ActiveVillain >= 0)
         {
-            found.RemoveAll(card =>
-                CardKinds.IsVillain(cast.World.Facts.Kind(card.FaceId)));
+            found.RemoveAll(card => CardKinds.IsVillain(cast.World.Facts.Kind(card.FaceId)));
             found.Add(cast.World.Cards[state.ActiveVillain]);
         }
-        else if (node.Kind == "query")
+        else if (selector is AbilityCardSelection.Query query)
         {
-            string query = Word(node.Argument);
-            if (query is "attackableEnemies" or "attackableMinions")
+            if (query.Kind is AbilityCardQuery.AttackableEnemies or AbilityCardQuery.AttackableMinions)
             {
-                string candidates = query == "attackableEnemies"
-                    ? "enemies" : "minions";
-                found = ProjectedEvery(
-                    new AbilityValue.Map(new Dictionary<string, AbilityValue>
-                    {
-                        ["query"] = new AbilityValue.Word(candidates),
-                    }),
-                    state,
-                    cast);
-                found = found.Where(card =>
-                        cast.World.Abilities.CanTakeDamage(
-                            cast.World, card, cast.Source))
-                    .Where(card => query != "attackableMinions"
+                var candidates = query.Kind == AbilityCardQuery.AttackableEnemies
+                    ? AbilityCardQuery.Enemies : AbilityCardQuery.Minions;
+                found = ProjectedEvery(new AbilityCardSelection.Query(candidates), state, cast)
+                    .Where(card => cast.World.Abilities.CanTakeDamage(cast.World, card, cast.Source))
+                    .Where(card => query.Kind != AbilityCardQuery.AttackableMinions
                         || cast.World.Facts.Kind(card.FaceId) == CardKind.Minion)
                     .ToList();
                 bool guard = found.Any(card =>
                     cast.World.Facts.Kind(card.FaceId) == CardKind.Minion
                     && state.ModifiedOf(cast, card, "guard") > 0
-                    && (state.EngagedWith.GetValueOrDefault(
-                            card.ObjectId, -1) == Resolver(cast)
+                    && (state.EngagedWith.GetValueOrDefault(card.ObjectId, -1) == Resolver(cast)
                         || !state.EngagedWith.ContainsKey(card.ObjectId)
                             && card.Area.PlayArea == PlayArea.Of(Resolver(cast))));
                 if (guard)
                 {
-                    found.RemoveAll(card =>
-                        CardKinds.IsVillain(cast.World.Facts.Kind(card.FaceId)));
+                    found.RemoveAll(card => CardKinds.IsVillain(cast.World.Facts.Kind(card.FaceId)));
                 }
             }
             else
@@ -1658,45 +1627,35 @@ public sealed partial class AbilityRunner
                 found.AddRange(state.Entered
                     .Select(id => cast.World.Cards[id])
                     .Where(card => !state.Departed.Contains(card.ObjectId))
-                    .Where(card => query switch
+                    .Where(card => query.Kind switch
                     {
-                        "minions" => cast.World.Facts.Kind(card.FaceId)
-                            == CardKind.Minion,
-                        "minionsEngagedWithYou" =>
+                        AbilityCardQuery.Minions => cast.World.Facts.Kind(card.FaceId) == CardKind.Minion,
+                        AbilityCardQuery.MinionsEngagedWithYou =>
                             cast.World.Facts.Kind(card.FaceId) == CardKind.Minion
-                            && state.EngagedWith.GetValueOrDefault(
-                                card.ObjectId, -1) == Resolver(cast),
-                        "enemiesEngagedWithChosenPlayer" =>
+                            && state.EngagedWith.GetValueOrDefault(card.ObjectId, -1) == Resolver(cast),
+                        AbilityCardQuery.EnemiesEngagedWithChosenPlayer =>
                             cast.World.Facts.Kind(card.FaceId) == CardKind.Minion
-                            && state.EngagedWith.GetValueOrDefault(
-                                card.ObjectId, -1) == ChosenPlayer(cast).Owner,
-                        "enemies" => CardKinds.IsEnemy(
-                            cast.World.Facts.Kind(card.FaceId)),
-                        "characters" => CardKinds.IsCharacter(
-                            cast.World.Facts.Kind(card.FaceId)),
-                        "sideSchemes" or "schemes" or "thwartableSchemes" =>
-                            cast.World.Facts.Kind(card.FaceId)
-                                == CardKind.EncounterSideScheme,
+                            && state.EngagedWith.GetValueOrDefault(card.ObjectId, -1) == ChosenPlayer(cast).Owner,
+                        AbilityCardQuery.Enemies => CardKinds.IsEnemy(cast.World.Facts.Kind(card.FaceId)),
+                        AbilityCardQuery.Characters => CardKinds.IsCharacter(cast.World.Facts.Kind(card.FaceId)),
+                        AbilityCardQuery.SideSchemes or AbilityCardQuery.Schemes or AbilityCardQuery.ThwartableSchemes =>
+                            cast.World.Facts.Kind(card.FaceId) == CardKind.EncounterSideScheme,
                         _ => false,
                     }));
             }
         }
-        else if (node.Kind == "titled")
+        else if (selector is AbilityCardSelection.Titled titled)
         {
-            string title = Word(node.Argument);
             found.AddRange(state.Entered
                 .Select(id => cast.World.Cards[id])
                 .Where(card => !state.Departed.Contains(card.ObjectId))
-                .Where(card => string.Equals(
-                    cast.World.Facts.Title(card.FaceId),
-                    title,
-                    StringComparison.Ordinal)));
+                .Where(card => string.Equals(cast.World.Facts.Title(card.FaceId), titled.Title, StringComparison.Ordinal)));
         }
         return [.. found.DistinctBy(card => card.ObjectId)];
     }
 
     private static Card? ProjectedFind(
-        AbilityValue selector, AreaProjectionState state, Cast cast)
+        AbilityCardSelection selector, AreaProjectionState state, Cast cast)
     {
         var found = ProjectedEvery(selector, state, cast);
         return found.Count switch
@@ -1709,34 +1668,34 @@ public sealed partial class AbilityRunner
     }
 
     private static bool? ProjectedTest(
-        AbilityNode test, AreaProjectionState state, Cast cast)
+        AbilityCondition test, AreaProjectionState state, Cast cast)
     {
-        if (test.Kind == "hasStatus"
-            && ProjectedFind(test.Require("card"), state, cast) is { } target)
+        if (test is AbilityCondition.CardText { Property: AbilityCardTextProperty.Status } status
+            && ProjectedFind(status.Card, state, cast) is { } target)
         {
-            return state.StatusOf(
-                cast, target, Word(test.Require("status"))) > 0;
+            return state.StatusOf(cast, target, status.Text) > 0;
         }
-        if (test.Kind == "not")
+        if (test is AbilityCondition.Negated negated)
         {
-            return ProjectedTest(Tree(test.Argument), state, cast) is { } inner
+            return ProjectedTest(negated.Operand, state, cast) is { } inner
                 ? !inner : null;
         }
-        if (test.Kind is "and" or "or")
+        if (test is AbilityCondition.All or AbilityCondition.Any)
         {
-            var values = Nodes(test.Argument)
+            var operands = test is AbilityCondition.All all ? all.Operands : ((AbilityCondition.Any)test).Operands;
+            var values = operands
                 .Select(child => ProjectedTest(child, state, cast)).ToList();
-            if (test.Kind == "and" && values.Any(value => value == false))
+            if (test is AbilityCondition.All && values.Any(value => value == false))
             {
                 return false;
             }
-            if (test.Kind == "or" && values.Any(value => value == true))
+            if (test is AbilityCondition.Any && values.Any(value => value == true))
             {
                 return true;
             }
             return values.Any(value => value is null)
                 ? null
-                : test.Kind == "and";
+                : test is AbilityCondition.All;
         }
         return null;
     }
@@ -1749,7 +1708,7 @@ public sealed partial class AbilityRunner
                 Nodes(effect.Argument).Select(child =>
                     ProjectedResolution(child, state, cast))),
             "if" => ProjectedTest(
-                    Tree(effect.Require("test")), state, cast)
+                    ConditionalOf(effect, cast).Test, state, cast)
                 is { } result
                     ? effect.Field(result ? "then" : "else") is { } branch
                         ? ProjectedResolution(Tree(branch), state, cast)
@@ -1762,14 +1721,14 @@ public sealed partial class AbilityRunner
             "forEach" => ProjectedResolution(
                 Tree(effect.Require("effect")), state, cast),
             "heal" => ResolutionOfAmount(
-                ProjectedFind(effect.Require("card"), state, cast) is { } healed
+                ProjectedFind(EffectOf<AbilityEffect.Heal>(effect, cast).Card, state, cast) is { } healed
                     ? state.DamageOf(healed) : 0,
-                Amount(effect.Require("amount"), cast)),
+                Amount(EffectOf<AbilityEffect.Heal>(effect, cast).Amount, cast)),
             "removeThreat" => CombinedOutcomes(
-                ProjectedEvery(effect.Require("scheme"), state, cast).Select(scheme =>
+                ProjectedEvery(EffectOf<AbilityEffect.RemoveThreat>(effect, cast).Schemes, state, cast).Select(scheme =>
                     ResolutionOfAmount(
                         state.ThreatOf(scheme),
-                        Amount(effect.Require("amount"), cast)))),
+                        Amount(EffectOf<AbilityEffect.RemoveThreat>(effect, cast).Amount, cast)))),
             _ => ResolutionOf(effect, cast),
         };
 
