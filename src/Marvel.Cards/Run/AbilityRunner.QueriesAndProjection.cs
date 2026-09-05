@@ -45,9 +45,10 @@ public sealed partial class AbilityRunner
     }
 
     private static bool MayChangeAnyArea(
-        AbilityNode effect, IReadOnlySet<DeckType> queried, Cast cast,
+        AbilityEffect effect, IReadOnlySet<DeckType> queried, Cast cast,
         long multiplier = 1)
     {
+        if (effect is AbilityEffect.DelayedStun) return false;
         bool Includes(params DeckType[] areas) => areas.Any(queried.Contains);
 
         bool SelectedCardMovesToDiscard(AbilityCardSelection selector) =>
@@ -61,7 +62,7 @@ public sealed partial class AbilityRunner
             Every(selector, cast).Any(card => queried.Contains(card.Area.Type))
             || Includes(destinations);
 
-        bool DamageCouldDiscard(AbilityNode damage)
+        bool DamageCouldDiscard(AbilityEffect damage)
         {
             long amount = SaturatingSum(
                 SaturatingMultiply(
@@ -82,7 +83,7 @@ public sealed partial class AbilityRunner
                         && queried.Contains(DeckType.DiscardPile)));
         }
 
-        bool ThreatRemovalCouldDiscard(AbilityNode removal)
+        bool ThreatRemovalCouldDiscard(AbilityEffect removal)
         {
             if (!queried.Contains(DeckType.EncounterDiscardPile))
             {
@@ -98,7 +99,7 @@ public sealed partial class AbilityRunner
                 && DefeatTreeChangesArea(scheme, queried, cast));
         }
 
-        bool MovedDamageCouldDiscard(AbilityNode movement)
+        bool MovedDamageCouldDiscard(AbilityEffect movement)
         {
             var from = Find(EffectOf<AbilityEffect.MoveDamage>(movement, cast).From, cast);
             var to = Find(EffectOf<AbilityEffect.MoveDamage>(movement, cast).To, cast);
@@ -120,7 +121,7 @@ public sealed partial class AbilityRunner
                         && queried.Contains(DeckType.DiscardPile));
         }
 
-        bool direct = effect.Kind switch
+        bool direct = effect.OperationName() switch
         {
             "draw" or "drawToHandSize" or "drawToPrintedHandSize" =>
                 Includes(DeckType.PlayerDeck, DeckType.HandsArea),
@@ -162,7 +163,7 @@ public sealed partial class AbilityRunner
             return true;
         }
 
-        if (effect.Kind == "forEach")
+        if (effect.OperationName() == "forEach")
         {
             if (CurrentlyZeroForEach(effect, cast))
             {
@@ -170,10 +171,10 @@ public sealed partial class AbilityRunner
             }
             long count = ForEachCount(effect, cast);
             return MayChangeAnyArea(
-                Tree(effect.Require("effect")), queried, cast,
+                EffectBody(effect), queried, cast,
                 SaturatingMultiply(multiplier, count));
         }
-        if (effect.Kind == "eachPlayer")
+        if (effect.OperationName() == "eachPlayer")
         {
             int priorPlayer = cast.Player;
             try
@@ -182,7 +183,7 @@ public sealed partial class AbilityRunner
                 {
                     cast.RestorePlayer(player);
                     return MayChangeAnyArea(
-                        Tree(effect.Require("effect")), queried, cast, multiplier);
+                        EffectBody(effect), queried, cast, multiplier);
                 });
             }
             finally
@@ -190,13 +191,13 @@ public sealed partial class AbilityRunner
                 cast.RestorePlayer(priorPlayer);
             }
         }
-        if (effect.Kind is "seq" or "and")
+        if (effect.OperationName() is "seq" or "and")
         {
             return EffectsMayChangeAnyArea(
-                Nodes(effect.Argument).ToList(), queried, cast, multiplier);
+                OrderedEffects(effect).ToList(), queried, cast, multiplier);
         }
 
-        IEnumerable<AbilityNode> reachable = effect.Kind switch
+        IEnumerable<AbilityEffect> reachable = effect.OperationName() switch
         {
             // A choice has not run during the enclosing sequence preflight.
             // Its selected option/effect is added to PriorSteps when that
@@ -204,15 +205,15 @@ public sealed partial class AbilityRunner
             "choose" or "chooseCard" => [],
             "if" => ReachableMutationBranches(effect, cast),
             "defense" or "delayUntil"
-                or "attack" or "thwart" => [Tree(effect.Require("effect"))],
-            _ => StructuralChildren(effect),
+                or "attack" or "thwart" => [EffectBody(effect)],
+            _ => ResolutionChildren(effect),
         };
         return reachable.Any(child =>
             MayChangeAnyArea(child, queried, cast, multiplier));
     }
 
     private static bool EffectsMayChangeAnyArea(
-        IReadOnlyList<AbilityNode> effects, IReadOnlySet<DeckType> queried,
+        IReadOnlyList<AbilityEffect> effects, IReadOnlySet<DeckType> queried,
         Cast cast, long baseMultiplier = 1)
         => ProjectedAreaMayChange(effects, null, queried, cast, baseMultiplier);
 
@@ -221,7 +222,7 @@ public sealed partial class AbilityRunner
         => ProjectedAreaMayChange([], cost, queried, cast);
 
     private static bool ProjectedAreaMayChange(
-        IReadOnlyList<AbilityNode> effects, AbilityCost? cost,
+        IReadOnlyList<AbilityEffect> effects, AbilityCost? cost,
         IReadOnlySet<DeckType> queried, Cast cast, long baseMultiplier = 1)
     {
         bool couldDiscard = false;
@@ -430,7 +431,7 @@ public sealed partial class AbilityRunner
         }
 
         List<AreaProjectionState> TraceSequence(
-            IEnumerable<AbilityNode> sequence,
+            IEnumerable<AbilityEffect> sequence,
             List<AreaProjectionState> states, long multiplier = 1)
         {
             foreach (var step in sequence)
@@ -441,7 +442,7 @@ public sealed partial class AbilityRunner
         }
 
         List<AreaProjectionState> Trace(
-            AbilityNode effect, List<AreaProjectionState> states,
+            AbilityEffect effect, List<AreaProjectionState> states,
             long repetitions = 1, long baseMultiplier = 1)
         {
             if (repetitions <= 0 || states.Count == 0)
@@ -449,7 +450,7 @@ public sealed partial class AbilityRunner
                 return states;
             }
 
-            if (effect.Kind is "dealDamage" or "dealAttackDamage")
+            if (effect.OperationName() is "dealDamage" or "dealAttackDamage")
             {
                 var (cards, printedAmount) = EffectOf<AbilityEffect>(effect, cast) switch
                 {
@@ -461,7 +462,7 @@ public sealed partial class AbilityRunner
                     SaturatingMultiply(
                         Amount(printedAmount, cast), baseMultiplier),
                     [EventModifier(cast, "eventDamage"),
-                     effect.Kind == "dealAttackDamage"
+                     effect.OperationName() == "dealAttackDamage"
                          || cast.Power == BasicPowers.AttackVerb
                             ? EventModifier(cast, "attackDamage")
                             : 0]);
@@ -476,7 +477,7 @@ public sealed partial class AbilityRunner
                 return states;
             }
 
-            if (effect.Kind is "moveDamage" or "moveAttackDamage")
+            if (effect.OperationName() is "moveDamage" or "moveAttackDamage")
             {
                 var instruction = EffectOf<AbilityEffect.MoveDamage>(effect, cast);
                 long requested = SaturatingMultiply(
@@ -503,7 +504,7 @@ public sealed partial class AbilityRunner
                 return states;
             }
 
-            if (effect.Kind == "heal")
+            if (effect.OperationName() == "heal")
             {
                 var instruction = EffectOf<AbilityEffect.Heal>(effect, cast);
                 foreach (var state in states)
@@ -523,7 +524,7 @@ public sealed partial class AbilityRunner
                 return states;
             }
 
-            if (effect.Kind == "removeThreat")
+            if (effect.OperationName() == "removeThreat")
             {
                 var instruction = EffectOf<AbilityEffect.RemoveThreat>(effect, cast);
                 long amount = SaturatingSum(
@@ -553,15 +554,15 @@ public sealed partial class AbilityRunner
                 return states;
             }
 
-            if (effect.Kind == "forEach")
+            if (effect.OperationName() == "forEach")
             {
                 if (CurrentlyZeroForEach(effect, cast))
                 {
                     return states;
                 }
-                var repeated = Tree(effect.Require("effect"));
+                var repeated = EffectBody(effect);
                 long count = ForEachCount(effect, cast);
-                return repeated.Kind is "dealDamage" or "dealAttackDamage"
+                return repeated.OperationName() is "dealDamage" or "dealAttackDamage"
                     or "removeThreat"
                     ? Trace(
                         repeated, states, repetitions,
@@ -571,7 +572,7 @@ public sealed partial class AbilityRunner
                         SaturatingMultiply(repetitions, count), baseMultiplier);
             }
 
-            if (effect.Kind == "giveStatus")
+            if (effect.OperationName() == "giveStatus")
             {
                 var instruction = EffectOf<AbilityEffect.GiveStatus>(effect, cast);
                 string status = instruction.Status;
@@ -607,7 +608,7 @@ public sealed partial class AbilityRunner
                 return states;
             }
 
-            if (effect.Kind == "grantUntil"
+            if (effect.OperationName() == "grantUntil"
                 && EffectOf<AbilityEffect>(effect, cast) is AbilityEffect.GrantTrait traitGrant)
             {
                 string trait = traitGrant.Trait;
@@ -629,7 +630,7 @@ public sealed partial class AbilityRunner
                 return states;
             }
 
-            if (effect.Kind == "grantUntil"
+            if (effect.OperationName() == "grantUntil"
                 && EffectOf<AbilityEffect>(effect, cast) is AbilityEffect.GrantField fieldGrant)
             {
                 string field = fieldGrant.Field;
@@ -648,7 +649,7 @@ public sealed partial class AbilityRunner
                 return states;
             }
 
-            if (effect.Kind == "eachPlayer")
+            if (effect.OperationName() == "eachPlayer")
             {
                 int priorPlayer = cast.Player;
                 try
@@ -657,7 +658,7 @@ public sealed partial class AbilityRunner
                     {
                         cast.RestorePlayer(player);
                         states = Trace(
-                            Tree(effect.Require("effect")), states,
+                            EffectBody(effect), states,
                             repetitions, baseMultiplier);
                     }
                     return states;
@@ -668,7 +669,7 @@ public sealed partial class AbilityRunner
                 }
             }
 
-            if (effect.Kind == "and")
+            if (effect.OperationName() == "and")
             {
                 if (repetitions > 1)
                 {
@@ -679,7 +680,7 @@ public sealed partial class AbilityRunner
                     }
                     return states;
                 }
-                var simultaneous = Nodes(effect.Argument).ToList();
+                var simultaneous = OrderedEffects(effect).ToList();
                 const int MaximumProjectedAndEffects = 12;
                 if (simultaneous.Count > MaximumProjectedAndEffects)
                 {
@@ -721,7 +722,7 @@ public sealed partial class AbilityRunner
                     frontier.Select(candidate => candidate.State));
             }
 
-            if (effect.Kind == "if")
+            if (effect.OperationName() == "if")
             {
                 var test = ConditionalOf(effect, cast).Test;
                 var branched = new List<AreaProjectionState>();
@@ -729,8 +730,8 @@ public sealed partial class AbilityRunner
                 {
                     bool? projected = ProjectedTest(test, state, cast);
                     var branches = projected is { } result
-                        ? effect.Field(result ? "then" : "else") is { } taken
-                            ? [Tree(taken)]
+                        ? ConditionalBranch(effect, result ? "then" : "else") is { } taken
+                            ? [taken]
                             : []
                         : ReachableMutationBranches(effect, cast).ToList();
                     if (branches.Count == 0)
@@ -747,11 +748,11 @@ public sealed partial class AbilityRunner
                 return AreaProjectionState.Distinct(branched);
             }
 
-            if (effect.Kind is "then" or "otherwise")
+            if (effect.OperationName() is "then" or "otherwise")
             {
-                var predecessor = Tree(effect.Require("effect"));
-                var dependent = Tree(effect.Require(effect.Kind));
-                var required = effect.Kind == "then"
+                var predecessor = EffectBody(effect);
+                var dependent = EffectFollowing(effect);
+                var required = effect.OperationName() == "then"
                     ? ResolutionOutcome.Full : ResolutionOutcome.None;
                 var branched = new List<AreaProjectionState>();
                 foreach (var state in states)
@@ -774,12 +775,12 @@ public sealed partial class AbilityRunner
                 return AreaProjectionState.Distinct(branched);
             }
 
-            if (effect.Kind is "choose" or "chooseCard")
+            if (effect.OperationName() is "choose" or "chooseCard")
             {
                 return states;
             }
 
-            if (effect.Kind is "attack" or "thwart")
+            if (effect.OperationName() is "attack" or "thwart")
             {
                 var instruction = EffectOf<AbilityEffect.Power>(effect, cast);
                 var projected = new List<AreaProjectionState>();
@@ -797,7 +798,7 @@ public sealed partial class AbilityRunner
                     {
                         cast.Choose(target);
                         projected.AddRange(Trace(
-                            Tree(effect.Require("effect")), [state],
+                            EffectBody(effect), [state],
                             repetitions, baseMultiplier));
                     }
                     finally
@@ -808,7 +809,7 @@ public sealed partial class AbilityRunner
                 return projected;
             }
 
-            if (effect.Kind == "thwartSchemes")
+            if (effect.OperationName() == "thwartSchemes")
             {
                 var instruction = EffectOf<AbilityEffect.ThwartGroup>(effect, cast);
                 var projected = new List<AreaProjectionState>();
@@ -828,7 +829,7 @@ public sealed partial class AbilityRunner
                         cast.Choose(schemes[0]);
                         cast.SetPowerTargets(schemes);
                         projected.AddRange(Trace(
-                            Tree(effect.Require("power")), [state],
+                            ((AbilityEffect.ThwartGroup)effect).Thwart, [state],
                             repetitions, baseMultiplier));
                     }
                     finally
@@ -840,14 +841,15 @@ public sealed partial class AbilityRunner
                 return projected;
             }
 
-            if (effect.Kind is "defense" or "delayUntil")
+            if (effect is AbilityEffect.DelayedStun) return states;
+            if (effect.OperationName() is "defense" or "delayUntil")
             {
                 return Trace(
-                    Tree(effect.Require("effect")), states,
+                    EffectBody(effect), states,
                     repetitions, baseMultiplier);
             }
 
-            if (effect.Kind == "discard")
+            if (effect.OperationName() == "discard")
             {
                 var instruction = EffectOf<AbilityEffect.CardAction>(effect, cast);
                 foreach (var state in states)
@@ -865,7 +867,7 @@ public sealed partial class AbilityRunner
                 return states;
             }
 
-            if (effect.Kind == "attachTo")
+            if (effect.OperationName() == "attachTo")
             {
                 var instruction = EffectOf<AbilityEffect.CardAction>(effect, cast);
                 foreach (var state in states)
@@ -884,10 +886,10 @@ public sealed partial class AbilityRunner
                 return states;
             }
 
-            if (effect.Kind is "removeFromGame" or "returnToHand" or "reveal")
+            if (effect.OperationName() is "removeFromGame" or "returnToHand" or "reveal")
             {
                 var instruction = EffectOf<AbilityEffect.CardAction>(effect, cast);
-                var destination = effect.Kind switch
+                var destination = effect.OperationName() switch
                 {
                     "removeFromGame" => DeckType.RemovedArea,
                     "returnToHand" => DeckType.HandsArea,
@@ -907,7 +909,7 @@ public sealed partial class AbilityRunner
                 return states;
             }
 
-            if (effect.Kind == "putIntoPlay")
+            if (effect.OperationName() == "putIntoPlay")
             {
                 var instruction = EffectOf<AbilityEffect.PutIntoPlay>(effect, cast);
                 foreach (var state in states)
@@ -949,7 +951,7 @@ public sealed partial class AbilityRunner
                 return states;
             }
 
-            if (effect.Kind is "draw" or "drawToHandSize"
+            if (effect.OperationName() is "draw" or "drawToHandSize"
                 or "drawToPrintedHandSize" or "search"
                 or "shuffleInto" or "dealEncounterCard" or "dealEncounterCards"
                 or "revealTop" or "discardTop" or "discardUntil"
@@ -971,7 +973,7 @@ public sealed partial class AbilityRunner
                 return states;
             }
             return TraceSequence(
-                StructuralChildren(effect), states, baseMultiplier);
+                ResolutionChildren(effect), states, baseMultiplier);
         }
 
         var removedCounters = new Dictionary<int, long>();
@@ -1279,17 +1281,17 @@ public sealed partial class AbilityRunner
     }
 
     private static ResolutionOutcome ProjectedResolution(
-        AbilityNode effect, AreaProjectionState state, Cast cast) =>
-        effect.Kind switch
+        AbilityEffect effect, AreaProjectionState state, Cast cast) =>
+        effect.OperationName() switch
         {
             "seq" or "and" => CombinedOutcomes(
-                Nodes(effect.Argument).Select(child =>
+                OrderedEffects(effect).Select(child =>
                     ProjectedResolution(child, state, cast))),
             "if" => ProjectedTest(
                     ConditionalOf(effect, cast).Test, state, cast)
                 is { } result
-                    ? effect.Field(result ? "then" : "else") is { } branch
-                        ? ProjectedResolution(Tree(branch), state, cast)
+                    ? ConditionalBranch(effect, result ? "then" : "else") is { } branch
+                        ? ProjectedResolution(branch, state, cast)
                         : ResolutionOutcome.None
                     : throw new RulesNotImplementedException(
                         $"'{cast.Source.FaceId}' has a projected dependent condition "
@@ -1297,7 +1299,7 @@ public sealed partial class AbilityRunner
             "forEach" when ForEachCount(effect, cast) == 0 =>
                 ResolutionOutcome.None,
             "forEach" => ProjectedResolution(
-                Tree(effect.Require("effect")), state, cast),
+                EffectBody(effect), state, cast),
             "heal" => ResolutionOfAmount(
                 ProjectedFind(EffectOf<AbilityEffect.Heal>(effect, cast).Card, state, cast) is { } healed
                     ? state.DamageOf(healed) : 0,
@@ -1464,7 +1466,7 @@ public sealed partial class AbilityRunner
                 .Where(source => !Departed.Contains(source.ObjectId))
                 .DistinctBy(source => source.ObjectId);
             return sources
-                .Any(source => runner.CompiledOn(source)
+                .Any(source => runner.On(source)
                     .Where(ability =>
                         ability.Trigger.Timing == AbilityType.Constant)
                     .Any(ability => ConditionalGrant(

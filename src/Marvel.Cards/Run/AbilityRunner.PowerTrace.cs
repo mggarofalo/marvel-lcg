@@ -32,7 +32,7 @@ public sealed partial class AbilityRunner
         PowerReachability[]? Alternatives = null);
 
     private static bool SuspendsPowerEffect(
-        AbilityNode node, Cast cast, bool stateMayChange = false,
+        AbilityEffect node, Cast cast, bool stateMayChange = false,
         bool bindingMayChange = false, PowerReachability? reachability = null)
     {
         var state = reachability ?? InitialPowerReachability(cast);
@@ -41,9 +41,9 @@ public sealed partial class AbilityRunner
             return alternatives.Any(alternative => SuspendsPowerEffect(
                 node, cast, stateMayChange, bindingMayChange, alternative));
         }
-        return (node.Kind == "and" && Nodes(node.Argument).Skip(1).Any())
+        return (node.OperationName() == "and" && OrderedEffects(node).Skip(1).Any())
             || IsChoice(node)
-            || node.Kind is "eachPlayer" or "attack" or "thwart" or "thwartSchemes"
+            || node.OperationName() is "eachPlayer" or "attack" or "thwart" or "thwartSchemes"
                 or "placeThreat" or "enemyAttacks" or "enemySchemes"
             || PowerSuspensionChildren(
                 node, cast, stateMayChange, bindingMayChange, state).Any(child =>
@@ -53,16 +53,16 @@ public sealed partial class AbilityRunner
     }
 
     private static IEnumerable<(
-        AbilityNode Node, bool StateMayChange, bool BindingMayChange,
+        AbilityEffect Node, bool StateMayChange, bool BindingMayChange,
         PowerReachability Reachability)> PowerSuspensionChildren(
-        AbilityNode node, Cast cast, bool stateMayChange,
+        AbilityEffect node, Cast cast, bool stateMayChange,
         bool bindingMayChange, PowerReachability reachability)
     {
-        if (node.Kind == "seq")
+        if (node.OperationName() == "seq")
         {
-            var children = Nodes(node.Argument).ToList();
+            var children = OrderedEffects(node).ToList();
             var result = new List<(
-                AbilityNode, bool, bool, PowerReachability)>(children.Count);
+                AbilityEffect, bool, bool, PowerReachability)>(children.Count);
             var state = reachability;
             for (int index = 0; index < children.Count; index++)
             {
@@ -76,27 +76,27 @@ public sealed partial class AbilityRunner
             }
             return result;
         }
-        if (node.Kind == "and")
+        if (node.OperationName() == "and")
         {
-            var children = Nodes(node.Argument).ToList();
+            var children = OrderedEffects(node).ToList();
             return children.Select(child =>
                 (child,
                     stateMayChange || children.Count > 1,
                     bindingMayChange,
                     reachability));
         }
-        if (node.Kind == "if")
+        if (node.OperationName() == "if")
         {
             var test = ConditionalOf(node, cast).Test;
             bool canSwitch = PowerTestCanChange(
                 test, cast, stateMayChange, bindingMayChange, reachability);
             var branches = canSwitch
-                ? Branches.Select(node.Field).Where(value => value is not null)
-                : node.Field(Test(test, cast) ? "then" : "else") is { } active
+                ? ConditionalBranches((AbilityEffect.Conditional)node).Where(value => value is not null)
+                : ConditionalBranch(node, Test(test, cast) ? "then" : "else") is { } active
                     ? [active]
                     : [];
             return branches.Select(value =>
-                (Tree(value!), stateMayChange, bindingMayChange, reachability));
+                (value, stateMayChange, bindingMayChange, reachability));
         }
         return GuardChildren(node, cast, stateMayChange, bindingMayChange, null)
             .Select(child =>
@@ -217,7 +217,7 @@ public sealed partial class AbilityRunner
     }
 
     private static PowerReachability PowerStateAfter(
-        AbilityNode node, Cast cast, bool stateMayChange,
+        AbilityEffect node, Cast cast, bool stateMayChange,
         bool bindingMayChange, PowerReachability reachability)
     {
         if (reachability.Alternatives is { } alternatives)
@@ -229,28 +229,28 @@ public sealed partial class AbilityRunner
         // SuspendsPowerEffect rejects this simultaneous choice by shape. Do
         // not eagerly replay its children while computing a later sibling's
         // abstract state; each replay would invent another damage instance.
-        if (node.Kind == "and" && Nodes(node.Argument).Skip(1).Any())
+        if (node.OperationName() == "and" && OrderedEffects(node).Skip(1).Any())
         {
             return reachability;
         }
-        if (node.Kind == "changeForm")
+        if (node.OperationName() == "changeForm")
         {
             return ChangeFormState(FormChangeOf(node, cast), cast, bindingMayChange, reachability);
         }
-        if (node.Kind == "forEach")
+        if (node.OperationName() == "forEach")
         {
             if (HasUnboundPowerAmount(node, cast))
             {
                 return MergePowerStates(
                     reachability,
                     PowerStateAfter(
-                        Tree(node.Require("effect")), cast,
+                        EffectBody(node), cast,
                         stateMayChange, bindingMayChange, reachability),
                     cast);
             }
             long count = ForEachCount(node, cast);
-            var effect = Tree(node.Require("effect"));
-            if (!Choices(effect).Any() && effect.Kind == "dealDamage")
+            var effect = EffectBody(node);
+            if (!Choices(effect).Any() && effect.OperationName() == "dealDamage")
             {
                 return ApplyPowerLeafState(
                     effect, cast, bindingMayChange, reachability, count);
@@ -269,7 +269,7 @@ public sealed partial class AbilityRunner
             }
             return repeated;
         }
-        if (node.Kind is "then" or "otherwise")
+        if (node.OperationName() is "then" or "otherwise")
         {
             return PowerDependentStateAfter(
                 node, cast, stateMayChange, bindingMayChange, reachability);
@@ -282,8 +282,8 @@ public sealed partial class AbilityRunner
         {
             return advanced;
         }
-        if (node.Kind == "seq"
-            || (node.Kind == "and" && children.Count == 1))
+        if (node.OperationName() == "seq"
+            || (node.OperationName() == "and" && children.Count == 1))
         {
             var ordered = advanced;
             foreach (var child in children)
@@ -295,7 +295,7 @@ public sealed partial class AbilityRunner
             return ordered;
         }
 
-        bool includeBaseline = node.Kind != "if"
+        bool includeBaseline = node.OperationName() != "if"
             || ConditionalCanSkipBranch(
                 node, cast, stateMayChange, bindingMayChange, advanced);
         PowerReachability? merged = includeBaseline ? advanced : null;
@@ -312,12 +312,12 @@ public sealed partial class AbilityRunner
     }
 
     private static PowerReachability PowerDependentStateAfter(
-        AbilityNode node, Cast cast, bool stateMayChange,
+        AbilityEffect node, Cast cast, bool stateMayChange,
         bool bindingMayChange, PowerReachability reachability)
     {
-        var effect = Tree(node.Require("effect"));
-        var dependent = Tree(node.Require(node.Kind));
-        var required = node.Kind == "then"
+        var effect = EffectBody(node);
+        var dependent = EffectFollowing(node);
+        var required = node.OperationName() == "then"
             ? ResolutionOutcome.Full
             : ResolutionOutcome.None;
         bool answered = ActiveChoices(effect, cast).Any();
@@ -329,7 +329,7 @@ public sealed partial class AbilityRunner
             var branch = outcome.Outcome == required
                 ? PowerStateAfter(
                     dependent, cast,
-                    node.Kind == "then" || answered || outcomes.Count > 1,
+                    node.OperationName() == "then" || answered || outcomes.Count > 1,
                     bindingMayChange, outcome.State)
                 : outcome.State;
             merged = merged is { } prior
@@ -343,7 +343,7 @@ public sealed partial class AbilityRunner
         ResolutionOutcome Outcome, PowerReachability State);
 
     private static List<PowerOutcomeState> PowerOutcomeStates(
-        AbilityNode node, Cast cast, bool stateMayChange,
+        AbilityEffect node, Cast cast, bool stateMayChange,
         bool bindingMayChange, PowerReachability reachability)
     {
         if (reachability.Alternatives is { } alternatives)
@@ -351,28 +351,28 @@ public sealed partial class AbilityRunner
             return [.. alternatives.SelectMany(alternative => PowerOutcomeStates(
                 node, cast, stateMayChange, bindingMayChange, alternative))];
         }
-        if (node.Kind == "if")
+        if (node.OperationName() == "if")
         {
             var test = ConditionalOf(node, cast).Test;
             bool canSwitch = PowerTestCanChange(
                 test, cast, stateMayChange, bindingMayChange, reachability);
-            IEnumerable<AbilityValue?> branches = canSwitch
-                ? Branches.Select(node.Field)
-                : [node.Field(Test(test, cast) ? "then" : "else")];
+            IEnumerable<AbilityEffect?> branches = canSwitch
+                ? new AbilityEffect?[] { ((AbilityEffect.Conditional)node).Then, ((AbilityEffect.Conditional)node).Else }
+                : new AbilityEffect?[] { ConditionalBranch(node, Test(test, cast) ? "then" : "else") };
             return [.. branches.SelectMany(branch => branch is null
                 ? [new PowerOutcomeState(ResolutionOutcome.None, reachability)]
                 : PowerOutcomeStates(
-                    Tree(branch), cast, stateMayChange,
+                    branch, cast, stateMayChange,
                     bindingMayChange, reachability))];
         }
-        if (node.Kind == "seq")
+        if (node.OperationName() == "seq")
         {
             var states = new List<PowerOutcomeState>
             {
                 new(ResolutionOutcome.None, reachability),
             };
             int index = 0;
-            foreach (var child in Nodes(node.Argument))
+            foreach (var child in OrderedEffects(node))
             {
                 int childIndex = index++;
                 states = [.. states.SelectMany(prior => PowerOutcomeStates(
@@ -399,10 +399,10 @@ public sealed partial class AbilityRunner
         left == right ? left : ResolutionOutcome.Partial;
 
     private static HashSet<ResolutionOutcome> PowerOutcomes(
-        AbilityNode node, Cast cast, bool stateMayChange,
+        AbilityEffect node, Cast cast, bool stateMayChange,
         bool bindingMayChange, PowerReachability reachability)
     {
-        if (node.Kind == "draw")
+        if (node.OperationName() == "draw")
         {
             var draw = EffectOf<AbilityEffect.Draw>(node, cast);
             long count = draw.Count;
@@ -410,7 +410,7 @@ public sealed partial class AbilityRunner
                 player => ResolutionOfAmount(
                     PowerCardsAvailable(reachability, player, cast), count)))];
         }
-        if (node.Kind == "heal")
+        if (node.OperationName() == "heal")
         {
             var card = PowerFind(EffectOf<AbilityEffect.Heal>(node, cast).Card, cast, reachability);
             if (card is not null)
@@ -420,7 +420,7 @@ public sealed partial class AbilityRunner
                     Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast))];
             }
         }
-        if (node.Kind == "discard")
+        if (node.OperationName() == "discard")
         {
             var target = EffectOf<AbilityEffect.CardAction>(node, cast).Selection;
             var card = PowerFind(target, cast, reachability);
@@ -438,7 +438,7 @@ public sealed partial class AbilityRunner
                 return [ResolutionOutcome.None];
             }
         }
-        if (node.Kind == "removeThreat")
+        if (node.OperationName() == "removeThreat")
         {
             long wanted = Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast);
             var schemes = PowerEvery(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Schemes, cast, reachability);
@@ -453,7 +453,7 @@ public sealed partial class AbilityRunner
             return [CombinedOutcomes(valid.Select(scheme => ResolutionOfAmount(
                 PowerThreat(reachability, scheme), wanted)))];
         }
-        var readinessTarget = node.Kind is "exhaust" or "ready"
+        var readinessTarget = node.OperationName() is "exhaust" or "ready"
             ? EffectOf<AbilityEffect.CardAction>(node, cast).Selection
             : null;
         var currentTargets = readinessTarget is not null
@@ -476,10 +476,10 @@ public sealed partial class AbilityRunner
                 !reachability.Discarded.Contains(card.ObjectId)))
             {
                 var readiness = PowerReady(card, reachability);
-                bool canChange = node.Kind == "exhaust"
+                bool canChange = node.OperationName() == "exhaust"
                     ? readiness.HasFlag(PowerReadiness.Ready)
                     : readiness.HasFlag(PowerReadiness.Exhausted);
-                bool canStay = node.Kind == "exhaust"
+                bool canStay = node.OperationName() == "exhaust"
                     ? readiness.HasFlag(PowerReadiness.Exhausted)
                     : readiness.HasFlag(PowerReadiness.Ready);
                 var next = new HashSet<(bool Changed, bool Unchanged)>();
@@ -503,7 +503,7 @@ public sealed partial class AbilityRunner
                 _ => ResolutionOutcome.Partial,
             })];
         }
-        if (node.Kind == "changeForm"
+        if (node.OperationName() == "changeForm"
             && FormChangeOf(node, cast) is var change
             && !(bindingMayChange && change.Player == AbilityPlayer.ChosenPlayer))
         {
@@ -528,7 +528,7 @@ public sealed partial class AbilityRunner
     }
 
     private static bool ConditionalCanSkipBranch(
-        AbilityNode node, Cast cast, bool stateMayChange,
+        AbilityEffect node, Cast cast, bool stateMayChange,
         bool bindingMayChange, PowerReachability reachability)
     {
         var test = ConditionalOf(node, cast).Test;
@@ -537,9 +537,9 @@ public sealed partial class AbilityRunner
         if (!canSwitch)
         {
             string active = Test(test, cast) ? "then" : "else";
-            return node.Field(active) is null;
+            return ConditionalBranch(node, active) is null;
         }
-        return node.Field("then") is null || node.Field("else") is null;
+        return ConditionalBranch(node, "then") is null || ConditionalBranch(node, "else") is null;
     }
 
     private static PowerReachability ChangeFormState(
@@ -571,7 +571,7 @@ public sealed partial class AbilityRunner
         (state & FirstPlayerRebinding) != 0;
 
     private static PowerReachability ApplyPowerLeafState(
-        AbilityNode node, Cast cast, bool bindingMayChange,
+        AbilityEffect node, Cast cast, bool bindingMayChange,
         PowerReachability reachability, long multiplier = 1)
     {
         if (reachability.Alternatives is { } alternatives)
@@ -580,7 +580,7 @@ public sealed partial class AbilityRunner
                 ApplyPowerLeafState(
                     node, cast, bindingMayChange, alternative, multiplier)));
         }
-        if (node.Field("amount") is { } authoredAmount
+        if (EffectAmount(node) is { } authoredAmount
             && (reachability.CardDamage.Count > 0
                 || reachability.SchemeThreat.Count > 0)
             && AmountMayChange(authoredAmount))
@@ -588,10 +588,10 @@ public sealed partial class AbilityRunner
             throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' reads a mutable power amount after damage changed");
         }
-        if (node.Kind is "exhaust" or "ready")
+        if (node.OperationName() is "exhaust" or "ready")
         {
             var state = reachability;
-            var readiness = node.Kind == "exhaust"
+            var readiness = node.OperationName() == "exhaust"
                 ? PowerReadiness.Exhausted
                 : PowerReadiness.Ready;
             foreach (var card in PowerEvery(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast, reachability))
@@ -600,7 +600,7 @@ public sealed partial class AbilityRunner
             }
             return state;
         }
-        if (node.Kind == "grantUntil")
+        if (node.OperationName() == "grantUntil")
         {
             var target = PowerFind(GrantSelectionOf(node, cast), cast, reachability);
             if (target is null)
@@ -638,7 +638,7 @@ public sealed partial class AbilityRunner
             }
             return reachability with { Modifiers = modifiers };
         }
-        if (node.Kind == "putIntoPlay")
+        if (node.OperationName() == "putIntoPlay")
         {
             var card = Find(EffectOf<AbilityEffect.PutIntoPlay>(node, cast).Card, cast);
             if (card is null)
@@ -646,7 +646,7 @@ public sealed partial class AbilityRunner
                 return reachability;
             }
             if (cast.Abilities is AbilityRunner runner
-                && runner.CompiledOn(card).Any(ability =>
+                && runner.On(card).Any(ability =>
                     ability.Trigger.Timing == AbilityType.Constant))
             {
                 throw new RulesNotImplementedException(
@@ -678,7 +678,7 @@ public sealed partial class AbilityRunner
             }
             return state;
         }
-        if (node.Kind == "draw")
+        if (node.OperationName() == "draw")
         {
             var draw = EffectOf<AbilityEffect.Draw>(node, cast);
             long count = draw.Count;
@@ -691,7 +691,7 @@ public sealed partial class AbilityRunner
             }
             return state;
         }
-        if (node.Kind == "discard")
+        if (node.OperationName() == "discard")
         {
             var card = PowerFind(
                 EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast, reachability);
@@ -720,7 +720,7 @@ public sealed partial class AbilityRunner
                 StatusChanges = statusChanges,
             };
         }
-        if (node.Kind == "removeThreat")
+        if (node.OperationName() == "removeThreat")
         {
             long removedAmount = SaturatingMultiply(
                 Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast), multiplier);
@@ -767,7 +767,7 @@ public sealed partial class AbilityRunner
             }
             return state;
         }
-        AbilityCardSelection? targets = node.Kind switch
+        AbilityCardSelection? targets = node.OperationName() switch
         {
             "dealDamage" or "dealAttackDamage" or "indirectDamage" => DamageSelectionOf(node, cast),
             "moveDamage" or "moveAttackDamage" => EffectOf<AbilityEffect.MoveDamage>(node, cast).To,
@@ -781,7 +781,7 @@ public sealed partial class AbilityRunner
             return reachability;
         }
         var first = cast.World.Seats[cast.World.FirstPlayer].IdentityCard;
-        List<Card> cards = node.Kind switch
+        List<Card> cards = node.OperationName() switch
         {
             "dealDamage" or "dealAttackDamage" =>
                 [.. PowerEvery(targets, cast, reachability).Where(target =>
@@ -803,7 +803,7 @@ public sealed partial class AbilityRunner
                 }
                 : reachability;
         }
-        if (node.Kind == "heal")
+        if (node.OperationName() == "heal")
         {
             long healed = Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast);
             var state = reachability;
@@ -815,7 +815,7 @@ public sealed partial class AbilityRunner
             }
             return state;
         }
-        if (node.Kind == "giveStatus")
+        if (node.OperationName() == "giveStatus")
         {
             string status = EffectOf<AbilityEffect.GiveStatus>(node, cast).Status;
             if (status != Statuses.Tough)
@@ -870,7 +870,7 @@ public sealed partial class AbilityRunner
             return state;
         }
 
-        if (node.Kind is "moveDamage" or "moveAttackDamage")
+        if (node.OperationName() is "moveDamage" or "moveAttackDamage")
         {
             var from = PowerFind(EffectOf<AbilityEffect.MoveDamage>(node, cast).From, cast, reachability);
             if (from is null)
@@ -886,7 +886,7 @@ public sealed partial class AbilityRunner
             return ApplyPowerDamage(state, cards, moved, first, cast);
         }
 
-        long amount = SaturatingMultiply(node.Kind switch
+        long amount = SaturatingMultiply(node.OperationName() switch
         {
             "indirectDamage" => Amount(EffectOf<AbilityEffect.IndirectDamage>(node, cast).Amount, cast),
             "replaceThreatWithDamage" => cast.Occurrence.Threat?.Remaining ?? 0,
@@ -1049,7 +1049,7 @@ public sealed partial class AbilityRunner
             foreach (var source in cast.World.Areas
                 .Where(area => DeckTypes.IsInPlay(area.Type))
                 .SelectMany(area => area.Cards)
-                .Where(card => authored.CompiledOn(card).Any(ability =>
+                .Where(card => authored.On(card).Any(ability =>
                     ability.Trigger.Timing == AbilityType.Constant)))
             {
                 sources.Add(source.ObjectId);
@@ -1076,7 +1076,7 @@ public sealed partial class AbilityRunner
                     cast.World, source, new Occurrence(0, []),
                     ControllerOf(cast.World, source), [], runner);
                 traced = 0;
-                foreach (var ability in runner.CompiledOn(source).Where(ability =>
+                foreach (var ability in runner.On(source).Where(ability =>
                     ability.Trigger.Timing == AbilityType.Constant))
                 {
                     if (!TryTraceConstantHealth(

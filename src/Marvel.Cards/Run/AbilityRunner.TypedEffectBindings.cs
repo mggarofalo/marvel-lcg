@@ -55,7 +55,7 @@ public sealed partial class AbilityRunner
             || (discard.Players is { } players && ContainsYouOrYour(players)) || ContainsYouOrYour(discard.Count),
         AbilityEffect.ShuffleInto shuffle => ContainsYouOrYour(shuffle.Cards) || shuffle.Deck == AbilitySearchArea.YourDeck,
         AbilityEffect.Search search => search.Areas.Contains(AbilitySearchArea.YourDeck),
-        AbilityEffect.PutIntoPlay entering => ContainsYouOrYour(entering.Card),
+        AbilityEffect.PutIntoPlay entering => !entering.PrintedDestination || ContainsYouOrYour(entering.Card),
         AbilityEffect.PlaceCounters counters => ContainsYouOrYour(counters.Card) || ContainsYouOrYour(counters.Count),
         AbilityEffect.RemoveCounters counters => ContainsYouOrYour(counters.Card),
         AbilityEffect.ReduceNextCardCost reduction => reduction.Player == AbilityPlayer.You || ContainsYouOrYour(reduction.Amount),

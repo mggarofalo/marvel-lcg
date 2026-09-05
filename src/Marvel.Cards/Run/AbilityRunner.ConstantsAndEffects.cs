@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Marvel.Cards.Dsl;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
@@ -255,8 +256,8 @@ public sealed partial class AbilityRunner
         }
     }
 
-    private static AbilityEffect.ChangeForm FormChangeOf(AbilityNode node, Cast cast) =>
-        (AbilityEffect.ChangeForm)((AbilityRunner)cast.Abilities).CompiledEffect(node);
+    private static AbilityEffect.ChangeForm FormChangeOf(AbilityEffect node, Cast cast) =>
+        (AbilityEffect.ChangeForm)node;
 
     private static bool AlreadyInForm(AbilityEffect.ChangeForm change, Cast cast) =>
         Forms.In(cast.World, cast.World.Seats[Seat(change.Player, cast)],
@@ -385,7 +386,7 @@ public sealed partial class AbilityRunner
         Draw.Cards(cast.World, player, count, cast.Trigger, cast.Events);
     }
 
-    private static bool CanDrawToPrintedHandSize(AbilityNode node, Cast cast)
+    private static bool CanDrawToPrintedHandSize(AbilityEffect node, Cast cast)
     {
         int player = Seat(EffectOf<AbilityEffect.DrawToHandSize>(node, cast).Player, cast);
         var seat = cast.World.Seats[player];
@@ -433,8 +434,8 @@ public sealed partial class AbilityRunner
         }
     }
 
-    private static AbilityEffect.RemoveCounters CounterRemovalOf(AbilityNode node, Cast cast) =>
-        (AbilityEffect.RemoveCounters)((AbilityRunner)cast.Abilities).CompiledEffect(node);
+    private static AbilityEffect.RemoveCounters CounterRemovalOf(AbilityEffect node, Cast cast) =>
+        (AbilityEffect.RemoveCounters)node;
 
     /// <summary>
     /// Advances because a card effect says to —
@@ -719,34 +720,6 @@ public sealed partial class AbilityRunner
         }
     }
 
-    /// <summary>Which place on the board a word names.</summary>
-    private static Area Area(string where, Cast cast) => where switch
-    {
-        "encounterDeck" => Area(AbilitySearchArea.EncounterDeck, cast),
-        "encounterDiscardPile" => Area(AbilitySearchArea.EncounterDiscardPile, cast),
-        "scenarioSetAside" => Area(AbilitySearchArea.ScenarioSetAside, cast),
-        "yourDeck" => Area(AbilitySearchArea.YourDeck, cast),
-        _ => throw new RulesNotImplementedException(
-            $"'{cast.Source.FaceId}' searches '{where}', which is not implemented"),
-    };
-
-    /// <summary>
-    /// "Choose to either … or …" — <c>rr:choose-option</c>.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <b>The ability stops here.</b> An interpreter that returns a list of
-    /// events has nowhere to ask a question, so the choice becomes a step on
-    /// the agenda and what resumes the ability is the answer to it. The step
-    /// carries the source card and the seat; <see cref="Choice"/> finds the
-    /// node again from the card, which is why an ability may hold only one.
-    /// </para>
-    /// <para>
-    /// <c>rr:choose-game-element.1</c> settles who is asked, and it is the
-    /// player resolving the ability — not the first player, and not the card's
-    /// owner, which an encounter card has not got.
-    /// </para>
-    /// </remarks>
     /// <summary>
     /// The steps of a <c>seq</c>, from wherever the ability left off.
     /// </summary>
@@ -763,14 +736,14 @@ public sealed partial class AbilityRunner
     /// sequences and branches without rerunning completed effects.
     /// </para>
     /// </remarks>
-    private static void Sequence(AbilityNode node, Cast cast, int from)
+    private static void Sequence(AbilityEffect node, Cast cast, int from)
     {
         if (from == 0)
         {
             _ = CanInitiateSequence(node, cast);
         }
 
-        var steps = Nodes(node.Argument).ToList();
+        var steps = OrderedEffects(node).ToList();
         bool outerContinuation = cast.HasContinuation;
         for (int step = from; step < steps.Count; step++)
         {
@@ -803,7 +776,7 @@ public sealed partial class AbilityRunner
     /// <c>rr:for-each.4</c>.
     /// </para>
     /// </remarks>
-    private static void ForEach(AbilityNode node, Cast cast)
+    private static void ForEach(AbilityEffect node, Cast cast)
     {
         var instruction = ForEachOf(node, cast);
         long count = ForEachCount(node, cast);
@@ -812,7 +785,7 @@ public sealed partial class AbilityRunner
             return;
         }
 
-        var effect = Tree(node.Require("effect"));
+        var effect = EffectBody(node);
         if (!Choices(effect).Any())
         {
             switch (instruction.Effect)
@@ -867,7 +840,7 @@ public sealed partial class AbilityRunner
     /// observable: its alteration finishes before the next card is discarded.
     /// The exact-card binding survives an immediate encounter-deck reset.
     /// </remarks>
-    private static void EachTime(AbilityNode node, Cast cast)
+    private static void EachTime(AbilityEffect node, Cast cast)
     {
         var preceding = EachTimePreceding(node, cast);
         long requested = Amount(preceding.Count, cast);
@@ -887,13 +860,13 @@ public sealed partial class AbilityRunner
         ContinueEachTime(node, cast, from: 0, Math.Min(requested, available));
     }
 
-    private static AbilityEffect.ForEach ForEachOf(AbilityNode node, Cast cast) =>
-        (AbilityEffect.ForEach)((AbilityRunner)cast.Abilities).CompiledEffect(node);
+    private static AbilityEffect.ForEach ForEachOf(AbilityEffect node, Cast cast) =>
+        (AbilityEffect.ForEach)node;
 
-    private static AbilityEffect.EachTime EachTimeOf(AbilityNode node, Cast cast) =>
-        (AbilityEffect.EachTime)((AbilityRunner)cast.Abilities).CompiledEffect(node);
+    private static AbilityEffect.EachTime EachTimeOf(AbilityEffect node, Cast cast) =>
+        (AbilityEffect.EachTime)node;
 
-    private static AbilityEffect.DiscardTop EachTimePreceding(AbilityNode node, Cast cast)
+    private static AbilityEffect.DiscardTop EachTimePreceding(AbilityEffect node, Cast cast)
     {
         if (EachTimeOf(node, cast).Effect is not AbilityEffect.DiscardTop
             { From: AbilitySearchArea.EncounterDeck, Players: null } preceding)
@@ -904,10 +877,10 @@ public sealed partial class AbilityRunner
         return preceding;
     }
 
-    private static void ValidateEachTimeBody(AbilityNode node, Cast cast)
+    private static void ValidateEachTimeBody(AbilityEffect node, Cast cast)
     {
         if (ContainsUnreconstructibleAfterActivation(
-            Tree(node.Require("then")), cast))
+            EffectFollowing(node), cast))
         {
             throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' suspends inside an after-activation effect, "
@@ -916,66 +889,66 @@ public sealed partial class AbilityRunner
     }
 
     private static bool ContainsUnreconstructibleAfterActivation(
-        AbilityNode node, Cast cast)
+        AbilityEffect node, Cast cast)
     {
-        if (node.Kind == "afterActivation")
+        if (node.OperationName() == "afterActivation")
         {
             return DelayedNeedsContinuationAddress(
-                Tree(node.Require("effect")), cast, hasContinuation: false);
+                EffectBody(node), cast, hasContinuation: false);
         }
         return ContinuationChildren(node).Any(child =>
             ContainsUnreconstructibleAfterActivation(child, cast));
     }
 
     private static bool DelayedNeedsContinuationAddress(
-        AbilityNode node, Cast cast, bool hasContinuation)
+        AbilityEffect node, Cast cast, bool hasContinuation)
     {
-        if (node.Kind == "afterActivation"
-            || node.Kind == "and" && Nodes(node.Argument).Skip(1).Any()
+        if (node.OperationName() == "afterActivation"
+            || node.OperationName() == "and" && OrderedEffects(node).Skip(1).Any()
             || IsChoice(node)
-            || node.Kind is "eachPlayer" or "attack" or "thwart" or "thwartSchemes")
+            || node.OperationName() is "eachPlayer" or "attack" or "thwart" or "thwartSchemes")
         {
             return true;
         }
-        if (node.Kind is "placeThreat" or "enemyAttacks" or "enemySchemes")
+        if (node.OperationName() is "placeThreat" or "enemyAttacks" or "enemySchemes")
         {
             return hasContinuation;
         }
-        if (node.Kind is "seq" or "and")
+        if (node.OperationName() is "seq" or "and")
         {
-            var children = Nodes(node.Argument).ToList();
+            var children = OrderedEffects(node).ToList();
             return children.Select((child, index) => (child, index)).Any(entry =>
                 DelayedNeedsContinuationAddress(
                     entry.child, cast,
                     hasContinuation || entry.index < children.Count - 1));
         }
-        if (node.Kind == "if")
+        if (node.OperationName() == "if")
         {
-            return Branches.Select(node.Field)
+            return ConditionalBranches((AbilityEffect.Conditional)node)
                 .Where(branch => branch is not null)
                 .Any(branch => DelayedNeedsContinuationAddress(
-                    Tree(branch!), cast, hasContinuation));
+                    branch, cast, hasContinuation));
         }
-        if (node.Kind is "then" or "otherwise")
+        if (node.OperationName() is "then" or "otherwise")
         {
             return DelayedNeedsContinuationAddress(
-                    Tree(node.Require("effect")), cast, hasContinuation: true)
+                    EffectBody(node), cast, hasContinuation: true)
                 || DelayedNeedsContinuationAddress(
-                    Tree(node.Require(node.Kind)), cast, hasContinuation);
+                    EffectFollowing(node), cast, hasContinuation);
         }
-        if (node.Kind == "forEach")
+        if (node.OperationName() == "forEach")
         {
             if (AmountMayChange(ForEachOf(node, cast).Count))
             {
                 return DelayedNeedsContinuationAddress(
-                    Tree(node.Require("effect")), cast, hasContinuation: true);
+                    EffectBody(node), cast, hasContinuation: true);
             }
             long count = ForEachCount(node, cast);
             return count > 0 && DelayedNeedsContinuationAddress(
-                Tree(node.Require("effect")), cast,
+                EffectBody(node), cast,
                 hasContinuation || count > 1);
         }
-        if (node.Kind == "eachTime")
+        if (node.OperationName() == "eachTime")
         {
             if (EachTimeOf(node, cast).Effect is not AbilityEffect.DiscardTop
                 { From: AbilitySearchArea.EncounterDeck, Players: null } preceding)
@@ -998,7 +971,7 @@ public sealed partial class AbilityRunner
                 return false;
             }
             return DelayedNeedsContinuationAddress(
-                Tree(node.Require("then")), cast,
+                EffectFollowing(node), cast,
                 hasContinuation || count > 1);
         }
         return ContinuationChildren(node).Any(child =>
@@ -1006,7 +979,7 @@ public sealed partial class AbilityRunner
     }
 
     private static void ContinueEachTime(
-        AbilityNode node, Cast cast, long from, long count)
+        AbilityEffect node, Cast cast, long from, long count)
     {
         var instruction = EachTimeOf(node, cast);
         bool outerContinuation = cast.HasContinuation;
@@ -1028,7 +1001,7 @@ public sealed partial class AbilityRunner
 
             cast.SetContinuation(outerContinuation || iteration < count - 1);
             RunChild(
-                Tree(node.Require("then")),
+                EffectFollowing(node),
                 $"eachTime:{iteration}:{count}:{discarded.ObjectId}",
                 cast);
             if (cast.Suspended)
@@ -1047,8 +1020,9 @@ public sealed partial class AbilityRunner
     /// targeted shapes fail closed until their target can be persisted instead
     /// of running a fresh selector against a changed board.
     /// </remarks>
-    private static bool ContainsForEachTarget(AbilityNode node) =>
-        node.Kind is "removeFromGame" or "exhaust" or "ready" or "reveal"
+    private static bool ContainsForEachTarget(AbilityEffect node) =>
+        node is AbilityEffect.DelayedStun
+        || node.OperationName() is "removeFromGame" or "exhaust" or "ready" or "reveal"
             or "returnToHand" or "returnOwnedToHand" or "soakDamage"
             or "addToHand" or "giveStatus" or "attachTo" or "grantUntil"
             or "discard" or "heal" or "placeCounters" or "shuffleInto" or "search"
@@ -1059,7 +1033,7 @@ public sealed partial class AbilityRunner
             or "thwartDifferentSchemes" or "legalPractice"
         || ContinuationChildren(node).Any(ContainsForEachTarget);
 
-    private static void RunChild(AbilityNode node, string frame, Cast cast)
+    private static void RunChild(AbilityEffect node, string frame, Cast cast)
     {
         cast.AbilityPath.Add(frame);
         try
@@ -1072,7 +1046,7 @@ public sealed partial class AbilityRunner
         }
     }
 
-    private static int AbilityOrdinal(AbilityNode node, Cast cast)
+    private static int AbilityOrdinal(AbilityEffect node, Cast cast)
     {
         if (cast.AbilityOrdinal >= 0)
         {
@@ -1086,7 +1060,7 @@ public sealed partial class AbilityRunner
         var matches = written
             .Select((ability, ordinal) => (Node: TryNodeAtPath(
                 ability.Effect, cast.AbilityPath), ordinal))
-            .Where(candidate => candidate.Node == node)
+            .Where(candidate => ReferenceEquals(candidate.Node, node))
             .Select(candidate => candidate.ordinal)
             .ToList();
         return matches.Count == 1
@@ -1095,10 +1069,10 @@ public sealed partial class AbilityRunner
                 $"'{cast.Source.FaceId}' cannot identify the exact ability that suspended");
     }
 
-    private IEnumerable<CardAbility> AbilitiesOn(Card source, string? face) =>
-        string.IsNullOrEmpty(face) ? On(source) : book.On(face);
+    private ImmutableArray<CompiledCardAbility> AbilitiesOn(Card source, string? face) =>
+        string.IsNullOrEmpty(face) ? On(source) : program.On(face);
 
-    private void TrackResolution(Cast cast, CardAbility ability)
+    private void TrackResolution(Cast cast, CompiledCardAbility ability)
     {
         var sameTier = AbilitiesOn(cast.Source, cast.AbilityFace)
             .Where(candidate => candidate.Trigger.Timing == ability.Trigger.Timing)
@@ -1117,7 +1091,7 @@ public sealed partial class AbilityRunner
         cast.TrackResolution(ordinal);
     }
 
-    private CardAbility AbilityAt(
+    private CompiledCardAbility AbilityAt(
         Card source, AbilityType? tier, int ordinal, string? face = null) =>
         AbilitiesOn(source, face)
             .Where(ability => tier is null || ability.Trigger.Timing == tier)
@@ -1204,8 +1178,8 @@ public sealed partial class AbilityRunner
         cast.BindAlteration(cast.World.Cards[ParseEachTimeCard(parts, frame)]);
     }
 
-    private static AbilityNode? TryNodeAtPath(
-        AbilityNode root, IReadOnlyList<string> path)
+    private static AbilityEffect? TryNodeAtPath(
+        AbilityEffect root, IReadOnlyList<string> path)
     {
         try
         {
@@ -1240,8 +1214,8 @@ public sealed partial class AbilityRunner
         return null;
     }
 
-    private static AbilityNode NodeAtPath(
-        AbilityNode root, IReadOnlyList<string> path)
+    private static AbilityEffect NodeAtPath(
+        AbilityEffect root, IReadOnlyList<string> path)
     {
         try
         {
@@ -1249,15 +1223,15 @@ public sealed partial class AbilityRunner
         }
         catch (Exception error) when (error is AbilityException
             or ArgumentOutOfRangeException or IndexOutOfRangeException
-            or InvalidOperationException or FormatException)
+            or InvalidOperationException or InvalidCastException or FormatException)
         {
             throw new RulesNotImplementedException(
                 $"ability continuation path '{string.Join("/", path)}' is invalid");
         }
     }
 
-    private static AbilityNode NodeAtPathCore(
-        AbilityNode root, IReadOnlyList<string> path, int offset = 0)
+    private static AbilityEffect NodeAtPathCore(
+        AbilityEffect root, IReadOnlyList<string> path, int offset = 0)
     {
         var node = root;
         for (int index = offset; index < path.Count; index++)
@@ -1265,17 +1239,17 @@ public sealed partial class AbilityRunner
             var parts = path[index].Split(':');
             node = parts[0] switch
             {
-                "seq" => Nodes(node.Argument).ElementAt(ParseIndex(parts, path[index])),
-                "if" => Tree(node.Require(parts[1])),
-                "then" or "otherwise" => Tree(node.Require(parts[1])),
+                "seq" => OrderedEffects(node).ElementAt(ParseIndex(parts, path[index])),
+                "if" => ContinuationChild(node, parts[1]),
+                "then" or "otherwise" => ContinuationChild(node, parts[1]),
                 "defense" or "eachPlayer" or "forEach" =>
-                    Tree(node.Require("effect")),
-                "eachTime" => Tree(node.Require("then")),
+                    EffectBody(node),
+                "eachTime" => EffectFollowing(node),
                 "choice" when parts[1] == "option" =>
-                    Nodes(node.Require("options")).ElementAt(ParseIndex(parts, path[index], 2)),
-                "choice" when parts[1] == "effect" => Tree(node.Require("effect")),
-                "choice" when parts[1] == "otherwise" => Tree(node.Require("otherwise")),
-                "and" => Nodes(node.Argument).ElementAt(ParseIndex(parts, path[index])),
+                    ((AbilityEffect.Choose)node).Options.ElementAt(ParseIndex(parts, path[index], 2)),
+                "choice" when parts[1] == "effect" => EffectBody(node),
+                "choice" when parts[1] == "otherwise" => EffectFollowing(node),
+                "and" => OrderedEffects(node).ElementAt(ParseIndex(parts, path[index])),
                 _ => throw new RulesNotImplementedException(
                     $"ability continuation frame '{path[index]}' is not implemented"),
             };
@@ -1284,7 +1258,7 @@ public sealed partial class AbilityRunner
     }
 
     private static void ResumeAfter(
-        AbilityNode node, IReadOnlyList<string> path, Cast cast, int depth = 0,
+        AbilityEffect node, IReadOnlyList<string> path, Cast cast, int depth = 0,
         int stopBefore = -1)
     {
         try
@@ -1293,7 +1267,7 @@ public sealed partial class AbilityRunner
         }
         catch (Exception error) when (error is AbilityException
             or ArgumentOutOfRangeException or IndexOutOfRangeException
-            or InvalidOperationException or FormatException)
+            or InvalidOperationException or InvalidCastException or FormatException)
         {
             throw new RulesNotImplementedException(
                 $"ability continuation path '{string.Join("/", path)}' is invalid");
@@ -1301,7 +1275,7 @@ public sealed partial class AbilityRunner
     }
 
     private static void ResumeAfterCore(
-        AbilityNode node, IReadOnlyList<string> path, Cast cast, int depth = 0,
+        AbilityEffect node, IReadOnlyList<string> path, Cast cast, int depth = 0,
         int stopBefore = -1)
     {
         if (depth >= path.Count)
@@ -1315,19 +1289,19 @@ public sealed partial class AbilityRunner
         {
             cast.BindAlteration(cast.World.Cards[ParseEachTimeCard(parts, frame)]);
         }
-        AbilityNode child = parts[0] switch
+        AbilityEffect child = parts[0] switch
         {
-            "seq" => Nodes(node.Argument).ElementAt(ParseIndex(parts, frame)),
-            "if" => Tree(node.Require(parts[1])),
-            "then" or "otherwise" => Tree(node.Require(parts[1])),
+            "seq" => OrderedEffects(node).ElementAt(ParseIndex(parts, frame)),
+            "if" => ContinuationChild(node, parts[1]),
+            "then" or "otherwise" => ContinuationChild(node, parts[1]),
             "defense" or "eachPlayer" or "forEach" =>
-                Tree(node.Require("effect")),
-            "eachTime" => Tree(node.Require("then")),
+                EffectBody(node),
+            "eachTime" => EffectFollowing(node),
             "choice" when parts[1] == "option" =>
-                Nodes(node.Require("options")).ElementAt(ParseIndex(parts, frame, 2)),
-            "choice" when parts[1] == "effect" => Tree(node.Require("effect")),
-            "choice" when parts[1] == "otherwise" => Tree(node.Require("otherwise")),
-            "and" => Nodes(node.Argument).ElementAt(ParseIndex(parts, frame)),
+                ((AbilityEffect.Choose)node).Options.ElementAt(ParseIndex(parts, frame, 2)),
+            "choice" when parts[1] == "effect" => EffectBody(node),
+            "choice" when parts[1] == "otherwise" => EffectFollowing(node),
+            "and" => OrderedEffects(node).ElementAt(ParseIndex(parts, frame)),
             _ => throw new RulesNotImplementedException(
                 $"ability continuation frame '{frame}' is not implemented"),
         };
@@ -1346,7 +1320,7 @@ public sealed partial class AbilityRunner
         switch (parts[0])
         {
             case "seq":
-                var steps = Nodes(node.Argument).ToList();
+                var steps = OrderedEffects(node).ToList();
                 bool outerContinuation = cast.HasContinuation;
                 for (int index = ParseIndex(parts, frame) + 1; index < steps.Count; index++)
                 {
@@ -1374,12 +1348,12 @@ public sealed partial class AbilityRunner
                     : ResolutionOutcome.None;
                 if (outcome == required)
                 {
-                    RunChild(Tree(node.Require(parts[0])), $"{parts[0]}:{parts[0]}", cast);
+                    RunChild(ContinuationChild(node, parts[0]), $"{parts[0]}:{parts[0]}", cast);
                 }
                 break;
 
             case "and":
-                var effects = Nodes(node.Argument).ToList();
+                var effects = OrderedEffects(node).ToList();
                 var remaining = ValidRemaining(node, parts, frame);
                 var completed = Completed(parts, frame);
                 completed.Add(ParseIndex(parts, frame));
@@ -1410,7 +1384,7 @@ public sealed partial class AbilityRunner
             case "forEach":
                 long count = ParseForEachCount(parts, frame);
                 long completedIteration = ParseIndex(parts, frame);
-                var repeated = Tree(node.Require("effect"));
+                var repeated = EffectBody(node);
                 bool outerForEachContinuation = cast.HasContinuation;
                 for (long iteration = completedIteration + 1; iteration < count; iteration++)
                 {
@@ -1435,11 +1409,11 @@ public sealed partial class AbilityRunner
     }
 
     private static bool HasRemainingAtFrame(
-        AbilityNode node, string[] parts, string frame)
+        AbilityEffect node, string[] parts, string frame)
     {
         return parts[0] switch
         {
-            "seq" => ParseIndex(parts, frame) < Nodes(node.Argument).Count() - 1,
+            "seq" => ParseIndex(parts, frame) < OrderedEffects(node).Length - 1,
             "and" => ValidRemaining(node, parts, frame).Count > 0,
             "forEach" => ParseIndex(parts, frame) + 1
                 < ParseForEachCount(parts, frame),
@@ -1492,9 +1466,9 @@ public sealed partial class AbilityRunner
     }
 
     private static List<int> ValidRemaining(
-        AbilityNode node, string[] parts, string frame)
+        AbilityEffect node, string[] parts, string frame)
     {
-        var effects = Nodes(node.Argument).ToList();
+        var effects = OrderedEffects(node).ToList();
         var remaining = Remaining(parts, frame);
         var completed = Completed(parts, frame);
         var completeOrder = completed

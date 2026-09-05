@@ -10,26 +10,26 @@ namespace Marvel.Cards.Run;
 public sealed partial class AbilityRunner
 {
     /// <summary>Whether a player-card option can change the current state.</summary>
-    private static bool CanPartiallyResolve(AbilityNode node, Cast cast)
+    private static bool CanPartiallyResolve(AbilityEffect node, Cast cast)
     {
-        return node.Kind switch
+        return node.OperationName() switch
         {
-            "seq" or "and" => !Nodes(node.Argument).Any()
-                || Nodes(node.Argument).Any(step => CanPartiallyResolve(step, cast)),
-            "if" => node.Field(Test(ConditionalOf(node, cast).Test, cast) ? "then" : "else")
-                is { } branch && CanPartiallyResolve(Tree(branch), cast),
-            "then" => ResolutionOf(Tree(node.Require("effect")), cast)
+            "seq" or "and" => !OrderedEffects(node).Any()
+                || OrderedEffects(node).Any(step => CanPartiallyResolve(step, cast)),
+            "if" => ConditionalBranch(node, Test(ConditionalOf(node, cast).Test, cast) ? "then" : "else")
+                is { } branch && CanPartiallyResolve(branch, cast),
+            "then" => ResolutionOf(EffectBody(node), cast)
                 is not ResolutionOutcome.None,
-            "otherwise" => ResolutionOf(Tree(node.Require("effect")), cast) switch
+            "otherwise" => ResolutionOf(EffectBody(node), cast) switch
             {
                 ResolutionOutcome.None => CanPartiallyResolve(
-                    Tree(node.Require("otherwise")), cast),
+                    EffectFollowing(node), cast),
                 _ => true,
             },
-            "defense" => CanPartiallyResolve(Tree(node.Require("effect")), cast),
+            "defense" => CanPartiallyResolve(EffectBody(node), cast),
             "forEach" => ForEachCount(node, cast) > 0
-                && CanPartiallyResolve(Tree(node.Require("effect")), cast),
-            "choose" => Nodes(node.Require("options")).Any(option => OptionIsLegal(option, cast)),
+                && CanPartiallyResolve(EffectBody(node), cast),
+            "choose" => ((AbilityEffect.Choose)node).Options.Any(option => OptionIsLegal(option, cast)),
             "chooseCard" => LegalCardChoices(node, cast).Count > 0,
             "changeForm" => !AlreadyInForm(FormChangeOf(node, cast), cast),
             "removeFromGame" => Find(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast) is { } card
@@ -46,7 +46,7 @@ public sealed partial class AbilityRunner
                 && Seats(EffectOf<AbilityEffect.DiscardAtRandom>(node, cast).Players, cast)
                     .Any(seat => cast.World.Seats[seat].Hand.Cards.Count > 0),
             "discardTop" => Amount(EffectOf<AbilityEffect.DiscardTop>(node, cast).Count, cast) > 0
-                && Area(Word(node.Require("from")), cast).Cards.Count > 0,
+                && DiscardTopHasCards((AbilityEffect.DiscardTop)node, cast),
             "heal" => Find(EffectOf<AbilityEffect.Heal>(node, cast).Card, cast) is { Damage: > 0 }
                 && Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast) > 0,
             "indirectDamage" => HasPartialResolutionTargets(node, cast)
@@ -86,7 +86,7 @@ public sealed partial class AbilityRunner
                 or "enemySchemes" or "putIntoPlay" or "shuffle" =>
                     HasPartialResolutionTargets(node, cast),
             _ => throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' uses '{node.Kind}' in an option whose partial "
+                $"'{cast.Source.FaceId}' uses '{node.OperationName()}' in an option whose partial "
                 + "resolution is not implemented"),
         };
     }
@@ -106,25 +106,25 @@ public sealed partial class AbilityRunner
     /// happen.
     /// </para>
     /// </remarks>
-    private static ResolutionOutcome ResolutionOf(AbilityNode node, Cast cast)
+    private static ResolutionOutcome ResolutionOf(AbilityEffect node, Cast cast)
     {
-        if (node.Kind is "choose" or "chooseCard" or "indirectDamage"
+        if (node.OperationName() is "choose" or "chooseCard" or "indirectDamage"
             or "resolveSpecials" or "payOrExhaust" or "chooseTopForHand"
             or "chooseDiscardToShuffle" or "thwartDifferentSchemes" or "makeTheCall"
             or "legalPractice" or "payOrEffect")
         {
             throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' uses '{node.Kind}' before dependent text and it "
+                $"'{cast.Source.FaceId}' uses '{node.OperationName()}' before dependent text and it "
                 + "suspends for a player choice");
         }
 
-        return node.Kind switch
+        return node.OperationName() switch
         {
             "seq" or "and" => CombinedOutcomes(
-                Nodes(node.Argument).Select(effect => ResolutionOf(effect, cast))),
-            "if" => node.Field(Test(ConditionalOf(node, cast).Test, cast) ? "then" : "else")
+                OrderedEffects(node).Select(effect => ResolutionOf(effect, cast))),
+            "if" => ConditionalBranch(node, Test(ConditionalOf(node, cast).Test, cast) ? "then" : "else")
                 is { } branch
-                    ? ResolutionOf(Tree(branch), cast)
+                    ? ResolutionOf(branch, cast)
                     : ResolutionOutcome.None,
             "forEach" when ForEachCount(node, cast) == 0 => ResolutionOutcome.None,
             "changeForm" => AlreadyInForm(FormChangeOf(node, cast), cast)
@@ -157,7 +157,7 @@ public sealed partial class AbilityRunner
                 Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast)),
             "removeThreat" => ResolutionOfThreat(node, cast),
             _ => throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' uses '{node.Kind}' before dependent text, whose "
+                $"'{cast.Source.FaceId}' uses '{node.OperationName()}' before dependent text, whose "
                 + "none/partial/full resolution is not implemented"),
         };
     }
@@ -199,7 +199,7 @@ public sealed partial class AbilityRunner
             : ResolutionOutcome.Partial;
     }
 
-    private static ResolutionOutcome ResolutionOfThreat(AbilityNode node, Cast cast)
+    private static ResolutionOutcome ResolutionOfThreat(AbilityEffect node, Cast cast)
     {
         var schemes = Every(ThreatSelectionOf(node, cast), cast);
         long wanted = Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast);
@@ -216,15 +216,15 @@ public sealed partial class AbilityRunner
     }
 
     private static void ResolveDependent(
-        AbilityNode node, Cast cast, ResolutionOutcome required, string branch)
+        AbilityEffect node, Cast cast, ResolutionOutcome required, string branch)
     {
-        var effect = Tree(node.Require("effect"));
-        var dependent = Tree(node.Require(branch));
+        var effect = EffectBody(node);
+        var dependent = ContinuationChild(node, branch);
         if (ActiveChoices(effect, cast).Any())
         {
             PreflightAnsweredOutcome(effect, cast);
             PreflightContinuationBoundaries(dependent, cast);
-            RunChild(effect, $"{node.Kind}:effect:Pending", cast);
+            RunChild(effect, $"{node.OperationName()}:effect:Pending", cast);
             return;
         }
         var outcome = EnsureDependentSupported(node, cast, effect, dependent, required);
@@ -235,19 +235,19 @@ public sealed partial class AbilityRunner
         // do not turn an advertised `otherwise` fallback into an exception.
         if (outcome != ResolutionOutcome.None)
         {
-            RunChild(effect, $"{node.Kind}:effect:{outcome}", cast);
+            RunChild(effect, $"{node.OperationName()}:effect:{outcome}", cast);
         }
         if (outcome == required)
         {
-            RunChild(dependent, $"{node.Kind}:{branch}", cast);
+            RunChild(dependent, $"{node.OperationName()}:{branch}", cast);
         }
     }
 
     private static ResolutionOutcome EnsureDependentSupported(
-        AbilityNode node,
+        AbilityEffect node,
         Cast cast,
-        AbilityNode effect,
-        AbilityNode dependent,
+        AbilityEffect effect,
+        AbilityEffect dependent,
         ResolutionOutcome required)
     {
         PreflightResolutionBranches(effect, cast);
@@ -258,16 +258,16 @@ public sealed partial class AbilityRunner
             && ContainsNode(dependent, "placeThreat", cast))
         {
             throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' uses '{node.Kind}' before dependent text that "
+                $"'{cast.Source.FaceId}' uses '{node.OperationName()}' before dependent text that "
                 + "needs a nested continuation");
         }
 
         return outcome;
     }
 
-    private static void PreflightAnsweredOutcome(AbilityNode node, Cast cast)
+    private static void PreflightAnsweredOutcome(AbilityEffect node, Cast cast)
     {
-        void PreflightEffect(AbilityNode effect)
+        void PreflightEffect(AbilityEffect effect)
         {
             if (ActiveChoices(effect, cast).Any())
             {
@@ -279,17 +279,17 @@ public sealed partial class AbilityRunner
             }
         }
 
-        if (node.Kind == "choose")
+        if (node.OperationName() == "choose")
         {
-            foreach (var option in Nodes(node.Require("options")))
+            foreach (var option in ((AbilityEffect.Choose)node).Options)
             {
                 PreflightEffect(option);
             }
             return;
         }
-        if (node.Kind == "chooseCard")
+        if (node.OperationName() == "chooseCard")
         {
-            PreflightEffect(Tree(node.Require("effect")));
+            PreflightEffect(EffectBody(node));
             return;
         }
         var choices = ActiveChoices(node, cast).ToList();
@@ -302,24 +302,24 @@ public sealed partial class AbilityRunner
             return;
         }
         throw new RulesNotImplementedException(
-            $"'{cast.Source.FaceId}' uses '{node.Kind}' before dependent text, whose "
+            $"'{cast.Source.FaceId}' uses '{node.OperationName()}' before dependent text, whose "
             + "answered resolution outcome is not implemented");
     }
 
     private static void PreflightResolutionBranches(
-        AbilityNode node, Cast cast, bool allBranches = false)
+        AbilityEffect node, Cast cast, bool allBranches = false)
     {
-        if (node.Kind == "if")
+        if (node.OperationName() == "if")
         {
             var test = ConditionalOf(node, cast).Test;
             var branches = allBranches || cast.PriorStepMayMutate || PaymentCanChange(test)
-                ? Branches.Select(node.Field).Where(value => value is not null)
-                : node.Field(Test(test, cast) ? "then" : "else") is { } active
+                ? ConditionalBranches((AbilityEffect.Conditional)node).Where(value => value is not null)
+                : ConditionalBranch(node, Test(test, cast) ? "then" : "else") is { } active
                     ? [active]
                     : [];
             foreach (var branch in branches)
             {
-                PreflightResolutionBranches(Tree(branch!), cast, allBranches);
+                PreflightResolutionBranches(branch, cast, allBranches);
             }
             return;
         }
@@ -341,20 +341,20 @@ public sealed partial class AbilityRunner
         _ => true,
     };
 
-    private static bool ContainsNode(AbilityNode node, string kind, Cast cast) =>
-        node.Kind == kind
+    private static bool ContainsNode(AbilityEffect node, string kind, Cast cast) =>
+        node.OperationName() == kind
         || !StableZeroForEach(node, cast)
-            && StructuralChildren(node).Any(child => ContainsNode(child, kind, cast));
+            && ResolutionChildren(node).Any(child => ContainsNode(child, kind, cast));
 
     private static bool HasNestedEachPlayer(
-        AbilityNode node, Cast cast, bool inside = false, bool stateMayChange = false,
-        bool bindingMayChange = false, AbilityNode? repeatedEffect = null)
+        AbilityEffect node, Cast cast, bool inside = false, bool stateMayChange = false,
+        bool bindingMayChange = false, AbilityEffect? repeatedEffect = null)
     {
-        if (inside && node.Kind == "eachPlayer")
+        if (inside && node.OperationName() == "eachPlayer")
         {
             return true;
         }
-        if (node.Kind == "eachPlayer")
+        if (node.OperationName() == "eachPlayer")
         {
             int original = cast.Player;
             try
@@ -364,9 +364,9 @@ public sealed partial class AbilityRunner
                 {
                     cast.RestorePlayer(player);
                     if (HasNestedEachPlayer(
-                        Tree(node.Require("effect")), cast, inside: true,
+                        EffectBody(node), cast, inside: true,
                         stateMayChange, bindingMayChange,
-                        players.Count > 1 ? Tree(node.Require("effect")) : repeatedEffect))
+                        players.Count > 1 ? EffectBody(node) : repeatedEffect))
                     {
                         return true;
                     }
@@ -378,7 +378,7 @@ public sealed partial class AbilityRunner
                 cast.RestorePlayer(original);
             }
         }
-        bool within = inside || node.Kind == "eachPlayer";
+        bool within = inside || node.OperationName() == "eachPlayer";
         return GuardChildren(
             node, cast, stateMayChange, bindingMayChange, repeatedEffect).Any(child =>
             HasNestedEachPlayer(
@@ -387,10 +387,10 @@ public sealed partial class AbilityRunner
     }
 
     private static bool ContainsUnsupportedPower(
-        AbilityNode node, Cast cast, bool stateMayChange = false,
-        bool bindingMayChange = false, AbilityNode? repeatedEffect = null)
+        AbilityEffect node, Cast cast, bool stateMayChange = false,
+        bool bindingMayChange = false, AbilityEffect? repeatedEffect = null)
     {
-        if (node.Kind == "eachPlayer")
+        if (node.OperationName() == "eachPlayer")
         {
             int original = cast.Player;
             try
@@ -400,9 +400,9 @@ public sealed partial class AbilityRunner
                 {
                     cast.RestorePlayer(player);
                     if (ContainsUnsupportedPower(
-                        Tree(node.Require("effect")), cast,
+                        EffectBody(node), cast,
                         stateMayChange, bindingMayChange,
-                        players.Count > 1 ? Tree(node.Require("effect")) : repeatedEffect))
+                        players.Count > 1 ? EffectBody(node) : repeatedEffect))
                     {
                         return true;
                     }
@@ -414,7 +414,7 @@ public sealed partial class AbilityRunner
                 cast.RestorePlayer(original);
             }
         }
-        if (node.Kind is "attack" or "thwart")
+        if (node.OperationName() is "attack" or "thwart")
         {
             var prior = cast.CaptureChosen();
             try
@@ -426,7 +426,7 @@ public sealed partial class AbilityRunner
                     cast.Choose(target);
                 }
                 if (SuspendsPowerEffect(
-                    Tree(node.Require("effect")), cast, stateMayChange,
+                    EffectBody(node), cast, stateMayChange,
                     bindingMayChange || targetWillBind))
                 {
                     return true;
@@ -437,11 +437,11 @@ public sealed partial class AbilityRunner
                 cast.RestoreChosen(prior);
             }
         }
-        if (node.Kind == "thwartSchemes")
+        if (node.OperationName() == "thwartSchemes")
         {
-            var power = Tree(node.Require("power"));
+            var power = ((AbilityEffect.ThwartGroup)node).Thwart;
             if (SuspendsPowerEffect(
-                Tree(power.Require("effect")), cast, stateMayChange, bindingMayChange))
+                EffectBody(power), cast, stateMayChange, bindingMayChange))
             {
                 return true;
             }
@@ -455,11 +455,11 @@ public sealed partial class AbilityRunner
 
     /// <summary>Executable children that can be reached after an ability is offered.</summary>
     private static IEnumerable<(
-        AbilityNode Node, bool StateMayChange, bool BindingMayChange)> GuardChildren(
-        AbilityNode node, Cast cast, bool stateMayChange, bool bindingMayChange,
-        AbilityNode? repeatedEffect)
+        AbilityEffect Node, bool StateMayChange, bool BindingMayChange)> GuardChildren(
+        AbilityEffect node, Cast cast, bool stateMayChange, bool bindingMayChange,
+        AbilityEffect? repeatedEffect)
     {
-        if (node.Kind == "forEach")
+        if (node.OperationName() == "forEach")
         {
             bool countWillBind = bindingMayChange && HasUnboundPowerAmount(node, cast);
             long? count = countWillBind ? null : ForEachCount(node, cast);
@@ -476,18 +476,18 @@ public sealed partial class AbilityRunner
             }
         }
 
-        if (node.Kind == "seq")
+        if (node.OperationName() == "seq")
         {
-            return Nodes(node.Argument).Select((child, index) =>
+            return OrderedEffects(node).Select((child, index) =>
                 (child, stateMayChange || index > 0, bindingMayChange));
         }
-        if (node.Kind == "and")
+        if (node.OperationName() == "and")
         {
-            var children = Nodes(node.Argument).ToList();
+            var children = OrderedEffects(node).ToList();
             return children.Select(child =>
                 (child, stateMayChange || children.Count > 1, bindingMayChange));
         }
-        if (node.Kind == "if")
+        if (node.OperationName() == "if")
         {
             var test = ConditionalOf(node, cast).Test;
             bool canSwitch = stateMayChange
@@ -496,18 +496,18 @@ public sealed partial class AbilityRunner
                 || repeatedEffect is not null
                     && RepeatedEffectCanChange(test, repeatedEffect, cast);
             var branches = canSwitch
-                ? Branches.Select(node.Field).Where(value => value is not null)
-                : node.Field(Test(test, cast) ? "then" : "else") is { } active
+                ? ConditionalBranches((AbilityEffect.Conditional)node).Where(value => value is not null)
+                : ConditionalBranch(node, Test(test, cast) ? "then" : "else") is { } active
                     ? [active]
                     : [];
             return branches.Select(value =>
-                (Tree(value!), stateMayChange, bindingMayChange));
+                (value, stateMayChange, bindingMayChange));
         }
-        if (node.Kind is "then" or "otherwise")
+        if (node.OperationName() is "then" or "otherwise")
         {
-            var effect = Tree(node.Require("effect"));
-            var dependent = Tree(node.Require(node.Kind));
-            var required = node.Kind == "then"
+            var effect = EffectBody(node);
+            var dependent = EffectFollowing(node);
+            var required = node.OperationName() == "then"
                 ? ResolutionOutcome.Full
                 : ResolutionOutcome.None;
             bool answered = ActiveChoices(effect, cast).Any();
@@ -518,7 +518,7 @@ public sealed partial class AbilityRunner
                 || ResolutionOf(effect, cast) == required;
             bool predecessorMayMutate = stateMayChange
                 || cast.PaymentMayMutate
-                || node.Kind == "then"
+                || node.OperationName() == "then"
                 || answered;
             return dependentCanRun
                 ? [
@@ -527,13 +527,13 @@ public sealed partial class AbilityRunner
                 ]
                 : [(effect, stateMayChange, bindingMayChange)];
         }
-        if (node.Kind is "chooseCard" or "thwartSchemes"
+        if (node.OperationName() is "chooseCard" or "thwartSchemes"
             or "thwartDifferentSchemes" or "legalPractice")
         {
             return ContinuationChildren(node).Select(child =>
                 (child, stateMayChange, true));
         }
-        if (node.Kind is "afterActivation" or "delayUntil" or "defense"
+        if (node.OperationName() is "afterActivation" or "delayUntil" or "defense"
             or "payOrEffect" or "payOrExhaust")
         {
             return ContinuationChildren(node).Select(child =>

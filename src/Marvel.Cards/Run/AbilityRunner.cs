@@ -13,49 +13,34 @@ namespace Marvel.Cards.Run;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>This is what replaces a class per card.</b> There was one — a switch on
-/// printed id, three cards deep and growing — and it was the "cards as scripts"
-/// inversion this port exists to undo (<c>docs/migration.md</c>). A card is now
-/// a row in <c>datasets/abilities/abilities.json</c>, and adding one is
-/// authoring data rather than compiling code.
+/// Cards compose the supported operations as inert JSON. Construction validates
+/// that data and lowers it to an immutable program; gameplay reads the checked
+/// instructions rather than the supplied syntax maps.
 /// </para>
 /// <para>
-/// The vocabulary is small and every gap is loud. A node nothing implements
-/// throws naming the node; a card nobody has authored throws naming the card.
-/// Growing the engine means adding a case here and growing the game means adding
-/// a row there, and the two are different activities on purpose.
+/// Adding an operation requires engine behavior and tests. Authoring another
+/// card combines those operations without introducing a card-specific class.
+/// Unknown data fails validation; an unsupported rule situation raises during
+/// resolution rather than inventing an outcome.
 /// </para>
 /// <para>
-/// See <c>docs/card-dsl.md</c> for the design this is the first executable
-/// piece of, and <c>docs/enemy-attacks.md</c> for the cards it currently runs.
+/// See <c>docs/card-dsl.md</c> for the language and <c>docs/timing.md</c> for
+/// scheduling and continuation contracts.
 /// </para>
 /// </remarks>
 public sealed partial class AbilityRunner : ICardAbilities
 {
     private readonly AbilityProgram program;
-    private readonly AbilityBook book;
-    private readonly Dictionary<CardAbility, CompiledCardAbility> compiledAbilities;
 
     /// <summary>Validates and lowers the authored cards before gameplay.</summary>
     /// <param name="book">The authored cards.</param>
     public AbilityRunner(AbilityBook book)
     {
         program = AbilityLowering.Book(book);
-        this.book = book;
-        compiledAbilities = new Dictionary<CardAbility, CompiledCardAbility>(ReferenceEqualityComparer.Instance);
-        for (int index = 0; index < book.Abilities.Count; index++)
-        {
-            compiledAbilities[book.Abilities[index]] = program.Abilities[index];
-        }
-        IndexEffectSyntax(book);
         constant = new HashSet<string>(program.Abilities
             .Where(ability => ability.Trigger.Timing == AbilityType.Constant)
             .Select(ability => ability.Card), StringComparer.Ordinal);
     }
-
-    // MARVEL-375 migration boundary: remove this syntax-to-program join when
-    // every runtime entry point takes CompiledCardAbility directly.
-    private AbilityCost? CompiledCost(CardAbility ability) => compiledAbilities[ability].Cost;
 
     // An activation is an agenda operation, while the sentence that initiated
     // it is a card operation. The stable agenda id is the join between them.
@@ -85,10 +70,7 @@ public sealed partial class AbilityRunner : ICardAbilities
     // facedown card text inactive. Every authored-ability entry point goes
     // through this boundary so no trigger, action, constant, boost, or query
     // can accidentally execute the hidden card.
-    private IEnumerable<CardAbility> On(Card card) =>
-        FacedownDrones.Is(card) ? [] : book.On(card.FaceId);
-
-    private ImmutableArray<CompiledCardAbility> CompiledOn(Card card) =>
+    private ImmutableArray<CompiledCardAbility> On(Card card) =>
         FacedownDrones.Is(card) ? [] : program.On(card.FaceId);
 
     /// <summary>The authored cards, whether or not they do anything.</summary>
@@ -356,7 +338,7 @@ public sealed partial class AbilityRunner : ICardAbilities
             ?? throw new RulesNotImplementedException(
                 $"'{source.FaceId}' ability {abilityIndex} has no {power.ToLowerInvariant()} "
                 + $"wrapper {powerOrdinal}");
-        var effect = Tree(wrapper.Require("effect"));
+        var effect = EffectBody(wrapper);
         var cast = new Cast(
             world, source, abilityOccurrence ?? occurrence, player, events, this)
         {
@@ -435,7 +417,7 @@ public sealed partial class AbilityRunner : ICardAbilities
         }
         else if (!cast.Suspended && resumeFrom >= 0)
         {
-            if (ability.Effect.Kind != "seq")
+            if (ability.Effect.OperationName() != "seq")
             {
                 throw new RulesNotImplementedException(
                     $"'{source.FaceId}' resumes a {power.ToLowerInvariant()} outside a sequence");
@@ -460,7 +442,7 @@ public sealed partial class AbilityRunner : ICardAbilities
 
         string classes = world.Facts.Attributes(payingFor.FaceId)
             .GetValueOrDefault("Class", string.Empty);
-        bool doubles = CompiledOn(source).Any(ability =>
+        bool doubles = On(source).Any(ability =>
             ability.Trigger.Timing == AbilityType.Constant
             && ability.Effect is AbilityEffect.DoubleResourceFor multiplier
             && classes.Split(';').Contains(
@@ -477,7 +459,7 @@ public sealed partial class AbilityRunner : ICardAbilities
         ArgumentNullException.ThrowIfNull(candidates);
 
         var enemy = world.Cards[attack.Enemy];
-        bool requiresControlledAlly = CompiledOn(enemy).Any(ability =>
+        bool requiresControlledAlly = On(enemy).Any(ability =>
             ability.Trigger.Timing == AbilityType.Constant
             && ability.Effect is AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.RequireAllyDefender });
         if (!requiresControlledAlly)
@@ -503,7 +485,7 @@ public sealed partial class AbilityRunner : ICardAbilities
         foreach (var card in world.Cards.Where(card =>
                      card.ObjectId != ignoredSource && DeckTypes.IsInPlay(card.Area.Type)))
         {
-            foreach (var ability in CompiledOn(card).Where(ability =>
+            foreach (var ability in On(card).Where(ability =>
                 ability.Trigger.Timing == AbilityType.Constant))
             {
                 if (ProhibitsThreatRemoval(
@@ -586,7 +568,7 @@ public sealed partial class AbilityRunner : ICardAbilities
                     eligibility.SetPaymentMayMutate(
                         ability.Cost is not null
                         || world.Facts.Kind(card.FaceId) == CardKind.Event,
-                        CompiledCost(ability));
+                        ability.Cost);
                     if (!WhenHolds(ability, eligibility)
                         || (controller >= 0 && !CanInitiate(ability, eligibility)))
                     {
@@ -598,7 +580,7 @@ public sealed partial class AbilityRunner : ICardAbilities
                     // conditions are met" do the later steps happen. So an ability
                     // nobody can pay for is not an offer that fails at step 5; it
                     // never reaches the window at all.
-                    if (!Payable(world, card, controller, CompiledCost(ability))
+                    if (!Payable(world, card, controller, ability.Cost)
                         || !EventPayable(world, card, controller, ability)
                         || !Available(world, card, ability, occurrence))
                     {
@@ -635,7 +617,7 @@ public sealed partial class AbilityRunner : ICardAbilities
             AnchorId: ability.Card,
             AnchorPlayer: ability.Player,
             Label: found.Name,
-            Targets: AbilityCostSelection.Ask(world, ability.Player, CompiledCost(found)),
+            Targets: AbilityCostSelection.Ask(world, ability.Player, found.Cost),
             Costs: price is null ? null : [price]);
     }
 
@@ -683,7 +665,7 @@ public sealed partial class AbilityRunner : ICardAbilities
         };
         cast.SetPaymentMayMutate(
             found.Cost is not null || world.Facts.Kind(card.FaceId) == CardKind.Event,
-            CompiledCost(found));
+            found.Cost);
 
         if (!Available(world, card, found, occurrence))
         {
@@ -700,18 +682,18 @@ public sealed partial class AbilityRunner : ICardAbilities
         // state instead of choosing on the player's behalf.
         if (AbilityTypes.IsMandatory(found.Trigger.Timing) && found.Cost is not null)
         {
-            if (!MandatoryCostIsAutomatic(CompiledCost(found)!))
+            if (!MandatoryCostIsAutomatic(found.Cost!))
             {
                 throw new RulesNotImplementedException(
-                    $"'{card.FaceId}' has a mandatory ability whose '{found.Cost.Kind}' "
+                    $"'{card.FaceId}' has a mandatory ability whose '{found.Cost.OperationName()}' "
                     + "cost requires a player decision");
             }
-            if (!Payable(world, card, resolving, CompiledCost(found)))
+            if (!Payable(world, card, resolving, found.Cost))
             {
                 return events;
             }
         }
-        else if (!CounterCostsPayable(world, card, resolving, CompiledCost(found)))
+        else if (!CounterCostsPayable(world, card, resolving, found.Cost))
         {
             throw new RulesNotImplementedException(
                 $"'{card.FaceId}' can no longer pay this ability's cost");
@@ -739,16 +721,16 @@ public sealed partial class AbilityRunner : ICardAbilities
         // refuses one that does not.
         var costOwner = world.Agenda.Current;
         var costOccurrence = world.Agenda.Occurrence;
-        ValidatePayment(CompiledCost(found), paying, chosen, values, cast);
-        PayEvent(card, paying, cast, found.Effect, allocations, CompiledCost(found));
+        ValidatePayment(found.Cost, paying, chosen, values, cast);
+        PayEvent(card, paying, cast, found.Effect, allocations, found.Cost);
         if (world.Facts.Kind(card.FaceId) == CardKind.Event
-            && ResourceRequirement(CompiledCost(found), card).Length > 0)
+            && ResourceRequirement(found.Cost, card).Length > 0)
         {
-            PayNonResourceCosts(CompiledCost(found), paying, chosen, values, cast);
+            PayNonResourceCosts(found.Cost, paying, chosen, values, cast);
         }
         else
         {
-            Pay(CompiledCost(found), paying, chosen, values, cast);
+            Pay(found.Cost, paying, chosen, values, cast);
         }
         if (cast.Suspended)
         {
@@ -987,7 +969,7 @@ public sealed partial class AbilityRunner : ICardAbilities
         var sources = new List<ResourceSource>();
         foreach (var card in Triggerable(world, player).ToList())
         {
-            foreach (var ability in CompiledOn(card))
+            foreach (var ability in On(card))
             {
                 var eligibility = new Cast(
                     world,
@@ -1034,7 +1016,7 @@ public sealed partial class AbilityRunner : ICardAbilities
         bool available = ResourceAbilities(world, player)
             .Any(candidate => candidate.Effect == card);
         CompiledCardAbility? ability = available
-            ? CompiledOn(source).FirstOrDefault(candidate =>
+            ? On(source).FirstOrDefault(candidate =>
                 candidate.Trigger.Timing == AbilityType.Resource)
             : null;
         return ability?.Name ?? world.Facts.Title(source.FaceId);
@@ -1048,7 +1030,7 @@ public sealed partial class AbilityRunner : ICardAbilities
         var available = ResourceAbilities(world, player);
         return
         [
-            .. available.Where(source => CompiledOn(world.Cards[source.Effect]).Any(ability =>
+            .. available.Where(source => On(world.Cards[source.Effect]).Any(ability =>
                 ability.Trigger.Timing == AbilityType.Resource
                 && string.Equals(
                     ability.PrintedResources, source.Generates, StringComparison.Ordinal))),
@@ -1073,10 +1055,6 @@ public sealed partial class AbilityRunner : ICardAbilities
     /// round without anything having to remember to clear it.
     /// </para>
     /// </remarks>
-    private bool Available(
-        World world, Card card, CardAbility ability, Occurrence? occurrence = null) =>
-        Available(world, card, compiledAbilities[ability], occurrence);
-
     private bool Available(
         World world, Card card, CompiledCardAbility ability, Occurrence? occurrence = null)
     {
@@ -1105,10 +1083,6 @@ public sealed partial class AbilityRunner : ICardAbilities
     }
 
     /// <summary>Records one use of a limited ability, until the round ends.</summary>
-    private void Use(
-        World world, Card card, CardAbility ability, Occurrence? occurrence = null) =>
-        Use(world, card, compiledAbilities[ability], occurrence);
-
     private void Use(
         World world, Card card, CompiledCardAbility ability, Occurrence? occurrence = null)
     {
@@ -1155,7 +1129,7 @@ public sealed partial class AbilityRunner : ICardAbilities
     /// <summary>The effect kind that stands for one use of this instance of an ability.</summary>
     private string Spent(Card card, CompiledCardAbility ability)
     {
-        var written = CompiledOn(card).ToList();
+        var written = On(card).ToList();
         int ordinal = written.FindIndex(candidate => ReferenceEquals(candidate, ability));
         if (ordinal < 0)
         {
@@ -1205,7 +1179,7 @@ public sealed partial class AbilityRunner : ICardAbilities
         ArgumentNullException.ThrowIfNull(world);
 
         var holder = world.Cards[card];
-        var ability = CompiledOn(holder).FirstOrDefault(candidate =>
+        var ability = On(holder).FirstOrDefault(candidate =>
         {
             var eligibility = new Cast(
                 world,
@@ -1249,7 +1223,7 @@ public sealed partial class AbilityRunner : ICardAbilities
             return true;
         }
 
-        foreach (var ability in CompiledOn(target).Where(ability =>
+        foreach (var ability in On(target).Where(ability =>
             ability.Trigger.Timing == AbilityType.Constant))
         {
             var cast = new Cast(
@@ -1277,7 +1251,7 @@ public sealed partial class AbilityRunner : ICardAbilities
                      .Where(candidate => candidate.Type == AbilityType.ForcedInterrupt))
         {
             Card card = world.Cards[pending.Card];
-            CardAbility ability = Pending(card, pending);
+            CompiledCardAbility ability = Pending(card, pending);
             string name = world.Facts.Title(card.FaceId);
             if (ContainsEffect(ability.Effect, "soakDamage"))
             {
@@ -1310,7 +1284,7 @@ public sealed partial class AbilityRunner : ICardAbilities
                      .Where(candidate => candidate.Type == AbilityType.ForcedInterrupt))
         {
             Card card = world.Cards[pending.Card];
-            CardAbility ability = Pending(card, pending);
+            CompiledCardAbility ability = Pending(card, pending);
             string name = world.Facts.Title(card.FaceId);
             if (HealsAllDamage(ability.Effect))
             {
@@ -1327,9 +1301,8 @@ public sealed partial class AbilityRunner : ICardAbilities
         return null;
     }
 
-    private static bool HealsAllDamage(AbilityNode node) =>
-        node.Kind == "heal"
-        && Tree(node.Require("amount")).Kind == "damageOn"
+    private static bool HealsAllDamage(AbilityEffect node) =>
+        node is AbilityEffect.Heal { Amount: AbilityNumber.CardValue { Property: AbilityCardNumberProperty.Damage } }
         || MutationChildren(node).Any(HealsAllDamage);
 
     /// <inheritdoc/>
@@ -1343,7 +1316,7 @@ public sealed partial class AbilityRunner : ICardAbilities
             .Where(area => DeckTypes.IsInPlay(area.Type))
             .SelectMany(area => area.Cards))
         {
-            foreach (var ability in CompiledOn(card).Where(ability =>
+            foreach (var ability in On(card).Where(ability =>
                 ability.Trigger.Timing == AbilityType.Constant))
             {
                 var cast = new Cast(
@@ -1584,7 +1557,7 @@ public sealed partial class AbilityRunner : ICardAbilities
     /// <c>World.Areas</c> lazily while resolving would be modifying the
     /// collection being read.
     /// </remarks>
-    private List<(Card Card, CardAbility Ability)> Waiting(World world, Occurrence what) =>
+    private List<(Card Card, CompiledCardAbility Ability)> Waiting(World world, Occurrence what) =>
     [
         .. world.Areas
             .Where(area => DeckTypes.IsInPlay(area.Type))
@@ -1598,7 +1571,7 @@ public sealed partial class AbilityRunner : ICardAbilities
 
     /// <summary>Whether one ability answers this occurrence at all.</summary>
     private bool Answers(
-        World world, CardAbility ability, Card card, Occurrence what)
+        World world, CompiledCardAbility ability, Card card, Occurrence what)
     {
         int? restricted = RestrictedPlayer(world, ability, card);
         return ability.Trigger.Event is { } condition
@@ -1763,9 +1736,9 @@ public sealed partial class AbilityRunner : ICardAbilities
                 $"'{source.FaceId}' has no reconstructable each-player ability");
         var parentPath = step is { What: Steps.ResolveEachPlayer, AbilityPath: { } path }
             ? path
-            : outer.Kind == "seq" ? [$"seq:{stoppedAt - 1}"] : [];
+            : outer.OperationName() == "seq" ? [$"seq:{stoppedAt - 1}"] : [];
         var each = NodeAtPath(outer, parentPath);
-        if (each.Kind != "eachPlayer")
+        if (each.OperationName() != "eachPlayer")
         {
             throw new RulesNotImplementedException(
                 $"'{source.FaceId}' has no each-player frame at step {stoppedAt - 1}");
@@ -1789,8 +1762,8 @@ public sealed partial class AbilityRunner : ICardAbilities
         RestorePathBindings(cast, parentPath);
         cast.At(stoppedAt - 1);
         cast.SetContinuation(finalPlayer && (step?.AbilityHasContinuation
-            ?? (outer.Kind == "seq" && stoppedAt < Nodes(outer.Argument).Count())));
-        Run(Tree(each.Require("effect")), cast);
+            ?? (outer.OperationName() == "seq" && stoppedAt < OrderedEffects(outer).Length)));
+        Run(EffectBody(each), cast);
         if (!cast.Suspended && finalPlayer)
         {
             cast.SetAbilityPath(parentPath);
@@ -1836,7 +1809,7 @@ public sealed partial class AbilityRunner : ICardAbilities
         }
 
         var found = new List<ContinuousEffect>();
-        foreach (var ability in CompiledOn(card))
+        foreach (var ability in On(card))
         {
             if (ability.Trigger.Timing != AbilityType.Constant)
             {
@@ -2086,7 +2059,7 @@ public sealed partial class AbilityRunner : ICardAbilities
             throw new RulesNotImplementedException(
                 $"'{card.FaceId}' cannot initiate this action in the current state");
         }
-        if (!CounterCostsPayable(world, card, ability.Player, CompiledCost(found)))
+        if (!CounterCostsPayable(world, card, ability.Player, found.Cost))
         {
             throw new RulesNotImplementedException(
                 $"'{card.FaceId}' can no longer pay this ability's counter cost");
@@ -2096,16 +2069,16 @@ public sealed partial class AbilityRunner : ICardAbilities
         // before step 6 resolves.
         var costOwner = world.Agenda.Current;
         var costOccurrence = world.Agenda.Occurrence;
-        ValidatePayment(CompiledCost(found), paying, chosen, values, cast);
-        PayEvent(card, paying, cast, found.Effect, allocations, CompiledCost(found));
+        ValidatePayment(found.Cost, paying, chosen, values, cast);
+        PayEvent(card, paying, cast, found.Effect, allocations, found.Cost);
         if (world.Facts.Kind(card.FaceId) == CardKind.Event
-            && ResourceRequirement(CompiledCost(found), card).Length > 0)
+            && ResourceRequirement(found.Cost, card).Length > 0)
         {
-            PayNonResourceCosts(CompiledCost(found), paying, chosen, values, cast);
+            PayNonResourceCosts(found.Cost, paying, chosen, values, cast);
         }
         else
         {
-            Pay(CompiledCost(found), paying, chosen, values, cast);
+            Pay(found.Cost, paying, chosen, values, cast);
         }
         if (cast.Suspended)
         {
@@ -2146,7 +2119,7 @@ public sealed partial class AbilityRunner : ICardAbilities
                 var eligibility = new Cast(world, card, new Occurrence(
                     0, [Steps.TurnAction], Subject: card.ObjectId, Player: player),
                     player, [], this);
-                if (Payable(world, card, player, CompiledCost(ability))
+                if (Payable(world, card, player, ability.Cost)
                     && EventPayable(world, card, player, ability)
                     && ActionAvailable(world, card, ability, player, eligibility))
                 {
@@ -2163,11 +2136,11 @@ public sealed partial class AbilityRunner : ICardAbilities
 
     /// <summary>Whether an action can pass every initiation check right now.</summary>
     private bool ActionAvailable(
-        World world, Card card, CardAbility ability, int player, Cast eligibility)
+        World world, Card card, CompiledCardAbility ability, int player, Cast eligibility)
     {
         eligibility.SetPaymentMayMutate(
             ability.Cost is not null || world.Facts.Kind(card.FaceId) == CardKind.Event,
-            CompiledCost(ability));
+            ability.Cost);
         return MayInitiate(world, ability, card, player)
         && Available(world, card, ability)
         && InForm(world, player, ability.Trigger.Form)
@@ -2176,7 +2149,7 @@ public sealed partial class AbilityRunner : ICardAbilities
     }
 
     /// <summary>The exact same-timing ability named by a pending ordinal.</summary>
-    private CardAbility Pending(Card card, PendingAbility pending) =>
+    private CompiledCardAbility Pending(Card card, PendingAbility pending) =>
         On(card)
             .Where(candidate => candidate.Trigger.Timing == pending.Type)
             .ElementAtOrDefault(pending.Ordinal)
@@ -2219,7 +2192,7 @@ public sealed partial class AbilityRunner : ICardAbilities
                 // you ask them.
                 if (ControllerOf(world, card) == player
                     || card.Owner == World.Scenario
-                    || CompiledOn(card).Any(ability => ability.AnyPlayer))
+                    || On(card).Any(ability => ability.AnyPlayer))
                 {
                     yield return card;
                 }

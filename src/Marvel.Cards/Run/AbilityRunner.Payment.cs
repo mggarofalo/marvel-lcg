@@ -205,8 +205,8 @@ public sealed partial class AbilityRunner
         _ => throw new InvalidOperationException("Unknown compiled cost card"),
     };
 
-    private bool EventPayable(
-        World world, Card card, int player, CardAbility ability)
+    private static bool EventPayable(
+        World world, Card card, int player, CompiledCardAbility ability)
     {
         if (world.Facts.Kind(card.FaceId) != CardKind.Event)
         {
@@ -221,7 +221,7 @@ public sealed partial class AbilityRunner
         long cost = CardPlay.CostOf(
             world, world.Facts, world.Seats[player], card).Amount;
         string required = Resources.Required(world, card, world.Facts)
-            + ResourceRequirement(CompiledCost(ability), card);
+            + ResourceRequirement(ability.Cost, card);
         cost += required.Length
             - Resources.Required(world, card, world.Facts).Length;
         string pool = string.Concat(EventGenerators(world, card, player, ability.Effect)
@@ -348,11 +348,11 @@ public sealed partial class AbilityRunner
             Sources: CardPlay.Generators(world, world.Facts, world.Seats[player]));
     }
 
-    private CostOption? CombinedPrice(
-        World world, Card card, int player, CardAbility ability)
+    private static CostOption? CombinedPrice(
+        World world, Card card, int player, CompiledCardAbility ability)
     {
         var printed = EventPrice(world, card, player, ability.Effect);
-        var arrow = Price(world, card, player, CompiledCost(ability));
+        var arrow = Price(world, card, player, ability.Cost);
         if (printed is null || arrow is null)
         {
             return printed ?? arrow;
@@ -394,7 +394,7 @@ public sealed partial class AbilityRunner
     }
 
     private static CostOption? EventPrice(
-        World world, Card card, int player, AbilityNode effect)
+        World world, Card card, int player, AbilityEffect effect)
     {
         if (world.Facts.Kind(card.FaceId) != CardKind.Event)
         {
@@ -410,12 +410,11 @@ public sealed partial class AbilityRunner
                 ? [required]
                 : null,
             Sources: EventGenerators(world, card, player, effect),
-            DeclarationSensitive: PaidResourceQueries(effect.Argument).Any()
-                || effect.Kind == "paidWithResource");
+            DeclarationSensitive: PaidResourceQueries(effect).Any());
     }
 
     private static List<ResourceSource> EventGenerators(
-        World world, Card card, int player, AbilityNode effect)
+        World world, Card card, int player, AbilityEffect effect)
     {
         return CardPlay.Paying(world, world.Facts, world.Seats[player], card)
             .SelectMany(seat => CardPlay.Generators(world, world.Facts, seat, card))
@@ -440,7 +439,7 @@ public sealed partial class AbilityRunner
     }
 
     private static void PayEvent(
-        Card card, IReadOnlyList<int> paying, Cast cast, AbilityNode effect,
+        Card card, IReadOnlyList<int> paying, Cast cast, AbilityEffect effect,
         IReadOnlyList<ResourceAllocation>? allocations = null,
         AbilityCost? additionalCost = null)
     {
@@ -531,8 +530,7 @@ public sealed partial class AbilityRunner
         // the event. A malformed allocation is an invalid payment answer and
         // `rr:initiating-abilities.step.5` must reject it without changing the
         // board.
-        bool declarationSensitive = PaidResourceQueries(effect.Argument).Any()
-            || effect.Kind == "paidWithResource";
+        bool declarationSensitive = PaidResourceQueries(effect).Any();
         string paid = assigned.Count > 0
             ? AllocatedResources(generators, paying, assigned, components, card)
             : declarationSensitive
@@ -665,12 +663,9 @@ public sealed partial class AbilityRunner
     }
 
     private static bool HasAmbiguousPaidResourceAllocation(
-        AbilityNode effect, string generated, long cost, string required)
+        AbilityEffect effect, string generated, long cost, string required)
     {
-        var queried = PaidResourceQueries(effect.Argument)
-            .Concat(effect.Kind == "paidWithResource"
-                ? [Word(effect.Argument)[0]]
-                : [])
+        var queried = PaidResourceQueries(effect)
             .Distinct()
             .ToList();
         if (queried.Count == 0)
@@ -749,35 +744,6 @@ public sealed partial class AbilityRunner
                 }
             }
             return false;
-        }
-    }
-
-    private static IEnumerable<char> PaidResourceQueries(AbilityValue value)
-    {
-        if (value is AbilityValue.List list)
-        {
-            foreach (char resource in list.Values.SelectMany(PaidResourceQueries))
-            {
-                yield return resource;
-            }
-            yield break;
-        }
-
-        if (value is not AbilityValue.Map map)
-        {
-            yield break;
-        }
-
-        foreach (var (kind, argument) in map.Entries)
-        {
-            if (kind == "paidWithResource")
-            {
-                yield return Word(argument)[0];
-            }
-            foreach (char resource in PaidResourceQueries(argument))
-            {
-                yield return resource;
-            }
         }
     }
 

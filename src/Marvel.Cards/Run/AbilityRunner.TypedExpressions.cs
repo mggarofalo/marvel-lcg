@@ -100,9 +100,6 @@ public sealed partial class AbilityRunner
         _ => throw new InvalidOperationException("Unknown compiled condition in power-binding analysis"),
     };
 
-    private bool WhenHolds(CardAbility ability, Cast cast) =>
-        WhenHolds(compiledAbilities[ability], cast);
-
     private static bool WhenHolds(CompiledCardAbility ability, Cast cast) =>
         ability.When is not { } condition || Test(condition, cast);
 

@@ -11,7 +11,7 @@ public sealed partial class AbilityRunner
 {
     /// <summary>Whether one ability answers this occurrence, in this window.</summary>
     private bool Answers(
-        World world, CardAbility ability, Card card, Occurrence occurrence, WindowKind window,
+        World world, CompiledCardAbility ability, Card card, Occurrence occurrence, WindowKind window,
         int? initiatingPlayer = null)
     {
         // A constant ability names no condition at all -- `rr:ability.5` -- so
@@ -80,7 +80,7 @@ public sealed partial class AbilityRunner
     /// </para>
     /// </remarks>
     private int Controller(
-        World world, CardAbility ability, Card card, Occurrence occurrence) =>
+        World world, CompiledCardAbility ability, Card card, Occurrence occurrence) =>
         RestrictedPlayer(world, ability, card) is { } restricted
             ? restricted
             : ability.Trigger.Player is not null
@@ -103,9 +103,6 @@ public sealed partial class AbilityRunner
     /// from control, because an obligation remains an encounter card.
     /// </para>
     /// </remarks>
-    private int? RestrictedPlayer(World world, CardAbility ability, Card card) =>
-        RestrictedPlayer(world, compiledAbilities[ability], card);
-
     private int? RestrictedPlayer(World world, CompiledCardAbility ability, Card card)
     {
         // The Golden Rules give explicit card text precedence. Obedience
@@ -164,9 +161,6 @@ public sealed partial class AbilityRunner
     };
 
     /// <summary>Whether this player is permitted to initiate the ability.</summary>
-    private bool MayInitiate(World world, CardAbility ability, Card card, int player) =>
-        MayInitiate(world, compiledAbilities[ability], card, player);
-
     private bool MayInitiate(World world, CompiledCardAbility ability, Card card, int player)
     {
         // `rr:player-turn.5.a-c` grants permission per ability: a player may
@@ -233,10 +227,10 @@ public sealed partial class AbilityRunner
 
     // ---- the effect tree ---------------------------------------------------
 
-    private static void Run(CardAbility ability, Cast cast)
+    private static void Run(CompiledCardAbility ability, Cast cast)
     {
-        var labels = ability.Labels ?? [];
-        if (labels.Count > 0)
+        var labels = ability.Labels;
+        if (labels.Length > 0)
         {
             if (!cast.LabelsPreflighted)
             {
@@ -268,13 +262,13 @@ public sealed partial class AbilityRunner
         Run(ability.Effect, cast);
     }
 
-    private static void Run(AbilityNode node, Cast cast)
+    private static void Run(AbilityEffect node, Cast cast)
     {
         int eventsBefore = cast.Events.Count;
         var agendaOwner = cast.World.Agenda.Current;
         var agendaOccurrence = cast.World.Agenda.Occurrence;
         var healthBefore = cast.World.Effects.CaptureCharacterHealth();
-        var instruction = ((AbilityRunner)cast.Abilities).CompiledEffect(node);
+        var instruction = node;
         if (instruction is AbilityEffect.ActivateEnemies activation)
         {
             Activate(activation, node, cast);
@@ -285,7 +279,7 @@ public sealed partial class AbilityRunner
         {
             RunRemainingEffect(node, cast);
         }
-        if (cast.Events.Count > eventsBefore && EventMeansEffectApplied(node.Kind))
+        if (cast.Events.Count > eventsBefore && EventMeansEffectApplied(node.OperationName()))
         {
             cast.ResolveEffect();
         }
@@ -312,9 +306,9 @@ public sealed partial class AbilityRunner
         Attack.RefreshDefender(cast.World, cast.World.Facts);
     }
 
-    private static void RunRemainingEffect(AbilityNode node, Cast cast)
+    private static void RunRemainingEffect(AbilityEffect node, Cast cast)
     {
-        switch (node.Kind)
+        switch (node.OperationName())
         {
             case "seq":
                 Sequence(node, cast, from: 0);
@@ -323,7 +317,7 @@ public sealed partial class AbilityRunner
             case "and":
                 // `rr:and` makes the effects simultaneous and independent;
                 // `rr:first-player.3` gives their order to the first player.
-                var simultaneous = Nodes(node.Argument).ToList();
+                var simultaneous = OrderedEffects(node).ToList();
                 if (simultaneous.Count <= 1)
                 {
                     foreach (var effect in simultaneous)
@@ -410,7 +404,7 @@ public sealed partial class AbilityRunner
                 }
                 waiting.Add(new ActivationEffect(
                     cast.Source.ObjectId, cast.Player, cast.Tier,
-                    Tree(node.Require("effect")),
+                    EffectBody(node),
                     cast.Altered?.ObjectId ?? -1,
                     cast.AbilityActor?.ObjectId ?? -1));
                 cast.ResolveEffect();
@@ -430,9 +424,9 @@ public sealed partial class AbilityRunner
                     cast.SetObservingInformation(wasObserving);
                 }
                 var branch = condition ? "then" : "else";
-                if (node.Field(branch) is { } taken)
+                if (ConditionalBranch(node, branch) is { } taken)
                 {
-                    RunChild(Tree(taken), $"if:{branch}", cast);
+                    RunChild(taken, $"if:{branch}", cast);
                 }
 
                 break;
@@ -460,7 +454,7 @@ public sealed partial class AbilityRunner
                         cast.Results["defenseAbilityDefender"] = defender.ObjectId;
                         Attack.BeginDefenseAbility(cast.World, Resolver(cast), defender);
                     }
-                    RunChild(Tree(node.Require("effect")), "defense:effect", cast);
+                    RunChild(EffectBody(node), "defense:effect", cast);
                 }
                 break;
 
@@ -474,14 +468,14 @@ public sealed partial class AbilityRunner
                 {
                     cast.Choose(schemes[0]);
                     ((AbilityRunner)cast.Abilities).SchedulePower(
-                        Tree(node.Require("power")), cast, BasicPowers.ThwartVerb,
+                        ((AbilityEffect.ThwartGroup)node).Thwart, cast, BasicPowers.ThwartVerb,
                         schemes[0], schemes, -1);
                 }
                 break;
 
             default:
                 throw new RulesNotImplementedException(
-                    $"'{cast.Source.FaceId}' uses the effect node '{node.Kind}', "
+                    $"'{cast.Source.FaceId}' uses the effect node '{node.OperationName()}', "
                     + "which is not implemented");
         }
     }
@@ -549,7 +543,7 @@ public sealed partial class AbilityRunner
         }
     }
 
-    private static bool CanCreateDrones(AbilityNode node, Cast cast) =>
+    private static bool CanCreateDrones(AbilityEffect node, Cast cast) =>
         EffectOf<AbilityEffect.CreateDrones>(node, cast) is var drones
         && drones.Count > 0
         && Seats(drones.Players, cast).Any(player =>

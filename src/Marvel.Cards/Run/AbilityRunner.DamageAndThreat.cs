@@ -7,7 +7,7 @@ public sealed partial class AbilityRunner
     // MARVEL-375: syntax identifies the suspended procedure until continuations
     // use program addresses directly. Only the compiled instruction supplies
     // the operation's arguments.
-    private static bool TryRunDamageAndThreat(AbilityEffect instruction, AbilityNode syntax, Cast cast)
+    private static bool TryRunDamageAndThreat(AbilityEffect instruction, AbilityEffect syntax, Cast cast)
     {
         switch (instruction)
         {

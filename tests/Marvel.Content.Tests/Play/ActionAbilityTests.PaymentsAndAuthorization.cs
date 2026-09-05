@@ -670,6 +670,8 @@ public sealed partial class ActionAbilityTests
     [InlineData("""{"choose":{"options":[{"discard":"this"},{"draw":{"player":"you","count":1}}]}}""", false)]
     [InlineData("""{"if":{"test":{"titleInPlay":"yourTitle"},"then":{"discard":"this"},"else":{"discard":"this"}}}""", true)]
     [InlineData("""{"if":{"test":{"titleInPlay":"yourTitle"},"then":{"draw":{"player":"you","count":1}},"else":{"discard":"this"}}}""", false)]
+    [InlineData("""{"if":{"test":{"titleInPlay":"absent"},"then":{"putIntoPlay":{"card":"this","where":"engagedWithYou"}},"else":{"discard":"this"}}}""", false)]
+    [InlineData("""{"if":{"test":{"titleInPlay":"absent"},"then":{"putIntoPlay":{"card":"this","where":"printedDestination"}},"else":{"discard":"this"}}}""", true)]
     [InlineData("""{"placeCounters":{"card":"this","counter":"marker","count":{"add":[1,{"countersOn":{"card":"this","counter":"yourMarker"}}]}}}""", true)]
     [InlineData("""{"placeCounters":{"card":"this","counter":"marker","count":{"add":[1,{"countersOn":{"card":"you","counter":"marker"}}]}}}""", false)]
     public void AttachmentEffectAuthorizationUsesBindingsNotLiteralText(string effect, bool anotherPlayerMayAct)

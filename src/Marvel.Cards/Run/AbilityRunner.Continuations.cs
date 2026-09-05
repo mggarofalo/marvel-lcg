@@ -41,7 +41,7 @@ public sealed partial class AbilityRunner
         // still resume from their top-level sequence index.
         if (cast.EachPlayerFrame)
         {
-            if (cast.FinalPlayer && effect is { Kind: "seq" } && !cast.Suspended)
+            if (cast.FinalPlayer && effect is AbilityEffect.Sequence && !cast.Suspended)
             {
                 Sequence(effect, cast, from);
             }
@@ -50,7 +50,7 @@ public sealed partial class AbilityRunner
             return cast.Events;
         }
 
-        if (effect is { Kind: "seq" } && !cast.Suspended)
+        if (effect is AbilityEffect.Sequence && !cast.Suspended)
         {
             Sequence(effect, cast, from);
         }
@@ -95,7 +95,7 @@ public sealed partial class AbilityRunner
     /// A step cannot carry an effect tree, so it carries the card, same-timing
     /// ability ordinal, and structural path used to find the node again.
     /// </remarks>
-    private AbilityNode Choice(
+    private AbilityEffect Choice(
         World world, Card source, int player, int stoppedAt, AbilityType? tier)
     {
         // **Which ability, when a card has a choice in more than one.** The
@@ -143,12 +143,12 @@ public sealed partial class AbilityRunner
             ?? throw new RulesNotImplementedException(
                 $"'{source.FaceId}' has no choice waiting on an answer");
 
-        if (effect.Kind != "seq")
+        if (effect.OperationName() != "seq")
         {
             return ActiveChoices(effect, cast).Single();
         }
 
-        var steps = Nodes(effect.Argument).ToList();
+        var steps = OrderedEffects(effect).ToList();
         if (stoppedAt >= 1 && stoppedAt <= steps.Count)
         {
             var nested = ActiveChoices(steps[stoppedAt - 1], cast).ToList();
@@ -163,34 +163,33 @@ public sealed partial class AbilityRunner
     }
 
     /// <summary>Every <c>choose</c> node in one effect tree.</summary>
-    private static IEnumerable<AbilityNode> Choices(AbilityNode node)
+    private static IEnumerable<AbilityEffect> Choices(AbilityEffect node)
     {
-        if ((node.Kind == "and" && Nodes(node.Argument).Skip(1).Any())
+        if ((node.OperationName() == "and" && OrderedEffects(node).Skip(1).Any())
             || IsChoice(node))
         {
             yield return node;
             yield break;
         }
 
-        var children = node.Kind switch
+        var children = node.OperationName() switch
         {
-            "seq" or "and" => Nodes(node.Argument),
-            "if" => Branches
-                .Select(node.Field)
+            "seq" or "and" => OrderedEffects(node),
+            "if" => ConditionalBranches((AbilityEffect.Conditional)node)
                 .Where(branch => branch is not null)
-                .Select(branch => Tree(branch!)),
+                .Select(branch => branch),
             "then" =>
             [
-                Tree(node.Require("effect")),
-                Tree(node.Require("then")),
+                EffectBody(node),
+                EffectFollowing(node),
             ],
             "otherwise" =>
             [
-                Tree(node.Require("effect")),
-                Tree(node.Require("otherwise")),
+                EffectBody(node),
+                EffectFollowing(node),
             ],
-            "eachPlayer" or "forEach" => [Tree(node.Require("effect"))],
-            "defense" => [Tree(node.Require("effect"))],
+            "eachPlayer" or "forEach" => [EffectBody(node)],
+            "defense" => [EffectBody(node)],
             _ => [],
         };
 
@@ -200,27 +199,27 @@ public sealed partial class AbilityRunner
         }
     }
 
-    private static bool IsChoice(AbilityNode node) =>
-        node.Kind is "choose" or "chooseCard" or "indirectDamage"
+    private static bool IsChoice(AbilityEffect node) =>
+        node.OperationName() is "choose" or "chooseCard" or "indirectDamage"
             or "resolveSpecials" or "payOrExhaust" or "chooseTopForHand"
             or "chooseDiscardToShuffle" or "thwartDifferentSchemes" or "makeTheCall"
             or "legalPractice" or "payOrEffect" or "enemyAttacks" or "enemySchemes";
 
     /// <summary>Choice nodes on the control-flow path that can execute now.</summary>
-    private static IEnumerable<AbilityNode> ActiveChoices(AbilityNode node, Cast cast)
+    private static IEnumerable<AbilityEffect> ActiveChoices(AbilityEffect node, Cast cast)
     {
         if (CurrentlyZeroForEach(node, cast))
         {
             yield break;
         }
 
-        if (node.Kind == "and" && Nodes(node.Argument).Skip(1).Any())
+        if (node.OperationName() == "and" && OrderedEffects(node).Skip(1).Any())
         {
             yield return node;
             yield break;
         }
 
-        if (node.Kind is "enemyAttacks" or "enemySchemes")
+        if (node.OperationName() is "enemyAttacks" or "enemySchemes")
         {
             if (ActivationCandidates(ActivationOf(node, cast), cast).Count > 1)
             {
@@ -231,18 +230,18 @@ public sealed partial class AbilityRunner
 
         if (IsChoice(node))
         {
-            if (node.Kind != "indirectDamage"
+            if (node.OperationName() != "indirectDamage"
                 || Assignable(((AbilityEffect.IndirectDamage)
-                    ((AbilityRunner)cast.Abilities).CompiledEffect(node)).Among, cast).Count > 1)
+                    node).Among, cast).Count > 1)
             {
                 yield return node;
             }
             yield break;
         }
 
-        if (node.Kind is "then" or "otherwise")
+        if (node.OperationName() is "then" or "otherwise")
         {
-            var preceding = Tree(node.Require("effect"));
+            var preceding = EffectBody(node);
             var precedingChoices = ActiveChoices(preceding, cast).ToList();
             foreach (var found in precedingChoices)
             {
@@ -253,13 +252,13 @@ public sealed partial class AbilityRunner
                 yield break;
             }
 
-            var required = node.Kind == "then"
+            var required = node.OperationName() == "then"
                 ? ResolutionOutcome.Full
                 : ResolutionOutcome.None;
             if (ResolutionOf(preceding, cast) == required)
             {
                 foreach (var found in ActiveChoices(
-                    Tree(node.Require(node.Kind)), cast))
+                    EffectFollowing(node), cast))
                 {
                     yield return found;
                 }
@@ -267,13 +266,13 @@ public sealed partial class AbilityRunner
             yield break;
         }
 
-        var children = node.Kind switch
+        var children = node.OperationName() switch
         {
-            "seq" or "and" => Nodes(node.Argument),
-            "if" => node.Field(Test(ConditionalOf(node, cast).Test, cast) ? "then" : "else")
-                is { } branch ? [Tree(branch)] : [],
-            "eachPlayer" or "forEach" => [Tree(node.Require("effect"))],
-            "defense" => [Tree(node.Require("effect"))],
+            "seq" or "and" => OrderedEffects(node),
+            "if" => ConditionalBranch(node, Test(ConditionalOf(node, cast).Test, cast) ? "then" : "else")
+                is { } branch ? [branch] : [],
+            "eachPlayer" or "forEach" => [EffectBody(node)],
+            "defense" => [EffectBody(node)],
             _ => [],
         };
 
@@ -284,9 +283,9 @@ public sealed partial class AbilityRunner
     }
 
     private static bool SuspendsInsideAnd(
-        AbilityNode node, Cast cast, bool stateMayChange = false,
+        AbilityEffect node, Cast cast, bool stateMayChange = false,
         bool bindingMayChange = false) =>
-        node.Kind == "placeThreat"
+        node.OperationName() == "placeThreat"
         || GuardChildren(node, cast, stateMayChange, bindingMayChange, null).Any(child =>
             SuspendsInsideAnd(
                 child.Node, cast, child.StateMayChange, child.BindingMayChange));

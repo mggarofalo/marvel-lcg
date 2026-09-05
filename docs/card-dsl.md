@@ -171,10 +171,11 @@ The program indexes effects by card face, face-local ability ordinal and explici
 DSL paths with ordered list indexes. These are engine-chosen internal addresses,
 not CLR type names or a new session-ledger wire format.
 
-Some continuation and preflight consumers still traverse syntax. Their temporary
-adapter joins original nodes to compiled instructions during runner construction;
-it does not lower content during gameplay. MARVEL-375 removes that adapter when
-those consumers use the typed program directly.
+Execution, preflight and continuation consumers traverse the compiled program.
+The runner does not retain the supplied syntax book or look up instructions by
+mutable argument maps. Engine-owned operation spellings preserve option labels,
+diagnostics and structural continuation frames; operands and child effects come
+from the checked types.
 
 Counter removal before a cost arrow is authored in `cost`, with the card that
 pays, the named pool, and the exact positive count:

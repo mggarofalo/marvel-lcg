@@ -136,7 +136,7 @@ public sealed partial class AbilityRunner
         }
         if (next is not null
             && cast.Abilities is AbilityRunner runner
-            && runner.CompiledOn(next).Any(ability =>
+            && runner.On(next).Any(ability =>
                 ability.Trigger.Timing == AbilityType.Constant))
         {
             // The stage is intentionally not moved while eligibility is
@@ -298,7 +298,7 @@ public sealed partial class AbilityRunner
             {
                 var placement = engagementChanges ?? new Dictionary<int, int>();
                 var constantCast = TraceConstantCast(cast, card, runner, placement);
-                return runner.CompiledOn(card).Any(ability =>
+                return runner.On(card).Any(ability =>
                     ability.Trigger.Timing == AbilityType.Constant
                     && ConstantCanRetargetVillain(
                         ability.Effect, current, next, constantCast, discarded,
@@ -365,7 +365,7 @@ public sealed partial class AbilityRunner
                 {
                     var constantCast = TraceConstantCast(
                         cast, source, runner, engagementChanges);
-                    return runner.CompiledOn(source).Any(ability =>
+                    return runner.On(source).Any(ability =>
                         ability.Trigger.Timing == AbilityType.Constant
                         && ConstantFieldCanDiffer(
                             ability.Effect, source, target, field,
@@ -758,74 +758,42 @@ public sealed partial class AbilityRunner
     private static bool SeatMayChange(ulong seats, int seat) =>
         (seats & PlayerSeat(seat)) != 0;
 
-    private static IEnumerable<AbilityNode> PowerNodes(AbilityNode node, string power)
+    private static IEnumerable<AbilityEffect> PowerNodes(AbilityEffect node, string power)
     {
-        if (string.Equals(node.Kind, power.ToLowerInvariant(), StringComparison.Ordinal))
+        if (string.Equals(node.OperationName(), power.ToLowerInvariant(), StringComparison.Ordinal))
         {
             yield return node;
         }
 
-        foreach (var found in PowerValues(node.Argument, power))
+        foreach (var found in AllEffectChildren(node).SelectMany(child => PowerNodes(child, power)))
         {
             yield return found;
         }
     }
 
-    private static IEnumerable<AbilityNode> PowerValues(AbilityValue value, string power)
+    private static IEnumerable<AbilityEffect> EachPlayers(AbilityEffect node)
     {
-        if (value is AbilityValue.List list)
-        {
-            foreach (var found in list.Values.SelectMany(item => PowerValues(item, power)))
-            {
-                yield return found;
-            }
-            yield break;
-        }
-
-        if (value is not AbilityValue.Map map)
-        {
-            yield break;
-        }
-
-        if (map.Entries.Count == 1)
-        {
-            var node = AbilityNode.Of(value);
-            foreach (var found in PowerNodes(node, power))
-            {
-                yield return found;
-            }
-            yield break;
-        }
-
-        foreach (var found in map.Entries.Values.SelectMany(item => PowerValues(item, power)))
-        {
-            yield return found;
-        }
-    }
-
-    private static IEnumerable<AbilityNode> EachPlayers(AbilityNode node)
-    {
-        if (node.Kind == "eachPlayer")
+        if (node.OperationName() == "eachPlayer")
         {
             yield return node;
             yield break;
         }
-        IEnumerable<AbilityNode> children = node.Kind switch
+        IEnumerable<AbilityEffect> children = node.OperationName() switch
         {
-            "seq" or "and" => Nodes(node.Argument),
-            "if" => Branches.Select(node.Field).Where(value => value is not null)
-                .Select(value => Tree(value!)),
+            "seq" or "and" => OrderedEffects(node),
+            "if" => ConditionalBranches((AbilityEffect.Conditional)node).Where(value => value is not null)
+                .Select(value => value),
             "then" =>
             [
-                Tree(node.Require("effect")),
-                Tree(node.Require("then")),
+                EffectBody(node),
+                EffectFollowing(node),
             ],
             "otherwise" =>
             [
-                Tree(node.Require("effect")),
-                Tree(node.Require("otherwise")),
+                EffectBody(node),
+                EffectFollowing(node),
             ],
-            "forEach" => [Tree(node.Require("effect"))],
+            "forEach" => [EffectBody(node)],
             _ => [],
         };
         foreach (var found in children.SelectMany(EachPlayers))

@@ -9,16 +9,16 @@ namespace Marvel.Cards.Run;
 
 public sealed partial class AbilityRunner
 {
-    private static void Choose(AbilityNode node, Cast cast)
+    private static void Choose(AbilityEffect node, Cast cast)
     {
-        if (node.Kind == "choose" && Nodes(node.Require("options")).Count() < 2)
+        if (node.OperationName() == "choose" && ((AbilityEffect.Choose)node).Options.Length < 2)
         {
             throw new AbilityException(
                 $"'{cast.Source.FaceId}' offers a choice of one, which is not a choice");
         }
 
-        if (node.Kind == "choose"
-            && !Nodes(node.Require("options")).Any(option => OptionIsLegal(option, cast)))
+        if (node.OperationName() == "choose"
+            && !((AbilityEffect.Choose)node).Options.Any(option => OptionIsLegal(option, cast)))
         {
             // rr:target.2 and rr:choose-option.1: a mandatory encounter-card
             // ability with no valid option cannot initiate. Reaching that
@@ -34,7 +34,7 @@ public sealed partial class AbilityRunner
                 $"'{cast.Source.FaceId}' requires a choice and has no legal option");
         }
 
-        if (node.Kind == "chooseCard"
+        if (node.OperationName() == "chooseCard"
             && LegalCardChoicesForContinuation(node, cast).Count == 0)
         {
             // A mandatory ability with no valid chosen target cannot initiate;
@@ -47,7 +47,7 @@ public sealed partial class AbilityRunner
     }
 
     /// <summary>Suspend an ability for one persisted player choice.</summary>
-    private static void SuspendForChoice(AbilityNode node, Cast cast)
+    private static void SuspendForChoice(AbilityEffect node, Cast cast)
     {
         // `Index` remains the legacy top-level resume point. New continuations
         // use AbilityOrdinal and AbilityPath below.
@@ -144,7 +144,7 @@ public sealed partial class AbilityRunner
     /// assigns everything before resolving any of it.
     /// </para>
     /// </remarks>
-    private static void Indirect(AbilityEffect.IndirectDamage damage, AbilityNode node, Cast cast)
+    private static void Indirect(AbilityEffect.IndirectDamage damage, AbilityEffect node, Cast cast)
     {
         long amount = Amount(damage.Amount, cast);
         var eligible = Assignable(damage.Among, cast);
@@ -202,7 +202,7 @@ public sealed partial class AbilityRunner
     /// a character and making the rest illegal.
     /// </remarks>
     private static void Assign(
-        AbilityNode node, Cast cast, IReadOnlyList<Card> among, long amount)
+        AbilityEffect node, Cast cast, IReadOnlyList<Card> among, long amount)
     {
         var assigned = new Dictionary<int, long>();
         long left = amount;
@@ -234,7 +234,7 @@ public sealed partial class AbilityRunner
     /// some order — one the board cannot see and the wire can.
     /// </remarks>
     private static void Resolve(
-        AbilityNode node, Cast cast, Dictionary<int, long> assigned)
+        AbilityEffect node, Cast cast, Dictionary<int, long> assigned)
     {
         bool suspended = false;
         foreach (var (card, damage) in assigned.OrderBy(each => each.Key))
@@ -257,7 +257,7 @@ public sealed partial class AbilityRunner
     /// of the same moment. A card that wrote to <c>k_damage</c> would skip
     /// both and leave a defeated character standing.
     /// </remarks>
-    private static void DealDamage(AbilityEffect.Damage damage, AbilityNode node, Cast cast, long multiplier = 1)
+    private static void DealDamage(AbilityEffect.Damage damage, AbilityEffect node, Cast cast, long multiplier = 1)
     {
         long amount = ModifiedAbilityDamage(SaturatingMultiply(
             Amount(damage.Amount, cast), multiplier), cast);
@@ -288,7 +288,7 @@ public sealed partial class AbilityRunner
             : amount;
     }
 
-    private static void MoveDamage(AbilityEffect.MoveDamage movement, AbilityNode node, Cast cast)
+    private static void MoveDamage(AbilityEffect.MoveDamage movement, AbilityEffect node, Cast cast)
     {
         var from = Find(movement.From, cast)
             ?? throw new RulesNotImplementedException(
@@ -314,7 +314,7 @@ public sealed partial class AbilityRunner
     }
 
     /// <summary>Damage from an attack event performed by the resolving identity.</summary>
-    private static void DealAttackDamage(AbilityEffect.AttackDamage damage, AbilityNode node, Cast cast)
+    private static void DealAttackDamage(AbilityEffect.AttackDamage damage, AbilityEffect node, Cast cast)
     {
         var attacker = cast.PowerActor
             ?? cast.AbilityActor
@@ -371,7 +371,7 @@ public sealed partial class AbilityRunner
         }
     }
 
-    private static void MoveAttackDamage(AbilityEffect.MoveDamage movement, AbilityNode node, Cast cast)
+    private static void MoveAttackDamage(AbilityEffect.MoveDamage movement, AbilityEffect node, Cast cast)
     {
         var from = Find(movement.From, cast)
             ?? throw new RulesNotImplementedException(
@@ -412,7 +412,7 @@ public sealed partial class AbilityRunner
         }
     }
 
-    private void SchedulePower(AbilityNode node, Cast cast, string power)
+    private void SchedulePower(AbilityEffect node, Cast cast, string power)
     {
         var target = Find(EffectOf<AbilityEffect.Power>(node, cast).Target!, cast)
             ?? throw new RulesNotImplementedException(
@@ -421,10 +421,10 @@ public sealed partial class AbilityRunner
     }
 
     private void SchedulePower(
-        AbilityNode node, Cast cast, string power, Card target,
+        AbilityEffect node, Cast cast, string power, Card target,
         IReadOnlyList<Card> targets, long powerAmount)
     {
-        var effect = Tree(node.Require("effect"));
+        var effect = EffectBody(node);
         var continuationChosen = cast.CaptureCurrentSelection();
         cast.Choose(target);
         if (SuspendsPowerEffect(
@@ -443,7 +443,7 @@ public sealed partial class AbilityRunner
             .SelectMany(candidate => PowerNodes(candidate.Ability.Effect, power)
                 .Select((wrapper, ordinal) =>
                     (candidate.Index, Ordinal: ordinal, Wrapper: wrapper)))
-            .Where(candidate => candidate.Wrapper == node)
+            .Where(candidate => ReferenceEquals(candidate.Wrapper, node))
             .ToList();
         if (addresses.Count != 1)
         {
@@ -557,7 +557,7 @@ public sealed partial class AbilityRunner
         placement.Prevent(Amount(prevention.Amount, cast));
     }
 
-    private static void ReplaceThreatWithDamage(AbilityCardSelection card, AbilityNode node, Cast cast)
+    private static void ReplaceThreatWithDamage(AbilityCardSelection card, AbilityEffect node, Cast cast)
     {
         var placement = cast.Occurrence.Threat
             ?? throw new RulesNotImplementedException(
@@ -915,7 +915,7 @@ public sealed partial class AbilityRunner
     /// </para>
     /// </remarks>
     private static void Activate(
-        AbilityEffect.ActivateEnemies instruction, AbilityNode node, Cast cast)
+        AbilityEffect.ActivateEnemies instruction, AbilityEffect node, Cast cast)
     {
         // The round the activation belongs to is the round the card was
         // revealed in. Nothing else on the agenda can tell it.
@@ -1058,8 +1058,8 @@ public sealed partial class AbilityRunner
         }
     }
 
-    private static AbilityEffect.ActivateEnemies ActivationOf(AbilityNode node, Cast cast) =>
-        (AbilityEffect.ActivateEnemies)((AbilityRunner)cast.Abilities).CompiledEffect(node);
+    private static AbilityEffect.ActivateEnemies ActivationOf(AbilityEffect node, Cast cast) =>
+        (AbilityEffect.ActivateEnemies)node;
 
     private static IReadOnlyList<Card> ActivationCandidates(
         AbilityEffect.ActivateEnemies instruction, Cast cast) =>
@@ -1095,7 +1095,7 @@ public sealed partial class AbilityRunner
 
     /// <summary>Resume the containing ability after a rules procedure finishes.</summary>
     private static void SuspendAfterProcedure(
-        AbilityNode node, Cast cast, PhaseStep? agendaOwner = null,
+        AbilityEffect node, Cast cast, PhaseStep? agendaOwner = null,
         Occurrence? agendaOccurrence = null)
     {
         int abilityOrdinal = AbilityOrdinal(node, cast);
@@ -1182,7 +1182,7 @@ public sealed partial class AbilityRunner
     }
 
     private static Dictionary<string, long> ContinuationResults(
-        Cast cast, CardAbility ability)
+        Cast cast, CompiledCardAbility ability)
     {
         var results = new Dictionary<string, long>(cast.Results, StringComparer.Ordinal);
         cast.PersistCrisisIgnoringThwarts(ability, results);

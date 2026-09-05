@@ -9,8 +9,8 @@ namespace Marvel.Cards.Run;
 
 public sealed partial class AbilityRunner
 {
-    private static IEnumerable<AbilityNode> ReachableMutationBranches(
-        AbilityNode conditional, Cast cast)
+    private static IEnumerable<AbilityEffect> ReachableMutationBranches(
+        AbilityEffect conditional, Cast cast)
     {
         var test = ConditionalOf(conditional, cast).Test;
         bool canSwitch = PriorStepCanChange(test, cast)
@@ -18,17 +18,17 @@ public sealed partial class AbilityRunner
             || cast.PriorBindingMayChange && BindingCanChange(test);
         if (canSwitch)
         {
-            return Branches.Select(conditional.Field)
+            return ConditionalBranches((AbilityEffect.Conditional)conditional)
                 .Where(value => value is not null)
-                .Select(value => Tree(value!));
+                .Select(value => value);
         }
-        return conditional.Field(Test(test, cast) ? "then" : "else") is { } active
-            ? [Tree(active)]
+        return ConditionalBranch(conditional, Test(test, cast) ? "then" : "else") is { } active
+            ? [active]
             : [];
     }
 
     private static HashSet<DeckType> SearchAreaTypes(
-        AbilityNode search, Cast cast) =>
+        AbilityEffect search, Cast cast) =>
         EffectOf<AbilityEffect.Search>(search, cast).Areas
             .Select(where => Area(where, cast).Type)
             .ToHashSet();
@@ -225,19 +225,6 @@ public sealed partial class AbilityRunner
             : throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' asks for the chosen player before one was chosen");
 
-    private static IEnumerable<AbilityNode> Nodes(AbilityValue value) =>
-        value is AbilityValue.List list
-            ? list.Values.Select(Tree)
-            : throw new AbilityException(
-                $"{AbilityNode.Describe(value)} is not a list of nodes");
-
-    private static AbilityNode Tree(AbilityValue value) => AbilityNode.Of(value);
-
-    private static string Word(AbilityValue value) =>
-        value is AbilityValue.Word word
-            ? word.Value
-            : throw new AbilityException($"{AbilityNode.Describe(value)} is not a word");
-
     private static long StartingHealth(Card identity, Cast cast)
     {
         if (FacedownDrones.Kind(identity, cast.World.Facts)
@@ -252,9 +239,5 @@ public sealed partial class AbilityRunner
             identity, cast.World.Facts, "HP", cast.World.Players);
     }
 
-    private static IReadOnlyList<AbilityValue> Values(AbilityValue value) =>
-        value is AbilityValue.List list
-            ? list.Values
-            : throw new AbilityException($"{AbilityNode.Describe(value)} is not a list");
 
 }
