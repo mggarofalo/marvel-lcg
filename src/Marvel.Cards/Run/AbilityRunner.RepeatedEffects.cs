@@ -1373,48 +1373,12 @@ public sealed partial class AbilityRunner
             return false;
         }
         var node = Tree(value);
-        bool villain = candidate.ObjectId == currentVillain;
-        var kind = FacedownDrones.Kind(candidate, cast.World.Facts);
         return node.Kind switch
         {
-            "query" => node.Argument switch
-            {
-                AbilityValue.Word { Value: "villain" } => villain,
-                AbilityValue.Word { Value: "enemies" } => villain
-                    || kind == CardKind.Minion,
-                AbilityValue.Word { Value: "minions" } => kind == CardKind.Minion,
-                AbilityValue.Word { Value: "characters" } => villain
-                    || kind is CardKind.Minion or CardKind.Hero
-                        or CardKind.AlterEgo or CardKind.Ally,
-                AbilityValue.Word { Value: "attackableEnemies" } => villain
-                    ? VillainIsAttackableInTrace(
-                        cast, candidate, discarded, modifiers, engagement)
-                    : kind == CardKind.Minion
-                        && CanTakeDamageInTrace(cast, candidate, discarded),
-                AbilityValue.Word { Value: "minionsEngagedWithYou" } =>
-                    kind == CardKind.Minion
-                    && TraceEngagedWith(candidate, cast.Player, engagement),
-                AbilityValue.Word { Value: "dronesEngagedWithYou" } =>
-                    kind == CardKind.Minion
-                    && TraceHasTrait(candidate, "DRONE", cast, discarded, traits)
-                    && TraceEngagedWith(candidate, Resolver(cast), engagement),
-                AbilityValue.Word { Value: "enemiesEngagedWithChosenPlayer" } =>
-                    kind == CardKind.Minion
-                    && cast.Chosen is { Owner: >= 0 } chosen
-                    && TraceEngagedWith(candidate, chosen.Owner, engagement),
-                AbilityValue.Word { Value: "upgradesYouControl" } =>
-                    candidate.Area.Type == DeckType.UpgradesArea
-                    && TracePlayAreaPlayer(candidate, engagement) == cast.Player,
-                AbilityValue.Word { Value: "supportsYouControl" } =>
-                    candidate.Area.Type == DeckType.SupportsArea
-                    && TracePlayAreaPlayer(candidate, engagement) == cast.Player,
-                AbilityValue.Word { Value: "upgradesAndSupportsYouControl" } =>
-                    candidate.Area.Type is DeckType.UpgradesArea
-                        or DeckType.SupportsArea
-                    && TracePlayAreaPlayer(candidate, engagement) == cast.Player,
-                _ => Every(value, cast).Any(card =>
-                    card.ObjectId == candidate.ObjectId),
-            },
+            "query" => ProjectedQuery(node.Argument) is { } query
+                ? TraceQueryMatches(query, candidate, currentVillain, cast, discarded,
+                    traits, modifiers, engagement)
+                : Every(value, cast).Any(card => card.ObjectId == candidate.ObjectId),
             "titled" => string.Equals(
                 Word(node.Argument), cast.World.Facts.Title(candidate.FaceId),
                 StringComparison.Ordinal),
@@ -1439,6 +1403,73 @@ public sealed partial class AbilityRunner
                 node, candidate, currentVillain, cast, discarded, traits,
                 modifiers, engagement),
             _ => false,
+        };
+    }
+
+    // MARVEL-375 adapter: remove with the remaining raw selector consumers.
+    // Only these relations have projected membership; other queries use their
+    // live membership through Every until that caller is migrated.
+    private static AbilityCardQuery? ProjectedQuery(AbilityValue value) => value switch
+    {
+        AbilityValue.Word { Value: "villain" } => AbilityCardQuery.Villain,
+        AbilityValue.Word { Value: "enemies" } => AbilityCardQuery.Enemies,
+        AbilityValue.Word { Value: "minions" } => AbilityCardQuery.Minions,
+        AbilityValue.Word { Value: "characters" } => AbilityCardQuery.Characters,
+        AbilityValue.Word { Value: "attackableEnemies" } => AbilityCardQuery.AttackableEnemies,
+        AbilityValue.Word { Value: "minionsEngagedWithYou" } => AbilityCardQuery.MinionsEngagedWithYou,
+        AbilityValue.Word { Value: "dronesEngagedWithYou" } => AbilityCardQuery.DronesEngagedWithYou,
+        AbilityValue.Word { Value: "enemiesEngagedWithChosenPlayer" } => AbilityCardQuery.EnemiesEngagedWithChosenPlayer,
+        AbilityValue.Word { Value: "upgradesYouControl" } => AbilityCardQuery.UpgradesYouControl,
+        AbilityValue.Word { Value: "supportsYouControl" } => AbilityCardQuery.SupportsYouControl,
+        AbilityValue.Word { Value: "upgradesAndSupportsYouControl" } => AbilityCardQuery.UpgradesAndSupportsYouControl,
+        _ => null,
+    };
+
+    private static bool TraceQueryMatches(
+        AbilityCardQuery query, Card candidate, int currentVillain, Cast cast,
+        HashSet<int> discarded, Dictionary<int, HashSet<string>> traits,
+        Dictionary<(int Card, string Field), long> modifiers,
+        Dictionary<int, int> engagement)
+    {
+        bool villain = candidate.ObjectId == currentVillain;
+        var kind = FacedownDrones.Kind(candidate, cast.World.Facts);
+        return query switch
+        {
+            AbilityCardQuery.Villain => villain,
+            AbilityCardQuery.Enemies => villain
+                || kind == CardKind.Minion,
+            AbilityCardQuery.Minions => kind == CardKind.Minion,
+            AbilityCardQuery.Characters => villain
+                || kind is CardKind.Minion or CardKind.Hero
+                    or CardKind.AlterEgo or CardKind.Ally,
+            AbilityCardQuery.AttackableEnemies => villain
+                ? VillainIsAttackableInTrace(
+                    cast, candidate, discarded, modifiers, engagement)
+                : kind == CardKind.Minion
+                    && CanTakeDamageInTrace(cast, candidate, discarded),
+            AbilityCardQuery.MinionsEngagedWithYou =>
+                kind == CardKind.Minion
+                && TraceEngagedWith(candidate, cast.Player, engagement),
+            AbilityCardQuery.DronesEngagedWithYou =>
+                kind == CardKind.Minion
+                && TraceHasTrait(candidate, "DRONE", cast, discarded, traits)
+                && TraceEngagedWith(candidate, Resolver(cast), engagement),
+            AbilityCardQuery.EnemiesEngagedWithChosenPlayer =>
+                kind == CardKind.Minion
+                && cast.Chosen is { Owner: >= 0 } chosen
+                && TraceEngagedWith(candidate, chosen.Owner, engagement),
+            AbilityCardQuery.UpgradesYouControl =>
+                candidate.Area.Type == DeckType.UpgradesArea
+                && TracePlayAreaPlayer(candidate, engagement) == cast.Player,
+            AbilityCardQuery.SupportsYouControl =>
+                candidate.Area.Type == DeckType.SupportsArea
+                && TracePlayAreaPlayer(candidate, engagement) == cast.Player,
+            AbilityCardQuery.UpgradesAndSupportsYouControl =>
+                candidate.Area.Type is DeckType.UpgradesArea
+                    or DeckType.SupportsArea
+                && TracePlayAreaPlayer(candidate, engagement) == cast.Player,
+            _ => QueryCards(query, cast).Any(card =>
+                card.ObjectId == candidate.ObjectId),
         };
     }
 
