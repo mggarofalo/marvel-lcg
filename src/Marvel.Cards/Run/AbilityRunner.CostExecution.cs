@@ -8,8 +8,8 @@ public sealed partial class AbilityRunner
 {
     private static Card? CostReference(AbilityCostCard binding, Cast cast) => binding switch
     {
-        AbilityCostCard.Source => cast.SourceReference,
-        AbilityCostCard.Identity => cast.World.Seats[Resolver(cast)].IdentityCard,
+        AbilityCostCard.Source => Named(AbilityCardBinding.This, cast),
+        AbilityCostCard.Identity => Named(AbilityCardBinding.You, cast),
         _ => throw new InvalidOperationException("Unknown compiled cost binding"),
     };
 

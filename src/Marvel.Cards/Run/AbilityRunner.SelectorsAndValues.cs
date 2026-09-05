@@ -33,34 +33,53 @@ public sealed partial class AbilityRunner
             .Select(where => Area(where.Kind, cast).Type)
             .ToHashSet();
 
-    private static Card? Named(string name, Cast cast) => name switch
+    // MARVEL-375: remove this syntax adapter when all selector consumers take typed bindings.
+    private static Card? Named(string name, Cast cast) => Named(name switch
     {
-        "this" => cast.SourceReference,
-        "that" => cast.Altered,
+        "this" => AbilityCardBinding.This,
+        "that" => AbilityCardBinding.That,
+        "trigger.actor" => AbilityCardBinding.TriggerActor,
+        "trigger.target" => AbilityCardBinding.TriggerTarget,
+        "chosen" => AbilityCardBinding.Chosen,
+        "yourHero" => AbilityCardBinding.YourHero,
+        "yourAlterEgo" => AbilityCardBinding.YourAlterEgo,
+        "defeater" => AbilityCardBinding.Defeater,
+        "activatingEnemy" => AbilityCardBinding.ActivatingEnemy,
+        "defeated" => AbilityCardBinding.Defeated,
+        "you" => AbilityCardBinding.You,
+        "attachedTo" => AbilityCardBinding.AttachedTo,
+        "trigger.subject" => AbilityCardBinding.TriggerSubject,
+        _ => throw new AbilityException($"'{name}' does not name a card"),
+    }, cast);
+
+    private static Card? Named(AbilityCardBinding name, Cast cast) => name switch
+    {
+        AbilityCardBinding.This => cast.SourceReference,
+        AbilityCardBinding.That => cast.Altered,
 
         // "Stun **the attacking character**." Not the attacking player:
         // `rr:ally.2` lets a player attack with an ally, and `rr:you-your.15`
         // is emphatic that an ally's attack is *not* performed by that player's
         // identity -- so Shocker stuns whichever character swung, and the
         // player standing behind it is untouched.
-        "trigger.actor" => cast.Occurrence.Actor >= 0
+        AbilityCardBinding.TriggerActor => cast.Occurrence.Actor >= 0
             ? cast.World.Cards[cast.Occurrence.Actor]
             : null,
 
-        "trigger.target" => cast.Occurrence.Target >= 0
+        AbilityCardBinding.TriggerTarget => cast.Occurrence.Target >= 0
             ? cast.World.Cards[cast.Occurrence.Target]
             : null,
 
         // The card a `chooseCard` was answered with. Null while the ability is
         // still asking, which is why nothing before the answer can read it.
-        "chosen" => cast.Chosen,
+        AbilityCardBinding.Chosen => cast.Chosen,
 
         // "Your hero" and not "you". `rr:form-change-form.5`: "while a player
         // is in alter-ego form, card abilities that interact with their hero do
         // not interact with their identity" -- so this names nothing at all
         // when the player has flipped down, and a card that has something to
         // say about that says it with `exists`.
-        "yourHero" => Forms.In(
+        AbilityCardBinding.YourHero => Forms.In(
             cast.World, cast.World.Seats[Resolver(cast)], cast.World.Facts, Forms.Hero)
             ? cast.World.Seats[Resolver(cast)].IdentityCard
             : null,
@@ -68,7 +87,7 @@ public sealed partial class AbilityRunner
         // The other half of the form-specific reference. `rr:form-change-form.4`
         // says a hero-form identity is not its alter-ego for card abilities,
         // just as `.5` says an alter-ego-form identity is not its hero.
-        "yourAlterEgo" => Forms.In(
+        AbilityCardBinding.YourAlterEgo => Forms.In(
             cast.World, cast.World.Seats[Resolver(cast)], cast.World.Facts, Forms.AlterEgo)
             ? cast.World.Seats[Resolver(cast)].IdentityCard
             : null,
@@ -82,7 +101,7 @@ public sealed partial class AbilityRunner
         // "The player who defeated this scheme confuses their identity."
         // `rr:you-your.5` is why this answers an identity rather than a seat:
         // a status card placed on a player goes on their identity.
-        "defeater" => cast.Occurrence.Defeat is { By: >= 0 } defeated
+        AbilityCardBinding.Defeater => cast.Occurrence.Defeat is { By: >= 0 } defeated
             ? cast.World.Seats[defeated.By].IdentityCard
             : throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' names the player who defeated a card, and no player "
@@ -94,7 +113,7 @@ public sealed partial class AbilityRunner
         // enemy is read off the board rather than off the moment --
         // `rr:activation` is what makes one answer serve an attack and a scheme
         // alike.
-        "activatingEnemy" => cast.World.Activation is { } activating
+        AbilityCardBinding.ActivatingEnemy => cast.World.Activation is { } activating
             ? cast.World.Cards[activating.Enemy]
             : throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' names the activating enemy, and no enemy is "
@@ -104,17 +123,17 @@ public sealed partial class AbilityRunner
         // damage." The card the occurrence defeated, which is not its subject:
         // an attack keeps its participants in actor and target roles, and the
         // ally that died is a second thing the same moment did.
-        "defeated" => cast.Occurrence.Defeat is { } killed
+        AbilityCardBinding.Defeated => cast.Occurrence.Defeat is { } killed
             ? cast.World.Cards[killed.Card]
             : throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' names the defeated card, and nothing was defeated"),
 
-        "you" => cast.World.Seats[Resolver(cast)].IdentityCard,
-        "attachedTo" => cast.Source.Area.Host >= 0 ? cast.World.Cards[cast.Source.Area.Host] : null,
-        "trigger.subject" => cast.Occurrence.Subject >= 0
+        AbilityCardBinding.You => cast.World.Seats[Resolver(cast)].IdentityCard,
+        AbilityCardBinding.AttachedTo => cast.Source.Area.Host >= 0 ? cast.World.Cards[cast.Source.Area.Host] : null,
+        AbilityCardBinding.TriggerSubject => cast.Occurrence.Subject >= 0
             ? cast.World.Cards[cast.Occurrence.Subject]
             : null,
-        _ => throw new AbilityException($"'{name}' does not name a card"),
+        _ => throw new InvalidOperationException("Unknown compiled card binding"),
     };
 
     private static Card? Query(AbilityNode node, Cast cast)
