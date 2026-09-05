@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 using Marvel.Cards.Dsl;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
@@ -34,18 +35,28 @@ public sealed partial class AbilityRunner : ICardAbilities
 
     /// <summary>Validates and lowers the authored cards before gameplay.</summary>
     /// <param name="book">The authored cards.</param>
-    public AbilityRunner(AbilityBook book)
+    public AbilityRunner(AbilityBook book) : this(AbilityLowering.Book(book))
     {
-        program = AbilityLowering.Book(book);
-        constant = new HashSet<string>(program.Abilities
-            .Where(ability => ability.Trigger.Timing == AbilityType.Constant)
-            .Select(ability => ability.Card), StringComparer.Ordinal);
     }
 
-    // An activation is an agenda operation, while the sentence that initiated
-    // it is a card operation. The stable agenda id is the join between them.
-    // Entries live only until that activation's completion sentinel calls back.
-    private readonly Dictionary<int, List<ActivationEffect>> activationEffects = [];
+    /// <summary>Runs a validated program that may be shared by independent games.</summary>
+    /// <param name="program">Immutable definitions, without game or continuation state.</param>
+    public AbilityRunner(AbilityProgram program)
+    {
+        ArgumentNullException.ThrowIfNull(program);
+        this.program = program;
+        constant = program.Abilities
+            .Where(ability => ability.Trigger.Timing == AbilityType.Constant)
+            .Select(ability => ability.Card).ToImmutableHashSet(StringComparer.Ordinal);
+    }
+
+    // Engine-owned association: a runner can serve multiple boards, but ids and
+    // delayed work belong to one board. Weak keys do not retain abandoned games.
+    // The table is only a lookup; its enumeration never decides gameplay order.
+    private readonly ConditionalWeakTable<World, AbilityGameRuntime> runtimes = new();
+
+    private AbilityGameRuntime RuntimeFor(World world) =>
+        runtimes.GetValue(world, static _ => new AbilityGameRuntime());
 
     // Which printed faces carry a constant ability. `Constant` is asked about
     // every card in play every time anything reads the effect list, and all but
@@ -56,7 +67,7 @@ public sealed partial class AbilityRunner : ICardAbilities
     // loop below finds the same abilities, just slower. It is here because
     // reading a stat goes through the effect list, and the digest reads every
     // stat of every card.
-    private readonly HashSet<string> constant;
+    private readonly ImmutableHashSet<string> constant;
 
     /// <summary>The verb an option carries on the wire.</summary>
     public const string ChooseVerb = "Choose_Option";
@@ -155,9 +166,9 @@ public sealed partial class AbilityRunner : ICardAbilities
             }
         }
 
-        if (activationEffects.Remove(result.Id, out var delayed))
+        if (runtimes.TryGetValue(world, out var runtime))
         {
-            foreach (var effect in delayed)
+            foreach (var effect in runtime.CompleteActivation(result.Id))
             {
                 var delayedCast = new Cast(
                     world,

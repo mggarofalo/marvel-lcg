@@ -397,12 +397,8 @@ public sealed partial class AbilityRunner
                         $"'{cast.Source.FaceId}' delays an effect and no enemy is activating");
                 }
 
-                if (!((AbilityRunner)cast.Abilities).activationEffects.TryGetValue(
-                    current.Id, out var waiting))
-                {
-                    ((AbilityRunner)cast.Abilities).activationEffects[current.Id] = waiting = [];
-                }
-                waiting.Add(new ActivationEffect(
+                ((AbilityRunner)cast.Abilities).RuntimeFor(cast.World).AfterActivation(
+                    current.Id, new ActivationEffect(
                     cast.Source.ObjectId, cast.Player, cast.Tier,
                     EffectBody(node),
                     cast.Altered?.ObjectId ?? -1,

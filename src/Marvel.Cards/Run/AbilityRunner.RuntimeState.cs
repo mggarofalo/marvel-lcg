@@ -418,7 +418,4 @@ public sealed partial class AbilityRunner
         public void Replace(long amount) => Remaining = amount;
     }
 
-    private sealed record ActivationEffect(
-        int Source, int Player, AbilityType? Tier, AbilityEffect Effect, int Altered,
-        int AbilityActor);
 }

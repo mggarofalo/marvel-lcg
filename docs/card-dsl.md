@@ -157,6 +157,12 @@ These maps are syntax, not the runtime's definition of an operation.
 `AbilityProgram`. Constructing an `AbilityRunner` performs that lowering before
 the book enters gameplay.
 
+A host can lower once and pass the same `AbilityProgram` to several runners.
+The program holds definitions, not game state. Each runner associates delayed
+activation work with the exact `World` that registered it. Activation ids and
+card ids cannot identify work in another game. The association uses weak keys,
+so retaining a runner does not retain abandoned worlds.
+
 The internal vocabulary has closed types for effects, costs, selectors,
 conditions and numbers. Lowering rejects unknown names, missing arguments and
 invalid shapes throughout the tree, including branches a particular game never
@@ -268,6 +274,17 @@ This preserves the engine contract:
 
 No gameplay thread blocks while waiting for input. Replaying the same decisions
 against the same seed reaches the same continuation points.
+
+Delayed activation effects live in `AbilityGameRuntime`, separately from the
+compiled program. Completing an activation consumes its ordered list before
+running the effects. Continuation result maps and card bindings remain local to
+their resolution; agenda continuations capture the data needed to resume them.
+
+Card and selector evaluation uses `AbilityQueryContext`, which captures binding
+incarnations and ordered power targets while reading the board in place. The
+query services receive no event sink or execution continuation. A selector
+evaluation collects information observations as output. The live conditional
+effect records those observations; preview evaluation does not publish them.
 
 ## Costs and legality
 
