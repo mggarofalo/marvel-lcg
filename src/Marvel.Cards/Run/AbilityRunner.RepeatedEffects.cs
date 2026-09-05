@@ -206,12 +206,11 @@ public sealed partial class AbilityRunner
         AbilityNode repeatedEffect, RepeatedChange assumed,
         int priorFrames)
     {
-        AbilityValue targets = node.Kind switch
+        AbilityCardSelection targets = node.Kind switch
         {
-            "dealDamage" => node.Require("cards"),
-            "indirectDamage" => node.Require("among"),
-            "moveDamage" => node.Require("to"),
-            "replaceThreatWithDamage" => node.Require("card"),
+            "dealDamage" or "indirectDamage" => DamageSelectionOf(node, cast),
+            "moveDamage" => EffectOf<AbilityEffect.MoveDamage>(node, cast).To,
+            "replaceThreatWithDamage" => EffectOf<AbilityEffect.CardAction>(node, cast).Selection,
             _ => throw new InvalidOperationException(
                 $"'{node.Kind}' is not a direct damage node"),
         };
@@ -235,20 +234,14 @@ public sealed partial class AbilityRunner
             target, repeatedEffect, cast, assumed, binding, frames)
             - target.Damage;
 
-    private static bool RebindsToEachPlayer(AbilityValue targets) => targets switch
+    private static bool RebindsToEachPlayer(AbilityCardSelection targets) => targets switch
     {
-        AbilityValue.Word word => word.Value is "you" or "yourHero" or "yourAlterEgo",
-        AbilityValue.Map => RebindsToEachPlayer(Tree(targets)),
-        _ => false,
-    };
-
-    private static bool RebindsToEachPlayer(AbilityNode targets) => targets.Kind switch
-    {
-        "query" => targets.Argument is AbilityValue.Word
-            { Value: "charactersYouControl" },
-        "withTrait" => RebindsToEachPlayer(targets.Require("cards")),
-        "minBy" or "maxBy" => RebindsToEachPlayer(targets.Require("of")),
-        "withoutAnotherCopyAttached" => RebindsToEachPlayer(targets.Argument),
+        AbilityCardSelection.Bound bound => bound.Binding is AbilityCardBinding.You
+            or AbilityCardBinding.YourHero or AbilityCardBinding.YourAlterEgo,
+        AbilityCardSelection.Query query => query.Kind == AbilityCardQuery.CharactersYouControl,
+        AbilityCardSelection.WithTrait trait => RebindsToEachPlayer(trait.Cards),
+        AbilityCardSelection.Ranked ranked => RebindsToEachPlayer(ranked.Cards),
+        AbilityCardSelection.WithoutAnotherCopyAttached other => RebindsToEachPlayer(other.Cards),
         _ => false,
     };
 
@@ -274,12 +267,12 @@ public sealed partial class AbilityRunner
         bool RemovesThreat = false,
         bool PlacesThreat = false, string? GrantsTrait = null,
         string? GrantsField = null,
-        AbilityValue? FromVillain = null, AbilityValue? ToVillain = null,
+        AbilityCardSelection? FromVillain = null, AbilityCardSelection? ToVillain = null,
         int ChangesForm = -1, string? Form = null,
         string? GrantsStatus = null);
 
     private readonly record struct TraceCard(
-        Card Card, AbilityValue? VillainSelector);
+        Card Card, AbilityCardSelection? VillainSelector);
 
     private sealed record DamageTraceState(
         Dictionary<int, long> Damage, long PeakTargetPressure,
@@ -1050,10 +1043,9 @@ public sealed partial class AbilityRunner
         }
         if (node.Kind is "dealDamage" or "indirectDamage")
         {
-            string field = node.Kind == "dealDamage" ? "cards" : "among";
             return
             [
-                .. TraceCards(node.Require(field), cast).Select(target =>
+                .. TraceCards(DamageSelectionOf(node, cast), cast).Select(target =>
                     new DamageTransfer(
                         -1, target.Card.ObjectId,
                         Amount(DamageAmountOf(node, cast), cast),
@@ -1062,7 +1054,7 @@ public sealed partial class AbilityRunner
             ];
         }
         if (node.Kind == "replaceThreatWithDamage"
-            && TraceCardNamed(node.Require("card"), cast) is { } replaced)
+            && TraceCardNamed(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast) is { } replaced)
         {
             return [new DamageTransfer(
                 -1, replaced.Card.ObjectId,
@@ -1071,15 +1063,15 @@ public sealed partial class AbilityRunner
                 ToVillain: replaced.VillainSelector)];
         }
         if (node.Kind == "heal"
-            && TraceCardNamed(node.Require("card"), cast) is { } healed)
+            && TraceCardNamed(EffectOf<AbilityEffect.Heal>(node, cast).Card, cast) is { } healed)
         {
             return [new DamageTransfer(
                 healed.Card.ObjectId, -1, Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast),
                 FromVillain: healed.VillainSelector)];
         }
         if (node.Kind == "moveDamage"
-            && TraceCardNamed(node.Require("from"), cast) is { } from
-            && TraceCardNamed(node.Require("to"), cast) is { } to)
+            && TraceCardNamed(EffectOf<AbilityEffect.MoveDamage>(node, cast).From, cast) is { } from
+            && TraceCardNamed(EffectOf<AbilityEffect.MoveDamage>(node, cast).To, cast) is { } to)
         {
             return [new DamageTransfer(
                 from.Card.ObjectId, to.Card.ObjectId,
@@ -1092,53 +1084,51 @@ public sealed partial class AbilityRunner
         {
             return
             [
-                .. TraceCards(node.Require("card"), cast).Select(target =>
+                .. TraceCards(EffectOf<AbilityEffect.GiveStatus>(node, cast).Cards, cast).Select(target =>
                     new DamageTransfer(
                         0, target.Card.ObjectId, 0,
-                        GrantsStatus: Word(node.Require("status")),
+                        GrantsStatus: EffectOf<AbilityEffect.GiveStatus>(node, cast).Status,
                         ToVillain: target.VillainSelector)),
             ];
         }
         if (node.Kind == "grantUntil"
-            && node.Field("trait") is { } gainedTrait)
+            && EffectOf<AbilityEffect>(node, cast) is AbilityEffect.GrantTrait trait)
         {
             return
             [
-                .. TraceCards(node.Require("card"), cast).Select(target =>
+                .. TraceCards(trait.Cards, cast).Select(target =>
                     new DamageTransfer(
                         0, target.Card.ObjectId, 0,
-                        GrantsTrait: Word(gainedTrait),
+                        GrantsTrait: trait.Trait,
                         ToVillain: target.VillainSelector)),
             ];
         }
         if (node.Kind == "grantUntil"
-            && node.Field("keyword") is { } grantedField
-            && Word(grantedField) != "health"
-            && TraceCards(node.Require("card"), cast) is { Count: > 0 } targets)
+            && EffectOf<AbilityEffect>(node, cast) is AbilityEffect.GrantField { Field: not "health" } field
+            && TraceCards(field.Cards, cast) is { Count: > 0 } targets)
         {
             return
             [
                 .. targets.Select(target => new DamageTransfer(
                     0, target.Card.ObjectId,
-                    Amount(EffectOf<AbilityEffect.GrantField>(node, cast).Amount, cast),
-                    GrantsField: Word(grantedField),
+                    Amount(field.Amount, cast),
+                    GrantsField: field.Field,
                     ToVillain: target.VillainSelector)),
             ];
         }
         if (node.Kind == "grantUntil"
-            && node.Field("keyword") is { } granted
-            && Word(granted) == "health"
-            && TraceCardNamed(node.Require("card"), cast) is { } healthier)
+            && EffectOf<AbilityEffect>(node, cast) is AbilityEffect.GrantField { Field: "health" } health
+            && TraceCardNamed(health.Cards, cast) is { } healthier)
         {
             return [new DamageTransfer(
                 0, healthier.Card.ObjectId,
-                Amount(EffectOf<AbilityEffect.GrantField>(node, cast).Amount, cast),
+                Amount(health.Amount, cast),
                 GrantsHealth: true,
                 ToVillain: healthier.VillainSelector)];
         }
         if (node.Kind == "discard")
         {
-            AbilityValue cards = node.Field("card") ?? node.Argument;
+            var cards = EffectOf<AbilityEffect.CardAction>(node, cast).Selection;
             return
             [
                 .. TraceCards(cards, cast).Select(target =>
@@ -1148,7 +1138,7 @@ public sealed partial class AbilityRunner
             ];
         }
         if (node.Kind == "putIntoPlay"
-            && TraceCardNamed(node.Require("card"), cast) is { } entering)
+            && TraceCardNamed(EffectOf<AbilityEffect.PutIntoPlay>(node, cast).Card, cast) is { } entering)
         {
             if (cast.Abilities is AbilityRunner runner
                 && runner.CompiledOn(entering.Card).Any(ability =>
@@ -1184,7 +1174,7 @@ public sealed partial class AbilityRunner
     }
 
     private static List<TraceCard> TraceCards(
-        AbilityValue value, Cast cast)
+        AbilityCardSelection value, Cast cast)
     {
         bool dynamic = SelectorMembershipCanChange(value)
             || PotentialVillainSelector(value, cast);
@@ -1203,56 +1193,8 @@ public sealed partial class AbilityRunner
         return traced;
     }
 
-    private static List<Card> TraceCandidateCards(
-        AbilityValue value, Cast cast)
-    {
-        if (value is AbilityValue.Map)
-        {
-            var node = Tree(value);
-            if (node.Kind is "minBy" or "maxBy")
-            {
-                return TraceCandidateCards(node.Require("of"), cast);
-            }
-            if (node.Kind == "withTrait")
-            {
-                return TraceCandidateCards(node.Require("cards"), cast);
-            }
-            if (node.Kind == "withoutAnotherCopyAttached")
-            {
-                return TraceCandidateCards(node.Argument, cast);
-            }
-            if (node.Kind == "enemiesWithTrait"
-                || node.Kind == "query" && node.Argument is AbilityValue.Word
-                    { Value: "enemies" or "attackableEnemies"
-                        or "minionsEngagedWithYou" or "dronesEngagedWithYou"
-                        or "enemiesEngagedWithChosenPlayer" })
-            {
-                return
-                [
-                    .. cast.World.Areas
-                        .SelectMany(area => area.Cards)
-                        .Where(card => CardKinds.IsEnemy(
-                            FacedownDrones.Kind(card, cast.World.Facts))),
-                ];
-            }
-            if (node.Kind == "query" && node.Argument is AbilityValue.Word
-                { Value: "upgradesYouControl" or "supportsYouControl"
-                    or "upgradesAndSupportsYouControl" })
-            {
-                return
-                [
-                    .. cast.World.Areas
-                        .Where(area => area.Type is DeckType.UpgradesArea
-                            or DeckType.SupportsArea)
-                        .SelectMany(area => area.Cards),
-                ];
-            }
-        }
-        return [.. Every(value, cast)];
-    }
-
     private static TraceCard? TraceCardNamed(
-        AbilityValue value, Cast cast)
+        AbilityCardSelection value, Cast cast)
     {
         if (Find(value, cast) is { } found)
         {
@@ -1264,59 +1206,12 @@ public sealed partial class AbilityRunner
             : null;
     }
 
-    private static bool PotentialVillainSelector(
-        AbilityValue value, Cast cast)
-    {
-        if (cast.World.TheCardIn(DeckType.VillainArea) is null
-            || value is not AbilityValue.Map)
-        {
-            return false;
-        }
-        var node = Tree(value);
-        return node.Kind switch
-        {
-            "query" => node.Argument is AbilityValue.Word
-                { Value: "villain" or "enemies" or "attackableEnemies" or "characters" },
-            "titled" => cast.World.AreaOf(DeckType.VillainDeck).Cards
-                    .Prepend(cast.World.TheCardIn(DeckType.VillainArea)!)
-                    .Any(stage => string.Equals(
-                        Word(node.Argument), cast.World.Facts.Title(stage.FaceId),
-                        StringComparison.Ordinal)),
-            "enemiesWithTrait" => true,
-            "withTrait" => PotentialVillainSelector(node.Require("cards"), cast),
-            "withoutAnotherCopyAttached" => PotentialVillainSelector(node.Argument, cast),
-            "minBy" or "maxBy" => PotentialVillainSelector(node.Require("of"), cast),
-            _ => false,
-        };
-    }
-
-    private static bool SelectorMembershipCanChange(AbilityValue value)
-    {
-        if (value is not AbilityValue.Map)
-        {
-            return false;
-        }
-        var node = Tree(value);
-        return node.Kind switch
-        {
-            "withTrait" or "enemiesWithTrait" or "minBy" or "maxBy"
-                or "withoutAnotherCopyAttached" => true,
-            "query" => node.Argument is AbilityValue.Word
-                { Value: "attackableEnemies" or "minionsEngagedWithYou"
-                    or "dronesEngagedWithYou"
-                    or "enemiesEngagedWithChosenPlayer"
-                    or "upgradesYouControl" or "supportsYouControl"
-                    or "upgradesAndSupportsYouControl" },
-            _ => false,
-        };
-    }
-
-    private static AbilityValue? VillainSelector(
-        AbilityValue value, Card resolved, Cast cast)
+    private static AbilityCardSelection? VillainSelector(
+        AbilityCardSelection value, Card resolved, Cast cast)
     {
         var current = cast.World.TheCardIn(DeckType.VillainArea);
         if (current is null || resolved.ObjectId != current.ObjectId
-            || value is not AbilityValue.Map)
+            || value is AbilityCardSelection.Bound)
         {
             return null;
         }
@@ -1324,36 +1219,22 @@ public sealed partial class AbilityRunner
     }
 
     private static bool SelectorCanTrackVillain(
-        AbilityValue value, Card current, Cast cast)
+        AbilityCardSelection selector, Card current, Cast cast) => selector switch
     {
-        if (value is not AbilityValue.Map)
-        {
-            return false;
-        }
-        var node = Tree(value);
-        return node.Kind switch
-        {
-            "query" => node.Argument is AbilityValue.Word
-                { Value: "villain" or "enemies" or "attackableEnemies" or "characters" },
-            "titled" => string.Equals(
-                Word(node.Argument), cast.World.Facts.Title(current.FaceId),
-                StringComparison.Ordinal),
-            "enemiesWithTrait" => TraceHasTrait(
-                current, Word(node.Argument), cast, []),
-            "withTrait" => TraceHasTrait(
-                    current, Word(node.Require("trait")), cast, [])
-                && SelectorCanTrackVillain(
-                    node.Require("cards"), current, cast),
-            "withoutAnotherCopyAttached" => SelectorCanTrackVillain(
-                node.Argument, current, cast),
-            "minBy" or "maxBy" => SelectorCanTrackVillain(
-                node.Require("of"), current, cast),
-            _ => false,
-        };
-    }
+        AbilityCardSelection.Query query => query.Kind is AbilityCardQuery.Villain
+            or AbilityCardQuery.Enemies or AbilityCardQuery.AttackableEnemies or AbilityCardQuery.Characters,
+        AbilityCardSelection.Titled titled => string.Equals(
+            titled.Title, cast.World.Facts.Title(current.FaceId), StringComparison.Ordinal),
+        AbilityCardSelection.EnemiesWithTrait trait => TraceHasTrait(current, trait.Trait, cast, []),
+        AbilityCardSelection.WithTrait trait => TraceHasTrait(current, trait.Trait, cast, [])
+            && SelectorCanTrackVillain(trait.Cards, current, cast),
+        AbilityCardSelection.WithoutAnotherCopyAttached other => SelectorCanTrackVillain(other.Cards, current, cast),
+        AbilityCardSelection.Ranked ranked => SelectorCanTrackVillain(ranked.Cards, current, cast),
+        _ => false,
+    };
 
     private static int? TraceSelectorIncludesCard(
-        AbilityValue value, int bound, int currentVillain, Cast cast,
+        AbilityCardSelection value, int bound, int currentVillain, Cast cast,
         HashSet<int> discarded, Dictionary<int, HashSet<string>> traits,
         Dictionary<(int Card, string Field), long> modifiers,
         Dictionary<int, int> engagement)
@@ -1371,69 +1252,6 @@ public sealed partial class AbilityRunner
             ? candidateId
             : null;
     }
-
-    private static bool TraceSelectorMatches(
-        AbilityValue value, Card candidate, int currentVillain, Cast cast,
-        HashSet<int> discarded, Dictionary<int, HashSet<string>> traits,
-        Dictionary<(int Card, string Field), long> modifiers,
-        Dictionary<int, int> engagement)
-    {
-        if (value is not AbilityValue.Map)
-        {
-            return false;
-        }
-        var node = Tree(value);
-        return node.Kind switch
-        {
-            "query" => ProjectedQuery(node.Argument) is { } query
-                ? TraceQueryMatches(query, candidate, currentVillain, cast, discarded,
-                    traits, modifiers, engagement)
-                : Every(value, cast).Any(card => card.ObjectId == candidate.ObjectId),
-            "titled" => string.Equals(
-                Word(node.Argument), cast.World.Facts.Title(candidate.FaceId),
-                StringComparison.Ordinal),
-            "enemiesWithTrait" => TraceHasTrait(
-                candidate, Word(node.Argument), cast, discarded, traits),
-            "withTrait" => TraceSelectorMatches(
-                    node.Require("cards"), candidate, currentVillain,
-                    cast, discarded, traits, modifiers, engagement)
-                && TraceHasTrait(
-                    candidate, Word(node.Require("trait")), cast, discarded, traits),
-            "withoutAnotherCopyAttached" => TraceSelectorMatches(
-                    node.Argument, candidate, currentVillain,
-                    cast, discarded, traits, modifiers, engagement)
-                && !AnotherCopyAttachedInTrace(candidate, cast, discarded),
-            "discardable" => TraceSelectorMatches(
-                    node.Argument, candidate, currentVillain,
-                    cast, discarded, traits, modifiers, engagement)
-                && (TraceModified(candidate, "permanent", cast, discarded) <= 0
-                    || Rules.Play.Discard.SameSet(
-                        cast.World.Facts, cast.Source, candidate)),
-            "minBy" or "maxBy" => TraceRankedSelectorIncludesCard(
-                node, candidate, currentVillain, cast, discarded, traits,
-                modifiers, engagement),
-            _ => false,
-        };
-    }
-
-    // MARVEL-375 adapter: remove with the remaining raw selector consumers.
-    // Only these relations have projected membership; other queries use their
-    // live membership through Every until that caller is migrated.
-    private static AbilityCardQuery? ProjectedQuery(AbilityValue value) => value switch
-    {
-        AbilityValue.Word { Value: "villain" } => AbilityCardQuery.Villain,
-        AbilityValue.Word { Value: "enemies" } => AbilityCardQuery.Enemies,
-        AbilityValue.Word { Value: "minions" } => AbilityCardQuery.Minions,
-        AbilityValue.Word { Value: "characters" } => AbilityCardQuery.Characters,
-        AbilityValue.Word { Value: "attackableEnemies" } => AbilityCardQuery.AttackableEnemies,
-        AbilityValue.Word { Value: "minionsEngagedWithYou" } => AbilityCardQuery.MinionsEngagedWithYou,
-        AbilityValue.Word { Value: "dronesEngagedWithYou" } => AbilityCardQuery.DronesEngagedWithYou,
-        AbilityValue.Word { Value: "enemiesEngagedWithChosenPlayer" } => AbilityCardQuery.EnemiesEngagedWithChosenPlayer,
-        AbilityValue.Word { Value: "upgradesYouControl" } => AbilityCardQuery.UpgradesYouControl,
-        AbilityValue.Word { Value: "supportsYouControl" } => AbilityCardQuery.SupportsYouControl,
-        AbilityValue.Word { Value: "upgradesAndSupportsYouControl" } => AbilityCardQuery.UpgradesAndSupportsYouControl,
-        _ => null,
-    };
 
     private static bool TraceQueryMatches(
         AbilityCardQuery query, Card candidate, int currentVillain, Cast cast,
@@ -1728,53 +1546,6 @@ public sealed partial class AbilityRunner
                 && string.Equals(
                     cast.World.Facts.Title(attached.FaceId), sourceTitle,
                     StringComparison.Ordinal));
-    }
-
-    private static bool TraceRankedSelectorIncludesCard(
-        AbilityNode node, Card candidate, int currentVillain, Cast cast,
-        HashSet<int> discarded, Dictionary<int, HashSet<string>> traits,
-        Dictionary<(int Card, string Field), long> modifiers,
-        Dictionary<int, int> engagement)
-    {
-        if (!TraceSelectorMatches(
-                node.Require("of"), candidate, currentVillain,
-                cast, discarded, traits, modifiers, engagement)
-            || TraceModified(candidate, "permanent", cast, discarded) > 0
-                && !Rules.Play.Discard.SameSet(
-                    cast.World.Facts, cast.Source, candidate))
-        {
-            return false;
-        }
-
-        int boardVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
-        var candidates = TraceCandidateCards(node.Require("of"), cast)
-            .Select(card => card.ObjectId == boardVillain
-                ? currentVillain >= 0
-                    ? cast.World.Cards[currentVillain]
-                    : null
-                : card)
-            .Where(card => card is not null)
-            .Cast<Card>()
-            .DistinctBy(card => card.ObjectId)
-            .Where(card => !discarded.Contains(card.ObjectId)
-                && TraceSelectorMatches(
-                    node.Require("of"), card, currentVillain,
-                    cast, discarded, traits, modifiers, engagement)
-                && (TraceModified(card, "permanent", cast, discarded) <= 0
-                    || Rules.Play.Discard.SameSet(
-                        cast.World.Facts, cast.Source, card)))
-            .ToList();
-        string key = Word(node.Require("by"));
-        var rank = key switch
-        {
-            "cost" => AbilityCardRank.Cost,
-            "attack" => AbilityCardRank.Attack,
-            "printedHealth" => AbilityCardRank.PrintedHealth,
-            _ => throw new AbilityException(
-                $"'{key}' is not a value cards can be ranked by"),
-        };
-        return TraceRankedCandidatesInclude(candidates, candidate, rank,
-            maximum: node.Kind != "minBy", cast, discarded, modifiers);
     }
 
     private static bool TraceRankedCandidatesInclude(
