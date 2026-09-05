@@ -48,7 +48,7 @@ public sealed partial class AbilityRunner
 
         if (choice.Kind == "and")
         {
-            int count = Nodes(choice.Argument).Count();
+            int count = EffectOf<AbilityEffect.Simultaneous>(choice, cast).Effects.Length;
             return new Prompt(
                 Player: world.FirstPlayer,
                 Asking: Question.Order,
@@ -99,11 +99,10 @@ public sealed partial class AbilityRunner
 
         // `rr:choose-option` and `rr:choose-game-element` are two questions and
         // not one: an option is a branch the card lists, an element is a card
-        // on the board. `Question` has told them apart since before anything
-        // asked either.
+        // on the board.
         if (choice.Kind == "resolveSpecials")
         {
-            var upgrades = Every(choice.Require("cards"), cast);
+            var upgrades = Every(EffectOf<AbilityEffect.CardAction>(choice, cast).Selection, cast);
             return new Prompt(
                 Player: player,
                 Asking: Question.Element,
@@ -127,7 +126,7 @@ public sealed partial class AbilityRunner
         }
         if (choice.Kind == "payOrExhaust")
         {
-            string required = Word(choice.Require("resources"));
+            string required = EffectOf<AbilityEffect.PayOrEffect>(choice, cast).Resources;
             var sources = CardPlay.Generators(world, world.Facts, world.Seats[player]);
             string pool = string.Concat(sources.SelectMany(source => source.Generates));
             var offers = new List<Affordance>();
@@ -145,9 +144,8 @@ public sealed partial class AbilityRunner
                             Sources: sources),
                     ]));
             }
-            AbilityNode otherwise = Tree(choice.Require("otherwise"));
-            if (otherwise.Kind != "exhaust"
-                || Every(otherwise.Argument, cast).Any(card => card.Ready))
+            var exhaust = (AbilityEffect.CardAction)EffectOf<AbilityEffect.PayOrEffect>(choice, cast).Otherwise;
+            if (Every(exhaust.Selection, cast).Any(card => card.Ready))
             {
                 offers.Add(new Affordance(
                     1, ChooseVerb, source.ObjectId, World.Scenario, "exhaust"));
@@ -159,7 +157,7 @@ public sealed partial class AbilityRunner
         }
         if (choice.Kind == "payOrEffect")
         {
-            string required = Word(choice.Require("resources"));
+            string required = EffectOf<AbilityEffect.PayOrEffect>(choice, cast).Resources;
             var sources = CardPlay.Generators(world, world.Facts, world.Seats[player]);
             var offers = new List<Affordance>();
             if (Resources.Pays(string.Concat(sources.SelectMany(s => s.Generates)),
@@ -206,7 +204,7 @@ public sealed partial class AbilityRunner
         }
         if (choice.Kind == "thwartDifferentSchemes")
         {
-            var schemes = Every(choice.Require("schemes"), cast);
+            var schemes = Every(EffectOf<AbilityEffect.ThwartGroup>(choice, cast).Schemes, cast);
             bool aerial = Rules.State.Traits.Has(
                 world, world.Seats[player].IdentityCard, "AERIAL", world.Facts);
             int count = aerial && schemes.Count > 1 ? 2 : 1;
@@ -257,7 +255,7 @@ public sealed partial class AbilityRunner
         {
             var hand = world.Seats[player].Hand.Cards
                 .Where(card => card.ObjectId != source.ObjectId).ToList();
-            var schemes = Every(choice.Require("schemes"), cast)
+            var schemes = Every(EffectOf<AbilityEffect.ThwartGroup>(choice, cast).Schemes, cast)
                 .Where(card => card.Tokens.GetValueOrDefault("k_threat") > 0).ToList();
             return new Prompt(player, Question.Element, TimingPriority.Untimed,
                 Steps.TurnAction, $"{source.FaceId}: choose cards and a scheme", false,
@@ -266,7 +264,7 @@ public sealed partial class AbilityRunner
                     new TargetRequest([.. hand.Select(card => card.ObjectId)], 1,
                         Math.Min(5, hand.Count)))).ToList());
         }
-        string[]? descriptions = ChoiceDescriptions(choice);
+        var descriptions = cards ? default : EffectOf<AbilityEffect.Choose>(choice, cast).Descriptions;
         bool optionalTransition = !cards
             && Nodes(choice.Require("options")).Any(IsExplicitDecline);
         var affordances = cards
@@ -288,7 +286,7 @@ public sealed partial class AbilityRunner
                     AnchorId: source.ObjectId,
                     AnchorPlayer: World.Scenario,
                     Label: candidate.Option.Kind,
-                    Description: descriptions?[candidate.Index]));
+                    Description: descriptions.IsDefaultOrEmpty ? null : descriptions[candidate.Index]));
 
         var offered = affordances.ToList();
         if (offered.Count == 0)
@@ -310,7 +308,7 @@ public sealed partial class AbilityRunner
             Affordances: offered)
         {
             ExposesConcealedCandidates = cards
-                && InspectsConcealedPile(choice.Require("from")),
+                && InspectsConcealedPile(EffectOf<AbilityEffect.ChooseCard>(choice, cast).From),
         };
     }
 
@@ -407,33 +405,6 @@ public sealed partial class AbilityRunner
                     .Select(modifier => modifier.Amount))]);
         }
         return SaturatingSum(amount, [EventModifier(cast, "attackDamage")]);
-    }
-
-    private static string[]? ChoiceDescriptions(AbilityNode choice)
-    {
-        if (choice.Field("descriptions") is not { } value)
-        {
-            return null;
-        }
-
-        if (value is not AbilityValue.List list
-            || list.Values.Any(item => item is not AbilityValue.Word))
-        {
-            throw new AbilityException("'choose' descriptions must be a list of strings");
-        }
-
-        string[] descriptions = list.Values
-            .Cast<AbilityValue.Word>()
-            .Select(item => item.Value)
-            .ToArray();
-        int optionCount = Nodes(choice.Require("options")).Count();
-        if (descriptions.Length != optionCount)
-        {
-            throw new AbilityException(
-                $"'choose' has {optionCount} options but {descriptions.Length} descriptions");
-        }
-
-        return descriptions;
     }
 
     /// <inheritdoc/>
@@ -633,7 +604,7 @@ public sealed partial class AbilityRunner
 
         if (choice.Kind == "resolveSpecials")
         {
-            var legal = Every(choice.Require("cards"), cast)
+            var legal = Every(EffectOf<AbilityEffect.CardAction>(choice, cast).Selection, cast)
                 .Select(card => card.ObjectId)
                 .ToHashSet();
             if (input.Targets.Count != legal.Count
@@ -662,7 +633,7 @@ public sealed partial class AbilityRunner
         {
             if (input.Affordance == 0)
             {
-                string required = Word(choice.Require("resources"));
+                string required = EffectOf<AbilityEffect.PayOrEffect>(choice, cast).Resources;
                 CardPlay.Spend(world, world.Facts, [world.Seats[player].Hand], input.Spent,
                     required.Length, required, -1, player, cast.Events);
                 cast.ResolveEffect();
@@ -686,7 +657,7 @@ public sealed partial class AbilityRunner
         {
             if (input.Affordance == 0)
             {
-                string required = Word(choice.Require("resources"));
+                string required = EffectOf<AbilityEffect.PayOrEffect>(choice, cast).Resources;
                 CardPlay.Spend(
                     world, world.Facts, [world.Seats[player].Hand], input.Spent,
                     required.Length, required, itself: -1, player, cast.Events);
@@ -765,7 +736,7 @@ public sealed partial class AbilityRunner
         }
         if (choice.Kind == "thwartDifferentSchemes")
         {
-            var legal = Every(choice.Require("schemes"), cast);
+            var legal = Every(EffectOf<AbilityEffect.ThwartGroup>(choice, cast).Schemes, cast);
             var selected = input.Targets.Select(id =>
                 legal.FirstOrDefault(card => card.ObjectId == id)
                 ?? throw new RulesNotImplementedException(
@@ -818,7 +789,7 @@ public sealed partial class AbilityRunner
         }
         if (choice.Kind == "legalPractice")
         {
-            var scheme = Every(choice.Require("schemes"), cast)
+            var scheme = Every(EffectOf<AbilityEffect.ThwartGroup>(choice, cast).Schemes, cast)
                 .FirstOrDefault(card => card.ObjectId == input.Affordance)
                 ?? throw new RulesNotImplementedException(
                     $"'{source.FaceId}' did not offer scheme {input.Affordance}");
@@ -1018,7 +989,7 @@ public sealed partial class AbilityRunner
         var legal = new List<Card>();
         try
         {
-            foreach (var card in Every(choice.Require("from"), cast))
+            foreach (var card in Every(EffectOf<AbilityEffect.ChooseCard>(choice, cast).From, cast))
             {
                 cast.ChooseSelection(card);
                 var effect = Tree(choice.Require("effect"));

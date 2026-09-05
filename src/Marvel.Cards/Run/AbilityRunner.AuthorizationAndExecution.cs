@@ -367,7 +367,7 @@ public sealed partial class AbilityRunner
                 break;
 
             case "resolveSpecials":
-                if (Every(node.Require("cards"), cast).Count > 0)
+                if (Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast).Count > 0)
                 {
                     SuspendForChoice(node, cast);
                 }

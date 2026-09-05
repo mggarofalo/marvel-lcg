@@ -6,6 +6,17 @@ namespace Marvel.Cards.Run;
 
 public sealed partial class AbilityRunner
 {
+    private static bool InspectsConcealedPile(AbilityCardSelection selector) => selector switch
+    {
+        AbilityCardSelection.InAreas areas => areas.Areas.Any(area => area is
+            AbilitySearchArea.YourDeck or AbilitySearchArea.EncounterDeck),
+        AbilityCardSelection.WithTrait filtered => InspectsConcealedPile(filtered.Cards),
+        AbilityCardSelection.WithoutAnotherCopyAttached filtered => InspectsConcealedPile(filtered.Cards),
+        AbilityCardSelection.Discardable filtered => InspectsConcealedPile(filtered.Cards),
+        AbilityCardSelection.Ranked ranked => InspectsConcealedPile(ranked.Cards),
+        _ => false,
+    };
+
     private static Card? Find(AbilityCardSelection selector, Cast cast)
     {
         if (selector is AbilityCardSelection.Bound bound) return Named(bound.Binding, cast);
