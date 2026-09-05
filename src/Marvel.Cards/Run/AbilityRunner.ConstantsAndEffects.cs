@@ -29,155 +29,105 @@ public sealed partial class AbilityRunner
     /// needs a design rather than a case.
     /// </para>
     /// </remarks>
-    private static void Grants(AbilityNode node, Cast cast, List<ContinuousEffect> found)
+    private static void Grants(AbilityEffect effect, Cast cast, List<ContinuousEffect> found)
     {
-        switch (node.Kind)
+        switch (effect)
         {
-            case "seq":
-            case "and":
-                foreach (var step in Nodes(node.Argument))
+            case AbilityEffect.Sequence sequence:
+                foreach (var step in sequence.Effects)
                 {
                     Grants(step, cast, found);
                 }
-
                 break;
-
-            case "if":
-                string branch = Test(Tree(node.Require("test")), cast) ? "then" : "else";
-                if (node.Field(branch) is { } taken)
+            case AbilityEffect.Simultaneous simultaneous:
+                foreach (var step in simultaneous.Effects)
                 {
-                    Grants(Tree(taken), cast, found);
-                }
-
-                break;
-
-            case "grant":
-                if (Find(node.Require("card"), cast) is { } grantTarget)
-                {
-                    found.Add(Grant(node, cast, grantTarget));
-                }
-                else if (Word(node.Require("card")) is not ("yourHero" or "yourAlterEgo"))
-                {
-                    throw new RulesNotImplementedException(
-                        $"'{cast.Source.FaceId}' card {cast.Source.ObjectId} in "
-                        + $"{cast.Source.Area.Type} hosted by {cast.Source.Area.Host} would grant "
-                        + "to a card that is not there");
+                    Grants(step, cast, found);
                 }
                 break;
-
-            case "grantEach":
-                foreach (var target in Every(node.Require("cards"), cast))
+            case AbilityEffect.Conditional conditional:
+                if ((Test(conditional.Test, cast) ? conditional.Then : conditional.Else) is { } taken)
                 {
-                    found.Add(Grant(node, cast, target));
+                    Grants(taken, cast, found);
                 }
                 break;
-
-            case "preventThreatRemoval":
+            case AbilityEffect.GrantField { Until: null } grant:
+                foreach (var target in ConstantTargets(grant.Cards, grant.EachCard, cast))
+                {
+                    found.Add(new ContinuousEffect(
+                        EffectSource.ConstantAbility, Kind: grant.Field,
+                        Amount: Amount(grant.Amount, cast), Card: cast.Source.ObjectId,
+                        Affects: target.ObjectId, Lasts: Duration.WhileInPlay));
+                }
+                break;
+            case AbilityEffect.GrantTrait { Until: null } grant:
+                foreach (var target in ConstantTargets(grant.Cards, grant.EachCard, cast))
+                {
+                    found.Add(new ContinuousEffect(
+                        EffectSource.ConstantAbility, Kind: Rules.State.Traits.Granted + grant.Trait,
+                        Card: cast.Source.ObjectId, Affects: target.ObjectId, Lasts: Duration.WhileInPlay));
+                }
+                break;
+            case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.PreventThreatRemoval }:
                 // A prohibition is answered by `CanRemoveThreat`; it is not a
                 // numeric modifier and therefore contributes no effect here.
                 break;
 
-            case "doubleResourceFor":
+            case AbilityEffect.DoubleResourceFor:
                 // This constant acts while its resource card is spent from
                 // hand. `ResourcesGeneratedBy` reads it with the payment's
                 // target card, which is context this general effect list does
                 // not carry.
                 break;
 
-            case "requireAllyDefender":
+            case AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.RequireAllyDefender }:
                 // Defender declaration carries the attack and its engaged
                 // player; `Defenders` reads this constraint in that context.
                 break;
 
-            case "preventDamageFrom":
-            case "preventDamageWhile":
+            case AbilityEffect.PreventDamageFrom:
+            case AbilityEffect.PreventDamageWhile:
                 // Damage carries both source and target. `CanTakeDamage`
                 // evaluates these prohibitions in that complete context.
                 break;
 
-            case "preventReady":
+            case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.PreventReady }:
                 // The card to be readied and the source of that instruction
                 // are available only when `CanReady` asks the question.
                 break;
 
             default:
                 throw new RulesNotImplementedException(
-                    $"'{cast.Source.FaceId}' has a constant ability using the node "
-                    + $"'{node.Kind}', which a constant ability cannot be written with");
+                    $"'{cast.Source.FaceId}' cannot resolve {effect} as a constant ability");
         }
     }
 
-    private static bool ProhibitsThreatRemoval(AbilityNode node, Cast cast, Card scheme)
+    private static IReadOnlyList<Card> ConstantTargets(AbilityCardSelection selection, bool each, Cast cast)
     {
-        return node.Kind switch
+        if (each) return Every(selection, cast);
+        if (Find(selection, cast) is { } target) return [target];
+        if (selection is AbilityCardSelection.Bound
+            { Binding: AbilityCardBinding.YourHero or AbilityCardBinding.YourAlterEgo }) return [];
+        throw new RulesNotImplementedException(
+            $"'{cast.Source.FaceId}' card {cast.Source.ObjectId} in "
+            + $"{cast.Source.Area.Type} hosted by {cast.Source.Area.Host} would grant "
+            + "to a card that is not there");
+    }
+
+    private static bool ProhibitsThreatRemoval(AbilityEffect effect, Cast cast, Card scheme)
+    {
+        return effect switch
         {
-            "seq" or "and" => Nodes(node.Argument).Any(step =>
+            AbilityEffect.Sequence sequence => sequence.Effects.Any(step =>
                 ProhibitsThreatRemoval(step, cast, scheme)),
-            "if" => node.Field(Test(Tree(node.Require("test")), cast) ? "then" : "else")
-                is { } branch && ProhibitsThreatRemoval(Tree(branch), cast, scheme),
-            "preventThreatRemoval" => Find(node.Argument, cast)?.ObjectId == scheme.ObjectId,
+            AbilityEffect.Simultaneous simultaneous => simultaneous.Effects.Any(step =>
+                ProhibitsThreatRemoval(step, cast, scheme)),
+            AbilityEffect.Conditional conditional => (Test(conditional.Test, cast) ? conditional.Then : conditional.Else)
+                is { } branch && ProhibitsThreatRemoval(branch, cast, scheme),
+            AbilityEffect.CardAction { Instruction: AbilityCardInstruction.PreventThreatRemoval } prohibition =>
+                Find(prohibition.Selection, cast)?.ObjectId == scheme.ObjectId,
             _ => false,
         };
-    }
-
-    /// <summary>One keyword a constant ability gives something.</summary>
-    /// <remarks>
-    /// <para>
-    /// <b>The amount defaults to one, not to zero.</b> "Unus gains retaliate 1"
-    /// states its number and "Unus also gains stalwart" does not, because a
-    /// keyword without one is simply present — and the engine asks whether a
-    /// card is stalwart by reading the field and comparing it to zero
-    /// (<c>Statuses</c>, <c>rr:stalwart.1</c>). A grant defaulting to zero would
-    /// parse, register, and mean the opposite of what the card says.
-    /// </para>
-    /// <para>
-    /// The keyword is held against the fields the engine actually reads, for
-    /// the reason the whole dataset is: <c>stallwart</c> would otherwise sit in
-    /// the file looking implemented and grant nothing for ever.
-    /// </para>
-    /// </remarks>
-    private static ContinuousEffect Grant(AbilityNode node, Cast cast)
-    {
-        var target = Find(node.Require("card"), cast)
-            ?? throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' would grant to a card that is not there");
-
-        return Grant(node, cast, target);
-    }
-
-    private static ContinuousEffect Grant(AbilityNode node, Cast cast, Card target)
-    {
-
-        // `rr:traits.1` -- "traits have no inherent effects on the game.
-        // Instead, some card abilities reference cards that possess or lack
-        // specific traits." So a granted trait carries no amount and is not
-        // held against the printed fields: it is a name other cards ask about,
-        // and the pool spells one in capitals.
-        if (node.Field("trait") is { } gained)
-        {
-            return new ContinuousEffect(
-                EffectSource.ConstantAbility,
-                Kind: Rules.State.Traits.Granted + Word(gained),
-                Card: cast.Source.ObjectId,
-                Affects: target.ObjectId,
-                Lasts: Duration.WhileInPlay);
-        }
-
-        string keyword = Word(node.Require("keyword"));
-        if (!StateFields.IsModifiable(keyword) && !Keywords.Granted.Contains(keyword))
-        {
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' grants '{keyword}', which is not a keyword or "
-                + "field the engine reads modifiers into");
-        }
-
-        return new ContinuousEffect(
-            EffectSource.ConstantAbility,
-            Kind: keyword,
-            Amount: node.Field("amount") is { } amount ? Amount(amount, cast) : 1,
-            Card: cast.Source.ObjectId,
-            Affects: target.ObjectId,
-            Lasts: Duration.WhileInPlay);
     }
 
     // `rr:lasting-effects` -- an effect "for a specified duration (such as

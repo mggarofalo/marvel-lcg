@@ -14,6 +14,100 @@ public sealed class ConstantAbilityTests
     private static readonly CardCatalog Cards =
         CardCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("cards", "cards.json")));
 
+    [Fact]
+    public void CompiledConstantBranchesKeepTheirSyntaxSnapshotButReadTheCurrentBoard()
+    {
+        var parsed = AbilityCatalog.Parse("""
+            {"cards":[{"card":"01094","abilities":[{
+              "trigger":{"timing":"Constant"},
+              "effect":{"if":{
+                "test":{"atLeast":{"value":{"damageOn":"this"},"count":1}},
+                "then":{"seq":[
+                  {"grant":{"card":"this","keyword":"attack","amount":{"damageOn":"this"}}},
+                  {"grantEach":{"cards":{"query":"allies"},"trait":"AVENGER"}}
+                ]},
+                "else":{"grant":{"card":"this","keyword":"stalwart"}}
+              }}
+            }]}]}
+            """);
+        var fields = ((AbilityValue.Map)parsed.Abilities[0].Effect.Argument).Entries
+            .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
+        var ability = parsed.Abilities[0] with { Effect = new AbilityNode("if", new AbilityValue.Map(fields)) };
+        var runner = new AbilityRunner(new AbilityBook([ability], parsed.Authored));
+        var world = Bare();
+        var villain = world.CreateCard("01094", world.AreaOf(DeckType.VillainArea));
+        var allyArea = world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0);
+        Card[] allies = [world.CreateCard("01002", allyArea), world.CreateCard("01020", allyArea)];
+        world.Abilities = runner;
+
+        var uninjured = Assert.Single(world.Effects.Active());
+        Assert.Equal("stalwart", uninjured.Kind);
+        Assert.Equal(1, uninjured.Amount);
+
+        // Engine choice: compiling freezes authored syntax, not game state.
+        // Replacing the caller's branch cannot change the running program.
+        fields["then"] = fields["else"];
+        villain.TakeDamage(2);
+        var injured = world.Effects.Active();
+        Assert.Equal(3, injured.Count);
+        var attack = Assert.Single(injured, effect => effect.Kind == "attack");
+        Assert.Equal(villain.ObjectId, attack.Affects);
+        Assert.Equal(2, attack.Amount);
+        Assert.Equal(allies.Select(card => (int?)card.ObjectId), injured
+            .Where(effect => effect.Kind == Traits.Granted + "AVENGER").Select(effect => effect.Affects));
+
+        villain.TakeDamage(1);
+        Assert.Equal(3, Assert.Single(world.Effects.Active(), effect => effect.Kind == "attack").Amount);
+    }
+
+    [Theory]
+    [InlineData("preventReady")]
+    [InlineData("preventThreatRemoval")]
+    [InlineData("preventDamageWhile")]
+    public void CompiledProhibitionsKeepTheirConditionSnapshotButFollowLiveDamage(string instruction)
+    {
+        string target = instruction == "preventThreatRemoval" ? """{"query":"mainScheme"}""" : "\"this\"";
+        string body = instruction == "preventDamageWhile"
+            ? """{"preventDamageWhile":{"card":"this","condition":{"atLeast":{"value":{"damageOn":"this"},"count":1}}}}"""
+            : $$$$"""{"if":{"test":{"atLeast":{"value":{"damageOn":"this"},"count":1}},"then":{"{{{{instruction}}}}":{{{{target}}}}}}} """;
+        var parsed = AbilityCatalog.Parse($$"""
+            {"cards":[{"card":"01094","abilities":[{
+              "trigger":{"timing":"Constant"},"effect":{{body}}
+            }]}]}
+            """);
+        var fields = ((AbilityValue.Map)parsed.Abilities[0].Effect.Argument).Entries
+            .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
+        var ability = parsed.Abilities[0] with
+        {
+            Effect = new AbilityNode(parsed.Abilities[0].Effect.Kind, new AbilityValue.Map(fields)),
+        };
+        var runner = new AbilityRunner(new AbilityBook([ability], parsed.Authored));
+        var world = Bare();
+        var villain = world.CreateCard("01094", world.AreaOf(DeckType.VillainArea));
+        world.Abilities = runner;
+        var scheme = world.CreateCard("01097", world.AreaOf(DeckType.MainSchemesArea));
+        bool Allowed() => instruction switch
+        {
+            "preventReady" => runner.CanReady(world, villain, villain),
+            "preventThreatRemoval" => runner.CanRemoveThreat(world, scheme),
+            _ => runner.CanTakeDamage(world, villain, world.Seats[0].IdentityCard),
+        };
+
+        Assert.True(Allowed());
+        // Engine choice: even a valid replacement condition belongs to the
+        // caller's syntax, not to this already-compiled program.
+        fields[instruction == "preventDamageWhile" ? "condition" : "test"] =
+            new AbilityValue.Map(new Dictionary<string, AbilityValue>(StringComparer.Ordinal)
+            {
+                ["inExpertMode"] = new AbilityValue.Word("expert"),
+            });
+        villain.TakeDamage(1);
+        Assert.False(Allowed());
+        Assert.Empty(world.Effects.Active());
+        villain.TakeDamage(-1);
+        Assert.True(Allowed());
+    }
+
     [Rule("rr:in-play-and-out-of-play.5")]
     [Fact]
     public void AFacedownUltronDroneDoesNotUseItsPrintedPlayerCardAbility()
@@ -119,7 +213,9 @@ public sealed class ConstantAbilityTests
 
         var refused = Assert.Throws<RulesNotImplementedException>(() => world.Effects.Active());
 
-        Assert.Contains("'dealDamage'", refused.Message, StringComparison.Ordinal);
+        Assert.Contains("'01094'", refused.Message, StringComparison.Ordinal);
+        Assert.Contains("Damage", refused.Message, StringComparison.Ordinal);
+        Assert.Contains("constant ability", refused.Message, StringComparison.Ordinal);
     }
 
     [Rule("rr:ability.5")]

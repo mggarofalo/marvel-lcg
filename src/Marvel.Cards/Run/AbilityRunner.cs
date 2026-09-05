@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Marvel.Cards.Dsl;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
@@ -85,6 +86,9 @@ public sealed partial class AbilityRunner : ICardAbilities
     // can accidentally execute the hidden card.
     private IEnumerable<CardAbility> On(Card card) =>
         FacedownDrones.Is(card) ? [] : book.On(card.FaceId);
+
+    private ImmutableArray<CompiledCardAbility> CompiledOn(Card card) =>
+        FacedownDrones.Is(card) ? [] : program.On(card.FaceId);
 
     /// <summary>The authored cards, whether or not they do anything.</summary>
     public IReadOnlySet<string> Authored => program.Authored;
@@ -455,11 +459,11 @@ public sealed partial class AbilityRunner : ICardAbilities
 
         string classes = world.Facts.Attributes(payingFor.FaceId)
             .GetValueOrDefault("Class", string.Empty);
-        bool doubles = On(source).Any(ability =>
+        bool doubles = CompiledOn(source).Any(ability =>
             ability.Trigger.Timing == AbilityType.Constant
-            && ability.Effect.Kind == "doubleResourceFor"
+            && ability.Effect is AbilityEffect.DoubleResourceFor multiplier
             && classes.Split(';').Contains(
-                Word(ability.Effect.Argument), StringComparer.Ordinal));
+                multiplier.Classification, StringComparer.Ordinal));
 
         return doubles ? printed + printed : printed;
     }
@@ -472,9 +476,9 @@ public sealed partial class AbilityRunner : ICardAbilities
         ArgumentNullException.ThrowIfNull(candidates);
 
         var enemy = world.Cards[attack.Enemy];
-        bool requiresControlledAlly = On(enemy).Any(ability =>
+        bool requiresControlledAlly = CompiledOn(enemy).Any(ability =>
             ability.Trigger.Timing == AbilityType.Constant
-            && ability.Effect.Kind == "requireAllyDefender");
+            && ability.Effect is AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.RequireAllyDefender });
         if (!requiresControlledAlly)
         {
             return new DefenderChoice(candidates, Required: false);
@@ -498,7 +502,7 @@ public sealed partial class AbilityRunner : ICardAbilities
         foreach (var card in world.Cards.Where(card =>
                      card.ObjectId != ignoredSource && DeckTypes.IsInPlay(card.Area.Type)))
         {
-            foreach (var ability in On(card).Where(ability =>
+            foreach (var ability in CompiledOn(card).Where(ability =>
                 ability.Trigger.Timing == AbilityType.Constant))
             {
                 if (ProhibitsThreatRemoval(
@@ -1236,7 +1240,7 @@ public sealed partial class AbilityRunner : ICardAbilities
             return true;
         }
 
-        foreach (var ability in On(target).Where(ability =>
+        foreach (var ability in CompiledOn(target).Where(ability =>
             ability.Trigger.Timing == AbilityType.Constant))
         {
             var cast = new Cast(
@@ -1330,7 +1334,7 @@ public sealed partial class AbilityRunner : ICardAbilities
             .Where(area => DeckTypes.IsInPlay(area.Type))
             .SelectMany(area => area.Cards))
         {
-            foreach (var ability in On(card).Where(ability =>
+            foreach (var ability in CompiledOn(card).Where(ability =>
                 ability.Trigger.Timing == AbilityType.Constant))
             {
                 var cast = new Cast(
@@ -1345,29 +1349,34 @@ public sealed partial class AbilityRunner : ICardAbilities
         return true;
     }
 
-    private static bool ProhibitsReady(AbilityNode node, Cast cast, Card target) =>
-        node.Kind switch
+    private static bool ProhibitsReady(AbilityEffect effect, Cast cast, Card target) =>
+        effect switch
         {
-            "seq" or "and" => Nodes(node.Argument).Any(step =>
+            AbilityEffect.Sequence sequence => sequence.Effects.Any(step =>
                 ProhibitsReady(step, cast, target)),
-            "if" => node.Field(Test(Tree(node.Require("test")), cast) ? "then" : "else")
-                is { } branch && ProhibitsReady(Tree(branch), cast, target),
-            "preventReady" => Find(node.Argument, cast)?.ObjectId == target.ObjectId,
+            AbilityEffect.Simultaneous simultaneous => simultaneous.Effects.Any(step =>
+                ProhibitsReady(step, cast, target)),
+            AbilityEffect.Conditional conditional => (Test(conditional.Test, cast) ? conditional.Then : conditional.Else)
+                is { } branch && ProhibitsReady(branch, cast, target),
+            AbilityEffect.CardAction { Instruction: AbilityCardInstruction.PreventReady } prohibition =>
+                Find(prohibition.Selection, cast)?.ObjectId == target.ObjectId,
             _ => false,
         };
 
-    private static bool ProhibitsDamage(AbilityNode node, Cast cast, Card source) =>
-        node.Kind switch
+    private static bool ProhibitsDamage(AbilityEffect effect, Cast cast, Card source) =>
+        effect switch
         {
-            "seq" or "and" => Nodes(node.Argument)
+            AbilityEffect.Sequence sequence => sequence.Effects
                 .Any(step => ProhibitsDamage(step, cast, source)),
-            "if" => node.Field(Test(Tree(node.Require("test")), cast) ? "then" : "else")
-                is { } branch && ProhibitsDamage(Tree(branch), cast, source),
-            "preventDamageFrom" => cast.World.Facts.Kind(source.FaceId)
-                    == Kind(Word(node.Require("sourceKind")))
+            AbilityEffect.Simultaneous simultaneous => simultaneous.Effects
+                .Any(step => ProhibitsDamage(step, cast, source)),
+            AbilityEffect.Conditional conditional => (Test(conditional.Test, cast) ? conditional.Then : conditional.Else)
+                is { } branch && ProhibitsDamage(branch, cast, source),
+            AbilityEffect.PreventDamageFrom prohibition => cast.World.Facts.Kind(source.FaceId)
+                    == prohibition.SourceKind
                 && Rules.State.Traits.Has(
-                    cast.World, source, Word(node.Require("sourceTrait")), cast.World.Facts),
-            "preventDamageWhile" => Test(Tree(node.Require("condition")), cast),
+                    cast.World, source, prohibition.SourceTrait, cast.World.Facts),
+            AbilityEffect.PreventDamageWhile prohibition => Test(prohibition.Condition, cast),
             _ => false,
         };
 
@@ -1818,7 +1827,7 @@ public sealed partial class AbilityRunner : ICardAbilities
         }
 
         var found = new List<ContinuousEffect>();
-        foreach (var ability in On(card))
+        foreach (var ability in CompiledOn(card))
         {
             if (ability.Trigger.Timing != AbilityType.Constant)
             {

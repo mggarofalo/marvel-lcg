@@ -879,7 +879,7 @@ public sealed partial class AbilityRunner
                 cast.World, target, cast.Source);
         }
 
-        foreach (var ability in runner.On(target).Where(ability =>
+        foreach (var ability in runner.CompiledOn(target).Where(ability =>
             ability.Trigger.Timing == AbilityType.Constant))
         {
             var constant = new Cast(
@@ -895,45 +895,45 @@ public sealed partial class AbilityRunner
     }
 
     private static bool ProhibitsDamageInTrace(
-        AbilityNode node, Cast cast, Card source,
-        HashSet<int> discarded) => node.Kind switch
+        AbilityEffect effect, Cast cast, Card source,
+        HashSet<int> discarded) => effect switch
         {
-            "seq" or "and" => Nodes(node.Argument).Any(step =>
+            AbilityEffect.Sequence sequence => sequence.Effects.Any(step =>
                 ProhibitsDamageInTrace(step, cast, source, discarded)),
-            "if" => node.Field(
-                    TraceTest(Tree(node.Require("test")), cast, discarded)
-                        ? "then"
-                        : "else")
+            AbilityEffect.Simultaneous simultaneous => simultaneous.Effects.Any(step =>
+                ProhibitsDamageInTrace(step, cast, source, discarded)),
+            AbilityEffect.Conditional conditional =>
+                (TraceTest(conditional.Test, cast, discarded) ? conditional.Then : conditional.Else)
                 is { } branch && ProhibitsDamageInTrace(
-                    Tree(branch), cast, source, discarded),
-            "preventDamageFrom" => cast.World.Facts.Kind(source.FaceId)
-                    == Kind(Word(node.Require("sourceKind")))
+                    branch, cast, source, discarded),
+            AbilityEffect.PreventDamageFrom prohibition => cast.World.Facts.Kind(source.FaceId)
+                    == prohibition.SourceKind
                 && Rules.State.Traits.Has(
-                    cast.World, source, Word(node.Require("sourceTrait")),
+                    cast.World, source, prohibition.SourceTrait,
                     cast.World.Facts),
-            "preventDamageWhile" => TraceTest(
-                Tree(node.Require("condition")), cast, discarded),
+            AbilityEffect.PreventDamageWhile prohibition => TraceTest(
+                prohibition.Condition, cast, discarded),
             _ => false,
         };
 
     private static bool TraceTest(
-        AbilityNode node, Cast cast, HashSet<int> discarded) => node.Kind switch
+        AbilityCondition condition, Cast cast, HashSet<int> discarded) => condition switch
         {
-            "and" => Nodes(node.Argument).All(test =>
+            AbilityCondition.All all => all.Operands.All(test =>
                 TraceTest(test, cast, discarded)),
-            "or" => Nodes(node.Argument).Any(test =>
+            AbilityCondition.Any any => any.Operands.Any(test =>
                 TraceTest(test, cast, discarded)),
-            "not" => !TraceTest(Tree(node.Argument), cast, discarded),
-            "exists" => Every(node.Argument, cast).Any(card =>
+            AbilityCondition.Negated negated => !TraceTest(negated.Operand, cast, discarded),
+            AbilityCondition.Exists exists => Every(exists.Cards, cast).Any(card =>
                 !discarded.Contains(card.ObjectId)),
-            "titleInPlay" => cast.World.Areas
+            AbilityCondition.TitleInPlay title => cast.World.Areas
                 .Where(area => DeckTypes.IsInPlay(area.Type))
                 .SelectMany(area => area.Cards)
                 .Any(card => !discarded.Contains(card.ObjectId)
                     && string.Equals(
                         cast.World.Facts.Title(card.FaceId),
-                        Word(node.Argument), StringComparison.Ordinal)),
-            _ => Test(node, cast),
+                        title.Title, StringComparison.Ordinal)),
+            _ => Test(condition, cast),
         };
 
     private static IReadOnlyList<IReadOnlyList<DamageTransfer>> DamageTraces(
