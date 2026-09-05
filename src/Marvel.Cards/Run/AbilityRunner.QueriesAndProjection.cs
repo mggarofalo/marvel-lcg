@@ -487,7 +487,7 @@ public sealed partial class AbilityRunner
         {
             long amount = SaturatingSum(
                 SaturatingMultiply(
-                    Amount(damage.Require("amount"), cast), multiplier),
+                    Amount(DamageAmountOf(damage, cast), cast), multiplier),
                 [EventModifier(cast, "eventDamage")]);
             if (cast.Power == BasicPowers.AttackVerb)
             {
@@ -512,7 +512,7 @@ public sealed partial class AbilityRunner
             }
             long amount = SaturatingSum(
                 SaturatingMultiply(
-                    Amount(removal.Require("amount"), cast), multiplier),
+                    Amount(EffectOf<AbilityEffect.RemoveThreat>(removal, cast).Amount, cast), multiplier),
                 [EventModifier(cast, "eventThreatRemoval")]);
             return Every(removal.Require("scheme"), cast).Any(scheme =>
                 cast.World.Facts.Kind(scheme.FaceId) == CardKind.EncounterSideScheme
@@ -531,7 +531,7 @@ public sealed partial class AbilityRunner
             long amount = Math.Min(
                 from.Damage,
                 SaturatingMultiply(
-                    Amount(movement.Require("amount"), cast), multiplier));
+                    Amount(EffectOf<AbilityEffect.MoveDamage>(movement, cast).Amount, cast), multiplier));
             return amount > 0
                 && cast.Abilities.CanTakeDamage(cast.World, to, cast.Source)
                 && Statuses.Count(cast.World, to, Statuses.Tough) == 0

@@ -144,6 +144,10 @@ public sealed partial class AbilityRunner
         _ => throw new InvalidOperationException("Unknown compiled condition in player-binding analysis"),
     };
 
+    // rr:player-elimination.6: effects referring to players ignore eliminated
+    // players, “except for the per player icon.” Its multiplier is World.Players.
+    // Result bindings read what an earlier effect actually did; an unwritten
+    // result is zero, including when no damage was healed this way.
     private static long Amount(AbilityNumber number, Cast cast) => number switch
     {
         AbilityNumber.Constant constant => constant.Value,

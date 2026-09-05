@@ -418,7 +418,7 @@ public sealed partial class AbilityRunner
             {
                 return [ResolutionOfAmount(
                     PowerDamage(reachability, card),
-                    Amount(node.Require("amount"), cast))];
+                    Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast))];
             }
         }
         if (node.Kind == "discard")
@@ -441,7 +441,7 @@ public sealed partial class AbilityRunner
         }
         if (node.Kind == "removeThreat")
         {
-            long wanted = Amount(node.Require("amount"), cast);
+            long wanted = Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast);
             var schemes = PowerEvery(node.Require("scheme"), cast, reachability);
             var valid = schemes.Where(scheme =>
                 PowerThreat(reachability, scheme) > 0
@@ -619,9 +619,7 @@ public sealed partial class AbilityRunner
             }
 
             string field = Word(node.Require("keyword"));
-            long grantedAmount = node.Field("amount") is { } granted
-                ? Amount(granted, cast)
-                : 1;
+            long grantedAmount = Amount(EffectOf<AbilityEffect.GrantField>(node, cast).Amount, cast);
             var modifiers = new Dictionary<(int Card, string Field), long>(
                 reachability.Modifiers);
             var key = (target.ObjectId, field);
@@ -722,7 +720,7 @@ public sealed partial class AbilityRunner
         if (node.Kind == "removeThreat")
         {
             long removedAmount = SaturatingMultiply(
-                Amount(node.Require("amount"), cast), multiplier);
+                Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast), multiplier);
             var state = reachability;
             foreach (var scheme in PowerEvery(
                 node.Require("scheme"), cast, reachability))
@@ -805,7 +803,7 @@ public sealed partial class AbilityRunner
         }
         if (node.Kind == "heal")
         {
-            long healed = Amount(node.Require("amount"), cast);
+            long healed = Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast);
             var state = reachability;
             foreach (var card in cards)
             {
@@ -879,7 +877,7 @@ public sealed partial class AbilityRunner
             }
             long moved = Math.Min(
                 PowerDamage(reachability, from),
-                Amount(node.Require("amount"), cast));
+                Amount(EffectOf<AbilityEffect.MoveDamage>(node, cast).Amount, cast));
             var state = SetPowerDamage(
                 reachability, from, PowerDamage(reachability, from) - moved,
                 first, cast);
@@ -888,9 +886,9 @@ public sealed partial class AbilityRunner
 
         long amount = SaturatingMultiply(node.Kind switch
         {
-            "indirectDamage" => Amount(node.Require("amount"), cast),
+            "indirectDamage" => Amount(EffectOf<AbilityEffect.IndirectDamage>(node, cast).Amount, cast),
             "replaceThreatWithDamage" => cast.Occurrence.Threat?.Remaining ?? 0,
-            _ => Amount(node.Require("amount"), cast),
+            _ => Amount(DamageAmountOf(node, cast), cast),
         }, multiplier);
         return ApplyPowerDamage(reachability, cards, amount, first, cast);
     }

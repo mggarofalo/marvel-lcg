@@ -51,4 +51,13 @@ public sealed partial class AbilityRunner
 
     private static T EffectOf<T>(AbilityNode node, Cast cast) where T : AbilityEffect =>
         (T)((AbilityRunner)cast.Abilities).CompiledEffect(node);
+
+    private static AbilityNumber DamageAmountOf(AbilityNode node, Cast cast) =>
+        EffectOf<AbilityEffect>(node, cast) switch
+        {
+            AbilityEffect.Damage damage => damage.Amount,
+            AbilityEffect.AttackDamage damage => damage.Amount,
+            AbilityEffect.IndirectDamage damage => damage.Amount,
+            _ => throw new InvalidOperationException("Expected a compiled damage instruction"),
+        };
 }

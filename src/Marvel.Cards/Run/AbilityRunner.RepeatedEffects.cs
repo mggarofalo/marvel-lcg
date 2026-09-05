@@ -259,7 +259,7 @@ public sealed partial class AbilityRunner
         long own = node.Kind == "removeThreat"
             && Every(node.Require("scheme"), cast).Any(candidate =>
                 candidate.ObjectId == scheme.ObjectId)
-                ? Amount(node.Require("amount"), cast)
+                ? Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast)
                 : 0;
         return MutationTotal(
             node, cast, assumed, binding, own,
@@ -1056,7 +1056,7 @@ public sealed partial class AbilityRunner
                 .. TraceCards(node.Require(field), cast).Select(target =>
                     new DamageTransfer(
                         -1, target.Card.ObjectId,
-                        Amount(node.Require("amount"), cast),
+                        Amount(DamageAmountOf(node, cast), cast),
                         DealsDamage: true,
                         ToVillain: target.VillainSelector)),
             ];
@@ -1074,7 +1074,7 @@ public sealed partial class AbilityRunner
             && TraceCardNamed(node.Require("card"), cast) is { } healed)
         {
             return [new DamageTransfer(
-                healed.Card.ObjectId, -1, Amount(node.Require("amount"), cast),
+                healed.Card.ObjectId, -1, Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast),
                 FromVillain: healed.VillainSelector)];
         }
         if (node.Kind == "moveDamage"
@@ -1083,7 +1083,7 @@ public sealed partial class AbilityRunner
         {
             return [new DamageTransfer(
                 from.Card.ObjectId, to.Card.ObjectId,
-                Amount(node.Require("amount"), cast),
+                Amount(EffectOf<AbilityEffect.MoveDamage>(node, cast).Amount, cast),
                 DealsDamage: true,
                 FromVillain: from.VillainSelector,
                 ToVillain: to.VillainSelector)];
@@ -1120,7 +1120,7 @@ public sealed partial class AbilityRunner
             [
                 .. targets.Select(target => new DamageTransfer(
                     0, target.Card.ObjectId,
-                    node.Field("amount") is { } amount ? Amount(amount, cast) : 1,
+                    Amount(EffectOf<AbilityEffect.GrantField>(node, cast).Amount, cast),
                     GrantsField: Word(grantedField),
                     ToVillain: target.VillainSelector)),
             ];
@@ -1132,7 +1132,7 @@ public sealed partial class AbilityRunner
         {
             return [new DamageTransfer(
                 0, healthier.Card.ObjectId,
-                node.Field("amount") is { } amount ? Amount(amount, cast) : 0,
+                Amount(EffectOf<AbilityEffect.GrantField>(node, cast).Amount, cast),
                 GrantsHealth: true,
                 ToVillain: healthier.VillainSelector)];
         }
@@ -1174,7 +1174,8 @@ public sealed partial class AbilityRunner
                 .. Every(node.Require("scheme"), cast).Select(scheme =>
                     new DamageTransfer(
                         0, scheme.ObjectId,
-                        Amount(node.Require("amount"), cast),
+                        Amount(removes ? EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount
+                            : EffectOf<AbilityEffect.PlaceThreat>(node, cast).Amount, cast),
                         RemovesThreat: removes,
                         PlacesThreat: !removes)),
             ];
@@ -1889,7 +1890,7 @@ public sealed partial class AbilityRunner
         var scheme = Find(node.Require("scheme"), cast);
         return scheme is not null
             && scheme.Tokens.GetValueOrDefault("k_threat") > 0
-            && Amount(node.Require("amount"), cast) > 0
+            && Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast) > 0
             && CanRemoveThreatFrom(node, cast, scheme);
     }
 

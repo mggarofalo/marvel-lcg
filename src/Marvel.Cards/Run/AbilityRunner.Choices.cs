@@ -356,7 +356,7 @@ public sealed partial class AbilityRunner
         if (effect.Kind == "removeThreat")
         {
             long current = card.Tokens.GetValueOrDefault("k_threat");
-            long removed = Math.Min(current, Amount(effect.Require("amount"), cast));
+            long removed = Math.Min(current, Amount(EffectOf<AbilityEffect.RemoveThreat>(effect, cast).Amount, cast));
             long result = current - removed;
             long threshold = cast.World.Facts.PrintedValue(
                 card.FaceId, "TargetThreat", cast.World.Players);
@@ -403,7 +403,7 @@ public sealed partial class AbilityRunner
         AbilityNode damage, bool isAttack, Cast cast)
     {
         long amount = SaturatingSum(
-            Amount(damage.Require("amount"), cast),
+            Amount(DamageAmountOf(damage, cast), cast),
             [EventModifier(cast, "eventDamage")]);
         if (!isAttack)
         {

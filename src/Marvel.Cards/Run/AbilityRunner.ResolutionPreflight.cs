@@ -42,21 +42,21 @@ public sealed partial class AbilityRunner
                 && CounterKeyForRemoval(
                     counterCard, removal.Counter, removal.Count) is not null,
             "advanceMainScheme" => CanAdvanceMainScheme(cast),
-            "discardAtRandom" => Amount(node.Require("count"), cast) > 0
+            "discardAtRandom" => Amount(EffectOf<AbilityEffect.DiscardAtRandom>(node, cast).Count, cast) > 0
                 && Seats(node.Require("player"), cast)
                     .Any(seat => cast.World.Seats[seat].Hand.Cards.Count > 0),
-            "discardTop" => Amount(node.Require("count"), cast) > 0
+            "discardTop" => Amount(EffectOf<AbilityEffect.DiscardTop>(node, cast).Count, cast) > 0
                 && Area(Word(node.Require("from")), cast).Cards.Count > 0,
             "heal" => Find(node.Require("card"), cast) is { Damage: > 0 }
-                && Amount(node.Require("amount"), cast) > 0,
+                && Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast) > 0,
             "indirectDamage" => HasRequiredTargets(node, cast)
-                && Amount(node.Require("amount"), cast) > 0,
+                && Amount(EffectOf<AbilityEffect.IndirectDamage>(node, cast).Amount, cast) > 0,
             "dealDamage" => HasRequiredTargets(node, cast)
-                && Amount(node.Require("amount"), cast) > 0,
+                && Amount(EffectOf<AbilityEffect.Damage>(node, cast).Amount, cast) > 0,
             "dealAttackDamage" => HasRequiredTargets(node, cast)
-                && Amount(node.Require("amount"), cast) > 0,
+                && Amount(EffectOf<AbilityEffect.AttackDamage>(node, cast).Amount, cast) > 0,
             "placeThreat" => HasRequiredTargets(node, cast)
-                && Amount(node.Require("amount"), cast) > 0,
+                && Amount(EffectOf<AbilityEffect.PlaceThreat>(node, cast).Amount, cast) > 0,
             "removeThreat" => CanRemoveThreat(node, cast),
             "gainSurge" => Number(node.Argument) > 0,
             "draw" => CanDraw(node, cast),
@@ -67,7 +67,7 @@ public sealed partial class AbilityRunner
             "createDrones" => CanCreateDrones(node, cast),
             "placeAccelerationToken" => HasRequiredTargets(node, cast),
             "preventThreat" => cast.Occurrence.Threat is { Remaining: > 0 }
-                && Amount(node.Argument, cast) > 0,
+                && Amount(EffectOf<AbilityEffect.PreventThreat>(node, cast).Amount, cast) > 0,
             "replaceThreatWithDamage" => cast.Occurrence.Threat is { Remaining: > 0 },
             "grantCharactersControlledBy" or "reduceNextCardCost" => true,
 
@@ -153,7 +153,7 @@ public sealed partial class AbilityRunner
                     Number(node.Require("count"))))),
             "heal" => ResolutionOfAmount(
                 Find(node.Require("card"), cast)?.Damage ?? 0,
-                Amount(node.Require("amount"), cast)),
+                Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast)),
             "removeThreat" => ResolutionOfThreat(node, cast),
             _ => throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' uses '{node.Kind}' before dependent text, whose "
@@ -201,7 +201,7 @@ public sealed partial class AbilityRunner
     private static ResolutionOutcome ResolutionOfThreat(AbilityNode node, Cast cast)
     {
         var schemes = Every(node.Require("scheme"), cast);
-        long wanted = Amount(node.Require("amount"), cast);
+        long wanted = Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast);
         if (schemes.Count == 0 || wanted <= 0)
         {
             return ResolutionOutcome.None;

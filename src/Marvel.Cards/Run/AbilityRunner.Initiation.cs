@@ -48,7 +48,7 @@ public sealed partial class AbilityRunner
         "discard" or "dealEncounterCard" =>
             Find(node.Field("card") ?? node.Argument, cast) is not null,
         "heal" => Find(node.Require("card"), cast) is not null,
-        "indirectDamage" => Amount(node.Require("amount"), cast) <= 0
+        "indirectDamage" => Amount(EffectOf<AbilityEffect.IndirectDamage>(node, cast).Amount, cast) <= 0
             || Assignable(node.Require("among"), cast).Count > 0,
         "dealDamage" => DamageTargets(node.Require("cards"), cast).Count > 0,
         "dealAttackDamage" => DamageTargets(node.Require("cards"), cast).Count > 0,
@@ -1329,7 +1329,7 @@ public sealed partial class AbilityRunner
                 && Every(node.Require("scheme"), cast).Any(candidate =>
                     candidate.ObjectId == scheme.ObjectId)
                 && scheme.Tokens.GetValueOrDefault("k_threat") > 0
-                && Amount(node.Require("amount"), cast) > 0
+                && Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast) > 0
                 && CanRemoveThreatFrom(node, cast, scheme);
         }
 
@@ -1474,21 +1474,21 @@ public sealed partial class AbilityRunner
             "dealEncounterCard" => Find(node.Field("card") ?? node.Argument, cast) is null
                 ? TargetLegality.Invalid : TargetLegality.Valid,
             "heal" => Find(node.Require("card"), cast) is { Damage: > 0 }
-                && Amount(node.Require("amount"), cast) > 0
+                && Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast) > 0
                     ? TargetLegality.Valid : TargetLegality.Invalid,
             "dealDamage" or "dealAttackDamage" =>
-                Amount(node.Require("amount"), cast) > 0
+                Amount(DamageAmountOf(node, cast), cast) > 0
                     ? Cards(DamageTargets(node.Require("cards"), cast))
                     : TargetLegality.Invalid,
-            "indirectDamage" => Amount(node.Require("amount"), cast) <= 0
+            "indirectDamage" => Amount(EffectOf<AbilityEffect.IndirectDamage>(node, cast).Amount, cast) <= 0
                 ? TargetLegality.Invalid
                 : Cards(Assignable(node.Require("among"), cast)),
-            "placeThreat" => Amount(node.Require("amount"), cast) <= 0
+            "placeThreat" => Amount(EffectOf<AbilityEffect.PlaceThreat>(node, cast).Amount, cast) <= 0
                 ? TargetLegality.Invalid
                 : Cards(Every(node.Require("scheme"), cast)),
             "removeThreat" => Every(node.Require("scheme"), cast).Any(scheme =>
                 scheme.Tokens.GetValueOrDefault("k_threat") > 0
-                && Amount(node.Require("amount"), cast) > 0
+                && Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast) > 0
                 && CanRemoveThreatFrom(node, cast, scheme))
                 ? TargetLegality.Valid : TargetLegality.Invalid,
             "enemyAttacks" or "enemySchemes" =>
