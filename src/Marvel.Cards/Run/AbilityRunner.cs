@@ -581,7 +581,7 @@ public sealed partial class AbilityRunner : ICardAbilities
                     eligibility.SetPaymentMayMutate(
                         ability.Cost is not null
                         || world.Facts.Kind(card.FaceId) == CardKind.Event,
-                        ability.Cost);
+                        CompiledCost(ability));
                     if ((ability.When is not null && !Test(ability.When, eligibility))
                         || (controller >= 0 && !CanInitiate(ability, eligibility)))
                     {
@@ -678,7 +678,7 @@ public sealed partial class AbilityRunner : ICardAbilities
         };
         cast.SetPaymentMayMutate(
             found.Cost is not null || world.Facts.Kind(card.FaceId) == CardKind.Event,
-            found.Cost);
+            CompiledCost(found));
 
         if (!Available(world, card, found, occurrence))
         {
@@ -2128,9 +2128,9 @@ public sealed partial class AbilityRunner : ICardAbilities
                 var eligibility = new Cast(world, card, new Occurrence(
                     0, [Steps.TurnAction], Subject: card.ObjectId, Player: player),
                     player, [], this);
-                if (ActionAvailable(world, card, ability, player, eligibility)
-                    && Payable(world, card, player, CompiledCost(ability))
-                    && EventPayable(world, card, player, ability))
+                if (Payable(world, card, player, CompiledCost(ability))
+                    && EventPayable(world, card, player, ability)
+                    && ActionAvailable(world, card, ability, player, eligibility))
                 {
                     int ordinal = written.Take(index).Count(candidate =>
                         candidate.Trigger.Timing == ability.Trigger.Timing);
@@ -2149,7 +2149,7 @@ public sealed partial class AbilityRunner : ICardAbilities
     {
         eligibility.SetPaymentMayMutate(
             ability.Cost is not null || world.Facts.Kind(card.FaceId) == CardKind.Event,
-            ability.Cost);
+            CompiledCost(ability));
         return MayInitiate(world, ability, card, player)
         && Available(world, card, ability)
         && InForm(world, player, ability.Trigger.Form)

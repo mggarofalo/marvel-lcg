@@ -1886,7 +1886,7 @@ public sealed partial class AbilityRunner
             && (cast.PriorSteps.Any(step =>
                     MayChangeAnyArea(step, searched, cast))
                 || cast.PaymentCost is { } cost
-                    && MayChangeAnyArea(cost, searched, cast)))
+                    && CostMayChangeAnyArea(cost, searched, cast)))
         {
             if (cast.FilteringContinuationOption)
             {

@@ -639,7 +639,7 @@ public sealed partial class AbilityRunner
         bool priorCanChange = EffectsMayChangeAnyArea(
             cast.PriorSteps, areas, cast);
         bool paymentCanChange = cast.PaymentCost is { } cost
-            && MayChangeAnyArea(cost, areas, cast);
+            && CostMayChangeAnyArea(cost, areas, cast);
         if (priorCanChange || paymentCanChange)
         {
             if (cast.FilteringContinuationOption)
@@ -835,6 +835,15 @@ public sealed partial class AbilityRunner
     private static bool EffectsMayChangeAnyArea(
         IReadOnlyList<AbilityNode> effects, IReadOnlySet<DeckType> queried,
         Cast cast, long baseMultiplier = 1)
+        => ProjectedAreaMayChange(effects, null, queried, cast, baseMultiplier);
+
+    private static bool CostMayChangeAnyArea(
+        AbilityCost cost, IReadOnlySet<DeckType> queried, Cast cast)
+        => ProjectedAreaMayChange([], cost, queried, cast);
+
+    private static bool ProjectedAreaMayChange(
+        IReadOnlyList<AbilityNode> effects, AbilityCost? cost,
+        IReadOnlySet<DeckType> queried, Cast cast, long baseMultiplier = 1)
     {
         bool couldDiscard = false;
 
@@ -1574,8 +1583,80 @@ public sealed partial class AbilityRunner
                 StructuralChildren(effect), states, baseMultiplier);
         }
 
-        _ = TraceSequence(
-            effects, [new AreaProjectionState(cast)], baseMultiplier);
+        var removedCounters = new Dictionary<int, long>();
+        void TraceCost(AbilityCost payment, AreaProjectionState state)
+        {
+            Card? Target(AbilityCostCard binding)
+            {
+                var card = CostReference(binding, cast);
+                return card is not null && !state.Departed.Contains(card.ObjectId)
+                    ? card : null;
+            }
+
+            switch (payment)
+            {
+                case AbilityCost.Sequence sequence:
+                    foreach (var step in sequence.Costs
+                        .Where(step => step is AbilityCost.Damage { MustTakeAll: true })
+                        .Concat(sequence.Costs.OfType<AbilityCost.Spend>())
+                        .Concat(sequence.Costs.Where(step => step is not
+                            (AbilityCost.Spend or AbilityCost.Damage { MustTakeAll: true }))))
+                    {
+                        TraceCost(step, state);
+                    }
+                    break;
+                case AbilityCost.Damage damage:
+                    if (Target(damage.Card) is { } damaged)
+                    {
+                        DealProjected(state, damaged,
+                            damage.MustTakeAll ? damage.Amount : ModifiedAbilityDamage(damage.Amount, cast), 1);
+                    }
+                    break;
+                case AbilityCost.Heal heal:
+                    if (Target(heal.Card) is { } healed)
+                    {
+                        state.Damage[healed.ObjectId] = Math.Max(0, state.DamageOf(healed) - heal.Amount);
+                    }
+                    break;
+                case AbilityCost.Discard discard:
+                    if (Target(discard.Card) is { } discarded)
+                    {
+                        couldDiscard |= queried.Contains(discarded.Area.Type)
+                            || DiscardTreeChangesArea(discarded);
+                        MarkDiscardedTree(state, discarded);
+                    }
+                    break;
+                case AbilityCost.DiscardFromHand or AbilityCost.Spend or AbilityCost.SpendEnergy:
+                    couldDiscard |= queried.Contains(DeckType.HandsArea)
+                        || queried.Contains(DeckType.DiscardPile);
+                    break;
+                case AbilityCost.RemoveCounters counters:
+                    if (Target(counters.Card) is { } holder)
+                    {
+                        long removed = checked(removedCounters.GetValueOrDefault(holder.ObjectId) + counters.Count);
+                        removedCounters[holder.ObjectId] = removed;
+                        if (CounterCount(holder, "allPurpose") == removed
+                            && !Characteristics.IsLost(cast.World, holder, "uses")
+                            && cast.Abilities.CounterPool(cast.World, holder)?.Uses == true)
+                        {
+                            couldDiscard |= queried.Contains(holder.Area.Type)
+                                || (Keywords.Has(cast.World, holder, "victory", cast.World.Facts)
+                                    ? HostedCardsChangeArea(state, holder.ObjectId)
+                                    : DiscardTreeChangesArea(holder));
+                            MarkDiscardedTree(state, holder);
+                        }
+                    }
+                    break;
+                case AbilityCost.Exhaust or AbilityCost.ExhaustChosen:
+                    break;
+                default:
+                    throw new InvalidOperationException("Unknown compiled cost in area projection");
+            }
+        }
+
+        var initial = new AreaProjectionState(cast);
+        if (cost is not null) TraceCost(cost, initial);
+        _ = TraceSequence(effects, [initial], baseMultiplier);
         return couldDiscard;
     }
 

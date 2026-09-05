@@ -86,9 +86,9 @@ public sealed partial class AbilityRunner
         /// <summary>Whether initiation payment may change outcome-relevant state.</summary>
         public bool PaymentMayMutate { get; private set; }
 
-        public AbilityNode? PaymentCost { get; private set; }
+        public AbilityCost? PaymentCost { get; private set; }
 
-        public void SetPaymentMayMutate(bool value, AbilityNode? cost = null)
+        public void SetPaymentMayMutate(bool value, AbilityCost? cost = null)
         {
             PaymentMayMutate = value;
             PaymentCost = cost;
