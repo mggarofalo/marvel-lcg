@@ -677,7 +677,7 @@ public sealed partial class ActionAbilityTests
         var runner = Runner(
             AuthoredCards.AuntMay,
             "Action",
-            """{ "seq": [ { "changeForm": { "player": "you", "to": "alterEgo" } }, { "then": { "effect": { "if": { "test": { "inForm": { "player": "you", "form": "alterEgo" } }, "then": { "dealDamage": { "cards": { "query": "villain" }, "amount": 1 } }, "else": { "draw": { "player": "you", "count": 1 } } } }, "then": { "draw": { "player": "you", "count": 1 } } } } ] }""",
+            """{ "seq": [ { "changeForm": { "player": "you", "to": "alter-ego" } }, { "then": { "effect": { "if": { "test": { "inForm": { "player": "you", "form": "alter-ego" } }, "then": { "dealDamage": { "cards": { "query": "villain" }, "amount": 1 } }, "else": { "draw": { "player": "you", "count": 1 } } } }, "then": { "draw": { "player": "you", "count": 1 } } } } ] }""",
             cost: """{ "exhaust": "this" }""");
         Card? source = null;
 
@@ -1049,7 +1049,7 @@ public sealed partial class ActionAbilityTests
         var runner = Runner(
             AuthoredCards.AuntMay,
             "Action",
-            """{ "then": { "effect": { "changeForm": { "player": "you", "to": "alterEgo" } }, "then": { "if": { "test": { "inForm": { "player": "you", "form": "hero" } }, "then": { "draw": { "player": "you", "count": 1 } }, "else": { "attack": { "target": { "query": "villain" }, "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } } } } } }""",
+            """{ "then": { "effect": { "changeForm": { "player": "you", "to": "alter-ego" } }, "then": { "if": { "test": { "inForm": { "player": "you", "form": "hero" } }, "then": { "draw": { "player": "you", "count": 1 } }, "else": { "attack": { "target": { "query": "villain" }, "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } } } } } } } }""",
             cost: """{ "exhaust": "this" }""");
         Card? source = null;
 
@@ -1160,7 +1160,7 @@ public sealed partial class ActionAbilityTests
                     "player": "chosenPlayer", "form": "hero"
                   } },
                   "then": { "changeForm": {
-                    "player": "chosenPlayer", "to": "alterEgo"
+                    "player": "chosenPlayer", "to": "alter-ego"
                   } },
                   "else": { "draw": {
                     "player": "chosenPlayer", "count": 1
@@ -1169,7 +1169,7 @@ public sealed partial class ActionAbilityTests
               } },
               { "if": {
                 "test": { "inForm": {
-                  "player": "chosenPlayer", "form": "alterEgo"
+                  "player": "chosenPlayer", "form": "alter-ego"
                 } },
                 "then": { "draw": {
                   "player": "chosenPlayer", "count": 1

@@ -164,7 +164,7 @@ public sealed class AllPurposeCounterTests
     }
 
     [Theory]
-    [InlineData("""{ "removeCounters": "charge" }""", "card")]
+    [InlineData("""{ "removeCounters": "charge" }""", "cost/removeCounters")]
     [InlineData("""{ "removeCounters": { "card": "this", "counter": "charge", "count": 0 } }""", "positive")]
     [InlineData("""{ "removeCounters": { "card": "this", "counter": "charge", "count": 1, "extra": 1 } }""", "extra")]
     public void CounterCostsRefuseImplicitMalformedOrNonPositiveForms(

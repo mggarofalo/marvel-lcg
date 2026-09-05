@@ -13,6 +13,250 @@ namespace Marvel.Content.Tests.Play;
 
 public sealed partial class ActionAbilityTests
 {
+    [Rule("rr:initiating-abilities.step.5")]
+    [Theory]
+    [InlineData("dealDamage")]
+    [InlineData("takeDamage")]
+    public void ACompiledDamageCostResumesItsPostArrowEffectExactlyOnce(string damageCost)
+    {
+        // rr:initiating-abilities.step.5: "Pay the cost(s)." An interrupt during the
+        // damage cost must finish before the post-arrow draw, without paying
+        // the cost again when the ability resumes.
+        var runner = new Marvel.Cards.Run.AbilityRunner(AbilityCatalog.Parse($$$"""
+            {"cards":[
+              {"card":"01030","abilities":[{
+                "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"game"},
+                "cost":{"seq":[{"exhaust":"this"},{"{{{damageCost}}}":{"cards":"this","amount":2}}]},
+                "effect":{"draw":{"player":"you","count":1}}
+              }]},
+              {"card":"01092","abilities":[{
+                "trigger":{"event":"WhenCardWouldBeDefeated","timing":"Interrupt","subject":"game"},
+                "effect":{"draw":{"player":"you","count":1}}
+              }]}
+            ]}
+            """));
+        Card? source = null;
+        var (game, world) = Playing(board =>
+        {
+            source = board.CreateCard("01030",
+                board.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+            source.TakeDamage(2);
+            InPlay(board, "01092");
+        }, abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(game.Pending!.Affordances,
+            option => option.Verb == Game.ActionVerb && option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.Equal(Question.Opportunity, game.Pending!.Asking);
+        Assert.False(source!.Ready);
+        Assert.Equal(4, source.Damage);
+        Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
+
+        game.Resolve(Decision.Decline);
+
+        Assert.Equal(Question.TurnOption, game.Pending!.Asking);
+        Assert.Equal(DeckType.DiscardPile, source.Area.Type);
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+        Assert.False(world.Agenda.IsBusy);
+    }
+
+    [Fact]
+    public void PaymentChoicesAndValidationUseTheCompiledCostSnapshot()
+    {
+        var parsed = AbilityCatalog.Parse("""
+            {"cards":[{"card":"01006","abilities":[{
+              "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"game"},
+              "effect":{"draw":{"player":"you","count":1}}
+            }]}]}
+            """);
+        var fields = new Dictionary<string, AbilityValue>(StringComparer.Ordinal)
+        {
+            ["from"] = new AbilityValue.Map(new Dictionary<string, AbilityValue>(StringComparer.Ordinal)
+            {
+                ["query"] = new AbilityValue.Word("alliesYouControl"),
+            }),
+            ["count"] = new AbilityValue.Number(1),
+        };
+        var ability = parsed.Abilities[0] with
+        {
+            Cost = new AbilityNode("exhaustChosen", new AbilityValue.Map(fields)),
+        };
+        var runner = new Marvel.Cards.Run.AbilityRunner(new AbilityBook([ability], parsed.Authored));
+        Card? source = null;
+        Card? ally = null;
+        var (_, world) = Playing(board =>
+        {
+            source = InPlay(board, AuthoredCards.AuntMay);
+            ally = board.CreateCard(AuthoredCards.BlackCat,
+                board.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        }, abilities: runner);
+
+        // The executable program is a snapshot. Changing the caller-owned
+        // syntax cannot change either the offered count or the accepted answer.
+        fields["count"] = new AbilityValue.Number(99);
+        var pending = Assert.Single(runner.Actions(world, 0), option => option.Card == source!.ObjectId);
+        var target = Assert.IsType<TargetRequest>(runner.Describe(world, pending).Targets);
+        Assert.Equal(1, target.Min);
+        Assert.Equal(1, target.Max);
+        Assert.Equal([ally!.ObjectId], target.Legal);
+
+        runner.Act(world, pending, [], [ally.ObjectId]);
+
+        Assert.False(ally.Ready);
+    }
+
+    [Fact]
+    public void PaymentExecutionUsesTheCompiledCostSnapshot()
+    {
+        var parsed = AbilityCatalog.Parse("""
+            {"cards":[{"card":"01030","abilities":[{
+              "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"game"},
+              "effect":{"draw":{"player":"you","count":1}}
+            }]}]}
+            """);
+        var fields = new Dictionary<string, AbilityValue>(StringComparer.Ordinal)
+        {
+            ["card"] = new AbilityValue.Word("this"),
+            ["amount"] = new AbilityValue.Number(1),
+        };
+        var ability = parsed.Abilities[0] with
+        {
+            Cost = new AbilityNode("heal", new AbilityValue.Map(fields)),
+        };
+        var runner = new Marvel.Cards.Run.AbilityRunner(new AbilityBook([ability], parsed.Authored));
+        Card? source = null;
+        var (game, world) = Playing(board =>
+        {
+            source = board.CreateCard("01030",
+                board.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+            source.TakeDamage(2);
+        }, abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+
+        // Engine choice: compilation snapshots authored syntax. Payment must
+        // use that program even if its caller later edits the input dictionary.
+        fields["amount"] = new AbilityValue.Number(2);
+        var action = Assert.Single(game.Pending!.Affordances,
+            option => option.Verb == Game.ActionVerb && option.AnchorId == source!.ObjectId);
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.Equal(1, source!.Damage);
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+    }
+
+    [Fact]
+    public void AbilityGuardUsesTheCompiledNumericSnapshot()
+    {
+        var parsed = AbilityCatalog.Parse("""
+            {"cards":[{"card":"01006","abilities":[{
+              "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"game"},
+              "cost":{"exhaust":"this"},
+              "effect":{"draw":{"player":"you","count":1}}
+            }]}]}
+            """);
+        var fields = new Dictionary<string, AbilityValue>(StringComparer.Ordinal)
+        {
+            ["value"] = new AbilityValue.Map(new Dictionary<string, AbilityValue>(StringComparer.Ordinal)
+            {
+                ["add"] = new AbilityValue.List([
+                    new AbilityValue.Number(1),
+                    new AbilityValue.Map(new Dictionary<string, AbilityValue>(StringComparer.Ordinal)
+                    {
+                        ["damageOn"] = new AbilityValue.Word("you"),
+                    }),
+                ]),
+            }),
+            ["count"] = new AbilityValue.Number(2),
+        };
+        var ability = parsed.Abilities[0] with { When = new AbilityNode("atLeast", new AbilityValue.Map(fields)) };
+        var runner = new Marvel.Cards.Run.AbilityRunner(new AbilityBook([ability], parsed.Authored));
+        Card? source = null;
+        var (game, world) = Playing(board =>
+        {
+            source = InPlay(board, AuthoredCards.AuntMay);
+            board.Seats[0].IdentityCard.TakeDamage(1);
+        }, abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+
+        // Engine choice: guard evaluation reads the compiled program, not a
+        // caller-owned dictionary that can change between offering and acting.
+        fields["count"] = new AbilityValue.Number(99);
+        var action = Assert.Single(game.Pending!.Affordances,
+            option => option.Verb == Game.ActionVerb && option.AnchorId == source!.ObjectId);
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.False(source!.Ready);
+        Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+        Assert.Equal(1, world.Seats[0].IdentityCard.Damage);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void CompiledGuardRefusesAnAmbiguousSingleCardSearch(int copies)
+    {
+        var runner = new Marvel.Cards.Run.AbilityRunner(AbilityCatalog.Parse("""
+            {"cards":[{"card":"01006","abilities":[{
+              "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"game"},
+              "when":{"atLeast":{"value":{"damageOn":{"cardsIn":{
+                "area":"encounterDiscardPile","title":"Hawkeye"
+              }}},"count":0}},
+              "cost":{"exhaust":"this"},
+              "effect":{"draw":{"player":"you","count":1}}
+            }]}]}
+            """));
+        Card? source = null;
+        (Game Game, World World) Start() => Playing(board =>
+        {
+            source = InPlay(board, AuthoredCards.AuntMay);
+            for (int index = 0; index < copies; index++)
+                board.CreateCard("01066", board.AreaOf(DeckType.EncounterDiscardPile));
+        }, abilities: runner);
+
+        if (copies == 1)
+        {
+            var (game, _) = Start();
+            Assert.Contains(game.Pending!.Affordances,
+                option => option.Verb == Game.ActionVerb && option.AnchorId == source!.ObjectId);
+        }
+        else
+        {
+            var refused = Assert.Throws<RulesNotImplementedException>(() => Start());
+            Assert.Contains("2 matching cards", refused.Message, StringComparison.Ordinal);
+        }
+        Assert.True(source!.Ready);
+    }
+
+    [Fact]
+    public void RuntimeCardMetadataUsesTheCompiledSnapshot()
+    {
+        var authored = new HashSet<string>(StringComparer.Ordinal) { "01080" };
+        var firstPlayer = new HashSet<string>(StringComparer.Ordinal) { "01080" };
+        var placementOnly = new HashSet<string>(StringComparer.Ordinal);
+        var pools = new Dictionary<string, CardCounterPool>(StringComparer.Ordinal)
+        {
+            ["01080"] = new("medical", 3, Uses: true),
+        };
+        var runner = new Marvel.Cards.Run.AbilityRunner(new AbilityBook([], authored,
+            ControlledByFirstPlayer: firstPlayer, PlacementOnly: placementOnly, CounterPools: pools));
+        Card? source = null;
+        var (_, world) = Playing(board => source = InPlay(board, "01080"));
+
+        // Engine choice: caller-owned syntax cannot alter a compiled program.
+        authored.Clear();
+        firstPlayer.Clear();
+        placementOnly.Add("01080");
+        pools["01080"] = new("medical", 9, Uses: false);
+
+        Assert.Contains("01080", runner.Authored);
+        Assert.Equal(world.FirstPlayer, runner.SetupController(world, source!));
+        Assert.Equal(new CardCounterPool("medical", 3, Uses: true), runner.CounterPool(world, source!));
+        Assert.Empty(runner.WhenRevealed(world, source!, 0));
+        runner.ValidateForPlay(world);
+    }
+
     [Rule("rr:printed.1")]
     [Rule("rr:text-box.1.1")]
     [Fact]
@@ -362,6 +606,30 @@ public sealed partial class ActionAbilityTests
     }
 
     [Rule("rr:ability.8.1")]
+    [Theory]
+    [InlineData("""{ "exhaust": "you" }""", false)]
+    [InlineData("""{ "removeCounters": { "card": "this", "counter": "yourMarker", "count": 1 } }""", true)]
+    public void AttachmentCostAuthorizationUsesBindingsNotCounterNames(string cost, bool anotherPlayerMayAct)
+    {
+        // rr:ability.8.1 restricts an attachment that "uses the word “you” or
+        // “your”". A counter's engine-chosen name is not a printed
+        // player binding, even when its spelling includes "your".
+        var runner = Runner(AuthoredCards.Charge, "Action", """{ "discard": "this" }""", cost: cost);
+        Card? attachment = null;
+        var (_, world) = Playing(board =>
+        {
+            attachment = board.CreateCard(AuthoredCards.Charge,
+                board.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0),
+                    host: board.Seats[0].IdentityCard.ObjectId));
+            attachment.PlaceTokens("c_yourMarker", 1);
+        }, heroes: ["spider_man", "captain_marvel"], abilities: runner);
+
+        Assert.Contains(runner.Actions(world, 0), action => action.Card == attachment!.ObjectId);
+        Assert.Equal(anotherPlayerMayAct,
+            runner.Actions(world, 1).Any(action => action.Card == attachment!.ObjectId));
+    }
+
+    [Rule("rr:ability.8.1")]
     [Fact]
     public void YourInTheAttachmentInstructionRestrictsEveryAbilityOnTheCard()
     {
@@ -372,7 +640,7 @@ public sealed partial class ActionAbilityTests
         var runner = new Marvel.Cards.Run.AbilityRunner(
             Marvel.Cards.Dsl.AbilityCatalog.Parse(
                 """
-                { "cards": [ { "card": "02048", "attachTo": { "query": "yourIdentity" }, "abilities": [ {
+                { "cards": [ { "card": "02048", "attachTo": "you", "abilities": [ {
                     "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "game" },
                     "effect": { "discard": "this" }
                 } ] } ] }
@@ -393,6 +661,72 @@ public sealed partial class ActionAbilityTests
     }
 
     [Rule("rr:ability.8.1")]
+    [Theory]
+    [InlineData("""{"placeCounters":{"card":"this","counter":"yourMarker","count":1}}""", true)]
+    [InlineData("""{"placeCounters":{"card":"you","counter":"marker","count":1}}""", false)]
+    [InlineData("""{"draw":{"player":"you","count":1}}""", false)]
+    [InlineData("""{"draw":{"player":"firstPlayer","count":1}}""", true)]
+    [InlineData("""{"choose":{"descriptions":["yourChoice","anotherChoice"],"options":[{"discard":"this"},{"discard":"this"}]}}""", true)]
+    [InlineData("""{"choose":{"options":[{"discard":"this"},{"draw":{"player":"you","count":1}}]}}""", false)]
+    [InlineData("""{"if":{"test":{"titleInPlay":"yourTitle"},"then":{"discard":"this"},"else":{"discard":"this"}}}""", true)]
+    [InlineData("""{"if":{"test":{"titleInPlay":"yourTitle"},"then":{"draw":{"player":"you","count":1}},"else":{"discard":"this"}}}""", false)]
+    [InlineData("""{"if":{"test":{"titleInPlay":"absent"},"then":{"putIntoPlay":{"card":"this","where":"engagedWithYou"}},"else":{"discard":"this"}}}""", false)]
+    [InlineData("""{"if":{"test":{"titleInPlay":"absent"},"then":{"putIntoPlay":{"card":"this","where":"printedDestination"}},"else":{"discard":"this"}}}""", true)]
+    [InlineData("""{"placeCounters":{"card":"this","counter":"marker","count":{"add":[1,{"countersOn":{"card":"this","counter":"yourMarker"}}]}}}""", true)]
+    [InlineData("""{"placeCounters":{"card":"this","counter":"marker","count":{"add":[1,{"countersOn":{"card":"you","counter":"marker"}}]}}}""", false)]
+    public void AttachmentEffectAuthorizationUsesBindingsNotLiteralText(string effect, bool anotherPlayerMayAct)
+    {
+        // rr:ability.8.1 restricts an attachment whose text "uses the word
+        // “you” or “your”". Engine-chosen literal counter names and choice
+        // descriptions do not represent that binding. A binding in an
+        // unchosen branch is still part of the ability's text.
+        var runner = Runner(AuthoredCards.Charge, "Action", effect);
+        Card? attachment = null;
+        var (_, world) = Playing(board => attachment = board.CreateCard(AuthoredCards.Charge,
+            board.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0),
+                host: board.Seats[0].IdentityCard.ObjectId)),
+            heroes: ["spider_man", "captain_marvel"], abilities: runner);
+
+        Assert.Contains(runner.Actions(world, 0), action => action.Card == attachment!.ObjectId);
+        Assert.Equal(anotherPlayerMayAct,
+            runner.Actions(world, 1).Any(action => action.Card == attachment!.ObjectId));
+    }
+
+    [Theory]
+    [InlineData("this", "you", true)]
+    [InlineData("you", "this", false)]
+    public void AttachmentEffectAuthorizationUsesTheCompiledSnapshot(
+        string originalBinding, string changedBinding, bool anotherPlayerMayAct)
+    {
+        var parsed = AbilityCatalog.Parse("""
+            {"cards":[{"card":"01099","abilities":[{
+              "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"game"},
+              "effect":{"discard":"this"}
+            }]}]}
+            """);
+        var fields = new Dictionary<string, AbilityValue>(StringComparer.Ordinal)
+        {
+            ["card"] = new AbilityValue.Word(originalBinding),
+            ["counter"] = new AbilityValue.Word("marker"),
+            ["count"] = new AbilityValue.Number(1),
+        };
+        var ability = parsed.Abilities[0] with { Effect = new AbilityNode("placeCounters", new AbilityValue.Map(fields)) };
+        var runner = new Marvel.Cards.Run.AbilityRunner(new AbilityBook([ability], parsed.Authored));
+        // Engine choice: editing caller-owned syntax after compilation cannot
+        // grant or revoke permission to use the compiled ability.
+        fields["card"] = new AbilityValue.Word(changedBinding);
+        Card? attachment = null;
+        var (_, world) = Playing(board => attachment = board.CreateCard(AuthoredCards.Charge,
+            board.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0),
+                host: board.Seats[0].IdentityCard.ObjectId)),
+            heroes: ["spider_man", "captain_marvel"], abilities: runner);
+
+        Assert.Contains(runner.Actions(world, 0), action => action.Card == attachment!.ObjectId);
+        Assert.Equal(anotherPlayerMayAct,
+            runner.Actions(world, 1).Any(action => action.Card == attachment!.ObjectId));
+    }
+
+    [Rule("rr:ability.8.1")]
     [Rule("rr:the-golden-rules")]
     [Fact]
     public void AnExplicitAnyPlayerPermissionOverridesTheAttachmentRestriction()
@@ -403,7 +737,7 @@ public sealed partial class ActionAbilityTests
         var runner = new Marvel.Cards.Run.AbilityRunner(
             Marvel.Cards.Dsl.AbilityCatalog.Parse(
                 """
-                { "cards": [ { "card": "16123", "attachTo": { "query": "yourIdentity" }, "abilities": [ {
+                { "cards": [ { "card": "16123", "attachTo": "you", "abilities": [ {
                     "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "game", "form": "hero" },
                     "anyPlayer": true,
                     "cost": { "spend": "BB" },
@@ -613,7 +947,7 @@ public sealed partial class ActionAbilityTests
         var obligationRunner = Runner(
             AuthoredCards.EvictionNotice,
             "Resource",
-            """{ "generate": "E" }""");
+            """{ "generate": "Y" }""");
         Card? obligation = null;
         var (_, obligationWorld) = Playing(
             board => obligation = board.CreateCard(

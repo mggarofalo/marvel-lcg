@@ -278,7 +278,7 @@ public sealed partial class ActionAbilityTests
             "Action",
             """
             { "seq": [
-              { "heal": { "cards": "you", "amount": 1 } },
+              { "heal": { "card": "you", "amount": 1 } },
               { "eachTime": {
                 "effect": { "discardTop": {
                   "from": "encounterDeck",
@@ -485,7 +485,7 @@ public sealed partial class ActionAbilityTests
             { "attack": {
               "target": { "query": "villain" },
               "effect": { "seq": [
-                { "changeForm": { "player": "you", "to": "alterEgo" } },
+                { "changeForm": { "player": "you", "to": "alter-ego" } },
                 { "if": {
                   "test": { "inForm": {
                     "player": "you", "form": "hero"
@@ -549,22 +549,28 @@ public sealed partial class ActionAbilityTests
     }
 
     [Rule("rr:labeled-ability.4")]
-    [Fact]
-    public void PowerAmountBranchIsRefusedBeforeLegalPracticeDiscards()
+    [Theory]
+    [InlineData("{\"powerAmount\":\"cardsDiscarded\"}")]
+    [InlineData("{\"add\":[0,{\"powerAmount\":\"cardsDiscarded\"}]}")]
+    [InlineData("{\"mul\":[1,{\"powerAmount\":\"cardsDiscarded\"}]}")]
+    [InlineData("{\"min\":[2,{\"powerAmount\":\"cardsDiscarded\"}]}")]
+    public void PowerAmountBranchIsRefusedBeforeLegalPracticeDiscards(string amount)
     {
+        // The labeled effect is "a thwart made by that player's identity."
+        // Suspending within that wrapper is an unsupported engine situation.
         // The selected card count binds powerAmount. Every branch that binding
         // can open must be checked before Legal Practice discards a hand card.
         var runner = Runner(
             AuthoredCards.AuntMay,
             "Action",
-            """
+            $$"""
             { "legalPractice": {
               "schemes": { "query": "thwartableSchemes" },
               "power": { "thwart": {
                 "target": "chosen",
                 "effect": { "if": {
                   "test": { "atLeast": {
-                    "value": { "powerAmount": "cardsDiscarded" },
+                    "value": {{amount}},
                     "count": 1
                   } },
                   "then": { "enemyAttacks": {
@@ -701,7 +707,7 @@ public sealed partial class ActionAbilityTests
                 { "forEach": {
                   "count": 0,
                   "effect": { "changeForm": {
-                    "player": "you", "to": "alterEgo"
+                    "player": "you", "to": "alter-ego"
                   } }
                 } },
                 { "if": {
@@ -780,7 +786,7 @@ public sealed partial class ActionAbilityTests
               "target": { "query": "villain" },
               "effect": { "seq": [
                 { "changeForm": {
-                  "player": "firstPlayer", "to": "alterEgo"
+                  "player": "firstPlayer", "to": "alter-ego"
                 } },
                 { "if": {
                   "test": { "inForm": {
@@ -919,7 +925,7 @@ public sealed partial class ActionAbilityTests
             { "attack": {
               "target": { "query": "villain" },
               "effect": { "seq": [
-                { "changeForm": { "player": "you", "to": "alterEgo" } },
+                { "changeForm": { "player": "you", "to": "alter-ego" } },
                 { "changeForm": { "player": "you", "to": "hero" } },
                 { "if": {
                   "test": { "inForm": {
@@ -961,9 +967,9 @@ public sealed partial class ActionAbilityTests
             { "seq": [
               { "choose": { "options": [
                 { "changeForm": {
-                  "player": "firstPlayer", "to": "alterEgo"
+                  "player": "firstPlayer", "to": "alter-ego"
                 } },
-                { "changeForm": { "player": "you", "to": "alterEgo" } }
+                { "changeForm": { "player": "you", "to": "alter-ego" } }
               ] } },
               { "chooseCard": {
                 "from": { "query": "identities" },
@@ -1029,7 +1035,7 @@ public sealed partial class ActionAbilityTests
                   "player": "firstPlayer", "form": "hero"
                 } },
                 "then": { "changeForm": {
-                  "player": "you", "to": "alterEgo"
+                  "player": "you", "to": "alter-ego"
                 } },
                 "else": { "seq": [] }
               } } } },

@@ -86,9 +86,9 @@ public sealed partial class AbilityRunner
         /// <summary>Whether initiation payment may change outcome-relevant state.</summary>
         public bool PaymentMayMutate { get; private set; }
 
-        public AbilityNode? PaymentCost { get; private set; }
+        public AbilityCost? PaymentCost { get; private set; }
 
-        public void SetPaymentMayMutate(bool value, AbilityNode? cost = null)
+        public void SetPaymentMayMutate(bool value, AbilityCost? cost = null)
         {
             PaymentMayMutate = value;
             PaymentCost = cost;
@@ -103,9 +103,9 @@ public sealed partial class AbilityRunner
         public void SetFilteringContinuationOption(bool value) =>
             FilteringContinuationOption = value;
 
-        public IReadOnlyList<AbilityNode> PriorSteps { get; private set; } = [];
+        public IReadOnlyList<AbilityEffect> PriorSteps { get; private set; } = [];
 
-        public void SetPriorSteps(IReadOnlyList<AbilityNode> steps) =>
+        public void SetPriorSteps(IReadOnlyList<AbilityEffect> steps) =>
             PriorSteps = steps;
 
         /// <summary>Whether an earlier sequence step may have changed the board.</summary>
@@ -397,22 +397,22 @@ public sealed partial class AbilityRunner
         private const string CrisisIgnoringThwartPrefix =
             "__preflight.crisisIgnoringThwart.";
 
-        private HashSet<AbilityNode> CrisisIgnoringThwarts { get; } = [];
+        private HashSet<AbilityEffect> CrisisIgnoringThwarts { get; } = new(ReferenceEqualityComparer.Instance);
 
         private HashSet<int> PersistedCrisisIgnoringThwarts { get; } = [];
 
         /// <summary>Persists a pre-payment exception to this power's target limit.</summary>
-        public void ValidateCrisisIgnoringThwart(AbilityNode node) =>
+        public void ValidateCrisisIgnoringThwart(AbilityEffect node) =>
             CrisisIgnoringThwarts.Add(node);
 
         /// <summary>Whether initiation established this scoped target exception.</summary>
-        public bool CrisisIgnoringThwartWasValidated(AbilityNode node, int ordinal) =>
+        public bool CrisisIgnoringThwartWasValidated(AbilityEffect node, int ordinal) =>
             CrisisIgnoringThwarts.Contains(node)
             || PersistedCrisisIgnoringThwarts.Contains(ordinal);
 
         /// <summary>Writes validated power addresses into continuation metadata.</summary>
         public void PersistCrisisIgnoringThwarts(
-            CardAbility ability, Dictionary<string, long> results)
+            CompiledCardAbility ability, Dictionary<string, long> results)
         {
             var nodes = PowerNodes(ability.Effect, BasicPowers.ThwartVerb).ToList();
             for (int ordinal = 0; ordinal < nodes.Count; ordinal++)
@@ -468,6 +468,6 @@ public sealed partial class AbilityRunner
     }
 
     private sealed record ActivationEffect(
-        int Source, int Player, AbilityType? Tier, AbilityNode Effect, int Altered,
+        int Source, int Player, AbilityType? Tier, AbilityEffect Effect, int Altered,
         int AbilityActor);
 }

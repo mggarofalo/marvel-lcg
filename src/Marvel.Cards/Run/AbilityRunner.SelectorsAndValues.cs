@@ -9,58 +9,58 @@ namespace Marvel.Cards.Run;
 
 public sealed partial class AbilityRunner
 {
-    private static IEnumerable<AbilityNode> ReachableMutationBranches(
-        AbilityNode conditional, Cast cast)
+    private static IEnumerable<AbilityEffect> ReachableMutationBranches(
+        AbilityEffect conditional, Cast cast)
     {
-        var test = Tree(conditional.Require("test"));
+        var test = ConditionalOf(conditional, cast).Test;
         bool canSwitch = PriorStepCanChange(test, cast)
             || cast.PaymentMayMutate && PaymentCanChange(test)
-            || cast.PriorBindingMayChange && BindingCanChange(test.Argument);
+            || cast.PriorBindingMayChange && BindingCanChange(test);
         if (canSwitch)
         {
-            return Branches.Select(conditional.Field)
+            return ConditionalBranches((AbilityEffect.Conditional)conditional)
                 .Where(value => value is not null)
-                .Select(value => Tree(value!));
+                .Select(value => value);
         }
-        return conditional.Field(Test(test, cast) ? "then" : "else") is { } active
-            ? [Tree(active)]
+        return ConditionalBranch(conditional, Test(test, cast) ? "then" : "else") is { } active
+            ? [active]
             : [];
     }
 
     private static HashSet<DeckType> SearchAreaTypes(
-        AbilityNode search, Cast cast) =>
-        Nodes(search.Require("in"))
-            .Select(where => Area(where.Kind, cast).Type)
+        AbilityEffect search, Cast cast) =>
+        EffectOf<AbilityEffect.Search>(search, cast).Areas
+            .Select(where => Area(where, cast).Type)
             .ToHashSet();
 
-    private static Card? Named(string name, Cast cast) => name switch
+    private static Card? Named(AbilityCardBinding name, Cast cast) => name switch
     {
-        "this" => cast.SourceReference,
-        "that" => cast.Altered,
+        AbilityCardBinding.This => cast.SourceReference,
+        AbilityCardBinding.That => cast.Altered,
 
         // "Stun **the attacking character**." Not the attacking player:
         // `rr:ally.2` lets a player attack with an ally, and `rr:you-your.15`
         // is emphatic that an ally's attack is *not* performed by that player's
         // identity -- so Shocker stuns whichever character swung, and the
         // player standing behind it is untouched.
-        "trigger.actor" => cast.Occurrence.Actor >= 0
+        AbilityCardBinding.TriggerActor => cast.Occurrence.Actor >= 0
             ? cast.World.Cards[cast.Occurrence.Actor]
             : null,
 
-        "trigger.target" => cast.Occurrence.Target >= 0
+        AbilityCardBinding.TriggerTarget => cast.Occurrence.Target >= 0
             ? cast.World.Cards[cast.Occurrence.Target]
             : null,
 
         // The card a `chooseCard` was answered with. Null while the ability is
         // still asking, which is why nothing before the answer can read it.
-        "chosen" => cast.Chosen,
+        AbilityCardBinding.Chosen => cast.Chosen,
 
         // "Your hero" and not "you". `rr:form-change-form.5`: "while a player
         // is in alter-ego form, card abilities that interact with their hero do
         // not interact with their identity" -- so this names nothing at all
         // when the player has flipped down, and a card that has something to
         // say about that says it with `exists`.
-        "yourHero" => Forms.In(
+        AbilityCardBinding.YourHero => Forms.In(
             cast.World, cast.World.Seats[Resolver(cast)], cast.World.Facts, Forms.Hero)
             ? cast.World.Seats[Resolver(cast)].IdentityCard
             : null,
@@ -68,7 +68,7 @@ public sealed partial class AbilityRunner
         // The other half of the form-specific reference. `rr:form-change-form.4`
         // says a hero-form identity is not its alter-ego for card abilities,
         // just as `.5` says an alter-ego-form identity is not its hero.
-        "yourAlterEgo" => Forms.In(
+        AbilityCardBinding.YourAlterEgo => Forms.In(
             cast.World, cast.World.Seats[Resolver(cast)], cast.World.Facts, Forms.AlterEgo)
             ? cast.World.Seats[Resolver(cast)].IdentityCard
             : null,
@@ -82,7 +82,7 @@ public sealed partial class AbilityRunner
         // "The player who defeated this scheme confuses their identity."
         // `rr:you-your.5` is why this answers an identity rather than a seat:
         // a status card placed on a player goes on their identity.
-        "defeater" => cast.Occurrence.Defeat is { By: >= 0 } defeated
+        AbilityCardBinding.Defeater => cast.Occurrence.Defeat is { By: >= 0 } defeated
             ? cast.World.Seats[defeated.By].IdentityCard
             : throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' names the player who defeated a card, and no player "
@@ -94,7 +94,7 @@ public sealed partial class AbilityRunner
         // enemy is read off the board rather than off the moment --
         // `rr:activation` is what makes one answer serve an attack and a scheme
         // alike.
-        "activatingEnemy" => cast.World.Activation is { } activating
+        AbilityCardBinding.ActivatingEnemy => cast.World.Activation is { } activating
             ? cast.World.Cards[activating.Enemy]
             : throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' names the activating enemy, and no enemy is "
@@ -104,69 +104,18 @@ public sealed partial class AbilityRunner
         // damage." The card the occurrence defeated, which is not its subject:
         // an attack keeps its participants in actor and target roles, and the
         // ally that died is a second thing the same moment did.
-        "defeated" => cast.Occurrence.Defeat is { } killed
+        AbilityCardBinding.Defeated => cast.Occurrence.Defeat is { } killed
             ? cast.World.Cards[killed.Card]
             : throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' names the defeated card, and nothing was defeated"),
 
-        "you" => cast.World.Seats[Resolver(cast)].IdentityCard,
-        "attachedTo" => cast.Source.Area.Host >= 0 ? cast.World.Cards[cast.Source.Area.Host] : null,
-        "trigger.subject" => cast.Occurrence.Subject >= 0
+        AbilityCardBinding.You => cast.World.Seats[Resolver(cast)].IdentityCard,
+        AbilityCardBinding.AttachedTo => cast.Source.Area.Host >= 0 ? cast.World.Cards[cast.Source.Area.Host] : null,
+        AbilityCardBinding.TriggerSubject => cast.Occurrence.Subject >= 0
             ? cast.World.Cards[cast.Occurrence.Subject]
             : null,
-        _ => throw new AbilityException($"'{name}' does not name a card"),
+        _ => throw new InvalidOperationException("Unknown compiled card binding"),
     };
-
-    private static Card? Query(AbilityNode node, Cast cast)
-    {
-        // "Bomb Scare", "Vulture" -- a card in play named by its title, which
-        // is a query with an argument rather than one of the bare words below.
-        // `rr:identity.2` makes a title name one card, so this compares titles
-        // and not printed ids.
-        if (node.Kind == "titled")
-        {
-            var referenced = ReferencedByTitle(Word(node.Argument), cast);
-            return referenced.Count switch
-            {
-                0 => null,
-                1 => referenced[0],
-                _ => throw new RulesNotImplementedException(
-                    $"'{cast.Source.FaceId}' refers to {referenced.Count} cards titled "
-                    + $"'{Word(node.Argument)}' where one card is required"),
-            };
-        }
-
-        if (node.Kind != "query")
-        {
-            throw new AbilityException($"'{node.Kind}' does not name a card");
-        }
-
-        string what = Word(node.Argument);
-        if (what == "topmostTechInChosenDiscard")
-        {
-            int player = ChosenPlayer(cast).Owner;
-            return cast.World.AreaOf(
-                    DeckType.DiscardPile, PlayArea.Of(player), cardOwner: player)
-                .Cards.LastOrDefault(candidate => Rules.State.Traits.Has(
-                    cast.World, candidate, "TECH", cast.World.Facts));
-        }
-
-        return what switch
-        {
-            // `rr:villain-villain-deck` -- one villain is in the villain area.
-            "villain" => cast.World.TheCardIn(DeckType.VillainArea),
-            "mainScheme" => cast.World.TheCardIn(DeckType.MainSchemesArea),
-
-            // "Your set-aside nemesis minion" and "your set-aside nemesis side
-            // scheme". A nemesis set holds one of each, so naming the kind
-            // names the card -- and answering null when it has already been
-            // taken is what Shadow of the Past's surge branch reads.
-            "yourAsideMinion" => Aside(cast, CardKind.Minion),
-            "yourAsideSideScheme" => Aside(cast, CardKind.EncounterSideScheme),
-            _ => throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' queries '{what}', which is not implemented"),
-        };
-    }
 
     /// <summary>Cards a printed title reference denotes — <c>rr:referential-ability</c>.</summary>
     /// <remarks>
@@ -270,165 +219,14 @@ public sealed partial class AbilityRunner
             $"'{cast.Source.FaceId}' asks who is resolving it, and an encounter card's "
             + "ability has no player unless the card says which");
 
-    private static int Seat(AbilityValue value, Cast cast) =>
-        value is AbilityValue.Word word
-            ? word.Value switch
-            {
-                AbilityPlayers.TriggerPlayer => cast.Occurrence.Player,
-                AbilityPlayers.You => Resolver(cast),
-                AbilityPlayers.Controller => cast.ProjectedPlayAreaPlayer
-                    ?? ControllerOf(cast.World, cast.Source),
-                "chosenPlayer" => ChosenPlayer(cast).Owner,
-                "engagedPlayer" => cast.ProjectedPlayAreaPlayer
-                    ?? (cast.Source.Area.PlayArea.Player >= 0
-                    ? cast.Source.Area.PlayArea.Player
-                    : throw new RulesNotImplementedException(
-                        $"'{cast.Source.FaceId}' asks for its engaged player outside a "
-                        + "player's engaged area")),
-                "firstPlayer" => cast.World.FirstPlayer,
-                _ => throw new AbilityException($"'{word.Value}' does not name a player"),
-            }
-            : throw new AbilityException(
-                $"{AbilityNode.Describe(value)} does not name a player");
-
     private static Card ChosenPlayer(Cast cast) =>
         (cast.PlayerSelection ?? cast.Chosen) is { Owner: >= 0 } chosen
             ? chosen
             : throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' asks for the chosen player before one was chosen");
 
-    private static IEnumerable<AbilityNode> Nodes(AbilityValue value) =>
-        value is AbilityValue.List list
-            ? list.Values.Select(Tree)
-            : throw new AbilityException(
-                $"{AbilityNode.Describe(value)} is not a list of nodes");
-
-    private static bool InspectsConcealedPile(AbilityValue value)
+    private static long StartingHealth(Card identity, Cast cast)
     {
-        if (value is AbilityValue.Map map)
-        {
-            if (map.Entries.TryGetValue("cardsIn", out AbilityValue? argument)
-                && IsConcealedCardsIn(new AbilityNode("cardsIn", argument)))
-            {
-                return true;
-            }
-
-            return map.Entries.Values.Any(InspectsConcealedPile);
-        }
-
-        return value is AbilityValue.List list
-            && list.Values.Any(InspectsConcealedPile);
-    }
-
-    private static bool IsConcealedArea(AbilityValue? value) =>
-        value is AbilityValue.Word { Value: "yourDeck" or "encounterDeck" };
-
-    private static bool IsConcealedCardsIn(AbilityNode node) =>
-        node.Kind == "cardsIn"
-        && node.Argument is AbilityValue.Map fields
-        && (IsConcealedArea(fields.Entry("area"))
-            || fields.Entry("areas") is AbilityValue.List areas
-            && areas.Values.Any(IsConcealedArea));
-
-    private static AbilityNode Tree(AbilityValue value) => AbilityNode.Of(value);
-
-    private static string Word(AbilityValue value) =>
-        value is AbilityValue.Word word
-            ? word.Value
-            : throw new AbilityException($"{AbilityNode.Describe(value)} is not a word");
-
-    /// <summary>How much, which may be printed per player.</summary>
-    /// <remarks>
-    /// <c>rr:per-player-icon</c> multiplies by the number of players, and
-    /// <c>rr:player-elimination.6</c> is the exception that keeps this
-    /// <c>World.Players</c> rather than the number still playing: "effects that
-    /// refer to the players in the game ignore eliminated players, <b>except
-    /// for the per player icon</b>."
-    /// </remarks>
-    private static long Amount(AbilityValue value, Cast cast)
-    {
-        if (value is not AbilityValue.Map)
-        {
-            return Number(value);
-        }
-
-        var node = Tree(value);
-        return node.Kind switch
-        {
-            "perPlayer" => Number(node.Argument) * cast.World.Players,
-
-            // "X is the amount of threat on Bomb Scare" -- a number read off
-            // the board rather than printed. `rr:threat` counts tokens, so this
-            // is the token pool and not a printed field.
-            "tokensOn" => Find(node.Argument, cast) is { } holder
-                ? holder.Tokens.GetValueOrDefault("k_threat")
-                : 0,
-
-            // `result.*` -- what an action earlier in this ability actually
-            // did, which is not what it was asked to do. Zero when nothing has
-            // written it, so a card reading a result it never produced reads a
-            // number rather than throwing: "no damage was healed" is exactly
-            // the case where nothing ran.
-            "result" => cast.Results.GetValueOrDefault(Word(node.Argument)),
-
-            // "If there is at least 5 damage here" -- damage tokens on a card,
-            // which `rr:damage.2` puts on an ally or minion and which an
-            // attachment can hold when a card puts them there.
-            "damageOn" => Find(node.Argument, cast)?.Damage ?? 0,
-            "powerAmount" => cast.PowerAmount,
-            "countersOn" => Find(node.Require("card"), cast) is { } counterHolder
-                ? CounterCount(counterHolder, Word(node.Require("counter")))
-                : 0,
-            "printedResourceCountDiscarded" => Resources.PrintedCount(
-                cast.Discarded, Word(node.Argument)[0], cast.World.Facts),
-            "printedBoostIconsDiscarded" => cast.Discarded.Sum(card =>
-                cast.World.Facts.PrintedValue(card.FaceId, "Boost", cast.World.Players)),
-            // The binding's spelling is the engine's choice. The printed card
-            // names what was "discarded this way," whose identity survives an
-            // immediate encounter-deck reset even when the discard pile does not.
-            "topEncounterDiscardBoostPlusOne" => 1 + (cast.Discarded.LastOrDefault() is { } card
-                ? cast.World.Facts.PrintedValue(card.FaceId, "Boost", cast.World.Players)
-                : 0),
-            "remainingHealth" => Find(node.Argument, cast) is { } remaining
-                ? Math.Max(
-                    0,
-                    Damage.Health(cast.World, cast.World.Facts, remaining) - remaining.Damage)
-                : 0,
-            // `rr:hit-points.1`: "starting hit points" means the identity's
-            // printed hit point value. It deliberately excludes attachments,
-            // constant abilities, and lasting effects that raise its dial.
-            "startingHealth" => StartingHealth(node.Argument, cast),
-            "if" => Test(Tree(node.Require("test")), cast)
-                ? Amount(node.Require("then"), cast)
-                : node.Field("else") is { } otherwise
-                    ? Amount(otherwise, cast)
-                    : 0,
-            "count" => Every(node.Argument, cast).Count,
-            "discardedWithResource" => cast.Discarded.Count(card =>
-                Resources.GeneratedBy(card.FaceId, cast.World.Facts).Contains(
-                    Word(node.Argument), StringComparison.Ordinal)),
-            "modified" => Find(node.Require("card"), cast) is { } modified
-                ? StateFields.Modified(
-                    cast.World, modified, Word(node.Require("field")),
-                    cast.World.Facts, cast.World.Players)
-                : 0,
-            "min" => Values(node.Argument).Select(each => Amount(each, cast)).Min(),
-            "add" => Values(node.Argument).Sum(each => Amount(each, cast)),
-            "mul" => Values(node.Argument).Aggregate(1L, (product, each) =>
-                product * Amount(each, cast)),
-            _ => throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' asks for the amount '{node.Kind}', "
-                + "which is not implemented"),
-        };
-    }
-
-    private static long StartingHealth(AbilityValue value, Cast cast)
-    {
-        if (Find(value, cast) is not { } identity)
-        {
-            return 0;
-        }
-
         if (FacedownDrones.Kind(identity, cast.World.Facts)
             is not (CardKind.Hero or CardKind.AlterEgo))
         {
@@ -441,14 +239,5 @@ public sealed partial class AbilityRunner
             identity, cast.World.Facts, "HP", cast.World.Players);
     }
 
-    private static long Number(AbilityValue value) =>
-        value is AbilityValue.Number number
-            ? number.Value
-            : throw new AbilityException($"{AbilityNode.Describe(value)} is not a number");
-
-    private static IReadOnlyList<AbilityValue> Values(AbilityValue value) =>
-        value is AbilityValue.List list
-            ? list.Values
-            : throw new AbilityException($"{AbilityNode.Describe(value)} is not a list");
 
 }

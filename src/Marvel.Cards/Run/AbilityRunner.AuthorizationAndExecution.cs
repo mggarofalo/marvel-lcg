@@ -11,7 +11,7 @@ public sealed partial class AbilityRunner
 {
     /// <summary>Whether one ability answers this occurrence, in this window.</summary>
     private bool Answers(
-        World world, CardAbility ability, Card card, Occurrence occurrence, WindowKind window,
+        World world, CompiledCardAbility ability, Card card, Occurrence occurrence, WindowKind window,
         int? initiatingPlayer = null)
     {
         // A constant ability names no condition at all -- `rr:ability.5` -- so
@@ -80,7 +80,7 @@ public sealed partial class AbilityRunner
     /// </para>
     /// </remarks>
     private int Controller(
-        World world, CardAbility ability, Card card, Occurrence occurrence) =>
+        World world, CompiledCardAbility ability, Card card, Occurrence occurrence) =>
         RestrictedPlayer(world, ability, card) is { } restricted
             ? restricted
             : ability.Trigger.Player is not null
@@ -103,7 +103,7 @@ public sealed partial class AbilityRunner
     /// from control, because an obligation remains an encounter card.
     /// </para>
     /// </remarks>
-    private int? RestrictedPlayer(World world, CardAbility ability, Card card)
+    private int? RestrictedPlayer(World world, CompiledCardAbility ability, Card card)
     {
         // The Golden Rules give explicit card text precedence. Obedience
         // Potion-shaped attachments say “Any player can do this,” so that
@@ -132,48 +132,36 @@ public sealed partial class AbilityRunner
     }
 
     /// <summary>Whether the authored ability contains the printed “you/your” binding.</summary>
-    private bool UsesYouOrYour(CardAbility ability, Card card) =>
+    private bool UsesYouOrYour(CompiledCardAbility ability, Card card) =>
         ability.Trigger.Subject == AbilitySubjects.You
         || ability.Trigger.Actor == AbilityRoles.You
         || ability.Trigger.Target == AbilityRoles.You
         || ability.Trigger.Player == AbilityPlayers.You
         || ContainsYouOrYour(ability.Effect)
-        || (ability.Cost is { } cost && ContainsYouOrYour(cost))
+        || ContainsYouOrYour(ability.Cost)
         || (ability.When is { } when && ContainsYouOrYour(when))
-        || (book.Attaches(card.FaceId) is { } attachment
+        || (program.AttachTo.GetValueOrDefault(card.FaceId) is { } attachment
             && ContainsYouOrYour(attachment));
 
-    private static bool ContainsYouOrYour(AbilityNode node) =>
-        IsYouOrYourBinding(node.Kind) || ContainsYouOrYour(node.Argument);
-
-    private static bool ContainsYouOrYour(AbilityValue value) => value switch
+    private static bool ContainsYouOrYour(AbilityCost? cost) => cost switch
     {
-        AbilityValue.Word word => IsYouOrYourBinding(word.Value),
-        AbilityValue.List list => list.Values.Any(ContainsYouOrYour),
-        AbilityValue.Map map => map.Entries.Any(entry =>
-            IsYouOrYourBinding(entry.Key) || ContainsYouOrYour(entry.Value)),
-        _ => false,
+        null => false,
+        AbilityCost.Sequence sequence => sequence.Costs.Any(ContainsYouOrYour),
+        AbilityCost.Exhaust exhaust => exhaust.Card == AbilityCostCard.Identity,
+        AbilityCost.Discard discard => discard.Card == AbilityCostCard.Identity,
+        AbilityCost.RemoveCounters counters => counters.Card == AbilityCostCard.Identity,
+        AbilityCost.Heal heal => heal.Card == AbilityCostCard.Identity,
+        AbilityCost.Damage damage => damage.Card == AbilityCostCard.Identity,
+        AbilityCost.ExhaustChosen chosen => chosen.From is
+            AbilityCardQuery.CharactersYouControl or AbilityCardQuery.AlliesYouControl,
+        // Only the any-number spelling carries an explicit "yourHand" binding.
+        AbilityCost.DiscardFromHand discard => discard.Range is AbilityCostRange.Any,
+        AbilityCost.Spend or AbilityCost.SpendEnergy => false,
+        _ => throw new InvalidOperationException("Unknown compiled cost in player-binding analysis"),
     };
 
-    /// <summary>Whether one DSL identifier is relative to the resolving player.</summary>
-    private static bool IsYouOrYourBinding(string value)
-    {
-        if (string.Equals(value, "you", StringComparison.Ordinal)
-            || value.StartsWith("your", StringComparison.Ordinal))
-        {
-            return true;
-        }
-
-        // Compound DSL identifiers use camel case: alliesYouControl,
-        // isYourIdentity, identitySpecificInYourHand. A printed title can also
-        // contain the word “You”, so only identifier-shaped values count.
-        return value.All(character => char.IsLetterOrDigit(character) || character == '.')
-            && (value.Contains("You", StringComparison.Ordinal)
-                || value.Contains("Your", StringComparison.Ordinal));
-    }
-
     /// <summary>Whether this player is permitted to initiate the ability.</summary>
-    private bool MayInitiate(World world, CardAbility ability, Card card, int player)
+    private bool MayInitiate(World world, CompiledCardAbility ability, Card card, int player)
     {
         // `rr:player-turn.5.a-c` grants permission per ability: a player may
         // use their card, an encounter card, or the particular ability whose
@@ -239,10 +227,10 @@ public sealed partial class AbilityRunner
 
     // ---- the effect tree ---------------------------------------------------
 
-    private static void Run(CardAbility ability, Cast cast)
+    private static void Run(CompiledCardAbility ability, Cast cast)
     {
-        var labels = ability.Labels ?? [];
-        if (labels.Count > 0)
+        var labels = ability.Labels;
+        if (labels.Length > 0)
         {
             if (!cast.LabelsPreflighted)
             {
@@ -274,13 +262,53 @@ public sealed partial class AbilityRunner
         Run(ability.Effect, cast);
     }
 
-    private static void Run(AbilityNode node, Cast cast)
+    private static void Run(AbilityEffect node, Cast cast)
     {
         int eventsBefore = cast.Events.Count;
         var agendaOwner = cast.World.Agenda.Current;
         var agendaOccurrence = cast.World.Agenda.Occurrence;
         var healthBefore = cast.World.Effects.CaptureCharacterHealth();
-        switch (node.Kind)
+        var instruction = node;
+        if (instruction is AbilityEffect.ActivateEnemies activation)
+        {
+            Activate(activation, node, cast);
+        }
+        else if (!TryRunImmediateEffect(instruction, cast)
+            && !TryRunDamageAndThreat(instruction, node, cast)
+            && !TryRunCardMovement(instruction, cast))
+        {
+            RunRemainingEffect(node, cast);
+        }
+        if (cast.Events.Count > eventsBefore && EventMeansEffectApplied(node.OperationName()))
+        {
+            cast.ResolveEffect();
+        }
+
+        // A conditional constant can become Stalwart because this node changed
+        // threat, counters, traits, or another dependency. `rr:stalwart.2`
+        // removes existing stunned/confused cards at that transition, before
+        // later text in the same ability reads the board.
+        Statuses.RemoveAfflictionsIfStalwart(
+            cast.World, cast.World.Facts, "stalwart", cast.Events);
+        bool healthDefeatSuspended = cast.World.Effects.SettleLostHealth(
+            healthBefore, cast.Trigger, cast.Events);
+        if (healthDefeatSuspended && !cast.Suspended)
+        {
+            SuspendAfterProcedure(
+                node, cast, agendaOwner, agendaOccurrence);
+        }
+
+        // `rr:attack-enemy-activation.3.2`: a defending ally that leaves play
+        // immediately stops defending and exposes its controller's identity.
+        // Recheck after every node so later text in the same ability, and the
+        // next boost ability, reads the new attack roles rather than a stale
+        // defender that has already moved.
+        Attack.RefreshDefender(cast.World, cast.World.Facts);
+    }
+
+    private static void RunRemainingEffect(AbilityEffect node, Cast cast)
+    {
+        switch (node.OperationName())
         {
             case "seq":
                 Sequence(node, cast, from: 0);
@@ -289,7 +317,7 @@ public sealed partial class AbilityRunner
             case "and":
                 // `rr:and` makes the effects simultaneous and independent;
                 // `rr:first-player.3` gives their order to the first player.
-                var simultaneous = Nodes(node.Argument).ToList();
+                var simultaneous = OrderedEffects(node).ToList();
                 if (simultaneous.Count <= 1)
                 {
                     foreach (var effect in simultaneous)
@@ -327,237 +355,13 @@ public sealed partial class AbilityRunner
                 cast.Suspend();
                 break;
 
-            case "generate":
-                // `rr:resource-ability` -- a resource ability is *read* while a
-                // cost is being paid rather than run like an effect, so nothing
-                // happens here. `ResourceAbilities` takes its letters and
-                // `UseResource` counts the use; running it would be a second
-                // way to generate the same resource.
-                throw new RulesNotImplementedException(
-                    $"'{cast.Source.FaceId}' generates a resource, which is read while a "
-                    + "cost is paid rather than resolved as an effect");
-
-            case "changeForm":
-                ChangeForm(node, cast);
-                break;
-
-            case "removeFromGame":
-                RemoveFromGame(node, cast);
-                break;
-
-            case "soakDamage":
-                Soak(node, cast);
-                break;
-
-            case "exhaust":
-                Exhaust(node, cast);
-                break;
-
-            case "ready":
-                Ready(node, cast);
-                break;
-
-            case "drawToHandSize":
-                DrawToHandSize(node, cast);
-                break;
-
-            case "drawToPrintedHandSize":
-                DrawToPrintedHandSize(node, cast);
-                break;
-
-            case "removeCounters":
-                RemoveCounters(node, cast);
-                break;
-
-            case "placeCounters":
-                var counter = Word(node.Require("counter"));
-                var counterCard = Find(node.Require("card"), cast)
-                    ?? throw new RulesNotImplementedException(
-                        $"'{cast.Source.FaceId}' cannot find the card receiving counters");
-                long beforeCounters = counterCard.Tokens.GetValueOrDefault("c_" + counter);
-                long placedCounters = Amount(node.Require("count"), cast);
-                if (placedCounters < 0)
-                {
-                    throw new AbilityException("'placeCounters' needs a non-negative 'count'");
-                }
-                if (placedCounters == 0)
-                {
-                    break;
-                }
-                counterCard.PlaceTokens("c_" + counter, placedCounters);
-                cast.Events.Add(new FieldSet(
-                    counterCard.ObjectId, "c_" + counter,
-                    beforeCounters, beforeCounters + placedCounters)
-                {
-                    Trigger = cast.Trigger, Verb = "Place_Counters",
-                });
-                break;
-
-            case "advanceMainScheme":
-                AdvanceMainScheme(node, cast);
-                break;
-
-            case "preventDamage":
-                PreventDamage(node, cast);
-                cast.ResolveEffect();
-                break;
-
-            case "cancelWhenRevealed":
-                CancelWhenRevealed(cast);
-                cast.ResolveEffect();
-                break;
-
-            case "cancelOccurrence":
-                // rr:replacement-effect.1: the interrupted occurrence does
-                // not happen. Printed card data decides when this generic
-                // agenda operation is part of an ability's effect.
-                if (cast.World.Agenda.IsOutstanding(cast.Occurrence))
-                {
-                    cast.World.Agenda.Cancel(cast.Occurrence);
-                }
-                cast.ResolveEffect();
-                break;
-
-            case "dealEncounterCards":
-                DealEncounterCards(node, cast);
-                break;
-
-            case "dealEncounterCard":
-                Rules.Play.Deal.EncounterCard(
-                    cast.World,
-                    Find(node.Require("card"), cast)
-                        ?? throw new RulesNotImplementedException(
-                            $"'{cast.Source.FaceId}' cannot find the encounter card to deal"),
-                    Seat(node.Require("player"), cast),
-                    cast.Trigger,
-                    cast.Events);
-                break;
-
-            case "revealTop":
-                RevealCard(TopOfTheEncounterDeck(cast), cast);
-                break;
-
-            case "reveal":
-                RevealCard(Find(node.Argument, cast), cast);
-                break;
-
-            case "placeAtRandom":
-                PlaceAtRandom(node, cast);
-                break;
-
-            case "returnToHand":
-                ReturnToHand(node, cast);
-                break;
-
-            case "addToHand":
-            {
-                var added = Find(node.Argument, cast)
-                    ?? throw new RulesNotImplementedException(
-                        $"'{cast.Source.FaceId}' cannot find the card added to hand");
-                var oldArea = added.Area;
-                var newHand = cast.World.Seats[cast.Player].Hand;
-                var addedConstantsEnding = cast.World.Effects.PreflightConstantsEnding(added);
-                using var addedDeparture = addedConstantsEnding.Begin();
-                if (DeckTypes.IsInPlay(oldArea.Type))
-                {
-                    Rules.Play.Discard.Attachments(
-                        cast.World, added, cast.Trigger, cast.Events);
-                }
-                if (!Characteristics.IsLost(cast.World, added, "linked")
-                    && cast.World.Facts.Attributes(added.FaceId).ContainsKey("Linked"))
-                {
-                    // rr:linked-card-title.4 changes ownership at the moment
-                    // the player takes control. A linked ally added from the
-                    // set-aside area reaches their hand before it enters play.
-                    added.TransferLinkedOwnership(cast.Player);
-                }
-                World.MoveToTop(added, newHand);
-                cast.Events.Add(new CardsMoved(
-                    Places.Reference(oldArea), Places.Reference(newHand),
-                    [new Landing(added.ObjectId, newHand.Cards.Count - 1)])
-                {
-                    Trigger = cast.Trigger, Verb = "Add_To_Hand",
-                });
-                addedConstantsEnding.Complete(cast.Trigger, cast.Events);
-                break;
-            }
-
-            case "returnOwnedToHand":
-            {
-                var returned = Find(node.Argument, cast)
-                    ?? throw new RulesNotImplementedException(
-                        $"'{cast.Source.FaceId}' cannot find the card returned to hand");
-                if (returned.Owner < 0)
-                {
-                    throw new RulesNotImplementedException(
-                        $"'{cast.Source.FaceId}' returns a card with no owning player");
-                }
-                var returnedFrom = returned.Area;
-                var ownersHand = cast.World.Seats[returned.Owner].Hand;
-                var returnedConstantsEnding =
-                    cast.World.Effects.PreflightConstantsEnding(returned);
-                using var returnedDeparture = returnedConstantsEnding.Begin();
-                if (DeckTypes.IsInPlay(returnedFrom.Type))
-                {
-                    Rules.Play.Discard.Attachments(
-                        cast.World, returned, cast.Trigger, cast.Events);
-                }
-                World.MoveToTop(returned, ownersHand);
-                cast.Events.Add(new CardsMoved(
-                    Places.Reference(returnedFrom), Places.Reference(ownersHand),
-                    [new Landing(returned.ObjectId, ownersHand.Cards.Count - 1)])
-                {
-                    Trigger = cast.Trigger, Verb = "Return",
-                });
-                returnedConstantsEnding.Complete(cast.Trigger, cast.Events);
-                break;
-            }
-
-            case "discardAtRandom":
-                DiscardAtRandom(node, cast);
-                break;
-
-            case "discardHandWithResource":
-                string wantedResource = Word(node.Argument);
-                foreach (var card in cast.World.Seats[cast.Player].Hand.Cards
-                             .Where(card => Resources.GeneratedBy(
-                                 card.FaceId, cast.World.Facts).Contains(
-                                     wantedResource, StringComparison.Ordinal))
-                             .ToList())
-                {
-                    Rules.Play.Discard.Card(cast.World, card, cast.Trigger, cast.Events);
-                    cast.Discarded.Add(card);
-                }
-                cast.Results["discarded"] = cast.Discarded.Count;
-                break;
-
-            case "discardUntil":
-                DiscardUntil(node, cast);
-                break;
-
-            case "discardTop":
-                DiscardTop(node, cast);
-                break;
-
-            case "recoverDiscardedByResource":
-                RecoverDiscardedByResource(node, cast);
-                break;
-
-            case "shuffleInto":
-                ShuffleInto(node, cast);
-                break;
-
-            case "search":
-                Search(node, cast);
-                break;
-
             case "choose":
             case "chooseCard":
                 Choose(node, cast);
                 break;
 
             case "resolveSpecials":
-                if (Every(node.Require("cards"), cast).Count > 0)
+                if (Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast).Count > 0)
                 {
                     SuspendForChoice(node, cast);
                 }
@@ -572,7 +376,7 @@ public sealed partial class AbilityRunner
             case "chooseTopForHand":
                 if (TopCards(
                     cast.World.Seats[cast.Player].Deck,
-                    (int)Number(node.Require("count"))).Count == 0)
+                    EffectOf<AbilityEffect.ChooseTopForHand>(node, cast).Count).Count == 0)
                 {
                     break;
                 }
@@ -600,29 +404,29 @@ public sealed partial class AbilityRunner
                 }
                 waiting.Add(new ActivationEffect(
                     cast.Source.ObjectId, cast.Player, cast.Tier,
-                    Tree(node.Require("effect")),
+                    EffectBody(node),
                     cast.Altered?.ObjectId ?? -1,
                     cast.AbilityActor?.ObjectId ?? -1));
                 cast.ResolveEffect();
                 break;
 
             case "if":
-                AbilityValue tested = node.Require("test");
+                var tested = ConditionalOf(node, cast).Test;
                 bool wasObserving = cast.ObservingInformation;
                 cast.SetObservingInformation(true);
                 bool condition;
                 try
                 {
-                    condition = Test(Tree(tested), cast);
+                    condition = Test(tested, cast);
                 }
                 finally
                 {
                     cast.SetObservingInformation(wasObserving);
                 }
                 var branch = condition ? "then" : "else";
-                if (node.Field(branch) is { } taken)
+                if (ConditionalBranch(node, branch) is { } taken)
                 {
-                    RunChild(Tree(taken), $"if:{branch}", cast);
+                    RunChild(taken, $"if:{branch}", cast);
                 }
 
                 break;
@@ -633,126 +437,6 @@ public sealed partial class AbilityRunner
 
             case "eachTime":
                 EachTime(node, cast);
-                break;
-
-            case "giveStatus":
-                GiveStatus(node, cast);
-                break;
-
-            case "giveAdditionalBoost":
-                Attack.GiveAdditionalBoostCard(
-                    cast.World,
-                    Find(node.Require("enemy"), cast)
-                        ?? throw new AbilityException(
-                            $"'{cast.Source.FaceId}' cannot find the enemy receiving an additional boost card"),
-                    cast.Trigger,
-                    cast.Events);
-                break;
-
-            case "alsoAttackEachOtherHero":
-                Attack.AlsoResolveAgainstEachOtherHero(cast.World);
-                cast.ResolveEffect();
-                break;
-
-            case "declareDefender":
-                var declared = Find(node.Require("card"), cast)
-                    ?? throw new RulesNotImplementedException(
-                        $"'{cast.Source.FaceId}' cannot find the character it declares as defender");
-                Attack.DeclareByAbility(
-                    cast.World, cast.World.Facts, declared,
-                    ReplaceableDefenseDefender(cast));
-                cast.ResolveEffect();
-                break;
-
-            case "attachTo":
-                AttachTo(node, cast);
-                break;
-
-            case "grantUntil":
-                GrantUntil(node, cast);
-                cast.ResolveEffect();
-                break;
-
-            case "grantCharactersControlledBy":
-                foreach (string field in Values(node.Require("fields")).Select(Word))
-                {
-                    cast.World.Effects.GrantToCharactersControlledBy(
-                        cast.Source, Seat(node.Require("player"), cast), field,
-                        Amount(node.Require("amount"), cast),
-                        Word(node.Require("until")));
-                }
-                cast.ResolveEffect();
-                break;
-
-            case "reduceNextCardCost":
-                CardPlay.ReduceNextCardCost(
-                    cast.World, cast.Source, Seat(node.Require("player"), cast),
-                    Amount(node.Require("amount"), cast));
-                cast.ResolveEffect();
-                break;
-
-            case "delayUntil":
-                DelayUntil(node, cast);
-                cast.ResolveEffect();
-                break;
-
-            case "discard":
-                Discard(node, cast);
-                break;
-
-            case "gainSurge":
-                // `rr:surge`: "the player resolving the card deals themself a
-                // facedown encounter card from the top of the encounter deck",
-                // and `.1` writes it as "**When Revealed**: deal yourself 1
-                // facedown encounter card". A card that *gains* surge does the
-                // same thing the keyword would have.
-                //
-                // `rr:keywords.1` makes every additional non-numeric instance
-                // inert. Printed and continuously granted Surge already ran in
-                // `Reveal.Keywords`; multiple nodes and a value greater than one
-                // are multiple gained instances inside this reveal. All four
-                // shapes therefore produce at most one deal between them.
-                if (Number(node.Argument) > 0
-                    && StateFields.Modified(
-                        cast.World, cast.Source, "surge", cast.World.Facts,
-                        cast.World.Players) <= 0
-                    && cast.GainedKeywords.Add("surge"))
-                {
-                    RememberGainedSurge(cast.World, cast.Source.ObjectId);
-                    Deal.EncounterCard(
-                        cast.World, cast.Player, cast.Trigger, cast.Events);
-                }
-
-                // `.2` finishes the original card first, which the villain
-                // phase's reveal queue does without anything else here.
-                break;
-
-            case "heal":
-                Heal(node, cast);
-                break;
-
-            case "indirectDamage":
-                Indirect(node, cast);
-                break;
-
-            case "makeAttackIndirect":
-                Attack.MakeIndirect(cast.World);
-                break;
-
-            case "dealDamage":
-                DealDamage(node, cast);
-                break;
-
-            case "moveDamage":
-                MoveDamage(node, cast);
-                break;
-
-            case "dealAttackDamage":
-                DealAttackDamage(node, cast);
-                break;
-
-            case "moveAttackDamage":
-                MoveAttackDamage(node, cast);
                 break;
 
             case "attack":
@@ -770,7 +454,7 @@ public sealed partial class AbilityRunner
                         cast.Results["defenseAbilityDefender"] = defender.ObjectId;
                         Attack.BeginDefenseAbility(cast.World, Resolver(cast), defender);
                     }
-                    RunChild(Tree(node.Require("effect")), "defense:effect", cast);
+                    RunChild(EffectBody(node), "defense:effect", cast);
                 }
                 break;
 
@@ -779,108 +463,21 @@ public sealed partial class AbilityRunner
                 break;
 
             case "thwartSchemes":
-                var schemes = Every(node.Require("schemes"), cast);
+                var schemes = Every(EffectOf<AbilityEffect.ThwartGroup>(node, cast).Schemes, cast);
                 if (schemes.Count > 0)
                 {
                     cast.Choose(schemes[0]);
                     ((AbilityRunner)cast.Abilities).SchedulePower(
-                        Tree(node.Require("power")), cast, BasicPowers.ThwartVerb,
+                        ((AbilityEffect.ThwartGroup)node).Thwart, cast, BasicPowers.ThwartVerb,
                         schemes[0], schemes, -1);
-                }
-                break;
-
-            case "placeThreat":
-                PlaceThreat(node, cast);
-                break;
-
-            case "placeAccelerationToken":
-                EncounterDeck.PlaceAccelerationToken(cast.World, cast.Trigger, cast.Events);
-                break;
-
-            case "preventThreat":
-                PreventThreat(node, cast);
-                cast.ResolveEffect();
-                break;
-
-            case "replaceThreatWithDamage":
-                ReplaceThreatWithDamage(node, cast);
-                break;
-
-            case "removeThreat":
-                RemoveThreat(node, cast);
-                break;
-
-            case "enemyAttacks":
-                Activate(node, cast, Steps.Attack);
-                break;
-
-            case "enemySchemes":
-                Activate(node, cast, Steps.Scheme);
-                break;
-
-            case "putIntoPlay":
-                PutIntoPlay(node, cast);
-                break;
-
-            case "createDrones":
-                CreateDrones(node, cast);
-                break;
-
-            case "shuffle":
-                // `rr:search.3` -- "if any portion of a deck is searched, upon
-                // completion of that game step, game function, or card ability,
-                // shuffle that entire deck." A step of the card rather than
-                // part of the search, because "upon completion" is after the
-                // player has answered which card they took.
-                if (cast.World.Shuffle(Area(Word(node.Argument), cast)))
-                {
-                    cast.ResolveEffect();
-                }
-                break;
-
-            case "draw":
-                foreach (int player in Seats(node.Require("player"), cast))
-                {
-                    if (CanDraw(cast.World, player))
-                    {
-                        Draw.Cards(
-                            cast.World, player,
-                            (int)Number(node.Require("count")),
-                            cast.Trigger, cast.Events);
-                    }
                 }
                 break;
 
             default:
                 throw new RulesNotImplementedException(
-                    $"'{cast.Source.FaceId}' uses the effect node '{node.Kind}', "
+                    $"'{cast.Source.FaceId}' uses the effect node '{node.OperationName()}', "
                     + "which is not implemented");
         }
-        if (cast.Events.Count > eventsBefore && EventMeansEffectApplied(node.Kind))
-        {
-            cast.ResolveEffect();
-        }
-
-        // A conditional constant can become Stalwart because this node changed
-        // threat, counters, traits, or another dependency. `rr:stalwart.2`
-        // removes existing stunned/confused cards at that transition, before
-        // later text in the same ability reads the board.
-        Statuses.RemoveAfflictionsIfStalwart(
-            cast.World, cast.World.Facts, "stalwart", cast.Events);
-        bool healthDefeatSuspended = cast.World.Effects.SettleLostHealth(
-            healthBefore, cast.Trigger, cast.Events);
-        if (healthDefeatSuspended && !cast.Suspended)
-        {
-            SuspendAfterProcedure(
-                node, cast, agendaOwner, agendaOccurrence);
-        }
-
-        // `rr:attack-enemy-activation.3.2`: a defending ally that leaves play
-        // immediately stops defending and exposes its controller's identity.
-        // Recheck after every node so later text in the same ability, and the
-        // next boost ability, reads the new attack roles rather than a stale
-        // defender that has already moved.
-        Attack.RefreshDefender(cast.World, cast.World.Facts);
     }
 
     private static bool EventMeansEffectApplied(string kind) => kind is not (
@@ -891,161 +488,6 @@ public sealed partial class AbilityRunner
         or "thwartDifferentSchemes" or "makeTheCall" or "legalPractice"
         or "attack" or "defense" or "thwart" or "thwartSchemes"
         or "placeThreat" or "enemyAttacks" or "enemySchemes");
-
-    private static bool Test(AbilityNode node, Cast cast) => node.Kind switch
-    {
-        "and" => Nodes(node.Argument).All(each => Test(each, cast)),
-        "or" => Nodes(node.Argument).Any(each => Test(each, cast)),
-        "not" => !Test(Tree(node.Argument), cast),
-        "finalStep" => cast.FinalStep,
-        "paidWithResource" => PaidWith(cast, Word(node.Argument)),
-        "threatCause" => cast.Occurrence.Threat?.Cause == (Word(node.Argument) switch
-            {
-                "villainPhase" => ThreatCause.VillainPhase,
-                "enemyScheme" => ThreatCause.EnemyScheme,
-                "incite" => ThreatCause.Incite,
-                "cardAbility" => ThreatCause.CardAbility,
-                var cause => throw new AbilityException($"'{cause}' is not a threat cause"),
-            }),
-        // Through `Every` and not `Find`: "is there one" is a question about a
-        // set, and a query that names many -- "an upgrade or support you
-        // control" -- has to be answerable by it. `Every` falls back to `Find`
-        // for the queries that name one, so both shapes go through here.
-        "exists" => Every(node.Argument, cast).Count > 0,
-        "canMakeTheCall" => CanMakeTheCall(cast),
-        "canLegalPractice" => cast.World.Seats[cast.Player].Hand.Cards.Any(
-                card => card.ObjectId != cast.Source.ObjectId)
-            && Every(node.Argument, cast).Any(
-                scheme => scheme.Tokens.GetValueOrDefault("k_threat") > 0),
-        "canAutomaticThwart" => Find(node.Argument, cast) is { } scheme
-            && BasicPowers.CanAutomaticallyThwart(
-                cast.World, cast.World.Facts, cast.Player, scheme),
-
-        // "If Vulture is in play". `rr:identity.2` makes a title name one
-        // card -- "if a card refers to a hero or alter-ego by title, it refers
-        // only to the identity with that title" -- so this compares titles and
-        // not printed ids, and asks only of the places `rr:in-play-and-out-of-play`
-        // calls in play.
-        "titleInPlay" => cast.World.Areas
-            .Where(area => DeckTypes.IsInPlay(area.Type))
-            .SelectMany(area => area.Cards)
-            .Any(card => string.Equals(
-                cast.World.Facts.Title(card.FaceId), Word(node.Argument),
-                StringComparison.Ordinal)),
-
-        // "If no damage was healed this way" and its family: a comparison
-        // against what an earlier action in this ability actually did.
-        "atLeast" => Amount(node.Require("value"), cast) >= Amount(node.Require("count"), cast),
-
-        // `rr:form` -- "(Hero)" and "(Alter-Ego)" on a card gate the ability by
-        // which form the player is in. Not a boolean: `Forms.Of` answers with a
-        // set, because a hero can print more than two faces.
-        "inForm" => Forms.In(
-            cast.World,
-            cast.World.Seats[Seat(node.Require("player"), cast)],
-            cast.World.Facts,
-            Word(node.Require("form"))),
-
-        "activationIs" => cast.World.Activation is { } activation
-            && activation.Attacking == (Word(node.Argument) switch
-            {
-                "attack" => true,
-                "scheme" => false,
-                var kind => throw new AbilityException(
-                    $"'{kind}' is not an enemy activation kind"),
-            }),
-
-        // "After [enemy] attacks **and damages** you". Two facts, and
-        // `rr:attack-enemy-activation.step.6.a` lists them as one trigger
-        // shape -- but the abilities it lists all run in the window *after* the
-        // attack, by which time the damage is on a dial that had damage on it
-        // before. So the attack carries what it did, and this reads it.
-        //
-        // A test rather than a triggering condition of its own, because the two
-        // are indistinguishable for a forced ability: it is in the same window
-        // either way, and does nothing when the attack did not land. A card
-        // whose trigger is optional would be able to tell them apart -- the
-        // prompt would appear -- and that is the case to change this for.
-        "attackDamaged" => cast.World.FinishedAttack is { Damaged: true } landed
-            // The ability may be printed on an attachment such as Sonic
-            // Converter, so its source is not necessarily the attacker. The
-            // trigger already names the attacking actor and damaged target;
-            // compare the completed attack with that occurrence instead.
-            && landed.Enemy == cast.Occurrence.Actor
-            && landed.Target == cast.Occurrence.Target,
-
-        // `rr:modes-of-play` -- "in expert mode" on a card, which 86 cards in
-        // the pool print. Not a property of the card or of anything on the
-        // board: it is how the game was set up, so the board carries it.
-        //
-        // The argument is the mode's own name and is checked, so that a card
-        // reaching for one of the other three -- heroic, skirmish, campaign --
-        // is a card that says so rather than one that quietly reads "expert".
-        "inExpertMode" => Word(node.Argument) == "expert"
-            ? cast.World.Expert
-            : throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' asks about the '{Word(node.Argument)}' mode, and "
-                + "rr:modes-of-play names four of which only 'expert' is modelled"),
-
-        "hasStatus" => Find(node.Require("card"), cast) is { } host
-            && Statuses.Has(cast.World, host, Word(node.Require("status"))),
-
-        "hasTrait" => Find(node.Require("card"), cast) is { } traitHolder
-            && Rules.State.Traits.Has(
-                cast.World, traitHolder, Word(node.Require("trait")), cast.World.Facts),
-
-        "cardSet" => Find(node.Require("card"), cast) is { } setCard
-            && string.Equals(
-                cast.World.Facts.EncounterSet(setCard.FaceId), Word(node.Require("set")),
-                StringComparison.Ordinal),
-
-        "isTitle" => Find(node.Require("card"), cast) is { } titled
-            && string.Equals(
-                cast.World.Facts.Title(titled.FaceId), Word(node.Require("title")),
-                StringComparison.Ordinal),
-
-        "discardedWithResource" => cast.Discarded.Any(card =>
-            Resources.GeneratedBy(card.FaceId, cast.World.Facts).Contains(
-                Word(node.Argument), StringComparison.Ordinal)),
-
-        // Defeated.By is already the seat whose character caused the defeat;
-        // it is not a card object id. Interrogation Room's "after you defeat"
-        // therefore compares that recorded seat directly with the resolver.
-        "defeatedByYou" => cast.Occurrence.Defeat is { By: >= 0 } defeatedByYou
-            && defeatedByYou.By == Resolver(cast),
-
-        "wasDefeated" => Find(node.Argument, cast) is { } defeatedCard
-            && cast.Occurrence.Defeats.Any(defeat => defeat.Card == defeatedCard.ObjectId),
-
-        "heroDefended" => cast.World.FinishedAttack is { } defended
-            && defended.Defender == cast.World.Seats[Resolver(cast)].IdentityCard.ObjectId,
-
-        "undefendedAttack" => cast.World.Attack is { IsDefended: false },
-
-        // "After **an ally** is defeated". A card type, asked of a card the
-        // ability has already named -- `rr:defeat` is one rule for every kind
-        // of card and the cards are the ones that narrow it.
-        "isKind" => Find(node.Require("card"), cast) is { } subject
-            && cast.World.Facts.Kind(subject.FaceId) == Kind(Word(node.Require("kind"))),
-
-        // Damage occurrences name the exact recipient. That differs from the
-        // declared attack target for indirect damage, whose assignment can
-        // name any friendly hero or ally after defense is settled.
-        "isYourIdentity" => Find(node.Argument, cast)?.ObjectId
-            == cast.World.Seats[Resolver(cast)].IdentityCard.ObjectId,
-
-        // "Defeated **by anything other than consequential damage**." What did
-        // it is carried on the occurrence's record of the defeat, and the word
-        // here names the rule rather than the engine's spelling of it -- see
-        // `Cause`.
-        "defeatedBy" => cast.Occurrence.Defeat is { } defeat
-            && string.Equals(defeat.How, Cause(Word(node.Argument), cast), StringComparison.Ordinal),
-
-
-        _ => throw new RulesNotImplementedException(
-            $"'{cast.Source.FaceId}' uses the test node '{node.Kind}', "
-            + "which is not implemented"),
-    };
 
     private static bool PaidWith(Cast cast, string resource) =>
         cast.Payment.Contains(resource[0])
@@ -1070,13 +512,10 @@ public sealed partial class AbilityRunner
     /// can empty part-way round.
     /// </para>
     /// </remarks>
-    private static void DealEncounterCards(AbilityNode node, Cast cast)
+    private static void DealEncounterCards(AbilityEffect.DealEncounterCards deal, Cast cast)
     {
-        long each = node.Field("count") is { } count ? Number(count) : 1;
-        IReadOnlyList<int> players = node.Field("player") is { } player
-            ? [Seat(player, cast)]
-            : [.. cast.World.PlayerOrder];
-        for (long dealt = 0; dealt < each; dealt++)
+        var players = Seats(deal.Players, cast).ToList();
+        for (long dealt = 0; dealt < deal.Count; dealt++)
         {
             foreach (int seat in players)
             {
@@ -1092,12 +531,11 @@ public sealed partial class AbilityRunner
     /// <summary>
     /// "Put the top card of your deck into play facedown … as a Drone minion."
     /// </summary>
-    private static void CreateDrones(AbilityNode node, Cast cast)
+    private static void CreateDrones(AbilityEffect.CreateDrones drones, Cast cast)
     {
-        long count = node.Field("count") is { } amount ? Number(amount) : 1;
-        foreach (int player in Seats(node.Require("player"), cast))
+        foreach (int player in Seats(drones.Players, cast))
         {
-            for (long created = 0; created < count; created++)
+            for (long created = 0; created < drones.Count; created++)
             {
                 FacedownDrones.EngageTop(
                     cast.World, player, cast.Trigger, "Create_Drone", cast.Events);
@@ -1105,9 +543,10 @@ public sealed partial class AbilityRunner
         }
     }
 
-    private static bool CanCreateDrones(AbilityNode node, Cast cast) =>
-        (node.Field("count") is not { } count || Number(count) > 0)
-        && Seats(node.Require("player"), cast).Any(player =>
+    private static bool CanCreateDrones(AbilityEffect node, Cast cast) =>
+        EffectOf<AbilityEffect.CreateDrones>(node, cast) is var drones
+        && drones.Count > 0
+        && Seats(drones.Players, cast).Any(player =>
             cast.World.Seats[player].Deck.Cards.Count > 0
             || cast.World.AreaOf(
                 DeckType.DiscardPile, PlayArea.Of(player), cardOwner: player).Cards.Count > 0);
@@ -1132,20 +571,18 @@ public sealed partial class AbilityRunner
     /// Revealed" is skipped.
     /// </para>
     /// <para>
-    /// "Engaged with you" is the only destination any authored card asks for.
     /// <c>rr:engage.1</c> makes it a place: "when a minion engages a player, it
     /// is placed in that player's play area", so engagement is where the card
     /// sits rather than a flag on it.
     /// </para>
     /// </remarks>
-    private static void PutIntoPlay(AbilityNode node, Cast cast)
+    private static void PutIntoPlay(AbilityEffect.PutIntoPlay placement, Cast cast)
     {
-        var card = Find(node.Require("card"), cast)
+        var card = Find(placement.Card, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would put a card into play that is not there");
 
-        string where = Word(node.Require("where"));
-        if (string.Equals(where, "printedDestination", StringComparison.Ordinal))
+        if (placement.PrintedDestination)
         {
             // This spelling is the engine's typed DSL choice; the rulebook
             // decides the destination from the card type. Passing no reveal
@@ -1161,13 +598,6 @@ public sealed partial class AbilityRunner
                 verb: "Put_Into_Play");
             cast.ResolveEffect();
             return;
-        }
-
-        if (!string.Equals(where, "engagedWithYou", StringComparison.Ordinal))
-        {
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' puts a card into play '{where}', "
-                + "which is not implemented");
         }
 
         PutIntoPlay(card, cast.Player, cast);
@@ -1206,21 +636,19 @@ public sealed partial class AbilityRunner
         Reveal.EnterPlay(cast.World, cast.World.Facts, card, cast.Events);
     }
 
-    private static void GiveStatus(AbilityNode node, Cast cast)
+    private static void GiveStatus(AbilityEffect.GiveStatus status, Cast cast)
     {
         // "Stun **each hero**" and "stun your hero" are the same node with a
         // different query, the way `placeThreat` names one scheme or all of
         // them: `Every` answers both.
-        foreach (var host in Every(node.Require("card"), cast))
+        foreach (var host in Every(status.Cards, cast))
         {
-            GiveStatus(node, cast, host);
+            GiveStatus(status.Status, cast, host);
         }
     }
 
-    private static void GiveStatus(AbilityNode node, Cast cast, Card host)
+    private static void GiveStatus(string what, Cast cast, Card host)
     {
-        string what = Word(node.Require("status"));
-
         // Through the rules rather than straight at `Statuses.Give`:
         // `rr:status-cards.1` caps how many a character can hold,
         // `rr:stalwart` makes that cap zero, and `rr:vulnerable` discards the
@@ -1240,9 +668,9 @@ public sealed partial class AbilityRunner
 
     // `rr:attachment` -- "when an attachment enters play, it attaches to another
     // card or game element".
-    private static void AttachTo(AbilityNode node, Cast cast)
+    private static void AttachTo(AbilityCardSelection selection, Cast cast)
     {
-        var host = Find(node.Argument, cast)
+        var host = Find(selection, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' attaches to a card that is not there");
 

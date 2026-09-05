@@ -1628,6 +1628,60 @@ public sealed partial class ActionAbilityTests
         Assert.Equal(DeckType.EngagedEnemiesArea, vulnerable!.Area.Type);
     }
 
+    [Rule("rr:uses-x-type.1")]
+    [Theory]
+    [InlineData(2)]
+    [InlineData(3)]
+    public void CompiledCounterCostsProjectTheLastUseBeforeAnAreaQuery(int counters)
+    {
+        // rr:uses-x-type.1: "If there are no all-purpose counters on this card,
+        // discard this card." Two components of one payment share that pool.
+        var runner = new Marvel.Cards.Run.AbilityRunner(AbilityCatalog.Parse("""
+            { "cards": [{ "card": "01080",
+              "startingCounters": { "type": "medical", "count": 3, "uses": true },
+              "abilities": [{
+                "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "game" },
+                "cost": { "seq": [
+                  { "removeCounters": { "card": "this", "counter": "medical", "count": 1 } },
+                  { "removeCounters": { "card": "this", "counter": "medical", "count": 1 } }
+                ] },
+                "effect": { "removeFromGame": { "cardsIn": {
+                  "area": "encounterDiscardPile", "title": "Armored Rhino Suit"
+                } } }
+              }]
+            }] }
+            """));
+        Card? source = null;
+        Card? hosted = null;
+        Card? discarded = null;
+        (Game Game, World World) Start() => Playing(board =>
+        {
+            source = InPlay(board, "01080");
+            source.PlaceTokens("c_medical", counters);
+            hosted = board.CreateCard("01098",
+                board.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), source.ObjectId));
+            discarded = board.CreateCard("01098", board.AreaOf(DeckType.EncounterDiscardPile));
+        }, hero: true, abilities: runner);
+
+        if (counters == 2)
+        {
+            Assert.Throws<RulesNotImplementedException>(() => Start());
+            Assert.Equal(2, source!.Tokens["c_medical"]);
+            Assert.Equal(DeckType.EncounterDiscardPile, discarded!.Area.Type);
+        }
+        else
+        {
+            var (game, _) = Start();
+            var action = Assert.Single(game.Pending!.Affordances,
+                option => option.Verb == Game.ActionVerb && option.AnchorId == source!.ObjectId);
+            game.Resolve(Decision.Take(action.Id));
+            Assert.Equal(1, source!.Tokens["c_medical"]);
+            Assert.Equal(DeckType.RemovedArea, discarded!.Area.Type);
+        }
+        Assert.Equal(DeckType.SupportsArea, source.Area.Type);
+        Assert.Equal(source.ObjectId, hosted!.Area.Host);
+    }
+
     [Rule("rr:otherwise.1")]
     [Fact]
     public void DependentContinuationUsesTheProjectedOutcome()
@@ -1904,6 +1958,62 @@ public sealed partial class ActionAbilityTests
         Assert.True(source!.Ready);
         Assert.Equal(DeckType.AlliesArea, ally!.Area.Type);
         Assert.Equal(ally.ObjectId, attachment!.Area.Host);
+    }
+
+    [Rule("rr:defeat.1")]
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CompiledCostsProjectCombinedDamageAndHealingBeforeAnAreaQuery(bool healFirst)
+    {
+        // rr:defeat.1: "If an ally, minion, or side scheme is defeated, it is
+        // discarded." Two cost packets can jointly defeat the source;
+        // healing first can keep it and its hosted card in play.
+        string healing = healFirst ? """{ "heal": { "card": "this", "amount": 1 } },""" : "";
+        var runner = Runner("01030", "Action", """
+            { "removeFromGame": { "cardsIn": {
+              "area": "encounterDiscardPile", "title": "Armored Rhino Suit"
+            } } }
+            """, cost: $$$"""
+            { "seq": [
+              { "exhaust": "this" },
+              {{{healing}}}
+              { "dealDamage": { "cards": "this", "amount": 1 } },
+              { "dealDamage": { "cards": "this", "amount": 1 } }
+            ] }
+            """);
+        Card? source = null;
+        Card? hosted = null;
+        Card? discarded = null;
+        (Game Game, World World) Start() => Playing(board =>
+        {
+            source = board.CreateCard("01030",
+                board.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+            source.TakeDamage(2);
+            hosted = board.CreateCard("01098",
+                board.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), source.ObjectId));
+            discarded = board.CreateCard("01098", board.AreaOf(DeckType.EncounterDiscardPile));
+        }, hero: true, abilities: runner);
+
+        if (healFirst)
+        {
+            var (game, _) = Start();
+            var action = Assert.Single(game.Pending!.Affordances,
+                option => option.Verb == Game.ActionVerb && option.AnchorId == source!.ObjectId);
+            game.Resolve(Decision.Take(action.Id));
+            Assert.Equal(3, source!.Damage);
+            Assert.False(source.Ready);
+            Assert.Equal(DeckType.RemovedArea, discarded!.Area.Type);
+        }
+        else
+        {
+            Assert.Throws<RulesNotImplementedException>(() => Start());
+            Assert.Equal(2, source!.Damage);
+            Assert.True(source.Ready);
+            Assert.Equal(DeckType.EncounterDiscardPile, discarded!.Area.Type);
+        }
+        Assert.Equal(DeckType.AlliesArea, source.Area.Type);
+        Assert.Equal(source.ObjectId, hosted!.Area.Host);
     }
 
     [Rule("rr:otherwise.1")]

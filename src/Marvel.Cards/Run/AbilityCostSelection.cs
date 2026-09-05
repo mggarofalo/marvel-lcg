@@ -1,0 +1,60 @@
+using Marvel.Cards.Dsl;
+using Marvel.Rules.Prompts;
+using Marvel.Rules.State;
+
+namespace Marvel.Cards.Run;
+
+/// <summary>Engine-owned card choices for a compiled arrow cost.</summary>
+internal static class AbilityCostSelection
+{
+    // rr:initiating-abilities keeps choosing and paying separate. Resource
+    // selections travel in Decision.Resources; this describes the cards a
+    // discard or exhaust cost asks the payer to choose.
+    internal static TargetRequest? Ask(World world, int player, AbilityCost? cost)
+    {
+        if (cost is AbilityCost.Sequence sequence)
+        {
+            return sequence.Costs.Select(step => Ask(world, player, step))
+                .SingleOrDefault(request => request is not null);
+        }
+        if (cost is AbilityCost.DiscardFromHand discard)
+        {
+            var hand = world.Seats[player].Hand.Cards;
+            var range = Range(discard.Range, hand.Count);
+            return new TargetRequest([.. hand.Select(card => card.ObjectId)], range.Min, range.Max);
+        }
+        if (cost is AbilityCost.ExhaustChosen exhaust)
+        {
+            var cards = Choices(world, player, exhaust.From).Where(card => card.Ready).ToList();
+            var range = Range(exhaust.Range, cards.Count);
+            return new TargetRequest([.. cards.Select(card => card.ObjectId)], range.Min, range.Max);
+        }
+        return null;
+    }
+
+    internal static IReadOnlyList<Card> Choices(World world, int player, AbilityCardQuery relation) => relation switch
+    {
+        AbilityCardQuery.HeroesAndAllies =>
+        [
+            .. world.PlayerOrder
+                .Where(seat => Forms.In(world, world.Seats[seat], world.Facts, Forms.Hero))
+                .Select(seat => world.Seats[seat].IdentityCard),
+            .. world.Areas.Where(area => area.Type == DeckType.AlliesArea).SelectMany(area => area.Cards),
+        ],
+        AbilityCardQuery.CharactersYouControl =>
+        [
+            world.Seats[player].IdentityCard,
+            .. world.AreaOf(DeckType.AlliesArea, PlayArea.Of(player)).Cards,
+        ],
+        AbilityCardQuery.AlliesYouControl => [.. world.AreaOf(DeckType.AlliesArea, PlayArea.Of(player)).Cards],
+        _ => throw new InvalidOperationException($"'{relation}' is not a compiled cost-selection relation"),
+    };
+
+    internal static (int Min, int Max) Range(AbilityCostRange range, int available) => range switch
+    {
+        AbilityCostRange.Exact exact => (exact.Count, exact.Count),
+        AbilityCostRange.UpTo upTo => (1, Math.Min(upTo.Count, available)),
+        AbilityCostRange.Any => (1, available),
+        _ => throw new InvalidOperationException("Unknown compiled cost range"),
+    };
+}

@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Marvel.Cards.Dsl;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
@@ -29,261 +30,162 @@ public sealed partial class AbilityRunner
     /// needs a design rather than a case.
     /// </para>
     /// </remarks>
-    private static void Grants(AbilityNode node, Cast cast, List<ContinuousEffect> found)
+    private static void Grants(AbilityEffect effect, Cast cast, List<ContinuousEffect> found)
     {
-        switch (node.Kind)
+        switch (effect)
         {
-            case "seq":
-            case "and":
-                foreach (var step in Nodes(node.Argument))
+            case AbilityEffect.Sequence sequence:
+                foreach (var step in sequence.Effects)
                 {
                     Grants(step, cast, found);
                 }
-
                 break;
-
-            case "if":
-                string branch = Test(Tree(node.Require("test")), cast) ? "then" : "else";
-                if (node.Field(branch) is { } taken)
+            case AbilityEffect.Simultaneous simultaneous:
+                foreach (var step in simultaneous.Effects)
                 {
-                    Grants(Tree(taken), cast, found);
-                }
-
-                break;
-
-            case "grant":
-                if (Find(node.Require("card"), cast) is { } grantTarget)
-                {
-                    found.Add(Grant(node, cast, grantTarget));
-                }
-                else if (Word(node.Require("card")) is not ("yourHero" or "yourAlterEgo"))
-                {
-                    throw new RulesNotImplementedException(
-                        $"'{cast.Source.FaceId}' card {cast.Source.ObjectId} in "
-                        + $"{cast.Source.Area.Type} hosted by {cast.Source.Area.Host} would grant "
-                        + "to a card that is not there");
+                    Grants(step, cast, found);
                 }
                 break;
-
-            case "grantEach":
-                foreach (var target in Every(node.Require("cards"), cast))
+            case AbilityEffect.Conditional conditional:
+                if ((Test(conditional.Test, cast) ? conditional.Then : conditional.Else) is { } taken)
                 {
-                    found.Add(Grant(node, cast, target));
+                    Grants(taken, cast, found);
                 }
                 break;
-
-            case "preventThreatRemoval":
+            case AbilityEffect.GrantField { Until: null } grant:
+                foreach (var target in ConstantTargets(grant.Cards, grant.EachCard, cast))
+                {
+                    found.Add(new ContinuousEffect(
+                        EffectSource.ConstantAbility, Kind: grant.Field,
+                        Amount: Amount(grant.Amount, cast), Card: cast.Source.ObjectId,
+                        Affects: target.ObjectId, Lasts: Duration.WhileInPlay));
+                }
+                break;
+            case AbilityEffect.GrantTrait { Until: null } grant:
+                foreach (var target in ConstantTargets(grant.Cards, grant.EachCard, cast))
+                {
+                    found.Add(new ContinuousEffect(
+                        EffectSource.ConstantAbility, Kind: Rules.State.Traits.Granted + grant.Trait,
+                        Card: cast.Source.ObjectId, Affects: target.ObjectId, Lasts: Duration.WhileInPlay));
+                }
+                break;
+            case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.PreventThreatRemoval }:
                 // A prohibition is answered by `CanRemoveThreat`; it is not a
                 // numeric modifier and therefore contributes no effect here.
                 break;
 
-            case "doubleResourceFor":
+            case AbilityEffect.DoubleResourceFor:
                 // This constant acts while its resource card is spent from
                 // hand. `ResourcesGeneratedBy` reads it with the payment's
                 // target card, which is context this general effect list does
                 // not carry.
                 break;
 
-            case "requireAllyDefender":
+            case AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.RequireAllyDefender }:
                 // Defender declaration carries the attack and its engaged
                 // player; `Defenders` reads this constraint in that context.
                 break;
 
-            case "preventDamageFrom":
-            case "preventDamageWhile":
+            case AbilityEffect.PreventDamageFrom:
+            case AbilityEffect.PreventDamageWhile:
                 // Damage carries both source and target. `CanTakeDamage`
                 // evaluates these prohibitions in that complete context.
                 break;
 
-            case "preventReady":
+            case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.PreventReady }:
                 // The card to be readied and the source of that instruction
                 // are available only when `CanReady` asks the question.
                 break;
 
             default:
                 throw new RulesNotImplementedException(
-                    $"'{cast.Source.FaceId}' has a constant ability using the node "
-                    + $"'{node.Kind}', which a constant ability cannot be written with");
+                    $"'{cast.Source.FaceId}' cannot resolve {effect} as a constant ability");
         }
     }
 
-    private static bool ProhibitsThreatRemoval(AbilityNode node, Cast cast, Card scheme)
+    private static IReadOnlyList<Card> ConstantTargets(AbilityCardSelection selection, bool each, Cast cast)
     {
-        return node.Kind switch
+        if (each) return Every(selection, cast);
+        if (Find(selection, cast) is { } target) return [target];
+        if (selection is AbilityCardSelection.Bound
+            { Binding: AbilityCardBinding.YourHero or AbilityCardBinding.YourAlterEgo }) return [];
+        throw new RulesNotImplementedException(
+            $"'{cast.Source.FaceId}' card {cast.Source.ObjectId} in "
+            + $"{cast.Source.Area.Type} hosted by {cast.Source.Area.Host} would grant "
+            + "to a card that is not there");
+    }
+
+    private static bool ProhibitsThreatRemoval(AbilityEffect effect, Cast cast, Card scheme)
+    {
+        return effect switch
         {
-            "seq" or "and" => Nodes(node.Argument).Any(step =>
+            AbilityEffect.Sequence sequence => sequence.Effects.Any(step =>
                 ProhibitsThreatRemoval(step, cast, scheme)),
-            "if" => node.Field(Test(Tree(node.Require("test")), cast) ? "then" : "else")
-                is { } branch && ProhibitsThreatRemoval(Tree(branch), cast, scheme),
-            "preventThreatRemoval" => Find(node.Argument, cast)?.ObjectId == scheme.ObjectId,
+            AbilityEffect.Simultaneous simultaneous => simultaneous.Effects.Any(step =>
+                ProhibitsThreatRemoval(step, cast, scheme)),
+            AbilityEffect.Conditional conditional => (Test(conditional.Test, cast) ? conditional.Then : conditional.Else)
+                is { } branch && ProhibitsThreatRemoval(branch, cast, scheme),
+            AbilityEffect.CardAction { Instruction: AbilityCardInstruction.PreventThreatRemoval } prohibition =>
+                Find(prohibition.Selection, cast)?.ObjectId == scheme.ObjectId,
             _ => false,
         };
     }
 
-    /// <summary>One keyword a constant ability gives something.</summary>
-    /// <remarks>
-    /// <para>
-    /// <b>The amount defaults to one, not to zero.</b> "Unus gains retaliate 1"
-    /// states its number and "Unus also gains stalwart" does not, because a
-    /// keyword without one is simply present — and the engine asks whether a
-    /// card is stalwart by reading the field and comparing it to zero
-    /// (<c>Statuses</c>, <c>rr:stalwart.1</c>). A grant defaulting to zero would
-    /// parse, register, and mean the opposite of what the card says.
-    /// </para>
-    /// <para>
-    /// The keyword is held against the fields the engine actually reads, for
-    /// the reason the whole dataset is: <c>stallwart</c> would otherwise sit in
-    /// the file looking implemented and grant nothing for ever.
-    /// </para>
-    /// </remarks>
-    private static ContinuousEffect Grant(AbilityNode node, Cast cast)
-    {
-        var target = Find(node.Require("card"), cast)
-            ?? throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' would grant to a card that is not there");
-
-        return Grant(node, cast, target);
-    }
-
-    private static ContinuousEffect Grant(AbilityNode node, Cast cast, Card target)
-    {
-
-        // `rr:traits.1` -- "traits have no inherent effects on the game.
-        // Instead, some card abilities reference cards that possess or lack
-        // specific traits." So a granted trait carries no amount and is not
-        // held against the printed fields: it is a name other cards ask about,
-        // and the pool spells one in capitals.
-        if (node.Field("trait") is { } gained)
-        {
-            return new ContinuousEffect(
-                EffectSource.ConstantAbility,
-                Kind: Rules.State.Traits.Granted + Word(gained),
-                Card: cast.Source.ObjectId,
-                Affects: target.ObjectId,
-                Lasts: Duration.WhileInPlay);
-        }
-
-        string keyword = Word(node.Require("keyword"));
-        if (!StateFields.IsModifiable(keyword) && !Keywords.Granted.Contains(keyword))
-        {
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' grants '{keyword}', which is not a keyword or "
-                + "field the engine reads modifiers into");
-        }
-
-        return new ContinuousEffect(
-            EffectSource.ConstantAbility,
-            Kind: keyword,
-            Amount: node.Field("amount") is { } amount ? Amount(amount, cast) : 1,
-            Card: cast.Source.ObjectId,
-            Affects: target.ObjectId,
-            Lasts: Duration.WhileInPlay);
-    }
-
     // `rr:lasting-effects` -- an effect "for a specified duration (such as
     // [...] 'until the end of this attack')".
-    private static void GrantUntil(AbilityNode node, Cast cast)
+    private static void GrantUntil(
+        AbilityCardSelection card, string kind, AbilityNumber amount, string until, Cast cast)
     {
-        var target = Find(node.Require("card"), cast)
+        var target = Find(card, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would grant to a card that is not there");
-
-        if (node.Field("trait") is { } gained)
-        {
-            EnsureLastingPeriodOpen(node, cast);
-            cast.World.Effects.Register(new ContinuousEffect(
-                EffectSource.LastingEffect,
-                Kind: Rules.State.Traits.Granted + Word(gained),
-                Amount: 1,
-                Card: cast.Source.ObjectId,
-                Affects: target.ObjectId,
-                Lasts: Duration.UntilEndOf(Word(node.Require("until")))));
-            return;
-        }
-
-        // Held against the fields the engine actually reads, exactly as a
-        // constant ability's grant is: an unrecognised name would register
-        // happily, expire on time, and modify nothing in between. "+2 SCH" is
-        // the same mechanism as "gains overkill" and reaches it through the
-        // same door, which is why `scheme` sits in this vocabulary beside
-        // `overkill`.
-        string keyword = Word(node.Require("keyword"));
-        if (!StateFields.IsModifiable(keyword) && !Keywords.Granted.Contains(keyword))
-        {
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' grants '{keyword}' for a duration, which is not a "
-                + "keyword or field the engine reads modifiers into");
-        }
-
-        EnsureLastingPeriodOpen(node, cast);
-
+        EnsureLastingPeriodOpen(until, cast);
         cast.World.Effects.Register(new ContinuousEffect(
             EffectSource.LastingEffect,
-            Kind: keyword,
-            Amount: node.Field("amount") is { } amount ? Amount(amount, cast) : 0,
+            Kind: kind,
+            Amount: Amount(amount, cast),
             Card: cast.Source.ObjectId,
             Affects: target.ObjectId,
-            Lasts: Duration.UntilEndOf(Word(node.Require("until")))));
+            Lasts: Duration.UntilEndOf(until)));
 
-        if (string.Equals(keyword, "stalwart", StringComparison.Ordinal))
+        if (string.Equals(kind, "stalwart", StringComparison.Ordinal))
         {
             Statuses.RemoveAfflictionsIfStalwart(
                 cast.World, cast.World.Facts, target, cast.Trigger, cast.Events);
         }
     }
 
-    private static void EnsureLastingPeriodOpen(AbilityNode node, Cast cast)
+    private static void EnsureLastingPeriodOpen(string until, Cast cast)
     {
-        if (!LastingPeriodIsOpen(node, cast))
+        if (!LastingPeriodIsOpen(until, cast))
         {
             throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' begins a lasting effect outside its named period");
         }
     }
 
-    // `rr:delayed-effect.1` -- an effect that resolves "after their specified
-    // timing point or future condition occurs or becomes true".
-    private static void DelayUntil(AbilityNode node, Cast cast)
+    // rr:delayed-effect.1 resolves an effect "after their specified timing
+    // point or future condition occurs or becomes true". The entry is data
+    // with an engine-owned kind, not a closure over an executable effect.
+    private static void DelayUntil(AbilityEffect.DelayedStun delayed, Cast cast)
     {
-        var effect = Tree(node.Require("effect"));
+        // The damaged character is identified by the future occurrence, not
+        // at registration. "This attack" bounds the condition as well: an
+        // attack stopped by Tough must not stun a later attack's recipient.
+        cast.World.Effects.Register(new ContinuousEffect(
+            EffectSource.DelayedEffect,
+            Kind: DelayedEffects.StunTheSubject,
+            Card: cast.Source.ObjectId,
+            Affects: null,
+            Lasts: new Duration(
+                Until: delayed.Within,
+                OnCondition: Steps.DamageDealt,
+                Uses: 1)));
+    }
 
-        // "If a character is damaged by this attack, that character is
-        // stunned." **The card it acts on does not exist yet** -- the attack
-        // has not happened, so there is nobody to name. `Affects` stays null
-        // and the occurrence names the card when the effect comes due.
-        if (effect.Kind == "giveStatus"
-            && Word(effect.Require("card")) == "damaged"
-            && Word(effect.Require("status")) == Statuses.Stunned)
-        {
-            // **Bounded by the attack as well as by the condition.** "If a
-            // character is damaged by **this attack**" is false once the attack
-            // is over, so an attack that damaged nobody -- `rr:tough.3`, a
-            // tough status card ate it -- must not leave the effect waiting for
-            // somebody else's. `Duration` carries both: the next time damage is
-            // dealt, and not past the end of this attack.
-            cast.World.Effects.Register(new ContinuousEffect(
-                EffectSource.DelayedEffect,
-                Kind: DelayedEffects.StunTheSubject,
-                Card: cast.Source.ObjectId,
-                Affects: null,
-                Lasts: new Duration(
-                    Until: node.Field("within") is { } bound ? Word(bound) : null,
-                    OnCondition: Word(node.Require("condition")),
-                    Uses: 1)));
-            return;
-        }
-
-        if (effect.Kind != "discard")
-        {
-            // A delayed effect is data on the board, not a closure, so what it
-            // will do has to be a `Kind` the engine can read back after a save.
-            // `DelayedEffects` knows one; the rest is the vocabulary that grows.
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' delays '{effect.Kind}', and only 'discard' can be "
-                + "written down as a delayed effect");
-        }
-
-        var target = Find(effect.Field("card") ?? effect.Argument, cast)
+    private static void DelayUntil(AbilityEffect.DelayedDiscard delayed, Cast cast)
+    {
+        var target = Find(delayed.Card, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would delay a discard of a card that is not there");
 
@@ -292,12 +194,11 @@ public sealed partial class AbilityRunner
             Kind: DelayedEffects.DiscardFromPlay,
             Card: cast.Source.ObjectId,
             Affects: target.ObjectId,
-            Lasts: Duration.NextTime(Word(node.Require("condition")))));
+            Lasts: Duration.NextTime(delayed.Condition)));
     }
 
-    private static void Discard(AbilityNode node, Cast cast)
+    private static void Discard(AbilityCardSelection selector, Cast cast)
     {
-        var selector = node.Field("card") ?? node.Argument;
         if (Find(selector, cast) is { } target)
         {
             // rr:target.2 lets a multi-target ability initiate when at least
@@ -310,69 +211,6 @@ public sealed partial class AbilityRunner
                     cast.Trigger, cast.Events);
             }
         }
-    }
-
-    /// <summary>Whether this exact selector may make its current target depart.</summary>
-    private static bool CanRemoveByEffect(
-        AbilityValue selector, Cast cast, Card target)
-    {
-        // `rr:in-play-and-out-of-play.4`: a retained binding does not authorize
-        // a later component to follow a card into an out-of-play area. Cards
-        // resolving in the boost/reveal/processing staging areas remain live
-        // ability subjects; every other out-of-play target must be found by a
-        // selector that expressly names its current area.
-        bool reachable = DeckTypes.IsInPlay(target.Area.Type)
-            || target.Area.Type is DeckType.BoostingArea
-                or DeckType.ProcessingArea
-                or DeckType.RevealingArea
-            // Black Widow's printed Interrupt names "that card" at the
-            // WhenCardRevealed occurrence. The villain-phase agenda still
-            // holds that card in the dealt queue during the interrupt window,
-            // so this retained trigger binding is the express authority to
-            // discard it before its reveal procedure applies.
-            || target.Area.Type == DeckType.DealtEncounterCardsDeck
-                && selector is AbilityValue.Word { Value: "trigger.subject" }
-                && cast.Occurrence.Conditions.Contains(
-                    Steps.CardRevealed, StringComparer.Ordinal)
-            || selector is AbilityValue.Word { Value: "chosen" }
-                && cast.WasSelectedInCurrentArea(target)
-            || ExplicitlySelectsOutOfPlayCard(selector, cast, target);
-        bool bindingIsCurrent = selector switch
-        {
-            AbilityValue.Word { Value: "this" } =>
-                cast.SourceBindingIsCurrent(target),
-            AbilityValue.Word { Value: "chosen" } =>
-                cast.ChosenBindingIsCurrent(target),
-            _ => true,
-        };
-        return reachable && bindingIsCurrent
-            && Rules.Play.Discard.EffectCanRemove(
-                cast.World, cast.World.Facts, cast.Source, target);
-    }
-
-    /// <summary>Whether a selector names the out-of-play area holding one card.</summary>
-    private static bool ExplicitlySelectsOutOfPlayCard(
-        AbilityValue value, Cast cast, Card target)
-    {
-        if (value is AbilityValue.Map map)
-        {
-            if (map.Entries.Count == 1)
-            {
-                var (kind, argument) = map.Entries.First();
-                if (kind == "cardsIn"
-                    && CardsIn(new AbilityNode(kind, argument), cast)
-                        .Any(card => card.ObjectId == target.ObjectId))
-                {
-                    return true;
-                }
-            }
-            return map.Entries.Values.Any(child =>
-                ExplicitlySelectsOutOfPlayCard(child, cast, target));
-        }
-
-        return value is AbilityValue.List list
-            && list.Values.Any(child =>
-                ExplicitlySelectsOutOfPlayCard(child, cast, target));
     }
 
     // ---- reading a value ---------------------------------------------------
@@ -395,11 +233,11 @@ public sealed partial class AbilityRunner
     /// arrive at the wrong one.
     /// </para>
     /// </remarks>
-    private static void ChangeForm(AbilityNode node, Cast cast)
+    private static void ChangeForm(AbilityEffect.ChangeForm change, Cast cast)
     {
-        var seat = cast.World.Seats[Seat(node.Require("player"), cast)];
-        string form = Word(node.Require("to"));
-        if (Forms.In(cast.World, seat, cast.World.Facts, form))
+        var seat = cast.World.Seats[Seat(change.Player, cast)];
+        string form = change.Form;
+        if (AlreadyInForm(change, cast))
         {
             return;
         }
@@ -418,18 +256,25 @@ public sealed partial class AbilityRunner
         }
     }
 
+    private static AbilityEffect.ChangeForm FormChangeOf(AbilityEffect node, Cast cast) =>
+        (AbilityEffect.ChangeForm)node;
+
+    private static bool AlreadyInForm(AbilityEffect.ChangeForm change, Cast cast) =>
+        Forms.In(cast.World, cast.World.Seats[Seat(change.Player, cast)],
+            cast.World.Facts, change.Form);
+
     /// <summary>"Remove … from the game" — <c>rr:removed-from-the-game</c>.</summary>
     /// <remarks>
     /// Removed and not discarded: <c>rr:defeat.2</c> keeps the two apart, and a
     /// card in the discard pile can come back where one out of the game cannot.
     /// </remarks>
-    private static void RemoveFromGame(AbilityNode node, Cast cast)
+    private static void RemoveFromGame(AbilityCardSelection selection, Cast cast)
     {
-        var card = Find(node.Argument, cast)
+        var card = Find(selection, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would remove a card that is not there");
 
-        if (!CanRemoveByEffect(node.Argument, cast, card))
+        if (!CanRemoveByEffect(selection, cast, card))
         {
             // Another component can make a multi-target effect valid under
             // rr:target.3.4; this invalid component simply does not resolve.
@@ -474,9 +319,9 @@ public sealed partial class AbilityRunner
     /// the order can respond to it.
     /// </para>
     /// </remarks>
-    private static void Soak(AbilityNode node, Cast cast)
+    private static void Soak(AbilityCardSelection card, Cast cast)
     {
-        var onto = Find(node.Require("onto"), cast)
+        var onto = Find(card, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would soak damage onto a card that is not there");
 
@@ -496,21 +341,27 @@ public sealed partial class AbilityRunner
     /// <c>rr:exhausted</c> is a state and not a counter, so exhausting
     /// twice is not two exhaustions and must not be two events on the wire.
     /// </remarks>
-    private static void Exhaust(AbilityNode node, Cast cast)
+    private static void Exhaust(AbilityCardSelection cards, Cast cast)
     {
-        foreach (var target in Every(node.Argument, cast).Where(target => target.Ready))
+        foreach (var target in Every(cards, cast))
         {
-            target.Exhaust();
-            cast.Events.Add(new FieldSet(target.ObjectId, "is_exhaust", 0, 1)
-            {
-                Trigger = cast.Trigger, Verb = "Exhaust",
-            });
+            Exhaust(target, cast);
         }
     }
 
-    private static void Ready(AbilityNode node, Cast cast)
+    private static void Exhaust(Card target, Cast cast)
     {
-        foreach (var target in Every(node.Argument, cast).Where(target =>
+        if (!target.Ready) return;
+        target.Exhaust();
+        cast.Events.Add(new FieldSet(target.ObjectId, "is_exhaust", 0, 1)
+        {
+            Trigger = cast.Trigger, Verb = "Exhaust",
+        });
+    }
+
+    private static void Ready(AbilityCardSelection cards, Cast cast)
+    {
+        foreach (var target in Every(cards, cast).Where(target =>
             !target.Ready
             && cast.Abilities.CanReady(cast.World, target, cast.Source)))
         {
@@ -522,30 +373,22 @@ public sealed partial class AbilityRunner
         }
     }
 
-    private static void DrawToHandSize(AbilityNode node, Cast cast)
+    private static void DrawToHandSize(AbilityEffect.DrawToHandSize draw, Cast cast)
     {
-        int player = Seat(node.Argument, cast);
+        int player = Seat(draw.Player, cast);
         var seat = cast.World.Seats[player];
-        int count = (int)Math.Max(
-            0, PhaseEnd.HandSize(cast.World, seat, cast.World.Facts)
-                - HandCountDuringEvent(cast, seat));
+        // rr:printed reads "physically printed on the card"; an unqualified hand size
+        // includes the live modifiers instead.
+        long size = draw.Printed
+            ? cast.World.Facts.PrintedValue(seat.IdentityCard.FaceId, "HS", cast.World.Players)
+            : PhaseEnd.HandSize(cast.World, seat, cast.World.Facts);
+        int count = (int)Math.Max(0, size - HandCountDuringEvent(cast, seat));
         Draw.Cards(cast.World, player, count, cast.Trigger, cast.Events);
     }
 
-    /// <summary>"Draw up to your printed hand size" — <c>rr:printed</c>.</summary>
-    private static void DrawToPrintedHandSize(AbilityNode node, Cast cast)
+    private static bool CanDrawToPrintedHandSize(AbilityEffect node, Cast cast)
     {
-        int player = Seat(node.Argument, cast);
-        var seat = cast.World.Seats[player];
-        long printed = cast.World.Facts.PrintedValue(
-            seat.IdentityCard.FaceId, "HS", cast.World.Players);
-        int count = (int)Math.Max(0, printed - HandCountDuringEvent(cast, seat));
-        Draw.Cards(cast.World, player, count, cast.Trigger, cast.Events);
-    }
-
-    private static bool CanDrawToPrintedHandSize(AbilityNode node, Cast cast)
-    {
-        int player = Seat(node.Argument, cast);
+        int player = Seat(EffectOf<AbilityEffect.DrawToHandSize>(node, cast).Player, cast);
         var seat = cast.World.Seats[player];
         return HandCountDuringEvent(cast, seat) < cast.World.Facts.PrintedValue(
             seat.IdentityCard.FaceId, "HS", cast.World.Players);
@@ -555,20 +398,24 @@ public sealed partial class AbilityRunner
         seat.Hand.Cards.Count - (cast.Source.Area == seat.Hand
             && cast.World.Facts.Kind(cast.Source.FaceId) == CardKind.Event ? 1 : 0);
 
-    private static void RemoveCounters(AbilityNode node, Cast cast)
+    private static void RemoveCounters(AbilityEffect.RemoveCounters removal, Cast cast)
     {
-        var removal = CounterRemovalOf(node);
         var card = Find(removal.Card, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' cannot find the card paying its counter cost");
-        string key = CounterKeyForRemoval(card, removal.Type, removal.Count)
+        RemoveCounters(card, removal.Counter, removal.Count, cast);
+    }
+
+    private static void RemoveCounters(Card card, string type, long count, Cast cast)
+    {
+        string key = CounterKeyForRemoval(card, type, count)
             ?? throw new RulesNotImplementedException(
-                $"'{card.FaceId}' has fewer than {removal.Count} {removal.Type} counters");
+                $"'{card.FaceId}' has fewer than {count} {type} counters");
         long before = card.Tokens.GetValueOrDefault(key);
 
-        card.PlaceTokens(key, -removal.Count);
+        card.PlaceTokens(key, -count);
         cast.Events.Add(new FieldSet(
-            card.ObjectId, key, before, before - removal.Count)
+            card.ObjectId, key, before, before - count)
         {
             Trigger = cast.Trigger, Verb = "Remove_Counter",
         });
@@ -587,39 +434,8 @@ public sealed partial class AbilityRunner
         }
     }
 
-    private sealed record CounterRemoval(
-        AbilityValue Card, string Type, long Count);
-
-    private static CounterRemoval CounterRemovalOf(AbilityNode node)
-    {
-        if (node.Argument is not AbilityValue.Map map)
-        {
-            throw new AbilityException(
-                "'removeCounters' needs 'card', 'counter', and 'count'");
-        }
-        string[] unknown = map.Entries.Keys
-            .Where(key => key is not ("card" or "counter" or "count"))
-            .Order(StringComparer.Ordinal)
-            .ToArray();
-        if (unknown.Length > 0)
-        {
-            throw new AbilityException(
-                $"'removeCounters' carries fields nothing reads: {string.Join(", ", unknown)}");
-        }
-
-        var card = node.Require("card");
-        string type = Word(node.Require("counter"));
-        long count = Number(node.Require("count"));
-        if (type.Length == 0)
-        {
-            throw new AbilityException("'removeCounters' needs a non-empty 'counter'");
-        }
-        if (count <= 0)
-        {
-            throw new AbilityException("'removeCounters' needs a positive 'count'");
-        }
-        return new CounterRemoval(card, type, count);
-    }
+    private static AbilityEffect.RemoveCounters CounterRemovalOf(AbilityEffect node, Cast cast) =>
+        (AbilityEffect.RemoveCounters)node;
 
     /// <summary>
     /// Advances because a card effect says to —
@@ -633,14 +449,8 @@ public sealed partial class AbilityRunner
     /// engine's choice; stage-addressed advancement needs a separate
     /// implementation.
     /// </remarks>
-    private static void AdvanceMainScheme(AbilityNode node, Cast cast)
+    private static void AdvanceMainScheme(Cast cast)
     {
-        if (!string.Equals(Word(node.Argument), "next", StringComparison.Ordinal))
-        {
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' advances to an unsupported main scheme stage");
-        }
-
         var scheme = cast.World.TheCardIn(DeckType.MainSchemesArea)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' advances a main scheme that is not in play");
@@ -649,17 +459,9 @@ public sealed partial class AbilityRunner
             cast.Trigger, cast.Events);
     }
 
-    private static bool CanAdvanceMainScheme(AbilityNode node, Cast cast)
-    {
-        if (!string.Equals(Word(node.Argument), "next", StringComparison.Ordinal))
-        {
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' advances to an unsupported main scheme stage");
-        }
-
-        return cast.World.TheCardIn(DeckType.MainSchemesArea) is not null
+    private static bool CanAdvanceMainScheme(Cast cast) =>
+        cast.World.TheCardIn(DeckType.MainSchemesArea) is not null
             && cast.World.AreaOf(DeckType.MainSchemesDeck).Cards.Count > 0;
-    }
 
     /// <summary>
     /// Reads a named counter pool, or every typed pool when the card says
@@ -710,7 +512,7 @@ public sealed partial class AbilityRunner
         };
     }
 
-    private static void PreventDamage(AbilityNode node, Cast cast)
+    private static void PreventDamage(AbilityEffect.PreventDamage prevention, Cast cast)
     {
         int target = cast.Occurrence.Target >= 0
             ? cast.Occurrence.Target
@@ -718,7 +520,7 @@ public sealed partial class AbilityRunner
         cast.World.Effects.Register(new ContinuousEffect(
             EffectSource.LastingEffect,
             Kind: "preventDamage",
-            Amount: node.Field("amount") is { } amount ? Amount(amount, cast) : long.MaxValue,
+            Amount: Amount(prevention.Amount, cast),
             Card: cast.Source.ObjectId,
             Affects: target,
             Lasts: new Duration(Uses: 1)));
@@ -817,11 +619,11 @@ public sealed partial class AbilityRunner
     /// single random stream, so how many times it happens is a wire fact and
     /// not a detail.
     /// </remarks>
-    private static void ShuffleInto(AbilityNode node, Cast cast)
+    private static void ShuffleInto(AbilityEffect.ShuffleInto shuffle, Cast cast)
     {
-        var deck = Area(Word(node.Require("deck")), cast);
+        var deck = Area(shuffle.Deck, cast);
         bool applied = false;
-        foreach (var card in Every(node.Require("cards"), cast))
+        foreach (var card in Every(shuffle.Cards, cast))
         {
             var from = card.Area;
             World.MoveToTop(card, deck);
@@ -873,11 +675,10 @@ public sealed partial class AbilityRunner
     /// so it is refused by name until a card needs it.
     /// </para>
     /// </remarks>
-    private static void Search(AbilityNode node, Cast cast)
+    private static void Search(AbilityEffect.Search search, Cast cast)
     {
-        string wanted = Word(node.Require("for"));
-        var searched = Nodes(node.Require("in")).Select(where => where.Kind).ToList();
-        var areas = searched.Select(where => Area(where, cast)).ToList();
+        string wanted = search.Face;
+        var areas = search.Areas.Select(where => Area(where, cast)).ToList();
 
         var found = areas
             .SelectMany(area => area.Cards)
@@ -919,34 +720,6 @@ public sealed partial class AbilityRunner
         }
     }
 
-    /// <summary>Which place on the board a word names.</summary>
-    private static Area Area(string where, Cast cast) => where switch
-    {
-        "encounterDeck" => cast.World.AreaOf(DeckType.EncounterDeck),
-        "encounterDiscardPile" => cast.World.AreaOf(DeckType.EncounterDiscardPile),
-        "scenarioSetAside" => cast.World.AreaOf(DeckType.AsideDeck),
-        "yourDeck" => cast.World.Seats[cast.Player].Deck,
-        _ => throw new RulesNotImplementedException(
-            $"'{cast.Source.FaceId}' searches '{where}', which is not implemented"),
-    };
-
-    /// <summary>
-    /// "Choose to either … or …" — <c>rr:choose-option</c>.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <b>The ability stops here.</b> An interpreter that returns a list of
-    /// events has nowhere to ask a question, so the choice becomes a step on
-    /// the agenda and what resumes the ability is the answer to it. The step
-    /// carries the source card and the seat; <see cref="Choice"/> finds the
-    /// node again from the card, which is why an ability may hold only one.
-    /// </para>
-    /// <para>
-    /// <c>rr:choose-game-element.1</c> settles who is asked, and it is the
-    /// player resolving the ability — not the first player, and not the card's
-    /// owner, which an encounter card has not got.
-    /// </para>
-    /// </remarks>
     /// <summary>
     /// The steps of a <c>seq</c>, from wherever the ability left off.
     /// </summary>
@@ -963,14 +736,14 @@ public sealed partial class AbilityRunner
     /// sequences and branches without rerunning completed effects.
     /// </para>
     /// </remarks>
-    private static void Sequence(AbilityNode node, Cast cast, int from)
+    private static void Sequence(AbilityEffect node, Cast cast, int from)
     {
         if (from == 0)
         {
             _ = CanInitiateSequence(node, cast);
         }
 
-        var steps = Nodes(node.Argument).ToList();
+        var steps = OrderedEffects(node).ToList();
         bool outerContinuation = cast.HasContinuation;
         for (int step = from; step < steps.Count; step++)
         {
@@ -1003,41 +776,38 @@ public sealed partial class AbilityRunner
     /// <c>rr:for-each.4</c>.
     /// </para>
     /// </remarks>
-    private static void ForEach(AbilityNode node, Cast cast)
+    private static void ForEach(AbilityEffect node, Cast cast)
     {
-        long count = Amount(node.Require("count"), cast);
-        if (count < 0)
-        {
-            throw new AbilityException("'forEach' needs a non-negative 'count'");
-        }
+        var instruction = ForEachOf(node, cast);
+        long count = ForEachCount(node, cast);
         if (count == 0)
         {
             return;
         }
 
-        var effect = Tree(node.Require("effect"));
+        var effect = EffectBody(node);
         if (!Choices(effect).Any())
         {
-            switch (effect.Kind)
+            switch (instruction.Effect)
             {
-                case "dealDamage":
-                    if (DamageTargets(effect.Require("cards"), cast).Count != 1)
+                case AbilityEffect.Damage damage:
+                    if (DamageTargets(damage.Cards, cast).Count != 1)
                     {
                         throw new RulesNotImplementedException(
                             $"'{cast.Source.FaceId}' has a for-each damage effect without "
                             + "choose and does not resolve to one target");
                     }
-                    DealDamage(effect, cast, count);
+                    DealDamage(damage, effect, cast, count);
                     return;
 
-                case "removeThreat":
-                    if (Every(effect.Require("scheme"), cast).Count != 1)
+                case AbilityEffect.RemoveThreat removal:
+                    if (Every(removal.Schemes, cast).Count != 1)
                     {
                         throw new RulesNotImplementedException(
                             $"'{cast.Source.FaceId}' has a for-each threat-removal effect "
                             + "without choose and does not resolve to one target");
                     }
-                    RemoveThreat(effect, cast, count);
+                    RemoveThreat(removal, cast, count);
                     return;
             }
 
@@ -1070,10 +840,10 @@ public sealed partial class AbilityRunner
     /// observable: its alteration finishes before the next card is discarded.
     /// The exact-card binding survives an immediate encounter-deck reset.
     /// </remarks>
-    private static void EachTime(AbilityNode node, Cast cast)
+    private static void EachTime(AbilityEffect node, Cast cast)
     {
         var preceding = EachTimePreceding(node, cast);
-        long requested = Amount(preceding.Require("count"), cast);
+        long requested = Amount(preceding.Count, cast);
         if (requested < 0)
         {
             throw new AbilityException("'eachTime' needs a non-negative discard count");
@@ -1090,14 +860,16 @@ public sealed partial class AbilityRunner
         ContinueEachTime(node, cast, from: 0, Math.Min(requested, available));
     }
 
-    private static AbilityNode EachTimePreceding(AbilityNode node, Cast cast)
+    private static AbilityEffect.ForEach ForEachOf(AbilityEffect node, Cast cast) =>
+        (AbilityEffect.ForEach)node;
+
+    private static AbilityEffect.EachTime EachTimeOf(AbilityEffect node, Cast cast) =>
+        (AbilityEffect.EachTime)node;
+
+    private static AbilityEffect.DiscardTop EachTimePreceding(AbilityEffect node, Cast cast)
     {
-        var preceding = Tree(node.Require("effect"));
-        if (preceding.Kind != "discardTop"
-            || preceding.Field("player") is not null
-            || !string.Equals(
-                Word(preceding.Require("from")), "encounterDeck",
-                StringComparison.Ordinal))
+        if (EachTimeOf(node, cast).Effect is not AbilityEffect.DiscardTop
+            { From: AbilitySearchArea.EncounterDeck, Players: null } preceding)
         {
             throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' uses each-time around an unsupported preceding effect");
@@ -1105,10 +877,10 @@ public sealed partial class AbilityRunner
         return preceding;
     }
 
-    private static void ValidateEachTimeBody(AbilityNode node, Cast cast)
+    private static void ValidateEachTimeBody(AbilityEffect node, Cast cast)
     {
         if (ContainsUnreconstructibleAfterActivation(
-            Tree(node.Require("then")), cast))
+            EffectFollowing(node), cast))
         {
             throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' suspends inside an after-activation effect, "
@@ -1117,78 +889,74 @@ public sealed partial class AbilityRunner
     }
 
     private static bool ContainsUnreconstructibleAfterActivation(
-        AbilityNode node, Cast cast)
+        AbilityEffect node, Cast cast)
     {
-        if (node.Kind == "afterActivation")
+        if (node.OperationName() == "afterActivation")
         {
             return DelayedNeedsContinuationAddress(
-                Tree(node.Require("effect")), cast, hasContinuation: false);
+                EffectBody(node), cast, hasContinuation: false);
         }
         return ContinuationChildren(node).Any(child =>
             ContainsUnreconstructibleAfterActivation(child, cast));
     }
 
     private static bool DelayedNeedsContinuationAddress(
-        AbilityNode node, Cast cast, bool hasContinuation)
+        AbilityEffect node, Cast cast, bool hasContinuation)
     {
-        if (node.Kind == "afterActivation"
-            || node.Kind == "and" && Nodes(node.Argument).Skip(1).Any()
+        if (node.OperationName() == "afterActivation"
+            || node.OperationName() == "and" && OrderedEffects(node).Skip(1).Any()
             || IsChoice(node)
-            || node.Kind is "eachPlayer" or "attack" or "thwart" or "thwartSchemes")
+            || node.OperationName() is "eachPlayer" or "attack" or "thwart" or "thwartSchemes")
         {
             return true;
         }
-        if (node.Kind is "placeThreat" or "enemyAttacks" or "enemySchemes")
+        if (node.OperationName() is "placeThreat" or "enemyAttacks" or "enemySchemes")
         {
             return hasContinuation;
         }
-        if (node.Kind is "seq" or "and")
+        if (node.OperationName() is "seq" or "and")
         {
-            var children = Nodes(node.Argument).ToList();
+            var children = OrderedEffects(node).ToList();
             return children.Select((child, index) => (child, index)).Any(entry =>
                 DelayedNeedsContinuationAddress(
                     entry.child, cast,
                     hasContinuation || entry.index < children.Count - 1));
         }
-        if (node.Kind == "if")
+        if (node.OperationName() == "if")
         {
-            return Branches.Select(node.Field)
+            return ConditionalBranches((AbilityEffect.Conditional)node)
                 .Where(branch => branch is not null)
                 .Any(branch => DelayedNeedsContinuationAddress(
-                    Tree(branch!), cast, hasContinuation));
+                    branch, cast, hasContinuation));
         }
-        if (node.Kind is "then" or "otherwise")
+        if (node.OperationName() is "then" or "otherwise")
         {
             return DelayedNeedsContinuationAddress(
-                    Tree(node.Require("effect")), cast, hasContinuation: true)
+                    EffectBody(node), cast, hasContinuation: true)
                 || DelayedNeedsContinuationAddress(
-                    Tree(node.Require(node.Kind)), cast, hasContinuation);
+                    EffectFollowing(node), cast, hasContinuation);
         }
-        if (node.Kind == "forEach")
+        if (node.OperationName() == "forEach")
         {
-            if (AmountMayChange(node.Require("count")))
+            if (AmountMayChange(ForEachOf(node, cast).Count))
             {
                 return DelayedNeedsContinuationAddress(
-                    Tree(node.Require("effect")), cast, hasContinuation: true);
+                    EffectBody(node), cast, hasContinuation: true);
             }
             long count = ForEachCount(node, cast);
             return count > 0 && DelayedNeedsContinuationAddress(
-                Tree(node.Require("effect")), cast,
+                EffectBody(node), cast,
                 hasContinuation || count > 1);
         }
-        if (node.Kind == "eachTime")
+        if (node.OperationName() == "eachTime")
         {
-            var preceding = Tree(node.Require("effect"));
-            if (preceding.Kind != "discardTop"
-                || preceding.Field("player") is not null
-                || !string.Equals(
-                    Word(preceding.Require("from")), "encounterDeck",
-                    StringComparison.Ordinal))
+            if (EachTimeOf(node, cast).Effect is not AbilityEffect.DiscardTop
+                { From: AbilitySearchArea.EncounterDeck, Players: null } preceding)
             {
                 return true;
             }
 
-            var requested = preceding.Require("count");
+            var requested = preceding.Count;
             if (AmountMayChange(requested))
             {
                 return true;
@@ -1203,7 +971,7 @@ public sealed partial class AbilityRunner
                 return false;
             }
             return DelayedNeedsContinuationAddress(
-                Tree(node.Require("then")), cast,
+                EffectFollowing(node), cast,
                 hasContinuation || count > 1);
         }
         return ContinuationChildren(node).Any(child =>
@@ -1211,8 +979,9 @@ public sealed partial class AbilityRunner
     }
 
     private static void ContinueEachTime(
-        AbilityNode node, Cast cast, long from, long count)
+        AbilityEffect node, Cast cast, long from, long count)
     {
+        var instruction = EachTimeOf(node, cast);
         bool outerContinuation = cast.HasContinuation;
         for (long iteration = from; iteration < count; iteration++)
         {
@@ -1225,14 +994,14 @@ public sealed partial class AbilityRunner
             cast.Discarded.Add(discarded);
             cast.BindAlteration(discarded);
 
-            if (!Test(Tree(node.Require("when")), cast))
+            if (!Test(instruction.When, cast))
             {
                 continue;
             }
 
             cast.SetContinuation(outerContinuation || iteration < count - 1);
             RunChild(
-                Tree(node.Require("then")),
+                EffectFollowing(node),
                 $"eachTime:{iteration}:{count}:{discarded.ObjectId}",
                 cast);
             if (cast.Suspended)
@@ -1251,8 +1020,9 @@ public sealed partial class AbilityRunner
     /// targeted shapes fail closed until their target can be persisted instead
     /// of running a fresh selector against a changed board.
     /// </remarks>
-    private static bool ContainsForEachTarget(AbilityNode node) =>
-        node.Kind is "removeFromGame" or "exhaust" or "ready" or "reveal"
+    private static bool ContainsForEachTarget(AbilityEffect node) =>
+        node is AbilityEffect.DelayedStun
+        || node.OperationName() is "removeFromGame" or "exhaust" or "ready" or "reveal"
             or "returnToHand" or "returnOwnedToHand" or "soakDamage"
             or "addToHand" or "giveStatus" or "attachTo" or "grantUntil"
             or "discard" or "heal" or "placeCounters" or "shuffleInto" or "search"
@@ -1263,7 +1033,7 @@ public sealed partial class AbilityRunner
             or "thwartDifferentSchemes" or "legalPractice"
         || ContinuationChildren(node).Any(ContainsForEachTarget);
 
-    private static void RunChild(AbilityNode node, string frame, Cast cast)
+    private static void RunChild(AbilityEffect node, string frame, Cast cast)
     {
         cast.AbilityPath.Add(frame);
         try
@@ -1276,7 +1046,7 @@ public sealed partial class AbilityRunner
         }
     }
 
-    private static int AbilityOrdinal(AbilityNode node, Cast cast)
+    private static int AbilityOrdinal(AbilityEffect node, Cast cast)
     {
         if (cast.AbilityOrdinal >= 0)
         {
@@ -1290,7 +1060,7 @@ public sealed partial class AbilityRunner
         var matches = written
             .Select((ability, ordinal) => (Node: TryNodeAtPath(
                 ability.Effect, cast.AbilityPath), ordinal))
-            .Where(candidate => candidate.Node == node)
+            .Where(candidate => ReferenceEquals(candidate.Node, node))
             .Select(candidate => candidate.ordinal)
             .ToList();
         return matches.Count == 1
@@ -1299,10 +1069,10 @@ public sealed partial class AbilityRunner
                 $"'{cast.Source.FaceId}' cannot identify the exact ability that suspended");
     }
 
-    private IEnumerable<CardAbility> AbilitiesOn(Card source, string? face) =>
-        string.IsNullOrEmpty(face) ? On(source) : book.On(face);
+    private ImmutableArray<CompiledCardAbility> AbilitiesOn(Card source, string? face) =>
+        string.IsNullOrEmpty(face) ? On(source) : program.On(face);
 
-    private void TrackResolution(Cast cast, CardAbility ability)
+    private void TrackResolution(Cast cast, CompiledCardAbility ability)
     {
         var sameTier = AbilitiesOn(cast.Source, cast.AbilityFace)
             .Where(candidate => candidate.Trigger.Timing == ability.Trigger.Timing)
@@ -1321,7 +1091,7 @@ public sealed partial class AbilityRunner
         cast.TrackResolution(ordinal);
     }
 
-    private CardAbility AbilityAt(
+    private CompiledCardAbility AbilityAt(
         Card source, AbilityType? tier, int ordinal, string? face = null) =>
         AbilitiesOn(source, face)
             .Where(ability => tier is null || ability.Trigger.Timing == tier)
@@ -1408,8 +1178,8 @@ public sealed partial class AbilityRunner
         cast.BindAlteration(cast.World.Cards[ParseEachTimeCard(parts, frame)]);
     }
 
-    private static AbilityNode? TryNodeAtPath(
-        AbilityNode root, IReadOnlyList<string> path)
+    private static AbilityEffect? TryNodeAtPath(
+        AbilityEffect root, IReadOnlyList<string> path)
     {
         try
         {
@@ -1444,8 +1214,8 @@ public sealed partial class AbilityRunner
         return null;
     }
 
-    private static AbilityNode NodeAtPath(
-        AbilityNode root, IReadOnlyList<string> path)
+    private static AbilityEffect NodeAtPath(
+        AbilityEffect root, IReadOnlyList<string> path)
     {
         try
         {
@@ -1453,15 +1223,15 @@ public sealed partial class AbilityRunner
         }
         catch (Exception error) when (error is AbilityException
             or ArgumentOutOfRangeException or IndexOutOfRangeException
-            or InvalidOperationException or FormatException)
+            or InvalidOperationException or InvalidCastException or FormatException)
         {
             throw new RulesNotImplementedException(
                 $"ability continuation path '{string.Join("/", path)}' is invalid");
         }
     }
 
-    private static AbilityNode NodeAtPathCore(
-        AbilityNode root, IReadOnlyList<string> path, int offset = 0)
+    private static AbilityEffect NodeAtPathCore(
+        AbilityEffect root, IReadOnlyList<string> path, int offset = 0)
     {
         var node = root;
         for (int index = offset; index < path.Count; index++)
@@ -1469,17 +1239,17 @@ public sealed partial class AbilityRunner
             var parts = path[index].Split(':');
             node = parts[0] switch
             {
-                "seq" => Nodes(node.Argument).ElementAt(ParseIndex(parts, path[index])),
-                "if" => Tree(node.Require(parts[1])),
-                "then" or "otherwise" => Tree(node.Require(parts[1])),
+                "seq" => OrderedEffects(node).ElementAt(ParseIndex(parts, path[index])),
+                "if" => ContinuationChild(node, parts[1]),
+                "then" or "otherwise" => ContinuationChild(node, parts[1]),
                 "defense" or "eachPlayer" or "forEach" =>
-                    Tree(node.Require("effect")),
-                "eachTime" => Tree(node.Require("then")),
+                    EffectBody(node),
+                "eachTime" => EffectFollowing(node),
                 "choice" when parts[1] == "option" =>
-                    Nodes(node.Require("options")).ElementAt(ParseIndex(parts, path[index], 2)),
-                "choice" when parts[1] == "effect" => Tree(node.Require("effect")),
-                "choice" when parts[1] == "otherwise" => Tree(node.Require("otherwise")),
-                "and" => Nodes(node.Argument).ElementAt(ParseIndex(parts, path[index])),
+                    ((AbilityEffect.Choose)node).Options.ElementAt(ParseIndex(parts, path[index], 2)),
+                "choice" when parts[1] == "effect" => EffectBody(node),
+                "choice" when parts[1] == "otherwise" => EffectFollowing(node),
+                "and" => OrderedEffects(node).ElementAt(ParseIndex(parts, path[index])),
                 _ => throw new RulesNotImplementedException(
                     $"ability continuation frame '{path[index]}' is not implemented"),
             };
@@ -1488,7 +1258,7 @@ public sealed partial class AbilityRunner
     }
 
     private static void ResumeAfter(
-        AbilityNode node, IReadOnlyList<string> path, Cast cast, int depth = 0,
+        AbilityEffect node, IReadOnlyList<string> path, Cast cast, int depth = 0,
         int stopBefore = -1)
     {
         try
@@ -1497,7 +1267,7 @@ public sealed partial class AbilityRunner
         }
         catch (Exception error) when (error is AbilityException
             or ArgumentOutOfRangeException or IndexOutOfRangeException
-            or InvalidOperationException or FormatException)
+            or InvalidOperationException or InvalidCastException or FormatException)
         {
             throw new RulesNotImplementedException(
                 $"ability continuation path '{string.Join("/", path)}' is invalid");
@@ -1505,7 +1275,7 @@ public sealed partial class AbilityRunner
     }
 
     private static void ResumeAfterCore(
-        AbilityNode node, IReadOnlyList<string> path, Cast cast, int depth = 0,
+        AbilityEffect node, IReadOnlyList<string> path, Cast cast, int depth = 0,
         int stopBefore = -1)
     {
         if (depth >= path.Count)
@@ -1519,19 +1289,19 @@ public sealed partial class AbilityRunner
         {
             cast.BindAlteration(cast.World.Cards[ParseEachTimeCard(parts, frame)]);
         }
-        AbilityNode child = parts[0] switch
+        AbilityEffect child = parts[0] switch
         {
-            "seq" => Nodes(node.Argument).ElementAt(ParseIndex(parts, frame)),
-            "if" => Tree(node.Require(parts[1])),
-            "then" or "otherwise" => Tree(node.Require(parts[1])),
+            "seq" => OrderedEffects(node).ElementAt(ParseIndex(parts, frame)),
+            "if" => ContinuationChild(node, parts[1]),
+            "then" or "otherwise" => ContinuationChild(node, parts[1]),
             "defense" or "eachPlayer" or "forEach" =>
-                Tree(node.Require("effect")),
-            "eachTime" => Tree(node.Require("then")),
+                EffectBody(node),
+            "eachTime" => EffectFollowing(node),
             "choice" when parts[1] == "option" =>
-                Nodes(node.Require("options")).ElementAt(ParseIndex(parts, frame, 2)),
-            "choice" when parts[1] == "effect" => Tree(node.Require("effect")),
-            "choice" when parts[1] == "otherwise" => Tree(node.Require("otherwise")),
-            "and" => Nodes(node.Argument).ElementAt(ParseIndex(parts, frame)),
+                ((AbilityEffect.Choose)node).Options.ElementAt(ParseIndex(parts, frame, 2)),
+            "choice" when parts[1] == "effect" => EffectBody(node),
+            "choice" when parts[1] == "otherwise" => EffectFollowing(node),
+            "and" => OrderedEffects(node).ElementAt(ParseIndex(parts, frame)),
             _ => throw new RulesNotImplementedException(
                 $"ability continuation frame '{frame}' is not implemented"),
         };
@@ -1550,7 +1320,7 @@ public sealed partial class AbilityRunner
         switch (parts[0])
         {
             case "seq":
-                var steps = Nodes(node.Argument).ToList();
+                var steps = OrderedEffects(node).ToList();
                 bool outerContinuation = cast.HasContinuation;
                 for (int index = ParseIndex(parts, frame) + 1; index < steps.Count; index++)
                 {
@@ -1578,12 +1348,12 @@ public sealed partial class AbilityRunner
                     : ResolutionOutcome.None;
                 if (outcome == required)
                 {
-                    RunChild(Tree(node.Require(parts[0])), $"{parts[0]}:{parts[0]}", cast);
+                    RunChild(ContinuationChild(node, parts[0]), $"{parts[0]}:{parts[0]}", cast);
                 }
                 break;
 
             case "and":
-                var effects = Nodes(node.Argument).ToList();
+                var effects = OrderedEffects(node).ToList();
                 var remaining = ValidRemaining(node, parts, frame);
                 var completed = Completed(parts, frame);
                 completed.Add(ParseIndex(parts, frame));
@@ -1614,7 +1384,7 @@ public sealed partial class AbilityRunner
             case "forEach":
                 long count = ParseForEachCount(parts, frame);
                 long completedIteration = ParseIndex(parts, frame);
-                var repeated = Tree(node.Require("effect"));
+                var repeated = EffectBody(node);
                 bool outerForEachContinuation = cast.HasContinuation;
                 for (long iteration = completedIteration + 1; iteration < count; iteration++)
                 {
@@ -1639,11 +1409,11 @@ public sealed partial class AbilityRunner
     }
 
     private static bool HasRemainingAtFrame(
-        AbilityNode node, string[] parts, string frame)
+        AbilityEffect node, string[] parts, string frame)
     {
         return parts[0] switch
         {
-            "seq" => ParseIndex(parts, frame) < Nodes(node.Argument).Count() - 1,
+            "seq" => ParseIndex(parts, frame) < OrderedEffects(node).Length - 1,
             "and" => ValidRemaining(node, parts, frame).Count > 0,
             "forEach" => ParseIndex(parts, frame) + 1
                 < ParseForEachCount(parts, frame),
@@ -1696,9 +1466,9 @@ public sealed partial class AbilityRunner
     }
 
     private static List<int> ValidRemaining(
-        AbilityNode node, string[] parts, string frame)
+        AbilityEffect node, string[] parts, string frame)
     {
-        var effects = Nodes(node.Argument).ToList();
+        var effects = OrderedEffects(node).ToList();
         var remaining = Remaining(parts, frame);
         var completed = Completed(parts, frame);
         var completeOrder = completed

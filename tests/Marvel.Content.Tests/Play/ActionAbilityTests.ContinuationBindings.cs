@@ -725,7 +725,7 @@ public sealed partial class ActionAbilityTests
               "test": { "inForm": { "player": "you", "form": "hero" } },
               "then": { "attack": {
                 "target": { "query": "villain" },
-                "effect": { "changeForm": { "player": "firstPlayer", "to": "alterEgo" } }
+                "effect": { "changeForm": { "player": "firstPlayer", "to": "alter-ego" } }
               } },
               "else": { "attack": {
                 "target": { "query": "villain" },
@@ -765,7 +765,7 @@ public sealed partial class ActionAbilityTests
               "then": { "discard": "this" },
               "else": { "if": {
                 "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
-                "then": { "changeForm": { "player": "firstPlayer", "to": "alterEgo" } },
+                "then": { "changeForm": { "player": "firstPlayer", "to": "alter-ego" } },
                 "else": { "attack": {
                   "target": { "query": "villain" },
                   "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
@@ -797,7 +797,7 @@ public sealed partial class ActionAbilityTests
               "then": { "discard": "this" },
               "else": { "if": {
                 "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
-                "then": { "changeForm": { "player": "firstPlayer", "to": "alterEgo" } },
+                "then": { "changeForm": { "player": "firstPlayer", "to": "alter-ego" } },
                 "else": { "attack": {
                   "target": { "query": "villain" },
                   "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }

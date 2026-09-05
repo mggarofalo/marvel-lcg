@@ -41,14 +41,14 @@ public sealed partial class AbilityRunner
             RestorePathBindings(cast, choicePath);
         }
 
-        if (choice.Kind == "indirectDamage")
+        if (choice.OperationName() == "indirectDamage")
         {
-            return Sharing(source, player, choice, cast);
+            return Sharing(source, player, (AbilityEffect.IndirectDamage)choice, cast);
         }
 
-        if (choice.Kind == "and")
+        if (choice.OperationName() == "and")
         {
-            int count = Nodes(choice.Argument).Count();
+            int count = EffectOf<AbilityEffect.Simultaneous>(choice, cast).Effects.Length;
             return new Prompt(
                 Player: world.FirstPlayer,
                 Asking: Question.Order,
@@ -72,9 +72,9 @@ public sealed partial class AbilityRunner
                 ]);
         }
 
-        if (choice.Kind is "enemyAttacks" or "enemySchemes")
+        if (choice.OperationName() is "enemyAttacks" or "enemySchemes")
         {
-            var enemies = ActivationCandidates(choice, cast);
+            var enemies = ActivationCandidates(ActivationOf(choice, cast), cast);
             var ids = enemies.Select(enemy => enemy.ObjectId).ToList();
             return new Prompt(
                 Player: world.FirstPlayer,
@@ -95,15 +95,14 @@ public sealed partial class AbilityRunner
                 ]);
         }
 
-        bool cards = choice.Kind == "chooseCard";
+        bool cards = choice.OperationName() == "chooseCard";
 
         // `rr:choose-option` and `rr:choose-game-element` are two questions and
         // not one: an option is a branch the card lists, an element is a card
-        // on the board. `Question` has told them apart since before anything
-        // asked either.
-        if (choice.Kind == "resolveSpecials")
+        // on the board.
+        if (choice.OperationName() == "resolveSpecials")
         {
-            var upgrades = Every(choice.Require("cards"), cast);
+            var upgrades = Every(EffectOf<AbilityEffect.CardAction>(choice, cast).Selection, cast);
             return new Prompt(
                 Player: player,
                 Asking: Question.Element,
@@ -118,16 +117,16 @@ public sealed partial class AbilityRunner
                         Verb: ChooseVerb,
                         AnchorId: source.ObjectId,
                         AnchorPlayer: player,
-                        Label: choice.Kind,
+                        Label: choice.OperationName(),
                         Targets: new TargetRequest(
                             [.. upgrades.Select(card => card.ObjectId)],
                             upgrades.Count,
                             upgrades.Count)),
                 ]);
         }
-        if (choice.Kind == "payOrExhaust")
+        if (choice.OperationName() == "payOrExhaust")
         {
-            string required = Word(choice.Require("resources"));
+            string required = EffectOf<AbilityEffect.PayOrEffect>(choice, cast).Resources;
             var sources = CardPlay.Generators(world, world.Facts, world.Seats[player]);
             string pool = string.Concat(sources.SelectMany(source => source.Generates));
             var offers = new List<Affordance>();
@@ -145,9 +144,8 @@ public sealed partial class AbilityRunner
                             Sources: sources),
                     ]));
             }
-            AbilityNode otherwise = Tree(choice.Require("otherwise"));
-            if (otherwise.Kind != "exhaust"
-                || Every(otherwise.Argument, cast).Any(card => card.Ready))
+            var exhaust = (AbilityEffect.CardAction)EffectOf<AbilityEffect.PayOrEffect>(choice, cast).Otherwise;
+            if (Every(exhaust.Selection, cast).Any(card => card.Ready))
             {
                 offers.Add(new Affordance(
                     1, ChooseVerb, source.ObjectId, World.Scenario, "exhaust"));
@@ -157,9 +155,9 @@ public sealed partial class AbilityRunner
                 Steps.CardRevealed, $"{source.FaceId}: spend or exhaust",
                 Cancellable: false, offers);
         }
-        if (choice.Kind == "payOrEffect")
+        if (choice.OperationName() == "payOrEffect")
         {
-            string required = Word(choice.Require("resources"));
+            string required = EffectOf<AbilityEffect.PayOrEffect>(choice, cast).Resources;
             var sources = CardPlay.Generators(world, world.Facts, world.Seats[player]);
             var offers = new List<Affordance>();
             if (Resources.Pays(string.Concat(sources.SelectMany(s => s.Generates)),
@@ -173,11 +171,11 @@ public sealed partial class AbilityRunner
             return new Prompt(player, Question.Option, TimingPriority.Untimed,
                 Steps.CardRevealed, $"{source.FaceId}: spend or resolve", false, offers);
         }
-        if (choice.Kind == "chooseTopForHand")
+        if (choice.OperationName() == "chooseTopForHand")
         {
             var top = TopCards(
                 world.Seats[player].Deck,
-                (int)Number(choice.Require("count")));
+                EffectOf<AbilityEffect.ChooseTopForHand>(choice, cast).Count);
             return new Prompt(
                 player, Question.Element, TimingPriority.Untimed,
                 Steps.TurnAction, $"{source.FaceId}: choose a top card",
@@ -188,25 +186,25 @@ public sealed partial class AbilityRunner
                 ExposesConcealedCandidates = true,
             };
         }
-        if (choice.Kind == "chooseDiscardToShuffle")
+        if (choice.OperationName() == "chooseDiscardToShuffle")
         {
             var discard = world.AreaOf(
                 DeckType.DiscardPile, PlayArea.Of(player), cardOwner: player);
             int max = Math.Min(
-                (int)Number(choice.Require("max")),
+                EffectOf<AbilityEffect.ChooseDiscardToShuffle>(choice, cast).Maximum,
                 discard.Cards.Select(card => world.Facts.Title(card.FaceId)).Distinct().Count());
             return new Prompt(
                 player, Question.Element, TimingPriority.Untimed,
                 Steps.TurnAction, $"{source.FaceId}: choose cards to shuffle",
                 Cancellable: false,
                 [new Affordance(
-                    source.ObjectId, ChooseVerb, source.ObjectId, player, choice.Kind,
+                    source.ObjectId, ChooseVerb, source.ObjectId, player, choice.OperationName(),
                     new TargetRequest(
                         [.. discard.Cards.Select(card => card.ObjectId)], 1, max))]);
         }
-        if (choice.Kind == "thwartDifferentSchemes")
+        if (choice.OperationName() == "thwartDifferentSchemes")
         {
-            var schemes = Every(choice.Require("schemes"), cast);
+            var schemes = Every(EffectOf<AbilityEffect.ThwartGroup>(choice, cast).Schemes, cast);
             bool aerial = Rules.State.Traits.Has(
                 world, world.Seats[player].IdentityCard, "AERIAL", world.Facts);
             int count = aerial && schemes.Count > 1 ? 2 : 1;
@@ -215,11 +213,11 @@ public sealed partial class AbilityRunner
                 Steps.TurnAction, $"{source.FaceId}: choose scheme{(count == 1 ? "" : "s")}",
                 Cancellable: false,
                 [new Affordance(
-                    source.ObjectId, ChooseVerb, source.ObjectId, player, choice.Kind,
+                    source.ObjectId, ChooseVerb, source.ObjectId, player, choice.OperationName(),
                     new TargetRequest(
                         [.. schemes.Select(card => card.ObjectId)], count, count))]);
         }
-        if (choice.Kind == "makeTheCall")
+        if (choice.OperationName() == "makeTheCall")
         {
             var offers = AlliesInPlayerDiscards(world)
                 .Select(ally => (Ally: ally, Sources: MakeTheCallSources(
@@ -253,11 +251,11 @@ public sealed partial class AbilityRunner
                 Steps.TurnAction, $"{source.FaceId}: choose an ally",
                 Cancellable: false, offers);
         }
-        if (choice.Kind == "legalPractice")
+        if (choice.OperationName() == "legalPractice")
         {
             var hand = world.Seats[player].Hand.Cards
                 .Where(card => card.ObjectId != source.ObjectId).ToList();
-            var schemes = Every(choice.Require("schemes"), cast)
+            var schemes = Every(EffectOf<AbilityEffect.ThwartGroup>(choice, cast).Schemes, cast)
                 .Where(card => card.Tokens.GetValueOrDefault("k_threat") > 0).ToList();
             return new Prompt(player, Question.Element, TimingPriority.Untimed,
                 Steps.TurnAction, $"{source.FaceId}: choose cards and a scheme", false,
@@ -266,9 +264,9 @@ public sealed partial class AbilityRunner
                     new TargetRequest([.. hand.Select(card => card.ObjectId)], 1,
                         Math.Min(5, hand.Count)))).ToList());
         }
-        string[]? descriptions = ChoiceDescriptions(choice);
+        var descriptions = cards ? default : EffectOf<AbilityEffect.Choose>(choice, cast).Descriptions;
         bool optionalTransition = !cards
-            && Nodes(choice.Require("options")).Any(IsExplicitDecline);
+            && ((AbilityEffect.Choose)choice).Options.Any(IsExplicitDecline);
         var affordances = cards
             ? LegalCardChoicesForContinuation(choice, cast)
                 .Select(card => new Affordance(
@@ -278,7 +276,7 @@ public sealed partial class AbilityRunner
                     AnchorPlayer: card.Owner,
                     Label: card.FaceId,
                     Description: ChoiceCardDescription(choice, card, cast)))
-            : Nodes(choice.Require("options"))
+            : ((AbilityEffect.Choose)choice).Options
                 .Select((option, index) => (Option: option, Index: index))
                 .Where(candidate => OptionIsLegalForContinuation(
                     candidate.Option, cast, optionalTransition))
@@ -287,8 +285,8 @@ public sealed partial class AbilityRunner
                     Verb: ChooseVerb,
                     AnchorId: source.ObjectId,
                     AnchorPlayer: World.Scenario,
-                    Label: candidate.Option.Kind,
-                    Description: descriptions?[candidate.Index]));
+                    Label: candidate.Option.OperationName(),
+                    Description: descriptions.IsDefaultOrEmpty ? null : descriptions[candidate.Index]));
 
         var offered = affordances.ToList();
         if (offered.Count == 0)
@@ -297,17 +295,8 @@ public sealed partial class AbilityRunner
                 $"'{source.FaceId}' requires a choice and has no legal option");
         }
 
-        // Most questions belong to the player resolving the ability. A card
-        // can instead name who makes this choice; the DSL chooses the
-        // `chooser` spelling because prompt ownership is an engine wire choice,
-        // not Rules Reference terminology. The resolving player remains on the
-        // continuation, so "you" inside the chosen effect does not change.
-        int chooser = choice.Field("chooser") is { } namedChooser
-            ? Seat(namedChooser, cast)
-            : player;
-
         return new Prompt(
-            Player: chooser,
+            Player: player,
             Asking: cards ? Question.Element : Question.Option,
             When: TimingPriority.Untimed,
             Trigger: Steps.CardRevealed,
@@ -319,12 +308,12 @@ public sealed partial class AbilityRunner
             Affordances: offered)
         {
             ExposesConcealedCandidates = cards
-                && InspectsConcealedPile(choice.Require("from")),
+                && InspectsConcealedPile(EffectOf<AbilityEffect.ChooseCard>(choice, cast).From),
         };
     }
 
     private static string ChoiceCardDescription(
-        AbilityNode choice, Card card, Cast cast)
+        AbilityEffect choice, Card card, Cast cast)
     {
         string title = cast.World.Facts.Title(card.FaceId);
         if (cast.World.Facts.Kind(card.FaceId) is CardKind.Hero or CardKind.AlterEgo)
@@ -332,7 +321,7 @@ public sealed partial class AbilityRunner
             return $"Select {cast.World.Seats[card.Owner].Name} → {title}";
         }
 
-        AbilityNode effect = Tree(choice.Require("effect"));
+        AbilityEffect effect = EffectOf<AbilityEffect.ChooseCard>(choice, cast).Effect;
         if (ProjectedDamage(effect, cast) is { } projection)
         {
             Card attacker = cast.AbilityActor
@@ -343,20 +332,20 @@ public sealed partial class AbilityRunner
                 return $"{title} · Stunned cancels this attack; no damage will be dealt";
             }
 
-            long amount = ProjectedDamageAmount(projection.Node, projection.IsAttack, cast);
+            long amount = ProjectedDamageAmount(projection.Amount, projection.IsAttack, cast);
             string consequence = projection.IsAttack
                 ? Damage.PreviewAttack(
                     cast.World, cast.World.Facts, attacker, cast.Source, card, amount,
-                    grantsOverkill: projection.Node.Field("overkill") is not null)
+                    grantsOverkill: projection.Overkill)
                 : Damage.PreviewDamage(
                     cast.World, cast.World.Facts, cast.Source, card, amount);
             return $"{title} · {consequence}";
         }
 
-        if (effect.Kind == "removeThreat")
+        if (effect is AbilityEffect.RemoveThreat threat)
         {
             long current = card.Tokens.GetValueOrDefault("k_threat");
-            long removed = Math.Min(current, Amount(effect.Require("amount"), cast));
+            long removed = Math.Min(current, Amount(threat.Amount, cast));
             long result = current - removed;
             long threshold = cast.World.Facts.PrintedValue(
                 card.FaceId, "TargetThreat", cast.World.Players);
@@ -368,81 +357,43 @@ public sealed partial class AbilityRunner
         return title;
     }
 
-    private static (AbilityNode Node, bool IsAttack)? ProjectedDamage(
-        AbilityNode node, Cast cast, bool isAttack = false)
+    private static (AbilityNumber Amount, bool IsAttack, bool Overkill)? ProjectedDamage(
+        AbilityEffect? effect, Cast cast, bool isAttack = false)
     {
-        if (node.Kind == "attack")
+        if (effect is AbilityEffect.Power { Kind: AbilityPowerKind.Attack } power)
         {
-            return ProjectedDamage(Tree(node.Require("effect")), cast, isAttack: true);
+            return ProjectedDamage(power.Effect, cast, isAttack: true);
         }
-        if (node.Kind == "if")
+        if (effect is AbilityEffect.Conditional conditional)
         {
-            string branch = Test(Tree(node.Require("test")), cast) ? "then" : "else";
-            return node.Field(branch) is { } active
-                ? ProjectedDamage(Tree(active), cast, isAttack)
-                : null;
+            return ProjectedDamage(Test(conditional.Test, cast) ? conditional.Then : conditional.Else, cast, isAttack);
         }
-        if (node.Kind == "seq")
+        if (effect is AbilityEffect.Sequence sequence)
         {
             // A later amount can depend on what an earlier effect discovers
             // (Repulsor Blast is the Core example). Only the leading effect is
             // already knowable at this decision; do not skip over state changes.
-            return Nodes(node.Argument).FirstOrDefault() is { } first
-                ? ProjectedDamage(first, cast, isAttack)
-                : null;
+            return ProjectedDamage(sequence.Effects.FirstOrDefault(), cast, isAttack);
         }
-        return node.Kind switch
+        return effect switch
         {
-            "dealAttackDamage" => (node, true),
-            "dealDamage" => (node, isAttack),
+            AbilityEffect.AttackDamage damage => (damage.Amount, true, damage.Overkill),
+            AbilityEffect.Damage damage => (damage.Amount, isAttack, false),
             _ => null,
         };
     }
 
     private static long ProjectedDamageAmount(
-        AbilityNode damage, bool isAttack, Cast cast)
+        AbilityNumber damage, bool isAttack, Cast cast)
     {
         long amount = SaturatingSum(
-            Amount(damage.Require("amount"), cast),
+            Amount(damage, cast),
             [EventModifier(cast, "eventDamage")]);
         if (!isAttack)
         {
             return amount;
         }
-        if (damage.Kind == "dealAttackDamage")
-        {
-            return SaturatingSum(amount, [SaturatingSum(
-                0, EventModifierEffects(cast, "attackDamage")
-                    .Select(modifier => modifier.Amount))]);
-        }
         return SaturatingSum(amount, [EventModifier(cast, "attackDamage")]);
-    }
-
-    private static string[]? ChoiceDescriptions(AbilityNode choice)
-    {
-        if (choice.Field("descriptions") is not { } value)
-        {
-            return null;
-        }
-
-        if (value is not AbilityValue.List list
-            || list.Values.Any(item => item is not AbilityValue.Word))
-        {
-            throw new AbilityException("'choose' descriptions must be a list of strings");
-        }
-
-        string[] descriptions = list.Values
-            .Cast<AbilityValue.Word>()
-            .Select(item => item.Value)
-            .ToArray();
-        int optionCount = Nodes(choice.Require("options")).Count();
-        if (descriptions.Length != optionCount)
-        {
-            throw new AbilityException(
-                $"'choose' has {optionCount} options but {descriptions.Length} descriptions");
-        }
-
-        return descriptions;
     }
 
     /// <inheritdoc/>
@@ -462,10 +413,10 @@ public sealed partial class AbilityRunner
     /// rather than a target list.
     /// </remarks>
     private static Prompt Sharing(
-        Card source, int player, AbilityNode choice, Cast cast)
+        Card source, int player, AbilityEffect.IndirectDamage choice, Cast cast)
     {
-        long amount = Amount(choice.Require("amount"), cast);
-        var eligible = Assignable(choice.Require("among"), cast);
+        long amount = Amount(choice.Amount, cast);
+        var eligible = Assignable(choice.Among, cast);
 
         // `rr:indirect-damage.3.1` -- never more than would defeat a character,
         // so an assignment can be short of the amount when the table has less
@@ -486,7 +437,7 @@ public sealed partial class AbilityRunner
                     Verb: ChooseVerb,
                     AnchorId: source.ObjectId,
                     AnchorPlayer: World.Scenario,
-                    Label: choice.Kind,
+                    Label: "indirectDamage",
                     Targets: new TargetRequest(
                         Legal: [.. eligible.Select(card => card.ObjectId)],
                         Min: (int)share,
@@ -573,12 +524,12 @@ public sealed partial class AbilityRunner
         cast.At(Math.Max(0, stoppedAt - 1));
         cast.SetContinuation(persisted?.AbilityHasContinuation ?? On(source).Any(ability =>
             (tier is null || ability.Trigger.Timing == tier)
-            && ability.Effect.Kind == "seq"
-            && Nodes(ability.Effect.Argument).Count() > stoppedAt));
+            && ability.Effect.OperationName() == "seq"
+            && OrderedEffects(ability.Effect).Length > stoppedAt));
 
-        if (choice.Kind == "and")
+        if (choice.OperationName() == "and")
         {
-            var effects = Nodes(choice.Argument).ToList();
+            var effects = OrderedEffects(choice).ToList();
             var legal = Enumerable.Range(0, effects.Count).ToHashSet();
             if (input.IsDecline
                 || input.Affordance != source.ObjectId
@@ -610,9 +561,10 @@ public sealed partial class AbilityRunner
             return Continue(source, cast, stoppedAt);
         }
 
-        if (choice.Kind is "enemyAttacks" or "enemySchemes")
+        if (choice.OperationName() is "enemyAttacks" or "enemySchemes")
         {
-            var legal = ActivationCandidates(choice, cast)
+            var activation = ActivationOf(choice, cast);
+            var legal = ActivationCandidates(activation, cast)
                 .Select(enemy => enemy.ObjectId)
                 .ToList();
             if (input.IsDecline
@@ -631,10 +583,7 @@ public sealed partial class AbilityRunner
             {
                 cast.Results[$"dynamicActivationOrder:{input.Targets[index]}"] = index;
             }
-            Activate(
-                choice,
-                cast,
-                choice.Kind == "enemyAttacks" ? Steps.Attack : Steps.Scheme);
+            Activate(activation, choice, cast);
             if (cast.Suspended)
             {
                 return cast.Events;
@@ -642,9 +591,9 @@ public sealed partial class AbilityRunner
             return Continue(source, cast, stoppedAt);
         }
 
-        if (choice.Kind == "resolveSpecials")
+        if (choice.OperationName() == "resolveSpecials")
         {
-            var legal = Every(choice.Require("cards"), cast)
+            var legal = Every(EffectOf<AbilityEffect.CardAction>(choice, cast).Selection, cast)
                 .Select(card => card.ObjectId)
                 .ToHashSet();
             if (input.Targets.Count != legal.Count
@@ -669,18 +618,18 @@ public sealed partial class AbilityRunner
 
             return Continue(source, cast, stoppedAt);
         }
-        if (choice.Kind == "payOrEffect")
+        if (choice.OperationName() == "payOrEffect")
         {
             if (input.Affordance == 0)
             {
-                string required = Word(choice.Require("resources"));
+                string required = EffectOf<AbilityEffect.PayOrEffect>(choice, cast).Resources;
                 CardPlay.Spend(world, world.Facts, [world.Seats[player].Hand], input.Spent,
                     required.Length, required, -1, player, cast.Events);
                 cast.ResolveEffect();
             }
             else if (input.Affordance == 1)
             {
-                RunChild(Tree(choice.Require("otherwise")), "choice:otherwise", cast);
+                RunChild(EffectFollowing(choice), "choice:otherwise", cast);
                 if (cast.Suspended)
                 {
                     return cast.Events;
@@ -693,11 +642,11 @@ public sealed partial class AbilityRunner
             }
             return Continue(source, cast, stoppedAt);
         }
-        if (choice.Kind == "payOrExhaust")
+        if (choice.OperationName() == "payOrExhaust")
         {
             if (input.Affordance == 0)
             {
-                string required = Word(choice.Require("resources"));
+                string required = EffectOf<AbilityEffect.PayOrEffect>(choice, cast).Resources;
                 CardPlay.Spend(
                     world, world.Facts, [world.Seats[player].Hand], input.Spent,
                     required.Length, required, itself: -1, player, cast.Events);
@@ -705,7 +654,7 @@ public sealed partial class AbilityRunner
             }
             else if (input.Affordance == 1)
             {
-                RunChild(Tree(choice.Require("otherwise")), "choice:otherwise", cast);
+                RunChild(EffectFollowing(choice), "choice:otherwise", cast);
                 if (cast.Suspended)
                 {
                     return cast.Events;
@@ -719,10 +668,10 @@ public sealed partial class AbilityRunner
 
             return Continue(source, cast, stoppedAt);
         }
-        if (choice.Kind == "chooseTopForHand")
+        if (choice.OperationName() == "chooseTopForHand")
         {
             var deck = world.Seats[player].Deck;
-            var top = TopCards(deck, (int)Number(choice.Require("count")));
+            var top = TopCards(deck, EffectOf<AbilityEffect.ChooseTopForHand>(choice, cast).Count);
             var selected = top.FirstOrDefault(card => card.ObjectId == input.Affordance)
                 ?? throw new RulesNotImplementedException(
                     $"'{source.FaceId}' did not offer card {input.Affordance} among its top cards");
@@ -748,7 +697,7 @@ public sealed partial class AbilityRunner
 
             return Continue(source, cast, stoppedAt);
         }
-        if (choice.Kind == "chooseDiscardToShuffle")
+        if (choice.OperationName() == "chooseDiscardToShuffle")
         {
             var discard = world.AreaOf(
                 DeckType.DiscardPile, PlayArea.Of(player), cardOwner: player);
@@ -757,8 +706,8 @@ public sealed partial class AbilityRunner
                 ?? throw new RulesNotImplementedException(
                     $"'{source.FaceId}' cannot shuffle card {id} from that discard pile"))
                 .ToList();
-            int max = (int)Number(choice.Require("max"));
-            if (selected.Count is < 1 || selected.Count > 3
+            int max = EffectOf<AbilityEffect.ChooseDiscardToShuffle>(choice, cast).Maximum;
+            if (selected.Count < 1
                 || selected.Count > max
                 || selected.Select(card => world.Facts.Title(card.FaceId)).Distinct().Count()
                     != selected.Count)
@@ -774,9 +723,9 @@ public sealed partial class AbilityRunner
             cast.ResolveEffect();
             return Continue(source, cast, stoppedAt);
         }
-        if (choice.Kind == "thwartDifferentSchemes")
+        if (choice.OperationName() == "thwartDifferentSchemes")
         {
-            var legal = Every(choice.Require("schemes"), cast);
+            var legal = Every(EffectOf<AbilityEffect.ThwartGroup>(choice, cast).Schemes, cast);
             var selected = input.Targets.Select(id =>
                 legal.FirstOrDefault(card => card.ObjectId == id)
                 ?? throw new RulesNotImplementedException(
@@ -799,9 +748,9 @@ public sealed partial class AbilityRunner
             cast.Choose(selected[0]);
             var priorTargets = cast.PowerTargets;
             cast.SetPowerTargets([selected[0]]);
-            var power = Tree(choice.Require("power"));
+            var power = ((AbilityEffect.ThwartGroup)choice).Thwart;
             bool firstFullyResolves = ResolutionOf(
-                Tree(power.Require("effect")), cast) == ResolutionOutcome.Full;
+                EffectBody(power), cast) == ResolutionOutcome.Full;
             cast.SetPowerTargets(priorTargets);
             IReadOnlyList<Card> resolving = firstFullyResolves
                 ? selected
@@ -811,7 +760,7 @@ public sealed partial class AbilityRunner
                 selected[0], resolving, -1);
             return Continue(source, cast, stoppedAt);
         }
-        if (choice.Kind == "makeTheCall")
+        if (choice.OperationName() == "makeTheCall")
         {
             var ally = AlliesInPlayerDiscards(world)
                 .FirstOrDefault(card => card.ObjectId == input.Affordance)
@@ -827,9 +776,9 @@ public sealed partial class AbilityRunner
             cast.ResolveEffect();
             return Continue(source, cast, stoppedAt);
         }
-        if (choice.Kind == "legalPractice")
+        if (choice.OperationName() == "legalPractice")
         {
-            var scheme = Every(choice.Require("schemes"), cast)
+            var scheme = Every(EffectOf<AbilityEffect.ThwartGroup>(choice, cast).Schemes, cast)
                 .FirstOrDefault(card => card.ObjectId == input.Affordance)
                 ?? throw new RulesNotImplementedException(
                     $"'{source.FaceId}' did not offer scheme {input.Affordance}");
@@ -853,15 +802,16 @@ public sealed partial class AbilityRunner
             cast.ResolveEffect();
             cast.Choose(scheme);
             SchedulePower(
-                Tree(choice.Require("power")), cast, BasicPowers.ThwartVerb,
+                ((AbilityEffect.ThwartGroup)choice).Thwart, cast, BasicPowers.ThwartVerb,
                 scheme, [scheme], input.Targets.Count);
             return Continue(source, cast, stoppedAt);
         }
 
-        if (choice.Kind == "indirectDamage")
+        if (choice.OperationName() == "indirectDamage")
         {
-            var eligible = Assignable(choice.Require("among"), cast);
-            long amount = Amount(choice.Require("amount"), cast);
+            var damage = (AbilityEffect.IndirectDamage)choice;
+            var eligible = Assignable(damage.Among, cast);
+            long amount = Amount(damage.Amount, cast);
             long expected = Math.Min(amount, eligible.Sum(card => Room(cast, card)));
             if (input.Targets.Count != expected)
             {
@@ -895,7 +845,7 @@ public sealed partial class AbilityRunner
         }
 
 
-        if (choice.Kind == "chooseCard")
+        if (choice.OperationName() == "chooseCard")
         {
             cast.ChooseSelection(
                 LegalCardChoicesForContinuation(choice, cast)
@@ -905,13 +855,13 @@ public sealed partial class AbilityRunner
 
             if (cast.HasPendingDependency)
             {
-                var effect = Tree(choice.Require("effect"));
+                var effect = EffectBody(choice);
                 if (!ActiveChoices(effect, cast).Any())
                 {
                     cast.CompletePendingDependency(ResolutionOf(effect, cast));
                 }
             }
-            RunChild(Tree(choice.Require("effect")), "choice:effect", cast);
+            RunChild(EffectBody(choice), "choice:effect", cast);
             if (cast.Suspended)
             {
                 return cast.Events;
@@ -919,7 +869,7 @@ public sealed partial class AbilityRunner
             return Continue(source, cast, stoppedAt);
         }
 
-        var options = Nodes(choice.Require("options")).ToList();
+        var options = ((AbilityEffect.Choose)choice).Options.ToList();
         if (input.IsDecline || input.Affordance < 0 || input.Affordance >= options.Count)
         {
             throw new RulesNotImplementedException(
@@ -963,7 +913,7 @@ public sealed partial class AbilityRunner
     /// sequence is the explicit decline branch used to express “may”.
     /// </para>
     /// </remarks>
-    private static bool OptionIsLegal(AbilityNode option, Cast cast)
+    private static bool OptionIsLegal(AbilityEffect option, Cast cast)
     {
         // Eligibility and support are separate questions. Preserve the
         // printed-option legality rules below, but make an unsupported option
@@ -975,7 +925,7 @@ public sealed partial class AbilityRunner
     }
 
     private static bool OptionIsLegalForContinuation(
-        AbilityNode option, Cast cast, bool requireStateChange = false)
+        AbilityEffect option, Cast cast, bool requireStateChange = false)
     {
         bool locallyLegal = OptionIsLegal(option, cast)
             && (!requireStateChange
@@ -1011,8 +961,8 @@ public sealed partial class AbilityRunner
         }
     }
 
-    private static bool IsExplicitDecline(AbilityNode option) =>
-        option.Kind == "seq" && !Nodes(option.Argument).Any();
+    private static bool IsExplicitDecline(AbilityEffect option) =>
+        option.OperationName() == "seq" && !OrderedEffects(option).Any();
 
     /// <summary>Cards that meet both a choice's selector and its nested effect.</summary>
     /// <remarks>
@@ -1021,17 +971,17 @@ public sealed partial class AbilityRunner
     /// asking about the nested effect keeps offering, prompting, and answer
     /// validation on the same decision.
     /// </remarks>
-    private static List<Card> LegalCardChoices(AbilityNode choice, Cast cast)
+    private static List<Card> LegalCardChoices(AbilityEffect choice, Cast cast)
     {
         var prior = cast.CaptureChosen();
         var priorSelection = cast.CapturePlayerSelection();
         var legal = new List<Card>();
         try
         {
-            foreach (var card in Every(choice.Require("from"), cast))
+            foreach (var card in Every(EffectOf<AbilityEffect.ChooseCard>(choice, cast).From, cast))
             {
                 cast.ChooseSelection(card);
-                var effect = Tree(choice.Require("effect"));
+                var effect = EffectBody(choice);
                 if (TargetLegalityOf(effect, cast) != TargetLegality.Invalid)
                 {
                     legal.Add(card);
@@ -1048,7 +998,7 @@ public sealed partial class AbilityRunner
 
     /// <summary>Legal targets that also leave the persisted sequence resumable.</summary>
     private static List<Card> LegalCardChoicesForContinuation(
-        AbilityNode choice, Cast cast)
+        AbilityEffect choice, Cast cast)
     {
         var legal = LegalCardChoices(choice, cast);
         if (cast.AbilityPath.Count == 0)
@@ -1064,7 +1014,7 @@ public sealed partial class AbilityRunner
             return legal.Where(candidate =>
             {
                 cast.ChooseSelection(candidate);
-                var effect = Tree(choice.Require("effect"));
+                var effect = EffectBody(choice);
                 ResolutionOutcome? pendingOutcome = cast.HasPendingDependency
                     && !ActiveChoices(effect, cast).Any()
                         ? ResolutionOf(effect, cast)
@@ -1105,9 +1055,18 @@ public sealed partial class AbilityRunner
             {
                 return true;
             }
-            var continuation = new AbilityNode(
-                "seq",
-                new AbilityValue.List(remaining.Select(NodeValue).ToList()));
+            // The engine refuses an option that can invalidate a later
+            // singular lookup, even when that lookup is inside a condition
+            // whose false result would otherwise look like a legal no-op.
+            var sensitiveAreas = new HashSet<DeckType>();
+            foreach (var step in remaining)
+                CollectSingularAreaDependencies(step, cast, sensitiveAreas);
+            if (sensitiveAreas.Count > 0
+                && EffectsMayChangeAnyArea(cast.PriorSteps, sensitiveAreas, cast))
+            {
+                return false;
+            }
+            var continuation = new AbilityEffect.Sequence([.. remaining]);
             return CanInitiateSequence(continuation, cast)
                 && TargetLegalityOf(continuation, cast) != TargetLegality.Invalid;
         }
@@ -1126,15 +1085,8 @@ public sealed partial class AbilityRunner
         }
     }
 
-    private static AbilityValue NodeValue(AbilityNode node) =>
-        new AbilityValue.Map(new Dictionary<string, AbilityValue>(
-            StringComparer.Ordinal)
-        {
-            [node.Kind] = node.Argument,
-        });
-
     /// <summary>Sequence siblings reached after the currently persisted choice.</summary>
-    private static List<AbilityNode> RemainingContinuationSteps(
+    private static List<AbilityEffect> RemainingContinuationSteps(
         Cast cast, ResolutionOutcome? pendingOutcome)
     {
         if (cast.AbilityOrdinal < 0 || cast.AbilityPath.Count == 0
@@ -1150,7 +1102,7 @@ public sealed partial class AbilityRunner
             return [];
         }
 
-        var remaining = new List<AbilityNode>();
+        var remaining = new List<AbilityEffect>();
         for (int position = cast.AbilityPath.Count - 1; position >= 0; position--)
         {
             string frame = cast.AbilityPath[position];
@@ -1180,12 +1132,12 @@ public sealed partial class AbilityRunner
                         ? ResolutionOutcome.Full : ResolutionOutcome.None;
                     if (outcome == required)
                     {
-                        remaining.Add(Tree(parent.Require(parts[0])));
+                        remaining.Add(ContinuationChild(parent, parts[0]));
                     }
                 }
                 else if (parts[0] == "and")
                 {
-                    var effects = Nodes(parent.Argument).ToList();
+                    var effects = OrderedEffects(parent).ToList();
                     remaining.AddRange(
                         ValidRemaining(parent, parts, frame).Select(index => effects[index]));
                 }
@@ -1199,7 +1151,7 @@ public sealed partial class AbilityRunner
                         System.Globalization.CultureInfo.InvariantCulture,
                         out long count))
                 {
-                    var repeated = Tree(parent.Require("effect"));
+                    var repeated = EffectBody(parent);
                     for (long next = iteration + 1; next < count; next++)
                     {
                         remaining.Add(repeated);
@@ -1226,16 +1178,16 @@ public sealed partial class AbilityRunner
                 }
                 continue;
             }
-            if (parent.Kind == "seq")
+            if (parent.OperationName() == "seq")
             {
-                remaining.AddRange(Nodes(parent.Argument).Skip(index + 1));
+                remaining.AddRange(OrderedEffects(parent).Skip(index + 1));
             }
         }
         return remaining;
     }
 
     private static bool LaterEachTimePromptIsGuaranteed(
-        AbilityNode eachTime, Cast cast, long iteration, long count)
+        AbilityEffect eachTime, Cast cast, long iteration, long count)
     {
         long remaining = count - iteration - 1;
         var future = cast.World.AreaOf(DeckType.EncounterDeck).Cards
@@ -1256,8 +1208,8 @@ public sealed partial class AbilityRunner
             foreach (var card in future)
             {
                 cast.BindAlteration(card);
-                var body = Tree(eachTime.Require("then"));
-                if (Test(Tree(eachTime.Require("when")), cast)
+                var body = EffectFollowing(eachTime);
+                if (Test(EachTimeOf(eachTime, cast).When, cast)
                     && ActiveChoices(body, cast).Any()
                     && CanInitiate(body, cast))
                 {

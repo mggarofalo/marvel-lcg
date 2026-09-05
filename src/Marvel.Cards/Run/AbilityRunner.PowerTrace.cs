@@ -32,7 +32,7 @@ public sealed partial class AbilityRunner
         PowerReachability[]? Alternatives = null);
 
     private static bool SuspendsPowerEffect(
-        AbilityNode node, Cast cast, bool stateMayChange = false,
+        AbilityEffect node, Cast cast, bool stateMayChange = false,
         bool bindingMayChange = false, PowerReachability? reachability = null)
     {
         var state = reachability ?? InitialPowerReachability(cast);
@@ -41,9 +41,9 @@ public sealed partial class AbilityRunner
             return alternatives.Any(alternative => SuspendsPowerEffect(
                 node, cast, stateMayChange, bindingMayChange, alternative));
         }
-        return (node.Kind == "and" && Nodes(node.Argument).Skip(1).Any())
+        return (node.OperationName() == "and" && OrderedEffects(node).Skip(1).Any())
             || IsChoice(node)
-            || node.Kind is "eachPlayer" or "attack" or "thwart" or "thwartSchemes"
+            || node.OperationName() is "eachPlayer" or "attack" or "thwart" or "thwartSchemes"
                 or "placeThreat" or "enemyAttacks" or "enemySchemes"
             || PowerSuspensionChildren(
                 node, cast, stateMayChange, bindingMayChange, state).Any(child =>
@@ -53,16 +53,16 @@ public sealed partial class AbilityRunner
     }
 
     private static IEnumerable<(
-        AbilityNode Node, bool StateMayChange, bool BindingMayChange,
+        AbilityEffect Node, bool StateMayChange, bool BindingMayChange,
         PowerReachability Reachability)> PowerSuspensionChildren(
-        AbilityNode node, Cast cast, bool stateMayChange,
+        AbilityEffect node, Cast cast, bool stateMayChange,
         bool bindingMayChange, PowerReachability reachability)
     {
-        if (node.Kind == "seq")
+        if (node.OperationName() == "seq")
         {
-            var children = Nodes(node.Argument).ToList();
+            var children = OrderedEffects(node).ToList();
             var result = new List<(
-                AbilityNode, bool, bool, PowerReachability)>(children.Count);
+                AbilityEffect, bool, bool, PowerReachability)>(children.Count);
             var state = reachability;
             for (int index = 0; index < children.Count; index++)
             {
@@ -76,27 +76,27 @@ public sealed partial class AbilityRunner
             }
             return result;
         }
-        if (node.Kind == "and")
+        if (node.OperationName() == "and")
         {
-            var children = Nodes(node.Argument).ToList();
+            var children = OrderedEffects(node).ToList();
             return children.Select(child =>
                 (child,
                     stateMayChange || children.Count > 1,
                     bindingMayChange,
                     reachability));
         }
-        if (node.Kind == "if")
+        if (node.OperationName() == "if")
         {
-            var test = Tree(node.Require("test"));
+            var test = ConditionalOf(node, cast).Test;
             bool canSwitch = PowerTestCanChange(
                 test, cast, stateMayChange, bindingMayChange, reachability);
             var branches = canSwitch
-                ? Branches.Select(node.Field).Where(value => value is not null)
-                : node.Field(Test(test, cast) ? "then" : "else") is { } active
+                ? ConditionalBranches((AbilityEffect.Conditional)node).Where(value => value is not null)
+                : ConditionalBranch(node, Test(test, cast) ? "then" : "else") is { } active
                     ? [active]
                     : [];
             return branches.Select(value =>
-                (Tree(value!), stateMayChange, bindingMayChange, reachability));
+                (value, stateMayChange, bindingMayChange, reachability));
         }
         return GuardChildren(node, cast, stateMayChange, bindingMayChange, null)
             .Select(child =>
@@ -105,24 +105,26 @@ public sealed partial class AbilityRunner
     }
 
     private static bool PowerTestCanChange(
-        AbilityNode test, Cast cast, bool stateMayChange,
-        bool bindingMayChange, PowerReachability reachability) => test.Kind switch
+        AbilityCondition test, Cast cast, bool stateMayChange,
+        bool bindingMayChange, PowerReachability reachability) => test switch
         {
-            "and" or "or" => Nodes(test.Argument).Any(child =>
+            AbilityCondition.All all => all.Operands.Any(child =>
                 PowerTestCanChange(
                     child, cast, stateMayChange, bindingMayChange, reachability)),
-            "not" => PowerTestCanChange(
-                Tree(test.Argument), cast, stateMayChange,
+            AbilityCondition.Any any => any.Operands.Any(child =>
+                PowerTestCanChange(
+                    child, cast, stateMayChange, bindingMayChange, reachability)),
+            AbilityCondition.Negated negated => PowerTestCanChange(
+                negated.Operand, cast, stateMayChange,
                 bindingMayChange, reachability),
-            "inForm" => bindingMayChange && BindingCanChange(test.Argument)
+            AbilityCondition.InForm form => bindingMayChange && BindingCanChange(test)
                 || FirstPlayerMayRebind(PowerForms(reachability))
-                    && test.Require("player") is AbilityValue.Word
-                        { Value: "firstPlayer" }
+                    && form.Player == AbilityPlayer.FirstPlayer
                 || SeatMayChange(
-                    PowerForms(reachability), Seat(test.Require("player"), cast)),
+                    PowerForms(reachability), Seat(form.Player, cast)),
             _ => stateMayChange
                 || cast.PaymentMayMutate && PaymentCanChange(test)
-                || bindingMayChange && BindingCanChange(test.Argument),
+                || bindingMayChange && BindingCanChange(test),
         };
 
     private static PowerReachability InitialPowerReachability(Cast cast)
@@ -139,11 +141,10 @@ public sealed partial class AbilityRunner
     }
 
     private static Card? PowerFind(
-        AbilityValue value, Cast cast, PowerReachability reachability)
+        AbilityCardSelection value, Cast cast, PowerReachability reachability)
     {
-        if (value is AbilityValue.Map
-            && (SelectorMembershipCanChange(value)
-                || PotentialVillainSelector(value, cast)))
+        if (SelectorMembershipCanChange(value)
+            || PotentialVillainSelector(value, cast))
         {
             return PowerEvery(value, cast, reachability).FirstOrDefault();
         }
@@ -163,12 +164,11 @@ public sealed partial class AbilityRunner
     }
 
     private static List<Card> PowerEvery(
-        AbilityValue value, Cast cast, PowerReachability reachability)
+        AbilityCardSelection value, Cast cast, PowerReachability reachability)
     {
         int liveVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
-        bool dynamic = value is AbilityValue.Map
-            && (SelectorMembershipCanChange(value)
-                || PotentialVillainSelector(value, cast));
+        bool dynamic = SelectorMembershipCanChange(value)
+            || PotentialVillainSelector(value, cast);
         if (dynamic)
         {
             var candidates = TraceCandidateCards(value, cast);
@@ -217,7 +217,7 @@ public sealed partial class AbilityRunner
     }
 
     private static PowerReachability PowerStateAfter(
-        AbilityNode node, Cast cast, bool stateMayChange,
+        AbilityEffect node, Cast cast, bool stateMayChange,
         bool bindingMayChange, PowerReachability reachability)
     {
         if (reachability.Alternatives is { } alternatives)
@@ -229,28 +229,28 @@ public sealed partial class AbilityRunner
         // SuspendsPowerEffect rejects this simultaneous choice by shape. Do
         // not eagerly replay its children while computing a later sibling's
         // abstract state; each replay would invent another damage instance.
-        if (node.Kind == "and" && Nodes(node.Argument).Skip(1).Any())
+        if (node.OperationName() == "and" && OrderedEffects(node).Skip(1).Any())
         {
             return reachability;
         }
-        if (node.Kind == "changeForm")
+        if (node.OperationName() == "changeForm")
         {
-            return ChangeFormState(node, cast, bindingMayChange, reachability);
+            return ChangeFormState(FormChangeOf(node, cast), cast, bindingMayChange, reachability);
         }
-        if (node.Kind == "forEach")
+        if (node.OperationName() == "forEach")
         {
             if (HasUnboundPowerAmount(node, cast))
             {
                 return MergePowerStates(
                     reachability,
                     PowerStateAfter(
-                        Tree(node.Require("effect")), cast,
+                        EffectBody(node), cast,
                         stateMayChange, bindingMayChange, reachability),
                     cast);
             }
             long count = ForEachCount(node, cast);
-            var effect = Tree(node.Require("effect"));
-            if (!Choices(effect).Any() && effect.Kind == "dealDamage")
+            var effect = EffectBody(node);
+            if (!Choices(effect).Any() && effect.OperationName() == "dealDamage")
             {
                 return ApplyPowerLeafState(
                     effect, cast, bindingMayChange, reachability, count);
@@ -269,7 +269,7 @@ public sealed partial class AbilityRunner
             }
             return repeated;
         }
-        if (node.Kind is "then" or "otherwise")
+        if (node.OperationName() is "then" or "otherwise")
         {
             return PowerDependentStateAfter(
                 node, cast, stateMayChange, bindingMayChange, reachability);
@@ -282,8 +282,8 @@ public sealed partial class AbilityRunner
         {
             return advanced;
         }
-        if (node.Kind == "seq"
-            || (node.Kind == "and" && children.Count == 1))
+        if (node.OperationName() == "seq"
+            || (node.OperationName() == "and" && children.Count == 1))
         {
             var ordered = advanced;
             foreach (var child in children)
@@ -295,7 +295,7 @@ public sealed partial class AbilityRunner
             return ordered;
         }
 
-        bool includeBaseline = node.Kind != "if"
+        bool includeBaseline = node.OperationName() != "if"
             || ConditionalCanSkipBranch(
                 node, cast, stateMayChange, bindingMayChange, advanced);
         PowerReachability? merged = includeBaseline ? advanced : null;
@@ -312,12 +312,12 @@ public sealed partial class AbilityRunner
     }
 
     private static PowerReachability PowerDependentStateAfter(
-        AbilityNode node, Cast cast, bool stateMayChange,
+        AbilityEffect node, Cast cast, bool stateMayChange,
         bool bindingMayChange, PowerReachability reachability)
     {
-        var effect = Tree(node.Require("effect"));
-        var dependent = Tree(node.Require(node.Kind));
-        var required = node.Kind == "then"
+        var effect = EffectBody(node);
+        var dependent = EffectFollowing(node);
+        var required = node.OperationName() == "then"
             ? ResolutionOutcome.Full
             : ResolutionOutcome.None;
         bool answered = ActiveChoices(effect, cast).Any();
@@ -329,7 +329,7 @@ public sealed partial class AbilityRunner
             var branch = outcome.Outcome == required
                 ? PowerStateAfter(
                     dependent, cast,
-                    node.Kind == "then" || answered || outcomes.Count > 1,
+                    node.OperationName() == "then" || answered || outcomes.Count > 1,
                     bindingMayChange, outcome.State)
                 : outcome.State;
             merged = merged is { } prior
@@ -343,7 +343,7 @@ public sealed partial class AbilityRunner
         ResolutionOutcome Outcome, PowerReachability State);
 
     private static List<PowerOutcomeState> PowerOutcomeStates(
-        AbilityNode node, Cast cast, bool stateMayChange,
+        AbilityEffect node, Cast cast, bool stateMayChange,
         bool bindingMayChange, PowerReachability reachability)
     {
         if (reachability.Alternatives is { } alternatives)
@@ -351,28 +351,28 @@ public sealed partial class AbilityRunner
             return [.. alternatives.SelectMany(alternative => PowerOutcomeStates(
                 node, cast, stateMayChange, bindingMayChange, alternative))];
         }
-        if (node.Kind == "if")
+        if (node.OperationName() == "if")
         {
-            var test = Tree(node.Require("test"));
+            var test = ConditionalOf(node, cast).Test;
             bool canSwitch = PowerTestCanChange(
                 test, cast, stateMayChange, bindingMayChange, reachability);
-            IEnumerable<AbilityValue?> branches = canSwitch
-                ? Branches.Select(node.Field)
-                : [node.Field(Test(test, cast) ? "then" : "else")];
+            IEnumerable<AbilityEffect?> branches = canSwitch
+                ? new AbilityEffect?[] { ((AbilityEffect.Conditional)node).Then, ((AbilityEffect.Conditional)node).Else }
+                : new AbilityEffect?[] { ConditionalBranch(node, Test(test, cast) ? "then" : "else") };
             return [.. branches.SelectMany(branch => branch is null
                 ? [new PowerOutcomeState(ResolutionOutcome.None, reachability)]
                 : PowerOutcomeStates(
-                    Tree(branch), cast, stateMayChange,
+                    branch, cast, stateMayChange,
                     bindingMayChange, reachability))];
         }
-        if (node.Kind == "seq")
+        if (node.OperationName() == "seq")
         {
             var states = new List<PowerOutcomeState>
             {
                 new(ResolutionOutcome.None, reachability),
             };
             int index = 0;
-            foreach (var child in Nodes(node.Argument))
+            foreach (var child in OrderedEffects(node))
             {
                 int childIndex = index++;
                 states = [.. states.SelectMany(prior => PowerOutcomeStates(
@@ -399,29 +399,30 @@ public sealed partial class AbilityRunner
         left == right ? left : ResolutionOutcome.Partial;
 
     private static HashSet<ResolutionOutcome> PowerOutcomes(
-        AbilityNode node, Cast cast, bool stateMayChange,
+        AbilityEffect node, Cast cast, bool stateMayChange,
         bool bindingMayChange, PowerReachability reachability)
     {
-        if (node.Kind == "draw")
+        if (node.OperationName() == "draw")
         {
-            long count = Number(node.Require("count"));
-            return [CombinedOutcomes(Seats(node.Require("player"), cast).Select(
+            var draw = EffectOf<AbilityEffect.Draw>(node, cast);
+            long count = draw.Count;
+            return [CombinedOutcomes(Seats(draw.Players, cast).Select(
                 player => ResolutionOfAmount(
                     PowerCardsAvailable(reachability, player, cast), count)))];
         }
-        if (node.Kind == "heal")
+        if (node.OperationName() == "heal")
         {
-            var card = PowerFind(node.Require("card"), cast, reachability);
+            var card = PowerFind(EffectOf<AbilityEffect.Heal>(node, cast).Card, cast, reachability);
             if (card is not null)
             {
                 return [ResolutionOfAmount(
                     PowerDamage(reachability, card),
-                    Amount(node.Require("amount"), cast))];
+                    Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast))];
             }
         }
-        if (node.Kind == "discard")
+        if (node.OperationName() == "discard")
         {
-            AbilityValue target = node.Field("card") ?? node.Argument;
+            var target = EffectOf<AbilityEffect.CardAction>(node, cast).Selection;
             var card = PowerFind(target, cast, reachability);
             if (card is not null)
             {
@@ -437,31 +438,35 @@ public sealed partial class AbilityRunner
                 return [ResolutionOutcome.None];
             }
         }
-        if (node.Kind == "removeThreat")
+        if (node.OperationName() == "removeThreat")
         {
-            long wanted = Amount(node.Require("amount"), cast);
-            var schemes = PowerEvery(node.Require("scheme"), cast, reachability);
+            long wanted = Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast);
+            var schemes = PowerEvery(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Schemes, cast, reachability);
             var valid = schemes.Where(scheme =>
                 PowerThreat(reachability, scheme) > 0
                 && cast.Abilities.CanRemoveThreat(
                     cast.World, scheme, OverriddenThreatRemovalSource(node, cast))
-                && (IgnoresCrisis(node)
+                && (IgnoresCrisis(node, cast)
                     || !(scheme.Area.Type == DeckType.MainSchemesArea
                     && IsPlayerCard(cast)
                     && PowerCrisis(reachability, cast))));
             return [CombinedOutcomes(valid.Select(scheme => ResolutionOfAmount(
                 PowerThreat(reachability, scheme), wanted)))];
         }
-        var currentTargets = node.Kind is "exhaust" or "ready"
-            ? PowerEvery(node.Argument, cast, reachability)
+        var readinessTarget = node.OperationName() is "exhaust" or "ready"
+            ? EffectOf<AbilityEffect.CardAction>(node, cast).Selection
+            : null;
+        var currentTargets = readinessTarget is not null
+            ? PowerEvery(readinessTarget, cast, reachability)
             : [];
         bool fixedTarget = !stateMayChange
-            || node.Argument is AbilityValue.Word { Value: "this" or "you" }
+            || readinessTarget is AbilityCardSelection.Bound
+                { Binding: AbilityCardBinding.This or AbilityCardBinding.You }
             || currentTargets.Count > 0
                 && currentTargets.All(card => reachability.Discarded.Contains(card.ObjectId));
-        if (node.Kind is "exhaust" or "ready"
+        if (readinessTarget is not null
             && fixedTarget
-            && !(bindingMayChange && BindingCanChange(node.Argument)))
+            && !(bindingMayChange && BindingCanChange(readinessTarget)))
         {
             var possibilities = new HashSet<(bool Changed, bool Unchanged)>
             {
@@ -471,10 +476,10 @@ public sealed partial class AbilityRunner
                 !reachability.Discarded.Contains(card.ObjectId)))
             {
                 var readiness = PowerReady(card, reachability);
-                bool canChange = node.Kind == "exhaust"
+                bool canChange = node.OperationName() == "exhaust"
                     ? readiness.HasFlag(PowerReadiness.Ready)
                     : readiness.HasFlag(PowerReadiness.Exhausted);
-                bool canStay = node.Kind == "exhaust"
+                bool canStay = node.OperationName() == "exhaust"
                     ? readiness.HasFlag(PowerReadiness.Exhausted)
                     : readiness.HasFlag(PowerReadiness.Ready);
                 var next = new HashSet<(bool Changed, bool Unchanged)>();
@@ -498,13 +503,12 @@ public sealed partial class AbilityRunner
                 _ => ResolutionOutcome.Partial,
             })];
         }
-        if (node.Kind == "changeForm"
-            && !(bindingMayChange && BindingCanChange(node.Require("player"))))
+        if (node.OperationName() == "changeForm"
+            && FormChangeOf(node, cast) is var change
+            && !(bindingMayChange && change.Player == AbilityPlayer.ChosenPlayer))
         {
-            int seat = Seat(node.Require("player"), cast);
-            bool destinationIsLive = Forms.In(
-                cast.World, cast.World.Seats[seat], cast.World.Facts,
-                Word(node.Require("to")));
+            int seat = Seat(change.Player, cast);
+            bool destinationIsLive = AlreadyInForm(change, cast);
             bool destinationIsCurrent = SeatMayChange(
                     reachability.FormsMayChange, seat)
                 ? !destinationIsLive
@@ -524,26 +528,26 @@ public sealed partial class AbilityRunner
     }
 
     private static bool ConditionalCanSkipBranch(
-        AbilityNode node, Cast cast, bool stateMayChange,
+        AbilityEffect node, Cast cast, bool stateMayChange,
         bool bindingMayChange, PowerReachability reachability)
     {
-        var test = Tree(node.Require("test"));
+        var test = ConditionalOf(node, cast).Test;
         bool canSwitch = PowerTestCanChange(
             test, cast, stateMayChange, bindingMayChange, reachability);
         if (!canSwitch)
         {
             string active = Test(test, cast) ? "then" : "else";
-            return node.Field(active) is null;
+            return ConditionalBranch(node, active) is null;
         }
-        return node.Field("then") is null || node.Field("else") is null;
+        return ConditionalBranch(node, "then") is null || ConditionalBranch(node, "else") is null;
     }
 
     private static PowerReachability ChangeFormState(
-        AbilityNode node, Cast cast, bool bindingMayChange,
+        AbilityEffect.ChangeForm change, Cast cast, bool bindingMayChange,
         PowerReachability reachability)
     {
-        var player = node.Require("player");
-        if (bindingMayChange && BindingCanChange(player))
+        var player = change.Player;
+        if (bindingMayChange && player == AbilityPlayer.ChosenPlayer)
         {
             return reachability with
             {
@@ -552,9 +556,7 @@ public sealed partial class AbilityRunner
         }
         int seat = Seat(player, cast);
         ulong bit = PlayerSeat(seat);
-        bool destinationIsCurrent = Forms.In(
-            cast.World, cast.World.Seats[seat], cast.World.Facts,
-            Word(node.Require("to")));
+        bool destinationIsCurrent = AlreadyInForm(change, cast);
         return reachability with
         {
             FormsMayChange = destinationIsCurrent
@@ -569,7 +571,7 @@ public sealed partial class AbilityRunner
         (state & FirstPlayerRebinding) != 0;
 
     private static PowerReachability ApplyPowerLeafState(
-        AbilityNode node, Cast cast, bool bindingMayChange,
+        AbilityEffect node, Cast cast, bool bindingMayChange,
         PowerReachability reachability, long multiplier = 1)
     {
         if (reachability.Alternatives is { } alternatives)
@@ -578,7 +580,7 @@ public sealed partial class AbilityRunner
                 ApplyPowerLeafState(
                     node, cast, bindingMayChange, alternative, multiplier)));
         }
-        if (node.Field("amount") is { } authoredAmount
+        if (EffectAmount(node) is { } authoredAmount
             && (reachability.CardDamage.Count > 0
                 || reachability.SchemeThreat.Count > 0)
             && AmountMayChange(authoredAmount))
@@ -586,26 +588,26 @@ public sealed partial class AbilityRunner
             throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' reads a mutable power amount after damage changed");
         }
-        if (node.Kind is "exhaust" or "ready")
+        if (node.OperationName() is "exhaust" or "ready")
         {
             var state = reachability;
-            var readiness = node.Kind == "exhaust"
+            var readiness = node.OperationName() == "exhaust"
                 ? PowerReadiness.Exhausted
                 : PowerReadiness.Ready;
-            foreach (var card in PowerEvery(node.Argument, cast, reachability))
+            foreach (var card in PowerEvery(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast, reachability))
             {
                 state = SetPowerReady(state, card, readiness);
             }
             return state;
         }
-        if (node.Kind == "grantUntil")
+        if (node.OperationName() == "grantUntil")
         {
-            var target = PowerFind(node.Require("card"), cast, reachability);
+            var target = PowerFind(GrantSelectionOf(node, cast), cast, reachability);
             if (target is null)
             {
                 return reachability;
             }
-            if (node.Field("trait") is { } gained)
+            if (EffectOf<AbilityEffect>(node, cast) is AbilityEffect.GrantTrait grant)
             {
                 var traits = reachability.Traits.ToDictionary(
                     pair => pair.Key,
@@ -615,14 +617,12 @@ public sealed partial class AbilityRunner
                     values = new HashSet<string>(StringComparer.Ordinal);
                     traits[target.ObjectId] = values;
                 }
-                values.Add(Word(gained));
+                values.Add(grant.Trait);
                 return reachability with { Traits = traits };
             }
 
-            string field = Word(node.Require("keyword"));
-            long grantedAmount = node.Field("amount") is { } granted
-                ? Amount(granted, cast)
-                : 1;
+            string field = EffectOf<AbilityEffect.GrantField>(node, cast).Field;
+            long grantedAmount = Amount(EffectOf<AbilityEffect.GrantField>(node, cast).Amount, cast);
             var modifiers = new Dictionary<(int Card, string Field), long>(
                 reachability.Modifiers);
             var key = (target.ObjectId, field);
@@ -638,9 +638,9 @@ public sealed partial class AbilityRunner
             }
             return reachability with { Modifiers = modifiers };
         }
-        if (node.Kind == "putIntoPlay")
+        if (node.OperationName() == "putIntoPlay")
         {
-            var card = Find(node.Require("card"), cast);
+            var card = Find(EffectOf<AbilityEffect.PutIntoPlay>(node, cast).Card, cast);
             if (card is null)
             {
                 return reachability;
@@ -660,8 +660,7 @@ public sealed partial class AbilityRunner
                 return reachability;
             }
             var engagement = new Dictionary<int, int>(reachability.Engagement);
-            if (node.Field("where") is { } where
-                && Word(where) == "engagedWithYou")
+            if (!EffectOf<AbilityEffect.PutIntoPlay>(node, cast).PrintedDestination)
             {
                 engagement[card.ObjectId] = Resolver(cast);
             }
@@ -679,11 +678,12 @@ public sealed partial class AbilityRunner
             }
             return state;
         }
-        if (node.Kind == "draw")
+        if (node.OperationName() == "draw")
         {
-            long count = Number(node.Require("count"));
+            var draw = EffectOf<AbilityEffect.Draw>(node, cast);
+            long count = draw.Count;
             var state = reachability;
-            foreach (int player in Seats(node.Require("player"), cast))
+            foreach (int player in Seats(draw.Players, cast))
             {
                 long available = PowerCardsAvailable(state, player, cast);
                 state = SetPowerCardsAvailable(
@@ -691,10 +691,10 @@ public sealed partial class AbilityRunner
             }
             return state;
         }
-        if (node.Kind == "discard")
+        if (node.OperationName() == "discard")
         {
             var card = PowerFind(
-                node.Field("card") ?? node.Argument, cast, reachability);
+                EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast, reachability);
             if (card is null)
             {
                 return reachability;
@@ -720,17 +720,17 @@ public sealed partial class AbilityRunner
                 StatusChanges = statusChanges,
             };
         }
-        if (node.Kind == "removeThreat")
+        if (node.OperationName() == "removeThreat")
         {
             long removedAmount = SaturatingMultiply(
-                Amount(node.Require("amount"), cast), multiplier);
+                Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast), multiplier);
             var state = reachability;
             foreach (var scheme in PowerEvery(
-                node.Require("scheme"), cast, reachability))
+                EffectOf<AbilityEffect.RemoveThreat>(node, cast).Schemes, cast, reachability))
             {
                 if (!cast.Abilities.CanRemoveThreat(
                         cast.World, scheme, OverriddenThreatRemovalSource(node, cast))
-                    || !IgnoresCrisis(node)
+                    || !IgnoresCrisis(node, cast)
                         && scheme.Area.Type == DeckType.MainSchemesArea
                         && IsPlayerCard(cast)
                         && PowerCrisis(state, cast))
@@ -767,14 +767,13 @@ public sealed partial class AbilityRunner
             }
             return state;
         }
-        AbilityValue? targets = node.Kind switch
+        AbilityCardSelection? targets = node.OperationName() switch
         {
-            "dealDamage" or "dealAttackDamage" => node.Require("cards"),
-            "indirectDamage" => node.Require("among"),
-            "moveDamage" or "moveAttackDamage" => node.Require("to"),
-            "replaceThreatWithDamage" => node.Require("card"),
-            "heal" => node.Require("card"),
-            "giveStatus" => node.Require("card"),
+            "dealDamage" or "dealAttackDamage" or "indirectDamage" => DamageSelectionOf(node, cast),
+            "moveDamage" or "moveAttackDamage" => EffectOf<AbilityEffect.MoveDamage>(node, cast).To,
+            "replaceThreatWithDamage" => EffectOf<AbilityEffect.CardAction>(node, cast).Selection,
+            "heal" => EffectOf<AbilityEffect.Heal>(node, cast).Card,
+            "giveStatus" => EffectOf<AbilityEffect.GiveStatus>(node, cast).Cards,
             _ => null,
         };
         if (targets is null)
@@ -782,7 +781,7 @@ public sealed partial class AbilityRunner
             return reachability;
         }
         var first = cast.World.Seats[cast.World.FirstPlayer].IdentityCard;
-        List<Card> cards = node.Kind switch
+        List<Card> cards = node.OperationName() switch
         {
             "dealDamage" or "dealAttackDamage" =>
                 [.. PowerEvery(targets, cast, reachability).Where(target =>
@@ -804,9 +803,9 @@ public sealed partial class AbilityRunner
                 }
                 : reachability;
         }
-        if (node.Kind == "heal")
+        if (node.OperationName() == "heal")
         {
-            long healed = Amount(node.Require("amount"), cast);
+            long healed = Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast);
             var state = reachability;
             foreach (var card in cards)
             {
@@ -816,9 +815,9 @@ public sealed partial class AbilityRunner
             }
             return state;
         }
-        if (node.Kind == "giveStatus")
+        if (node.OperationName() == "giveStatus")
         {
-            string status = Word(node.Require("status"));
+            string status = EffectOf<AbilityEffect.GiveStatus>(node, cast).Status;
             if (status != Statuses.Tough)
             {
                 var changes = new HashSet<(int Card, string Status)>(
@@ -871,27 +870,27 @@ public sealed partial class AbilityRunner
             return state;
         }
 
-        if (node.Kind is "moveDamage" or "moveAttackDamage")
+        if (node.OperationName() is "moveDamage" or "moveAttackDamage")
         {
-            var from = PowerFind(node.Require("from"), cast, reachability);
+            var from = PowerFind(EffectOf<AbilityEffect.MoveDamage>(node, cast).From, cast, reachability);
             if (from is null)
             {
                 return reachability;
             }
             long moved = Math.Min(
                 PowerDamage(reachability, from),
-                Amount(node.Require("amount"), cast));
+                Amount(EffectOf<AbilityEffect.MoveDamage>(node, cast).Amount, cast));
             var state = SetPowerDamage(
                 reachability, from, PowerDamage(reachability, from) - moved,
                 first, cast);
             return ApplyPowerDamage(state, cards, moved, first, cast);
         }
 
-        long amount = SaturatingMultiply(node.Kind switch
+        long amount = SaturatingMultiply(node.OperationName() switch
         {
-            "indirectDamage" => Amount(node.Require("amount"), cast),
+            "indirectDamage" => Amount(EffectOf<AbilityEffect.IndirectDamage>(node, cast).Amount, cast),
             "replaceThreatWithDamage" => cast.Occurrence.Threat?.Remaining ?? 0,
-            _ => Amount(node.Require("amount"), cast),
+            _ => Amount(DamageAmountOf(node, cast), cast),
         }, multiplier);
         return ApplyPowerDamage(reachability, cards, amount, first, cast);
     }
@@ -1098,16 +1097,15 @@ public sealed partial class AbilityRunner
     }
 
     private static bool TryTraceConstantHealth(
-        AbilityNode node, Card character, Dictionary<int, long> schemeThreat,
+        AbilityEffect effect, Card character, Dictionary<int, long> schemeThreat,
         Cast cast, out long amount)
     {
-        if (node.Kind is "seq" or "and")
+        if (effect is AbilityEffect.Sequence or AbilityEffect.Simultaneous)
         {
             amount = 0;
-            foreach (var child in Nodes(node.Argument))
+            foreach (var child in StructuralChildren(effect))
             {
-                if (!TryTraceConstantHealth(
-                    child, character, schemeThreat, cast, out long childAmount))
+                if (!TryTraceConstantHealth(child, character, schemeThreat, cast, out long childAmount))
                 {
                     return false;
                 }
@@ -1115,63 +1113,45 @@ public sealed partial class AbilityRunner
             }
             return true;
         }
-        if (node.Kind == "if")
+        if (effect is AbilityEffect.Conditional conditional)
         {
-            if (!TryPowerTest(
-                Tree(node.Require("test")), schemeThreat, cast, out bool branch))
+            if (!TryPowerTest(conditional.Test, schemeThreat, cast, out bool branch))
             {
                 amount = 0;
                 return false;
             }
-            if (node.Field(branch ? "then" : "else") is not { } chosen)
+            if ((branch ? conditional.Then : conditional.Else) is not { } chosen)
             {
                 amount = 0;
                 return true;
             }
-            return TryTraceConstantHealth(
-                Tree(chosen), character, schemeThreat, cast, out amount);
+            return TryTraceConstantHealth(chosen, character, schemeThreat, cast, out amount);
         }
-        if (node.Kind == "grant"
-            && node.Field("keyword") is { } keyword
-            && string.Equals(Word(keyword), "health", StringComparison.Ordinal))
+        if (effect is AbilityEffect.GrantField { Until: null, Field: "health" } grant
+            && (grant.EachCard
+                ? Every(grant.Cards, cast).Any(card => card.ObjectId == character.ObjectId)
+                : Find(grant.Cards, cast)?.ObjectId == character.ObjectId))
         {
-            if (Find(node.Require("card"), cast)?.ObjectId != character.ObjectId)
-            {
-                amount = 0;
-                return true;
-            }
-            if (node.Field("amount") is { } granted)
-            {
-                return TryPowerAmount(granted, schemeThreat, cast, out amount);
-            }
-            amount = 1;
-            return true;
-        }
-        if (node.Kind == "grantEach"
-            && node.Field("keyword") is { } eachKeyword
-            && string.Equals(Word(eachKeyword), "health", StringComparison.Ordinal)
-            && Every(node.Require("cards"), cast).Any(card =>
-                card.ObjectId == character.ObjectId))
-        {
-            if (node.Field("amount") is { } granted)
-            {
-                return TryPowerAmount(granted, schemeThreat, cast, out amount);
-            }
-            amount = 1;
-            return true;
+            return TryPowerAmount(grant.Amount, schemeThreat, cast, out amount);
         }
         amount = 0;
         return true;
     }
 
     private static bool TryPowerTest(
-        AbilityNode test, Dictionary<int, long> schemeThreat,
+        AbilityCondition test, Dictionary<int, long> schemeThreat,
         Cast cast, out bool result)
     {
-        if (test.Kind is "and" or "or")
+        var operands = test switch
+        {
+            AbilityCondition.All all => all.Operands,
+            AbilityCondition.Any any => any.Operands,
+            _ => default,
+        };
+        if (!operands.IsDefault)
         {
             var values = new List<bool>();
-            foreach (var child in Nodes(test.Argument))
+            foreach (var child in operands)
             {
                 if (!TryPowerTest(child, schemeThreat, cast, out bool value))
                 {
@@ -1180,15 +1160,12 @@ public sealed partial class AbilityRunner
                 }
                 values.Add(value);
             }
-            result = test.Kind == "and"
-                ? values.All(value => value)
-                : values.Any(value => value);
+            result = test is AbilityCondition.All ? values.All(value => value) : values.Any(value => value);
             return true;
         }
-        if (test.Kind == "not")
+        if (test is AbilityCondition.Negated negated)
         {
-            if (!TryPowerTest(
-                Tree(test.Argument), schemeThreat, cast, out bool value))
+            if (!TryPowerTest(negated.Operand, schemeThreat, cast, out bool value))
             {
                 result = false;
                 return false;
@@ -1196,16 +1173,14 @@ public sealed partial class AbilityRunner
             result = !value;
             return true;
         }
-        if (test.Kind == "atLeast"
-            && TryPowerAmount(
-                test.Require("value"), schemeThreat, cast, out long valueAt)
-            && TryPowerAmount(
-                test.Require("count"), schemeThreat, cast, out long count))
+        if (test is AbilityCondition.AtLeast comparison
+            && TryPowerAmount(comparison.Value, schemeThreat, cast, out long valueAt)
+            && TryPowerAmount(comparison.Count, schemeThreat, cast, out long count))
         {
             result = valueAt >= count;
             return true;
         }
-        if (!ReadsChangedThreat(test.Argument, schemeThreat, cast))
+        if (!ReadsChangedThreat(test, schemeThreat, cast))
         {
             result = Test(test, cast);
             return true;
@@ -1215,39 +1190,45 @@ public sealed partial class AbilityRunner
     }
 
     private static bool TryPowerAmount(
-        AbilityValue value, Dictionary<int, long> schemeThreat,
+        AbilityNumber number, Dictionary<int, long> schemeThreat,
         Cast cast, out long amount)
     {
-        if (!ReadsChangedThreat(value, schemeThreat, cast))
+        if (!ReadsChangedThreat(number, schemeThreat, cast))
         {
-            amount = Amount(value, cast);
+            amount = Amount(number, cast);
             return true;
         }
-        if (value is AbilityValue.Map)
+        if (number is AbilityNumber.CardValue { Property: AbilityCardNumberProperty.Threat } value
+            && Find(value.Card, cast) is { } scheme)
         {
-            var node = Tree(value);
-            if (node.Kind == "tokensOn"
-                && Find(node.Argument, cast) is { } scheme)
-            {
-                amount = TraceThreat(schemeThreat, scheme);
-                return true;
-            }
+            amount = TraceThreat(schemeThreat, scheme);
+            return true;
         }
         amount = 0;
         return false;
     }
 
     private static bool ReadsChangedThreat(
-        AbilityValue value, Dictionary<int, long> schemeThreat,
-        Cast cast) => value switch
+        AbilityNumber number, Dictionary<int, long> schemeThreat, Cast cast) => number switch
         {
-            AbilityValue.Map map => map.Entries.Any(pair =>
-                string.Equals(pair.Key, "tokensOn", StringComparison.Ordinal)
-                    && Find(pair.Value, cast) is { } scheme
-                    && schemeThreat.ContainsKey(scheme.ObjectId)
-                || ReadsChangedThreat(pair.Value, schemeThreat, cast)),
-            AbilityValue.List list => list.Values.Any(item =>
-                ReadsChangedThreat(item, schemeThreat, cast)),
+            AbilityNumber.CardValue { Property: AbilityCardNumberProperty.Threat } value =>
+                Find(value.Card, cast) is { } scheme && schemeThreat.ContainsKey(scheme.ObjectId),
+            AbilityNumber.Sum sum => sum.Operands.Any(value => ReadsChangedThreat(value, schemeThreat, cast)),
+            AbilityNumber.Minimum minimum => minimum.Operands.Any(value => ReadsChangedThreat(value, schemeThreat, cast)),
+            AbilityNumber.Product product => product.Operands.Any(value => ReadsChangedThreat(value, schemeThreat, cast)),
+            AbilityNumber.Conditional conditional => ReadsChangedThreat(conditional.Test, schemeThreat, cast)
+                || ReadsChangedThreat(conditional.Then, schemeThreat, cast) || ReadsChangedThreat(conditional.Else, schemeThreat, cast),
+            _ => false,
+        };
+
+    private static bool ReadsChangedThreat(
+        AbilityCondition condition, Dictionary<int, long> schemeThreat, Cast cast) => condition switch
+        {
+            AbilityCondition.All all => all.Operands.Any(test => ReadsChangedThreat(test, schemeThreat, cast)),
+            AbilityCondition.Any any => any.Operands.Any(test => ReadsChangedThreat(test, schemeThreat, cast)),
+            AbilityCondition.Negated negated => ReadsChangedThreat(negated.Operand, schemeThreat, cast),
+            AbilityCondition.AtLeast comparison => ReadsChangedThreat(comparison.Value, schemeThreat, cast)
+                || ReadsChangedThreat(comparison.Count, schemeThreat, cast),
             _ => false,
         };
 
