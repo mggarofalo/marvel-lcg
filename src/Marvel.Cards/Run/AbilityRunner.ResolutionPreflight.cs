@@ -16,7 +16,7 @@ public sealed partial class AbilityRunner
         {
             "seq" or "and" => !Nodes(node.Argument).Any()
                 || Nodes(node.Argument).Any(step => CanPartiallyResolve(step, cast)),
-            "if" => node.Field(Test(Tree(node.Require("test")), cast) ? "then" : "else")
+            "if" => node.Field(Test(ConditionalOf(node, cast).Test, cast) ? "then" : "else")
                 is { } branch && CanPartiallyResolve(Tree(branch), cast),
             "then" => ResolutionOf(Tree(node.Require("effect")), cast)
                 is not ResolutionOutcome.None,
@@ -121,7 +121,7 @@ public sealed partial class AbilityRunner
         {
             "seq" or "and" => CombinedOutcomes(
                 Nodes(node.Argument).Select(effect => ResolutionOf(effect, cast))),
-            "if" => node.Field(Test(Tree(node.Require("test")), cast) ? "then" : "else")
+            "if" => node.Field(Test(ConditionalOf(node, cast).Test, cast) ? "then" : "else")
                 is { } branch
                     ? ResolutionOf(Tree(branch), cast)
                     : ResolutionOutcome.None,
@@ -310,7 +310,7 @@ public sealed partial class AbilityRunner
     {
         if (node.Kind == "if")
         {
-            var test = Tree(node.Require("test"));
+            var test = ConditionalOf(node, cast).Test;
             var branches = allBranches || cast.PriorStepMayMutate || PaymentCanChange(test)
                 ? Branches.Select(node.Field).Where(value => value is not null)
                 : node.Field(Test(test, cast) ? "then" : "else") is { } active
@@ -326,16 +326,17 @@ public sealed partial class AbilityRunner
         _ = ResolutionOf(node, cast);
     }
 
-    private static bool PaymentCanChange(AbilityNode test) => test.Kind switch
+    private static bool PaymentCanChange(AbilityCondition test) => test switch
     {
-        "and" or "or" => Nodes(test.Argument).Any(PaymentCanChange),
-        "not" => PaymentCanChange(Tree(test.Argument)),
+        AbilityCondition.All all => all.Operands.Any(PaymentCanChange),
+        AbilityCondition.Any any => any.Operands.Any(PaymentCanChange),
+        AbilityCondition.Negated negated => PaymentCanChange(negated.Operand),
 
         // Paying an ability cannot change identity form. Other predicates may
         // read the chosen resources, the source's in-play status, or another
         // fact changed by an authored cost, so their branches are preflighted
         // conservatively.
-        "inForm" => false,
+        AbilityCondition.InForm => false,
         _ => true,
     };
 
@@ -487,10 +488,10 @@ public sealed partial class AbilityRunner
         }
         if (node.Kind == "if")
         {
-            var test = Tree(node.Require("test"));
+            var test = ConditionalOf(node, cast).Test;
             bool canSwitch = stateMayChange
                 || cast.PaymentMayMutate && PaymentCanChange(test)
-                || bindingMayChange && BindingCanChange(test.Argument)
+                || bindingMayChange && BindingCanChange(test)
                 || repeatedEffect is not null
                     && RepeatedEffectCanChange(test, repeatedEffect, cast);
             var branches = canSwitch

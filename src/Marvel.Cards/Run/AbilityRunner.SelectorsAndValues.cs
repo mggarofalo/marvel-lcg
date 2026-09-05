@@ -12,10 +12,10 @@ public sealed partial class AbilityRunner
     private static IEnumerable<AbilityNode> ReachableMutationBranches(
         AbilityNode conditional, Cast cast)
     {
-        var test = Tree(conditional.Require("test"));
+        var test = ConditionalOf(conditional, cast).Test;
         bool canSwitch = PriorStepCanChange(test, cast)
             || cast.PaymentMayMutate && PaymentCanChange(test)
-            || cast.PriorBindingMayChange && BindingCanChange(test.Argument);
+            || cast.PriorBindingMayChange && BindingCanChange(test);
         if (canSwitch)
         {
             return Branches.Select(conditional.Field)

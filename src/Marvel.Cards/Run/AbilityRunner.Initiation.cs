@@ -13,7 +13,7 @@ public sealed partial class AbilityRunner
     private static bool HasRequiredTargets(AbilityNode node, Cast cast) => node.Kind switch
     {
         "seq" or "and" => Nodes(node.Argument).All(step => HasRequiredTargets(step, cast)),
-        "if" => node.Field(Test(Tree(node.Require("test")), cast) ? "then" : "else")
+        "if" => node.Field(Test(ConditionalOf(node, cast).Test, cast) ? "then" : "else")
             is not { } branch || HasRequiredTargets(Tree(branch), cast),
         "then" => HasRequiredTargets(Tree(node.Require("effect")), cast)
             && (ResolutionOf(Tree(node.Require("effect")), cast) != ResolutionOutcome.Full
@@ -527,10 +527,10 @@ public sealed partial class AbilityRunner
         // tested by the branch. Validate every structurally reachable
         // continuation boundary now, while no cost has been paid, then use
         // only the currently active branch for ordinary target eligibility.
-        var test = Tree(node.Require("test"));
+        var test = ConditionalOf(node, cast).Test;
         bool paymentCanSwitch = cast.PaymentMayMutate && PaymentCanChange(test);
         bool bindingCanSwitch = cast.PriorBindingMayChange
-            && BindingCanChange(test.Argument);
+            && BindingCanChange(test);
         bool stateCanSwitch = bindingCanSwitch
             || PriorStepCanChange(test, cast) || paymentCanSwitch;
         bool reachableLabelledTargetsAreValid = true;
@@ -568,15 +568,16 @@ public sealed partial class AbilityRunner
             is not { } active || CanInitiate(Tree(active), cast);
     }
 
-    private static bool PriorStepCanChange(AbilityNode test, Cast cast) => test.Kind switch
+    private static bool PriorStepCanChange(AbilityCondition test, Cast cast) => test switch
     {
-        "and" or "or" => Nodes(test.Argument).Any(child =>
+        AbilityCondition.All all => all.Operands.Any(child =>
             PriorStepCanChange(child, cast)),
-        "not" => PriorStepCanChange(Tree(test.Argument), cast),
-        "inForm" => cast.PriorBindingMayChange
-                && BindingCanChange(test.Argument)
-            || Seats(test.Require("player"), cast)
-                .Any(seat => SeatMayChange(cast.PriorFormsMayChange, seat)),
+        AbilityCondition.Any any => any.Operands.Any(child =>
+            PriorStepCanChange(child, cast)),
+        AbilityCondition.Negated negated => PriorStepCanChange(negated.Operand, cast),
+        AbilityCondition.InForm form => cast.PriorBindingMayChange
+                && BindingCanChange(test)
+            || SeatMayChange(cast.PriorFormsMayChange, Seat(form.Player, cast)),
         _ => cast.PriorStepMayMutate,
     };
 
@@ -626,9 +627,9 @@ public sealed partial class AbilityRunner
             cast.SetPriorFormsMayChange(before);
             if (node.Kind == "if")
             {
-                var test = Tree(node.Require("test"));
+                var test = ConditionalOf(node, cast).Test;
                 bool canSwitch = bindingMayChange
-                        && BindingCanChange(test.Argument)
+                        && BindingCanChange(test)
                     || PriorStepCanChange(test, cast)
                     || cast.PaymentMayMutate && PaymentCanChange(test);
                 var branches = canSwitch
@@ -729,8 +730,8 @@ public sealed partial class AbilityRunner
         }
         if (node.Kind == "if")
         {
-            var test = Tree(node.Require("test"));
-            bool canSwitch = before && BindingCanChange(test.Argument)
+            var test = ConditionalOf(node, cast).Test;
+            bool canSwitch = before && BindingCanChange(test)
                 || PriorStepCanChange(test, cast)
                 || cast.PaymentMayMutate && PaymentCanChange(test);
             var branches = canSwitch
@@ -799,9 +800,9 @@ public sealed partial class AbilityRunner
         }
         if (node.Kind == "if")
         {
-            var test = Tree(node.Require("test"));
+            var test = ConditionalOf(node, cast).Test;
             bool canSwitch = before.Cards.Count > 0
-                    && BindingCanChange(test.Argument)
+                    && BindingCanChange(test)
                 || PriorStepCanChange(test, cast)
                 || cast.PaymentMayMutate && PaymentCanChange(test);
             var branches = canSwitch
@@ -1336,7 +1337,7 @@ public sealed partial class AbilityRunner
         {
             "seq" or "and" => Nodes(node.Argument).Any(child =>
                 CrisisIgnoringRemovalCanAffectBound(child, cast, scheme)),
-            "if" => node.Field(Test(Tree(node.Require("test")), cast) ? "then" : "else")
+            "if" => node.Field(Test(ConditionalOf(node, cast).Test, cast) ? "then" : "else")
                 is { } branch
                 && CrisisIgnoringRemovalCanAffectBound(Tree(branch), cast, scheme),
             "forEach" => ForEachCount(node, cast) > 0
@@ -1400,12 +1401,12 @@ public sealed partial class AbilityRunner
                 Nodes(node.Argument).Select(child =>
                     TargetLegalityOf(child, cast, bindingMayChange))),
             "if" when bindingMayChange
-                    && BindingCanChange(Tree(node.Require("test")).Argument) =>
+                    && BindingCanChange(ConditionalOf(node, cast).Test) =>
                 CombineTargetLegality(Branches.Select(node.Field)
                     .Where(value => value is not null)
                     .Select(value => TargetLegalityOf(
                         Tree(value!), cast, bindingMayChange))),
-            "if" => node.Field(Test(Tree(node.Require("test")), cast) ? "then" : "else")
+            "if" => node.Field(Test(ConditionalOf(node, cast).Test, cast) ? "then" : "else")
                 is { } branch
                     ? TargetLegalityOf(Tree(branch), cast, bindingMayChange)
                     : TargetLegality.None,

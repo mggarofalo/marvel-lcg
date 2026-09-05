@@ -377,7 +377,7 @@ public sealed partial class AbilityRunner
         }
         if (node.Kind == "if")
         {
-            string branch = Test(Tree(node.Require("test")), cast) ? "then" : "else";
+            string branch = Test(ConditionalOf(node, cast).Test, cast) ? "then" : "else";
             return node.Field(branch) is { } active
                 ? ProjectedDamage(Tree(active), cast, isAttack)
                 : null;

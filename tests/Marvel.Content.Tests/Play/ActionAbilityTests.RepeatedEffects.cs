@@ -549,22 +549,28 @@ public sealed partial class ActionAbilityTests
     }
 
     [Rule("rr:labeled-ability.4")]
-    [Fact]
-    public void PowerAmountBranchIsRefusedBeforeLegalPracticeDiscards()
+    [Theory]
+    [InlineData("{\"powerAmount\":\"cardsDiscarded\"}")]
+    [InlineData("{\"add\":[0,{\"powerAmount\":\"cardsDiscarded\"}]}")]
+    [InlineData("{\"mul\":[1,{\"powerAmount\":\"cardsDiscarded\"}]}")]
+    [InlineData("{\"min\":[2,{\"powerAmount\":\"cardsDiscarded\"}]}")]
+    public void PowerAmountBranchIsRefusedBeforeLegalPracticeDiscards(string amount)
     {
+        // The labeled effect is "a thwart made by that player's identity."
+        // Suspending within that wrapper is an unsupported engine situation.
         // The selected card count binds powerAmount. Every branch that binding
         // can open must be checked before Legal Practice discards a hand card.
         var runner = Runner(
             AuthoredCards.AuntMay,
             "Action",
-            """
+            $$"""
             { "legalPractice": {
               "schemes": { "query": "thwartableSchemes" },
               "power": { "thwart": {
                 "target": "chosen",
                 "effect": { "if": {
                   "test": { "atLeast": {
-                    "value": { "powerAmount": "cardsDiscarded" },
+                    "value": {{amount}},
                     "count": 1
                   } },
                   "then": { "enemyAttacks": {

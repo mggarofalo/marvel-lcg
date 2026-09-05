@@ -87,7 +87,7 @@ public sealed partial class AbilityRunner
         }
         if (node.Kind == "if")
         {
-            var test = Tree(node.Require("test"));
+            var test = ConditionalOf(node, cast).Test;
             bool canSwitch = PowerTestCanChange(
                 test, cast, stateMayChange, bindingMayChange, reachability);
             var branches = canSwitch
@@ -105,24 +105,26 @@ public sealed partial class AbilityRunner
     }
 
     private static bool PowerTestCanChange(
-        AbilityNode test, Cast cast, bool stateMayChange,
-        bool bindingMayChange, PowerReachability reachability) => test.Kind switch
+        AbilityCondition test, Cast cast, bool stateMayChange,
+        bool bindingMayChange, PowerReachability reachability) => test switch
         {
-            "and" or "or" => Nodes(test.Argument).Any(child =>
+            AbilityCondition.All all => all.Operands.Any(child =>
                 PowerTestCanChange(
                     child, cast, stateMayChange, bindingMayChange, reachability)),
-            "not" => PowerTestCanChange(
-                Tree(test.Argument), cast, stateMayChange,
+            AbilityCondition.Any any => any.Operands.Any(child =>
+                PowerTestCanChange(
+                    child, cast, stateMayChange, bindingMayChange, reachability)),
+            AbilityCondition.Negated negated => PowerTestCanChange(
+                negated.Operand, cast, stateMayChange,
                 bindingMayChange, reachability),
-            "inForm" => bindingMayChange && BindingCanChange(test.Argument)
+            AbilityCondition.InForm form => bindingMayChange && BindingCanChange(test)
                 || FirstPlayerMayRebind(PowerForms(reachability))
-                    && test.Require("player") is AbilityValue.Word
-                        { Value: "firstPlayer" }
+                    && form.Player == AbilityPlayer.FirstPlayer
                 || SeatMayChange(
-                    PowerForms(reachability), Seat(test.Require("player"), cast)),
+                    PowerForms(reachability), Seat(form.Player, cast)),
             _ => stateMayChange
                 || cast.PaymentMayMutate && PaymentCanChange(test)
-                || bindingMayChange && BindingCanChange(test.Argument),
+                || bindingMayChange && BindingCanChange(test),
         };
 
     private static PowerReachability InitialPowerReachability(Cast cast)
@@ -353,7 +355,7 @@ public sealed partial class AbilityRunner
         }
         if (node.Kind == "if")
         {
-            var test = Tree(node.Require("test"));
+            var test = ConditionalOf(node, cast).Test;
             bool canSwitch = PowerTestCanChange(
                 test, cast, stateMayChange, bindingMayChange, reachability);
             IEnumerable<AbilityValue?> branches = canSwitch
@@ -526,7 +528,7 @@ public sealed partial class AbilityRunner
         AbilityNode node, Cast cast, bool stateMayChange,
         bool bindingMayChange, PowerReachability reachability)
     {
-        var test = Tree(node.Require("test"));
+        var test = ConditionalOf(node, cast).Test;
         bool canSwitch = PowerTestCanChange(
             test, cast, stateMayChange, bindingMayChange, reachability);
         if (!canSwitch)

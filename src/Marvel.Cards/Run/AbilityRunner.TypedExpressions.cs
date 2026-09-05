@@ -6,6 +6,56 @@ namespace Marvel.Cards.Run;
 
 public sealed partial class AbilityRunner
 {
+    private static bool BindingCanChange(AbilityCondition condition) => condition switch
+    {
+        AbilityCondition.All all => all.Operands.Any(BindingCanChange),
+        AbilityCondition.Any any => any.Operands.Any(BindingCanChange),
+        AbilityCondition.Negated negated => BindingCanChange(negated.Operand),
+        AbilityCondition.Exists exists => BindingCanChange(exists.Cards),
+        AbilityCondition.LegalPractice practice => BindingCanChange(practice.Schemes),
+        AbilityCondition.AutomaticThwart thwart => BindingCanChange(thwart.Scheme),
+        AbilityCondition.AtLeast comparison => BindingCanChange(comparison.Value)
+            || BindingCanChange(comparison.Count),
+        AbilityCondition.InForm form => form.Player == AbilityPlayer.ChosenPlayer,
+        AbilityCondition.CardText text => BindingCanChange(text.Card),
+        AbilityCondition.IsKind kind => BindingCanChange(kind.Card),
+        AbilityCondition.WasDefeated defeated => BindingCanChange(defeated.Card),
+        AbilityCondition.IsYourIdentity identity => BindingCanChange(identity.Card),
+        AbilityCondition.Flag or AbilityCondition.PaidWithResource or AbilityCondition.DiscardedWithResource
+            or AbilityCondition.CausedThreat or AbilityCondition.TitleInPlay or AbilityCondition.ActivationIs => false,
+        _ => throw new InvalidOperationException("Unknown compiled condition in binding analysis"),
+    };
+
+    private static bool BindingCanChange(AbilityNumber number) => number switch
+    {
+        AbilityNumber.Sum sum => sum.Operands.Any(BindingCanChange),
+        AbilityNumber.Product product => product.Operands.Any(BindingCanChange),
+        AbilityNumber.Minimum minimum => minimum.Operands.Any(BindingCanChange),
+        AbilityNumber.CardValue value => BindingCanChange(value.Card),
+        AbilityNumber.Counters counters => BindingCanChange(counters.Card),
+        AbilityNumber.Modified modified => BindingCanChange(modified.Card),
+        AbilityNumber.Count count => BindingCanChange(count.Cards),
+        AbilityNumber.Conditional conditional => BindingCanChange(conditional.Test)
+            || BindingCanChange(conditional.Then) || BindingCanChange(conditional.Else),
+        AbilityNumber.ResolutionValue value => value.Kind == AbilityResolutionNumber.PowerAmount,
+        AbilityNumber.Constant or AbilityNumber.PerPlayer or AbilityNumber.Result
+            or AbilityNumber.PrintedResourcesDiscarded or AbilityNumber.DiscardedWithResource => false,
+        _ => throw new InvalidOperationException("Unknown compiled number in binding analysis"),
+    };
+
+    private static bool BindingCanChange(AbilityCardSelection selector) => selector switch
+    {
+        AbilityCardSelection.Bound bound => bound.Binding is AbilityCardBinding.Chosen or AbilityCardBinding.That,
+        AbilityCardSelection.Query query => query.Kind is AbilityCardQuery.PowerTargets
+            or AbilityCardQuery.EnemiesEngagedWithChosenPlayer or AbilityCardQuery.TopmostTechInChosenDiscard,
+        AbilityCardSelection.WithTrait trait => BindingCanChange(trait.Cards),
+        AbilityCardSelection.WithoutAnotherCopyAttached other => BindingCanChange(other.Cards),
+        AbilityCardSelection.Discardable discardable => BindingCanChange(discardable.Cards),
+        AbilityCardSelection.Ranked ranked => BindingCanChange(ranked.Cards),
+        AbilityCardSelection.Titled or AbilityCardSelection.EnemiesWithTrait or AbilityCardSelection.InAreas => false,
+        _ => throw new InvalidOperationException("Unknown compiled selector in binding analysis"),
+    };
+
     private static bool AmountMayChange(AbilityNumber number) => number switch
     {
         AbilityNumber.Constant or AbilityNumber.PerPlayer => false,

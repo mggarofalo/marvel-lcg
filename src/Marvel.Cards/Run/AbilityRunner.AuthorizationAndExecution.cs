@@ -417,13 +417,13 @@ public sealed partial class AbilityRunner
                 break;
 
             case "if":
-                AbilityValue tested = node.Require("test");
+                var tested = ConditionalOf(node, cast).Test;
                 bool wasObserving = cast.ObservingInformation;
                 cast.SetObservingInformation(true);
                 bool condition;
                 try
                 {
-                    condition = Test(Tree(tested), cast);
+                    condition = Test(tested, cast);
                 }
                 finally
                 {

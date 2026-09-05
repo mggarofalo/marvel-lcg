@@ -270,7 +270,7 @@ public sealed partial class AbilityRunner
         var children = node.Kind switch
         {
             "seq" or "and" => Nodes(node.Argument),
-            "if" => node.Field(Test(Tree(node.Require("test")), cast) ? "then" : "else")
+            "if" => node.Field(Test(ConditionalOf(node, cast).Test, cast) ? "then" : "else")
                 is { } branch ? [Tree(branch)] : [],
             "eachPlayer" or "forEach" => [Tree(node.Require("effect"))],
             "defense" => [Tree(node.Require("effect"))],

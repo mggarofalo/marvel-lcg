@@ -31,7 +31,7 @@ public sealed partial class AbilityRunner
     };
 
     private static bool RepeatedEffectCanChange(
-        AbilityNode test, AbilityNode effect, Cast cast)
+        AbilityCondition test, AbilityNode effect, Cast cast)
     {
         int original = cast.Player;
         try
@@ -123,9 +123,9 @@ public sealed partial class AbilityRunner
         }
         if (node.Kind == "if")
         {
-            var test = Tree(node.Require("test"));
+            var test = ConditionalOf(node, cast).Test;
             var branches = RepeatedTestCanChange(test, assumed)
-                    || binding && BindingCanChange(test.Argument)
+                    || binding && BindingCanChange(test)
                 ? Branches.Select(node.Field).Where(value => value is not null)
                 : node.Field(Test(test, cast) ? "then" : "else") is { } active
                     ? [active]
@@ -156,16 +156,19 @@ public sealed partial class AbilityRunner
     }
 
     private static bool RepeatedTestCanChange(
-        AbilityNode test, RepeatedChange changes) => test.Kind switch
+        AbilityCondition test, RepeatedChange changes) => test switch
         {
-            "and" or "or" => Nodes(test.Argument).Any(child =>
+            AbilityCondition.All all => all.Operands.Any(child =>
                 RepeatedTestCanChange(child, changes)),
-            "not" => RepeatedTestCanChange(Tree(test.Argument), changes),
-            "inForm" => changes.HasFlag(RepeatedChange.Form)
+            AbilityCondition.Any any => any.Operands.Any(child =>
+                RepeatedTestCanChange(child, changes)),
+            AbilityCondition.Negated negated => RepeatedTestCanChange(negated.Operand, changes),
+            AbilityCondition.InForm form => changes.HasFlag(RepeatedChange.Form)
                 || changes.HasFlag(RepeatedChange.PlayerOrder)
-                    && Word(test.Require("player")) != AbilityPlayers.You,
-            "titleInPlay" => changes.HasFlag(RepeatedChange.CardsInPlay),
-            "finalStep" or "paidWithResource" or "threatCause" => false,
+                    && form.Player != AbilityPlayer.You,
+            AbilityCondition.TitleInPlay => changes.HasFlag(RepeatedChange.CardsInPlay),
+            AbilityCondition.Flag { Kind: AbilityConditionFact.FinalStep }
+                or AbilityCondition.PaidWithResource or AbilityCondition.CausedThreat => false,
             _ => true,
         };
 
@@ -836,7 +839,7 @@ public sealed partial class AbilityRunner
                         : attachment.Damage,
                     [amount]);
                 damage[attachment.ObjectId] = placed;
-                long threshold = SoakDiscardThreshold(replacement.Effect);
+                long threshold = runner.SoakDiscardThreshold(replacement.Effect);
                 if (threshold > 0 && placed >= threshold)
                 {
                     discarded.Add(attachment.ObjectId);
@@ -851,15 +854,20 @@ public sealed partial class AbilityRunner
         node.Kind == kind || MutationChildren(node).Any(child =>
             ContainsEffect(child, kind));
 
-    private static long SoakDiscardThreshold(AbilityNode node)
+    private long SoakDiscardThreshold(AbilityNode node)
     {
         if (node.Kind == "if"
-            && Tree(node.Require("test")) is { Kind: "atLeast" } test
-            && Tree(test.Require("value")) is { Kind: "damageOn" }
+            && CompiledEffect(node) is AbilityEffect.Conditional
+            {
+                Test: AbilityCondition.AtLeast
+                { Value: AbilityNumber.CardValue { Property: AbilityCardNumberProperty.Damage } } comparison,
+            }
             && node.Field("then") is { } then
             && ContainsEffect(Tree(then), "discard"))
         {
-            return Number(test.Require("count"));
+            return comparison.Count is AbilityNumber.Constant constant
+                ? constant.Value
+                : throw new AbilityException("Soak discard threshold must be a constant number");
         }
         return MutationChildren(node)
             .Select(SoakDiscardThreshold)
@@ -990,9 +998,9 @@ public sealed partial class AbilityRunner
 
         if (node.Kind == "if")
         {
-            var test = Tree(node.Require("test"));
+            var test = ConditionalOf(node, cast).Test;
             var branches = RepeatedTestCanChange(test, assumed)
-                    || binding && BindingCanChange(test.Argument)
+                    || binding && BindingCanChange(test)
                 ? Branches.Select(node.Field).Where(value => value is not null)
                 : node.Field(Test(test, cast) ? "then" : "else") is { } active
                     ? [active]
@@ -1794,9 +1802,9 @@ public sealed partial class AbilityRunner
     {
         if (node.Kind == "if")
         {
-            var test = Tree(node.Require("test"));
+            var test = ConditionalOf(node, cast).Test;
             if (RepeatedTestCanChange(test, assumed)
-                || binding && BindingCanChange(test.Argument))
+                || binding && BindingCanChange(test))
             {
                 long possible = Branches.Select(node.Field)
                     .Where(value => value is not null)

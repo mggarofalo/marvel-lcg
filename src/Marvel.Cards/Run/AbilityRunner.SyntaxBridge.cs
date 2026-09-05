@@ -45,4 +45,7 @@ public sealed partial class AbilityRunner
     private AbilityEffect CompiledEffect(AbilityNode node) =>
         effectsBySyntax.GetValueOrDefault(node)
         ?? throw new InvalidOperationException("Effect syntax is not part of the compiled ability program");
+
+    private static AbilityEffect.Conditional ConditionalOf(AbilityNode node, Cast cast) =>
+        (AbilityEffect.Conditional)((AbilityRunner)cast.Abilities).CompiledEffect(node);
 }
