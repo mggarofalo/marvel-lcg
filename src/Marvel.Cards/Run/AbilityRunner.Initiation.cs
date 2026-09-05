@@ -9,71 +9,36 @@ namespace Marvel.Cards.Run;
 
 public sealed partial class AbilityRunner
 {
-    /// <summary>Whether every card target required by an effect exists.</summary>
-    private static bool HasRequiredTargets(AbilityNode node, Cast cast) => node.Kind switch
+    /// <summary>Target existence for leaf options without a dedicated partial-resolution check.</summary>
+    private static bool HasPartialResolutionTargets(AbilityNode node, Cast cast) => node.Kind switch
     {
-        "seq" or "and" => Nodes(node.Argument).All(step => HasRequiredTargets(step, cast)),
-        "if" => node.Field(Test(ConditionalOf(node, cast).Test, cast) ? "then" : "else")
-            is not { } branch || HasRequiredTargets(Tree(branch), cast),
-        "then" => HasRequiredTargets(Tree(node.Require("effect")), cast)
-            && (ResolutionOf(Tree(node.Require("effect")), cast) != ResolutionOutcome.Full
-                || HasRequiredTargets(Tree(node.Require("then")), cast)),
-        "otherwise" => ResolutionOf(Tree(node.Require("effect")), cast) switch
-        {
-            ResolutionOutcome.None => HasRequiredTargets(
-                Tree(node.Require("otherwise")), cast),
-            _ => HasRequiredTargets(Tree(node.Require("effect")), cast),
-        },
-        "choose" => Nodes(node.Require("options")).Any(option => OptionIsLegal(option, cast)),
-        "chooseCard" => LegalCardChoices(node, cast).Count > 0,
-        "forEach" => ForEachCount(node, cast) <= 0
-            || HasRequiredTargets(Tree(node.Require("effect")), cast),
-        "eachTime" => true,
-        "removeFromGame" or "exhaust" or "reveal" or "returnToHand" =>
-            Every(node.Argument, cast).Count > 0,
-        "ready" => Every(node.Argument, cast).Any(target =>
-            !target.Ready && cast.Abilities.CanReady(cast.World, target, cast.Source)),
-        "soakDamage" => Find(node.Require("onto"), cast) is not null,
+        "reveal" or "returnToHand" =>
+            Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast).Count > 0,
+        "soakDamage" or "attachTo" or "discard" =>
+            Find(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast) is not null,
         "giveStatus" => StatusTargets(node, cast).Count > 0,
-        "declareDefender" => Find(node.Require("card"), cast) is { } declared
+        "declareDefender" => Find(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast) is { } declared
             && Attack.CanDeclareByAbility(
                 cast.World, cast.World.Facts, declared,
                 ReplaceableDefenseDefender(cast)),
-        "attachTo" => Find(node.Argument, cast) is not null,
-        "grantUntil" => Find(node.Require("card"), cast) is not null,
-        // The delayed effect's game element is supplied by its future
-        // occurrence, so rr:target.5 requires no target at initiation.
-        "delayUntil" => true,
-        "defense" => HasRequiredTargets(Tree(node.Require("effect")), cast),
-        "discard" or "dealEncounterCard" =>
-            Find(node.Field("card") ?? node.Argument, cast) is not null,
-        "heal" => Find(node.Require("card"), cast) is not null,
+        "grantUntil" => Find(GrantSelectionOf(node, cast), cast) is not null,
+        "dealEncounterCard" => Find(EffectOf<AbilityEffect.DealEncounterCard>(node, cast).Card, cast) is not null,
         "indirectDamage" => Amount(EffectOf<AbilityEffect.IndirectDamage>(node, cast).Amount, cast) <= 0
-            || Assignable(node.Require("among"), cast).Count > 0,
-        "dealDamage" => DamageTargets(node.Require("cards"), cast).Count > 0,
-        "dealAttackDamage" => DamageTargets(node.Require("cards"), cast).Count > 0,
-        "placeThreat" => Every(node.Require("scheme"), cast).Count > 0,
+            || Assignable(DamageSelectionOf(node, cast), cast).Count > 0,
+        "dealDamage" or "dealAttackDamage" => DamageTargets(DamageSelectionOf(node, cast), cast).Count > 0,
+        "placeThreat" => Every(ThreatSelectionOf(node, cast), cast).Count > 0,
         "placeAccelerationToken" => cast.World.TheCardIn(DeckType.MainSchemesArea) is not null,
-        "advanceMainScheme" => CanAdvanceMainScheme(cast),
-        "removeThreat" => Find(node.Require("scheme"), cast) is not null,
         "enemyAttacks" or "enemySchemes" => Every(ActivationOf(node, cast).Enemies, cast).Count > 0,
-        "putIntoPlay" => Find(node.Require("card"), cast) is not null,
-        "placeAtRandom" => Find(node.Require("on"), cast) is not null,
-        "createDrones" => CanCreateDrones(node, cast),
-        "draw" => CanDraw(node, cast),
+        "putIntoPlay" => Find(EffectOf<AbilityEffect.PutIntoPlay>(node, cast).Card, cast) is not null,
+        "placeAtRandom" => Find(EffectOf<AbilityEffect.PlaceAtRandom>(node, cast).Host, cast) is not null,
         "search" => HasSearchableArea(node, cast),
 
-        // These effects need no separate card-target existence check in this
-        // legacy option-reachability pass. TargetLegalityOf is the authority
-        // for the complete rr:target initiation rule, including players.
-        "generate" or "changeForm" or "removeCounters" or "preventDamage"
-            or "cancelWhenRevealed" or "cancelOccurrence" or "dealEncounterCards" or "revealTop"
-            or "discardAtRandom" or "discardUntil" or "discardTop"
-            or "recoverDiscardedByResource" or "shuffleInto"
-            or "gainSurge" or "shuffle" or "drawToHandSize"
-            or "drawToPrintedHandSize" or "preventThreat"
-            or "replaceThreatWithDamage" or "grantCharactersControlledBy"
-            or "reduceNextCardCost" => true,
+        // The delayed effect's game element comes from its future occurrence;
+        // rr:target.5 requires no target at initiation.
+        "delayUntil" => true,
+        "generate" or "preventDamage" or "cancelWhenRevealed" or "cancelOccurrence"
+            or "dealEncounterCards" or "revealTop" or "discardUntil"
+            or "recoverDiscardedByResource" or "shuffleInto" or "shuffle" => true,
         _ => throw new RulesNotImplementedException(
             $"'{cast.Source.FaceId}' uses '{node.Kind}' in an option whose target "
             + "legality is not implemented"),
@@ -1038,7 +1003,7 @@ public sealed partial class AbilityRunner
         }
         if (node.Kind == "grantUntil"
             && requireCurrentTargets
-            && Find(node.Require("card"), cast) is null)
+            && Find(GrantSelectionOf(node, cast), cast) is null)
         {
             throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' may reach a lasting effect with no target after payment");
@@ -1124,16 +1089,16 @@ public sealed partial class AbilityRunner
         "chooseCard" => CanInitiateChooseCard(node, cast),
         "choose" => CanInitiateChoice(node, cast),
         "draw" => CanInitiateDraw(node, cast),
-        "thwartDifferentSchemes" => Every(node.Require("schemes"), cast).Count > 0,
+        "thwartDifferentSchemes" => Every(EffectOf<AbilityEffect.ThwartGroup>(node, cast).Schemes, cast).Count > 0,
         "legalPractice" => cast.World.Seats[cast.Player].Hand.Cards.Any(card =>
                 card.ObjectId != cast.Source.ObjectId)
-            && Every(node.Require("schemes"), cast).Count > 0,
+            && Every(EffectOf<AbilityEffect.ThwartGroup>(node, cast).Schemes, cast).Count > 0,
         "thwartSchemes" when SuspendsPowerEffect(
             Tree(Tree(node.Require("power")).Require("effect")), cast) =>
             throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' suspends inside a labelled power, "
                 + "which is not implemented"),
-        "thwartSchemes" => Every(node.Require("schemes"), cast).Count > 0,
+        "thwartSchemes" => Every(EffectOf<AbilityEffect.ThwartGroup>(node, cast).Schemes, cast).Count > 0,
         "attack" or "thwart" when SuspendsPowerEffect(
             Tree(node.Require("effect")), cast) =>
             throw new RulesNotImplementedException(
@@ -1147,7 +1112,7 @@ public sealed partial class AbilityRunner
         // A missing dynamic target gets the resolver's specific exception
         // (for example, no activating enemy). When the target exists, the
         // lasting period itself is an initiation constraint.
-        "grantUntil" => Find(node.Require("card"), cast) is not null
+        "grantUntil" => Find(GrantSelectionOf(node, cast), cast) is not null
             ? LastingPeriodIsOpen(node, cast)
             : !IsPlayerCard(cast)
                 && !cast.PaymentMayMutate
@@ -1325,8 +1290,8 @@ public sealed partial class AbilityRunner
     {
         if (node.Kind == "removeThreat")
         {
-            return IgnoresCrisis(node)
-                && Every(node.Require("scheme"), cast).Any(candidate =>
+            return IgnoresCrisis(node, cast)
+                && Every(ThreatSelectionOf(node, cast), cast).Any(candidate =>
                     candidate.ObjectId == scheme.ObjectId)
                 && scheme.Tokens.GetValueOrDefault("k_threat") > 0
                 && Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast) > 0
@@ -1453,49 +1418,49 @@ public sealed partial class AbilityRunner
                 ? TargetLegality.Valid : TargetLegality.Invalid,
 
             "removeFromGame" => RemoveFromGameTargetLegality(node, cast),
-            "reveal" or "returnToHand" => Cards(Every(node.Argument, cast)),
-            "exhaust" => Cards(Every(node.Argument, cast).Where(card => card.Ready)),
-            "ready" => Cards(Every(node.Argument, cast).Where(card =>
+            "reveal" or "returnToHand" => Cards(Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast)),
+            "exhaust" => Cards(Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast).Where(card => card.Ready)),
+            "ready" => Cards(Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast).Where(card =>
                 !card.Ready && cast.Abilities.CanReady(cast.World, card, cast.Source))),
             "giveStatus" => Cards(StatusTargets(node, cast)),
-            "declareDefender" => Find(node.Require("card"), cast) is { } declared
+            "declareDefender" => Find(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast) is { } declared
                 && Attack.CanDeclareByAbility(
                     cast.World, cast.World.Facts, declared,
                     ReplaceableDefenseDefender(cast))
                     ? TargetLegality.Valid : TargetLegality.Invalid,
-            "attachTo" => Find(node.Argument, cast) is null
+            "attachTo" => Find(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast) is null
                 ? TargetLegality.Invalid : TargetLegality.Valid,
-            "grantUntil" => Find(node.Require("card"), cast) is null
+            "grantUntil" => Find(GrantSelectionOf(node, cast), cast) is null
                 ? TargetLegality.Invalid : TargetLegality.Valid,
-            "discard" => (node.Field("card") ?? node.Argument) is { } discardTarget
+            "discard" => EffectOf<AbilityEffect.CardAction>(node, cast).Selection is var discardTarget
                 && Find(discardTarget, cast) is { } discarded
                 && CanRemoveByEffect(discardTarget, cast, discarded)
                     ? TargetLegality.Valid : TargetLegality.Invalid,
-            "dealEncounterCard" => Find(node.Field("card") ?? node.Argument, cast) is null
+            "dealEncounterCard" => Find(EffectOf<AbilityEffect.DealEncounterCard>(node, cast).Card, cast) is null
                 ? TargetLegality.Invalid : TargetLegality.Valid,
-            "heal" => Find(node.Require("card"), cast) is { Damage: > 0 }
+            "heal" => Find(EffectOf<AbilityEffect.Heal>(node, cast).Card, cast) is { Damage: > 0 }
                 && Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast) > 0
                     ? TargetLegality.Valid : TargetLegality.Invalid,
             "dealDamage" or "dealAttackDamage" =>
                 Amount(DamageAmountOf(node, cast), cast) > 0
-                    ? Cards(DamageTargets(node.Require("cards"), cast))
+                    ? Cards(DamageTargets(DamageSelectionOf(node, cast), cast))
                     : TargetLegality.Invalid,
             "indirectDamage" => Amount(EffectOf<AbilityEffect.IndirectDamage>(node, cast).Amount, cast) <= 0
                 ? TargetLegality.Invalid
-                : Cards(Assignable(node.Require("among"), cast)),
+                : Cards(Assignable(DamageSelectionOf(node, cast), cast)),
             "placeThreat" => Amount(EffectOf<AbilityEffect.PlaceThreat>(node, cast).Amount, cast) <= 0
                 ? TargetLegality.Invalid
-                : Cards(Every(node.Require("scheme"), cast)),
-            "removeThreat" => Every(node.Require("scheme"), cast).Any(scheme =>
+                : Cards(Every(ThreatSelectionOf(node, cast), cast)),
+            "removeThreat" => Every(ThreatSelectionOf(node, cast), cast).Any(scheme =>
                 scheme.Tokens.GetValueOrDefault("k_threat") > 0
                 && Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast) > 0
                 && CanRemoveThreatFrom(node, cast, scheme))
                 ? TargetLegality.Valid : TargetLegality.Invalid,
             "enemyAttacks" or "enemySchemes" =>
                 Cards(Every(ActivationOf(node, cast).Enemies, cast)),
-            "putIntoPlay" => Find(node.Require("card"), cast) is null
+            "putIntoPlay" => Find(EffectOf<AbilityEffect.PutIntoPlay>(node, cast).Card, cast) is null
                 ? TargetLegality.Invalid : TargetLegality.Valid,
-            "placeAtRandom" => Find(node.Require("on"), cast) is null
+            "placeAtRandom" => Find(EffectOf<AbilityEffect.PlaceAtRandom>(node, cast).Host, cast) is null
                 ? TargetLegality.Invalid : TargetLegality.Valid,
             "draw" when cast.Chosen is null
                     && bindingMayChange
@@ -1623,8 +1588,9 @@ public sealed partial class AbilityRunner
 
     private static IReadOnlyList<Card> StatusTargets(AbilityNode node, Cast cast)
     {
-        string status = Word(node.Require("status"));
-        return [.. Every(node.Require("card"), cast).Where(card =>
+        var instruction = EffectOf<AbilityEffect.GiveStatus>(node, cast);
+        string status = instruction.Status;
+        return [.. Every(instruction.Cards, cast).Where(card =>
             DeckTypes.IsInPlay(card.Area.Type)
                 && CardKinds.IsCharacter(FacedownDrones.Kind(card, cast.World.Facts))
                 && Statuses.Count(cast.World, card, status)
@@ -1634,8 +1600,8 @@ public sealed partial class AbilityRunner
     private static TargetLegality RemoveFromGameTargetLegality(
         AbilityNode node, Cast cast)
     {
-        return Find(node.Argument, cast) is { } removed
-            && CanRemoveByEffect(node.Argument, cast, removed)
+        return Find(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast) is { } removed
+            && CanRemoveByEffect(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast, removed)
                 ? TargetLegality.Valid : TargetLegality.Invalid;
     }
 
@@ -1676,7 +1642,7 @@ public sealed partial class AbilityRunner
         {
             if (effect.Kind == "dealDamage")
             {
-                if (DamageTargets(effect.Require("cards"), cast).Count != 1)
+                if (DamageTargets(DamageSelectionOf(effect, cast), cast).Count != 1)
                 {
                     return false;
                 }
@@ -1690,7 +1656,7 @@ public sealed partial class AbilityRunner
             }
             if (effect.Kind == "removeThreat")
             {
-                if (Every(effect.Require("scheme"), cast).Count != 1)
+                if (Every(EffectOf<AbilityEffect.RemoveThreat>(effect, cast).Schemes, cast).Count != 1)
                 {
                     return false;
                 }

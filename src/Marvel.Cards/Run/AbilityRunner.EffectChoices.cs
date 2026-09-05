@@ -173,12 +173,6 @@ public sealed partial class AbilityRunner
     /// hit points left ineligible for the same reason — there is no amount that
     /// would not defeat it.
     /// </remarks>
-    private static List<Card> Assignable(AbilityValue among, Cast cast) =>
-        Assignable(Every(among, cast), cast);
-
-    private static IReadOnlyList<Card> DamageTargets(AbilityValue targets, Cast cast) =>
-        DamageTargets(Every(targets, cast), cast);
-
     private static List<Card> Assignable(AbilityCardSelection among, Cast cast) =>
         Assignable(Every(among, cast), cast);
 

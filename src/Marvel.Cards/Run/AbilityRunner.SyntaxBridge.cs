@@ -60,4 +60,29 @@ public sealed partial class AbilityRunner
             AbilityEffect.IndirectDamage damage => damage.Amount,
             _ => throw new InvalidOperationException("Expected a compiled damage instruction"),
         };
+
+    private static AbilityCardSelection DamageSelectionOf(AbilityNode node, Cast cast) =>
+        EffectOf<AbilityEffect>(node, cast) switch
+        {
+            AbilityEffect.Damage damage => damage.Cards,
+            AbilityEffect.AttackDamage damage => damage.Cards,
+            AbilityEffect.IndirectDamage damage => damage.Among,
+            _ => throw new InvalidOperationException("Expected a compiled damage instruction"),
+        };
+
+    private static AbilityCardSelection GrantSelectionOf(AbilityNode node, Cast cast) =>
+        EffectOf<AbilityEffect>(node, cast) switch
+        {
+            AbilityEffect.GrantField grant => grant.Cards,
+            AbilityEffect.GrantTrait grant => grant.Cards,
+            _ => throw new InvalidOperationException("Expected a compiled grant instruction"),
+        };
+
+    private static AbilityCardSelection ThreatSelectionOf(AbilityNode node, Cast cast) =>
+        EffectOf<AbilityEffect>(node, cast) switch
+        {
+            AbilityEffect.PlaceThreat threat => threat.Schemes,
+            AbilityEffect.RemoveThreat threat => threat.Schemes,
+            _ => throw new InvalidOperationException("Expected a compiled threat instruction"),
+        };
 }

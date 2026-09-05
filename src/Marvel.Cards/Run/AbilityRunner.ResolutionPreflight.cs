@@ -32,10 +32,10 @@ public sealed partial class AbilityRunner
             "choose" => Nodes(node.Require("options")).Any(option => OptionIsLegal(option, cast)),
             "chooseCard" => LegalCardChoices(node, cast).Count > 0,
             "changeForm" => !AlreadyInForm(FormChangeOf(node, cast), cast),
-            "removeFromGame" => Find(node.Argument, cast) is { } card
-                && CanRemoveByEffect(node.Argument, cast, card),
-            "exhaust" => Find(node.Argument, cast)?.Ready == true,
-            "ready" => Every(node.Argument, cast).Any(card =>
+            "removeFromGame" => Find(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast) is { } card
+                && CanRemoveByEffect(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast, card),
+            "exhaust" => Find(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast)?.Ready == true,
+            "ready" => Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast).Any(card =>
                 !card.Ready && cast.Abilities.CanReady(cast.World, card, cast.Source)),
             "removeCounters" => CounterRemovalOf(node, cast) is var removal
                 && Find(removal.Card, cast) is { } counterCard
@@ -47,15 +47,15 @@ public sealed partial class AbilityRunner
                     .Any(seat => cast.World.Seats[seat].Hand.Cards.Count > 0),
             "discardTop" => Amount(EffectOf<AbilityEffect.DiscardTop>(node, cast).Count, cast) > 0
                 && Area(Word(node.Require("from")), cast).Cards.Count > 0,
-            "heal" => Find(node.Require("card"), cast) is { Damage: > 0 }
+            "heal" => Find(EffectOf<AbilityEffect.Heal>(node, cast).Card, cast) is { Damage: > 0 }
                 && Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast) > 0,
-            "indirectDamage" => HasRequiredTargets(node, cast)
+            "indirectDamage" => HasPartialResolutionTargets(node, cast)
                 && Amount(EffectOf<AbilityEffect.IndirectDamage>(node, cast).Amount, cast) > 0,
-            "dealDamage" => HasRequiredTargets(node, cast)
+            "dealDamage" => HasPartialResolutionTargets(node, cast)
                 && Amount(EffectOf<AbilityEffect.Damage>(node, cast).Amount, cast) > 0,
-            "dealAttackDamage" => HasRequiredTargets(node, cast)
+            "dealAttackDamage" => HasPartialResolutionTargets(node, cast)
                 && Amount(EffectOf<AbilityEffect.AttackDamage>(node, cast).Amount, cast) > 0,
-            "placeThreat" => HasRequiredTargets(node, cast)
+            "placeThreat" => HasPartialResolutionTargets(node, cast)
                 && Amount(EffectOf<AbilityEffect.PlaceThreat>(node, cast).Amount, cast) > 0,
             "removeThreat" => CanRemoveThreat(node, cast),
             "gainSurge" => EffectOf<AbilityEffect.GainSurge>(node, cast).Instances > 0,
@@ -66,7 +66,7 @@ public sealed partial class AbilityRunner
                     cast.World, cast.World.Seats[Seat(handSize.Player, cast)], cast.World.Facts),
             "drawToPrintedHandSize" => CanDrawToPrintedHandSize(node, cast),
             "createDrones" => CanCreateDrones(node, cast),
-            "placeAccelerationToken" => HasRequiredTargets(node, cast),
+            "placeAccelerationToken" => HasPartialResolutionTargets(node, cast),
             "preventThreat" => cast.Occurrence.Threat is { Remaining: > 0 }
                 && Amount(EffectOf<AbilityEffect.PreventThreat>(node, cast).Amount, cast) > 0,
             "replaceThreatWithDamage" => cast.Occurrence.Threat is { Remaining: > 0 },
@@ -84,7 +84,7 @@ public sealed partial class AbilityRunner
                 or "attachTo"
                 or "grantUntil" or "delayUntil" or "discard" or "enemyAttacks"
                 or "enemySchemes" or "putIntoPlay" or "shuffle" =>
-                    HasRequiredTargets(node, cast),
+                    HasPartialResolutionTargets(node, cast),
             _ => throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' uses '{node.Kind}' in an option whose partial "
                 + "resolution is not implemented"),
@@ -131,17 +131,17 @@ public sealed partial class AbilityRunner
                 ? ResolutionOutcome.None
                 : ResolutionOutcome.Full,
             "exhaust" => ResolutionOfCards(
-                Every(node.Argument, cast), card => card.Ready),
+                Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast), card => card.Ready),
             "ready" => ResolutionOfCards(
-                Every(node.Argument, cast), card => !card.Ready
+                Every(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast), card => !card.Ready
                     && cast.Abilities.CanReady(cast.World, card, cast.Source)),
-            "declareDefender" => Find(node.Require("card"), cast) is { } declared
+            "declareDefender" => Find(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast) is { } declared
                 && Attack.CanDeclareByAbility(
                     cast.World, cast.World.Facts, declared,
                     ReplaceableDefenseDefender(cast))
                     ? ResolutionOutcome.Full
                     : ResolutionOutcome.None,
-            "discard" => (node.Field("card") ?? node.Argument) is { } discardTarget
+            "discard" => EffectOf<AbilityEffect.CardAction>(node, cast).Selection is var discardTarget
                 && Find(discardTarget, cast) is { } discarded
                 && CanRemoveByEffect(discardTarget, cast, discarded)
                     ? ResolutionOutcome.Full
@@ -153,7 +153,7 @@ public sealed partial class AbilityRunner
                         DeckType.DiscardPile, PlayArea.Of(player)).Cards.Count,
                     EffectOf<AbilityEffect.Draw>(node, cast).Count))),
             "heal" => ResolutionOfAmount(
-                Find(node.Require("card"), cast)?.Damage ?? 0,
+                Find(EffectOf<AbilityEffect.Heal>(node, cast).Card, cast)?.Damage ?? 0,
                 Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast)),
             "removeThreat" => ResolutionOfThreat(node, cast),
             _ => throw new RulesNotImplementedException(
@@ -201,7 +201,7 @@ public sealed partial class AbilityRunner
 
     private static ResolutionOutcome ResolutionOfThreat(AbilityNode node, Cast cast)
     {
-        var schemes = Every(node.Require("scheme"), cast);
+        var schemes = Every(ThreatSelectionOf(node, cast), cast);
         long wanted = Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast);
         if (schemes.Count == 0 || wanted <= 0)
         {
@@ -419,7 +419,7 @@ public sealed partial class AbilityRunner
             var prior = cast.CaptureChosen();
             try
             {
-                var target = Find(node.Require("target"), cast);
+                var target = Find(EffectOf<AbilityEffect.Power>(node, cast).Target!, cast);
                 bool targetWillBind = target is null;
                 if (target is not null)
                 {

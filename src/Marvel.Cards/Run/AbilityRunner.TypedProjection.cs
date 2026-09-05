@@ -24,6 +24,17 @@ public sealed partial class AbilityRunner
         if (conditional.Else is { } otherwise) yield return otherwise;
     }
 
+    private static bool SelectorMembershipCanChange(AbilityCardSelection selector) => selector switch
+    {
+        AbilityCardSelection.WithTrait or AbilityCardSelection.EnemiesWithTrait
+            or AbilityCardSelection.Ranked or AbilityCardSelection.WithoutAnotherCopyAttached => true,
+        AbilityCardSelection.Query query => query.Kind is AbilityCardQuery.AttackableEnemies
+            or AbilityCardQuery.MinionsEngagedWithYou or AbilityCardQuery.DronesEngagedWithYou
+            or AbilityCardQuery.EnemiesEngagedWithChosenPlayer or AbilityCardQuery.UpgradesYouControl
+            or AbilityCardQuery.SupportsYouControl or AbilityCardQuery.UpgradesAndSupportsYouControl,
+        _ => false,
+    };
+
     private static bool PotentialVillainSelector(AbilityCardSelection selector, Cast cast)
     {
         if (cast.World.TheCardIn(DeckType.VillainArea) is null) return false;

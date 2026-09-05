@@ -494,7 +494,7 @@ public sealed partial class AbilityRunner
                 amount = SaturatingSum(
                     amount, [EventModifier(cast, "attackDamage")]);
             }
-            return DamageTargets(damage.Require("cards"), cast).Any(card =>
+            return DamageTargets(DamageSelectionOf(damage, cast), cast).Any(card =>
                 cast.Abilities.CanTakeDamage(cast.World, card, cast.Source)
                 && Statuses.Count(cast.World, card, Statuses.Tough) == 0
                 && Damage.Health(cast.World, cast.World.Facts, card) - card.Damage <= amount

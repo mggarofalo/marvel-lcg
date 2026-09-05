@@ -191,7 +191,7 @@ public sealed partial class AbilityRunner
             or "cancelWhenRevealed" or "cancelOccurrence" or "grantUntil"
             or "grantCharactersControlledBy" or "reduceNextCardCost"
         || node.Kind == "removeThreat"
-            && Every(node.Require("scheme"), cast) is { Count: > 0 } schemes
+            && Every(ThreatSelectionOf(node, cast), cast) is { Count: > 0 } schemes
             && schemes.All(scheme => scheme.Area.Type == DeckType.MainSchemesArea
                 || !CanExhaust(
                     // An earlier ordered mutation can switch a branch before
@@ -257,7 +257,7 @@ public sealed partial class AbilityRunner
         RepeatedChange assumed = RepeatedChange.None, bool binding = false)
     {
         long own = node.Kind == "removeThreat"
-            && Every(node.Require("scheme"), cast).Any(candidate =>
+            && Every(ThreatSelectionOf(node, cast), cast).Any(candidate =>
                 candidate.ObjectId == scheme.ObjectId)
                 ? Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast)
                 : 0;
@@ -1171,7 +1171,7 @@ public sealed partial class AbilityRunner
             bool removes = node.Kind == "removeThreat";
             return
             [
-                .. Every(node.Require("scheme"), cast).Select(scheme =>
+                .. Every(ThreatSelectionOf(node, cast), cast).Select(scheme =>
                     new DamageTransfer(
                         0, scheme.ObjectId,
                         Amount(removes ? EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount
@@ -1887,7 +1887,7 @@ public sealed partial class AbilityRunner
     /// <summary>Whether this player-card effect can remove any threat.</summary>
     private static bool CanRemoveThreat(AbilityNode node, Cast cast)
     {
-        var scheme = Find(node.Require("scheme"), cast);
+        var scheme = Find(ThreatSelectionOf(node, cast), cast);
         return scheme is not null
             && scheme.Tokens.GetValueOrDefault("k_threat") > 0
             && Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast) > 0
@@ -1897,18 +1897,18 @@ public sealed partial class AbilityRunner
     private static bool CanRemoveThreatFrom(AbilityNode node, Cast cast, Card scheme) =>
         cast.Abilities.CanRemoveThreat(
             cast.World, scheme, OverriddenThreatRemovalSource(node, cast))
-        && (IgnoresCrisis(node)
+        && (IgnoresCrisis(node, cast)
             || scheme.Area.Type != DeckType.MainSchemesArea
             || !IsPlayerCard(cast)
             || !MainScheme.Crisis(cast.World, cast.World.Facts));
 
     private static int OverriddenThreatRemovalSource(AbilityNode node, Cast cast) =>
-        node.Field("overridesCannotFrom") is { } source
+        EffectOf<AbilityEffect.RemoveThreat>(node, cast).OverridesCannotFrom is { } source
             ? Find(source, cast)?.ObjectId ?? -1
             : -1;
 
-    private static bool IgnoresCrisis(AbilityNode node) =>
-        node.Field("ignoresCrisis") is AbilityValue.Word { Value: "true" };
+    private static bool IgnoresCrisis(AbilityNode node, Cast cast) =>
+        EffectOf<AbilityEffect.RemoveThreat>(node, cast).IgnoresCrisis;
 
     /// <summary>Whether at least one named player can draw a card.</summary>
     private static bool CanDraw(AbilityNode node, Cast cast) =>

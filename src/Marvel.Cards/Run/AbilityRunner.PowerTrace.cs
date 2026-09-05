@@ -141,11 +141,10 @@ public sealed partial class AbilityRunner
     }
 
     private static Card? PowerFind(
-        AbilityValue value, Cast cast, PowerReachability reachability)
+        AbilityCardSelection value, Cast cast, PowerReachability reachability)
     {
-        if (value is AbilityValue.Map
-            && (SelectorMembershipCanChange(value)
-                || PotentialVillainSelector(value, cast)))
+        if (SelectorMembershipCanChange(value)
+            || PotentialVillainSelector(value, cast))
         {
             return PowerEvery(value, cast, reachability).FirstOrDefault();
         }
@@ -165,12 +164,11 @@ public sealed partial class AbilityRunner
     }
 
     private static List<Card> PowerEvery(
-        AbilityValue value, Cast cast, PowerReachability reachability)
+        AbilityCardSelection value, Cast cast, PowerReachability reachability)
     {
         int liveVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
-        bool dynamic = value is AbilityValue.Map
-            && (SelectorMembershipCanChange(value)
-                || PotentialVillainSelector(value, cast));
+        bool dynamic = SelectorMembershipCanChange(value)
+            || PotentialVillainSelector(value, cast);
         if (dynamic)
         {
             var candidates = TraceCandidateCards(value, cast);
@@ -414,7 +412,7 @@ public sealed partial class AbilityRunner
         }
         if (node.Kind == "heal")
         {
-            var card = PowerFind(node.Require("card"), cast, reachability);
+            var card = PowerFind(EffectOf<AbilityEffect.Heal>(node, cast).Card, cast, reachability);
             if (card is not null)
             {
                 return [ResolutionOfAmount(
@@ -424,7 +422,7 @@ public sealed partial class AbilityRunner
         }
         if (node.Kind == "discard")
         {
-            AbilityValue target = node.Field("card") ?? node.Argument;
+            var target = EffectOf<AbilityEffect.CardAction>(node, cast).Selection;
             var card = PowerFind(target, cast, reachability);
             if (card is not null)
             {
@@ -443,28 +441,32 @@ public sealed partial class AbilityRunner
         if (node.Kind == "removeThreat")
         {
             long wanted = Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast);
-            var schemes = PowerEvery(node.Require("scheme"), cast, reachability);
+            var schemes = PowerEvery(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Schemes, cast, reachability);
             var valid = schemes.Where(scheme =>
                 PowerThreat(reachability, scheme) > 0
                 && cast.Abilities.CanRemoveThreat(
                     cast.World, scheme, OverriddenThreatRemovalSource(node, cast))
-                && (IgnoresCrisis(node)
+                && (IgnoresCrisis(node, cast)
                     || !(scheme.Area.Type == DeckType.MainSchemesArea
                     && IsPlayerCard(cast)
                     && PowerCrisis(reachability, cast))));
             return [CombinedOutcomes(valid.Select(scheme => ResolutionOfAmount(
                 PowerThreat(reachability, scheme), wanted)))];
         }
-        var currentTargets = node.Kind is "exhaust" or "ready"
-            ? PowerEvery(node.Argument, cast, reachability)
+        var readinessTarget = node.Kind is "exhaust" or "ready"
+            ? EffectOf<AbilityEffect.CardAction>(node, cast).Selection
+            : null;
+        var currentTargets = readinessTarget is not null
+            ? PowerEvery(readinessTarget, cast, reachability)
             : [];
         bool fixedTarget = !stateMayChange
-            || node.Argument is AbilityValue.Word { Value: "this" or "you" }
+            || readinessTarget is AbilityCardSelection.Bound
+                { Binding: AbilityCardBinding.This or AbilityCardBinding.You }
             || currentTargets.Count > 0
                 && currentTargets.All(card => reachability.Discarded.Contains(card.ObjectId));
-        if (node.Kind is "exhaust" or "ready"
+        if (readinessTarget is not null
             && fixedTarget
-            && !(bindingMayChange && BindingCanChange(node.Argument)))
+            && !(bindingMayChange && BindingCanChange(readinessTarget)))
         {
             var possibilities = new HashSet<(bool Changed, bool Unchanged)>
             {
@@ -592,7 +594,7 @@ public sealed partial class AbilityRunner
             var readiness = node.Kind == "exhaust"
                 ? PowerReadiness.Exhausted
                 : PowerReadiness.Ready;
-            foreach (var card in PowerEvery(node.Argument, cast, reachability))
+            foreach (var card in PowerEvery(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast, reachability))
             {
                 state = SetPowerReady(state, card, readiness);
             }
@@ -600,12 +602,12 @@ public sealed partial class AbilityRunner
         }
         if (node.Kind == "grantUntil")
         {
-            var target = PowerFind(node.Require("card"), cast, reachability);
+            var target = PowerFind(GrantSelectionOf(node, cast), cast, reachability);
             if (target is null)
             {
                 return reachability;
             }
-            if (node.Field("trait") is { } gained)
+            if (EffectOf<AbilityEffect>(node, cast) is AbilityEffect.GrantTrait grant)
             {
                 var traits = reachability.Traits.ToDictionary(
                     pair => pair.Key,
@@ -615,11 +617,11 @@ public sealed partial class AbilityRunner
                     values = new HashSet<string>(StringComparer.Ordinal);
                     traits[target.ObjectId] = values;
                 }
-                values.Add(Word(gained));
+                values.Add(grant.Trait);
                 return reachability with { Traits = traits };
             }
 
-            string field = Word(node.Require("keyword"));
+            string field = EffectOf<AbilityEffect.GrantField>(node, cast).Field;
             long grantedAmount = Amount(EffectOf<AbilityEffect.GrantField>(node, cast).Amount, cast);
             var modifiers = new Dictionary<(int Card, string Field), long>(
                 reachability.Modifiers);
@@ -638,7 +640,7 @@ public sealed partial class AbilityRunner
         }
         if (node.Kind == "putIntoPlay")
         {
-            var card = Find(node.Require("card"), cast);
+            var card = Find(EffectOf<AbilityEffect.PutIntoPlay>(node, cast).Card, cast);
             if (card is null)
             {
                 return reachability;
@@ -658,8 +660,7 @@ public sealed partial class AbilityRunner
                 return reachability;
             }
             var engagement = new Dictionary<int, int>(reachability.Engagement);
-            if (node.Field("where") is { } where
-                && Word(where) == "engagedWithYou")
+            if (!EffectOf<AbilityEffect.PutIntoPlay>(node, cast).PrintedDestination)
             {
                 engagement[card.ObjectId] = Resolver(cast);
             }
@@ -693,7 +694,7 @@ public sealed partial class AbilityRunner
         if (node.Kind == "discard")
         {
             var card = PowerFind(
-                node.Field("card") ?? node.Argument, cast, reachability);
+                EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast, reachability);
             if (card is null)
             {
                 return reachability;
@@ -725,11 +726,11 @@ public sealed partial class AbilityRunner
                 Amount(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Amount, cast), multiplier);
             var state = reachability;
             foreach (var scheme in PowerEvery(
-                node.Require("scheme"), cast, reachability))
+                EffectOf<AbilityEffect.RemoveThreat>(node, cast).Schemes, cast, reachability))
             {
                 if (!cast.Abilities.CanRemoveThreat(
                         cast.World, scheme, OverriddenThreatRemovalSource(node, cast))
-                    || !IgnoresCrisis(node)
+                    || !IgnoresCrisis(node, cast)
                         && scheme.Area.Type == DeckType.MainSchemesArea
                         && IsPlayerCard(cast)
                         && PowerCrisis(state, cast))
@@ -766,14 +767,13 @@ public sealed partial class AbilityRunner
             }
             return state;
         }
-        AbilityValue? targets = node.Kind switch
+        AbilityCardSelection? targets = node.Kind switch
         {
-            "dealDamage" or "dealAttackDamage" => node.Require("cards"),
-            "indirectDamage" => node.Require("among"),
-            "moveDamage" or "moveAttackDamage" => node.Require("to"),
-            "replaceThreatWithDamage" => node.Require("card"),
-            "heal" => node.Require("card"),
-            "giveStatus" => node.Require("card"),
+            "dealDamage" or "dealAttackDamage" or "indirectDamage" => DamageSelectionOf(node, cast),
+            "moveDamage" or "moveAttackDamage" => EffectOf<AbilityEffect.MoveDamage>(node, cast).To,
+            "replaceThreatWithDamage" => EffectOf<AbilityEffect.CardAction>(node, cast).Selection,
+            "heal" => EffectOf<AbilityEffect.Heal>(node, cast).Card,
+            "giveStatus" => EffectOf<AbilityEffect.GiveStatus>(node, cast).Cards,
             _ => null,
         };
         if (targets is null)
@@ -817,7 +817,7 @@ public sealed partial class AbilityRunner
         }
         if (node.Kind == "giveStatus")
         {
-            string status = Word(node.Require("status"));
+            string status = EffectOf<AbilityEffect.GiveStatus>(node, cast).Status;
             if (status != Statuses.Tough)
             {
                 var changes = new HashSet<(int Card, string Status)>(
@@ -872,7 +872,7 @@ public sealed partial class AbilityRunner
 
         if (node.Kind is "moveDamage" or "moveAttackDamage")
         {
-            var from = PowerFind(node.Require("from"), cast, reachability);
+            var from = PowerFind(EffectOf<AbilityEffect.MoveDamage>(node, cast).From, cast, reachability);
             if (from is null)
             {
                 return reachability;
