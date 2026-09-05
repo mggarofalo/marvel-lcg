@@ -414,7 +414,7 @@ public sealed partial class AbilityRunner
 
     private void SchedulePower(AbilityNode node, Cast cast, string power)
     {
-        var target = Find(node.Require("target"), cast)
+        var target = Find(EffectOf<AbilityEffect.Power>(node, cast).Target!, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' cannot find the target of its {power}");
         SchedulePower(node, cast, power, target, [target], -1);
@@ -467,7 +467,7 @@ public sealed partial class AbilityRunner
             PersistChosen(continuationChosen, abilityResults);
         }
         var discarded = cast.Discarded.Select(card => card.ObjectId).ToList();
-        bool automaticThwartTarget = node.Field("automaticTarget") is not null
+        bool automaticThwartTarget = EffectOf<AbilityEffect.Power>(node, cast).AutomaticTarget
             || cast.CrisisIgnoringThwartWasValidated(node, address.Ordinal);
         bool scheduled = power == BasicPowers.AttackVerb
             ? BasicPowers.CardAttack(

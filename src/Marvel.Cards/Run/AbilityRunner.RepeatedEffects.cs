@@ -1694,13 +1694,14 @@ public sealed partial class AbilityRunner
     /// <summary>Whether a search names at least one searchable game area.</summary>
     private static bool HasSearchableArea(AbilityNode node, Cast cast)
     {
-        if (node.Field("in") is not AbilityValue.List areas || areas.Values.Count == 0)
+        var search = EffectOf<AbilityEffect.Search>(node, cast);
+        if (search.Areas.IsEmpty)
         {
             return false;
         }
 
-        var searchedAreas = areas.Values
-            .Select(value => Area(Tree(value).Kind, cast))
+        var searchedAreas = search.Areas
+            .Select(value => Area(value, cast))
             .ToList();
 
         var searched = SearchAreaTypes(node, cast);
@@ -1719,7 +1720,7 @@ public sealed partial class AbilityRunner
                 + "cards may change");
         }
 
-        string wanted = Word(node.Require("for"));
+        string wanted = search.Face;
         int matches = searchedAreas.SelectMany(area => area.Cards)
             .Count(card => string.Equals(
                 card.FaceId, wanted, StringComparison.Ordinal));

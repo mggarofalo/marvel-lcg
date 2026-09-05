@@ -86,6 +86,8 @@ public sealed partial class AbilityRunner
 
     private static IReadOnlyList<Card> CardsIn(AbilityCardSelection.InAreas selection, Cast cast)
     {
+        // rr:search.2: "cards being searched are not considered to leave the
+        // searched area." Choosing and shuffling happen after this selection.
         if (cast.ObservingInformation && selection.Areas.Any(area => area is
             AbilitySearchArea.YourDeck or AbilitySearchArea.EncounterDeck))
         {
@@ -101,6 +103,8 @@ public sealed partial class AbilityRunner
 
     private static IReadOnlyList<Card> Ranked(AbilityCardSelection.Ranked selection, Cast cast)
     {
+        // rr:permanent.4.1: the effect "instead targets the non-permanent card
+        // that fits its criteria." Filter before comparing and keep all ties.
         var among = Every(selection.Cards, cast)
             .Where(card => CanRemoveByEffect(selection.Cards, cast, card)).ToList();
         return RankedCandidates(among, selection.By, selection.Maximum, cast);

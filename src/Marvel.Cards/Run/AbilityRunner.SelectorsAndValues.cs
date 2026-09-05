@@ -29,28 +29,9 @@ public sealed partial class AbilityRunner
 
     private static HashSet<DeckType> SearchAreaTypes(
         AbilityNode search, Cast cast) =>
-        Nodes(search.Require("in"))
-            .Select(where => Area(where.Kind, cast).Type)
+        EffectOf<AbilityEffect.Search>(search, cast).Areas
+            .Select(where => Area(where, cast).Type)
             .ToHashSet();
-
-    // MARVEL-375: remove this syntax adapter when all selector consumers take typed bindings.
-    private static Card? Named(string name, Cast cast) => Named(name switch
-    {
-        "this" => AbilityCardBinding.This,
-        "that" => AbilityCardBinding.That,
-        "trigger.actor" => AbilityCardBinding.TriggerActor,
-        "trigger.target" => AbilityCardBinding.TriggerTarget,
-        "chosen" => AbilityCardBinding.Chosen,
-        "yourHero" => AbilityCardBinding.YourHero,
-        "yourAlterEgo" => AbilityCardBinding.YourAlterEgo,
-        "defeater" => AbilityCardBinding.Defeater,
-        "activatingEnemy" => AbilityCardBinding.ActivatingEnemy,
-        "defeated" => AbilityCardBinding.Defeated,
-        "you" => AbilityCardBinding.You,
-        "attachedTo" => AbilityCardBinding.AttachedTo,
-        "trigger.subject" => AbilityCardBinding.TriggerSubject,
-        _ => throw new AbilityException($"'{name}' does not name a card"),
-    }, cast);
 
     private static Card? Named(AbilityCardBinding name, Cast cast) => name switch
     {
@@ -135,53 +116,6 @@ public sealed partial class AbilityRunner
             : null,
         _ => throw new InvalidOperationException("Unknown compiled card binding"),
     };
-
-    private static Card? Query(AbilityNode node, Cast cast)
-    {
-        // "Bomb Scare", "Vulture" -- a card in play named by its title, which
-        // is a query with an argument rather than one of the bare words below.
-        // `rr:identity.2` makes a title name one card, so this compares titles
-        // and not printed ids.
-        if (node.Kind == "titled")
-        {
-            var referenced = ReferencedByTitle(Word(node.Argument), cast);
-            return referenced.Count switch
-            {
-                0 => null,
-                1 => referenced[0],
-                _ => throw new RulesNotImplementedException(
-                    $"'{cast.Source.FaceId}' refers to {referenced.Count} cards titled "
-                    + $"'{Word(node.Argument)}' where one card is required"),
-            };
-        }
-
-        if (node.Kind != "query")
-        {
-            throw new AbilityException($"'{node.Kind}' does not name a card");
-        }
-
-        string what = Word(node.Argument);
-        if (what == "topmostTechInChosenDiscard")
-        {
-            return QueryCards(AbilityCardQuery.TopmostTechInChosenDiscard, cast).SingleOrDefault();
-        }
-
-        return what switch
-        {
-            // `rr:villain-villain-deck` -- one villain is in the villain area.
-            "villain" => QueryCards(AbilityCardQuery.Villain, cast).SingleOrDefault(),
-            "mainScheme" => QueryCards(AbilityCardQuery.MainScheme, cast).SingleOrDefault(),
-
-            // "Your set-aside nemesis minion" and "your set-aside nemesis side
-            // scheme". A nemesis set holds one of each, so naming the kind
-            // names the card -- and answering null when it has already been
-            // taken is what Shadow of the Past's surge branch reads.
-            "yourAsideMinion" => QueryCards(AbilityCardQuery.YourAsideMinion, cast).SingleOrDefault(),
-            "yourAsideSideScheme" => QueryCards(AbilityCardQuery.YourAsideSideScheme, cast).SingleOrDefault(),
-            _ => throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' queries '{what}', which is not implemented"),
-        };
-    }
 
     /// <summary>Cards a printed title reference denotes — <c>rr:referential-ability</c>.</summary>
     /// <remarks>
@@ -296,16 +230,6 @@ public sealed partial class AbilityRunner
             ? list.Values.Select(Tree)
             : throw new AbilityException(
                 $"{AbilityNode.Describe(value)} is not a list of nodes");
-
-    private static bool IsConcealedArea(AbilityValue? value) =>
-        value is AbilityValue.Word { Value: "yourDeck" or "encounterDeck" };
-
-    private static bool IsConcealedCardsIn(AbilityNode node) =>
-        node.Kind == "cardsIn"
-        && node.Argument is AbilityValue.Map fields
-        && (IsConcealedArea(fields.Entry("area"))
-            || fields.Entry("areas") is AbilityValue.List areas
-            && areas.Values.Any(IsConcealedArea));
 
     private static AbilityNode Tree(AbilityValue value) => AbilityNode.Of(value);
 

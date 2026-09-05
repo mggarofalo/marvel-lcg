@@ -212,47 +212,6 @@ public sealed partial class AbilityRunner
         }
     }
 
-    /// <summary>Whether this exact selector may make its current target depart.</summary>
-    private static bool CanRemoveByEffect(AbilityValue selector, Cast cast, Card target)
-    {
-        var binding = selector switch
-        {
-            AbilityValue.Word { Value: "this" } => AbilityCardBinding.This,
-            AbilityValue.Word { Value: "chosen" } => AbilityCardBinding.Chosen,
-            AbilityValue.Word { Value: "trigger.subject" } => AbilityCardBinding.TriggerSubject,
-            _ => (AbilityCardBinding?)null,
-        };
-        bool reachable = RemovalAreaIsReachable(binding, cast, target)
-            || ExplicitlySelectsOutOfPlayCard(selector, cast, target);
-        return reachable && RemovalBindingIsCurrent(binding, cast, target)
-            && Rules.Play.Discard.EffectCanRemove(cast.World, cast.World.Facts, cast.Source, target);
-    }
-
-    /// <summary>Whether a selector names the out-of-play area holding one card.</summary>
-    private static bool ExplicitlySelectsOutOfPlayCard(
-        AbilityValue value, Cast cast, Card target)
-    {
-        if (value is AbilityValue.Map map)
-        {
-            if (map.Entries.Count == 1)
-            {
-                var (kind, argument) = map.Entries.First();
-                if (kind == "cardsIn"
-                    && CardsIn(new AbilityNode(kind, argument), cast)
-                        .Any(card => card.ObjectId == target.ObjectId))
-                {
-                    return true;
-                }
-            }
-            return map.Entries.Values.Any(child =>
-                ExplicitlySelectsOutOfPlayCard(child, cast, target));
-        }
-
-        return value is AbilityValue.List list
-            && list.Values.Any(child =>
-                ExplicitlySelectsOutOfPlayCard(child, cast, target));
-    }
-
     // ---- reading a value ---------------------------------------------------
 
     /// <summary>

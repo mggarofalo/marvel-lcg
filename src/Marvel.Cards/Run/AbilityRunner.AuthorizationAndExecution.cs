@@ -469,7 +469,7 @@ public sealed partial class AbilityRunner
                 break;
 
             case "thwartSchemes":
-                var schemes = Every(node.Require("schemes"), cast);
+                var schemes = Every(EffectOf<AbilityEffect.ThwartGroup>(node, cast).Schemes, cast);
                 if (schemes.Count > 0)
                 {
                     cast.Choose(schemes[0]);

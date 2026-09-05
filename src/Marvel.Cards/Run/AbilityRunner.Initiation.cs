@@ -1193,7 +1193,7 @@ public sealed partial class AbilityRunner
 
     private static bool CanTargetAttack(AbilityNode node, Cast cast)
     {
-        var target = node.Require("target");
+        var target = EffectOf<AbilityEffect.Power>(node, cast).Target!;
         if (cast.Chosen is null && BindingCanChange(target)
             && cast.PriorBindingCandidates.Count > 0)
         {
@@ -1207,7 +1207,8 @@ public sealed partial class AbilityRunner
 
     private static bool CanTargetThwart(AbilityNode node, Cast cast)
     {
-        var target = node.Require("target");
+        var power = EffectOf<AbilityEffect.Power>(node, cast);
+        var target = power.Target!;
         if (cast.Chosen is null && BindingCanChange(target)
             && cast.PriorBindingCandidates.Count > 0)
         {
@@ -1218,7 +1219,7 @@ public sealed partial class AbilityRunner
             return false;
         }
 
-        if (node.Field("automaticTarget") is not null)
+        if (power.AutomaticTarget)
         {
             return BasicPowers.CanAutomaticallyThwart(
                 cast.World, cast.World.Facts, Resolver(cast), scheme);
