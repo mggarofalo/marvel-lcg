@@ -366,11 +366,6 @@ public sealed partial class AbilityRunner
             identity, cast.World.Facts, "HP", cast.World.Players);
     }
 
-    private static long Number(AbilityValue value) =>
-        value is AbilityValue.Number number
-            ? number.Value
-            : throw new AbilityException($"{AbilityNode.Describe(value)} is not a number");
-
     private static IReadOnlyList<AbilityValue> Values(AbilityValue value) =>
         value is AbilityValue.List list
             ? list.Values

@@ -382,7 +382,7 @@ public sealed partial class AbilityRunner
             case "chooseTopForHand":
                 if (TopCards(
                     cast.World.Seats[cast.Player].Deck,
-                    (int)Number(node.Require("count"))).Count == 0)
+                    EffectOf<AbilityEffect.ChooseTopForHand>(node, cast).Count).Count == 0)
                 {
                     break;
                 }
@@ -550,8 +550,9 @@ public sealed partial class AbilityRunner
     }
 
     private static bool CanCreateDrones(AbilityNode node, Cast cast) =>
-        (node.Field("count") is not { } count || Number(count) > 0)
-        && Seats(node.Require("player"), cast).Any(player =>
+        EffectOf<AbilityEffect.CreateDrones>(node, cast) is var drones
+        && drones.Count > 0
+        && Seats(drones.Players, cast).Any(player =>
             cast.World.Seats[player].Deck.Cards.Count > 0
             || cast.World.AreaOf(
                 DeckType.DiscardPile, PlayArea.Of(player), cardOwner: player).Cards.Count > 0);

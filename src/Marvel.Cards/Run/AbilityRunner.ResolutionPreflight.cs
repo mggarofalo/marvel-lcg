@@ -58,7 +58,7 @@ public sealed partial class AbilityRunner
             "placeThreat" => HasRequiredTargets(node, cast)
                 && Amount(EffectOf<AbilityEffect.PlaceThreat>(node, cast).Amount, cast) > 0,
             "removeThreat" => CanRemoveThreat(node, cast),
-            "gainSurge" => Number(node.Argument) > 0,
+            "gainSurge" => EffectOf<AbilityEffect.GainSurge>(node, cast).Instances > 0,
             "draw" => CanDraw(node, cast),
             "drawToHandSize" => cast.World.Seats[Seat(node.Argument, cast)].Hand.Cards.Count
                 < PhaseEnd.HandSize(
@@ -145,12 +145,12 @@ public sealed partial class AbilityRunner
                 && CanRemoveByEffect(discardTarget, cast, discarded)
                     ? ResolutionOutcome.Full
                     : ResolutionOutcome.None,
-            "draw" => CombinedOutcomes(Seats(node.Require("player"), cast).Select(player =>
+            "draw" => CombinedOutcomes(Seats(EffectOf<AbilityEffect.Draw>(node, cast).Players, cast).Select(player =>
                 ResolutionOfAmount(
                     cast.World.Seats[player].Deck.Cards.Count
                     + cast.World.AreaOf(
                         DeckType.DiscardPile, PlayArea.Of(player)).Cards.Count,
-                    Number(node.Require("count"))))),
+                    EffectOf<AbilityEffect.Draw>(node, cast).Count))),
             "heal" => ResolutionOfAmount(
                 Find(node.Require("card"), cast)?.Damage ?? 0,
                 Amount(EffectOf<AbilityEffect.Heal>(node, cast).Amount, cast)),

@@ -177,7 +177,7 @@ public sealed partial class AbilityRunner
         {
             var top = TopCards(
                 world.Seats[player].Deck,
-                (int)Number(choice.Require("count")));
+                EffectOf<AbilityEffect.ChooseTopForHand>(choice, cast).Count);
             return new Prompt(
                 player, Question.Element, TimingPriority.Untimed,
                 Steps.TurnAction, $"{source.FaceId}: choose a top card",
@@ -193,7 +193,7 @@ public sealed partial class AbilityRunner
             var discard = world.AreaOf(
                 DeckType.DiscardPile, PlayArea.Of(player), cardOwner: player);
             int max = Math.Min(
-                (int)Number(choice.Require("max")),
+                EffectOf<AbilityEffect.ChooseDiscardToShuffle>(choice, cast).Maximum,
                 discard.Cards.Select(card => world.Facts.Title(card.FaceId)).Distinct().Count());
             return new Prompt(
                 player, Question.Element, TimingPriority.Untimed,
@@ -720,7 +720,7 @@ public sealed partial class AbilityRunner
         if (choice.Kind == "chooseTopForHand")
         {
             var deck = world.Seats[player].Deck;
-            var top = TopCards(deck, (int)Number(choice.Require("count")));
+            var top = TopCards(deck, EffectOf<AbilityEffect.ChooseTopForHand>(choice, cast).Count);
             var selected = top.FirstOrDefault(card => card.ObjectId == input.Affordance)
                 ?? throw new RulesNotImplementedException(
                     $"'{source.FaceId}' did not offer card {input.Affordance} among its top cards");
@@ -755,8 +755,8 @@ public sealed partial class AbilityRunner
                 ?? throw new RulesNotImplementedException(
                     $"'{source.FaceId}' cannot shuffle card {id} from that discard pile"))
                 .ToList();
-            int max = (int)Number(choice.Require("max"));
-            if (selected.Count is < 1 || selected.Count > 3
+            int max = EffectOf<AbilityEffect.ChooseDiscardToShuffle>(choice, cast).Maximum;
+            if (selected.Count < 1
                 || selected.Count > max
                 || selected.Select(card => world.Facts.Title(card.FaceId)).Distinct().Count()
                     != selected.Count)

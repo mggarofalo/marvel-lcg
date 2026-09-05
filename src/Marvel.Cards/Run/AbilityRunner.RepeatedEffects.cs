@@ -1912,8 +1912,9 @@ public sealed partial class AbilityRunner
 
     /// <summary>Whether at least one named player can draw a card.</summary>
     private static bool CanDraw(AbilityNode node, Cast cast) =>
-        Number(node.Require("count")) > 0
-        && Seats(node.Require("player"), cast).Any(player =>
+        EffectOf<AbilityEffect.Draw>(node, cast) is var draw
+        && draw.Count > 0
+        && Seats(draw.Players, cast).Any(player =>
             CanDraw(cast.World, player));
 
     private static bool CanDraw(World world, int player) =>

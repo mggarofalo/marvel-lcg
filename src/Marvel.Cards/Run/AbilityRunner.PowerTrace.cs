@@ -406,8 +406,9 @@ public sealed partial class AbilityRunner
     {
         if (node.Kind == "draw")
         {
-            long count = Number(node.Require("count"));
-            return [CombinedOutcomes(Seats(node.Require("player"), cast).Select(
+            var draw = EffectOf<AbilityEffect.Draw>(node, cast);
+            long count = draw.Count;
+            return [CombinedOutcomes(Seats(draw.Players, cast).Select(
                 player => ResolutionOfAmount(
                     PowerCardsAvailable(reachability, player, cast), count)))];
         }
@@ -678,9 +679,10 @@ public sealed partial class AbilityRunner
         }
         if (node.Kind == "draw")
         {
-            long count = Number(node.Require("count"));
+            var draw = EffectOf<AbilityEffect.Draw>(node, cast);
+            long count = draw.Count;
             var state = reachability;
-            foreach (int player in Seats(node.Require("player"), cast))
+            foreach (int player in Seats(draw.Players, cast))
             {
                 long available = PowerCardsAvailable(state, player, cast);
                 state = SetPowerCardsAvailable(
