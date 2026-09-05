@@ -1066,6 +1066,17 @@ public sealed partial class AbilityRunner
             {
                 return true;
             }
+            // The engine refuses an option that can invalidate a later
+            // singular lookup, even when that lookup is inside a condition
+            // whose false result would otherwise look like a legal no-op.
+            var sensitiveAreas = new HashSet<DeckType>();
+            foreach (var step in remaining)
+                CollectSingularAreaDependencies(step, cast, sensitiveAreas);
+            if (sensitiveAreas.Count > 0
+                && EffectsMayChangeAnyArea(cast.PriorSteps, sensitiveAreas, cast))
+            {
+                return false;
+            }
             var continuation = new AbilityNode(
                 "seq",
                 new AbilityValue.List(remaining.Select(NodeValue).ToList()));

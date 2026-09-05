@@ -44,15 +44,6 @@ public sealed partial class AbilityRunner
         return true;
     }
 
-    private static HashSet<DeckType> CardsInAreaTypes(
-        AbilityNode query, Cast cast)
-    {
-        var names = query.Field("areas") is AbilityValue.List several
-            ? several.Values.Select(Word)
-            : [Word(query.Require("area"))];
-        return names.Select(name => Area(name, cast).Type).ToHashSet();
-    }
-
     private static bool MayChangeAnyArea(
         AbilityNode effect, IReadOnlySet<DeckType> queried, Cast cast,
         long multiplier = 1)
