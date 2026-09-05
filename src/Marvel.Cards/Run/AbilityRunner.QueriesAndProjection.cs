@@ -25,158 +25,74 @@ public sealed partial class AbilityRunner
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } query
             && query.Argument is AbilityValue.Word { Value: "minionsEngagedWithYou" })
         {
-            // `rr:engage.1` -- "when a minion engages a player, it is placed in
-            // that player's play area". Engagement *is* which area the minion
-            // sits in, so this is a read of the board and not of a flag; and
-            // "you" is the player resolving the card, so a minion engaged with
-            // somebody else is not in this list however close it is on the
-            // table.
-            return [.. cast.World
-                .AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(cast.Player))
-                .Cards];
+            return QueryCards(AbilityCardQuery.MinionsEngagedWithYou, cast);
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } eligibleIdentities
             && eligibleIdentities.Argument is AbilityValue.Word
                 { Value: "identitiesWithinPerPlayerLimit" })
         {
-            long maximum = cast.World.Facts.PrintedValue(
-                cast.Source.FaceId, "MaxPerUnit", cast.World.Players);
-            string title = cast.World.Facts.Title(cast.Source.FaceId);
-            return
-            [
-                .. cast.World.PlayerOrder
-                    .Where(player => maximum <= 0 || cast.World.Areas
-                        .Where(area => area.PlayArea == PlayArea.Of(player))
-                        .SelectMany(area => area.Cards)
-                        .Count(card => DeckTypes.IsInPlay(card.Area.Type)
-                            && string.Equals(
-                                cast.World.Facts.Title(card.FaceId),
-                                title,
-                                StringComparison.Ordinal)) < maximum)
-                    .Select(player => cast.World.Seats[player].IdentityCard),
-            ];
+            return QueryCards(AbilityCardQuery.IdentitiesWithinPerPlayerLimit, cast);
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } attached
             && attached.Argument is AbilityValue.Word { Value: "attachedToThis" })
         {
-            // What is sitting on this card. `rr:attachment` puts an attachment
-            // in an area hosted by the card it is attached to, so this is a
-            // read of the board.
-            return
-            [
-                .. cast.World.Areas
-                    .Where(area => area.Host == cast.Source.ObjectId)
-                    .SelectMany(area => area.Cards),
-            ];
+            return QueryCards(AbilityCardQuery.AttachedToThis, cast);
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } friendly
             && friendly.Argument is AbilityValue.Word { Value: "heroesAndAllies" })
         {
-            // `rr:indirect-damage.2`'s "friendly characters in play", which
-            // `rr:friendly` makes every player's rather than one player's: "a
-            // blanket term that refers to cards **the players** control".
-            //
-            // **Every identity, not only those in hero form.** "Heroes and
-            // allies" is what the card says, but `rr:you-your.3` divides
-            // indirect damage "among characters in play under their control",
-            // and a player in alter-ego form is still a character with hit
-            // points. A reading that skipped them would leave damage
-            // unassignable at a table where everyone had flipped down.
-            return
-            [
-                .. cast.World.PlayerOrder.Select(seat => cast.World.Seats[seat].IdentityCard),
-                .. cast.World.Areas
-                    .Where(area => area.Type == DeckType.AlliesArea)
-                    .SelectMany(area => area.Cards),
-            ];
+            return QueryCards(AbilityCardQuery.HeroesAndAllies, cast);
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } schemes
             && schemes.Argument is AbilityValue.Word { Value: "sideSchemes" })
         {
-            // "Each side scheme", which reaches the players' as well as the
-            // scenario's: `rr:player-side-scheme` calls them "the player card
-            // equivalent of the side schemes found in the encounter deck" and
-            // `.1` puts them in the same place, next to the main scheme.
-            return [.. cast.World.AreaOf(DeckType.SideSchemesArea).Cards];
+            return QueryCards(AbilityCardQuery.SideSchemes, cast);
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } minions
             && minions.Argument is AbilityValue.Word { Value: "minions" })
         {
-            // `rr:minion.3`: minions in play are engaged with players, so the
-            // engaged-enemy areas across every play area are the complete set.
-            return
-            [
-                .. cast.World.Areas
-                    .Where(area => area.Type == DeckType.EngagedEnemiesArea)
-                    .SelectMany(area => area.Cards)
-                    .Where(card => FacedownDrones.Kind(
-                        card, cast.World.Facts) == CardKind.Minion),
-            ];
+            return QueryCards(AbilityCardQuery.Minions, cast);
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } enemies
             && enemies.Argument is AbilityValue.Word { Value: "enemies" })
         {
-            return
-            [
-                .. cast.World.Areas
-                    .Where(area => area.Type is DeckType.VillainArea
-                        or DeckType.EngagedEnemiesArea)
-                    .SelectMany(area => area.Cards)
-                    .Where(card => CardKinds.IsEnemy(
-                        FacedownDrones.Kind(card, cast.World.Facts))),
-            ];
+            return QueryCards(AbilityCardQuery.Enemies, cast);
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } attackable
             && attackable.Argument is AbilityValue.Word { Value: "attackableEnemies" })
         {
-            return
-            [
-                .. BasicPowers.Attackable(cast.World, cast.World.Facts, Resolver(cast))
-                    .Where(enemy => cast.World.Abilities.CanTakeDamage(
-                        cast.World, enemy, cast.Source)),
-            ];
+            return QueryCards(AbilityCardQuery.AttackableEnemies, cast);
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } attackableMinions
             && attackableMinions.Argument is AbilityValue.Word { Value: "attackableMinions" })
         {
-            return
-            [
-                .. BasicPowers.Attackable(cast.World, cast.World.Facts, Resolver(cast))
-                    .Where(enemy => FacedownDrones.Kind(
-                        enemy, cast.World.Facts) == CardKind.Minion)
-                    .Where(enemy => cast.World.Abilities.CanTakeDamage(
-                        cast.World, enemy, cast.Source)),
-            ];
+            return QueryCards(AbilityCardQuery.AttackableMinions, cast);
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } allSchemes
             && allSchemes.Argument is AbilityValue.Word { Value: "schemes" })
         {
-            return
-            [
-                .. cast.World.AreaOf(DeckType.MainSchemesArea).Cards,
-                .. cast.World.AreaOf(DeckType.SideSchemesArea).Cards,
-            ];
+            return QueryCards(AbilityCardQuery.Schemes, cast);
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } thwartable
             && thwartable.Argument is AbilityValue.Word { Value: "thwartableSchemes" })
         {
-            return BasicPowers.Thwartable(cast.World, cast.World.Facts, Resolver(cast));
+            return QueryCards(AbilityCardQuery.ThwartableSchemes, cast);
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } powerTargets
             && powerTargets.Argument is AbilityValue.Word { Value: "powerTargets" })
         {
-            return cast.PowerTargets;
+            return QueryCards(AbilityCardQuery.PowerTargets, cast);
         }
 
         if (value is AbilityValue.Map
@@ -209,26 +125,13 @@ public sealed partial class AbilityRunner
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } pile
             && pile.Argument is AbilityValue.Word { Value: "yourAsidePile" })
         {
-            // "The rest of your set-aside nemesis encounter set" -- whatever is
-            // still in the pile once the cards this ability took out of it have
-            // gone. The obligation is not among them: setup shuffles it into
-            // the encounter deck long before this resolves.
-            return [.. cast.World.Seats[cast.Player].Nemesis.Cards];
+            return QueryCards(AbilityCardQuery.YourAsidePile, cast);
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } yours
             && yours.Argument is AbilityValue.Word { Value: "upgradesAndSupportsYouControl" })
         {
-            // "An upgrade or support **you control**." A player's upgrades and
-            // supports sit in their own play area, so control is where the card
-            // is -- the same reading `rr:engage.1` gets for a minion.
-            return
-            [
-                .. cast.World.Areas
-                    .Where(area => Owned.Contains(area.Type)
-                        && area.PlayArea == PlayArea.Of(cast.Player))
-                    .SelectMany(area => area.Cards),
-            ];
+            return QueryCards(AbilityCardQuery.UpgradesAndSupportsYouControl, cast);
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "minBy" or "maxBy" } ranked)
@@ -274,197 +177,93 @@ public sealed partial class AbilityRunner
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } hand
             && hand.Argument is AbilityValue.Word { Value: "identitySpecificInYourHand" })
         {
-            // "1 identity-specific card from your hand."
-            // `rr:identity-specific-card` calls it a classification -- "cards
-            // that belong to an identity's set of accompanying cards" -- and
-            // `.3` says it is "designated by the identity icon printed in the
-            // bottom right corner of the card". The extract records that corner
-            // as the `Class` attribute, where an aspect card carries its aspect
-            // and an identity-specific one carries `Hero`.
-            //
-            // A contains rather than an equals: `rr:classifications` lets a
-            // card hold more than one, and three cards in the pool are printed
-            // both identity-specific and aspect.
-            return
-            [
-                .. cast.World.Seats[cast.Player].Hand.Cards
-                    .Where(card => cast.World.Facts
-                        .Attributes(card.FaceId)
-                        .GetValueOrDefault("Class", string.Empty)
-                        .Split(';')
-                        .Contains("Hero", StringComparer.Ordinal)),
-            ];
+            return QueryCards(AbilityCardQuery.IdentitySpecificInYourHand, cast);
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } supports
             && supports.Argument is AbilityValue.Word { Value: "supportsYouControl" })
         {
-            // The support half of `upgradesAndSupportsYouControl`, on its own,
-            // because Speed Demon's boost says "support" and an upgrade is not
-            // one. `rr:play-area.1` again for what "you control" reads as.
-            return [.. cast.World.AreaOf(DeckType.SupportsArea, PlayArea.Of(cast.Player)).Cards];
+            return QueryCards(AbilityCardQuery.SupportsYouControl, cast);
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } characters
             && characters.Argument is AbilityValue.Word { Value: "charactersYouControl" })
         {
-            // "The character you control with the highest ATK value." Every
-            // character, not only those in hero form: `rr:you-your.10` reads
-            // "you control" as the cards in that player's play area, and an
-            // alter-ego is a character with a hit point dial. An alter-ego
-            // prints no ATK, and `rr:dash-value.3` makes that "an unmodifiable
-            // 0" rather than a card that cannot be compared.
-            return
-            [
-                cast.World.Seats[cast.Player].IdentityCard,
-                .. cast.World.AreaOf(DeckType.AlliesArea, PlayArea.Of(cast.Player)).Cards,
-            ];
+            return QueryCards(AbilityCardQuery.CharactersYouControl, cast);
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } upgrades
             && upgrades.Argument is AbilityValue.Word { Value: "upgradesYouControl" })
         {
-            // The upgrade half of `upgradesAndSupportsYouControl`, on its own,
-            // because Beetle's two abilities both say "upgrade" and a support
-            // is not one. Same reading of control: `rr:play-area.1` puts "any
-            // cards in play under their control" in a player's own play area.
-            return
-            [
-                .. cast.World.Areas
-                    .Where(area => area.Type == DeckType.UpgradesArea
-                        && area.PlayArea == PlayArea.Of(cast.Player))
-                    .SelectMany(area => area.Cards),
-            ];
+            return QueryCards(AbilityCardQuery.UpgradesYouControl, cast);
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } panther
             && panther.Argument is AbilityValue.Word { Value: "blackPantherUpgrades" })
         {
-            return
-            [
-                .. cast.World.Areas
-                    .Where(area => area.Type == DeckType.UpgradesArea
-                        && area.PlayArea == PlayArea.Of(cast.Player))
-                    .SelectMany(area => area.Cards)
-                    .Where(card => Rules.State.Traits.Has(
-                        cast.World, card, "BLACK_PANTHER", cast.World.Facts)),
-            ];
+            return QueryCards(AbilityCardQuery.BlackPantherUpgrades, cast);
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } engaged
             && engaged.Argument is AbilityValue.Word { Value: "enemiesEngagedWithChosenPlayer" })
         {
-            int player = ChosenPlayer(cast).Owner;
-            return
-            [
-                .. cast.World.AreaOf(
-                    DeckType.EngagedEnemiesArea, PlayArea.Of(player)).Cards,
-            ];
+            return QueryCards(AbilityCardQuery.EnemiesEngagedWithChosenPlayer, cast);
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } allies
             && allies.Argument is AbilityValue.Word { Value: "alliesYouControl" })
         {
-            // "Each ally **you control**", which is where the card is:
-            // `rr:play-area.1` puts "any cards in play under their control" in
-            // a player's own play area, so control is a read of the board
-            // rather than a field -- the same reading `rr:engage.1` gets for a
-            // minion. Not `heroesAndAllies`, which is every player's: Boomerang
-            // hits the allies of the player it attacked and nobody else's.
-            return [.. cast.World.AreaOf(DeckType.AlliesArea, PlayArea.Of(cast.Player)).Cards];
+            return QueryCards(AbilityCardQuery.AlliesYouControl, cast);
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } friendlyAllies
             && friendlyAllies.Argument is AbilityValue.Word { Value: "allies" })
         {
-            // Inspired prints "Attach to an ally," not "an ally you control."
-            // `rr:friendly` makes every player-controlled card friendly, and
-            // `rr:upgrade.3.1` expressly gives the host's controller control of
-            // an upgrade another player owns.
-            return
-            [
-                .. cast.World.Areas
-                    .Where(area => area.Type == DeckType.AlliesArea)
-                    .SelectMany(area => area.Cards),
-            ];
+            return QueryCards(AbilityCardQuery.Allies, cast);
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } heroes
             && heroes.Argument is AbilityValue.Word { Value: "heroes" })
         {
-            // **Not every identity.** `rr:form-change-form.5`: "while a player
-            // is in alter-ego form, card abilities that interact with their
-            // hero do not interact with their identity." So "each hero" passes
-            // over a player who has flipped down, and Shocker's one damage is
-            // one damage to whoever is standing up.
-            return [.. cast.World.PlayerOrder
-                .Select(seat => cast.World.Seats[seat])
-                .Where(seat => Forms.In(cast.World, seat, cast.World.Facts, Forms.Hero))
-                .Select(seat => seat.IdentityCard)];
+            return QueryCards(AbilityCardQuery.Heroes, cast);
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } identities
             && identities.Argument is AbilityValue.Word { Value: "identities" })
         {
-            return [.. cast.World.PlayerOrder.Select(player =>
-                cast.World.Seats[player].IdentityCard)];
+            return QueryCards(AbilityCardQuery.Identities, cast);
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } eligiblePlayers
             && eligiblePlayers.Argument is AbilityValue.Word
                 { Value: "identitiesWithTechInDiscard" })
         {
-            return
-            [
-                .. cast.World.PlayerOrder
-                    .Where(player => cast.World.AreaOf(
-                            DeckType.DiscardPile, PlayArea.Of(player), cardOwner: player)
-                        .Cards.Any(card => Rules.State.Traits.Has(
-                            cast.World, card, "TECH", cast.World.Facts)))
-                    .Select(player => cast.World.Seats[player].IdentityCard),
-            ];
+            return QueryCards(AbilityCardQuery.IdentitiesWithTechInDiscard, cast);
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } topmost
             && topmost.Argument is AbilityValue.Word
                 { Value: "topmostTechInChosenDiscard" })
         {
-            int player = ChosenPlayer(cast).Owner;
-            var card = cast.World.AreaOf(
-                    DeckType.DiscardPile, PlayArea.Of(player), cardOwner: player)
-                .Cards.LastOrDefault(candidate => Rules.State.Traits.Has(
-                    cast.World, candidate, "TECH", cast.World.Facts));
-            return card is null ? [] : [card];
+            return QueryCards(AbilityCardQuery.TopmostTechInChosenDiscard, cast);
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } allCharacters
             && allCharacters.Argument is AbilityValue.Word { Value: "characters" })
         {
-            return
-            [
-                .. cast.World.PlayerOrder.Select(player =>
-                    cast.World.Seats[player].IdentityCard),
-                .. cast.World.Areas
-                    .Where(area => area.Type is DeckType.AlliesArea
-                        or DeckType.VillainArea or DeckType.EngagedEnemiesArea)
-                    .SelectMany(area => area.Cards),
-            ];
+            return QueryCards(AbilityCardQuery.Characters, cast);
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } drones
             && drones.Argument is AbilityValue.Word { Value: "drones" })
         {
-            return FacedownDrones.InPlay(cast.World);
+            return QueryCards(AbilityCardQuery.Drones, cast);
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "query" } engagedDrones
             && engagedDrones.Argument is AbilityValue.Word { Value: "dronesEngagedWithYou" })
         {
-            return [.. cast.World.AreaOf(
-                    DeckType.EngagedEnemiesArea, PlayArea.Of(Resolver(cast))).Cards
-                .Where(card => FacedownDrones.Kind(card, cast.World.Facts) == CardKind.Minion
-                    && Rules.State.Traits.Has(
-                        cast.World, card, "DRONE", cast.World.Facts))];
+            return QueryCards(AbilityCardQuery.DronesEngagedWithYou, cast);
         }
 
         if (value is AbilityValue.Map && Tree(value) is { Kind: "withTrait" } withTrait)

@@ -144,25 +144,21 @@ public sealed partial class AbilityRunner
         string what = Word(node.Argument);
         if (what == "topmostTechInChosenDiscard")
         {
-            int player = ChosenPlayer(cast).Owner;
-            return cast.World.AreaOf(
-                    DeckType.DiscardPile, PlayArea.Of(player), cardOwner: player)
-                .Cards.LastOrDefault(candidate => Rules.State.Traits.Has(
-                    cast.World, candidate, "TECH", cast.World.Facts));
+            return QueryCards(AbilityCardQuery.TopmostTechInChosenDiscard, cast).SingleOrDefault();
         }
 
         return what switch
         {
             // `rr:villain-villain-deck` -- one villain is in the villain area.
-            "villain" => cast.World.TheCardIn(DeckType.VillainArea),
-            "mainScheme" => cast.World.TheCardIn(DeckType.MainSchemesArea),
+            "villain" => QueryCards(AbilityCardQuery.Villain, cast).SingleOrDefault(),
+            "mainScheme" => QueryCards(AbilityCardQuery.MainScheme, cast).SingleOrDefault(),
 
             // "Your set-aside nemesis minion" and "your set-aside nemesis side
             // scheme". A nemesis set holds one of each, so naming the kind
             // names the card -- and answering null when it has already been
             // taken is what Shadow of the Past's surge branch reads.
-            "yourAsideMinion" => Aside(cast, CardKind.Minion),
-            "yourAsideSideScheme" => Aside(cast, CardKind.EncounterSideScheme),
+            "yourAsideMinion" => QueryCards(AbilityCardQuery.YourAsideMinion, cast).SingleOrDefault(),
+            "yourAsideSideScheme" => QueryCards(AbilityCardQuery.YourAsideSideScheme, cast).SingleOrDefault(),
             _ => throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' queries '{what}', which is not implemented"),
         };
