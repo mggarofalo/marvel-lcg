@@ -275,7 +275,11 @@ public sealed partial class AbilityRunner
         var agendaOccurrence = cast.World.Agenda.Occurrence;
         var healthBefore = cast.World.Effects.CaptureCharacterHealth();
         var instruction = ((AbilityRunner)cast.Abilities).CompiledEffect(node);
-        if (!TryRunImmediateEffect(instruction, cast)
+        if (instruction is AbilityEffect.ActivateEnemies activation)
+        {
+            Activate(activation, node, cast);
+        }
+        else if (!TryRunImmediateEffect(instruction, cast)
             && !TryRunDamageAndThreat(instruction, node, cast)
             && !TryRunCardMovement(instruction, cast))
         {
@@ -481,14 +485,6 @@ public sealed partial class AbilityRunner
                         Tree(node.Require("power")), cast, BasicPowers.ThwartVerb,
                         schemes[0], schemes, -1);
                 }
-                break;
-
-            case "enemyAttacks":
-                Activate(node, cast, Steps.Attack);
-                break;
-
-            case "enemySchemes":
-                Activate(node, cast, Steps.Scheme);
                 break;
 
             default:

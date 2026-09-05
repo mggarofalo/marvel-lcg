@@ -222,7 +222,7 @@ public sealed partial class AbilityRunner
 
         if (node.Kind is "enemyAttacks" or "enemySchemes")
         {
-            if (ActivationCandidates(node, cast).Count > 1)
+            if (ActivationCandidates(ActivationOf(node, cast), cast).Count > 1)
             {
                 yield return node;
             }

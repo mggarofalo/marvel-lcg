@@ -56,7 +56,7 @@ public sealed partial class AbilityRunner
         "placeAccelerationToken" => cast.World.TheCardIn(DeckType.MainSchemesArea) is not null,
         "advanceMainScheme" => CanAdvanceMainScheme(node, cast),
         "removeThreat" => Find(node.Require("scheme"), cast) is not null,
-        "enemyAttacks" or "enemySchemes" => Every(node.Require("enemies"), cast).Count > 0,
+        "enemyAttacks" or "enemySchemes" => Every(ActivationOf(node, cast).Enemies, cast).Count > 0,
         "putIntoPlay" => Find(node.Require("card"), cast) is not null,
         "placeAtRandom" => Find(node.Require("on"), cast) is not null,
         "createDrones" => CanCreateDrones(node, cast),
@@ -1142,7 +1142,7 @@ public sealed partial class AbilityRunner
                 + "which is not implemented"),
         "attack" => CanTargetAttack(node, cast),
         "thwart" => CanTargetThwart(node, cast),
-        "enemyAttacks" or "enemySchemes" => CanInitiateActivation(node, cast),
+        "enemyAttacks" or "enemySchemes" => true,
         "defense" => Attack.CanUseDefenseAbility(cast.World, cast.Player)
             && CanInitiate(Tree(node.Require("effect")), cast),
         // A missing dynamic target gets the resolver's specific exception
@@ -1493,7 +1493,7 @@ public sealed partial class AbilityRunner
                 && CanRemoveThreatFrom(node, cast, scheme))
                 ? TargetLegality.Valid : TargetLegality.Invalid,
             "enemyAttacks" or "enemySchemes" =>
-                Cards(Every(node.Require("enemies"), cast)),
+                Cards(Every(ActivationOf(node, cast).Enemies, cast)),
             "putIntoPlay" => Find(node.Require("card"), cast) is null
                 ? TargetLegality.Invalid : TargetLegality.Valid,
             "placeAtRandom" => Find(node.Require("on"), cast) is null
@@ -1826,11 +1826,6 @@ public sealed partial class AbilityRunner
             return false;
         }
         return ForEachCount(node, cast) == 0;
-    }
-
-    private static bool CanInitiateActivation(AbilityNode node, Cast cast)
-    {
-        return true;
     }
 
     private static bool LastingPeriodIsOpen(AbilityNode node, Cast cast) =>

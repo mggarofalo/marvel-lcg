@@ -929,13 +929,13 @@ public sealed partial class AbilityRunner
     /// hero who had flipped since the card was dealt.
     /// </para>
     /// <para>
-    /// <c>rr:activation.5</c> gives the first player the order when one effect
-    /// initiates multiple enemy activations. A dynamic activation collection
-    /// therefore suspends for an ordered target request whenever a read finds
-    /// several eligible enemies, then re-reads after that ordered batch.
+    /// An activation collection suspends for an ordered target request whenever
+    /// a read finds several eligible enemies. A dynamic collection re-reads
+    /// after that ordered batch, excluding enemies it has already processed.
     /// </para>
     /// </remarks>
-    private static void Activate(AbilityNode node, Cast cast, string what)
+    private static void Activate(
+        AbilityEffect.ActivateEnemies instruction, AbilityNode node, Cast cast)
     {
         // The round the activation belongs to is the round the card was
         // revealed in. Nothing else on the agenda can tell it.
@@ -946,9 +946,9 @@ public sealed partial class AbilityRunner
         // `rr:attack-enemy-activation.1.1` calls normal: "the attacked
         // character is the player's hero". An ability naming one instead is
         // the exception the same clause allows.
-        AbilityValue? namedTarget = node.Field("against");
-        bool engagedHero = namedTarget is AbilityValue.Word { Value: "engagedHero" };
-        int against = namedTarget is { } named && !engagedHero
+        var namedTarget = instruction.Against;
+        bool engagedHero = instruction.EngagedHero;
+        int against = namedTarget is { } named
             ? Find(named, cast)?.ObjectId ?? -1
             : -1;
 
@@ -959,9 +959,9 @@ public sealed partial class AbilityRunner
         // must not rewrite who was behind the character that attacked it.
         int seat = namedTarget switch
         {
-            AbilityValue.Word { Value: "trigger.actor" } =>
+            AbilityCardSelection.Bound { Binding: AbilityCardBinding.TriggerActor } =>
                 cast.Occurrence.ActorFacts?.Controller ?? World.Scenario,
-            AbilityValue.Word { Value: "trigger.target" } =>
+            AbilityCardSelection.Bound { Binding: AbilityCardBinding.TriggerTarget } =>
                 cast.Occurrence.TargetFacts?.Controller ?? World.Scenario,
             null => cast.Player,
             _ => cast.Player,
@@ -981,10 +981,10 @@ public sealed partial class AbilityRunner
         // activation has finished resolving." An interrupt that means to get
         // in front of the thing it answers has to say so, and Speed Demon's
         // parenthesis is the card saying it.
-        bool first = node.Field("first") is AbilityValue.Word { Value: "true" };
+        bool first = instruction.First;
 
-        bool dynamic = node.Field("dynamic") is AbilityValue.Word { Value: "true" };
-        var enemies = ActivationCandidates(node, cast).ToList();
+        bool dynamic = instruction.Dynamic;
+        var enemies = ActivationCandidates(instruction, cast).ToList();
         bool ordered = cast.Results.Remove("dynamicActivationOrderSet");
         if (enemies.Count > 1 && !ordered)
         {
@@ -1017,7 +1017,8 @@ public sealed partial class AbilityRunner
             }
 
             activations.Add(new PhaseStep(
-                what, round, 2, Index: activationSeat, Subject: enemy.ObjectId,
+                instruction.Attack ? Steps.Attack : Steps.Scheme,
+                round, 2, Index: activationSeat, Subject: enemy.ObjectId,
                 Seat: activationSeat, Character: against));
         }
 
@@ -1077,13 +1078,13 @@ public sealed partial class AbilityRunner
         }
     }
 
+    private static AbilityEffect.ActivateEnemies ActivationOf(AbilityNode node, Cast cast) =>
+        (AbilityEffect.ActivateEnemies)((AbilityRunner)cast.Abilities).CompiledEffect(node);
+
     private static IReadOnlyList<Card> ActivationCandidates(
-        AbilityNode node, Cast cast)
-    {
-        bool dynamic = node.Field("dynamic") is AbilityValue.Word { Value: "true" };
-        return [.. Every(node.Require("enemies"), cast).Where(enemy => !dynamic
+        AbilityEffect.ActivateEnemies instruction, Cast cast) =>
+        [.. Every(instruction.Enemies, cast).Where(enemy => !instruction.Dynamic
             || cast.Results.GetValueOrDefault($"dynamicActivation:{enemy.ObjectId}") == 0)];
-    }
 
     private static Dictionary<string, long> ActivationResults(
         Cast cast, int abilityOrdinal)

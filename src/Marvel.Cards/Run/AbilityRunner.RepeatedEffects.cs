@@ -1874,11 +1874,6 @@ public sealed partial class AbilityRunner
             _ => StructuralChildren(node),
         };
 
-    private static bool ContainsFirstActivation(AbilityNode node) =>
-        (node.Kind is "enemyAttacks" or "enemySchemes"
-            && node.Field("first") is AbilityValue.Word { Value: "true" })
-        || StructuralChildren(node).Any(ContainsFirstActivation);
-
     /// <summary>Whether this player-card effect can remove any threat.</summary>
     private static bool CanRemoveThreat(AbilityNode node, Cast cast)
     {

@@ -74,7 +74,7 @@ public sealed partial class AbilityRunner
 
         if (choice.Kind is "enemyAttacks" or "enemySchemes")
         {
-            var enemies = ActivationCandidates(choice, cast);
+            var enemies = ActivationCandidates(ActivationOf(choice, cast), cast);
             var ids = enemies.Select(enemy => enemy.ObjectId).ToList();
             return new Prompt(
                 Player: world.FirstPlayer,
@@ -612,7 +612,8 @@ public sealed partial class AbilityRunner
 
         if (choice.Kind is "enemyAttacks" or "enemySchemes")
         {
-            var legal = ActivationCandidates(choice, cast)
+            var activation = ActivationOf(choice, cast);
+            var legal = ActivationCandidates(activation, cast)
                 .Select(enemy => enemy.ObjectId)
                 .ToList();
             if (input.IsDecline
@@ -631,10 +632,7 @@ public sealed partial class AbilityRunner
             {
                 cast.Results[$"dynamicActivationOrder:{input.Targets[index]}"] = index;
             }
-            Activate(
-                choice,
-                cast,
-                choice.Kind == "enemyAttacks" ? Steps.Attack : Steps.Scheme);
+            Activate(activation, choice, cast);
             if (cast.Suspended)
             {
                 return cast.Events;
