@@ -177,7 +177,7 @@ public sealed class ForEachTests
     public void AModifierChangesEveryChosenInstance()
     {
         // “That modifier is applied to each instance.” The lasting effect is
-        // the other ability's +1, read beside the printed two. Two choices
+        // the other ability's +1 ATK, read beside Rhino's printed two. Two choices
         // therefore deal three each. Applying the modifier once to the whole
         // repeated effect would deal only five.
         var world = Deal();
@@ -185,10 +185,10 @@ public sealed class ForEachTests
         var source = world.CreateCard(SourceFace, world.AreaOf(DeckType.RevealingArea));
         world.Effects.Register(new ContinuousEffect(
             EffectSource.LastingEffect,
-            Kind: "forEachDamage",
+            Kind: "attack",
             Amount: 1,
             Card: source.ObjectId,
-            Affects: source.ObjectId));
+            Affects: villain.ObjectId));
         var runner = Runner(
             """
             { "forEach": { "count": 2, "effect": {
@@ -196,10 +196,7 @@ public sealed class ForEachTests
                 "from": { "query": "attackableEnemies" },
                 "effect": { "dealDamage": {
                   "cards": "chosen",
-                  "amount": { "add": [
-                    2,
-                    { "modified": { "card": "this", "field": "forEachDamage" } }
-                  ] }
+                  "amount": { "modified": { "card": { "query": "villain" }, "field": "attack" } }
                 } }
               }
             } } }

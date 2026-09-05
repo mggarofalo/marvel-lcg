@@ -1431,7 +1431,7 @@ public sealed partial class ActionAbilityTests
             """
             { "seq": [
               { "if": {
-                "test": { "inForm": { "player": "you", "form": "alterEgo" } },
+                "test": { "inForm": { "player": "you", "form": "alter-ego" } },
                 "then": { "discard": { "titled": "Hydra Mercenary" } }
               } },
               { "removeFromGame": { "cardsIn": {

@@ -92,9 +92,13 @@ public static class AbilityCatalog
             {
                 // Held as a value rather than a node: what it names is read by
                 // the same `Find` a card's effect uses, and that takes the
-                // value. `Node` is still called, for the "exactly one named
-                // operation" check it makes.
-                Node(host, card);
+                // value. A word is a direct card binding; selector objects
+                // must name exactly one operation. Semantic lowering validates
+                // both forms before the runner can consult a board.
+                if (host.ValueKind != JsonValueKind.String)
+                {
+                    Node(host, card);
+                }
                 attachTo[card] = Value(host, card);
             }
 

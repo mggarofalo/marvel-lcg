@@ -278,7 +278,7 @@ public sealed partial class ActionAbilityTests
             "Action",
             """
             { "seq": [
-              { "heal": { "cards": "you", "amount": 1 } },
+              { "heal": { "card": "you", "amount": 1 } },
               { "eachTime": {
                 "effect": { "discardTop": {
                   "from": "encounterDeck",
@@ -485,7 +485,7 @@ public sealed partial class ActionAbilityTests
             { "attack": {
               "target": { "query": "villain" },
               "effect": { "seq": [
-                { "changeForm": { "player": "you", "to": "alterEgo" } },
+                { "changeForm": { "player": "you", "to": "alter-ego" } },
                 { "if": {
                   "test": { "inForm": {
                     "player": "you", "form": "hero"
@@ -701,7 +701,7 @@ public sealed partial class ActionAbilityTests
                 { "forEach": {
                   "count": 0,
                   "effect": { "changeForm": {
-                    "player": "you", "to": "alterEgo"
+                    "player": "you", "to": "alter-ego"
                   } }
                 } },
                 { "if": {
@@ -780,7 +780,7 @@ public sealed partial class ActionAbilityTests
               "target": { "query": "villain" },
               "effect": { "seq": [
                 { "changeForm": {
-                  "player": "firstPlayer", "to": "alterEgo"
+                  "player": "firstPlayer", "to": "alter-ego"
                 } },
                 { "if": {
                   "test": { "inForm": {
@@ -919,7 +919,7 @@ public sealed partial class ActionAbilityTests
             { "attack": {
               "target": { "query": "villain" },
               "effect": { "seq": [
-                { "changeForm": { "player": "you", "to": "alterEgo" } },
+                { "changeForm": { "player": "you", "to": "alter-ego" } },
                 { "changeForm": { "player": "you", "to": "hero" } },
                 { "if": {
                   "test": { "inForm": {
@@ -961,9 +961,9 @@ public sealed partial class ActionAbilityTests
             { "seq": [
               { "choose": { "options": [
                 { "changeForm": {
-                  "player": "firstPlayer", "to": "alterEgo"
+                  "player": "firstPlayer", "to": "alter-ego"
                 } },
-                { "changeForm": { "player": "you", "to": "alterEgo" } }
+                { "changeForm": { "player": "you", "to": "alter-ego" } }
               ] } },
               { "chooseCard": {
                 "from": { "query": "identities" },
@@ -1029,7 +1029,7 @@ public sealed partial class ActionAbilityTests
                   "player": "firstPlayer", "form": "hero"
                 } },
                 "then": { "changeForm": {
-                  "player": "you", "to": "alterEgo"
+                  "player": "you", "to": "alter-ego"
                 } },
                 "else": { "seq": [] }
               } } } },

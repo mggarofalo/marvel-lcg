@@ -131,16 +131,21 @@ public static partial class AbilityLowering
     private static AbilityCondition.IsKind IsKind(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "card", "kind");
-        string name = Text(Required(fields, "kind", location), location.Child("kind"));
-        var kind = name switch
+        var kind = ConditionCardKind(Required(fields, "kind", location), location.Child("kind"));
+        return new(Cards(Required(fields, "card", location), location.Child("card")), kind);
+    }
+
+    private static CardKind ConditionCardKind(AbilityValue value, AbilityLocation location)
+    {
+        string name = Text(value, location);
+        return name switch
         {
             "sideScheme" => CardKind.EncounterSideScheme,
             "minion" => CardKind.Minion,
             "ally" => CardKind.Ally,
             "upgrade" => CardKind.Upgrade,
             "treachery" => CardKind.Treachery,
-            _ => throw location.Child("kind").Error($"'{name}' is not a supported condition card kind"),
+            _ => throw location.Error($"'{name}' is not a supported condition card kind"),
         };
-        return new(Cards(Required(fields, "card", location), location.Child("card")), kind);
     }
 }

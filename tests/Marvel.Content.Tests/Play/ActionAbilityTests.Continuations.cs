@@ -13,6 +13,45 @@ namespace Marvel.Content.Tests.Play;
 
 public sealed partial class ActionAbilityTests
 {
+    [Fact]
+    public void ANoOpPlayerFramePreservesEarlierDamageForLaterPreflight()
+    {
+        // The engine checks every frame before an action cost is paid. An
+        // alter-ego player's empty branch must preserve the hero's preceding
+        // lethal damage and the resulting change of first player.
+        var runner = Runner(AuthoredCards.AuntMay, "Action", """
+            { "eachPlayer": { "effect": { "if": {
+              "test": { "inForm": { "player": "firstPlayer", "form": "alter-ego" } },
+              "then": { "if": {
+                "test": { "inForm": { "player": "you", "form": "hero" } },
+                "then": { "dealDamage": { "cards": { "titled": "Peter Parker" }, "amount": 1 } }
+              } },
+              "else": { "attack": {
+                "target": { "query": "villain" },
+                "effect": { "enemyAttacks": { "enemies": { "query": "villain" } } }
+              } }
+            } } } }
+            """, cost: """{ "exhaust": "this" }""");
+        World? world = null;
+        Card? source = null;
+
+        var refused = Assert.Throws<RulesNotImplementedException>(() => Playing(
+            board =>
+            {
+                world = board;
+                source = InPlay(board, AuthoredCards.AuntMay);
+                board.Seats[0].IdentityCard.TakeDamage(9);
+                board.Seats[1].IdentityCard.TurnTo("01010a");
+            },
+            heroes: ["spider_man", "captain_marvel", "she_hulk"],
+            abilities: runner));
+
+        Assert.Contains("suspends inside a labelled power", refused.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+        Assert.Equal(0, world.FirstPlayer);
+    }
+
     [Rule("rr:guard.1")]
     [Rule("rr:engage.3")]
     [Fact]
@@ -62,7 +101,7 @@ public sealed partial class ActionAbilityTests
             """
             { "eachPlayer": { "effect": { "if": {
               "test": { "inForm": {
-                "player": "firstPlayer", "form": "alterEgo"
+                "player": "firstPlayer", "form": "alter-ego"
               } },
               "then": { "if": {
                 "test": { "inForm": { "player": "you", "form": "hero" } },
@@ -79,7 +118,7 @@ public sealed partial class ActionAbilityTests
                   } },
                   { "moveDamage": {
                     "from": { "query": "villain" },
-                    "to": { "titled": "Spider-Man" }, "amount": 1
+                    "to": { "titled": "Peter Parker" }, "amount": 1
                   } }
                 ] }
               } },
@@ -129,7 +168,7 @@ public sealed partial class ActionAbilityTests
             """
             { "eachPlayer": { "effect": { "if": {
               "test": { "inForm": {
-                "player": "firstPlayer", "form": "alterEgo"
+                "player": "firstPlayer", "form": "alter-ego"
               } },
               "then": { "if": {
                 "test": { "inForm": { "player": "you", "form": "hero" } },
@@ -147,7 +186,7 @@ public sealed partial class ActionAbilityTests
                   } },
                   { "moveDamage": {
                     "from": { "query": "villain" },
-                    "to": { "titled": "Spider-Man" }, "amount": 1
+                    "to": { "titled": "Peter Parker" }, "amount": 1
                   } }
                 ] }
               } },
@@ -823,7 +862,7 @@ public sealed partial class ActionAbilityTests
               { "discard": "this" },
               { "if": {
                 "test": { "not": { "titleInPlay": "Aunt May" } },
-                "then": { "changeForm": { "player": "firstPlayer", "to": "alterEgo" } }
+                "then": { "changeForm": { "player": "firstPlayer", "to": "alter-ego" } }
               } }
             ] } } }
             """,

@@ -632,7 +632,7 @@ public sealed partial class ActionAbilityTests
         repeated,
         """
         { "seq": [
-          { "changeForm": { "player": "you", "to": "alterEgo" } },
+          { "changeForm": { "player": "you", "to": "alter-ego" } },
           { "dealDamage": {
             "cards": { "query": "villain" }, "amount": 100
           } },
@@ -1650,7 +1650,7 @@ public sealed partial class ActionAbilityTests
     {
         const string sequence = """
             { "seq": [
-              { "changeForm": { "player": "you", "to": "alterEgo" } },
+              { "changeForm": { "player": "you", "to": "alter-ego" } },
               { "dealDamage": {
                 "cards": { "query": "villain" }, "amount": 100
               } },
@@ -1699,7 +1699,7 @@ public sealed partial class ActionAbilityTests
     {
         const string sequence = """
             { "seq": [
-              { "changeForm": { "player": "you", "to": "alterEgo" } },
+              { "changeForm": { "player": "you", "to": "alter-ego" } },
               { "dealDamage": {
                 "cards": { "query": "villain" }, "amount": 100
               } },

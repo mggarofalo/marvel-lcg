@@ -372,7 +372,7 @@ public sealed partial class ActionAbilityTests
         var runner = new Marvel.Cards.Run.AbilityRunner(
             Marvel.Cards.Dsl.AbilityCatalog.Parse(
                 """
-                { "cards": [ { "card": "02048", "attachTo": { "query": "yourIdentity" }, "abilities": [ {
+                { "cards": [ { "card": "02048", "attachTo": "you", "abilities": [ {
                     "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "game" },
                     "effect": { "discard": "this" }
                 } ] } ] }
@@ -403,7 +403,7 @@ public sealed partial class ActionAbilityTests
         var runner = new Marvel.Cards.Run.AbilityRunner(
             Marvel.Cards.Dsl.AbilityCatalog.Parse(
                 """
-                { "cards": [ { "card": "16123", "attachTo": { "query": "yourIdentity" }, "abilities": [ {
+                { "cards": [ { "card": "16123", "attachTo": "you", "abilities": [ {
                     "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "game", "form": "hero" },
                     "anyPlayer": true,
                     "cost": { "spend": "BB" },
@@ -613,7 +613,7 @@ public sealed partial class ActionAbilityTests
         var obligationRunner = Runner(
             AuthoredCards.EvictionNotice,
             "Resource",
-            """{ "generate": "E" }""");
+            """{ "generate": "Y" }""");
         Card? obligation = null;
         var (_, obligationWorld) = Playing(
             board => obligation = board.CreateCard(

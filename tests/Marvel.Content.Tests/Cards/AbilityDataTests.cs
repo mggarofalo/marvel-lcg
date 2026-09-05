@@ -492,14 +492,9 @@ public sealed class AbilityDataTests
     [Fact]
     public void AnEffectNodeNothingImplementsThrowsNamingTheNode()
     {
-        // How the vocabulary grows: a card names a node, the engine says which
-        // node it has not got, somebody implements that one node. That is a
-        // different activity from adding a card, and it should read differently
-        // in a stack trace.
-        var world = new World(Printed, players: 1);
-        world.CreateSeat("p0");
-        var card = world.CreateCard("01105", world.AreaOf(DeckType.RevealingArea));
-
+        // Unknown syntax is an authored-data error, rejected before a board
+        // exists. Valid instructions that reach unsupported game situations
+        // are a separate runtime failure.
         var book = AbilityCatalog.Parse(
             """
             {"cards":[{"card":"01105","abilities":[{
@@ -507,9 +502,10 @@ public sealed class AbilityDataTests
               "effect":{"summonCthulhu":1}}]}]}
             """);
 
-        var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => new Marvel.Cards.Run.AbilityRunner(book).WhenRevealed(world, card, 0));
+        var thrown = Assert.Throws<AbilityException>(
+            () => new Marvel.Cards.Run.AbilityRunner(book));
         Assert.Contains("summonCthulhu", thrown.Message, StringComparison.Ordinal);
+        Assert.Contains("'01105' ability 0", thrown.Message, StringComparison.Ordinal);
     }
 
     [Rule("rr:ability.step.3")]

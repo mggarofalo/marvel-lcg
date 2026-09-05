@@ -997,11 +997,12 @@ public sealed partial class AbilityRunner
                 : node.Field(Test(test, cast) ? "then" : "else") is { } active
                     ? [active]
                     : [];
-            return
-            [
-                .. branches.SelectMany(branch => DamageTraces(
-                    Tree(branch!), cast, assumed, binding)),
-            ];
+            // The engine represents a skipped branch as one empty trace.
+            // Returning no traces would erase the preceding players' effects
+            // when this frame is composed with the rest of the sequence.
+            var branchTraces = branches.SelectMany(branch => DamageTraces(
+                Tree(branch!), cast, assumed, binding)).ToList();
+            return branchTraces.Count == 0 ? [[]] : branchTraces;
         }
 
         if (node.Kind == "choose")

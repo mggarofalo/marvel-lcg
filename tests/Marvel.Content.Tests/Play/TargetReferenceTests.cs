@@ -308,9 +308,9 @@ public sealed class TargetReferenceTests
         // cannot begin by manufacturing one during payment.
         var runner = new AbilityRunner(AbilityCatalog.Parse(
             """
-            { "cards": [ { "card": "01006", "abilities": [ {
+            { "cards": [ { "card": "01092", "abilities": [ {
               "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "game" },
-              "cost": { "exhaust": { "titled": "Helicarrier" } },
+              "cost": { "exhaust": "this" },
               "effect": { "ready": { "titled": "Helicarrier" } }
             } ] } ] }
             """));
@@ -319,8 +319,7 @@ public sealed class TargetReferenceTests
         var (game, _) = Playing(
             board =>
             {
-                source = InPlay(board, "01006", DeckType.SupportsArea);
-                carrier = InPlay(board, "01092", DeckType.SupportsArea);
+                source = carrier = InPlay(board, "01092", DeckType.SupportsArea);
             },
             runner);
 
@@ -841,7 +840,7 @@ public sealed class TargetReferenceTests
             "01006",
             """
             { "seq": [
-              { "changeForm": { "player": "you", "to": "alterEgo" } },
+              { "changeForm": { "player": "you", "to": "alter-ego" } },
               { "if": {
                 "test": { "inForm": { "player": "you", "form": "hero" } },
                 "then": { "thwart": {
@@ -950,7 +949,7 @@ public sealed class TargetReferenceTests
             """
             { "seq": [
               { "choose": { "options": [
-                { "changeForm": { "player": "you", "to": "alterEgo" } },
+                { "changeForm": { "player": "you", "to": "alter-ego" } },
                 { "seq": [] }
               ] } },
               { "if": {
@@ -1121,7 +1120,7 @@ public sealed class TargetReferenceTests
             "01006",
             """
             { "seq": [
-              { "changeForm": { "player": "you", "to": "alterEgo" } },
+              { "changeForm": { "player": "you", "to": "alter-ego" } },
               { "changeForm": { "player": "you", "to": "hero" } },
               { "if": {
                 "test": { "inForm": { "player": "you", "form": "hero" } },

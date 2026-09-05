@@ -102,12 +102,11 @@ public sealed class ConstantAbilityTests
     {
         var world = Bare();
         world.CreateCard("01094", world.AreaOf(DeckType.VillainArea));
-        world.Abilities = Runner(
-            """{ "grant": { "card": "this", "keyword": "stallwart" } }""");
+        var refused = Assert.Throws<AbilityException>(() => Runner(
+            """{ "grant": { "card": "this", "keyword": "stallwart" } }"""));
 
-        var refused = Assert.Throws<RulesNotImplementedException>(() => world.Effects.Active());
-
-        Assert.Contains("grants 'stallwart'", refused.Message, StringComparison.Ordinal);
+        Assert.Contains("effect/grant/keyword", refused.Message, StringComparison.Ordinal);
+        Assert.Contains("'stallwart'", refused.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -116,7 +115,7 @@ public sealed class ConstantAbilityTests
         var world = Bare();
         world.CreateCard("01094", world.AreaOf(DeckType.VillainArea));
         world.Abilities = Runner(
-            """{ "dealDamage": { "card": "this", "amount": 1 } }""");
+            """{ "dealDamage": { "cards": "this", "amount": 1 } }""");
 
         var refused = Assert.Throws<RulesNotImplementedException>(() => world.Effects.Active());
 
@@ -138,7 +137,7 @@ public sealed class ConstantAbilityTests
                 },
                 {
                   "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed" },
-                  "effect": { "dealDamage": { "card": "this", "amount": 1 } }
+                  "effect": { "dealDamage": { "cards": "this", "amount": 1 } }
                 }
             ] } ] }
             """));

@@ -32,6 +32,7 @@ namespace Marvel.Cards.Run;
 /// <param name="book">The authored cards.</param>
 public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
 {
+    private readonly AbilityProgram program = AbilityLowering.Book(book);
     private readonly AbilityBook book = book;
 
     // An activation is an agenda operation, while the sentence that initiated
@@ -70,7 +71,7 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
         FacedownDrones.Is(card) ? [] : book.On(card.FaceId);
 
     /// <summary>The authored cards, whether or not they do anything.</summary>
-    public IReadOnlySet<string> Authored => book.Authored;
+    public IReadOnlySet<string> Authored => program.Authored;
 
     /// <inheritdoc/>
     public CardCounterPool? CounterPool(World world, Card card)
