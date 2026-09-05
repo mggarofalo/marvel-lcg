@@ -47,10 +47,12 @@ public static class Elimination
             Attack.EndForEliminatedPlayer(world, events);
         }
 
+        var layout = EliminationLayout.Calculate(new WorldEliminationLayout(world), player);
+
         // Step 1. "If the eliminated player has the first player token, they
         // pass it to the next clockwise player." Before step 5 takes their play
-        // area away, and before `Next` starts skipping them.
-        if (world.FirstPlayer == player && Next(world, player) is { } holder)
+        // area away.
+        if (world.FirstPlayer == player && layout.NextPlayer is { } holder)
         {
             world.FirstPlayer = holder;
         }
@@ -60,13 +62,12 @@ public static class Elimination
         // any tokens, attached cards, boost cards, tucked cards, and status
         // cards on them**." Moving the card keeps all of those, because they
         // hang off its object id rather than off the area.
-        if (Next(world, player) is { } neighbour)
+        if (layout.NextPlayer is { } neighbour)
         {
-            var engaged = world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(player));
             var onto = world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(neighbour));
-            foreach (var minion in engaged.Cards.ToList())
+            foreach (var relocation in layout.Relocations)
             {
-                var hosted = HostedTree(world, minion);
+                var minion = world.Cards[relocation.Minion];
                 var from = minion.Area;
                 World.MoveToTop(minion, onto);
                 events.Add(new CardsMoved(
@@ -79,8 +80,10 @@ public static class Elimination
                 // "Retaining any tokens, attached cards, boost cards, tucked
                 // cards, and status cards on them" includes their placement:
                 // they move into the next player's play area with their host.
-                foreach (var (source, card) in hosted)
+                foreach (int cardId in relocation.Hosted)
                 {
+                    var card = world.Cards[cardId];
+                    var source = card.Area;
                     var destination = world.AreaOf(
                         source.Type, onto.PlayArea, source.Host, source.CardOwner);
                     bool wasFaceUp = card.FaceUp;
@@ -150,47 +153,14 @@ public static class Elimination
         }
     }
 
-    /// <summary>Every card hosted below one root, parents before children.</summary>
-    private static List<(Area Source, Card Card)> HostedTree(World world, Card root)
-    {
-        var descendants = new List<(Area Source, Card Card)>();
-        var pending = new Stack<Card>(world.Areas
-            .Where(area => area.Host == root.ObjectId)
-            .SelectMany(area => area.Cards)
-            .Reverse());
-        var seen = new HashSet<int> { root.ObjectId };
-
-        while (pending.TryPop(out var card))
-        {
-            if (!seen.Add(card.ObjectId))
-            {
-                throw new RulesNotImplementedException(
-                    $"attachment {card.ObjectId} forms a hosting cycle");
-            }
-
-            descendants.Add((card.Area, card));
-            foreach (var child in world.Areas
-                         .Where(area => area.Host == card.ObjectId)
-                         .SelectMany(area => area.Cards)
-                         .Reverse())
-            {
-                pending.Push(child);
-            }
-        }
-
-        return descendants;
-    }
-
     /// <summary>
     /// The areas that belong to one play area, as step 5 counts them.
     /// </summary>
     /// <remarks>
-    /// <b>An area hosted by a card that has already left is not one of them.</b>
-    /// A status card's area is created in its host's play area and does not
-    /// follow when the host moves, so a minion that engaged the next player in
-    /// step 2 leaves its status area behind — and step 2 is explicit that the
-    /// minion keeps "any tokens, attached cards, boost cards, tucked cards, and
-    /// status cards on them".
+    /// A hosted area counts only while its host also belongs to this play
+    /// area. Step 2 explicitly relocates retained descendants with their
+    /// minion; later departures are read again after each numbered step has
+    /// changed placement and settled continuous effects.
     /// </remarks>
     private static List<Area> Mine(World world, int player) =>
         [.. world.Areas.Where(area =>
@@ -216,7 +186,7 @@ public static class Elimination
         {
             // `.1` and `.2`. A non-attachment permanent is removed from the
             // game; an attachment resolves its "attach to" text first, and that
-            // text is not modelled -- see the original investigation's note on the keyword.
+            // text is not modelled.
             if (facts.Kind(card.FaceId) == CardKind.Attachment)
             {
                 throw new RulesNotImplementedException(
@@ -259,28 +229,9 @@ public static class Elimination
     /// <summary>Proves every step-three/four departure before elimination mutates state.</summary>
     private static void Preflight(World world, ICardFacts facts, int player)
     {
-        // Step 2 moves these minions and every hosted descendant intact; none
-        // of them is a step-three/four departure. Build the retained set with
-        // the same cycle-checking traversal that the move itself uses.
-        var retained = new HashSet<int>();
-        if (Next(world, player) is not null)
-        {
-            var engaged = world.AreaOf(
-                DeckType.EngagedEnemiesArea, PlayArea.Of(player));
-            foreach (var minion in engaged.Cards)
-            {
-                retained.Add(minion.ObjectId);
-                foreach (var (_, card) in HostedTree(world, minion))
-                {
-                    retained.Add(card.ObjectId);
-                }
-            }
-        }
-
-        var leaving = Mine(world, player)
-            .Where(area => DeckTypes.IsInPlay(area.Type))
-            .SelectMany(area => area.Cards)
-            .Where(card => !retained.Contains(card.ObjectId))
+        var layout = EliminationLayout.Calculate(new WorldEliminationLayout(world), player);
+        var leaving = layout.Leaving.Select(card => world.Cards[card])
+            .Where(card => DeckTypes.IsInPlay(card.Area.Type))
             .ToList();
 
         foreach (var card in leaving)
@@ -300,28 +251,5 @@ public static class Elimination
         {
             Discard.PreflightAttachments(world, card);
         }
-    }
-
-    /// <summary>
-    /// The next player still in the game, clockwise, or null when there is
-    /// none.
-    /// </summary>
-    /// <remarks>
-    /// "The next clockwise player" in a game where players have already been
-    /// eliminated is the next one who is still playing —
-    /// <c>rr:player-elimination.6</c> has effects ignore the eliminated.
-    /// </remarks>
-    private static int? Next(World world, int player)
-    {
-        for (int offset = 1; offset < world.Players; offset++)
-        {
-            int seat = (player + offset) % world.Players;
-            if (!world.Seats[seat].Eliminated)
-            {
-                return seat;
-            }
-        }
-
-        return null;
     }
 }

@@ -9,63 +9,13 @@ namespace Marvel.Cards.Run;
 
 public sealed partial class AbilityRunner
 {
-    private sealed record TracePlayerElimination(
-        int? NextPlayer,
-        HashSet<int> Leaving,
-        HashSet<int> RelocatedCards);
-
-    private static TracePlayerElimination PlanTracePlayerElimination(
+    private static EliminationLayout PlanTracePlayerElimination(
         int player, Cast cast, HashSet<int> discarded,
         Dictionary<int, int> engagement)
     {
-        int? next = null;
-        for (int offset = 1; offset < cast.World.Seats.Count; offset++)
-        {
-            int candidate = (player + offset) % cast.World.Seats.Count;
-            var identity = cast.World.Seats[candidate].IdentityCard;
-            if (!cast.World.Seats[candidate].Eliminated
-                && !discarded.Contains(identity.ObjectId))
-            {
-                next = candidate;
-                break;
-            }
-        }
-
-        var retained = new HashSet<int>();
-        var relocated = new HashSet<int>();
-        foreach (var minion in cast.World.Cards.Where(card =>
-            !discarded.Contains(card.ObjectId)
-            && FacedownDrones.Kind(card, cast.World.Facts) == CardKind.Minion))
-        {
-            int engagedPlayer = engagement.TryGetValue(
-                    minion.ObjectId, out int traced)
-                ? traced
-                : minion.Area.Type == DeckType.EngagedEnemiesArea
-                    ? minion.Area.PlayArea.Player
-                    : -1;
-            if (engagedPlayer == player && next is not null)
-            {
-                foreach (int relocatedCard in TraceHostedTree(minion, cast))
-                {
-                    relocated.Add(relocatedCard);
-                }
-            }
-            if (engagedPlayer != player || next is not null)
-            {
-                foreach (int retainedCard in TraceHostedTree(minion, cast))
-                {
-                    retained.Add(retainedCard);
-                }
-            }
-        }
-
-        var leaving = cast.World.Cards
-            .Where(card => card.Area.PlayArea == PlayArea.Of(player)
-                && !retained.Contains(card.ObjectId))
-            .Select(card => card.ObjectId)
-            .ToHashSet();
-        leaving.Add(cast.World.Seats[player].IdentityCard.ObjectId);
-        foreach (int cardId in leaving)
+        var layout = EliminationLayout.Calculate(
+            new AbilityEliminationLayout(cast.World, discarded, engagement), player);
+        foreach (int cardId in layout.Leaving)
         {
             var card = cast.World.Cards[cardId];
             if (DeckTypes.IsInPlay(card.Area.Type)
@@ -80,34 +30,7 @@ public sealed partial class AbilityRunner
                     + "'attach to' text, which is not modelled");
             }
         }
-        return new TracePlayerElimination(next, leaving, relocated);
-    }
-
-    private static List<int> TraceHostedTree(Card root, Cast cast)
-    {
-        var tree = new List<int> { root.ObjectId };
-        var pending = new Stack<Card>(cast.World.Areas
-            .Where(area => area.Host == root.ObjectId)
-            .SelectMany(area => area.Cards)
-            .Reverse());
-        var seen = new HashSet<int> { root.ObjectId };
-        while (pending.TryPop(out var card))
-        {
-            if (!seen.Add(card.ObjectId))
-            {
-                throw new RulesNotImplementedException(
-                    $"attachment {card.ObjectId} forms a hosting cycle");
-            }
-            tree.Add(card.ObjectId);
-            foreach (var child in cast.World.Areas
-                .Where(area => area.Host == card.ObjectId)
-                .SelectMany(area => area.Cards)
-                .Reverse())
-            {
-                pending.Push(child);
-            }
-        }
-        return tree;
+        return layout;
     }
 
     private static PowerReachability AdvancePowerVillain(

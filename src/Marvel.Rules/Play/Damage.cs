@@ -315,12 +315,12 @@ public static class Damage
         World world, ICardFacts facts, Card source, Card target, long amount,
         string trigger, List<GameEvent> events)
     {
-        if (amount <= 0)
+        var assignment = DamageAssignment.AfterReplacement(
+            amount, amount > 0 && Statuses.Has(world, target, Statuses.Tough));
+        if (assignment.Dealt <= 0)
         {
             return new PlacedDamage(target, 0, 0);
         }
-
-        long dealt = amount;
 
         // `rr:tough.2`: "if a character with a tough status card would take any
         // amount of damage, **prevent all of that damage** and discard a tough
@@ -331,8 +331,8 @@ public static class Damage
         // a hero with a tough status card defends an attack, they reduce the
         // damage from the attack by their DEF **first**. If the damage is
         // reduced to 0, the hero does not lose their tough status card." The
-        // `amount <= 0` return above is that clause.
-        if (Statuses.Has(world, target, Statuses.Tough))
+        // zero-dealt assignment returns before any status is discarded.
+        if (assignment.SpendsTough)
         {
             world.Abilities.DamagePreventedByTough(world, target, source, events);
             var tough = world.Areas
@@ -345,21 +345,16 @@ public static class Damage
             // `rr:tough.3`: "as a tough status card prevents damage fully, the
             // character who had the tough status card is **not considered to
             // have taken damage**." So no health event, and no defeat.
-            return new PlacedDamage(target, dealt, 0);
+            return new PlacedDamage(target, assignment.Dealt, assignment.Taken);
         }
 
         // `rr:damage.step.3` and `.3.2`: modifying what the character takes
         // (including prevention) does not rewrite the amount the source dealt.
         // Step 1 has already fixed that dealt amount; only placement below uses
         // the reduced taken amount.
-        amount = world.Abilities.WouldTake(world, target, source, amount, events);
-        if (amount <= 0)
-        {
-            return new PlacedDamage(target, dealt, 0);
-        }
-        long taken = amount;
-
-        return new PlacedDamage(target, dealt, taken);
+        assignment = assignment.AfterPrevention(
+            world.Abilities.WouldTake(world, target, source, assignment.Taken, events));
+        return new PlacedDamage(target, assignment.Dealt, assignment.Taken);
     }
 
     /// <summary>Place one already-fixed share of simultaneous damage at step 5.</summary>

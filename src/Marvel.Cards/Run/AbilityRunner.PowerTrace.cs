@@ -916,17 +916,19 @@ public sealed partial class AbilityRunner
                 CardDamage = damage,
                 Discarded = discarded,
             };
-            if (landed <= 0)
+            var assignment = DamageAssignment.AfterReplacement(
+                landed, landed > 0 && PowerTough(state, card, cast));
+            if (assignment.Dealt <= 0)
             {
                 continue;
             }
-            if (PowerTough(state, card, cast))
+            if (assignment.SpendsTough)
             {
                 state = SetPowerTough(state, card, false, first, cast);
                 continue;
             }
             state = SetPowerDamage(
-                state, card, SaturatingAdd(PowerDamage(state, card), landed),
+                state, card, SaturatingAdd(PowerDamage(state, card), assignment.Taken),
                 first, cast);
             state = ResolvePowerCharacterDefeat(state, card, first, cast);
         }

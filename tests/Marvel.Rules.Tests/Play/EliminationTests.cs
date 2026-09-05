@@ -14,7 +14,7 @@ namespace Marvel.Rules.Tests.Play;
 /// Five numbered steps, and the order is load-bearing: step 1 hands the first
 /// player token on before step 5 removes the play area it was sitting in.
 /// </remarks>
-public sealed class EliminationTests
+public sealed partial class EliminationTests
 {
     [Rule("rr:player-elimination.step.1")]
     [Fact]

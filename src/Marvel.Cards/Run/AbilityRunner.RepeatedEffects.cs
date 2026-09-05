@@ -740,12 +740,14 @@ public sealed partial class AbilityRunner
                         cast, to, transfer.Amount, damage, discarded,
                         currentVillain)
                     : transfer.Amount;
-                if (incoming > 0 && CurrentTough(to) > 0)
+                var assignment = DamageAssignment.AfterReplacement(
+                    incoming, incoming > 0 && CurrentTough(to) > 0);
+                if (assignment.SpendsTough)
                 {
                     tough[to] = CurrentTough(to) - 1;
                     continue;
                 }
-                damage[to] = SaturatingSum(Current(to), [incoming]);
+                damage[to] = SaturatingSum(Current(to), [assignment.Taken]);
                 ResolveCharacterDefeat(to);
                 ObserveTarget();
                 continue;
@@ -766,13 +768,15 @@ public sealed partial class AbilityRunner
                 : amount;
             if (to >= 0)
             {
-                if (landed > 0 && CurrentTough(to) > 0)
+                var assignment = DamageAssignment.AfterReplacement(
+                    landed, landed > 0 && CurrentTough(to) > 0);
+                if (assignment.SpendsTough)
                 {
                     tough[to] = CurrentTough(to) - 1;
                 }
                 else
                 {
-                    damage[to] = SaturatingSum(Current(to), [landed]);
+                    damage[to] = SaturatingSum(Current(to), [assignment.Taken]);
                     ResolveCharacterDefeat(to);
                 }
             }
