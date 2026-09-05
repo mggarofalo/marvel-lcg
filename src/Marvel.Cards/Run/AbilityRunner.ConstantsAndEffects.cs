@@ -273,11 +273,11 @@ public sealed partial class AbilityRunner
     /// arrive at the wrong one.
     /// </para>
     /// </remarks>
-    private static void ChangeForm(AbilityNode node, Cast cast)
+    private static void ChangeForm(AbilityEffect.ChangeForm change, Cast cast)
     {
-        var seat = cast.World.Seats[Seat(node.Require("player"), cast)];
-        string form = Word(node.Require("to"));
-        if (Forms.In(cast.World, seat, cast.World.Facts, form))
+        var seat = cast.World.Seats[Seat(change.Player, cast)];
+        string form = change.Form;
+        if (AlreadyInForm(change, cast))
         {
             return;
         }
@@ -295,6 +295,13 @@ public sealed partial class AbilityRunner
                 $"flipping '{was}' did not reach {form}");
         }
     }
+
+    private static AbilityEffect.ChangeForm FormChangeOf(AbilityNode node, Cast cast) =>
+        (AbilityEffect.ChangeForm)((AbilityRunner)cast.Abilities).CompiledEffect(node);
+
+    private static bool AlreadyInForm(AbilityEffect.ChangeForm change, Cast cast) =>
+        Forms.In(cast.World, cast.World.Seats[Seat(change.Player, cast)],
+            cast.World.Facts, change.Form);
 
     /// <summary>"Remove … from the game" — <c>rr:removed-from-the-game</c>.</summary>
     /// <remarks>
@@ -482,14 +489,8 @@ public sealed partial class AbilityRunner
     /// engine's choice; stage-addressed advancement needs a separate
     /// implementation.
     /// </remarks>
-    private static void AdvanceMainScheme(AbilityNode node, Cast cast)
+    private static void AdvanceMainScheme(Cast cast)
     {
-        if (!string.Equals(Word(node.Argument), "next", StringComparison.Ordinal))
-        {
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' advances to an unsupported main scheme stage");
-        }
-
         var scheme = cast.World.TheCardIn(DeckType.MainSchemesArea)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' advances a main scheme that is not in play");
@@ -498,17 +499,9 @@ public sealed partial class AbilityRunner
             cast.Trigger, cast.Events);
     }
 
-    private static bool CanAdvanceMainScheme(AbilityNode node, Cast cast)
-    {
-        if (!string.Equals(Word(node.Argument), "next", StringComparison.Ordinal))
-        {
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' advances to an unsupported main scheme stage");
-        }
-
-        return cast.World.TheCardIn(DeckType.MainSchemesArea) is not null
+    private static bool CanAdvanceMainScheme(Cast cast) =>
+        cast.World.TheCardIn(DeckType.MainSchemesArea) is not null
             && cast.World.AreaOf(DeckType.MainSchemesDeck).Cards.Count > 0;
-    }
 
     /// <summary>
     /// Reads a named counter pool, or every typed pool when the card says

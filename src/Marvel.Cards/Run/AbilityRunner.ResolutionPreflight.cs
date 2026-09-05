@@ -31,11 +31,7 @@ public sealed partial class AbilityRunner
                 && CanPartiallyResolve(Tree(node.Require("effect")), cast),
             "choose" => Nodes(node.Require("options")).Any(option => OptionIsLegal(option, cast)),
             "chooseCard" => LegalCardChoices(node, cast).Count > 0,
-            "changeForm" => !Forms.In(
-                cast.World,
-                cast.World.Seats[Seat(node.Require("player"), cast)],
-                cast.World.Facts,
-                Word(node.Require("to"))),
+            "changeForm" => !AlreadyInForm(FormChangeOf(node, cast), cast),
             "removeFromGame" => Find(node.Argument, cast) is { } card
                 && CanRemoveByEffect(node.Argument, cast, card),
             "exhaust" => Find(node.Argument, cast)?.Ready == true,
@@ -45,7 +41,7 @@ public sealed partial class AbilityRunner
                 && Find(removal.Card, cast) is { } counterCard
                 && CounterKeyForRemoval(
                     counterCard, removal.Counter, removal.Count) is not null,
-            "advanceMainScheme" => CanAdvanceMainScheme(node, cast),
+            "advanceMainScheme" => CanAdvanceMainScheme(cast),
             "discardAtRandom" => Amount(node.Require("count"), cast) > 0
                 && Seats(node.Require("player"), cast)
                     .Any(seat => cast.World.Seats[seat].Hand.Cards.Count > 0),
@@ -130,11 +126,7 @@ public sealed partial class AbilityRunner
                     ? ResolutionOf(Tree(branch), cast)
                     : ResolutionOutcome.None,
             "forEach" when ForEachCount(node, cast) == 0 => ResolutionOutcome.None,
-            "changeForm" => Forms.In(
-                    cast.World,
-                    cast.World.Seats[Seat(node.Require("player"), cast)],
-                    cast.World.Facts,
-                    Word(node.Require("to")))
+            "changeForm" => AlreadyInForm(FormChangeOf(node, cast), cast)
                 ? ResolutionOutcome.None
                 : ResolutionOutcome.Full,
             "exhaust" => ResolutionOfCards(

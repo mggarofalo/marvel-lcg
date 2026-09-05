@@ -11,6 +11,14 @@ public sealed partial class AbilityRunner
     {
         switch (effect)
         {
+            case AbilityEffect.ChangeForm change:
+                ChangeForm(change, cast);
+                return true;
+
+            case AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.AdvanceMainScheme }:
+                AdvanceMainScheme(cast);
+                return true;
+
             case AbilityEffect.Generate:
                 // `rr:resource-ability` -- a resource ability is *read* while a
                 // cost is being paid rather than run like an effect, so nothing

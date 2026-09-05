@@ -235,7 +235,7 @@ public sealed partial class AbilityRunner
         }
         if (node.Kind == "changeForm")
         {
-            return ChangeFormState(node, cast, bindingMayChange, reachability);
+            return ChangeFormState(FormChangeOf(node, cast), cast, bindingMayChange, reachability);
         }
         if (node.Kind == "forEach")
         {
@@ -499,12 +499,11 @@ public sealed partial class AbilityRunner
             })];
         }
         if (node.Kind == "changeForm"
-            && !(bindingMayChange && BindingCanChange(node.Require("player"))))
+            && FormChangeOf(node, cast) is var change
+            && !(bindingMayChange && change.Player == AbilityPlayer.ChosenPlayer))
         {
-            int seat = Seat(node.Require("player"), cast);
-            bool destinationIsLive = Forms.In(
-                cast.World, cast.World.Seats[seat], cast.World.Facts,
-                Word(node.Require("to")));
+            int seat = Seat(change.Player, cast);
+            bool destinationIsLive = AlreadyInForm(change, cast);
             bool destinationIsCurrent = SeatMayChange(
                     reachability.FormsMayChange, seat)
                 ? !destinationIsLive
@@ -539,11 +538,11 @@ public sealed partial class AbilityRunner
     }
 
     private static PowerReachability ChangeFormState(
-        AbilityNode node, Cast cast, bool bindingMayChange,
+        AbilityEffect.ChangeForm change, Cast cast, bool bindingMayChange,
         PowerReachability reachability)
     {
-        var player = node.Require("player");
-        if (bindingMayChange && BindingCanChange(player))
+        var player = change.Player;
+        if (bindingMayChange && player == AbilityPlayer.ChosenPlayer)
         {
             return reachability with
             {
@@ -552,9 +551,7 @@ public sealed partial class AbilityRunner
         }
         int seat = Seat(player, cast);
         ulong bit = PlayerSeat(seat);
-        bool destinationIsCurrent = Forms.In(
-            cast.World, cast.World.Seats[seat], cast.World.Facts,
-            Word(node.Require("to")));
+        bool destinationIsCurrent = AlreadyInForm(change, cast);
         return reachability with
         {
             FormsMayChange = destinationIsCurrent

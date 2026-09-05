@@ -1646,19 +1646,30 @@ public sealed partial class ActionAbilityTests
     }
 
     private static Marvel.Cards.Run.AbilityRunner FormConditionalVillainGrantRunner(
-        bool repeated)
+        bool repeated, bool includeIdentityDamage = false)
     {
-        const string sequence = """
+        string changingPlayer = includeIdentityDamage ? "firstPlayer" : "you";
+        string identityDamage = includeIdentityDamage
+            ? """, { "dealDamage": { "cards": "you", "amount": 1 } }"""
+            : string.Empty;
+        string sequence = $$"""
             { "seq": [
-              { "changeForm": { "player": "you", "to": "alter-ego" } },
+              { "changeForm": { "player": "{{changingPlayer}}", "to": "alter-ego" } },
               { "dealDamage": {
                 "cards": { "query": "villain" }, "amount": 100
               } },
               { "dealDamage": {
                 "cards": { "query": "villain" }, "amount": 1
-              } }
+              } }{{identityDamage}}
             ] }
             """;
+        if (includeIdentityDamage)
+        {
+            sequence = $$"""
+                { "if": { "test": { "inForm": { "player": "firstPlayer", "form": "hero" } },
+                  "then": {{sequence}}, "else": { "heal": { "card": "you", "amount": 1 } } } }
+                """;
+        }
         string effect = repeated
             ? $$"""{ "eachPlayer": { "effect": {{sequence}} } }"""
             : $$"""

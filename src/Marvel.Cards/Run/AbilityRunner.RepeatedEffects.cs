@@ -1034,10 +1034,11 @@ public sealed partial class AbilityRunner
     {
         if (node.Kind == "changeForm")
         {
+            var change = FormChangeOf(node, cast);
             return [new DamageTransfer(
                 0, 0, 0,
-                ChangesForm: Seat(node.Require("player"), cast),
-                Form: Word(node.Require("to")))];
+                ChangesForm: Seat(change.Player, cast),
+                Form: change.Form)];
         }
         if (node.Kind is "dealDamage" or "indirectDamage")
         {

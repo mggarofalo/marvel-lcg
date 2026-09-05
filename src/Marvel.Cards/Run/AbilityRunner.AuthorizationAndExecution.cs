@@ -361,14 +361,6 @@ public sealed partial class AbilityRunner
                 cast.Suspend();
                 break;
 
-            case "changeForm":
-                ChangeForm(node, cast);
-                break;
-
-            case "advanceMainScheme":
-                AdvanceMainScheme(node, cast);
-                break;
-
             case "choose":
             case "chooseCard":
                 Choose(node, cast);

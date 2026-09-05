@@ -54,7 +54,7 @@ public sealed partial class AbilityRunner
         "dealAttackDamage" => DamageTargets(node.Require("cards"), cast).Count > 0,
         "placeThreat" => Every(node.Require("scheme"), cast).Count > 0,
         "placeAccelerationToken" => cast.World.TheCardIn(DeckType.MainSchemesArea) is not null,
-        "advanceMainScheme" => CanAdvanceMainScheme(node, cast),
+        "advanceMainScheme" => CanAdvanceMainScheme(cast),
         "removeThreat" => Find(node.Require("scheme"), cast) is not null,
         "enemyAttacks" or "enemySchemes" => Every(ActivationOf(node, cast).Enemies, cast).Count > 0,
         "putIntoPlay" => Find(node.Require("card"), cast) is not null,
@@ -575,7 +575,7 @@ public sealed partial class AbilityRunner
         "not" => PriorStepCanChange(Tree(test.Argument), cast),
         "inForm" => cast.PriorBindingMayChange
                 && BindingCanChange(test.Argument)
-            || FormSeats(test.Require("player"), cast)
+            || Seats(test.Require("player"), cast)
                 .Any(seat => SeatMayChange(cast.PriorFormsMayChange, seat)),
         _ => cast.PriorStepMayMutate,
     };
@@ -591,9 +591,13 @@ public sealed partial class AbilityRunner
         }
         if (node.Kind == "changeForm")
         {
-            string destination = Word(node.Require("to"));
-            var player = node.Require("player");
-            var seats = FormSeats(player, cast, bindingMayChange).ToList();
+            var change = FormChangeOf(node, cast);
+            string destination = change.Form;
+            var player = change.Player;
+            bool canChangePlayer = player == AbilityPlayer.ChosenPlayer;
+            var seats = bindingMayChange && canChangePlayer
+                ? cast.World.PlayerOrder.ToList()
+                : [Seat(player, cast)];
             ulong ChangeOne(ulong state, int seat)
             {
                 ulong bit = PlayerSeat(seat);
@@ -603,7 +607,7 @@ public sealed partial class AbilityRunner
                     ? state & ~bit
                     : state | bit;
             }
-            if (bindingMayChange && BindingCanChange(player))
+            if (bindingMayChange && canChangePlayer)
             {
                 return seats.Aggregate(0UL, (possible, seat) =>
                     possible | ChangeOne(before, seat));
@@ -691,12 +695,6 @@ public sealed partial class AbilityRunner
             cast.SetPriorFormsMayChange(outer);
         }
     }
-
-    private static IEnumerable<int> FormSeats(
-        AbilityValue value, Cast cast, bool bindingMayChange = false) =>
-        bindingMayChange && BindingCanChange(value)
-            ? cast.World.PlayerOrder
-            : Seats(value, cast);
 
     private static IEnumerable<IReadOnlyList<int>> PlayerPermutations(
         List<int> players)
