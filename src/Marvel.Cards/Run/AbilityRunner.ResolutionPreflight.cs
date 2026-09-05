@@ -27,7 +27,7 @@ public sealed partial class AbilityRunner
                 _ => true,
             },
             "defense" => CanPartiallyResolve(Tree(node.Require("effect")), cast),
-            "forEach" => Amount(node.Require("count"), cast) > 0
+            "forEach" => ForEachCount(node, cast) > 0
                 && CanPartiallyResolve(Tree(node.Require("effect")), cast),
             "choose" => Nodes(node.Require("options")).Any(option => OptionIsLegal(option, cast)),
             "chooseCard" => LegalCardChoices(node, cast).Count > 0,
@@ -463,7 +463,7 @@ public sealed partial class AbilityRunner
             long? count = countWillBind ? null : ForEachCount(node, cast);
             if (!countWillBind
                 && (stateMayChange || bindingMayChange || cast.PaymentMayMutate)
-                && AmountMayChange(node.Require("count")))
+                && AmountMayChange(ForEachOf(node, cast).Count))
             {
                 throw new RulesNotImplementedException(
                     $"'{cast.Source.FaceId}' reaches a for-each count after state may change");

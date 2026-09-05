@@ -26,7 +26,7 @@ public sealed partial class AbilityRunner
         },
         "choose" => Nodes(node.Require("options")).Any(option => OptionIsLegal(option, cast)),
         "chooseCard" => LegalCardChoices(node, cast).Count > 0,
-        "forEach" => Amount(node.Require("count"), cast) <= 0
+        "forEach" => ForEachCount(node, cast) <= 0
             || HasRequiredTargets(Tree(node.Require("effect")), cast),
         "eachTime" => true,
         "removeFromGame" or "exhaust" or "reveal" or "returnToHand" =>
@@ -1339,7 +1339,7 @@ public sealed partial class AbilityRunner
             "if" => node.Field(Test(Tree(node.Require("test")), cast) ? "then" : "else")
                 is { } branch
                 && CrisisIgnoringRemovalCanAffectBound(Tree(branch), cast, scheme),
-            "forEach" => Amount(node.Require("count"), cast) > 0
+            "forEach" => ForEachCount(node, cast) > 0
                 && CrisisIgnoringRemovalCanAffectBound(
                     Tree(node.Require("effect")), cast, scheme),
             "choose" => Nodes(node.Require("options")).Any(option =>
@@ -1432,7 +1432,7 @@ public sealed partial class AbilityRunner
                         Tree(node.Require("otherwise")), cast, bindingMayChange)
                     : TargetLegalityOf(
                         Tree(node.Require("effect")), cast, bindingMayChange),
-            "forEach" => Amount(node.Require("count"), cast) <= 0
+            "forEach" => ForEachCount(node, cast) <= 0
                 ? TargetLegality.None
                 : TargetLegalityOf(
                     Tree(node.Require("effect")), cast, bindingMayChange),
@@ -1659,7 +1659,7 @@ public sealed partial class AbilityRunner
     private static bool CanInitiateForEach(AbilityNode node, Cast cast)
     {
         bool stateMayChange = cast.PaymentMayMutate || cast.PriorStepMayMutate;
-        if (stateMayChange && AmountMayChange(node.Require("count")))
+        if (stateMayChange && AmountMayChange(ForEachOf(node, cast).Count))
         {
             throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' reaches a for-each count after state may change");
@@ -1715,7 +1715,7 @@ public sealed partial class AbilityRunner
     private static bool CanInitiateEachTime(AbilityNode node, Cast cast)
     {
         var preceding = EachTimePreceding(node, cast);
-        var authoredCount = preceding.Require("count");
+        var authoredCount = preceding.Count;
         if ((cast.PaymentMayMutate || cast.PriorStepMayMutate)
             && AmountMayChange(authoredCount))
         {
@@ -1756,25 +1756,17 @@ public sealed partial class AbilityRunner
         };
     }
 
-    private static bool ContainsPowerAmount(AbilityValue value) => value switch
-    {
-        AbilityValue.List list => list.Values.Any(ContainsPowerAmount),
-        AbilityValue.Map map => map.Entries.Any(entry =>
-            entry.Key == "powerAmount" || ContainsPowerAmount(entry.Value)),
-        _ => false,
-    };
-
     private static bool HasUnboundPowerAmount(AbilityNode node, Cast cast) =>
-        cast.PowerAmount < 0 && ContainsPowerAmount(node.Require("count"));
+        cast.PowerAmount < 0 && ContainsPowerAmount(ForEachOf(node, cast).Count);
 
-    private static bool ContainsMutableAmount(AbilityNode node) =>
+    private static bool ContainsMutableAmount(AbilityNode node, Cast cast) =>
         (node.Field("amount") is { } amount && AmountMayChange(amount))
-        || (node.Kind == "forEach" && AmountMayChange(node.Require("count")))
-        || ContinuationChildren(node).Any(ContainsMutableAmount);
+        || (node.Kind == "forEach" && AmountMayChange(ForEachOf(node, cast).Count))
+        || ContinuationChildren(node).Any(child => ContainsMutableAmount(child, cast));
 
     private static long ForEachCount(AbilityNode node, Cast cast)
     {
-        long count = Amount(node.Require("count"), cast);
+        long count = Amount(ForEachOf(node, cast).Count, cast);
         if (count < 0)
         {
             throw new AbilityException("'forEach' needs a non-negative 'count'");
@@ -1785,7 +1777,7 @@ public sealed partial class AbilityRunner
     private static bool SkipForEachPreflight(AbilityNode node, Cast cast)
     {
         if ((cast.PaymentMayMutate || cast.PriorStepMayMutate)
-            && AmountMayChange(node.Require("count")))
+            && AmountMayChange(ForEachOf(node, cast).Count))
         {
             throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' reaches a for-each count after state may change");
@@ -1809,7 +1801,7 @@ public sealed partial class AbilityRunner
         }
 
         long count = ForEachCount(node, cast);
-        return !AmountMayChange(node.Require("count")) && count == 0;
+        return !AmountMayChange(ForEachOf(node, cast).Count) && count == 0;
     }
 
     private static bool CurrentlyZeroForEach(AbilityNode node, Cast cast)
@@ -1819,7 +1811,7 @@ public sealed partial class AbilityRunner
             return false;
         }
         if ((cast.PaymentMayMutate || cast.PriorStepMayMutate)
-            && AmountMayChange(node.Require("count")))
+            && AmountMayChange(ForEachOf(node, cast).Count))
         {
             return false;
         }

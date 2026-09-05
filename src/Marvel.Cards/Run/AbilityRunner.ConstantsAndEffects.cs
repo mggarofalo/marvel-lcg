@@ -846,11 +846,8 @@ public sealed partial class AbilityRunner
     /// </remarks>
     private static void ForEach(AbilityNode node, Cast cast)
     {
-        long count = Amount(node.Require("count"), cast);
-        if (count < 0)
-        {
-            throw new AbilityException("'forEach' needs a non-negative 'count'");
-        }
+        var instruction = ForEachOf(node, cast);
+        long count = ForEachCount(node, cast);
         if (count == 0)
         {
             return;
@@ -859,7 +856,7 @@ public sealed partial class AbilityRunner
         var effect = Tree(node.Require("effect"));
         if (!Choices(effect).Any())
         {
-            switch (((AbilityRunner)cast.Abilities).CompiledEffect(effect))
+            switch (instruction.Effect)
             {
                 case AbilityEffect.Damage damage:
                     if (DamageTargets(damage.Cards, cast).Count != 1)
@@ -914,7 +911,7 @@ public sealed partial class AbilityRunner
     private static void EachTime(AbilityNode node, Cast cast)
     {
         var preceding = EachTimePreceding(node, cast);
-        long requested = Amount(preceding.Require("count"), cast);
+        long requested = Amount(preceding.Count, cast);
         if (requested < 0)
         {
             throw new AbilityException("'eachTime' needs a non-negative discard count");
@@ -931,14 +928,16 @@ public sealed partial class AbilityRunner
         ContinueEachTime(node, cast, from: 0, Math.Min(requested, available));
     }
 
-    private static AbilityNode EachTimePreceding(AbilityNode node, Cast cast)
+    private static AbilityEffect.ForEach ForEachOf(AbilityNode node, Cast cast) =>
+        (AbilityEffect.ForEach)((AbilityRunner)cast.Abilities).CompiledEffect(node);
+
+    private static AbilityEffect.EachTime EachTimeOf(AbilityNode node, Cast cast) =>
+        (AbilityEffect.EachTime)((AbilityRunner)cast.Abilities).CompiledEffect(node);
+
+    private static AbilityEffect.DiscardTop EachTimePreceding(AbilityNode node, Cast cast)
     {
-        var preceding = Tree(node.Require("effect"));
-        if (preceding.Kind != "discardTop"
-            || preceding.Field("player") is not null
-            || !string.Equals(
-                Word(preceding.Require("from")), "encounterDeck",
-                StringComparison.Ordinal))
+        if (EachTimeOf(node, cast).Effect is not AbilityEffect.DiscardTop
+            { From: AbilitySearchArea.EncounterDeck, Players: null } preceding)
         {
             throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' uses each-time around an unsupported preceding effect");
@@ -1007,7 +1006,7 @@ public sealed partial class AbilityRunner
         }
         if (node.Kind == "forEach")
         {
-            if (AmountMayChange(node.Require("count")))
+            if (AmountMayChange(ForEachOf(node, cast).Count))
             {
                 return DelayedNeedsContinuationAddress(
                     Tree(node.Require("effect")), cast, hasContinuation: true);
@@ -1019,17 +1018,13 @@ public sealed partial class AbilityRunner
         }
         if (node.Kind == "eachTime")
         {
-            var preceding = Tree(node.Require("effect"));
-            if (preceding.Kind != "discardTop"
-                || preceding.Field("player") is not null
-                || !string.Equals(
-                    Word(preceding.Require("from")), "encounterDeck",
-                    StringComparison.Ordinal))
+            if (EachTimeOf(node, cast).Effect is not AbilityEffect.DiscardTop
+                { From: AbilitySearchArea.EncounterDeck, Players: null } preceding)
             {
                 return true;
             }
 
-            var requested = preceding.Require("count");
+            var requested = preceding.Count;
             if (AmountMayChange(requested))
             {
                 return true;
@@ -1054,6 +1049,7 @@ public sealed partial class AbilityRunner
     private static void ContinueEachTime(
         AbilityNode node, Cast cast, long from, long count)
     {
+        var instruction = EachTimeOf(node, cast);
         bool outerContinuation = cast.HasContinuation;
         for (long iteration = from; iteration < count; iteration++)
         {
@@ -1066,7 +1062,7 @@ public sealed partial class AbilityRunner
             cast.Discarded.Add(discarded);
             cast.BindAlteration(discarded);
 
-            if (!Test(Tree(node.Require("when")), cast))
+            if (!Test(instruction.When, cast))
             {
                 continue;
             }

@@ -942,7 +942,7 @@ public sealed partial class AbilityRunner
         if (node.Kind == "forEach")
         {
             long count = ForEachCount(node, cast);
-            if (AmountMayChange(node.Require("count")))
+            if (AmountMayChange(ForEachOf(node, cast).Count))
             {
                 throw new RulesNotImplementedException(
                     $"'{cast.Source.FaceId}' has a for-each count that can change "
@@ -952,7 +952,7 @@ public sealed partial class AbilityRunner
             {
                 return [[]];
             }
-            if (ContainsMutableAmount(Tree(node.Require("effect"))))
+            if (ContainsMutableAmount(Tree(node.Require("effect")), cast))
             {
                 throw new RulesNotImplementedException(
                     $"'{cast.Source.FaceId}' has a for-each amount that can change "
@@ -1821,7 +1821,7 @@ public sealed partial class AbilityRunner
         {
             "choose" => amounts.DefaultIfEmpty(0).Max(),
             "forEach" => SaturatingMultiply(
-                amounts.SingleOrDefault(), Amount(node.Require("count"), cast)),
+                amounts.SingleOrDefault(), ForEachCount(node, cast)),
             _ => SaturatingSum(0, amounts),
         };
         return SaturatingSum(own, [descendants]);

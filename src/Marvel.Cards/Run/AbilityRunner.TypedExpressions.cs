@@ -6,6 +6,50 @@ namespace Marvel.Cards.Run;
 
 public sealed partial class AbilityRunner
 {
+    private static bool AmountMayChange(AbilityNumber number) => number switch
+    {
+        AbilityNumber.Constant or AbilityNumber.PerPlayer => false,
+        AbilityNumber.ResolutionValue { Kind: AbilityResolutionNumber.PowerAmount } => false,
+        AbilityNumber.Sum sum => sum.Operands.Any(AmountMayChange),
+        AbilityNumber.Product product => product.Operands.Any(AmountMayChange),
+        AbilityNumber.Minimum minimum => minimum.Operands.Any(AmountMayChange),
+        AbilityNumber.Result or AbilityNumber.CardValue or AbilityNumber.Counters
+            or AbilityNumber.Modified or AbilityNumber.Count or AbilityNumber.Conditional
+            or AbilityNumber.PrintedResourcesDiscarded or AbilityNumber.DiscardedWithResource
+            or AbilityNumber.ResolutionValue => true,
+        _ => throw new InvalidOperationException("Unknown compiled number in mutation analysis"),
+    };
+
+    private static bool ContainsPowerAmount(AbilityNumber number) => number switch
+    {
+        AbilityNumber.ResolutionValue value => value.Kind == AbilityResolutionNumber.PowerAmount,
+        AbilityNumber.Sum sum => sum.Operands.Any(ContainsPowerAmount),
+        AbilityNumber.Product product => product.Operands.Any(ContainsPowerAmount),
+        AbilityNumber.Minimum minimum => minimum.Operands.Any(ContainsPowerAmount),
+        AbilityNumber.Conditional conditional => ContainsPowerAmount(conditional.Test)
+            || ContainsPowerAmount(conditional.Then) || ContainsPowerAmount(conditional.Else),
+        AbilityNumber.Constant or AbilityNumber.PerPlayer or AbilityNumber.Result
+            or AbilityNumber.CardValue or AbilityNumber.Counters or AbilityNumber.Modified
+            or AbilityNumber.Count or AbilityNumber.PrintedResourcesDiscarded
+            or AbilityNumber.DiscardedWithResource => false,
+        _ => throw new InvalidOperationException("Unknown compiled number in power-binding analysis"),
+    };
+
+    private static bool ContainsPowerAmount(AbilityCondition condition) => condition switch
+    {
+        AbilityCondition.All all => all.Operands.Any(ContainsPowerAmount),
+        AbilityCondition.Any any => any.Operands.Any(ContainsPowerAmount),
+        AbilityCondition.Negated negated => ContainsPowerAmount(negated.Operand),
+        AbilityCondition.AtLeast comparison => ContainsPowerAmount(comparison.Value)
+            || ContainsPowerAmount(comparison.Count),
+        AbilityCondition.Flag or AbilityCondition.PaidWithResource or AbilityCondition.DiscardedWithResource
+            or AbilityCondition.CausedThreat or AbilityCondition.Exists or AbilityCondition.LegalPractice
+            or AbilityCondition.AutomaticThwart or AbilityCondition.TitleInPlay or AbilityCondition.InForm
+            or AbilityCondition.ActivationIs or AbilityCondition.CardText or AbilityCondition.IsKind
+            or AbilityCondition.WasDefeated or AbilityCondition.IsYourIdentity => false,
+        _ => throw new InvalidOperationException("Unknown compiled condition in power-binding analysis"),
+    };
+
     private bool WhenHolds(CardAbility ability, Cast cast) =>
         WhenHolds(compiledAbilities[ability], cast);
 

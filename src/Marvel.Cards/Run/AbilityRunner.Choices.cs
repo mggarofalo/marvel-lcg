@@ -1256,7 +1256,7 @@ public sealed partial class AbilityRunner
             {
                 cast.BindAlteration(card);
                 var body = Tree(eachTime.Require("then"));
-                if (Test(Tree(eachTime.Require("when")), cast)
+                if (Test(EachTimeOf(eachTime, cast).When, cast)
                     && ActiveChoices(body, cast).Any()
                     && CanInitiate(body, cast))
                 {
