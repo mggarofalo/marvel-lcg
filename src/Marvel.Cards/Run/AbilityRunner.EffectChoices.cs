@@ -144,10 +144,10 @@ public sealed partial class AbilityRunner
     /// assigns everything before resolving any of it.
     /// </para>
     /// </remarks>
-    private static void Indirect(AbilityNode node, Cast cast)
+    private static void Indirect(AbilityEffect.IndirectDamage damage, AbilityNode node, Cast cast)
     {
-        long amount = Amount(node.Require("amount"), cast);
-        var eligible = Assignable(node.Require("among"), cast);
+        long amount = Amount(damage.Amount, cast);
+        var eligible = Assignable(damage.Among, cast);
 
         if (amount <= 0 || eligible.Count == 0)
         {
@@ -174,14 +174,26 @@ public sealed partial class AbilityRunner
     /// would not defeat it.
     /// </remarks>
     private static List<Card> Assignable(AbilityValue among, Cast cast) =>
+        Assignable(Every(among, cast), cast);
+
+    private static IReadOnlyList<Card> DamageTargets(AbilityValue targets, Cast cast) =>
+        DamageTargets(Every(targets, cast), cast);
+
+    private static List<Card> Assignable(AbilityCardSelection among, Cast cast) =>
+        Assignable(Every(among, cast), cast);
+
+    private static List<Card> Assignable(IReadOnlyList<Card> among, Cast cast) =>
     [
-        .. Every(among, cast).Where(card =>
+        .. among.Where(card =>
             Room(cast, card) > 0
             && cast.Abilities.CanTakeDamage(cast.World, card, cast.Source)),
     ];
 
-    private static IReadOnlyList<Card> DamageTargets(AbilityValue targets, Cast cast) =>
-        [.. Every(targets, cast).Where(target =>
+    private static IReadOnlyList<Card> DamageTargets(AbilityCardSelection targets, Cast cast) =>
+        DamageTargets(Every(targets, cast), cast);
+
+    private static IReadOnlyList<Card> DamageTargets(IReadOnlyList<Card> targets, Cast cast) =>
+        [.. targets.Where(target =>
             cast.Abilities.CanTakeDamage(cast.World, target, cast.Source))];
 
     /// <summary>How much indirect damage one character may be assigned.</summary>
@@ -251,13 +263,13 @@ public sealed partial class AbilityRunner
     /// of the same moment. A card that wrote to <c>k_damage</c> would skip
     /// both and leave a defeated character standing.
     /// </remarks>
-    private static void DealDamage(AbilityNode node, Cast cast, long multiplier = 1)
+    private static void DealDamage(AbilityEffect.Damage damage, AbilityNode node, Cast cast, long multiplier = 1)
     {
         long amount = ModifiedAbilityDamage(SaturatingMultiply(
-            Amount(node.Require("amount"), cast), multiplier), cast);
-        string verb = node.Field("attack") is null ? "Deal_Damage" : "Attack";
+            Amount(damage.Amount, cast), multiplier), cast);
+        string verb = damage.AttackVerb ? "Attack" : "Deal_Damage";
         bool suspended = false;
-        foreach (var target in Every(node.Require("cards"), cast))
+        foreach (var target in Every(damage.Cards, cast))
         {
             long before = target.Damage;
             suspended |= Damage.DealOutcome(
@@ -282,15 +294,15 @@ public sealed partial class AbilityRunner
             : amount;
     }
 
-    private static void MoveDamage(AbilityNode node, Cast cast)
+    private static void MoveDamage(AbilityEffect.MoveDamage movement, AbilityNode node, Cast cast)
     {
-        var from = Find(node.Require("from"), cast)
+        var from = Find(movement.From, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' cannot find the character damage moves from");
-        var to = Find(node.Require("to"), cast)
+        var to = Find(movement.To, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' cannot find the enemy damage moves to");
-        long amount = Math.Min(from.Damage, Amount(node.Require("amount"), cast));
+        long amount = Math.Min(from.Damage, Amount(movement.Amount, cast));
         if (amount <= 0 || !cast.Abilities.CanTakeDamage(cast.World, to, cast.Source))
         {
             return;
@@ -308,13 +320,13 @@ public sealed partial class AbilityRunner
     }
 
     /// <summary>Damage from an attack event performed by the resolving identity.</summary>
-    private static void DealAttackDamage(AbilityNode node, Cast cast)
+    private static void DealAttackDamage(AbilityEffect.AttackDamage damage, AbilityNode node, Cast cast)
     {
         var attacker = cast.PowerActor
             ?? cast.AbilityActor
             ?? cast.World.Seats[Resolver(cast)].IdentityCard;
         ContinuousEffect? temporaryOverkill = null;
-        if (node.Field("overkill") is not null)
+        if (damage.Overkill)
         {
             temporaryOverkill = new ContinuousEffect(
                 EffectSource.LastingEffect,
@@ -328,11 +340,11 @@ public sealed partial class AbilityRunner
 
         var attackModifiers = EventModifierEffects(cast, "attackDamage");
         long amount = SaturatingSum(
-            Amount(node.Require("amount"), cast),
+            Amount(damage.Amount, cast),
             [EventModifier(cast, "eventDamage"),
              SaturatingSum(0, attackModifiers.Select(effect => effect.Amount))]);
         bool suspended = false;
-        foreach (var target in DamageTargets(node.Require("cards"), cast))
+        foreach (var target in DamageTargets(damage.Cards, cast))
         {
             var damaged = Damage.Attack(
                 cast.World, cast.World.Facts, attacker, cast.Source, target,
@@ -365,16 +377,16 @@ public sealed partial class AbilityRunner
         }
     }
 
-    private static void MoveAttackDamage(AbilityNode node, Cast cast)
+    private static void MoveAttackDamage(AbilityEffect.MoveDamage movement, AbilityNode node, Cast cast)
     {
-        var from = Find(node.Require("from"), cast)
+        var from = Find(movement.From, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' cannot find the character damage moves from");
-        var to = Find(node.Require("to"), cast)
+        var to = Find(movement.To, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' cannot find the enemy damage moves to");
         cast.Attacked.Add(to);
-        long amount = Math.Min(from.Damage, Amount(node.Require("amount"), cast));
+        long amount = Math.Min(from.Damage, Amount(movement.Amount, cast));
         if (amount <= 0 || !cast.Abilities.CanTakeDamage(cast.World, to, cast.Source))
         {
             return;
@@ -508,12 +520,12 @@ public sealed partial class AbilityRunner
     /// a main scheme's target completes it whatever put it there, and a card
     /// placing threat is one of the things that can.
     /// </remarks>
-    private static void PlaceThreat(AbilityNode node, Cast cast)
+    private static void PlaceThreat(AbilityEffect.PlaceThreat threat, Cast cast)
     {
         // "On each side scheme" and "here" are the same node with a different
         // query: `Every` answers one card or many, so a card that names one
         // scheme and a card that names all of them read alike.
-        var schemes = Every(node.Require("scheme"), cast);
+        var schemes = Every(threat.Schemes, cast);
         if (schemes.Count == 0)
         {
             // The ability has initiated, but its named game element can leave
@@ -523,7 +535,7 @@ public sealed partial class AbilityRunner
             return;
         }
 
-        long amount = Amount(node.Require("amount"), cast);
+        long amount = Amount(threat.Amount, cast);
         if (amount <= 0)
         {
             return;
@@ -551,13 +563,13 @@ public sealed partial class AbilityRunner
         placement.Prevent(Amount(prevention.Amount, cast));
     }
 
-    private static void ReplaceThreatWithDamage(AbilityNode node, Cast cast)
+    private static void ReplaceThreatWithDamage(AbilityCardSelection card, AbilityNode node, Cast cast)
     {
         var placement = cast.Occurrence.Threat
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would replace threat that is not imminent");
         long damage = placement.Remaining;
-        var target = Find(node.Require("card"), cast)
+        var target = Find(card, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' replaces threat with damage to a card that is not there");
         placement.Replace();
@@ -570,9 +582,9 @@ public sealed partial class AbilityRunner
         }
     }
 
-    private static void RemoveThreat(AbilityNode node, Cast cast, long multiplier = 1)
+    private static void RemoveThreat(AbilityEffect.RemoveThreat removal, Cast cast, long multiplier = 1)
     {
-        var schemes = Every(node.Require("scheme"), cast);
+        var schemes = Every(removal.Schemes, cast);
         if (schemes.Count == 0)
         {
             throw new RulesNotImplementedException(
@@ -584,7 +596,7 @@ public sealed partial class AbilityRunner
             // `rr:crisis-icon.1`: player cards cannot remove threat from the main
             // scheme while a crisis icon is in play. Encounter effects are not
             // player cards and remain able to do so.
-            if (!IgnoresCrisis(node)
+            if (!removal.IgnoresCrisis
                 && scheme.Area.Type == DeckType.MainSchemesArea
                 && IsPlayerCard(cast)
                 && MainScheme.Crisis(cast.World, cast.World.Facts))
@@ -598,13 +610,14 @@ public sealed partial class AbilityRunner
                 cast.Abilities,
                 scheme,
                 SaturatingSum(
-                    SaturatingMultiply(Amount(node.Require("amount"), cast), multiplier),
+                    SaturatingMultiply(Amount(removal.Amount, cast), multiplier),
                     [EventModifier(cast, "eventThreatRemoval")]),
                 cast.Trigger,
                 "Remove_Threat",
                 cast.Events,
                 by: Resolver(cast),
-                overridesCannotFrom: OverriddenThreatRemovalSource(node, cast));
+                overridesCannotFrom: removal.OverridesCannotFrom is { } source
+                    ? Find(source, cast)?.ObjectId ?? -1 : -1);
         }
     }
 

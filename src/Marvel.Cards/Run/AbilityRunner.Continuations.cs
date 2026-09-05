@@ -232,7 +232,8 @@ public sealed partial class AbilityRunner
         if (IsChoice(node))
         {
             if (node.Kind != "indirectDamage"
-                || Assignable(node.Require("among"), cast).Count > 1)
+                || Assignable(((AbilityEffect.IndirectDamage)
+                    ((AbilityRunner)cast.Abilities).CompiledEffect(node)).Among, cast).Count > 1)
             {
                 yield return node;
             }

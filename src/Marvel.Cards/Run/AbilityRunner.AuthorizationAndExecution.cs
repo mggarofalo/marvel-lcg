@@ -274,7 +274,9 @@ public sealed partial class AbilityRunner
         var agendaOwner = cast.World.Agenda.Current;
         var agendaOccurrence = cast.World.Agenda.Occurrence;
         var healthBefore = cast.World.Effects.CaptureCharacterHealth();
-        if (!TryRunImmediateEffect(((AbilityRunner)cast.Abilities).CompiledEffect(node), cast))
+        var instruction = ((AbilityRunner)cast.Abilities).CompiledEffect(node);
+        if (!TryRunImmediateEffect(instruction, cast)
+            && !TryRunDamageAndThreat(instruction, node, cast))
         {
             RunRemainingEffect(node, cast);
         }
@@ -360,10 +362,6 @@ public sealed partial class AbilityRunner
 
             case "removeFromGame":
                 RemoveFromGame(node, cast);
-                break;
-
-            case "soakDamage":
-                Soak(node, cast);
                 break;
 
             case "advanceMainScheme":
@@ -570,26 +568,6 @@ public sealed partial class AbilityRunner
                 Discard(node, cast);
                 break;
 
-            case "indirectDamage":
-                Indirect(node, cast);
-                break;
-
-            case "dealDamage":
-                DealDamage(node, cast);
-                break;
-
-            case "moveDamage":
-                MoveDamage(node, cast);
-                break;
-
-            case "dealAttackDamage":
-                DealAttackDamage(node, cast);
-                break;
-
-            case "moveAttackDamage":
-                MoveAttackDamage(node, cast);
-                break;
-
             case "attack":
                 ((AbilityRunner)cast.Abilities).SchedulePower(node, cast, BasicPowers.AttackVerb);
                 break;
@@ -622,18 +600,6 @@ public sealed partial class AbilityRunner
                         Tree(node.Require("power")), cast, BasicPowers.ThwartVerb,
                         schemes[0], schemes, -1);
                 }
-                break;
-
-            case "placeThreat":
-                PlaceThreat(node, cast);
-                break;
-
-            case "replaceThreatWithDamage":
-                ReplaceThreatWithDamage(node, cast);
-                break;
-
-            case "removeThreat":
-                RemoveThreat(node, cast);
                 break;
 
             case "enemyAttacks":

@@ -353,9 +353,9 @@ public sealed partial class AbilityRunner
     /// the order can respond to it.
     /// </para>
     /// </remarks>
-    private static void Soak(AbilityNode node, Cast cast)
+    private static void Soak(AbilityCardSelection card, Cast cast)
     {
-        var onto = Find(node.Require("onto"), cast)
+        var onto = Find(card, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would soak damage onto a card that is not there");
 
@@ -868,26 +868,26 @@ public sealed partial class AbilityRunner
         var effect = Tree(node.Require("effect"));
         if (!Choices(effect).Any())
         {
-            switch (effect.Kind)
+            switch (((AbilityRunner)cast.Abilities).CompiledEffect(effect))
             {
-                case "dealDamage":
-                    if (DamageTargets(effect.Require("cards"), cast).Count != 1)
+                case AbilityEffect.Damage damage:
+                    if (DamageTargets(damage.Cards, cast).Count != 1)
                     {
                         throw new RulesNotImplementedException(
                             $"'{cast.Source.FaceId}' has a for-each damage effect without "
                             + "choose and does not resolve to one target");
                     }
-                    DealDamage(effect, cast, count);
+                    DealDamage(damage, effect, cast, count);
                     return;
 
-                case "removeThreat":
-                    if (Every(effect.Require("scheme"), cast).Count != 1)
+                case AbilityEffect.RemoveThreat removal:
+                    if (Every(removal.Schemes, cast).Count != 1)
                     {
                         throw new RulesNotImplementedException(
                             $"'{cast.Source.FaceId}' has a for-each threat-removal effect "
                             + "without choose and does not resolve to one target");
                     }
-                    RemoveThreat(effect, cast, count);
+                    RemoveThreat(removal, cast, count);
                     return;
             }
 

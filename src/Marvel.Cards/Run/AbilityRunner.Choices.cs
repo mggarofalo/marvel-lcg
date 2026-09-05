@@ -43,7 +43,7 @@ public sealed partial class AbilityRunner
 
         if (choice.Kind == "indirectDamage")
         {
-            return Sharing(source, player, choice, cast);
+            return Sharing(source, player, (AbilityEffect.IndirectDamage)CompiledEffect(choice), cast);
         }
 
         if (choice.Kind == "and")
@@ -462,10 +462,10 @@ public sealed partial class AbilityRunner
     /// rather than a target list.
     /// </remarks>
     private static Prompt Sharing(
-        Card source, int player, AbilityNode choice, Cast cast)
+        Card source, int player, AbilityEffect.IndirectDamage choice, Cast cast)
     {
-        long amount = Amount(choice.Require("amount"), cast);
-        var eligible = Assignable(choice.Require("among"), cast);
+        long amount = Amount(choice.Amount, cast);
+        var eligible = Assignable(choice.Among, cast);
 
         // `rr:indirect-damage.3.1` -- never more than would defeat a character,
         // so an assignment can be short of the amount when the table has less
@@ -486,7 +486,7 @@ public sealed partial class AbilityRunner
                     Verb: ChooseVerb,
                     AnchorId: source.ObjectId,
                     AnchorPlayer: World.Scenario,
-                    Label: choice.Kind,
+                    Label: "indirectDamage",
                     Targets: new TargetRequest(
                         Legal: [.. eligible.Select(card => card.ObjectId)],
                         Min: (int)share,
@@ -860,8 +860,9 @@ public sealed partial class AbilityRunner
 
         if (choice.Kind == "indirectDamage")
         {
-            var eligible = Assignable(choice.Require("among"), cast);
-            long amount = Amount(choice.Require("amount"), cast);
+            var damage = (AbilityEffect.IndirectDamage)CompiledEffect(choice);
+            var eligible = Assignable(damage.Among, cast);
+            long amount = Amount(damage.Amount, cast);
             long expected = Math.Min(amount, eligible.Sum(card => Room(cast, card)));
             if (input.Targets.Count != expected)
             {
