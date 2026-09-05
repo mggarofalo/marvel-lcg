@@ -1050,7 +1050,7 @@ public sealed partial class AbilityRunner
             foreach (var source in cast.World.Areas
                 .Where(area => DeckTypes.IsInPlay(area.Type))
                 .SelectMany(area => area.Cards)
-                .Where(card => authored.On(card).Any(ability =>
+                .Where(card => authored.CompiledOn(card).Any(ability =>
                     ability.Trigger.Timing == AbilityType.Constant)))
             {
                 sources.Add(source.ObjectId);

@@ -978,6 +978,37 @@ public sealed partial class ActionAbilityTests
         Assert.Equal(DeckType.SupportsArea, conditional!.Area.Type);
     }
 
+    [Fact]
+    public void UnprojectedConstantCountersAreAValidButUnsupportedSituation()
+    {
+        var runner = ConditionalVillainGrantRunner(false, """
+            {"seq":[
+              {"dealDamage":{"cards":{"query":"villain"},"amount":100}},
+              {"dealDamage":{"cards":{"query":"villain"},"amount":1}}
+            ]}
+            """, """
+            {"atLeast":{"value":{"countersOn":{"card":"this","counter":"condition"}},"count":1}}
+            """);
+        Card? source = null;
+        Card? conditional = null;
+        World? world = null;
+
+        // Engine choice: the counter expression is valid authored data, but
+        // this preview cannot project it. Refuse before paying or applying it.
+        var refused = Assert.Throws<RulesNotImplementedException>(() => Playing(board =>
+        {
+            world = board;
+            source = InPlay(board, AuthoredCards.AuntMay);
+            conditional = board.CreateCard("01092",
+                board.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+        }, hero: true, abilities: runner, scenario: "klaw"));
+
+        Assert.Contains("all-purpose counters", refused.Message, StringComparison.Ordinal);
+        Assert.True(source!.Ready);
+        Assert.Equal(0, conditional!.Tokens.GetValueOrDefault("c_condition"));
+        Assert.Equal(0, world!.TheCardIn(DeckType.VillainArea)!.Damage);
+    }
+
     [Rule("rr:ability.step.1")]
     [Rule("rr:villain-defeat.4")]
     [Rule("rr:labeled-ability.4")]

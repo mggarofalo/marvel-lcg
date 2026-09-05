@@ -468,7 +468,7 @@ public sealed partial class AbilityRunner
                     LeavePlay(cardId);
                 }
                 if (cast.Abilities is AbilityRunner runner
-                    && runner.On(next).Any(ability =>
+                    && runner.CompiledOn(next).Any(ability =>
                         ability.Trigger.Timing == AbilityType.Constant))
                 {
                     throw new RulesNotImplementedException(
@@ -1755,20 +1755,34 @@ public sealed partial class AbilityRunner
                         cast.World.Facts, cast.Source, card)))
             .ToList();
         string key = Word(node.Require("by"));
-        long Rank(Card card) => key switch
+        var rank = key switch
         {
-            "cost" => cast.World.Facts.PrintedValue(
-                card.FaceId, "Cost", cast.World.Players),
-            "attack" => TraceModified(
-                card, "attack", cast, discarded, modifiers),
-            "printedHealth" => FacedownDrones.BaseValue(
-                card, cast.World.Facts, "HP", cast.World.Players),
+            "cost" => AbilityCardRank.Cost,
+            "attack" => AbilityCardRank.Attack,
+            "printedHealth" => AbilityCardRank.PrintedHealth,
             _ => throw new AbilityException(
                 $"'{key}' is not a value cards can be ranked by"),
         };
-        long extreme = node.Kind == "minBy"
-            ? candidates.Min(Rank)
-            : candidates.Max(Rank);
+        return TraceRankedCandidatesInclude(candidates, candidate, rank,
+            maximum: node.Kind != "minBy", cast, discarded, modifiers);
+    }
+
+    private static bool TraceRankedCandidatesInclude(
+        List<Card> candidates, Card candidate, AbilityCardRank rank, bool maximum,
+        Cast cast, HashSet<int> discarded,
+        Dictionary<(int Card, string Field), long> modifiers)
+    {
+        long Rank(Card card) => rank switch
+        {
+            AbilityCardRank.Cost => cast.World.Facts.PrintedValue(
+                card.FaceId, "Cost", cast.World.Players),
+            AbilityCardRank.Attack => TraceModified(
+                card, "attack", cast, discarded, modifiers),
+            AbilityCardRank.PrintedHealth => FacedownDrones.BaseValue(
+                card, cast.World.Facts, "HP", cast.World.Players),
+            _ => throw new InvalidOperationException("Unknown compiled rank in a projected selector"),
+        };
+        long extreme = maximum ? candidates.Max(Rank) : candidates.Min(Rank);
         return Rank(candidate) == extreme;
     }
 
