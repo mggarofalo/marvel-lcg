@@ -956,6 +956,7 @@ public sealed partial class AbilityRunner
         "chooseCard" => CanInitiateChooseCard(node, cast),
         "choose" => CanInitiateChoice(node, cast),
         "draw" => CanInitiateDraw(node, cast),
+        "placeCounters" => CanInitiateCounters((AbilityEffect.PlaceCounters)node, cast),
         "thwartDifferentSchemes" => Every(EffectOf<AbilityEffect.ThwartGroup>(node, cast).Schemes, cast).Count > 0,
         "legalPractice" => cast.World.Seats[cast.Player].Hand.Cards.Any(card =>
                 card.ObjectId != cast.Source.ObjectId)
@@ -986,6 +987,35 @@ public sealed partial class AbilityRunner
                 && !cast.Reachability.PriorStepMayMutate,
         _ => true,
     };
+
+    private static bool CanInitiateCounters(AbilityEffect.PlaceCounters counters, Cast cast)
+    {
+        // Admit the reads before payment or preceding effects can change their
+        // candidates. Resolution computes the amount again; this is not a
+        // prediction of a result binding or of counters after payment.
+        if (BindingCanChange(counters.Count)
+            && (cast.Chosen is null || cast.Reachability.PriorBindingMayChange)
+            && cast.Reachability.PriorBindingCandidates.Count > 0)
+        {
+            foreach (var candidate in cast.Reachability.PriorBindingCandidates)
+            {
+                var probe = cast.ForReachability(cast.Reachability);
+                probe.ChooseSelection(candidate);
+                _ = Amount(counters.Count, probe);
+            }
+            if (cast.Reachability.PriorBindingMayBeEmpty)
+            {
+                var probe = cast.ForReachability(cast.Reachability);
+                probe.ChooseSelection(null);
+                _ = Amount(counters.Count, probe);
+            }
+        }
+        else
+        {
+            _ = Amount(counters.Count, cast);
+        }
+        return true;
+    }
 
     private static bool CanInitiateChooseCard(AbilityEffect node, Cast cast)
     {
@@ -1565,9 +1595,11 @@ public sealed partial class AbilityRunner
         || (node.OperationName() == "forEach" && AmountMayChange(ForEachOf(node, cast).Count))
         || ContinuationChildren(node).Any(child => ContainsMutableAmount(child, cast));
 
-    private static long ForEachCount(AbilityEffect node, Cast cast)
+    private static long ForEachCount(AbilityEffect node, Cast cast) =>
+        NonNegativeForEachCount(Amount(ForEachOf(node, cast).Count, cast));
+
+    private static long NonNegativeForEachCount(long count)
     {
-        long count = Amount(ForEachOf(node, cast).Count, cast);
         if (count < 0)
         {
             throw new AbilityException("'forEach' needs a non-negative 'count'");

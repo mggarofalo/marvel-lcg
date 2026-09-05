@@ -7,9 +7,15 @@ namespace Marvel.Cards.Run;
 
 internal sealed record AbilityQueryResult<T>(T Value, ImmutableArray<InformationKind> Information);
 
+// Preflight may refuse a single-card read if prior effects or payment can
+// change its candidates. This capability admits only an area-set query; it
+// exposes no runner, effect execution or continuation operation to the evaluator.
+internal delegate bool AbilitySingularAreaAdmission(IReadOnlySet<DeckType> areas);
+
 // One evaluation owns its observations. Nested selections share this local
 // collector; separate evaluations cannot change each other's bindings or output.
-internal sealed class AbilitySelectorEvaluation(AbilityQueryContext context)
+internal sealed class AbilitySelectorEvaluation(
+    AbilityQueryContext context, AbilitySingularAreaAdmission? admitSingularArea = null)
 {
     private readonly List<InformationKind> information = [];
 
@@ -35,6 +41,8 @@ internal sealed class AbilitySelectorEvaluation(AbilityQueryContext context)
             return AbilityCardQueries.Cards(query.Kind, context).SingleOrDefault();
         if (selector is AbilityCardSelection.InAreas areas)
         {
+            if (admitSingularArea is not null && !admitSingularArea(areas.Areas.Select(AreaType).ToHashSet()))
+                return null;
             var found = CardsIn(areas);
             return found.Count switch
             {

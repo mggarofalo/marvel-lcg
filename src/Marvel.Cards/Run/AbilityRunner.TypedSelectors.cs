@@ -17,32 +17,19 @@ public sealed partial class AbilityRunner
         _ => false,
     };
 
-    private static Card? Find(AbilityCardSelection selector, Cast cast, List<InformationKind>? information = null)
-    {
-        if (selector is AbilityCardSelection.InAreas areas && cast.Reachability.CheckingInitiation
-            && !SingularAreaQueryIsStable(areas.Areas.Select(AbilitySelectorEvaluation.AreaType).ToHashSet(), cast))
-            return null;
-        var evaluation = new AbilitySelectorEvaluation(cast.QueryContext());
-        return QueryValue(evaluation.Result(evaluation.Find(selector)), information);
-    }
+    private static AbilitySingularAreaAdmission? SingularAreaAdmission(Cast cast) =>
+        cast.Reachability.CheckingInitiation
+            ? areas => SingularAreaQueryIsStable(areas, cast)
+            : null;
 
-    private static IReadOnlyList<Card> Every(AbilityCardSelection selector, Cast cast, List<InformationKind>? information = null)
-    {
-        var evaluation = new AbilitySelectorEvaluation(cast.QueryContext());
-        return QueryValue(evaluation.Result(evaluation.Every(selector)), information);
-    }
+    private static Card? Find(AbilityCardSelection selector, Cast cast) =>
+        new AbilitySelectorEvaluation(cast.QueryContext(), SingularAreaAdmission(cast)).Find(selector);
 
-    private static bool CanRemoveByEffect(AbilityCardSelection selector, Cast cast, Card target)
-    {
-        var evaluation = new AbilitySelectorEvaluation(cast.QueryContext());
-        return evaluation.CanRemove(selector, target);
-    }
+    private static IReadOnlyList<Card> Every(AbilityCardSelection selector, Cast cast) =>
+        new AbilitySelectorEvaluation(cast.QueryContext()).Every(selector);
 
-    private static T QueryValue<T>(AbilityQueryResult<T> result, List<InformationKind>? information)
-    {
-        information?.AddRange(result.Information);
-        return result.Value;
-    }
+    private static bool CanRemoveByEffect(AbilityCardSelection selector, Cast cast, Card target) =>
+        new AbilitySelectorEvaluation(cast.QueryContext()).CanRemove(selector, target);
 
     private static Area Area(AbilitySearchArea area, Cast cast) => area switch
     {

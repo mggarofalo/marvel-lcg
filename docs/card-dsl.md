@@ -282,9 +282,22 @@ their resolution; agenda continuations capture the data needed to resume them.
 
 Card and selector evaluation uses `AbilityQueryContext`, which captures binding
 incarnations and ordered power targets while reading the board in place. The
-query services receive no event sink or execution continuation. A selector
-evaluation collects information observations as output. The live conditional
-effect records those observations; preview evaluation does not publish them.
+query services receive no event sink or execution continuation.
+`AbilityExpressionContext` also captures result bindings, discarded cards,
+payment and the current power amount. Numeric and predicate evaluation use
+these inputs through the concrete `AbilityExpressionEvaluation` collaborator.
+
+Each evaluation returns its information observations. Live effect consumers
+publish them when resolving a number, condition or card selection. Repetition
+counts and per-card alteration conditions use the same boundary. Legality,
+projection and prompt construction do not publish observations. Short-circuited
+branches neither read cards nor report exposure.
+
+Preflight can refuse a singular area lookup through a narrow admission policy.
+That policy receives only the requested area types. It cannot execute an effect
+through the evaluator. Counter-placement preflight admits its numeric reads
+before payment, using separate candidate bindings when an earlier choice is
+pending. Live resolution recomputes the amount from the resulting state.
 
 ## Costs and legality
 

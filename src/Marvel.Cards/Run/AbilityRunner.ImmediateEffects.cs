@@ -31,11 +31,11 @@ public sealed partial class AbilityRunner
 
             case AbilityEffect.PlaceCounters counters:
                 var counter = counters.Counter;
-                var counterCard = Find(counters.Card, cast)
+                var counterCard = ResolveCard(counters.Card, cast)
                     ?? throw new RulesNotImplementedException(
                         $"'{cast.Source.FaceId}' cannot find the card receiving counters");
                 long beforeCounters = counterCard.Tokens.GetValueOrDefault("c_" + counter);
-                long placedCounters = Amount(counters.Count, cast);
+                long placedCounters = ResolveAmount(counters.Count, cast);
                 if (placedCounters < 0)
                 {
                     throw new AbilityException("'placeCounters' needs a non-negative 'count'");
@@ -72,7 +72,7 @@ public sealed partial class AbilityRunner
             case AbilityEffect.DealEncounterCard deal:
                 Rules.Play.Deal.EncounterCard(
                     cast.World,
-                    Find(deal.Card, cast)
+                    ResolveCard(deal.Card, cast)
                         ?? throw new RulesNotImplementedException(
                             $"'{cast.Source.FaceId}' cannot find the encounter card to deal"),
                     Seat(deal.Player, cast),
@@ -97,7 +97,7 @@ public sealed partial class AbilityRunner
             case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.GiveAdditionalBoost } boost:
                 Attack.GiveAdditionalBoostCard(
                     cast.World,
-                    Find(boost.Selection, cast)
+                    ResolveCard(boost.Selection, cast)
                         ?? throw new AbilityException(
                             $"'{cast.Source.FaceId}' cannot find the enemy receiving an additional boost card"),
                     cast.Trigger,
@@ -110,7 +110,7 @@ public sealed partial class AbilityRunner
                 return true;
 
             case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.DeclareDefender } declare:
-                var declared = Find(declare.Selection, cast)
+                var declared = ResolveCard(declare.Selection, cast)
                     ?? throw new RulesNotImplementedException(
                         $"'{cast.Source.FaceId}' cannot find the character it declares as defender");
                 Attack.DeclareByAbility(
@@ -124,7 +124,7 @@ public sealed partial class AbilityRunner
                 {
                     cast.World.Effects.GrantToCharactersControlledBy(
                         cast.Source, Seat(grant.Player, cast), field,
-                        Amount(grant.Amount, cast),
+                        ResolveAmount(grant.Amount, cast),
                         grant.Until);
                 }
                 cast.ResolveEffect();
@@ -133,7 +133,7 @@ public sealed partial class AbilityRunner
             case AbilityEffect.ReduceNextCardCost reduction:
                 CardPlay.ReduceNextCardCost(
                     cast.World, cast.Source, Seat(reduction.Player, cast),
-                    Amount(reduction.Amount, cast));
+                    ResolveAmount(reduction.Amount, cast));
                 cast.ResolveEffect();
                 return true;
 

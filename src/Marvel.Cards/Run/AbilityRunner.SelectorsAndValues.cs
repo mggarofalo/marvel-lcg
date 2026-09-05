@@ -41,20 +41,4 @@ public sealed partial class AbilityRunner
 
     private static Card ChosenPlayer(Cast cast) =>
         AbilityCardQueries.ChosenPlayer(cast.QueryContext());
-
-    private static long StartingHealth(Card identity, Cast cast)
-    {
-        if (FacedownDrones.Kind(identity, cast.World.Facts)
-            is not (CardKind.Hero or CardKind.AlterEgo))
-        {
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' asks for starting hit points of "
-                + $"non-identity card {identity.ObjectId}");
-        }
-
-        return FacedownDrones.BaseValue(
-            identity, cast.World.Facts, "HP", cast.World.Players);
-    }
-
-
 }

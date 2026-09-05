@@ -109,9 +109,9 @@ public sealed partial class AbilityRunner
     /// </remarks>
     private static void Heal(AbilityEffect.Heal heal, Cast cast)
     {
-        long healed = Find(heal.Card, cast) is { } target
+        long healed = ResolveCard(heal.Card, cast) is { } target
             ? Damage.Heal(
-                cast.World, cast.World.Facts, target, Amount(heal.Amount, cast),
+                cast.World, cast.World.Facts, target, ResolveAmount(heal.Amount, cast),
                 cast.Trigger, "Heal", cast.Events)
             : 0;
 
@@ -146,8 +146,8 @@ public sealed partial class AbilityRunner
     /// </remarks>
     private static void Indirect(AbilityEffect.IndirectDamage damage, AbilityEffect node, Cast cast)
     {
-        long amount = Amount(damage.Amount, cast);
-        var eligible = Assignable(damage.Among, cast);
+        long amount = ResolveAmount(damage.Amount, cast);
+        var eligible = Assignable(ResolveCards(damage.Among, cast), cast);
 
         if (amount <= 0 || eligible.Count == 0)
         {
@@ -260,10 +260,10 @@ public sealed partial class AbilityRunner
     private static void DealDamage(AbilityEffect.Damage damage, AbilityEffect node, Cast cast, long multiplier = 1)
     {
         long amount = ModifiedAbilityDamage(SaturatingMultiply(
-            Amount(damage.Amount, cast), multiplier), cast);
+            ResolveAmount(damage.Amount, cast), multiplier), cast);
         string verb = damage.AttackVerb ? "Attack" : "Deal_Damage";
         bool suspended = false;
-        foreach (var target in Every(damage.Cards, cast))
+        foreach (var target in ResolveCards(damage.Cards, cast))
         {
             long before = target.Damage;
             suspended |= Damage.DealOutcome(
@@ -290,13 +290,13 @@ public sealed partial class AbilityRunner
 
     private static void MoveDamage(AbilityEffect.MoveDamage movement, AbilityEffect node, Cast cast)
     {
-        var from = Find(movement.From, cast)
+        var from = ResolveCard(movement.From, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' cannot find the character damage moves from");
-        var to = Find(movement.To, cast)
+        var to = ResolveCard(movement.To, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' cannot find the enemy damage moves to");
-        long amount = Math.Min(from.Damage, Amount(movement.Amount, cast));
+        long amount = Math.Min(from.Damage, ResolveAmount(movement.Amount, cast));
         if (amount <= 0 || !cast.Abilities.CanTakeDamage(cast.World, to, cast.Source))
         {
             return;
@@ -334,11 +334,11 @@ public sealed partial class AbilityRunner
 
         var attackModifiers = EventModifierEffects(cast, "attackDamage");
         long amount = SaturatingSum(
-            Amount(damage.Amount, cast),
+            ResolveAmount(damage.Amount, cast),
             [EventModifier(cast, "eventDamage"),
              SaturatingSum(0, attackModifiers.Select(effect => effect.Amount))]);
         bool suspended = false;
-        foreach (var target in DamageTargets(damage.Cards, cast))
+        foreach (var target in DamageTargets(ResolveCards(damage.Cards, cast), cast))
         {
             var damaged = Damage.Attack(
                 cast.World, cast.World.Facts, attacker, cast.Source, target,
@@ -373,14 +373,14 @@ public sealed partial class AbilityRunner
 
     private static void MoveAttackDamage(AbilityEffect.MoveDamage movement, AbilityEffect node, Cast cast)
     {
-        var from = Find(movement.From, cast)
+        var from = ResolveCard(movement.From, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' cannot find the character damage moves from");
-        var to = Find(movement.To, cast)
+        var to = ResolveCard(movement.To, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' cannot find the enemy damage moves to");
         cast.Attacked.Add(to);
-        long amount = Math.Min(from.Damage, Amount(movement.Amount, cast));
+        long amount = Math.Min(from.Damage, ResolveAmount(movement.Amount, cast));
         if (amount <= 0 || !cast.Abilities.CanTakeDamage(cast.World, to, cast.Source))
         {
             return;
@@ -414,7 +414,7 @@ public sealed partial class AbilityRunner
 
     private void SchedulePower(AbilityEffect node, Cast cast, string power)
     {
-        var target = Find(EffectOf<AbilityEffect.Power>(node, cast).Target!, cast)
+        var target = ResolveCard(EffectOf<AbilityEffect.Power>(node, cast).Target!, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' cannot find the target of its {power}");
         SchedulePower(node, cast, power, target, [target], -1);
@@ -519,7 +519,7 @@ public sealed partial class AbilityRunner
         // "On each side scheme" and "here" are the same node with a different
         // query: `Every` answers one card or many, so a card that names one
         // scheme and a card that names all of them read alike.
-        var schemes = Every(threat.Schemes, cast);
+        var schemes = ResolveCards(threat.Schemes, cast);
         if (schemes.Count == 0)
         {
             // The ability has initiated, but its named game element can leave
@@ -529,7 +529,7 @@ public sealed partial class AbilityRunner
             return;
         }
 
-        long amount = Amount(threat.Amount, cast);
+        long amount = ResolveAmount(threat.Amount, cast);
         if (amount <= 0)
         {
             return;
@@ -554,7 +554,7 @@ public sealed partial class AbilityRunner
         var placement = cast.ImminentThreat ?? cast.Occurrence.Threat
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would prevent threat that is not imminent");
-        placement.Prevent(Amount(prevention.Amount, cast));
+        placement.Prevent(ResolveAmount(prevention.Amount, cast));
     }
 
     private static void ReplaceThreatWithDamage(AbilityCardSelection card, AbilityEffect node, Cast cast)
@@ -563,7 +563,7 @@ public sealed partial class AbilityRunner
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would replace threat that is not imminent");
         long damage = placement.Remaining;
-        var target = Find(card, cast)
+        var target = ResolveCard(card, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' replaces threat with damage to a card that is not there");
         placement.Replace();
@@ -578,7 +578,7 @@ public sealed partial class AbilityRunner
 
     private static void RemoveThreat(AbilityEffect.RemoveThreat removal, Cast cast, long multiplier = 1)
     {
-        var schemes = Every(removal.Schemes, cast);
+        var schemes = ResolveCards(removal.Schemes, cast);
         if (schemes.Count == 0)
         {
             throw new RulesNotImplementedException(
@@ -604,14 +604,14 @@ public sealed partial class AbilityRunner
                 cast.Abilities,
                 scheme,
                 SaturatingSum(
-                    SaturatingMultiply(Amount(removal.Amount, cast), multiplier),
+                    SaturatingMultiply(ResolveAmount(removal.Amount, cast), multiplier),
                     [EventModifier(cast, "eventThreatRemoval")]),
                 cast.Trigger,
                 "Remove_Threat",
                 cast.Events,
                 by: Resolver(cast),
                 overridesCannotFrom: removal.OverridesCannotFrom is { } source
-                    ? Find(source, cast)?.ObjectId ?? -1 : -1);
+                    ? ResolveCard(source, cast)?.ObjectId ?? -1 : -1);
         }
     }
 
@@ -650,13 +650,13 @@ public sealed partial class AbilityRunner
     /// </remarks>
     private static void PlaceAtRandom(AbilityEffect.PlaceAtRandom placement, Cast cast)
     {
-        var host = Find(placement.Host, cast)
+        var host = ResolveCard(placement.Host, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' places cards on a card that is not there");
 
         var onto = cast.World.AreaOf(
             DeckType.UpgradesArea, host.Area.PlayArea, host.ObjectId, host.Area.CardOwner);
-        long count = Amount(placement.Count, cast);
+        long count = ResolveAmount(placement.Count, cast);
 
         foreach (int seat in Seats(placement.Players, cast))
         {
@@ -691,7 +691,7 @@ public sealed partial class AbilityRunner
     /// </remarks>
     private static void ReturnToHand(AbilityCardSelection selection, Cast cast)
     {
-        foreach (var card in Every(selection, cast))
+        foreach (var card in ResolveCards(selection, cast))
         {
             var from = card.Area;
             var hand = cast.World.Seats[card.Owner].Hand;
@@ -745,7 +745,7 @@ public sealed partial class AbilityRunner
     /// </remarks>
     private static void DiscardAtRandom(AbilityEffect.DiscardAtRandom discard, Cast cast)
     {
-        long count = Amount(discard.Count, cast);
+        long count = ResolveAmount(discard.Count, cast);
         var types = new SortedSet<char>();
         long discarded = 0;
 
@@ -807,7 +807,7 @@ public sealed partial class AbilityRunner
 
     private static void DiscardTop(AbilityEffect.DiscardTop discard, Cast cast)
     {
-        long count = Amount(discard.Count, cast);
+        long count = ResolveAmount(discard.Count, cast);
         if (discard.Players is null && discard.From == AbilitySearchArea.EncounterDeck)
         {
             cast.Discarded.AddRange(EncounterDeck.DiscardTop(
@@ -860,32 +860,6 @@ public sealed partial class AbilityRunner
             $"'{named}' is not a card type this engine can name"),
     };
 
-    /// <summary>
-    /// Which kind of thing a card means by how something was defeated.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// The word in the data names <b>the rule</b>; what comes back is the verb
-    /// the event stream records damage under, which is what
-    /// <c>Defeated.How</c> holds. Keeping the two apart is the point: a card
-    /// says "consequential damage" because <c>rr:consequential-damage</c> is
-    /// what it means, and the day the stream spells that verb differently the
-    /// card does not have to change.
-    /// </para>
-    /// <para>
-    /// <b>One word, because one card asks.</b> Gene Pool's "by anything other
-    /// than consequential damage" is the whole of it. Anything else is refused
-    /// by name rather than guessed at, so a card reaching for a cause this
-    /// engine cannot tell apart says so instead of quietly answering false.
-    /// </para>
-    /// </remarks>
-    private static string Cause(string named, Cast cast) => named switch
-    {
-        "consequentialDamage" => "Consequential_Damage",
-        _ => throw new RulesNotImplementedException(
-            $"'{cast.Source.FaceId}' asks whether a card was defeated by '{named}', and this "
-            + "engine can only tell consequential damage from everything else"),
-    };
 
     /// <summary>
     /// "The villain attacks you", "the villain schemes" — an enemy activation
@@ -929,7 +903,7 @@ public sealed partial class AbilityRunner
         var namedTarget = instruction.Against;
         bool engagedHero = instruction.EngagedHero;
         int against = namedTarget is { } named
-            ? Find(named, cast)?.ObjectId ?? -1
+            ? ResolveCard(named, cast)?.ObjectId ?? -1
             : -1;
 
         // An ordinary "attacks you" activation belongs to the player
@@ -964,7 +938,7 @@ public sealed partial class AbilityRunner
         bool first = instruction.First;
 
         bool dynamic = instruction.Dynamic;
-        var enemies = ActivationCandidates(instruction, cast).ToList();
+        var enemies = ActivationCandidates(instruction, ResolveCards(instruction.Enemies, cast), cast).ToList();
         bool ordered = cast.Results.Remove("dynamicActivationOrderSet");
         if (enemies.Count > 1 && !ordered)
         {
@@ -1063,7 +1037,11 @@ public sealed partial class AbilityRunner
 
     private static IReadOnlyList<Card> ActivationCandidates(
         AbilityEffect.ActivateEnemies instruction, Cast cast) =>
-        [.. Every(instruction.Enemies, cast).Where(enemy => !instruction.Dynamic
+        ActivationCandidates(instruction, Every(instruction.Enemies, cast), cast);
+
+    private static IReadOnlyList<Card> ActivationCandidates(
+        AbilityEffect.ActivateEnemies instruction, IReadOnlyList<Card> enemies, Cast cast) =>
+        [.. enemies.Where(enemy => !instruction.Dynamic
             || cast.Results.GetValueOrDefault($"dynamicActivation:{enemy.ObjectId}") == 0)];
 
     private static Dictionary<string, long> ActivationResults(
@@ -1236,28 +1214,10 @@ public sealed partial class AbilityRunner
         }
     }
 
-    /// <summary>All allies in player discard piles, in player and pile order.</summary>
     private static IReadOnlyList<Card> AlliesInPlayerDiscards(World world) =>
-    [
-        .. world.PlayerOrder.SelectMany(player => world.AreaOf(
-                DeckType.DiscardPile, PlayArea.Of(player), cardOwner: player).Cards)
-            .Where(card => world.Facts.Kind(card.FaceId) == CardKind.Ally),
-    ];
+        AbilityExpressionEvaluation.AlliesInPlayerDiscards(world);
 
-    private static bool CanMakeTheCall(Cast cast)
-        => AlliesInPlayerDiscards(cast.World).Any(ally => Resources.Pays(
-            string.Concat(MakeTheCallSources(
-                    cast.World, cast.Player, cast.Source, ally)
-                .Select(source => source.Generates)),
-            Resources.Cost(ally.FaceId, cast.World.Facts, cast.World.Players) ?? 0,
-            Resources.Required(cast.World, ally, cast.World.Facts)));
-
-    /// <summary>The resources available while paying one Make the Call candidate's cost.</summary>
     private static IReadOnlyList<ResourceSource> MakeTheCallSources(
         World world, int player, Card source, Card ally) =>
-    [
-        .. CardPlay.Generators(world, world.Facts, world.Seats[player], payingFor: ally)
-            .Where(generator => generator.Effect != source.ObjectId),
-    ];
-
+        AbilityExpressionEvaluation.MakeTheCallSources(world, player, source, ally);
 }

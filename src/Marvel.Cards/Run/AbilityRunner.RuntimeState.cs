@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Marvel.Cards.Dsl;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
@@ -262,6 +263,10 @@ public sealed partial class AbilityRunner
         public AbilityQueryContext QueryContext() => new(
             World, Source, Occurrence, Player, sourceIncarnation,
             chosenBinding, playerSelectionBinding, Altered, [.. PowerTargets]);
+
+        public AbilityExpressionContext ExpressionContext() => new(
+            QueryContext(), Results.ToImmutableDictionary(StringComparer.Ordinal),
+            [.. Discarded], Payment, PowerAmount, FinalStep, ProjectedPlayAreaPlayer);
 
         /// <summary>
         /// Which of the card's abilities is running, or null.

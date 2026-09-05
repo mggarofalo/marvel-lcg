@@ -24,7 +24,7 @@ public sealed partial class AbilityRunner
                 ReturnToHand(returned.Selection, cast);
                 return true;
             case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.Reveal } reveal:
-                RevealCard(Find(reveal.Selection, cast), cast);
+                RevealCard(ResolveCard(reveal.Selection, cast), cast);
                 return true;
             case AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.RevealTop }:
                 RevealCard(TopOfTheEncounterDeck(cast), cast);
@@ -72,7 +72,7 @@ public sealed partial class AbilityRunner
 
     private static void AddToHand(AbilityCardSelection selection, Cast cast)
     {
-        var added = Find(selection, cast)
+        var added = ResolveCard(selection, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' cannot find the card added to hand");
         var oldArea = added.Area;
@@ -104,7 +104,7 @@ public sealed partial class AbilityRunner
 
     private static void ReturnOwnedToHand(AbilityCardSelection selection, Cast cast)
     {
-        var returned = Find(selection, cast)
+        var returned = ResolveCard(selection, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' cannot find the card returned to hand");
         if (returned.Owner < 0)
