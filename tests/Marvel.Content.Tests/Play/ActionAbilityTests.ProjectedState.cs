@@ -842,14 +842,17 @@ public sealed partial class ActionAbilityTests
     }
 
     [Rule("rr:ability.9")]
-    [Fact]
-    public void DynamicConstantAmountRefusesStaleProjectedRanking()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DynamicConstantAmountRefusesStaleProjectedRanking(bool replaceAuthoredAmount)
     {
-        var runner = Runner(
-            AuthoredCards.AuntMay,
-            "Action",
+        var local = AbilityCatalog.Parse(
             """
-            { "seq": [
+            { "cards": [ { "card": "01006", "abilities": [ {
+              "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "game" },
+              "cost": { "exhaust": "this" },
+              "effect": { "seq": [
               { "dealDamage": {
                 "cards": { "titled": "Titania" }, "amount": 5
               } },
@@ -865,10 +868,22 @@ public sealed partial class ActionAbilityTests
               { "removeFromGame": { "cardsIn": {
                 "area": "encounterDiscardPile", "title": "Hydra Mercenary"
               } } }
-            ] }
-            """,
-            cost: """{ "exhaust": "this" }""",
-            includeAuthored: true);
+            ] } } ] } ] }
+            """);
+        var titaniaAbility = Assert.Single(AuthoredCards.Book.Abilities, ability => ability.Card == "01162");
+        var grant = ((AbilityValue.Map)titaniaAbility.Effect.Argument).Entries
+            .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
+        var snapshotSource = titaniaAbility with { Effect = new AbilityNode("grant", new AbilityValue.Map(grant)) };
+        var runner = new Marvel.Cards.Run.AbilityRunner(new AbilityBook(
+            [.. AuthoredCards.Book.Abilities.Where(ability => ability.Card != "01162"), snapshotSource, .. local.Abilities],
+            AuthoredCards.Book.Authored.Concat(local.Authored).ToHashSet(StringComparer.Ordinal),
+            AuthoredCards.Book.AttachTo));
+        if (replaceAuthoredAmount)
+        {
+            // Engine choice: projection analyzes the compiled instruction,
+            // not a caller-owned replacement that hides its dynamic amount.
+            grant["amount"] = new AbilityValue.Number(0);
+        }
         Card? source = null;
         Card? titania = null;
         Card? hydra = null;

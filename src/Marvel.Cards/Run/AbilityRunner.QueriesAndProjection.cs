@@ -1927,7 +1927,7 @@ public sealed partial class AbilityRunner
                 .Where(source => !Departed.Contains(source.ObjectId))
                 .DistinctBy(source => source.ObjectId);
             return sources
-                .Any(source => runner.On(source)
+                .Any(source => runner.CompiledOn(source)
                     .Where(ability =>
                         ability.Trigger.Timing == AbilityType.Constant)
                     .Any(ability => ConditionalGrant(
@@ -1936,29 +1936,32 @@ public sealed partial class AbilityRunner
         }
 
         private bool ConditionalGrant(
-            AbilityNode node, string field, bool conditioned,
+            AbilityEffect effect, string field, bool conditioned,
             Card source, Card target, Cast current)
         {
-            if (node.Kind == "if")
+            if (effect is AbilityEffect.Conditional conditional)
             {
-                return Branches.Select(node.Field)
-                    .Where(value => value is not null)
-                    .Any(value => ConditionalGrant(
-                        Tree(value!), field, conditioned: true,
-                        source, target, current));
+                return conditional.Then is { } then && ConditionalGrant(
+                        then, field, conditioned: true, source, target, current)
+                    || conditional.Else is { } otherwise && ConditionalGrant(
+                        otherwise, field, conditioned: true, source, target, current);
             }
-            if (node.Kind is "grant" or "grantEach"
-                && node.Field("keyword") is { } keyword
-                && string.Equals(Word(keyword), field, StringComparison.Ordinal))
+            if (effect is AbilityEffect.GrantField { Until: null } grant
+                && string.Equals(grant.Field, field, StringComparison.Ordinal))
             {
-                bool dynamicAmount = node.Field("amount") is { } amount
-                    && amount is not AbilityValue.Number;
+                bool dynamicAmount = grant.Amount is not AbilityNumber.Constant;
                 return (conditioned || dynamicAmount)
-                    && GrantCouldAffect(node, source, target, current);
+                    && GrantCouldAffect(grant.Cards, source, target, current);
             }
-            if (node.Kind is "seq" or "and")
+            if (effect is AbilityEffect.Sequence sequence)
             {
-                return Nodes(node.Argument).Any(child =>
+                return sequence.Effects.Any(child =>
+                    ConditionalGrant(
+                        child, field, conditioned, source, target, current));
+            }
+            if (effect is AbilityEffect.Simultaneous simultaneous)
+            {
+                return simultaneous.Effects.Any(child =>
                     ConditionalGrant(
                         child, field, conditioned, source, target, current));
             }
@@ -1966,29 +1969,24 @@ public sealed partial class AbilityRunner
         }
 
         private bool GrantCouldAffect(
-            AbilityNode grant, Card source, Card target, Cast current)
+            AbilityCardSelection selector, Card source, Card target, Cast current)
         {
-            var selector = grant.Require(
-                grant.Kind == "grant" ? "card" : "cards");
-            if (selector is AbilityValue.Word { Value: "this" })
+            if (selector is AbilityCardSelection.Bound { Binding: AbilityCardBinding.This })
             {
                 return source.ObjectId == target.ObjectId;
             }
-            if (selector is AbilityValue.Word { Value: "attachedTo" })
+            if (selector is AbilityCardSelection.Bound { Binding: AbilityCardBinding.AttachedTo })
             {
                 return Hosts.GetValueOrDefault(
                     source.ObjectId, source.Area.Host) == target.ObjectId;
             }
-            if (selector is AbilityValue.Map
-                && Tree(selector) is { Kind: "titled" } titled)
+            if (selector is AbilityCardSelection.Titled titled)
             {
                 return string.Equals(
                     current.World.Facts.Title(target.FaceId),
-                    Word(titled.Argument), StringComparison.Ordinal);
+                    titled.Title, StringComparison.Ordinal);
             }
-            if (selector is AbilityValue.Map
-                && Tree(selector) is { Kind: "query" } query
-                && query.Argument is AbilityValue.Word { Value: "villain" })
+            if (selector is AbilityCardSelection.Query { Kind: AbilityCardQuery.Villain })
             {
                 return CardKinds.IsVillain(
                     current.World.Facts.Kind(target.FaceId));
