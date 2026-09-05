@@ -321,7 +321,7 @@ public sealed partial class AbilityRunner
             return $"Select {cast.World.Seats[card.Owner].Name} → {title}";
         }
 
-        AbilityNode effect = Tree(choice.Require("effect"));
+        AbilityEffect effect = EffectOf<AbilityEffect.ChooseCard>(choice, cast).Effect;
         if (ProjectedDamage(effect, cast) is { } projection)
         {
             Card attacker = cast.AbilityActor
@@ -332,20 +332,20 @@ public sealed partial class AbilityRunner
                 return $"{title} · Stunned cancels this attack; no damage will be dealt";
             }
 
-            long amount = ProjectedDamageAmount(projection.Node, projection.IsAttack, cast);
+            long amount = ProjectedDamageAmount(projection.Amount, projection.IsAttack, cast);
             string consequence = projection.IsAttack
                 ? Damage.PreviewAttack(
                     cast.World, cast.World.Facts, attacker, cast.Source, card, amount,
-                    grantsOverkill: projection.Node.Field("overkill") is not null)
+                    grantsOverkill: projection.Overkill)
                 : Damage.PreviewDamage(
                     cast.World, cast.World.Facts, cast.Source, card, amount);
             return $"{title} · {consequence}";
         }
 
-        if (effect.Kind == "removeThreat")
+        if (effect is AbilityEffect.RemoveThreat threat)
         {
             long current = card.Tokens.GetValueOrDefault("k_threat");
-            long removed = Math.Min(current, Amount(EffectOf<AbilityEffect.RemoveThreat>(effect, cast).Amount, cast));
+            long removed = Math.Min(current, Amount(threat.Amount, cast));
             long result = current - removed;
             long threshold = cast.World.Facts.PrintedValue(
                 card.FaceId, "TargetThreat", cast.World.Players);
@@ -357,52 +357,41 @@ public sealed partial class AbilityRunner
         return title;
     }
 
-    private static (AbilityNode Node, bool IsAttack)? ProjectedDamage(
-        AbilityNode node, Cast cast, bool isAttack = false)
+    private static (AbilityNumber Amount, bool IsAttack, bool Overkill)? ProjectedDamage(
+        AbilityEffect? effect, Cast cast, bool isAttack = false)
     {
-        if (node.Kind == "attack")
+        if (effect is AbilityEffect.Power { Kind: AbilityPowerKind.Attack } power)
         {
-            return ProjectedDamage(Tree(node.Require("effect")), cast, isAttack: true);
+            return ProjectedDamage(power.Effect, cast, isAttack: true);
         }
-        if (node.Kind == "if")
+        if (effect is AbilityEffect.Conditional conditional)
         {
-            string branch = Test(ConditionalOf(node, cast).Test, cast) ? "then" : "else";
-            return node.Field(branch) is { } active
-                ? ProjectedDamage(Tree(active), cast, isAttack)
-                : null;
+            return ProjectedDamage(Test(conditional.Test, cast) ? conditional.Then : conditional.Else, cast, isAttack);
         }
-        if (node.Kind == "seq")
+        if (effect is AbilityEffect.Sequence sequence)
         {
             // A later amount can depend on what an earlier effect discovers
             // (Repulsor Blast is the Core example). Only the leading effect is
             // already knowable at this decision; do not skip over state changes.
-            return Nodes(node.Argument).FirstOrDefault() is { } first
-                ? ProjectedDamage(first, cast, isAttack)
-                : null;
+            return ProjectedDamage(sequence.Effects.FirstOrDefault(), cast, isAttack);
         }
-        return node.Kind switch
+        return effect switch
         {
-            "dealAttackDamage" => (node, true),
-            "dealDamage" => (node, isAttack),
+            AbilityEffect.AttackDamage damage => (damage.Amount, true, damage.Overkill),
+            AbilityEffect.Damage damage => (damage.Amount, isAttack, false),
             _ => null,
         };
     }
 
     private static long ProjectedDamageAmount(
-        AbilityNode damage, bool isAttack, Cast cast)
+        AbilityNumber damage, bool isAttack, Cast cast)
     {
         long amount = SaturatingSum(
-            Amount(DamageAmountOf(damage, cast), cast),
+            Amount(damage, cast),
             [EventModifier(cast, "eventDamage")]);
         if (!isAttack)
         {
             return amount;
-        }
-        if (damage.Kind == "dealAttackDamage")
-        {
-            return SaturatingSum(amount, [SaturatingSum(
-                0, EventModifierEffects(cast, "attackDamage")
-                    .Select(modifier => modifier.Amount))]);
         }
         return SaturatingSum(amount, [EventModifier(cast, "attackDamage")]);
     }
