@@ -1834,7 +1834,10 @@ public sealed partial class AbilityRunner
     }
 
     private static bool LastingPeriodIsOpen(AbilityNode node, Cast cast) =>
-        Word(node.Require("until")) switch
+        LastingPeriodIsOpen(Word(node.Require("until")), cast);
+
+    private static bool LastingPeriodIsOpen(string until, Cast cast) =>
+        until switch
         {
             TimingPoints.EndOfAttack => cast.World.Attack is not null
                 || cast.World.CharacterAttack is not null

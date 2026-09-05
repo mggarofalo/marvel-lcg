@@ -132,108 +132,59 @@ public sealed partial class AbilityRunner
 
     // `rr:lasting-effects` -- an effect "for a specified duration (such as
     // [...] 'until the end of this attack')".
-    private static void GrantUntil(AbilityNode node, Cast cast)
+    private static void GrantUntil(
+        AbilityCardSelection card, string kind, AbilityNumber amount, string until, Cast cast)
     {
-        var target = Find(node.Require("card"), cast)
+        var target = Find(card, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would grant to a card that is not there");
-
-        if (node.Field("trait") is { } gained)
-        {
-            EnsureLastingPeriodOpen(node, cast);
-            cast.World.Effects.Register(new ContinuousEffect(
-                EffectSource.LastingEffect,
-                Kind: Rules.State.Traits.Granted + Word(gained),
-                Amount: 1,
-                Card: cast.Source.ObjectId,
-                Affects: target.ObjectId,
-                Lasts: Duration.UntilEndOf(Word(node.Require("until")))));
-            return;
-        }
-
-        // Held against the fields the engine actually reads, exactly as a
-        // constant ability's grant is: an unrecognised name would register
-        // happily, expire on time, and modify nothing in between. "+2 SCH" is
-        // the same mechanism as "gains overkill" and reaches it through the
-        // same door, which is why `scheme` sits in this vocabulary beside
-        // `overkill`.
-        string keyword = Word(node.Require("keyword"));
-        if (!StateFields.IsModifiable(keyword) && !Keywords.Granted.Contains(keyword))
-        {
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' grants '{keyword}' for a duration, which is not a "
-                + "keyword or field the engine reads modifiers into");
-        }
-
-        EnsureLastingPeriodOpen(node, cast);
-
+        EnsureLastingPeriodOpen(until, cast);
         cast.World.Effects.Register(new ContinuousEffect(
             EffectSource.LastingEffect,
-            Kind: keyword,
-            Amount: node.Field("amount") is { } amount ? Amount(amount, cast) : 0,
+            Kind: kind,
+            Amount: Amount(amount, cast),
             Card: cast.Source.ObjectId,
             Affects: target.ObjectId,
-            Lasts: Duration.UntilEndOf(Word(node.Require("until")))));
+            Lasts: Duration.UntilEndOf(until)));
 
-        if (string.Equals(keyword, "stalwart", StringComparison.Ordinal))
+        if (string.Equals(kind, "stalwart", StringComparison.Ordinal))
         {
             Statuses.RemoveAfflictionsIfStalwart(
                 cast.World, cast.World.Facts, target, cast.Trigger, cast.Events);
         }
     }
 
-    private static void EnsureLastingPeriodOpen(AbilityNode node, Cast cast)
+    private static void EnsureLastingPeriodOpen(string until, Cast cast)
     {
-        if (!LastingPeriodIsOpen(node, cast))
+        if (!LastingPeriodIsOpen(until, cast))
         {
             throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' begins a lasting effect outside its named period");
         }
     }
 
-    // `rr:delayed-effect.1` -- an effect that resolves "after their specified
-    // timing point or future condition occurs or becomes true".
-    private static void DelayUntil(AbilityNode node, Cast cast)
+    // rr:delayed-effect.1 resolves an effect "after their specified timing
+    // point or future condition occurs or becomes true". The entry is data
+    // with an engine-owned kind, not a closure over an executable effect.
+    private static void DelayUntil(AbilityEffect.DelayedStun delayed, Cast cast)
     {
-        var effect = Tree(node.Require("effect"));
+        // The damaged character is identified by the future occurrence, not
+        // at registration. "This attack" bounds the condition as well: an
+        // attack stopped by Tough must not stun a later attack's recipient.
+        cast.World.Effects.Register(new ContinuousEffect(
+            EffectSource.DelayedEffect,
+            Kind: DelayedEffects.StunTheSubject,
+            Card: cast.Source.ObjectId,
+            Affects: null,
+            Lasts: new Duration(
+                Until: delayed.Within,
+                OnCondition: Steps.DamageDealt,
+                Uses: 1)));
+    }
 
-        // "If a character is damaged by this attack, that character is
-        // stunned." **The card it acts on does not exist yet** -- the attack
-        // has not happened, so there is nobody to name. `Affects` stays null
-        // and the occurrence names the card when the effect comes due.
-        if (effect.Kind == "giveStatus"
-            && Word(effect.Require("card")) == "damaged"
-            && Word(effect.Require("status")) == Statuses.Stunned)
-        {
-            // **Bounded by the attack as well as by the condition.** "If a
-            // character is damaged by **this attack**" is false once the attack
-            // is over, so an attack that damaged nobody -- `rr:tough.3`, a
-            // tough status card ate it -- must not leave the effect waiting for
-            // somebody else's. `Duration` carries both: the next time damage is
-            // dealt, and not past the end of this attack.
-            cast.World.Effects.Register(new ContinuousEffect(
-                EffectSource.DelayedEffect,
-                Kind: DelayedEffects.StunTheSubject,
-                Card: cast.Source.ObjectId,
-                Affects: null,
-                Lasts: new Duration(
-                    Until: node.Field("within") is { } bound ? Word(bound) : null,
-                    OnCondition: Word(node.Require("condition")),
-                    Uses: 1)));
-            return;
-        }
-
-        if (effect.Kind != "discard")
-        {
-            // A delayed effect is data on the board, not a closure, so what it
-            // will do has to be a `Kind` the engine can read back after a save.
-            // `DelayedEffects` knows one; the rest is the vocabulary that grows.
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' delays '{effect.Kind}', and only 'discard' can be "
-                + "written down as a delayed effect");
-        }
-
-        var target = Find(effect.Field("card") ?? effect.Argument, cast)
+    private static void DelayUntil(AbilityEffect.DelayedDiscard delayed, Cast cast)
+    {
+        var target = Find(delayed.Card, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would delay a discard of a card that is not there");
 
@@ -242,7 +193,7 @@ public sealed partial class AbilityRunner
             Kind: DelayedEffects.DiscardFromPlay,
             Card: cast.Source.ObjectId,
             Affects: target.ObjectId,
-            Lasts: Duration.NextTime(Word(node.Require("condition")))));
+            Lasts: Duration.NextTime(delayed.Condition)));
     }
 
     private static void Discard(AbilityNode node, Cast cast)
@@ -424,9 +375,9 @@ public sealed partial class AbilityRunner
     /// <c>rr:exhausted</c> is a state and not a counter, so exhausting
     /// twice is not two exhaustions and must not be two events on the wire.
     /// </remarks>
-    private static void Exhaust(AbilityNode node, Cast cast)
+    private static void Exhaust(AbilityCardSelection cards, Cast cast)
     {
-        foreach (var target in Every(node.Argument, cast))
+        foreach (var target in Every(cards, cast))
         {
             Exhaust(target, cast);
         }
@@ -442,9 +393,9 @@ public sealed partial class AbilityRunner
         });
     }
 
-    private static void Ready(AbilityNode node, Cast cast)
+    private static void Ready(AbilityCardSelection cards, Cast cast)
     {
-        foreach (var target in Every(node.Argument, cast).Where(target =>
+        foreach (var target in Every(cards, cast).Where(target =>
             !target.Ready
             && cast.Abilities.CanReady(cast.World, target, cast.Source)))
         {
@@ -456,24 +407,16 @@ public sealed partial class AbilityRunner
         }
     }
 
-    private static void DrawToHandSize(AbilityNode node, Cast cast)
+    private static void DrawToHandSize(AbilityEffect.DrawToHandSize draw, Cast cast)
     {
-        int player = Seat(node.Argument, cast);
+        int player = Seat(draw.Player, cast);
         var seat = cast.World.Seats[player];
-        int count = (int)Math.Max(
-            0, PhaseEnd.HandSize(cast.World, seat, cast.World.Facts)
-                - HandCountDuringEvent(cast, seat));
-        Draw.Cards(cast.World, player, count, cast.Trigger, cast.Events);
-    }
-
-    /// <summary>"Draw up to your printed hand size" — <c>rr:printed</c>.</summary>
-    private static void DrawToPrintedHandSize(AbilityNode node, Cast cast)
-    {
-        int player = Seat(node.Argument, cast);
-        var seat = cast.World.Seats[player];
-        long printed = cast.World.Facts.PrintedValue(
-            seat.IdentityCard.FaceId, "HS", cast.World.Players);
-        int count = (int)Math.Max(0, printed - HandCountDuringEvent(cast, seat));
+        // rr:printed reads "physically printed on the card"; an unqualified hand size
+        // includes the live modifiers instead.
+        long size = draw.Printed
+            ? cast.World.Facts.PrintedValue(seat.IdentityCard.FaceId, "HS", cast.World.Players)
+            : PhaseEnd.HandSize(cast.World, seat, cast.World.Facts);
+        int count = (int)Math.Max(0, size - HandCountDuringEvent(cast, seat));
         Draw.Cards(cast.World, player, count, cast.Trigger, cast.Events);
     }
 
@@ -489,13 +432,12 @@ public sealed partial class AbilityRunner
         seat.Hand.Cards.Count - (cast.Source.Area == seat.Hand
             && cast.World.Facts.Kind(cast.Source.FaceId) == CardKind.Event ? 1 : 0);
 
-    private static void RemoveCounters(AbilityNode node, Cast cast)
+    private static void RemoveCounters(AbilityEffect.RemoveCounters removal, Cast cast)
     {
-        var removal = CounterRemovalOf(node);
         var card = Find(removal.Card, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' cannot find the card paying its counter cost");
-        RemoveCounters(card, removal.Type, removal.Count, cast);
+        RemoveCounters(card, removal.Counter, removal.Count, cast);
     }
 
     private static void RemoveCounters(Card card, string type, long count, Cast cast)
@@ -526,39 +468,8 @@ public sealed partial class AbilityRunner
         }
     }
 
-    private sealed record CounterRemoval(
-        AbilityValue Card, string Type, long Count);
-
-    private static CounterRemoval CounterRemovalOf(AbilityNode node)
-    {
-        if (node.Argument is not AbilityValue.Map map)
-        {
-            throw new AbilityException(
-                "'removeCounters' needs 'card', 'counter', and 'count'");
-        }
-        string[] unknown = map.Entries.Keys
-            .Where(key => key is not ("card" or "counter" or "count"))
-            .Order(StringComparer.Ordinal)
-            .ToArray();
-        if (unknown.Length > 0)
-        {
-            throw new AbilityException(
-                $"'removeCounters' carries fields nothing reads: {string.Join(", ", unknown)}");
-        }
-
-        var card = node.Require("card");
-        string type = Word(node.Require("counter"));
-        long count = Number(node.Require("count"));
-        if (type.Length == 0)
-        {
-            throw new AbilityException("'removeCounters' needs a non-empty 'counter'");
-        }
-        if (count <= 0)
-        {
-            throw new AbilityException("'removeCounters' needs a positive 'count'");
-        }
-        return new CounterRemoval(card, type, count);
-    }
+    private static AbilityEffect.RemoveCounters CounterRemovalOf(AbilityNode node, Cast cast) =>
+        (AbilityEffect.RemoveCounters)((AbilityRunner)cast.Abilities).CompiledEffect(node);
 
     /// <summary>
     /// Advances because a card effect says to —
@@ -649,7 +560,7 @@ public sealed partial class AbilityRunner
         };
     }
 
-    private static void PreventDamage(AbilityNode node, Cast cast)
+    private static void PreventDamage(AbilityEffect.PreventDamage prevention, Cast cast)
     {
         int target = cast.Occurrence.Target >= 0
             ? cast.Occurrence.Target
@@ -657,7 +568,7 @@ public sealed partial class AbilityRunner
         cast.World.Effects.Register(new ContinuousEffect(
             EffectSource.LastingEffect,
             Kind: "preventDamage",
-            Amount: node.Field("amount") is { } amount ? Amount(amount, cast) : long.MaxValue,
+            Amount: Amount(prevention.Amount, cast),
             Card: cast.Source.ObjectId,
             Affects: target,
             Lasts: new Duration(Uses: 1)));

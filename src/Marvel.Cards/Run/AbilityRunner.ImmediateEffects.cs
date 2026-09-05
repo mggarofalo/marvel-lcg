@@ -189,6 +189,61 @@ public sealed partial class AbilityRunner
                 }
                 return true;
 
+            case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.Exhaust } exhaust:
+                Exhaust(exhaust.Selection, cast);
+                return true;
+
+            case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.Ready } ready:
+                Ready(ready.Selection, cast);
+                return true;
+
+            case AbilityEffect.DrawToHandSize handSize:
+                DrawToHandSize(handSize, cast);
+                return true;
+
+            case AbilityEffect.RemoveCounters removal:
+                RemoveCounters(removal, cast);
+                return true;
+
+            case AbilityEffect.PreventDamage prevention:
+                PreventDamage(prevention, cast);
+                cast.ResolveEffect();
+                return true;
+
+            case AbilityEffect.GiveStatus status:
+                GiveStatus(status, cast);
+                return true;
+
+            case AbilityEffect.GrantField { Until: { } until } fieldGrant:
+                GrantUntil(fieldGrant.Cards, fieldGrant.Field, fieldGrant.Amount, until, cast);
+                cast.ResolveEffect();
+                return true;
+
+            case AbilityEffect.GrantTrait { Until: { } until } traitGrant:
+                GrantUntil(traitGrant.Cards, Traits.Granted + traitGrant.Trait,
+                    new AbilityNumber.Constant(1), until, cast);
+                cast.ResolveEffect();
+                return true;
+
+            case AbilityEffect.DelayedStun delayed:
+                DelayUntil(delayed, cast);
+                cast.ResolveEffect();
+                return true;
+
+            case AbilityEffect.DelayedDiscard delayed:
+                DelayUntil(delayed, cast);
+                cast.ResolveEffect();
+                return true;
+
+            case AbilityEffect.Heal heal:
+                Heal(heal, cast);
+                return true;
+
+            case AbilityEffect.PreventThreat prevention:
+                PreventThreat(prevention, cast);
+                cast.ResolveEffect();
+                return true;
+
             default:
                 return false;
         }

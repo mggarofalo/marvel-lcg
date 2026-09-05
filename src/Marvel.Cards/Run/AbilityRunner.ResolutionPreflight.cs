@@ -41,10 +41,10 @@ public sealed partial class AbilityRunner
             "exhaust" => Find(node.Argument, cast)?.Ready == true,
             "ready" => Every(node.Argument, cast).Any(card =>
                 !card.Ready && cast.Abilities.CanReady(cast.World, card, cast.Source)),
-            "removeCounters" => CounterRemovalOf(node) is var removal
+            "removeCounters" => CounterRemovalOf(node, cast) is var removal
                 && Find(removal.Card, cast) is { } counterCard
                 && CounterKeyForRemoval(
-                    counterCard, removal.Type, removal.Count) is not null,
+                    counterCard, removal.Counter, removal.Count) is not null,
             "advanceMainScheme" => CanAdvanceMainScheme(node, cast),
             "discardAtRandom" => Amount(node.Require("count"), cast) > 0
                 && Seats(node.Require("player"), cast)

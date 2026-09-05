@@ -107,11 +107,11 @@ public sealed partial class AbilityRunner
     /// the surge.
     /// </para>
     /// </remarks>
-    private static void Heal(AbilityNode node, Cast cast)
+    private static void Heal(AbilityEffect.Heal heal, Cast cast)
     {
-        long healed = Find(node.Require("card"), cast) is { } target
+        long healed = Find(heal.Card, cast) is { } target
             ? Damage.Heal(
-                cast.World, cast.World.Facts, target, Amount(node.Require("amount"), cast),
+                cast.World, cast.World.Facts, target, Amount(heal.Amount, cast),
                 cast.Trigger, "Heal", cast.Events)
             : 0;
 
@@ -543,12 +543,12 @@ public sealed partial class AbilityRunner
         cast.Suspend();
     }
 
-    private static void PreventThreat(AbilityNode node, Cast cast)
+    private static void PreventThreat(AbilityEffect.PreventThreat prevention, Cast cast)
     {
         var placement = cast.ImminentThreat ?? cast.Occurrence.Threat
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would prevent threat that is not imminent");
-        placement.Prevent(Amount(node.Argument, cast));
+        placement.Prevent(Amount(prevention.Amount, cast));
     }
 
     private static void ReplaceThreatWithDamage(AbilityNode node, Cast cast)

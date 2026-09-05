@@ -366,33 +366,8 @@ public sealed partial class AbilityRunner
                 Soak(node, cast);
                 break;
 
-            case "exhaust":
-                Exhaust(node, cast);
-                break;
-
-            case "ready":
-                Ready(node, cast);
-                break;
-
-            case "drawToHandSize":
-                DrawToHandSize(node, cast);
-                break;
-
-            case "drawToPrintedHandSize":
-                DrawToPrintedHandSize(node, cast);
-                break;
-
-            case "removeCounters":
-                RemoveCounters(node, cast);
-                break;
-
             case "advanceMainScheme":
                 AdvanceMainScheme(node, cast);
-                break;
-
-            case "preventDamage":
-                PreventDamage(node, cast);
-                cast.ResolveEffect();
                 break;
 
             case "dealEncounterCards":
@@ -587,30 +562,12 @@ public sealed partial class AbilityRunner
                 EachTime(node, cast);
                 break;
 
-            case "giveStatus":
-                GiveStatus(node, cast);
-                break;
-
             case "attachTo":
                 AttachTo(node, cast);
                 break;
 
-            case "grantUntil":
-                GrantUntil(node, cast);
-                cast.ResolveEffect();
-                break;
-
-            case "delayUntil":
-                DelayUntil(node, cast);
-                cast.ResolveEffect();
-                break;
-
             case "discard":
                 Discard(node, cast);
-                break;
-
-            case "heal":
-                Heal(node, cast);
                 break;
 
             case "indirectDamage":
@@ -669,11 +626,6 @@ public sealed partial class AbilityRunner
 
             case "placeThreat":
                 PlaceThreat(node, cast);
-                break;
-
-            case "preventThreat":
-                PreventThreat(node, cast);
-                cast.ResolveEffect();
                 break;
 
             case "replaceThreatWithDamage":
@@ -1030,21 +982,19 @@ public sealed partial class AbilityRunner
         Reveal.EnterPlay(cast.World, cast.World.Facts, card, cast.Events);
     }
 
-    private static void GiveStatus(AbilityNode node, Cast cast)
+    private static void GiveStatus(AbilityEffect.GiveStatus status, Cast cast)
     {
         // "Stun **each hero**" and "stun your hero" are the same node with a
         // different query, the way `placeThreat` names one scheme or all of
         // them: `Every` answers both.
-        foreach (var host in Every(node.Require("card"), cast))
+        foreach (var host in Every(status.Cards, cast))
         {
-            GiveStatus(node, cast, host);
+            GiveStatus(status.Status, cast, host);
         }
     }
 
-    private static void GiveStatus(AbilityNode node, Cast cast, Card host)
+    private static void GiveStatus(string what, Cast cast, Card host)
     {
-        string what = Word(node.Require("status"));
-
         // Through the rules rather than straight at `Statuses.Give`:
         // `rr:status-cards.1` caps how many a character can hold,
         // `rr:stalwart` makes that cap zero, and `rr:vulnerable` discards the
