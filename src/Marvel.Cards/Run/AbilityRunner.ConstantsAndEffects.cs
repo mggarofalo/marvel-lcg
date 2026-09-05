@@ -196,9 +196,8 @@ public sealed partial class AbilityRunner
             Lasts: Duration.NextTime(delayed.Condition)));
     }
 
-    private static void Discard(AbilityNode node, Cast cast)
+    private static void Discard(AbilityCardSelection selector, Cast cast)
     {
-        var selector = node.Field("card") ?? node.Argument;
         if (Find(selector, cast) is { } target)
         {
             // rr:target.2 lets a multi-target ability initiate when at least
@@ -302,13 +301,13 @@ public sealed partial class AbilityRunner
     /// Removed and not discarded: <c>rr:defeat.2</c> keeps the two apart, and a
     /// card in the discard pile can come back where one out of the game cannot.
     /// </remarks>
-    private static void RemoveFromGame(AbilityNode node, Cast cast)
+    private static void RemoveFromGame(AbilityCardSelection selection, Cast cast)
     {
-        var card = Find(node.Argument, cast)
+        var card = Find(selection, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would remove a card that is not there");
 
-        if (!CanRemoveByEffect(node.Argument, cast, card))
+        if (!CanRemoveByEffect(selection, cast, card))
         {
             // Another component can make a multi-target effect valid under
             // rr:target.3.4; this invalid component simply does not resolve.
@@ -667,11 +666,11 @@ public sealed partial class AbilityRunner
     /// single random stream, so how many times it happens is a wire fact and
     /// not a detail.
     /// </remarks>
-    private static void ShuffleInto(AbilityNode node, Cast cast)
+    private static void ShuffleInto(AbilityEffect.ShuffleInto shuffle, Cast cast)
     {
-        var deck = Area(Word(node.Require("deck")), cast);
+        var deck = Area(shuffle.Deck, cast);
         bool applied = false;
-        foreach (var card in Every(node.Require("cards"), cast))
+        foreach (var card in Every(shuffle.Cards, cast))
         {
             var from = card.Area;
             World.MoveToTop(card, deck);
@@ -723,11 +722,10 @@ public sealed partial class AbilityRunner
     /// so it is refused by name until a card needs it.
     /// </para>
     /// </remarks>
-    private static void Search(AbilityNode node, Cast cast)
+    private static void Search(AbilityEffect.Search search, Cast cast)
     {
-        string wanted = Word(node.Require("for"));
-        var searched = Nodes(node.Require("in")).Select(where => where.Kind).ToList();
-        var areas = searched.Select(where => Area(where, cast)).ToList();
+        string wanted = search.Face;
+        var areas = search.Areas.Select(where => Area(where, cast)).ToList();
 
         var found = areas
             .SelectMany(area => area.Cards)

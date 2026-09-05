@@ -649,22 +649,22 @@ public sealed partial class AbilityRunner
     /// nobody may look at it while it is there.
     /// </para>
     /// <para>
-    /// One draw from the game's single random stream per card taken, in player
+    /// One selection from the game's single random stream per card taken, in player
     /// order, for the same reason <c>discardAtRandom</c> takes them that way —
     /// the order is what the stream sees.
     /// </para>
     /// </remarks>
-    private static void PlaceAtRandom(AbilityNode node, Cast cast)
+    private static void PlaceAtRandom(AbilityEffect.PlaceAtRandom placement, Cast cast)
     {
-        var host = Find(node.Require("on"), cast)
+        var host = Find(placement.Host, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' places cards on a card that is not there");
 
         var onto = cast.World.AreaOf(
             DeckType.UpgradesArea, host.Area.PlayArea, host.ObjectId, host.Area.CardOwner);
-        long count = Amount(node.Require("count"), cast);
+        long count = Amount(placement.Count, cast);
 
-        foreach (int seat in Seats(node.Require("player"), cast))
+        foreach (int seat in Seats(placement.Players, cast))
         {
             var hand = cast.World.Seats[seat].Hand;
             for (long placed = 0; placed < count && hand.Cards.Count > 0; placed++)
@@ -695,9 +695,9 @@ public sealed partial class AbilityRunner
     /// is why <c>Card.Owner</c> decides rather than whoever defeated the
     /// scheme.
     /// </remarks>
-    private static void ReturnToHand(AbilityNode node, Cast cast)
+    private static void ReturnToHand(AbilityCardSelection selection, Cast cast)
     {
-        foreach (var card in Every(node.Argument, cast))
+        foreach (var card in Every(selection, cast))
         {
             var from = card.Area;
             var hand = cast.World.Seats[card.Owner].Hand;
@@ -732,10 +732,10 @@ public sealed partial class AbilityRunner
     /// <para>
     /// <b>The draw is a wire format.</b> One MT19937 stream runs the whole
     /// game, so how many numbers this takes and in what order decides every
-    /// later shuffle and every later random card. <c>EngineRandom.Choice</c> is
-    /// the ported primitive and is pinned against recorded RNG vectors; this
-    /// takes one draw per card discarded, from the hand as it stands after the
-    /// previous one.
+    /// later shuffle and every later random card. <c>EngineRandom.Choice</c>
+    /// uses masked rejection, so one selection can consume multiple words.
+    /// Each discarded card gets one selection from the hand as it stands
+    /// after the previous discard; see docs/rng-contract.md.
     /// </para>
     /// <para>
     /// "From <b>each</b> player's hand" goes in player order —
@@ -749,13 +749,13 @@ public sealed partial class AbilityRunner
     /// type, and a card printing none is none.
     /// </para>
     /// </remarks>
-    private static void DiscardAtRandom(AbilityNode node, Cast cast)
+    private static void DiscardAtRandom(AbilityEffect.DiscardAtRandom discard, Cast cast)
     {
-        long count = Amount(node.Require("count"), cast);
+        long count = Amount(discard.Count, cast);
         var types = new SortedSet<char>();
         long discarded = 0;
 
-        foreach (int seat in Seats(node.Require("player"), cast))
+        foreach (int seat in Seats(discard.Players, cast))
         {
             var hand = cast.World.Seats[seat].Hand;
             for (long gone = 0; gone < count && hand.Cards.Count > 0; gone++)
@@ -806,53 +806,37 @@ public sealed partial class AbilityRunner
     /// instead of the game.
     /// </para>
     /// </remarks>
-    private static void DiscardUntil(AbilityNode node, Cast cast)
+    private static void DiscardUntil(AbilityEffect.DiscardUntil discard, Cast cast)
     {
-        if (!string.Equals(
-            Word(node.Require("from")), "encounterDeck", StringComparison.Ordinal))
-        {
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' discards until a match from an unsupported area");
-        }
-
-        var wanted = Kind(Word(node.Require("kind")));
-        string? trait = node.Field("trait") is { } requiredTrait
-            ? Word(requiredTrait)
-            : null;
         var found = EncounterDeck.DiscardUntil(
-            cast.World, cast.World.Facts, wanted, cast.Trigger, cast.Events, trait);
+            cast.World, cast.World.Facts, discard.Kind, cast.Trigger, cast.Events, discard.Trait);
         if (found is null)
         {
             return;
         }
 
-        switch (Word(node.Require("then")))
+        if (discard.PutIntoPlayForFirstPlayer)
         {
-            case "reveal":
-                RevealCard(found, cast);
-                break;
-            case "putIntoPlayFirstPlayer":
-                PutIntoPlay(found, cast.World.FirstPlayer, cast);
-                break;
-            default:
-                throw new RulesNotImplementedException(
-                    $"'{cast.Source.FaceId}' has an unsupported discard-until result");
+            PutIntoPlay(found, cast.World.FirstPlayer, cast);
+        }
+        else
+        {
+            RevealCard(found, cast);
         }
     }
 
-    private static void DiscardTop(AbilityNode node, Cast cast)
+    private static void DiscardTop(AbilityEffect.DiscardTop discard, Cast cast)
     {
-        long count = Amount(node.Require("count"), cast);
-        if (node.Field("player") is null
-            && string.Equals(Word(node.Require("from")), "encounterDeck", StringComparison.Ordinal))
+        long count = Amount(discard.Count, cast);
+        if (discard.Players is null && discard.From == AbilitySearchArea.EncounterDeck)
         {
             cast.Discarded.AddRange(EncounterDeck.DiscardTop(
                 cast.World, count, cast.Trigger, cast.Events));
             return;
         }
-        IEnumerable<Area> decks = node.Field("player") is { } players
+        IEnumerable<Area> decks = discard.Players is { } players
             ? Seats(players, cast).Select(player => cast.World.Seats[player].Deck)
-            : [Area(Word(node.Require("from")), cast)];
+            : [Area(discard.From, cast)];
         foreach (var deck in decks)
         {
             if (deck.Type == DeckType.PlayerDeck && deck.PlayArea.IsPlayers)
@@ -867,13 +851,11 @@ public sealed partial class AbilityRunner
         }
     }
 
-    private static void RecoverDiscardedByResource(AbilityNode node, Cast cast)
+    private static void RecoverDiscardedByResource(AbilityEffect.RecoverDiscardedByResource recovery, Cast cast)
     {
-        string resource = Word(node.Argument);
         var hand = cast.World.Seats[cast.Player].Hand;
         foreach (var card in cast.Discarded.Where(card =>
-            Resources.GeneratedBy(card.FaceId, cast.World.Facts).Contains(
-                resource, StringComparison.Ordinal)).ToList())
+            Resources.GeneratedBy(card.FaceId, cast.World.Facts).Contains(recovery.Resource)).ToList())
         {
             var from = card.Area;
             World.MoveToTop(card, hand);

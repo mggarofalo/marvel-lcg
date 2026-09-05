@@ -64,7 +64,7 @@ public sealed partial class ActionAbilityTests
         // points to the villain." The compiled flag decides whether this
         // synthetic attack has the keyword, not a later edit to its input.
         string marker = overkill ? ",\"overkill\":1" : string.Empty;
-        var (runner, fields) = MutableDamageRunner("dealAttackDamage",
+        var (runner, fields) = MutableEffectRunner("dealAttackDamage",
             $$"""{"cards":{"query":"minionsEngagedWithYou"},"amount":5{{marker}}}""", false);
         Card? source = null;
         Card? minion = null;
@@ -94,7 +94,7 @@ public sealed partial class ActionAbilityTests
     public void OrdinaryDamageKeepsItsCompiledEventVerb(bool attackVerb)
     {
         string marker = attackVerb ? ",\"attack\":1" : string.Empty;
-        var (runner, fields) = MutableDamageRunner("dealDamage",
+        var (runner, fields) = MutableEffectRunner("dealDamage",
             $$"""{"cards":{"query":"villain"},"amount":1{{marker}}}""", false);
         Card? source = null;
         var (game, world) = Playing(board => source = InPlay(board, AuthoredCards.AuntMay),
@@ -130,7 +130,7 @@ public sealed partial class ActionAbilityTests
                 """{"scheme":{"query":"mainScheme"},"amount":1}""",
             _ => """{"cards":{"query":"villain"},"amount":1}""",
         };
-        var (runner, fields) = MutableDamageRunner(operation, arguments, repeated);
+        var (runner, fields) = MutableEffectRunner(operation, arguments, repeated);
         Card? source = null;
         var (game, world) = Playing(board =>
         {
@@ -162,7 +162,7 @@ public sealed partial class ActionAbilityTests
     [InlineData(false)]
     public void IndirectAssignmentKeepsCompiledAmountAndRecipients(bool mutateBeforeAction)
     {
-        var (runner, fields) = MutableDamageRunner("indirectDamage",
+        var (runner, fields) = MutableEffectRunner("indirectDamage",
             """{"among":{"query":"heroesAndAllies"},"amount":2}""", repeated: false);
         Card? source = null;
         Card? ally = null;
@@ -199,7 +199,7 @@ public sealed partial class ActionAbilityTests
         Assert.False(world.Agenda.IsBusy);
     }
 
-    private static (AbilityRunner Runner, Dictionary<string, AbilityValue> Fields) MutableDamageRunner(
+    private static (AbilityRunner Runner, Dictionary<string, AbilityValue> Fields) MutableEffectRunner(
         string operation, string arguments, bool repeated)
     {
         var parsed = AbilityCatalog.Parse($$"""

@@ -276,7 +276,8 @@ public sealed partial class AbilityRunner
         var healthBefore = cast.World.Effects.CaptureCharacterHealth();
         var instruction = ((AbilityRunner)cast.Abilities).CompiledEffect(node);
         if (!TryRunImmediateEffect(instruction, cast)
-            && !TryRunDamageAndThreat(instruction, node, cast))
+            && !TryRunDamageAndThreat(instruction, node, cast)
+            && !TryRunCardMovement(instruction, cast))
         {
             RunRemainingEffect(node, cast);
         }
@@ -360,120 +361,8 @@ public sealed partial class AbilityRunner
                 ChangeForm(node, cast);
                 break;
 
-            case "removeFromGame":
-                RemoveFromGame(node, cast);
-                break;
-
             case "advanceMainScheme":
                 AdvanceMainScheme(node, cast);
-                break;
-
-            case "dealEncounterCards":
-                DealEncounterCards(node, cast);
-                break;
-
-            case "revealTop":
-                RevealCard(TopOfTheEncounterDeck(cast), cast);
-                break;
-
-            case "reveal":
-                RevealCard(Find(node.Argument, cast), cast);
-                break;
-
-            case "placeAtRandom":
-                PlaceAtRandom(node, cast);
-                break;
-
-            case "returnToHand":
-                ReturnToHand(node, cast);
-                break;
-
-            case "addToHand":
-            {
-                var added = Find(node.Argument, cast)
-                    ?? throw new RulesNotImplementedException(
-                        $"'{cast.Source.FaceId}' cannot find the card added to hand");
-                var oldArea = added.Area;
-                var newHand = cast.World.Seats[cast.Player].Hand;
-                var addedConstantsEnding = cast.World.Effects.PreflightConstantsEnding(added);
-                using var addedDeparture = addedConstantsEnding.Begin();
-                if (DeckTypes.IsInPlay(oldArea.Type))
-                {
-                    Rules.Play.Discard.Attachments(
-                        cast.World, added, cast.Trigger, cast.Events);
-                }
-                if (!Characteristics.IsLost(cast.World, added, "linked")
-                    && cast.World.Facts.Attributes(added.FaceId).ContainsKey("Linked"))
-                {
-                    // rr:linked-card-title.4 changes ownership at the moment
-                    // the player takes control. A linked ally added from the
-                    // set-aside area reaches their hand before it enters play.
-                    added.TransferLinkedOwnership(cast.Player);
-                }
-                World.MoveToTop(added, newHand);
-                cast.Events.Add(new CardsMoved(
-                    Places.Reference(oldArea), Places.Reference(newHand),
-                    [new Landing(added.ObjectId, newHand.Cards.Count - 1)])
-                {
-                    Trigger = cast.Trigger, Verb = "Add_To_Hand",
-                });
-                addedConstantsEnding.Complete(cast.Trigger, cast.Events);
-                break;
-            }
-
-            case "returnOwnedToHand":
-            {
-                var returned = Find(node.Argument, cast)
-                    ?? throw new RulesNotImplementedException(
-                        $"'{cast.Source.FaceId}' cannot find the card returned to hand");
-                if (returned.Owner < 0)
-                {
-                    throw new RulesNotImplementedException(
-                        $"'{cast.Source.FaceId}' returns a card with no owning player");
-                }
-                var returnedFrom = returned.Area;
-                var ownersHand = cast.World.Seats[returned.Owner].Hand;
-                var returnedConstantsEnding =
-                    cast.World.Effects.PreflightConstantsEnding(returned);
-                using var returnedDeparture = returnedConstantsEnding.Begin();
-                if (DeckTypes.IsInPlay(returnedFrom.Type))
-                {
-                    Rules.Play.Discard.Attachments(
-                        cast.World, returned, cast.Trigger, cast.Events);
-                }
-                World.MoveToTop(returned, ownersHand);
-                cast.Events.Add(new CardsMoved(
-                    Places.Reference(returnedFrom), Places.Reference(ownersHand),
-                    [new Landing(returned.ObjectId, ownersHand.Cards.Count - 1)])
-                {
-                    Trigger = cast.Trigger, Verb = "Return",
-                });
-                returnedConstantsEnding.Complete(cast.Trigger, cast.Events);
-                break;
-            }
-
-            case "discardAtRandom":
-                DiscardAtRandom(node, cast);
-                break;
-
-            case "discardUntil":
-                DiscardUntil(node, cast);
-                break;
-
-            case "discardTop":
-                DiscardTop(node, cast);
-                break;
-
-            case "recoverDiscardedByResource":
-                RecoverDiscardedByResource(node, cast);
-                break;
-
-            case "shuffleInto":
-                ShuffleInto(node, cast);
-                break;
-
-            case "search":
-                Search(node, cast);
                 break;
 
             case "choose":
@@ -560,14 +449,6 @@ public sealed partial class AbilityRunner
                 EachTime(node, cast);
                 break;
 
-            case "attachTo":
-                AttachTo(node, cast);
-                break;
-
-            case "discard":
-                Discard(node, cast);
-                break;
-
             case "attack":
                 ((AbilityRunner)cast.Abilities).SchedulePower(node, cast, BasicPowers.AttackVerb);
                 break;
@@ -608,14 +489,6 @@ public sealed partial class AbilityRunner
 
             case "enemySchemes":
                 Activate(node, cast, Steps.Scheme);
-                break;
-
-            case "putIntoPlay":
-                PutIntoPlay(node, cast);
-                break;
-
-            case "createDrones":
-                CreateDrones(node, cast);
                 break;
 
             default:
@@ -783,7 +656,6 @@ public sealed partial class AbilityRunner
         "defeatedBy" => cast.Occurrence.Defeat is { } defeat
             && string.Equals(defeat.How, Cause(Word(node.Argument), cast), StringComparison.Ordinal),
 
-
         _ => throw new RulesNotImplementedException(
             $"'{cast.Source.FaceId}' uses the test node '{node.Kind}', "
             + "which is not implemented"),
@@ -812,13 +684,10 @@ public sealed partial class AbilityRunner
     /// can empty part-way round.
     /// </para>
     /// </remarks>
-    private static void DealEncounterCards(AbilityNode node, Cast cast)
+    private static void DealEncounterCards(AbilityEffect.DealEncounterCards deal, Cast cast)
     {
-        long each = node.Field("count") is { } count ? Number(count) : 1;
-        IReadOnlyList<int> players = node.Field("player") is { } player
-            ? [Seat(player, cast)]
-            : [.. cast.World.PlayerOrder];
-        for (long dealt = 0; dealt < each; dealt++)
+        var players = Seats(deal.Players, cast).ToList();
+        for (long dealt = 0; dealt < deal.Count; dealt++)
         {
             foreach (int seat in players)
             {
@@ -834,12 +703,11 @@ public sealed partial class AbilityRunner
     /// <summary>
     /// "Put the top card of your deck into play facedown … as a Drone minion."
     /// </summary>
-    private static void CreateDrones(AbilityNode node, Cast cast)
+    private static void CreateDrones(AbilityEffect.CreateDrones drones, Cast cast)
     {
-        long count = node.Field("count") is { } amount ? Number(amount) : 1;
-        foreach (int player in Seats(node.Require("player"), cast))
+        foreach (int player in Seats(drones.Players, cast))
         {
-            for (long created = 0; created < count; created++)
+            for (long created = 0; created < drones.Count; created++)
             {
                 FacedownDrones.EngageTop(
                     cast.World, player, cast.Trigger, "Create_Drone", cast.Events);
@@ -874,20 +742,18 @@ public sealed partial class AbilityRunner
     /// Revealed" is skipped.
     /// </para>
     /// <para>
-    /// "Engaged with you" is the only destination any authored card asks for.
     /// <c>rr:engage.1</c> makes it a place: "when a minion engages a player, it
     /// is placed in that player's play area", so engagement is where the card
     /// sits rather than a flag on it.
     /// </para>
     /// </remarks>
-    private static void PutIntoPlay(AbilityNode node, Cast cast)
+    private static void PutIntoPlay(AbilityEffect.PutIntoPlay placement, Cast cast)
     {
-        var card = Find(node.Require("card"), cast)
+        var card = Find(placement.Card, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' would put a card into play that is not there");
 
-        string where = Word(node.Require("where"));
-        if (string.Equals(where, "printedDestination", StringComparison.Ordinal))
+        if (placement.PrintedDestination)
         {
             // This spelling is the engine's typed DSL choice; the rulebook
             // decides the destination from the card type. Passing no reveal
@@ -903,13 +769,6 @@ public sealed partial class AbilityRunner
                 verb: "Put_Into_Play");
             cast.ResolveEffect();
             return;
-        }
-
-        if (!string.Equals(where, "engagedWithYou", StringComparison.Ordinal))
-        {
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' puts a card into play '{where}', "
-                + "which is not implemented");
         }
 
         PutIntoPlay(card, cast.Player, cast);
@@ -980,9 +839,9 @@ public sealed partial class AbilityRunner
 
     // `rr:attachment` -- "when an attachment enters play, it attaches to another
     // card or game element".
-    private static void AttachTo(AbilityNode node, Cast cast)
+    private static void AttachTo(AbilityCardSelection selection, Cast cast)
     {
-        var host = Find(node.Argument, cast)
+        var host = Find(selection, cast)
             ?? throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' attaches to a card that is not there");
 
