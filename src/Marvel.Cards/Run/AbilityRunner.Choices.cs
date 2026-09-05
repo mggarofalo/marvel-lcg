@@ -935,30 +935,20 @@ public sealed partial class AbilityRunner
         {
             return locallyLegal;
         }
-
+        cast = cast.ForReachability(cast.Reachability);
         var prior = cast.CaptureChosen();
-        var priorSelection = cast.CapturePlayerSelection();
-        var priorSteps = cast.PriorSteps;
-        bool priorFiltering = cast.FilteringContinuationOption;
-        try
+        ResolutionOutcome? pendingOutcome = cast.HasPendingDependency
+            ? ResolutionOf(option, cast)
+            : null;
+        var before = new BindingCandidateState(
+            prior is null ? [] : [prior.Card], prior is null);
+        var outcomes = BindingCandidatesAfter(option, cast, before);
+        var scope = cast.ForReachability(cast.Reachability with
         {
-            ResolutionOutcome? pendingOutcome = cast.HasPendingDependency
-                ? ResolutionOf(option, cast)
-                : null;
-            var before = new BindingCandidateState(
-                prior is null ? [] : [prior.Card], prior is null);
-            var outcomes = BindingCandidatesAfter(option, cast, before);
-            cast.SetPriorSteps([.. priorSteps, option]);
-            cast.SetFilteringContinuationOption(true);
-            return ContinuationCanResolve(outcomes, cast, pendingOutcome);
-        }
-        finally
-        {
-            cast.RestoreChosen(prior);
-            cast.RestorePlayerSelection(priorSelection);
-            cast.SetPriorSteps(priorSteps);
-            cast.SetFilteringContinuationOption(priorFiltering);
-        }
+            PriorSteps = cast.Reachability.PriorSteps.Add(option),
+            FilteringContinuationOption = true,
+        });
+        return ContinuationCanResolve(outcomes, scope, pendingOutcome);
     }
 
     private static bool IsExplicitDecline(AbilityEffect option) =>
@@ -1005,84 +995,62 @@ public sealed partial class AbilityRunner
         {
             return legal;
         }
-        var prior = cast.CaptureChosen();
-        var priorSelection = cast.CapturePlayerSelection();
-        var priorSteps = cast.PriorSteps;
-        bool priorFiltering = cast.FilteringContinuationOption;
-        try
+        return legal.Where(candidate =>
         {
-            return legal.Where(candidate =>
+            var scope = cast.ForReachability(cast.Reachability);
+            scope.ChooseSelection(candidate);
+            var effect = EffectBody(choice);
+            ResolutionOutcome? pendingOutcome = scope.HasPendingDependency
+                && !ActiveChoices(effect, scope).Any()
+                    ? ResolutionOf(effect, scope)
+                    : null;
+            var outcomes = BindingCandidatesAfter(
+                effect, scope,
+                new BindingCandidateState([candidate], MayBeEmpty: false));
+            scope = scope.ForReachability(scope.Reachability with
             {
-                cast.ChooseSelection(candidate);
-                var effect = EffectBody(choice);
-                ResolutionOutcome? pendingOutcome = cast.HasPendingDependency
-                    && !ActiveChoices(effect, cast).Any()
-                        ? ResolutionOf(effect, cast)
-                        : null;
-                var outcomes = BindingCandidatesAfter(
-                    effect, cast,
-                    new BindingCandidateState([candidate], MayBeEmpty: false));
-                cast.SetPriorSteps([.. priorSteps, effect]);
-                cast.SetFilteringContinuationOption(true);
-                return ContinuationCanResolve(outcomes, cast, pendingOutcome);
-            }).ToList();
-        }
-        finally
-        {
-            cast.RestoreChosen(prior);
-            cast.RestorePlayerSelection(priorSelection);
-            cast.SetPriorSteps(priorSteps);
-            cast.SetFilteringContinuationOption(priorFiltering);
-        }
+                PriorSteps = cast.Reachability.PriorSteps.Add(effect),
+                FilteringContinuationOption = true,
+            });
+            return ContinuationCanResolve(outcomes, scope, pendingOutcome);
+        }).ToList();
     }
 
     private static bool ContinuationCanResolve(
         BindingCandidateState outcomes, Cast cast,
         ResolutionOutcome? pendingOutcome)
     {
-        var outerCandidates = cast.PriorBindingCandidates;
-        bool outerMayBeEmpty = cast.PriorBindingMayBeEmpty;
-        bool outerBindingMayChange = cast.PriorBindingMayChange;
-        bool outerChecking = cast.CheckingInitiation;
         bool CanResolve(Card? binding)
         {
-            cast.ChooseSelection(binding);
-            cast.SetPriorBindingCandidates(binding is null ? [] : [binding]);
-            cast.SetPriorBindingMayBeEmpty(binding is null);
-            cast.SetPriorBindingMayChange(false);
-            var remaining = RemainingContinuationSteps(cast, pendingOutcome);
+            var scope = cast.ForReachability(cast.Reachability with
+            {
+                CheckingInitiation = true,
+                PriorBindingCandidates = binding is null ? [] : [binding],
+                PriorBindingMayBeEmpty = binding is null,
+                PriorBindingMayChange = false,
+            });
+            scope.ChooseSelection(binding);
+            var remaining = RemainingContinuationSteps(scope, pendingOutcome);
             if (remaining.Count == 0)
             {
                 return true;
             }
-            // The engine refuses an option that can invalidate a later
-            // singular lookup, even when that lookup is inside a condition
-            // whose false result would otherwise look like a legal no-op.
+            // An option cannot invalidate a later singular lookup, even inside
+            // a condition whose false result would otherwise be a legal no-op.
             var sensitiveAreas = new HashSet<DeckType>();
             foreach (var step in remaining)
-                CollectSingularAreaDependencies(step, cast, sensitiveAreas);
+                CollectSingularAreaDependencies(step, scope, sensitiveAreas);
             if (sensitiveAreas.Count > 0
-                && EffectsMayChangeAnyArea(cast.PriorSteps, sensitiveAreas, cast))
+                && EffectsMayChangeAnyArea(scope.Reachability.PriorSteps, sensitiveAreas, scope))
             {
                 return false;
             }
             var continuation = new AbilityEffect.Sequence([.. remaining]);
-            return CanInitiateSequence(continuation, cast)
-                && TargetLegalityOf(continuation, cast) != TargetLegality.Invalid;
+            return CanInitiateSequence(continuation, scope)
+                && TargetLegalityOf(continuation, scope) != TargetLegality.Invalid;
         }
-        try
-        {
-            cast.SetCheckingInitiation(true);
-            return outcomes.Cards.Any(CanResolve)
-                || outcomes.MayBeEmpty && CanResolve(null);
-        }
-        finally
-        {
-            cast.SetPriorBindingCandidates(outerCandidates);
-            cast.SetPriorBindingMayBeEmpty(outerMayBeEmpty);
-            cast.SetPriorBindingMayChange(outerBindingMayChange);
-            cast.SetCheckingInitiation(outerChecking);
-        }
+        return outcomes.Cards.Any(CanResolve)
+            || outcomes.MayBeEmpty && CanResolve(null);
     }
 
     /// <summary>Sequence siblings reached after the currently persisted choice.</summary>

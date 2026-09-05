@@ -16,19 +16,19 @@ public sealed partial class AbilityRunner
     private static bool SingularAreaQueryIsStable(IReadOnlySet<DeckType> areas, Cast cast)
     {
         bool priorCanChange = EffectsMayChangeAnyArea(
-            cast.PriorSteps, areas, cast);
-        bool paymentCanChange = cast.PaymentCost is { } cost
+            cast.Reachability.PriorSteps, areas, cast);
+        bool paymentCanChange = cast.Reachability.PaymentCost is { } cost
             && CostMayChangeAnyArea(cost, areas, cast);
         if (priorCanChange || paymentCanChange)
         {
-            if (cast.FilteringContinuationOption)
+            if (cast.Reachability.FilteringContinuationOption)
             {
                 return false;
             }
             throw new RulesNotImplementedException(
                 $"'{cast.Source.FaceId}' reaches a singular area query after its "
                 + "matching cards may change"
-                + (cast.PriorSteps.Count > 0
+                + (cast.Reachability.PriorSteps.Count > 0
                     ? " during prior effects"
                     : " during payment"));
         }

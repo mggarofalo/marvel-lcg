@@ -19,7 +19,7 @@ public sealed partial class AbilityRunner
 
     private static Card? Find(AbilityCardSelection selector, Cast cast, List<InformationKind>? information = null)
     {
-        if (selector is AbilityCardSelection.InAreas areas && cast.CheckingInitiation
+        if (selector is AbilityCardSelection.InAreas areas && cast.Reachability.CheckingInitiation
             && !SingularAreaQueryIsStable(areas.Areas.Select(AbilitySelectorEvaluation.AreaType).ToHashSet(), cast))
             return null;
         var evaluation = new AbilitySelectorEvaluation(cast.QueryContext());

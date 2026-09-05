@@ -295,6 +295,16 @@ The engine preflights an ability before offering it. It checks the printed form,
 live conditions, target availability, limits, maxima and ability to pay. An
 offered affordance must remain legal when taken against the same state.
 
+`AbilityReachabilityContext` holds immutable assumptions for one speculative
+path: possible prior effects, payment changes, form changes and selected cards.
+Sequence steps and continuation candidates receive separate snapshots. A child
+probe cannot overwrite its parent's assumptions or leave a mode set afterward.
+
+`AbilityInitiationEvidence` holds the checks that live resolution must retain,
+including label validation and scoped target exceptions. It belongs to one
+ability resolution, not the shared program. Payment or suspension cannot erase
+an exception already established before the cost.
+
 Costs are atomic where the rules require them to be. A failed component does not
 leave earlier resources, cards or exhaustions spent. When the protocol cannot
 represent a required choice, the engine raises before changing the board.

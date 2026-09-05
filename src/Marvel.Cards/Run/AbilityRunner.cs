@@ -576,10 +576,12 @@ public sealed partial class AbilityRunner : ICardAbilities
 
                     var eligibility = new Cast(
                         world, card, occurrence, controller, [], this);
-                    eligibility.SetPaymentMayMutate(
-                        ability.Cost is not null
-                        || world.Facts.Kind(card.FaceId) == CardKind.Event,
-                        ability.Cost);
+                    eligibility = eligibility.ForReachability(eligibility.Reachability with
+                    {
+                        PaymentMayMutate = ability.Cost is not null
+                            || world.Facts.Kind(card.FaceId) == CardKind.Event,
+                        PaymentCost = ability.Cost,
+                    });
                     if (!WhenHolds(ability, eligibility)
                         || (controller >= 0 && !CanInitiate(ability, eligibility)))
                     {
@@ -674,9 +676,11 @@ public sealed partial class AbilityRunner : ICardAbilities
         {
             Tier = found.Trigger.Timing,
         };
-        cast.SetPaymentMayMutate(
-            found.Cost is not null || world.Facts.Kind(card.FaceId) == CardKind.Event,
-            found.Cost);
+        cast = cast.ForReachability(cast.Reachability with
+        {
+            PaymentMayMutate = found.Cost is not null || world.Facts.Kind(card.FaceId) == CardKind.Event,
+            PaymentCost = found.Cost,
+        });
 
         if (!Available(world, card, found, occurrence))
         {
@@ -2149,9 +2153,11 @@ public sealed partial class AbilityRunner : ICardAbilities
     private bool ActionAvailable(
         World world, Card card, CompiledCardAbility ability, int player, Cast eligibility)
     {
-        eligibility.SetPaymentMayMutate(
-            ability.Cost is not null || world.Facts.Kind(card.FaceId) == CardKind.Event,
-            ability.Cost);
+        eligibility = eligibility.ForReachability(eligibility.Reachability with
+        {
+            PaymentMayMutate = ability.Cost is not null || world.Facts.Kind(card.FaceId) == CardKind.Event,
+            PaymentCost = ability.Cost,
+        });
         return MayInitiate(world, ability, card, player)
         && Available(world, card, ability)
         && InForm(world, player, ability.Trigger.Form)

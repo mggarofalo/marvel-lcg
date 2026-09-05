@@ -14,8 +14,8 @@ public sealed partial class AbilityRunner
     {
         var test = ConditionalOf(conditional, cast).Test;
         bool canSwitch = PriorStepCanChange(test, cast)
-            || cast.PaymentMayMutate && PaymentCanChange(test)
-            || cast.PriorBindingMayChange && BindingCanChange(test);
+            || cast.Reachability.PaymentMayMutate && PaymentCanChange(test)
+            || cast.Reachability.PriorBindingMayChange && BindingCanChange(test);
         if (canSwitch)
         {
             return ConditionalBranches((AbilityEffect.Conditional)conditional)

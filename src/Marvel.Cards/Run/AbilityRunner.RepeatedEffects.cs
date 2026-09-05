@@ -1695,13 +1695,13 @@ public sealed partial class AbilityRunner
             .ToList();
 
         var searched = SearchAreaTypes(node, cast);
-        if (cast.CheckingInitiation
-            && (cast.PriorSteps.Any(step =>
+        if (cast.Reachability.CheckingInitiation
+            && (cast.Reachability.PriorSteps.Any(step =>
                     MayChangeAnyArea(step, searched, cast))
-                || cast.PaymentCost is { } cost
+                || cast.Reachability.PaymentCost is { } cost
                     && CostMayChangeAnyArea(cost, searched, cast)))
         {
-            if (cast.FilteringContinuationOption)
+            if (cast.Reachability.FilteringContinuationOption)
             {
                 return false;
             }

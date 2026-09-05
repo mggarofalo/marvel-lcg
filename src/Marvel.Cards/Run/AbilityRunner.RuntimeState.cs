@@ -83,59 +83,12 @@ public sealed partial class AbilityRunner
 
         public void PaidWith(string resources) => Payment = resources;
 
-        /// <summary>Whether initiation payment may change outcome-relevant state.</summary>
-        public bool PaymentMayMutate { get; private set; }
+        public AbilityReachabilityContext Reachability { get; init; } = new();
 
-        public AbilityCost? PaymentCost { get; private set; }
-
-        public void SetPaymentMayMutate(bool value, AbilityCost? cost = null)
-        {
-            PaymentMayMutate = value;
-            PaymentCost = cost;
-        }
-
-        public bool CheckingInitiation { get; private set; }
-
-        public void SetCheckingInitiation(bool value) => CheckingInitiation = value;
-
-        public bool FilteringContinuationOption { get; private set; }
-
-        public void SetFilteringContinuationOption(bool value) =>
-            FilteringContinuationOption = value;
-
-        public IReadOnlyList<AbilityEffect> PriorSteps { get; private set; } = [];
-
-        public void SetPriorSteps(IReadOnlyList<AbilityEffect> steps) =>
-            PriorSteps = steps;
-
-        /// <summary>Whether an earlier sequence step may have changed the board.</summary>
-        public bool PriorStepMayMutate { get; private set; }
-
-        public void SetPriorStepMayMutate(bool value) => PriorStepMayMutate = value;
-
-        /// <summary>Seats whose form an earlier sequence step may change.</summary>
-        public ulong PriorFormsMayChange { get; private set; }
-
-        public void SetPriorFormsMayChange(ulong value) =>
-            PriorFormsMayChange = value;
-
-        /// <summary>Whether an earlier step may bind a selected game element.</summary>
-        public bool PriorBindingMayChange { get; private set; }
-
-        public void SetPriorBindingMayChange(bool value) =>
-            PriorBindingMayChange = value;
-
-        /// <summary>Cards an earlier unanswered selector may bind.</summary>
-        public IReadOnlyList<Card> PriorBindingCandidates { get; private set; } = [];
-
-        public void SetPriorBindingCandidates(IReadOnlyList<Card> value) =>
-            PriorBindingCandidates = value;
-
-        /// <summary>Whether a reachable binding path supplies no selected card.</summary>
-        public bool PriorBindingMayBeEmpty { get; private set; }
-
-        public void SetPriorBindingMayBeEmpty(bool value) =>
-            PriorBindingMayBeEmpty = value;
+        // The interpreter adapter preserves resolution-local evidence while
+        // giving every speculative branch independent scalar state and bindings.
+        public Cast ForReachability(AbilityReachabilityContext context) =>
+            this with { Reachability = context };
 
         /// <summary>Cards discarded earlier in this resolution, in order.</summary>
         public List<Card> Discarded { get; } = [];
@@ -342,15 +295,21 @@ public sealed partial class AbilityRunner
         /// <summary>The performer attributed by an ability-envelope label.</summary>
         public Card? AbilityActor { get; set; }
 
+        private AbilityInitiationEvidence InitiationEvidence { get; } = new();
+
         /// <summary>Whether this fresh cast passed envelope legality before resolution.</summary>
-        public bool LabelsPreflighted { get; set; }
+        public bool LabelsPreflighted
+        {
+            get => InitiationEvidence.LabelsPreflighted;
+            set => InitiationEvidence.LabelsPreflighted = value;
+        }
 
         private const string CrisisIgnoringThwartPrefix =
             "__preflight.crisisIgnoringThwart.";
 
-        private HashSet<AbilityEffect> CrisisIgnoringThwarts { get; } = new(ReferenceEqualityComparer.Instance);
+        private HashSet<AbilityEffect> CrisisIgnoringThwarts => InitiationEvidence.CrisisIgnoringThwarts;
 
-        private HashSet<int> PersistedCrisisIgnoringThwarts { get; } = [];
+        private HashSet<int> PersistedCrisisIgnoringThwarts => InitiationEvidence.PersistedCrisisIgnoringThwarts;
 
         /// <summary>Persists a pre-payment exception to this power's target limit.</summary>
         public void ValidateCrisisIgnoringThwart(AbilityEffect node) =>
