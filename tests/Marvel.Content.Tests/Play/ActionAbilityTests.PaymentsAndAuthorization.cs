@@ -13,6 +13,51 @@ namespace Marvel.Content.Tests.Play;
 
 public sealed partial class ActionAbilityTests
 {
+    [Fact]
+    public void PaymentChoicesAndValidationUseTheCompiledCostSnapshot()
+    {
+        var parsed = AbilityCatalog.Parse("""
+            {"cards":[{"card":"01006","abilities":[{
+              "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"game"},
+              "effect":{"draw":{"player":"you","count":1}}
+            }]}]}
+            """);
+        var fields = new Dictionary<string, AbilityValue>(StringComparer.Ordinal)
+        {
+            ["from"] = new AbilityValue.Map(new Dictionary<string, AbilityValue>(StringComparer.Ordinal)
+            {
+                ["query"] = new AbilityValue.Word("alliesYouControl"),
+            }),
+            ["count"] = new AbilityValue.Number(1),
+        };
+        var ability = parsed.Abilities[0] with
+        {
+            Cost = new AbilityNode("exhaustChosen", new AbilityValue.Map(fields)),
+        };
+        var runner = new Marvel.Cards.Run.AbilityRunner(new AbilityBook([ability], parsed.Authored));
+        Card? source = null;
+        Card? ally = null;
+        var (_, world) = Playing(board =>
+        {
+            source = InPlay(board, AuthoredCards.AuntMay);
+            ally = board.CreateCard(AuthoredCards.BlackCat,
+                board.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+        }, abilities: runner);
+
+        // The executable program is a snapshot. Changing the caller-owned
+        // syntax cannot change either the offered count or the accepted answer.
+        fields["count"] = new AbilityValue.Number(99);
+        var pending = Assert.Single(runner.Actions(world, 0), option => option.Card == source!.ObjectId);
+        var target = Assert.IsType<TargetRequest>(runner.Describe(world, pending).Targets);
+        Assert.Equal(1, target.Min);
+        Assert.Equal(1, target.Max);
+        Assert.Equal([ally!.ObjectId], target.Legal);
+
+        runner.Act(world, pending, [], [ally.ObjectId]);
+
+        Assert.False(ally.Ready);
+    }
+
     [Rule("rr:printed.1")]
     [Rule("rr:text-box.1.1")]
     [Fact]

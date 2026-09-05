@@ -29,11 +29,31 @@ namespace Marvel.Cards.Run;
 /// piece of, and <c>docs/enemy-attacks.md</c> for the cards it currently runs.
 /// </para>
 /// </remarks>
-/// <param name="book">The authored cards.</param>
-public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
+public sealed partial class AbilityRunner : ICardAbilities
 {
-    private readonly AbilityProgram program = AbilityLowering.Book(book);
-    private readonly AbilityBook book = book;
+    private readonly AbilityProgram program;
+    private readonly AbilityBook book;
+    private readonly Dictionary<CardAbility, CompiledCardAbility> compiledAbilities;
+
+    /// <summary>Validates and lowers the authored cards before gameplay.</summary>
+    /// <param name="book">The authored cards.</param>
+    public AbilityRunner(AbilityBook book)
+    {
+        program = AbilityLowering.Book(book);
+        this.book = book;
+        compiledAbilities = new Dictionary<CardAbility, CompiledCardAbility>(ReferenceEqualityComparer.Instance);
+        for (int index = 0; index < book.Abilities.Count; index++)
+        {
+            compiledAbilities[book.Abilities[index]] = program.Abilities[index];
+        }
+        constant = new HashSet<string>(program.Abilities
+            .Where(ability => ability.Trigger.Timing == AbilityType.Constant)
+            .Select(ability => ability.Card), StringComparer.Ordinal);
+    }
+
+    // MARVEL-375 migration boundary: remove this syntax-to-program join when
+    // every runtime entry point takes CompiledCardAbility directly.
+    private AbilityCost? CompiledCost(CardAbility ability) => compiledAbilities[ability].Cost;
 
     // An activation is an agenda operation, while the sentence that initiated
     // it is a card operation. The stable agenda id is the join between them.
@@ -49,11 +69,7 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
     // loop below finds the same abilities, just slower. It is here because
     // reading a stat goes through the effect list, and the digest reads every
     // stat of every card.
-    private readonly HashSet<string> constant = new(
-        book.Abilities
-            .Where(ability => ability.Trigger.Timing == AbilityType.Constant)
-            .Select(ability => ability.Card),
-        StringComparer.Ordinal);
+    private readonly HashSet<string> constant;
 
     /// <summary>The verb an option carries on the wire.</summary>
     public const string ChooseVerb = "Choose_Option";
@@ -577,7 +593,7 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
                     // conditions are met" do the later steps happen. So an ability
                     // nobody can pay for is not an offer that fails at step 5; it
                     // never reaches the window at all.
-                    if (!Payable(world, card, controller, ability.Cost)
+                    if (!Payable(world, card, controller, CompiledCost(ability))
                         || !EventPayable(world, card, controller, ability)
                         || !Available(world, card, ability, occurrence))
                     {
@@ -614,7 +630,7 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
             AnchorId: ability.Card,
             AnchorPlayer: ability.Player,
             Label: found.Name,
-            Targets: Asking(world, ability.Player, found.Cost),
+            Targets: AbilityCostSelection.Ask(world, ability.Player, CompiledCost(found)),
             Costs: price is null ? null : [price]);
     }
 
@@ -679,18 +695,18 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
         // state instead of choosing on the player's behalf.
         if (AbilityTypes.IsMandatory(found.Trigger.Timing) && found.Cost is not null)
         {
-            if (!MandatoryCostIsAutomatic(found.Cost))
+            if (!MandatoryCostIsAutomatic(CompiledCost(found)!))
             {
                 throw new RulesNotImplementedException(
                     $"'{card.FaceId}' has a mandatory ability whose '{found.Cost.Kind}' "
                     + "cost requires a player decision");
             }
-            if (!Payable(world, card, resolving, found.Cost))
+            if (!Payable(world, card, resolving, CompiledCost(found)))
             {
                 return events;
             }
         }
-        else if (!CounterCostsPayable(world, card, resolving, found.Cost))
+        else if (!CounterCostsPayable(world, card, resolving, CompiledCost(found)))
         {
             throw new RulesNotImplementedException(
                 $"'{card.FaceId}' can no longer pay this ability's cost");
@@ -716,10 +732,10 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
         // asked whether the cost could be paid at all. What it cannot check is
         // that the player named a payment that works, and `CardPlay.Spend`
         // refuses one that does not.
-        ValidatePayment(found.Cost, paying, chosen, values, cast);
-        PayEvent(card, paying, cast, found.Effect, allocations, found.Cost);
+        ValidatePayment(CompiledCost(found), paying, chosen, values, cast);
+        PayEvent(card, paying, cast, found.Effect, allocations, CompiledCost(found));
         if (world.Facts.Kind(card.FaceId) == CardKind.Event
-            && ResourceRequirement(found.Cost, card).Length > 0)
+            && ResourceRequirement(CompiledCost(found), card).Length > 0)
         {
             PayNonResourceCosts(found.Cost, paying, chosen, values, cast);
         }
@@ -978,7 +994,7 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
                     || !MayInitiate(world, ability, card, player)
                     || !Available(world, card, ability)
                     || !InForm(world, player, ability.Trigger.Form)
-                    || !Payable(world, card, player, ability.Cost)
+                    || !Payable(world, card, player, CompiledCost(ability))
                     || (ability.When is not null && !Test(ability.When, eligibility)))
                 {
                     continue;
@@ -1188,7 +1204,7 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
                 && MayInitiate(world, candidate, holder, player)
                 && Available(world, holder, candidate)
                 && InForm(world, player, candidate.Trigger.Form)
-                && Payable(world, holder, player, candidate.Cost)
+                && Payable(world, holder, player, CompiledCost(candidate))
                 && (candidate.When is null || Test(candidate.When, eligibility));
         })
             ?? throw new RulesNotImplementedException(
@@ -2050,7 +2066,7 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
             throw new RulesNotImplementedException(
                 $"'{card.FaceId}' cannot initiate this action in the current state");
         }
-        if (!CounterCostsPayable(world, card, ability.Player, found.Cost))
+        if (!CounterCostsPayable(world, card, ability.Player, CompiledCost(found)))
         {
             throw new RulesNotImplementedException(
                 $"'{card.FaceId}' can no longer pay this ability's counter cost");
@@ -2058,10 +2074,10 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
 
         // `rr:initiating-abilities` keeps the steps apart, and step 5 pays
         // before step 6 resolves.
-        ValidatePayment(found.Cost, paying, chosen, values, cast);
-        PayEvent(card, paying, cast, found.Effect, allocations, found.Cost);
+        ValidatePayment(CompiledCost(found), paying, chosen, values, cast);
+        PayEvent(card, paying, cast, found.Effect, allocations, CompiledCost(found));
         if (world.Facts.Kind(card.FaceId) == CardKind.Event
-            && ResourceRequirement(found.Cost, card).Length > 0)
+            && ResourceRequirement(CompiledCost(found), card).Length > 0)
         {
             PayNonResourceCosts(found.Cost, paying, chosen, values, cast);
         }
@@ -2109,7 +2125,7 @@ public sealed partial class AbilityRunner(AbilityBook book) : ICardAbilities
                     0, [Steps.TurnAction], Subject: card.ObjectId, Player: player),
                     player, [], this);
                 if (ActionAvailable(world, card, ability, player, eligibility)
-                    && Payable(world, card, player, ability.Cost)
+                    && Payable(world, card, player, CompiledCost(ability))
                     && EventPayable(world, card, player, ability))
                 {
                     int ordinal = written.Take(index).Count(candidate =>

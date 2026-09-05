@@ -11,11 +11,11 @@ namespace Marvel.Cards.Dsl;
 /// preference: everything a player can author or download has to be inert.
 /// </para>
 /// <para>
-/// This is the JSON the sketches in <c>docs/card-dsl.md</c> are written in,
-/// given types. It is deliberately <i>not</i> a record per node kind: the
-/// measured vocabulary is around a hundred actions and three hundred triggers,
-/// and a C# type per node would make the vocabulary grow by compiling rather
-/// than by authoring — which is the thing this exists to stop.
+/// This syntax tree retains the shape of the authored JSON. Semantic lowering
+/// maps supported operations to the closed instruction types in
+/// <see cref="AbilityProgram"/>. Cards compose those operations as inert data;
+/// adding a card needs no new CLR type, while adding an operation requires an
+/// engine implementation before its spelling is admitted.
 /// </para>
 /// </remarks>
 public abstract record AbilityValue

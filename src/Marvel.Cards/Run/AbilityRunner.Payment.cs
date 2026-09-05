@@ -18,41 +18,39 @@ public sealed partial class AbilityRunner
     /// ability that would abort is not an offer, it is a trap. An exhausted card
     /// cannot pay a cost of exhausting itself: <c>rr:exhausted.2</c>.
     /// </remarks>
-    private static bool Payable(World world, Card card, int player, AbilityNode? cost) =>
+    private static bool Payable(World world, Card card, int player, AbilityCost? cost) =>
         cost switch
         {
             null => true,
-            { Kind: "seq" } => SequencePayable(world, card, player, cost),
-            { Kind: "exhaust" } => CostTarget(world, card, player, cost.Argument)?.Ready == true,
-            { Kind: "discard" } => CostTarget(world, card, player,
-                cost.Field("card") ?? cost.Argument) is not null,
-            { Kind: "removeCounters" } => CounterRemovalOf(cost) is var removal
-                && CostTarget(world, card, player, removal.Card) is { } counterCard
+            AbilityCost.Sequence sequence => SequencePayable(world, card, player, sequence),
+            AbilityCost.Exhaust exhaust => CostTarget(world, card, player, exhaust.Card)?.Ready == true,
+            AbilityCost.Discard discard => CostTarget(world, card, player, discard.Card) is not null,
+            AbilityCost.RemoveCounters removal => CostTarget(world, card, player, removal.Card) is { } counterCard
                 && CounterKeyForRemoval(
-                    counterCard, removal.Type, removal.Count) is not null,
+                    counterCard, removal.Counter, removal.Count) is not null,
 
             // Every other cost is somebody's, and an ability offered to every
             // seat at once has not said whose. `AbilityTrigger.Player` is where
             // a card that means one seat says so.
             _ when player < 0 => throw new RulesNotImplementedException(
-                $"'{card.FaceId}' has a cost of '{cost.Kind}' and is offered to every player, "
+                $"'{card.FaceId}' has a cost and is offered to every player, "
                 + "so there is no hand to price it against"),
 
             // Asked of the whole hand, which is the right question rather than
             // an approximation: `rr:cost.4` permits generating beyond the cost,
             // so if everything together cannot pay then no choice among them
             // can, and if it can then spending it all is a payment.
-            { Kind: "spend" } => Resources.Pays(
+            AbilityCost.Spend { PrintedOnly: false } spend => Resources.Pays(
                 string.Concat(CardPlay.Generators(world, world.Facts, world.Seats[player])
                     .SelectMany(source => source.Generates)),
-                Word(cost.Argument).Length,
-                Word(cost.Argument)),
-            { Kind: "spendPrinted" } => Resources.PaysPrinted(
+                spend.Resources.Length,
+                spend.Resources),
+            AbilityCost.Spend { PrintedOnly: true } spend => Resources.PaysPrinted(
                 string.Concat(PrintedGenerators(world, player)
                     .SelectMany(source => source.Generates)),
-                Word(cost.Argument).Length,
-                Word(cost.Argument)),
-            { Kind: "spendEnergyX" } => Resources.Pays(
+                spend.Resources.Length,
+                spend.Resources),
+            AbilityCost.SpendEnergy => Resources.Pays(
                 string.Concat(CardPlay.Generators(world, world.Facts, world.Seats[player])
                     .SelectMany(source => source.Generates)),
                 1,
@@ -63,34 +61,23 @@ public sealed partial class AbilityRunner
             // discard can be: the card is the cost and what it would have
             // generated is not read at all. So the question is a count and not
             // a sum, and a card with no printed `RES` pays it.
-            { Kind: "discardFromHand" } =>
-                world.Seats[player].Hand.Cards.Count >= Number(cost.Argument),
-            { Kind: "discardUpToFromHand" } =>
-                Number(cost.Argument) > 0 && world.Seats[player].Hand.Cards.Count > 0,
-            { Kind: "discardAnyFromHand" } =>
-                world.Seats[player].Hand.Cards.Count > 0,
-            { Kind: "exhaustChosen" } => CostChoices(world, player, cost)
-                .Count(card => card.Ready) >= CostRange(cost, available: int.MaxValue).Min,
+            AbilityCost.DiscardFromHand discard => world.Seats[player].Hand.Cards.Count
+                >= AbilityCostSelection.Range(discard.Range, int.MaxValue).Min,
+            AbilityCost.ExhaustChosen exhaust => AbilityCostSelection.Choices(world, player, exhaust.From)
+                .Count(card => card.Ready) >= AbilityCostSelection.Range(exhaust.Range, int.MaxValue).Min,
 
-            { Kind: "heal" } => CostTarget(
-                    world, card, player, cost.Require("card")) is { Damage: > 0 }
-                && Number(cost.Require("amount")) > 0,
+            AbilityCost.Heal heal => CostTarget(world, card, player, heal.Card) is { Damage: > 0 },
 
-            { Kind: "dealDamage" } => CostTarget(
-                    world, card, player, cost.Require("cards")) is { } damageTarget
-                && Number(cost.Require("amount")) > 0
-                && world.Abilities.CanTakeDamage(world, damageTarget, card),
-            { Kind: "takeDamage" } => CostTarget(
-                    world, card, player, cost.Require("cards")) is { } takingTarget
-                && Number(cost.Require("amount")) > 0
+            AbilityCost.Damage damage => CostTarget(
+                    world, card, player, damage.Card) is { } takingTarget
                 && world.Abilities.CanTakeDamage(world, takingTarget, card)
                 // `rr:cost.12`: "that cost is not considered paid unless all
                 // of that damage was taken." Tough necessarily prevents the
                 // next instance, so this cost cannot be paid at initiation.
-                && !Statuses.Has(world, takingTarget, Statuses.Tough),
+                && (!damage.MustTakeAll || !Statuses.Has(world, takingTarget, Statuses.Tough)),
 
             _ => throw new RulesNotImplementedException(
-                $"'{card.FaceId}' has a cost of '{cost.Kind}', which is not implemented"),
+                $"'{card.FaceId}' has an unknown compiled cost"),
         };
 
     /// <summary>Whether a mandatory cost can be paid without asking a player.</summary>
@@ -101,22 +88,22 @@ public sealed partial class AbilityRunner
     /// variable-card costs do, so they remain explicitly unimplemented until
     /// the timing window can carry that mandatory payment prompt.
     /// </remarks>
-    private static bool MandatoryCostIsAutomatic(AbilityNode cost) => cost.Kind switch
+    private static bool MandatoryCostIsAutomatic(AbilityCost cost) => cost switch
     {
-        "seq" => Nodes(cost.Argument).All(MandatoryCostIsAutomatic),
-        "discard" or "exhaust" or "removeCounters" => true,
+        AbilityCost.Sequence sequence => sequence.Costs.All(MandatoryCostIsAutomatic),
+        AbilityCost.Discard or AbilityCost.Exhaust or AbilityCost.RemoveCounters => true,
         _ => false,
     };
 
-    private static bool SequencePayable(World world, Card card, int player, AbilityNode cost)
+    private static bool SequencePayable(World world, Card card, int player, AbilityCost.Sequence cost)
     {
-        var steps = Nodes(cost.Argument).ToList();
+        var steps = cost.Costs;
         if (!CounterCostsPayable(world, card, player, cost))
         {
             return false;
         }
 
-        var spends = steps.Where(step => step.Kind is "spend" or "spendPrinted").ToList();
+        var spends = steps.OfType<AbilityCost.Spend>().ToList();
         if (spends.Count > 0)
         {
             if (player < 0)
@@ -126,15 +113,15 @@ public sealed partial class AbilityRunner
                     + "every player, so there is no hand to price them against");
             }
 
-            bool printed = spends.All(step => step.Kind == "spendPrinted");
-            if (!printed && spends.Any(step => step.Kind == "spendPrinted"))
+            bool printed = spends.All(step => step.PrintedOnly);
+            if (!printed && spends.Any(step => step.PrintedOnly))
             {
                 throw new RulesNotImplementedException(
                     $"'{card.FaceId}' mixes printed and ordinary simultaneous "
                     + "resource costs, whose allocation is not implemented");
             }
 
-            string required = string.Concat(spends.Select(step => Word(step.Argument)));
+            string required = string.Concat(spends.Select(step => step.Resources));
             string pool = string.Concat((printed
                     ? PrintedGenerators(world, player)
                     : CardPlay.Generators(world, world.Facts, world.Seats[player]))
@@ -148,13 +135,12 @@ public sealed partial class AbilityRunner
             }
         }
 
-        return steps.Where(step => step.Kind is not (
-                "spend" or "spendPrinted" or "removeCounters"))
+        return steps.Where(step => step is not (AbilityCost.Spend or AbilityCost.RemoveCounters))
             .All(step => Payable(world, card, player, step));
     }
 
     private static bool CounterCostsPayable(
-        World world, Card card, int player, AbilityNode? cost)
+        World world, Card card, int player, AbilityCost? cost)
     {
         if (cost is null)
         {
@@ -163,14 +149,13 @@ public sealed partial class AbilityRunner
 
         var counterCosts = new Dictionary<(int Card, string Type), long>();
         var counterCards = new Dictionary<int, Card>();
-        foreach (var step in CounterCostSteps(cost))
+        foreach (var removal in CounterCostSteps(cost))
         {
-            var removal = CounterRemovalOf(step);
             if (CostTarget(world, card, player, removal.Card) is not { } target)
             {
                 return false;
             }
-            var key = (target.ObjectId, removal.Type);
+            var key = (target.ObjectId, removal.Counter);
             counterCards[target.ObjectId] = target;
             counterCosts[key] = checked(
                 counterCosts.GetValueOrDefault(key) + removal.Count);
@@ -193,18 +178,18 @@ public sealed partial class AbilityRunner
         return true;
     }
 
-    private static IEnumerable<AbilityNode> CounterCostSteps(AbilityNode cost)
+    private static IEnumerable<AbilityCost.RemoveCounters> CounterCostSteps(AbilityCost cost)
     {
-        if (cost.Kind == "removeCounters")
+        if (cost is AbilityCost.RemoveCounters removal)
         {
-            yield return cost;
+            yield return removal;
             yield break;
         }
-        if (cost.Kind != "seq")
+        if (cost is not AbilityCost.Sequence sequence)
         {
             yield break;
         }
-        foreach (var step in Nodes(cost.Argument))
+        foreach (var step in sequence.Costs)
         {
             foreach (var counterCost in CounterCostSteps(step))
             {
@@ -221,7 +206,14 @@ public sealed partial class AbilityRunner
             _ => null,
         };
 
-    private static bool EventPayable(
+    private static Card? CostTarget(World world, Card source, int player, AbilityCostCard value) => value switch
+    {
+        AbilityCostCard.Source => source,
+        AbilityCostCard.Identity => player >= 0 ? world.Seats[player].IdentityCard : null,
+        _ => throw new InvalidOperationException("Unknown compiled cost card"),
+    };
+
+    private bool EventPayable(
         World world, Card card, int player, CardAbility ability)
     {
         if (world.Facts.Kind(card.FaceId) != CardKind.Event)
@@ -237,7 +229,7 @@ public sealed partial class AbilityRunner
         long cost = CardPlay.CostOf(
             world, world.Facts, world.Seats[player], card).Amount;
         string required = Resources.Required(world, card, world.Facts)
-            + ResourceRequirement(ability.Cost, card);
+            + ResourceRequirement(CompiledCost(ability), card);
         cost += required.Length
             - Resources.Required(world, card, world.Facts).Length;
         string pool = string.Concat(EventGenerators(world, card, player, ability.Effect)
@@ -245,140 +237,26 @@ public sealed partial class AbilityRunner
         return Resources.Pays(pool, cost, required);
     }
 
-    private static string ResourceRequirement(AbilityNode? cost, Card card) => cost switch
+    private static string ResourceRequirement(AbilityCost? cost, Card card) => cost switch
     {
         null => string.Empty,
-        { Kind: "spend" } => Word(cost.Argument),
-        { Kind: "spendPrinted" } => throw new RulesNotImplementedException(
+        AbilityCost.Spend { PrintedOnly: false } spend => spend.Resources,
+        AbilityCost.Spend { PrintedOnly: true } => throw new RulesNotImplementedException(
             $"event '{card.FaceId}' combines its printed card cost with a printed-resource "
             + "arrow cost, whose allocation is not implemented"),
-        { Kind: "seq" } => string.Concat(Nodes(cost.Argument)
-            .Select(step => step.Kind switch
+        AbilityCost.Sequence sequence => string.Concat(sequence.Costs
+            .Select(step => step switch
             {
-                "spend" => Word(step.Argument),
-                "spendPrinted" => throw new RulesNotImplementedException(
+                AbilityCost.Spend { PrintedOnly: false } spend => spend.Resources,
+                AbilityCost.Spend { PrintedOnly: true } => throw new RulesNotImplementedException(
                     $"event '{card.FaceId}' combines its printed card cost with a "
                     + "printed-resource arrow cost, whose allocation is not implemented"),
                 _ => string.Empty,
             })),
-        { Kind: "spendEnergyX" } => throw new RulesNotImplementedException(
+        AbilityCost.SpendEnergy => throw new RulesNotImplementedException(
             $"event '{card.FaceId}' combines a printed cost with a variable X cost"),
         _ => string.Empty,
     };
-
-    /// <summary>
-    /// What a cost still has to be told, or null.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <c>rr:initiating-abilities</c> keeps choosing and paying in different
-    /// steps, and this is the choosing half of a cost that has one. A resource
-    /// cost has none: <see cref="CostOption.Sources"/> is the menu and which
-    /// subset pays is the <i>payment</i>, which travels in
-    /// <c>Decision.Resources</c>.
-    /// </para>
-    /// <para>
-    /// <b>The whole hand, and not the hand minus this card.</b> Hunted is an
-    /// obligation in the player's play area rather than a card in hand, so
-    /// there is nothing here for <c>CardPlay.Spend</c>'s "a card being played
-    /// cannot also pay for itself" to guard against — and a card that could
-    /// would be a different rule, checked where that one is.
-    /// </para>
-    /// </remarks>
-    private static TargetRequest? Asking(World world, int player, AbilityNode? cost)
-    {
-        if (cost is { Kind: "seq" })
-        {
-            return Nodes(cost.Argument)
-                .Select(step => Asking(world, player, step))
-                .SingleOrDefault(request => request is not null);
-        }
-
-        if (cost is { Kind: "discardFromHand" })
-        {
-            long many = Number(cost.Argument);
-            return new TargetRequest(
-                [.. world.Seats[player].Hand.Cards.Select(card => card.ObjectId)],
-                (int)many,
-                (int)many);
-        }
-
-        if (cost is { Kind: "discardUpToFromHand" })
-        {
-            int maximum = Math.Min(
-                checked((int)Number(cost.Argument)),
-                world.Seats[player].Hand.Cards.Count);
-            return new TargetRequest(
-                [.. world.Seats[player].Hand.Cards.Select(card => card.ObjectId)],
-                Min: 1,
-                Max: maximum);
-        }
-
-        if (cost is { Kind: "discardAnyFromHand" })
-        {
-            return new TargetRequest(
-                [.. world.Seats[player].Hand.Cards.Select(card => card.ObjectId)],
-                Min: 1,
-                Max: world.Seats[player].Hand.Cards.Count);
-        }
-
-        if (cost is not { Kind: "exhaustChosen" })
-        {
-            return null;
-        }
-
-        var legal = CostChoices(world, player, cost).Where(card => card.Ready).ToList();
-        var range = CostRange(cost, legal.Count);
-        return new TargetRequest(
-            [.. legal.Select(card => card.ObjectId)],
-            range.Min,
-            range.Max);
-    }
-
-    private static IReadOnlyList<Card> CostChoices(
-        World world, int player, AbilityNode cost)
-    {
-        var query = Tree(cost.Require("from"));
-        string name = Word(query.Argument);
-        return (query.Kind, name) switch
-        {
-            ("query", "heroesAndAllies") =>
-            [
-                .. world.PlayerOrder
-                    .Where(seat => Forms.In(world, world.Seats[seat], world.Facts, "hero"))
-                    .Select(seat => world.Seats[seat].IdentityCard),
-                .. world.Areas.Where(area => area.Type == DeckType.AlliesArea)
-                    .SelectMany(area => area.Cards),
-            ],
-            ("query", "charactersYouControl") =>
-            [
-                world.Seats[player].IdentityCard,
-                .. world.AreaOf(DeckType.AlliesArea, PlayArea.Of(player)).Cards,
-            ],
-            ("query", "alliesYouControl") =>
-                [.. world.AreaOf(DeckType.AlliesArea, PlayArea.Of(player)).Cards],
-            _ => throw new RulesNotImplementedException(
-                $"cost choice query '{query.Kind}:{name}' is not implemented"),
-        };
-    }
-
-    private static (int Min, int Max) CostRange(AbilityNode cost, int available)
-    {
-        if (cost.Field("count") is { } exact)
-        {
-            int count = checked((int)Number(exact));
-            return (count, count);
-        }
-        if (cost.Field("upTo") is { } upTo)
-        {
-            return (1, Math.Min(checked((int)Number(upTo)), available));
-        }
-        if (cost.Field("anyNumber") is not null)
-        {
-            return (1, available);
-        }
-        return (1, 1);
-    }
 
     /// <summary>What an action's cost looks like on a prompt, or null.</summary>
     /// <remarks>
@@ -386,11 +264,11 @@ public sealed partial class AbilityRunner
     /// <i>choice</i>. Exhausting the card the ability is on has one way to be
     /// paid, so there is nothing to ask and nothing to carry.
     /// </remarks>
-    private static CostOption? Price(World world, Card card, int player, AbilityNode? cost)
+    private static CostOption? Price(World world, Card card, int player, AbilityCost? cost)
     {
-        if (cost is { Kind: "seq" })
+        if (cost is AbilityCost.Sequence sequence)
         {
-            var prices = Nodes(cost.Argument)
+            var prices = sequence.Costs
                 .Select(step => Price(world, card, player, step))
                 .Where(price => price is not null)
                 .Cast<CostOption>()
@@ -437,7 +315,7 @@ public sealed partial class AbilityRunner
                 Components: components);
         }
 
-        if (cost is { Kind: "spendEnergyX" })
+        if (cost is AbilityCost.SpendEnergy)
         {
             long maximum = CardPlay.Generators(
                     world, world.Facts, world.Seats[player])
@@ -449,9 +327,9 @@ public sealed partial class AbilityRunner
                 Variables: [new VariableRequest("X", 1, maximum)]);
         }
 
-        if (cost is { Kind: "spendPrinted" })
+        if (cost is AbilityCost.Spend { PrintedOnly: true } printed)
         {
-            string printedLetters = Word(cost.Argument);
+            string printedLetters = printed.Resources;
             return new CostOption(
                 Target: card.ObjectId,
                 Cost: printedLetters.Length.ToString(
@@ -465,12 +343,12 @@ public sealed partial class AbilityRunner
                     Printed: true)]);
         }
 
-        if (cost is not { Kind: "spend" })
+        if (cost is not AbilityCost.Spend spend)
         {
             return null;
         }
 
-        string letters = Word(cost.Argument);
+        string letters = spend.Resources;
         return new CostOption(
             Target: card.ObjectId,
             Cost: letters.Length.ToString(System.Globalization.CultureInfo.InvariantCulture),
@@ -478,11 +356,11 @@ public sealed partial class AbilityRunner
             Sources: CardPlay.Generators(world, world.Facts, world.Seats[player]));
     }
 
-    private static CostOption? CombinedPrice(
+    private CostOption? CombinedPrice(
         World world, Card card, int player, CardAbility ability)
     {
         var printed = EventPrice(world, card, player, ability.Effect);
-        var arrow = Price(world, card, player, ability.Cost);
+        var arrow = Price(world, card, player, CompiledCost(ability));
         if (printed is null || arrow is null)
         {
             return printed ?? arrow;
@@ -572,7 +450,7 @@ public sealed partial class AbilityRunner
     private static void PayEvent(
         Card card, IReadOnlyList<int> paying, Cast cast, AbilityNode effect,
         IReadOnlyList<ResourceAllocation>? allocations = null,
-        AbilityNode? additionalCost = null)
+        AbilityCost? additionalCost = null)
     {
         if (cast.World.Facts.Kind(card.FaceId) != CardKind.Event)
         {
@@ -1177,11 +1055,11 @@ public sealed partial class AbilityRunner
 
     /// <summary>Validates every selected cost before any simultaneous cost is paid.</summary>
     private static void ValidatePayment(
-        AbilityNode? cost, IReadOnlyList<int> paying, IReadOnlyList<int> chosen, Cast cast)
+        AbilityCost? cost, IReadOnlyList<int> paying, IReadOnlyList<int> chosen, Cast cast)
         => ValidatePayment(cost, paying, chosen, values: null, cast);
 
     private static void ValidatePayment(
-        AbilityNode? cost, IReadOnlyList<int> paying, IReadOnlyList<int> chosen,
+        AbilityCost? cost, IReadOnlyList<int> paying, IReadOnlyList<int> chosen,
         IReadOnlyDictionary<string, long>? values, Cast cast)
     {
         if (cost is null)
@@ -1189,9 +1067,9 @@ public sealed partial class AbilityRunner
             return;
         }
 
-        var steps = cost.Kind == "seq" ? Nodes(cost.Argument).ToList() : [cost];
+        IReadOnlyList<AbilityCost> steps = cost is AbilityCost.Sequence sequence ? sequence.Costs : [cost];
         if (cast.World.Facts.Kind(cast.Source.FaceId) == CardKind.Event
-            && steps.Any(step => step.Kind == "takeDamage"))
+            && steps.Any(step => step is AbilityCost.Damage { MustTakeAll: true }))
         {
             // Playing an event pays its printed resource price through
             // PayEvent. Rolling that payment back after damage prevention is a
@@ -1201,7 +1079,7 @@ public sealed partial class AbilityRunner
                 $"'{cast.Source.FaceId}' is an event with a take-damage cost; "
                 + "atomic printed and damage payment is not implemented");
         }
-        var spends = steps.Where(step => step.Kind is "spend" or "spendPrinted").ToList();
+        var spends = steps.OfType<AbilityCost.Spend>().ToList();
         if (spends.Count > 0)
         {
             if (paying.Distinct().Count() != paying.Count || paying.Intersect(chosen).Any())
@@ -1210,8 +1088,8 @@ public sealed partial class AbilityRunner
                     $"'{cast.Source.FaceId}' names a generator more than once across its costs");
             }
 
-            bool printed = spends.All(step => step.Kind == "spendPrinted");
-            if (!printed && spends.Any(step => step.Kind == "spendPrinted"))
+            bool printed = spends.All(step => step.PrintedOnly);
+            if (!printed && spends.Any(step => step.PrintedOnly))
             {
                 throw new RulesNotImplementedException(
                     $"'{cast.Source.FaceId}' mixes printed and ordinary simultaneous "
@@ -1231,7 +1109,7 @@ public sealed partial class AbilityRunner
             string generated = string.Concat(generators
                 .Where(source => selected.Contains(source.Effect))
                 .Select(source => source.Generates));
-            string required = string.Concat(spends.Select(step => Word(step.Argument)));
+            string required = string.Concat(spends.Select(step => step.Resources));
             bool pays = printed
                 ? Resources.PaysPrinted(generated, required.Length, required)
                 : Resources.Pays(generated, required.Length, required);
@@ -1244,9 +1122,9 @@ public sealed partial class AbilityRunner
         }
 
         foreach (var step in steps.Where(
-                     step => step.Kind is not ("spend" or "spendPrinted")))
+                     step => step is not AbilityCost.Spend))
         {
-            if (step.Kind == "spendEnergyX")
+            if (step is AbilityCost.SpendEnergy)
             {
                 long x = DefinedVariable(values, "X", cast.Source);
                 var request = Price(cast.World, cast.Source, cast.Player, step)!
@@ -1282,19 +1160,10 @@ public sealed partial class AbilityRunner
                         + $"generates '{generated}'");
                 }
             }
-            else if (step.Kind is "discardFromHand" or "discardUpToFromHand"
-                     or "discardAnyFromHand")
+            else if (step is AbilityCost.DiscardFromHand discard)
             {
                 var hand = cast.World.Seats[cast.Player].Hand;
-                int minimum = step.Kind == "discardFromHand"
-                    ? checked((int)Number(step.Argument))
-                    : 1;
-                int maximum = step.Kind switch
-                {
-                    "discardFromHand" => minimum,
-                    "discardUpToFromHand" => checked((int)Number(step.Argument)),
-                    _ => hand.Cards.Count,
-                };
+                var (minimum, maximum) = AbilityCostSelection.Range(discard.Range, hand.Cards.Count);
                 if (chosen.Count < minimum || chosen.Count > maximum
                     || chosen.Distinct().Count() != chosen.Count)
                 {
@@ -1317,13 +1186,13 @@ public sealed partial class AbilityRunner
                     }
                 }
             }
-            else if (step.Kind == "exhaustChosen")
+            else if (step is AbilityCost.ExhaustChosen exhaust)
             {
-                var legal = CostChoices(cast.World, cast.Player, step)
+                var legal = AbilityCostSelection.Choices(cast.World, cast.Player, exhaust.From)
                     .Where(card => card.Ready)
                     .Select(card => card.ObjectId)
                     .ToHashSet();
-                var range = CostRange(step, legal.Count);
+                var range = AbilityCostSelection.Range(exhaust.Range, legal.Count);
                 if (chosen.Count < range.Min || chosen.Count > range.Max
                     || chosen.Distinct().Count() != chosen.Count
                     || chosen.Any(id => !legal.Contains(id)))
@@ -1336,7 +1205,7 @@ public sealed partial class AbilityRunner
             else if (!Payable(cast.World, cast.Source, cast.Player, step))
             {
                 throw new RulesNotImplementedException(
-                    $"'{cast.Source.FaceId}' cannot pay its '{step.Kind}' cost");
+                    $"'{cast.Source.FaceId}' cannot pay its compiled cost");
             }
         }
     }
