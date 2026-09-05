@@ -313,41 +313,19 @@ public sealed partial class AbilityRunner
     }
 
     /// <summary>Whether this exact selector may make its current target depart.</summary>
-    private static bool CanRemoveByEffect(
-        AbilityValue selector, Cast cast, Card target)
+    private static bool CanRemoveByEffect(AbilityValue selector, Cast cast, Card target)
     {
-        // `rr:in-play-and-out-of-play.4`: a retained binding does not authorize
-        // a later component to follow a card into an out-of-play area. Cards
-        // resolving in the boost/reveal/processing staging areas remain live
-        // ability subjects; every other out-of-play target must be found by a
-        // selector that expressly names its current area.
-        bool reachable = DeckTypes.IsInPlay(target.Area.Type)
-            || target.Area.Type is DeckType.BoostingArea
-                or DeckType.ProcessingArea
-                or DeckType.RevealingArea
-            // Black Widow's printed Interrupt names "that card" at the
-            // WhenCardRevealed occurrence. The villain-phase agenda still
-            // holds that card in the dealt queue during the interrupt window,
-            // so this retained trigger binding is the express authority to
-            // discard it before its reveal procedure applies.
-            || target.Area.Type == DeckType.DealtEncounterCardsDeck
-                && selector is AbilityValue.Word { Value: "trigger.subject" }
-                && cast.Occurrence.Conditions.Contains(
-                    Steps.CardRevealed, StringComparer.Ordinal)
-            || selector is AbilityValue.Word { Value: "chosen" }
-                && cast.WasSelectedInCurrentArea(target)
-            || ExplicitlySelectsOutOfPlayCard(selector, cast, target);
-        bool bindingIsCurrent = selector switch
+        var binding = selector switch
         {
-            AbilityValue.Word { Value: "this" } =>
-                cast.SourceBindingIsCurrent(target),
-            AbilityValue.Word { Value: "chosen" } =>
-                cast.ChosenBindingIsCurrent(target),
-            _ => true,
+            AbilityValue.Word { Value: "this" } => AbilityCardBinding.This,
+            AbilityValue.Word { Value: "chosen" } => AbilityCardBinding.Chosen,
+            AbilityValue.Word { Value: "trigger.subject" } => AbilityCardBinding.TriggerSubject,
+            _ => (AbilityCardBinding?)null,
         };
-        return reachable && bindingIsCurrent
-            && Rules.Play.Discard.EffectCanRemove(
-                cast.World, cast.World.Facts, cast.Source, target);
+        bool reachable = RemovalAreaIsReachable(binding, cast, target)
+            || ExplicitlySelectsOutOfPlayCard(selector, cast, target);
+        return reachable && RemovalBindingIsCurrent(binding, cast, target)
+            && Rules.Play.Discard.EffectCanRemove(cast.World, cast.World.Facts, cast.Source, target);
     }
 
     /// <summary>Whether a selector names the out-of-play area holding one card.</summary>
@@ -933,10 +911,10 @@ public sealed partial class AbilityRunner
     /// <summary>Which place on the board a word names.</summary>
     private static Area Area(string where, Cast cast) => where switch
     {
-        "encounterDeck" => cast.World.AreaOf(DeckType.EncounterDeck),
-        "encounterDiscardPile" => cast.World.AreaOf(DeckType.EncounterDiscardPile),
-        "scenarioSetAside" => cast.World.AreaOf(DeckType.AsideDeck),
-        "yourDeck" => cast.World.Seats[cast.Player].Deck,
+        "encounterDeck" => Area(AbilitySearchArea.EncounterDeck, cast),
+        "encounterDiscardPile" => Area(AbilitySearchArea.EncounterDiscardPile, cast),
+        "scenarioSetAside" => Area(AbilitySearchArea.ScenarioSetAside, cast),
+        "yourDeck" => Area(AbilitySearchArea.YourDeck, cast),
         _ => throw new RulesNotImplementedException(
             $"'{cast.Source.FaceId}' searches '{where}', which is not implemented"),
     };

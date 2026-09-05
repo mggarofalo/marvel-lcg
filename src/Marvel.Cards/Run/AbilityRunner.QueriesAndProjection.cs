@@ -376,23 +376,20 @@ public sealed partial class AbilityRunner
         }
 
         string key = Word(node.Require("by"));
-        long Rank(Card card) => key switch
+        var rank = key switch
         {
             // `rr:dash-value.3` -- a printed dash "is treated as an
             // unmodifiable 0", which is what `PrintedValue` answers for a field
             // that is not a number, so nothing extra is needed for it here.
-            "cost" => cast.World.Facts.PrintedValue(card.FaceId, "Cost", cast.World.Players),
-            "attack" => StateFields.Modified(
-                cast.World, card, "attack", cast.World.Facts, cast.World.Players),
+            "cost" => AbilityCardRank.Cost,
+            "attack" => AbilityCardRank.Attack,
             // FAQ 01185: a facedown Ultron Drone's environment-defined base
             // stats count as printed for this comparison; +HP modifiers do not.
-            "printedHealth" => FacedownDrones.BaseValue(
-                card, cast.World.Facts, "HP", cast.World.Players),
+            "printedHealth" => AbilityCardRank.PrintedHealth,
             _ => throw new AbilityException($"'{key}' is not a value cards can be ranked by"),
         };
 
-        long extreme = node.Kind == "minBy" ? among.Min(Rank) : among.Max(Rank);
-        return [.. among.Where(card => Rank(card) == extreme)];
+        return RankedCandidates(among, rank, node.Kind == "maxBy", cast);
     }
 
     /// <summary>Which card a value names, or null when it names none.</summary>

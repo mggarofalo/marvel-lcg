@@ -59,8 +59,14 @@ public sealed partial class AbilityRunner
     {
         var among = Every(selection.Cards, cast)
             .Where(card => CanRemoveByEffect(selection.Cards, cast, card)).ToList();
+        return RankedCandidates(among, selection.By, selection.Maximum, cast);
+    }
+
+    private static IReadOnlyList<Card> RankedCandidates(
+        List<Card> among, AbilityCardRank by, bool maximum, Cast cast)
+    {
         if (among.Count == 0) return [];
-        long Rank(Card card) => selection.By switch
+        long Rank(Card card) => by switch
         {
             AbilityCardRank.Cost => cast.World.Facts.PrintedValue(card.FaceId, "Cost", cast.World.Players),
             AbilityCardRank.Attack => StateFields.Modified(
@@ -68,30 +74,34 @@ public sealed partial class AbilityRunner
             AbilityCardRank.PrintedHealth => FacedownDrones.BaseValue(card, cast.World.Facts, "HP", cast.World.Players),
             _ => throw new InvalidOperationException("Unknown compiled card rank"),
         };
-        long extreme = selection.Maximum ? among.Max(Rank) : among.Min(Rank);
+        long extreme = maximum ? among.Max(Rank) : among.Min(Rank);
         return [.. among.Where(card => Rank(card) == extreme)];
     }
 
+    // rr:in-play-and-out-of-play.4 permits out-of-play targets only when text
+    // "specifically refers to an out-of-play area". Current choices and the
+    // revealed-card interrupt retain the area they explicitly selected.
+    private static bool RemovalAreaIsReachable(AbilityCardBinding? binding, Cast cast, Card target) =>
+        DeckTypes.IsInPlay(target.Area.Type)
+        || target.Area.Type is DeckType.BoostingArea or DeckType.ProcessingArea or DeckType.RevealingArea
+        || target.Area.Type == DeckType.DealtEncounterCardsDeck
+            && binding == AbilityCardBinding.TriggerSubject
+            && cast.Occurrence.Conditions.Contains(Steps.CardRevealed, StringComparer.Ordinal)
+        || binding == AbilityCardBinding.Chosen && cast.WasSelectedInCurrentArea(target);
+
+    private static bool RemovalBindingIsCurrent(AbilityCardBinding? binding, Cast cast, Card target) => binding switch
+    {
+        AbilityCardBinding.This => cast.SourceBindingIsCurrent(target),
+        AbilityCardBinding.Chosen => cast.ChosenBindingIsCurrent(target),
+        _ => true,
+    };
+
     private static bool CanRemoveByEffect(AbilityCardSelection selector, Cast cast, Card target)
     {
-        // rr:in-play-and-out-of-play.4: "Card abilities only interact with, and
-        // can only target, cards that are in play" unless text names another
-        // area. A retained reference must also denote the current incarnation.
-        bool reachable = DeckTypes.IsInPlay(target.Area.Type)
-            || target.Area.Type is DeckType.BoostingArea or DeckType.ProcessingArea or DeckType.RevealingArea
-            || target.Area.Type == DeckType.DealtEncounterCardsDeck
-                && selector is AbilityCardSelection.Bound { Binding: AbilityCardBinding.TriggerSubject }
-                && cast.Occurrence.Conditions.Contains(Steps.CardRevealed, StringComparer.Ordinal)
-            || selector is AbilityCardSelection.Bound { Binding: AbilityCardBinding.Chosen }
-                && cast.WasSelectedInCurrentArea(target)
+        var binding = (selector as AbilityCardSelection.Bound)?.Binding;
+        bool reachable = RemovalAreaIsReachable(binding, cast, target)
             || ExplicitlySelectsOutOfPlayCard(selector, cast, target);
-        bool current = selector switch
-        {
-            AbilityCardSelection.Bound { Binding: AbilityCardBinding.This } => cast.SourceBindingIsCurrent(target),
-            AbilityCardSelection.Bound { Binding: AbilityCardBinding.Chosen } => cast.ChosenBindingIsCurrent(target),
-            _ => true,
-        };
-        return reachable && current
+        return reachable && RemovalBindingIsCurrent(binding, cast, target)
             && Rules.Play.Discard.EffectCanRemove(cast.World, cast.World.Facts, cast.Source, target);
     }
 
