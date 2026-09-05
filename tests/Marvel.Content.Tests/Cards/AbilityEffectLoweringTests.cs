@@ -23,6 +23,8 @@ public sealed class AbilityEffectLoweringTests
     [InlineData("""{"heal":{"cards":"you","amount":1}}""")]
     [InlineData("""{"dealDamage":{"card":"you","amount":1}}""")]
     [InlineData("""{"generate":"E"}""")]
+    [InlineData("""{"choose":{"chooser":"firstPlayer","options":[{"draw":{"player":"you","count":1}},{"heal":{"card":"you","amount":1}}]}}""")]
+    [InlineData("""{"chooseCard":{"chooser":"firstPlayer","from":{"query":"villain"},"effect":{"heal":{"card":"chosen","amount":1}}}}""")]
     public void UnimplementedSpellingsAreRejectedEvenInAnUnselectedBranch(string effect)
     {
         var failure = Assert.Throws<AbilityException>(() => Lower($$$"""

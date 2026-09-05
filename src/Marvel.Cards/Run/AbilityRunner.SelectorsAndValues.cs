@@ -285,27 +285,6 @@ public sealed partial class AbilityRunner
             $"'{cast.Source.FaceId}' asks who is resolving it, and an encounter card's "
             + "ability has no player unless the card says which");
 
-    private static int Seat(AbilityValue value, Cast cast) =>
-        value is AbilityValue.Word word
-            ? word.Value switch
-            {
-                AbilityPlayers.TriggerPlayer => cast.Occurrence.Player,
-                AbilityPlayers.You => Resolver(cast),
-                AbilityPlayers.Controller => cast.ProjectedPlayAreaPlayer
-                    ?? ControllerOf(cast.World, cast.Source),
-                "chosenPlayer" => ChosenPlayer(cast).Owner,
-                "engagedPlayer" => cast.ProjectedPlayAreaPlayer
-                    ?? (cast.Source.Area.PlayArea.Player >= 0
-                    ? cast.Source.Area.PlayArea.Player
-                    : throw new RulesNotImplementedException(
-                        $"'{cast.Source.FaceId}' asks for its engaged player outside a "
-                        + "player's engaged area")),
-                "firstPlayer" => cast.World.FirstPlayer,
-                _ => throw new AbilityException($"'{word.Value}' does not name a player"),
-            }
-            : throw new AbilityException(
-                $"{AbilityNode.Describe(value)} does not name a player");
-
     private static Card ChosenPlayer(Cast cast) =>
         (cast.PlayerSelection ?? cast.Chosen) is { Owner: >= 0 } chosen
             ? chosen

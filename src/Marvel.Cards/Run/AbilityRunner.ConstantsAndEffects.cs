@@ -428,7 +428,7 @@ public sealed partial class AbilityRunner
 
     private static bool CanDrawToPrintedHandSize(AbilityNode node, Cast cast)
     {
-        int player = Seat(node.Argument, cast);
+        int player = Seat(EffectOf<AbilityEffect.DrawToHandSize>(node, cast).Player, cast);
         var seat = cast.World.Seats[player];
         return HandCountDuringEvent(cast, seat) < cast.World.Facts.PrintedValue(
             seat.IdentityCard.FaceId, "HS", cast.World.Players);

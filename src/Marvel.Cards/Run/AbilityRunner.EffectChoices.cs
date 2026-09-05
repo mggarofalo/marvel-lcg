@@ -771,20 +771,6 @@ public sealed partial class AbilityRunner
         cast.Results["resourceTypes"] = types.Count;
     }
 
-    /// <summary>Which seats a word names.</summary>
-    /// <remarks>
-    /// <c>rr:each-player.1</c> resolves "each player" in player order when the
-    /// effect does not say otherwise, and <c>rr:player-elimination.6</c> is why
-    /// that is <c>PlayerOrder</c>: "effects that refer to the players in the
-    /// game ignore eliminated players".
-    /// </remarks>
-    private static IEnumerable<int> Seats(AbilityValue value, Cast cast) =>
-        Word(value) switch
-        {
-            "each" => cast.World.PlayerOrder,
-            _ => [Seat(value, cast)],
-        };
-
     /// <summary>
     /// "Discard cards from the top of the encounter deck until a … is
     /// discarded" — <c>rr:discard.4</c>.

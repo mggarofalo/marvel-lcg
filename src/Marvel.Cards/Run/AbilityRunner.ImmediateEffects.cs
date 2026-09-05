@@ -257,6 +257,13 @@ public sealed partial class AbilityRunner
         }
     }
 
+    /// <summary>Which seats a compiled player selection names.</summary>
+    /// <remarks>
+    /// <c>rr:each-player.1</c> resolves "each player" in player order when the
+    /// effect does not say otherwise, and <c>rr:player-elimination.6</c> is why
+    /// that is <c>PlayerOrder</c>: "effects that refer to the players in the
+    /// game ignore eliminated players".
+    /// </remarks>
     private static IEnumerable<int> Seats(AbilityPlayerSelection players, Cast cast) => players switch
     {
         AbilityPlayerSelection.AllPlayers => cast.World.PlayerOrder,

@@ -297,17 +297,8 @@ public sealed partial class AbilityRunner
                 $"'{source.FaceId}' requires a choice and has no legal option");
         }
 
-        // Most questions belong to the player resolving the ability. A card
-        // can instead name who makes this choice; the DSL chooses the
-        // `chooser` spelling because prompt ownership is an engine wire choice,
-        // not Rules Reference terminology. The resolving player remains on the
-        // continuation, so "you" inside the chosen effect does not change.
-        int chooser = choice.Field("chooser") is { } namedChooser
-            ? Seat(namedChooser, cast)
-            : player;
-
         return new Prompt(
-            Player: chooser,
+            Player: player,
             Asking: cards ? Question.Element : Question.Option,
             When: TimingPriority.Untimed,
             Trigger: Steps.CardRevealed,

@@ -43,7 +43,7 @@ public sealed partial class AbilityRunner
                     counterCard, removal.Counter, removal.Count) is not null,
             "advanceMainScheme" => CanAdvanceMainScheme(cast),
             "discardAtRandom" => Amount(EffectOf<AbilityEffect.DiscardAtRandom>(node, cast).Count, cast) > 0
-                && Seats(node.Require("player"), cast)
+                && Seats(EffectOf<AbilityEffect.DiscardAtRandom>(node, cast).Players, cast)
                     .Any(seat => cast.World.Seats[seat].Hand.Cards.Count > 0),
             "discardTop" => Amount(EffectOf<AbilityEffect.DiscardTop>(node, cast).Count, cast) > 0
                 && Area(Word(node.Require("from")), cast).Cards.Count > 0,
@@ -60,9 +60,10 @@ public sealed partial class AbilityRunner
             "removeThreat" => CanRemoveThreat(node, cast),
             "gainSurge" => EffectOf<AbilityEffect.GainSurge>(node, cast).Instances > 0,
             "draw" => CanDraw(node, cast),
-            "drawToHandSize" => cast.World.Seats[Seat(node.Argument, cast)].Hand.Cards.Count
+            "drawToHandSize" => EffectOf<AbilityEffect.DrawToHandSize>(node, cast) is var handSize
+                && cast.World.Seats[Seat(handSize.Player, cast)].Hand.Cards.Count
                 < PhaseEnd.HandSize(
-                    cast.World, cast.World.Seats[Seat(node.Argument, cast)], cast.World.Facts),
+                    cast.World, cast.World.Seats[Seat(handSize.Player, cast)], cast.World.Facts),
             "drawToPrintedHandSize" => CanDrawToPrintedHandSize(node, cast),
             "createDrones" => CanCreateDrones(node, cast),
             "placeAccelerationToken" => HasRequiredTargets(node, cast),
