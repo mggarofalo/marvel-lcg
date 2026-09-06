@@ -973,7 +973,12 @@ public sealed partial class AbilityRunner
         {
             Card? Target(AbilityCostCard binding)
             {
-                var card = CostReference(binding, cast);
+                var card = Named(binding switch
+                {
+                    AbilityCostCard.Source => AbilityCardBinding.This,
+                    AbilityCostCard.Identity => AbilityCardBinding.You,
+                    _ => throw new InvalidOperationException("Unknown compiled cost binding"),
+                }, cast);
                 return card is not null && !state.Departed.Contains(card.ObjectId)
                     ? card : null;
             }

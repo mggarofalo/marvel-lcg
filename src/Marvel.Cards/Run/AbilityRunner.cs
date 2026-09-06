@@ -738,22 +738,17 @@ public sealed partial class AbilityRunner : ICardAbilities
         // refuses one that does not.
         var costOwner = world.Agenda.Current;
         var costOccurrence = world.Agenda.Occurrence;
-        ValidatePayment(found.Cost, paying, chosen, values, world, card, cast.Player);
+        var arrowPayment = AbilityCostPayment.Prepare(
+            world, card, cast.Player, found.Cost, paying, chosen, values,
+            resourcesPaidByEvent: world.Facts.Kind(card.FaceId) == CardKind.Event
+                && ResourceRequirement(found.Cost, card).Length > 0);
         var eventPayment = AbilityEventPayment.Prepare(
             world, card, cast.Player, paying, found.Effect, allocations, found.Cost);
         if (eventPayment is not null)
         {
             cast.PaidWith(eventPayment.Commit(occurrence, events));
         }
-        if (world.Facts.Kind(card.FaceId) == CardKind.Event
-            && ResourceRequirement(found.Cost, card).Length > 0)
-        {
-            PayNonResourceCosts(found.Cost, paying, chosen, values, cast);
-        }
-        else
-        {
-            Pay(found.Cost, paying, chosen, values, cast);
-        }
+        ApplyPayment(arrowPayment.Commit(this, cast.Trigger, events), cast);
         if (cast.Suspended)
         {
             SuspendAfterCost(cast, ability.Ordinal, costOwner, costOccurrence);
@@ -1221,14 +1216,8 @@ public sealed partial class AbilityRunner : ICardAbilities
             ?? throw new RulesNotImplementedException(
                 $"card {card} has no resource ability left to use this round");
 
-        var cast = new Cast(
-            world, holder,
-            new Occurrence(0, [Steps.TurnAction], Subject: holder.ObjectId, Player: player),
-            player, events, this)
-        {
-            Tier = ability.Trigger.Timing,
-        };
-        Pay(ability.Cost, [], [], cast);
+        var payment = AbilityCostPayment.Prepare(world, holder, player, ability.Cost, [], []);
+        payment.Commit(this, Steps.TurnAction, events);
         Use(world, holder, ability);
         return Generated(ability.Effect, world, player);
     }
@@ -2092,22 +2081,17 @@ public sealed partial class AbilityRunner : ICardAbilities
         // before step 6 resolves.
         var costOwner = world.Agenda.Current;
         var costOccurrence = world.Agenda.Occurrence;
-        ValidatePayment(found.Cost, paying, chosen, values, world, card, cast.Player);
+        var arrowPayment = AbilityCostPayment.Prepare(
+            world, card, cast.Player, found.Cost, paying, chosen, values,
+            resourcesPaidByEvent: world.Facts.Kind(card.FaceId) == CardKind.Event
+                && ResourceRequirement(found.Cost, card).Length > 0);
         var eventPayment = AbilityEventPayment.Prepare(
             world, card, cast.Player, paying, found.Effect, allocations, found.Cost);
         if (eventPayment is not null)
         {
             cast.PaidWith(eventPayment.Commit(occurrence, events));
         }
-        if (world.Facts.Kind(card.FaceId) == CardKind.Event
-            && ResourceRequirement(found.Cost, card).Length > 0)
-        {
-            PayNonResourceCosts(found.Cost, paying, chosen, values, cast);
-        }
-        else
-        {
-            Pay(found.Cost, paying, chosen, values, cast);
-        }
+        ApplyPayment(arrowPayment.Commit(this, cast.Trigger, events), cast);
         if (cast.Suspended)
         {
             SuspendAfterCost(cast, ability.Ordinal, costOwner, costOccurrence);

@@ -352,14 +352,7 @@ public sealed partial class AbilityRunner
     }
 
     private static void Exhaust(Card target, Cast cast)
-    {
-        if (!target.Ready) return;
-        target.Exhaust();
-        cast.Events.Add(new FieldSet(target.ObjectId, "is_exhaust", 0, 1)
-        {
-            Trigger = cast.Trigger, Verb = "Exhaust",
-        });
-    }
+        => AbilityCardOperations.Exhaust(target, cast.Trigger, cast.Events);
 
     private static void Ready(AbilityCardSelection cards, Cast cast)
     {
@@ -409,32 +402,8 @@ public sealed partial class AbilityRunner
     }
 
     private static void RemoveCounters(Card card, string type, long count, Cast cast)
-    {
-        string key = CounterKeyForRemoval(card, type, count)
-            ?? throw new RulesNotImplementedException(
-                $"'{card.FaceId}' has fewer than {count} {type} counters");
-        long before = card.Tokens.GetValueOrDefault(key);
-
-        card.PlaceTokens(key, -count);
-        cast.Events.Add(new FieldSet(
-            card.ObjectId, key, before, before - count)
-        {
-            Trigger = cast.Trigger, Verb = "Remove_Counter",
-        });
-
-        if (CounterCount(card, "allPurpose") == 0
-            && !Characteristics.IsLost(cast.World, card, "uses")
-            && cast.Abilities.CounterPool(cast.World, card)?.Uses == true)
-        {
-            if (!Defeat.ToVictoryDisplay(
-                    cast.World, cast.World.Facts, card,
-                    cast.Trigger, cast.Events))
-            {
-                Rules.Play.Discard.Card(
-                    cast.World, card, cast.Trigger, cast.Events);
-            }
-        }
-    }
+        => AbilityCardOperations.RemoveCounters(
+            cast.World, cast.Abilities, card, type, count, cast.Trigger, cast.Events);
 
     private static AbilityEffect.RemoveCounters CounterRemovalOf(AbilityEffect node, Cast cast) =>
         (AbilityEffect.RemoveCounters)node;
