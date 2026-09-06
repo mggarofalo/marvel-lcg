@@ -72,7 +72,7 @@ public sealed partial class AbilityRunner : ICardAbilities
     private readonly ImmutableHashSet<string> constant;
 
     /// <summary>The verb an option carries on the wire.</summary>
-    public const string ChooseVerb = "Choose_Option";
+    public const string ChooseVerb = AbilityStructuralExecution.ChooseVerb;
 
     private static readonly string[] Branches = ["then", "else"];
 

@@ -4,15 +4,6 @@ namespace Marvel.Cards.Run;
 
 public sealed partial class AbilityRunner
 {
-    private sealed record BindingCandidateState(
-        IReadOnlyList<Marvel.Rules.State.Card> Cards, bool MayBeEmpty);
-
-    private enum TargetLegality
-    {
-        Invalid,
-        Valid,
-    }
-
     // The interpreter translates its resolving frame into immutable admission
     // facts, then applies only the evidence returned by the independent owner.
     private static AbilityAdmissionContext AdmissionContext(Cast cast) =>
@@ -23,6 +14,21 @@ public sealed partial class AbilityRunner
                     "Admission requires the authored ability program"),
             cast.ExpressionContext(), cast.Reachability, cast.Power,
             cast.HasContinuation);
+
+    // The runner owns this one-way snapshot boundary.  Structural execution
+    // receives values, never Cast, the runner, or an execution callback.
+    private static AbilityStructuralContext StructuralContext(Cast cast) =>
+        new(
+            cast.Abilities is AbilityRunner runner
+                ? runner.program
+                : throw new InvalidOperationException(
+                    "Structural execution requires the authored ability program"),
+            cast.ExpressionContext(), cast.Reachability, cast.Trigger,
+            cast.Source.FaceId, cast.AbilityFace,
+            cast.Player, cast.Position, cast.HasContinuation, cast.Tier,
+            cast.Power, cast.AbilityActor, cast.HasPendingDependency,
+            cast.ValidatedCrisisIgnoringThwarts, cast.RestoredCrisisIgnoringThwarts,
+            [.. cast.StructuralPath]);
 
     private static bool CanInitiate(CompiledCardAbility ability, Cast cast)
     {
@@ -51,20 +57,6 @@ public sealed partial class AbilityRunner
     private static bool CanInitiateSequence(AbilityEffect effect, Cast cast) =>
         ApplyAdmission(
             AbilityInitiation.AdmitStructure(effect, AdmissionContext(cast)), cast);
-
-    private static TargetLegality TargetLegalityOf(AbilityEffect effect, Cast cast) =>
-        AbilityInitiation.TargetsAreValid(effect, AdmissionContext(cast))
-            ? TargetLegality.Valid
-            : TargetLegality.Invalid;
-
-    private static BindingCandidateState BindingCandidatesAfter(
-        AbilityEffect effect, Cast cast, BindingCandidateState before)
-    {
-        var result = AbilityInitiation.BindingCandidates(
-            effect, AdmissionContext(cast),
-            new AbilityInitiation.BindingCandidateState(before.Cards, before.MayBeEmpty));
-        return new BindingCandidateState(result.Cards, result.MayBeEmpty);
-    }
 
     private static bool BindingCanChange(AbilityEffect? effect) =>
         AbilityBindingAnalysis.BindingCanChange(effect);

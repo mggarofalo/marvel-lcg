@@ -348,23 +348,23 @@ public sealed partial class AbilityRunner
     /// </remarks>
     private static void Sequence(AbilityEffect node, Cast cast, int from)
     {
-        if (from == 0)
-        {
-            _ = CanInitiateSequence(node, cast);
-        }
-
-        var steps = OrderedEffects(node).ToList();
         bool outerContinuation = cast.HasContinuation;
-        for (int step = from; step < steps.Count; step++)
+        var transition = AbilityStructuralExecution.SequenceStart(
+            StructuralContext(cast), (AbilityEffect.Sequence)node, from);
+        while (transition is RunLeaf leaf
+            && leaf.Frames[^1] is SequenceFrame frame)
         {
-            cast.At(step);
-            cast.SetContinuation(outerContinuation || step < steps.Count - 1);
-            RunChild(steps[step], $"seq:{step}", cast);
+            RunStructuralLeaf(leaf, cast);
+            var observation = new AbilityStructuralObservation(cast.Suspended);
+            if (!cast.Suspended)
+                cast.SetContinuation(outerContinuation);
+            transition = AbilityStructuralExecution.NextSequence(
+                StructuralContext(cast), (AbilityEffect.Sequence)node, frame,
+                observation);
             if (cast.Suspended)
-            {
                 return;
-            }
         }
+        ApplyStructuralCompletion(transition, cast);
         cast.SetContinuation(outerContinuation);
     }
 
@@ -388,57 +388,29 @@ public sealed partial class AbilityRunner
     /// </remarks>
     private static void ForEach(AbilityEffect node, Cast cast)
     {
-        var instruction = ForEachOf(node, cast);
-        long count = NonNegativeForEachCount(ResolveAmount(instruction.Count, cast));
-        if (count == 0)
+        var repeated = (AbilityEffect.ForEach)node;
+        bool outerContinuation = cast.HasContinuation;
+        var transition = AbilityStructuralExecution.ForEachStart(
+            StructuralContext(cast), repeated);
+        if (transition is RunCombinedForEach combined)
         {
+            RunCombinedForEach(combined, cast);
             return;
         }
-
-        var effect = EffectBody(node);
-        if (!Choices(effect).Any())
+        while (transition is RunLeaf leaf
+            && leaf.Frames[^1] is ForEachFrame frame)
         {
-            switch (instruction.Effect)
-            {
-                case AbilityEffect.Damage damage:
-                    if (DamageTargets(damage.Cards, cast).Count != 1)
-                    {
-                        throw new RulesNotImplementedException(
-                            $"'{cast.Source.FaceId}' has a for-each damage effect without "
-                            + "choose and does not resolve to one target");
-                    }
-                    DealDamage(damage, effect, cast, count);
-                    return;
-
-                case AbilityEffect.RemoveThreat removal:
-                    if (Every(removal.Schemes, cast).Count != 1)
-                    {
-                        throw new RulesNotImplementedException(
-                            $"'{cast.Source.FaceId}' has a for-each threat-removal effect "
-                            + "without choose and does not resolve to one target");
-                    }
-                    RemoveThreat(removal, cast, count);
-                    return;
-            }
-
-            if (ContainsForEachTarget(effect))
-            {
-                throw new RulesNotImplementedException(
-                    $"'{cast.Source.FaceId}' has a targeted for-each effect without choose "
-                    + "whose one target cannot be persisted");
-            }
-        }
-
-        bool outerContinuation = cast.HasContinuation;
-        for (long iteration = 0; iteration < count; iteration++)
-        {
-            cast.SetContinuation(outerContinuation || iteration < count - 1);
-            RunChild(effect, $"forEach:{iteration}:{count}", cast);
+            RunStructuralLeaf(leaf, cast);
+            var observation = new AbilityStructuralObservation(cast.Suspended);
+            if (!cast.Suspended)
+                cast.SetContinuation(outerContinuation);
+            transition = AbilityStructuralExecution.NextForEach(
+                StructuralContext(cast), repeated, frame,
+                observation);
             if (cast.Suspended)
-            {
                 return;
-            }
         }
+        ApplyStructuralCompletion(transition, cast);
         cast.SetContinuation(outerContinuation);
     }
 
@@ -451,89 +423,135 @@ public sealed partial class AbilityRunner
     /// The exact-card binding survives an immediate encounter-deck reset.
     /// </remarks>
     private static void EachTime(AbilityEffect node, Cast cast)
-    {
-        var preceding = EachTimePreceding(node, cast);
-        long requested = ResolveAmount(preceding.Count, cast);
-        if (requested < 0)
-        {
-            throw new AbilityException("'eachTime' needs a non-negative discard count");
-        }
-        if (requested == 0)
-        {
-            return;
-        }
-        ValidateEachTimeBody(node, cast);
-
-        var deck = cast.World.AreaOf(DeckType.EncounterDeck);
-        var discard = cast.World.AreaOf(DeckType.EncounterDiscardPile);
-        long available = deck.Cards.Count > 0 ? deck.Cards.Count : discard.Cards.Count;
-        ContinueEachTime(node, cast, from: 0, Math.Min(requested, available));
-    }
-
-    private static AbilityEffect.ForEach ForEachOf(AbilityEffect node, Cast cast) =>
-        (AbilityEffect.ForEach)node;
-
-    private static AbilityEffect.EachTime EachTimeOf(AbilityEffect node, Cast cast) =>
-        (AbilityEffect.EachTime)node;
-
-    private static AbilityEffect.DiscardTop EachTimePreceding(AbilityEffect node, Cast cast)
-    {
-        if (EachTimeOf(node, cast).Effect is not AbilityEffect.DiscardTop
-            { From: AbilitySearchArea.EncounterDeck, Players: null } preceding)
-        {
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' uses each-time around an unsupported preceding effect");
-        }
-        return preceding;
-    }
-
-    private static void ValidateEachTimeBody(AbilityEffect node, Cast cast) =>
-        AbilityInitiation.ValidateEachTimeBody(node, AdmissionContext(cast));
+        => ContinueEachTime((AbilityEffect.EachTime)node, cast, from: 0, count: null);
 
     private static void ContinueEachTime(
-        AbilityEffect node, Cast cast, long from, long count)
+        AbilityEffect.EachTime repeated, Cast cast, long from, long? count)
     {
-        var instruction = EachTimeOf(node, cast);
         bool outerContinuation = cast.HasContinuation;
-        for (long iteration = from; iteration < count; iteration++)
+        var transition = AbilityStructuralExecution.EachTimeStart(
+            StructuralContext(cast), repeated, from, count);
+        while (transition is DiscardEachTime discard)
         {
-            var discarded = EncounterDeck.DiscardTop(
-                cast.World, 1, cast.Trigger, cast.Events).SingleOrDefault();
-            if (discarded is null)
-            {
-                break;
-            }
-            cast.Discarded.Add(discarded);
-            cast.BindAlteration(discarded);
-
-            if (!ResolveCondition(instruction.When, cast))
+            int before = cast.Discarded.Count;
+            if (!TryRunCardState(discard.Effect, cast))
+                throw new InvalidOperationException("The card-state owner refused discardTop");
+            var discarded = cast.Discarded.Skip(before).SingleOrDefault();
+            if (discarded is not null)
+                cast.BindAlteration(discarded);
+            transition = AbilityStructuralExecution.AfterEachTimeDiscard(
+                StructuralContext(cast), repeated, discard.Frame,
+                new AbilityStructuralObservation(false, discarded));
+            if (transition is not RunLeaf leaf
+                || leaf.Frames[^1] is not EachTimeFrame frame)
             {
                 continue;
             }
 
-            cast.SetContinuation(outerContinuation || iteration < count - 1);
-            RunChild(
-                EffectFollowing(node),
-                $"eachTime:{iteration}:{count}:{discarded.ObjectId}",
-                cast);
+            RunStructuralLeaf(leaf, cast);
+            var observation = new AbilityStructuralObservation(cast.Suspended);
+            if (!cast.Suspended)
+                cast.SetContinuation(outerContinuation);
+            transition = AbilityStructuralExecution.NextEachTime(
+                StructuralContext(cast), repeated, frame,
+                observation);
             if (cast.Suspended)
-            {
                 return;
-            }
         }
+        ApplyStructuralCompletion(transition, cast);
         cast.SetContinuation(outerContinuation);
     }
 
-    /// <summary>Whether a repeated effect names a game element it can affect.</summary>
-    /// <remarks>
-    /// The rulebook decides that a no-choice repetition keeps one target, but
-    /// it does not supply a binding for the DSL. Direct damage and threat
-    /// removal capture their single target by resolving once above. Other
-    /// targeted shapes fail closed until their target can be persisted instead
-    /// of running a fresh selector against a changed board.
-    /// </remarks>
-    private static bool ContainsForEachTarget(AbilityEffect node) =>
-        AbilityInitiation.ContainsForEachTarget(node);
+    private static void RunCombinedForEach(RunCombinedForEach combined, Cast cast)
+    {
+        switch (combined.Effect)
+        {
+            case AbilityEffect.Damage damage:
+                if (DamageTargets(damage.Cards, cast).Count != 1)
+                {
+                    throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' has a for-each damage effect without "
+                        + "choose and does not resolve to one target");
+                }
+                DealDamage(damage, combined.Effect, cast, combined.Multiplier);
+                return;
+
+            case AbilityEffect.RemoveThreat removal:
+                if (Every(removal.Schemes, cast).Count != 1)
+                {
+                    throw new RulesNotImplementedException(
+                        $"'{cast.Source.FaceId}' has a for-each threat-removal effect "
+                        + "without choose and does not resolve to one target");
+                }
+                RemoveThreat(removal, cast, combined.Multiplier);
+                return;
+
+            default:
+                throw new InvalidOperationException(
+                    "Structural execution returned an unsupported combined repetition");
+        }
+    }
+
+    private static void ApplyStructuralCompletion(
+        AbilityStructuralTransition transition, Cast cast)
+    {
+        switch (transition)
+        {
+            case Complete { Admission: { } admission }:
+                _ = ApplyAdmission(admission, cast);
+                break;
+            case Rejected rejected:
+                throw new AbilityException(rejected.Reason);
+            case Unsupported unsupported:
+                throw new RulesNotImplementedException(unsupported.Reason);
+            case Complete:
+                break;
+            default:
+                throw new InvalidOperationException(
+                    $"Structural execution stopped at {transition.GetType().Name}");
+        }
+    }
+
+    private static void RunStructuralLeaf(RunLeaf leaf, Cast cast)
+    {
+        if (leaf.Admission is { } admission)
+            _ = ApplyAdmission(admission, cast);
+        var frame = leaf.Frames[^1];
+        cast.At(leaf.Position);
+        cast.SetContinuation(leaf.HasContinuation);
+        cast.StructuralPath.Add(frame);
+        try
+        {
+            RunChild(leaf.Effect, LegacyFrame(frame), cast);
+        }
+        finally
+        {
+            cast.StructuralPath.RemoveAt(cast.StructuralPath.Count - 1);
+        }
+    }
+
+    // This is the only MARVEL-407 bridge to the continuation path wire.
+    private static string LegacyFrame(AbilityStructuralFrame frame) => frame switch
+    {
+        SequenceFrame sequence => $"seq:{sequence.Next - 1}",
+        SimultaneousFrame simultaneous when simultaneous.Current >= 0 =>
+            $"and:{simultaneous.Current}:"
+            + $"{string.Join(',', simultaneous.Remaining)}:{string.Join(',', simultaneous.Completed)}",
+        ConditionalFrame conditional => conditional.Then ? "if:then" : "if:else",
+        DependentFrame dependent when dependent.Predecessor =>
+            $"{(dependent.OnFull ? "then" : "otherwise")}:effect:"
+            + (dependent.Outcome?.ToString() ?? "Pending"),
+        DependentFrame dependent =>
+            $"{(dependent.OnFull ? "then" : "otherwise")}:"
+            + (dependent.OnFull ? "then" : "otherwise"),
+        ForEachFrame repeated => $"forEach:{repeated.Next - 1}:{repeated.Count}",
+        EachTimeFrame repeated when repeated.DiscardedCard is { } card =>
+            $"eachTime:{repeated.Next - 1}:{repeated.Count}:{card}",
+        ChoiceFrame { Card: not null } => "choice:effect",
+        ChoiceFrame { Option: { } option } => $"choice:option:{option}",
+        _ => throw new InvalidOperationException(
+            $"No legacy continuation encoding exists for {frame.GetType().Name}"),
+    };
 
     private static void RunChild(AbilityEffect node, string frame, Cast cast)
     {
@@ -903,7 +921,7 @@ public sealed partial class AbilityRunner
 
             case "eachTime":
                 ContinueEachTime(
-                    node, cast,
+                    (AbilityEffect.EachTime)node, cast,
                     from: ParseIndex(parts, frame) + 1,
                     count: ParseForEachCount(parts, frame));
                 break;

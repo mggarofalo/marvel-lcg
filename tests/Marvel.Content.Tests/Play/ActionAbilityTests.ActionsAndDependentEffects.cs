@@ -220,6 +220,52 @@ public sealed partial class ActionAbilityTests
         Assert.Equal(held + 2, world.Seats[0].Hand.Cards.Count);
     }
 
+    [Rule("rr:first-player.3")]
+    [Fact]
+    public void NestedStructuralFramesWaitAndResumeEveryRemainingEffectOnce()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """
+            { "seq": [
+              { "and": [
+                { "if": {
+                  "test": { "inForm": { "player": "you", "form": "hero" } },
+                  "then": { "choose": { "options": [
+                    { "draw": { "player": "you", "count": 1 } },
+                    { "heal": { "card": "you", "amount": 1 } }
+                  ] } },
+                  "else": { "draw": { "player": "you", "count": 8 } }
+                } },
+                { "draw": { "player": "you", "count": 2 } }
+              ] },
+              { "draw": { "player": "you", "count": 4 } }
+            ] }
+            """);
+        Card? source = null;
+        var (game, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            hero: true,
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+        var order = Assert.Single(game.Pending!.Affordances);
+        game.Resolve(new Decision(order.Id, [0, 1]));
+
+        Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
+        Assert.Equal(Question.Option, game.Pending!.Asking);
+
+        game.Resolve(Decision.Take(0));
+
+        Assert.Equal(held + 7, world.Seats[0].Hand.Cards.Count);
+        Assert.Equal(Question.TurnOption, game.Pending!.Asking);
+    }
+
     [Rule("rr:then")]
     [Rule("rr:then.1")]
     [Rule("rr:then.2")]
