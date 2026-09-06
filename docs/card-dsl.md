@@ -158,7 +158,11 @@ These maps are syntax, not the runtime's definition of an operation.
 the book enters gameplay.
 
 A host can lower once and pass the same `AbilityProgram` to several runners.
-The program holds definitions, not game state. Each runner associates delayed
+The program holds definitions, not game state. `AbilityRunner` is the public
+composition facade: focused query and resource-discovery owners answer read-only
+ports, `AbilityResourceExecution` commits a resource ability and records its use,
+and `AbilityResolutionExecution` sequences live ability resolution through narrow
+encounter and card-play entry ports. `AbilityGameRuntimes` associates delayed
 activation work with the exact `World` that registered it. Activation ids and
 card ids cannot identify work in another game. The association uses weak keys,
 so retaining a runner does not retain abandoned worlds.

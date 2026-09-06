@@ -242,7 +242,8 @@ internal static partial class AbilityInitiation
             [], string.Empty, -1, false, projected);
         return new AbilityAdmissionScope(
             new AbilityAdmissionContext(
-                cast.Context.Program, expressions, cast.Reachability, cast.Power),
+                cast.Context.Program, cast.Context.ResourceAbilities,
+                expressions, cast.Reachability, cast.Power),
             []);
     }
 

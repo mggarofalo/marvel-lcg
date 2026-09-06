@@ -8,45 +8,8 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Cards.Run;
 
-public sealed partial class AbilityRunner
+internal sealed partial class AbilityResolutionExecution
 {
-    /// <summary>
-    /// Whose opportunity an ability in a window is, or <c>-1</c> for every
-    /// seat's — <c>rr:ability.8</c>.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// The card's controller, unless the trigger names somebody. "Players can only
-    /// trigger interrupt / response abilities on cards they control or on
-    /// encounter cards", and an encounter card is one the scenario owns, so
-    /// <c>-1</c> here means <i>anyone</i> rather than nobody.
-    /// </para>
-    /// <para>
-    /// <b>A card that says "you" may name the occurrence's player rather than
-    /// its controller.</b> <c>rr:you-your.7</c> — "for abilities that trigger
-    /// 'after [enemy] attacks you,' 'you' refers to the attacked player, even
-    /// if that player defended with an ally." Prelate Armor's "after
-    /// <i>you</i> make a basic attack against Unus" is no opportunity at all
-    /// for a player who did not attack, and it is that player's hand the cost
-    /// would otherwise be priced against.
-    /// </para>
-    /// <para>
-    /// Which is why this is written on the trigger rather than inferred from
-    /// the card having no owner: "any player may" and "the player it happened
-    /// to" are both things an encounter card can say, and only the card knows
-    /// which it said.
-    /// </para>
-    /// </remarks>
-    private int Controller(
-        World world, CompiledCardAbility ability, Card card, Occurrence occurrence) =>
-        RestrictedPlayer(world, ability, card) is { } restricted
-            ? restricted
-            : ability.Trigger.Player is not null
-            ? occurrence.Player
-            : ability.Trigger.Actor == AbilityRoles.You
-                ? occurrence.ActorFacts?.Controller ?? ControllerOf(world, card)
-                : ControllerOf(world, card);
-
     /// <summary>The one player allowed to use this encounter-card ability, if any.</summary>
     /// <remarks>
     /// <para>
@@ -95,21 +58,6 @@ public sealed partial class AbilityRunner
 
     private static bool ContainsYouOrYour(AbilityCost? cost) =>
         AbilityPlayerBindingAnalysis.Contains(cost);
-
-    /// <summary>Whether this player is permitted to initiate the ability.</summary>
-    private bool MayInitiate(World world, CompiledCardAbility ability, Card card, int player)
-    {
-        // `rr:player-turn.5.a-c` grants permission per ability: a player may
-        // use their card, an encounter card, or the particular ability whose
-        // text allows them. One AnyPlayer ability must not expose its card's
-        // other controller-only actions or resource abilities.
-        bool cardPermits = ControllerOf(world, card) == player
-            || card.Owner == World.Scenario
-            || ability.AnyPlayer;
-        return cardPermits
-            && (RestrictedPlayer(world, ability, card) is not { } restricted
-                || restricted == player);
-    }
 
     private static bool Subject(
         World world, string? subject, Card card, Occurrence occurrence,
@@ -163,7 +111,7 @@ public sealed partial class AbilityRunner
 
     // ---- the effect tree ---------------------------------------------------
 
-    private static void Run(CompiledCardAbility ability, Cast cast)
+    private void Run(CompiledCardAbility ability, AbilityResolutionState cast)
     {
         var labels = ability.Labels;
         if (labels.Length > 0)
@@ -198,7 +146,7 @@ public sealed partial class AbilityRunner
         Run(ability.Effect, cast);
     }
 
-    private static void Run(AbilityEffect node, Cast cast)
+    private void Run(AbilityEffect node, AbilityResolutionState cast)
     {
         int eventsBefore = cast.Events.Count;
         var agendaOwner = cast.World.Agenda.Current;
@@ -240,11 +188,11 @@ public sealed partial class AbilityRunner
         Attack.RefreshDefender(cast.World, cast.World.Facts);
     }
 
-    private static void RunRemainingEffect(AbilityEffect node, Cast cast)
+    private void RunRemainingEffect(AbilityEffect node, AbilityResolutionState cast)
         => ApplyStructuralDecision(AbilityStructuralExecution.Decide(
             StructuralContext(cast), node), cast);
 
-    private static void RunDefense(RunDefenseCommand command, Cast cast)
+    private void RunDefense(RunDefenseCommand command, AbilityResolutionState cast)
     {
         var defender = cast.AbilityActor ?? LabeledAbilities.Begin(
             cast.World, cast.World.Facts, Resolver(cast), cast.Source,
@@ -261,7 +209,7 @@ public sealed partial class AbilityRunner
 
     // The owner has decided the structural transition. This trampoline performs
     // only its explicit domain command or continuation suspension.
-    private static void ApplyStructuralDecision(AbilityStructuralTransition transition, Cast cast)
+    private void ApplyStructuralDecision(AbilityStructuralTransition transition, AbilityResolutionState cast)
     {
         switch (transition)
         {
@@ -312,8 +260,8 @@ public sealed partial class AbilityRunner
             case DelayAfterActivation delay:
                 var activation = cast.World.Activation
                     ?? throw new InvalidOperationException("Structural owner admitted no activation");
-                ((AbilityRunner)cast.Abilities).RuntimeFor(cast.World).AfterActivation(
-                    activation.Id, new ActivationEffect(
+                runtimes.AfterActivation(
+                    cast.World, activation.Id, new ActivationEffect(
                         cast.Source.ObjectId, cast.Player, cast.Tier, delay.Effect.Effect,
                         cast.Altered?.ObjectId ?? -1, cast.AbilityActor?.ObjectId ?? -1));
                 cast.ResolveEffect();
@@ -348,15 +296,14 @@ public sealed partial class AbilityRunner
     /// <summary>
     /// "Put the top card of your deck into play facedown … as a Drone minion."
     /// </summary>
-    private static bool CanCreateDrones(AbilityEffect node, Cast cast) =>
+    private bool CanCreateDrones(AbilityEffect node, AbilityResolutionState cast) =>
         EffectOf<AbilityEffect.CreateDrones>(node, cast) is var drones
         && AbilityAdmissionFacts.CanCreateDrones(
-            cast.World, Seats(drones.Players, cast), drones.Count);
-
-    // The rules define the role, not this persisted result-key spelling. The
-    // value survives a suspended printed sequence so only this defense ability
-    // may replace the provisional defender it established.
-    private static int ReplaceableDefenseDefender(Cast cast) =>
-        checked((int)cast.Results.GetValueOrDefault("defenseAbilityDefender", -1));
+            cast.World, drones.Players switch
+            {
+                AbilityPlayerSelection.AllPlayers => cast.World.PlayerOrder,
+                AbilityPlayerSelection.OnePlayer one => [Seat(one.Player, cast)],
+                _ => throw new InvalidOperationException("Unknown compiled player selection"),
+            }, drones.Count);
 
 }

@@ -186,7 +186,7 @@ public sealed class FormDataTests
         // "Each player begins the game in alter-ego form", and the recorded
         // opening board agrees -- `01001b` is the face in `HeroArea` at step 0.
         var world = Deal();
-        var game = Game.Begin(world, Cards);
+        var game = Game.BeginWithoutCardAbilities(world, Cards);
         var seat = world.Seats[0];
 
         Assert.Equal([Forms.AlterEgo], Forms.Of(world, seat, Cards));
@@ -208,7 +208,7 @@ public sealed class FormDataTests
         // on -- changing form is something a player may do in a turn, not the
         // whole of it.
         var world = Deal();
-        var game = Game.Begin(world, Cards);
+        var game = Game.BeginWithoutCardAbilities(world, Cards);
 
         game.Resolve(Decision.Decline);
         var change = game.Pending!.Affordances.Single(a => a.Verb == Game.ChangeForm);
@@ -255,7 +255,7 @@ public sealed class FormDataTests
     private static (long Threat, Question? Asking) VillainPhaseAfter(bool changingForm)
     {
         var world = Deal();
-        var game = Game.Begin(world, Cards);
+        var game = Game.BeginWithoutCardAbilities(world, Cards);
         game.Resolve(Decision.Decline);   // keep the opening hand
 
         if (changingForm)
@@ -300,7 +300,7 @@ public sealed class FormDataTests
             hasFirstPlayerToken: true, world)["health"];
 
     private static World Deal() =>
-        WorldSetup.Deal(
+        WorldSetup.DealWithoutCardAbilities(
             Cards,
             Blueprints.From(Dealer.DealOrder(Setup, Campaign, ["spider_man"]), Cards),
             [Setup.Hero("spider_man").Name],

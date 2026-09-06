@@ -38,7 +38,19 @@ public static class Sequence
         World world, ICardFacts facts, ICardAbilities abilities, List<GameEvent> events,
         WindowAbilityScope scope = WindowAbilityScope.AllCards)
     {
+        ArgumentNullException.ThrowIfNull(abilities);
+        world.Abilities = abilities;
+        return WorkWithWorldAbilities(world, facts, events, scope);
+    }
+
+    internal static Prompt? WorkWithWorldAbilities(
+        World world, ICardFacts facts, List<GameEvent> events,
+        WindowAbilityScope scope = WindowAbilityScope.AllCards)
+    {
         ArgumentNullException.ThrowIfNull(world);
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(events);
+        IWindowAbilities abilities = world.WindowAbilities;
 
         while (world.Agenda.Current is { } step)
         {
@@ -81,7 +93,7 @@ public static class Sequence
                         $"a planning '{step.What}' agenda step has no occurrence");
                 if (world.Agenda.Stage == Stage.Apply)
                 {
-                    if (VillainPhase.Take(world, facts, abilities, step, events) is { } planQuestion)
+                    if (VillainPhase.TakeWithWorldAbilities(world, facts, step, events) is { } planQuestion)
                     {
                         return planQuestion;
                     }
@@ -201,7 +213,7 @@ public static class Sequence
                 ?? throw new InvalidOperationException(
                     $"an applying '{step.What}' agenda step has no occurrence");
             var healthBefore = world.Effects.CaptureCharacterHealth();
-            if (VillainPhase.Take(world, facts, abilities, step, events) is { } asking)
+            if (VillainPhase.TakeWithWorldAbilities(world, facts, step, events) is { } asking)
             {
                 return WithAttackContext(world, facts, step, asking);
             }
@@ -371,12 +383,21 @@ public static class Sequence
         World world, ICardFacts facts, ICardAbilities abilities, Prompt asked, Decision input,
         List<GameEvent> events)
     {
+        ArgumentNullException.ThrowIfNull(abilities);
+        world.Abilities = abilities;
+        AnswerWithWorldAbilities(world, facts, asked, input, events);
+    }
+
+    internal static void AnswerWithWorldAbilities(
+        World world, ICardFacts facts, Prompt asked, Decision input,
+        List<GameEvent> events)
+    {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
-        ArgumentNullException.ThrowIfNull(abilities);
         ArgumentNullException.ThrowIfNull(asked);
         ArgumentNullException.ThrowIfNull(input);
         ArgumentNullException.ThrowIfNull(events);
+        IWindowAbilities abilities = world.WindowAbilities;
 
         if (world.Windows.Current is not { } window)
         {
@@ -391,7 +412,7 @@ public static class Sequence
 
             var occurrence = world.Agenda.Occurrence
                 ?? throw new InvalidOperationException("an asking agenda step has no occurrence");
-            VillainPhase.Answered(world, facts, abilities, step, input, events);
+            VillainPhase.AnswerWithWorldAbilities(world, facts, step, input, events);
             if ((step.What is Steps.ChooseOption
                 or Steps.ChooseWouldBeDefeated
                 or Steps.ChooseCardDefeatedAbility

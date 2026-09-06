@@ -177,7 +177,7 @@ public sealed class RandomDiscardTests
     private static World Deal(params string[] heroes)
     {
         string[] playing = heroes.Length > 0 ? heroes : ["spider_man"];
-        var world = WorldSetup.Deal(
+        var world = WorldSetup.DealWithoutCardAbilities(
             Cards,
             Blueprints.From(Dealer.DealOrder(Setup, "rhino", playing), Cards),
             [.. playing.Select(hero => Setup.Hero(hero).Name)],

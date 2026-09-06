@@ -92,7 +92,7 @@ public sealed class SetupOrderTests
         // The authored setup row lists stages one, two, then three. Areas are
         // bottom-first, so the waiting cards are stored stage three then stage
         // two and the next rules-driven advance takes stage two from the top.
-        var world = WorldSetup.Deal(
+        var world = WorldSetup.DealWithoutCardAbilities(
             Cards,
             Blueprints.From(
                 Dealer.DealOrder(Setup, "ultron", ["spider_man"]), Cards),
@@ -142,7 +142,7 @@ public sealed class SetupOrderTests
         Assert.NotEqual(scheme.Faces[0], scheme.FaceId);
     }
 
-    private static World Deal(params string[] heroes) => WorldSetup.Deal(
+    private static World Deal(params string[] heroes) => WorldSetup.DealWithoutCardAbilities(
         Cards,
         Blueprints.From(Dealer.DealOrder(Setup, Campaign, heroes), Cards),
         [.. heroes.Select(hero => Setup.Hero(hero).Name)],

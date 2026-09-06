@@ -264,12 +264,6 @@ public sealed class World
     /// already built from. Exposed because a caller holding a <see cref="World"/>
     /// is by definition in that game: threading a second <c>ICardFacts</c>
     /// alongside it is how two of them get to disagree.
-    /// <para>
-    /// The rules still take it as a parameter where they can — that keeps a
-    /// function's inputs visible in its signature. This is for the callers that
-    /// have a world and nothing else, which is what <c>ICardAbilities</c> hands
-    /// a card.
-    /// </para>
     /// </remarks>
     public ICardFacts Facts => facts;
 
@@ -278,18 +272,16 @@ public sealed class World
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Here for the same reason <see cref="Facts"/> is, and with the same
-    /// bargain: the rules take <c>ICardAbilities</c> as a parameter wherever
-    /// they can, because that keeps a function's inputs visible in its
-    /// signature. This is for the callers that have a world and nothing else.
+    /// The public aggregate is retained for compatibility at construction and
+    /// direct engine entry points. Rules procedures read the typed capability
+    /// properties below, so each consumer sees only the card behavior it uses.
     /// </para>
     /// <para>
     /// <b>Defeat is the caller that needed it.</b>
     /// <c>rr:when-defeated-abilities</c> resolves a card's ability before the
-    /// card leaves play, and a defeat happens inside <c>Damage.Deal</c> —
-    /// four calls below anything that was ever handed an
-    /// <c>ICardAbilities</c>. Threading one down that path would put it in
-    /// seventeen signatures that have no use for it.
+    /// card leaves play, and a defeat happens inside <c>Damage.Deal</c>. Keeping
+    /// the capabilities on the board lets that nested procedure use the damage
+    /// port without threading unrelated card behavior through every caller.
     /// </para>
     /// <para>
     /// Defaults to <see cref="Play.NoCardAbilities"/>, so a board built by hand
@@ -298,6 +290,44 @@ public sealed class World
     /// </para>
     /// </remarks>
     public Play.ICardAbilities Abilities { get; set; } = new Play.NoCardAbilities();
+
+    // The aggregate is retained for host compatibility. Rules code reaches card
+    // text through the smallest port that expresses the operation it performs.
+    /// <summary>The damage-specific card capability.</summary>
+    public Play.ICardDamageAbilities DamageAbilities => (Play.ICardDamageAbilities)Abilities;
+    /// <summary>The threat-specific card capability.</summary>
+    public Play.IThreatCardAbilities ThreatAbilities => (Play.IThreatCardAbilities)Abilities;
+    /// <summary>The power-specific card capability.</summary>
+    public Play.ICardPowerAbilities PowerAbilities => (Play.ICardPowerAbilities)Abilities;
+    /// <summary>The resource-specific card capability.</summary>
+    public Play.IResourceCardAbilities ResourceAbilities => (Play.IResourceCardAbilities)Abilities;
+    /// <summary>The encounter-specific card capability.</summary>
+    public Play.IEncounterCardAbilities EncounterAbilities => (Play.IEncounterCardAbilities)Abilities;
+    /// <summary>The continuation-specific card capability.</summary>
+    public Play.ICardContinuationAbilities ContinuationAbilities => (Play.ICardContinuationAbilities)Abilities;
+    /// <summary>The activation-completion card capability.</summary>
+    public Play.IActivationCompletionAbilities ActivationCompletionAbilities =>
+        (Play.IActivationCompletionAbilities)Abilities;
+    /// <summary>The readiness-specific card capability.</summary>
+    public Play.ICardReadinessAbilities ReadinessAbilities => (Play.ICardReadinessAbilities)Abilities;
+    /// <summary>The setup-specific card capability.</summary>
+    public Play.ICardSetupAbilities SetupAbilities => (Play.ICardSetupAbilities)Abilities;
+    /// <summary>The placement-specific card capability.</summary>
+    public Play.ICardPlacementAbilities PlacementAbilities => (Play.ICardPlacementAbilities)Abilities;
+    /// <summary>The constant-effect card capability.</summary>
+    public Play.ICardConstantAbilities ConstantAbilities => (Play.ICardConstantAbilities)Abilities;
+    /// <summary>The action-specific card capability.</summary>
+    public Play.ICardActionAbilities ActionAbilities => (Play.ICardActionAbilities)Abilities;
+    /// <summary>The timing-window card capability.</summary>
+    public Timing.IWindowAbilities WindowAbilities => Abilities;
+    /// <summary>The enemy-attack card capability.</summary>
+    public Play.IAttackCardAbilities AttackAbilities => (Play.IAttackCardAbilities)Abilities;
+    /// <summary>The enter-play card capability.</summary>
+    public Play.ICardPlayAbilities CardPlayAbilities => (Play.ICardPlayAbilities)Abilities;
+    /// <summary>The encounter-reveal card capability.</summary>
+    public Play.IRevealCardAbilities RevealAbilities => (Play.IRevealCardAbilities)Abilities;
+    /// <summary>The counter-pool card capability.</summary>
+    public Play.ICardCounterPools CounterPools => Abilities;
 
     /// <summary>
     /// Whether this game is being played in expert mode —

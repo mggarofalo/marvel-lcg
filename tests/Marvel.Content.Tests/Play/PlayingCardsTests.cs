@@ -135,12 +135,12 @@ public sealed class PlayingCardsTests
 
     private static (Game Game, World World) Begin()
     {
-        var world = WorldSetup.Deal(
+        var world = WorldSetup.DealWithoutCardAbilities(
             Cards,
             Blueprints.From(Dealer.DealOrder(Setup, "rhino", ["spider_man"]), Cards),
             [Setup.Hero("spider_man").Name],
             12345);
-        var game = Game.Begin(world, Cards);
+        var game = Game.BeginWithoutCardAbilities(world, Cards);
         game.Resolve(Decision.Decline);   // the mulligan
         return (game, world);
     }

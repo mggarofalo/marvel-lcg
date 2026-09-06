@@ -55,8 +55,8 @@ public sealed record CardBlueprint(string Spec, SetupSlot Slot, int Seat);
 /// the scenario's "Setup" and "When Revealed" abilities as part of the deal, so
 /// a dealer that could not run a card could not deal a board that was correct —
 /// it could only deal one that looked correct on the scenarios whose first card
-/// happens to say nothing. The interpreter is a parameter and defaults to
-/// <c>NoCardAbilities</c>, which is what a test building a board by hand wants.
+/// happens to say nothing. The interpreter is a required parameter; tests that
+/// intentionally omit card text use <see cref="DealWithoutCardAbilities"/>.
 /// </para>
 /// </remarks>
 public static class WorldSetup
@@ -70,14 +70,11 @@ public static class WorldSetup
     /// </param>
     /// <param name="seed">The game's seed. One stream, seeded once.</param>
     /// <param name="abilities">
-    /// What cards do — <c>rr:appendix-ii-setup.step.12</c>. Defaults to
-    /// <see cref="Play.NoCardAbilities"/>, which deals the board and runs no
-    /// text.
+    /// What cards do — <c>rr:appendix-ii-setup.step.12</c>.
     /// </param>
     /// <param name="events">
     /// Where to record what setup's abilities did, or null to discard it. Null
-    /// is safe rather than lossy for the same reason the parameter above
-    /// defaults: with no interpreter there is nothing to lose.
+    /// is safe when the caller does not need a setup transcript.
     /// </param>
     /// <param name="expert">
     /// Whether this is expert mode — <c>rr:modes-of-play.2</c>. What it changes
@@ -87,12 +84,13 @@ public static class WorldSetup
     public static World Deal(
         ICardFacts facts, IReadOnlyList<CardBlueprint> blueprints,
         IReadOnlyList<string> seats, uint seed,
-        Play.ICardAbilities? abilities = null, List<Events.GameEvent>? events = null,
+        Play.ICardAbilities abilities, List<Events.GameEvent>? events = null,
         bool expert = false)
     {
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(blueprints);
         ArgumentNullException.ThrowIfNull(seats);
+        ArgumentNullException.ThrowIfNull(abilities);
 
         RefuseUnsupportedKinds(facts, blueprints);
 
@@ -106,7 +104,7 @@ public static class WorldSetup
         // in `rr:player-deck.1` draws from this same stream years of turns
         // later, and a second generator would restart it.
         var world = new World(facts, players, seed);
-        world.Abilities = abilities ?? new Play.NoCardAbilities();
+        world.Abilities = abilities;
         world.Expert = expert;
 
         var insert = world.CreateArea(DeckType.RemovedArea);
@@ -230,7 +228,7 @@ public static class WorldSetup
         if (scheme is not null)
         {
             // 12a. "Resolve any 'Setup' abilities on main scheme card 1A."
-            happened.AddRange(world.Abilities.Setup(world, scheme));
+            happened.AddRange(world.SetupAbilities.Setup(world, scheme));
             FinishSetupAgenda(world, facts, happened);
             TrackSetupEntrants(
                 world, facts, happened, ref setupEventCursor,
@@ -261,7 +259,7 @@ public static class WorldSetup
             scheme.PlaceTokens("k_threat",
                 facts.PrintedValue(scheme.FaceId, "StartingThreat", players));
 
-            happened.AddRange(world.Abilities.WhenRevealed(world, scheme, world.FirstPlayer));
+            happened.AddRange(world.EncounterAbilities.WhenRevealed(world, scheme, world.FirstPlayer));
             FinishSetupAgenda(world, facts, happened);
             TrackSetupEntrants(
                 world, facts, happened, ref setupEventCursor,
@@ -281,12 +279,12 @@ public static class WorldSetup
         //      reads the side the players will be playing against.
         if (world.TheCardIn(DeckType.VillainArea) is { } villain)
         {
-            happened.AddRange(world.Abilities.Setup(world, villain));
+            happened.AddRange(world.SetupAbilities.Setup(world, villain));
             FinishSetupAgenda(world, facts, happened);
             TrackSetupEntrants(
                 world, facts, happened, ref setupEventCursor,
                 deferredReveals, deferredRevealSet);
-            happened.AddRange(world.Abilities.WhenRevealed(world, villain, world.FirstPlayer));
+            happened.AddRange(world.EncounterAbilities.WhenRevealed(world, villain, world.FirstPlayer));
             FinishSetupAgenda(world, facts, happened);
             TrackSetupEntrants(
                 world, facts, happened, ref setupEventCursor,
@@ -324,9 +322,9 @@ public static class WorldSetup
             }
 
             Play.Reveal.Keywords(
-                world, facts, world.Abilities, card, world.FirstPlayer, happened);
+                world, facts, world.ThreatAbilities, card, world.FirstPlayer, happened);
             happened.AddRange(
-                world.Abilities.WhenRevealed(world, card, world.FirstPlayer));
+                world.EncounterAbilities.WhenRevealed(world, card, world.FirstPlayer));
             FinishSetupAgenda(world, facts, happened);
             TrackSetupEntrants(
                 world, facts, happened, ref setupEventCursor,
@@ -353,6 +351,13 @@ public static class WorldSetup
 
         return world;
     }
+
+    /// <summary>Deals a board whose cards intentionally have no executable text.</summary>
+    public static World DealWithoutCardAbilities(
+        ICardFacts facts, IReadOnlyList<CardBlueprint> blueprints,
+        IReadOnlyList<string> seats, uint seed,
+        List<Events.GameEvent>? events = null, bool expert = false) =>
+        Deal(facts, blueprints, seats, seed, new Play.NoCardAbilities(), events, expert);
 
     private static void RefuseUnsupportedKinds(
         ICardFacts facts, IReadOnlyList<CardBlueprint> blueprints)
@@ -393,10 +398,9 @@ public static class WorldSetup
         // may therefore read encounter cards only. A question from one of
         // those cards is still refused rather than answered on a player's
         // behalf, because setup has no prompt channel.
-        if (Play.Sequence.Work(
+        if (Play.Sequence.WorkWithWorldAbilities(
                 world,
                 facts,
-                world.Abilities,
                 happened,
                 Timing.WindowAbilityScope.EncounterCardsOnly) is { } asked)
         {
@@ -489,7 +493,7 @@ public static class WorldSetup
             }
 
             var from = card.Area;
-            int? controller = world.Abilities.SetupController(world, card);
+            int? controller = world.SetupAbilities.SetupController(world, card);
             if (controller is { } player)
             {
                 Play.CardPlay.TakeScenarioCardOwnership(facts, card, player);

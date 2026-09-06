@@ -17,6 +17,7 @@ internal sealed class AbilityEventPayment
     private readonly World world;
     private readonly Card card;
     private readonly int player;
+    private readonly IResourceCardAbilities resourceAbilities;
     private readonly ImmutableArray<int> paying;
     private readonly ImmutableArray<Area> hands;
     private readonly ImmutableDictionary<int, int> resourcePayers;
@@ -26,13 +27,15 @@ internal sealed class AbilityEventPayment
     private readonly string paid;
 
     private AbilityEventPayment(
-        World world, Card card, int player, ImmutableArray<int> paying,
+        World world, Card card, int player, IResourceCardAbilities resourceAbilities,
+        ImmutableArray<int> paying,
         ImmutableArray<Area> hands, ImmutableDictionary<int, int> resourcePayers,
         AdjustedCardCost adjusted, long total, string required, string paid)
     {
         this.world = world;
         this.card = card;
         this.player = player;
+        this.resourceAbilities = resourceAbilities;
         this.paying = paying;
         this.hands = hands;
         this.resourcePayers = resourcePayers;
@@ -44,6 +47,7 @@ internal sealed class AbilityEventPayment
 
     internal static AbilityEventPayment? Prepare(
         World world, Card card, int player, IReadOnlyList<int> paying, AbilityEffect effect,
+        IResourceCardAbilities resourceAbilities,
         IReadOnlyList<ResourceAllocation>? allocations = null,
         AbilityCost? additionalCost = null)
     {
@@ -64,13 +68,13 @@ internal sealed class AbilityEventPayment
             world, world.Facts, world.Seats[player], card);
         var generators = payingSeats
             .SelectMany(seat => CardPlay.Generators(
-                world, world.Facts, seat, card))
+                world, world.Facts, seat, resourceAbilities, card))
             .Where(source => source.Effect != card.ObjectId)
             .GroupBy(source => source.Effect)
             .Select(group => group.First())
             .ToList();
         var resourcePayers = payingSeats
-            .SelectMany(seat => world.Abilities.ResourceAbilities(
+            .SelectMany(seat => resourceAbilities.ResourceAbilities(
                     world, seat.Index)
                 .Select(source => (source.Effect, seat.Index)))
             .GroupBy(entry => entry.Effect)
@@ -141,7 +145,7 @@ internal sealed class AbilityEventPayment
                 ? DeclaredPaidResources(generated, total, required)
                 : Resources.Paid(generated, total, required);
 
-        return new AbilityEventPayment(world, card, player, [.. paying],
+        return new AbilityEventPayment(world, card, player, resourceAbilities, [.. paying],
             [.. payingSeats.Select(seat => seat.Hand)],
             resourcePayers.ToImmutableDictionary(),
             adjusted with { Modifiers = adjusted.Modifiers.ToImmutableArray() },
@@ -179,7 +183,7 @@ internal sealed class AbilityEventPayment
         }
 
         CardPlay.Spend(
-            world, world.Facts, hands, paying,
+            world, world.Facts, resourceAbilities, hands, paying,
             total,
             required, card.ObjectId,
             player, events, payingFor: card,

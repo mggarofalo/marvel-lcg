@@ -71,9 +71,25 @@ public sealed class MainSchemeAdvancementAbilityTests
         Assert.Equal(0, old.Tokens.GetValueOrDefault("is_completed"));
     }
 
+    [Rule("rr:main-scheme-main-scheme-deck.2.2")]
+    [Fact]
+    public void NextStageUsesTheInitiatingRunnersRevealedAbility()
+    {
+        var (world, source, _) = Board();
+        var runner = RunnerWithNextStageAbility();
+        world.Abilities = new UnrelatedWorldAbilities();
+        int handBefore = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(
+            runner.Actions(world, 0), ability => ability.Card == source.ObjectId);
+
+        runner.Act(world, action, [], []);
+
+        Assert.Equal(handBefore + 1, world.Seats[0].Hand.Cards.Count);
+    }
+
     private static (World World, Card Source, Card Next) Board()
     {
-        var world = WorldSetup.Deal(
+        var world = WorldSetup.DealWithoutCardAbilities(
             Cards,
             Blueprints.From(Dealer.DealOrder(Setup, "rhino", ["spider_man"]), Cards),
             [Setup.Hero("spider_man").Name],
@@ -97,4 +113,26 @@ public sealed class MainSchemeAdvancementAbilityTests
           { "card": "01116b", "abilities": [] }
         ] }
         """));
+
+    private static AbilityRunner RunnerWithNextStageAbility() => new(AbilityCatalog.Parse(
+        $$"""
+        { "cards": [
+          { "card": "{{AuthoredCards.AuntMay}}", "abilities": [ {
+            "trigger": { "event": "WhenActionTriggered", "timing": "Action", "subject": "game" },
+            "effect": { "advanceMainScheme": "next" }
+          } ] },
+          { "card": "01116a", "abilities": [ {
+            "trigger": { "event": "WhenCardRevealed", "timing": "WhenRevealed" },
+            "effect": { "draw": { "player": "you", "count": 1 } }
+          } ] },
+          { "card": "01116b", "abilities": [] }
+        ] }
+        """));
+
+    private sealed class UnrelatedWorldAbilities : NoCardAbilities
+    {
+        public override IReadOnlyList<Marvel.Rules.Events.GameEvent> WhenRevealed(
+            World world, Card card, int player) =>
+            throw new InvalidOperationException("the unrelated World ability aggregate was used");
+    }
 }

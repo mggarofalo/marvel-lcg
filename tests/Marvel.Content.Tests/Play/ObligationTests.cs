@@ -161,7 +161,7 @@ public sealed class ObligationTests
         }
     }
 
-    private static World Deal(params string[] heroes) => WorldSetup.Deal(
+    private static World Deal(params string[] heroes) => WorldSetup.DealWithoutCardAbilities(
         Cards,
         Blueprints.From(Dealer.DealOrder(Setup, "rhino", heroes), Cards),
         [.. heroes.Select(hero => Setup.Hero(hero).Name)],

@@ -45,8 +45,8 @@ internal sealed record RestoredContinuationState(
     int SourceIncarnation, AbilityContinuationCardBinding? Chosen, Card? Actor,
     ImmutableHashSet<int> CrisisIgnoringThwarts);
 
-// Concrete capture facts cross the runner boundary. This deliberately contains
-// values, not a Cast, callback, or runner service.
+// Concrete capture facts cross the executor boundary. This deliberately contains
+// values, not an AbilityResolutionState, callback, or service object.
 internal sealed record AbilityContinuationCapture(
     int Source, int SourceIncarnation, AbilityContinuationAddress Address,
     ImmutableArray<AbilityStructuralFrame> Frames, int Position, int Player, int AbilityPlayer,
@@ -287,7 +287,7 @@ internal static class AbilityContinuationCodec
             hasContinuation);
 
     /// <summary>
-    /// Consumes one-shot wire markers before the runner can execute a node that
+    /// Consumes one-shot wire markers before the executor can execute a node that
     /// might suspend again. The returned state is the only state a later capture
     /// may persist.
     /// </summary>

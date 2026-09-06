@@ -81,7 +81,7 @@ public static class EachPlayerEffects
     }
 
     internal static IReadOnlyList<GameEvent> Resolve(
-        World world, ICardAbilities abilities, PhaseStep step)
+        World world, ICardContinuationAbilities abilities, PhaseStep step)
     {
         var source = Source(world, step);
         if (step.Seat < 0 || step.Seat >= world.Seats.Count || world.Seats[step.Seat].Eliminated)

@@ -379,7 +379,7 @@ public sealed class DefeatStepSevenTests
         var names = players == 1
             ? new[] { "Spider-Man" }
             : ["Spider-Man", "Captain Marvel"];
-        var world = WorldSetup.Deal(
+        var world = WorldSetup.DealWithoutCardAbilities(
             Cards,
             Blueprints.From(Dealer.DealOrder(Setup, "rhino", heroes), Cards),
             names,

@@ -228,7 +228,7 @@ public sealed class ForEachTests
         return runner.WhenRevealed(world, source, 0);
     }
 
-    private static World Deal() => WorldSetup.Deal(
+    private static World Deal() => WorldSetup.DealWithoutCardAbilities(
         Cards,
         Blueprints.From(Dealer.DealOrder(Setup, Campaign, ["spider_man"]), Cards),
         [Setup.Hero("spider_man").Name],

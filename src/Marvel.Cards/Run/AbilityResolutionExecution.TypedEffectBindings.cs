@@ -2,7 +2,7 @@ using Marvel.Cards.Dsl;
 
 namespace Marvel.Cards.Run;
 
-public sealed partial class AbilityRunner
+internal sealed partial class AbilityResolutionExecution
 {
     // rr:ability.8.1: only the attached player card's controller can trigger
     // an attachment ability that "uses the word “you” or “your”". The engine

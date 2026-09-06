@@ -238,7 +238,7 @@ internal static class AbilityStructuralQueries
             foreach (var step in remaining)
                 AbilityAdmissionAreaDependencies.Collect(step, selected, sensitive);
             if (sensitive.Count > 0
-                && AbilityAreaProjection.EffectsMayChangeAnyArea(
+                && AbilityRuntimeQueries.EffectsMayChangeAnyArea(
                     selected.Reachability.PriorSteps, sensitive, selected))
             {
                 return false;

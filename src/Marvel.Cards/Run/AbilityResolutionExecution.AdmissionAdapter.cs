@@ -2,27 +2,21 @@ using Marvel.Cards.Dsl;
 
 namespace Marvel.Cards.Run;
 
-public sealed partial class AbilityRunner
+internal sealed partial class AbilityResolutionExecution
 {
     // The interpreter translates its resolving frame into immutable admission
     // facts, then applies only the evidence returned by the independent owner.
-    private static AbilityAdmissionContext AdmissionContext(Cast cast) =>
+    private AbilityAdmissionContext AdmissionContext(AbilityResolutionState cast) =>
         new(
-            cast.Abilities is AbilityRunner runner
-                ? runner.program
-                : throw new InvalidOperationException(
-                    "Admission requires the authored ability program"),
+            program, resourceAbilities,
             cast.ExpressionContext(), cast.Reachability, cast.Power,
             cast.HasContinuation);
 
-    // The runner owns this one-way snapshot boundary.  Structural execution
-    // receives values, never Cast, the runner, or an execution callback.
-    private static AbilityStructuralContext StructuralContext(Cast cast) =>
+    // The executor owns this one-way snapshot boundary. Structural execution
+    // receives values, never AbilityResolutionState or an execution callback.
+    private AbilityStructuralContext StructuralContext(AbilityResolutionState cast) =>
         new(
-            cast.Abilities is AbilityRunner runner
-                ? runner.program
-                : throw new InvalidOperationException(
-                    "Structural execution requires the authored ability program"),
+            program, resourceAbilities, threatAbilities,
             cast.ExpressionContext(), cast.Reachability, cast.Trigger,
             cast.Source.FaceId, cast.AbilityFace,
             cast.Player, cast.Position, cast.HasContinuation, cast.Tier,
@@ -30,7 +24,7 @@ public sealed partial class AbilityRunner
             cast.ValidatedCrisisIgnoringThwarts, cast.RestoredCrisisIgnoringThwarts,
             [.. cast.StructuralPath]);
 
-    private static bool CanInitiate(CompiledCardAbility ability, Cast cast)
+    private bool CanInitiate(CompiledCardAbility ability, AbilityResolutionState cast)
     {
         var context = AdmissionContext(cast).WithReachability(
             cast.Reachability with { CheckingInitiation = true });
@@ -51,12 +45,8 @@ public sealed partial class AbilityRunner
         return ApplyAdmission(AbilityInitiation.Admit(ability.Effect, context), cast);
     }
 
-    private static bool CanInitiate(AbilityEffect effect, Cast cast) =>
+    private bool CanInitiate(AbilityEffect effect, AbilityResolutionState cast) =>
         ApplyAdmission(AbilityInitiation.Admit(effect, AdmissionContext(cast)), cast);
-
-    private static bool CanInitiateSequence(AbilityEffect effect, Cast cast) =>
-        ApplyAdmission(
-            AbilityInitiation.AdmitStructure(effect, AdmissionContext(cast)), cast);
 
     private static bool BindingCanChange(AbilityEffect? effect) =>
         AbilityBindingAnalysis.BindingCanChange(effect);
@@ -64,14 +54,12 @@ public sealed partial class AbilityRunner
     private static bool BindingCanChange(AbilityPlayerSelection players) =>
         AbilityBindingAnalysis.BindingCanChange(players);
 
-    private static bool SuspendsPowerEffect(
-        AbilityEffect effect, Cast cast, bool stateMayChange = false,
+    private bool SuspendsPowerEffect(
+        AbilityEffect effect, AbilityResolutionState cast, bool stateMayChange = false,
         bool bindingMayChange = false) =>
         AbilityInitiation.SuspendsPowerEffect(
             effect, AdmissionContext(cast), stateMayChange, bindingMayChange);
 
-    private static IEnumerable<AbilityEffect> PowerNodes(AbilityEffect effect, string power) =>
-        AbilityInitiation.PowerEffects(effect, power);
     private static IEnumerable<AbilityEffect> MutationChildren(AbilityEffect effect) =>
         AbilityInitiation.MutationChildren(effect);
     private static IEnumerable<AbilityEffect> ContinuationChildren(AbilityEffect effect) =>
@@ -88,20 +76,20 @@ public sealed partial class AbilityRunner
         AbilityInitiation.SaturatingMultiply(amount, multiplier);
     private static long NonNegativeForEachCount(long count) =>
         AbilityInitiation.NonNegativeForEachCount(count);
-    private static long ForEachCount(AbilityEffect effect, Cast cast) =>
+    private long ForEachCount(AbilityEffect effect, AbilityResolutionState cast) =>
         AbilityInitiation.ForEachCount(effect, AdmissionContext(cast));
-    private static bool CanDraw(AbilityEffect effect, Cast cast) =>
+    private bool CanDraw(AbilityEffect effect, AbilityResolutionState cast) =>
         AbilityInitiation.CanDraw(effect, AdmissionContext(cast));
     private static bool CanDraw(Marvel.Rules.State.World world, int player) =>
         AbilityInitiation.CanDraw(world, player);
-    private static bool LastingPeriodIsOpen(string until, Cast cast) =>
+    private bool LastingPeriodIsOpen(string until, AbilityResolutionState cast) =>
         AbilityInitiation.LastingPeriodIsOpen(until, AdmissionContext(cast));
-    private static void PreflightContinuationBoundaries(AbilityEffect effect, Cast cast) =>
+    private void PreflightContinuationBoundaries(AbilityEffect effect, AbilityResolutionState cast) =>
         AbilityInitiation.PreflightContinuationBoundaries(effect, AdmissionContext(cast));
-    private static bool PriorStepCanChange(AbilityCondition condition, Cast cast) =>
+    private bool PriorStepCanChange(AbilityCondition condition, AbilityResolutionState cast) =>
         AbilityInitiation.PriorStepCanChange(condition, AdmissionContext(cast));
 
-    private static bool ApplyAdmission(AbilityAdmissionResult result, Cast cast)
+    private static bool ApplyAdmission(AbilityAdmissionResult result, AbilityResolutionState cast)
     {
         foreach (var thwart in result.CrisisIgnoringThwarts)
         {

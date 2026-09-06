@@ -162,13 +162,13 @@ public sealed class PlayerTurnTests
 
     private static (Game Game, World World) BeginFrom(int firstPlayer, params string[] heroes)
     {
-        var world = WorldSetup.Deal(
+        var world = WorldSetup.DealWithoutCardAbilities(
             Cards,
             Blueprints.From(Dealer.DealOrder(Setup, Campaign, heroes), Cards),
             [.. heroes.Select(hero => Setup.Hero(hero).Name)],
             Seed);
         world.FirstPlayer = firstPlayer;
-        return (Game.Begin(world, Cards), world);
+        return (Game.BeginWithoutCardAbilities(world, Cards), world);
     }
 
     private static void ResolveMulligans(Game game)

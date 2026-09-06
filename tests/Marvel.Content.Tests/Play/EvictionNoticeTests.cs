@@ -147,7 +147,7 @@ public sealed class EvictionNoticeTests
 
     private static (World World, Card Card) Reveal(bool hero)
     {
-        var world = WorldSetup.Deal(
+        var world = WorldSetup.DealWithoutCardAbilities(
             Cards,
             Blueprints.From(Dealer.DealOrder(Setup, "rhino", ["spider_man"]), Cards),
             ["Spider-Man"],

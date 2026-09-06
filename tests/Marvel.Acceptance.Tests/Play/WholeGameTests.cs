@@ -204,11 +204,11 @@ public sealed class WholeGameTests
 
     private static (Game Game, World World) Deal(uint seed, params string[] heroes)
     {
-        var world = WorldSetup.Deal(
+        var world = WorldSetup.DealWithoutCardAbilities(
             Cards,
             Blueprints.From(Dealer.DealOrder(Setup, Campaign, heroes), Cards),
             [.. heroes.Select(hero => Setup.Hero(hero).Name)],
             seed);
-        return (Game.Begin(world, Cards), world);
+        return (Game.BeginWithoutCardAbilities(world, Cards), world);
     }
 }

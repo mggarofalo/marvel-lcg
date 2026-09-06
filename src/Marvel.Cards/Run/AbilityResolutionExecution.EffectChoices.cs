@@ -8,10 +8,10 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Cards.Run;
 
-public sealed partial class AbilityRunner
+internal sealed partial class AbilityResolutionExecution
 {
     /// <summary>Suspend an ability for one persisted player choice.</summary>
-    private static void SuspendForChoice(AbilityEffect node, Cast cast)
+    private void SuspendForChoice(AbilityEffect node, AbilityResolutionState cast)
     {
         // `Index` remains the legacy top-level resume point. New continuations
         // use AbilityOrdinal and AbilityPath below.
@@ -31,7 +31,7 @@ public sealed partial class AbilityRunner
         cast.Suspend();
     }
 
-    private static IReadOnlyList<Card> DamageTargets(AbilityCardSelection targets, Cast cast) =>
+    private IReadOnlyList<Card> DamageTargets(AbilityCardSelection targets, AbilityResolutionState cast) =>
         AbilityDamageAndThreatExecution.DamageTargets(targets, DamageAndThreatContext(cast));
 
     /// <summary>Deals an assignment that is already worked out.</summary>
@@ -40,8 +40,8 @@ public sealed partial class AbilityRunner
     /// "simultaneously" and simultaneous still has to reach the event stream in
     /// some order — one the board cannot see and the wire can.
     /// </remarks>
-    private static void Resolve(
-        AbilityEffect node, Cast cast, Dictionary<int, long> assigned)
+    private void Resolve(
+        AbilityEffect node, AbilityResolutionState cast, Dictionary<int, long> assigned)
         => ApplyDamageAndThreat(
             AbilityDamageAndThreatExecution.ResolveAssigned(
                 node, assigned, DamageAndThreatContext(cast)),
@@ -55,13 +55,13 @@ public sealed partial class AbilityRunner
     /// of the same moment. A card that wrote to <c>k_damage</c> would skip
     /// both and leave a defeated character standing.
     /// </remarks>
-    private static void DealDamage(AbilityEffect.Damage damage, AbilityEffect node, Cast cast, long multiplier = 1)
+    private void DealDamage(AbilityEffect.Damage damage, AbilityEffect node, AbilityResolutionState cast, long multiplier = 1)
         => ApplyDamageAndThreat(
             AbilityDamageAndThreatExecution.DealDamage(
                 damage, node, DamageAndThreatContext(cast), multiplier),
             node, cast);
 
-    private static void SchedulePower(SchedulePowerCommand command, Cast cast)
+    private void SchedulePower(SchedulePowerCommand command, AbilityResolutionState cast)
     {
         var continuationChosen = cast.CaptureCurrentSelection();
         cast.Choose(command.Target);
@@ -88,17 +88,17 @@ public sealed partial class AbilityRunner
         cast.Suspend();
     }
 
-    private static void RemoveThreat(AbilityEffect.RemoveThreat removal, Cast cast, long multiplier = 1)
+    private void RemoveThreat(AbilityEffect.RemoveThreat removal, AbilityResolutionState cast, long multiplier = 1)
         => ApplyDamageAndThreat(
             AbilityDamageAndThreatExecution.RemoveThreat(
                 removal, DamageAndThreatContext(cast), multiplier),
             removal, cast);
 
-    private static long EventModifier(Cast cast, string kind) =>
+    private static long EventModifier(AbilityResolutionState cast, string kind) =>
         AbilityEventModifiers.Amount(cast.World, cast.Source, kind);
 
     private static IReadOnlyList<ContinuousEffect> EventModifierEffects(
-        Cast cast, string kind)
+        AbilityResolutionState cast, string kind)
         => AbilityEventModifiers.Effects(cast.World, cast.Source, kind);
 
     /// <summary>Which card type a word names.</summary>
@@ -141,8 +141,8 @@ public sealed partial class AbilityRunner
     /// after that ordered batch, excluding enemies it has already processed.
     /// </para>
     /// </remarks>
-    private static void ScheduleActivations(
-        ScheduleActivationsCommand command, Cast cast)
+    private void ScheduleActivations(
+        ScheduleActivationsCommand command, AbilityResolutionState cast)
     {
         int round = cast.World.Agenda.Current?.Round ?? 0;
         var activations = new List<PhaseStep>();
@@ -188,8 +188,8 @@ public sealed partial class AbilityRunner
     }
 
     /// <summary>Resume the containing ability after a rules procedure finishes.</summary>
-    private static void SuspendAfterProcedure(
-        AbilityEffect node, Cast cast, PhaseStep? agendaOwner = null,
+    private void SuspendAfterProcedure(
+        AbilityEffect node, AbilityResolutionState cast, PhaseStep? agendaOwner = null,
         Occurrence? agendaOccurrence = null)
     {
         int abilityOrdinal = AbilityOrdinal(node, cast);
@@ -214,8 +214,8 @@ public sealed partial class AbilityRunner
     }
 
     /// <summary>Resume an initiated ability after its cost procedure settles.</summary>
-    private static void SuspendAfterCost(
-        Cast cast, int abilityOrdinal, PhaseStep? owner, Occurrence? occurrence)
+    private void SuspendAfterCost(
+        AbilityResolutionState cast, int abilityOrdinal, PhaseStep? owner, Occurrence? occurrence)
     {
         var capture = AbilityContinuationCodec.ForCostProcedure(
             Capture(cast, abilityOrdinal));
@@ -234,13 +234,12 @@ public sealed partial class AbilityRunner
         }
     }
 
-    private static AbilityContinuationCapture Capture(
-        Cast cast, int ordinal, AbilityCardReference? chosen = null,
+    private AbilityContinuationCapture Capture(
+        AbilityResolutionState cast, int ordinal, AbilityCardReference? chosen = null,
         IReadOnlyList<AbilityStructuralFrame>? frames = null)
     {
         var results = new Dictionary<string, long>(cast.Results, StringComparer.Ordinal);
-        var runner = (AbilityRunner)cast.Abilities;
-        var ability = runner.AbilityAt(
+        var ability = AbilityAt(
             cast.Source, cast.Tier, ordinal, cast.AbilityFace);
         var crisis = AbilityContinuationCodec.CrisisIgnoringThwartOrdinals(
             ability, cast.ValidatedCrisisIgnoringThwarts,
@@ -256,27 +255,6 @@ public sealed partial class AbilityRunner
             cast.EachPlayerFrame, cast.HasContinuation, cast.Trigger,
             cast.GainedKeywords.Contains("surge"), cast.Occurrence,
             cast.Discarded.Select(card => card.ObjectId), results, binding, crisis);
-    }
-
-    /// <summary>Propagate one reveal-scoped Surge gain to work already suspended.</summary>
-    private static void RememberGainedSurge(World world, int source)
-    {
-        // Choice and each-player continuations are saveable agenda data. An
-        // earlier ability can already have scheduled one when a later sibling
-        // ability gains Surge, so its original snapshot must be advanced too.
-        // The rulebook determines the shared non-numeric keyword instance; the
-        // propagation mechanism is the engine's choice.
-        world.Agenda.MarkSurgeGained(source);
-        if (world.CharacterAttack is { Source: var attackSource } attack
-            && attackSource == source)
-        {
-            world.CharacterAttack = attack with { SurgeGained = true };
-        }
-        if (world.CharacterThwart is { Source: var thwartSource } thwart
-            && thwartSource == source)
-        {
-            world.CharacterThwart = thwart with { SurgeGained = true };
-        }
     }
 
 }

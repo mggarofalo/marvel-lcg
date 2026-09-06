@@ -63,7 +63,9 @@ internal static class AbilityCardStateExecution
         World.MoveToTop(card, into);
         context.Events.Add(new CardsMoved(Places.Reference(from), Places.Reference(into),
             [new Landing(card.ObjectId, into.Cards.Count - 1)]) { Trigger = context.Trigger, Verb = "Put_Into_Play" });
-        Reveal.EnterPlay(context.World, context.World.Facts, card, context.Events);
+        Reveal.EnterPlay(
+            context.World, context.World.Facts, card, context.Events,
+            abilities: context.CardPlayAbilities);
     }
     internal static bool TryRun(AbilityEffect effect, AbilityCardStateContext context)
     {
@@ -114,7 +116,7 @@ internal static class AbilityCardStateExecution
     {
         var card = Find(removal.Card, context) ?? throw new RulesNotImplementedException(
             $"'{context.Source.FaceId}' cannot find the card paying its counter cost");
-        AbilityCardOperations.RemoveCounters(context.World, context.Pools, card, removal.Counter,
+        AbilityCardOperations.RemoveCounters(context.World, context.CardPlayAbilities, card, removal.Counter,
             removal.Count, context.Trigger, context.Events);
     }
 
@@ -127,7 +129,7 @@ internal static class AbilityCardStateExecution
     private static void Ready(AbilityCardSelection selection, AbilityCardStateContext context)
     {
         foreach (var card in Every(selection, context).Where(card => card.Ready == false
-                     && context.World.Abilities.CanReady(context.World, card, context.Source)))
+                     && context.Readiness.CanReady(context.World, card, context.Source)))
         {
             card.Refresh();
             context.Events.Add(new FieldSet(card.ObjectId, "is_exhaust", 1, 0)
@@ -331,7 +333,9 @@ internal static class AbilityCardStateExecution
 }
 
 internal sealed record AbilityCardStateContext(AbilityExpressionContext Expressions, string Trigger,
-    List<GameEvent> Events, ICardCounterPools Pools, AbilityCardStateResult Result)
+    List<GameEvent> Events, ICardPlayAbilities CardPlayAbilities,
+    ICardReadinessAbilities Readiness,
+    AbilityCardStateResult Result)
 {
     internal World World => Expressions.World;
     internal Card Source => Expressions.Source;

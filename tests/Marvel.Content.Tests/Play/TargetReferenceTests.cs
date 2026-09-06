@@ -1276,7 +1276,7 @@ public sealed class TargetReferenceTests
               "effect": { "giveStatus": { "card": { "titled": "{{title}}" }, "status": "tough" } }
             } ] } ] }
             """));
-        var world = WorldSetup.Deal(
+        var world = WorldSetup.DealWithoutCardAbilities(
             Cards,
             Blueprints.From(Dealer.DealOrder(Setup, "rhino", [hero]), Cards),
             [Setup.Hero(hero).Name],
@@ -1312,7 +1312,7 @@ public sealed class TargetReferenceTests
         AbilityRunner runner,
         string hero = "spider_man")
     {
-        var world = WorldSetup.Deal(
+        var world = WorldSetup.DealWithoutCardAbilities(
             Cards,
             Blueprints.From(Dealer.DealOrder(Setup, "rhino", [hero]), Cards),
             [Setup.Hero(hero).Name],

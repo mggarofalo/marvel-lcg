@@ -4,7 +4,7 @@ using Marvel.Rules.State;
 
 namespace Marvel.Cards.Run;
 
-public sealed partial class AbilityRunner
+internal sealed partial class AbilityResolutionExecution
 {
     private static bool InspectsConcealedPile(AbilityCardSelection selector) => selector switch
     {
@@ -17,21 +17,22 @@ public sealed partial class AbilityRunner
         _ => false,
     };
 
-    private static AbilitySingularAreaAdmission? SingularAreaAdmission(Cast cast) =>
+    private AbilitySingularAreaAdmission? SingularAreaAdmission(AbilityResolutionState cast) =>
         cast.Reachability.CheckingInitiation
             ? areas => SingularAreaQueryIsStable(areas, cast)
             : null;
 
-    private static Card? Find(AbilityCardSelection selector, Cast cast) =>
-        new AbilitySelectorEvaluation(cast.QueryContext(), SingularAreaAdmission(cast)).Find(selector);
+    private Card? Find(AbilityCardSelection selector, AbilityResolutionState cast) =>
+        new AbilitySelectorEvaluation(
+            cast.QueryContext(), SingularAreaAdmission(cast), program).Find(selector);
 
-    private static IReadOnlyList<Card> Every(AbilityCardSelection selector, Cast cast) =>
-        new AbilitySelectorEvaluation(cast.QueryContext()).Every(selector);
+    private IReadOnlyList<Card> Every(AbilityCardSelection selector, AbilityResolutionState cast) =>
+        new AbilitySelectorEvaluation(cast.QueryContext(), null, program).Every(selector);
 
-    private static bool CanRemoveByEffect(AbilityCardSelection selector, Cast cast, Card target) =>
+    private static bool CanRemoveByEffect(AbilityCardSelection selector, AbilityResolutionState cast, Card target) =>
         new AbilitySelectorEvaluation(cast.QueryContext()).CanRemove(selector, target);
 
-    private static Area Area(AbilitySearchArea area, Cast cast) => area switch
+    private static Area Area(AbilitySearchArea area, AbilityResolutionState cast) => area switch
     {
         AbilitySearchArea.EncounterDeck => cast.World.AreaOf(DeckType.EncounterDeck),
         AbilitySearchArea.EncounterDiscardPile => cast.World.AreaOf(DeckType.EncounterDiscardPile),

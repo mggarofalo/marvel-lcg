@@ -1,13 +1,15 @@
 using System.Collections.Immutable;
 using Marvel.Cards.Dsl;
+using Marvel.Rules.Play;
 using Marvel.Rules.State;
 
 namespace Marvel.Cards.Run;
 
 // The read-only input to admission. It deliberately omits events, runner
-// callbacks, continuation frames, and every mutable collection on Cast.
+// callbacks, continuation frames, and every mutable collection on AbilityResolutionState.
 internal sealed record AbilityAdmissionContext(
     AbilityProgram Program,
+    IResourceCardAbilities ResourceAbilities,
     AbilityExpressionContext Expressions,
     AbilityReachabilityContext Reachability,
     string? Power,
@@ -65,12 +67,12 @@ internal sealed record AbilityAdmissionContext(
         AbilitySingularAreaAdmission? singularAreaAdmission = null)
     {
         var selectors = Selectors(singularAreaAdmission);
-        return new AbilityExpressionEvaluation(Expressions, selectors);
+        return new AbilityExpressionEvaluation(Expressions, selectors, ResourceAbilities);
     }
 }
 
 // The only mutable product of admission is scoped evidence that a continuation
-// serializes by address. It is returned explicitly and never aliases Cast.
+// serializes by address. It is returned explicitly and never aliases AbilityResolutionState.
 internal sealed record AbilityAdmissionResult(
     bool IsAdmissible,
     ImmutableHashSet<AbilityEffect> CrisisIgnoringThwarts)

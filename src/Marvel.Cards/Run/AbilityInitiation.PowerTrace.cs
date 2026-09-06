@@ -1251,7 +1251,7 @@ internal static partial class AbilityInitiation
                 cast.Context.Program, cast.World,
                 new Occurrence(
                     0, [condition], Subject: subject.ObjectId, Player: subject.Owner),
-                WindowKind.Interrupt)
+                WindowKind.Interrupt, cast.Context.ResourceAbilities)
             .Any(card => !state.Discarded.Contains(card));
     }
 

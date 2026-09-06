@@ -237,7 +237,7 @@ public sealed partial class ActionAbilityTests
             ] }
             """,
             eventName: Steps.CardRevealed);
-        var world = WorldSetup.Deal(
+        var world = WorldSetup.DealWithoutCardAbilities(
             Cards,
             Blueprints.From(Dealer.DealOrder(Setup, "rhino", ["spider_man"]), Cards),
             ["Spider-Man"],

@@ -7,10 +7,12 @@ using Marvel.Rules.Play;
 
 namespace Marvel.Cards.Run;
 
-// One immutable read of a live resolution. The runner refreshes it after every
+// One immutable read of a live resolution. The executor refreshes it after every
 // command, so structural decisions never retain a stale view of the board.
 internal sealed record AbilityStructuralContext(
     AbilityProgram Program,
+    IResourceCardAbilities ResourceAbilities,
+    IThreatCardAbilities ThreatAbilities,
     AbilityExpressionContext Expressions,
     AbilityReachabilityContext Reachability,
     string Trigger,
@@ -28,7 +30,7 @@ internal sealed record AbilityStructuralContext(
     ImmutableArray<AbilityStructuralFrame> Frames)
 {
     internal AbilityAdmissionContext Admission() => new(
-        Program, Expressions, Reachability, Power, HasContinuation);
+        Program, ResourceAbilities, Expressions, Reachability, Power, HasContinuation);
 }
 
 internal enum AbilityStructuralOutcome { None, Partial, Full }
@@ -232,7 +234,8 @@ internal static class AbilityStructuralExecution
         AbilityStructuralContext context, AbilityEffect.PayOrEffect payment)
     {
         var world = context.Expressions.World;
-        var sources = CardPlay.Generators(world, world.Facts, world.Seats[context.Player]);
+        var sources = CardPlay.Generators(
+            world, world.Facts, world.Seats[context.Player], context.ResourceAbilities);
         bool payable = Resources.Pays(string.Concat(sources.SelectMany(source => source.Generates)),
             payment.Resources.Length, payment.Resources);
         var offers = new List<Affordance>();
@@ -269,7 +272,8 @@ internal static class AbilityStructuralExecution
             return new PayOrCommand(false);
 
         var sources = CardPlay.Generators(context.Expressions.World,
-            context.Expressions.World.Facts, context.Expressions.World.Seats[context.Player]);
+            context.Expressions.World.Facts, context.Expressions.World.Seats[context.Player],
+            context.ResourceAbilities);
         return Resources.Pays(string.Concat(sources.SelectMany(source => source.Generates)),
             payment.Resources.Length, payment.Resources)
             ? new PayOrCommand(true)
@@ -373,7 +377,8 @@ internal static class AbilityStructuralExecution
         var world = context.Expressions.World;
         var offers = AbilityExpressionEvaluation.AlliesInPlayerDiscards(world)
             .Select(ally => (Ally: ally, Sources: AbilityExpressionEvaluation.MakeTheCallSources(
-                world, context.Player, context.Expressions.Source, ally)))
+                world, context.Player, context.Expressions.Source, ally,
+                context.ResourceAbilities)))
             .Where(candidate => Resources.Pays(string.Concat(candidate.Sources.SelectMany(source => source.Generates)),
                 Resources.Cost(candidate.Ally.FaceId, world.Facts, world.Players) ?? 0,
                 Resources.Required(world, candidate.Ally, world.Facts)))
@@ -392,7 +397,8 @@ internal static class AbilityStructuralExecution
     {
         var offered = AbilityExpressionEvaluation.AlliesInPlayerDiscards(context.Expressions.World)
             .Select(ally => (Ally: ally, Sources: AbilityExpressionEvaluation.MakeTheCallSources(
-                context.Expressions.World, context.Player, context.Expressions.Source, ally)))
+                context.Expressions.World, context.Player, context.Expressions.Source, ally,
+                context.ResourceAbilities)))
             .Where(candidate => Resources.Pays(string.Concat(candidate.Sources.SelectMany(source => source.Generates)),
                 Resources.Cost(candidate.Ally.FaceId, context.Expressions.World.Facts, context.Expressions.World.Players) ?? 0,
                 Resources.Required(context.Expressions.World, candidate.Ally, context.Expressions.World.Facts)))
@@ -532,8 +538,8 @@ internal static class AbilityStructuralExecution
             : context.Program.On(context.AbilityFace);
 
     private static AbilityDamageAndThreatContext DamageContext(AbilityStructuralContext context) =>
-        new(context.Expressions, context.Trigger, [], context.AbilityActor, null, context.Power,
-            context.HasContinuation, null, null, 0);
+        new(context.Expressions, context.Program, context.Trigger, [], context.AbilityActor, null, context.Power,
+            context.HasContinuation, null, null, 0, context.ThreatAbilities);
 
     private static Prompt DescribeSpecials(AbilityStructuralContext context, AbilityEffect.CardAction specials)
     {

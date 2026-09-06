@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Globalization;
 using Marvel.Cards.Dsl;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
@@ -17,13 +16,14 @@ internal static class AbilityWindowAdmission
 
     internal static ImmutableHashSet<int> WaitingCards(
         AbilityProgram program, World world, Occurrence occurrence,
-        WindowKind window) => Waiting(program, world, occurrence, window)
+        WindowKind window, IResourceCardAbilities resourceAbilities) =>
+        Waiting(program, world, occurrence, window, resourceAbilities)
             .Select(candidate => candidate.Card.ObjectId)
             .ToImmutableHashSet();
 
     internal static ImmutableArray<Candidate> Waiting(
         AbilityProgram program, World world, Occurrence occurrence,
-        WindowKind window)
+        WindowKind window, IResourceCardAbilities resourceAbilities)
     {
         var waiting = ImmutableArray.CreateBuilder<Candidate>();
         foreach (var card in world.Cards)
@@ -57,14 +57,16 @@ internal static class AbilityWindowAdmission
                     }
 
                     var context = Context(
-                        program, world, card, occurrence, controller, ability.Cost);
+                        program, world, card, occurrence, controller, ability.Cost,
+                        resourceAbilities);
                     if (!WhenHolds(ability, context)
                         || controller >= 0 && !CanInitiate(ability, context)
                         || !AbilityPaymentRules.Payable(
-                            world, card, controller, ability.Cost, program)
+                            world, card, controller, ability.Cost, program,
+                            resourceAbilities)
                         || !AbilityPaymentRules.EventPayable(
-                            world, card, controller, ability)
-                        || !Available(world, card, ability, index, occurrence))
+                            world, card, controller, ability, resourceAbilities)
+                        || !AbilityAvailability.Available(world, card, ability, index, occurrence))
                     {
                         continue;
                     }
@@ -79,7 +81,7 @@ internal static class AbilityWindowAdmission
 
     private static AbilityAdmissionContext Context(
         AbilityProgram program, World world, Card card, Occurrence occurrence,
-        int player, AbilityCost? cost)
+        int player, AbilityCost? cost, IResourceCardAbilities resourceAbilities)
     {
         var query = new AbilityQueryContext(
             world, card, occurrence, player, card.Incarnation,
@@ -88,7 +90,7 @@ internal static class AbilityWindowAdmission
             query, ImmutableDictionary<string, long>.Empty, [], string.Empty,
             -1, false, null);
         return new AbilityAdmissionContext(
-            program, expressions,
+            program, resourceAbilities, expressions,
             new AbilityReachabilityContext
             {
                 PaymentMayMutate = cost is not null
@@ -264,37 +266,4 @@ internal static class AbilityWindowAdmission
                 + "so there is no identity whose form to read");
     }
 
-    private static bool Available(
-        World world, Card card, CompiledCardAbility ability,
-        int abilityIndex, Occurrence occurrence)
-    {
-        if (ability.Limit is { } limit
-            && world.Effects.Active().Count(effect =>
-                effect.Card == card.ObjectId
-                && string.Equals(
-                    effect.Kind, Spent(card, ability, abilityIndex),
-                    StringComparison.Ordinal)) >= limit)
-        {
-            return false;
-        }
-        if (ability.Maximum is not { } maximum)
-        {
-            return true;
-        }
-        string title = world.Facts.Title(card.FaceId);
-        string instance = maximum.Period == MaximumPeriod.Instance
-            ? ":" + occurrence.Id.ToString(CultureInfo.InvariantCulture)
-            : string.Empty;
-        string key = $"maximum:{maximum.Period}:{title}{instance}";
-        return world.Effects.Active().Count(effect =>
-            string.Equals(effect.Kind, key, StringComparison.Ordinal))
-            < maximum.Uses;
-    }
-
-    private static string Spent(
-        Card card, CompiledCardAbility ability, int abilityIndex) =>
-        "spent:"
-            + card.Incarnation.ToString(CultureInfo.InvariantCulture)
-            + ":" + ability.Card + ":"
-            + abilityIndex.ToString(CultureInfo.InvariantCulture);
 }

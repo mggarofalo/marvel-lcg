@@ -5,9 +5,9 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Cards.Run;
 
-public sealed partial class AbilityRunner
+internal sealed partial class AbilityResolutionExecution
 {
-    private static void DiscardEvent(Card card, Cast cast)
+    private static void DiscardEvent(Card card, AbilityResolutionState cast)
     {
         bool playedInWindow = !cast.Suspended
             && cast.World.Facts.Kind(card.FaceId) == CardKind.Event
@@ -37,7 +37,7 @@ public sealed partial class AbilityRunner
         }
     }
 
-    private static void ApplyPayment(AbilityPaymentResult result, Cast cast)
+    private static void ApplyPayment(AbilityPaymentResult result, AbilityResolutionState cast)
     {
         if (result.Healed is { } healed) cast.Results["healed"] = healed;
         if (result.Energy is { } energy) cast.Results["energy"] = energy;

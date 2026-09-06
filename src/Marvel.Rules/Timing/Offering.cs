@@ -10,7 +10,16 @@ namespace Marvel.Rules.Timing;
 /// <see cref="Offering"/> is the Rules Reference and none of it knows what any
 /// card says.
 /// </remarks>
-public interface IWindowAbilities
+public interface IAbilityDescriptions
+{
+    /// <summary>How to describe one ability to a player who may take it.</summary>
+    /// <param name="world">The world.</param>
+    /// <param name="ability">The ability being offered.</param>
+    Affordance Describe(World world, PendingAbility ability);
+}
+
+/// <summary>What a card is waiting to do, and what happens when it does.</summary>
+public interface IWindowAbilities : IAbilityDescriptions
 {
     /// <summary>The abilities on the board waiting to act in this window.</summary>
     /// <param name="world">The world.</param>
@@ -23,7 +32,7 @@ public interface IWindowAbilities
     /// <b>The payment is the player's, and a window is where it arrives.</b>
     /// <c>rr:initiating-abilities.step.5</c> pays before step 6 resolves, and
     /// nothing in that sequence is about which tier the ability sits in — a
-    /// response with a cost is priced by <see cref="Describe"/>, paid from the
+    /// response with a cost is priced by <see cref="IAbilityDescriptions.Describe"/>, paid from the
     /// answer, and resolved here. A forced ability passes an empty list,
     /// because nobody was asked.
     /// </remarks>
@@ -60,13 +69,7 @@ public interface IWindowAbilities
         IReadOnlyList<int> paying,
         IReadOnlyList<int> chosen,
         IReadOnlyDictionary<string, long>? values = null,
-        IReadOnlyList<Play.ResourceAllocation>? allocations = null) =>
-        Resolve(world, occurrence, ability, paying, chosen);
-
-    /// <summary>How to describe one ability to a player who may take it.</summary>
-    /// <param name="world">The world.</param>
-    /// <param name="ability">The ability being offered.</param>
-    Affordance Describe(World world, PendingAbility ability);
+        IReadOnlyList<Play.ResourceAllocation>? allocations = null);
 }
 
 /// <summary>Which cards may contribute abilities while a window is worked.</summary>

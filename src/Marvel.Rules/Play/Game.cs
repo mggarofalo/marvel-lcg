@@ -118,7 +118,6 @@ public sealed class Game
     private readonly Dictionary<(string Verb, int Anchor), int> handles = [];
     private readonly World world;
     private readonly ICardFacts facts;
-    private readonly ICardAbilities abilities;
     private readonly Queue<Card> playerSetup = [];
     private readonly HashSet<int> finishedTurns = [];
     private readonly HashSet<(
@@ -130,11 +129,10 @@ public sealed class Game
     private Asker asking = Asker.Game;
     private bool endingPlayerPhase;
 
-    private Game(World world, ICardFacts facts, ICardAbilities abilities)
+    private Game(World world, ICardFacts facts)
     {
         this.world = world;
         this.facts = facts;
-        this.abilities = abilities;
         Phase = GamePhase.Mulligan;
         Active = world.FirstPlayer;
         Round = 0;
@@ -235,9 +233,9 @@ public sealed class Game
     /// <param name="world">A world from <see cref="WorldSetup.Deal"/>.</param>
     /// <param name="facts">The printed card data.</param>
     /// <param name="abilities">
-    /// What revealed cards do. Defaults to <see cref="NoCardAbilities"/>, which
-    /// is an engine with no cards ported — every villain phase then places
-    /// threat and discards correctly and no card's own text ever fires.
+    /// What cards do. Production callers supply the public compatibility
+    /// composition surface; tests that intentionally omit card text use
+    /// <see cref="BeginWithoutCardAbilities"/>.
     /// </param>
     /// <remarks>
     /// Setup is not resolved this way — <see cref="WorldSetup"/> runs it and hands
@@ -247,17 +245,22 @@ public sealed class Game
     /// <c>CardsCreated</c> and two <c>AreaReordered</c>, and nothing records
     /// them today to check against.
     /// </remarks>
-    public static Game Begin(World world, ICardFacts facts, ICardAbilities? abilities = null)
+    public static Game Begin(World world, ICardFacts facts, ICardAbilities abilities)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(abilities);
         // The world carries them too, for `rr:when-defeated-abilities` and its
         // like: a defeat happens deep inside `Damage.Deal`, four calls below
-        // anything that was handed an `ICardAbilities`.
-        world.Abilities = abilities ?? new NoCardAbilities();
-        world.Abilities.ValidateForPlay(world);
-        return new Game(world, facts, world.Abilities);
+        // the public compatibility entry point.
+        world.Abilities = abilities;
+        world.SetupAbilities.ValidateForPlay(world);
+        return new Game(world, facts);
     }
+
+    /// <summary>Opens a dealt board whose cards intentionally have no executable text.</summary>
+    public static Game BeginWithoutCardAbilities(World world, ICardFacts facts) =>
+        Begin(world, facts, new NoCardAbilities());
 
     /// <summary>Applies one answer and produces the next question.</summary>
     /// <param name="input">The answer. <see cref="Decision.Decline"/> takes nothing.</param>
@@ -294,7 +297,7 @@ public sealed class Game
             && asking == Asker.Sequence)
         {
             var during = new List<GameEvent>();
-            Sequence.Answer(world, facts, abilities, Pending, input, during);
+            Sequence.AnswerWithWorldAbilities(world, facts, Pending, input, during);
             return Phase == GamePhase.PlayerSetup
                 ? ContinuePlayerSetup(during)
                 : endingPlayerPhase
@@ -565,7 +568,7 @@ public sealed class Game
     private Resolution TriggerAction(Decision input)
     {
         var taken = Pending!.Affordances.First(option => option.Id == input.Affordance);
-        var ability = abilities.Actions(world, taken.AnchorPlayer)
+        var ability = world.ActionAbilities.Actions(world, taken.AnchorPlayer)
             .FirstOrDefault(pending => pending.Card == taken.AnchorId
                 && pending.Player == taken.AnchorPlayer
                 && Handle(
@@ -590,7 +593,7 @@ public sealed class Game
         {
             // Resolving the ability once satisfies rr:action.2 for this player
             // phase even when the printed ability remains legal afterwards.
-            // Printed use limits are a separate rule and stay in the runner.
+            // Printed use limits are a separate card-ability rule.
             satisfiedForcedActions.Add(
                 (ability.Card, world.Cards[ability.Card].Incarnation,
                     world.Cards[ability.Card].FaceId, ability.Type, ability.Ordinal));
@@ -618,7 +621,7 @@ public sealed class Game
 
         var happened = new List<GameEvent>();
         CardPlay.Play(
-            world, facts, abilities, seat, world.Cards[affordance.AnchorId],
+            world, facts, world.CardPlayAbilities, seat, world.Cards[affordance.AnchorId],
             input.Spent, happened, input.Targets);
 
         return Turn(happened);
@@ -781,7 +784,7 @@ public sealed class Game
 
         foreach (int player in world.PlayerOrder)
         {
-            foreach (var card in abilities.PlayerSetupCards(world, player)
+            foreach (var card in world.SetupAbilities.PlayerSetupCards(world, player)
                          .DistinctBy(card => card.ObjectId)
                          .OrderBy(card => card.ObjectId))
             {
@@ -805,7 +808,7 @@ public sealed class Game
     {
         while (true)
         {
-            if (Sequence.Work(world, facts, abilities, happened) is { } asked)
+            if (Sequence.WorkWithWorldAbilities(world, facts, happened) is { } asked)
             {
                 Active = asked.Player;
                 Pending = asked;
@@ -815,7 +818,7 @@ public sealed class Game
 
             if (playerSetup.TryDequeue(out var card))
             {
-                happened.AddRange(abilities.Setup(world, card));
+                happened.AddRange(world.SetupAbilities.Setup(world, card));
                 continue;
             }
 
@@ -866,7 +869,7 @@ public sealed class Game
     /// </remarks>
     private Resolution Turn(List<GameEvent> happened)
     {
-        if (Sequence.Work(world, facts, abilities, happened) is { } asked)
+        if (Sequence.WorkWithWorldAbilities(world, facts, happened) is { } asked)
         {
             Pending = asked;
             asking = Asker.Sequence;
@@ -895,7 +898,7 @@ public sealed class Game
 
     private Resolution Work(List<GameEvent> happened)
     {
-        if (Sequence.Work(world, facts, abilities, happened) is { } asked)
+        if (Sequence.WorkWithWorldAbilities(world, facts, happened) is { } asked)
         {
             Pending = asked;
             asking = Asker.Sequence;
@@ -953,7 +956,7 @@ public sealed class Game
     /// <summary>Finishes only the mandatory actions deferred to the phase boundary.</summary>
     private Resolution ContinueForcedActions(List<GameEvent> happened)
     {
-        if (Sequence.Work(world, facts, abilities, happened) is { } asked)
+        if (Sequence.WorkWithWorldAbilities(world, facts, happened) is { } asked)
         {
             Pending = asked;
             asking = Asker.Sequence;
@@ -999,7 +1002,7 @@ public sealed class Game
         var happened = new List<GameEvent>();
         if (Pending is { } asked)
         {
-            Sequence.Answer(world, facts, abilities, asked, input, happened);
+            Sequence.AnswerWithWorldAbilities(world, facts, asked, input, happened);
         }
 
         return happened;
@@ -1033,7 +1036,7 @@ public sealed class Game
         var options = new List<Affordance>();
         foreach (var action in forced.Where(action => action.Player == player))
         {
-            var described = abilities.Describe(world, action);
+            var described = world.ActionAbilities.Describe(world, action);
             options.Add(described with
             {
                 Verb = ActionVerb,
@@ -1093,7 +1096,7 @@ public sealed class Game
             if (CardPlay.Price(world, facts, seat, card) is { } price)
             {
                 var hosts = CardPlay.LegalAttachmentTargets(
-                    world, facts, seat, card, abilities);
+                    world, facts, seat, card, world.CardPlayAbilities);
                 if (hosts is not { Count: 0 })
                 {
                     options.Add(Priced(seat, card, price, hosts));
@@ -1140,13 +1143,13 @@ public sealed class Game
         foreach (var action in TurnActions())
         {
             // **Re-stamped, not taken as given.** `Describe` answers with the
-            // card's object id, because a card interpreter has no handle
+            // card's object id, because card abilities have no handle
             // allocator to ask; the rest of this prompt is numbered from a
             // counter. Both are valid handles and they are different number
             // spaces, so an unstamped one collides with a card play sooner or
             // later -- and `Resolve` would then take the play instead of the
-            // ability, with nothing anywhere saying so. the original investigation.
-            var described = abilities.Describe(world, action);
+            // ability, with nothing else identifying the intended action.
+            var described = world.ActionAbilities.Describe(world, action);
             options.Add(described with
             {
                 Verb = ActionVerb,
@@ -1210,7 +1213,7 @@ public sealed class Game
                 continue;
             }
 
-            foreach (var action in abilities.Actions(world, player))
+            foreach (var action in world.ActionAbilities.Actions(world, player))
             {
                 yield return action;
             }
@@ -1396,7 +1399,7 @@ public sealed class Game
     /// <see cref="Resolve"/> looks the answer up by, and it looks it up with
     /// <c>First</c> — so two options sharing an id in one prompt do not fail,
     /// they silently resolve the wrong one. An ability's own affordance arrives
-    /// carrying the card's object id (<c>ICardAbilities.Describe</c> has no
+    /// carrying the card's object id (<c>IAbilityDescriptions.Describe</c> has no
     /// allocator to ask), and a card play carries a counter, and the two number
     /// spaces overlap. the original investigation.
     /// </remarks>

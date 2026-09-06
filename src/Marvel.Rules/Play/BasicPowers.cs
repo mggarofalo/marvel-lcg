@@ -162,7 +162,7 @@ public static class BasicPowers
 
             schemes.AddRange(area.Cards.Where(scheme =>
                 scheme.Tokens.GetValueOrDefault("k_threat") > 0
-                && world.Abilities.CanRemoveThreat(world, scheme)));
+                && world.ThreatAbilities.CanRemoveThreat(world, scheme)));
         }
 
         return schemes;
@@ -411,7 +411,7 @@ public static class BasicPowers
         }
 
         if (!Attackable(world, facts, player).Any(card => card.ObjectId == enemy.ObjectId)
-            || !world.Abilities.CanTakeDamage(world, enemy, source))
+            || !world.DamageAbilities.CanTakeDamage(world, enemy, source))
         {
             throw new RulesNotImplementedException(
                 $"card {enemy.ObjectId} is not an enemy {world.Seats[player].Name} can attack");
@@ -548,7 +548,7 @@ public static class BasicPowers
             var occurrence = world.Agenda.Occurrence
                 ?? throw new RulesNotImplementedException(
                     "a character thwart resolved without an occurrence for its response window");
-            world.Abilities.ResolveCardThwart(world, thwart, occurrence, events);
+            world.PowerAbilities.ResolveCardThwart(world, thwart, occurrence, events);
             return;
         }
 
@@ -557,7 +557,7 @@ public static class BasicPowers
             Threat.Remove(
                 world,
                 facts,
-                world.Abilities,
+                world.ThreatAbilities,
                 world.Cards[thwart.Scheme],
                 thwart.Amount,
                 thwart.Trigger,
@@ -616,7 +616,7 @@ public static class BasicPowers
         }
         if (attack.AbilityIndex >= 0)
         {
-            world.Abilities.ResolveCardAttack(world, attack, occurrence, events);
+            world.PowerAbilities.ResolveCardAttack(world, attack, occurrence, events);
             occurrence.Also(Steps.AttackEnds);
             return;
         }
@@ -644,7 +644,7 @@ public static class BasicPowers
         {
             var from = world.Cards[attack.MoveFrom];
             amount = Math.Min(amount, from.Damage);
-            if (amount > 0 && world.Abilities.CanTakeDamage(world, world.Cards[attack.Enemy], source))
+            if (amount > 0 && world.DamageAbilities.CanTakeDamage(world, world.Cards[attack.Enemy], source))
             {
                 Damage.Heal(world, facts, from, amount, attack.Trigger, "Move_Damage", events);
             }
@@ -1135,7 +1135,7 @@ public static class BasicPowers
         // its owner's doing -- `rr:you-your.15` keeps it off that player's
         // identity, which is a different question.
         Threat.Remove(
-            world, facts, world.Abilities, scheme,
+            world, facts, world.ThreatAbilities, scheme,
             StateFields.Modified(world, character, power, facts, world.Players),
             ThwartVerb, ThwartVerb, events, by: character.Owner);
     }

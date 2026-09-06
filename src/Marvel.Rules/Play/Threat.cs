@@ -107,7 +107,7 @@ public static class Threat
     /// <summary>Apply the threat assignment on an agenda occurrence.</summary>
     /// <returns>The amount actually placed.</returns>
     public static long Apply(
-        World world, ICardFacts facts, ICardAbilities abilities, Occurrence occurrence,
+        World world, ICardFacts facts, IThreatCardAbilities abilities, Occurrence occurrence,
         List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(world);
@@ -174,7 +174,7 @@ public static class Threat
     /// </param>
     /// <returns>How much threat was removed.</returns>
     public static long Remove(
-        World world, ICardFacts facts, ICardAbilities abilities, Card scheme, long amount,
+        World world, ICardFacts facts, IThreatCardAbilities abilities, Card scheme, long amount,
         string trigger, string verb, List<GameEvent> events, int by = -1,
         int overridesCannotFrom = -1)
     {
@@ -218,7 +218,7 @@ public static class Threat
     /// <param name="trigger">What caused it, for the event stream.</param>
     /// <param name="events">Where to record what happened.</param>
     public static void Place(
-        World world, ICardFacts facts, ICardAbilities abilities, Card scheme, long amount,
+        World world, ICardFacts facts, IThreatCardAbilities abilities, Card scheme, long amount,
         string trigger, List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(world);
@@ -263,7 +263,7 @@ public static class Threat
     /// <param name="scheme">Which scheme.</param>
     /// <param name="events">Where to record what happened.</param>
     public static void Completed(
-        World world, ICardFacts facts, ICardAbilities abilities, Card scheme,
+        World world, ICardFacts facts, IThreatCardAbilities abilities, Card scheme,
         List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(world);

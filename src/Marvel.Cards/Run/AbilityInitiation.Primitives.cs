@@ -78,7 +78,7 @@ internal static partial class AbilityInitiation
 
     private static AbilityExpressionEvaluation Expressions(AbilityAdmissionScope scope) =>
         scope.Context.Evaluator(
-            areas => AbilityAreaProjection.SingularAreaQueryIsStable(areas, scope.Context));
+            areas => AbilityRuntimeQueries.SingularAreaQueryIsStable(areas, scope.Context));
 
     private static long Amount(AbilityNumber number, AbilityAdmissionScope scope) =>
         Expressions(scope).Amount(number);
@@ -96,7 +96,7 @@ internal static partial class AbilityInitiation
     private static Card? Find(
         AbilityCardSelection selection, AbilityAdmissionScope scope) =>
         scope.Context.Selectors(
-            areas => AbilityAreaProjection.SingularAreaQueryIsStable(areas, scope.Context))
+            areas => AbilityRuntimeQueries.SingularAreaQueryIsStable(areas, scope.Context))
             .Find(selection);
 
     private static bool CanRemoveByEffect(
@@ -121,7 +121,7 @@ internal static partial class AbilityInitiation
 
     private static bool MayChangeAnyArea(
         AbilityEffect effect, IReadOnlySet<DeckType> areas, AbilityAdmissionScope scope) =>
-        AbilityAreaProjection.MayChangeAnyArea(effect, areas, scope.Context);
+        AbilityRuntimeQueries.MayChangeAnyArea(effect, areas, scope.Context);
 
     private static ulong PlayerSeat(int player) => 1UL << player;
     private static bool SeatMayChange(ulong seats, int player) =>
@@ -215,7 +215,7 @@ internal static partial class AbilityInitiation
 
     private static bool CostMayChangeAnyArea(
         AbilityCost cost, IReadOnlySet<DeckType> areas, AbilityAdmissionScope scope) =>
-        AbilityAreaProjection.CostMayChangeAnyArea(cost, areas, scope.Context);
+        AbilityRuntimeQueries.CostMayChangeAnyArea(cost, areas, scope.Context);
 
     private static IReadOnlyList<Card> ActivationCandidates(
         AbilityEffect.ActivateEnemies activation, AbilityAdmissionScope scope) =>
@@ -225,7 +225,7 @@ internal static partial class AbilityInitiation
 
     private static IEnumerable<AbilityEffect> ReachableMutationBranches(
         AbilityEffect effect, AbilityAdmissionScope scope) =>
-        AbilityAreaProjection.ReachableMutationBranches(effect, scope.Context);
+        AbilityRuntimeQueries.ReachableMutationBranches(effect, scope.Context);
 
     internal static bool ContainsForEachTarget(AbilityEffect node) =>
         node is AbilityEffect.DelayedStun

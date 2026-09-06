@@ -98,7 +98,7 @@ public sealed class HighwayRobberyTests
 
     private static World Deal(params string[] heroes)
     {
-        var world = WorldSetup.Deal(
+        var world = WorldSetup.DealWithoutCardAbilities(
             Cards,
             Blueprints.From(Dealer.DealOrder(Setup, "rhino", heroes), Cards),
             [.. heroes.Select(hero => Setup.Hero(hero).Name)],
