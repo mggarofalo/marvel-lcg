@@ -1603,13 +1603,7 @@ public sealed partial class AbilityRunner
     }
 
     private static long SaturatingSum(long own, IEnumerable<long> rest)
-    {
-        foreach (long amount in rest)
-        {
-            own = amount > long.MaxValue - own ? long.MaxValue : own + amount;
-        }
-        return own;
-    }
+        => AbilityAmounts.SaturatingSum(own, rest);
 
     private static long SaturatingMultiply(long amount, long multiplier)
     {

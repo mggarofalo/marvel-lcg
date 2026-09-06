@@ -1,0 +1,14 @@
+namespace Marvel.Cards.Run;
+
+/// <summary>Shared arithmetic for accumulated ability amounts.</summary>
+internal static class AbilityAmounts
+{
+    internal static long SaturatingSum(long own, IEnumerable<long> rest)
+    {
+        foreach (long amount in rest)
+        {
+            own = amount > long.MaxValue - own ? long.MaxValue : own + amount;
+        }
+        return own;
+    }
+}

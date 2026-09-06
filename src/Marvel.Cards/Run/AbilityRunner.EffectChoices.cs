@@ -617,20 +617,11 @@ public sealed partial class AbilityRunner
     }
 
     private static long EventModifier(Cast cast, string kind) =>
-        SaturatingSum(0, EventModifierEffects(cast, kind).Select(effect => effect.Amount));
+        AbilityEventModifiers.Amount(cast.World, cast.Source, kind);
 
     private static IReadOnlyList<ContinuousEffect> EventModifierEffects(
         Cast cast, string kind)
-    {
-        if (cast.World.Facts.Kind(cast.Source.FaceId) != CardKind.Event)
-        {
-            return [];
-        }
-
-        return [.. cast.World.Effects.Active().Where(effect =>
-            string.Equals(effect.Kind, kind, StringComparison.Ordinal)
-            && effect.Affects == cast.Source.ObjectId)];
-    }
+        => AbilityEventModifiers.Effects(cast.World, cast.Source, kind);
 
     /// <summary>
     /// "Each player places a random card from their hand facedown here."

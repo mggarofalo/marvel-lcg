@@ -28,22 +28,8 @@ public sealed record DefeatProjection(long? RemainingHealth, string Note);
 /// enter the engine, and the interpreter replaces what is behind it.
 /// </para>
 /// </remarks>
-public interface ICardAbilities : IWindowAbilities
+public interface ICardAbilities : IWindowAbilities, ICardCounterPools
 {
-    /// <summary>The counter pool this card enters play with, or null.</summary>
-    /// <remarks>
-    /// The default derives the Uses keyword for rules-only callers. The card
-    /// interpreter overrides it with authored DSL data, which also represents
-    /// ordinary "enters play with" text that does not discard at zero.
-    /// </remarks>
-    CardCounterPool? CounterPool(World world, Card card)
-    {
-        var (count, type) = Reveal.Uses(world.Facts.Attributes(card.FaceId));
-        return count > 0
-            ? new CardCounterPool(type, checked((int)count), Uses: true)
-            : null;
-    }
-
     /// <summary>Applies card text that determines the state a card enters play with.</summary>
     /// <remarks>
     /// Some cards print a constant such as "enters play with 4 arrow counters"

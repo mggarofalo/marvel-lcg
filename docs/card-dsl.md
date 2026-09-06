@@ -356,8 +356,19 @@ a card. Its plan captures selected generators, paying hands, allocated resource
 types and cost modifiers. Commitment moves the event out of hand, registers its
 paid resources, spends the generators and consumes those modifiers. Preparation
 and commitment occur together after initiation revalidation; the plan is not a
-saveable continuation. Arrow-cost execution and post-payment continuation still
-belong to the runner.
+saveable continuation.
+
+`AbilityCostPayment` prepares an ordered arrow-cost plan from the complete
+validated answer. It captures selected cards, resource requirements, variable
+amounts and source incarnation. Commitment takes only the counter-pool reader,
+trigger and event sink; it returns healed damage, spent energy and suspension,
+not a general effect frame. Taking damage precedes irreversible costs; combined
+resource components spend once; other components retain authored order.
+`AbilityCardOperations` shares exhaustion and counter removal with effects,
+using `ICardCounterPools` from the executing interpreter. Event damage modifiers
+are read live through `AbilityEventModifiers`, including after earlier costs.
+The runner owns post-payment continuation and copies the typed payment results
+into that ability's result scope.
 
 ## Results and ordered resolution
 
