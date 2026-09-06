@@ -41,7 +41,7 @@ internal static class AbilityDeckAndRevealExecution
             ImmutableDictionary<string, long>.Empty);
     }
 
-    /// <summary>Moves a card now so the runner can schedule its reveal procedure.</summary>
+    /// <summary>Moves a card now so the executor can schedule its reveal procedure.</summary>
     /// <remarks>
     /// Revealing is not dealing: <c>rr:deal</c> leaves a card facedown for the
     /// villain phase, while <c>rr:reveal</c> opens its own interrupt and response
@@ -241,7 +241,8 @@ internal static class AbilityDeckAndRevealExecution
 
     private static AbilityCardStateContext CardStateContext(
         AbilityDeckAndRevealContext context) =>
-        new(context.Expressions, context.Trigger, context.Events, context.Pools,
+        new(context.Expressions, context.Trigger, context.Events,
+            context.CardPlayAbilities, context.Readiness,
             new AbilityCardStateResult());
 
     private static Card? Find(
@@ -294,7 +295,8 @@ internal static class AbilityDeckAndRevealExecution
 
 internal sealed record AbilityDeckAndRevealContext(
     AbilityExpressionContext Expressions, string Trigger, List<GameEvent> Events,
-    ICardCounterPools Pools, ImmutableArray<Card> Discarded)
+    ICardPlayAbilities CardPlayAbilities, ICardReadinessAbilities Readiness,
+    ImmutableArray<Card> Discarded)
 {
     internal World World => Expressions.World;
     internal Card Source => Expressions.Source;

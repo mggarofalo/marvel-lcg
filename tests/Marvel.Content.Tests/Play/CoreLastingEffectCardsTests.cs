@@ -169,6 +169,7 @@ public sealed class CoreLastingEffectCardsTests
         var chosen = world.CreateCard("01083", theirDiscard);
         world.CreateCard("01076", theirDiscard);
         var runner = AuthoredCards.Runner();
+        world.Abilities = new UnrelatedWorldAbilities();
 
         runner.Act(
             world, new PendingAbility(source.ObjectId, AbilityType.Action, 0), [], []);
@@ -253,5 +254,29 @@ public sealed class CoreLastingEffectCardsTests
         }
 
         return world;
+    }
+
+    private sealed class UnrelatedWorldAbilities : NoCardAbilities
+    {
+        private readonly string counterFailure =
+            "the unrelated World counter-pool port was used";
+
+        public CardCounterPool? CounterPool(World world, Card card) =>
+            throw new InvalidOperationException(counterFailure);
+
+        public override IReadOnlyList<Marvel.Rules.Events.GameEvent> EntersPlay(
+            World world, Card card) =>
+            throw new InvalidOperationException("the unrelated World enter-play port was used");
+
+        public override IReadOnlyList<ResourceSource> ResourceAbilities(World world, int player) =>
+            throw new InvalidOperationException("the unrelated World resource port was used");
+
+        public override string ResourcesGeneratedBy(World world, Card source, Card? payingFor) =>
+            throw new InvalidOperationException("the unrelated World resource port was used");
+
+        public override string UseResource(
+            World world, int player, int card,
+            List<Marvel.Rules.Events.GameEvent> events) =>
+            throw new InvalidOperationException("the unrelated World resource port was used");
     }
 }

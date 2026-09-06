@@ -156,7 +156,7 @@ public static class MainScheme
     /// <param name="trigger">What caused it, for the event stream.</param>
     /// <param name="events">Where to record what happened.</param>
     public static void Advance(
-        World world, ICardFacts facts, ICardAbilities abilities, Card scheme,
+        World world, ICardFacts facts, IEncounterCardAbilities abilities, Card scheme,
         string trigger, List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(world);

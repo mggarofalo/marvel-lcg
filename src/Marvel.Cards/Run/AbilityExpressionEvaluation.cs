@@ -9,7 +9,8 @@ namespace Marvel.Cards.Run;
 // Recursion shares captured inputs and the concrete selector collaborator; no
 // expression can resolve an effect, resume an agenda frame or alter payment.
 internal sealed class AbilityExpressionEvaluation(
-    AbilityExpressionContext context, AbilitySelectorEvaluation selectors)
+    AbilityExpressionContext context, AbilitySelectorEvaluation selectors,
+    IResourceCardAbilities? resourceAbilities = null)
 {
     internal AbilityQueryResult<T> Result<T>(T value) => selectors.Result(value);
 
@@ -168,17 +169,25 @@ internal sealed class AbilityExpressionEvaluation(
     ];
 
     private bool CanMakeTheCall()
-        => AlliesInPlayerDiscards(context.World).Any(ally => Resources.Pays(
+    {
+        var resources = resourceAbilities
+            ?? throw new InvalidOperationException(
+                "canMakeTheCall requires the initiating resource capability");
+        return AlliesInPlayerDiscards(context.World).Any(ally => Resources.Pays(
             string.Concat(MakeTheCallSources(
-                    context.World, context.Player, context.Source, ally)
+                    context.World, context.Player, context.Source, ally,
+                    resources)
                 .Select(source => source.Generates)),
             Resources.Cost(ally.FaceId, context.World.Facts, context.World.Players) ?? 0,
             Resources.Required(context.World, ally, context.World.Facts)));
+    }
 
     internal static IReadOnlyList<ResourceSource> MakeTheCallSources(
-        World world, int player, Card source, Card ally) =>
+        World world, int player, Card source, Card ally,
+        IResourceCardAbilities resourceAbilities) =>
     [
-        .. CardPlay.Generators(world, world.Facts, world.Seats[player], payingFor: ally)
+        .. CardPlay.Generators(
+                world, world.Facts, world.Seats[player], resourceAbilities, payingFor: ally)
             .Where(generator => generator.Effect != source.ObjectId),
     ];
 }

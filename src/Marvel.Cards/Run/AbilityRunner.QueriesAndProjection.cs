@@ -15,7 +15,11 @@ internal enum AbilityProjectionResolution
     Full,
 }
 
-internal static class AbilityAreaProjection
+/// <summary>
+/// Pure card-program query and projection policy. It has no resolution state,
+/// event sink, runtime registry, or reference to the compatibility facade.
+/// </summary>
+internal static class AbilityRuntimeQueries
 {
     private static T EffectOf<T>(AbilityEffect effect, AbilityAdmissionContext context)
         where T : AbilityEffect => (T)effect;

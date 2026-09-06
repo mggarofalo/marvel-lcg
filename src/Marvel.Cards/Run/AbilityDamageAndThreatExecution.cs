@@ -124,11 +124,12 @@ internal static class AbilityDamageAndThreatExecution
 
     private static List<Card> Assignable(IReadOnlyList<Card> among, AbilityDamageAndThreatContext context) =>
     [.. among.Where(card => Room(context, card) > 0
-        && context.World.Abilities.CanTakeDamage(context.World, card, context.Source))];
+        && AbilityProgramQueries.CanTakeDamage(
+            context.World, context.Program, card, context.Source))];
 
     private static IReadOnlyList<Card> DamageTargets(IReadOnlyList<Card> targets, AbilityDamageAndThreatContext context) =>
-        [.. targets.Where(target => context.World.Abilities.CanTakeDamage(
-            context.World, target, context.Source))];
+        [.. targets.Where(target => AbilityProgramQueries.CanTakeDamage(
+            context.World, context.Program, target, context.Source))];
 
     private static long Room(AbilityDamageAndThreatContext context, Card card) =>
         Damage.Health(context.World, context.World.Facts, card) - card.Damage;
@@ -196,7 +197,8 @@ internal static class AbilityDamageAndThreatExecution
         var to = Find(movement.To, context) ?? throw new RulesNotImplementedException(
             $"'{context.Source.FaceId}' cannot find the enemy damage moves to");
         long amount = Math.Min(from.Damage, Amount(movement.Amount, context));
-        if (amount <= 0 || !context.World.Abilities.CanTakeDamage(context.World, to, context.Source)) return;
+        if (amount <= 0 || !AbilityProgramQueries.CanTakeDamage(
+                context.World, context.Program, to, context.Source)) return;
         Damage.Heal(context.World, context.World.Facts, from, amount, context.Trigger, "Move_Damage", context.Events);
         if (Damage.DealOutcome(context.World, context.World.Facts, context.Source, to, amount,
             context.Trigger, "Attack", context.Events) == Damage.Outcome.Suspended)
@@ -244,7 +246,8 @@ internal static class AbilityDamageAndThreatExecution
             $"'{context.Source.FaceId}' cannot find the enemy damage moves to");
         state.Attacked.Add(to);
         long amount = Math.Min(from.Damage, Amount(movement.Amount, context));
-        if (amount <= 0 || !context.World.Abilities.CanTakeDamage(context.World, to, context.Source)) return;
+        if (amount <= 0 || !AbilityProgramQueries.CanTakeDamage(
+                context.World, context.Program, to, context.Source)) return;
         Damage.Heal(context.World, context.World.Facts, from, amount, context.Trigger, "Move_Damage", context.Events);
         var damaged = Damage.Attack(context.World, context.World.Facts,
             context.PowerActor ?? context.AbilityActor ?? context.World.Seats[Resolver(context)].IdentityCard,
@@ -303,7 +306,7 @@ internal static class AbilityDamageAndThreatExecution
             if (!removal.IgnoresCrisis && scheme.Area.Type == DeckType.MainSchemesArea
                 && context.World.Facts.Kind(context.Source.FaceId) is CardKind.Event or CardKind.Ally or CardKind.Hero or CardKind.AlterEgo or CardKind.Upgrade or CardKind.Support
                 && MainScheme.Crisis(context.World, context.World.Facts)) continue;
-            Threat.Remove(context.World, context.World.Facts, context.World.Abilities, scheme,
+            Threat.Remove(context.World, context.World.Facts, context.World.ThreatAbilities, scheme,
                 AbilityAmounts.SaturatingSum(AbilityAmounts.SaturatingMultiply(
                     Amount(removal.Amount, context), multiplier),
                     [AbilityEventModifiers.Amount(context.World, context.Source, "eventThreatRemoval")]),
@@ -335,7 +338,8 @@ internal static class AbilityDamageAndThreatExecution
 
     private static long Amount(AbilityNumber number, AbilityDamageAndThreatContext context)
     {
-        var selectors = new AbilitySelectorEvaluation(context.Expressions.Bindings);
+        var selectors = new AbilitySelectorEvaluation(
+            context.Expressions.Bindings, null, context.Program);
         var evaluation = new AbilityExpressionEvaluation(context.Expressions, selectors);
         var result = evaluation.Result(evaluation.Amount(number));
         Publish(result, context.World);
@@ -344,7 +348,8 @@ internal static class AbilityDamageAndThreatExecution
 
     private static Card? Find(AbilityCardSelection selection, AbilityDamageAndThreatContext context)
     {
-        var evaluation = new AbilitySelectorEvaluation(context.Expressions.Bindings);
+        var evaluation = new AbilitySelectorEvaluation(
+            context.Expressions.Bindings, null, context.Program);
         var result = evaluation.Result(evaluation.Find(selection));
         Publish(result, context.World);
         return result.Value;
@@ -352,7 +357,8 @@ internal static class AbilityDamageAndThreatExecution
 
     private static IReadOnlyList<Card> Every(AbilityCardSelection selection, AbilityDamageAndThreatContext context)
     {
-        var evaluation = new AbilitySelectorEvaluation(context.Expressions.Bindings);
+        var evaluation = new AbilitySelectorEvaluation(
+            context.Expressions.Bindings, null, context.Program);
         var result = evaluation.Result(evaluation.Every(selection));
         Publish(result, context.World);
         return result.Value;
@@ -368,7 +374,7 @@ internal static class AbilityDamageAndThreatExecution
 }
 
 internal sealed record AbilityDamageAndThreatContext(
-    AbilityExpressionContext Expressions, string Trigger,
+    AbilityExpressionContext Expressions, AbilityProgram Program, string Trigger,
     List<GameEvent> Events, Card? AbilityActor, Card? PowerActor, string? Power,
     bool HasContinuation, ThreatPlacement? ImminentThreat, PendingAbility? ResolutionAbility,
     long Incoming)

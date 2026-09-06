@@ -299,7 +299,7 @@ public sealed class SetupDealTests
     {
         string[] playing = heroes ?? ["spider_man"];
         var order = Dealer.DealOrder(Setup, Campaign, playing);
-        var world = WorldSetup.Deal(
+        var world = WorldSetup.DealWithoutCardAbilities(
             Cards,
             Blueprints.From(order, Cards),
             [.. playing.Select(name => Setup.Hero(name).Name)],

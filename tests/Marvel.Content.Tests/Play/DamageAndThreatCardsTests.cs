@@ -178,7 +178,7 @@ public sealed class DamageAndThreatCardsTests
     private static World Deal(params string[] heroes)
     {
         string[] playing = heroes.Length > 0 ? heroes : ["spider_man"];
-        return WorldSetup.Deal(
+        return WorldSetup.DealWithoutCardAbilities(
             Cards,
             Blueprints.From(Dealer.DealOrder(Setup, Campaign, playing), Cards),
             [.. playing.Select(hero => Setup.Hero(hero).Name)],

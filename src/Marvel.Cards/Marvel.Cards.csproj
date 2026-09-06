@@ -29,4 +29,8 @@
     <ProjectReference Include="../Marvel.Rules/Marvel.Rules.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Marvel.Content.Tests" />
+  </ItemGroup>
+
 </Project>

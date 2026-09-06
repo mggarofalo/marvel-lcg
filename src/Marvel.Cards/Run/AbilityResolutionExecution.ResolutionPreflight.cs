@@ -9,45 +9,45 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Cards.Run;
 
-public sealed partial class AbilityRunner
+internal sealed partial class AbilityResolutionExecution
 {
-    private static bool CanPartiallyResolve(AbilityEffect node, Cast cast) =>
+    private bool CanPartiallyResolve(AbilityEffect node, AbilityResolutionState cast) =>
         AbilityInitiation.CanPartiallyResolve(node, AdmissionContext(cast));
 
-    private static ResolutionOutcome ResolutionOf(AbilityEffect node, Cast cast) =>
+    private ResolutionOutcome ResolutionOf(AbilityEffect node, AbilityResolutionState cast) =>
         (ResolutionOutcome)(int)AbilityInitiation.ResolutionOf(node, AdmissionContext(cast));
 
-    private static ResolutionOutcome EnsureDependentSupported(
-        AbilityEffect node, Cast cast, AbilityEffect effect,
+    private ResolutionOutcome EnsureDependentSupported(
+        AbilityEffect node, AbilityResolutionState cast, AbilityEffect effect,
         AbilityEffect dependent, ResolutionOutcome required) =>
         (ResolutionOutcome)(int)AbilityInitiation.EnsureDependentSupported(
             node, AdmissionContext(cast), effect, dependent,
             (AbilityInitiation.ResolutionOutcome)(int)required);
 
-    private static void PreflightAnsweredOutcome(AbilityEffect node, Cast cast) =>
+    private void PreflightAnsweredOutcome(AbilityEffect node, AbilityResolutionState cast) =>
         AbilityInitiation.PreflightAnsweredOutcome(node, AdmissionContext(cast));
 
-    private static void PreflightResolutionBranches(
-        AbilityEffect node, Cast cast, bool allBranches = false) =>
+    private void PreflightResolutionBranches(
+        AbilityEffect node, AbilityResolutionState cast, bool allBranches = false) =>
         AbilityInitiation.PreflightResolutionBranches(
             node, AdmissionContext(cast), allBranches);
 
     private static bool PaymentCanChange(AbilityCondition test) =>
         AbilityInitiation.PaymentCanChange(test);
 
-    private static bool ContainsNode(AbilityEffect node, string kind, Cast cast) =>
+    private bool ContainsNode(AbilityEffect node, string kind, AbilityResolutionState cast) =>
         AbilityInitiation.ContainsNode(node, kind, AdmissionContext(cast));
 
-    private static bool HasNestedEachPlayer(
-        AbilityEffect node, Cast cast, bool inside = false,
+    private bool HasNestedEachPlayer(
+        AbilityEffect node, AbilityResolutionState cast, bool inside = false,
         bool stateMayChange = false, bool bindingMayChange = false,
         AbilityEffect? repeatedEffect = null) =>
         AbilityInitiation.HasNestedEachPlayer(
             node, AdmissionContext(cast), inside, stateMayChange,
             bindingMayChange, repeatedEffect);
 
-    private static void ResolveDependent(
-        AbilityEffect.Dependent dependent, Cast cast)
+    private void ResolveDependent(
+        AbilityEffect.Dependent dependent, AbilityResolutionState cast)
     {
         bool outerContinuation = cast.HasContinuation;
         var transition = AbilityStructuralExecution.Dependent(

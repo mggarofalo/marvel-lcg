@@ -484,7 +484,7 @@ public static class Attack
     /// <param name="abilities">Card-specific defender restrictions.</param>
     /// <returns>The question, or null when nobody could defend.</returns>
     public static Prompt? DeclareDefender(
-        World world, ICardFacts facts, ICardAbilities abilities)
+        World world, ICardFacts facts, IAttackCardAbilities abilities)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -548,7 +548,7 @@ public static class Attack
     /// <param name="input">The player's answer.</param>
     /// <param name="events">Where to record what happened.</param>
     public static void Defend(
-        World world, ICardFacts facts, ICardAbilities abilities, Decision input,
+        World world, ICardFacts facts, IAttackCardAbilities abilities, Decision input,
         List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(world);
@@ -619,7 +619,7 @@ public static class Attack
     /// <param name="abilities">What cards do, for a boost card that has one.</param>
     /// <param name="events">Where to record what happened.</param>
     public static void FlipBoostCards(
-        World world, ICardFacts facts, ICardAbilities abilities, List<GameEvent> events)
+        World world, ICardFacts facts, IAttackCardAbilities abilities, List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -701,7 +701,7 @@ public static class Attack
 
     /// <summary>Apply step 3c and 3d after one boost ability has completed.</summary>
     public static void FinishBoostCard(
-        World world, ICardFacts facts, ICardAbilities abilities, PhaseStep step,
+        World world, ICardFacts facts, IAttackCardAbilities abilities, PhaseStep step,
         List<GameEvent> events)
     {
         var boost = world.Cards[step.Subject];
@@ -1217,7 +1217,7 @@ public static class Attack
                 || FacedownDrones.Kind(card, facts) == CardKind.Ally)
             .Where(card => DeckTypes.IsInPlay(card.Area.Type)
                 && Damage.Health(world, facts, card) - card.Damage > 0
-                && world.Abilities.CanTakeDamage(world, card, world.Cards[Current(world).Enemy]))
+                && world.DamageAbilities.CanTakeDamage(world, card, world.Cards[Current(world).Enemy]))
             .OrderBy(card => card.ObjectId),
     ];
 
@@ -1399,7 +1399,7 @@ public static class Attack
 
     /// <summary>Applies card-specific defender constraints to the rules candidates.</summary>
     private static DefenderChoice Choice(
-        World world, ICardFacts facts, ICardAbilities abilities, EnemyAttack attack)
+        World world, ICardFacts facts, IAttackCardAbilities abilities, EnemyAttack attack)
     {
         List<Card> legal;
         if (attack.IsDefended)

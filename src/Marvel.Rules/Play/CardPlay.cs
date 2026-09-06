@@ -140,10 +140,17 @@ public static class CardPlay
     /// <param name="payingFor">The card being paid for, or null for an ability cost.</param>
     public static IReadOnlyList<ResourceSource> Generators(
         World world, ICardFacts facts, Seat seat, Card? payingFor = null)
+        => Generators(world, facts, seat, world.ResourceAbilities, payingFor);
+
+    /// <summary>Every resource source supplied by one explicit card capability.</summary>
+    public static IReadOnlyList<ResourceSource> Generators(
+        World world, ICardFacts facts, Seat seat,
+        IResourceCardAbilities resourceAbilities, Card? payingFor = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(seat);
+        ArgumentNullException.ThrowIfNull(resourceAbilities);
 
         // `rr:resource-ability.1` -- one "can be triggered **anytime the player
         // who controls the ability is generating resources to pay a cost**", so
@@ -151,12 +158,12 @@ public static class CardPlay
         // rather than another moment. Peter Parker's "Scientist" is the one the
         // recorded prompt carries, and it is why that prompt lists six
         // generators for five payable cards.
-        var sources = new List<ResourceSource>(world.Abilities.ResourceAbilities(
+        var sources = new List<ResourceSource>(resourceAbilities.ResourceAbilities(
             world, seat.Index));
 
         foreach (var card in seat.Hand.Cards)
         {
-            string generates = world.Abilities.ResourcesGeneratedBy(world, card, payingFor);
+            string generates = resourceAbilities.ResourcesGeneratedBy(world, card, payingFor);
             if (generates.Length > 0)
             {
                 sources.Add(new ResourceSource(card.ObjectId, generates));
@@ -227,7 +234,7 @@ public static class CardPlay
         ArgumentNullException.ThrowIfNull(seat);
         ArgumentNullException.ThrowIfNull(card);
 
-        if (!Permitted(world, facts, seat, card, abilities: world.Abilities))
+        if (!Permitted(world, facts, seat, card, abilities: world.CardPlayAbilities))
         {
             return null;
         }
@@ -236,7 +243,7 @@ public static class CardPlay
         // reaches them through "trigger an **Action** ability on an event card
         // in their hand", so an event without one is played in a window and not
         // here -- 555 of the 602 events in the pool have no Action ability at
-        // all. An authored Action event is offered by `ICardAbilities.Actions`
+        // all. An authored Action event is offered by `ICardActionAbilities.Actions`
         // instead, which plays it while resolving that action.
         //
         // The recorded board is the check: its opening hand holds `01003`
@@ -288,7 +295,7 @@ public static class CardPlay
     /// card needs a rule this engine does not have.
     /// </exception>
     public static void Play(
-        World world, ICardFacts facts, ICardAbilities abilities, Seat seat, Card card,
+        World world, ICardFacts facts, ICardPlayAbilities abilities, Seat seat, Card card,
         IReadOnlyList<int> paying, List<GameEvent> events,
         IReadOnlyList<int>? targets = null)
     {
@@ -346,7 +353,7 @@ public static class CardPlay
     /// card's ordinary affordance. All play restrictions still apply.
     /// </remarks>
     public static void PlayIgnoringResourceCost(
-        World world, ICardFacts facts, ICardAbilities abilities, Seat seat, Card card,
+        World world, ICardFacts facts, ICardPlayAbilities abilities, Seat seat, Card card,
         List<GameEvent> events, IReadOnlyList<int>? targets = null)
     {
         ArgumentNullException.ThrowIfNull(world);
@@ -394,7 +401,7 @@ public static class CardPlay
     /// resource cost remain in force.
     /// </remarks>
     public static void PlayWithPermission(
-        World world, ICardFacts facts, ICardAbilities abilities, Seat seat, Card card,
+        World world, ICardFacts facts, ICardPlayAbilities abilities, Seat seat, Card card,
         IReadOnlyList<int> paying, List<GameEvent> events,
         IReadOnlyList<int>? targets = null)
     {
@@ -451,7 +458,7 @@ public static class CardPlay
     /// </para>
     /// </remarks>
     public static void PutAllyIntoPlay(
-        World world, ICardFacts facts, ICardAbilities abilities, Card ally,
+        World world, ICardFacts facts, ICardPlayAbilities abilities, Card ally,
         int controller, string trigger, List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(world);
@@ -563,9 +570,19 @@ public static class CardPlay
         World world, ICardFacts facts, IReadOnlyList<Area> hands, IReadOnlyList<int> paying,
         long cost, string required, int itself, int payer, List<GameEvent> events,
         Card? payingFor = null, IReadOnlyDictionary<int, int>? resourcePayers = null)
+        => Spend(world, facts, world.ResourceAbilities, hands, paying, cost, required,
+            itself, payer, events, payingFor, resourcePayers);
+
+    /// <summary>Spends resources through one explicit card capability.</summary>
+    public static void Spend(
+        World world, ICardFacts facts, IResourceCardAbilities resourceAbilities,
+        IReadOnlyList<Area> hands, IReadOnlyList<int> paying,
+        long cost, string required, int itself, int payer, List<GameEvent> events,
+        Card? payingFor = null, IReadOnlyDictionary<int, int>? resourcePayers = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(resourceAbilities);
         ArgumentNullException.ThrowIfNull(hands);
         ArgumentNullException.ThrowIfNull(paying);
         ArgumentNullException.ThrowIfNull(events);
@@ -582,7 +599,7 @@ public static class CardPlay
         // so that a payment naming a card that is neither still says the thing
         // that is wrong with it.
         var abilityPayers = resourcePayers is null
-            ? world.Abilities.ResourceAbilities(world, payer)
+            ? resourceAbilities.ResourceAbilities(world, payer)
                 .GroupBy(source => source.Effect)
                 .ToDictionary(group => group.Key, _ => payer)
             : resourcePayers;
@@ -593,7 +610,7 @@ public static class CardPlay
             if (abilityPayers.TryGetValue(id, out int abilityPayer)
                 && !hands.Contains(source.Area))
             {
-                generated.Append(world.Abilities.UseResource(
+                generated.Append(resourceAbilities.UseResource(
                     world, abilityPayer, id, events));
                 continue;
             }
@@ -616,7 +633,7 @@ public static class CardPlay
             }
 
             spent.Add(source);
-            generated.Append(world.Abilities.ResourcesGeneratedBy(world, source, payingFor));
+            generated.Append(resourceAbilities.ResourcesGeneratedBy(world, source, payingFor));
         }
 
         if (!Resources.Pays(generated.ToString(), cost, required))
@@ -736,7 +753,7 @@ public static class CardPlay
 
     private static bool Permitted(
         World world, ICardFacts facts, Seat seat, Card card,
-        IReadOnlyList<int>? targets = null, ICardAbilities? abilities = null,
+        IReadOnlyList<int>? targets = null, ICardPlayAbilities? abilities = null,
         bool outOfPlayPermission = false)
     {
         if (!outOfPlayPermission && card.Area != seat.Hand)
@@ -787,7 +804,7 @@ public static class CardPlay
         }
 
         if (!WithinPerPlayerLimit(
-                world, facts, seat, card, targets, abilities ?? world.Abilities))
+                world, facts, seat, card, targets, abilities ?? world.CardPlayAbilities))
         {
             return false;
         }
@@ -809,7 +826,7 @@ public static class CardPlay
     /// <summary>Checks a printed “Max N per player” against the destination controller.</summary>
     public static bool WithinPerPlayerLimit(
         World world, ICardFacts facts, Seat seat, Card card, IReadOnlyList<int>? targets,
-        ICardAbilities abilities)
+        ICardPlayAbilities abilities)
     {
         long maximum = facts.PrintedValue(card.FaceId, "MaxPerUnit", world.Players);
         if (maximum <= 0)
@@ -859,7 +876,7 @@ public static class CardPlay
 
     /// <summary>Attachment targets that also satisfy the card's printed maximum.</summary>
     public static IReadOnlyList<int>? LegalAttachmentTargets(
-        World world, ICardFacts facts, Seat seat, Card card, ICardAbilities abilities)
+        World world, ICardFacts facts, Seat seat, Card card, ICardPlayAbilities abilities)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -1053,7 +1070,7 @@ public static class CardPlay
 
     /// <summary>Where a played card goes — <c>rr:enters-play</c>.</summary>
     private static void Enter(
-        World world, ICardFacts facts, ICardAbilities abilities, Seat seat, Card card,
+        World world, ICardFacts facts, ICardPlayAbilities abilities, Seat seat, Card card,
         List<GameEvent> events, IReadOnlyList<int> targets)
     {
         var kind = facts.Kind(card.FaceId);

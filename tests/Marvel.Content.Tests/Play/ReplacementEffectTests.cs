@@ -125,7 +125,7 @@ public sealed class ReplacementEffectTests
                "effect":{"giveStatus":{"card":"this","status":"tough"}}}]}]}
             """);
 
-        var world = WorldSetup.Deal(
+        var world = WorldSetup.DealWithoutCardAbilities(
             Cards,
             Blueprints.From(Dealer.DealOrder(Setup, "rhino", ["spider_man"]), Cards),
             ["Spider-Man"],
@@ -147,7 +147,7 @@ public sealed class ReplacementEffectTests
     /// <summary>The Rhino board with the suit attached, by its own text.</summary>
     private static (World World, Card Suit, Card Villain) Board()
     {
-        var world = WorldSetup.Deal(
+        var world = WorldSetup.DealWithoutCardAbilities(
             Cards,
             Blueprints.From(Dealer.DealOrder(Setup, "rhino", ["spider_man"]), Cards),
             ["Spider-Man"],

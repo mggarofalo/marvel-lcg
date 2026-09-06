@@ -636,7 +636,7 @@ public sealed class ResolutionStatusTests
     private static (World World, Card Card, Occurrence Occurrence, AbilityRunner Runner)
         Revealing(string face, string effect)
     {
-        var world = WorldSetup.Deal(
+        var world = WorldSetup.DealWithoutCardAbilities(
             Cards,
             Blueprints.From(Dealer.DealOrder(Setup, "rhino", ["spider_man"]), Cards),
             ["Spider-Man"],
@@ -656,7 +656,7 @@ public sealed class ResolutionStatusTests
             new AbilityRunner(AbilityCatalog.Parse(json)));
     }
 
-    private static World Deal() => WorldSetup.Deal(
+    private static World Deal() => WorldSetup.DealWithoutCardAbilities(
         Cards,
         Blueprints.From(Dealer.DealOrder(Setup, "rhino", ["spider_man"]), Cards),
         ["Spider-Man"],

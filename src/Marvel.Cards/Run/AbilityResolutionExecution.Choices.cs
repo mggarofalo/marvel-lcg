@@ -8,7 +8,7 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Cards.Run;
 
-public sealed partial class AbilityRunner
+internal sealed partial class AbilityResolutionExecution
 {
     /// <inheritdoc/>
     public Prompt? Choosing(
@@ -246,7 +246,9 @@ public sealed partial class AbilityRunner
             if (payment.Pay)
             {
                 string required = EffectOf<AbilityEffect.PayOrEffect>(choice, cast).Resources;
-                CardPlay.Spend(world, world.Facts, [world.Seats[player].Hand], input.Spent,
+                CardPlay.Spend(
+                    world, world.Facts, resourceAbilities,
+                    [world.Seats[player].Hand], input.Spent,
                     required.Length, required, -1, player, cast.Events);
                 cast.ResolveEffect();
             }
@@ -276,7 +278,8 @@ public sealed partial class AbilityRunner
             {
                 string required = EffectOf<AbilityEffect.PayOrEffect>(choice, cast).Resources;
                 CardPlay.Spend(
-                    world, world.Facts, [world.Seats[player].Hand], input.Spent,
+                    world, world.Facts, resourceAbilities,
+                    [world.Seats[player].Hand], input.Spent,
                     required.Length, required, itself: -1, player, cast.Events);
                 cast.ResolveEffect();
             }
@@ -308,7 +311,8 @@ public sealed partial class AbilityRunner
             var selected = world.Cards[command.Selected];
             AbilityCardStateExecution.ChooseTopForHand(top, selected,
                 new AbilityCardStateContext(cast.ExpressionContext(), cast.Trigger,
-                    cast.Events, cast.Abilities, new AbilityCardStateResult()));
+                    cast.Events, cardPlayAbilities, readinessAbilities,
+                    new AbilityCardStateResult()));
             cast.ResolveEffect();
 
             return Continue(source, cast, stoppedAt);
@@ -324,7 +328,8 @@ public sealed partial class AbilityRunner
             var selected = command.Targets.Select(id => world.Cards[id]).ToList();
             AbilityCardStateExecution.ShuffleDiscardIntoDeck(selected,
                 new AbilityCardStateContext(cast.ExpressionContext(), cast.Trigger,
-                    cast.Events, cast.Abilities, new AbilityCardStateResult()));
+                    cast.Events, cardPlayAbilities, readinessAbilities,
+                    new AbilityCardStateResult()));
             cast.ResolveEffect();
             return Continue(source, cast, stoppedAt);
         }
@@ -355,11 +360,12 @@ public sealed partial class AbilityRunner
             var ally = world.Cards[((MakeTheCallCommand)answer).Ally];
             long cost = Resources.Cost(ally.FaceId, world.Facts, world.Players) ?? 0;
             CardPlay.Spend(
-                world, world.Facts, [world.Seats[player].Hand], input.Spent,
+                world, world.Facts, resourceAbilities,
+                [world.Seats[player].Hand], input.Spent,
                 cost, Resources.Required(world, ally, world.Facts),
                 source.ObjectId, player, cast.Events, payingFor: ally);
             CardPlay.PutAllyIntoPlay(
-                world, world.Facts, cast.Abilities, ally, player, cast.Trigger, cast.Events);
+                world, world.Facts, cardPlayAbilities, ally, player, cast.Trigger, cast.Events);
             cast.ResolveEffect();
             return Continue(source, cast, stoppedAt);
         }
@@ -373,7 +379,8 @@ public sealed partial class AbilityRunner
             AbilityCardStateExecution.DiscardCards(
                 command.Discard.Select(id => world.Cards[id]).ToList(), CardPlay.Verb,
                 new AbilityCardStateContext(cast.ExpressionContext(), cast.Trigger,
-                    cast.Events, cast.Abilities, new AbilityCardStateResult()));
+                    cast.Events, cardPlayAbilities, readinessAbilities,
+                    new AbilityCardStateResult()));
             cast.ResolveEffect();
             cast.Choose(scheme);
             ApplyStructuralDecision(AbilityStructuralExecution.Power(
@@ -412,7 +419,7 @@ public sealed partial class AbilityRunner
     }
 
     /// <summary>Whether the source has a player-card face.</summary>
-    private static bool IsPlayerCard(Cast cast) =>
+    private static bool IsPlayerCard(AbilityResolutionState cast) =>
         IsPlayerCard(cast.World.Facts, cast.Source);
 
     /// <summary>Whether a card face belongs to a player rather than the scenario.</summary>

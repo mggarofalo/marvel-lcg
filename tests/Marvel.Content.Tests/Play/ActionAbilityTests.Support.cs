@@ -1894,7 +1894,7 @@ public sealed partial class ActionAbilityTests
         string scenario = "rhino")
     {
         string[] playing = heroes ?? ["spider_man"];
-        var world = WorldSetup.Deal(
+        var world = WorldSetup.DealWithoutCardAbilities(
             Cards,
             Blueprints.From(Dealer.DealOrder(Setup, scenario, playing), Cards),
             [.. playing.Select(name => Setup.Hero(name).Name)],

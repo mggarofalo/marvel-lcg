@@ -151,7 +151,7 @@ public sealed class CoreSetupTests
         foreach (var (name, printed) in Scenarios)
         {
             var order = Dealer.DealOrder(Setup, name, ["spider_man"]);
-            var world = WorldSetup.Deal(
+            var world = WorldSetup.DealWithoutCardAbilities(
                 Cards,
                 Blueprints.From(order, Cards),
                 [Setup.Hero("spider_man").Name],

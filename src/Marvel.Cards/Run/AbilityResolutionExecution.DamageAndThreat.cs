@@ -2,12 +2,12 @@ using Marvel.Cards.Dsl;
 
 namespace Marvel.Cards.Run;
 
-public sealed partial class AbilityRunner
+internal sealed partial class AbilityResolutionExecution
 {
     // MARVEL-375: syntax identifies the suspended procedure until continuations
     // use program addresses directly. Only the compiled instruction supplies
     // the operation's arguments.
-    private static bool TryRunDamageAndThreat(AbilityEffect instruction, AbilityEffect syntax, Cast cast)
+    private bool TryRunDamageAndThreat(AbilityEffect instruction, AbilityEffect syntax, AbilityResolutionState cast)
     {
         var result = AbilityDamageAndThreatExecution.Run(instruction, syntax, DamageAndThreatContext(cast));
         if (!result.Handled)
@@ -18,13 +18,13 @@ public sealed partial class AbilityRunner
         return true;
     }
 
-    private static AbilityDamageAndThreatContext DamageAndThreatContext(Cast cast) =>
-        new(cast.ExpressionContext(), cast.Trigger, cast.Events,
+    private AbilityDamageAndThreatContext DamageAndThreatContext(AbilityResolutionState cast) =>
+        new(cast.ExpressionContext(), program, cast.Trigger, cast.Events,
             cast.AbilityActor, cast.PowerActor, cast.Power, cast.HasContinuation,
             cast.ImminentThreat, cast.ResolutionAbility, cast.Incoming);
 
-    private static void ApplyDamageAndThreat(
-        AbilityDamageAndThreatResult result, AbilityEffect syntax, Cast cast)
+    private void ApplyDamageAndThreat(
+        AbilityDamageAndThreatResult result, AbilityEffect syntax, AbilityResolutionState cast)
     {
         if (result.Healed is { } healed) cast.Results["healed"] = healed;
         if (result.Remaining is { } remaining) cast.Replace(remaining);

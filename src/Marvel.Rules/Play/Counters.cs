@@ -29,7 +29,7 @@ public static class Counters
             return 0;
         }
 
-        string destinationType = world.Abilities.CounterPool(world, to)?.Type
+        string destinationType = world.CounterPools.CounterPool(world, to)?.Type
             ?? string.Empty;
         string destinationKey = "c_" + (destinationType.Length > 0
             ? destinationType

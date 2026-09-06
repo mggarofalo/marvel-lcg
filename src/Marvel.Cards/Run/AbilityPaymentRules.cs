@@ -24,12 +24,12 @@ internal static class AbilityPaymentRules
     /// </remarks>
     internal static bool Payable(
         World world, Card card, int player, AbilityCost? cost,
-        AbilityProgram? program = null) =>
+        AbilityProgram program, IResourceCardAbilities resourceAbilities) =>
         cost switch
         {
             null => true,
             AbilityCost.Sequence sequence => SequencePayable(
-                world, card, player, sequence, program),
+                world, card, player, sequence, program, resourceAbilities),
             AbilityCost.Exhaust exhaust => CostTarget(world, card, player, exhaust.Card)?.Ready == true,
             AbilityCost.Discard discard => CostTarget(world, card, player, discard.Card) is not null,
             AbilityCost.RemoveCounters removal => CostTarget(world, card, player, removal.Card) is { } counterCard
@@ -48,17 +48,19 @@ internal static class AbilityPaymentRules
             // so if everything together cannot pay then no choice among them
             // can, and if it can then spending it all is a payment.
             AbilityCost.Spend { PrintedOnly: false } spend => Resources.Pays(
-                string.Concat(CardPlay.Generators(world, world.Facts, world.Seats[player])
+                string.Concat(CardPlay.Generators(
+                        world, world.Facts, world.Seats[player], resourceAbilities)
                     .SelectMany(source => source.Generates)),
                 spend.Resources.Length,
                 spend.Resources),
             AbilityCost.Spend { PrintedOnly: true } spend => Resources.PaysPrinted(
-                string.Concat(PrintedGenerators(world, player)
+                string.Concat(PrintedGenerators(world, player, resourceAbilities)
                     .SelectMany(source => source.Generates)),
                 spend.Resources.Length,
                 spend.Resources),
             AbilityCost.SpendEnergy => Resources.Pays(
-                string.Concat(CardPlay.Generators(world, world.Facts, world.Seats[player])
+                string.Concat(CardPlay.Generators(
+                        world, world.Facts, world.Seats[player], resourceAbilities)
                     .SelectMany(source => source.Generates)),
                 1,
                 "Y"),
@@ -77,10 +79,8 @@ internal static class AbilityPaymentRules
 
             AbilityCost.Damage damage => CostTarget(
                     world, card, player, damage.Card) is { } takingTarget
-                && (program is not null
-                    ? AbilityProgramQueries.CanTakeDamage(
-                        world, program, takingTarget, card)
-                    : world.Abilities.CanTakeDamage(world, takingTarget, card))
+                && AbilityProgramQueries.CanTakeDamage(
+                    world, program, takingTarget, card)
                 // `rr:cost.12`: "that cost is not considered paid unless all
                 // of that damage was taken." Tough necessarily prevents the
                 // next instance, so this cost cannot be paid at initiation.
@@ -107,7 +107,7 @@ internal static class AbilityPaymentRules
 
     internal static bool SequencePayable(
         World world, Card card, int player, AbilityCost.Sequence cost,
-        AbilityProgram? program = null)
+        AbilityProgram program, IResourceCardAbilities resourceAbilities)
     {
         var steps = cost.Costs;
         if (!CounterCostsPayable(world, card, player, cost))
@@ -135,8 +135,9 @@ internal static class AbilityPaymentRules
 
             string required = string.Concat(spends.Select(step => step.Resources));
             string pool = string.Concat((printed
-                    ? PrintedGenerators(world, player)
-                    : CardPlay.Generators(world, world.Facts, world.Seats[player]))
+                    ? PrintedGenerators(world, player, resourceAbilities)
+                    : CardPlay.Generators(
+                        world, world.Facts, world.Seats[player], resourceAbilities))
                 .SelectMany(source => source.Generates));
             bool pays = printed
                 ? Resources.PaysPrinted(pool, required.Length, required)
@@ -148,7 +149,8 @@ internal static class AbilityPaymentRules
         }
 
         return steps.Where(step => step is not (AbilityCost.Spend or AbilityCost.RemoveCounters))
-            .All(step => Payable(world, card, player, step, program));
+            .All(step => Payable(
+                world, card, player, step, program, resourceAbilities));
     }
 
     internal static bool CounterCostsPayable(
@@ -218,7 +220,8 @@ internal static class AbilityPaymentRules
     };
 
     internal static bool EventPayable(
-        World world, Card card, int player, CompiledCardAbility ability)
+        World world, Card card, int player, CompiledCardAbility ability,
+        IResourceCardAbilities resourceAbilities)
     {
         if (world.Facts.Kind(card.FaceId) != CardKind.Event)
         {
@@ -236,7 +239,8 @@ internal static class AbilityPaymentRules
             + ResourceRequirement(ability.Cost, card);
         cost += required.Length
             - Resources.Required(world, card, world.Facts).Length;
-        string pool = string.Concat(EventGenerators(world, card, player, ability.Effect)
+        string pool = string.Concat(EventGenerators(
+                world, card, player, ability.Effect, resourceAbilities)
             .SelectMany(source => source.Generates));
         return Resources.Pays(pool, cost, required);
     }
@@ -268,12 +272,14 @@ internal static class AbilityPaymentRules
     /// separate TargetRequest from AbilityCostSelection. A cost that names its
     /// own card needs neither choice representation.
     /// </remarks>
-    internal static CostOption? Price(World world, Card card, int player, AbilityCost? cost)
+    internal static CostOption? Price(
+        World world, Card card, int player, AbilityCost? cost,
+        IResourceCardAbilities resourceAbilities)
     {
         if (cost is AbilityCost.Sequence sequence)
         {
             var prices = sequence.Costs
-                .Select(step => Price(world, card, player, step))
+                .Select(step => Price(world, card, player, step, resourceAbilities))
                 .Where(price => price is not null)
                 .Cast<CostOption>()
                 .ToList();
@@ -322,12 +328,13 @@ internal static class AbilityPaymentRules
         if (cost is AbilityCost.SpendEnergy)
         {
             long maximum = CardPlay.Generators(
-                    world, world.Facts, world.Seats[player])
+                    world, world.Facts, world.Seats[player], resourceAbilities)
                 .Sum(source => source.Generates.LongCount(resource =>
                     resource is Resources.Energy or Resources.Wild));
             return new CostOption(
                 card.ObjectId, "X", ["Y"],
-                Sources: CardPlay.Generators(world, world.Facts, world.Seats[player]),
+                Sources: CardPlay.Generators(
+                    world, world.Facts, world.Seats[player], resourceAbilities),
                 Variables: [new VariableRequest("X", 1, maximum)]);
         }
 
@@ -339,7 +346,7 @@ internal static class AbilityPaymentRules
                 Cost: printedLetters.Length.ToString(
                     System.Globalization.CultureInfo.InvariantCulture),
                 Rule: [printedLetters],
-                Sources: PrintedGenerators(world, player),
+                Sources: PrintedGenerators(world, player, resourceAbilities),
                 Components: [new ResourceCost(
                     printedLetters.Length.ToString(
                         System.Globalization.CultureInfo.InvariantCulture),
@@ -357,14 +364,16 @@ internal static class AbilityPaymentRules
             Target: card.ObjectId,
             Cost: letters.Length.ToString(System.Globalization.CultureInfo.InvariantCulture),
             Rule: [letters],
-            Sources: CardPlay.Generators(world, world.Facts, world.Seats[player]));
+            Sources: CardPlay.Generators(
+                world, world.Facts, world.Seats[player], resourceAbilities));
     }
 
     internal static CostOption? CombinedPrice(
-        World world, Card card, int player, CompiledCardAbility ability)
+        World world, Card card, int player, CompiledCardAbility ability,
+        IResourceCardAbilities resourceAbilities)
     {
-        var printed = EventPrice(world, card, player, ability.Effect);
-        var arrow = Price(world, card, player, ability.Cost);
+        var printed = EventPrice(world, card, player, ability.Effect, resourceAbilities);
+        var arrow = Price(world, card, player, ability.Cost, resourceAbilities);
         if (printed is null || arrow is null)
         {
             return printed ?? arrow;
@@ -406,7 +415,8 @@ internal static class AbilityPaymentRules
     }
 
     internal static CostOption? EventPrice(
-        World world, Card card, int player, AbilityEffect effect)
+        World world, Card card, int player, AbilityEffect effect,
+        IResourceCardAbilities resourceAbilities)
     {
         if (world.Facts.Kind(card.FaceId) != CardKind.Event)
         {
@@ -421,22 +431,25 @@ internal static class AbilityPaymentRules
             Rule: Resources.Required(world, card, world.Facts) is { Length: > 0 } required
                 ? [required]
                 : null,
-            Sources: EventGenerators(world, card, player, effect),
+            Sources: EventGenerators(world, card, player, effect, resourceAbilities),
             DeclarationSensitive: PaidResourceQueries(effect).Any());
     }
 
     internal static List<ResourceSource> EventGenerators(
-        World world, Card card, int player, AbilityEffect effect)
+        World world, Card card, int player, AbilityEffect effect,
+        IResourceCardAbilities resourceAbilities)
     {
         return CardPlay.Paying(world, world.Facts, world.Seats[player], card)
-            .SelectMany(seat => CardPlay.Generators(world, world.Facts, seat, card))
+            .SelectMany(seat => CardPlay.Generators(
+                world, world.Facts, seat, resourceAbilities, card))
             .Where(source => source.Effect != card.ObjectId)
             .GroupBy(source => source.Effect)
             .Select(group => group.First())
             .ToList();
     }
 
-    internal static List<ResourceSource> PrintedGenerators(World world, int player)
+    internal static List<ResourceSource> PrintedGenerators(
+        World world, int player, IResourceCardAbilities resourceAbilities)
     {
         var hand = world.Seats[player].Hand.Cards
             .Select(card => new ResourceSource(
@@ -444,7 +457,7 @@ internal static class AbilityPaymentRules
                 Resources.GeneratedBy(card.FaceId, world.Facts)))
             .Where(source => source.Generates.Length > 0);
         return hand
-            .Concat(world.Abilities.PrintedResourceAbilities(world, player))
+            .Concat(resourceAbilities.PrintedResourceAbilities(world, player))
             .GroupBy(source => source.Effect)
             .Select(group => group.First())
             .ToList();
@@ -453,12 +466,16 @@ internal static class AbilityPaymentRules
     /// <summary>Validates every selected cost before any simultaneous cost is paid.</summary>
     internal static void ValidatePayment(
         AbilityCost? cost, IReadOnlyList<int> paying, IReadOnlyList<int> chosen,
-        World world, Card source, int player)
-        => ValidatePayment(cost, paying, chosen, values: null, world, source, player);
+        World world, Card source, int player, AbilityProgram program,
+        IResourceCardAbilities resourceAbilities)
+        => ValidatePayment(
+            cost, paying, chosen, values: null, world, source, player,
+            program, resourceAbilities);
 
     internal static void ValidatePayment(
         AbilityCost? cost, IReadOnlyList<int> paying, IReadOnlyList<int> chosen,
-        IReadOnlyDictionary<string, long>? values, World world, Card source, int player)
+        IReadOnlyDictionary<string, long>? values, World world, Card source, int player,
+        AbilityProgram program, IResourceCardAbilities resourceAbilities)
     {
         if (cost is null)
         {
@@ -494,9 +511,9 @@ internal static class AbilityPaymentRules
                     + "resource costs, whose allocation is not implemented");
             }
             var generators = printed
-                ? PrintedGenerators(world, player)
+                ? PrintedGenerators(world, player, resourceAbilities)
                 : CardPlay.Generators(
-                    world, world.Facts, world.Seats[player]).ToList();
+                    world, world.Facts, world.Seats[player], resourceAbilities).ToList();
             var selected = paying.ToHashSet();
             if (paying.Any(id => generators.All(source => source.Effect != id)))
             {
@@ -525,7 +542,7 @@ internal static class AbilityPaymentRules
             if (step is AbilityCost.SpendEnergy)
             {
                 long x = DefinedVariable(values, "X", source);
-                var request = Price(world, source, player, step)!
+                var request = Price(world, source, player, step, resourceAbilities)!
                     .VariableRequests.Single(variable =>
                         string.Equals(variable.Name, "X", StringComparison.Ordinal));
                 if (!request.Allows(x))
@@ -536,7 +553,7 @@ internal static class AbilityPaymentRules
                 }
 
                 var generators = CardPlay.Generators(
-                    world, world.Facts, world.Seats[player]).ToList();
+                    world, world.Facts, world.Seats[player], resourceAbilities).ToList();
                 var selected = paying.ToHashSet();
                 if (paying.Count == 0
                     || paying.Distinct().Count() != paying.Count
@@ -600,7 +617,8 @@ internal static class AbilityPaymentRules
                         + $"cards to exhaust and {chosen.Count} were supplied");
                 }
             }
-            else if (!Payable(world, source, player, step))
+            else if (!Payable(
+                         world, source, player, step, program, resourceAbilities))
             {
                 throw new RulesNotImplementedException(
                     $"'{source.FaceId}' cannot pay its compiled cost");

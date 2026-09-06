@@ -65,7 +65,7 @@ public enum Outcome
 /// defeated…</i>" at <c>.step.7</c> — after <c>.step.5</c> places the damage,
 /// before <c>.step.8</c> discards the card. So it is reached from inside the
 /// damage rather than from the window, which closed before <c>.step.1</c>.
-/// <c>ICardAbilities.WhenCardDefeated</c> is that step, and it holds a card's
+/// <c>ICardDamageAbilities.WhenCardDefeated</c> is that step, and it holds a card's
 /// own "When Defeated" and another card's forced interrupt on the same defeat
 /// alike, because the parenthesis in <c>.step.7</c> says they are one moment.
 /// </para>
@@ -125,7 +125,7 @@ public static class Defeat
         // occurrence's interrupt window closed before the damage that caused
         // this was dealt, and `rr:damage`'s own order is what says that is not
         // where these belong.
-        if (!world.Abilities.WhenCardDefeated(
+        if (!world.DamageAbilities.WhenCardDefeated(
                 world, character, defeated, trigger, events))
         {
             return false;
@@ -220,7 +220,7 @@ public static class Defeat
 
         // `rr:when-defeated-abilities.2` lists a side scheme among the cards
         // this happens to, and `.2.1` puts it before the card goes.
-        if (!world.Abilities.WhenCardDefeated(
+        if (!world.DamageAbilities.WhenCardDefeated(
                 world, scheme, defeated, trigger, events))
         {
             return;
@@ -628,6 +628,6 @@ public static class Defeat
         // `rr:reveal.step.3` puts the card's own text after the placement and
         // the keywords -- and `.3` there, with `rr:villain-defeat.1`, is why
         // nothing between here and the deck gets to cancel it.
-        events.AddRange(world.Abilities.WhenRevealed(world, next, world.FirstPlayer));
+        events.AddRange(world.EncounterAbilities.WhenRevealed(world, next, world.FirstPlayer));
     }
 }

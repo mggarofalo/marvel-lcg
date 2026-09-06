@@ -451,7 +451,7 @@ public sealed class CardsInWindowsTests
     private static World Deal(params string[] heroes)
     {
         var playing = heroes.Length > 0 ? heroes : Heroes;
-        return WorldSetup.Deal(
+        return WorldSetup.DealWithoutCardAbilities(
             Cards,
             Blueprints.From(Dealer.DealOrder(Setup, Campaign, playing), Cards),
             [.. playing.Select(hero => Setup.Hero(hero).Name)],

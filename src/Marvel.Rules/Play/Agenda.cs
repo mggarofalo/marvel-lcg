@@ -1577,7 +1577,7 @@ public static class Steps
     /// a gap: <c>rr:damage.step.7</c> puts "abilities that trigger <i>when
     /// [character] is defeated…</i>" after <c>.step.5</c> has placed the
     /// damage, which is past the window. So the interrupt tier is reached from
-    /// inside the damage — <c>ICardAbilities.WhenCardDefeated</c> — and every
+    /// inside the damage — <c>ICardDamageAbilities.WhenCardDefeated</c> — and every
     /// ability there is forced, with nothing to offer and nothing to decline.
     /// The response tier is <c>.step.9</c>, which is the window.
     /// </para>

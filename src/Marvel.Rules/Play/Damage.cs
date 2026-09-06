@@ -73,14 +73,14 @@ public static class Damage
         long? taken = amount;
         string? uncertainty = null;
 
-        if (!world.Abilities.CanTakeDamage(world, target, source))
+        if (!world.DamageAbilities.CanTakeDamage(world, target, source))
         {
             taken = 0;
             notes.Add("cannot take damage from this source");
         }
         else
         {
-            DamageProjection replacement = world.Abilities.PreviewDamageReplacement(
+            DamageProjection replacement = world.DamageAbilities.PreviewDamageReplacement(
                 world, target, source, amount);
             taken = replacement.Result switch
             {
@@ -141,7 +141,7 @@ public static class Damage
             : $"{current}/{maximum} HP · {uncertainty}";
         if (taken >= current && current > 0)
         {
-            DefeatProjection? defeat = world.Abilities.PreviewDefeatReplacement(
+            DefeatProjection? defeat = world.DamageAbilities.PreviewDefeatReplacement(
                 world, target, maximum);
             if (defeat is null)
             {
@@ -314,7 +314,7 @@ public static class Damage
         // `rr:cannot` -- "cannot" is absolute. A character forbidden from
         // taking damage from this source never reaches the damage sequence:
         // there is no imminent damage to replace and no tough card to spend.
-        if (!world.Abilities.CanTakeDamage(world, target, source))
+        if (!world.DamageAbilities.CanTakeDamage(world, target, source))
         {
             return 0;
         }
@@ -324,7 +324,7 @@ public static class Damage
         // sits. It comes before the tough card, which is step 2, and a card
         // that replaces all of the damage leaves nothing for the rest of the
         // nine steps to do.
-        return world.Abilities.WouldBeDealt(world, target, source, amount, events);
+        return world.DamageAbilities.WouldBeDealt(world, target, source, amount, events);
     }
 
     /// <summary>Continue damage after step 1 has fixed the amount dealt.</summary>
@@ -351,7 +351,7 @@ public static class Damage
         // zero-dealt assignment returns before any status is discarded.
         if (assignment.SpendsTough)
         {
-            world.Abilities.DamagePreventedByTough(world, target, source, events);
+            world.DamageAbilities.DamagePreventedByTough(world, target, source, events);
             var tough = world.Areas
                 .Where(area => area.Type == DeckType.StatusArea && area.Host == target.ObjectId)
                 .SelectMany(area => area.Cards)
@@ -370,7 +370,7 @@ public static class Damage
         // Step 1 has already fixed that dealt amount; only placement below uses
         // the reduced taken amount.
         assignment = assignment.AfterPrevention(
-            world.Abilities.WouldTake(world, target, source, assignment.Taken, events));
+            world.DamageAbilities.WouldTake(world, target, source, assignment.Taken, events));
         return new PlacedDamage(target, assignment.Dealt, assignment.Taken);
     }
 
@@ -420,7 +420,7 @@ public static class Damage
         if (after <= 0)
         {
             int beforeProcedure = world.Agenda.Count;
-            if (!world.Abilities.WouldBeDefeated(
+            if (!world.DamageAbilities.WouldBeDefeated(
                     world, target, source, trigger, verb, by, events,
                     recordDefeatOn))
             {
@@ -875,7 +875,7 @@ public static class Damage
         long moved = Math.Min(Math.Max(0, amount), from.Damage);
         if (moved <= 0
             || ReferenceEquals(from, to)
-            || !world.Abilities.CanTakeDamage(world, to, source))
+            || !world.DamageAbilities.CanTakeDamage(world, to, source))
         {
             return 0;
         }

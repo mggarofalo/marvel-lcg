@@ -114,7 +114,7 @@ public static class Reveal
     /// <param name="events">Where to record what happened.</param>
     /// <param name="occurrence">The reveal occurrence retaining resolution status.</param>
     public static void Keywords(
-        World world, ICardFacts facts, ICardAbilities abilities, Card card, int player,
+        World world, ICardFacts facts, IThreatCardAbilities abilities, Card card, int player,
         List<GameEvent> events, Occurrence? occurrence = null)
     {
         ArgumentNullException.ThrowIfNull(world);
@@ -142,7 +142,7 @@ public static class Reveal
 
     /// <summary>Resolve one keyword-provided When Revealed ability by address.</summary>
     public static void ResolveKeyword(
-        World world, ICardFacts facts, ICardAbilities abilities, Card card, int player,
+        World world, ICardFacts facts, IThreatCardAbilities abilities, Card card, int player,
         PendingAbility ability, List<GameEvent> events, Occurrence? occurrence = null)
     {
         ArgumentNullException.ThrowIfNull(world);
@@ -355,7 +355,7 @@ public static class Reveal
             // attaches says so with the `attachTo` node instead, and it moves
             // the card itself rather than coming through here.
             CardKind.Attachment when (attachmentTarget
-                ?? world.Abilities.AttachesTo(world, card)) is { } element
+                ?? world.PlacementAbilities.AttachesTo(world, card)) is { } element
                 => world.AreaOf(
                     DeckType.UpgradesArea,
                     world.Cards[element].Area.PlayArea,
@@ -569,7 +569,7 @@ public static class Reveal
     /// </remarks>
     public static void EnterPlay(
         World world, ICardFacts facts, Card card, List<GameEvent> events,
-        Occurrence? occurrence = null, ICardAbilities? abilities = null)
+        Occurrence? occurrence = null, ICardPlayAbilities? abilities = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(facts);
@@ -608,7 +608,7 @@ public static class Reveal
         // active. Ordinary card text can define the same physical starting
         // state without gaining the discard-at-zero rule, so the card layer
         // supplies both the pool and which printed form created it.
-        CardCounterPool? counterPool = (abilities ?? world.Abilities)
+        CardCounterPool? counterPool = (abilities ?? world.CardPlayAbilities)
             .CounterPool(world, card);
         if (counterPool is { Starting: > 0 }
             && (!counterPool.Uses
@@ -651,7 +651,7 @@ public static class Reveal
 
         // Card-specific entry state is still part of the transition and must
         // exist before an "after this card enters play" response is read.
-        events.AddRange((abilities ?? world.Abilities).EntersPlay(world, card));
+        events.AddRange((abilities ?? world.CardPlayAbilities).EntersPlay(world, card));
 
         // A newly active constant may grant stalwart to its own character or
         // to another one already in play. `rr:stalwart.2` removes both kinds of

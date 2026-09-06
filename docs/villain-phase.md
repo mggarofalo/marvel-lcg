@@ -46,8 +46,9 @@ modified SCH threat. An attack gives facedown boost cards, asks for a defender,
 reveals and resolves boosts, fixes the attack value, deals damage, and ends the
 attack. Boost icons are scoped modifiers that expire with that activation.
 
-Card abilities enter through `ICardAbilities`. A printed Boost or When Revealed
-ability without an executable Core definition raises
+The phase receives narrow card-ability ports for its reveal, window, activation,
+and damage operations. Hosts may compose those ports with `ICardAbilities`. A
+printed Boost or When Revealed ability without an executable Core definition raises
 `RulesNotImplementedException`; the phase never treats unknown text as silence.
 
 ## Encounter cards

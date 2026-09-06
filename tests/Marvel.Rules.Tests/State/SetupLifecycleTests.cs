@@ -78,7 +78,7 @@ public sealed class SetupLifecycleTests
     }
 
     private static World DealUnsupported(string faceId, SetupSlot slot) =>
-        WorldSetup.Deal(
+        WorldSetup.DealWithoutCardAbilities(
             new Facts(),
             [new CardBlueprint(faceId, slot, slot == SetupSlot.PlayerDeck ? 0 : -1)],
             slot == SetupSlot.PlayerDeck ? ["p0"] : [],

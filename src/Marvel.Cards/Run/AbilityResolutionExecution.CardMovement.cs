@@ -4,13 +4,14 @@ using Marvel.Rules.State;
 
 namespace Marvel.Cards.Run;
 
-public sealed partial class AbilityRunner
+internal sealed partial class AbilityResolutionExecution
 {
-    private static bool TryRunCardMovement(AbilityEffect instruction, Cast cast)
+    private bool TryRunCardMovement(AbilityEffect instruction, AbilityResolutionState cast)
     {
         var result = AbilityDeckAndRevealExecution.Run(instruction,
             new AbilityDeckAndRevealContext(
-                cast.ExpressionContext(), cast.Trigger, cast.Events, cast.Abilities,
+                cast.ExpressionContext(), cast.Trigger, cast.Events,
+                cardPlayAbilities, readinessAbilities,
                 [.. cast.Discarded]));
         if (!result.IsHandled)
         {

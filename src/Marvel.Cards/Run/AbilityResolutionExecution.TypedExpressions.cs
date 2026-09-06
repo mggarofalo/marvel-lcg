@@ -4,7 +4,7 @@ using Marvel.Rules.State;
 
 namespace Marvel.Cards.Run;
 
-public sealed partial class AbilityRunner
+internal sealed partial class AbilityResolutionExecution
 {
     private static bool BindingCanChange(AbilityCondition condition) =>
         AbilityBindingAnalysis.BindingCanChange(condition);
@@ -24,7 +24,7 @@ public sealed partial class AbilityRunner
     private static bool ContainsPowerAmount(AbilityCondition condition) =>
         AbilityBindingAnalysis.ContainsPowerAmount(condition);
 
-    private static bool WhenHolds(CompiledCardAbility ability, Cast cast) =>
+    private bool WhenHolds(CompiledCardAbility ability, AbilityResolutionState cast) =>
         ability.When is not { } condition || Test(condition, cast);
 
     private static bool ContainsYouOrYour(AbilityNumber number) =>
@@ -33,23 +33,25 @@ public sealed partial class AbilityRunner
     private static bool ContainsYouOrYour(AbilityCondition condition) =>
         AbilityPlayerBindingAnalysis.Contains(condition);
 
-    private static AbilityExpressionEvaluation Expressions(Cast cast)
+    private AbilityExpressionEvaluation Expressions(AbilityResolutionState cast)
     {
         var context = cast.ExpressionContext();
         return new AbilityExpressionEvaluation(
-            context, new AbilitySelectorEvaluation(context.Bindings, SingularAreaAdmission(cast)));
+            context, new AbilitySelectorEvaluation(
+                context.Bindings, SingularAreaAdmission(cast), program),
+            resourceAbilities);
     }
 
-    private static long Amount(AbilityNumber number, Cast cast) =>
+    private long Amount(AbilityNumber number, AbilityResolutionState cast) =>
         Expressions(cast).Amount(number);
 
-    private static bool Test(AbilityCondition condition, Cast cast) =>
+    private bool Test(AbilityCondition condition, AbilityResolutionState cast) =>
         Expressions(cast).Test(condition);
 
-    private static int Seat(AbilityPlayer player, Cast cast) =>
+    private int Seat(AbilityPlayer player, AbilityResolutionState cast) =>
         Expressions(cast).Seat(player);
 
-    private static AbilityQueryResult<bool> EvaluateCondition(AbilityCondition condition, Cast cast)
+    private AbilityQueryResult<bool> EvaluateCondition(AbilityCondition condition, AbilityResolutionState cast)
     {
         var evaluation = Expressions(cast);
         return evaluation.Result(evaluation.Test(condition));

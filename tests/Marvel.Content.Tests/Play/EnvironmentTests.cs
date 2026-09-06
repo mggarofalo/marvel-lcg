@@ -94,7 +94,7 @@ public sealed class EnvironmentTests
         }
     }
 
-    private static World Deal() => WorldSetup.Deal(
+    private static World Deal() => WorldSetup.DealWithoutCardAbilities(
         Cards,
         Blueprints.From(Dealer.DealOrder(Setup, "rhino", ["spider_man"]), Cards),
         ["Spider-Man"],

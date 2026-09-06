@@ -258,7 +258,7 @@ public sealed class ContinuousEffects(World world)
     /// enters play" and <c>rr:ability.9</c> makes a conditional one active
     /// "anytime the specific condition is met", so both are read off the board
     /// here, card by card, through
-    /// <c>ICardAbilities.Constant</c>. Nothing has to remember to register
+    /// <c>ICardConstantAbilities.Constant</c>. Nothing has to remember to register
     /// one when a card arrives or to dispose it when the card goes, and there
     /// is therefore no path into play on which a constant ability is quietly
     /// missing.
@@ -328,7 +328,7 @@ public sealed class ContinuousEffects(World world)
                         if (DeckTypes.IsInPlay(card.Area.Type)
                             && !departing.Contains(card.ObjectId))
                         {
-                            found.AddRange(world.Abilities.Constant(world, card));
+                            found.AddRange(world.ConstantAbilities.Constant(world, card));
                         }
                     }
                 }
@@ -523,7 +523,7 @@ public sealed class ContinuousEffects(World world)
             DeckTypes.IsInPlay(card.Area.Type)
             && !FacedownDrones.Is(card)
             && Characteristics.IsLost(world, card, "uses")
-            && world.Abilities.CounterPool(world, card)?.Uses == true
+            && world.CounterPools.CounterPool(world, card)?.Uses == true
             && card.Tokens
                 .Where(pair => pair.Key.StartsWith("c_", StringComparison.Ordinal))
                 .Sum(pair => pair.Value) == 0).ToArray();
@@ -627,7 +627,7 @@ public sealed class ContinuousEffects(World world)
         // the engine chooses this spelling to distinguish it from damage.
         const string verb = "Hit_Points_Reduced";
         var occurrence = world.Agenda.Occurrence;
-        if (!world.Abilities.WouldBeDefeated(
+        if (!world.DamageAbilities.WouldBeDefeated(
                 world, card, card, trigger, verb, by: -1,
                 events: events, recordDefeatOn: occurrence))
         {
@@ -755,7 +755,7 @@ public sealed class ContinuousEffects(World world)
                 }
 
                 var ending = layer
-                    .SelectMany(card => world.Abilities.Constant(world, card))
+                    .SelectMany(card => world.ConstantAbilities.Constant(world, card))
                     .ToArray();
                 var candidates = LostUsesCandidates();
                 suppressedConstants.AddRange(ending);

@@ -657,7 +657,7 @@ public static class SessionReplay
                     {
                         historyResourceIdsInOrder.Add(generator);
                         historyResources.Add(
-                            game.State.Abilities.ResourceGeneratorName(
+                            game.State.ResourceAbilities.ResourceGeneratorName(
                                 game.State, step.Decision.Actor, generator));
                     }
                 }

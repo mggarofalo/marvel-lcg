@@ -112,11 +112,10 @@ internal static class AbilityCardQueries
                 return
                 [
                     .. BasicPowers.Attackable(cast.World, cast.World.Facts, Resolver(cast))
-                        .Where(enemy => program is { }
-                            ? AbilityProgramQueries.CanTakeDamage(
-                                cast.World, program, enemy, cast.Source)
-                            : cast.World.Abilities.CanTakeDamage(
-                                cast.World, enemy, cast.Source)),
+                        .Where(enemy => AbilityProgramQueries.CanTakeDamage(
+                            cast.World, program ?? throw new InvalidOperationException(
+                                "Attackable-enemy queries require the authored ability program"),
+                            enemy, cast.Source)),
                 ];
             }
             case AbilityCardQuery.AttackableMinions:
@@ -126,11 +125,10 @@ internal static class AbilityCardQueries
                     .. BasicPowers.Attackable(cast.World, cast.World.Facts, Resolver(cast))
                         .Where(enemy => FacedownDrones.Kind(
                             enemy, cast.World.Facts) == CardKind.Minion)
-                        .Where(enemy => program is { }
-                            ? AbilityProgramQueries.CanTakeDamage(
-                                cast.World, program, enemy, cast.Source)
-                            : cast.World.Abilities.CanTakeDamage(
-                                cast.World, enemy, cast.Source)),
+                        .Where(enemy => AbilityProgramQueries.CanTakeDamage(
+                            cast.World, program ?? throw new InvalidOperationException(
+                                "Attackable-minion queries require the authored ability program"),
+                            enemy, cast.Source)),
                 ];
             }
             case AbilityCardQuery.Schemes:

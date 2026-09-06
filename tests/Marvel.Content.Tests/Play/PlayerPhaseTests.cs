@@ -54,7 +54,7 @@ public sealed class PlayerPhaseTests
     /// </remarks>
     private static Game Begin(out World world)
     {
-        world = WorldSetup.Deal(
+        world = WorldSetup.DealWithoutCardAbilities(
             Cards,
             Blueprints.From(Dealer.DealOrder(Setup, Campaign, Heroes), Cards),
             [.. Heroes.Select(hero => Setup.Hero(hero).Name)],
@@ -399,7 +399,7 @@ public sealed class PlayerPhaseTests
         // already holds. Whatever the real interpreter numbers its options with
         // is not this test's business, and a board where the collision happens
         // to arise is a board one extra card would fix.
-        var world = WorldSetup.Deal(
+        var world = WorldSetup.DealWithoutCardAbilities(
             Cards,
             Blueprints.From(Dealer.DealOrder(Setup, Campaign, Heroes), Cards),
             [.. Heroes.Select(hero => Setup.Hero(hero).Name)],

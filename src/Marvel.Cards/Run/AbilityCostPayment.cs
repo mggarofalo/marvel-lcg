@@ -17,16 +17,19 @@ internal sealed class AbilityCostPayment
     private readonly World world;
     private readonly Card source;
     private readonly int player;
+    private readonly IResourceCardAbilities resourceAbilities;
     private readonly ImmutableArray<int> paying;
     private readonly ImmutableArray<Step> steps;
 
     private AbilityCostPayment(
-        World world, Card source, int player, ImmutableArray<int> paying,
+        World world, Card source, int player, IResourceCardAbilities resourceAbilities,
+        ImmutableArray<int> paying,
         ImmutableArray<Step> steps)
     {
         this.world = world;
         this.source = source;
         this.player = player;
+        this.resourceAbilities = resourceAbilities;
         this.paying = paying;
         this.steps = steps;
     }
@@ -34,6 +37,7 @@ internal sealed class AbilityCostPayment
     internal static AbilityCostPayment Prepare(
         World world, Card source, int player, AbilityCost? cost,
         IReadOnlyList<int> paying, IReadOnlyList<int> chosen,
+        AbilityProgram program, IResourceCardAbilities resourceAbilities,
         IReadOnlyDictionary<string, long>? values = null,
         bool resourcesPaidByEvent = false)
     {
@@ -43,7 +47,8 @@ internal sealed class AbilityCostPayment
         int incarnation = source.Incarnation;
         var ordered = ImmutableArray.CreateBuilder<Step>();
         PrepareSteps(cost);
-        return new(world, source, player, generators, ordered.ToImmutable());
+        return new(
+            world, source, player, resourceAbilities, generators, ordered.ToImmutable());
 
         BoundCard Bind(AbilityCostCard binding) => binding switch
         {
@@ -56,7 +61,8 @@ internal sealed class AbilityCostPayment
         void PrepareSteps(AbilityCost? component)
         {
             AbilityPaymentRules.ValidatePayment(
-                component, generators, selected, variables, world, source, player);
+                component, generators, selected, variables, world, source, player,
+                program, resourceAbilities);
             if (component is null) return;
             if (component is AbilityCost.Sequence sequence)
             {
@@ -126,7 +132,9 @@ internal sealed class AbilityCostPayment
             switch (step)
             {
                 case Spend spend:
-                    CardPlay.Spend(world, world.Facts, [world.Seats[player].Hand], paying,
+                    CardPlay.Spend(
+                        world, world.Facts, resourceAbilities,
+                        [world.Seats[player].Hand], paying,
                         spend.Required.Length, spend.Required, itself: -1, player, events);
                     if (spend.Energy is { } x) energy = x;
                     continue;

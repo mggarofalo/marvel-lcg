@@ -391,7 +391,7 @@ public sealed class AllPurposeCounterTests
     private static (Game Game, World World) Playing(
         Action<World> prepare, ICardAbilities abilities)
     {
-        var world = WorldSetup.Deal(
+        var world = WorldSetup.DealWithoutCardAbilities(
             Cards,
             Blueprints.From(Dealer.DealOrder(Setup, "rhino", ["spider_man"]), Cards),
             [Setup.Hero("spider_man").Name],

@@ -9,7 +9,7 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Cards.Run;
 
-public sealed partial class AbilityRunner
+internal sealed partial class AbilityResolutionExecution
 {
     /// <summary>
     /// Runs what is left of the ability after the answered choice.
@@ -19,7 +19,7 @@ public sealed partial class AbilityRunner
     /// was a step of. If the rest holds another choice, it suspends again and
     /// the step it schedules says where to pick up next.
     /// </remarks>
-    private List<GameEvent> Continue(Card source, Cast cast, int from)
+    private List<GameEvent> Continue(Card source, AbilityResolutionState cast, int from)
     {
         if (cast.Suspended)
         {
@@ -50,7 +50,7 @@ public sealed partial class AbilityRunner
     }
 
     /// <summary>A fresh resolution of one card's ability, by one player.</summary>
-    private Cast Resolving(
+    private static AbilityResolutionState Resolving(
         World world, Card source, int player, AbilityType? tier, bool finalStep = false,
         Occurrence? continuation = null) =>
         new(world,
@@ -58,15 +58,14 @@ public sealed partial class AbilityRunner
             continuation ?? new Occurrence(
                 0, [Steps.CardRevealed], Subject: source.ObjectId, Player: player),
             player,
-            [],
-            this)
+            [])
         {
             Tier = tier,
             FinalStep = finalStep,
         };
 
     /// <summary>A suspended resolution with its persisted card bindings restored.</summary>
-    private Cast Resuming(
+    private static AbilityResolutionState Resuming(
         World world, Card source, int player, AbilityType? tier, bool finalStep = false,
         Occurrence? continuation = null)
     {
@@ -81,13 +80,13 @@ public sealed partial class AbilityRunner
     private static IEnumerable<AbilityEffect> Choices(AbilityEffect node) =>
         AbilityInitiation.Choices(node);
 
-    private static IEnumerable<AbilityEffect> ActiveChoices(AbilityEffect node, Cast cast) =>
+    private IEnumerable<AbilityEffect> ActiveChoices(AbilityEffect node, AbilityResolutionState cast) =>
         AbilityInitiation.ActiveChoices(node, AdmissionContext(cast));
 
     private static bool IsChoice(AbilityEffect node) => AbilityInitiation.IsChoice(node);
 
-    private static bool SuspendsInsideAnd(
-        AbilityEffect node, Cast cast, bool stateMayChange = false,
+    private bool SuspendsInsideAnd(
+        AbilityEffect node, AbilityResolutionState cast, bool stateMayChange = false,
         bool bindingMayChange = false) =>
         AbilityInitiation.SuspendsInsideAnd(
             node, AdmissionContext(cast), stateMayChange, bindingMayChange);

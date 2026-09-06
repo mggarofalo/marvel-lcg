@@ -14,11 +14,73 @@ namespace Marvel.Content.Tests.Play;
 public sealed partial class ActionAbilityTests
 {
     [Fact]
+    public void PaymentUsesTheInitiatingRunnersResourceAbilities()
+    {
+        // Composed-path counterpart for the component probes below: action
+        // admission, payment preparation, commitment, and the effect all use
+        // the initiating runner even when World exposes an unrelated port.
+        var runner = new AbilityRunner(AbilityCatalog.Parse(
+            """
+            {"cards":[
+              {"card":"01006","abilities":[{
+                "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"game"},
+                "cost":{"spend":"Y"},
+                "effect":{"placeCounters":{"card":"you","counter":"test","count":1}}
+              }]},
+              {"card":"01091","abilities":[{
+                "trigger":{"event":"WhenActionTriggered","timing":"Resource","subject":"this"},
+                "effect":{"generate":"Y"}
+              }]}
+            ]}
+            """));
+        var (world, source) = OrderedPaymentBoard(runner);
+        var generator = InPlay(world, "01091");
+        world.Abilities = new UnrelatedPaymentAbilities();
+
+        var action = Assert.Single(
+            runner.Actions(world, 0), option => option.Card == source.ObjectId);
+        runner.Act(world, action, [generator.ObjectId], []);
+
+        Assert.Equal(1, world.Seats[0].IdentityCard.Tokens.GetValueOrDefault("c_test"));
+        Assert.True(generator.Ready);
+    }
+
+    [Fact]
+    public void DamageCostEligibilityUsesTheInitiatingRunnersProgram()
+    {
+        var runner = new AbilityRunner(AbilityCatalog.Parse(
+            """
+            {"cards":[{"card":"01006","abilities":[
+              {"trigger":{"event":"Probe","timing":"Response","subject":"game"},
+               "cost":{"takeDamage":{"cards":"this","amount":1}},
+               "effect":{"placeCounters":{"card":"you","counter":"test","count":1}}},
+              {"trigger":{"timing":"Constant","subject":"this"},
+               "effect":{"preventDamageWhile":{"card":"this","condition":{
+                 "atLeast":{"value":{"damageOn":"this"},"count":1}}}}}
+            ]}]}
+            """));
+        var (world, source) = OrderedPaymentBoard(runner);
+        source.TakeDamage(1);
+        world.Abilities = new UnrelatedPaymentAbilities();
+        var occurrence = new Occurrence(0, ["Probe"], Subject: source.ObjectId, Player: 0);
+
+        Assert.Throws<RulesNotImplementedException>(() => runner.Resolve(
+            world, occurrence,
+            new PendingAbility(source.ObjectId, AbilityType.Response, 0), [], []));
+
+        Assert.Equal(1, source.Damage);
+        Assert.Equal(0, world.Seats[0].IdentityCard.Tokens.GetValueOrDefault("c_test"));
+    }
+
+    [Fact]
     public void PaymentCommitsTheSelectedCardsCapturedBeforeResourceGeneration()
     {
         // Engine choice: a caller-owned answer is snapshotted before commitment.
         // A resource callback cannot rewrite which ally the player selected.
-        var runner = Runner(AuthoredCards.AuntMay, "Action",
+        // The compiled action is the initiation input, AbilityCostPayment.Prepare
+        // captures it, and its explicit resource port runs during Commit before
+        // the captured selection is exhausted.
+        var (program, runner) = PaymentRunner(AuthoredCards.AuntMay,
             """{"placeCounters":{"card":"you","counter":"test","count":1}}""",
             cost: """
                 {"seq":[{"spend":"Y"},{"exhaustChosen":{
@@ -31,10 +93,12 @@ public sealed partial class ActionAbilityTests
         List<int> chosen = [selected.ObjectId];
         var generator = InPlay(world, "01091");
         var probe = new PaymentResourceProbe(generator, "Y", () => chosen[0] = other.ObjectId);
-        world.Abilities = probe;
-        var action = Assert.Single(runner.Actions(world, 0), option => option.Card == source.ObjectId);
+        var ability = Assert.Single(program.On(source.FaceId));
+        var payment = AbilityCostPayment.Prepare(
+            world, source, 0, ability.Cost, [generator.ObjectId], chosen, program, probe);
+        var events = new List<GameEvent>();
 
-        var events = runner.Act(world, action, [generator.ObjectId], chosen);
+        payment.Commit(runner, Steps.TurnAction, events);
 
         Assert.Equal(other.ObjectId, Assert.Single(chosen));
         Assert.False(selected.Ready);
@@ -42,7 +106,6 @@ public sealed partial class ActionAbilityTests
         Assert.Equal(1, probe.Uses);
         Assert.Single(events.OfType<FieldSet>(), change =>
             change.Card == selected.ObjectId && change.Field == "is_exhaust");
-        Assert.Equal(1, world.Seats[0].IdentityCard.Tokens.GetValueOrDefault("c_test"));
     }
 
     [Rule("rr:leaves-play.1")]
@@ -51,27 +114,32 @@ public sealed partial class ActionAbilityTests
     {
         // A returning card is "a new copy of the card." The prepared exhaust
         // still names the incarnation that initiated, not the returning copy.
-        var runner = Runner(AuthoredCards.AuntMay, "Action",
+        // AbilityCostPayment is the explicit preparation/commit boundary: the
+        // resource callback reenters the source during Commit, after its original
+        // incarnation was captured at initiation.
+        var (program, runner) = PaymentRunner(AuthoredCards.AuntMay,
             """{"placeCounters":{"card":"you","counter":"test","count":1}}""",
             cost: """{"seq":[{"spend":"Y"},{"exhaust":"this"}]}""");
         var (world, source) = OrderedPaymentBoard(runner);
         var generator = InPlay(world, "01091");
         var area = source.Area;
         int incarnation = source.Incarnation;
-        world.Abilities = new PaymentResourceProbe(generator, "Y", () =>
+        var probe = new PaymentResourceProbe(generator, "Y", () =>
         {
             Discard.Card(world, source, CardPlay.Verb, []);
             World.MoveToTop(source, area);
         });
-        var action = Assert.Single(runner.Actions(world, 0), option => option.Card == source.ObjectId);
+        var ability = Assert.Single(program.On(source.FaceId));
+        var payment = AbilityCostPayment.Prepare(
+            world, source, 0, ability.Cost, [generator.ObjectId], [], program, probe);
+        var events = new List<GameEvent>();
 
-        var events = runner.Act(world, action, [generator.ObjectId], []);
+        payment.Commit(runner, Steps.TurnAction, events);
 
         Assert.Equal(incarnation + 1, source.Incarnation);
         Assert.True(source.Ready);
         Assert.DoesNotContain(events.OfType<FieldSet>(), change =>
             change.Card == source.ObjectId && change.Field == "is_exhaust");
-        Assert.Equal(1, world.Seats[0].IdentityCard.Tokens.GetValueOrDefault("c_test"));
     }
 
     [Rule("rr:uses-x-type.1")]
@@ -125,19 +193,25 @@ public sealed partial class ActionAbilityTests
     {
         // Multiple costs "must be paid simultaneously"; a Resource ability
         // producing two icons is used once for the two components.
-        var runner = Runner(AuthoredCards.AuntMay, "Action",
+        // AbilityCostPayment.Prepare combines the initiated sequence; Commit
+        // invokes the explicit resource port once before the prepared exhaust.
+        var (program, runner) = PaymentRunner(AuthoredCards.AuntMay,
             """{"placeCounters":{"card":"you","counter":"test","count":1}}""",
             cost: """{"seq":[{"exhaust":"this"},{"spend":"Y"},{"spend":"Y"}]}""");
         var (world, source) = OrderedPaymentBoard(runner);
         var generator = InPlay(world, "01091");
         var probe = new PaymentResourceProbe(generator, "YY", () => Assert.True(source.Ready));
-        world.Abilities = probe;
+        var ability = Assert.Single(program.On(source.FaceId));
+        var payment = AbilityCostPayment.Prepare(
+            world, source, 0, ability.Cost, [generator.ObjectId], [], program, probe);
+        var events = new List<GameEvent>();
 
-        runner.Act(world, Assert.Single(runner.Actions(world, 0)), [generator.ObjectId], []);
+        payment.Commit(runner, Steps.TurnAction, events);
 
         Assert.Equal(1, probe.Uses);
         Assert.False(source.Ready);
-        Assert.Equal(1, world.Seats[0].IdentityCard.Tokens.GetValueOrDefault("c_test"));
+        Assert.Single(events.OfType<FieldSet>(), change =>
+            change.Card == source.ObjectId && change.Field == "is_exhaust");
     }
 
     [Rule("rr:initiating-abilities.step.5")]
@@ -169,7 +243,10 @@ public sealed partial class ActionAbilityTests
         // Engine payment context carries no basic-power frame. Event modifiers
         // apply at commitment, after resource abilities have run; attack-only
         // modifiers cannot turn paying a damage cost into an attack.
-        var runner = Runner(AuthoredCards.Backflip, "Action",
+        // The initiated event is prepared at both explicit boundaries. Its
+        // AbilityEventPayment commits the resource callback first, then the
+        // AbilityCostPayment commits the live damage component.
+        var (program, runner) = PaymentRunner(AuthoredCards.Backflip,
             """{"placeCounters":{"card":"you","counter":"test","count":1}}""",
             cost: """{"seq":[{"spend":"Y"},{"dealDamage":{"cards":"you","amount":1}}]}""");
         var (world, _) = OrderedPaymentBoard(runner);
@@ -180,19 +257,34 @@ public sealed partial class ActionAbilityTests
         world.Effects.Register(modifier);
         world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, Kind: "attackDamage", Amount: 100,
             Card: generator.ObjectId, Affects: source.ObjectId, Lasts: new Duration(Uses: 1)));
-        world.Abilities = new PaymentResourceProbe(generator, "Y", () =>
+        var probe = new PaymentResourceProbe(generator, "Y", () =>
         {
             if (removeModifier) world.Effects.Use(modifier);
         });
         var occurrence = new Occurrence(0, [Steps.TurnAction], Subject: source.ObjectId, Player: 0);
+        var ability = Assert.Single(program.On(source.FaceId));
+        var arrowPayment = AbilityCostPayment.Prepare(
+            world, source, 0, ability.Cost, [generator.ObjectId], [], program, probe,
+            resourcesPaidByEvent: true);
+        var eventPayment = Assert.IsType<AbilityEventPayment>(AbilityEventPayment.Prepare(
+            world, source, 0, [generator.ObjectId], ability.Effect, probe,
+            allocations: [new ResourceAllocation(generator.ObjectId, Cost: 1, PaidAs: "Y")],
+            additionalCost: ability.Cost));
+        var events = new List<GameEvent>();
 
-        runner.Act(world, Assert.Single(runner.Actions(world, 0)), [generator.ObjectId], [], occurrence,
-            allocations: [new ResourceAllocation(generator.ObjectId, Cost: 1, PaidAs: "Y")]);
+        eventPayment.Commit(occurrence, events);
+        arrowPayment.Commit(runner, Steps.TurnAction, events);
 
         Assert.Equal(removeModifier ? 1 : 3, world.Seats[0].IdentityCard.Damage);
         Assert.False(occurrence.Is(Steps.DamageDealt));
-        Assert.Equal(DeckType.DiscardPile, source.Area.Type);
-        Assert.Equal(1, world.Seats[0].IdentityCard.Tokens.GetValueOrDefault("c_test"));
+        Assert.Equal(DeckType.RevealingArea, source.Area.Type);
+        Assert.Equal(1, probe.Uses);
+        int moved = events.FindIndex(happened => happened is CardsMoved);
+        int damaged = events.FindIndex(happened => happened is FieldSet change
+            && change.Card == world.Seats[0].IdentityCard.ObjectId
+            && change.Field == "health");
+        Assert.True(moved >= 0);
+        Assert.True(damaged > moved);
     }
 
     [Rule("rr:cost.4.1")]
@@ -205,31 +297,52 @@ public sealed partial class ActionAbilityTests
     {
         // Excess resources "were not paid for that cost." An unpayable X
         // must "abort this process without paying any costs."
-        var runner = Runner(AuthoredCards.AuntMay, "Action",
+        // AbilityCostPayment.Prepare captures the initiated X declaration;
+        // its explicit resource callback mutates the caller dictionary during
+        // Commit, which must still return the prepared paid energy.
+        var (program, runner) = PaymentRunner(AuthoredCards.AuntMay,
             """{"placeCounters":{"card":"this","counter":"test","count":{"result":"energy"}}}""",
             cost: """{"spendEnergyX":"Y"}""");
         var (world, source) = OrderedPaymentBoard(runner);
         var generator = InPlay(world, "01091");
         var values = new Dictionary<string, long>(StringComparer.Ordinal) { ["X"] = declared };
         var probe = new PaymentResourceProbe(generator, "YY", () => values["X"] = 99);
-        world.Abilities = probe;
-        var action = Assert.Single(runner.Actions(world, 0));
+        var ability = Assert.Single(program.On(source.FaceId));
         string before = world.Digest().Canonical();
 
         if (declared == 3)
         {
             Assert.Throws<RulesNotImplementedException>(() =>
-                runner.Act(world, action, [generator.ObjectId], [], values: values));
+                AbilityCostPayment.Prepare(
+                    world, source, 0, ability.Cost, [generator.ObjectId], [], program, probe,
+                    values));
             Assert.Equal(before, world.Digest().Canonical());
             Assert.Equal(0, probe.Uses);
             return;
         }
 
-        runner.Act(world, action, [generator.ObjectId], [], values: values);
+        var payment = AbilityCostPayment.Prepare(
+            world, source, 0, ability.Cost, [generator.ObjectId], [], program, probe, values);
+        var result = payment.Commit(runner, Steps.TurnAction, []);
 
         Assert.Equal(99, values["X"]);
-        Assert.Equal(declared, source.Tokens.GetValueOrDefault("c_test"));
+        Assert.Equal(declared, result.Energy);
         Assert.Equal(1, probe.Uses);
+    }
+
+    private static (AbilityProgram Program, AbilityRunner Runner) PaymentRunner(
+        string card, string effect, string cost)
+    {
+        var book = AbilityCatalog.Parse(
+            $$"""
+            {"cards":[{"card":"{{card}}","abilities":[{
+              "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"game"},
+              "cost":{{cost}},
+              "effect":{{effect}}
+            }]}]}
+            """);
+        var program = AbilityLowering.Book(book);
+        return (program, new AbilityRunner(program));
     }
 
     private static (World World, Card Source) OrderedPaymentBoard(AbilityRunner runner)
@@ -254,5 +367,21 @@ public sealed partial class ActionAbilityTests
             commit();
             return resources;
         }
+    }
+
+    private sealed class UnrelatedPaymentAbilities : NoCardAbilities
+    {
+        public override bool CanTakeDamage(World world, Card target, Card source) =>
+            throw new InvalidOperationException("the unrelated World damage port was used");
+
+        public override IReadOnlyList<ResourceSource> ResourceAbilities(World world, int player) =>
+            throw new InvalidOperationException("the unrelated World resource port was used");
+
+        public override string ResourcesGeneratedBy(World world, Card source, Card? payingFor) =>
+            throw new InvalidOperationException("the unrelated World resource port was used");
+
+        public override string UseResource(
+            World world, int player, int card, List<GameEvent> events) =>
+            throw new InvalidOperationException("the unrelated World resource port was used");
     }
 }

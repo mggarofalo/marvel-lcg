@@ -89,7 +89,7 @@ public static class Resources
     /// <remarks>
     /// The printed <c>RES</c> field is one letter per icon, so a double-resource
     /// card contributes two. This deliberately reads printed data rather than
-    /// <see cref="ICardAbilities.ResourcesGeneratedBy"/>: an effect that counts
+    /// <see cref="IResourceCardAbilities.ResourcesGeneratedBy"/>: an effect that counts
     /// icons on discarded cards is not paying a cost and does not receive a
     /// conditional resource-generator bonus.
     /// </remarks>
