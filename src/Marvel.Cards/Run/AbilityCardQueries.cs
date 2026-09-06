@@ -8,7 +8,8 @@ namespace Marvel.Cards.Run;
 // record information exposure; execution owns those effects.
 internal static class AbilityCardQueries
 {
-    internal static IReadOnlyList<Card> Cards(AbilityCardQuery query, AbilityQueryContext cast)
+    internal static IReadOnlyList<Card> Cards(
+        AbilityCardQuery query, AbilityQueryContext cast, AbilityProgram? program = null)
     {
         switch (query)
         {
@@ -111,8 +112,11 @@ internal static class AbilityCardQueries
                 return
                 [
                     .. BasicPowers.Attackable(cast.World, cast.World.Facts, Resolver(cast))
-                        .Where(enemy => cast.World.Abilities.CanTakeDamage(
-                            cast.World, enemy, cast.Source)),
+                        .Where(enemy => program is { }
+                            ? AbilityProgramQueries.CanTakeDamage(
+                                cast.World, program, enemy, cast.Source)
+                            : cast.World.Abilities.CanTakeDamage(
+                                cast.World, enemy, cast.Source)),
                 ];
             }
             case AbilityCardQuery.AttackableMinions:
@@ -122,8 +126,11 @@ internal static class AbilityCardQueries
                     .. BasicPowers.Attackable(cast.World, cast.World.Facts, Resolver(cast))
                         .Where(enemy => FacedownDrones.Kind(
                             enemy, cast.World.Facts) == CardKind.Minion)
-                        .Where(enemy => cast.World.Abilities.CanTakeDamage(
-                            cast.World, enemy, cast.Source)),
+                        .Where(enemy => program is { }
+                            ? AbilityProgramQueries.CanTakeDamage(
+                                cast.World, program, enemy, cast.Source)
+                            : cast.World.Abilities.CanTakeDamage(
+                                cast.World, enemy, cast.Source)),
                 ];
             }
             case AbilityCardQuery.Schemes:

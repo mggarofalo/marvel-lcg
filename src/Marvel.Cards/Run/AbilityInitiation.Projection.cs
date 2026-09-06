@@ -5,7 +5,7 @@ using Marvel.Rules.State;
 
 namespace Marvel.Cards.Run;
 
-public sealed partial class AbilityRunner
+internal static partial class AbilityInitiation
 {
     private static IEnumerable<AbilityEffect> StructuralChildren(AbilityEffect effect) => effect switch
     {
@@ -19,7 +19,7 @@ public sealed partial class AbilityRunner
         _ => [],
     };
 
-    private static bool DiscardTopHasCards(AbilityEffect.DiscardTop discard, Cast cast) =>
+    private static bool DiscardTopHasCards(AbilityEffect.DiscardTop discard, AbilityAdmissionScope cast) =>
         discard.Players is { } players
             ? Seats(players, cast).Any(player => cast.World.Seats[player].Deck.Cards.Count > 0)
             : Area(discard.From, cast).Cards.Count > 0;
@@ -35,7 +35,7 @@ public sealed partial class AbilityRunner
         _ => false,
     };
 
-    private static bool PotentialVillainSelector(AbilityCardSelection selector, Cast cast)
+    private static bool PotentialVillainSelector(AbilityCardSelection selector, AbilityAdmissionScope cast)
     {
         if (cast.World.TheCardIn(DeckType.VillainArea) is null) return false;
         return selector switch
@@ -53,7 +53,7 @@ public sealed partial class AbilityRunner
         };
     }
 
-    private static List<Card> TraceCandidateCards(AbilityCardSelection selector, Cast cast) => selector switch
+    private static List<Card> TraceCandidateCards(AbilityCardSelection selector, AbilityAdmissionScope cast) => selector switch
     {
         AbilityCardSelection.Ranked ranked => TraceCandidateCards(ranked.Cards, cast),
         AbilityCardSelection.WithTrait filtered => TraceCandidateCards(filtered.Cards, cast),
@@ -72,7 +72,7 @@ public sealed partial class AbilityRunner
     };
 
     private static bool TraceSelectorMatches(
-        AbilityCardSelection selector, Card candidate, int currentVillain, Cast cast,
+        AbilityCardSelection selector, Card candidate, int currentVillain, AbilityAdmissionScope cast,
         HashSet<int> discarded, Dictionary<int, HashSet<string>> traits,
         Dictionary<(int Card, string Field), long> modifiers,
         Dictionary<int, int> engagement) => selector switch
@@ -99,7 +99,7 @@ public sealed partial class AbilityRunner
         };
 
     private static bool TraceRankedSelectorIncludesCard(
-        AbilityCardSelection.Ranked ranked, Card candidate, int currentVillain, Cast cast,
+        AbilityCardSelection.Ranked ranked, Card candidate, int currentVillain, AbilityAdmissionScope cast,
         HashSet<int> discarded, Dictionary<int, HashSet<string>> traits,
         Dictionary<(int Card, string Field), long> modifiers,
         Dictionary<int, int> engagement)
@@ -125,7 +125,7 @@ public sealed partial class AbilityRunner
     }
 
     private static bool TryTraceCount(
-        AbilityCardSelection selector, Card next, Cast cast, HashSet<int> discarded,
+        AbilityCardSelection selector, Card next, AbilityAdmissionScope cast, HashSet<int> discarded,
         IReadOnlyDictionary<int, HashSet<string>> traitChanges,
         IReadOnlyDictionary<(int Card, string Field), long> modifierChanges,
         IReadOnlyDictionary<int, int> engagementChanges,
@@ -174,7 +174,7 @@ public sealed partial class AbilityRunner
     }
 
     private static bool TryTraceCountAmount(
-        AbilityNumber number, Card next, Cast cast, HashSet<int> discarded,
+        AbilityNumber number, Card next, AbilityAdmissionScope cast, HashSet<int> discarded,
         IReadOnlyDictionary<int, HashSet<string>> traitChanges,
         IReadOnlyDictionary<(int Card, string Field), long> modifierChanges,
         IReadOnlyDictionary<int, int> engagementChanges,
@@ -239,7 +239,7 @@ public sealed partial class AbilityRunner
         return false;
     }
 
-    private static bool CountSelectorFormsMayChange(AbilityCardSelection selector, Cast cast, ulong formsMayChange) =>
+    private static bool CountSelectorFormsMayChange(AbilityCardSelection selector, AbilityAdmissionScope cast, ulong formsMayChange) =>
         selector switch
         {
             AbilityCardSelection.Bound { Binding: AbilityCardBinding.YourHero or AbilityCardBinding.YourAlterEgo } =>
@@ -255,7 +255,7 @@ public sealed partial class AbilityRunner
     private static bool IsProjectedVillainSelector(AbilityCardSelection selector) =>
         selector is AbilityCardSelection.Query { Kind: AbilityCardQuery.Villain };
 
-    private static Card? TraceEnteredCard(AbilityCardSelection selector, HashSet<int> discarded, Cast cast) =>
+    private static Card? TraceEnteredCard(AbilityCardSelection selector, HashSet<int> discarded, AbilityAdmissionScope cast) =>
         selector is AbilityCardSelection.Titled titled
             ? cast.World.Cards.FirstOrDefault(card => !DeckTypes.IsInPlay(card.Area.Type)
                 && !discarded.Contains(card.ObjectId)
@@ -263,7 +263,7 @@ public sealed partial class AbilityRunner
                 && string.Equals(cast.World.Facts.Title(card.FaceId), titled.Title, StringComparison.Ordinal))
             : null;
 
-    private static bool? TraceVillainExists(AbilityCardSelection selector, Card next, Cast cast, HashSet<int> discarded) =>
+    private static bool? TraceVillainExists(AbilityCardSelection selector, Card next, AbilityAdmissionScope cast, HashSet<int> discarded) =>
         selector switch
         {
             AbilityCardSelection.Query { Kind: AbilityCardQuery.Villain or AbilityCardQuery.Enemies
@@ -285,7 +285,7 @@ public sealed partial class AbilityRunner
     };
 
     private static bool TryTraceEnteredCardTest(
-        AbilityCondition condition, Cast cast, HashSet<int> discarded,
+        AbilityCondition condition, AbilityAdmissionScope cast, HashSet<int> discarded,
         IReadOnlyDictionary<int, HashSet<string>> traitChanges,
         IReadOnlySet<(int Card, string Status)> statusChanges, out bool result)
     {
@@ -307,7 +307,7 @@ public sealed partial class AbilityRunner
         return true;
     }
 
-    private static bool ValueReadsVillain(AbilityCardSelection selector, Cast cast) =>
+    private static bool ValueReadsVillain(AbilityCardSelection selector, AbilityAdmissionScope cast) =>
         PotentialVillainSelector(selector, cast) || selector switch
         {
             AbilityCardSelection.WithTrait filtered => ValueReadsVillain(filtered.Cards, cast),
@@ -317,7 +317,7 @@ public sealed partial class AbilityRunner
             _ => false,
         };
 
-    private static bool ValueReadsVillain(AbilityNumber number, Cast cast) => number switch
+    private static bool ValueReadsVillain(AbilityNumber number, AbilityAdmissionScope cast) => number switch
     {
         AbilityNumber.CardValue value => ValueReadsVillain(value.Card, cast),
         AbilityNumber.Counters counters => ValueReadsVillain(counters.Card, cast),
@@ -331,7 +331,7 @@ public sealed partial class AbilityRunner
         _ => false,
     };
 
-    private static bool ValueReadsVillain(AbilityCondition condition, Cast cast) => condition switch
+    private static bool ValueReadsVillain(AbilityCondition condition, AbilityAdmissionScope cast) => condition switch
     {
         AbilityCondition.All all => all.Operands.Any(test => ValueReadsVillain(test, cast)),
         AbilityCondition.Any any => any.Operands.Any(test => ValueReadsVillain(test, cast)),
@@ -348,7 +348,7 @@ public sealed partial class AbilityRunner
     };
 
     private static bool TryTraceConstantTest(
-        AbilityCondition test, Card current, Card next, Cast cast,
+        AbilityCondition test, Card current, Card next, AbilityAdmissionScope cast,
         HashSet<int> discarded, IReadOnlyDictionary<int, long> threatChanges,
         IReadOnlyDictionary<int, long> damageChanges,
         IReadOnlyDictionary<(int Card, string Field), long> modifierChanges,
@@ -459,7 +459,7 @@ public sealed partial class AbilityRunner
     }
 
     private static bool AmountCanDifferInVillainTrace(
-        AbilityNumber number, Card current, Card next, Cast cast,
+        AbilityNumber number, Card current, Card next, AbilityAdmissionScope cast,
         HashSet<int> discarded, IReadOnlyDictionary<int, long> threatChanges,
         IReadOnlyDictionary<int, long> damageChanges,
         IReadOnlyDictionary<(int Card, string Field), long> modifierChanges,
@@ -512,7 +512,7 @@ public sealed partial class AbilityRunner
     }
 
     private static bool TestCanChangeOnVillainAdvance(
-        AbilityCondition test, Card current, Card next, Cast cast,
+        AbilityCondition test, Card current, Card next, AbilityAdmissionScope cast,
         HashSet<int> discarded, IReadOnlyDictionary<int, long> threatChanges,
         IReadOnlyDictionary<int, long> damageChanges,
         IReadOnlyDictionary<(int Card, string Field), long> modifierChanges,

@@ -11,4 +11,9 @@ internal static class AbilityAmounts
         }
         return own;
     }
+
+    internal static long SaturatingMultiply(long left, long right) =>
+        left <= 0 || right <= 0 ? 0
+        : left > long.MaxValue / right ? long.MaxValue
+        : left * right;
 }

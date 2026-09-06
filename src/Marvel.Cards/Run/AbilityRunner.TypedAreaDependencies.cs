@@ -3,15 +3,16 @@ using Marvel.Rules.State;
 
 namespace Marvel.Cards.Run;
 
-public sealed partial class AbilityRunner
+internal static class AbilityAdmissionAreaDependencies
 {
     // This engine-owned preflight collects dependencies of singular lookups,
     // including those in alternatives. Plural selections do not constrain an
     // earlier choice: their matching cards can be selected after it resolves.
-    private static void CollectSingularAreaDependencies(
-        AbilityEffect? effect, Cast cast, HashSet<DeckType> areas)
+    internal static void Collect(
+        AbilityEffect? effect, AbilityAdmissionContext context, HashSet<DeckType> areas)
     {
-        void Visit(AbilityEffect? child) => CollectSingularAreaDependencies(child, cast, areas);
+        var cast = context;
+        void Visit(AbilityEffect? child) => Collect(child, cast, areas);
         void Number(AbilityNumber number) => CollectSingularAreaDependencies(number, cast, areas);
         void Condition(AbilityCondition condition) => CollectSingularAreaDependencies(condition, cast, areas);
         void Card(AbilityCardSelection card) => CollectCardsInDependencies(card, cast, areas);
@@ -98,8 +99,9 @@ public sealed partial class AbilityRunner
     }
 
     private static void CollectSingularAreaDependencies(
-        AbilityCondition condition, Cast cast, HashSet<DeckType> areas)
+        AbilityCondition condition, AbilityAdmissionContext context, HashSet<DeckType> areas)
     {
+        var cast = context;
         switch (condition)
         {
             case AbilityCondition.All all:
@@ -128,8 +130,9 @@ public sealed partial class AbilityRunner
     }
 
     private static void CollectSingularAreaDependencies(
-        AbilityNumber number, Cast cast, HashSet<DeckType> areas)
+        AbilityNumber number, AbilityAdmissionContext context, HashSet<DeckType> areas)
     {
+        var cast = context;
         switch (number)
         {
             case AbilityNumber.Sum sum:
@@ -156,8 +159,9 @@ public sealed partial class AbilityRunner
     }
 
     private static void CollectCardsInDependencies(
-        AbilityCardSelection selector, Cast cast, HashSet<DeckType> areas)
+        AbilityCardSelection selector, AbilityAdmissionContext context, HashSet<DeckType> areas)
     {
+        var cast = context;
         switch (selector)
         {
             case AbilityCardSelection.InAreas selection:
@@ -173,4 +177,13 @@ public sealed partial class AbilityRunner
             default: throw new InvalidOperationException("Unknown compiled selector in area-dependency analysis");
         }
     }
+
+    private static Area Area(AbilitySearchArea area, AbilityAdmissionContext context) => area switch
+    {
+        AbilitySearchArea.EncounterDeck => context.World.AreaOf(DeckType.EncounterDeck),
+        AbilitySearchArea.EncounterDiscardPile => context.World.AreaOf(DeckType.EncounterDiscardPile),
+        AbilitySearchArea.ScenarioSetAside => context.World.AreaOf(DeckType.AsideDeck),
+        AbilitySearchArea.YourDeck => context.World.Seats[context.Query.Player].Deck,
+        _ => throw new InvalidOperationException("Unknown compiled search area"),
+    };
 }

@@ -10,16 +10,16 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Cards.Run;
 
-public sealed partial class AbilityRunner
+internal static partial class AbilityInitiation
 {
     private static EliminationLayout PlanTracePlayerElimination(
-        int player, Cast cast, HashSet<int> discarded,
+        int player, AbilityAdmissionScope cast, HashSet<int> discarded,
         Dictionary<int, int> engagement)
         => EliminationLayout.Calculate(
             new AbilityEliminationLayout(cast.World, discarded, engagement), player);
 
     private static AbilityPowerState AdvancePowerVillain(
-        AbilityPowerState state, Card damaged, Card first, Cast cast)
+        AbilityPowerState state, Card damaged, Card first, AbilityAdmissionScope cast)
     {
         if (damaged.ObjectId != state.CurrentVillain
             || PowerDamage(state, damaged) < PowerHealth(state, damaged, cast))
@@ -43,8 +43,7 @@ public sealed partial class AbilityRunner
             }
         }
         if (next is not null
-            && cast.Abilities is AbilityRunner runner
-            && runner.On(next).Any(ability =>
+            && cast.Context.Program.On(next.FaceId).Any(ability =>
                 ability.Trigger.Timing == AbilityType.Constant))
         {
             // The stage is intentionally not moved while eligibility is
@@ -123,7 +122,7 @@ public sealed partial class AbilityRunner
     }
 
     private static bool ConstantCanRetargetVillain(
-        AbilityEffect node, Card current, Card next, Cast cast,
+        AbilityEffect node, Card current, Card next, AbilityAdmissionScope cast,
         HashSet<int> discarded,
         IReadOnlyDictionary<int, long> threatChanges,
         IReadOnlyDictionary<int, long> damageChanges,
@@ -188,7 +187,7 @@ public sealed partial class AbilityRunner
     }
 
     private static bool HasLiveVillainRetargetingConstant(
-        HashSet<int> discarded, Card current, Card next, Cast cast,
+        HashSet<int> discarded, Card current, Card next, AbilityAdmissionScope cast,
         IReadOnlyDictionary<int, long>? threatChanges = null,
         IReadOnlyDictionary<int, long>? damageChanges = null,
         IReadOnlyDictionary<(int Card, string Field), long>? modifierChanges = null,
@@ -196,8 +195,7 @@ public sealed partial class AbilityRunner
         HashSet<(int Card, string Status)>? statusChanges = null,
         IReadOnlyDictionary<int, int>? engagementChanges = null,
         ulong formsMayChange = 0, int traceFirstPlayer = -1) =>
-        cast.Abilities is AbilityRunner runner
-        && cast.World.Areas
+        cast.World.Areas
             .Where(area => DeckTypes.IsInPlay(area.Type))
             .SelectMany(area => area.Cards)
             .ToList()
@@ -205,8 +203,8 @@ public sealed partial class AbilityRunner
             .Any(card =>
             {
                 var placement = engagementChanges ?? new Dictionary<int, int>();
-                var constantCast = TraceConstantCast(cast, card, runner, placement);
-                return runner.On(card).Any(ability =>
+                var constantCast = TraceConstantCast(cast, card, placement);
+                return cast.Context.Program.On(card.FaceId).Any(ability =>
                     ability.Trigger.Timing == AbilityType.Constant
                     && ConstantCanRetargetVillain(
                         ability.Effect, current, next, constantCast, discarded,
@@ -223,30 +221,34 @@ public sealed partial class AbilityRunner
                             : traceFirstPlayer));
             });
 
-    private static Cast TraceConstantCast(
-        Cast cast, Card source, AbilityRunner runner,
+    private static AbilityAdmissionScope TraceConstantCast(
+        AbilityAdmissionScope cast, Card source,
         IReadOnlyDictionary<int, int> placement)
     {
-        int controller = ControllerOf(cast.World, source);
-        if (IsPlayerCard(cast.World.Facts, source)
+        int controller = AbilityCardQueries.ControllerOf(cast.World, source);
+        if (AbilityCardQueries.IsPlayerCard(cast.World.Facts, source)
             && DeckTypes.IsInPlay(source.Area.Type)
             && placement.TryGetValue(source.ObjectId, out int projectedPlayer))
         {
             controller = projectedPlayer;
         }
-        return new Cast(
-            cast.World, source, new Occurrence(0, []), controller, [], runner)
-        {
-            ProjectedPlayAreaPlayer = placement.TryGetValue(
-                source.ObjectId, out int projected)
-                    ? projected
-                    : null,
-        };
+        int? projected = placement.TryGetValue(source.ObjectId, out int player)
+            ? player : null;
+        var bindings = new AbilityQueryContext(
+            cast.World, source, new Occurrence(0, []), controller,
+            source.Incarnation, null, null, null, []);
+        var expressions = new AbilityExpressionContext(
+            bindings, System.Collections.Immutable.ImmutableDictionary<string, long>.Empty,
+            [], string.Empty, -1, false, projected);
+        return new AbilityAdmissionScope(
+            new AbilityAdmissionContext(
+                cast.Context.Program, expressions, cast.Reachability, cast.Power),
+            []);
     }
 
 
     private static bool ConditionalModifierCanDiffer(
-        Card target, string field, Card current, Card next, Cast cast,
+        Card target, string field, Card current, Card next, AbilityAdmissionScope cast,
         HashSet<int> discarded,
         IReadOnlyDictionary<int, long> threatChanges,
         IReadOnlyDictionary<int, long> damageChanges,
@@ -264,16 +266,15 @@ public sealed partial class AbilityRunner
                 $"'{cast.Source.FaceId}' reaches a cyclic conditional modifier "
                 + "before a labelled-power continuation, which is not implemented");
         }
-        return cast.Abilities is AbilityRunner runner
-            && cast.World.Areas
+        return cast.World.Areas
                 .Where(area => DeckTypes.IsInPlay(area.Type))
                 .SelectMany(area => area.Cards)
                 .Where(source => !discarded.Contains(source.ObjectId))
                 .Any(source =>
                 {
                     var constantCast = TraceConstantCast(
-                        cast, source, runner, engagementChanges);
-                    return runner.On(source).Any(ability =>
+                        cast, source, engagementChanges);
+                    return cast.Context.Program.On(source.FaceId).Any(ability =>
                         ability.Trigger.Timing == AbilityType.Constant
                         && ConstantFieldCanDiffer(
                             ability.Effect, source, target, field,
@@ -286,7 +287,7 @@ public sealed partial class AbilityRunner
 
     private static bool ConstantFieldCanDiffer(
         AbilityEffect node, Card source, Card target, string field,
-        Card current, Card next, Cast cast, HashSet<int> discarded,
+        Card current, Card next, AbilityAdmissionScope cast, HashSet<int> discarded,
         IReadOnlyDictionary<int, long> threatChanges,
         IReadOnlyDictionary<int, long> damageChanges,
         IReadOnlyDictionary<(int Card, string Field), long> modifierChanges,
@@ -354,7 +355,7 @@ public sealed partial class AbilityRunner
     }
 
     private static bool ContainsFieldGrant(
-        AbilityEffect node, Card source, Card target, string field, Cast cast)
+        AbilityEffect node, Card source, Card target, string field, AbilityAdmissionScope cast)
     {
         if (node is AbilityEffect.GrantField { Until: null } grant
             && string.Equals(grant.Field, field, StringComparison.Ordinal)
@@ -368,13 +369,13 @@ public sealed partial class AbilityRunner
     }
 
     private static bool ConstantSelectorAffects(
-        AbilityCardSelection selector, Card source, Card target, Cast cast) =>
+        AbilityCardSelection selector, Card source, Card target, AbilityAdmissionScope cast) =>
         selector is AbilityCardSelection.Bound { Binding: AbilityCardBinding.This }
             ? source.ObjectId == target.ObjectId
             : Every(selector, cast).Any(card => card.ObjectId == target.ObjectId);
 
     private static bool TraceCardsInPlayMayDiffer(
-        HashSet<int> discarded, Cast cast) => cast.World.Cards.Any(card =>
+        HashSet<int> discarded, AbilityAdmissionScope cast) => cast.World.Cards.Any(card =>
             DeckTypes.IsInPlay(card.Area.Type)
                 ? discarded.Contains(card.ObjectId)
                 : FacedownDrones.Kind(card, cast.World.Facts) == CardKind.Minion
@@ -382,7 +383,7 @@ public sealed partial class AbilityRunner
 
 
     private static bool TraceTitlePresenceMayDiffer(
-        string title, HashSet<int> discarded, Cast cast) =>
+        string title, HashSet<int> discarded, AbilityAdmissionScope cast) =>
         cast.World.Cards.Any(card => string.Equals(
                 cast.World.Facts.Title(card.FaceId), title,
                 StringComparison.Ordinal)
@@ -406,7 +407,7 @@ public sealed partial class AbilityRunner
             ? threat
             : scheme.Tokens.GetValueOrDefault("k_threat");
 
-    private static bool PowerCrisis(AbilityPowerState state, Cast cast) =>
+    private static bool PowerCrisis(AbilityPowerState state, AbilityAdmissionScope cast) =>
         cast.World.Areas
             .Where(area => DeckTypes.IsInPlay(area.Type))
             .SelectMany(area => area.Cards)
@@ -431,7 +432,7 @@ public sealed partial class AbilityRunner
     }
 
     private static bool PowerTough(
-        AbilityPowerState state, Card card, Cast cast) =>
+        AbilityPowerState state, Card card, AbilityAdmissionScope cast) =>
         state.CardTough.TryGetValue(card.ObjectId, out bool tough)
             ? tough
             : Statuses.Has(cast.World, card, Statuses.Tough);
@@ -463,7 +464,7 @@ public sealed partial class AbilityRunner
     }
 
     private static long PowerCardsAvailable(
-        AbilityPowerState state, int player, Cast cast) =>
+        AbilityPowerState state, int player, AbilityAdmissionScope cast) =>
         state.PlayerCardsAvailable.TryGetValue(player, out long available)
             ? available
             : cast.World.Seats[player].Deck.Cards.Count
@@ -471,7 +472,7 @@ public sealed partial class AbilityRunner
                     DeckType.DiscardPile, PlayArea.Of(player)).Cards.Count;
 
     private static AbilityPowerState SetPowerCardsAvailable(
-        AbilityPowerState state, int player, long available, Cast cast)
+        AbilityPowerState state, int player, long available, AbilityAdmissionScope cast)
     {
         var cards = new Dictionary<int, long>(state.PlayerCardsAvailable);
         long live = cast.World.Seats[player].Deck.Cards.Count
@@ -489,7 +490,7 @@ public sealed partial class AbilityRunner
     }
 
     private static AbilityPowerState SetPowerDamage(
-        AbilityPowerState state, Card card, long damage, Card first, Cast cast)
+        AbilityPowerState state, Card card, long damage, Card first, AbilityAdmissionScope cast)
     {
         if (damage == PowerDamage(state, card))
         {
@@ -533,7 +534,7 @@ public sealed partial class AbilityRunner
     }
 
     private static AbilityPowerState SetPowerTough(
-        AbilityPowerState state, Card card, bool tough, Card first, Cast cast)
+        AbilityPowerState state, Card card, bool tough, Card first, AbilityAdmissionScope cast)
     {
         if (tough == PowerTough(state, card, cast))
         {
@@ -557,7 +558,7 @@ public sealed partial class AbilityRunner
     }
 
     private static PowerReachability MergePowerStates(
-        PowerReachability left, PowerReachability right, Cast cast) =>
+        PowerReachability left, PowerReachability right, AbilityAdmissionScope cast) =>
         MergePowerAlternatives([left, right]);
 
     private static PowerReachability MergePowerAlternatives(
@@ -668,30 +669,12 @@ public sealed partial class AbilityRunner
         return left - right;
     }
 
-    private static ulong AllPlayerSeats(Cast cast) =>
+    private static ulong AllPlayerSeats(AbilityAdmissionScope cast) =>
         cast.World.Seats.Count >= 63
             ? FirstPlayerRebinding - 1
             : (1UL << cast.World.Seats.Count) - 1;
 
-    private static ulong PlayerSeat(int seat) => 1UL << seat;
-
-    private static bool SeatMayChange(ulong seats, int seat) =>
-        (seats & PlayerSeat(seat)) != 0;
-
-    private static IEnumerable<AbilityEffect> PowerNodes(AbilityEffect node, string power)
-    {
-        if (string.Equals(node.OperationName(), power.ToLowerInvariant(), StringComparison.Ordinal))
-        {
-            yield return node;
-        }
-
-        foreach (var found in AllEffectChildren(node).SelectMany(child => PowerNodes(child, power)))
-        {
-            yield return found;
-        }
-    }
-
-    private static IEnumerable<AbilityEffect> EachPlayers(AbilityEffect node)
+    internal static IEnumerable<AbilityEffect> EachPlayers(AbilityEffect node)
     {
         if (node.OperationName() == "eachPlayer")
         {

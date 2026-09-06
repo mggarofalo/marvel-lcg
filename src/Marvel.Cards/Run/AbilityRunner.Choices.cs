@@ -915,15 +915,7 @@ public sealed partial class AbilityRunner
     /// </para>
     /// </remarks>
     private static bool OptionIsLegal(AbilityEffect option, Cast cast)
-    {
-        // Eligibility and support are separate questions. Preserve the
-        // printed-option legality rules below, but make an unsupported option
-        // raise while the enclosing ability is still being offered.
-        bool canInitiate = CanInitiate(option, cast);
-        return canInitiate
-            && TargetLegalityOf(option, cast) != TargetLegality.Invalid
-            && (!IsPlayerCard(cast) || CanPartiallyResolve(option, cast));
-    }
+        => AbilityInitiation.IsOptionLegal(option, AdmissionContext(cast));
 
     private static bool OptionIsLegalForContinuation(
         AbilityEffect option, Cast cast, bool requireStateChange = false)
@@ -963,29 +955,7 @@ public sealed partial class AbilityRunner
     /// validation on the same decision.
     /// </remarks>
     private static List<Card> LegalCardChoices(AbilityEffect choice, Cast cast)
-    {
-        var prior = cast.CaptureChosen();
-        var priorSelection = cast.CapturePlayerSelection();
-        var legal = new List<Card>();
-        try
-        {
-            foreach (var card in Every(EffectOf<AbilityEffect.ChooseCard>(choice, cast).From, cast))
-            {
-                cast.ChooseSelection(card);
-                var effect = EffectBody(choice);
-                if (TargetLegalityOf(effect, cast) != TargetLegality.Invalid)
-                {
-                    legal.Add(card);
-                }
-            }
-        }
-        finally
-        {
-            cast.RestoreChosen(prior);
-            cast.RestorePlayerSelection(priorSelection);
-        }
-        return legal;
-    }
+        => [.. AbilityInitiation.LegalCardChoices(choice, AdmissionContext(cast))];
 
     /// <summary>Legal targets that also leave the persisted sequence resumable.</summary>
     private static List<Card> LegalCardChoicesForContinuation(
@@ -1040,7 +1010,8 @@ public sealed partial class AbilityRunner
             // a condition whose false result would otherwise be a legal no-op.
             var sensitiveAreas = new HashSet<DeckType>();
             foreach (var step in remaining)
-                CollectSingularAreaDependencies(step, scope, sensitiveAreas);
+                AbilityAdmissionAreaDependencies.Collect(
+                    step, AdmissionContext(scope), sensitiveAreas);
             if (sensitiveAreas.Count > 0
                 && EffectsMayChangeAnyArea(scope.Reachability.PriorSteps, sensitiveAreas, scope))
             {

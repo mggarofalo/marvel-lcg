@@ -94,19 +94,7 @@ public sealed partial class AbilityRunner : ICardAbilities
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(card);
-        if (program.CounterPools.GetValueOrDefault(card.FaceId) is { } authored)
-        {
-            return authored;
-        }
-
-        // Rules-only and focused synthetic books may omit card-level metadata.
-        // The complete supported book is separately held to an exact account
-        // of every printed starting pool, so this compatibility path cannot
-        // conceal an omission in shipped content.
-        var (count, type) = Reveal.Uses(world.Facts.Attributes(card.FaceId));
-        return count > 0
-            ? new CardCounterPool(type, checked((int)count), Uses: true)
-            : null;
+        return AbilityProgramQueries.CounterPool(world, program, card);
     }
 
     /// <inheritdoc/>
@@ -521,96 +509,10 @@ public sealed partial class AbilityRunner : ICardAbilities
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(occurrence);
-
-        var waiting = new List<PendingAbility>();
-        foreach (var card in world.Cards)
-        {
-            // `rr:ability.1` -- a card's ability functions while the card is in
-            // play. Being attached to something is not the same as being in
-            // play: the recorded Tough hangs off Rhino from a zone that is not.
-            bool eventInHand = world.Facts.Kind(card.FaceId) == CardKind.Event
-                && card.Owner >= 0
-                && card.Area == world.Seats[card.Owner].Hand;
-            if (!DeckTypes.IsInPlay(card.Area.Type) && !eventInHand)
-            {
-                continue;
-            }
-
-            var written = On(card).ToList();
-            for (int index = 0; index < written.Count; index++)
-            {
-                var ability = written[index];
-                IEnumerable<int> players;
-                if (!ability.AnyPlayer)
-                {
-                    players = [Controller(world, ability, card, occurrence)];
-                }
-                else if (ability.Trigger.Player == AbilityPlayers.TriggerPlayer
-                    && occurrence.Player >= 0)
-                {
-                    // The permission is broad, but the trigger is not:
-                    // trigger.player is the seat the occurrence happened to.
-                    players = [occurrence.Player];
-                }
-                else
-                {
-                    players = world.PlayerOrder;
-                }
-                foreach (int controller in players)
-                {
-                    if (!Answers(
-                            world, ability, card, occurrence, window,
-                            ability.AnyPlayer ? controller : null))
-                    {
-                        continue;
-                    }
-
-                    // `rr:initiating-abilities.step.2` -- "if the card or ability
-                    // has a form requirement (for example, 'Hero form only' or
-                    // 'Hero Action'), the form of the player playing that card or
-                    // initiating that ability is checked now." Step 2 is about any
-                    // ability, not only an action: Prelate Armor prints a *Hero
-                    // Response*, and an alter-ego cannot initiate one.
-                    if (!InForm(world, controller, ability.Trigger.Form, card))
-                    {
-                        continue;
-                    }
-
-                    var eligibility = new Cast(
-                        world, card, occurrence, controller, [], this);
-                    eligibility = eligibility.ForReachability(eligibility.Reachability with
-                    {
-                        PaymentMayMutate = ability.Cost is not null
-                            || world.Facts.Kind(card.FaceId) == CardKind.Event,
-                        PaymentCost = ability.Cost,
-                    });
-                    if (!WhenHolds(ability, eligibility)
-                        || (controller >= 0 && !CanInitiate(ability, eligibility)))
-                    {
-                        continue;
-                    }
-
-                    // `rr:initiating-abilities.step.3` -- the cost and "the
-                    // player's ability to pay them" are one step, and only "if both
-                    // conditions are met" do the later steps happen. So an ability
-                    // nobody can pay for is not an offer that fails at step 5; it
-                    // never reaches the window at all.
-                    if (!Payable(world, card, controller, ability.Cost)
-                        || !EventPayable(world, card, controller, ability)
-                        || !Available(world, card, ability, occurrence))
-                    {
-                        continue;
-                    }
-
-                    int ordinal = written.Take(index).Count(candidate =>
-                        candidate.Trigger.Timing == ability.Trigger.Timing);
-                    waiting.Add(new PendingAbility(
-                        card.ObjectId, ability.Trigger.Timing, controller, ordinal));
-                }
-            }
-        }
-
-        return waiting;
+        return [.. AbilityWindowAdmission.Waiting(program, world, occurrence, window)
+            .Select(candidate => new PendingAbility(
+                candidate.Card.ObjectId, candidate.Ability.Trigger.Timing,
+                candidate.Controller, candidate.Ordinal))];
     }
 
     /// <inheritdoc/>
@@ -1229,23 +1131,7 @@ public sealed partial class AbilityRunner : ICardAbilities
         ArgumentNullException.ThrowIfNull(target);
         ArgumentNullException.ThrowIfNull(source);
 
-        if (!DeckTypes.IsInPlay(target.Area.Type))
-        {
-            return true;
-        }
-
-        foreach (var ability in On(target).Where(ability =>
-            ability.Trigger.Timing == AbilityType.Constant))
-        {
-            var cast = new Cast(
-                world, target, new Occurrence(0, []), ControllerOf(world, target), [], this);
-            if (ProhibitsDamage(ability.Effect, cast, source))
-            {
-                return false;
-            }
-        }
-
-        return true;
+        return AbilityProgramQueries.CanTakeDamage(world, program, target, source);
     }
 
     /// <inheritdoc/>
@@ -1324,55 +1210,8 @@ public sealed partial class AbilityRunner : ICardAbilities
         ArgumentNullException.ThrowIfNull(target);
         ArgumentNullException.ThrowIfNull(source);
 
-        foreach (var card in world.Areas
-            .Where(area => DeckTypes.IsInPlay(area.Type))
-            .SelectMany(area => area.Cards))
-        {
-            foreach (var ability in On(card).Where(ability =>
-                ability.Trigger.Timing == AbilityType.Constant))
-            {
-                var cast = new Cast(
-                    world, card, new Occurrence(0, []), ControllerOf(world, card), [], this);
-                if (ProhibitsReady(ability.Effect, cast, target))
-                {
-                    return false;
-                }
-            }
-        }
-
-        return true;
+        return AbilityProgramQueries.CanReady(world, program, target);
     }
-
-    private static bool ProhibitsReady(AbilityEffect effect, Cast cast, Card target) =>
-        effect switch
-        {
-            AbilityEffect.Sequence sequence => sequence.Effects.Any(step =>
-                ProhibitsReady(step, cast, target)),
-            AbilityEffect.Simultaneous simultaneous => simultaneous.Effects.Any(step =>
-                ProhibitsReady(step, cast, target)),
-            AbilityEffect.Conditional conditional => (Test(conditional.Test, cast) ? conditional.Then : conditional.Else)
-                is { } branch && ProhibitsReady(branch, cast, target),
-            AbilityEffect.CardAction { Instruction: AbilityCardInstruction.PreventReady } prohibition =>
-                Find(prohibition.Selection, cast)?.ObjectId == target.ObjectId,
-            _ => false,
-        };
-
-    private static bool ProhibitsDamage(AbilityEffect effect, Cast cast, Card source) =>
-        effect switch
-        {
-            AbilityEffect.Sequence sequence => sequence.Effects
-                .Any(step => ProhibitsDamage(step, cast, source)),
-            AbilityEffect.Simultaneous simultaneous => simultaneous.Effects
-                .Any(step => ProhibitsDamage(step, cast, source)),
-            AbilityEffect.Conditional conditional => (Test(conditional.Test, cast) ? conditional.Then : conditional.Else)
-                is { } branch && ProhibitsDamage(branch, cast, source),
-            AbilityEffect.PreventDamageFrom prohibition => cast.World.Facts.Kind(source.FaceId)
-                    == prohibition.SourceKind
-                && Rules.State.Traits.Has(
-                    cast.World, source, prohibition.SourceTrait, cast.World.Facts),
-            AbilityEffect.PreventDamageWhile prohibition => Test(prohibition.Condition, cast),
-            _ => false,
-        };
 
     /// <inheritdoc/>
     public long WouldBeDealt(

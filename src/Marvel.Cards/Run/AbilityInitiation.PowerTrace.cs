@@ -9,10 +9,17 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Cards.Run;
 
-public sealed partial class AbilityRunner
+internal static partial class AbilityInitiation
 {
+    internal static bool SuspendsPowerEffect(
+        AbilityEffect effect, AbilityAdmissionContext context,
+        bool stateMayChange = false, bool bindingMayChange = false) =>
+        SuspendsPowerEffect(
+            effect, new AbilityAdmissionScope(context, []),
+            stateMayChange, bindingMayChange);
+
     private static bool SuspendsPowerEffect(
-        AbilityEffect node, Cast cast, bool stateMayChange = false,
+        AbilityEffect node, AbilityAdmissionScope cast, bool stateMayChange = false,
         bool bindingMayChange = false, PowerReachability? reachability = null)
     {
         var state = reachability ?? InitialPowerReachability(cast);
@@ -33,7 +40,7 @@ public sealed partial class AbilityRunner
     private static IEnumerable<(
         AbilityEffect Node, bool StateMayChange, bool BindingMayChange,
         PowerReachability Reachability)> PowerSuspensionChildren(
-        AbilityEffect node, Cast cast, bool stateMayChange,
+        AbilityEffect node, AbilityAdmissionScope cast, bool stateMayChange,
         bool bindingMayChange, PowerReachability reachability)
     {
         if (node.OperationName() == "seq")
@@ -83,7 +90,7 @@ public sealed partial class AbilityRunner
     }
 
     private static bool PowerTestCanChange(
-        AbilityCondition test, Cast cast, bool stateMayChange,
+        AbilityCondition test, AbilityAdmissionScope cast, bool stateMayChange,
         bool bindingMayChange, AbilityPowerState reachability) => test switch
         {
             AbilityCondition.All all => all.Operands.Any(child =>
@@ -105,7 +112,7 @@ public sealed partial class AbilityRunner
                 || bindingMayChange && BindingCanChange(test),
         };
 
-    private static AbilityPowerState InitialPowerReachability(Cast cast)
+    private static AbilityPowerState InitialPowerReachability(AbilityAdmissionScope cast)
     {
         var identity = cast.World.Seats[cast.World.FirstPlayer].IdentityCard;
         int villain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
@@ -119,7 +126,7 @@ public sealed partial class AbilityRunner
     }
 
     private static Card? PowerFind(
-        AbilityCardSelection value, Cast cast, AbilityPowerState reachability)
+        AbilityCardSelection value, AbilityAdmissionScope cast, AbilityPowerState reachability)
     {
         if (SelectorMembershipCanChange(value)
             || PotentialVillainSelector(value, cast))
@@ -142,7 +149,7 @@ public sealed partial class AbilityRunner
     }
 
     private static List<Card> PowerEvery(
-        AbilityCardSelection value, Cast cast, AbilityPowerState reachability)
+        AbilityCardSelection value, AbilityAdmissionScope cast, AbilityPowerState reachability)
     {
         int liveVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
         bool dynamic = SelectorMembershipCanChange(value)
@@ -195,7 +202,7 @@ public sealed partial class AbilityRunner
     }
 
     private static PowerReachability PowerStateAfter(
-        AbilityEffect node, Cast cast, bool stateMayChange,
+        AbilityEffect node, AbilityAdmissionScope cast, bool stateMayChange,
         bool bindingMayChange, PowerReachability reachability)
     {
         if (reachability is PowerReachability.Unsupported)
@@ -214,7 +221,7 @@ public sealed partial class AbilityRunner
     }
 
     private static PowerReachability PowerStateAfterKnown(
-        AbilityEffect node, Cast cast, bool stateMayChange,
+        AbilityEffect node, AbilityAdmissionScope cast, bool stateMayChange,
         bool bindingMayChange, AbilityPowerState reachability)
     {
         // SuspendsPowerEffect rejects this simultaneous choice by shape. Do
@@ -303,7 +310,7 @@ public sealed partial class AbilityRunner
     }
 
     private static PowerReachability PowerDependentStateAfter(
-        AbilityEffect node, Cast cast, bool stateMayChange,
+        AbilityEffect node, AbilityAdmissionScope cast, bool stateMayChange,
         bool bindingMayChange, PowerReachability reachability)
     {
         var effect = EffectBody(node);
@@ -334,13 +341,13 @@ public sealed partial class AbilityRunner
         ResolutionOutcome Outcome, PowerReachability State);
 
     private static List<PowerOutcomeState> PowerOutcomeStates(
-        AbilityEffect node, Cast cast, bool stateMayChange,
+        AbilityEffect node, AbilityAdmissionScope cast, bool stateMayChange,
         bool bindingMayChange, PowerReachability reachability)
         => [.. PowerPaths(reachability).SelectMany(path => PowerOutcomeStatesKnown(
             node, cast, stateMayChange, bindingMayChange, path))];
 
     private static List<PowerOutcomeState> PowerOutcomeStatesKnown(
-        AbilityEffect node, Cast cast, bool stateMayChange,
+        AbilityEffect node, AbilityAdmissionScope cast, bool stateMayChange,
         bool bindingMayChange, AbilityPowerState reachability)
     {
         if (node.OperationName() == "if")
@@ -391,7 +398,7 @@ public sealed partial class AbilityRunner
         left == right ? left : ResolutionOutcome.Partial;
 
     private static HashSet<ResolutionOutcome> PowerOutcomes(
-        AbilityEffect node, Cast cast, bool stateMayChange,
+        AbilityEffect node, AbilityAdmissionScope cast, bool stateMayChange,
         bool bindingMayChange, AbilityPowerState reachability)
     {
         if (node.OperationName() == "draw")
@@ -436,8 +443,9 @@ public sealed partial class AbilityRunner
             var schemes = PowerEvery(EffectOf<AbilityEffect.RemoveThreat>(node, cast).Schemes, cast, reachability);
             var valid = schemes.Where(scheme =>
                 PowerThreat(reachability, scheme) > 0
-                && cast.Abilities.CanRemoveThreat(
-                    cast.World, scheme, OverriddenThreatRemovalSource(node, cast))
+                && AbilityProgramQueries.CanRemoveThreat(
+                    cast.World, cast.Context.Program, scheme,
+                    OverriddenThreatRemovalSource(node, cast))
                 && (IgnoresCrisis(node, cast)
                     || !(scheme.Area.Type == DeckType.MainSchemesArea
                     && IsPlayerCard(cast)
@@ -520,7 +528,7 @@ public sealed partial class AbilityRunner
     }
 
     private static bool ConditionalCanSkipBranch(
-        AbilityEffect node, Cast cast, bool stateMayChange,
+        AbilityEffect node, AbilityAdmissionScope cast, bool stateMayChange,
         bool bindingMayChange, AbilityPowerState reachability)
     {
         var test = ConditionalOf(node, cast).Test;
@@ -535,7 +543,7 @@ public sealed partial class AbilityRunner
     }
 
     private static AbilityPowerState ChangeFormState(
-        AbilityEffect.ChangeForm change, Cast cast, bool bindingMayChange,
+        AbilityEffect.ChangeForm change, AbilityAdmissionScope cast, bool bindingMayChange,
         AbilityPowerState reachability)
     {
         var player = change.Player;
@@ -563,7 +571,7 @@ public sealed partial class AbilityRunner
         (state & FirstPlayerRebinding) != 0;
 
     private static AbilityPowerState ApplyPowerLeafState(
-        AbilityEffect node, Cast cast, bool bindingMayChange,
+        AbilityEffect node, AbilityAdmissionScope cast, bool bindingMayChange,
         AbilityPowerState reachability, long multiplier = 1)
     {
         if (EffectAmount(node) is { } authoredAmount
@@ -631,8 +639,7 @@ public sealed partial class AbilityRunner
             {
                 return reachability;
             }
-            if (cast.Abilities is AbilityRunner runner
-                && runner.On(card).Any(ability =>
+            if (cast.Context.Program.On(card.FaceId).Any(ability =>
                     ability.Trigger.Timing == AbilityType.Constant))
             {
                 throw new RulesNotImplementedException(
@@ -714,8 +721,9 @@ public sealed partial class AbilityRunner
             foreach (var scheme in PowerEvery(
                 EffectOf<AbilityEffect.RemoveThreat>(node, cast).Schemes, cast, reachability))
             {
-                if (!cast.Abilities.CanRemoveThreat(
-                        cast.World, scheme, OverriddenThreatRemovalSource(node, cast))
+                if (!AbilityProgramQueries.CanRemoveThreat(
+                        cast.World, cast.Context.Program, scheme,
+                        OverriddenThreatRemovalSource(node, cast))
                     || !IgnoresCrisis(node, cast)
                         && scheme.Area.Type == DeckType.MainSchemesArea
                         && IsPlayerCard(cast)
@@ -883,7 +891,7 @@ public sealed partial class AbilityRunner
 
     private static AbilityPowerState ApplyPowerDamage(
         AbilityPowerState reachability, IReadOnlyList<Card> cards,
-        long amount, Card first, Cast cast)
+        long amount, Card first, AbilityAdmissionScope cast)
     {
         if (amount <= 0)
         {
@@ -922,7 +930,7 @@ public sealed partial class AbilityRunner
     }
 
     private static AbilityPowerState ResolvePowerCharacterDefeat(
-        AbilityPowerState state, Card damaged, Card first, Cast cast)
+        AbilityPowerState state, Card damaged, Card first, AbilityAdmissionScope cast)
     {
         long health = PowerHealth(state, damaged, cast);
         if (PowerDamage(state, damaged) < health)
@@ -1014,7 +1022,7 @@ public sealed partial class AbilityRunner
     }
 
     private static long PowerHealth(
-        AbilityPowerState state, Card character, Cast cast)
+        AbilityPowerState state, Card character, AbilityAdmissionScope cast)
         => SaturatingAdd(
             TraceHealth(
                 character, state.Discarded, state.SchemeThreat, cast),
@@ -1022,7 +1030,7 @@ public sealed partial class AbilityRunner
 
     private static long TraceHealth(
         Card character, HashSet<int> discarded,
-        Dictionary<int, long> schemeThreat, Cast cast)
+        Dictionary<int, long> schemeThreat, AbilityAdmissionScope cast)
     {
         long health = Damage.Health(cast.World, cast.World.Facts, character);
         var active = cast.World.Effects.Active()
@@ -1032,12 +1040,12 @@ public sealed partial class AbilityRunner
                 && effect.AppliesTo(cast.World, character))
             .ToList();
         var sources = active.Select(effect => effect.Card!.Value).ToHashSet();
-        if (schemeThreat.Count > 0 && cast.Abilities is AbilityRunner authored)
+        if (schemeThreat.Count > 0)
         {
             foreach (var source in cast.World.Areas
                 .Where(area => DeckTypes.IsInPlay(area.Type))
                 .SelectMany(area => area.Cards)
-                .Where(card => authored.On(card).Any(ability =>
+                .Where(card => cast.Context.Program.On(card.FaceId).Any(ability =>
                     ability.Trigger.Timing == AbilityType.Constant)))
             {
                 sources.Add(source.ObjectId);
@@ -1056,15 +1064,12 @@ public sealed partial class AbilityRunner
             {
                 traced = 0;
             }
-            else if (schemeThreat.Count > 0
-                && cast.Abilities is AbilityRunner runner)
+            else if (schemeThreat.Count > 0)
             {
                 var source = cast.World.Cards[sourceId];
-                var constantCast = new Cast(
-                    cast.World, source, new Occurrence(0, []),
-                    ControllerOf(cast.World, source), [], runner);
+                var constantCast = cast.ForConstant(source);
                 traced = 0;
-                foreach (var ability in runner.On(source).Where(ability =>
+                foreach (var ability in cast.Context.Program.On(source.FaceId).Where(ability =>
                     ability.Trigger.Timing == AbilityType.Constant))
                 {
                     if (!TryTraceConstantHealth(
@@ -1086,7 +1091,7 @@ public sealed partial class AbilityRunner
 
     private static bool TryTraceConstantHealth(
         AbilityEffect effect, Card character, Dictionary<int, long> schemeThreat,
-        Cast cast, out long amount)
+        AbilityAdmissionScope cast, out long amount)
     {
         if (effect is AbilityEffect.Sequence or AbilityEffect.Simultaneous)
         {
@@ -1128,7 +1133,7 @@ public sealed partial class AbilityRunner
 
     private static bool TryPowerTest(
         AbilityCondition test, Dictionary<int, long> schemeThreat,
-        Cast cast, out bool result)
+        AbilityAdmissionScope cast, out bool result)
     {
         var operands = test switch
         {
@@ -1179,7 +1184,7 @@ public sealed partial class AbilityRunner
 
     private static bool TryPowerAmount(
         AbilityNumber number, Dictionary<int, long> schemeThreat,
-        Cast cast, out long amount)
+        AbilityAdmissionScope cast, out long amount)
     {
         if (!ReadsChangedThreat(number, schemeThreat, cast))
         {
@@ -1197,7 +1202,7 @@ public sealed partial class AbilityRunner
     }
 
     private static bool ReadsChangedThreat(
-        AbilityNumber number, Dictionary<int, long> schemeThreat, Cast cast) => number switch
+        AbilityNumber number, Dictionary<int, long> schemeThreat, AbilityAdmissionScope cast) => number switch
         {
             AbilityNumber.CardValue { Property: AbilityCardNumberProperty.Threat } value =>
                 Find(value.Card, cast) is { } scheme && schemeThreat.ContainsKey(scheme.ObjectId),
@@ -1210,7 +1215,7 @@ public sealed partial class AbilityRunner
         };
 
     private static bool ReadsChangedThreat(
-        AbilityCondition condition, Dictionary<int, long> schemeThreat, Cast cast) => condition switch
+        AbilityCondition condition, Dictionary<int, long> schemeThreat, AbilityAdmissionScope cast) => condition switch
         {
             AbilityCondition.All all => all.Operands.Any(test => ReadsChangedThreat(test, schemeThreat, cast)),
             AbilityCondition.Any any => any.Operands.Any(test => ReadsChangedThreat(test, schemeThreat, cast)),
@@ -1221,43 +1226,36 @@ public sealed partial class AbilityRunner
         };
 
     private static bool PowerWouldBeDefeatedHasTriggeredWork(
-        AbilityPowerState state, Card defeated, Cast cast) =>
+        AbilityPowerState state, Card defeated, AbilityAdmissionScope cast) =>
         PowerHasMatchingInterrupt(
             state, defeated, cast, Steps.CardWouldBeDefeated);
 
     private static bool PowerDefeatHasTriggeredWork(
-        AbilityPowerState state, Card defeated, Cast cast) =>
+        AbilityPowerState state, Card defeated, AbilityAdmissionScope cast) =>
         PowerHasMatchingInterrupt(state, defeated, cast, Steps.CardDefeated);
 
     private static bool PowerHasMatchingInterrupt(
-        AbilityPowerState state, Card subject, Cast cast, string condition)
+        AbilityPowerState state, Card subject, AbilityAdmissionScope cast, string condition)
     {
-        if (cast.Abilities is not AbilityRunner runner)
-        {
-            return false;
-        }
         if (string.Equals(condition, Steps.CardDefeated, StringComparison.Ordinal)
             && cast.World.Facts.HasWhenDefeated(subject.FaceId)
-            && !runner.On(subject).Any(ability => string.Equals(
-                ability.Trigger.Event, Steps.CardDefeated,
-                StringComparison.Ordinal)))
+            && !cast.Context.Program.On(subject.FaceId).Any(ability =>
+                ability.Trigger.Timing == AbilityType.WhenDefeated))
         {
             // Runtime refuses printed defeat text with no authored behavior.
             // Eligibility must make the same refusal before a labelled cost.
             return true;
         }
 
-        // Damage steps 6 and 7 re-read every card for interrupts that answer
-        // the imminent or actual defeat. Use that same board-wide matcher, but
-        // omit sources the trace has already discarded.
-        var occurrence = new Occurrence(
-            0, [condition], Subject: subject.ObjectId, Player: subject.Owner);
-        return runner.Waiting(
-                cast.World, occurrence, WindowKind.Interrupt)
-            .Any(pending => !state.Discarded.Contains(pending.Card));
+        return AbilityWindowAdmission.WaitingCards(
+                cast.Context.Program, cast.World,
+                new Occurrence(
+                    0, [condition], Subject: subject.ObjectId, Player: subject.Owner),
+                WindowKind.Interrupt)
+            .Any(card => !state.Discarded.Contains(card));
     }
 
-    private static List<int> PowerLeavingTree(Card host, Cast cast)
+    private static List<int> PowerLeavingTree(Card host, AbilityAdmissionScope cast)
     {
         var leaving = new List<int> { host.ObjectId };
         var pending = new Stack<Card>(cast.World.Areas
