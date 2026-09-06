@@ -213,11 +213,6 @@ public sealed partial class AbilityRunner
                 RemoveCounters(removal, cast);
                 return true;
 
-            case AbilityEffect.PreventDamage prevention:
-                PreventDamage(prevention, cast);
-                cast.ResolveEffect();
-                return true;
-
             case AbilityEffect.GiveStatus status:
                 GiveStatus(status, cast);
                 return true;
@@ -240,15 +235,6 @@ public sealed partial class AbilityRunner
 
             case AbilityEffect.DelayedDiscard delayed:
                 DelayUntil(delayed, cast);
-                cast.ResolveEffect();
-                return true;
-
-            case AbilityEffect.Heal heal:
-                Heal(heal, cast);
-                return true;
-
-            case AbilityEffect.PreventThreat prevention:
-                PreventThreat(prevention, cast);
                 cast.ResolveEffect();
                 return true;
 

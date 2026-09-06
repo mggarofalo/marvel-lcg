@@ -9,37 +9,38 @@ public sealed partial class AbilityRunner
     // the operation's arguments.
     private static bool TryRunDamageAndThreat(AbilityEffect instruction, AbilityEffect syntax, Cast cast)
     {
-        switch (instruction)
+        var result = AbilityDamageAndThreatExecution.Run(instruction, syntax, DamageAndThreatContext(cast));
+        if (!result.Handled)
         {
-            case AbilityEffect.Damage damage:
-                DealDamage(damage, syntax, cast);
-                return true;
-            case AbilityEffect.AttackDamage damage:
-                DealAttackDamage(damage, syntax, cast);
-                return true;
-            case AbilityEffect.MoveDamage { Attack: false } movement:
-                MoveDamage(movement, syntax, cast);
-                return true;
-            case AbilityEffect.MoveDamage movement:
-                MoveAttackDamage(movement, syntax, cast);
-                return true;
-            case AbilityEffect.IndirectDamage damage:
-                Indirect(damage, syntax, cast);
-                return true;
-            case AbilityEffect.PlaceThreat threat:
-                PlaceThreat(threat, cast);
-                return true;
-            case AbilityEffect.RemoveThreat removal:
-                RemoveThreat(removal, cast);
-                return true;
-            case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.SoakDamage } soak:
-                Soak(soak.Selection, cast);
-                return true;
-            case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.ReplaceThreatWithDamage } replacement:
-                ReplaceThreatWithDamage(replacement.Selection, syntax, cast);
-                return true;
-            default:
-                return false;
+            return false;
+        }
+        ApplyDamageAndThreat(result, syntax, cast);
+        return true;
+    }
+
+    private static AbilityDamageAndThreatContext DamageAndThreatContext(Cast cast) =>
+        new(cast.ExpressionContext(), cast.Trigger, cast.Events,
+            cast.AbilityActor, cast.PowerActor, cast.Power, cast.HasContinuation,
+            cast.ImminentThreat, cast.ResolutionAbility, cast.Incoming);
+
+    private static void ApplyDamageAndThreat(
+        AbilityDamageAndThreatResult result, AbilityEffect syntax, Cast cast)
+    {
+        if (result.Healed is { } healed) cast.Results["healed"] = healed;
+        if (result.Remaining is { } remaining) cast.Replace(remaining);
+        cast.Attacked.AddRange(result.Attacked);
+        if (result.ResolveEffect) cast.ResolveEffect();
+        switch (result.Suspension)
+        {
+            case AbilityDamageAndThreatSuspension.Choice:
+                SuspendForChoice(syntax, cast);
+                break;
+            case AbilityDamageAndThreatSuspension.Procedure:
+                SuspendAfterProcedure(syntax, cast);
+                break;
+            case AbilityDamageAndThreatSuspension.ScheduledThreat:
+                cast.Suspend();
+                break;
         }
     }
 }
