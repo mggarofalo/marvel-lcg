@@ -262,8 +262,8 @@ public sealed partial class AbilityRunner
         (AbilityEffect.ChangeForm)node;
 
     private static bool AlreadyInForm(AbilityEffect.ChangeForm change, Cast cast) =>
-        Forms.In(cast.World, cast.World.Seats[Seat(change.Player, cast)],
-            cast.World.Facts, change.Form);
+        AbilityAdmissionFacts.AlreadyInForm(
+            cast.World, Seat(change.Player, cast), change.Form);
 
     /// <summary>"Remove … from the game" — <c>rr:removed-from-the-game</c>.</summary>
     /// <remarks>
@@ -382,12 +382,9 @@ public sealed partial class AbilityRunner
     }
 
     private static bool CanDrawToPrintedHandSize(AbilityEffect node, Cast cast)
-    {
-        int player = Seat(EffectOf<AbilityEffect.DrawToHandSize>(node, cast).Player, cast);
-        var seat = cast.World.Seats[player];
-        return HandCountDuringEvent(cast, seat) < cast.World.Facts.PrintedValue(
-            seat.IdentityCard.FaceId, "HS", cast.World.Players);
-    }
+        => AbilityAdmissionFacts.CanDrawToPrintedHandSize(
+            cast.World, cast.Source,
+            Seat(EffectOf<AbilityEffect.DrawToHandSize>(node, cast).Player, cast));
 
     private static int HandCountDuringEvent(Cast cast, Seat seat) =>
         seat.Hand.Cards.Count - (cast.Source.Area == seat.Hand
@@ -431,8 +428,7 @@ public sealed partial class AbilityRunner
     }
 
     private static bool CanAdvanceMainScheme(Cast cast) =>
-        cast.World.TheCardIn(DeckType.MainSchemesArea) is not null
-            && cast.World.AreaOf(DeckType.MainSchemesDeck).Cards.Count > 0;
+        AbilityAdmissionFacts.CanAdvanceMainScheme(cast.World);
 
     /// <summary>
     /// Reads a named counter pool, or every typed pool when the card says
@@ -814,106 +810,8 @@ public sealed partial class AbilityRunner
         return preceding;
     }
 
-    private static void ValidateEachTimeBody(AbilityEffect node, Cast cast)
-    {
-        if (ContainsUnreconstructibleAfterActivation(
-            EffectFollowing(node), cast))
-        {
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' suspends inside an after-activation effect, "
-                + "which cannot be reconstructed");
-        }
-    }
-
-    private static bool ContainsUnreconstructibleAfterActivation(
-        AbilityEffect node, Cast cast)
-    {
-        if (node.OperationName() == "afterActivation")
-        {
-            return DelayedNeedsContinuationAddress(
-                EffectBody(node), cast, hasContinuation: false);
-        }
-        return ContinuationChildren(node).Any(child =>
-            ContainsUnreconstructibleAfterActivation(child, cast));
-    }
-
-    private static bool DelayedNeedsContinuationAddress(
-        AbilityEffect node, Cast cast, bool hasContinuation)
-    {
-        if (node.OperationName() == "afterActivation"
-            || node.OperationName() == "and" && OrderedEffects(node).Skip(1).Any()
-            || IsChoice(node)
-            || node.OperationName() is "eachPlayer" or "attack" or "thwart" or "thwartSchemes")
-        {
-            return true;
-        }
-        if (node.OperationName() is "placeThreat" or "enemyAttacks" or "enemySchemes")
-        {
-            return hasContinuation;
-        }
-        if (node.OperationName() is "seq" or "and")
-        {
-            var children = OrderedEffects(node).ToList();
-            return children.Select((child, index) => (child, index)).Any(entry =>
-                DelayedNeedsContinuationAddress(
-                    entry.child, cast,
-                    hasContinuation || entry.index < children.Count - 1));
-        }
-        if (node.OperationName() == "if")
-        {
-            return ConditionalBranches((AbilityEffect.Conditional)node)
-                .Where(branch => branch is not null)
-                .Any(branch => DelayedNeedsContinuationAddress(
-                    branch, cast, hasContinuation));
-        }
-        if (node.OperationName() is "then" or "otherwise")
-        {
-            return DelayedNeedsContinuationAddress(
-                    EffectBody(node), cast, hasContinuation: true)
-                || DelayedNeedsContinuationAddress(
-                    EffectFollowing(node), cast, hasContinuation);
-        }
-        if (node.OperationName() == "forEach")
-        {
-            if (AmountMayChange(ForEachOf(node, cast).Count))
-            {
-                return DelayedNeedsContinuationAddress(
-                    EffectBody(node), cast, hasContinuation: true);
-            }
-            long count = ForEachCount(node, cast);
-            return count > 0 && DelayedNeedsContinuationAddress(
-                EffectBody(node), cast,
-                hasContinuation || count > 1);
-        }
-        if (node.OperationName() == "eachTime")
-        {
-            if (EachTimeOf(node, cast).Effect is not AbilityEffect.DiscardTop
-                { From: AbilitySearchArea.EncounterDeck, Players: null } preceding)
-            {
-                return true;
-            }
-
-            var requested = preceding.Count;
-            if (AmountMayChange(requested))
-            {
-                return true;
-            }
-            long count = Amount(requested, cast);
-            if (count < 0)
-            {
-                throw new AbilityException("'eachTime' needs a non-negative discard count");
-            }
-            if (count == 0)
-            {
-                return false;
-            }
-            return DelayedNeedsContinuationAddress(
-                EffectFollowing(node), cast,
-                hasContinuation || count > 1);
-        }
-        return ContinuationChildren(node).Any(child =>
-            DelayedNeedsContinuationAddress(child, cast, hasContinuation));
-    }
+    private static void ValidateEachTimeBody(AbilityEffect node, Cast cast) =>
+        AbilityInitiation.ValidateEachTimeBody(node, AdmissionContext(cast));
 
     private static void ContinueEachTime(
         AbilityEffect node, Cast cast, long from, long count)
@@ -958,17 +856,7 @@ public sealed partial class AbilityRunner
     /// of running a fresh selector against a changed board.
     /// </remarks>
     private static bool ContainsForEachTarget(AbilityEffect node) =>
-        node is AbilityEffect.DelayedStun
-        || node.OperationName() is "removeFromGame" or "exhaust" or "ready" or "reveal"
-            or "returnToHand" or "returnOwnedToHand" or "soakDamage"
-            or "addToHand" or "giveStatus" or "attachTo" or "grantUntil"
-            or "discard" or "heal" or "placeCounters" or "shuffleInto" or "search"
-            or "indirectDamage" or "dealDamage" or "moveDamage"
-            or "dealAttackDamage" or "moveAttackDamage" or "placeThreat"
-            or "removeThreat" or "replaceThreatWithDamage" or "enemyAttacks"
-            or "enemySchemes" or "putIntoPlay" or "placeAtRandom" or "thwartSchemes"
-            or "thwartDifferentSchemes" or "legalPractice"
-        || ContinuationChildren(node).Any(ContainsForEachTarget);
+        AbilityInitiation.ContainsForEachTarget(node);
 
     private static void RunChild(AbilityEffect node, string frame, Cast cast)
     {

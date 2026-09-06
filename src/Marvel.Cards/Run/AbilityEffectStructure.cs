@@ -24,6 +24,22 @@ internal static class AbilityEffectStructure
         _ => [],
     };
 
+    // Children that can resolve during an admitted sentence. This deliberately
+    // excludes prompts and delayed future recipients from preflight traversal.
+    internal static IEnumerable<AbilityEffect> ResolutionChildren(AbilityEffect effect) => effect switch
+    {
+        AbilityEffect.Sequence sequence => sequence.Effects,
+        AbilityEffect.Simultaneous simultaneous => simultaneous.Effects,
+        AbilityEffect.Conditional conditional => ConditionalBranches(conditional),
+        AbilityEffect.Dependent dependent => [dependent.Effect, dependent.Continuation],
+        AbilityEffect.Power { Kind: AbilityPowerKind.Defense } power => [power.Effect],
+        AbilityEffect.DelayedDiscard => [EffectBody(effect)],
+        AbilityEffect.DelayedStun => [],
+        AbilityEffect.ForEach repeated => [repeated.Effect],
+        AbilityEffect.EachTime each => [each.Effect, each.Then],
+        _ => [],
+    };
+
     internal static AbilityNumber? EffectAmount(AbilityEffect effect) => effect switch
     {
         AbilityEffect.Heal heal => heal.Amount,

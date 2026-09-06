@@ -10,7 +10,7 @@ namespace Marvel.Cards.Run;
 
 public sealed partial class AbilityRunner
 {
-    private enum ResolutionOutcome
+    internal enum ResolutionOutcome
     {
         None,
         Partial,

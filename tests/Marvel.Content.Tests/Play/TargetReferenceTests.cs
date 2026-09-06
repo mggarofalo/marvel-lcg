@@ -775,6 +775,48 @@ public sealed class TargetReferenceTests
     }
 
     [Rule("rr:cannot.3")]
+    [Rule("rr:crisis-icon.1")]
+    [Fact]
+    public void StructurallyIdenticalThwartsKeepSeparateCrisisEvidence()
+    {
+        // Both authored powers carry the same printed exception to Crisis.
+        // The second wrapper must retain evidence for its exact compiled
+        // location rather than losing it through structural record equality.
+        const string thwart = """
+            { "thwart": {
+              "target": { "query": "mainScheme" },
+              "effect": { "removeThreat": {
+                "scheme": { "query": "mainScheme" },
+                "amount": 1,
+                "ignoresCrisis": "true"
+              } }
+            } }
+            """;
+        var runner = Runner(
+            "01006",
+            $$"""
+            { "seq": [ {{thwart}}, {{thwart}} ] }
+            """);
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, "01006", DeckType.SupportsArea);
+                var crisis = board.CreateCard(
+                    "01108", board.AreaOf(DeckType.SideSchemesArea));
+                crisis.PlaceTokens("k_threat", 1);
+                board.TheCardIn(DeckType.MainSchemesArea)!
+                    .PlaceTokens("k_threat", 3);
+            },
+            runner);
+        var main = world.TheCardIn(DeckType.MainSchemesArea)!;
+
+        ResolveAction(game, source!);
+
+        Assert.Equal(1, main.Tokens.GetValueOrDefault("k_threat"));
+    }
+
+    [Rule("rr:cannot.3")]
     [Rule("rr:target.3.3")]
     [Fact]
     public void AValidatedCrisisExceptionSurvivesAnActivationContinuation()

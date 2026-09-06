@@ -10,49 +10,6 @@ namespace Marvel.Cards.Run;
 
 public sealed partial class AbilityRunner
 {
-    /// <summary>Whether one ability answers this occurrence, in this window.</summary>
-    private bool Answers(
-        World world, CompiledCardAbility ability, Card card, Occurrence occurrence, WindowKind window,
-        int? initiatingPlayer = null)
-    {
-        // A constant ability names no condition at all -- `rr:ability.5` -- so
-        // it answers no occurrence and appears in no window. What it does is
-        // read off the board by `Constant` instead.
-        if (ability.Trigger.Event is not { } condition || !occurrence.Is(condition))
-        {
-            return false;
-        }
-
-        // **The rest of the sentence, when the rest of the sentence is about
-        // the occurrence.** `rr:triggering-condition.2` gives one window to an
-        // occurrence that created several conditions, so a card whose triggering
-        // condition is "Unus **attacks and** defeats an ally" is answering a
-        // moment that carries both -- and an occurrence carrying only the defeat
-        // has not met it. `rr:forced.1` is why this gates the trigger rather
-        // than guarding the effect: a forced ability must resolve when its
-        // condition is met, so an ability that initiates and does nothing has
-        // already been the wrong answer -- it takes a place in `rr:forced.5`'s
-        // ordering question that it should never have been offered.
-        if (ability.Trigger.Also is { } also && !occurrence.Is(also))
-        {
-            return false;
-        }
-
-        bool belongs = window switch
-        {
-            WindowKind.Interrupt => AbilityTypes.IsInterrupt(ability.Trigger.Timing),
-            WindowKind.Response => AbilityTypes.IsResponse(ability.Trigger.Timing),
-            _ => false,
-        };
-
-        int? restricted = initiatingPlayer ?? RestrictedPlayer(world, ability, card);
-        return belongs
-            && Subject(world, ability.Trigger.Subject, card, occurrence, restricted)
-            && Role(world, ability.Trigger.Actor, card, occurrence.ActorFacts, restricted)
-            && Role(world, ability.Trigger.Target, card, occurrence.TargetFacts, restricted)
-            && Player(world, ability.Trigger.Player, card, occurrence, restricted);
-    }
-
     /// <summary>
     /// Whose opportunity an ability in a window is, or <c>-1</c> for every
     /// seat's — <c>rr:ability.8</c>.
@@ -134,32 +91,10 @@ public sealed partial class AbilityRunner
 
     /// <summary>Whether the authored ability contains the printed “you/your” binding.</summary>
     private bool UsesYouOrYour(CompiledCardAbility ability, Card card) =>
-        ability.Trigger.Subject == AbilitySubjects.You
-        || ability.Trigger.Actor == AbilityRoles.You
-        || ability.Trigger.Target == AbilityRoles.You
-        || ability.Trigger.Player == AbilityPlayers.You
-        || ContainsYouOrYour(ability.Effect)
-        || ContainsYouOrYour(ability.Cost)
-        || (ability.When is { } when && ContainsYouOrYour(when))
-        || (program.AttachTo.GetValueOrDefault(card.FaceId) is { } attachment
-            && ContainsYouOrYour(attachment));
+        AbilityPlayerBindingAnalysis.UsesYouOrYour(program, ability, card);
 
-    private static bool ContainsYouOrYour(AbilityCost? cost) => cost switch
-    {
-        null => false,
-        AbilityCost.Sequence sequence => sequence.Costs.Any(ContainsYouOrYour),
-        AbilityCost.Exhaust exhaust => exhaust.Card == AbilityCostCard.Identity,
-        AbilityCost.Discard discard => discard.Card == AbilityCostCard.Identity,
-        AbilityCost.RemoveCounters counters => counters.Card == AbilityCostCard.Identity,
-        AbilityCost.Heal heal => heal.Card == AbilityCostCard.Identity,
-        AbilityCost.Damage damage => damage.Card == AbilityCostCard.Identity,
-        AbilityCost.ExhaustChosen chosen => chosen.From is
-            AbilityCardQuery.CharactersYouControl or AbilityCardQuery.AlliesYouControl,
-        // Only the any-number spelling carries an explicit "yourHand" binding.
-        AbilityCost.DiscardFromHand discard => discard.Range is AbilityCostRange.Any,
-        AbilityCost.Spend or AbilityCost.SpendEnergy => false,
-        _ => throw new InvalidOperationException("Unknown compiled cost in player-binding analysis"),
-    };
+    private static bool ContainsYouOrYour(AbilityCost? cost) =>
+        AbilityPlayerBindingAnalysis.Contains(cost);
 
     /// <summary>Whether this player is permitted to initiate the ability.</summary>
     private bool MayInitiate(World world, CompiledCardAbility ability, Card card, int player)
@@ -235,7 +170,7 @@ public sealed partial class AbilityRunner
         {
             if (!cast.LabelsPreflighted)
             {
-                if (!CanInitiateLabels(ability, cast))
+                if (!AbilityInitiation.LabelsCanInitiate(ability, AdmissionContext(cast)))
                 {
                     throw new RulesNotImplementedException(
                         $"'{cast.Source.FaceId}' cannot initiate its labeled ability "
@@ -526,11 +461,8 @@ public sealed partial class AbilityRunner
 
     private static bool CanCreateDrones(AbilityEffect node, Cast cast) =>
         EffectOf<AbilityEffect.CreateDrones>(node, cast) is var drones
-        && drones.Count > 0
-        && Seats(drones.Players, cast).Any(player =>
-            cast.World.Seats[player].Deck.Cards.Count > 0
-            || cast.World.AreaOf(
-                DeckType.DiscardPile, PlayArea.Of(player), cardOwner: player).Cards.Count > 0);
+        && AbilityAdmissionFacts.CanCreateDrones(
+            cast.World, Seats(drones.Players, cast), drones.Count);
 
     /// <summary>
     /// "Put it into play engaged with you" — <c>rr:play-put-into-play</c>.

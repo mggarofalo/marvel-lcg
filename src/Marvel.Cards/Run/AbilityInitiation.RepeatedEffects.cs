@@ -8,7 +8,7 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Cards.Run;
 
-public sealed partial class AbilityRunner
+internal static partial class AbilityInitiation
 {
     private static bool RequiresChosenPlayer(AbilityCardSelection selection) => selection switch
     {
@@ -22,7 +22,7 @@ public sealed partial class AbilityRunner
     };
 
     private static bool RepeatedEffectCanChange(
-        AbilityCondition test, AbilityEffect effect, Cast cast)
+        AbilityCondition test, AbilityEffect effect, AbilityAdmissionScope cast)
     {
         int original = cast.Player;
         try
@@ -50,7 +50,7 @@ public sealed partial class AbilityRunner
     }
 
     private static RepeatedChange RepeatedChanges(
-        AbilityEffect node, Cast cast, RepeatedChange assumed, bool binding,
+        AbilityEffect node, AbilityAdmissionScope cast, RepeatedChange assumed, bool binding,
         int priorFrames, AbilityEffect repeatedEffect)
     {
         if (node.OperationName() == "changeForm")
@@ -173,7 +173,7 @@ public sealed partial class AbilityRunner
     }
 
     private static bool StableForCardsInPlay(
-        AbilityEffect node, Cast cast, int priorFrames,
+        AbilityEffect node, AbilityAdmissionScope cast, int priorFrames,
         AbilityEffect repeatedEffect, RepeatedChange assumed,
         bool binding) =>
         node.OperationName() is "draw" or "drawToHandSize" or "drawToPrintedHandSize"
@@ -193,7 +193,7 @@ public sealed partial class AbilityRunner
                     scheme.Tokens.GetValueOrDefault("k_threat")));
 
     private static bool DamageCanChangePlayerOrder(
-        AbilityEffect node, Cast cast, bool binding,
+        AbilityEffect node, AbilityAdmissionScope cast, bool binding,
         AbilityEffect repeatedEffect, RepeatedChange assumed,
         int priorFrames)
     {
@@ -219,7 +219,7 @@ public sealed partial class AbilityRunner
     }
 
     private static long TotalRepeatedDamageTo(
-        Card target, AbilityEffect repeatedEffect, Cast cast,
+        Card target, AbilityEffect repeatedEffect, AbilityAdmissionScope cast,
         RepeatedChange assumed, bool binding, int frames)
         => PeakRepeatedDamageOn(
             target, repeatedEffect, cast, assumed, binding, frames)
@@ -237,7 +237,7 @@ public sealed partial class AbilityRunner
     };
 
     private static long TotalThreatRemoved(
-        Card scheme, AbilityEffect node, Cast cast,
+        Card scheme, AbilityEffect node, AbilityAdmissionScope cast,
         RepeatedChange assumed = RepeatedChange.None, bool binding = false)
     {
         long own = node.OperationName() == "removeThreat"
@@ -280,7 +280,7 @@ public sealed partial class AbilityRunner
         int VillainStagesDrawn, bool Finished);
 
     private static long PeakRepeatedDamageOn(
-        Card target, AbilityEffect repeatedEffect, Cast cast,
+        Card target, AbilityEffect repeatedEffect, AbilityAdmissionScope cast,
         RepeatedChange assumed, bool binding, int frames)
     {
         int original = cast.Player;
@@ -326,7 +326,7 @@ public sealed partial class AbilityRunner
         }
     }
 
-    private static HashSet<int> TraceUnavailableMinions(Cast cast) =>
+    private static HashSet<int> TraceUnavailableMinions(AbilityAdmissionScope cast) =>
         cast.World.Areas
             .SelectMany(area => area.Cards)
             .Where(card => card.Area.Type != DeckType.EngagedEnemiesArea
@@ -336,7 +336,7 @@ public sealed partial class AbilityRunner
 
     private static DamageTraceState ApplyDamageTrace(
         DamageTraceState state, IReadOnlyList<DamageTransfer> trace,
-        Card target, Cast cast)
+        Card target, AbilityAdmissionScope cast)
     {
         var damage = new Dictionary<int, long>(state.Damage);
         var tough = new Dictionary<int, int>(state.Tough);
@@ -454,8 +454,7 @@ public sealed partial class AbilityRunner
                 {
                     LeavePlay(cardId);
                 }
-                if (cast.Abilities is AbilityRunner runner
-                    && runner.On(next).Any(ability =>
+                if (AbilityProgramQueries.On(cast.Context.Program, next).Any(ability =>
                         ability.Trigger.Timing == AbilityType.Constant))
                 {
                     throw new RulesNotImplementedException(
@@ -792,10 +791,10 @@ public sealed partial class AbilityRunner
     }
 
     private static long AfterForcedDamageReplacements(
-        Cast cast, int target, long amount, Dictionary<int, long> damage,
+        AbilityAdmissionScope cast, int target, long amount, Dictionary<int, long> damage,
         HashSet<int> discarded, int currentVillain)
     {
-        if (amount <= 0 || cast.Abilities is not AbilityRunner runner)
+        if (amount <= 0)
         {
             return amount;
         }
@@ -813,7 +812,7 @@ public sealed partial class AbilityRunner
             foreach (var attachment in area.Cards.Where(card =>
                 !discarded.Contains(card.ObjectId)))
             {
-                var replacement = runner.On(attachment).FirstOrDefault(ability =>
+                var replacement = AbilityProgramQueries.On(cast.Context.Program, attachment).FirstOrDefault(ability =>
                     ability.Trigger.Timing == AbilityType.ForcedInterrupt
                     && ContainsEffect(ability.Effect, "soakDamage"));
                 if (replacement is null)
@@ -827,7 +826,7 @@ public sealed partial class AbilityRunner
                         : attachment.Damage,
                     [amount]);
                 damage[attachment.ObjectId] = placed;
-                long threshold = runner.SoakDiscardThreshold(replacement.Effect);
+                long threshold = SoakDiscardThreshold(replacement.Effect);
                 if (threshold > 0 && placed >= threshold)
                 {
                     discarded.Add(attachment.ObjectId);
@@ -838,11 +837,11 @@ public sealed partial class AbilityRunner
         return amount;
     }
 
-    private static bool ContainsEffect(AbilityEffect node, string kind) =>
+    internal static bool ContainsEffect(AbilityEffect node, string kind) =>
         node.OperationName() == kind || MutationChildren(node).Any(child =>
             ContainsEffect(child, kind));
 
-    private long SoakDiscardThreshold(AbilityEffect node)
+    internal static long SoakDiscardThreshold(AbilityEffect node)
     {
         if (node.OperationName() == "if"
             && node is AbilityEffect.Conditional
@@ -863,24 +862,16 @@ public sealed partial class AbilityRunner
     }
 
     private static bool CanTakeDamageInTrace(
-        Cast cast, Card target, HashSet<int> discarded)
+        AbilityAdmissionScope cast, Card target, HashSet<int> discarded)
     {
         if (discarded.Contains(target.ObjectId))
         {
             return false;
         }
-        if (cast.Abilities is not AbilityRunner runner)
-        {
-            return cast.Abilities.CanTakeDamage(
-                cast.World, target, cast.Source);
-        }
-
-        foreach (var ability in runner.On(target).Where(ability =>
+        foreach (var ability in AbilityProgramQueries.On(cast.Context.Program, target).Where(ability =>
             ability.Trigger.Timing == AbilityType.Constant))
         {
-            var constant = new Cast(
-                cast.World, target, new Occurrence(0, []),
-                ControllerOf(cast.World, target), [], runner);
+            var constant = cast.ForConstant(target);
             if (ProhibitsDamageInTrace(
                 ability.Effect, constant, cast.Source, discarded))
             {
@@ -891,7 +882,7 @@ public sealed partial class AbilityRunner
     }
 
     private static bool ProhibitsDamageInTrace(
-        AbilityEffect effect, Cast cast, Card source,
+        AbilityEffect effect, AbilityAdmissionScope cast, Card source,
         HashSet<int> discarded) => effect switch
         {
             AbilityEffect.Sequence sequence => sequence.Effects.Any(step =>
@@ -913,7 +904,7 @@ public sealed partial class AbilityRunner
         };
 
     private static bool TraceTest(
-        AbilityCondition condition, Cast cast, HashSet<int> discarded) => condition switch
+        AbilityCondition condition, AbilityAdmissionScope cast, HashSet<int> discarded) => condition switch
         {
             AbilityCondition.All all => all.Operands.All(test =>
                 TraceTest(test, cast, discarded)),
@@ -933,7 +924,7 @@ public sealed partial class AbilityRunner
         };
 
     private static IReadOnlyList<IReadOnlyList<DamageTransfer>> DamageTraces(
-        AbilityEffect node, Cast cast, RepeatedChange assumed, bool binding)
+        AbilityEffect node, AbilityAdmissionScope cast, RepeatedChange assumed, bool binding)
     {
         if (node.OperationName() == "forEach")
         {
@@ -1026,7 +1017,7 @@ public sealed partial class AbilityRunner
     }
 
     private static IReadOnlyList<DamageTransfer> DamageTransfers(
-        AbilityEffect node, Cast cast)
+        AbilityEffect node, AbilityAdmissionScope cast)
     {
         if (node.OperationName() == "changeForm")
         {
@@ -1135,8 +1126,7 @@ public sealed partial class AbilityRunner
         if (node.OperationName() == "putIntoPlay"
             && TraceCardNamed(EffectOf<AbilityEffect.PutIntoPlay>(node, cast).Card, cast) is { } entering)
         {
-            if (cast.Abilities is AbilityRunner runner
-                && runner.On(entering.Card).Any(ability =>
+            if (AbilityProgramQueries.On(cast.Context.Program, entering.Card).Any(ability =>
                     ability.Trigger.Timing == AbilityType.Constant))
             {
                 // The card is intentionally not moved while eligibility is
@@ -1169,7 +1159,7 @@ public sealed partial class AbilityRunner
     }
 
     private static List<TraceCard> TraceCards(
-        AbilityCardSelection value, Cast cast)
+        AbilityCardSelection value, AbilityAdmissionScope cast)
     {
         bool dynamic = SelectorMembershipCanChange(value)
             || PotentialVillainSelector(value, cast);
@@ -1189,7 +1179,7 @@ public sealed partial class AbilityRunner
     }
 
     private static TraceCard? TraceCardNamed(
-        AbilityCardSelection value, Cast cast)
+        AbilityCardSelection value, AbilityAdmissionScope cast)
     {
         if (Find(value, cast) is { } found)
         {
@@ -1202,7 +1192,7 @@ public sealed partial class AbilityRunner
     }
 
     private static AbilityCardSelection? VillainSelector(
-        AbilityCardSelection value, Card resolved, Cast cast)
+        AbilityCardSelection value, Card resolved, AbilityAdmissionScope cast)
     {
         var current = cast.World.TheCardIn(DeckType.VillainArea);
         if (current is null || resolved.ObjectId != current.ObjectId
@@ -1214,7 +1204,7 @@ public sealed partial class AbilityRunner
     }
 
     private static bool SelectorCanTrackVillain(
-        AbilityCardSelection selector, Card current, Cast cast) => selector switch
+        AbilityCardSelection selector, Card current, AbilityAdmissionScope cast) => selector switch
     {
         AbilityCardSelection.Query query => query.Kind is AbilityCardQuery.Villain
             or AbilityCardQuery.Enemies or AbilityCardQuery.AttackableEnemies or AbilityCardQuery.Characters,
@@ -1229,7 +1219,7 @@ public sealed partial class AbilityRunner
     };
 
     private static int? TraceSelectorIncludesCard(
-        AbilityCardSelection value, int bound, int currentVillain, Cast cast,
+        AbilityCardSelection value, int bound, int currentVillain, AbilityAdmissionScope cast,
         HashSet<int> discarded, Dictionary<int, HashSet<string>> traits,
         Dictionary<(int Card, string Field), long> modifiers,
         Dictionary<int, int> engagement)
@@ -1249,7 +1239,7 @@ public sealed partial class AbilityRunner
     }
 
     private static bool TraceQueryMatches(
-        AbilityCardQuery query, Card candidate, int currentVillain, Cast cast,
+        AbilityCardQuery query, Card candidate, int currentVillain, AbilityAdmissionScope cast,
         HashSet<int> discarded, Dictionary<int, HashSet<string>> traits,
         Dictionary<(int Card, string Field), long> modifiers,
         Dictionary<int, int> engagement)
@@ -1310,7 +1300,7 @@ public sealed partial class AbilityRunner
             : card.Area.PlayArea.Player;
 
     private static bool VillainIsAttackableInTrace(
-        Cast cast, Card current, HashSet<int> discarded,
+        AbilityAdmissionScope cast, Card current, HashSet<int> discarded,
         Dictionary<(int Card, string Field), long> modifiers,
         Dictionary<int, int> engagement)
     {
@@ -1331,7 +1321,7 @@ public sealed partial class AbilityRunner
     }
 
     private static bool TraceHasTrait(
-        Card current, string trait, Cast cast, HashSet<int> discarded,
+        Card current, string trait, AbilityAdmissionScope cast, HashSet<int> discarded,
         Dictionary<int, HashSet<string>>? traits = null)
     {
         if (traits?.TryGetValue(current.ObjectId, out var gained) == true
@@ -1365,7 +1355,7 @@ public sealed partial class AbilityRunner
     }
 
     private static List<Card> TraceCarriedAttachments(
-        Card current, Cast cast, HashSet<int> discarded)
+        Card current, AbilityAdmissionScope cast, HashSet<int> discarded)
     {
         int boardVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
         if (boardVillain < 0 || !string.Equals(
@@ -1386,7 +1376,7 @@ public sealed partial class AbilityRunner
     }
 
     private static long TraceModified(
-        Card current, string field, Cast cast, HashSet<int> discarded,
+        Card current, string field, AbilityAdmissionScope cast, HashSet<int> discarded,
         Dictionary<(int Card, string Field), long>? modifiers = null)
     {
         if (StateFields.FilledFrom.TryGetValue(field, out string? attribute)
@@ -1450,7 +1440,7 @@ public sealed partial class AbilityRunner
     }
 
     private static int TraceStatusLimit(
-        Card card, string status, Cast cast, HashSet<int> discarded,
+        Card card, string status, AbilityAdmissionScope cast, HashSet<int> discarded,
         Dictionary<(int Card, string Field), long> modifiers)
     {
         if (status is not (Statuses.Stunned or Statuses.Confused))
@@ -1467,7 +1457,7 @@ public sealed partial class AbilityRunner
     }
 
     private static void TraceStatusesLeave(
-        int cardId, Cast cast,
+        int cardId, AbilityAdmissionScope cast,
         Dictionary<(int Card, string Status), int> statusCounts,
         HashSet<(int Card, string Status)> statusChanges)
     {
@@ -1490,7 +1480,7 @@ public sealed partial class AbilityRunner
     }
 
     private static void TraceSetStatusCount(
-        Card card, string status, int count, Cast cast,
+        Card card, string status, int count, AbilityAdmissionScope cast,
         Dictionary<(int Card, string Status), int> statusCounts,
         HashSet<(int Card, string Status)> statusChanges)
     {
@@ -1515,7 +1505,7 @@ public sealed partial class AbilityRunner
     }
 
     private static bool TraceStatusMakesVulnerable(
-        Card card, string status, int count, int limit, Cast cast,
+        Card card, string status, int count, int limit, AbilityAdmissionScope cast,
         HashSet<int> discarded,
         Dictionary<(int Card, string Field), long> modifiers) =>
         status is Statuses.Stunned or Statuses.Confused
@@ -1525,7 +1515,7 @@ public sealed partial class AbilityRunner
             card, "vulnerable", cast, discarded, modifiers) > 0;
 
     private static bool AnotherCopyAttachedInTrace(
-        Card current, Cast cast, HashSet<int> discarded)
+        Card current, AbilityAdmissionScope cast, HashSet<int> discarded)
     {
         int boardVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
         string sourceTitle = cast.World.Facts.Title(cast.Source.FaceId);
@@ -1545,7 +1535,7 @@ public sealed partial class AbilityRunner
 
     private static bool TraceRankedCandidatesInclude(
         List<Card> candidates, Card candidate, AbilityCardRank rank, bool maximum,
-        Cast cast, HashSet<int> discarded,
+        AbilityAdmissionScope cast, HashSet<int> discarded,
         Dictionary<(int Card, string Field), long> modifiers)
     {
         long Rank(Card card) => rank switch
@@ -1563,7 +1553,7 @@ public sealed partial class AbilityRunner
     }
 
     private static long MutationTotal(
-        AbilityEffect node, Cast cast, RepeatedChange assumed, bool binding,
+        AbilityEffect node, AbilityAdmissionScope cast, RepeatedChange assumed, bool binding,
         long own,
         Func<AbilityEffect, long> childAmount)
     {
@@ -1602,10 +1592,10 @@ public sealed partial class AbilityRunner
         return SaturatingSum(own, [descendants]);
     }
 
-    private static long SaturatingSum(long own, IEnumerable<long> rest)
+    internal static long SaturatingSum(long own, IEnumerable<long> rest)
         => AbilityAmounts.SaturatingSum(own, rest);
 
-    private static long SaturatingMultiply(long amount, long multiplier)
+    internal static long SaturatingMultiply(long amount, long multiplier)
     {
         if (amount <= 0 || multiplier <= 0)
         {
@@ -1621,12 +1611,12 @@ public sealed partial class AbilityRunner
         amountPerFrame > 0 && frames > 0
         && amountPerFrame >= (remaining + frames - 1) / frames;
 
-    private static IEnumerable<AbilityEffect> MutationChildren(AbilityEffect node) =>
+    internal static IEnumerable<AbilityEffect> MutationChildren(AbilityEffect node) =>
         node.OperationName() is "attack" or "thwart"
             ? [EffectBody(node)]
             : ContinuationChildren(node);
 
-    private static IEnumerable<AbilityEffect> ContinuationChildren(AbilityEffect node) =>
+    internal static IEnumerable<AbilityEffect> ContinuationChildren(AbilityEffect node) =>
         node.OperationName() switch
         {
             "choose" => ((AbilityEffect.Choose)node).Options,
@@ -1645,7 +1635,7 @@ public sealed partial class AbilityRunner
         };
 
     /// <summary>Whether this player-card effect can remove any threat.</summary>
-    private static bool CanRemoveThreat(AbilityEffect node, Cast cast)
+    private static bool CanRemoveThreat(AbilityEffect node, AbilityAdmissionScope cast)
     {
         var scheme = Find(ThreatSelectionOf(node, cast), cast);
         return scheme is not null
@@ -1654,34 +1644,35 @@ public sealed partial class AbilityRunner
             && CanRemoveThreatFrom(node, cast, scheme);
     }
 
-    private static bool CanRemoveThreatFrom(AbilityEffect node, Cast cast, Card scheme) =>
-        cast.Abilities.CanRemoveThreat(
-            cast.World, scheme, OverriddenThreatRemovalSource(node, cast))
+    private static bool CanRemoveThreatFrom(AbilityEffect node, AbilityAdmissionScope cast, Card scheme) =>
+        AbilityProgramQueries.CanRemoveThreat(
+            cast.World, cast.Context.Program, scheme,
+            OverriddenThreatRemovalSource(node, cast))
         && (IgnoresCrisis(node, cast)
             || scheme.Area.Type != DeckType.MainSchemesArea
             || !IsPlayerCard(cast)
             || !MainScheme.Crisis(cast.World, cast.World.Facts));
 
-    private static int OverriddenThreatRemovalSource(AbilityEffect node, Cast cast) =>
+    private static int OverriddenThreatRemovalSource(AbilityEffect node, AbilityAdmissionScope cast) =>
         EffectOf<AbilityEffect.RemoveThreat>(node, cast).OverridesCannotFrom is { } source
             ? Find(source, cast)?.ObjectId ?? -1
             : -1;
 
-    private static bool IgnoresCrisis(AbilityEffect node, Cast cast) =>
+    private static bool IgnoresCrisis(AbilityEffect node, AbilityAdmissionScope cast) =>
         EffectOf<AbilityEffect.RemoveThreat>(node, cast).IgnoresCrisis;
 
     /// <summary>Whether at least one named player can draw a card.</summary>
-    private static bool CanDraw(AbilityEffect node, Cast cast) =>
+    private static bool CanDraw(AbilityEffect node, AbilityAdmissionScope cast) =>
         EffectOf<AbilityEffect.Draw>(node, cast) is var draw
         && draw.Count > 0
         && Seats(draw.Players, cast).Any(player =>
             CanDraw(cast.World, player));
 
-    private static bool CanDraw(World world, int player) =>
+    internal static bool CanDraw(World world, int player) =>
         world.Seats[player].Deck.Cards.Count > 0;
 
     /// <summary>Whether a search names at least one searchable game area.</summary>
-    private static bool HasSearchableArea(AbilityEffect node, Cast cast)
+    private static bool HasSearchableArea(AbilityEffect node, AbilityAdmissionScope cast)
     {
         var search = EffectOf<AbilityEffect.Search>(node, cast);
         if (search.Areas.IsEmpty)

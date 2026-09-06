@@ -1,4 +1,5 @@
 using Marvel.Cards.Dsl;
+using Marvel.Cards.Run;
 using Marvel.Content.Setup;
 using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Events;
@@ -130,6 +131,67 @@ public sealed partial class ActionAbilityTests
         Assert.True(source!.Ready);
         Assert.Equal(0, advanced!.Damage);
         Assert.Equal(9, world!.Seats[0].IdentityCard.Damage);
+    }
+
+    [Rule("rr:triggering-condition.1")]
+    [Rule("rr:labeled-ability.4")]
+    [Fact]
+    public void AnUnrelatedDefeatInterruptDoesNotSuspendALabelledPowerTrace()
+    {
+        // An interrupt answers only when all of its triggering condition is
+        // true. This support's `this` is not the minion the attack would
+        // defeat, so the ordinary window filter must exclude it from the
+        // read-only trace just as it excludes it during resolution.
+        var runner = new AbilityRunner(AbilityCatalog.Parse(
+            """
+            { "cards": [
+              { "card": "01006", "abilities": [ {
+                "trigger": {
+                  "event": "WhenActionTriggered", "timing": "Action",
+                  "subject": "game"
+                },
+                "cost": { "exhaust": "this" },
+                "effect": { "attack": {
+                  "target": { "titled": "Hydra Mercenary" },
+                  "effect": { "seq": [
+                    { "dealDamage": {
+                      "cards": { "titled": "Hydra Mercenary" },
+                      "amount": 100
+                    } },
+                    { "dealAttackDamage": {
+                      "cards": { "query": "villain" }, "amount": 1
+                    } }
+                  ] }
+                } }
+              } ] },
+              { "card": "01092", "abilities": [ {
+                "trigger": {
+                  "event": "WhenCardDefeated", "timing": "Interrupt",
+                  "subject": "this"
+                },
+                "effect": { "draw": { "player": "you", "count": 1 } }
+              } ] }
+            ] }
+            """));
+        Card? source = null;
+        var (game, world) = Playing(
+            board =>
+            {
+                source = InPlay(board, "01006");
+                InPlay(board, "01092");
+                board.CreateCard(
+                    "01101",
+                    board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+            },
+            hero: true,
+            abilities: runner);
+
+        Assert.Contains(
+            game.Pending!.Affordances,
+            option => option.AnchorId == source!.ObjectId);
+        Assert.True(source!.Ready);
+        Assert.Equal(0, world.TheCardIn(DeckType.VillainArea)!.Damage);
     }
 
     [Rule("rr:damage.step.7")]

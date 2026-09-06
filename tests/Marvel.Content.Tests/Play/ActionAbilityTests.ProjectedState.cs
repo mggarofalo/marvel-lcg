@@ -801,6 +801,81 @@ public sealed partial class ActionAbilityTests
         Assert.Equal(0, Statuses.Count(world!, hydra, Statuses.Stunned));
     }
 
+    [Rule("rr:in-play-and-out-of-play.5")]
+    [Rule("rr:in-play-and-out-of-play.13")]
+    [Fact]
+    public void ProjectedStatusIgnoresAFacedownDronesPrintedConditionalConstant()
+    {
+        // A facedown card's printed text cannot affect the game. Projecting a
+        // status onto the Drone therefore cannot activate the conditional
+        // attack modifier printed on the card underneath or make a later
+        // attack-ranked minion selection unsafe to admit.
+        var runner = new Marvel.Cards.Run.AbilityRunner(
+            Marvel.Cards.Dsl.AbilityCatalog.Parse(
+                """
+                { "cards": [
+                  { "card": "01006", "abilities": [ {
+                    "trigger": {
+                      "event": "WhenActionTriggered", "timing": "Action",
+                      "subject": "game"
+                    },
+                    "cost": { "exhaust": "this" },
+                    "effect": { "seq": [
+                      { "giveStatus": {
+                        "card": { "query": "dronesEngagedWithYou" },
+                        "status": "stunned"
+                      } },
+                      { "dealDamage": {
+                        "cards": { "maxBy": {
+                          "of": { "query": "minions" }, "by": "attack"
+                        } },
+                        "amount": 100
+                      } },
+                      { "removeFromGame": { "cardsIn": {
+                        "area": "encounterDiscardPile",
+                        "title": "Hydra Mercenary"
+                      } } }
+                    ] }
+                  } ] },
+                  { "card": "08028", "abilities": [ {
+                    "trigger": { "timing": "Constant", "subject": "this" },
+                    "effect": { "if": {
+                      "test": { "hasStatus": {
+                        "card": "this", "status": "stunned"
+                      } },
+                      "then": { "grant": {
+                        "card": "this", "keyword": "attack", "amount": 10
+                      } }
+                    } }
+                  } ] }
+                ] }
+                """));
+        Card? source = null;
+        Card? drone = null;
+        var (game, _) = Playing(
+            board =>
+            {
+                source = InPlay(board, AuthoredCards.AuntMay);
+                drone = board.CreateCard("08028", board.Seats[0].Deck);
+                FacedownDrones.EngageTop(
+                    board, 0, "test", "Create_Drone", []);
+                var criminal = board.CreateCard(
+                    "02007", board.AreaOf(
+                        DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+                Statuses.Give(board, criminal, Statuses.Tough);
+                board.CreateCard(
+                    "08028", board.AreaOf(DeckType.EncounterDiscardPile));
+            },
+            hero: true,
+            abilities: runner);
+
+        Assert.True(FacedownDrones.Is(drone!));
+        Assert.Contains(
+            game.Pending!.Affordances,
+            option => option.Verb == Game.ActionVerb
+                && option.AnchorId == source!.ObjectId);
+    }
+
     [Rule("rr:ability.9")]
     [Fact]
     public void UnrelatedConditionalHealthConstantDoesNotBlockVillainProjection()

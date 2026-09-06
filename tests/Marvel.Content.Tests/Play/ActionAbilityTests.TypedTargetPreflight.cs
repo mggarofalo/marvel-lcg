@@ -4,12 +4,48 @@ using Marvel.Content.Tests.Cards;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
+using Marvel.Tests;
 using Xunit;
 
 namespace Marvel.Content.Tests.Play;
 
 public sealed partial class ActionAbilityTests
 {
+    [Rule("rr:in-play-and-out-of-play.5")]
+    [Fact]
+    public void AFacedownDroneCannotBlockThreatRemovalDuringActionAdmission()
+    {
+        // Card abilities can only "affect the game while they are in play."
+        // The Drone retains its underlying face id, but admission must not
+        // apply that hidden card's constant prohibition when deciding whether
+        // to offer the threat-removal action.
+        var runner = new AbilityRunner(AbilityCatalog.Parse("""
+            {"cards":[{"card":"01006","abilities":[
+              {"trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"game"},
+               "cost":{"exhaust":"this"},
+               "effect":{"removeThreat":{"scheme":{"query":"mainScheme"},"amount":1}}}
+            ]},{"card":"01091","abilities":[
+              {"trigger":{"timing":"Constant","subject":"this"},
+               "effect":{"preventThreatRemoval":{"query":"mainScheme"}}}
+            ]}]}
+            """));
+        Card? source = null;
+        Card? drone = null;
+        var (game, world) = Playing(board =>
+        {
+            source = InPlay(board, AuthoredCards.AuntMay);
+            drone = board.CreateCard("01091", board.Seats[0].Deck);
+            FacedownDrones.EngageTop(board, 0, "test", "Create_Drone", []);
+            board.TheCardIn(DeckType.MainSchemesArea)!.PlaceTokens("k_threat", 1);
+        }, abilities: runner);
+
+        Assert.True(FacedownDrones.Is(drone!));
+        Assert.True(runner.CanRemoveThreat(world, world.TheCardIn(DeckType.MainSchemesArea)!));
+        Assert.Contains(
+            game.Pending!.Affordances,
+            option => option.Verb == Game.ActionVerb && option.AnchorId == source!.ObjectId);
+    }
+
     [Theory]
     [InlineData("heal", false)]
     [InlineData("heal", true)]

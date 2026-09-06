@@ -2,9 +2,9 @@ using Marvel.Cards.Dsl;
 
 namespace Marvel.Cards.Run;
 
-public sealed partial class AbilityRunner
+internal static partial class AbilityBindingAnalysis
 {
-    private static bool BindingCanChange(AbilityEffect? effect) => effect switch
+    internal static bool BindingCanChange(AbilityEffect? effect) => effect switch
     {
         null => false,
         AbilityEffect.Sequence sequence => sequence.Effects.Any(BindingCanChange),
@@ -65,7 +65,7 @@ public sealed partial class AbilityRunner
         _ => throw new InvalidOperationException("Unknown compiled effect in player-binding analysis"),
     };
 
-    private static bool BindingCanChange(AbilityPlayerSelection players) => players switch
+    internal static bool BindingCanChange(AbilityPlayerSelection players) => players switch
     {
         AbilityPlayerSelection.OnePlayer one => one.Player == AbilityPlayer.ChosenPlayer,
         AbilityPlayerSelection.AllPlayers => false,

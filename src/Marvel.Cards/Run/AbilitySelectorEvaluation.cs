@@ -15,7 +15,8 @@ internal delegate bool AbilitySingularAreaAdmission(IReadOnlySet<DeckType> areas
 // One evaluation owns its observations. Nested selections share this local
 // collector; separate evaluations cannot change each other's bindings or output.
 internal sealed class AbilitySelectorEvaluation(
-    AbilityQueryContext context, AbilitySingularAreaAdmission? admitSingularArea = null)
+    AbilityQueryContext context, AbilitySingularAreaAdmission? admitSingularArea = null,
+    AbilityProgram? program = null)
 {
     private readonly List<InformationKind> information = [];
 
@@ -60,7 +61,7 @@ internal sealed class AbilitySelectorEvaluation(
     internal IReadOnlyList<Card> Every(AbilityCardSelection selector) => selector switch
     {
         AbilityCardSelection.Bound bound => AbilityCardQueries.Named(bound.Binding, context) is { } card ? [card] : [],
-        AbilityCardSelection.Query query => AbilityCardQueries.Cards(query.Kind, context),
+        AbilityCardSelection.Query query => AbilityCardQueries.Cards(query.Kind, context, program),
         AbilityCardSelection.Titled titled => AbilityCardQueries.ReferencedByTitle(titled.Title, context),
         AbilityCardSelection.EnemiesWithTrait trait => [.. context.World.Areas
             .Where(area => area.Type is DeckType.VillainArea or DeckType.EngagedEnemiesArea)

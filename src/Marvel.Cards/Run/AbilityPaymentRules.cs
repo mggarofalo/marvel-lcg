@@ -22,11 +22,14 @@ internal static class AbilityPaymentRules
     /// ability that would abort is not an offer, it is a trap. An exhausted card
     /// cannot pay a cost of exhausting itself: <c>rr:exhausted.2</c>.
     /// </remarks>
-    internal static bool Payable(World world, Card card, int player, AbilityCost? cost) =>
+    internal static bool Payable(
+        World world, Card card, int player, AbilityCost? cost,
+        AbilityProgram? program = null) =>
         cost switch
         {
             null => true,
-            AbilityCost.Sequence sequence => SequencePayable(world, card, player, sequence),
+            AbilityCost.Sequence sequence => SequencePayable(
+                world, card, player, sequence, program),
             AbilityCost.Exhaust exhaust => CostTarget(world, card, player, exhaust.Card)?.Ready == true,
             AbilityCost.Discard discard => CostTarget(world, card, player, discard.Card) is not null,
             AbilityCost.RemoveCounters removal => CostTarget(world, card, player, removal.Card) is { } counterCard
@@ -74,7 +77,10 @@ internal static class AbilityPaymentRules
 
             AbilityCost.Damage damage => CostTarget(
                     world, card, player, damage.Card) is { } takingTarget
-                && world.Abilities.CanTakeDamage(world, takingTarget, card)
+                && (program is not null
+                    ? AbilityProgramQueries.CanTakeDamage(
+                        world, program, takingTarget, card)
+                    : world.Abilities.CanTakeDamage(world, takingTarget, card))
                 // `rr:cost.12`: "that cost is not considered paid unless all
                 // of that damage was taken." Tough necessarily prevents the
                 // next instance, so this cost cannot be paid at initiation.
@@ -99,7 +105,9 @@ internal static class AbilityPaymentRules
         _ => false,
     };
 
-    internal static bool SequencePayable(World world, Card card, int player, AbilityCost.Sequence cost)
+    internal static bool SequencePayable(
+        World world, Card card, int player, AbilityCost.Sequence cost,
+        AbilityProgram? program = null)
     {
         var steps = cost.Costs;
         if (!CounterCostsPayable(world, card, player, cost))
@@ -140,7 +148,7 @@ internal static class AbilityPaymentRules
         }
 
         return steps.Where(step => step is not (AbilityCost.Spend or AbilityCost.RemoveCounters))
-            .All(step => Payable(world, card, player, step));
+            .All(step => Payable(world, card, player, step, program));
     }
 
     internal static bool CounterCostsPayable(

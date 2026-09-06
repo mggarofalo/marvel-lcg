@@ -40,22 +40,6 @@ public sealed partial class AbilityRunner
         _ => throw new InvalidOperationException("Unknown compiled search area"),
     };
 
-    private static bool ContainsYouOrYour(AbilityCardSelection selector) => selector switch
-    {
-        AbilityCardSelection.Bound bound => bound.Binding is
-            AbilityCardBinding.You or AbilityCardBinding.YourHero or AbilityCardBinding.YourAlterEgo,
-        AbilityCardSelection.Query query => query.Kind is
-            AbilityCardQuery.YourAsideMinion or AbilityCardQuery.YourAsideSideScheme
-            or AbilityCardQuery.MinionsEngagedWithYou or AbilityCardQuery.YourAsidePile
-            or AbilityCardQuery.UpgradesAndSupportsYouControl or AbilityCardQuery.IdentitySpecificInYourHand
-            or AbilityCardQuery.SupportsYouControl or AbilityCardQuery.CharactersYouControl
-            or AbilityCardQuery.UpgradesYouControl or AbilityCardQuery.AlliesYouControl or AbilityCardQuery.DronesEngagedWithYou,
-        AbilityCardSelection.WithTrait trait => ContainsYouOrYour(trait.Cards),
-        AbilityCardSelection.WithoutAnotherCopyAttached unoccupied => ContainsYouOrYour(unoccupied.Cards),
-        AbilityCardSelection.Discardable discardable => ContainsYouOrYour(discardable.Cards),
-        AbilityCardSelection.Ranked ranked => ContainsYouOrYour(ranked.Cards),
-        AbilityCardSelection.InAreas areas => areas.Areas.Contains(AbilitySearchArea.YourDeck),
-        AbilityCardSelection.Titled or AbilityCardSelection.EnemiesWithTrait => false,
-        _ => throw new InvalidOperationException("Unknown compiled selector in player-binding analysis"),
-    };
+    private static bool ContainsYouOrYour(AbilityCardSelection selector) =>
+        AbilityPlayerBindingAnalysis.Contains(selector);
 }
