@@ -1,4 +1,5 @@
 using static Marvel.Cards.Run.AbilityEffectStructure;
+using System.Collections.Immutable;
 using Marvel.Cards.Dsl;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
@@ -161,6 +162,69 @@ public sealed partial class AbilityRunner
 
         throw new RulesNotImplementedException(
             $"'{source.FaceId}' has no single choice at step {stoppedAt - 1} of its sequence");
+    }
+
+    // MARVEL-408 still owns how a continuation path is stored and how its
+    // exact choice node is reconstructed. This bridge ends that wire concern:
+    // structural legality receives only typed parent/cursor facts.
+    private AbilityContinuationFacts StructuralContinuationFacts(Cast cast)
+    {
+        if (cast.AbilityOrdinal < 0 || cast.AbilityPath.Count == 0)
+            return AbilityContinuationFacts.Empty;
+
+        var root = AbilitiesOn(cast.Source, cast.AbilityFace)
+            .Where(ability => cast.Tier is null || ability.Trigger.Timing == cast.Tier)
+            .ElementAtOrDefault(cast.AbilityOrdinal)?.Effect;
+        if (root is null)
+            return AbilityContinuationFacts.Empty;
+
+        var frames = ImmutableArray.CreateBuilder<AbilityContinuationFrame>();
+        for (int position = 0; position < cast.AbilityPath.Count; position++)
+        {
+            string encoded = cast.AbilityPath[position];
+            var parts = encoded.Split(':');
+            var prefix = cast.AbilityPath.Take(position).ToList();
+            var parent = prefix.Count == 0 ? root : NodeAtPath(root, prefix);
+            switch (parts[0])
+            {
+                case "seq":
+                    frames.Add(new SequenceContinuationFrame(
+                        (AbilityEffect.Sequence)parent, ParseIndex(parts, encoded)));
+                    break;
+                case "then":
+                case "otherwise":
+                    if (parts.Length >= 2 && parts[1] == "effect")
+                    {
+                        AbilityStructuralOutcome? outcome = parts.Length >= 3
+                            && Enum.TryParse(parts[2], out ResolutionOutcome parsed)
+                                ? (AbilityStructuralOutcome)(int)parsed
+                                : null;
+                        frames.Add(new DependentContinuationFrame(
+                            (AbilityEffect.Dependent)parent, Predecessor: true, outcome));
+                    }
+                    break;
+                case "and":
+                    frames.Add(new SimultaneousContinuationFrame(
+                        (AbilityEffect.Simultaneous)parent,
+                        [.. ValidRemaining(parent, parts, encoded)]));
+                    break;
+                case "forEach":
+                    frames.Add(new ForEachContinuationFrame(
+                        (AbilityEffect.ForEach)parent,
+                        ParseIndex(parts, encoded), ParseForEachCount(parts, encoded)));
+                    break;
+                case "eachTime":
+                    frames.Add(new EachTimeContinuationFrame(
+                        (AbilityEffect.EachTime)parent,
+                        ParseIndex(parts, encoded), ParseForEachCount(parts, encoded)));
+                    break;
+                case "eachPlayer":
+                    frames.Add(new EachPlayerContinuationFrame(
+                        cast.EachPlayerFrame && !cast.FinalPlayer));
+                    break;
+            }
+        }
+        return new AbilityContinuationFacts(true, frames.ToImmutable());
     }
 
     private static IEnumerable<AbilityEffect> Choices(AbilityEffect node) =>

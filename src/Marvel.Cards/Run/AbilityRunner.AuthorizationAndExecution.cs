@@ -205,18 +205,15 @@ public sealed partial class AbilityRunner
         var agendaOccurrence = cast.World.Agenda.Occurrence;
         var healthBefore = cast.World.Effects.CaptureCharacterHealth();
         var instruction = node;
-        if (instruction is AbilityEffect.ActivateEnemies activation)
-        {
-            Activate(activation, node, cast);
-        }
-        else if (!TryRunCardState(instruction, cast)
+        if (!TryRunCardState(instruction, cast)
             && !TryRunImmediateEffect(instruction, cast)
             && !TryRunDamageAndThreat(instruction, node, cast)
             && !TryRunCardMovement(instruction, cast))
         {
             RunRemainingEffect(node, cast);
         }
-        if (cast.Events.Count > eventsBefore && EventMeansEffectApplied(node.OperationName()))
+        if (cast.Events.Count > eventsBefore
+            && AbilityStructuralExecution.EventMeansEffectApplied(node))
         {
             cast.ResolveEffect();
         }
@@ -244,173 +241,115 @@ public sealed partial class AbilityRunner
     }
 
     private static void RunRemainingEffect(AbilityEffect node, Cast cast)
+        => ApplyStructuralDecision(AbilityStructuralExecution.Decide(
+            StructuralContext(cast), node), cast);
+
+    private static void RunDefense(RunDefenseCommand command, Cast cast)
     {
-        switch (node.OperationName())
+        var defender = cast.AbilityActor ?? LabeledAbilities.Begin(
+            cast.World, cast.World.Facts, Resolver(cast), cast.Source,
+            [Attack.DefenseVerb], cast.Events);
+        if (defender is null)
+            return;
+        if (cast.AbilityActor is null)
         {
-            case "seq":
-                Sequence(node, cast, from: 0);
-                break;
-
-            case "and":
-                // `rr:and` makes the effects simultaneous and independent;
-                // `rr:first-player.3` gives their order to the first player.
-                var simultaneous = OrderedEffects(node).ToList();
-                if (simultaneous.Count <= 1)
-                {
-                    foreach (var effect in simultaneous)
-                    {
-                        RunChild(effect, $"and:{simultaneous.IndexOf(effect)}::", cast);
-                    }
-                    break;
-                }
-                SuspendForChoice(node, cast);
-                break;
-
-            case "then":
-                ResolveDependent(node, cast, ResolutionOutcome.Full, "then");
-                break;
-
-            case "otherwise":
-                ResolveDependent(node, cast, ResolutionOutcome.None, "otherwise");
-                break;
-
-            case "eachPlayer":
-                if (HasNestedEachPlayer(node, cast))
-                {
-                    throw new RulesNotImplementedException(
-                        $"'{cast.Source.FaceId}' nests one each-player frame inside another, "
-                        + "which is not implemented");
-                }
-                int eachPlayerAbility = AbilityOrdinal(node, cast);
-                EachPlayerEffects.Schedule(
-                    cast.World, cast.Source, cast.Position + 1, cast.Tier, cast.FinalStep,
-                    cast.GainedKeywords.Contains("surge"), eachPlayerAbility,
-                    [.. cast.AbilityPath], cast.AbilityFace, cast.Player,
-                    ContinuationResults(cast, eachPlayerAbility),
-                    cast.Occurrence, [.. cast.Discarded.Select(card => card.ObjectId)],
-                    cast.HasContinuation, cast.AbilityActor?.ObjectId ?? -1);
-                cast.Suspend();
-                break;
-
-            case "choose":
-            case "chooseCard":
-                Choose(node, cast);
-                break;
-
-            case "resolveSpecials":
-                if (ResolveCards(EffectOf<AbilityEffect.CardAction>(node, cast).Selection, cast).Count > 0)
-                {
-                    SuspendForChoice(node, cast);
-                }
-
-                break;
-
-            case "payOrExhaust":
-            case "payOrEffect":
-                SuspendForChoice(node, cast);
-                break;
-
-            case "chooseTopForHand":
-                if (TopCards(
-                    cast.World.Seats[cast.Player].Deck,
-                    EffectOf<AbilityEffect.ChooseTopForHand>(node, cast).Count).Count == 0)
-                {
-                    break;
-                }
-                SuspendForChoice(node, cast);
-                break;
-
-            case "chooseDiscardToShuffle":
-            case "thwartDifferentSchemes":
-            case "makeTheCall":
-            case "legalPractice":
-                SuspendForChoice(node, cast);
-                break;
-
-            case "afterActivation":
-                if (cast.World.Activation is not { } current)
-                {
-                    throw new RulesNotImplementedException(
-                        $"'{cast.Source.FaceId}' delays an effect and no enemy is activating");
-                }
-
-                ((AbilityRunner)cast.Abilities).RuntimeFor(cast.World).AfterActivation(
-                    current.Id, new ActivationEffect(
-                    cast.Source.ObjectId, cast.Player, cast.Tier,
-                    EffectBody(node),
-                    cast.Altered?.ObjectId ?? -1,
-                    cast.AbilityActor?.ObjectId ?? -1));
-                cast.ResolveEffect();
-                break;
-
-            case "if":
-                var tested = ConditionalOf(node, cast).Test;
-                var branch = ResolveCondition(tested, cast) ? "then" : "else";
-                if (ConditionalBranch(node, branch) is { } taken)
-                {
-                    RunChild(taken, $"if:{branch}", cast);
-                }
-
-                break;
-
-            case "forEach":
-                ForEach(node, cast);
-                break;
-
-            case "eachTime":
-                EachTime(node, cast);
-                break;
-
-            case "attack":
-                ((AbilityRunner)cast.Abilities).SchedulePower(node, cast, BasicPowers.AttackVerb);
-                break;
-
-            case "defense":
-                var defender = cast.AbilityActor ?? LabeledAbilities.Begin(
-                    cast.World, cast.World.Facts, Resolver(cast), cast.Source,
-                    [Attack.DefenseVerb], cast.Events);
-                if (defender is not null)
-                {
-                    if (cast.AbilityActor is null)
-                    {
-                        cast.Results["defenseAbilityDefender"] = defender.ObjectId;
-                        Attack.BeginDefenseAbility(cast.World, Resolver(cast), defender);
-                    }
-                    RunChild(EffectBody(node), "defense:effect", cast);
-                }
-                break;
-
-            case "thwart":
-                ((AbilityRunner)cast.Abilities).SchedulePower(node, cast, BasicPowers.ThwartVerb);
-                break;
-
-            case "thwartSchemes":
-                var schemes = ResolveCards(EffectOf<AbilityEffect.ThwartGroup>(node, cast).Schemes, cast);
-                if (schemes.Count > 0)
-                {
-                    cast.Choose(schemes[0]);
-                    ((AbilityRunner)cast.Abilities).SchedulePower(
-                        ((AbilityEffect.ThwartGroup)node).Thwart, cast, BasicPowers.ThwartVerb,
-                        schemes[0], schemes, -1);
-                }
-                break;
-
-            default:
-                throw new RulesNotImplementedException(
-                    $"'{cast.Source.FaceId}' uses the effect node '{node.OperationName()}', "
-                    + "which is not implemented");
+            cast.Results["defenseAbilityDefender"] = defender.ObjectId;
+            Attack.BeginDefenseAbility(cast.World, Resolver(cast), defender);
         }
+        RunChild(command.Effect.Effect, "defense:effect", cast);
     }
 
-    private static bool EventMeansEffectApplied(string kind) => kind is not (
-        "seq" or "and" or "then" or "otherwise" or "eachPlayer" or "if"
-        or "forEach" or "eachTime" or "choose" or "chooseCard"
-        or "resolveSpecials" or "payOrExhaust" or "payOrEffect"
-        or "chooseTopForHand" or "chooseDiscardToShuffle"
-        or "thwartDifferentSchemes" or "makeTheCall" or "legalPractice"
-        or "attack" or "defense" or "thwart" or "thwartSchemes"
-        or "placeThreat" or "enemyAttacks" or "enemySchemes");
-
+    // The owner has decided the structural transition. This trampoline performs
+    // only its explicit domain command or the existing MARVEL-408 pause bridge.
+    private static void ApplyStructuralDecision(AbilityStructuralTransition transition, Cast cast)
+    {
+        switch (transition)
+        {
+            case StartSequenceCommand sequence:
+                Sequence(sequence.Effect, cast, from: 0);
+                return;
+            case StartDependentCommand dependent:
+                ResolveDependent(dependent.Effect, cast);
+                return;
+            case StartForEachCommand repeated:
+                ForEach(repeated.Effect, cast);
+                return;
+            case StartEachTimeCommand repeated:
+                EachTime(repeated.Effect, cast);
+                return;
+            case SchedulePowerCommand power:
+                ((AbilityRunner)cast.Abilities).SchedulePower(power, cast);
+                return;
+            case RunDefenseCommand defense:
+                RunDefense(defense, cast);
+                return;
+            case ScheduleActivationsCommand activations:
+                ScheduleActivations(activations, cast);
+                return;
+            case RunLeaf leaf:
+                RunStructuralLeaf(leaf, cast);
+                return;
+            case RunChoice choice:
+                _ = ApplyAdmission(choice.Admission, cast);
+                if (choice.BindsPlayerSelection)
+                    cast.ChooseSelection(choice.Selection);
+                if (choice.PendingOutcome is { } outcome)
+                    cast.CompletePendingDependency((ResolutionOutcome)(int)outcome);
+                RunStructuralLeaf(new RunLeaf(
+                    choice.Effect, [.. cast.StructuralPath, choice.Frame],
+                    cast.Position, cast.HasContinuation), cast);
+                return;
+            case Ask ask:
+                cast.StructuralPath.Add(ask.Frames[^1]);
+                try { SuspendForChoice(ask.Choice, cast); }
+                finally { cast.StructuralPath.RemoveAt(cast.StructuralPath.Count - 1); }
+                return;
+            case ScheduleEachPlayer schedule:
+                int ordinal = AbilityOrdinal(schedule.Effect, cast);
+                EachPlayerEffects.Schedule(
+                    cast.World, cast.Source, cast.Position + 1, cast.Tier, cast.FinalStep,
+                    cast.GainedKeywords.Contains("surge"), ordinal,
+                    [.. cast.AbilityPath], cast.AbilityFace, cast.Player,
+                    ContinuationResults(cast, ordinal), cast.Occurrence,
+                    [.. cast.Discarded.Select(card => card.ObjectId)], cast.HasContinuation,
+                    cast.AbilityActor?.ObjectId ?? -1);
+                cast.Suspend();
+                return;
+            case DelayAfterActivation delay:
+                var activation = cast.World.Activation
+                    ?? throw new InvalidOperationException("Structural owner admitted no activation");
+                ((AbilityRunner)cast.Abilities).RuntimeFor(cast.World).AfterActivation(
+                    activation.Id, new ActivationEffect(
+                        cast.Source.ObjectId, cast.Player, cast.Tier, delay.Effect.Effect,
+                        cast.Altered?.ObjectId ?? -1, cast.AbilityActor?.ObjectId ?? -1));
+                cast.ResolveEffect();
+                return;
+            case RunOrdered ordered:
+                for (int position = 0; position < ordered.Effects.Length; position++)
+                {
+                    var frame = ordered.Frames[position];
+                    cast.StructuralPath.Add(frame);
+                    try
+                    {
+                        cast.SetContinuation(cast.HasContinuation || position < ordered.Effects.Length - 1);
+                        RunChild(ordered.Effects[position], LegacyFrame(frame), cast);
+                    }
+                    finally { cast.StructuralPath.RemoveAt(cast.StructuralPath.Count - 1); }
+                    if (cast.Suspended) return;
+                }
+                return;
+            case Complete complete:
+                ApplyStructuralCompletion(complete, cast);
+                return;
+            case Rejected rejected:
+                throw new AbilityException(rejected.Reason);
+            case Unsupported unsupported:
+                throw new RulesNotImplementedException(unsupported.Reason);
+            default:
+                throw new InvalidOperationException(
+                    $"Structural execution stopped at {transition.GetType().Name}");
+        }
+    }
 
     /// <summary>
     /// "Put the top card of your deck into play facedown … as a Drone minion."

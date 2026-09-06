@@ -47,31 +47,25 @@ public sealed partial class AbilityRunner
             bindingMayChange, repeatedEffect);
 
     private static void ResolveDependent(
-        AbilityEffect node, Cast cast, ResolutionOutcome required, string branch)
+        AbilityEffect.Dependent dependent, Cast cast)
     {
-        var effect = EffectBody(node);
-        var dependent = ContinuationChild(node, branch);
-        if (ActiveChoices(effect, cast).Any())
+        bool outerContinuation = cast.HasContinuation;
+        var transition = AbilityStructuralExecution.Dependent(
+            StructuralContext(cast), dependent);
+        while (transition is RunLeaf leaf
+            && leaf.Frames[^1] is DependentFrame frame)
         {
-            PreflightAnsweredOutcome(effect, cast);
-            PreflightContinuationBoundaries(dependent, cast);
-            RunChild(effect, $"{node.OperationName()}:effect:Pending", cast);
-            return;
+            RunStructuralLeaf(leaf, cast);
+            var observation = new AbilityStructuralObservation(cast.Suspended);
+            if (!cast.Suspended)
+                cast.SetContinuation(outerContinuation);
+            transition = AbilityStructuralExecution.AfterDependentLeaf(
+                StructuralContext(cast), dependent, frame,
+                observation);
+            if (cast.Suspended)
+                return;
         }
-        var outcome = EnsureDependentSupported(node, cast, effect, dependent, required);
-
-        // A supported predecessor classified as `None` changes no state. Some
-        // low-level resolvers deliberately reject a missing target when used
-        // alone; dependency words make that absence an expected outcome, so
-        // do not turn an advertised `otherwise` fallback into an exception.
-        if (outcome != ResolutionOutcome.None)
-        {
-            RunChild(effect, $"{node.OperationName()}:effect:{outcome}", cast);
-        }
-        if (outcome == required)
-        {
-            RunChild(dependent, $"{node.OperationName()}:{branch}", cast);
-        }
+        cast.SetContinuation(outerContinuation);
     }
 
 

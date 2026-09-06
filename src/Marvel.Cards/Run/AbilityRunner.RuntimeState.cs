@@ -129,6 +129,10 @@ public sealed partial class AbilityRunner
 
         public List<string> AbilityPath { get; } = [];
 
+        // The currently executing structural ancestry. Its string wire mirror
+        // remains in AbilityPath until MARVEL-408 owns continuation storage.
+        public List<AbilityStructuralFrame> StructuralPath { get; } = [];
+
         public void RestoreAbility(
             int ordinal, IReadOnlyList<string> path, string? face = null)
         {
@@ -315,6 +319,13 @@ public sealed partial class AbilityRunner
         private HashSet<AbilityEffect> CrisisIgnoringThwarts => InitiationEvidence.CrisisIgnoringThwarts;
 
         private HashSet<int> PersistedCrisisIgnoringThwarts => InitiationEvidence.PersistedCrisisIgnoringThwarts;
+
+        public ImmutableHashSet<AbilityEffect> ValidatedCrisisIgnoringThwarts =>
+            ImmutableHashSet.CreateRange<AbilityEffect>(
+                ReferenceEqualityComparer.Instance, CrisisIgnoringThwarts);
+
+        public ImmutableHashSet<int> RestoredCrisisIgnoringThwarts =>
+            PersistedCrisisIgnoringThwarts.ToImmutableHashSet();
 
         /// <summary>Persists a pre-payment exception to this power's target limit.</summary>
         public void ValidateCrisisIgnoringThwart(AbilityEffect node) =>

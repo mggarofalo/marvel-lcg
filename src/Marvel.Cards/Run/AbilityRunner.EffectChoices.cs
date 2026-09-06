@@ -10,43 +10,6 @@ namespace Marvel.Cards.Run;
 
 public sealed partial class AbilityRunner
 {
-    private static void Choose(AbilityEffect node, Cast cast)
-    {
-        if (node.OperationName() == "choose" && ((AbilityEffect.Choose)node).Options.Length < 2)
-        {
-            throw new AbilityException(
-                $"'{cast.Source.FaceId}' offers a choice of one, which is not a choice");
-        }
-
-        if (node.OperationName() == "choose"
-            && !((AbilityEffect.Choose)node).Options.Any(option => OptionIsLegal(option, cast)))
-        {
-            // rr:target.2 and rr:choose-option.1: a mandatory encounter-card
-            // ability with no valid option cannot initiate. Reaching that
-            // instruction directly during reveal or boost resolution is a
-            // no-effect resolution, not a question with an invented answer.
-            if (!IsPlayerCard(cast)
-                && cast.Tier is { } tier
-                && AbilityTypes.IsMandatory(tier))
-            {
-                return;
-            }
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' requires a choice and has no legal option");
-        }
-
-        if (node.OperationName() == "chooseCard"
-            && LegalCardChoicesForContinuation(node, cast).Count == 0)
-        {
-            // A mandatory ability with no valid chosen target cannot initiate;
-            // reaching it directly from reveal or boost resolution is a no-op.
-            // Optional and action paths reject it during their preflight.
-            return;
-        }
-
-        SuspendForChoice(node, cast);
-    }
-
     /// <summary>Suspend an ability for one persisted player choice.</summary>
     private static void SuspendForChoice(AbilityEffect node, Cast cast)
     {
@@ -91,22 +54,8 @@ public sealed partial class AbilityRunner
         cast.Suspend();
     }
 
-    /// <summary>The characters indirect damage may be assigned to.</summary>
-    /// <remarks>
-    /// <c>rr:indirect-damage.4</c>: "characters that cannot take damage cannot
-    /// be assigned indirect damage", and <c>.3.1</c> makes a character with no
-    /// hit points left ineligible for the same reason — there is no amount that
-    /// would not defeat it.
-    /// </remarks>
-    private static List<Card> Assignable(AbilityCardSelection among, Cast cast) =>
-        AbilityDamageAndThreatExecution.Assignable(among, DamageAndThreatContext(cast));
-
     private static IReadOnlyList<Card> DamageTargets(AbilityCardSelection targets, Cast cast) =>
         AbilityDamageAndThreatExecution.DamageTargets(targets, DamageAndThreatContext(cast));
-
-    /// <summary>How much indirect damage one character may be assigned.</summary>
-    private static long Room(Cast cast, Card card) =>
-        AbilityDamageAndThreatExecution.Room(card, DamageAndThreatContext(cast));
 
     /// <summary>Deals an assignment that is already worked out.</summary>
     /// <remarks>
@@ -135,50 +84,14 @@ public sealed partial class AbilityRunner
                 damage, node, DamageAndThreatContext(cast), multiplier),
             node, cast);
 
-    private void SchedulePower(AbilityEffect node, Cast cast, string power)
+    private void SchedulePower(SchedulePowerCommand command, Cast cast)
     {
-        var target = ResolveCard(EffectOf<AbilityEffect.Power>(node, cast).Target!, cast)
-            ?? throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' cannot find the target of its {power}");
-        SchedulePower(node, cast, power, target, [target], -1);
-    }
-
-    private void SchedulePower(
-        AbilityEffect node, Cast cast, string power, Card target,
-        IReadOnlyList<Card> targets, long powerAmount)
-    {
-        var effect = EffectBody(node);
         var continuationChosen = cast.CaptureCurrentSelection();
-        cast.Choose(target);
-        if (SuspendsPowerEffect(
-            effect, cast, bindingMayChange: powerAmount >= 0))
-        {
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' suspends inside a {power.ToLowerInvariant()}, "
-                + "which is not implemented");
-        }
-
+        cast.Choose(command.Target);
         var abilities = AbilitiesOn(cast.Source, cast.AbilityFace).ToList();
-        var addresses = abilities
-            .Select((ability, index) => (Ability: ability, Index: index))
-            .Where(candidate => cast.Tier is null
-                || candidate.Ability.Trigger.Timing == cast.Tier)
-            .SelectMany(candidate => PowerNodes(candidate.Ability.Effect, power)
-                .Select((wrapper, ordinal) =>
-                    (candidate.Index, Ordinal: ordinal, Wrapper: wrapper)))
-            .Where(candidate => ReferenceEquals(candidate.Wrapper, node))
-            .ToList();
-        if (addresses.Count != 1)
-        {
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' {power.ToLowerInvariant()} has {addresses.Count} "
-                + "reconstructable authored locations");
-        }
-
-        var address = addresses[0];
         int resumeFrom = cast.HasContinuation ? cast.Position + 1 : -1;
         IReadOnlyList<string> abilityPath = [.. cast.AbilityPath];
-        var abilityResults = ContinuationResults(cast, abilities[address.Index]);
+        var abilityResults = ContinuationResults(cast, abilities[command.AbilityIndex]);
         if (continuationChosen is null)
         {
             abilityResults.Remove(PersistedChosen);
@@ -190,15 +103,14 @@ public sealed partial class AbilityRunner
             PersistChosen(continuationChosen, abilityResults);
         }
         var discarded = cast.Discarded.Select(card => card.ObjectId).ToList();
-        bool automaticThwartTarget = EffectOf<AbilityEffect.Power>(node, cast).AutomaticTarget
-            || cast.CrisisIgnoringThwartWasValidated(node, address.Ordinal);
-        bool scheduled = power == BasicPowers.AttackVerb
+        bool scheduled = command.Verb == BasicPowers.AttackVerb
             ? BasicPowers.CardAttack(
-                cast.World, cast.World.Facts, Resolver(cast), cast.Source, target, powerAmount,
-                cast.Trigger, cast.Events, abilityIndex: address.Index,
-                powerOrdinal: address.Ordinal, resumeFrom: resumeFrom,
+                cast.World, cast.World.Facts, Resolver(cast), cast.Source,
+                command.Target, command.Amount,
+                cast.Trigger, cast.Events, abilityIndex: command.AbilityIndex,
+                powerOrdinal: command.PowerOrdinal, resumeFrom: resumeFrom,
                 finalStep: cast.FinalStep,
-                targets: [.. targets.Select(card => card.ObjectId)], nested: true,
+                targets: [.. command.Targets.Select(card => card.ObjectId)], nested: true,
                 surgeGained: cast.GainedKeywords.Contains("surge"),
                 abilityPath: abilityPath, abilityFace: cast.AbilityFace,
                 abilityResults: abilityResults, abilityOccurrence: cast.Occurrence,
@@ -207,13 +119,14 @@ public sealed partial class AbilityRunner
                 abilityHasContinuation: cast.HasContinuation,
                 performer: cast.AbilityActor)
             : BasicPowers.CardThwart(
-                cast.World, cast.World.Facts, Resolver(cast), cast.Source, target, powerAmount,
-                cast.Trigger, cast.Events, abilityIndex: address.Index,
-                powerOrdinal: address.Ordinal, resumeFrom: resumeFrom,
+                cast.World, cast.World.Facts, Resolver(cast), cast.Source,
+                command.Target, command.Amount,
+                cast.Trigger, cast.Events, abilityIndex: command.AbilityIndex,
+                powerOrdinal: command.PowerOrdinal, resumeFrom: resumeFrom,
                 finalStep: cast.FinalStep,
-                targets: [.. targets.Select(card => card.ObjectId)],
+                targets: [.. command.Targets.Select(card => card.ObjectId)],
                 imminentThreat: cast.Occurrence.Threat,
-                automaticTarget: automaticThwartTarget,
+                automaticTarget: command.AutomaticThwartTarget,
                 nested: true,
                 surgeGained: cast.GainedKeywords.Contains("surge"),
                 abilityPath: abilityPath, abilityFace: cast.AbilityFace,
@@ -283,102 +196,27 @@ public sealed partial class AbilityRunner
     /// after that ordered batch, excluding enemies it has already processed.
     /// </para>
     /// </remarks>
-    private static void Activate(
-        AbilityEffect.ActivateEnemies instruction, AbilityEffect node, Cast cast)
+    private static void ScheduleActivations(
+        ScheduleActivationsCommand command, Cast cast)
     {
-        // The round the activation belongs to is the round the card was
-        // revealed in. Nothing else on the agenda can tell it.
         int round = cast.World.Agenda.Current?.Round ?? 0;
-
-        // "Speed Demon attacks **that character**." Absent on every card that
-        // simply says "the villain attacks you", which is the case
-        // `rr:attack-enemy-activation.1.1` calls normal: "the attacked
-        // character is the player's hero". An ability naming one instead is
-        // the exception the same clause allows.
-        var namedTarget = instruction.Against;
-        bool engagedHero = instruction.EngagedHero;
-        int against = namedTarget is { } named
-            ? ResolveCard(named, cast)?.ObjectId ?? -1
-            : -1;
-
-        // An ordinary "attacks you" activation belongs to the player
-        // resolving the card. An attack against a named occurrence role gets
-        // its attacked player from that role's snapshot instead. Speed Demon's
-        // target can move or change control during this interrupt, but that
-        // must not rewrite who was behind the character that attacked it.
-        int seat = namedTarget switch
-        {
-            AbilityCardSelection.Bound { Binding: AbilityCardBinding.TriggerActor } =>
-                cast.Occurrence.ActorFacts?.Controller ?? World.Scenario,
-            AbilityCardSelection.Bound { Binding: AbilityCardBinding.TriggerTarget } =>
-                cast.Occurrence.TargetFacts?.Controller ?? World.Scenario,
-            null => cast.Player,
-            _ => cast.Player,
-        };
-
-        if (seat < 0)
-        {
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' initiates an enemy attack against a character "
-                + "with no attacked player");
-        }
-
-        // "**(Resolve Speed Demon's attack first.)**" -- the card prints the
-        // instruction, so the data records it. Absent, an activation a card
-        // causes goes after whatever is happening, which is `rr:activation.8`:
-        // "an activation initiated during another resolves after the current
-        // activation has finished resolving." An interrupt that means to get
-        // in front of the thing it answers has to say so, and Speed Demon's
-        // parenthesis is the card saying it.
-        bool first = instruction.First;
-
-        bool dynamic = instruction.Dynamic;
-        var enemies = ActivationCandidates(instruction, ResolveCards(instruction.Enemies, cast), cast).ToList();
-        bool ordered = cast.Results.Remove("dynamicActivationOrderSet");
-        if (enemies.Count > 1 && !ordered)
-        {
-            SuspendForChoice(node, cast);
-            return;
-        }
-        if (ordered)
-        {
-            enemies = enemies
-                .OrderBy(enemy => cast.Results.GetValueOrDefault(
-                    $"dynamicActivationOrder:{enemy.ObjectId}", long.MaxValue))
-                .ToList();
-            foreach (var enemy in enemies)
-            {
-                cast.Results.Remove($"dynamicActivationOrder:{enemy.ObjectId}");
-            }
-        }
         var activations = new List<PhaseStep>();
-        foreach (var enemy in enemies)
+        foreach (var target in command.Targets)
         {
-            int activationSeat = engagedHero ? enemy.Area.PlayArea.Player : seat;
-            if (activationSeat < 0
-                || (engagedHero && !Forms.In(
-                    cast.World,
-                    cast.World.Seats[activationSeat],
-                    cast.World.Facts,
-                    Forms.Hero)))
-            {
-                continue;
-            }
-
             activations.Add(new PhaseStep(
-                instruction.Attack ? Steps.Attack : Steps.Scheme,
-                round, 2, Index: activationSeat, Subject: enemy.ObjectId,
-                Seat: activationSeat, Character: against));
+                command.Effect.Attack ? Steps.Attack : Steps.Scheme,
+                round, 2, Index: target.Seat, Subject: target.Enemy.ObjectId,
+                Seat: target.Seat, Character: command.Against));
         }
 
         var activationIds = new List<int>();
         foreach (var activation in activations)
         {
-            if (dynamic)
+            if (command.Dynamic)
             {
                 cast.Results[$"dynamicActivation:{activation.Subject}"] = 1;
             }
-            if (first)
+            if (command.First)
             {
                 activationIds.Add(cast.World.Agenda.NowActivation(activation));
             }
@@ -390,11 +228,11 @@ public sealed partial class AbilityRunner
 
         if (activationIds.Count > 0)
         {
-            if (dynamic)
+            if (command.Dynamic)
             {
                 cast.Results["repeatDynamicActivation"] = 1;
             }
-            int abilityOrdinal = AbilityOrdinal(node, cast);
+            int abilityOrdinal = AbilityOrdinal(command.Effect, cast);
             cast.World.Agenda.AfterActivations(activationIds, new PhaseStep(
                 Steps.ResumeAbility,
                 round,
@@ -420,24 +258,12 @@ public sealed partial class AbilityRunner
             cast.WaitFor(activationIds);
             cast.Suspend();
         }
-        else if (dynamic)
+        else if (command.Dynamic)
         {
             cast.Results["activationMade"] =
                 cast.Results.GetValueOrDefault("dynamicActivationMade");
         }
     }
-
-    private static AbilityEffect.ActivateEnemies ActivationOf(AbilityEffect node, Cast cast) =>
-        (AbilityEffect.ActivateEnemies)node;
-
-    private static IReadOnlyList<Card> ActivationCandidates(
-        AbilityEffect.ActivateEnemies instruction, Cast cast) =>
-        ActivationCandidates(instruction, Every(instruction.Enemies, cast), cast);
-
-    private static IReadOnlyList<Card> ActivationCandidates(
-        AbilityEffect.ActivateEnemies instruction, IReadOnlyList<Card> enemies, Cast cast) =>
-        [.. enemies.Where(enemy => !instruction.Dynamic
-            || cast.Results.GetValueOrDefault($"dynamicActivation:{enemy.ObjectId}") == 0)];
 
     private static Dictionary<string, long> ActivationResults(
         Cast cast, int abilityOrdinal)
@@ -609,10 +435,4 @@ public sealed partial class AbilityRunner
         }
     }
 
-    private static IReadOnlyList<Card> AlliesInPlayerDiscards(World world) =>
-        AbilityExpressionEvaluation.AlliesInPlayerDiscards(world);
-
-    private static IReadOnlyList<ResourceSource> MakeTheCallSources(
-        World world, int player, Card source, Card ally) =>
-        AbilityExpressionEvaluation.MakeTheCallSources(world, player, source, ally);
 }

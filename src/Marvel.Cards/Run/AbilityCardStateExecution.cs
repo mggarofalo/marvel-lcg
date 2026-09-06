@@ -11,6 +11,45 @@ namespace Marvel.Cards.Run;
 /// committed state changes and semantic events.</remarks>
 internal static class AbilityCardStateExecution
 {
+    // The structural owner supplies an already-validated, ordered selection;
+    // this owner alone performs the resulting deck and card-state mutations.
+    internal static void ChooseTopForHand(
+        IReadOnlyList<Card> top, Card selected, AbilityCardStateContext context)
+    {
+        var deck = context.World.Seats[context.Player].Deck;
+        var hand = context.World.Seats[context.Player].Hand;
+        foreach (var card in top)
+        {
+            if (ReferenceEquals(card, selected))
+            {
+                World.MoveToTop(card, hand);
+                context.Events.Add(new CardsMoved(
+                    Places.Reference(deck), Places.Reference(hand),
+                    [new Landing(card.ObjectId, hand.Cards.Count - 1)])
+                { Trigger = context.Trigger, Verb = "Add_To_Hand" });
+            }
+            else
+            {
+                Rules.Play.Discard.Card(context.World, card, context.Trigger, context.Events);
+            }
+        }
+    }
+
+    internal static void ShuffleDiscardIntoDeck(
+        IReadOnlyList<Card> selected, AbilityCardStateContext context)
+    {
+        var deck = context.World.Seats[context.Player].Deck;
+        foreach (var card in selected)
+            World.MoveToTop(card, deck);
+        context.World.Shuffle(deck);
+    }
+
+    internal static void DiscardCards(IReadOnlyList<Card> cards, string verb, AbilityCardStateContext context)
+    {
+        foreach (var card in cards)
+            Rules.Play.Discard.Card(context.World, card, verb, context.Events);
+    }
+
     internal static void PutIntoPlay(Card card, int player, AbilityCardStateContext context)
     {
         if (Uniqueness.IsBlocked(context.World, context.World.Facts, card, PlayArea.Of(player)))
