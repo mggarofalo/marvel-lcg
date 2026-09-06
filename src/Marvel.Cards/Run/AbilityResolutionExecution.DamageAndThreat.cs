@@ -21,7 +21,7 @@ internal sealed partial class AbilityResolutionExecution
     private AbilityDamageAndThreatContext DamageAndThreatContext(AbilityResolutionState cast) =>
         new(cast.ExpressionContext(), program, cast.Trigger, cast.Events,
             cast.AbilityActor, cast.PowerActor, cast.Power, cast.HasContinuation,
-            cast.ImminentThreat, cast.ResolutionAbility, cast.Incoming);
+            cast.ImminentThreat, cast.ResolutionAbility, cast.Incoming, threatAbilities);
 
     private void ApplyDamageAndThreat(
         AbilityDamageAndThreatResult result, AbilityEffect syntax, AbilityResolutionState cast)

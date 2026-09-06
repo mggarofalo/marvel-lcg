@@ -14,6 +14,30 @@ namespace Marvel.Content.Tests.Play;
 public sealed partial class ActionAbilityTests
 {
     [Fact]
+    public void ThreatRemovalUsesTheInitiatingRunnersThreatAbilities()
+    {
+        // Admission and resolution both belong to the runner passed to Act.
+        // The world's aggregate can describe another game and must not decide
+        // whether this card removes threat.
+        var runner = new AbilityRunner(AbilityCatalog.Parse(
+            """
+            {"cards":[{"card":"01006","abilities":[{
+              "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"game"},
+              "effect":{"removeThreat":{"scheme":{"query":"mainScheme"},"amount":1}}
+            }]}]}
+            """));
+        var (world, source) = OrderedPaymentBoard(runner);
+        var scheme = world.CreateCard("01137b", world.AreaOf(DeckType.MainSchemesArea));
+        scheme.PlaceTokens("k_threat", 2);
+        world.Abilities = new UnrelatedPaymentAbilities();
+
+        runner.Act(world, Assert.Single(
+            runner.Actions(world, 0), option => option.Card == source.ObjectId), [], []);
+
+        Assert.Equal(1, scheme.Tokens.GetValueOrDefault("k_threat"));
+    }
+
+    [Fact]
     public void PaymentUsesTheInitiatingRunnersResourceAbilities()
     {
         // Composed-path counterpart for the component probes below: action
@@ -373,6 +397,9 @@ public sealed partial class ActionAbilityTests
     {
         public override bool CanTakeDamage(World world, Card target, Card source) =>
             throw new InvalidOperationException("the unrelated World damage port was used");
+
+        public override bool CanRemoveThreat(World world, Card scheme, int ignoredSource = -1) =>
+            throw new InvalidOperationException("the unrelated World threat port was used");
 
         public override IReadOnlyList<ResourceSource> ResourceAbilities(World world, int player) =>
             throw new InvalidOperationException("the unrelated World resource port was used");

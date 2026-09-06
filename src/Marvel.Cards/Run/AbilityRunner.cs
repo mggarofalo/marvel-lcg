@@ -38,7 +38,7 @@ public sealed class AbilityRunner : ICardAbilities
         resourceExecution = new AbilityResourceExecution(program, offerQueries);
         runtimes = new AbilityGameRuntimes();
         resolution = new AbilityResolutionExecution(
-            program, runtimes, this, this, this, this, offerQueries);
+            program, runtimes, this, this, this, this, this, offerQueries);
     }
 
     public const string ChooseVerb = AbilityStructuralExecution.ChooseVerb;

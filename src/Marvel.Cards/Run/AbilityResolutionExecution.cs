@@ -39,6 +39,7 @@ internal sealed partial class AbilityResolutionExecution
     private readonly ICardPlayAbilities cardPlayAbilities;
     private readonly ICardReadinessAbilities readinessAbilities;
     private readonly IResourceCardAbilities resourceAbilities;
+    private readonly IThreatCardAbilities threatAbilities;
 
     internal AbilityResolutionExecution(
         AbilityProgram program,
@@ -47,6 +48,7 @@ internal sealed partial class AbilityResolutionExecution
         ICardPlayAbilities cardPlayAbilities,
         ICardReadinessAbilities readinessAbilities,
         IResourceCardAbilities resourceAbilities,
+        IThreatCardAbilities threatAbilities,
         AbilityOfferQueries offerQueries)
     {
         ArgumentNullException.ThrowIfNull(program);
@@ -56,6 +58,7 @@ internal sealed partial class AbilityResolutionExecution
         this.cardPlayAbilities = cardPlayAbilities;
         this.readinessAbilities = readinessAbilities;
         this.resourceAbilities = resourceAbilities;
+        this.threatAbilities = threatAbilities;
         this.offerQueries = offerQueries;
     }
 

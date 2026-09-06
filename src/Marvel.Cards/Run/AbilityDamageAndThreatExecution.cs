@@ -306,7 +306,7 @@ internal static class AbilityDamageAndThreatExecution
             if (!removal.IgnoresCrisis && scheme.Area.Type == DeckType.MainSchemesArea
                 && context.World.Facts.Kind(context.Source.FaceId) is CardKind.Event or CardKind.Ally or CardKind.Hero or CardKind.AlterEgo or CardKind.Upgrade or CardKind.Support
                 && MainScheme.Crisis(context.World, context.World.Facts)) continue;
-            Threat.Remove(context.World, context.World.Facts, context.World.ThreatAbilities, scheme,
+            Threat.Remove(context.World, context.World.Facts, context.ThreatAbilities, scheme,
                 AbilityAmounts.SaturatingSum(AbilityAmounts.SaturatingMultiply(
                     Amount(removal.Amount, context), multiplier),
                     [AbilityEventModifiers.Amount(context.World, context.Source, "eventThreatRemoval")]),
@@ -377,7 +377,7 @@ internal sealed record AbilityDamageAndThreatContext(
     AbilityExpressionContext Expressions, AbilityProgram Program, string Trigger,
     List<GameEvent> Events, Card? AbilityActor, Card? PowerActor, string? Power,
     bool HasContinuation, ThreatPlacement? ImminentThreat, PendingAbility? ResolutionAbility,
-    long Incoming)
+    long Incoming, IThreatCardAbilities ThreatAbilities)
 {
     internal World World => Expressions.World;
     internal Card Source => Expressions.Source;

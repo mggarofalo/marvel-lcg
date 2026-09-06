@@ -12,6 +12,7 @@ namespace Marvel.Cards.Run;
 internal sealed record AbilityStructuralContext(
     AbilityProgram Program,
     IResourceCardAbilities ResourceAbilities,
+    IThreatCardAbilities ThreatAbilities,
     AbilityExpressionContext Expressions,
     AbilityReachabilityContext Reachability,
     string Trigger,
@@ -538,7 +539,7 @@ internal static class AbilityStructuralExecution
 
     private static AbilityDamageAndThreatContext DamageContext(AbilityStructuralContext context) =>
         new(context.Expressions, context.Program, context.Trigger, [], context.AbilityActor, null, context.Power,
-            context.HasContinuation, null, null, 0);
+            context.HasContinuation, null, null, 0, context.ThreatAbilities);
 
     private static Prompt DescribeSpecials(AbilityStructuralContext context, AbilityEffect.CardAction specials)
     {

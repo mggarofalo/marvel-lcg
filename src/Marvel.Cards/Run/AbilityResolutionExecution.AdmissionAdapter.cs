@@ -16,7 +16,7 @@ internal sealed partial class AbilityResolutionExecution
     // receives values, never AbilityResolutionState or an execution callback.
     private AbilityStructuralContext StructuralContext(AbilityResolutionState cast) =>
         new(
-            program, resourceAbilities,
+            program, resourceAbilities, threatAbilities,
             cast.ExpressionContext(), cast.Reachability, cast.Trigger,
             cast.Source.FaceId, cast.AbilityFace,
             cast.Player, cast.Position, cast.HasContinuation, cast.Tier,

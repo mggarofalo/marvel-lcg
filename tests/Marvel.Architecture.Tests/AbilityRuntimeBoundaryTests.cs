@@ -58,6 +58,7 @@ public sealed class AbilityRuntimeBoundaryTests
             "ICardReadinessAbilities",
             "IEncounterCardAbilities",
             "IResourceCardAbilities",
+            "IThreatCardAbilities",
         ], dependencies);
     }
 
@@ -80,7 +81,12 @@ public sealed class AbilityRuntimeBoundaryTests
                 .DescendantNodes()
                 .OfType<MemberAccessExpressionSyntax>()
                 .Where(access => access.Name.Identifier.ValueText is
-                    "Abilities" or "ResourceAbilities" or "DamageAbilities")
+                    "Abilities" or "DamageAbilities" or "ThreatAbilities" or "PowerAbilities"
+                    or "ResourceAbilities" or "EncounterAbilities" or "ContinuationAbilities"
+                    or "ActivationCompletionAbilities" or "ReadinessAbilities" or "SetupAbilities"
+                    or "PlacementAbilities" or "ConstantAbilities" or "ActionAbilities"
+                    or "WindowAbilities" or "AttackAbilities" or "CardPlayAbilities"
+                    or "RevealAbilities" or "CounterPools")
                 .Where(access => access.Expression is IdentifierNameSyntax identifier
                         && identifier.Identifier.ValueText is "world" or "World"
                     || access.Expression is MemberAccessExpressionSyntax owner
