@@ -1,3 +1,5 @@
+using static Marvel.Cards.Run.AbilityEffectStructure;
+using static Marvel.Cards.Run.AbilityPaymentRules;
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 using Marvel.Cards.Dsl;
@@ -736,8 +738,13 @@ public sealed partial class AbilityRunner : ICardAbilities
         // refuses one that does not.
         var costOwner = world.Agenda.Current;
         var costOccurrence = world.Agenda.Occurrence;
-        ValidatePayment(found.Cost, paying, chosen, values, cast);
-        PayEvent(card, paying, cast, found.Effect, allocations, found.Cost);
+        ValidatePayment(found.Cost, paying, chosen, values, world, card, cast.Player);
+        var eventPayment = AbilityEventPayment.Prepare(
+            world, card, cast.Player, paying, found.Effect, allocations, found.Cost);
+        if (eventPayment is not null)
+        {
+            cast.PaidWith(eventPayment.Commit(occurrence, events));
+        }
         if (world.Facts.Kind(card.FaceId) == CardKind.Event
             && ResourceRequirement(found.Cost, card).Length > 0)
         {
@@ -2085,8 +2092,13 @@ public sealed partial class AbilityRunner : ICardAbilities
         // before step 6 resolves.
         var costOwner = world.Agenda.Current;
         var costOccurrence = world.Agenda.Occurrence;
-        ValidatePayment(found.Cost, paying, chosen, values, cast);
-        PayEvent(card, paying, cast, found.Effect, allocations, found.Cost);
+        ValidatePayment(found.Cost, paying, chosen, values, world, card, cast.Player);
+        var eventPayment = AbilityEventPayment.Prepare(
+            world, card, cast.Player, paying, found.Effect, allocations, found.Cost);
+        if (eventPayment is not null)
+        {
+            cast.PaidWith(eventPayment.Commit(occurrence, events));
+        }
         if (world.Facts.Kind(card.FaceId) == CardKind.Event
             && ResourceRequirement(found.Cost, card).Length > 0)
         {

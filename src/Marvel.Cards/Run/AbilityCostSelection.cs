@@ -1,5 +1,6 @@
 using Marvel.Cards.Dsl;
 using Marvel.Rules.Prompts;
+using Marvel.Rules.Play;
 using Marvel.Rules.State;
 
 namespace Marvel.Cards.Run;
@@ -57,4 +58,34 @@ internal static class AbilityCostSelection
         AbilityCostRange.Any => (1, available),
         _ => throw new InvalidOperationException("Unknown compiled cost range"),
     };
+    /// <summary>Resolves the physical counter removed by a cost.</summary>
+    /// <remarks>
+    /// If more than one typed pool is present, the rule permits the player to
+    /// choose either one. The current action protocol has no counter-choice
+    /// affordance, so resolution raises before changing state rather than
+    /// choosing an outcome on the player's behalf.
+    /// </remarks>
+    internal static string? CounterKeyForRemoval(Card card, string type, long count)
+    {
+        if (!string.Equals(type, "allPurpose", StringComparison.Ordinal))
+        {
+            string typed = "c_" + type;
+            return card.Tokens.GetValueOrDefault(typed) >= count ? typed : null;
+        }
+
+        string[] pools = [.. card.Tokens
+            .Where(pair => pair.Value > 0
+                && pair.Key.StartsWith("c_", StringComparison.Ordinal))
+            .Select(pair => pair.Key)
+            .Order(StringComparer.Ordinal)];
+        return pools.Length switch
+        {
+            0 => null,
+            1 when card.Tokens[pools[0]] >= count => pools[0],
+            1 => null,
+            _ => throw new RulesNotImplementedException(
+                $"'{card.FaceId}' must choose which all-purpose counter to remove"),
+        };
+    }
+
 }

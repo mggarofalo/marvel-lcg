@@ -1,3 +1,4 @@
+using static Marvel.Cards.Run.AbilityEffectStructure;
 using Marvel.Cards.Dsl;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;

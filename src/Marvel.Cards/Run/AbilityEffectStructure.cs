@@ -3,9 +3,10 @@ using Marvel.Cards.Dsl;
 
 namespace Marvel.Cards.Run;
 
-public sealed partial class AbilityRunner
+/// <summary>Read-only structural facts about checked instructions, without game state.</summary>
+internal static class AbilityEffectStructure
 {
-    private static IEnumerable<AbilityEffect> AllEffectChildren(AbilityEffect effect) => effect switch
+    internal static IEnumerable<AbilityEffect> AllEffectChildren(AbilityEffect effect) => effect switch
     {
         AbilityEffect.Sequence sequence => sequence.Effects,
         AbilityEffect.Simultaneous simultaneous => simultaneous.Effects,
@@ -23,7 +24,7 @@ public sealed partial class AbilityRunner
         _ => [],
     };
 
-    private static AbilityNumber? EffectAmount(AbilityEffect effect) => effect switch
+    internal static AbilityNumber? EffectAmount(AbilityEffect effect) => effect switch
     {
         AbilityEffect.Heal heal => heal.Amount,
         AbilityEffect.Damage damage => damage.Amount,
@@ -39,7 +40,7 @@ public sealed partial class AbilityRunner
         _ => null,
     };
 
-    private static IEnumerable<AbilityNumber> EffectNumbers(AbilityEffect effect)
+    internal static IEnumerable<AbilityNumber> EffectNumbers(AbilityEffect effect)
     {
         if (EffectAmount(effect) is { } amount) yield return amount;
         var count = effect switch
@@ -55,7 +56,7 @@ public sealed partial class AbilityRunner
         if (count is not null) yield return count;
     }
 
-    private static IEnumerable<AbilityCondition> EffectConditions(AbilityEffect effect) => effect switch
+    internal static IEnumerable<AbilityCondition> EffectConditions(AbilityEffect effect) => effect switch
     {
         AbilityEffect.Conditional conditional => [conditional.Test],
         AbilityEffect.EachTime each => [each.When],
@@ -63,12 +64,12 @@ public sealed partial class AbilityRunner
         _ => [],
     };
 
-    private static IEnumerable<char> PaidResourceQueries(AbilityEffect effect) =>
+    internal static IEnumerable<char> PaidResourceQueries(AbilityEffect effect) =>
         EffectConditions(effect).SelectMany(PaidResourceQueries)
             .Concat(EffectNumbers(effect).SelectMany(PaidResourceQueries))
             .Concat(AllEffectChildren(effect).SelectMany(PaidResourceQueries));
 
-    private static IEnumerable<char> PaidResourceQueries(AbilityCondition condition) => condition switch
+    internal static IEnumerable<char> PaidResourceQueries(AbilityCondition condition) => condition switch
     {
         AbilityCondition.PaidWithResource resource => [resource.Resource],
         AbilityCondition.All all => all.Operands.SelectMany(PaidResourceQueries),
@@ -78,7 +79,7 @@ public sealed partial class AbilityRunner
         _ => [],
     };
 
-    private static IEnumerable<char> PaidResourceQueries(AbilityNumber number) => number switch
+    internal static IEnumerable<char> PaidResourceQueries(AbilityNumber number) => number switch
     {
         AbilityNumber.Conditional conditional => PaidResourceQueries(conditional.Test)
             .Concat(PaidResourceQueries(conditional.Then)).Concat(PaidResourceQueries(conditional.Else)),
@@ -88,19 +89,14 @@ public sealed partial class AbilityRunner
         _ => [],
     };
 
-    private static bool DiscardTopHasCards(AbilityEffect.DiscardTop discard, Cast cast) =>
-        discard.Players is { } players
-            ? Seats(players, cast).Any(player => cast.World.Seats[player].Deck.Cards.Count > 0)
-            : Area(discard.From, cast).Cards.Count > 0;
-
-    private static ImmutableArray<AbilityEffect> OrderedEffects(AbilityEffect effect) => effect switch
+    internal static ImmutableArray<AbilityEffect> OrderedEffects(AbilityEffect effect) => effect switch
     {
         AbilityEffect.Sequence sequence => sequence.Effects,
         AbilityEffect.Simultaneous simultaneous => simultaneous.Effects,
         _ => throw new InvalidOperationException("Expected an ordered effect collection"),
     };
 
-    private static AbilityEffect EffectBody(AbilityEffect effect) => effect switch
+    internal static AbilityEffect EffectBody(AbilityEffect effect) => effect switch
     {
         AbilityEffect.Dependent dependent => dependent.Effect,
         AbilityEffect.EachPlayer each => each.Effect,
@@ -113,7 +109,7 @@ public sealed partial class AbilityRunner
         _ => throw new InvalidOperationException("Expected an effect with a body"),
     };
 
-    private static AbilityEffect EffectFollowing(AbilityEffect effect) => effect switch
+    internal static AbilityEffect EffectFollowing(AbilityEffect effect) => effect switch
     {
         AbilityEffect.Dependent dependent => dependent.Continuation,
         AbilityEffect.EachTime each => each.Then,
@@ -121,7 +117,7 @@ public sealed partial class AbilityRunner
         _ => throw new InvalidOperationException("Expected an effect with a continuation"),
     };
 
-    private static AbilityEffect? ConditionalBranch(AbilityEffect effect, string branch) =>
+    internal static AbilityEffect? ConditionalBranch(AbilityEffect effect, string branch) =>
         (effect, branch) switch
         {
             (AbilityEffect.Conditional conditional, "then") => conditional.Then,
@@ -131,7 +127,7 @@ public sealed partial class AbilityRunner
 
     // The persisted path uses engine-chosen field spellings. Decode those
     // structural frames against typed instructions, not the supplied JSON.
-    private static AbilityEffect ContinuationChild(AbilityEffect effect, string field) => (effect, field) switch
+    internal static AbilityEffect ContinuationChild(AbilityEffect effect, string field) => (effect, field) switch
     {
         (AbilityEffect.Conditional conditional, "then") when conditional.Then is { } then => then,
         (AbilityEffect.Conditional conditional, "else") when conditional.Else is { } otherwise => otherwise,
@@ -140,4 +136,10 @@ public sealed partial class AbilityRunner
         (AbilityEffect.Dependent { OnFull: false } dependent, "otherwise") => dependent.Continuation,
         _ => throw new InvalidOperationException("The continuation does not identify an effect child"),
     };
+    internal static IEnumerable<AbilityEffect> ConditionalBranches(AbilityEffect.Conditional conditional)
+    {
+        if (conditional.Then is { } then) yield return then;
+        if (conditional.Else is { } otherwise) yield return otherwise;
+    }
+
 }
