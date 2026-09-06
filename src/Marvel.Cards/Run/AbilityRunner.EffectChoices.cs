@@ -16,32 +16,9 @@ public sealed partial class AbilityRunner
         // `Index` remains the legacy top-level resume point. New continuations
         // use AbilityOrdinal and AbilityPath below.
         int abilityOrdinal = AbilityOrdinal(node, cast);
-        var abilityResults = ContinuationResults(cast, abilityOrdinal);
-        var continuation = new PhaseStep(
-            Steps.ChooseOption,
-            cast.World.Agenda.Current?.Round ?? 0,
-            2,
-            Index: cast.Position + 1,
-            Subject: cast.Source.ObjectId,
-            Seat: cast.Player,
-
-            // Which ability stopped. A card can have a choice in two of them,
-            // and the card and the position do not say which -- see `Choice`.
-            Tier: cast.Tier,
-            FinalStep: cast.FinalStep,
-            FinalPlayer: cast.FinalPlayer,
-            EachPlayerFrame: cast.EachPlayerFrame,
-            Trigger: cast.Trigger,
-            SurgeGained: cast.GainedKeywords.Contains("surge"),
-            Discarded: [.. cast.Discarded.Select(card => card.ObjectId)],
-            AbilityOrdinal: abilityOrdinal,
-            AbilityPath: [.. cast.AbilityPath],
-            AbilityResults: abilityResults,
-            AbilityOccurrence: cast.Occurrence,
-            AbilityFace: cast.AbilityFace,
-            AbilityPlayer: cast.AbilityPlayer,
-            AbilityActor: cast.AbilityActor?.ObjectId ?? -1,
-            AbilityHasContinuation: cast.HasContinuation);
+        var continuation = AbilityContinuationCodec.Step(
+            Capture(cast, abilityOrdinal), Steps.ChooseOption,
+            cast.World.Agenda.Current?.Round ?? 0);
         if (cast.Occurrence.Is(Steps.TurnAction))
         {
             cast.World.Agenda.ThenContinuation(continuation, cast.Occurrence);
@@ -84,57 +61,25 @@ public sealed partial class AbilityRunner
                 damage, node, DamageAndThreatContext(cast), multiplier),
             node, cast);
 
-    private void SchedulePower(SchedulePowerCommand command, Cast cast)
+    private static void SchedulePower(SchedulePowerCommand command, Cast cast)
     {
         var continuationChosen = cast.CaptureCurrentSelection();
         cast.Choose(command.Target);
-        var abilities = AbilitiesOn(cast.Source, cast.AbilityFace).ToList();
-        int resumeFrom = cast.HasContinuation ? cast.Position + 1 : -1;
-        IReadOnlyList<string> abilityPath = [.. cast.AbilityPath];
-        var abilityResults = ContinuationResults(cast, abilities[command.AbilityIndex]);
-        if (continuationChosen is null)
-        {
-            abilityResults.Remove(PersistedChosen);
-            abilityResults.Remove(PersistedChosenArea);
-            abilityResults.Remove(PersistedChosenIncarnation);
-        }
-        else
-        {
-            PersistChosen(continuationChosen, abilityResults);
-        }
-        var discarded = cast.Discarded.Select(card => card.ObjectId).ToList();
+        var capture = Capture(cast, command.AbilityIndex, continuationChosen);
+        var continuation = AbilityContinuationCodec.Power(
+            capture, command.PowerOrdinal, cast.HasContinuation);
         bool scheduled = command.Verb == BasicPowers.AttackVerb
             ? BasicPowers.CardAttack(
                 cast.World, cast.World.Facts, Resolver(cast), cast.Source,
                 command.Target, command.Amount,
-                cast.Trigger, cast.Events, abilityIndex: command.AbilityIndex,
-                powerOrdinal: command.PowerOrdinal, resumeFrom: resumeFrom,
-                finalStep: cast.FinalStep,
-                targets: [.. command.Targets.Select(card => card.ObjectId)], nested: true,
-                surgeGained: cast.GainedKeywords.Contains("surge"),
-                abilityPath: abilityPath, abilityFace: cast.AbilityFace,
-                abilityResults: abilityResults, abilityOccurrence: cast.Occurrence,
-                discarded: discarded, eachPlayerFrame: cast.EachPlayerFrame,
-                finalPlayer: cast.FinalPlayer, abilityPlayer: cast.AbilityPlayer,
-                abilityHasContinuation: cast.HasContinuation,
-                performer: cast.AbilityActor)
+                cast.Trigger, cast.Events, continuation,
+                [.. command.Targets.Select(card => card.ObjectId)], cast.AbilityActor)
             : BasicPowers.CardThwart(
                 cast.World, cast.World.Facts, Resolver(cast), cast.Source,
                 command.Target, command.Amount,
-                cast.Trigger, cast.Events, abilityIndex: command.AbilityIndex,
-                powerOrdinal: command.PowerOrdinal, resumeFrom: resumeFrom,
-                finalStep: cast.FinalStep,
-                targets: [.. command.Targets.Select(card => card.ObjectId)],
-                imminentThreat: cast.Occurrence.Threat,
-                automaticTarget: command.AutomaticThwartTarget,
-                nested: true,
-                surgeGained: cast.GainedKeywords.Contains("surge"),
-                abilityPath: abilityPath, abilityFace: cast.AbilityFace,
-                abilityResults: abilityResults, abilityOccurrence: cast.Occurrence,
-                discarded: discarded, eachPlayerFrame: cast.EachPlayerFrame,
-                finalPlayer: cast.FinalPlayer, abilityPlayer: cast.AbilityPlayer,
-                abilityHasContinuation: cast.HasContinuation,
-                performer: cast.AbilityActor);
+                cast.Trigger, cast.Events, continuation,
+                [.. command.Targets.Select(card => card.ObjectId)], cast.Occurrence.Threat,
+                command.AutomaticThwartTarget, cast.AbilityActor);
         if (!scheduled)
         {
             return;
@@ -228,68 +173,18 @@ public sealed partial class AbilityRunner
 
         if (activationIds.Count > 0)
         {
-            if (command.Dynamic)
-            {
-                cast.Results["repeatDynamicActivation"] = 1;
-            }
             int abilityOrdinal = AbilityOrdinal(command.Effect, cast);
-            cast.World.Agenda.AfterActivations(activationIds, new PhaseStep(
-                Steps.ResumeAbility,
-                round,
-                2,
-                Index: cast.Position + 1,
-                Subject: cast.Source.ObjectId,
-                Seat: cast.Player,
-                Tier: cast.Tier,
-                FinalStep: cast.FinalStep,
-                FinalPlayer: cast.FinalPlayer,
-                EachPlayerFrame: cast.EachPlayerFrame,
-                Trigger: cast.Trigger,
-                SurgeGained: cast.GainedKeywords.Contains("surge"),
-                Discarded: [.. cast.Discarded.Select(card => card.ObjectId)],
-                AbilityOrdinal: abilityOrdinal,
-                AbilityPath: [.. cast.AbilityPath],
-                AbilityResults: ActivationResults(cast, abilityOrdinal),
-                AbilityOccurrence: cast.Occurrence,
-                AbilityFace: cast.AbilityFace,
-                AbilityPlayer: cast.AbilityPlayer,
-                AbilityActor: cast.AbilityActor?.ObjectId ?? -1,
-                AbilityHasContinuation: cast.HasContinuation));
+            var capture = AbilityContinuationCodec.ForActivations(
+                Capture(cast, abilityOrdinal), command.Dynamic);
+            cast.World.Agenda.AfterActivations(activationIds, AbilityContinuationCodec.Step(
+                capture, Steps.ResumeAbility, round, plan: true, activationIds: activationIds));
             cast.WaitFor(activationIds);
             cast.Suspend();
         }
         else if (command.Dynamic)
         {
-            cast.Results["activationMade"] =
-                cast.Results.GetValueOrDefault("dynamicActivationMade");
+            AbilityContinuationCodec.CompleteDynamicActivation(cast.Results);
         }
-    }
-
-    private static Dictionary<string, long> ActivationResults(
-        Cast cast, int abilityOrdinal)
-    {
-        var results = ContinuationResults(cast, abilityOrdinal);
-        results.Remove("activationMade");
-        results.Remove("activationDamage");
-        results.Remove("activationThreat");
-        return results;
-    }
-
-    /// <summary>Gameplay results plus engine-owned state needed after suspension.</summary>
-    private static Dictionary<string, long> ContinuationResults(
-        Cast cast, int abilityOrdinal)
-    {
-        var results = new Dictionary<string, long>(cast.Results, StringComparer.Ordinal);
-        if (cast.Abilities is AbilityRunner runner)
-        {
-            cast.PersistCrisisIgnoringThwarts(
-                runner.AbilityAt(
-                    cast.Source, cast.Tier, abilityOrdinal, cast.AbilityFace),
-                results);
-        }
-        PersistSource(cast, results);
-        PersistChosen(cast, results);
-        return results;
     }
 
     /// <summary>Resume the containing ability after a rules procedure finishes.</summary>
@@ -298,31 +193,10 @@ public sealed partial class AbilityRunner
         Occurrence? agendaOccurrence = null)
     {
         int abilityOrdinal = AbilityOrdinal(node, cast);
-        var results = ContinuationResults(cast, abilityOrdinal);
-        results["procedureApplied"] = 1;
-        var continuation = new PhaseStep(
-            Steps.ResumeAbility,
-            cast.World.Agenda.Current?.Round ?? 0,
-            2,
-            Index: cast.Position + 1,
-            Subject: cast.Source.ObjectId,
-            Seat: cast.Player,
-            Plan: true,
-            Tier: cast.Tier,
-            FinalStep: cast.FinalStep,
-            FinalPlayer: cast.FinalPlayer,
-            EachPlayerFrame: cast.EachPlayerFrame,
-            Trigger: cast.Trigger,
-            SurgeGained: cast.GainedKeywords.Contains("surge"),
-            Discarded: [.. cast.Discarded.Select(card => card.ObjectId)],
-            AbilityOrdinal: abilityOrdinal,
-            AbilityPath: [.. cast.AbilityPath],
-            AbilityResults: results,
-            AbilityOccurrence: cast.Occurrence,
-            AbilityFace: cast.AbilityFace,
-            AbilityPlayer: cast.AbilityPlayer,
-            AbilityActor: cast.AbilityActor?.ObjectId ?? -1,
-            AbilityHasContinuation: cast.HasContinuation);
+        var capture = AbilityContinuationCodec.ForEffectProcedure(
+            Capture(cast, abilityOrdinal));
+        var continuation = AbilityContinuationCodec.Step(
+            capture, Steps.ResumeAbility, cast.World.Agenda.Current?.Round ?? 0, plan: true);
         if (agendaOwner is null)
         {
             cast.World.Agenda.Then(continuation);
@@ -343,30 +217,10 @@ public sealed partial class AbilityRunner
     private static void SuspendAfterCost(
         Cast cast, int abilityOrdinal, PhaseStep? owner, Occurrence? occurrence)
     {
-        var results = ContinuationResults(cast, abilityOrdinal);
-        results["costProcedurePending"] = 1;
-        var continuation = new PhaseStep(
-            Steps.ResumeAbility,
-            cast.World.Agenda.Current?.Round ?? 0,
-            2,
-            Subject: cast.Source.ObjectId,
-            Seat: cast.Player,
-            Plan: true,
-            Tier: cast.Tier,
-            FinalStep: cast.FinalStep,
-            FinalPlayer: cast.FinalPlayer,
-            EachPlayerFrame: cast.EachPlayerFrame,
-            Trigger: cast.Trigger,
-            SurgeGained: cast.GainedKeywords.Contains("surge"),
-            Discarded: [.. cast.Discarded.Select(card => card.ObjectId)],
-            AbilityOrdinal: abilityOrdinal,
-            AbilityPath: [],
-            AbilityResults: results,
-            AbilityOccurrence: cast.Occurrence,
-            AbilityFace: cast.AbilityFace,
-            AbilityPlayer: cast.AbilityPlayer,
-            AbilityActor: cast.AbilityActor?.ObjectId ?? -1,
-            AbilityHasContinuation: cast.HasContinuation);
+        var capture = AbilityContinuationCodec.ForCostProcedure(
+            Capture(cast, abilityOrdinal));
+        var continuation = AbilityContinuationCodec.Step(
+            capture, Steps.ResumeAbility, cast.World.Agenda.Current?.Round ?? 0, plan: true);
         if (owner is null)
         {
             cast.World.Agenda.Then(continuation);
@@ -380,38 +234,28 @@ public sealed partial class AbilityRunner
         }
     }
 
-    private static Dictionary<string, long> ContinuationResults(
-        Cast cast, CompiledCardAbility ability)
+    private static AbilityContinuationCapture Capture(
+        Cast cast, int ordinal, AbilityCardReference? chosen = null,
+        IReadOnlyList<AbilityStructuralFrame>? frames = null)
     {
         var results = new Dictionary<string, long>(cast.Results, StringComparer.Ordinal);
-        cast.PersistCrisisIgnoringThwarts(ability, results);
-        PersistSource(cast, results);
-        PersistChosen(cast, results);
-        return results;
-    }
-
-    private const string PersistedChosen = "__continuation.chosen";
-    private const string PersistedChosenArea = "__continuation.chosen_area";
-    private const string PersistedChosenIncarnation = "__continuation.chosen_incarnation";
-    private const string PersistedSourceIncarnation = "__continuation.source_incarnation";
-
-    private static void PersistSource(Cast cast, Dictionary<string, long> results) =>
-        results[PersistedSourceIncarnation] = cast.SourceBindingIncarnation;
-
-    private static void PersistChosen(Cast cast, Dictionary<string, long> results)
-    {
-        if (cast.CaptureCurrentSelection() is { } chosen)
-        {
-            PersistChosen(chosen, results);
-        }
-    }
-
-    private static void PersistChosen(
-        AbilityCardReference chosen, Dictionary<string, long> results)
-    {
-        results[PersistedChosen] = chosen.Card.ObjectId;
-        results[PersistedChosenArea] = chosen.Area;
-        results[PersistedChosenIncarnation] = chosen.Incarnation;
+        var runner = (AbilityRunner)cast.Abilities;
+        var ability = runner.AbilityAt(
+            cast.Source, cast.Tier, ordinal, cast.AbilityFace);
+        var crisis = AbilityContinuationCodec.CrisisIgnoringThwartOrdinals(
+            ability, cast.ValidatedCrisisIgnoringThwarts,
+            cast.RestoredCrisisIgnoringThwarts);
+        var selection = chosen ?? cast.CaptureCurrentSelection();
+        var binding = selection is null ? null : new AbilityContinuationCardBinding(
+            selection.Card.ObjectId, selection.Area, selection.Incarnation);
+        return AbilityContinuationCodec.Capture(
+            cast.Source.ObjectId, cast.SourceBindingIncarnation,
+            new AbilityContinuationAddress(cast.AbilityFace, cast.Tier, ordinal),
+            frames ?? cast.StructuralPath, cast.Position, cast.Player, cast.AbilityPlayer,
+            cast.AbilityActor?.ObjectId ?? -1, cast.FinalStep, cast.FinalPlayer,
+            cast.EachPlayerFrame, cast.HasContinuation, cast.Trigger,
+            cast.GainedKeywords.Contains("surge"), cast.Occurrence,
+            cast.Discarded.Select(card => card.ObjectId), results, binding, crisis);
     }
 
     /// <summary>Propagate one reveal-scoped Surge gain to work already suspended.</summary>

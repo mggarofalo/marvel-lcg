@@ -522,7 +522,7 @@ public sealed partial class AbilityRunner
         cast.StructuralPath.Add(frame);
         try
         {
-            RunChild(leaf.Effect, LegacyFrame(frame), cast);
+            Run(leaf.Effect, cast);
         }
         finally
         {
@@ -530,39 +530,17 @@ public sealed partial class AbilityRunner
         }
     }
 
-    // This is the only MARVEL-407 bridge to the continuation path wire.
-    private static string LegacyFrame(AbilityStructuralFrame frame) => frame switch
+    private static void RunChild(
+        AbilityEffect node, AbilityStructuralFrame frame, Cast cast)
     {
-        SequenceFrame sequence => $"seq:{sequence.Next - 1}",
-        SimultaneousFrame simultaneous when simultaneous.Current >= 0 =>
-            $"and:{simultaneous.Current}:"
-            + $"{string.Join(',', simultaneous.Remaining)}:{string.Join(',', simultaneous.Completed)}",
-        ConditionalFrame conditional => conditional.Then ? "if:then" : "if:else",
-        DependentFrame dependent when dependent.Predecessor =>
-            $"{(dependent.OnFull ? "then" : "otherwise")}:effect:"
-            + (dependent.Outcome?.ToString() ?? "Pending"),
-        DependentFrame dependent =>
-            $"{(dependent.OnFull ? "then" : "otherwise")}:"
-            + (dependent.OnFull ? "then" : "otherwise"),
-        ForEachFrame repeated => $"forEach:{repeated.Next - 1}:{repeated.Count}",
-        EachTimeFrame repeated when repeated.DiscardedCard is { } card =>
-            $"eachTime:{repeated.Next - 1}:{repeated.Count}:{card}",
-        ChoiceFrame { Card: not null } => "choice:effect",
-        ChoiceFrame { Option: { } option } => $"choice:option:{option}",
-        _ => throw new InvalidOperationException(
-            $"No legacy continuation encoding exists for {frame.GetType().Name}"),
-    };
-
-    private static void RunChild(AbilityEffect node, string frame, Cast cast)
-    {
-        cast.AbilityPath.Add(frame);
+        cast.StructuralPath.Add(frame);
         try
         {
             Run(node, cast);
         }
         finally
         {
-            cast.AbilityPath.RemoveAt(cast.AbilityPath.Count - 1);
+            cast.StructuralPath.RemoveAt(cast.StructuralPath.Count - 1);
         }
     }
 
@@ -574,23 +552,13 @@ public sealed partial class AbilityRunner
         }
 
         var runner = (AbilityRunner)cast.Abilities;
-        var written = runner.AbilitiesOn(cast.Source, cast.AbilityFace)
-            .Where(ability => cast.Tier is null || ability.Trigger.Timing == cast.Tier)
-            .ToList();
-        var matches = written
-            .Select((ability, ordinal) => (Node: TryNodeAtPath(
-                ability.Effect, cast.AbilityPath), ordinal))
-            .Where(candidate => ReferenceEquals(candidate.Node, node))
-            .Select(candidate => candidate.ordinal)
-            .ToList();
-        return matches.Count == 1
-            ? matches[0]
-            : throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' cannot identify the exact ability that suspended");
+        return AbilityContinuationCodec.OrdinalForNode(
+            runner.program, cast.Source, cast.AbilityFace, cast.Tier,
+            cast.StructuralPath, node);
     }
 
     private ImmutableArray<CompiledCardAbility> AbilitiesOn(Card source, string? face) =>
-        string.IsNullOrEmpty(face) ? On(source) : program.On(face);
+        AbilityContinuationCodec.AbilitiesOn(program, source, face);
 
     private void TrackResolution(Cast cast, CompiledCardAbility ability)
     {
@@ -613,11 +581,7 @@ public sealed partial class AbilityRunner
 
     private CompiledCardAbility AbilityAt(
         Card source, AbilityType? tier, int ordinal, string? face = null) =>
-        AbilitiesOn(source, face)
-            .Where(ability => tier is null || ability.Trigger.Timing == tier)
-            .ElementAtOrDefault(ordinal)
-        ?? throw new RulesNotImplementedException(
-            $"'{source.FaceId}' has no '{tier}' ability {ordinal}");
+        AbilityContinuationCodec.AbilityAt(program, source, tier, ordinal, face);
 
     private static void RestorePersisted(Cast cast, PhaseStep? continuation)
     {
@@ -625,424 +589,39 @@ public sealed partial class AbilityRunner
         {
             return;
         }
-        RestorePersisted(cast, step.Discarded, step.AbilityResults);
-        cast.AbilityActor = step.AbilityActor >= 0
-            ? cast.World.Cards[step.AbilityActor]
-            : null;
+        ApplyRestored(cast, AbilityContinuationCodec.RestoreState(
+            cast.World.Cards, step.Discarded, step.AbilityResults,
+            step.AbilityActor, cast.Source.FaceId));
     }
 
     private static void RestorePersisted(
         Cast cast, IReadOnlyList<int>? discarded,
         IReadOnlyDictionary<string, long>? results)
     {
+        ApplyRestored(cast, AbilityContinuationCodec.RestoreState(
+            cast.World.Cards, discarded, results, -1, cast.Source.FaceId));
+    }
+
+    private static void ApplyRestored(Cast cast, RestoredContinuationState state)
+    {
         cast.Discarded.Clear();
-        if (discarded is not null)
+        cast.Discarded.AddRange(state.Discarded);
+        foreach (var (name, value) in state.Results)
         {
-            cast.Discarded.AddRange(discarded.Select(id => cast.World.Cards[id]));
-        }
-        foreach (var (name, value) in results
-            ?? new Dictionary<string, long>(StringComparer.Ordinal))
-        {
-            if (name is PersistedChosen or PersistedChosenArea
-                or PersistedChosenIncarnation or PersistedSourceIncarnation)
-            {
-                continue;
-            }
-            if (cast.RestoreCrisisIgnoringThwart(name, value))
-            {
-                continue;
-            }
             cast.Results[name] = value;
         }
-        cast.RestoreSourceIncarnation(
-            results?.TryGetValue(PersistedSourceIncarnation, out long incarnation) == true
-                ? checked((int)incarnation)
-                : -1);
-        RestorePersistedChosen(cast, results, overwrite: false);
-    }
-
-    private static void RestorePersistedChosen(
-        Cast cast, IReadOnlyDictionary<string, long>? results, bool overwrite)
-    {
-        if (results?.TryGetValue(PersistedChosen, out long chosen) == true)
-        {
-            if (chosen < 0 || chosen >= cast.World.Cards.Count)
-            {
-                throw new RulesNotImplementedException(
-                    $"'{cast.Source.FaceId}' has invalid persisted chosen-card metadata");
-            }
-            if (!results.TryGetValue(PersistedChosenArea, out long savedArea)
-                || !results.TryGetValue(
-                    PersistedChosenIncarnation, out long savedIncarnation))
-            {
-                throw new RulesNotImplementedException(
-                    $"'{cast.Source.FaceId}' has persisted chosen-card metadata "
-                    + "without target provenance");
-            }
-            var card = cast.World.Cards[(int)chosen];
+        cast.RestoreCrisisIgnoringThwarts(state.CrisisIgnoringThwarts);
+        cast.RestoreSourceIncarnation(state.SourceIncarnation);
+        if (state.Chosen is { } chosen)
             cast.RestorePersistedSelection(
-                card, checked((int)savedArea), checked((int)savedIncarnation),
-                overwriteChosen: overwrite);
-        }
-    }
-
-    private static void RestorePathBindings(Cast cast, IReadOnlyList<string> path)
-    {
-        var frame = path.LastOrDefault(candidate =>
-            candidate.StartsWith("eachTime:", StringComparison.Ordinal));
-        if (frame is null)
-        {
-            return;
-        }
-        var parts = frame.Split(':');
-        cast.BindAlteration(cast.World.Cards[ParseEachTimeCard(parts, frame)]);
-    }
-
-    private static AbilityEffect? TryNodeAtPath(
-        AbilityEffect root, IReadOnlyList<string> path)
-    {
-        try
-        {
-            return NodeAtPath(root, path);
-        }
-        catch (Exception error) when (error is AbilityException
-            or ArgumentOutOfRangeException or InvalidOperationException
-            or RulesNotImplementedException)
-        {
-            return null;
-        }
+                cast.World.Cards[chosen.ObjectId], chosen.AreaId, chosen.Incarnation,
+                overwriteChosen: false);
+        cast.AbilityActor = state.Actor;
     }
 
     private static PhaseStep? ContinuationStep(
         World world, Card source, int stoppedAt, AbilityType? tier)
-    {
-        bool Matches(PhaseStep step) => step.What == Steps.ChooseOption
-            && step.Subject == source.ObjectId
-            && step.Index == stoppedAt
-            && step.Tier == tier;
-        if (world.Agenda.Current is { } current && Matches(current))
-        {
-            return current;
-        }
-        for (int index = world.Agenda.Outstanding.Count - 1; index >= 0; index--)
-        {
-            if (Matches(world.Agenda.Outstanding[index]))
-            {
-                return world.Agenda.Outstanding[index];
-            }
-        }
-        return null;
-    }
-
-    private static AbilityEffect NodeAtPath(
-        AbilityEffect root, IReadOnlyList<string> path)
-    {
-        try
-        {
-            return NodeAtPathCore(root, path);
-        }
-        catch (Exception error) when (error is AbilityException
-            or ArgumentOutOfRangeException or IndexOutOfRangeException
-            or InvalidOperationException or InvalidCastException or FormatException)
-        {
-            throw new RulesNotImplementedException(
-                $"ability continuation path '{string.Join("/", path)}' is invalid");
-        }
-    }
-
-    private static AbilityEffect NodeAtPathCore(
-        AbilityEffect root, IReadOnlyList<string> path, int offset = 0)
-    {
-        var node = root;
-        for (int index = offset; index < path.Count; index++)
-        {
-            var parts = path[index].Split(':');
-            node = parts[0] switch
-            {
-                "seq" => OrderedEffects(node).ElementAt(ParseIndex(parts, path[index])),
-                "if" => ContinuationChild(node, parts[1]),
-                "then" or "otherwise" => ContinuationChild(node, parts[1]),
-                "defense" or "eachPlayer" or "forEach" =>
-                    EffectBody(node),
-                "eachTime" => EffectFollowing(node),
-                "choice" when parts[1] == "option" =>
-                    ((AbilityEffect.Choose)node).Options.ElementAt(ParseIndex(parts, path[index], 2)),
-                "choice" when parts[1] == "effect" => EffectBody(node),
-                "choice" when parts[1] == "otherwise" => EffectFollowing(node),
-                "and" => OrderedEffects(node).ElementAt(ParseIndex(parts, path[index])),
-                _ => throw new RulesNotImplementedException(
-                    $"ability continuation frame '{path[index]}' is not implemented"),
-            };
-        }
-        return node;
-    }
-
-    private static void ResumeAfter(
-        AbilityEffect node, IReadOnlyList<string> path, Cast cast, int depth = 0,
-        int stopBefore = -1)
-    {
-        try
-        {
-            ResumeAfterCore(node, path, cast, depth, stopBefore);
-        }
-        catch (Exception error) when (error is AbilityException
-            or ArgumentOutOfRangeException or IndexOutOfRangeException
-            or InvalidOperationException or InvalidCastException or FormatException)
-        {
-            throw new RulesNotImplementedException(
-                $"ability continuation path '{string.Join("/", path)}' is invalid");
-        }
-    }
-
-    private static void ResumeAfterCore(
-        AbilityEffect node, IReadOnlyList<string> path, Cast cast, int depth = 0,
-        int stopBefore = -1)
-    {
-        if (depth >= path.Count)
-        {
-            return;
-        }
-
-        string frame = path[depth];
-        var parts = frame.Split(':');
-        if (parts[0] == "eachTime")
-        {
-            cast.BindAlteration(cast.World.Cards[ParseEachTimeCard(parts, frame)]);
-        }
-        AbilityEffect child = parts[0] switch
-        {
-            "seq" => OrderedEffects(node).ElementAt(ParseIndex(parts, frame)),
-            "if" => ContinuationChild(node, parts[1]),
-            "then" or "otherwise" => ContinuationChild(node, parts[1]),
-            "defense" or "eachPlayer" or "forEach" =>
-                EffectBody(node),
-            "eachTime" => EffectFollowing(node),
-            "choice" when parts[1] == "option" =>
-                ((AbilityEffect.Choose)node).Options.ElementAt(ParseIndex(parts, frame, 2)),
-            "choice" when parts[1] == "effect" => EffectBody(node),
-            "choice" when parts[1] == "otherwise" => EffectFollowing(node),
-            "and" => OrderedEffects(node).ElementAt(ParseIndex(parts, frame)),
-            _ => throw new RulesNotImplementedException(
-                $"ability continuation frame '{frame}' is not implemented"),
-        };
-
-        bool inheritedContinuation = cast.HasContinuation;
-        cast.SetContinuation(
-            inheritedContinuation || HasRemainingAtFrame(node, parts, frame));
-        ResumeAfterCore(child, path, cast, depth + 1, stopBefore);
-        if (cast.Suspended || depth <= stopBefore)
-        {
-            return;
-        }
-
-        cast.SetContinuation(inheritedContinuation);
-        cast.SetAbilityPath(path.Take(depth));
-        switch (parts[0])
-        {
-            case "seq":
-                var steps = OrderedEffects(node).ToList();
-                bool outerContinuation = cast.HasContinuation;
-                for (int index = ParseIndex(parts, frame) + 1; index < steps.Count; index++)
-                {
-                    cast.At(index);
-                    cast.SetContinuation(outerContinuation || index < steps.Count - 1);
-                    RunChild(steps[index], $"seq:{index}", cast);
-                    if (cast.Suspended)
-                    {
-                        return;
-                    }
-                }
-                cast.SetContinuation(outerContinuation);
-                break;
-
-            case "then" when parts[1] == "effect":
-            case "otherwise" when parts[1] == "effect":
-                if (parts.Length < 3
-                    || !Enum.TryParse(parts[2], out ResolutionOutcome outcome))
-                {
-                    throw new RulesNotImplementedException(
-                        $"ability continuation frame '{frame}' has no resolution outcome");
-                }
-                var required = parts[0] == "then"
-                    ? ResolutionOutcome.Full
-                    : ResolutionOutcome.None;
-                if (outcome == required)
-                {
-                    RunChild(ContinuationChild(node, parts[0]), $"{parts[0]}:{parts[0]}", cast);
-                }
-                break;
-
-            case "and":
-                var effects = OrderedEffects(node).ToList();
-                var remaining = ValidRemaining(node, parts, frame);
-                var completed = Completed(parts, frame);
-                completed.Add(ParseIndex(parts, frame));
-                bool outerAndContinuation = cast.HasContinuation;
-                for (int position = 0; position < remaining.Count; position++)
-                {
-                    int index = remaining[position];
-                    string after = string.Join(',', remaining.Skip(position + 1));
-                    string before = string.Join(',', completed.Concat(remaining.Take(position)));
-                    cast.SetContinuation(
-                        outerAndContinuation || position < remaining.Count - 1);
-                    RunChild(effects[index], $"and:{index}:{after}:{before}", cast);
-                    if (cast.Suspended)
-                    {
-                        return;
-                    }
-                }
-                cast.SetContinuation(outerAndContinuation);
-                break;
-
-            case "eachPlayer":
-                if (cast.AbilityPlayer >= 0)
-                {
-                    cast.RestorePlayer(cast.AbilityPlayer);
-                }
-                break;
-
-            case "forEach":
-                long count = ParseForEachCount(parts, frame);
-                long completedIteration = ParseIndex(parts, frame);
-                var repeated = EffectBody(node);
-                bool outerForEachContinuation = cast.HasContinuation;
-                for (long iteration = completedIteration + 1; iteration < count; iteration++)
-                {
-                    cast.SetContinuation(
-                        outerForEachContinuation || iteration < count - 1);
-                    RunChild(repeated, $"forEach:{iteration}:{count}", cast);
-                    if (cast.Suspended)
-                    {
-                        return;
-                    }
-                }
-                cast.SetContinuation(outerForEachContinuation);
-                break;
-
-            case "eachTime":
-                ContinueEachTime(
-                    (AbilityEffect.EachTime)node, cast,
-                    from: ParseIndex(parts, frame) + 1,
-                    count: ParseForEachCount(parts, frame));
-                break;
-        }
-    }
-
-    private static bool HasRemainingAtFrame(
-        AbilityEffect node, string[] parts, string frame)
-    {
-        return parts[0] switch
-        {
-            "seq" => ParseIndex(parts, frame) < OrderedEffects(node).Length - 1,
-            "and" => ValidRemaining(node, parts, frame).Count > 0,
-            "forEach" => ParseIndex(parts, frame) + 1
-                < ParseForEachCount(parts, frame),
-            "eachTime" => ParseIndex(parts, frame) + 1
-                < ParseForEachCount(parts, frame),
-            "then" when parts[1] == "effect" => DependentContinues(parts, frame, true),
-            "otherwise" when parts[1] == "effect" =>
-                DependentContinues(parts, frame, false),
-            _ => false,
-        };
-    }
-
-    private static long ParseForEachCount(string[] parts, string frame)
-    {
-        if (parts.Length < 3
-            || !long.TryParse(
-                parts[2], System.Globalization.NumberStyles.None,
-                System.Globalization.CultureInfo.InvariantCulture, out long count)
-            || count < 0)
-        {
-            throw new RulesNotImplementedException(
-                $"ability continuation frame '{frame}' has no iteration count");
-        }
-        return count;
-    }
-
-    private static int ParseEachTimeCard(string[] parts, string frame)
-    {
-        if (parts.Length < 4
-            || !int.TryParse(
-                parts[3], System.Globalization.NumberStyles.None,
-                System.Globalization.CultureInfo.InvariantCulture, out int card)
-            || card < 0)
-        {
-            throw new RulesNotImplementedException(
-                $"ability continuation frame '{frame}' has no bound card");
-        }
-        return card;
-    }
-
-    private static bool DependentContinues(string[] parts, string frame, bool onFull)
-    {
-        if (parts.Length < 3
-            || !Enum.TryParse(parts[2], out ResolutionOutcome outcome))
-        {
-            throw new RulesNotImplementedException(
-                $"ability continuation frame '{frame}' has no resolution outcome");
-        }
-        return outcome == (onFull ? ResolutionOutcome.Full : ResolutionOutcome.None);
-    }
-
-    private static List<int> ValidRemaining(
-        AbilityEffect node, string[] parts, string frame)
-    {
-        var effects = OrderedEffects(node).ToList();
-        var remaining = Remaining(parts, frame);
-        var completed = Completed(parts, frame);
-        var completeOrder = completed
-            .Append(ParseIndex(parts, frame))
-            .Concat(remaining)
-            .ToList();
-        if (completeOrder.Count != effects.Count
-            || completeOrder.Distinct().Count() != effects.Count
-            || completeOrder.Any(index => index < 0 || index >= effects.Count))
-        {
-            throw new RulesNotImplementedException(
-                $"ability continuation frame '{frame}' has an invalid remaining order");
-        }
-        return remaining;
-    }
-
-    private static List<int> Remaining(string[] parts, string frame)
-        => OrderPart(parts, 2, frame);
-
-    private static List<int> Completed(string[] parts, string frame)
-    {
-        if (parts.Length < 4)
-        {
-            throw new RulesNotImplementedException(
-                $"ability continuation frame '{frame}' has no completed order");
-        }
-        return OrderPart(parts, 3, frame);
-    }
-
-    private static List<int> OrderPart(string[] parts, int position, string frame)
-    {
-        if (parts.Length <= position || string.IsNullOrEmpty(parts[position]))
-        {
-            return [];
-        }
-        try
-        {
-            return parts[position].Split(',').Select(value => int.Parse(
-                value, System.Globalization.CultureInfo.InvariantCulture)).ToList();
-        }
-        catch (Exception error) when (error is FormatException or OverflowException)
-        {
-            throw new RulesNotImplementedException(
-                $"ability continuation frame '{frame}' has an invalid remaining order");
-        }
-    }
-
-    private static int ParseIndex(string[] parts, string frame, int position = 1) =>
-        parts.Length > position
-        && int.TryParse(
-            parts[position], System.Globalization.NumberStyles.None,
-            System.Globalization.CultureInfo.InvariantCulture, out int value)
-            ? value
-            : throw new RulesNotImplementedException(
-                $"ability continuation frame '{frame}' has no valid index");
+        => AbilityContinuationCodec.ContinuationStep(
+            world.Agenda.Current, world.Agenda.Outstanding, source.ObjectId, stoppedAt, tier);
 
 }

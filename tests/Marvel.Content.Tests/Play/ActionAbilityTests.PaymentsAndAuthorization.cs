@@ -62,6 +62,67 @@ public sealed partial class ActionAbilityTests
         Assert.False(world.Agenda.IsBusy);
     }
 
+    [Rule("rr:initiating-abilities.step.5")]
+    [Fact]
+    public void ADamageCostThenChoiceResumesItsFollowingEffectExactlyOnce()
+    {
+        // rr:initiating-abilities.step.5: "Pay the cost(s)." The completed
+        // damage cost is not part of either continuation: first the defeat
+        // interrupt resumes the post-arrow effect, then the answer resumes the
+        // structural suffix without paying that cost again.
+        var runner = new Marvel.Cards.Run.AbilityRunner(AbilityCatalog.Parse("""
+            {"cards":[
+              {"card":"01030","abilities":[{
+                "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"game"},
+                "cost":{"seq":[{"exhaust":"this"},{"dealDamage":{"cards":"this","amount":2}}]},
+                "effect":{"seq":[
+                  {"choose":{"options":[
+                    {"draw":{"player":"you","count":1}},
+                    {"draw":{"player":"you","count":2}}
+                  ]}},
+                  {"draw":{"player":"you","count":4}}
+                ]}
+              }]},
+              {"card":"01092","abilities":[{
+                "trigger":{"event":"WhenCardWouldBeDefeated","timing":"Interrupt","subject":"game"},
+                "effect":{"draw":{"player":"you","count":1}}
+              }]}
+            ]}
+            """));
+        Card? source = null;
+        var (game, world) = Playing(board =>
+        {
+            source = board.CreateCard("01030",
+                board.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
+            source.TakeDamage(2);
+            InPlay(board, "01092");
+        }, abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var action = Assert.Single(game.Pending!.Affordances,
+            option => option.Verb == Game.ActionVerb && option.AnchorId == source!.ObjectId);
+
+        game.Resolve(Decision.Take(action.Id));
+        Assert.Equal(Question.Opportunity, game.Pending!.Asking);
+        Assert.False(source!.Ready);
+        Assert.Equal(4, source.Damage);
+
+        game.Resolve(Decision.Decline);
+        Assert.Equal(Question.Option, game.Pending!.Asking);
+        Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
+        // The engine chooses this persisted key as a one-shot transition
+        // marker. Consuming it before the next suspension prevents a later
+        // ResumeAbility continuation from restarting the paid-cost boundary.
+        Assert.False(world.Agenda.Current?.AbilityResults?.ContainsKey(
+            "costProcedurePending") ?? false);
+
+        game.Resolve(Decision.Take(0));
+
+        Assert.Equal(Question.TurnOption, game.Pending!.Asking);
+        Assert.Equal(DeckType.DiscardPile, source.Area.Type);
+        Assert.Equal(held + 5, world.Seats[0].Hand.Cards.Count);
+        Assert.False(world.Agenda.IsBusy);
+    }
+
     [Fact]
     public void PaymentChoicesAndValidationUseTheCompiledCostSnapshot()
     {

@@ -34,7 +34,7 @@ internal sealed record AbilityStructuralContext(
 internal enum AbilityStructuralOutcome { None, Partial, Full }
 
 // Live frames are typed. Their legacy string encoding is confined to the
-// runner's continuation adapter until MARVEL-408 replaces that wire boundary.
+// continuation codec at the persistence boundary.
 internal abstract record AbilityStructuralFrame;
 internal sealed record SequenceFrame(int Next, int Count) : AbilityStructuralFrame;
 internal sealed record SimultaneousFrame(int Current, ImmutableArray<int> Remaining, ImmutableArray<int> Completed)
@@ -45,6 +45,8 @@ internal sealed record ConditionalFrame(bool Then) : AbilityStructuralFrame;
 internal sealed record ForEachFrame(long Next, long Count) : AbilityStructuralFrame;
 internal sealed record EachTimeFrame(long Next, long Count, int? DiscardedCard) : AbilityStructuralFrame;
 internal sealed record ChoiceFrame(int? Option, int? Card) : AbilityStructuralFrame;
+internal sealed record ChoiceOtherwiseFrame : AbilityStructuralFrame;
+internal sealed record DefenseFrame : AbilityStructuralFrame;
 internal sealed record EachPlayerFrame(int Player, bool Final) : AbilityStructuralFrame;
 
 internal sealed record AbilityStructuralObservation(bool Suspended, Card? Discarded = null);
@@ -682,6 +684,29 @@ internal static class AbilityStructuralExecution
         return new RunLeaf(
             sequence.Effects[position], context.Frames.Add(next), position,
             context.HasContinuation || position < frame.Count - 1, admission);
+    }
+
+    internal static AbilityStructuralTransition NextSimultaneous(
+        AbilityStructuralContext context, AbilityEffect.Simultaneous simultaneous,
+        SimultaneousFrame frame, AbilityStructuralObservation observation)
+    {
+        if (observation.Suspended)
+            return new Complete(context.Frames.Add(frame));
+        if (frame.Current < 0 || frame.Current >= simultaneous.Effects.Length
+            || frame.Remaining.Any(index => index < 0 || index >= simultaneous.Effects.Length)
+            || frame.Completed.Any(index => index < 0 || index >= simultaneous.Effects.Length)
+            || frame.Completed.Append(frame.Current).Concat(frame.Remaining).Distinct().Count()
+                != simultaneous.Effects.Length)
+            return new Rejected("invalid simultaneous cursor");
+        if (frame.Remaining.IsEmpty)
+            return new Complete(context.Frames.Add(frame));
+
+        int current = frame.Remaining[0];
+        var next = new SimultaneousFrame(
+            current, frame.Remaining.RemoveAt(0), frame.Completed.Add(frame.Current));
+        return new RunLeaf(
+            simultaneous.Effects[current], context.Frames.Add(next), context.Position,
+            context.HasContinuation || next.Remaining.Length > 0);
     }
 
     internal static AbilityStructuralTransition Conditional(

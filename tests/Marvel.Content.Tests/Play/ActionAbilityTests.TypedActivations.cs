@@ -40,8 +40,7 @@ public sealed partial class ActionAbilityTests
             world.Agenda.Outstanding.Where(step => step.What == Steps.Attack).Select(step => step.Subject));
         var scheduled = Assert.Single(world.Agenda.Outstanding,
             step => step.What == Steps.Attack && step.Subject == minion.ObjectId);
-        var continuation = world.Agenda.CompleteActivationWait(new EnemyActivation(
-            minion.ObjectId, 0, Attacking: true, scheduled.ActivationId, Made: false));
+        var continuation = world.Agenda.ActivationWait(scheduled.ActivationId);
         Assert.NotNull(continuation);
         Assert.Same(occurrence, continuation.Value.AbilityOccurrence);
         Assert.Equal(source!.ObjectId, continuation.Value.Subject);

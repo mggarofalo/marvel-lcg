@@ -175,9 +175,8 @@ public sealed partial class AbilityRunner : ICardAbilities
                         ? world.Cards[effect.AbilityActor]
                         : null,
                 };
-                delayedCast.Results["activationDamage"] = result.DamageDealt;
-                delayedCast.Results["activationThreat"] = result.ThreatPlaced;
-                delayedCast.Results["activationMade"] = result.Made ? 1 : 0;
+                AbilityContinuationCodec.RecordImmediateActivationResult(
+                    delayedCast.Results, result);
                 if (effect.Altered >= 0)
                 {
                     delayedCast.BindAlteration(world.Cards[effect.Altered]);
@@ -186,9 +185,18 @@ public sealed partial class AbilityRunner : ICardAbilities
             }
         }
 
-        if (world.Agenda.CompleteActivationWait(result) is { } continuation)
+        if (world.Agenda.ActivationWait(result.Id) is { } waiting)
         {
-            events.AddRange(ResumeAbility(world, continuation));
+            var updated = AbilityContinuationCodec.RecordActivationResult(waiting, result);
+            if (updated.Complete)
+            {
+                _ = world.Agenda.TakeActivationWait(result.Id);
+                events.AddRange(ResumeAbility(world, updated.Step));
+            }
+            else
+            {
+                world.Agenda.ReplaceActivationWait(result.Id, updated.Step);
+            }
         }
 
         return events;
@@ -201,11 +209,17 @@ public sealed partial class AbilityRunner : ICardAbilities
             ? world.Cards[continuation.Subject]
             : throw new RulesNotImplementedException(
                 $"activation continuation has no card at object id {continuation.Subject}");
-        if (continuation.AbilityOrdinal < 0 || continuation.AbilityPath is not { } path)
+        var transition = AbilityContinuationCodec.BeginResume(program, source, continuation);
+        var resumed = transition switch
         {
-            throw new RulesNotImplementedException(
-                $"'{source.FaceId}' has an incomplete activation continuation");
-        }
+            RestartAfterPaidCost paid => paid.State,
+            RunResumedNode node => node.State,
+            ContinueAfterResumedNode completed => completed.State,
+            ResumeComplete complete => complete.State,
+            ResumeRejected rejected => throw new RulesNotImplementedException(rejected.Reason),
+            _ => throw new InvalidOperationException("Unknown continuation transition"),
+        };
+        continuation = AbilityContinuationCodec.WithResumedResults(continuation, resumed);
 
         var cast = Resuming(
             world, source, continuation.Seat, continuation.Tier, continuation.FinalStep,
@@ -219,19 +233,15 @@ public sealed partial class AbilityRunner : ICardAbilities
                 ? new HashSet<string>(["surge"], StringComparer.Ordinal)
                 : new HashSet<string>(StringComparer.Ordinal),
         };
-        cast.RestoreAbility(
-            continuation.AbilityOrdinal, path, continuation.AbilityFace);
+        RestoreContinuationCursor(cast, resumed);
         cast.TrackResolution(continuation.AbilityOrdinal);
         RestorePersisted(cast, continuation);
-        if (cast.Results.GetValueOrDefault("costProcedurePending") > 0)
+        if (transition is RestartAfterPaidCost paidCost)
         {
             // The cost has settled. Do not persist its resume marker into a
             // later suspension inside the effect, or that continuation would
             // restart the whole effect instead of resuming its own path.
-            cast.Results.Remove("costProcedurePending");
-            var ability = AbilityAt(
-                source, continuation.Tier, continuation.AbilityOrdinal,
-                continuation.AbilityFace);
+            var ability = paidCost.Ability;
             Use(world, source, ability, cast.Occurrence);
             if (world.Facts.Kind(source.FaceId) == CardKind.Event)
             {
@@ -248,40 +258,92 @@ public sealed partial class AbilityRunner : ICardAbilities
             DiscardEvent(source, cast);
             return cast.Events;
         }
-        if (cast.Results.GetValueOrDefault("activationMade") > 0
-            || cast.Results.GetValueOrDefault("procedureApplied") > 0)
+        return ResumeContinuation(cast, source, transition);
+    }
+
+    private static List<GameEvent> ResumeContinuation(
+        Cast cast, Card source, AbilityContinuationTransition transition)
+    {
+        while (true)
         {
-            cast.ResolveEffect();
-        }
-        RestorePathBindings(cast, path);
-        var root = AbilityAt(
-            source, continuation.Tier, continuation.AbilityOrdinal,
-            continuation.AbilityFace).Effect;
-        bool repeatDynamicActivation =
-            cast.Results.Remove("repeatDynamicActivation");
-        if (repeatDynamicActivation)
-        {
-            if (cast.Results.GetValueOrDefault("activationMade") > 0)
+            switch (transition)
             {
-                cast.Results["dynamicActivationMade"] = 1;
-            }
-            Run(NodeAtPath(root, path), cast);
-            if (cast.Suspended)
-            {
-                cast.CompleteResolution();
-                return cast.Events;
+                case ContinueAfterResumedNode completed:
+                    RestoreContinuationCursor(cast, completed.State);
+                    if (completed.EffectApplied)
+                        cast.ResolveEffect();
+                    transition = AbilityContinuationCodec.Advance(
+                        StructuralContext(cast), completed.Ability, completed.State,
+                        new AbilityStructuralObservation(false));
+                    break;
+
+                case RunResumedNode run:
+                    RestoreContinuationCursor(cast, run.State);
+                    if (run.EffectApplied)
+                        cast.ResolveEffect();
+                    RestoreAlteredFromFrames(cast, run.State.Frames);
+                    Run(run.Effect, cast);
+                    if (cast.Suspended)
+                    {
+                        cast.CompleteResolution();
+                        return cast.Events;
+                    }
+                    transition = AbilityContinuationCodec.Advance(
+                        StructuralContext(cast), run.Ability, run.State,
+                        new AbilityStructuralObservation(false));
+                    break;
+
+                case DiscardForResumedEachTime discard:
+                    RestoreContinuationCursor(cast, discard.State);
+                    int before = cast.Discarded.Count;
+                    var one = new AbilityEffect.DiscardTop(
+                        AbilitySearchArea.EncounterDeck, Players: null,
+                        new AbilityNumber.Constant(1));
+                    if (!TryRunCardState(one, cast))
+                        throw new InvalidOperationException(
+                            "The card-state owner refused discardTop");
+                    var discarded = cast.Discarded.Skip(before).SingleOrDefault();
+                    if (discarded is not null)
+                        cast.BindAlteration(discarded);
+                    transition = AbilityContinuationCodec.AfterEachTimeDiscard(
+                        StructuralContext(cast), discard, discarded);
+                    break;
+
+                case ResumeComplete complete:
+                    RestoreContinuationCursor(cast, complete.State);
+                    cast.CompleteResolution();
+                    DiscardEvent(source, cast);
+                    return cast.Events;
+
+                case ResumeRejected rejected:
+                    throw new RulesNotImplementedException(rejected.Reason);
+
+                default:
+                    throw new InvalidOperationException(
+                        $"Unknown continuation transition {transition.GetType().Name}");
             }
         }
-        int eachPlayer = path.ToList().FindIndex(frame =>
-            frame.StartsWith("eachPlayer:", StringComparison.Ordinal));
-        ResumeAfter(
-            root, path, cast,
-            stopBefore: continuation.EachPlayerFrame && !continuation.FinalPlayer
-                ? eachPlayer
-                : -1);
-        cast.CompleteResolution();
-        DiscardEvent(source, cast);
-        return cast.Events;
+    }
+
+    private static void RestoreContinuationCursor(
+        Cast cast, AbilityContinuationState state)
+    {
+        cast.RestoreAbility(
+            state.Address.Ordinal,
+            state.Frames,
+            state.Address.Face);
+        cast.At(state.Position);
+        cast.SetContinuation(state.HasContinuation);
+        cast.RestorePlayer(state.Player);
+    }
+
+    private static void RestoreAlteredFromFrames(
+        Cast cast, ImmutableArray<AbilityStructuralFrame> frames)
+    {
+        var card = frames.OfType<EachTimeFrame>()
+            .LastOrDefault()?.DiscardedCard;
+        if (card is { } id)
+            cast.BindAlteration(cast.World.Cards[id]);
     }
 
     /// <inheritdoc/>
@@ -329,17 +391,11 @@ public sealed partial class AbilityRunner : ICardAbilities
         }
 
         var source = world.Cards[sourceId];
-        var abilities = AbilitiesOn(source, abilityFace).ToList();
-        var ability = abilities.ElementAtOrDefault(abilityIndex)
-            ?? throw new RulesNotImplementedException(
-                $"'{source.FaceId}' has no ability {abilityIndex} for its "
-                + power.ToLowerInvariant());
-        var wrappers = PowerNodes(ability.Effect, power).ToList();
-        var wrapper = wrappers.ElementAtOrDefault(powerOrdinal)
-            ?? throw new RulesNotImplementedException(
-                $"'{source.FaceId}' ability {abilityIndex} has no {power.ToLowerInvariant()} "
-                + $"wrapper {powerOrdinal}");
-        var effect = EffectBody(wrapper);
+        var restored = AbilityContinuationCodec.DecodePower(
+            program, source, abilityIndex, powerOrdinal, power, resumeFrom, abilityPath,
+            abilityFace, eachPlayerFrame, finalPlayer);
+        var ability = restored.Ability;
+        var effect = restored.Body;
         var cast = new Cast(
             world, source, abilityOccurrence ?? occurrence, player, events, this)
         {
@@ -361,21 +417,16 @@ public sealed partial class AbilityRunner : ICardAbilities
         };
         cast.Choose(world.Cards[targetId]);
         RestorePersisted(cast, discarded, abilityResults);
-        if (abilityPath is not null)
-        {
-            RestorePathBindings(cast, abilityPath);
-        }
         if (SuspendsPowerEffect(effect, cast))
         {
             throw new RulesNotImplementedException(
                 $"'{source.FaceId}' suspends inside a {power.ToLowerInvariant()}, "
                 + "which is not implemented");
         }
-        int ordinal = abilities
-            .Where(candidate => candidate.Trigger.Timing == ability.Trigger.Timing)
-            .ToList()
-            .IndexOf(ability);
-        cast.RestoreAbility(ordinal, abilityPath ?? [], abilityFace);
+        int ordinal = restored.Ordinal;
+        var continuationFrames = restored.Frames;
+        cast.RestoreAbility(ordinal, continuationFrames, abilityFace);
+        RestoreAlteredFromFrames(cast, continuationFrames);
         cast.TrackResolution(ordinal);
         var attackModifiers = power == BasicPowers.AttackVerb
             ? EventModifierEffects(cast, "attackDamage")
@@ -406,24 +457,21 @@ public sealed partial class AbilityRunner : ICardAbilities
         // The labelled power owns `chosen` while its effect runs. The outer
         // ability's earlier selection is a different binding and becomes
         // current again only when that outer continuation resumes.
-        RestorePersistedChosen(cast, abilityResults, overwrite: true);
-
-        if (!cast.Suspended && abilityPath is not null)
+        if (AbilityContinuationCodec.ChosenBinding(
+            world.Cards, abilityResults, source.FaceId) is { } outerChosen)
         {
-            int eachPlayer = abilityPath.ToList().FindIndex(frame =>
-                frame.StartsWith("eachPlayer:", StringComparison.Ordinal));
-            ResumeAfter(
-                ability.Effect, abilityPath, cast,
-                stopBefore: eachPlayerFrame && !finalPlayer ? eachPlayer : -1);
+            cast.RestorePersistedSelection(
+                world.Cards[outerChosen.ObjectId], outerChosen.AreaId,
+                outerChosen.Incarnation, overwriteChosen: true);
         }
-        else if (!cast.Suspended && resumeFrom >= 0)
+
+        var next = AbilityContinuationCodec.AfterPower(
+            program, source, restored, Capture(cast, ordinal),
+            world.Agenda.Current?.Round ?? 0, cast.Suspended);
+        if (next is not null)
         {
-            if (ability.Effect.OperationName() != "seq")
-            {
-                throw new RulesNotImplementedException(
-                    $"'{source.FaceId}' resumes a {power.ToLowerInvariant()} outside a sequence");
-            }
-            Sequence(ability.Effect, cast, resumeFrom);
+            _ = ResumeContinuation(cast, source, next);
+            return;
         }
         cast.CompleteResolution();
         DiscardEvent(source, cast);
@@ -1576,24 +1624,8 @@ public sealed partial class AbilityRunner : ICardAbilities
         AbilityType? tier, bool finalStep, bool finalPlayer)
     {
         var step = world.Agenda.Current;
-        var written = AbilitiesOn(source, step?.AbilityFace)
-            .Where(ability => tier is null || ability.Trigger.Timing == tier)
-            .ToList();
-        int ordinal = step is { What: Steps.ResolveEachPlayer, AbilityOrdinal: >= 0 }
-            ? step.Value.AbilityOrdinal
-            : written.FindIndex(ability => EachPlayers(ability.Effect).Any());
-        var outer = written.ElementAtOrDefault(ordinal)?.Effect
-            ?? throw new RulesNotImplementedException(
-                $"'{source.FaceId}' has no reconstructable each-player ability");
-        var parentPath = step is { What: Steps.ResolveEachPlayer, AbilityPath: { } path }
-            ? path
-            : outer.OperationName() == "seq" ? [$"seq:{stoppedAt - 1}"] : [];
-        var each = NodeAtPath(outer, parentPath);
-        if (each.OperationName() != "eachPlayer")
-        {
-            throw new RulesNotImplementedException(
-                $"'{source.FaceId}' has no each-player frame at step {stoppedAt - 1}");
-        }
+        var restored = AbilityContinuationCodec.DecodeEachPlayer(
+            program, source, step, stoppedAt, tier, player, finalPlayer);
 
         var cast = Resolving(
             world, source, player, tier, finalStep, step?.AbilityOccurrence) with
@@ -1608,19 +1640,19 @@ public sealed partial class AbilityRunner : ICardAbilities
         };
         RestorePersisted(cast, step);
         cast.RestoreAbility(
-            ordinal, [.. parentPath, "eachPlayer:effect"], step?.AbilityFace);
-        cast.TrackResolution(ordinal);
-        RestorePathBindings(cast, parentPath);
+            restored.Ordinal, restored.Frames,
+            step?.AbilityFace);
+        cast.TrackResolution(restored.Ordinal);
+        RestoreAlteredFromFrames(cast, cast.StructuralPath.ToImmutableArray());
         cast.At(stoppedAt - 1);
-        cast.SetContinuation(finalPlayer && (step?.AbilityHasContinuation
-            ?? (outer.OperationName() == "seq" && stoppedAt < OrderedEffects(outer).Length)));
-        Run(EffectBody(each), cast);
-        if (!cast.Suspended && finalPlayer)
+        cast.SetContinuation(restored.HasContinuation);
+        Run(restored.Body, cast);
+        var next = AbilityContinuationCodec.AfterEachPlayer(
+            program, source, restored, Capture(cast, restored.Ordinal),
+            world.Agenda.Current?.Round ?? 0, tier, finalPlayer, cast.Suspended);
+        if (next is not null)
         {
-            cast.SetAbilityPath(parentPath);
-            cast.RestorePlayer(cast.AbilityPlayer);
-            cast.SetContinuation(false);
-            ResumeAfter(outer, parentPath, cast);
+            return ResumeContinuation(cast, source, next);
         }
         cast.CompleteResolution();
         return cast.Events;

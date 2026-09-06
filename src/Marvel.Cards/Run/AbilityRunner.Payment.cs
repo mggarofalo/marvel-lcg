@@ -43,9 +43,6 @@ public sealed partial class AbilityRunner
         if (result.Energy is { } energy) cast.Results["energy"] = energy;
         if (result.Suspended)
         {
-            // The initiation entry point owns the post-cost continuation.
-            // A cost is not a node in the post-arrow effect's structural path.
-            cast.Results["costProcedurePending"] = 1;
             cast.Suspend();
         }
     }
