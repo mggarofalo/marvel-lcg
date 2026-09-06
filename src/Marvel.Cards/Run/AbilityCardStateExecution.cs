@@ -258,7 +258,12 @@ internal static class AbilityCardStateExecution
         foreach (var card in context.World.Seats[context.Player].Hand.Cards.Where(card =>
                      Resources.GeneratedBy(card.FaceId, context.World.Facts).Contains(discard.Resource)).ToList())
         { Rules.Play.Discard.Card(context.World, card, context.Trigger, context.Events); context.Result.Discarded.Add(card); }
-        context.Result.Values["discarded"] = context.Result.Discarded.Count;
+        // `result.discarded` is resolution evidence: cards discarded by an
+        // earlier node remain visible to later nodes. The owner sees that
+        // immutable prior evidence through its expression context and adds
+        // only this operation's new discards.
+        context.Result.Values["discarded"] = context.Expressions.Discarded.Length
+            + context.Result.Discarded.Count;
     }
 
     private static long Amount(AbilityNumber value, AbilityCardStateContext context)

@@ -143,4 +143,35 @@ public sealed partial class ActionAbilityTests
         Assert.Equal(top.Select(card => card.ObjectId), moved.Select(card => card.Card));
         Assert.All(top, card => Assert.True(card.FaceUp));
     }
+
+    [Fact]
+    public void HandResourceDiscardKeepsEarlierDiscardEvidenceForTheSequence()
+    {
+        // `result.discarded` spans the resolution. The hand operation has no
+        // matching cards here, but must not erase the card its preceding
+        // discardTop operation recorded.
+        var runner = Runner(AuthoredCards.AuntMay, "Action", """
+            { "seq": [
+              { "discardTop": { "from": "yourDeck", "count": 1 } },
+              { "discardHandWithResource": "Y" },
+              { "if": { "test": { "atLeast": {
+                "value": { "result": "discarded" }, "count": 1
+              } }, "then": { "placeCounters": {
+                "card": "this", "counter": "test", "count": 1
+              } } } }
+            ] }
+            """);
+        Card? source = null;
+        var (game, world) = Playing(board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner);
+        foreach (var card in world.Seats[0].Hand.Cards.ToList())
+            World.MoveToTop(card, world.Seats[0].Deck);
+        var action = Assert.Single(game.Pending!.Affordances, option => option.AnchorId == source!.ObjectId);
+        Assert.Empty(world.Seats[0].Hand.Cards);
+        Assert.Equal(0, source!.Tokens.GetValueOrDefault("c_test"));
+
+        game.Resolve(Decision.Take(action.Id));
+
+        Assert.Equal(1, source!.Tokens.GetValueOrDefault("c_test"));
+    }
 }
