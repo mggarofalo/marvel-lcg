@@ -199,22 +199,6 @@ public sealed partial class AbilityRunner
             Lasts: Duration.NextTime(delayed.Condition)));
     }
 
-    private static void Discard(AbilityCardSelection selector, Cast cast)
-    {
-        if (ResolveCard(selector, cast) is { } target)
-        {
-            // rr:target.2 lets a multi-target ability initiate when at least
-            // one target is valid. A different component can therefore have
-            // an invalid target and simply does not resolve against it.
-            if (CanRemoveByEffect(selector, cast, target))
-            {
-                Rules.Play.Discard.CardFromEffect(
-                    cast.World, cast.World.Facts, cast.Source, target,
-                    cast.Trigger, cast.Events);
-            }
-        }
-    }
-
     // ---- reading a value ---------------------------------------------------
 
     /// <summary>
@@ -265,76 +249,12 @@ public sealed partial class AbilityRunner
         AbilityAdmissionFacts.AlreadyInForm(
             cast.World, Seat(change.Player, cast), change.Form);
 
-    /// <summary>"Remove … from the game" — <c>rr:removed-from-the-game</c>.</summary>
-    /// <remarks>
-    /// Removed and not discarded: <c>rr:defeat.2</c> keeps the two apart, and a
-    /// card in the discard pile can come back where one out of the game cannot.
-    /// </remarks>
-    private static void RemoveFromGame(AbilityCardSelection selection, Cast cast)
-    {
-        var card = ResolveCard(selection, cast)
-            ?? throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' would remove a card that is not there");
-
-        if (!CanRemoveByEffect(selection, cast, card))
-        {
-            // Another component can make a multi-target effect valid under
-            // rr:target.3.4; this invalid component simply does not resolve.
-            return;
-        }
-
-        var from = card.Area;
-        var removed = cast.World.AreaOf(DeckType.RemovedArea);
-        var constantsEnding = cast.World.Effects.PreflightConstantsEnding(card);
-        using var departure = constantsEnding.Begin();
-        if (DeckTypes.IsInPlay(from.Type))
-        {
-            Rules.Play.Discard.Attachments(
-                cast.World, card, cast.Trigger, cast.Events);
-            Rules.Play.Discard.ResetLeavingState(
-                cast.World, card, cast.Trigger, cast.Events);
-        }
-        World.MoveToTop(card, removed);
-        cast.Events.Add(new CardsMoved(
-            Places.Reference(from), Places.Reference(removed),
-            [new Landing(card.ObjectId, removed.Cards.Count - 1)])
-        {
-            Trigger = cast.Trigger, Verb = "Remove_From_Game",
-        });
-        constantsEnding.Complete(cast.Trigger, cast.Events);
-    }
-
     /// <summary>"Exhaust …" — <c>rr:exhausted</c>.</summary>
     /// <remarks>
     /// A card already exhausted stays exhausted and reports nothing:
     /// <c>rr:exhausted</c> is a state and not a counter, so exhausting
     /// twice is not two exhaustions and must not be two events on the wire.
     /// </remarks>
-    private static void Exhaust(AbilityCardSelection cards, Cast cast)
-    {
-        foreach (var target in ResolveCards(cards, cast))
-        {
-            Exhaust(target, cast);
-        }
-    }
-
-    private static void Exhaust(Card target, Cast cast)
-        => AbilityCardOperations.Exhaust(target, cast.Trigger, cast.Events);
-
-    private static void Ready(AbilityCardSelection cards, Cast cast)
-    {
-        foreach (var target in ResolveCards(cards, cast).Where(target =>
-            !target.Ready
-            && cast.Abilities.CanReady(cast.World, target, cast.Source)))
-        {
-            target.Refresh();
-            cast.Events.Add(new FieldSet(target.ObjectId, "is_exhaust", 1, 0)
-            {
-                Trigger = cast.Trigger, Verb = "Ready",
-            });
-        }
-    }
-
     private static void DrawToHandSize(AbilityEffect.DrawToHandSize draw, Cast cast)
     {
         int player = Seat(draw.Player, cast);
@@ -356,18 +276,6 @@ public sealed partial class AbilityRunner
     private static int HandCountDuringEvent(Cast cast, Seat seat) =>
         seat.Hand.Cards.Count - (cast.Source.Area == seat.Hand
             && cast.World.Facts.Kind(cast.Source.FaceId) == CardKind.Event ? 1 : 0);
-
-    private static void RemoveCounters(AbilityEffect.RemoveCounters removal, Cast cast)
-    {
-        var card = ResolveCard(removal.Card, cast)
-            ?? throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' cannot find the card paying its counter cost");
-        RemoveCounters(card, removal.Counter, removal.Count, cast);
-    }
-
-    private static void RemoveCounters(Card card, string type, long count, Cast cast)
-        => AbilityCardOperations.RemoveCounters(
-            cast.World, cast.Abilities, card, type, count, cast.Trigger, cast.Events);
 
     private static AbilityEffect.RemoveCounters CounterRemovalOf(AbilityEffect node, Cast cast) =>
         (AbilityEffect.RemoveCounters)node;
@@ -420,190 +328,6 @@ public sealed partial class AbilityRunner
             Card: cast.Source.ObjectId,
             Affects: cast.Occurrence.Subject,
             Lasts: new Duration(Uses: 1)));
-    }
-
-    /// <summary>
-    /// "Reveal the top card of the encounter deck" — <c>rr:reveal</c>.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <b>Revealed, not dealt.</b> <c>rr:deal-deal-an-encounter-card</c> puts a
-    /// card facedown in a queue to be resolved later; this one is turned over
-    /// now. The difference is a whole villain phase, and Under Fire says
-    /// "reveal".
-    /// </para>
-    /// <para>
-    /// Scheduled, for the same reason <c>search</c> schedules: revealing an
-    /// encounter card is a step with an interrupt window and a response window
-    /// around it, and the card revealed may itself ask a player something.
-    /// </para>
-    /// <para>
-    /// <c>EncounterDeck.TakeTop</c> is what draws it, so an empty deck
-    /// reshuffles its discard pile first — <c>rr:encounter-deck.3</c> — rather
-    /// than this quietly doing nothing.
-    /// </para>
-    /// </remarks>
-    private static Card? TopOfTheEncounterDeck(Cast cast) =>
-        EncounterDeck.TakeTop(cast.World, cast.Trigger, cast.Events);
-
-    /// <summary>Reveals one card, wherever it was.</summary>
-    /// <remarks>
-    /// <b>The card moves now and resolves later.</b> It goes to the revealing
-    /// area at once, so a later step of the same ability cannot find it where
-    /// it was — Shadow of the Past reveals two cards out of a pile and then
-    /// shuffles "the rest" of that pile away, and a reveal that only scheduled
-    /// would shuffle the two it had just chosen.
-    /// </remarks>
-    private static void RevealCard(Card? card, Cast cast)
-    {
-        if (!ScheduleReveal(card, cast))
-        {
-            return;
-        }
-
-        cast.ResolveEffect();
-    }
-
-    /// <summary>Moves one card into the reveal procedure and schedules it.</summary>
-    private static bool ScheduleReveal(Card? card, Cast cast)
-    {
-        if (card is null)
-        {
-            return false;
-        }
-
-        var from = card.Area;
-        var revealing = cast.World.AreaOf(DeckType.RevealingArea);
-        World.MoveToTop(card, revealing);
-        cast.Events.Add(new CardsMoved(
-            Places.Reference(from), Places.Reference(revealing),
-            [new Landing(card.ObjectId, revealing.Cards.Count - 1)])
-        {
-            Trigger = cast.Trigger,
-            Verb = "Reveal",
-        });
-        // Scenario setup has no active player's ability to inherit. The first
-        // player resolves cards revealed by that mandatory setup instruction;
-        // ordinary in-game abilities retain their occurrence's player.
-        int revealingPlayer = cast.Player >= 0 ? cast.Player : cast.World.FirstPlayer;
-        cast.World.Agenda.Then(new PhaseStep(
-            Steps.RevealEncounterCard,
-            cast.World.Agenda.Current?.Round ?? 0,
-            4,
-            Index: revealingPlayer,
-            Subject: card.ObjectId,
-            Seat: revealingPlayer));
-        return true;
-    }
-
-    /// <summary>
-    /// "Shuffle the rest of … into the encounter deck" — <c>rr:shuffle</c>.
-    /// </summary>
-    /// <remarks>
-    /// The cards move in the order the query answers and the deck is shuffled
-    /// once afterwards, not once per card. The shuffle draws from the game's
-    /// single random stream, so how many times it happens is a wire fact and
-    /// not a detail.
-    /// </remarks>
-    private static void ShuffleInto(AbilityEffect.ShuffleInto shuffle, Cast cast)
-    {
-        var deck = Area(shuffle.Deck, cast);
-        bool applied = false;
-        foreach (var card in ResolveCards(shuffle.Cards, cast))
-        {
-            var from = card.Area;
-            World.MoveToTop(card, deck);
-            cast.Events.Add(new CardsMoved(
-                Places.Reference(from), Places.Reference(deck),
-                [new Landing(card.ObjectId, deck.Cards.Count - 1)])
-            {
-                Trigger = cast.Trigger, Verb = "Shuffle_Into",
-            });
-            applied = true;
-        }
-
-        applied |= cast.World.Shuffle(deck);
-        if (applied)
-        {
-            cast.ResolveEffect();
-        }
-    }
-
-    /// <summary>
-    /// "Search the encounter deck and discard pile for … and reveal it" —
-    /// <c>rr:search</c>.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <c>rr:search.2</c> — "cards being searched are not considered to leave
-    /// the searched area" — so looking costs nothing and only the card found
-    /// moves.
-    /// </para>
-    /// <para>
-    /// <b>The reveal is scheduled, not done here.</b> Revealing an encounter
-    /// card is a step with an interrupt window and a response window around it,
-    /// and a reveal called inline would have neither. The step is the same one
-    /// the villain phase uses, so the card found goes through
-    /// <c>rr:reveal</c>'s four steps exactly as a dealt card does.
-    /// </para>
-    /// <para>
-    /// <c>rr:search.3</c> — "if any portion of a deck is searched, upon
-    /// completion of that game step, game function, or card ability, shuffle
-    /// that entire deck." Taken as the ability completing, which is this method
-    /// returning; the reveal it scheduled happens afterwards. Nothing in the
-    /// pool that is reached this way reads the encounter deck, so the two
-    /// readings agree on every board that exists — but this is the one written
-    /// down.
-    /// </para>
-    /// <para>
-    /// <c>rr:search.1</c> gives the player the choice when several cards match.
-    /// That is a second suspension inside an ability that may already have one,
-    /// so it is refused by name until a card needs it.
-    /// </para>
-    /// </remarks>
-    private static void Search(AbilityEffect.Search search, Cast cast)
-    {
-        string wanted = search.Face;
-        var areas = search.Areas.Select(where => Area(where, cast)).ToList();
-
-        var found = areas
-            .SelectMany(area => area.Cards)
-            .Where(card => string.Equals(card.FaceId, wanted, StringComparison.Ordinal))
-            .ToList();
-
-        if (found.Count > 1)
-        {
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' searched and found {found.Count} copies of "
-                + $"'{wanted}'; rr:search.1 gives the player that choice and asking is "
-                + "not implemented");
-        }
-
-        // The identities inspected by a search never enter the public event
-        // wire. The resolution still records that knowledge was acquired even
-        // when no card matches and a one-card deck consumes no shuffle RNG.
-        cast.World.RecordInformation(InformationKind.Search);
-
-        // The found card is added to the revealing area before the searched
-        // deck is shuffled. `rr:search` says the found card is added to the
-        // indicated area, and the shuffle therefore applies to the cards that
-        // remain rather than consuming the wire-format RNG with that card
-        // still in its old area.
-        bool applied = found.Count == 1 && ScheduleReveal(found[0], cast);
-
-        cast.Results["found"] = found.Count;
-
-        // `rr:search.3`. The discard pile is not a deck and is not shuffled --
-        // and shuffling one would consume from the game's single random stream,
-        // which is a wire format.
-        foreach (var deck in areas.Where(area => area.Type == DeckType.EncounterDeck))
-        {
-            applied |= cast.World.Shuffle(deck);
-        }
-        if (applied)
-        {
-            cast.ResolveEffect();
-        }
     }
 
     /// <summary>

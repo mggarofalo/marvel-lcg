@@ -32,13 +32,35 @@ public sealed class ResolutionStatusTests
         // both exact addresses are resolved.
         var (world, card, occurrence, runner) = Revealing(
             AuthoredCards.ImTough,
-            """{ "giveStatus": { "card": { "query": "villain" }, "status": "tough" } }""");
+            """{ "giveStatus": { "card": { "query": "villain" }, "status": "stunned" } }""");
 
         runner.WhenRevealed(world, card, 0, occurrence);
 
         var ability = new PendingAbility(card.ObjectId, AbilityType.WhenRevealed, 0);
         Assert.Equal(ResolutionStatus.Resolved, occurrence.StatusOf(ability));
         Assert.Equal(ResolutionStatus.Resolved, occurrence.CardStatus(card.ObjectId));
+    }
+
+    [Rule("rr:status-cards.1")]
+    [Rule("rr:vulnerable.1")]
+    [Fact]
+    public void InflictingAStatusOnAVulnerableCharacterCreatesItThenDiscardsTheCharacter()
+    {
+        // `Reveal.Afflict` is the one rules procedure for an inflicted status:
+        // it creates the physical status card and then `rr:vulnerable.1`
+        // discards the character. Calling `Statuses.Give` directly would make
+        // a plausible status board while skipping both observable operations.
+        var (world, card, _, runner) = Revealing(
+            AuthoredCards.ImTough,
+            """{ "giveStatus": { "card": { "titled": "A.I.M. Scientist" }, "status": "stunned" } }""");
+        var vulnerable = world.CreateCard(
+            "50083", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
+
+        var events = runner.WhenRevealed(world, card, 0);
+
+        Assert.Equal(DeckType.EncounterDiscardPile, vulnerable.Area.Type);
+        Assert.Contains(events.OfType<CardsCreated>(), created =>
+            created.Cards.Any(status => status.Card == Statuses.Stunned));
     }
 
     [Rule("rr:resolve.2")]

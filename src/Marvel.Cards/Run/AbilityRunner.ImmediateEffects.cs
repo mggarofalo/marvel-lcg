@@ -29,30 +29,6 @@ public sealed partial class AbilityRunner
                     $"'{cast.Source.FaceId}' generates a resource, which is read while a "
                     + "cost is paid rather than resolved as an effect");
 
-            case AbilityEffect.PlaceCounters counters:
-                var counter = counters.Counter;
-                var counterCard = ResolveCard(counters.Card, cast)
-                    ?? throw new RulesNotImplementedException(
-                        $"'{cast.Source.FaceId}' cannot find the card receiving counters");
-                long beforeCounters = counterCard.Tokens.GetValueOrDefault("c_" + counter);
-                long placedCounters = ResolveAmount(counters.Count, cast);
-                if (placedCounters < 0)
-                {
-                    throw new AbilityException("'placeCounters' needs a non-negative 'count'");
-                }
-                if (placedCounters == 0)
-                {
-                    return true;
-                }
-                counterCard.PlaceTokens("c_" + counter, placedCounters);
-                cast.Events.Add(new FieldSet(
-                    counterCard.ObjectId, "c_" + counter,
-                    beforeCounters, beforeCounters + placedCounters)
-                {
-                    Trigger = cast.Trigger, Verb = "Place_Counters",
-                });
-                return true;
-
             case AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.CancelWhenRevealed }:
                 CancelWhenRevealed(cast);
                 cast.ResolveEffect();
@@ -67,31 +43,6 @@ public sealed partial class AbilityRunner
                     cast.World.Agenda.Cancel(cast.Occurrence);
                 }
                 cast.ResolveEffect();
-                return true;
-
-            case AbilityEffect.DealEncounterCard deal:
-                Rules.Play.Deal.EncounterCard(
-                    cast.World,
-                    ResolveCard(deal.Card, cast)
-                        ?? throw new RulesNotImplementedException(
-                            $"'{cast.Source.FaceId}' cannot find the encounter card to deal"),
-                    Seat(deal.Player, cast),
-                    cast.Trigger,
-                    cast.Events);
-                return true;
-
-            case AbilityEffect.DiscardHandWithResource discard:
-                char wantedResource = discard.Resource;
-                foreach (var card in cast.World.Seats[cast.Player].Hand.Cards
-                             .Where(card => Resources.GeneratedBy(
-                                 card.FaceId, cast.World.Facts).Contains(
-                                     wantedResource))
-                             .ToList())
-                {
-                    Rules.Play.Discard.Card(cast.World, card, cast.Trigger, cast.Events);
-                    cast.Discarded.Add(card);
-                }
-                cast.Results["discarded"] = cast.Discarded.Count;
                 return true;
 
             case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.GiveAdditionalBoost } boost:
@@ -172,18 +123,6 @@ public sealed partial class AbilityRunner
                 EncounterDeck.PlaceAccelerationToken(cast.World, cast.Trigger, cast.Events);
                 return true;
 
-            case AbilityEffect.Shuffle shuffle:
-                // `rr:search.3` -- "if any portion of a deck is searched, upon
-                // completion of that game step, game function, or card ability,
-                // shuffle that entire deck." A step of the card rather than
-                // part of the search, because "upon completion" is after the
-                // player has answered which card they took.
-                if (cast.World.Shuffle(Area(shuffle.Area, cast)))
-                {
-                    cast.ResolveEffect();
-                }
-                return true;
-
             case AbilityEffect.Draw draw:
                 foreach (int player in Seats(draw.Players, cast))
                 {
@@ -197,24 +136,8 @@ public sealed partial class AbilityRunner
                 }
                 return true;
 
-            case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.Exhaust } exhaust:
-                Exhaust(exhaust.Selection, cast);
-                return true;
-
-            case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.Ready } ready:
-                Ready(ready.Selection, cast);
-                return true;
-
             case AbilityEffect.DrawToHandSize handSize:
                 DrawToHandSize(handSize, cast);
-                return true;
-
-            case AbilityEffect.RemoveCounters removal:
-                RemoveCounters(removal, cast);
-                return true;
-
-            case AbilityEffect.GiveStatus status:
-                GiveStatus(status, cast);
                 return true;
 
             case AbilityEffect.GrantField { Until: { } until } fieldGrant:

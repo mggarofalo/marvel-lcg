@@ -209,7 +209,8 @@ public sealed partial class AbilityRunner
         {
             Activate(activation, node, cast);
         }
-        else if (!TryRunImmediateEffect(instruction, cast)
+        else if (!TryRunCardState(instruction, cast)
+            && !TryRunImmediateEffect(instruction, cast)
             && !TryRunDamageAndThreat(instruction, node, cast)
             && !TryRunCardMovement(instruction, cast))
         {
@@ -412,197 +413,12 @@ public sealed partial class AbilityRunner
 
 
     /// <summary>
-    /// "Deal each player a facedown encounter card" — <c>rr:deal</c>.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <b>Dealt is not revealed.</b> <c>rr:deal</c> puts the card facedown in
-    /// front of the player and leaves it there; step 4 of the villain phase is
-    /// what turns it over, and it drains the whole queue however the cards got
-    /// into it. So a card dealt during setup waits for the first villain phase,
-    /// which is what it does at a table.
-    /// </para>
-    /// <para>
-    /// In player order, because <c>rr:in-player-order</c> is what "each player"
-    /// means whenever the order is observable — and it is here, since the deck
-    /// can empty part-way round.
-    /// </para>
-    /// </remarks>
-    private static void DealEncounterCards(AbilityEffect.DealEncounterCards deal, Cast cast)
-    {
-        var players = Seats(deal.Players, cast).ToList();
-        for (long dealt = 0; dealt < deal.Count; dealt++)
-        {
-            foreach (int seat in players)
-            {
-                if (Rules.Play.Deal.EncounterCard(
-                        cast.World, seat, cast.Trigger, cast.Events) is null)
-                {
-                    return;
-                }
-            }
-        }
-    }
-
-    /// <summary>
     /// "Put the top card of your deck into play facedown … as a Drone minion."
     /// </summary>
-    private static void CreateDrones(AbilityEffect.CreateDrones drones, Cast cast)
-    {
-        foreach (int player in Seats(drones.Players, cast))
-        {
-            for (long created = 0; created < drones.Count; created++)
-            {
-                FacedownDrones.EngageTop(
-                    cast.World, player, cast.Trigger, "Create_Drone", cast.Events);
-            }
-        }
-    }
-
     private static bool CanCreateDrones(AbilityEffect node, Cast cast) =>
         EffectOf<AbilityEffect.CreateDrones>(node, cast) is var drones
         && AbilityAdmissionFacts.CanCreateDrones(
             cast.World, Seats(drones.Players, cast), drones.Count);
-
-    /// <summary>
-    /// "Put it into play engaged with you" — <c>rr:play-put-into-play</c>.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <b>Put into play is not revealed.</b>
-    /// <c>rr:when-revealed-abilities.2</c>: "if an encounter card with a
-    /// '<b>When Revealed</b>' ability is put into play without being revealed,
-    /// the '<b>When Revealed</b>' ability does not trigger." So this moves the
-    /// card and stops, where <c>Steps.RevealEncounterCard</c> would have run
-    /// the card's own text — and the difference is the whole reason the two are
-    /// separate words here.
-    /// </para>
-    /// <para>
-    /// <b>The keywords still fire.</b> <c>rr:enters-play</c> is "any time when
-    /// a card transitions from an out-of-play area into play", which a card put
-    /// into play does — so toughness and uses X apply, and only the "When
-    /// Revealed" is skipped.
-    /// </para>
-    /// <para>
-    /// <c>rr:engage.1</c> makes it a place: "when a minion engages a player, it
-    /// is placed in that player's play area", so engagement is where the card
-    /// sits rather than a flag on it.
-    /// </para>
-    /// </remarks>
-    private static void PutIntoPlay(AbilityEffect.PutIntoPlay placement, Cast cast)
-    {
-        var card = ResolveCard(placement.Card, cast)
-            ?? throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' would put a card into play that is not there");
-
-        if (placement.PrintedDestination)
-        {
-            // This spelling is the engine's typed DSL choice; the rulebook
-            // decides the destination from the card type. Passing no reveal
-            // occurrence is load-bearing: rr:when-revealed-abilities.2 says a
-            // card put into play without being revealed does not trigger that
-            // ability, while Reveal.Resolve still applies enters-play rules.
-            Reveal.Resolve(
-                cast.World,
-                cast.World.Facts,
-                card,
-                cast.World.FirstPlayer,
-                cast.Events,
-                verb: "Put_Into_Play");
-            cast.ResolveEffect();
-            return;
-        }
-
-        PutIntoPlay(card, cast.Player, cast);
-    }
-
-    /// <summary>Puts one exact minion into play engaged with a named player.</summary>
-    private static void PutIntoPlay(Card card, int player, Cast cast)
-    {
-        if (Uniqueness.IsBlocked(
-                cast.World, cast.World.Facts, card, PlayArea.Of(player)))
-        {
-            // `rr:unique-icon.4.2`: a matching non-villain encounter card is
-            // discarded and does not enter play. This path is put into play,
-            // not reveal, so it deals no facedown replacement encounter card.
-            if (card.Area.Type != DeckType.EncounterDiscardPile)
-            {
-                Marvel.Rules.Play.Discard.Card(
-                    cast.World, card, cast.Trigger, cast.Events);
-            }
-            return;
-        }
-
-        var into = cast.World.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(player));
-        var from = card.Area;
-
-        // Moving into an in-play area turns the card faceup in `Card.MovedTo`;
-        // a second `TurnFaceUp` here would be an equivalent state write.
-        World.MoveToTop(card, into);
-        cast.Events.Add(new CardsMoved(
-            Places.Reference(from), Places.Reference(into),
-            [new Landing(card.ObjectId, into.Cards.Count - 1)])
-        {
-            Trigger = cast.Trigger, Verb = "Put_Into_Play",
-        });
-
-        Reveal.EnterPlay(cast.World, cast.World.Facts, card, cast.Events);
-    }
-
-    private static void GiveStatus(AbilityEffect.GiveStatus status, Cast cast)
-    {
-        // "Stun **each hero**" and "stun your hero" are the same node with a
-        // different query, the way `placeThreat` names one scheme or all of
-        // them: `Every` answers both.
-        foreach (var host in ResolveCards(status.Cards, cast))
-        {
-            GiveStatus(status.Status, cast, host);
-        }
-    }
-
-    private static void GiveStatus(string what, Cast cast, Card host)
-    {
-        // Through the rules rather than straight at `Statuses.Give`:
-        // `rr:status-cards.1` caps how many a character can hold,
-        // `rr:stalwart` makes that cap zero, and `rr:vulnerable` discards the
-        // character. A card giving a status does not get to skip any of them.
-        var status = Reveal.Afflict(
-            cast.World, cast.World.Facts, host, what, cast.Trigger, cast.Events);
-        if (status is null)
-        {
-            return;
-        }
-
-        cast.Events.Add(new CardAttached(status.ObjectId, host.ObjectId)
-        {
-            Trigger = cast.Trigger, Verb = "Give_Status",
-        });
-    }
-
-    // `rr:attachment` -- "when an attachment enters play, it attaches to another
-    // card or game element".
-    private static void AttachTo(AbilityCardSelection selection, Cast cast)
-    {
-        var host = ResolveCard(selection, cast)
-            ?? throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' attaches to a card that is not there");
-
-        var onto = cast.World.AreaOf(
-            DeckType.UpgradesArea, host.Area.PlayArea, host.ObjectId, host.Area.CardOwner);
-        var from = cast.Source.Area;
-        World.MoveToTop(cast.Source, onto);
-
-        cast.Events.Add(new CardsMoved(
-            Places.Reference(from), Places.Reference(onto),
-            [new Landing(cast.Source.ObjectId, onto.Cards.Count - 1)])
-        {
-            Trigger = cast.Trigger, Verb = "Attach",
-        });
-        cast.Events.Add(new CardAttached(cast.Source.ObjectId, host.ObjectId)
-        {
-            Trigger = cast.Trigger, Verb = "Attach",
-        });
-    }
 
     // The rules define the role, not this persisted result-key spelling. The
     // value survives a suspended printed sequence so only this defense ability
