@@ -181,6 +181,41 @@ public sealed class CoreActivationAbilityTests
         Assert.Single(world.Seats[0].Deck.Cards);
     }
 
+    [Rule("rr:resolve.2")]
+    [Rule("rr:resolve.4")]
+    [Theory]
+    [InlineData(true, ResolutionStatus.Resolved)]
+    [InlineData(false, ResolutionStatus.Unresolved)]
+    public void SwarmAttackResolutionWaitsForWhetherADroneAttackWasMade(
+        bool made, ResolutionStatus expected)
+    {
+        // “An ability is resolved when it is triggered and one or more of its
+        // effects resolve.” Swarm Attack's dynamic activation therefore stays
+        // pending until its drone attack reports whether it was made.
+        var world = Board("01001a", "01134");
+        var drone = world.CreateCard(
+            "01087",
+            world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0), cardOwner: 0));
+        drone.TurnFaceDown();
+        var card = world.CreateCard("01147", world.AreaOf(DeckType.RevealingArea));
+        var occurrence = new Occurrence(
+            1, [Steps.CardRevealed], Subject: card.ObjectId, Player: 0);
+        var runner = AuthoredCards.Runner();
+
+        runner.WhenRevealed(world, card, 0, occurrence);
+        var ability = new PendingAbility(card.ObjectId, AbilityType.WhenRevealed, 0);
+        Assert.Equal(ResolutionStatus.Pending, occurrence.StatusOf(ability));
+        Assert.Equal(ResolutionStatus.Pending, occurrence.CardStatus(card.ObjectId));
+
+        var attack = Assert.Single(
+            world.Agenda.Outstanding, step => step.What == Steps.Attack);
+        runner.ActivationCompleted(world, new EnemyActivation(
+            drone.ObjectId, attack.Seat, Attacking: true, attack.ActivationId, Made: made));
+
+        Assert.Equal(expected, occurrence.StatusOf(ability));
+        Assert.Equal(expected, occurrence.CardStatus(card.ObjectId));
+    }
+
     [Rule("rr:attack-enemy-activation")]
     [Fact]
     public void SwarmAttackSchedulesEveryEngagedDrone()

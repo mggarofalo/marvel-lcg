@@ -279,6 +279,8 @@ public sealed partial class AbilityRunner : ICardAbilities
 
                 case RunResumedNode run:
                     RestoreContinuationCursor(cast, run.State);
+                    if (run.EffectApplied)
+                        cast.ResolveEffect();
                     RestoreAlteredFromFrames(cast, run.State.Frames);
                     Run(run.Effect, cast);
                     if (cast.Suspended)

@@ -57,7 +57,8 @@ internal sealed record AbilityContinuationCapture(
 internal sealed record ActivationWaitResult(PhaseStep Step, bool Complete);
 internal abstract record AbilityContinuationTransition;
 internal sealed record RunResumedNode(
-    CompiledCardAbility Ability, AbilityEffect Effect, AbilityContinuationState State)
+    CompiledCardAbility Ability, AbilityEffect Effect, AbilityContinuationState State,
+    bool EffectApplied = false)
     : AbilityContinuationTransition;
 internal sealed record ContinueAfterResumedNode(
     CompiledCardAbility Ability, AbilityContinuationState State, bool EffectApplied)
@@ -304,7 +305,8 @@ internal static class AbilityContinuationCodec
             if (results.GetValueOrDefault("activationMade") > 0)
                 results = results.SetItem("dynamicActivationMade", 1);
             return new RunResumedNode(
-                decoded.Ability, decoded.Node, state with { Results = results });
+                decoded.Ability, decoded.Node, state with { Results = results },
+                EffectApplied: results.GetValueOrDefault("activationMade") > 0);
         }
         bool effectApplied = state.Results.GetValueOrDefault("activationMade") > 0
             || state.Results.ContainsKey("procedureApplied");
