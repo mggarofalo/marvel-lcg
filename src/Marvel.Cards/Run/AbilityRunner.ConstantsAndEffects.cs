@@ -1,3 +1,5 @@
+using static Marvel.Cards.Run.AbilityEffectStructure;
+using static Marvel.Cards.Run.AbilityCostSelection;
 using System.Collections.Immutable;
 using Marvel.Cards.Dsl;
 using Marvel.Rules.Events;
@@ -477,36 +479,6 @@ public sealed partial class AbilityRunner
     /// </remarks>
     private static long CounterCount(Card card, string type) =>
         AbilityExpressionEvaluation.CounterCount(card, type);
-
-    /// <summary>Resolves the physical counter removed by a cost.</summary>
-    /// <remarks>
-    /// If more than one typed pool is present, the rule permits the player to
-    /// choose either one. The current action protocol has no counter-choice
-    /// affordance, so resolution raises before changing state rather than
-    /// choosing an outcome on the player's behalf.
-    /// </remarks>
-    private static string? CounterKeyForRemoval(Card card, string type, long count)
-    {
-        if (!string.Equals(type, "allPurpose", StringComparison.Ordinal))
-        {
-            string typed = "c_" + type;
-            return card.Tokens.GetValueOrDefault(typed) >= count ? typed : null;
-        }
-
-        string[] pools = [.. card.Tokens
-            .Where(pair => pair.Value > 0
-                && pair.Key.StartsWith("c_", StringComparison.Ordinal))
-            .Select(pair => pair.Key)
-            .Order(StringComparer.Ordinal)];
-        return pools.Length switch
-        {
-            0 => null,
-            1 when card.Tokens[pools[0]] >= count => pools[0],
-            1 => null,
-            _ => throw new RulesNotImplementedException(
-                $"'{card.FaceId}' must choose which all-purpose counter to remove"),
-        };
-    }
 
     private static void PreventDamage(AbilityEffect.PreventDamage prevention, Cast cast)
     {

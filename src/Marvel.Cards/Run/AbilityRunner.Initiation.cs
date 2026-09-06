@@ -1,3 +1,4 @@
+using static Marvel.Cards.Run.AbilityEffectStructure;
 using System.Collections.Immutable;
 using Marvel.Cards.Dsl;
 using Marvel.Rules.Events;

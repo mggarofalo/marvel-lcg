@@ -1,3 +1,4 @@
+using static Marvel.Cards.Run.AbilityEffectStructure;
 using Marvel.Cards.Dsl;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
@@ -18,11 +19,10 @@ public sealed partial class AbilityRunner
         _ => [],
     };
 
-    private static IEnumerable<AbilityEffect> ConditionalBranches(AbilityEffect.Conditional conditional)
-    {
-        if (conditional.Then is { } then) yield return then;
-        if (conditional.Else is { } otherwise) yield return otherwise;
-    }
+    private static bool DiscardTopHasCards(AbilityEffect.DiscardTop discard, Cast cast) =>
+        discard.Players is { } players
+            ? Seats(players, cast).Any(player => cast.World.Seats[player].Deck.Cards.Count > 0)
+            : Area(discard.From, cast).Cards.Count > 0;
 
     private static bool SelectorMembershipCanChange(AbilityCardSelection selector) => selector switch
     {

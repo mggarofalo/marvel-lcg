@@ -345,6 +345,20 @@ Costs are atomic where the rules require them to be. A failed component does not
 leave earlier resources, cards or exhaustions spent. When the protocol cannot
 represent a required choice, the engine raises before changing the board.
 
+`AbilityPaymentRules` owns cost eligibility, pricing and complete payment-answer
+validation. It reads the board, source and payer without a resolution frame or
+event sink. `AbilityCostSelection` supplies card-valued choices and identifies
+the physical counter pool a cost can remove. Shared typed-tree inspection lives
+in `AbilityEffectStructure`, which receives instructions but no game state.
+
+`AbilityEventPayment` prepares an event's resource payment before any cost moves
+a card. Its plan captures selected generators, paying hands, allocated resource
+types and cost modifiers. Commitment moves the event out of hand, registers its
+paid resources, spends the generators and consumes those modifiers. Preparation
+and commitment occur together after initiation revalidation; the plan is not a
+saveable continuation. Arrow-cost execution and post-payment continuation still
+belong to the runner.
+
 ## Results and ordered resolution
 
 Effect interpretation reports whether an effect applied. This is gameplay state,
