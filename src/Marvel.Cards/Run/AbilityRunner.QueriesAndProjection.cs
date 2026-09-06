@@ -1576,7 +1576,7 @@ internal static class AbilityAreaProjection
                 .Where(source => !Departed.Contains(source.ObjectId))
                 .DistinctBy(source => source.ObjectId);
             return sources
-                .Any(source => current.Program.On(source.FaceId)
+                .Any(source => AbilityProgramQueries.On(current.Program, source)
                     .Where(ability =>
                         ability.Trigger.Timing == AbilityType.Constant)
                     .Any(ability => ConditionalGrant(
