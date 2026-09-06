@@ -23,24 +23,26 @@ public sealed class ActivationCompletionTests
             Steps.ResumeAbility, 1, 2, Subject: 9, Seat: 0,
             AbilityOrdinal: 3,
             AbilityPath: ["seq:1", "then:then"],
+            AbilityActivationIds: [first, second],
             AbilityResults: new Dictionary<string, long> { ["earlier"] = 4 }));
 
         Assert.Equal(
             [Steps.Attack, Steps.Attack],
             agenda.Outstanding.Select(step => step.What));
-        Assert.Null(agenda.CompleteActivationWait(new EnemyActivation(
-            1, 0, Attacking: true, first, Made: true, DamageDealt: 2)));
+        var waiting = agenda.ActivationWait(first);
+        Assert.NotNull(waiting);
+        Assert.Equal(3, waiting.Value.AbilityOrdinal);
+        Assert.Equal(["seq:1", "then:then"], waiting.Value.AbilityPath);
+        Assert.Equal(4, waiting.Value.AbilityResults!["earlier"]);
 
-        var resumed = agenda.CompleteActivationWait(new EnemyActivation(
-            2, 0, Attacking: true, second, Made: false, DamageDealt: 0));
-
-        Assert.NotNull(resumed);
-        Assert.Equal(3, resumed.Value.AbilityOrdinal);
-        Assert.Equal(["seq:1", "then:then"], resumed.Value.AbilityPath);
-        Assert.Equal(4, resumed.Value.AbilityResults!["earlier"]);
-        Assert.Equal(1, resumed.Value.AbilityResults["activationMade"]);
-        Assert.Equal(2, resumed.Value.AbilityResults["activationDamage"]);
-        Assert.Equal(0, resumed.Value.AbilityResults["activationThreat"]);
+        // Agenda stores and replaces a continuation opaquely. Cards owns the
+        // activation-result keys and decides whether an updated wait is done.
+        agenda.ReplaceActivationWait(first, waiting.Value with
+        { AbilityActivationIds = [second] });
+        Assert.Null(agenda.ActivationWait(first));
+        var resumed = agenda.TakeActivationWait(second);
+        Assert.Equal(3, resumed.AbilityOrdinal);
+        Assert.Equal(["seq:1", "then:then"], resumed.AbilityPath);
     }
 
     [Rule("rr:activation.8")]

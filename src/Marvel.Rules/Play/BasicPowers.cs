@@ -33,6 +33,37 @@ namespace Marvel.Rules.Play;
 /// </remarks>
 public static class BasicPowers
 {
+    /// <summary>Initiates an attack using an opaque Cards-owned continuation payload.</summary>
+    public static bool CardAttack(
+        World world, ICardFacts facts, int player, Card source, Card enemy, long amount,
+        string trigger, List<GameEvent> events, CardPowerContinuation continuation,
+        IReadOnlyList<int> targets, Card? performer = null) => CardAttack(
+            world, facts, player, source, enemy, amount, trigger, events,
+            abilityIndex: continuation.AbilityIndex, powerOrdinal: continuation.PowerOrdinal,
+            resumeFrom: continuation.ResumeFrom, finalStep: continuation.FinalStep,
+            targets: targets, nested: true, surgeGained: continuation.SurgeGained,
+            abilityPath: continuation.AbilityPath, abilityFace: continuation.AbilityFace,
+            abilityResults: continuation.AbilityResults, abilityOccurrence: continuation.AbilityOccurrence,
+            discarded: continuation.Discarded, eachPlayerFrame: continuation.EachPlayerFrame,
+            finalPlayer: continuation.FinalPlayer, abilityPlayer: continuation.AbilityPlayer,
+            abilityHasContinuation: continuation.AbilityHasContinuation, performer: performer);
+
+    /// <summary>Initiates a thwart using an opaque Cards-owned continuation payload.</summary>
+    public static bool CardThwart(
+        World world, ICardFacts facts, int player, Card source, Card scheme, long amount,
+        string trigger, List<GameEvent> events, CardPowerContinuation continuation,
+        IReadOnlyList<int> targets, ThreatPlacement? imminentThreat, bool automaticTarget,
+        Card? performer = null) => CardThwart(
+            world, facts, player, source, scheme, amount, trigger, events,
+            abilityIndex: continuation.AbilityIndex, powerOrdinal: continuation.PowerOrdinal,
+            resumeFrom: continuation.ResumeFrom, finalStep: continuation.FinalStep,
+            targets: targets, imminentThreat: imminentThreat, automaticTarget: automaticTarget,
+            nested: true, surgeGained: continuation.SurgeGained,
+            abilityPath: continuation.AbilityPath, abilityFace: continuation.AbilityFace,
+            abilityResults: continuation.AbilityResults, abilityOccurrence: continuation.AbilityOccurrence,
+            discarded: continuation.Discarded, eachPlayerFrame: continuation.EachPlayerFrame,
+            finalPlayer: continuation.FinalPlayer, abilityPlayer: continuation.AbilityPlayer,
+            abilityHasContinuation: continuation.AbilityHasContinuation, performer: performer);
     /// <summary>Whether a character has a usable printed value for one basic power.</summary>
     public static bool CanUsePower(ICardFacts facts, Card character, string field)
     {

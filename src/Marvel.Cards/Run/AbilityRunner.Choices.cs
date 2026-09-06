@@ -22,8 +22,6 @@ public sealed partial class AbilityRunner
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(source);
 
-        var choice = Choice(world, source, player, stoppedAt, tier);
-
         var persisted = ContinuationStep(world, source, stoppedAt, tier);
         var cast = Resuming(
             world, source, player, tier, finalStep,
@@ -37,10 +35,13 @@ public sealed partial class AbilityRunner
         if (persisted is
             { AbilityOrdinal: >= 0, AbilityPath: { } choicePath } current)
         {
-            cast.RestoreAbility(
-                current.AbilityOrdinal, choicePath, current.AbilityFace);
-            RestorePathBindings(cast, choicePath);
+            var decoded = AbilityContinuationCodec.Decode(
+                program, source, current, tier);
+            RestoreContinuationCursor(cast, decoded.State);
+            RestoreAlteredFromFrames(cast, decoded.State.Frames);
         }
+        var choice = AbilityContinuationCodec.Choice(
+            program, source, tier, stoppedAt, persisted, AdmissionContext(cast));
 
         if (choice.OperationName() == "indirectDamage")
         {
@@ -98,7 +99,7 @@ public sealed partial class AbilityRunner
                 StructuralContext(cast), (AbilityEffect.ThwartGroup)choice);
         }
         var described = AbilityStructuralExecution.DescribeGenericChoice(
-            StructuralContext(cast), choice, StructuralContinuationFacts(cast));
+            StructuralContext(cast), choice, ContinuationFacts(source, persisted, tier));
         _ = ApplyAdmission(described.Admission, cast);
         return described.Prompt;
     }
@@ -149,7 +150,6 @@ public sealed partial class AbilityRunner
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(input);
 
-        var choice = Choice(world, source, player, stoppedAt, tier);
         var persisted = ContinuationStep(world, source, stoppedAt, tier);
         var continuation = world.Agenda.Current is { What: Steps.ChooseOption, Plan: true }
             && world.Agenda.Occurrence is { } live
@@ -173,9 +173,13 @@ public sealed partial class AbilityRunner
         if (persisted is
             { AbilityOrdinal: >= 0, AbilityPath: { } path } current)
         {
-            cast.RestoreAbility(current.AbilityOrdinal, path, current.AbilityFace);
-            RestorePathBindings(cast, path);
+            var decoded = AbilityContinuationCodec.Decode(
+                program, source, current, tier);
+            RestoreContinuationCursor(cast, decoded.State);
+            RestoreAlteredFromFrames(cast, decoded.State.Frames);
         }
+        var choice = AbilityContinuationCodec.Choice(
+            program, source, tier, stoppedAt, persisted, AdmissionContext(cast));
         if (cast.AbilityOrdinal >= 0)
         {
             cast.TrackResolution(cast.AbilityOrdinal);
@@ -248,7 +252,7 @@ public sealed partial class AbilityRunner
             }
             else if (input.Affordance == 1)
             {
-                RunChild(EffectFollowing(choice), "choice:otherwise", cast);
+                RunChild(EffectFollowing(choice), new ChoiceOtherwiseFrame(), cast);
                 if (cast.Suspended)
                 {
                     return cast.Events;
@@ -278,7 +282,7 @@ public sealed partial class AbilityRunner
             }
             else if (input.Affordance == 1)
             {
-                RunChild(EffectFollowing(choice), "choice:otherwise", cast);
+                RunChild(EffectFollowing(choice), new ChoiceOtherwiseFrame(), cast);
                 if (cast.Suspended)
                 {
                     return cast.Events;
@@ -391,12 +395,20 @@ public sealed partial class AbilityRunner
 
 
         ApplyStructuralDecision(AbilityStructuralExecution.AnswerGenericChoice(
-            StructuralContext(cast), choice, StructuralContinuationFacts(cast), input), cast);
+            StructuralContext(cast), choice, ContinuationFacts(source, persisted, tier), input), cast);
         if (cast.Suspended)
         {
             return cast.Events;
         }
         return Continue(source, cast, stoppedAt);
+    }
+
+    private AbilityContinuationFacts ContinuationFacts(
+        Card source, PhaseStep? step, AbilityType? tier)
+    {
+        if (step is not { AbilityOrdinal: >= 0, AbilityPath: not null } persisted)
+            return AbilityContinuationFacts.Empty;
+        return AbilityContinuationCodec.Decode(program, source, persisted, tier).Facts;
     }
 
     /// <summary>Whether the source has a player-card face.</summary>

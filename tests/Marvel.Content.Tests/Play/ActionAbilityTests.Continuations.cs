@@ -1058,6 +1058,33 @@ public sealed partial class ActionAbilityTests
     }
 
     [Fact]
+    public void MalformedStructuralContinuationIsRejectedBeforeRunningAnySibling()
+    {
+        // The continuation path is engine wire data. A malformed cursor must
+        // fail while decoding the compiled tree, before it can select a
+        // plausible sibling and mutate the board.
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "Action",
+            """{ "seq": [ { "exhaust": "this" }, { "draw": { "player": "you", "count": 1 } } ] }""");
+        Card? source = null;
+        var (_, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+        var forged = new PhaseStep(
+            Steps.ResumeAbility, 1, 2, Subject: source!.ObjectId, Seat: 0,
+            Tier: AbilityType.Action, AbilityOrdinal: 0,
+            AbilityPath: ["seq:not-an-index"], AbilityFace: source.FaceId,
+            AbilityHasContinuation: true);
+
+        Assert.Throws<RulesNotImplementedException>(() => runner.ResumeAbility(world, forged));
+
+        Assert.True(source.Ready);
+        Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
+    }
+
+    [Fact]
     public void LegacyContinuationWithoutSourceProvenanceRaisesInsteadOfSkipping()
     {
         // Continuation metadata from before card-incarnation bindings cannot
@@ -1182,6 +1209,56 @@ public sealed partial class ActionAbilityTests
             attack.Subject, attack.Seat, Attacking: true, attack.ActivationId, Made: false));
 
         Assert.Equal(held + 1, world.Seats[0].Hand.Cards.Count);
+    }
+
+    [Fact]
+    public void AFinalNestedSequenceEndpointDoesNotInventAThreatContinuation()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "WhenRevealed",
+            """{ "seq": [ { "seq": [ { "enemyAttacks": { "enemies": { "query": "villain" } } }, { "placeThreat": { "scheme": { "query": "mainScheme" }, "amount": 1 } } ] } ] }""",
+            eventName: Steps.CardRevealed);
+        Card? source = null;
+        var (_, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner);
+
+        runner.WhenRevealed(world, source!, 0);
+        var attack = Assert.Single(
+            world.Agenda.Outstanding, pending => pending.What == Steps.Attack);
+
+        runner.ActivationCompleted(world, new EnemyActivation(
+            attack.Subject, attack.Seat, Attacking: true, attack.ActivationId, Made: true));
+
+        var placement = Assert.Single(
+            world.Agenda.Outstanding, pending => pending.What == Steps.PlaceThreatEffect);
+        Assert.Equal(world.TheCardIn(DeckType.MainSchemesArea)!.ObjectId,
+            placement.Placement!.Scheme);
+        Assert.Equal(1, placement.Placement.Assigned);
+    }
+
+    [Fact]
+    public void LegacyNonFinalEachPlayerFrameDoesNotClaimTheOuterSuffix()
+    {
+        var runner = Runner(
+            AuthoredCards.AuntMay,
+            "WhenRevealed",
+            """{ "seq": [ { "eachPlayer": { "effect": { "placeThreat": { "scheme": { "query": "mainScheme" }, "amount": 1 } } } }, { "draw": { "player": "you", "count": 1 } } ] }""",
+            eventName: Steps.CardRevealed);
+        Card? source = null;
+        var (_, world) = Playing(
+            board => source = InPlay(board, AuthoredCards.AuntMay),
+            abilities: runner);
+        int held = world.Seats[0].Hand.Cards.Count;
+
+        runner.ResolveEachPlayer(
+            world, source!, player: 0, stoppedAt: 1,
+            AbilityType.WhenRevealed, finalStep: false, finalPlayer: false);
+
+        Assert.Single(
+            world.Agenda.Outstanding, pending => pending.What == Steps.PlaceThreatEffect);
+        Assert.Equal(held, world.Seats[0].Hand.Cards.Count);
     }
 
     [Fact]

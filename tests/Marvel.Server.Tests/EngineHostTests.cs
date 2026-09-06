@@ -1,4 +1,6 @@
 using Marvel.Decisions;
+using Marvel.Cards.Dsl;
+using Marvel.Cards.Run;
 using Marvel.Tests;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
@@ -1272,6 +1274,92 @@ public sealed class EngineHostTests
     }
 
     [Fact]
+    public void AnOpenNestedContinuationReplaysAcrossRestartUndoAndRedo()
+    {
+        var store = new MemorySessionStore();
+        var factory = new NestedContinuationFactory(
+            DatasetGameFactory.Load(RepositoryPaths.Root));
+        var first = new EngineHost(
+            factory,
+            new SequenceCapabilities("continuation-owner"),
+            store: store);
+        EngineResponse opened = first.Exchange(EngineRequest.OpenGame(
+            "open", "continuation-replay",
+            new GameSpecification("rhino", ["spider_man"], [], Seed: 73)));
+        EngineResponse kept = first.Exchange(EngineRequest.ResolveGame(
+            "keep", "continuation-replay", RequiredCapability(opened),
+            TakeOnly(opened), opened.Revision));
+        Affordance action = Assert.Single(kept.Prompt!.Affordances, option =>
+            option.AnchorId == factory.Source.ObjectId
+            && string.Equals(option.Verb, Game.ActionVerb, StringComparison.Ordinal));
+
+        EngineResponse waiting = first.Exchange(EngineRequest.ResolveGame(
+            "act", "continuation-replay", RequiredCapability(opened),
+            new EngineDecision(action.Id, []), kept.Revision));
+        StoredSession open = Assert.Single(store.Load());
+        JournalUnit openUnit = open.Save.Units[^1];
+        JournalStep beforeRestart = Assert.Single(openUnit.Decisions);
+        string waitingDigest = factory.Game.State.Digest().Canonical();
+        long waitingRng = factory.Game.State.Random.Generator.WordsConsumed;
+
+        Assert.Equal("open", openUnit.Status);
+        Assert.Equal(Question.Option, waiting.Prompt?.Asking);
+        Assert.Equal(1, factory.Game.State.Seats[0].IdentityCard.Damage);
+
+        var restarted = new EngineHost(factory, store: store);
+        EngineResponse restored = restarted.Exchange(EngineRequest.SyncGame(
+            "sync", "continuation-replay", RequiredCapability(opened)));
+        JournalStep afterRestart = Assert.Single(Assert.Single(store.Load()).Save.Units[^1].Decisions);
+
+        Assert.Equal(
+            EngineJson.Write(waiting with { RequestId = "same", Events = [] }),
+            EngineJson.Write(restored with { RequestId = "same", Events = [] }));
+        Assert.Equal(waitingDigest, factory.Game.State.Digest().Canonical());
+        Assert.Equal(waitingRng, factory.Game.State.Random.Generator.WordsConsumed);
+        Assert.Equal(
+            beforeRestart.Events.Select(item => item.GetRawText()),
+            afterRestart.Events.Select(item => item.GetRawText()));
+        Assert.Equal(beforeRestart.RngWords, afterRestart.RngWords);
+        Assert.Equal(beforeRestart.StateFingerprint, afterRestart.StateFingerprint);
+
+        Affordance choice = restored.Prompt!.Affordances[0];
+        EngineResponse answered = restarted.Exchange(EngineRequest.ResolveGame(
+            "answer", "continuation-replay", RequiredCapability(opened),
+            new EngineDecision(choice.Id, []), restored.Revision));
+        StoredSession completed = Assert.Single(store.Load());
+        JournalUnit completedUnit = completed.Save.Units[^1];
+        JournalStep answeredStep = completedUnit.Decisions[^1];
+        string completedDigest = factory.Game.State.Digest().Canonical();
+        long completedRng = factory.Game.State.Random.Generator.WordsConsumed;
+
+        Assert.Null(answered.Error);
+        Assert.Equal("complete", completedUnit.Status);
+        Assert.Equal(6, factory.Game.State.Seats[0].IdentityCard.Damage);
+
+        EngineResponse undone = restarted.Exchange(EngineRequest.UndoGame(
+            "undo", "continuation-replay", RequiredCapability(opened),
+            cursor: completed.Save.Cursor - 1, expectedRevision: answered.Revision));
+        EngineResponse redone = restarted.Exchange(EngineRequest.RedoGame(
+            "redo", "continuation-replay", RequiredCapability(opened),
+            cursor: completed.Save.Cursor, expectedRevision: undone.Revision));
+        JournalStep replayedAnswer = Assert.Single(store.Load()).Save.Units[^1].Decisions[^1];
+
+        Assert.Null(undone.Error);
+        Assert.Null(redone.Error);
+        Assert.Equal(
+            EngineJson.Write(answered with { RequestId = "same", Events = [], Revision = 0, History = null }),
+            EngineJson.Write(redone with { RequestId = "same", Events = [], Revision = 0, History = null }));
+        Assert.Equal(completedDigest, factory.Game.State.Digest().Canonical());
+        Assert.Equal(completedRng, factory.Game.State.Random.Generator.WordsConsumed);
+        Assert.Equal(
+            answeredStep.Events.Select(item => item.GetRawText()),
+            replayedAnswer.Events.Select(item => item.GetRawText()));
+        Assert.Equal(answeredStep.RngWords, replayedAnswer.RngWords);
+        Assert.Equal(answeredStep.StateFingerprint, replayedAnswer.StateFingerprint);
+        Assert.Equal(6, factory.Game.State.Seats[0].IdentityCard.Damage);
+    }
+
+    [Fact]
     public void AFailedSaveCommitDoesNotAdvanceOrInvalidateTheLiveGame()
     {
         var inner = new MemorySessionStore();
@@ -1876,6 +1964,42 @@ public sealed class EngineHostTests
                     cardOwner: 1));
             world.Seats[1].IdentityCard.TakeDamage(5);
             return opened;
+        }
+    }
+
+    private sealed class NestedContinuationFactory(IDurableGameFactory inner)
+        : IDurableGameFactory
+    {
+        private readonly AbilityBook abilities = AbilityCatalog.Parse("""
+            {"cards":[{"card":"01006","abilities":[{
+              "trigger":{"event":"WhenActionTriggered","timing":"Action","subject":"game"},
+              "effect":{"seq":[
+                {"dealDamage":{"cards":"you","amount":1}},
+                {"choose":{"options":[
+                  {"dealDamage":{"cards":"you","amount":1}},
+                  {"dealDamage":{"cards":"you","amount":2}}
+                ]}},
+                {"dealDamage":{"cards":"you","amount":4}}
+              ]}
+            }]}]}
+            """);
+
+        public SessionCompatibility Compatibility => inner.Compatibility;
+
+        public Card Source { get; private set; } = null!;
+
+        public Game Game { get; private set; } = null!;
+
+        public OpenedGame Create(GameSpecification specification)
+        {
+            OpenedGame opened = inner.Create(specification);
+            World world = opened.Game.State;
+            Source = world.CreateCard(
+                "01006",
+                world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+            var runner = new AbilityRunner(abilities);
+            Game = Game.Begin(world, world.Facts, runner);
+            return opened with { Game = Game };
         }
     }
 

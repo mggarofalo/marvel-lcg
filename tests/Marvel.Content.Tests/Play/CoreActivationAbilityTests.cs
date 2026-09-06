@@ -156,6 +156,31 @@ public sealed class CoreActivationAbilityTests
             world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)).Cards.Count);
     }
 
+    [Rule("rr:activation.7")]
+    [Fact]
+    public void SwarmAttackDoesNotCreateADroneAfterAnAttackWasMade()
+    {
+        var world = Board("01001a", "01134");
+        var original = world.CreateCard(
+            "01087",
+            world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0), cardOwner: 0));
+        original.TurnFaceDown();
+        world.CreateCard("01002", world.Seats[0].Deck);
+        var card = world.CreateCard("01147", world.AreaOf(DeckType.RevealingArea));
+        var runner = AuthoredCards.Runner();
+
+        runner.WhenRevealed(world, card, 0);
+        int activation = Assert.Single(
+            world.Agenda.Outstanding, step => step.What == Steps.Attack).ActivationId;
+        runner.ActivationCompleted(
+            world, new EnemyActivation(original.ObjectId, 0, Attacking: true,
+                activation, Made: true));
+
+        Assert.Single(
+            world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)).Cards);
+        Assert.Single(world.Seats[0].Deck.Cards);
+    }
+
     [Rule("rr:attack-enemy-activation")]
     [Fact]
     public void SwarmAttackSchedulesEveryEngagedDrone()

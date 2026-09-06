@@ -8,70 +8,22 @@ namespace Marvel.Rules.Play;
 /// <summary>Saveable orchestration for card text that resolves for each player.</summary>
 public static class EachPlayerEffects
 {
-    /// <summary>Schedule one independently resumable frame per player.</summary>
-    /// <remarks>
-    /// <para>
-    /// <c>rr:each-player.1</c>: "If an 'each player' effect does not specify an
-    /// order in which to resolve the effect, the first player determines the
-    /// order in which the effect resolves." A single player has only one legal
-    /// order, so that frame is scheduled without asking a vacuous question.
-    /// </para>
-    /// <para>
-    /// The order is stored as agenda frames rather than an iterator. Every
-    /// frame carries its own seat and reconstruction position, so a choice that
-    /// suspends one player's effect cannot lend its context to the next player.
-    /// The field spelling is an engine choice; the rulebook only determines
-    /// who orders the resolutions.
-    /// </para>
-    /// </remarks>
-    public static void Schedule(
-        World world, Card source, int stoppedAt, AbilityType? tier = null,
-        bool finalStep = false, bool surgeGained = false, int abilityOrdinal = -1,
-        IReadOnlyList<string>? abilityPath = null, string abilityFace = "",
-        int abilityPlayer = -1, IReadOnlyDictionary<string, long>? abilityResults = null,
-        Occurrence? abilityOccurrence = null, IReadOnlyList<int>? discarded = null,
-        bool abilityHasContinuation = false, int abilityActor = -1)
+    /// <summary>Schedule frames from an opaque continuation template built by Cards.</summary>
+    public static void Schedule(World world, PhaseStep template)
     {
         ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(source);
-
         var players = world.PlayerOrder.ToList();
-        if (players.Count == 0)
-        {
-            return;
-        }
-
-        int round = world.Agenda.Current?.Round ?? 0;
+        if (players.Count == 0) return;
         if (players.Count == 1)
         {
-            ScheduleFrames(
-                world, source, stoppedAt, tier, finalStep, surgeGained, players,
-                abilityOrdinal, abilityPath, abilityFace, abilityPlayer,
-                abilityResults, abilityOccurrence, discarded, abilityHasContinuation,
-                abilityActor);
+            ScheduleFrames(world, template, players);
             return;
         }
-
-        world.Agenda.Then(new PhaseStep(
-            Steps.OrderEachPlayer,
-            round,
-            2,
-            Index: stoppedAt,
-            Subject: source.ObjectId,
-            Seat: world.FirstPlayer,
-            Plan: true,
-            Tier: tier,
-            FinalStep: finalStep,
-            SurgeGained: surgeGained,
-            AbilityOrdinal: abilityOrdinal,
-            AbilityPath: abilityPath,
-            AbilityFace: abilityFace,
-            AbilityPlayer: abilityPlayer,
-            AbilityResults: abilityResults,
-            AbilityOccurrence: abilityOccurrence,
-            Discarded: discarded,
-            AbilityActor: abilityActor,
-            AbilityHasContinuation: abilityHasContinuation));
+        world.Agenda.Then(template with
+        {
+            What = Steps.OrderEachPlayer, Round = world.Agenda.Current?.Round ?? 0,
+            Number = 2, Seat = world.FirstPlayer, Plan = true,
+        });
     }
 
     internal static Prompt Ordering(World world, PhaseStep step)
@@ -125,23 +77,7 @@ public static class EachPlayerEffects
                 $"'{source.FaceId}' needs an exact ordering of every player in the game");
         }
 
-        ScheduleFrames(
-            world,
-            source,
-            step.Index,
-            step.Tier,
-            step.FinalStep,
-            step.SurgeGained,
-            input.Targets.Select(identity => candidates[identity]).ToList(),
-            step.AbilityOrdinal,
-            step.AbilityPath,
-            step.AbilityFace,
-            step.AbilityPlayer,
-            step.AbilityResults,
-            step.AbilityOccurrence,
-            step.Discarded,
-            step.AbilityHasContinuation,
-            step.AbilityActor);
+        ScheduleFrames(world, step, input.Targets.Select(identity => candidates[identity]).ToList());
     }
 
     internal static IReadOnlyList<GameEvent> Resolve(
@@ -166,49 +102,17 @@ public static class EachPlayerEffects
             step.FinalPlayer);
     }
 
-    private static void ScheduleFrames(
-        World world,
-        Card source,
-        int stoppedAt,
-        AbilityType? tier,
-        bool finalStep,
-        bool surgeGained,
-        List<int> players,
-        int abilityOrdinal,
-        IReadOnlyList<string>? abilityPath,
-        string abilityFace,
-        int abilityPlayer,
-        IReadOnlyDictionary<string, long>? abilityResults,
-        Occurrence? abilityOccurrence,
-        IReadOnlyList<int>? discarded,
-        bool abilityHasContinuation,
-        int abilityActor)
+    private static void ScheduleFrames(World world, PhaseStep template, List<int> players)
     {
         int round = world.Agenda.Current?.Round ?? 0;
         for (int position = 0; position < players.Count; position++)
         {
-            world.Agenda.Then(new PhaseStep(
-                Steps.ResolveEachPlayer,
-                round,
-                2,
-                Index: stoppedAt,
-                Subject: source.ObjectId,
-                Seat: players[position],
-                Plan: true,
-                Tier: tier,
-                FinalStep: finalStep,
-                FinalPlayer: position == players.Count - 1,
-                EachPlayerFrame: true,
-                SurgeGained: surgeGained,
-                AbilityOrdinal: abilityOrdinal,
-                AbilityPath: abilityPath,
-                AbilityFace: abilityFace,
-                AbilityPlayer: abilityPlayer,
-                AbilityResults: abilityResults,
-                AbilityOccurrence: abilityOccurrence,
-                Discarded: discarded,
-                AbilityActor: abilityActor,
-                AbilityHasContinuation: abilityHasContinuation));
+            world.Agenda.Then(template with
+            {
+                What = Steps.ResolveEachPlayer, Round = round, Number = 2,
+                Seat = players[position], Plan = true,
+                FinalPlayer = position == players.Count - 1, EachPlayerFrame = true,
+            });
         }
     }
 

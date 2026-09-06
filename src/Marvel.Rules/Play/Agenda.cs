@@ -888,48 +888,46 @@ public sealed class Agenda
         }
         int at = activationIds.Max(CompletionIndex) + 1;
         items.Insert(at, (
-            continuation with { Plan = true, AbilityActivationIds = [.. activationIds] },
+            continuation with { Plan = true },
             Stage.Apply,
             continuation.AbilityOccurrence));
     }
 
-    /// <summary>Record one activation result and take the continuation when all are done.</summary>
-    public PhaseStep? CompleteActivationWait(EnemyActivation result)
+    /// <summary>Find a continuation waiting for one activation without interpreting its payload.</summary>
+    public PhaseStep? ActivationWait(int activationId)
     {
         int at = items.FindIndex(item =>
             item.Step.What == Steps.ResumeAbility
-            && item.Step.AbilityActivationIds?.Contains(result.Id) == true);
+            && item.Step.AbilityActivationIds?.Contains(activationId) == true);
         if (at < 0)
         {
             return null;
         }
-
-        var item = items[at];
-        var values = item.Step.AbilityResults is { } existing
-            ? new Dictionary<string, long>(existing, StringComparer.Ordinal)
-            : new Dictionary<string, long>(StringComparer.Ordinal);
-        values["activationMade"] = values.GetValueOrDefault("activationMade")
-            + (result.Made ? 1 : 0);
-        values["activationDamage"] = values.GetValueOrDefault("activationDamage")
-            + result.DamageDealt;
-        values["activationThreat"] = values.GetValueOrDefault("activationThreat")
-            + result.ThreatPlaced;
-        var remaining = item.Step.AbilityActivationIds!
-            .Where(id => id != result.Id)
-            .ToList();
-        var updated = item.Step with
-        {
-            AbilityResults = values,
-            AbilityActivationIds = remaining,
-        };
-        if (remaining.Count > 0)
-        {
-            items[at] = (updated, item.Stage, item.Occurrence);
-            return null;
-        }
-        items.RemoveAt(at);
-        return updated;
+        return items[at].Step;
     }
+
+    /// <summary>Replace one activation wait as opaque scheduled work.</summary>
+    public void ReplaceActivationWait(int activationId, PhaseStep replacement)
+    {
+        int at = ActivationWaitIndex(activationId);
+        if (at < 0) throw new InvalidOperationException("the activation wait is not on the agenda");
+        var item = items[at];
+        items[at] = (replacement, item.Stage, item.Occurrence);
+    }
+
+    /// <summary>Take one activation wait as opaque scheduled work.</summary>
+    public PhaseStep TakeActivationWait(int activationId)
+    {
+        int at = ActivationWaitIndex(activationId);
+        if (at < 0) throw new InvalidOperationException("the activation wait is not on the agenda");
+        var step = items[at].Step;
+        items.RemoveAt(at);
+        return step;
+    }
+
+    private int ActivationWaitIndex(int activationId) => items.FindIndex(item =>
+        item.Step.What == Steps.ResumeAbility
+        && item.Step.AbilityActivationIds?.Contains(activationId) == true);
 
     private int CompletionIndex(int activationId)
     {

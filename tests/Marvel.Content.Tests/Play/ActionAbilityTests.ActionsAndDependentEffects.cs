@@ -627,7 +627,6 @@ public sealed partial class ActionAbilityTests
         Assert.True(source!.Ready);
         Assert.Equal(held + 2, world.Seats[0].Hand.Cards.Count);
     }
-
     [Fact]
     public void AChoiceOptionCanSuspendInsideAnd()
     {

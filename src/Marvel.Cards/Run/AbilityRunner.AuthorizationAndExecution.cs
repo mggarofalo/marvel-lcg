@@ -256,11 +256,11 @@ public sealed partial class AbilityRunner
             cast.Results["defenseAbilityDefender"] = defender.ObjectId;
             Attack.BeginDefenseAbility(cast.World, Resolver(cast), defender);
         }
-        RunChild(command.Effect.Effect, "defense:effect", cast);
+        RunChild(command.Effect.Effect, new DefenseFrame(), cast);
     }
 
     // The owner has decided the structural transition. This trampoline performs
-    // only its explicit domain command or the existing MARVEL-408 pause bridge.
+    // only its explicit domain command or continuation suspension.
     private static void ApplyStructuralDecision(AbilityStructuralTransition transition, Cast cast)
     {
         switch (transition)
@@ -278,7 +278,7 @@ public sealed partial class AbilityRunner
                 EachTime(repeated.Effect, cast);
                 return;
             case SchedulePowerCommand power:
-                ((AbilityRunner)cast.Abilities).SchedulePower(power, cast);
+                SchedulePower(power, cast);
                 return;
             case RunDefenseCommand defense:
                 RunDefense(defense, cast);
@@ -300,19 +300,13 @@ public sealed partial class AbilityRunner
                     cast.Position, cast.HasContinuation), cast);
                 return;
             case Ask ask:
-                cast.StructuralPath.Add(ask.Frames[^1]);
-                try { SuspendForChoice(ask.Choice, cast); }
-                finally { cast.StructuralPath.RemoveAt(cast.StructuralPath.Count - 1); }
+                SuspendForChoice(ask.Choice, cast);
                 return;
             case ScheduleEachPlayer schedule:
                 int ordinal = AbilityOrdinal(schedule.Effect, cast);
-                EachPlayerEffects.Schedule(
-                    cast.World, cast.Source, cast.Position + 1, cast.Tier, cast.FinalStep,
-                    cast.GainedKeywords.Contains("surge"), ordinal,
-                    [.. cast.AbilityPath], cast.AbilityFace, cast.Player,
-                    ContinuationResults(cast, ordinal), cast.Occurrence,
-                    [.. cast.Discarded.Select(card => card.ObjectId)], cast.HasContinuation,
-                    cast.AbilityActor?.ObjectId ?? -1);
+                EachPlayerEffects.Schedule(cast.World, AbilityContinuationCodec.Step(
+                    Capture(cast, ordinal), Steps.ResolveEachPlayer,
+                    cast.World.Agenda.Current?.Round ?? 0));
                 cast.Suspend();
                 return;
             case DelayAfterActivation delay:
@@ -332,7 +326,7 @@ public sealed partial class AbilityRunner
                     try
                     {
                         cast.SetContinuation(cast.HasContinuation || position < ordered.Effects.Length - 1);
-                        RunChild(ordered.Effects[position], LegacyFrame(frame), cast);
+                        Run(ordered.Effects[position], cast);
                     }
                     finally { cast.StructuralPath.RemoveAt(cast.StructuralPath.Count - 1); }
                     if (cast.Suspended) return;

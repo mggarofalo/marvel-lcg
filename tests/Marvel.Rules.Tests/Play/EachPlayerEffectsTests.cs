@@ -10,6 +10,12 @@ namespace Marvel.Rules.Tests.Play;
 
 public sealed class EachPlayerEffectsTests
 {
+    private static void Schedule(
+        World world, Card source, int stoppedAt, AbilityType? tier = null,
+        bool finalStep = false) => EachPlayerEffects.Schedule(world, new PhaseStep(
+            Steps.ResolveEachPlayer, world.Agenda.Current?.Round ?? 0, 2,
+            Index: stoppedAt, Subject: source.ObjectId, Tier: tier,
+            FinalStep: finalStep, Plan: true));
     [Rule("rr:each-player.1")]
     [Fact]
     public void FirstPlayerChoosesAnExactPermutationAndFramesPersistThatOrder()
@@ -20,7 +26,7 @@ public sealed class EachPlayerEffectsTests
         world.FirstPlayer = 1;
         var source = world.CreateCard("treachery", world.AreaOf(DeckType.EncounterDiscardPile));
         var abilities = new Recorder();
-        EachPlayerEffects.Schedule(
+        Schedule(
             world, source, stoppedAt: 4, AbilityType.WhenRevealed, finalStep: true);
 
         var asked = Sequence.Work(world, world.Facts, abilities, []);
@@ -63,7 +69,7 @@ public sealed class EachPlayerEffectsTests
         var world = Board(2);
         var source = world.CreateCard("treachery", world.AreaOf(DeckType.EncounterDiscardPile));
         var abilities = new FormRecorder(changeBefore: 0);
-        EachPlayerEffects.Schedule(world, source, stoppedAt: 1);
+        Schedule(world, source, stoppedAt: 1);
 
         var asked = Sequence.Work(world, world.Facts, abilities, []);
         var affordance = Assert.Single(asked!.Affordances);
@@ -91,7 +97,7 @@ public sealed class EachPlayerEffectsTests
         var world = Board(1);
         var source = world.CreateCard("treachery", world.AreaOf(DeckType.EncounterDiscardPile));
         var abilities = new Recorder();
-        EachPlayerEffects.Schedule(world, source, stoppedAt: 2);
+        Schedule(world, source, stoppedAt: 2);
 
         Assert.Null(Sequence.Work(world, world.Facts, abilities, []));
         Assert.Equal([0], abilities.Players);
@@ -104,7 +110,7 @@ public sealed class EachPlayerEffectsTests
         var world = Board(2);
         var source = world.CreateCard("treachery", world.AreaOf(DeckType.EncounterDiscardPile));
         var abilities = new ChoiceRecorder();
-        EachPlayerEffects.Schedule(
+        Schedule(
             world, source, stoppedAt: 7, AbilityType.WhenRevealed, finalStep: true);
 
         var ordering = Sequence.Work(world, world.Facts, abilities, []);

@@ -127,22 +127,18 @@ public sealed partial class AbilityRunner
 
         public string AbilityFace { get; private set; } = Source.FaceId;
 
-        public List<string> AbilityPath { get; } = [];
-
-        // The currently executing structural ancestry. Its string wire mirror
-        // remains in AbilityPath until MARVEL-408 owns continuation storage.
         public List<AbilityStructuralFrame> StructuralPath { get; } = [];
 
         public void RestoreAbility(
-            int ordinal, IReadOnlyList<string> path, string? face = null)
+            int ordinal, IEnumerable<AbilityStructuralFrame> frames, string? face = null)
         {
             AbilityOrdinal = ordinal;
             if (face is not null)
             {
                 AbilityFace = face;
             }
-            AbilityPath.Clear();
-            AbilityPath.AddRange(path);
+            StructuralPath.Clear();
+            StructuralPath.AddRange(frames);
         }
 
         private PendingAbility? resolutionAbility;
@@ -179,26 +175,22 @@ public sealed partial class AbilityRunner
             }
         }
 
-        public void SetAbilityPath(IEnumerable<string> path)
-        {
-            var copy = path.ToList();
-            AbilityPath.Clear();
-            AbilityPath.AddRange(copy);
-        }
-
         public void CompletePendingDependency(ResolutionOutcome outcome)
         {
-            int pending = AbilityPath.FindLastIndex(frame =>
-                frame.EndsWith(":Pending", StringComparison.Ordinal));
+            int pending = StructuralPath.FindLastIndex(frame =>
+                frame is DependentFrame { Predecessor: true, Outcome: null });
             if (pending >= 0)
             {
-                AbilityPath[pending] = AbilityPath[pending][..^"Pending".Length]
-                    + outcome;
+                var frame = (DependentFrame)StructuralPath[pending];
+                StructuralPath[pending] = frame with
+                {
+                    Outcome = (AbilityStructuralOutcome)(int)outcome,
+                };
             }
         }
 
-        public bool HasPendingDependency => AbilityPath.Any(frame =>
-            frame.EndsWith(":Pending", StringComparison.Ordinal));
+        public bool HasPendingDependency => StructuralPath.Any(frame =>
+            frame is DependentFrame { Predecessor: true, Outcome: null });
 
         private AbilityCardReference? chosenBinding;
         private AbilityCardReference? playerSelectionBinding;
@@ -313,9 +305,6 @@ public sealed partial class AbilityRunner
             set => InitiationEvidence.LabelsPreflighted = value;
         }
 
-        private const string CrisisIgnoringThwartPrefix =
-            "__preflight.crisisIgnoringThwart.";
-
         private HashSet<AbilityEffect> CrisisIgnoringThwarts => InitiationEvidence.CrisisIgnoringThwarts;
 
         private HashSet<int> PersistedCrisisIgnoringThwarts => InitiationEvidence.PersistedCrisisIgnoringThwarts;
@@ -336,42 +325,8 @@ public sealed partial class AbilityRunner
             CrisisIgnoringThwarts.Contains(node)
             || PersistedCrisisIgnoringThwarts.Contains(ordinal);
 
-        /// <summary>Writes validated power addresses into continuation metadata.</summary>
-        public void PersistCrisisIgnoringThwarts(
-            CompiledCardAbility ability, Dictionary<string, long> results)
-        {
-            var nodes = PowerNodes(ability.Effect, BasicPowers.ThwartVerb).ToList();
-            for (int ordinal = 0; ordinal < nodes.Count; ordinal++)
-            {
-                if (CrisisIgnoringThwarts.Contains(nodes[ordinal])
-                    || PersistedCrisisIgnoringThwarts.Contains(ordinal))
-                {
-                    results[$"{CrisisIgnoringThwartPrefix}{ordinal}"] = 1;
-                }
-            }
-        }
-
-        /// <summary>Consumes engine-owned target metadata without exposing a result.</summary>
-        public bool RestoreCrisisIgnoringThwart(string name, long value)
-        {
-            if (!name.StartsWith(CrisisIgnoringThwartPrefix, StringComparison.Ordinal))
-            {
-                return false;
-            }
-            string encoded = name[CrisisIgnoringThwartPrefix.Length..];
-            if (value != 1 || !int.TryParse(
-                    encoded,
-                    System.Globalization.NumberStyles.None,
-                    System.Globalization.CultureInfo.InvariantCulture,
-                    out int ordinal)
-                || ordinal < 0)
-            {
-                throw new RulesNotImplementedException(
-                    $"'{Source.FaceId}' has invalid persisted thwart target metadata");
-            }
-            PersistedCrisisIgnoringThwarts.Add(ordinal);
-            return true;
-        }
+        public void RestoreCrisisIgnoringThwarts(IEnumerable<int> ordinals) =>
+            PersistedCrisisIgnoringThwarts.UnionWith(ordinals);
 
         /// <summary>A numeric result carried into this labelled power.</summary>
         public long PowerAmount { get; init; } = -1;
