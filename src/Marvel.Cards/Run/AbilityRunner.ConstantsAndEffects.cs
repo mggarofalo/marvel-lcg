@@ -304,39 +304,6 @@ public sealed partial class AbilityRunner
         constantsEnding.Complete(cast.Trigger, cast.Events);
     }
 
-    /// <summary>
-    /// "Place it here instead" — <c>rr:replacement-effect</c>.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// The damage does not happen to the character at all: it is <i>placed</i>
-    /// on this card as damage tokens, which is why it goes on with
-    /// <c>Card.TakeDamage</c> rather than through <c>Damage.Deal</c>. Dealing it
-    /// would start the nine steps of <c>rr:damage</c> again, on a card that is
-    /// not a character.
-    /// </para>
-    /// <para>
-    /// What is left afterwards is zero, and <c>rr:replacement-effect.1</c> then
-    /// holds for free: the damage is no longer imminent, so nothing later in
-    /// the order can respond to it.
-    /// </para>
-    /// </remarks>
-    private static void Soak(AbilityCardSelection card, Cast cast)
-    {
-        var onto = ResolveCard(card, cast)
-            ?? throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' would soak damage onto a card that is not there");
-
-        long before = onto.Damage;
-        onto.TakeDamage(cast.Incoming);
-        cast.Events.Add(new FieldSet(onto.ObjectId, "k_damage", before, onto.Damage)
-        {
-            Trigger = cast.Trigger, Verb = "Place_Damage",
-        });
-
-        cast.Replace(0);
-    }
-
     /// <summary>"Exhaust …" — <c>rr:exhausted</c>.</summary>
     /// <remarks>
     /// A card already exhausted stays exhausted and reports nothing:
@@ -444,20 +411,6 @@ public sealed partial class AbilityRunner
     /// </remarks>
     private static long CounterCount(Card card, string type) =>
         AbilityExpressionEvaluation.CounterCount(card, type);
-
-    private static void PreventDamage(AbilityEffect.PreventDamage prevention, Cast cast)
-    {
-        int target = cast.Occurrence.Target >= 0
-            ? cast.Occurrence.Target
-            : cast.Occurrence.Subject;
-        cast.World.Effects.Register(new ContinuousEffect(
-            EffectSource.LastingEffect,
-            Kind: "preventDamage",
-            Amount: ResolveAmount(prevention.Amount, cast),
-            Card: cast.Source.ObjectId,
-            Affects: target,
-            Lasts: new Duration(Uses: 1)));
-    }
 
     private static void CancelWhenRevealed(Cast cast)
     {

@@ -91,82 +91,6 @@ public sealed partial class AbilityRunner
         cast.Suspend();
     }
 
-    /// <summary>"… heals N damage" — <c>rr:heal</c>.</summary>
-    /// <remarks>
-    /// <para>
-    /// What it records is the point. <c>rr:heal</c> heals up to the amount, and
-    /// a character at full health or damaged by less heals less than it was
-    /// told to — so <c>result.healed</c> is what actually moved, and a card
-    /// reading "if no damage was healed this way" reads that rather than
-    /// checking the character's health first. The check <i>before</i> is
-    /// silently wrong: it reads a number the heal may never reach.
-    /// </para>
-    /// <para>
-    /// A target that is not on the board heals nothing rather than throwing.
-    /// "Rhino heals 4 damage. If no damage was healed this way, this card gains
-    /// surge" is a sentence with an answer for the absent villain, and it is
-    /// the surge.
-    /// </para>
-    /// </remarks>
-    private static void Heal(AbilityEffect.Heal heal, Cast cast)
-    {
-        long healed = ResolveCard(heal.Card, cast) is { } target
-            ? Damage.Heal(
-                cast.World, cast.World.Facts, target, ResolveAmount(heal.Amount, cast),
-                cast.Trigger, "Heal", cast.Events)
-            : 0;
-
-        cast.Results["healed"] = healed;
-    }
-
-    /// <summary>
-    /// "Assign N damage among …" — <c>rr:indirect-damage</c>.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <c>.1</c>: "indirect damage dealt to a player can be divided as that
-    /// player chooses among characters under their control." <c>.2</c> is the
-    /// group form, "among friendly characters in play", which is what "assign X
-    /// damage among heroes and allies" means.
-    /// </para>
-    /// <para>
-    /// <b>Only asked when there is something to ask.</b> A player with no ally
-    /// has one character, so every point goes to their identity and there is no
-    /// division to choose — which is most of the 101 cards in the pool that
-    /// deal indirect damage. It suspends only when the eligible characters can
-    /// hold the damage more than one way.
-    /// </para>
-    /// <para>
-    /// <c>.3.1</c> caps each character at its remaining hit points: "a
-    /// character cannot be assigned more indirect damage than would cause it to
-    /// be defeated", assessed "without accounting for interactions with other
-    /// abilities". <c>.3.2</c> keeps a tough character eligible up to that same
-    /// cap even though the tough card will prevent all of it, and <c>.3</c>
-    /// assigns everything before resolving any of it.
-    /// </para>
-    /// </remarks>
-    private static void Indirect(AbilityEffect.IndirectDamage damage, AbilityEffect node, Cast cast)
-    {
-        long amount = ResolveAmount(damage.Amount, cast);
-        var eligible = Assignable(ResolveCards(damage.Among, cast), cast);
-
-        if (amount <= 0 || eligible.Count == 0)
-        {
-            return;
-        }
-
-        if (eligible.Count == 1)
-        {
-            // No division to choose. `.3.1`'s cap still applies -- a character
-            // cannot be assigned more than would defeat it -- so what is over
-            // the cap is simply not assigned.
-            Assign(node, cast, [eligible[0]], amount);
-            return;
-        }
-
-        SuspendForChoice(node, cast);
-    }
-
     /// <summary>The characters indirect damage may be assigned to.</summary>
     /// <remarks>
     /// <c>rr:indirect-damage.4</c>: "characters that cannot take damage cannot
@@ -175,58 +99,14 @@ public sealed partial class AbilityRunner
     /// would not defeat it.
     /// </remarks>
     private static List<Card> Assignable(AbilityCardSelection among, Cast cast) =>
-        Assignable(Every(among, cast), cast);
-
-    private static List<Card> Assignable(IReadOnlyList<Card> among, Cast cast) =>
-    [
-        .. among.Where(card =>
-            Room(cast, card) > 0
-            && cast.Abilities.CanTakeDamage(cast.World, card, cast.Source)),
-    ];
+        AbilityDamageAndThreatExecution.Assignable(among, DamageAndThreatContext(cast));
 
     private static IReadOnlyList<Card> DamageTargets(AbilityCardSelection targets, Cast cast) =>
-        DamageTargets(Every(targets, cast), cast);
-
-    private static IReadOnlyList<Card> DamageTargets(IReadOnlyList<Card> targets, Cast cast) =>
-        [.. targets.Where(target =>
-            cast.Abilities.CanTakeDamage(cast.World, target, cast.Source))];
+        AbilityDamageAndThreatExecution.DamageTargets(targets, DamageAndThreatContext(cast));
 
     /// <summary>How much indirect damage one character may be assigned.</summary>
     private static long Room(Cast cast, Card card) =>
-        Damage.Health(cast.World, cast.World.Facts, card) - card.Damage;
-
-    /// <summary>Assigns the damage, then resolves it — <c>rr:indirect-damage.3</c>.</summary>
-    /// <remarks>
-    /// "All indirect damage from a single source is <b>first assigned and then
-    /// resolved simultaneously</b>." So the whole assignment is worked out
-    /// before any of it is dealt, which is what stops the first point defeating
-    /// a character and making the rest illegal.
-    /// </remarks>
-    private static void Assign(
-        AbilityEffect node, Cast cast, IReadOnlyList<Card> among, long amount)
-    {
-        var assigned = new Dictionary<int, long>();
-        long left = amount;
-
-        foreach (var card in among)
-        {
-            if (left <= 0)
-            {
-                break;
-            }
-
-            long take = Math.Min(Room(cast, card), left);
-            if (take <= 0)
-            {
-                continue;
-            }
-
-            assigned[card.ObjectId] = take;
-            left -= take;
-        }
-
-        Resolve(node, cast, assigned);
-    }
+        AbilityDamageAndThreatExecution.Room(card, DamageAndThreatContext(cast));
 
     /// <summary>Deals an assignment that is already worked out.</summary>
     /// <remarks>
@@ -236,19 +116,10 @@ public sealed partial class AbilityRunner
     /// </remarks>
     private static void Resolve(
         AbilityEffect node, Cast cast, Dictionary<int, long> assigned)
-    {
-        bool suspended = false;
-        foreach (var (card, damage) in assigned.OrderBy(each => each.Key))
-        {
-            suspended |= Damage.DealOutcome(
-                cast.World, cast.World.Facts, cast.Source, cast.World.Cards[card], damage,
-                cast.Trigger, "Indirect_Damage", cast.Events) == Damage.Outcome.Suspended;
-        }
-        if (suspended)
-        {
-            SuspendAfterProcedure(node, cast);
-        }
-    }
+        => ApplyDamageAndThreat(
+            AbilityDamageAndThreatExecution.ResolveAssigned(
+                node, assigned, DamageAndThreatContext(cast)),
+            node, cast);
 
     /// <summary>"Deal N damage to …" — <c>rr:damage</c>.</summary>
     /// <remarks>
@@ -259,159 +130,10 @@ public sealed partial class AbilityRunner
     /// both and leave a defeated character standing.
     /// </remarks>
     private static void DealDamage(AbilityEffect.Damage damage, AbilityEffect node, Cast cast, long multiplier = 1)
-    {
-        long amount = ModifiedAbilityDamage(SaturatingMultiply(
-            ResolveAmount(damage.Amount, cast), multiplier), cast);
-        string verb = damage.AttackVerb ? "Attack" : "Deal_Damage";
-        bool suspended = false;
-        foreach (var target in ResolveCards(damage.Cards, cast))
-        {
-            long before = target.Damage;
-            suspended |= Damage.DealOutcome(
-                cast.World, cast.World.Facts, cast.Source, target, amount, cast.Trigger, verb,
-                cast.Events) == Damage.Outcome.Suspended;
-            if (cast.Power == BasicPowers.AttackVerb && target.Damage > before)
-            {
-                cast.Occurrence.Also(Steps.DamageDealt);
-            }
-        }
-        if (suspended)
-        {
-            SuspendAfterProcedure(node, cast);
-        }
-    }
-
-    private static long ModifiedAbilityDamage(long amount, Cast cast)
-    {
-        amount = SaturatingSum(amount, [EventModifier(cast, "eventDamage")]);
-        return cast.Power == BasicPowers.AttackVerb
-            ? SaturatingSum(amount, [EventModifier(cast, "attackDamage")])
-            : amount;
-    }
-
-    private static void MoveDamage(AbilityEffect.MoveDamage movement, AbilityEffect node, Cast cast)
-    {
-        var from = ResolveCard(movement.From, cast)
-            ?? throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' cannot find the character damage moves from");
-        var to = ResolveCard(movement.To, cast)
-            ?? throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' cannot find the enemy damage moves to");
-        long amount = Math.Min(from.Damage, ResolveAmount(movement.Amount, cast));
-        if (amount <= 0 || !cast.Abilities.CanTakeDamage(cast.World, to, cast.Source))
-        {
-            return;
-        }
-
-        Damage.Heal(
-            cast.World, cast.World.Facts, from, amount,
-            cast.Trigger, "Move_Damage", cast.Events);
-        if (Damage.DealOutcome(
-            cast.World, cast.World.Facts, cast.Source, to, amount,
-            cast.Trigger, "Attack", cast.Events) == Damage.Outcome.Suspended)
-        {
-            SuspendAfterProcedure(node, cast);
-        }
-    }
-
-    /// <summary>Damage from an attack event performed by the resolving identity.</summary>
-    private static void DealAttackDamage(AbilityEffect.AttackDamage damage, AbilityEffect node, Cast cast)
-    {
-        var attacker = cast.PowerActor
-            ?? cast.AbilityActor
-            ?? cast.World.Seats[Resolver(cast)].IdentityCard;
-        ContinuousEffect? temporaryOverkill = null;
-        if (damage.Overkill)
-        {
-            temporaryOverkill = new ContinuousEffect(
-                EffectSource.LastingEffect,
-                Kind: Keywords.Overkill,
-                Amount: 1,
-                Card: cast.Source.ObjectId,
-                Affects: attacker.ObjectId,
-                Lasts: new Duration(Uses: 1));
-            cast.World.Effects.Register(temporaryOverkill);
-        }
-
-        var attackModifiers = EventModifierEffects(cast, "attackDamage");
-        long amount = SaturatingSum(
-            ResolveAmount(damage.Amount, cast),
-            [EventModifier(cast, "eventDamage"),
-             SaturatingSum(0, attackModifiers.Select(effect => effect.Amount))]);
-        bool suspended = false;
-        foreach (var target in DamageTargets(ResolveCards(damage.Cards, cast), cast))
-        {
-            var damaged = Damage.Attack(
-                cast.World, cast.World.Facts, attacker, cast.Source, target,
-                amount, cast.Trigger, "Attack", cast.Events,
-                retaliate: false);
-            cast.Attacked.Add(target);
-            if (damaged.Characters.Count > 0)
-            {
-                cast.Occurrence.Also(Steps.DamageDealt);
-            }
-            suspended |= damaged.Suspended;
-        }
-        // Inside an attack wrapper, every damage instance belongs to the same
-        // attack and the wrapper consumes these after its whole effect. A
-        // direct dealAttackDamage node is itself the attack and consumes here.
-        foreach (var modifier in cast.Power == BasicPowers.AttackVerb
-                     ? []
-                     : attackModifiers)
-        {
-            cast.World.Effects.Use(modifier);
-        }
-
-        if (temporaryOverkill is not null)
-        {
-            cast.World.Effects.Use(temporaryOverkill);
-        }
-        if (suspended)
-        {
-            SuspendAfterProcedure(node, cast);
-        }
-    }
-
-    private static void MoveAttackDamage(AbilityEffect.MoveDamage movement, AbilityEffect node, Cast cast)
-    {
-        var from = ResolveCard(movement.From, cast)
-            ?? throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' cannot find the character damage moves from");
-        var to = ResolveCard(movement.To, cast)
-            ?? throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' cannot find the enemy damage moves to");
-        cast.Attacked.Add(to);
-        long amount = Math.Min(from.Damage, ResolveAmount(movement.Amount, cast));
-        if (amount <= 0 || !cast.Abilities.CanTakeDamage(cast.World, to, cast.Source))
-        {
-            return;
-        }
-
-        Damage.Heal(
-            cast.World, cast.World.Facts, from, amount,
-            cast.Trigger, "Move_Damage", cast.Events);
-        var damaged = Damage.Attack(
-            cast.World,
-            cast.World.Facts,
-            cast.PowerActor
-                ?? cast.AbilityActor
-                ?? cast.World.Seats[Resolver(cast)].IdentityCard,
-            cast.Source,
-            to,
-            amount,
-            cast.Trigger,
-            BasicPowers.AttackVerb,
-            cast.Events,
-            retaliate: false);
-        if (damaged.Characters.Count > 0)
-        {
-            cast.Occurrence.Also(Steps.DamageDealt);
-        }
-        if (damaged.Suspended)
-        {
-            SuspendAfterProcedure(node, cast);
-        }
-    }
+        => ApplyDamageAndThreat(
+            AbilityDamageAndThreatExecution.DealDamage(
+                damage, node, DamageAndThreatContext(cast), multiplier),
+            node, cast);
 
     private void SchedulePower(AbilityEffect node, Cast cast, string power)
     {
@@ -508,113 +230,11 @@ public sealed partial class AbilityRunner
         cast.Suspend();
     }
 
-    /// <summary>"Place N threat on …" — <c>rr:threat</c>.</summary>
-    /// <remarks>
-    /// Through <see cref="Threat.Place"/>, which checks
-    /// <c>rr:main-scheme-main-scheme-deck.2</c> afterwards: threat that reaches
-    /// a main scheme's target completes it whatever put it there, and a card
-    /// placing threat is one of the things that can.
-    /// </remarks>
-    private static void PlaceThreat(AbilityEffect.PlaceThreat threat, Cast cast)
-    {
-        // "On each side scheme" and "here" are the same node with a different
-        // query: `Every` answers one card or many, so a card that names one
-        // scheme and a card that names all of them read alike.
-        var schemes = ResolveCards(threat.Schemes, cast);
-        if (schemes.Count == 0)
-        {
-            // The ability has initiated, but its named game element can leave
-            // before resolution. `rr:resolve-as-much-as-possible` resolves the
-            // remaining effect with no target rather than recreating the card
-            // or treating an absent target as an engine gap.
-            return;
-        }
-
-        long amount = ResolveAmount(threat.Amount, cast);
-        if (amount <= 0)
-        {
-            return;
-        }
-
-        if (cast.HasContinuation)
-        {
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' places threat before its ability has finished; "
-                + "the continuation must be preserved across the threat interrupt window");
-        }
-
-        Threat.Schedule(
-            cast.World, schemes, cast.Source, amount,
-            ThreatCause.CardAbility, cast.Trigger, cast.Player,
-            cast.ResolutionAbility, cast.Occurrence);
-        cast.Suspend();
-    }
-
-    private static void PreventThreat(AbilityEffect.PreventThreat prevention, Cast cast)
-    {
-        var placement = cast.ImminentThreat ?? cast.Occurrence.Threat
-            ?? throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' would prevent threat that is not imminent");
-        placement.Prevent(ResolveAmount(prevention.Amount, cast));
-    }
-
-    private static void ReplaceThreatWithDamage(AbilityCardSelection card, AbilityEffect node, Cast cast)
-    {
-        var placement = cast.Occurrence.Threat
-            ?? throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' would replace threat that is not imminent");
-        long damage = placement.Remaining;
-        var target = ResolveCard(card, cast)
-            ?? throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' replaces threat with damage to a card that is not there");
-        placement.Replace();
-        cast.ResolveEffect();
-        if (Damage.DealOutcome(
-            cast.World, cast.World.Facts, cast.Source, target, damage,
-            cast.Trigger, "Deal_Damage", cast.Events) == Damage.Outcome.Suspended)
-        {
-            SuspendAfterProcedure(node, cast);
-        }
-    }
-
     private static void RemoveThreat(AbilityEffect.RemoveThreat removal, Cast cast, long multiplier = 1)
-    {
-        var schemes = ResolveCards(removal.Schemes, cast);
-        if (schemes.Count == 0)
-        {
-            throw new RulesNotImplementedException(
-                $"'{cast.Source.FaceId}' would remove threat from a scheme that is not there");
-        }
-
-        foreach (var scheme in schemes)
-        {
-            // `rr:crisis-icon.1`: player cards cannot remove threat from the main
-            // scheme while a crisis icon is in play. Encounter effects are not
-            // player cards and remain able to do so.
-            if (!removal.IgnoresCrisis
-                && scheme.Area.Type == DeckType.MainSchemesArea
-                && IsPlayerCard(cast)
-                && MainScheme.Crisis(cast.World, cast.World.Facts))
-            {
-                continue;
-            }
-
-            Threat.Remove(
-                cast.World,
-                cast.World.Facts,
-                cast.Abilities,
-                scheme,
-                SaturatingSum(
-                    SaturatingMultiply(ResolveAmount(removal.Amount, cast), multiplier),
-                    [EventModifier(cast, "eventThreatRemoval")]),
-                cast.Trigger,
-                "Remove_Threat",
-                cast.Events,
-                by: Resolver(cast),
-                overridesCannotFrom: removal.OverridesCannotFrom is { } source
-                    ? ResolveCard(source, cast)?.ObjectId ?? -1 : -1);
-        }
-    }
+        => ApplyDamageAndThreat(
+            AbilityDamageAndThreatExecution.RemoveThreat(
+                removal, DamageAndThreatContext(cast), multiplier),
+            removal, cast);
 
     private static long EventModifier(Cast cast, string kind) =>
         AbilityEventModifiers.Amount(cast.World, cast.Source, kind);
