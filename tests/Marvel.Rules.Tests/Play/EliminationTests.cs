@@ -199,6 +199,11 @@ public sealed partial class EliminationTests
                 DeckType.UpgradesArea, PlayArea.Of(0),
                 world.Seats[0].IdentityCard.ObjectId));
 
+        string before = world.Digest().Canonical();
+        Assert.Throws<RulesNotImplementedException>(() =>
+            EliminationLayout.Calculate(new WorldEliminationLayout(world), 0));
+        Assert.Equal(before, world.Digest().Canonical());
+
         Assert.Throws<RulesNotImplementedException>(() =>
             Elimination.Eliminate(world, printed, 0, "test", []));
 

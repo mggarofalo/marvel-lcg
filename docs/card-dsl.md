@@ -318,14 +318,23 @@ Elimination and damage share bounded calculations owned by `Marvel.Rules`.
 `IEliminationLayout`. It identifies the next player, retained minion trees and
 cards leaving the eliminated play area. The live reader uses current placements;
 the ability reader applies known departures and engagement changes without
-moving cards. Live elimination still owns discard destinations, permanent-card
-checks, events, attack termination and continuous-effect settlement.
+moving cards. The shared calculation refuses unsupported permanent-attachment
+departures. Live elimination still owns discard destinations, events, attack
+termination and continuous-effect settlement.
 
 `DamageAssignment` distinguishes damage dealt, damage taken and spending one
-tough status card. Live damage and both ability trace paths use its step-2
-calculation. Live damage supplies step-3 prevention and retains every callback,
+tough status card. Live damage, damage descriptions and both ability trace paths
+use its step-2 calculation. Live damage supplies step-3 prevention and retains every callback,
 status discard, placement and defeat window. The calculation does not predict
 future choices or make an unsupported replacement safe to project.
+
+`RuleProjection<T>` distinguishes one known result, possible alternatives and
+unsupported calculations. Power analysis stores each alternative as a separate
+`AbilityPowerState`; an aggregate cannot supply the first alternative's fields
+as though a player selected it. Required unsupported facts raise before payment.
+Damage descriptions report uncertainty without turning it into a predicted
+health value. See [shared domain calculations](architecture-domain-calculations.md)
+for the ownership boundary and remaining extraction candidates.
 
 `AbilityInitiationEvidence` holds the checks that live resolution must retain,
 including label validation and scoped target exceptions. It belongs to one

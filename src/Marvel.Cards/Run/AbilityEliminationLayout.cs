@@ -17,6 +17,8 @@ internal sealed class AbilityEliminationLayout(
 
     public IEnumerable<int> Cards => live.Cards.Where(card => !departed.Contains(card));
 
+    public bool RequiresAttachTo(int card) => live.RequiresAttachTo(card);
+
     public EliminationPlacement Placement(int card)
     {
         var placement = live.Placement(card);

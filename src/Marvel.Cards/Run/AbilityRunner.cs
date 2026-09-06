@@ -1280,7 +1280,8 @@ public sealed partial class AbilityRunner : ICardAbilities
             }
 
             return new DamageProjection(
-                null, $"{name} has a forced interrupt that modifies this damage");
+                new RuleProjection<long>.Unsupported(
+                    $"{name} has a forced interrupt whose damage projection is not implemented"));
         }
 
         return new DamageProjection(amount);

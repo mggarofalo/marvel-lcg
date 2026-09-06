@@ -47,7 +47,7 @@ public static class Elimination
             Attack.EndForEliminatedPlayer(world, events);
         }
 
-        var layout = EliminationLayout.Calculate(new WorldEliminationLayout(world), player);
+        var layout = EliminationLayout.Calculate(new WorldEliminationLayout(world, facts), player);
 
         // Step 1. "If the eliminated player has the first player token, they
         // pass it to the next clockwise player." Before step 5 takes their play
@@ -229,23 +229,10 @@ public static class Elimination
     /// <summary>Proves every step-three/four departure before elimination mutates state.</summary>
     private static void Preflight(World world, ICardFacts facts, int player)
     {
-        var layout = EliminationLayout.Calculate(new WorldEliminationLayout(world), player);
+        var layout = EliminationLayout.Calculate(new WorldEliminationLayout(world, facts), player);
         var leaving = layout.Leaving.Select(card => world.Cards[card])
             .Where(card => DeckTypes.IsInPlay(card.Area.Type))
             .ToList();
-
-        foreach (var card in leaving)
-        {
-            if (facts.Kind(card.FaceId) == CardKind.Attachment
-                && StateFields.Modified(
-                    world, card, "permanent", facts, world.Players) > 0)
-            {
-                throw new RulesNotImplementedException(
-                    $"card {card.ObjectId} is a permanent attachment on an eliminated "
-                    + "player's board, and rr:player-elimination.1 resolves its "
-                    + "'attach to' text, which is not modelled");
-            }
-        }
 
         foreach (var card in leaving)
         {

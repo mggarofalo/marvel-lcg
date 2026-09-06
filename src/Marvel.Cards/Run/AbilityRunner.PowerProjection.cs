@@ -1,4 +1,6 @@
+using System.Collections.Immutable;
 using Marvel.Cards.Dsl;
+using PowerReachability = Marvel.Rules.Play.RuleProjection<Marvel.Cards.Run.AbilityPowerState>;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
@@ -12,29 +14,11 @@ public sealed partial class AbilityRunner
     private static EliminationLayout PlanTracePlayerElimination(
         int player, Cast cast, HashSet<int> discarded,
         Dictionary<int, int> engagement)
-    {
-        var layout = EliminationLayout.Calculate(
+        => EliminationLayout.Calculate(
             new AbilityEliminationLayout(cast.World, discarded, engagement), player);
-        foreach (int cardId in layout.Leaving)
-        {
-            var card = cast.World.Cards[cardId];
-            if (DeckTypes.IsInPlay(card.Area.Type)
-                && cast.World.Facts.Kind(card.FaceId) == CardKind.Attachment
-                && StateFields.Modified(
-                    cast.World, card, "permanent",
-                    cast.World.Facts, cast.World.Players) > 0)
-            {
-                throw new RulesNotImplementedException(
-                    $"card {cardId} is a permanent attachment on an eliminated "
-                    + "player's board, and rr:player-elimination.1 resolves its "
-                    + "'attach to' text, which is not modelled");
-            }
-        }
-        return layout;
-    }
 
-    private static PowerReachability AdvancePowerVillain(
-        PowerReachability state, Card damaged, Card first, Cast cast)
+    private static AbilityPowerState AdvancePowerVillain(
+        AbilityPowerState state, Card damaged, Card first, Cast cast)
     {
         if (damaged.ObjectId != state.CurrentVillain
             || PowerDamage(state, damaged) < PowerHealth(state, damaged, cast))
@@ -407,12 +391,12 @@ public sealed partial class AbilityRunner
                     && !discarded.Contains(card.ObjectId)));
 
 
-    private static long PowerDamage(PowerReachability state, Card card) =>
+    private static long PowerDamage(AbilityPowerState state, Card card) =>
         state.CardDamage.TryGetValue(card.ObjectId, out long damage)
             ? damage
             : card.Damage;
 
-    private static long PowerThreat(PowerReachability state, Card scheme) =>
+    private static long PowerThreat(AbilityPowerState state, Card scheme) =>
         TraceThreat(state.SchemeThreat, scheme);
 
     private static long TraceThreat(
@@ -421,7 +405,7 @@ public sealed partial class AbilityRunner
             ? threat
             : scheme.Tokens.GetValueOrDefault("k_threat");
 
-    private static bool PowerCrisis(PowerReachability state, Cast cast) =>
+    private static bool PowerCrisis(AbilityPowerState state, Cast cast) =>
         cast.World.Areas
             .Where(area => DeckTypes.IsInPlay(area.Type))
             .SelectMany(area => area.Cards)
@@ -429,8 +413,8 @@ public sealed partial class AbilityRunner
             .Any(card => TraceModified(
                 card, "crisis", cast, state.Discarded, state.Modifiers) > 0);
 
-    private static PowerReachability SetPowerThreat(
-        PowerReachability state, Card scheme, long threat)
+    private static AbilityPowerState SetPowerThreat(
+        AbilityPowerState state, Card scheme, long threat)
     {
         var values = new Dictionary<int, long>(state.SchemeThreat);
         long live = scheme.Tokens.GetValueOrDefault("k_threat");
@@ -446,21 +430,21 @@ public sealed partial class AbilityRunner
     }
 
     private static bool PowerTough(
-        PowerReachability state, Card card, Cast cast) =>
+        AbilityPowerState state, Card card, Cast cast) =>
         state.CardTough.TryGetValue(card.ObjectId, out bool tough)
             ? tough
             : Statuses.Has(cast.World, card, Statuses.Tough);
 
     private static PowerReadiness PowerReady(
-        Card card, PowerReachability state) =>
+        Card card, AbilityPowerState state) =>
         state.CardReadiness.TryGetValue(card.ObjectId, out var readiness)
             ? readiness
             : card.Ready
                 ? PowerReadiness.Ready
                 : PowerReadiness.Exhausted;
 
-    private static PowerReachability SetPowerReady(
-        PowerReachability state, Card card, PowerReadiness readiness)
+    private static AbilityPowerState SetPowerReady(
+        AbilityPowerState state, Card card, PowerReadiness readiness)
     {
         var cards = new Dictionary<int, PowerReadiness>(state.CardReadiness);
         var live = card.Ready
@@ -478,15 +462,15 @@ public sealed partial class AbilityRunner
     }
 
     private static long PowerCardsAvailable(
-        PowerReachability state, int player, Cast cast) =>
+        AbilityPowerState state, int player, Cast cast) =>
         state.PlayerCardsAvailable.TryGetValue(player, out long available)
             ? available
             : cast.World.Seats[player].Deck.Cards.Count
                 + cast.World.AreaOf(
                     DeckType.DiscardPile, PlayArea.Of(player)).Cards.Count;
 
-    private static PowerReachability SetPowerCardsAvailable(
-        PowerReachability state, int player, long available, Cast cast)
+    private static AbilityPowerState SetPowerCardsAvailable(
+        AbilityPowerState state, int player, long available, Cast cast)
     {
         var cards = new Dictionary<int, long>(state.PlayerCardsAvailable);
         long live = cast.World.Seats[player].Deck.Cards.Count
@@ -503,8 +487,8 @@ public sealed partial class AbilityRunner
         return state with { PlayerCardsAvailable = cards };
     }
 
-    private static PowerReachability SetPowerDamage(
-        PowerReachability state, Card card, long damage, Card first, Cast cast)
+    private static AbilityPowerState SetPowerDamage(
+        AbilityPowerState state, Card card, long damage, Card first, Cast cast)
     {
         if (damage == PowerDamage(state, card))
         {
@@ -547,8 +531,8 @@ public sealed partial class AbilityRunner
         };
     }
 
-    private static PowerReachability SetPowerTough(
-        PowerReachability state, Card card, bool tough, Card first, Cast cast)
+    private static AbilityPowerState SetPowerTough(
+        AbilityPowerState state, Card card, bool tough, Card first, Cast cast)
     {
         if (tough == PowerTough(state, card, cast))
         {
@@ -578,27 +562,39 @@ public sealed partial class AbilityRunner
     private static PowerReachability MergePowerAlternatives(
         IEnumerable<PowerReachability> states)
     {
-        var alternatives = new List<PowerReachability>();
-        foreach (var state in states.SelectMany(PowerPaths))
+        var alternatives = new List<AbilityPowerState>();
+        foreach (var projection in states)
         {
-            if (!alternatives.Any(existing => SameConcretePowerState(existing, state)))
+            if (projection is PowerReachability.Unsupported)
             {
-                alternatives.Add(state);
+                return projection;
+            }
+            foreach (var state in PowerPaths(projection))
+            {
+                if (!alternatives.Any(existing => SameConcretePowerState(existing, state)))
+                {
+                    alternatives.Add(state);
+                }
             }
         }
         if (alternatives.Count == 0)
         {
             throw new InvalidOperationException("A power state must have a reachable path.");
         }
-        if (alternatives.Count == 1)
-        {
-            return alternatives[0];
-        }
-        return alternatives[0] with { Alternatives = [.. alternatives] };
+        return alternatives.Count == 1
+            ? new PowerReachability.Known(alternatives[0])
+            : new PowerReachability.Possible([.. alternatives]);
     }
 
-    private static IEnumerable<PowerReachability> PowerPaths(
-        PowerReachability state) => state.Alternatives ?? [state];
+    private static ImmutableArray<AbilityPowerState> PowerPaths(
+        PowerReachability state) => state switch
+        {
+            PowerReachability.Known known => [known.Value],
+            PowerReachability.Possible possible => possible.Alternatives,
+            PowerReachability.Unsupported unsupported =>
+                throw new RulesNotImplementedException(unsupported.Reason),
+            _ => throw new InvalidOperationException("Unknown power projection outcome."),
+        };
 
     private static ulong PowerForms(PowerReachability state) =>
         PowerPaths(state).Aggregate(0UL, (forms, path) => forms | path.FormsMayChange);
@@ -614,7 +610,7 @@ public sealed partial class AbilityRunner
     }
 
     private static bool SameConcretePowerState(
-        PowerReachability left, PowerReachability right) =>
+        AbilityPowerState left, AbilityPowerState right) =>
         left.FormsMayChange == right.FormsMayChange
         && left.FirstPlayer == right.FirstPlayer
         && left.FirstPlayerDamage == right.FirstPlayerDamage

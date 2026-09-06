@@ -21,6 +21,9 @@ public interface IEliminationLayout
 
     /// <summary>The card's current or projected placement.</summary>
     EliminationPlacement Placement(int card);
+
+    /// <summary>Whether a departing card requires permanent attachment resolution.</summary>
+    bool RequiresAttachTo(int card);
 }
 
 /// <summary>Only the placement facts used by player elimination.</summary>
@@ -112,6 +115,19 @@ public sealed record EliminationLayout(
                     || placements.TryGetValue(card.At.Host, out var host)
                         && host.PlayArea == PlayArea.Of(player)))
             .Select(card => card.Id).ToImmutableArray();
+        foreach (int card in leaving)
+        {
+            // rr:player-elimination.1: "resolve its 'attach to' text".
+            // That procedure is unsupported. Retained attachments never reach
+            // this boundary because step 2 moves them without a departure.
+            if (read.RequiresAttachTo(card))
+            {
+                throw new RulesNotImplementedException(
+                    $"card {card} is a permanent attachment on an eliminated "
+                    + "player's board, and rr:player-elimination.1 resolves its "
+                    + "'attach to' text, which is not modelled");
+            }
+        }
         return new EliminationLayout(next, relocations.ToImmutable(), leaving);
     }
 }
@@ -120,12 +136,14 @@ public sealed record EliminationLayout(
 public sealed class WorldEliminationLayout : IEliminationLayout
 {
     private readonly World world;
+    private readonly ICardFacts facts;
 
     /// <summary>Read placement in place without creating any game areas.</summary>
-    public WorldEliminationLayout(World world)
+    public WorldEliminationLayout(World world, ICardFacts? facts = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         this.world = world;
+        this.facts = facts ?? world.Facts;
     }
 
     /// <inheritdoc />
@@ -144,5 +162,14 @@ public sealed class WorldEliminationLayout : IEliminationLayout
         var area = world.Cards[card].Area;
         return new EliminationPlacement(
             area.PlayArea, area.Host, area.Type == DeckType.EngagedEnemiesArea);
+    }
+
+    /// <inheritdoc />
+    public bool RequiresAttachTo(int card)
+    {
+        var current = world.Cards[card];
+        return DeckTypes.IsInPlay(current.Area.Type)
+            && facts.Kind(current.FaceId) == CardKind.Attachment
+            && StateFields.Modified(world, current, "permanent", facts, world.Players) > 0;
     }
 }

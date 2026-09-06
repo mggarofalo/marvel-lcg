@@ -71,6 +71,7 @@ public static class Damage
         long current = Math.Max(0, maximum - target.Damage);
         var notes = new List<string>();
         long? taken = amount;
+        string? uncertainty = null;
 
         if (!world.Abilities.CanTakeDamage(world, target, source))
         {
@@ -81,7 +82,19 @@ public static class Damage
         {
             DamageProjection replacement = world.Abilities.PreviewDamageReplacement(
                 world, target, source, amount);
-            taken = replacement.Amount;
+            taken = replacement.Result switch
+            {
+                RuleProjection<long>.Known exact => exact.Value,
+                RuleProjection<long>.Possible => null,
+                RuleProjection<long>.Unsupported => null,
+                _ => throw new InvalidOperationException("Unknown damage projection outcome."),
+            };
+            uncertainty = replacement.Result switch
+            {
+                RuleProjection<long>.Possible => "damage has multiple possible outcomes",
+                RuleProjection<long>.Unsupported unsupported => unsupported.Reason,
+                _ => null,
+            };
             if (!string.IsNullOrWhiteSpace(replacement.Note))
             {
                 notes.Add(replacement.Note);
@@ -91,14 +104,18 @@ public static class Damage
         bool piercing = isAttack
             && Keywords.Has(world, attacker, Keywords.Piercing, facts);
         bool tough = Statuses.Has(world, target, Statuses.Tough);
-        if (taken > 0 && tough && !piercing)
+        if (taken is { } dealt)
         {
-            taken = 0;
-            notes.Add("Tough prevents the damage and is discarded");
-        }
-        else if (taken > 0 && tough && piercing)
-        {
-            notes.Add("Piercing discards Tough");
+            var assignment = DamageAssignment.AfterReplacement(dealt, tough && !piercing);
+            taken = assignment.Taken;
+            if (assignment.SpendsTough)
+            {
+                notes.Add("Tough prevents the damage and is discarded");
+            }
+            else if (assignment.Dealt > 0 && tough && piercing)
+            {
+                notes.Add("Piercing discards Tough");
+            }
         }
 
         if (taken > 0)
@@ -121,7 +138,7 @@ public static class Damage
 
         string health = taken is { } known
             ? $"{current}/{maximum} → {Math.Max(0, current - known)}/{maximum} HP"
-            : $"{current}/{maximum} HP · result depends on a forced replacement";
+            : $"{current}/{maximum} HP · {uncertainty}";
         if (taken >= current && current > 0)
         {
             DefeatProjection? defeat = world.Abilities.PreviewDefeatReplacement(
