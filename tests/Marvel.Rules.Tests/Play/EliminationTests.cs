@@ -14,7 +14,7 @@ namespace Marvel.Rules.Tests.Play;
 /// Five numbered steps, and the order is load-bearing: step 1 hands the first
 /// player token on before step 5 removes the play area it was sitting in.
 /// </remarks>
-public sealed class EliminationTests
+public sealed partial class EliminationTests
 {
     [Rule("rr:player-elimination.step.1")]
     [Fact]
@@ -198,6 +198,11 @@ public sealed class EliminationTests
             "attachment", world.AreaOf(
                 DeckType.UpgradesArea, PlayArea.Of(0),
                 world.Seats[0].IdentityCard.ObjectId));
+
+        string before = world.Digest().Canonical();
+        Assert.Throws<RulesNotImplementedException>(() =>
+            EliminationLayout.Calculate(new WorldEliminationLayout(world), 0));
+        Assert.Equal(before, world.Digest().Canonical());
 
         Assert.Throws<RulesNotImplementedException>(() =>
             Elimination.Eliminate(world, printed, 0, "test", []));

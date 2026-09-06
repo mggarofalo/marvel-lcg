@@ -1,4 +1,5 @@
 using Marvel.Cards.Dsl;
+using PowerReachability = Marvel.Rules.Play.RuleProjection<Marvel.Cards.Run.AbilityPowerState>;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
@@ -9,44 +10,20 @@ namespace Marvel.Cards.Run;
 
 public sealed partial class AbilityRunner
 {
-    [Flags]
-    private enum PowerReadiness
-    {
-        Ready = 1,
-        Exhausted = 2,
-    }
-
-    private readonly record struct PowerReachability(
-        ulong FormsMayChange, int FirstPlayer,
-        long FirstPlayerDamage, bool FirstPlayerTough,
-        Dictionary<int, long> CardDamage, Dictionary<int, bool> CardTough,
-        HashSet<(int Card, string Status)> StatusChanges,
-        Dictionary<(int Card, string Status), int> StatusCounts,
-        Dictionary<int, PowerReadiness> CardReadiness, HashSet<int> Discarded,
-        Dictionary<int, long> SchemeThreat,
-        Dictionary<int, long> PlayerCardsAvailable,
-        Dictionary<(int Card, string Field), long> Modifiers,
-        Dictionary<int, HashSet<string>> Traits,
-        Dictionary<int, int> Engagement,
-        int CurrentVillain, int VillainStagesDrawn, bool Finished,
-        PowerReachability[]? Alternatives = null);
-
     private static bool SuspendsPowerEffect(
         AbilityEffect node, Cast cast, bool stateMayChange = false,
         bool bindingMayChange = false, PowerReachability? reachability = null)
     {
         var state = reachability ?? InitialPowerReachability(cast);
-        if (state.Alternatives is { } alternatives)
-        {
-            return alternatives.Any(alternative => SuspendsPowerEffect(
-                node, cast, stateMayChange, bindingMayChange, alternative));
-        }
+        // Enumerate every supported path before accepting a suspension answer;
+        // unsupported is a missing calculation, never an absent legal option.
+        var paths = PowerPaths(state).ToArray();
         return (node.OperationName() == "and" && OrderedEffects(node).Skip(1).Any())
             || IsChoice(node)
             || node.OperationName() is "eachPlayer" or "attack" or "thwart" or "thwartSchemes"
                 or "placeThreat" or "enemyAttacks" or "enemySchemes"
-            || PowerSuspensionChildren(
-                node, cast, stateMayChange, bindingMayChange, state).Any(child =>
+            || paths.SelectMany(path => PowerSuspensionChildren(
+                node, cast, stateMayChange, bindingMayChange, path)).Any(child =>
                 SuspendsPowerEffect(
                     child.Node, cast, child.StateMayChange, child.BindingMayChange,
                     child.Reachability));
@@ -88,8 +65,8 @@ public sealed partial class AbilityRunner
         if (node.OperationName() == "if")
         {
             var test = ConditionalOf(node, cast).Test;
-            bool canSwitch = PowerTestCanChange(
-                test, cast, stateMayChange, bindingMayChange, reachability);
+            bool canSwitch = PowerPaths(reachability).Any(path => PowerTestCanChange(
+                test, cast, stateMayChange, bindingMayChange, path));
             var branches = canSwitch
                 ? ConditionalBranches((AbilityEffect.Conditional)node).Where(value => value is not null)
                 : ConditionalBranch(node, Test(test, cast) ? "then" : "else") is { } active
@@ -106,7 +83,7 @@ public sealed partial class AbilityRunner
 
     private static bool PowerTestCanChange(
         AbilityCondition test, Cast cast, bool stateMayChange,
-        bool bindingMayChange, PowerReachability reachability) => test switch
+        bool bindingMayChange, AbilityPowerState reachability) => test switch
         {
             AbilityCondition.All all => all.Operands.Any(child =>
                 PowerTestCanChange(
@@ -127,21 +104,21 @@ public sealed partial class AbilityRunner
                 || bindingMayChange && BindingCanChange(test),
         };
 
-    private static PowerReachability InitialPowerReachability(Cast cast)
+    private static AbilityPowerState InitialPowerReachability(Cast cast)
     {
         var identity = cast.World.Seats[cast.World.FirstPlayer].IdentityCard;
         int villain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
-        return new PowerReachability(
+        return new AbilityPowerState(
             0, cast.World.FirstPlayer, identity.Damage,
             Statuses.Has(cast.World, identity, Statuses.Tough),
             new Dictionary<int, long>(), new Dictionary<int, bool>(),
             [], [], new Dictionary<int, PowerReadiness>(), TraceUnavailableMinions(cast),
             new Dictionary<int, long>(), new Dictionary<int, long>(), [], [], [],
-            villain, 0, false, null);
+            villain, 0, false);
     }
 
     private static Card? PowerFind(
-        AbilityCardSelection value, Cast cast, PowerReachability reachability)
+        AbilityCardSelection value, Cast cast, AbilityPowerState reachability)
     {
         if (SelectorMembershipCanChange(value)
             || PotentialVillainSelector(value, cast))
@@ -164,7 +141,7 @@ public sealed partial class AbilityRunner
     }
 
     private static List<Card> PowerEvery(
-        AbilityCardSelection value, Cast cast, PowerReachability reachability)
+        AbilityCardSelection value, Cast cast, AbilityPowerState reachability)
     {
         int liveVillain = cast.World.TheCardIn(DeckType.VillainArea)?.ObjectId ?? -1;
         bool dynamic = SelectorMembershipCanChange(value)
@@ -220,12 +197,25 @@ public sealed partial class AbilityRunner
         AbilityEffect node, Cast cast, bool stateMayChange,
         bool bindingMayChange, PowerReachability reachability)
     {
-        if (reachability.Alternatives is { } alternatives)
+        if (reachability is PowerReachability.Unsupported)
         {
-            return MergePowerAlternatives(alternatives.Select(alternative =>
-                PowerStateAfter(
-                    node, cast, stateMayChange, bindingMayChange, alternative)));
+            return reachability;
         }
+        try
+        {
+            return MergePowerAlternatives(PowerPaths(reachability).Select(path =>
+                PowerStateAfterKnown(node, cast, stateMayChange, bindingMayChange, path)));
+        }
+        catch (RulesNotImplementedException unsupported)
+        {
+            return new PowerReachability.Unsupported(unsupported.Message);
+        }
+    }
+
+    private static PowerReachability PowerStateAfterKnown(
+        AbilityEffect node, Cast cast, bool stateMayChange,
+        bool bindingMayChange, AbilityPowerState reachability)
+    {
         // SuspendsPowerEffect rejects this simultaneous choice by shape. Do
         // not eagerly replay its children while computing a later sibling's
         // abstract state; each replay would invent another damage instance.
@@ -255,7 +245,7 @@ public sealed partial class AbilityRunner
                 return ApplyPowerLeafState(
                     effect, cast, bindingMayChange, reachability, count);
             }
-            var repeated = reachability;
+            PowerReachability repeated = reachability;
             for (long iteration = 0; iteration < count; iteration++)
             {
                 var next = PowerStateAfter(
@@ -285,7 +275,7 @@ public sealed partial class AbilityRunner
         if (node.OperationName() == "seq"
             || (node.OperationName() == "and" && children.Count == 1))
         {
-            var ordered = advanced;
+            PowerReachability ordered = advanced;
             foreach (var child in children)
             {
                 ordered = PowerStateAfter(
@@ -345,12 +335,13 @@ public sealed partial class AbilityRunner
     private static List<PowerOutcomeState> PowerOutcomeStates(
         AbilityEffect node, Cast cast, bool stateMayChange,
         bool bindingMayChange, PowerReachability reachability)
+        => [.. PowerPaths(reachability).SelectMany(path => PowerOutcomeStatesKnown(
+            node, cast, stateMayChange, bindingMayChange, path))];
+
+    private static List<PowerOutcomeState> PowerOutcomeStatesKnown(
+        AbilityEffect node, Cast cast, bool stateMayChange,
+        bool bindingMayChange, AbilityPowerState reachability)
     {
-        if (reachability.Alternatives is { } alternatives)
-        {
-            return [.. alternatives.SelectMany(alternative => PowerOutcomeStates(
-                node, cast, stateMayChange, bindingMayChange, alternative))];
-        }
         if (node.OperationName() == "if")
         {
             var test = ConditionalOf(node, cast).Test;
@@ -400,7 +391,7 @@ public sealed partial class AbilityRunner
 
     private static HashSet<ResolutionOutcome> PowerOutcomes(
         AbilityEffect node, Cast cast, bool stateMayChange,
-        bool bindingMayChange, PowerReachability reachability)
+        bool bindingMayChange, AbilityPowerState reachability)
     {
         if (node.OperationName() == "draw")
         {
@@ -529,7 +520,7 @@ public sealed partial class AbilityRunner
 
     private static bool ConditionalCanSkipBranch(
         AbilityEffect node, Cast cast, bool stateMayChange,
-        bool bindingMayChange, PowerReachability reachability)
+        bool bindingMayChange, AbilityPowerState reachability)
     {
         var test = ConditionalOf(node, cast).Test;
         bool canSwitch = PowerTestCanChange(
@@ -542,9 +533,9 @@ public sealed partial class AbilityRunner
         return ConditionalBranch(node, "then") is null || ConditionalBranch(node, "else") is null;
     }
 
-    private static PowerReachability ChangeFormState(
+    private static AbilityPowerState ChangeFormState(
         AbilityEffect.ChangeForm change, Cast cast, bool bindingMayChange,
-        PowerReachability reachability)
+        AbilityPowerState reachability)
     {
         var player = change.Player;
         if (bindingMayChange && player == AbilityPlayer.ChosenPlayer)
@@ -570,16 +561,10 @@ public sealed partial class AbilityRunner
     private static bool FirstPlayerMayRebind(ulong state) =>
         (state & FirstPlayerRebinding) != 0;
 
-    private static PowerReachability ApplyPowerLeafState(
+    private static AbilityPowerState ApplyPowerLeafState(
         AbilityEffect node, Cast cast, bool bindingMayChange,
-        PowerReachability reachability, long multiplier = 1)
+        AbilityPowerState reachability, long multiplier = 1)
     {
-        if (reachability.Alternatives is { } alternatives)
-        {
-            return MergePowerAlternatives(alternatives.Select(alternative =>
-                ApplyPowerLeafState(
-                    node, cast, bindingMayChange, alternative, multiplier)));
-        }
         if (EffectAmount(node) is { } authoredAmount
             && (reachability.CardDamage.Count > 0
                 || reachability.SchemeThreat.Count > 0)
@@ -895,8 +880,8 @@ public sealed partial class AbilityRunner
         return ApplyPowerDamage(reachability, cards, amount, first, cast);
     }
 
-    private static PowerReachability ApplyPowerDamage(
-        PowerReachability reachability, IReadOnlyList<Card> cards,
+    private static AbilityPowerState ApplyPowerDamage(
+        AbilityPowerState reachability, IReadOnlyList<Card> cards,
         long amount, Card first, Cast cast)
     {
         if (amount <= 0)
@@ -916,25 +901,27 @@ public sealed partial class AbilityRunner
                 CardDamage = damage,
                 Discarded = discarded,
             };
-            if (landed <= 0)
+            var assignment = DamageAssignment.AfterReplacement(
+                landed, landed > 0 && PowerTough(state, card, cast));
+            if (assignment.Dealt <= 0)
             {
                 continue;
             }
-            if (PowerTough(state, card, cast))
+            if (assignment.SpendsTough)
             {
                 state = SetPowerTough(state, card, false, first, cast);
                 continue;
             }
             state = SetPowerDamage(
-                state, card, SaturatingAdd(PowerDamage(state, card), landed),
+                state, card, SaturatingAdd(PowerDamage(state, card), assignment.Taken),
                 first, cast);
             state = ResolvePowerCharacterDefeat(state, card, first, cast);
         }
         return state;
     }
 
-    private static PowerReachability ResolvePowerCharacterDefeat(
-        PowerReachability state, Card damaged, Card first, Cast cast)
+    private static AbilityPowerState ResolvePowerCharacterDefeat(
+        AbilityPowerState state, Card damaged, Card first, Cast cast)
     {
         long health = PowerHealth(state, damaged, cast);
         if (PowerDamage(state, damaged) < health)
@@ -1026,7 +1013,7 @@ public sealed partial class AbilityRunner
     }
 
     private static long PowerHealth(
-        PowerReachability state, Card character, Cast cast)
+        AbilityPowerState state, Card character, Cast cast)
         => SaturatingAdd(
             TraceHealth(
                 character, state.Discarded, state.SchemeThreat, cast),
@@ -1233,16 +1220,16 @@ public sealed partial class AbilityRunner
         };
 
     private static bool PowerWouldBeDefeatedHasTriggeredWork(
-        PowerReachability state, Card defeated, Cast cast) =>
+        AbilityPowerState state, Card defeated, Cast cast) =>
         PowerHasMatchingInterrupt(
             state, defeated, cast, Steps.CardWouldBeDefeated);
 
     private static bool PowerDefeatHasTriggeredWork(
-        PowerReachability state, Card defeated, Cast cast) =>
+        AbilityPowerState state, Card defeated, Cast cast) =>
         PowerHasMatchingInterrupt(state, defeated, cast, Steps.CardDefeated);
 
     private static bool PowerHasMatchingInterrupt(
-        PowerReachability state, Card subject, Cast cast, string condition)
+        AbilityPowerState state, Card subject, Cast cast, string condition)
     {
         if (cast.Abilities is not AbilityRunner runner)
         {

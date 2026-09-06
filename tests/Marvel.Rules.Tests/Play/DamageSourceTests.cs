@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Marvel.Rules.Tests.Play;
 
-public sealed class DamageSourceTests
+public sealed partial class DamageSourceTests
 {
     [Rule("rr:cannot")]
     [Rule("rr:cannot.1")]

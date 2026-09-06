@@ -71,6 +71,7 @@ public static class Damage
         long current = Math.Max(0, maximum - target.Damage);
         var notes = new List<string>();
         long? taken = amount;
+        string? uncertainty = null;
 
         if (!world.Abilities.CanTakeDamage(world, target, source))
         {
@@ -81,7 +82,19 @@ public static class Damage
         {
             DamageProjection replacement = world.Abilities.PreviewDamageReplacement(
                 world, target, source, amount);
-            taken = replacement.Amount;
+            taken = replacement.Result switch
+            {
+                RuleProjection<long>.Known exact => exact.Value,
+                RuleProjection<long>.Possible => null,
+                RuleProjection<long>.Unsupported => null,
+                _ => throw new InvalidOperationException("Unknown damage projection outcome."),
+            };
+            uncertainty = replacement.Result switch
+            {
+                RuleProjection<long>.Possible => "damage has multiple possible outcomes",
+                RuleProjection<long>.Unsupported unsupported => unsupported.Reason,
+                _ => null,
+            };
             if (!string.IsNullOrWhiteSpace(replacement.Note))
             {
                 notes.Add(replacement.Note);
@@ -91,14 +104,18 @@ public static class Damage
         bool piercing = isAttack
             && Keywords.Has(world, attacker, Keywords.Piercing, facts);
         bool tough = Statuses.Has(world, target, Statuses.Tough);
-        if (taken > 0 && tough && !piercing)
+        if (taken is { } dealt)
         {
-            taken = 0;
-            notes.Add("Tough prevents the damage and is discarded");
-        }
-        else if (taken > 0 && tough && piercing)
-        {
-            notes.Add("Piercing discards Tough");
+            var assignment = DamageAssignment.AfterReplacement(dealt, tough && !piercing);
+            taken = assignment.Taken;
+            if (assignment.SpendsTough)
+            {
+                notes.Add("Tough prevents the damage and is discarded");
+            }
+            else if (assignment.Dealt > 0 && tough && piercing)
+            {
+                notes.Add("Piercing discards Tough");
+            }
         }
 
         if (taken > 0)
@@ -121,7 +138,7 @@ public static class Damage
 
         string health = taken is { } known
             ? $"{current}/{maximum} → {Math.Max(0, current - known)}/{maximum} HP"
-            : $"{current}/{maximum} HP · result depends on a forced replacement";
+            : $"{current}/{maximum} HP · {uncertainty}";
         if (taken >= current && current > 0)
         {
             DefeatProjection? defeat = world.Abilities.PreviewDefeatReplacement(
@@ -315,12 +332,12 @@ public static class Damage
         World world, ICardFacts facts, Card source, Card target, long amount,
         string trigger, List<GameEvent> events)
     {
-        if (amount <= 0)
+        var assignment = DamageAssignment.AfterReplacement(
+            amount, amount > 0 && Statuses.Has(world, target, Statuses.Tough));
+        if (assignment.Dealt <= 0)
         {
             return new PlacedDamage(target, 0, 0);
         }
-
-        long dealt = amount;
 
         // `rr:tough.2`: "if a character with a tough status card would take any
         // amount of damage, **prevent all of that damage** and discard a tough
@@ -331,8 +348,8 @@ public static class Damage
         // a hero with a tough status card defends an attack, they reduce the
         // damage from the attack by their DEF **first**. If the damage is
         // reduced to 0, the hero does not lose their tough status card." The
-        // `amount <= 0` return above is that clause.
-        if (Statuses.Has(world, target, Statuses.Tough))
+        // zero-dealt assignment returns before any status is discarded.
+        if (assignment.SpendsTough)
         {
             world.Abilities.DamagePreventedByTough(world, target, source, events);
             var tough = world.Areas
@@ -345,21 +362,16 @@ public static class Damage
             // `rr:tough.3`: "as a tough status card prevents damage fully, the
             // character who had the tough status card is **not considered to
             // have taken damage**." So no health event, and no defeat.
-            return new PlacedDamage(target, dealt, 0);
+            return new PlacedDamage(target, assignment.Dealt, assignment.Taken);
         }
 
         // `rr:damage.step.3` and `.3.2`: modifying what the character takes
         // (including prevention) does not rewrite the amount the source dealt.
         // Step 1 has already fixed that dealt amount; only placement below uses
         // the reduced taken amount.
-        amount = world.Abilities.WouldTake(world, target, source, amount, events);
-        if (amount <= 0)
-        {
-            return new PlacedDamage(target, dealt, 0);
-        }
-        long taken = amount;
-
-        return new PlacedDamage(target, dealt, taken);
+        assignment = assignment.AfterPrevention(
+            world.Abilities.WouldTake(world, target, source, assignment.Taken, events));
+        return new PlacedDamage(target, assignment.Dealt, assignment.Taken);
     }
 
     /// <summary>Place one already-fixed share of simultaneous damage at step 5.</summary>

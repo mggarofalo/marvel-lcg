@@ -5,9 +5,6 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Rules.Play;
 
-/// <summary>A read-only projection of damage after forced step-1 replacements.</summary>
-public sealed record DamageProjection(long? Amount, string? Note = null);
-
 /// <summary>A read-only projection of a forced would-be-defeated interrupt.</summary>
 public sealed record DefeatProjection(long? RemainingHealth, string Note);
 
@@ -244,8 +241,9 @@ public interface ICardAbilities : IWindowAbilities
     /// <summary>Projects forced step-1 replacement effects without changing the board.</summary>
     /// <remarks>
     /// A preview cannot call <see cref="WouldBeDealt"/>, because resolving a
-    /// replacement spends effects and may move cards. A null amount means a forced
-    /// replacement applies but its result is not knowable before resolution.
+    /// replacement spends effects and may move cards. Possible amounts retain
+    /// alternatives; an unsupported result names a calculation the engine cannot
+    /// make. Neither supplies an authoritative amount for live execution.
     /// </remarks>
     DamageProjection PreviewDamageReplacement(
         World world, Card target, Card source, long amount) => new(amount);
