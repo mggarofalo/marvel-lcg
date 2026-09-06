@@ -639,7 +639,7 @@ internal static partial class AbilityInitiation
             {
                 return reachability;
             }
-            if (cast.Context.Program.On(card.FaceId).Any(ability =>
+            if (AbilityProgramQueries.On(cast.Context.Program, card).Any(ability =>
                     ability.Trigger.Timing == AbilityType.Constant))
             {
                 throw new RulesNotImplementedException(
@@ -1045,7 +1045,7 @@ internal static partial class AbilityInitiation
             foreach (var source in cast.World.Areas
                 .Where(area => DeckTypes.IsInPlay(area.Type))
                 .SelectMany(area => area.Cards)
-                .Where(card => cast.Context.Program.On(card.FaceId).Any(ability =>
+                .Where(card => AbilityProgramQueries.On(cast.Context.Program, card).Any(ability =>
                     ability.Trigger.Timing == AbilityType.Constant)))
             {
                 sources.Add(source.ObjectId);
@@ -1069,7 +1069,7 @@ internal static partial class AbilityInitiation
                 var source = cast.World.Cards[sourceId];
                 var constantCast = cast.ForConstant(source);
                 traced = 0;
-                foreach (var ability in cast.Context.Program.On(source.FaceId).Where(ability =>
+                foreach (var ability in AbilityProgramQueries.On(cast.Context.Program, source).Where(ability =>
                     ability.Trigger.Timing == AbilityType.Constant))
                 {
                     if (!TryTraceConstantHealth(
@@ -1239,7 +1239,7 @@ internal static partial class AbilityInitiation
     {
         if (string.Equals(condition, Steps.CardDefeated, StringComparison.Ordinal)
             && cast.World.Facts.HasWhenDefeated(subject.FaceId)
-            && !cast.Context.Program.On(subject.FaceId).Any(ability =>
+            && !AbilityProgramQueries.On(cast.Context.Program, subject).Any(ability =>
                 ability.Trigger.Timing == AbilityType.WhenDefeated))
         {
             // Runtime refuses printed defeat text with no authored behavior.

@@ -43,7 +43,7 @@ internal static partial class AbilityInitiation
             }
         }
         if (next is not null
-            && cast.Context.Program.On(next.FaceId).Any(ability =>
+            && AbilityProgramQueries.On(cast.Context.Program, next).Any(ability =>
                 ability.Trigger.Timing == AbilityType.Constant))
         {
             // The stage is intentionally not moved while eligibility is
@@ -204,7 +204,7 @@ internal static partial class AbilityInitiation
             {
                 var placement = engagementChanges ?? new Dictionary<int, int>();
                 var constantCast = TraceConstantCast(cast, card, placement);
-                return cast.Context.Program.On(card.FaceId).Any(ability =>
+                return AbilityProgramQueries.On(cast.Context.Program, card).Any(ability =>
                     ability.Trigger.Timing == AbilityType.Constant
                     && ConstantCanRetargetVillain(
                         ability.Effect, current, next, constantCast, discarded,
@@ -274,7 +274,7 @@ internal static partial class AbilityInitiation
                 {
                     var constantCast = TraceConstantCast(
                         cast, source, engagementChanges);
-                    return cast.Context.Program.On(source.FaceId).Any(ability =>
+                    return AbilityProgramQueries.On(cast.Context.Program, source).Any(ability =>
                         ability.Trigger.Timing == AbilityType.Constant
                         && ConstantFieldCanDiffer(
                             ability.Effect, source, target, field,

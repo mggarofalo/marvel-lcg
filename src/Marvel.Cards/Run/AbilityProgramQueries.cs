@@ -11,6 +11,9 @@ namespace Marvel.Cards.Run;
 // runner callback.
 internal static class AbilityProgramQueries
 {
+    internal static IReadOnlyList<CompiledCardAbility> On(AbilityProgram program, Card card) =>
+        FacedownDrones.Is(card) ? [] : program.On(card.FaceId);
+
     internal static CardCounterPool? CounterPool(World world, AbilityProgram program, Card card)
     {
         if (program.CounterPools.GetValueOrDefault(card.FaceId) is { } authored) return authored;
@@ -24,7 +27,7 @@ internal static class AbilityProgramQueries
                      .SelectMany(area => area.Cards))
         {
             if (FacedownDrones.Is(card)) continue;
-        foreach (var ability in program.On(card.FaceId).Where(ability =>
+        foreach (var ability in On(program, card).Where(ability =>
                      ability.Trigger.Timing == AbilityType.Constant))
         {
             var bindings = new AbilityQueryContext(
@@ -46,7 +49,7 @@ internal static class AbilityProgramQueries
         World world, AbilityProgram program, Card target, Card source)
     {
         if (!DeckTypes.IsInPlay(target.Area.Type) || FacedownDrones.Is(target)) return true;
-        foreach (var ability in program.On(target.FaceId).Where(ability =>
+        foreach (var ability in On(program, target).Where(ability =>
                      ability.Trigger.Timing == AbilityType.Constant))
         {
             var bindings = new AbilityQueryContext(
@@ -69,7 +72,7 @@ internal static class AbilityProgramQueries
         foreach (var card in world.Cards.Where(card =>
             card.ObjectId != ignoredSource && DeckTypes.IsInPlay(card.Area.Type)))
         {
-            foreach (var ability in program.On(card.FaceId).Where(ability =>
+            foreach (var ability in On(program, card).Where(ability =>
                 ability.Trigger.Timing == AbilityType.Constant))
             {
                 var bindings = new AbilityQueryContext(

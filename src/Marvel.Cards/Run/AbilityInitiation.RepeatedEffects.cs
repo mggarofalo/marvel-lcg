@@ -454,7 +454,7 @@ internal static partial class AbilityInitiation
                 {
                     LeavePlay(cardId);
                 }
-                if (cast.Context.Program.On(next.FaceId).Any(ability =>
+                if (AbilityProgramQueries.On(cast.Context.Program, next).Any(ability =>
                         ability.Trigger.Timing == AbilityType.Constant))
                 {
                     throw new RulesNotImplementedException(
@@ -812,7 +812,7 @@ internal static partial class AbilityInitiation
             foreach (var attachment in area.Cards.Where(card =>
                 !discarded.Contains(card.ObjectId)))
             {
-                var replacement = cast.Context.Program.On(attachment.FaceId).FirstOrDefault(ability =>
+                var replacement = AbilityProgramQueries.On(cast.Context.Program, attachment).FirstOrDefault(ability =>
                     ability.Trigger.Timing == AbilityType.ForcedInterrupt
                     && ContainsEffect(ability.Effect, "soakDamage"));
                 if (replacement is null)
@@ -868,7 +868,7 @@ internal static partial class AbilityInitiation
         {
             return false;
         }
-        foreach (var ability in cast.Context.Program.On(target.FaceId).Where(ability =>
+        foreach (var ability in AbilityProgramQueries.On(cast.Context.Program, target).Where(ability =>
             ability.Trigger.Timing == AbilityType.Constant))
         {
             var constant = cast.ForConstant(target);
@@ -1126,7 +1126,7 @@ internal static partial class AbilityInitiation
         if (node.OperationName() == "putIntoPlay"
             && TraceCardNamed(EffectOf<AbilityEffect.PutIntoPlay>(node, cast).Card, cast) is { } entering)
         {
-            if (cast.Context.Program.On(entering.Card.FaceId).Any(ability =>
+            if (AbilityProgramQueries.On(cast.Context.Program, entering.Card).Any(ability =>
                     ability.Trigger.Timing == AbilityType.Constant))
             {
                 // The card is intentionally not moved while eligibility is
