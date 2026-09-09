@@ -124,7 +124,7 @@ public enum Stage
 /// The object ids offered by a rules procedure that suspended for a player
 /// decision. The list is engine continuation data: the rulebook determines
 /// who chooses and what is legal, while the agenda preserves the exact question
-/// across serialization and replay.
+/// through nested scheduling and deterministic decision replay.
 /// </para>
 /// <para><c>ActivationOrder</c> —
 /// The engaged player's chosen order for the remaining minion activations.
@@ -159,7 +159,7 @@ public enum Stage
 /// </para>
 /// <para><c>ProcedureFlag</c> — A boolean rule result preserved for procedure cleanup.</para>
 /// <para><c>AbilityOrdinal</c> —
-/// Which same-tier authored ability suspended. The ordinal is engine save data;
+/// Which same-tier authored ability suspended. The ordinal is engine continuation data;
 /// it avoids guessing when one card has more than one ability at the same timing.
 /// </para>
 /// <para><c>AbilityPath</c> —
