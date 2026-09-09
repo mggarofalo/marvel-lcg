@@ -68,6 +68,15 @@ public sealed class AgendaProcedureBoundaryTests
         }
 
         Assert.Contains("step.Operation.Procedure switch", source, StringComparison.Ordinal);
+        Assert.Matches(@"AgendaProcedureKind\.Attack\s*=>\s*AttackProcedure\.Apply", source);
+        Assert.Matches(@"AgendaProcedureKind\.Threat\s*=>\s*ThreatProcedure\.Apply", source);
+        Assert.Matches(@"AgendaProcedureKind\.Reveal\s*=>\s*RevealProcedure\.Apply", source);
+        Assert.Matches(@"AgendaProcedureKind\.Defeat\s*=>\s*DefeatProcedure\.Apply", source);
+        Assert.Matches(
+            @"AgendaProcedureKind\.PlayerAction\s*=>\s*PlayerActionProcedure\.Apply", source);
+        Assert.Matches(
+            @"AgendaProcedureKind\.AbilityContinuation\s*=>\s*AbilityContinuationProcedure\.Apply",
+            source);
     }
 
     [Fact]
