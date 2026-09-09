@@ -116,6 +116,17 @@ public sealed class AgendaProcedureBoundaryTests
     }
 
     [Fact]
+    public void ClosedOperationCannotBeReplacedDirectly()
+    {
+        MethodInfo? setter = typeof(PhaseStep)
+            .GetProperty(nameof(PhaseStep.Operation))!
+            .SetMethod;
+
+        Assert.NotNull(setter);
+        Assert.True(setter.IsPrivate);
+    }
+
+    [Fact]
     public void AttackOperationCannotCarryARevealProcedurePayload()
     {
         Assert.Throws<ArgumentException>(() => new PhaseStep(
@@ -128,5 +139,19 @@ public sealed class AgendaProcedureBoundaryTests
             [
                 new PendingAbility(8, AbilityType.WhenRevealed, 0),
             ]));
+    }
+
+    [Fact]
+    public void AttackOperationCannotGainARevealProcedurePayloadWhenCopied()
+    {
+        var attack = new PhaseStep(Steps.Attack, 1, 2, Subject: 7, Seat: 0);
+
+        Assert.Throws<ArgumentException>(() => attack with
+        {
+            ProcedureAbilities =
+            [
+                new PendingAbility(8, AbilityType.WhenRevealed, 0),
+            ],
+        });
     }
 }

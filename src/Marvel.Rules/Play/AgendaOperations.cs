@@ -50,82 +50,45 @@ public abstract record AgendaOperation
 
     internal AgendaOperationData Data { get; }
 
-    private protected abstract AgendaOperation WithData(AgendaOperationData data);
-
-    internal AgendaOperation Changed(AgendaOperationData data) => WithData(data);
+    internal AgendaOperation Changed(AgendaOperationData data) =>
+        AgendaOperations.Create(What, data);
 }
 
 internal sealed record AttackAgendaOperation(
     string Name, AgendaOperationData Payload)
-    : AgendaOperation(Name, AgendaProcedureKind.Attack, Payload)
-{
-    private protected override AgendaOperation WithData(AgendaOperationData data) =>
-        new AttackAgendaOperation(Name, data);
-}
+    : AgendaOperation(Name, AgendaProcedureKind.Attack, Payload);
 
 internal sealed record ThreatAgendaOperation(
     string Name, AgendaOperationData Payload)
-    : AgendaOperation(Name, AgendaProcedureKind.Threat, Payload)
-{
-    private protected override AgendaOperation WithData(AgendaOperationData data) =>
-        new ThreatAgendaOperation(Name, data);
-}
+    : AgendaOperation(Name, AgendaProcedureKind.Threat, Payload);
 
 internal sealed record RevealAgendaOperation(
     string Name, AgendaOperationData Payload)
-    : AgendaOperation(Name, AgendaProcedureKind.Reveal, Payload)
-{
-    private protected override AgendaOperation WithData(AgendaOperationData data) =>
-        new RevealAgendaOperation(Name, data);
-}
+    : AgendaOperation(Name, AgendaProcedureKind.Reveal, Payload);
 
 internal sealed record DefeatAgendaOperation(
     string Name, AgendaOperationData Payload)
-    : AgendaOperation(Name, AgendaProcedureKind.Defeat, Payload)
-{
-    private protected override AgendaOperation WithData(AgendaOperationData data) =>
-        new DefeatAgendaOperation(Name, data);
-}
+    : AgendaOperation(Name, AgendaProcedureKind.Defeat, Payload);
 
 internal sealed record PlayerActionAgendaOperation(
     string Name, AgendaOperationData Payload)
-    : AgendaOperation(Name, AgendaProcedureKind.PlayerAction, Payload)
-{
-    private protected override AgendaOperation WithData(AgendaOperationData data) =>
-        new PlayerActionAgendaOperation(Name, data);
-}
+    : AgendaOperation(Name, AgendaProcedureKind.PlayerAction, Payload);
 
 internal sealed record AbilityContinuationAgendaOperation(
     string Name, AgendaOperationData Payload)
-    : AgendaOperation(Name, AgendaProcedureKind.AbilityContinuation, Payload)
-{
-    private protected override AgendaOperation WithData(AgendaOperationData data) =>
-        new AbilityContinuationAgendaOperation(Name, data);
-}
+    : AgendaOperation(Name, AgendaProcedureKind.AbilityContinuation, Payload);
 
 internal sealed record ActivationAgendaOperation(
     string Name, AgendaOperationData Payload)
-    : AgendaOperation(Name, AgendaProcedureKind.Activation, Payload)
-{
-    private protected override AgendaOperation WithData(AgendaOperationData data) =>
-        new ActivationAgendaOperation(Name, data);
-}
+    : AgendaOperation(Name, AgendaProcedureKind.Activation, Payload);
 
 internal sealed record PhaseTransitionAgendaOperation(
     string Name, AgendaOperationData Payload)
-    : AgendaOperation(Name, AgendaProcedureKind.PhaseTransition, Payload)
-{
-    private protected override AgendaOperation WithData(AgendaOperationData data) =>
-        new PhaseTransitionAgendaOperation(Name, data);
-}
+    : AgendaOperation(Name, AgendaProcedureKind.PhaseTransition, Payload);
 
 internal sealed record LifecycleAgendaOperation(
     string Name, AgendaOperationData Payload)
-    : AgendaOperation(Name, AgendaProcedureKind.Lifecycle, Payload)
-{
-    private protected override AgendaOperation WithData(AgendaOperationData data) =>
-        new LifecycleAgendaOperation(Name, data);
-}
+    : AgendaOperation(Name, AgendaProcedureKind.Lifecycle, Payload);
 
 internal sealed record AgendaOperationData(
     int Subject = -1,
@@ -231,7 +194,7 @@ internal static class AgendaOperations
         return changed;
     }
 
-    private static AgendaOperationData AttackPayload(AgendaOperationData data)
+    internal static AgendaOperationData AttackPayload(AgendaOperationData data)
     {
         if (data.Placement is not null
             || data.PlayerAction is not null

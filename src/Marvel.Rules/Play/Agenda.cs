@@ -220,7 +220,7 @@ public readonly record struct PhaseStep
     }
 
     /// <summary>The closed operation payload.</summary>
-    public AgendaOperation Operation { get; init; }
+    public AgendaOperation Operation { get; private init; }
     /// <summary>The round containing the step.</summary>
     public int Round { get; init; }
     /// <summary>The rule-defined number within its phase or procedure.</summary>
