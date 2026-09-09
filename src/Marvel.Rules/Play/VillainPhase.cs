@@ -385,154 +385,112 @@ public static class AgendaProcedures
         {
             return AttackProcedure.Apply(world, facts, step, events);
         }
+        if (step.What == Steps.TurnAction)
+        {
+            return PlayerActionProcedure.Apply(world, step, events);
+        }
+        if (AbilityContinuationProcedure.Handles(step))
+        {
+            return AbilityContinuationProcedure.Apply(world, step, events);
+        }
 
         switch (step.What)
         {
             case Steps.PlaceThreat:
-                PlaceThreat(world, facts, world.ThreatAbilities, events);
+                ThreatProcedure.PlaceThreat(world, facts, world.ThreatAbilities, events);
                 break;
 
             case Steps.PlaceThreatEffect:
-                ApplyThreat(world, facts, world.ThreatAbilities, events);
+                ThreatProcedure.ApplyThreat(world, facts, world.ThreatAbilities, events);
                 break;
 
             case Steps.EnemiesActivate:
-                return PlanActivations(world, facts, step);
-
-            case Steps.ResumeAbility:
-                events.AddRange(world.ContinuationAbilities.ResumeAbility(world, step));
-                break;
+                return ActivationProcedure.Plan(world, facts, step);
 
             case Steps.FinalizeCharacterDefeat:
-                Defeat.FinalizeCharacter(
-                    world, facts, world.Cards[step.Subject], step.Trigger, events);
+                DefeatProcedure.FinalizeCharacter(world, facts, step, events);
                 break;
 
             case Steps.FinalizeSchemeDefeat:
-                Defeat.FinalizeScheme(
-                    world, facts, world.Cards[step.Subject], step.Trigger, events);
+                DefeatProcedure.FinalizeScheme(world, facts, step, events);
                 break;
 
             case Steps.Scheme:
-                Scheme(world, facts, world.Cards[step.Subject], step.Seat, events);
+                ThreatProcedure.Scheme(world, facts, step, events);
                 break;
 
             case Steps.SchemeThreat:
-                SchemeThreat(world, facts, world.ThreatAbilities, step, events);
+                ThreatProcedure.SchemeThreat(
+                    world, facts, world.ThreatAbilities, step, events);
                 break;
 
             case Steps.EndSchemeEarly:
-                EndSchemeEarly(world, events);
+                ThreatProcedure.EndSchemeEarly(world, events);
                 break;
 
             case Steps.DealEncounterCards:
-                DealEncounterCards(world, facts, events);
+                RevealProcedure.DealEncounterCards(world, facts, events);
                 break;
 
             case Steps.RevealEncounterCards:
-                RevealNextEncounterCard(world, step);
+                RevealProcedure.RevealNextEncounterCard(world, step);
                 break;
 
             case Steps.RevealEncounterCard:
-                RevealEncounterCard(
+                RevealProcedure.RevealEncounterCard(
                     world, facts, world.RevealAbilities, world.Cards[step.Subject], step.Seat,
                     step.Round, events);
                 break;
 
             case Steps.DiscardRevealedTreachery:
-                DiscardRevealedTreachery(world, facts, step, events);
+                RevealProcedure.DiscardRevealedTreachery(world, facts, step, events);
                 break;
-
-            case Steps.ResolveSpecial:
-                events.AddRange(world.ContinuationAbilities.ResolveSpecial(
-                    world, world.Cards[step.Subject], step.Seat, step.FinalStep));
-                break;
-
-            case Steps.TurnAction:
-                if (step.PlayerAction is not { } action)
-                {
-                    throw new InvalidOperationException(
-                        "a player Action agenda step has no accepted action");
-                }
-
-                var occurrence = world.Agenda.Occurrence
-                    ?? throw new InvalidOperationException(
-                        "an applying player Action has no occurrence");
-                try
-                {
-                    events.AddRange(world.ActionAbilities.Act(
-                        world, action.Ability, action.Paying, action.Chosen, occurrence,
-                        action.DefinedValues, action.Allocated));
-                }
-                catch
-                {
-                    // A refused command must not become permanent agenda work.
-                    // The engine chooses its command failure semantics; they
-                    // match the former direct Action path, whose failed input
-                    // left the open turn prompt retryable.
-                    world.Agenda.Cancel(occurrence);
-                    throw;
-                }
-                // A rules procedure can move a continuation in front of the
-                // Action before Act returns. Those children intentionally
-                // share its occurrence, so advance the exact owner rather
-                // than the first item carrying that occurrence.
-                world.Agenda.Advance(step, occurrence);
-                world.Agenda.BeforeResponses(occurrence);
-                break;
-
-            case Steps.ChooseOption:
-                return world.ContinuationAbilities.Choosing(
-                    world, world.Cards[step.Subject], step.Seat, step.Index, step.Tier,
-                    step.FinalStep, step.EachPlayerFrame, step.FinalPlayer);
 
             case Steps.ChooseAllyForLimit:
-                return ChooseAllyForLimit(world, facts, step.Seat);
+                return PlayerLimitProcedure.ChooseAlly(world, facts, step.Seat);
 
             case Steps.ChooseRestrictedCard:
-                return ChooseRestrictedCard(world, facts, step.Seat);
+                return PlayerLimitProcedure.ChooseRestricted(world, facts, step.Seat);
 
             case Steps.ChooseAttachmentTarget:
-                return ChooseAttachmentTarget(world, facts, step);
+                return DefeatProcedure.ChooseAttachmentTarget(world, facts, step);
 
             case Steps.ChooseWouldBeDefeated:
-                return ChooseWouldBeDefeated(world, world.WindowAbilities, step);
+                return DefeatProcedure.ChooseWouldBeDefeated(
+                    world, world.WindowAbilities, step);
 
             case Steps.ResumeWouldBeDefeated:
-                ResumeWouldBeDefeated(world, facts, world.WindowAbilities, step, events);
+                DefeatProcedure.ResumeWouldBeDefeated(
+                    world, facts, world.WindowAbilities, step, events);
                 break;
 
             case Steps.ChooseCardDefeatedAbility:
-                return ChooseCardDefeatedAbility(world, world.WindowAbilities, step);
+                return DefeatProcedure.ChooseCardDefeatedAbility(
+                    world, world.WindowAbilities, step);
 
             case Steps.ResumeCardDefeatedAbility:
-                ResumeCardDefeatedAbility(world, facts, world.WindowAbilities, step, events);
+                DefeatProcedure.ResumeCardDefeatedAbility(
+                    world, facts, world.WindowAbilities, step, events);
                 break;
 
             case Steps.ChooseRevealAbility:
-                return ChooseRevealAbility(world, facts, step);
+                return RevealProcedure.ChooseRevealAbility(world, facts, step);
 
             case Steps.ResumeRevealAbility:
-                ResumeRevealAbility(world, facts, world.RevealAbilities, step, events);
+                RevealProcedure.ResumeRevealAbility(
+                    world, facts, world.RevealAbilities, step, events);
                 break;
 
             case Steps.ChoosePostRevealAbility:
-                return ChoosePostRevealAbility(world, step);
+                return RevealProcedure.ChoosePostRevealAbility(world, step);
 
             case Steps.FinalizeAllyEntry:
-                FinalizeAllyEntry(
+                RevealProcedure.FinalizeAllyEntry(
                     world, facts, step.Subject, step.Seat, events);
                 break;
 
-            case Steps.OrderEachPlayer:
-                return EachPlayerEffects.Ordering(world, step);
-
-            case Steps.ResolveEachPlayer:
-                events.AddRange(EachPlayerEffects.Resolve(world, world.ContinuationAbilities, step));
-                break;
-
             case Steps.PassFirstPlayerToken:
-                PassFirstPlayerToken(world);
+                PhaseTransitionProcedure.PassFirstPlayerToken(world);
                 break;
 
             case Steps.EndVillainPhase:
@@ -597,51 +555,49 @@ public static class AgendaProcedures
             AttackProcedure.Answer(world, facts, step, input, events);
             return;
         }
+        if (AbilityContinuationProcedure.Handles(step))
+        {
+            AbilityContinuationProcedure.Answer(world, step, input, events);
+            return;
+        }
 
         switch (step.What)
         {
-            case Steps.ChooseOption:
-                events.AddRange(world.ContinuationAbilities.Chose(
-                    world, world.Cards[step.Subject], step.Seat, step.Index, input, step.Tier,
-                    step.FinalStep, step.EachPlayerFrame, step.FinalPlayer, step.Trigger));
-                break;
-
             case Steps.ChooseAllyForLimit:
-                DiscardAllyForLimit(world, facts, step.Seat, input, events);
+                PlayerLimitProcedure.DiscardAlly(
+                    world, facts, step.Seat, input, events);
                 break;
 
             case Steps.ChooseRestrictedCard:
-                DiscardRestrictedCard(world, facts, step, input, events);
+                PlayerLimitProcedure.DiscardRestricted(world, facts, step, input, events);
                 break;
 
             case Steps.ChooseAttachmentTarget:
-                AttachRevealedCard(world, facts, world.RevealAbilities, step, input, events);
+                RevealProcedure.AttachRevealedCard(
+                    world, facts, world.RevealAbilities, step, input, events);
                 break;
 
             case Steps.ChooseWouldBeDefeated:
-                ResolveWouldBeDefeated(
+                DefeatProcedure.ResolveWouldBeDefeated(
                     world, facts, world.WindowAbilities, step, input, events);
                 break;
 
             case Steps.ChooseCardDefeatedAbility:
-                ResolveCardDefeatedAbility(
+                DefeatProcedure.ResolveCardDefeatedAbility(
                     world, facts, world.WindowAbilities, step, input, events);
                 break;
 
             case Steps.ChooseRevealAbility:
-                ResolveRevealAbility(world, facts, world.RevealAbilities, step, input, events);
+                RevealProcedure.ResolveRevealAbility(
+                    world, facts, world.RevealAbilities, step, input, events);
                 break;
 
             case Steps.ChoosePostRevealAbility:
-                ResolvePostRevealAbility(world, facts, step, input, events);
+                RevealProcedure.ResolvePostRevealAbility(world, facts, step, input, events);
                 break;
 
             case Steps.EnemiesActivate:
-                OrderMinionActivations(world, step, input);
-                break;
-
-            case Steps.OrderEachPlayer:
-                EachPlayerEffects.Ordered(world, step, input);
+                ActivationProcedure.Order(world, step, input);
                 break;
 
             default:
@@ -650,7 +606,11 @@ public static class AgendaProcedures
         }
     }
 
-    private static Prompt ChooseAllyForLimit(World world, ICardFacts facts, int player)
+}
+
+internal static class PlayerLimitProcedure
+{
+    internal static Prompt ChooseAlly(World world, ICardFacts facts, int player)
     {
         var allies = ControlledAllies(world, player);
         long limit = StateFields.Modified(
@@ -676,7 +636,7 @@ public static class AgendaProcedures
                 facts.Title(ally.FaceId)))]);
     }
 
-    private static void DiscardAllyForLimit(
+    internal static void DiscardAlly(
         World world, ICardFacts facts, int player, Decision input, List<GameEvent> events)
     {
         var ally = ControlledAllies(world, player)
@@ -707,7 +667,7 @@ public static class AgendaProcedures
             .OrderBy(card => card.ObjectId),
     ];
 
-    private static Prompt ChooseRestrictedCard(World world, ICardFacts facts, int player)
+    internal static Prompt ChooseRestricted(World world, ICardFacts facts, int player)
     {
         var restricted = RestrictedCards(world, facts, player);
         if (restricted.Count <= StateFields.RestrictedLimit)
@@ -731,7 +691,7 @@ public static class AgendaProcedures
                 facts.Title(card.FaceId)))]);
     }
 
-    private static void DiscardRestrictedCard(
+    internal static void DiscardRestricted(
         World world, ICardFacts facts, PhaseStep step, Decision input,
         List<GameEvent> events)
     {
@@ -747,7 +707,7 @@ public static class AgendaProcedures
         var remaining = RestrictedCards(world, facts, step.Seat);
         if (remaining.Count > StateFields.RestrictedLimit)
         {
-            ScheduleProcedureChoice(world, step with
+            DefeatProcedure.ScheduleProcedureChoice(world, step with
             {
                 ProcedureCandidates = [.. remaining.Select(candidate => candidate.ObjectId)],
                 OccurrenceId = null,
@@ -766,7 +726,11 @@ public static class AgendaProcedures
             .OrderBy(card => card.ObjectId),
     ];
 
-    private static void ScheduleProcedureChoice(World world, PhaseStep step)
+}
+
+internal static class DefeatProcedure
+{
+    internal static void ScheduleProcedureChoice(World world, PhaseStep step)
     {
         if (world.Agenda.Occurrence is { } occurrence)
         {
@@ -777,7 +741,7 @@ public static class AgendaProcedures
         world.Agenda.Add(step with { Plan = true });
     }
 
-    private static Prompt ChooseAttachmentTarget(
+    internal static Prompt ChooseAttachmentTarget(
         World world, ICardFacts facts, PhaseStep step)
     {
         var card = world.Cards[step.Subject];
@@ -799,7 +763,7 @@ public static class AgendaProcedures
                 facts.Title(world.Cards[id].FaceId)))]);
     }
 
-    private static Prompt ChooseWouldBeDefeated(
+    internal static Prompt ChooseWouldBeDefeated(
         World world, IWindowAbilities abilities, PhaseStep step)
     {
         var pending = step.ProcedureAbilities ?? [];
@@ -825,7 +789,7 @@ public static class AgendaProcedures
             [.. offered.Select(ability => abilities.Describe(world, ability))]);
     }
 
-    private static void ResolveWouldBeDefeated(
+    internal static void ResolveWouldBeDefeated(
         World world, ICardFacts facts, IWindowAbilities abilities, PhaseStep step,
         Decision input, List<GameEvent> events)
     {
@@ -891,7 +855,7 @@ public static class AgendaProcedures
         }, containingOccurrence);
     }
 
-    private static void ResumeWouldBeDefeated(
+    internal static void ResumeWouldBeDefeated(
         World world, ICardFacts facts, IWindowAbilities abilities, PhaseStep step,
         List<GameEvent> events)
     {
@@ -966,7 +930,7 @@ public static class AgendaProcedures
         }
     }
 
-    private static Prompt ChooseCardDefeatedAbility(
+    internal static Prompt ChooseCardDefeatedAbility(
         World world, IWindowAbilities abilities, PhaseStep step)
     {
         var pending = step.ProcedureAbilities ?? [];
@@ -992,7 +956,7 @@ public static class AgendaProcedures
             [.. offered.Select(ability => abilities.Describe(world, ability))]);
     }
 
-    private static void ResolveCardDefeatedAbility(
+    internal static void ResolveCardDefeatedAbility(
         World world, ICardFacts facts, IWindowAbilities abilities, PhaseStep step,
         Decision input, List<GameEvent> events)
     {
@@ -1058,7 +1022,7 @@ public static class AgendaProcedures
         }, containingOccurrence);
     }
 
-    private static void ResumeCardDefeatedAbility(
+    internal static void ResumeCardDefeatedAbility(
         World world, ICardFacts facts, IWindowAbilities abilities, PhaseStep step,
         List<GameEvent> events)
     {
@@ -1093,7 +1057,7 @@ public static class AgendaProcedures
                 after: step.Tier);
         if (pending.Count > 0)
         {
-            ScheduleProcedureChoice(world, step with
+            DefeatProcedure.ScheduleProcedureChoice(world, step with
             {
                 What = Steps.ChooseCardDefeatedAbility,
                 ProcedureAbilities = pending,
@@ -1163,7 +1127,20 @@ public static class AgendaProcedures
         }
     }
 
-    private static Prompt ChooseRevealAbility(
+    internal static void FinalizeCharacter(
+        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events) =>
+        Defeat.FinalizeCharacter(
+            world, facts, world.Cards[step.Subject], step.Trigger, events);
+
+    internal static void FinalizeScheme(
+        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events) =>
+        Defeat.FinalizeScheme(
+            world, facts, world.Cards[step.Subject], step.Trigger, events);
+}
+
+internal static partial class RevealProcedure
+{
+    internal static Prompt ChooseRevealAbility(
         World world, ICardFacts facts, PhaseStep step)
     {
         var card = world.Cards[step.Subject];
@@ -1197,7 +1174,7 @@ public static class AgendaProcedures
         _ => $"{facts.Title(card.FaceId)} When Revealed {ability.Ordinal + 1}",
     };
 
-    private static void ResolveRevealAbility(
+    internal static void ResolveRevealAbility(
         World world, ICardFacts facts, IRevealCardAbilities abilities, PhaseStep step,
         Decision input, List<GameEvent> events)
     {
@@ -1234,7 +1211,7 @@ public static class AgendaProcedures
         }, containingOccurrence);
     }
 
-    private static void ResumeRevealAbility(
+    internal static void ResumeRevealAbility(
         World world, ICardFacts facts, IRevealCardAbilities abilities, PhaseStep step,
         List<GameEvent> events)
     {
@@ -1252,7 +1229,7 @@ public static class AgendaProcedures
         var handles = step.ProcedureCandidates ?? [];
         if (pending.Count > 1)
         {
-            ScheduleProcedureChoice(world, step with
+            DefeatProcedure.ScheduleProcedureChoice(world, step with
             {
                 What = Steps.ChooseRevealAbility,
                 ProcedureSource = -1,
@@ -1304,7 +1281,7 @@ public static class AgendaProcedures
         events.AddRange(abilities.Resolve(world, occurrence, ability, [], []));
     }
 
-    private static Prompt ChoosePostRevealAbility(World world, PhaseStep step)
+    internal static Prompt ChoosePostRevealAbility(World world, PhaseStep step)
     {
         var card = world.Cards[step.Subject];
         return new Prompt(
@@ -1320,7 +1297,7 @@ public static class AgendaProcedures
             ]);
     }
 
-    private static void ResolvePostRevealAbility(
+    internal static void ResolvePostRevealAbility(
         World world, ICardFacts facts, PhaseStep step, Decision input,
         List<GameEvent> events)
     {
@@ -1348,7 +1325,7 @@ public static class AgendaProcedures
                 ?? throw new InvalidOperationException("post-reveal order has no occurrence"));
     }
 
-    private static void AttachRevealedCard(
+    internal static void AttachRevealedCard(
         World world, ICardFacts facts, IRevealCardAbilities abilities, PhaseStep step,
         Decision input, List<GameEvent> events)
     {
@@ -1369,7 +1346,7 @@ public static class AgendaProcedures
             world, facts, abilities, card, step.Seat, step.Round, occurrence, events);
     }
 
-    private static void FinalizeAllyEntry(
+    internal static void FinalizeAllyEntry(
         World world, ICardFacts facts, int allyId, int player,
         List<GameEvent> events)
     {
@@ -1381,11 +1358,15 @@ public static class AgendaProcedures
         }
     }
 
+}
+
+internal static class ActivationProcedure
+{
     /// <summary>
     /// Step 2, one enemy at a time — <c>rr:villain-phase.step.2</c>, "in player
     /// order, each player resolves".
     /// </summary>
-    private static Prompt? PlanActivations(World world, ICardFacts facts, PhaseStep step)
+    internal static Prompt? Plan(World world, ICardFacts facts, PhaseStep step)
     {
         var playerOrder = step.ActivationPlayers ?? world.PlayerOrder.ToList();
         if (step.Index >= playerOrder.Count)
@@ -1498,7 +1479,7 @@ public static class AgendaProcedures
         return null;
     }
 
-    private static void OrderMinionActivations(World world, PhaseStep step, Decision input)
+    internal static void Order(World world, PhaseStep step, Decision input)
     {
         var playerOrder = step.ActivationPlayers ?? world.PlayerOrder.ToList();
         if (step.Index < 0 || step.Index >= playerOrder.Count)
@@ -1540,6 +1521,10 @@ public static class AgendaProcedures
         });
     }
 
+}
+
+internal static class ThreatProcedure
+{
     /// <summary>Step 1. Threat from the main scheme's acceleration field.</summary>
     /// <remarks>
     /// <c>rr:villain-phase.1</c>: "Place the amount of threat indicated in the
@@ -1549,7 +1534,7 @@ public static class AgendaProcedures
     /// three. Acceleration icons and tokens add more; nothing on the milestone
     /// board has one.
     /// </remarks>
-    private static void PlaceThreat(
+    internal static void PlaceThreat(
         World world, ICardFacts facts, IThreatCardAbilities abilities, List<GameEvent> events)
     {
         if (world.Agenda.Occurrence is { } occurrence)
@@ -1565,7 +1550,7 @@ public static class AgendaProcedures
         }
     }
 
-    private static void ApplyThreat(
+    internal static void ApplyThreat(
         World world, ICardFacts facts, IThreatCardAbilities abilities, List<GameEvent> events)
     {
         var step = world.Agenda.Current
@@ -1594,10 +1579,11 @@ public static class AgendaProcedures
     /// resolve that card (flip, add its boost icons to SCH, discard), then place
     /// threat equal to the modified SCH on the main scheme.
     /// </remarks>
-    private static void Scheme(
-        World world, ICardFacts facts, Card villain, int seat,
-        List<GameEvent> events)
+    internal static void Scheme(
+        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
     {
+        Card villain = world.Cards[step.Subject];
+        int seat = step.Seat;
         // `rr:activation.6`: "if an activating minion leaves play, that
         // minion's activation ends immediately and no further steps of that
         // activation resolve." A scheme is an activation -- `rr:activation`
@@ -1676,7 +1662,7 @@ public static class AgendaProcedures
     /// <param name="abilities">What cards do.</param>
     /// <param name="step">The step.</param>
     /// <param name="events">Where to record what happened.</param>
-    private static void SchemeThreat(
+    internal static void SchemeThreat(
         World world, ICardFacts facts, IThreatCardAbilities abilities, PhaseStep step,
         List<GameEvent> events)
     {
@@ -1700,18 +1686,17 @@ public static class AgendaProcedures
     }
 
     /// <summary>Ends a scheme without placing threat when its minion left play.</summary>
-    private static void EndSchemeEarly(World world, List<GameEvent> events)
+    internal static void EndSchemeEarly(World world, List<GameEvent> events)
     {
         world.Effects.Expire(TimingPoints.EndOfActivation, events);
         world.FinishedActivation = world.Activation;
         world.Activation = null;
     }
 
-    /// <summary>Step 3. One encounter card to each player, in player order.</summary>
-    /// <remarks>
-    /// Hazard icons deal additional cards. Nothing on the milestone board has
-    /// one, and a board that did would deal too few here — so it throws.
-    /// </remarks>
+}
+
+internal static partial class RevealProcedure
+{
     /// <summary>Step 3. One card each, plus one per hazard icon in play.</summary>
     /// <remarks>
     /// <c>rr:villain-phase.step.3</c>: "Deal one encounter card to each player.
@@ -1724,7 +1709,7 @@ public static class AgendaProcedures
     /// rest.
     /// </para>
     /// </remarks>
-    private static void DealEncounterCards(
+    internal static void DealEncounterCards(
         World world, ICardFacts facts, List<GameEvent> events)
     {
         foreach (int seat in world.PlayerOrder)
@@ -1751,7 +1736,7 @@ public static class AgendaProcedures
     }
 
     /// <summary>Step 4, one card at a time, until the queue is empty.</summary>
-    private static void RevealNextEncounterCard(World world, PhaseStep step)
+    internal static void RevealNextEncounterCard(World world, PhaseStep step)
     {
         if (Deal.NextToReveal(world) is not { } next)
         {
@@ -1775,7 +1760,7 @@ public static class AgendaProcedures
     }
 
     /// <summary>Step 4. Each player reveals their cards, in the order dealt.</summary>
-    private static void RevealEncounterCard(
+    internal static void RevealEncounterCard(
         World world, ICardFacts facts, IRevealCardAbilities abilities, Card card, int player,
         int round, List<GameEvent> events)
     {
@@ -1994,7 +1979,7 @@ public static class AgendaProcedures
         }
     }
 
-    private static void DiscardRevealedTreachery(
+    internal static void DiscardRevealedTreachery(
         World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
     {
         var card = world.Cards[step.Subject];
@@ -2019,8 +2004,11 @@ public static class AgendaProcedures
         });
     }
 
-    /// <summary>Step 5. <c>rr:villain-phase.step.5</c>, to the next clockwise player.</summary>
-    private static void PassFirstPlayerToken(World world) =>
-        world.FirstPlayer = world.Players > 0 ? (world.FirstPlayer + 1) % world.Players : 0;
+}
 
+internal static class PhaseTransitionProcedure
+{
+    /// <summary>Step 5. <c>rr:villain-phase.step.5</c>, to the next clockwise player.</summary>
+    internal static void PassFirstPlayerToken(World world) =>
+        world.FirstPlayer = world.Players > 0 ? (world.FirstPlayer + 1) % world.Players : 0;
 }

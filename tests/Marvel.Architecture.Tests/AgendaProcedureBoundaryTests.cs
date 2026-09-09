@@ -43,4 +43,27 @@ public sealed class AgendaProcedureBoundaryTests
         Assert.DoesNotContain("Attack.Initiate", dispatcher, StringComparison.Ordinal);
         Assert.DoesNotContain("Attack.DeclareDefender", dispatcher, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void NeutralDispatcherHasExplicitRequiredProcedureOwners()
+    {
+        string source = File.ReadAllText(Path.Combine(
+            Marvel.Tests.RepositoryPaths.Root,
+            "src", "Marvel.Rules", "Play", "VillainPhase.cs"));
+
+        string[] owners =
+        [
+            "AttackProcedure",
+            "ThreatProcedure",
+            "RevealProcedure",
+            "DefeatProcedure",
+            "PlayerActionProcedure",
+            "AbilityContinuationProcedure",
+        ];
+
+        foreach (string owner in owners)
+        {
+            Assert.Contains(owner, source, StringComparison.Ordinal);
+        }
+    }
 }
