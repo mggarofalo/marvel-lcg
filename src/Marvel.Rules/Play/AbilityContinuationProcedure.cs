@@ -7,10 +7,6 @@ namespace Marvel.Rules.Play;
 /// <summary>Applies and answers card-ability continuation agenda operations.</summary>
 internal static class AbilityContinuationProcedure
 {
-    public static bool Handles(PhaseStep step) => step.What is
-        Steps.ResumeAbility or Steps.ResolveSpecial or Steps.ChooseOption
-        or Steps.OrderEachPlayer or Steps.ResolveEachPlayer;
-
     public static Prompt? Apply(World world, PhaseStep step, List<GameEvent> events)
     {
         switch (step.What)

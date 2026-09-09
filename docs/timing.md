@@ -201,9 +201,9 @@ source — it "does not stop from completing if that card leaves play during thi
 sequence".
 
 Data, and on the board, because the alternative is to suspend the engine
-mid-call and resume it. A suspended iterator or a blocked thread cannot be
-written to a save, cannot be diffed against a recorded step, and cannot tell a
-client that the game is two windows deep.
+mid-call and resume it. A suspended iterator or blocked thread cannot be
+reconstructed by replaying the decision ledger, diffed against agenda state,
+or used to tell a client that the game is two windows deep.
 
 ### Offering a window round the table
 
@@ -385,9 +385,9 @@ the villain wins the game, and the encounter cards are not dealt.
 
 Not every question in a phase comes from a window. Declaring a defender is a
 step of the attack with a name of its own — `rr:attack-enemy-activation.step.2` —
-and nobody is using an ability when it is asked. So `VillainPhase.Take` returns a
-`Prompt?`, the agenda stays on that step's `Apply`, and the answer is what makes
-the step happen.
+and nobody is using an ability when it is asked. So the phase-neutral
+`AgendaProcedures.Apply` returns a `Prompt?`, the agenda stays on that step's
+`Apply`, and the answer is what makes the step happen.
 
 Which of the two answered a prompt is read off the board rather than off the
 prompt: a window open means the window absorbs the answer, no window open means

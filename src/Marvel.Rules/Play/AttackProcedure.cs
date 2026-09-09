@@ -11,17 +11,6 @@ namespace Marvel.Rules.Play;
 /// </remarks>
 internal static class AttackProcedure
 {
-    public static bool Handles(PhaseStep step) => step.What is
-        Steps.CompleteAttackActivation or Steps.CompleteSchemeActivation
-        or Steps.Attack or Steps.GiveBoostCard or Steps.DeclareDefender
-        or Steps.FlipBoostCards or Steps.FinishBoostCard
-        or Steps.CalculateAttackDamage or Steps.DealAttackDamage
-        or Steps.AssignIndirectAttackDamage or Steps.PrepareIndirectAttackDamage
-        or Steps.ApplyIndirectAttackDamage or Steps.FinishIndirectAttackDamage
-        or Steps.NextAttackTarget or Steps.CharacterAttacks or Steps.CharacterThwarts
-        or Steps.AllyConsequentialDamage or Steps.AllyThwartConsequentialDamage
-        or Steps.EndAttack or Steps.FinishAttackDamage;
-
     public static Prompt? Apply(
         World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
     {

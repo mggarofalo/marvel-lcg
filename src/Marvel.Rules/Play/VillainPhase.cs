@@ -381,150 +381,23 @@ public static class AgendaProcedures
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(events);
 
-        if (AttackProcedure.Handles(step))
+        return step.Operation.Procedure switch
         {
-            return AttackProcedure.Apply(world, facts, step, events);
-        }
-        if (step.What == Steps.TurnAction)
-        {
-            return PlayerActionProcedure.Apply(world, step, events);
-        }
-        if (AbilityContinuationProcedure.Handles(step))
-        {
-            return AbilityContinuationProcedure.Apply(world, step, events);
-        }
-
-        switch (step.What)
-        {
-            case Steps.PlaceThreat:
-                ThreatProcedure.PlaceThreat(world, facts, world.ThreatAbilities, events);
-                break;
-
-            case Steps.PlaceThreatEffect:
-                ThreatProcedure.ApplyThreat(world, facts, world.ThreatAbilities, events);
-                break;
-
-            case Steps.EnemiesActivate:
-                return ActivationProcedure.Plan(world, facts, step);
-
-            case Steps.FinalizeCharacterDefeat:
-                DefeatProcedure.FinalizeCharacter(world, facts, step, events);
-                break;
-
-            case Steps.FinalizeSchemeDefeat:
-                DefeatProcedure.FinalizeScheme(world, facts, step, events);
-                break;
-
-            case Steps.Scheme:
-                ThreatProcedure.Scheme(world, facts, step, events);
-                break;
-
-            case Steps.SchemeThreat:
-                ThreatProcedure.SchemeThreat(
-                    world, facts, world.ThreatAbilities, step, events);
-                break;
-
-            case Steps.EndSchemeEarly:
-                ThreatProcedure.EndSchemeEarly(world, events);
-                break;
-
-            case Steps.DealEncounterCards:
-                RevealProcedure.DealEncounterCards(world, facts, events);
-                break;
-
-            case Steps.RevealEncounterCards:
-                RevealProcedure.RevealNextEncounterCard(world, step);
-                break;
-
-            case Steps.RevealEncounterCard:
-                RevealProcedure.RevealEncounterCard(
-                    world, facts, world.RevealAbilities, world.Cards[step.Subject], step.Seat,
-                    step.Round, events);
-                break;
-
-            case Steps.DiscardRevealedTreachery:
-                RevealProcedure.DiscardRevealedTreachery(world, facts, step, events);
-                break;
-
-            case Steps.ChooseAllyForLimit:
-                return PlayerLimitProcedure.ChooseAlly(world, facts, step.Seat);
-
-            case Steps.ChooseRestrictedCard:
-                return PlayerLimitProcedure.ChooseRestricted(world, facts, step.Seat);
-
-            case Steps.ChooseAttachmentTarget:
-                return DefeatProcedure.ChooseAttachmentTarget(world, facts, step);
-
-            case Steps.ChooseWouldBeDefeated:
-                return DefeatProcedure.ChooseWouldBeDefeated(
-                    world, world.WindowAbilities, step);
-
-            case Steps.ResumeWouldBeDefeated:
-                DefeatProcedure.ResumeWouldBeDefeated(
-                    world, facts, world.WindowAbilities, step, events);
-                break;
-
-            case Steps.ChooseCardDefeatedAbility:
-                return DefeatProcedure.ChooseCardDefeatedAbility(
-                    world, world.WindowAbilities, step);
-
-            case Steps.ResumeCardDefeatedAbility:
-                DefeatProcedure.ResumeCardDefeatedAbility(
-                    world, facts, world.WindowAbilities, step, events);
-                break;
-
-            case Steps.ChooseRevealAbility:
-                return RevealProcedure.ChooseRevealAbility(world, facts, step);
-
-            case Steps.ResumeRevealAbility:
-                RevealProcedure.ResumeRevealAbility(
-                    world, facts, world.RevealAbilities, step, events);
-                break;
-
-            case Steps.ChoosePostRevealAbility:
-                return RevealProcedure.ChoosePostRevealAbility(world, step);
-
-            case Steps.FinalizeAllyEntry:
-                RevealProcedure.FinalizeAllyEntry(
-                    world, facts, step.Subject, step.Seat, events);
-                break;
-
-            case Steps.PassFirstPlayerToken:
-                PhaseTransitionProcedure.PassFirstPlayerToken(world);
-                break;
-
-            case Steps.EndVillainPhase:
-                PhaseEnd.EndVillainPhase(world, facts, events);
-                break;
-
-            case Steps.DrawToHandSize:
-                PhaseEnd.DrawToHandSize(world, facts, events);
-                break;
-
-            case Steps.ReadyCards:
-                PhaseEnd.ReadyCards(world, events);
-                break;
-
-            case Steps.EndPlayerPhase:
-                PhaseEnd.EndPlayerPhase(world, events);
-                break;
-
-            // Lifecycle steps exist to put their interrupt and response
-            // windows on the agenda. The transition itself was applied before
-            // the step was scheduled, so occurrence tier has nothing further
-            // to mutate.
-            case Steps.CardPlayed:
-            case Steps.EventPlayed:
-            case Steps.CardEntersPlay:
-            case Steps.FormChanged:
-                break;
-
-            default:
-                throw new RulesNotImplementedException(
-                    $"the villain phase has no step '{step.What}'");
-        }
-
-        return null;
+            AgendaProcedureKind.Attack => AttackProcedure.Apply(world, facts, step, events),
+            AgendaProcedureKind.Threat => ThreatProcedure.Apply(world, facts, step, events),
+            AgendaProcedureKind.Reveal => RevealProcedure.Apply(world, facts, step, events),
+            AgendaProcedureKind.Defeat => DefeatProcedure.Apply(world, facts, step, events),
+            AgendaProcedureKind.PlayerAction =>
+                PlayerActionProcedure.Apply(world, facts, step, events),
+            AgendaProcedureKind.AbilityContinuation =>
+                AbilityContinuationProcedure.Apply(world, step, events),
+            AgendaProcedureKind.Activation => ActivationProcedure.Apply(world, facts, step),
+            AgendaProcedureKind.PhaseTransition =>
+                PhaseTransitionProcedure.Apply(world, facts, step, events),
+            AgendaProcedureKind.Lifecycle => null,
+            _ => throw new RulesNotImplementedException(
+                $"the agenda has no procedure for '{step.What}'"),
+        };
     }
 
     /// <summary>Give a step the answer it stopped for.</summary>
@@ -550,56 +423,26 @@ public static class AgendaProcedures
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(events);
 
-        if (AttackProcedure.Handles(step))
+        switch (step.Operation.Procedure)
         {
-            AttackProcedure.Answer(world, facts, step, input, events);
-            return;
-        }
-        if (AbilityContinuationProcedure.Handles(step))
-        {
-            AbilityContinuationProcedure.Answer(world, step, input, events);
-            return;
-        }
-
-        switch (step.What)
-        {
-            case Steps.ChooseAllyForLimit:
-                PlayerLimitProcedure.DiscardAlly(
-                    world, facts, step.Seat, input, events);
+            case AgendaProcedureKind.Attack:
+                AttackProcedure.Answer(world, facts, step, input, events);
                 break;
-
-            case Steps.ChooseRestrictedCard:
-                PlayerLimitProcedure.DiscardRestricted(world, facts, step, input, events);
+            case AgendaProcedureKind.Reveal:
+                RevealProcedure.Answer(world, facts, step, input, events);
                 break;
-
-            case Steps.ChooseAttachmentTarget:
-                RevealProcedure.AttachRevealedCard(
-                    world, facts, world.RevealAbilities, step, input, events);
+            case AgendaProcedureKind.Defeat:
+                DefeatProcedure.Answer(world, facts, step, input, events);
                 break;
-
-            case Steps.ChooseWouldBeDefeated:
-                DefeatProcedure.ResolveWouldBeDefeated(
-                    world, facts, world.WindowAbilities, step, input, events);
+            case AgendaProcedureKind.PlayerAction:
+                PlayerActionProcedure.Answer(world, facts, step, input, events);
                 break;
-
-            case Steps.ChooseCardDefeatedAbility:
-                DefeatProcedure.ResolveCardDefeatedAbility(
-                    world, facts, world.WindowAbilities, step, input, events);
+            case AgendaProcedureKind.AbilityContinuation:
+                AbilityContinuationProcedure.Answer(world, step, input, events);
                 break;
-
-            case Steps.ChooseRevealAbility:
-                RevealProcedure.ResolveRevealAbility(
-                    world, facts, world.RevealAbilities, step, input, events);
+            case AgendaProcedureKind.Activation:
+                ActivationProcedure.Answer(world, step, input);
                 break;
-
-            case Steps.ChoosePostRevealAbility:
-                RevealProcedure.ResolvePostRevealAbility(world, facts, step, input, events);
-                break;
-
-            case Steps.EnemiesActivate:
-                ActivationProcedure.Order(world, step, input);
-                break;
-
             default:
                 throw new RulesNotImplementedException(
                     $"step '{step.What}' asked nothing and cannot take an answer");
@@ -730,6 +573,54 @@ internal static class PlayerLimitProcedure
 
 internal static class DefeatProcedure
 {
+    internal static Prompt? Apply(
+        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
+    {
+        switch (step.What)
+        {
+            case Steps.FinalizeCharacterDefeat:
+                FinalizeCharacter(world, facts, step, events);
+                break;
+            case Steps.FinalizeSchemeDefeat:
+                FinalizeScheme(world, facts, step, events);
+                break;
+            case Steps.ChooseWouldBeDefeated:
+                return ChooseWouldBeDefeated(world, world.WindowAbilities, step);
+            case Steps.ResumeWouldBeDefeated:
+                ResumeWouldBeDefeated(world, facts, world.WindowAbilities, step, events);
+                break;
+            case Steps.ChooseCardDefeatedAbility:
+                return ChooseCardDefeatedAbility(world, world.WindowAbilities, step);
+            case Steps.ResumeCardDefeatedAbility:
+                ResumeCardDefeatedAbility(world, facts, world.WindowAbilities, step, events);
+                break;
+            default:
+                throw new RulesNotImplementedException(
+                    $"the defeat procedure has no step '{step.What}'");
+        }
+        return null;
+    }
+
+    internal static void Answer(
+        World world, ICardFacts facts, PhaseStep step, Decision input,
+        List<GameEvent> events)
+    {
+        switch (step.What)
+        {
+            case Steps.ChooseWouldBeDefeated:
+                ResolveWouldBeDefeated(
+                    world, facts, world.WindowAbilities, step, input, events);
+                break;
+            case Steps.ChooseCardDefeatedAbility:
+                ResolveCardDefeatedAbility(
+                    world, facts, world.WindowAbilities, step, input, events);
+                break;
+            default:
+                throw new RulesNotImplementedException(
+                    $"defeat step '{step.What}' asked nothing and cannot take an answer");
+        }
+    }
+
     internal static void ScheduleProcedureChoice(World world, PhaseStep step)
     {
         if (world.Agenda.Occurrence is { } occurrence)
@@ -1140,6 +1031,67 @@ internal static class DefeatProcedure
 
 internal static partial class RevealProcedure
 {
+    internal static Prompt? Apply(
+        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
+    {
+        switch (step.What)
+        {
+            case Steps.DealEncounterCards:
+                DealEncounterCards(world, facts, events);
+                break;
+            case Steps.RevealEncounterCards:
+                RevealNextEncounterCard(world, step);
+                break;
+            case Steps.RevealEncounterCard:
+                RevealEncounterCard(
+                    world, facts, world.RevealAbilities, world.Cards[step.Subject],
+                    step.Seat, step.Round, events);
+                break;
+            case Steps.DiscardRevealedTreachery:
+                DiscardRevealedTreachery(world, facts, step, events);
+                break;
+            case Steps.ChooseAttachmentTarget:
+                return DefeatProcedure.ChooseAttachmentTarget(world, facts, step);
+            case Steps.ChooseRevealAbility:
+                return ChooseRevealAbility(world, facts, step);
+            case Steps.ResumeRevealAbility:
+                ResumeRevealAbility(world, facts, world.RevealAbilities, step, events);
+                break;
+            case Steps.ChoosePostRevealAbility:
+                return ChoosePostRevealAbility(world, step);
+            case Steps.FinalizeAllyEntry:
+                FinalizeAllyEntry(world, facts, step.Subject, step.Seat, events);
+                break;
+            default:
+                throw new RulesNotImplementedException(
+                    $"the reveal procedure has no step '{step.What}'");
+        }
+        return null;
+    }
+
+    internal static void Answer(
+        World world, ICardFacts facts, PhaseStep step, Decision input,
+        List<GameEvent> events)
+    {
+        switch (step.What)
+        {
+            case Steps.ChooseAttachmentTarget:
+                AttachRevealedCard(
+                    world, facts, world.RevealAbilities, step, input, events);
+                break;
+            case Steps.ChooseRevealAbility:
+                ResolveRevealAbility(
+                    world, facts, world.RevealAbilities, step, input, events);
+                break;
+            case Steps.ChoosePostRevealAbility:
+                ResolvePostRevealAbility(world, facts, step, input, events);
+                break;
+            default:
+                throw new RulesNotImplementedException(
+                    $"reveal step '{step.What}' asked nothing and cannot take an answer");
+        }
+    }
+
     internal static Prompt ChooseRevealAbility(
         World world, ICardFacts facts, PhaseStep step)
     {
@@ -1362,6 +1314,22 @@ internal static partial class RevealProcedure
 
 internal static class ActivationProcedure
 {
+    internal static Prompt? Apply(World world, ICardFacts facts, PhaseStep step) =>
+        step.What == Steps.EnemiesActivate
+            ? Plan(world, facts, step)
+            : throw new RulesNotImplementedException(
+                $"the activation procedure has no step '{step.What}'");
+
+    internal static void Answer(World world, PhaseStep step, Decision input)
+    {
+        if (step.What != Steps.EnemiesActivate)
+        {
+            throw new RulesNotImplementedException(
+                $"activation step '{step.What}' asked nothing and cannot take an answer");
+        }
+        Order(world, step, input);
+    }
+
     /// <summary>
     /// Step 2, one enemy at a time — <c>rr:villain-phase.step.2</c>, "in player
     /// order, each player resolves".
@@ -1525,6 +1493,33 @@ internal static class ActivationProcedure
 
 internal static class ThreatProcedure
 {
+    internal static Prompt? Apply(
+        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
+    {
+        switch (step.What)
+        {
+            case Steps.PlaceThreat:
+                PlaceThreat(world, facts, world.ThreatAbilities, events);
+                break;
+            case Steps.PlaceThreatEffect:
+                ApplyThreat(world, facts, world.ThreatAbilities, events);
+                break;
+            case Steps.Scheme:
+                Scheme(world, facts, step, events);
+                break;
+            case Steps.SchemeThreat:
+                SchemeThreat(world, facts, world.ThreatAbilities, step, events);
+                break;
+            case Steps.EndSchemeEarly:
+                EndSchemeEarly(world, events);
+                break;
+            default:
+                throw new RulesNotImplementedException(
+                    $"the threat procedure has no step '{step.What}'");
+        }
+        return null;
+    }
+
     /// <summary>Step 1. Threat from the main scheme's acceleration field.</summary>
     /// <remarks>
     /// <c>rr:villain-phase.1</c>: "Place the amount of threat indicated in the
@@ -2008,6 +2003,33 @@ internal static partial class RevealProcedure
 
 internal static class PhaseTransitionProcedure
 {
+    internal static Prompt? Apply(
+        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
+    {
+        switch (step.What)
+        {
+            case Steps.PassFirstPlayerToken:
+                PassFirstPlayerToken(world);
+                break;
+            case Steps.EndVillainPhase:
+                PhaseEnd.EndVillainPhase(world, facts, events);
+                break;
+            case Steps.DrawToHandSize:
+                PhaseEnd.DrawToHandSize(world, facts, events);
+                break;
+            case Steps.ReadyCards:
+                PhaseEnd.ReadyCards(world, events);
+                break;
+            case Steps.EndPlayerPhase:
+                PhaseEnd.EndPlayerPhase(world, events);
+                break;
+            default:
+                throw new RulesNotImplementedException(
+                    $"the phase-transition procedure has no step '{step.What}'");
+        }
+        return null;
+    }
+
     /// <summary>Step 5. <c>rr:villain-phase.step.5</c>, to the next clockwise player.</summary>
     internal static void PassFirstPlayerToken(World world) =>
         world.FirstPlayer = world.Players > 0 ? (world.FirstPlayer + 1) % world.Players : 0;

@@ -1,7 +1,9 @@
 # The villain phase
 
-`src/Marvel.Rules/Play/VillainPhase.cs` implements the phase as agenda steps so
-every occurrence can open timing windows or suspend for a player decision.
+`VillainPhase` plans the phase as agenda steps so every occurrence can open
+timing windows or suspend for a player decision. `Sequence` advances their
+timing, and the phase-neutral `AgendaProcedures` dispatcher routes each typed
+operation to its procedure owner.
 
 ## Phase order
 

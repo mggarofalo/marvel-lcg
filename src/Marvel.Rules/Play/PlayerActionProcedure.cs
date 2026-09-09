@@ -7,8 +7,17 @@ namespace Marvel.Rules.Play;
 /// <summary>Applies an accepted player Action stored on the agenda.</summary>
 internal static class PlayerActionProcedure
 {
-    public static Prompt? Apply(World world, PhaseStep step, List<GameEvent> events)
+    public static Prompt? Apply(
+        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
     {
+        if (step.What == Steps.ChooseAllyForLimit)
+        {
+            return PlayerLimitProcedure.ChooseAlly(world, facts, step.Seat);
+        }
+        if (step.What == Steps.ChooseRestrictedCard)
+        {
+            return PlayerLimitProcedure.ChooseRestricted(world, facts, step.Seat);
+        }
         if (step.What != Steps.TurnAction)
         {
             throw new RulesNotImplementedException(
@@ -42,5 +51,25 @@ internal static class PlayerActionProcedure
         world.Agenda.Advance(step, occurrence);
         world.Agenda.BeforeResponses(occurrence);
         return null;
+    }
+
+    public static void Answer(
+        World world, ICardFacts facts, PhaseStep step, Decision input,
+        List<GameEvent> events)
+    {
+        switch (step.What)
+        {
+            case Steps.ChooseAllyForLimit:
+                PlayerLimitProcedure.DiscardAlly(
+                    world, facts, step.Seat, input, events);
+                break;
+            case Steps.ChooseRestrictedCard:
+                PlayerLimitProcedure.DiscardRestricted(
+                    world, facts, step, input, events);
+                break;
+            default:
+                throw new RulesNotImplementedException(
+                    $"player-action step '{step.What}' asked nothing and cannot take an answer");
+        }
     }
 }
