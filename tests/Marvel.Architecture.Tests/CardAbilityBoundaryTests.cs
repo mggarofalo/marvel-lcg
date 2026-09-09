@@ -88,12 +88,12 @@ public sealed class CardAbilityBoundaryTests
 
         Assert.Equal(
         [
+            "Marvel.Rules.Play.AgendaProcedures.Answer",
+            "Marvel.Rules.Play.AgendaProcedures.Apply",
             "Marvel.Rules.Play.Game.Begin",
             "Marvel.Rules.Play.Sequence.Answer",
             "Marvel.Rules.Play.Sequence.Finish",
             "Marvel.Rules.Play.Sequence.Work",
-            "Marvel.Rules.Play.VillainPhase.Answered",
-            "Marvel.Rules.Play.VillainPhase.Take",
             "Marvel.Rules.State.World.set_Abilities",
             "Marvel.Rules.State.WorldSetup.Deal",
         ], actual);

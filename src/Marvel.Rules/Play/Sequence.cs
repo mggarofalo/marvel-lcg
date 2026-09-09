@@ -93,7 +93,7 @@ public static class Sequence
                         $"a planning '{step.What}' agenda step has no occurrence");
                 if (world.Agenda.Stage == Stage.Apply)
                 {
-                    if (VillainPhase.TakeWithWorldAbilities(world, facts, step, events) is { } planQuestion)
+                    if (AgendaProcedures.ApplyWithWorldAbilities(world, facts, step, events) is { } planQuestion)
                     {
                         return planQuestion;
                     }
@@ -213,7 +213,7 @@ public static class Sequence
                 ?? throw new InvalidOperationException(
                     $"an applying '{step.What}' agenda step has no occurrence");
             var healthBefore = world.Effects.CaptureCharacterHealth();
-            if (VillainPhase.TakeWithWorldAbilities(world, facts, step, events) is { } asking)
+            if (AgendaProcedures.ApplyWithWorldAbilities(world, facts, step, events) is { } asking)
             {
                 return WithAttackContext(world, facts, step, asking);
             }
@@ -412,7 +412,7 @@ public static class Sequence
 
             var occurrence = world.Agenda.Occurrence
                 ?? throw new InvalidOperationException("an asking agenda step has no occurrence");
-            VillainPhase.AnswerWithWorldAbilities(world, facts, step, input, events);
+            AgendaProcedures.AnswerWithWorldAbilities(world, facts, step, input, events);
             if ((step.What is Steps.ChooseOption
                 or Steps.ChooseWouldBeDefeated
                 or Steps.ChooseCardDefeatedAbility

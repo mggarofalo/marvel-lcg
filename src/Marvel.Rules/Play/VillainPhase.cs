@@ -336,14 +336,24 @@ public static class VillainPhase
         agenda.Add(new PhaseStep(Steps.PassFirstPlayerToken, round, 5));
         agenda.Add(new PhaseStep(Steps.EndVillainPhase, round, 6));
     }
+}
 
-    /// <summary>Take one step of the villain phase.</summary>
+/// <summary>Dispatches phase-neutral agenda operations to their rules procedures.</summary>
+/// <remarks>
+/// The engine chooses this dispatch boundary. The Rules Reference defines the
+/// procedures and their order, but not the software component that routes a
+/// scheduled operation to its owner. <see cref="Sequence"/> retains timing and
+/// scheduling; this type applies or answers the current operation.
+/// </remarks>
+public static class AgendaProcedures
+{
+    /// <summary>Apply one agenda operation.</summary>
     /// <remarks>
     /// Returns a prompt when the step itself has something to ask, which one of
     /// them does: <c>rr:attack-enemy-activation.step.2</c> asks whether anybody
     /// defends. That is not a window — nobody is using an ability — so it is the
     /// step that stops, and the answer comes back to
-    /// <see cref="Answered"/>.
+    /// <see cref="Answer"/>.
     /// </remarks>
     /// <param name="world">The board.</param>
     /// <param name="facts">The printed card data.</param>
@@ -355,16 +365,16 @@ public static class VillainPhase
     /// The board reached a rule this engine does not have — a minion engaged
     /// with a player, or an attack that would defeat its target.
     /// </exception>
-    public static Prompt? Take(
+    public static Prompt? Apply(
         World world, ICardFacts facts, ICardAbilities abilities,
         PhaseStep step, List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(abilities);
         world.Abilities = abilities;
-        return TakeWithWorldAbilities(world, facts, step, events);
+        return ApplyWithWorldAbilities(world, facts, step, events);
     }
 
-    internal static Prompt? TakeWithWorldAbilities(
+    internal static Prompt? ApplyWithWorldAbilities(
         World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(world);
@@ -678,7 +688,7 @@ public static class VillainPhase
     /// <param name="step">The step that asked.</param>
     /// <param name="input">The player's answer.</param>
     /// <param name="events">Where to record what happened.</param>
-    public static void Answered(
+    public static void Answer(
         World world, ICardFacts facts, ICardAbilities abilities, PhaseStep step, Decision input,
         List<GameEvent> events)
     {

@@ -53,8 +53,8 @@ public sealed class SpecialSequenceTests
             Steps.ChooseOption, 1, 1, Index: 1, Subject: source.ObjectId, Seat: 0,
             Tier: AbilityType.Special, FinalStep: true);
 
-        VillainPhase.Take(world, facts, abilities, step, []);
-        VillainPhase.Answered(
+        AgendaProcedures.Apply(world, facts, abilities, step, []);
+        AgendaProcedures.Answer(
             world, facts, abilities, step, Decision.Take(source.ObjectId), []);
 
         Assert.True(abilities.ChoosingWasFinal);
