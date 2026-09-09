@@ -182,7 +182,7 @@ internal static class AgendaOperations
             or Steps.NextAttackTarget or Steps.CharacterAttacks or Steps.CharacterThwarts
             or Steps.AllyConsequentialDamage or Steps.AllyThwartConsequentialDamage
             or Steps.EndAttack or Steps.FinishAttackDamage =>
-                new AttackAgendaOperation(what, data),
+                new AttackAgendaOperation(what, AttackPayload(data)),
 
         Steps.PlaceThreat or Steps.PlaceThreatEffect or Steps.Scheme
             or Steps.SchemeThreat or Steps.EndSchemeEarly =>
@@ -229,5 +229,27 @@ internal static class AgendaOperations
                 + $"{changed.Procedure} operation");
         }
         return changed;
+    }
+
+    private static AgendaOperationData AttackPayload(AgendaOperationData data)
+    {
+        if (data.Placement is not null
+            || data.PlayerAction is not null
+            || data.ProcedureAbilities is not null
+            || data.ProcedurePlayersPassed is not null
+            || data.AbilityOrdinal >= 0
+            || data.AbilityPath is not null
+            || data.AbilityActivationIds is not null
+            || data.AbilityResults is not null
+            || data.AbilityOccurrence is not null
+            || data.AbilityFace.Length > 0
+            || data.AbilityPlayer >= 0
+            || data.AbilityActor >= 0
+            || data.AbilityHasContinuation)
+        {
+            throw new ArgumentException(
+                "an attack operation cannot carry reveal, action, or ability-continuation payload");
+        }
+        return data;
     }
 }

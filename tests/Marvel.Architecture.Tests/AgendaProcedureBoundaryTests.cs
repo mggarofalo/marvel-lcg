@@ -1,5 +1,6 @@
 using System.Reflection;
 using Marvel.Rules.Play;
+using Marvel.Rules.Timing;
 using Xunit;
 
 namespace Marvel.Architecture.Tests;
@@ -103,5 +104,20 @@ public sealed class AgendaProcedureBoundaryTests
 
         Assert.Throws<InvalidOperationException>(() =>
             attack with { What = Steps.RevealEncounterCard });
+    }
+
+    [Fact]
+    public void AttackOperationCannotCarryARevealProcedurePayload()
+    {
+        Assert.Throws<ArgumentException>(() => new PhaseStep(
+            Steps.Attack,
+            1,
+            2,
+            Subject: 7,
+            Seat: 0,
+            ProcedureAbilities:
+            [
+                new PendingAbility(8, AbilityType.WhenRevealed, 0),
+            ]));
     }
 }
