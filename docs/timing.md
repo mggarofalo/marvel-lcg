@@ -201,9 +201,9 @@ source — it "does not stop from completing if that card leaves play during thi
 sequence".
 
 Data, and on the board, because the alternative is to suspend the engine
-mid-call and resume it. A suspended iterator or a blocked thread cannot be
-written to a save, cannot be diffed against a recorded step, and cannot tell a
-client that the game is two windows deep.
+mid-call and resume it. A suspended iterator or blocked thread cannot be
+reconstructed by replaying the decision ledger, diffed against agenda state,
+or used to tell a client that the game is two windows deep.
 
 ### Offering a window round the table
 
@@ -299,7 +299,8 @@ method call has nowhere to stop, so a phase is not a method call.
 `World.Agenda` is what the game still has to do: a list of steps, each part-way
 through three parts — `Interrupts`, `Apply`, `Responses`. `Sequence.Work` walks
 it until something needs an answer and returns; the next answer picks it up
-exactly where it was. Nothing is on a call stack, so all of it survives a save.
+exactly where it was. Nothing is on a call stack, so deterministic decision
+replay reconstructs the same agenda when a session save is restored.
 
 It also makes `rr:villain-phase`'s six steps **visible** rather than leaving the
 order implicit in nested calls:
@@ -356,7 +357,7 @@ source card, ability type, and same-type ordinal so two printed abilities are
 never conflated. A suspended choice, scheduled power, enemy activation, or
 threat placement retains that address and the same occurrence. This is state,
 not event history: it must still be available when the response window opens
-and after a save is restored.
+and be reconstructed when a session save replays its decisions.
 
 Event and treachery entries aggregate their abilities as `rr:resolve.3-.4`
 requires: one resolved ability resolves the card, while an all-cancelled or
@@ -385,9 +386,9 @@ the villain wins the game, and the encounter cards are not dealt.
 
 Not every question in a phase comes from a window. Declaring a defender is a
 step of the attack with a name of its own — `rr:attack-enemy-activation.step.2` —
-and nobody is using an ability when it is asked. So `VillainPhase.Take` returns a
-`Prompt?`, the agenda stays on that step's `Apply`, and the answer is what makes
-the step happen.
+and nobody is using an ability when it is asked. So the phase-neutral
+`AgendaProcedures.Apply` returns a `Prompt?`, the agenda stays on that step's
+`Apply`, and the answer is what makes the step happen.
 
 Which of the two answered a prompt is read off the board rather than off the
 prompt: a window open means the window absorbs the answer, no window open means

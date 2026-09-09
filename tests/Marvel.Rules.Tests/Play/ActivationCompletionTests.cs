@@ -143,7 +143,7 @@ public sealed class ActivationCompletionTests
         {
             if (world.Agenda.Stage == Stage.Apply)
             {
-                VillainPhase.Take(world, facts, abilities, step, []);
+                AgendaProcedures.Apply(world, facts, abilities, step, []);
             }
             world.Agenda.Advance();
         }
