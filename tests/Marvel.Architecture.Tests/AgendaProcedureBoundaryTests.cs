@@ -30,4 +30,17 @@ public sealed class AgendaProcedureBoundaryTests
         Assert.DoesNotContain("VillainPhase.Take", source, StringComparison.Ordinal);
         Assert.DoesNotContain("VillainPhase.Answer", source, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void NeutralDispatcherDelegatesAttackOperationsToTheirOwner()
+    {
+        string dispatcher = File.ReadAllText(Path.Combine(
+            Marvel.Tests.RepositoryPaths.Root,
+            "src", "Marvel.Rules", "Play", "VillainPhase.cs"));
+
+        Assert.Contains("AttackProcedure.Apply", dispatcher, StringComparison.Ordinal);
+        Assert.Contains("AttackProcedure.Answer", dispatcher, StringComparison.Ordinal);
+        Assert.DoesNotContain("Attack.Initiate", dispatcher, StringComparison.Ordinal);
+        Assert.DoesNotContain("Attack.DeclareDefender", dispatcher, StringComparison.Ordinal);
+    }
 }

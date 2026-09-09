@@ -381,6 +381,11 @@ public static class AgendaProcedures
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(events);
 
+        if (AttackProcedure.Handles(step))
+        {
+            return AttackProcedure.Apply(world, facts, step, events);
+        }
+
         switch (step.What)
         {
             case Steps.PlaceThreat:
@@ -393,11 +398,6 @@ public static class AgendaProcedures
 
             case Steps.EnemiesActivate:
                 return PlanActivations(world, facts, step);
-
-            case Steps.CompleteAttackActivation:
-            case Steps.CompleteSchemeActivation:
-                CompleteActivation(world, world.ActivationCompletionAbilities, step, events);
-                break;
 
             case Steps.ResumeAbility:
                 events.AddRange(world.ContinuationAbilities.ResumeAbility(world, step));
@@ -423,70 +423,6 @@ public static class AgendaProcedures
 
             case Steps.EndSchemeEarly:
                 EndSchemeEarly(world, events);
-                break;
-
-            case Steps.Attack:
-                Attack.Initiate(world, facts, step, events);
-                break;
-
-            case Steps.GiveBoostCard:
-                Attack.GiveBoostCard(world, facts, events);
-                break;
-
-            case Steps.DeclareDefender:
-                return Attack.DeclareDefender(world, facts, world.AttackAbilities);
-
-            case Steps.FlipBoostCards:
-                Attack.FlipBoostCards(world, facts, world.AttackAbilities, events);
-                break;
-
-            case Steps.FinishBoostCard:
-                Attack.FinishBoostCard(world, facts, world.AttackAbilities, step, events);
-                break;
-
-            case Steps.CalculateAttackDamage:
-                Attack.CalculateDamage(world, facts);
-                break;
-
-            case Steps.DealAttackDamage:
-                Attack.DealDamage(world, facts, events);
-                break;
-
-            case Steps.AssignIndirectAttackDamage:
-                return Attack.IndirectDamagePrompt(world, facts, step);
-
-            case Steps.PrepareIndirectAttackDamage:
-                // Its interrupt and response windows are the procedure. The
-                // simultaneous placement waits in ApplyIndirectAttackDamage.
-                break;
-
-            case Steps.ApplyIndirectAttackDamage:
-                Attack.ApplyIndirectDamage(world, facts, step, events);
-                break;
-
-            case Steps.FinishIndirectAttackDamage:
-                Attack.FinishIndirectDamage(world, facts, step, events);
-                break;
-
-            case Steps.NextAttackTarget:
-                Attack.NextTarget(world, step.Seat);
-                break;
-
-            case Steps.CharacterAttacks:
-                BasicPowers.ResolveCharacterAttack(world, facts, events, step.CharacterAttack);
-                break;
-
-            case Steps.CharacterThwarts:
-                BasicPowers.ResolveCharacterThwart(world, facts, events, step.CharacterThwart);
-                break;
-
-            case Steps.AllyConsequentialDamage:
-            case Steps.AllyThwartConsequentialDamage:
-                AllyConsequentialDamage(world, facts, step, events);
-                break;
-
-            case Steps.EndAttack:
-                Attack.End(world, events);
                 break;
 
             case Steps.DealEncounterCards:
@@ -580,10 +516,6 @@ public static class AgendaProcedures
                 ResumeRevealAbility(world, facts, world.RevealAbilities, step, events);
                 break;
 
-            case Steps.FinishAttackDamage:
-                Damage.FinishAttack(world, facts, step, events);
-                break;
-
             case Steps.ChoosePostRevealAbility:
                 return ChoosePostRevealAbility(world, step);
 
@@ -637,50 +569,6 @@ public static class AgendaProcedures
         return null;
     }
 
-    private static void CompleteActivation(
-        World world, IActivationCompletionAbilities abilities, PhaseStep step, List<GameEvent> events)
-    {
-        bool attacking = step.What == Steps.CompleteAttackActivation;
-        var result = world.FinishedActivation is { } finished
-            && finished.Id == step.ActivationId
-            ? finished
-            : new EnemyActivation(
-                step.Subject, step.Seat, attacking, step.ActivationId, Made: false);
-
-        world.FinishedActivation = result;
-        events.AddRange(abilities.ActivationCompleted(world, result));
-        world.FinishedActivation = null;
-        world.Activation = null;
-    }
-
-    /// <summary>
-    /// An ally's consequential damage — <c>rr:consequential-damage</c>.
-    /// </summary>
-    /// <remarks>
-    /// Two facts, and they are not the same fact. <b>What the ally did</b> is
-    /// the step's own name, and it is what the event stream records. <b>Which
-    /// field it used</b> is <c>rr:assault.2</c>'s question — "it takes the
-    /// consequential damage listed under its ATK instead of its THW" — and it
-    /// is read here rather than when the step was scheduled, because assault
-    /// is a constant ability and <c>rr:ability.9</c> makes those true only
-    /// while their condition holds. A scheme that stopped being assaulted
-    /// while the window was open stops sending the ally to its ATK icons.
-    /// </remarks>
-    private static void AllyConsequentialDamage(
-        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
-    {
-        bool attacked = string.Equals(
-            step.What, Steps.AllyConsequentialDamage, StringComparison.Ordinal);
-
-        BasicPowers.Consequential(
-            world,
-            facts,
-            world.Cards[step.Subject],
-            byAttack: attacked || BasicPowers.Assaulted(world, facts, world.Cards[step.Character]),
-            attacked ? BasicPowers.AttackVerb : BasicPowers.ThwartVerb,
-            events);
-    }
-
     /// <summary>Give a step the answer it stopped for.</summary>
     /// <param name="world">The board.</param>
     /// <param name="facts">The printed card data.</param>
@@ -704,16 +592,14 @@ public static class AgendaProcedures
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(events);
 
+        if (AttackProcedure.Handles(step))
+        {
+            AttackProcedure.Answer(world, facts, step, input, events);
+            return;
+        }
+
         switch (step.What)
         {
-            case Steps.DeclareDefender:
-                Attack.Defend(world, facts, world.AttackAbilities, input, events);
-                break;
-
-            case Steps.AssignIndirectAttackDamage:
-                Attack.AssignIndirectDamage(world, facts, step, input, events);
-                break;
-
             case Steps.ChooseOption:
                 events.AddRange(world.ContinuationAbilities.Chose(
                     world, world.Cards[step.Subject], step.Seat, step.Index, input, step.Tier,
