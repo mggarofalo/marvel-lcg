@@ -170,6 +170,7 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
                 Fields: [])
             {
                 Back = back.ToString().ToUpperInvariant(),
+                StageRole = ProgressiveStageRole(zone),
             });
         }
 
@@ -191,6 +192,7 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
                 Fields: [])
             {
                 Back = card.Back.ToString().ToUpperInvariant(),
+                StageRole = ProgressiveStageRole(zone),
             };
         }
 
@@ -209,6 +211,8 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
                 .Where(field => field.Key != "k_threat"
                     || card.Face.Kind is CardKind.MainScheme or CardKind.EncounterSideScheme)
                 .Where(field => field.Value != 0
+                    || inPlay && field.Key is
+                        "attack" or "defense" or "recover" or "scheme" or "thwart"
                     || inPlay && field.Key == "health"
                     || inPlay && field.Key == "k_threat"
                         && card.Face.Kind is CardKind.MainScheme or CardKind.EncounterSideScheme)
@@ -226,6 +230,7 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
         {
             Back = card.Back.ToString().ToUpperInvariant(),
             FaceId = card.Face.ArtFaceId,
+            StageRole = ProgressiveStageRole(zone),
             Traits = card.Face.Traits,
             Cost = card.Face.Cost,
             PrintedStats = card.Face.PrintedStats
@@ -245,6 +250,13 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
                 .ToArray(),
         };
     }
+
+    private static BoardStageRole ProgressiveStageRole(string zone) => zone switch
+    {
+        "VillainArea" or "MainSchemesArea" => BoardStageRole.Current,
+        "VillainDeck" or "MainSchemesDeck" => BoardStageRole.Upcoming,
+        _ => BoardStageRole.None,
+    };
 
     private static string Status(CardDescriptor card, string zone, CardKind? kind)
     {
@@ -331,6 +343,22 @@ public enum BoardAreaProminence
     Live,
 }
 
+/// <summary>
+/// The authoritative progressive-stage role retained from the engine area's
+/// zone before current and upcoming stages are combined for presentation.
+/// </summary>
+public enum BoardStageRole
+{
+    /// <summary>The card is not part of a progressive villain or main-scheme stack.</summary>
+    None,
+
+    /// <summary>The card occupies the engine's active villain or main-scheme area.</summary>
+    Current,
+
+    /// <summary>The card occupies the engine's out-of-play upcoming-stage deck.</summary>
+    Upcoming,
+}
+
 /// <summary>One readable card, face-down object, or concealed pile summary.</summary>
 public sealed record BoardCardPresentation(
     int? TargetId,
@@ -342,6 +370,9 @@ public sealed record BoardCardPresentation(
     string Status,
     IReadOnlyList<BoardFieldPresentation> Fields)
 {
+    /// <summary>The card's engine-zone-derived role in a progressive stage stack.</summary>
+    public BoardStageRole StageRole { get; init; }
+
     /// <summary>The non-identifying physical back.</summary>
     public string Back { get; init; } = string.Empty;
 

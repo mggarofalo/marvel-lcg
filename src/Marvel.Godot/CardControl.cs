@@ -50,7 +50,7 @@ public sealed partial class CardControl : PanelContainer
                     ? layout.Width * 0.72f
                     : size == CardDisplaySize.Full
                         ? layout.MinimumHeight
-                        : EstimatedCompactHeight(card, layout, size)),
+                        : CompactHeight(card, layout, size)),
             SizeFlagsHorizontal = SizeFlags.ShrinkBegin,
             TooltipText = card.Title,
             FocusMode = card.Concealed ? FocusModeEnum.None : FocusModeEnum.All,
@@ -63,8 +63,8 @@ public sealed partial class CardControl : PanelContainer
         Control body = card.Concealed
             ? Back(card)
             : size == CardDisplaySize.Full
-                ? FullFace(card, layout, art)
-                : CompactFace(card, layout, size);
+                ? FullFace(card, layout, scale, art)
+                : CompactFace(card, size, scale);
         body.CustomMinimumSize = new Vector2(
             Math.Max(1, layout.Width - 32),
             Math.Max(1, layout.MinimumHeight - 32));
@@ -72,23 +72,26 @@ public sealed partial class CardControl : PanelContainer
         return control;
     }
 
-    private static float EstimatedCompactHeight(
+    internal static float CompactHeight(
         BoardCardPresentation card,
         CardLayoutMetrics layout,
         CardDisplaySize size)
     {
-        if (size == CardDisplaySize.Hand)
-        {
-            return layout.MinimumHeight;
-        }
-
-        int valueRows = card.PrintedStats.Count + card.Fields.Count + card.Counters.Count;
-        int textRows = 2
-            + (string.IsNullOrWhiteSpace(card.Classification) ? 0 : 1)
-            + (string.IsNullOrWhiteSpace(card.Status) ? 0 : 1)
+        IReadOnlyList<BoardFieldPresentation> values = CompactValues(card, size);
+        int progressRows = values.Count(IsCompactProgressValue);
+        int resourcesRows = values.Count(value => value.Name == "RES");
+        int badgeCount = values.Count - progressRows - values.Count(value => value.Name == "RES");
+        int valueRows = (badgeCount + 2) / 3 + progressRows + resourcesRows;
+        int titleCharactersPerLine = size == CardDisplaySize.Hand ? 18 : 24;
+        int titleRows = Math.Max(
+            1,
+            (int)Math.Ceiling(card.Title.Length / (double)titleCharactersPerLine));
+        int textRows = (size == CardDisplaySize.Hand ? 1 : 0)
+            + titleRows
+            + (CompactState(card, size) is null ? 0 : 1)
             + valueRows;
-        float scale = layout.Width / 250.0f;
-        return Math.Max(layout.MinimumHeight, textRows * 24 * scale + 48 * scale);
+        float scale = layout.Width / (size == CardDisplaySize.Hand ? 172.0f : 210.0f);
+        return Math.Max(layout.MinimumHeight, textRows * 22 * scale + 20 * scale);
     }
 
     /// <summary>Applies or clears the prompt-anchor focus treatment.</summary>
@@ -131,6 +134,7 @@ public sealed partial class CardControl : PanelContainer
     private static VBoxContainer FullFace(
         BoardCardPresentation card,
         CardLayoutMetrics layout,
+        InterfaceScale scale,
         ICardArtProvider? art)
     {
         CardFrameProfile profile = VisualSystem.CardFrame(card.Kind);
@@ -232,11 +236,12 @@ public sealed partial class CardControl : PanelContainer
                 horizontal: true));
         }
 
+        CardRulesMarkup.ResourceFont();
         content.AddChild(new RichTextLabel
         {
             Name = "RulesText",
             BbcodeEnabled = true,
-            Text = CardRulesMarkup.ToBbCode(card.RulesMarkup, card.RulesText),
+            Text = CardRulesMarkup.ToBbCode(card.RulesMarkup, card.RulesText, scale),
             FitContent = true,
             ScrollActive = false,
             FocusMode = FocusModeEnum.All,
@@ -264,70 +269,334 @@ public sealed partial class CardControl : PanelContainer
             .FirstOrDefault(value => value.Name == "RES");
         if (resource is not null)
         {
-            content.AddChild(Label(
-                $"RESOURCE  {CardRulesMarkup.ResourceIcons(resource.Value)}",
-                GodotThemeVariations.CardPrintedValue,
-                "ResourceIcons"));
+            content.AddChild(InspectorResourceValue(resource, scale));
         }
         return content;
     }
 
+    private static HBoxContainer InspectorResourceValue(
+        BoardFieldPresentation resource,
+        InterfaceScale scale)
+    {
+        var presentation = new HBoxContainer
+        {
+            Name = "ResourceIcons",
+            ThemeTypeVariation = GodotThemeVariations.CompactRow,
+            SizeFlagsHorizontal = SizeFlags.ShrinkBegin,
+            TooltipText = $"Resource {CardRulesMarkup.ResourceNames(resource.Value)}",
+        };
+        presentation.AddChild(Label(
+            "RESOURCE",
+            GodotThemeVariations.CardPrintedValue,
+            "ResourceLabel"));
+
+        Font iconFont = CardRulesMarkup.ResourceFont();
+        int index = 0;
+        foreach ((string name, string glyph) in CardRulesMarkup.ResourceTokens(resource.Value))
+        {
+            ResourceIconMetrics metrics = VisualSystem.ResourceIcon(glyph, scale);
+            Label slot = Label(
+                glyph,
+                GodotThemeVariations.CardPrintedValue,
+                $"InspectorResourceIconSlot{index}");
+            slot.CustomMinimumSize = new Vector2(metrics.SlotSize, metrics.SlotSize);
+            slot.HorizontalAlignment = HorizontalAlignment.Center;
+            slot.VerticalAlignment = VerticalAlignment.Center;
+            slot.TooltipText = $"Resource {name}";
+            slot.AddThemeFontOverride("font", iconFont);
+            slot.AddThemeFontSizeOverride("font_size", metrics.FontSize);
+            presentation.AddChild(slot);
+            index++;
+        }
+        return presentation;
+    }
+
     private static VBoxContainer CompactFace(
         BoardCardPresentation card,
-        CardLayoutMetrics layout,
-        CardDisplaySize size)
+        CardDisplaySize size,
+        InterfaceScale scale)
     {
         var content = Stack();
         content.Name = "CardFace";
-        if (size != CardDisplaySize.Hand)
+        if (size == CardDisplaySize.Hand)
         {
-            content.AddChild(Label(card.Kind, GodotThemeVariations.Eyebrow, "Kind"));
-        }
-        if (!string.IsNullOrWhiteSpace(card.Classification))
-        {
-            content.AddChild(Label(
-                card.Classification.ToUpperInvariant(),
-                GodotThemeVariations.Eyebrow,
-                "Classification"));
-        }
-        if (card.Status is "READY" or "EXHAUSTED")
-        {
-            Label ready = Label(card.Status, GodotThemeVariations.CardState, "ReadyIndicator");
-            ready.HorizontalAlignment = HorizontalAlignment.Right;
-            content.AddChild(ready);
+            string identity = string.IsNullOrWhiteSpace(card.Classification)
+                ? card.Kind
+                : $"{card.Kind}  /  {card.Classification.ToUpperInvariant()}";
+            content.AddChild(Label(identity, GodotThemeVariations.Eyebrow, "Kind"));
         }
         content.AddChild(Label(card.Title, GodotThemeVariations.CardTitle, "Title", wrap: true));
 
-        bool hasCurrentHealth = card.Fields.Any(field => field.Name == "HEALTH");
-        if (layout.ShowPrintedStats)
-        {
-            BoardFieldPresentation[] printed = card.PrintedStats
-                .Where(stat => stat.Name is
-                    "REC" or "THW" or "ATK" or "DEF" or "SCH" or "HP"
-                    or "Stage" or "StartingThreat" or "TargetThreat")
-                .Where(stat => stat.Name != "HP" || !hasCurrentHealth)
-                .ToArray();
-            if (printed.Length > 0)
-            {
-                content.AddChild(ValueStrip(
-                    "PRINTED", printed, GodotThemeVariations.CardPrintedValue, "PrintedValues"));
-            }
-        }
-
-        List<BoardFieldPresentation> live = size == CardDisplaySize.Hand ? [] : LiveValues(card);
-        if (live.Count > 0)
+        IReadOnlyList<BoardFieldPresentation> values = CompactValues(card, size);
+        BoardFieldPresentation[] summary = [.. values.Where(value =>
+            !IsCompactProgressValue(value) && value.Name != "RES")];
+        if (summary.Length > 0)
         {
             content.AddChild(ValueStrip(
-                "CURRENT", live, GodotThemeVariations.CardLiveValue, "LiveValues"));
+                string.Empty,
+                summary,
+                GodotThemeVariations.CardLiveValue,
+                "SummaryValues",
+                horizontal: true));
         }
-        if (!string.IsNullOrWhiteSpace(card.Status)
-            && card.Status is not ("READY" or "EXHAUSTED")
-            && size != CardDisplaySize.Hand)
+        foreach (BoardFieldPresentation resource in values.Where(value => value.Name == "RES"))
         {
-            content.AddChild(Label(
-                card.Status, GodotThemeVariations.CardState, "StateStrip", wrap: true));
+            content.AddChild(ResourceValue(resource, scale));
+        }
+        BoardFieldPresentation[] progress = [.. values.Where(IsCompactProgressValue)];
+        if (progress.Length > 0)
+        {
+            content.AddChild(ValueStrip(
+                string.Empty,
+                progress,
+                GodotThemeVariations.CardLiveValue,
+                "ProgressValues"));
+        }
+
+        if (CompactState(card, size) is { } state)
+        {
+            content.AddChild(Label(state, GodotThemeVariations.CardState, "StateStrip", wrap: true));
         }
         return content;
+    }
+
+    private static HFlowContainer ResourceValue(
+        BoardFieldPresentation resource,
+        InterfaceScale scale)
+    {
+        var presentation = new HFlowContainer
+        {
+            Name = "SummaryValuesRES",
+            ThemeTypeVariation = GodotThemeVariations.CompactRow,
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+        };
+        Font iconFont = CardRulesMarkup.ResourceFont();
+        int index = 0;
+        foreach ((string name, string glyph) in CardRulesMarkup.ResourceTokens(resource.Value))
+        {
+            var token = new HBoxContainer
+            {
+                Name = $"ResourceToken{index}",
+                ThemeTypeVariation = GodotThemeVariations.CompactRow,
+                SizeFlagsHorizontal = SizeFlags.ShrinkBegin,
+                TooltipText = $"Resource {name}",
+            };
+            token.AddChild(Label(
+                name,
+                GodotThemeVariations.CardLiveValue,
+                $"ResourceName{index}"));
+            ResourceIconMetrics metrics = VisualSystem.ResourceIcon(glyph, scale);
+            Label slot = Label(
+                glyph,
+                GodotThemeVariations.CardLiveValue,
+                $"ResourceIconSlot{index}");
+            slot.CustomMinimumSize = new Vector2(metrics.SlotSize, metrics.SlotSize);
+            slot.HorizontalAlignment = HorizontalAlignment.Center;
+            slot.VerticalAlignment = VerticalAlignment.Center;
+            slot.AddThemeFontOverride("font", iconFont);
+            slot.AddThemeFontSizeOverride("font_size", metrics.FontSize);
+            token.AddChild(slot);
+            presentation.AddChild(token);
+            index++;
+        }
+        return presentation;
+    }
+
+    internal static IReadOnlyList<BoardFieldPresentation> CompactValues(
+        BoardCardPresentation card,
+        CardDisplaySize size)
+    {
+        ArgumentNullException.ThrowIfNull(card);
+        if (card.Concealed)
+        {
+            return [];
+        }
+
+        var values = new List<BoardFieldPresentation>();
+        if (size == CardDisplaySize.Hand)
+        {
+            if (card.Cost is not null)
+            {
+                AddUnique(values, new BoardFieldPresentation("COST", card.Cost));
+            }
+            BoardFieldPresentation? resource = card.PrintedStats
+                .FirstOrDefault(value => value.Name == "RES");
+            if (resource is not null)
+            {
+                AddUnique(values, resource);
+            }
+            return values;
+        }
+
+        CardFrameFamily family = VisualSystem.CardFrame(card.Kind).Family;
+        switch (family)
+        {
+            case CardFrameFamily.Identity:
+                if (HasLiveField(card, "HEALTH"))
+                {
+                    if (card.Kind == "ALTER EGO")
+                    {
+                        AddPresented(values, card, "REC", "RECOVER");
+                    }
+                    else
+                    {
+                        AddPresented(values, card, "THW", "THWART");
+                        AddPresented(values, card, "ATK", "ATTACK");
+                        AddPresented(values, card, "DEF", "DEFENSE");
+                    }
+                    AddPresented(values, card, "HEALTH", "HEALTH");
+                }
+                else
+                {
+                    AddQuietMetadata(values, card);
+                }
+                break;
+            case CardFrameFamily.Enemy:
+                if (HasLiveField(card, "HEALTH"))
+                {
+                    if (card.Kind.Contains("VILLAIN", StringComparison.OrdinalIgnoreCase))
+                    {
+                        AddPresentedOrPrinted(
+                            values, card, "Stage", "Stage", "PRINTED_STAGE");
+                    }
+                    AddPresented(values, card, "SCH", "SCHEME");
+                    AddPresented(values, card, "ATK", "ATTACK");
+                    AddPresented(values, card, "HEALTH", "HEALTH");
+                }
+                else
+                {
+                    AddQuietMetadata(values, card);
+                }
+                break;
+            case CardFrameFamily.Scheme:
+                if (HasLiveField(card, "THREAT"))
+                {
+                    if (SchemeThreat(card) is { } threat)
+                    {
+                        AddUnique(values, threat);
+                    }
+                    AddPresentedOrPrinted(
+                        values,
+                        card,
+                        "ESCALATION_THREAT",
+                        "ESCALATION_THREAT",
+                        "EscalationThreat");
+                    AddPersistentIcons(values, card);
+                }
+                else
+                {
+                    AddQuietMetadata(values, card);
+                }
+                break;
+            case CardFrameFamily.Player when card.Kind == "ALLY":
+                if (HasLiveField(card, "HEALTH"))
+                {
+                    AddPresented(values, card, "THW", "THWART");
+                    AddPresented(values, card, "ATK", "ATTACK");
+                    AddPresented(values, card, "HEALTH", "HEALTH");
+                }
+                break;
+            case CardFrameFamily.Environment:
+                AddQuietMetadata(values, card);
+                break;
+        }
+
+        foreach (BoardFieldPresentation counter in card.Counters)
+        {
+            AddUnique(values, counter);
+        }
+        return values;
+    }
+
+    internal static bool IsCompactProgressValue(BoardFieldPresentation value) =>
+        value.Name is "HEALTH" or "THREAT";
+
+    internal static string? CompactState(BoardCardPresentation card, CardDisplaySize size)
+    {
+        ArgumentNullException.ThrowIfNull(card);
+        return size == CardDisplaySize.Hand
+            || string.IsNullOrWhiteSpace(card.Status)
+            || card.Status == "READY"
+                ? null
+                : card.Status;
+    }
+
+    private static bool HasLiveField(BoardCardPresentation card, string name) =>
+        card.Fields.Any(field => field.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+
+    private static void AddPresented(
+        List<BoardFieldPresentation> destination,
+        BoardCardPresentation card,
+        string displayedName,
+        params string[] sourceNames)
+    {
+        BoardFieldPresentation? value = card.Fields.FirstOrDefault(field =>
+            sourceNames.Contains(field.Name, StringComparer.OrdinalIgnoreCase));
+        if (value is not null)
+        {
+            AddUnique(destination, new BoardFieldPresentation(displayedName, value.Value));
+        }
+    }
+
+    private static void AddPresentedOrPrinted(
+        List<BoardFieldPresentation> destination,
+        BoardCardPresentation card,
+        string displayedName,
+        params string[] sourceNames)
+    {
+        BoardFieldPresentation? value = card.Fields.FirstOrDefault(field =>
+                sourceNames.Contains(field.Name, StringComparer.OrdinalIgnoreCase))
+            ?? card.PrintedStats.FirstOrDefault(field =>
+                sourceNames.Contains(field.Name, StringComparer.OrdinalIgnoreCase));
+        if (value is not null)
+        {
+            AddUnique(destination, new BoardFieldPresentation(displayedName, value.Value));
+        }
+    }
+
+    private static void AddQuietMetadata(
+        List<BoardFieldPresentation> destination,
+        BoardCardPresentation card)
+    {
+        AddPresentedOrPrinted(destination, card, "Stage", "Stage", "PRINTED_STAGE");
+        AddPresentedOrPrinted(destination, card, "Boost", "Boost");
+        AddPersistentIcons(destination, card);
+    }
+
+    private static void AddPersistentIcons(
+        List<BoardFieldPresentation> destination,
+        BoardCardPresentation card)
+    {
+        (string Source, string Display)[] icons =
+        {
+            ("ACCELERATION ICON", "ACCELERATION"),
+            ("AMPLIFY", "AMPLIFY"),
+            ("CRISIS", "CRISIS"),
+            ("HAZARD", "HAZARD"),
+        };
+        foreach ((string source, string display) in icons)
+        {
+            BoardFieldPresentation? value = card.Fields.FirstOrDefault(field =>
+                field.Name.Equals(source, StringComparison.OrdinalIgnoreCase));
+            if (value is not null
+                && long.TryParse(value.Value, out long count)
+                && count > 0)
+            {
+                AddUnique(destination, new BoardFieldPresentation(display, value.Value));
+            }
+        }
+    }
+
+    private static void AddUnique(
+        List<BoardFieldPresentation> destination,
+        BoardFieldPresentation value)
+    {
+        string displayedName = DisplayFieldName(value.Name);
+        if (!destination.Any(existing => string.Equals(
+                DisplayFieldName(existing.Name), displayedName, StringComparison.OrdinalIgnoreCase)))
+        {
+            destination.Add(value);
+        }
     }
 
     private static List<BoardFieldPresentation> LiveValues(BoardCardPresentation card)
@@ -413,11 +682,9 @@ public sealed partial class CardControl : PanelContainer
         {
             section.AddChild(Label(heading, GodotThemeVariations.Eyebrow, $"{name}Heading"));
         }
-        Container valuesList = horizontal && values.Count > 3
-            ? new GridContainer { Columns = values.Count >= 6 ? 3 : 2 }
-            : horizontal
-                ? new HBoxContainer()
-                : new VBoxContainer();
+        Container valuesList = horizontal
+            ? new HFlowContainer()
+            : new VBoxContainer();
         valuesList.Name = $"{name}Values";
         valuesList.ThemeTypeVariation = horizontal
             ? GodotThemeVariations.CompactRow
@@ -425,15 +692,21 @@ public sealed partial class CardControl : PanelContainer
         valuesList.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         foreach (BoardFieldPresentation value in values)
         {
-            string displayed = value.Name == "Boost"
-                ? new string('◆', int.TryParse(value.Value, out int boost) ? boost : 0)
-                : value.Value;
+            string displayed = value.Name switch
+            {
+                "Boost" => new string('◆', int.TryParse(value.Value, out int boost) ? boost : 0),
+                "RES" => $"{CardRulesMarkup.ResourceNames(value.Value)}  "
+                    + CardRulesMarkup.ResourceIcons(value.Value),
+                _ => value.Value,
+            };
             Label field = Label(
                 $"{DisplayFieldName(value.Name)}  {displayed}",
                 variation,
                 $"{name}{value.Name}",
-                wrap: true);
-            field.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+                wrap: !horizontal);
+            field.SizeFlagsHorizontal = horizontal
+                ? SizeFlags.ShrinkBegin
+                : SizeFlags.ExpandFill;
             valuesList.AddChild(field);
         }
         section.AddChild(valuesList);
@@ -446,6 +719,7 @@ public sealed partial class CardControl : PanelContainer
         "HAND_SIZE" => "Hand",
         "HS" => "Hand",
         "HEALTH" => "HP",
+        "RES" => "Resource",
         "FIRST_PLAYER_TOKEN" => "First",
         "RECOVER" => "REC",
         "RESTRICTED_LIMIT" => "Limit",
@@ -475,7 +749,9 @@ public sealed partial class CardControl : PanelContainer
             AutowrapMode = wrap
                 ? TextServer.AutowrapMode.WordSmart
                 : TextServer.AutowrapMode.Off,
-            TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
+            TextOverrunBehavior = maximumLines > 0
+                ? TextServer.OverrunBehavior.TrimEllipsis
+                : TextServer.OverrunBehavior.NoTrimming,
             MaxLinesVisible = maximumLines,
             ClipText = maximumLines > 0,
             ThemeTypeVariation = variation,

@@ -101,6 +101,9 @@ public sealed record CardLayoutMetrics(
     bool ShowTraits,
     bool ShowPrintedStats);
 
+/// <summary>Optical sizing for one resource glyph inside a fixed square slot.</summary>
+public sealed record ResourceIconMetrics(int SlotSize, int FontSize);
+
 /// <summary>The visual family selected from an already-visible printed card kind.</summary>
 public enum CardFrameFamily
 {
@@ -342,17 +345,16 @@ public static class VisualSystem
         {
             >= 1800 => Math.Clamp((int)Math.Ceiling(viewportWidth * 0.37), 680, 720),
             >= 1500 => 600,
-            >= 1200 => Math.Clamp((int)Math.Ceiling(viewportWidth * 0.42), 500, 560),
+            >= 1200 => Math.Clamp((int)Math.Ceiling(viewportWidth * 0.36), 450, 500),
             _ => Math.Clamp((int)Math.Ceiling(viewportWidth * 0.39), 390, 440),
         };
         CardLayoutMetrics card = Card(CardDisplaySize.Board, scale);
-        SpacingMetrics spacing = Spacing(scale);
         return new DesktopPlayMetrics(
             decisionWidth,
             DecisionMinimumHeight: viewportHeight < 800
                 ? Math.Max(270, Scale(220, scale))
                 : Math.Max(300, Scale(320, scale)),
-            BoardAreaWidth: checked(card.Width * 2));
+            BoardAreaWidth: checked(card.Width + 32));
     }
 
     /// <summary>Returns card geometry without shrinking type to fit content.</summary>
@@ -362,12 +364,19 @@ public static class VisualSystem
             Scale(400, scale), Scale(560, scale),
             ShowSubtitle: true, ShowTraits: true, ShowPrintedStats: true),
         CardDisplaySize.Board => new(
-            Scale(210, scale), Scale(190, scale),
+            Scale(210, scale), Scale(112, scale),
             ShowSubtitle: false, ShowTraits: false, ShowPrintedStats: true),
         CardDisplaySize.Hand => new(
-            Scale(210, scale), Scale(52, scale),
+            Scale(172, scale), Scale(72, scale),
             ShowSubtitle: false, ShowTraits: false, ShowPrintedStats: false),
         _ => throw new ArgumentOutOfRangeException(nameof(size), size, "unsupported card size"),
+    };
+
+    /// <summary>Normalizes unequal Unicode resource glyphs inside one square rhythm.</summary>
+    public static ResourceIconMetrics ResourceIcon(string glyph, InterfaceScale scale) => glyph switch
+    {
+        "P" or "M" or "E" or "W" => new(Scale(26, scale), Scale(22, scale)),
+        _ => throw new ArgumentOutOfRangeException(nameof(glyph), glyph, "unknown resource glyph"),
     };
 
     /// <summary>Maps a visible card kind to its presentation-only frame family.</summary>

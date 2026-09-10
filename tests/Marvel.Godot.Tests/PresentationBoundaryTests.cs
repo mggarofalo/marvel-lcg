@@ -72,6 +72,7 @@ public sealed class PresentationBoundaryTests
             "Marvel.View.BoardLayout",
             "Marvel.View.BoardPlayerPresentation",
             "Marvel.View.BoardPresentation",
+            "Marvel.View.BoardStageRole",
             "Marvel.View.EventBatchPresentation",
             "Marvel.View.EventChronology",
             "Marvel.View.EventCuePlanner",

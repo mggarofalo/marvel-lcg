@@ -154,6 +154,39 @@ public sealed class VisualSystemTests
     }
 
     [Theory]
+    [InlineData(InterfaceScale.Percent80, 18)]
+    [InlineData(InterfaceScale.Percent100, 22)]
+    [InlineData(InterfaceScale.Percent120, 27)]
+    public void ResourceGlyphsShareASquareSlotWithDeliberateOpticalSizes(
+        InterfaceScale scale,
+        int expectedMentalSize)
+    {
+        ResourceIconMetrics physical = VisualSystem.ResourceIcon("P", scale);
+        ResourceIconMetrics mental = VisualSystem.ResourceIcon("M", scale);
+        ResourceIconMetrics energy = VisualSystem.ResourceIcon("E", scale);
+        ResourceIconMetrics wild = VisualSystem.ResourceIcon("W", scale);
+
+        Assert.Single(new[]
+        {
+            physical.SlotSize,
+            mental.SlotSize,
+            energy.SlotSize,
+            wild.SlotSize,
+        }.Distinct());
+        if (scale == InterfaceScale.Standard)
+        {
+            Assert.Equal(26, physical.SlotSize);
+            Assert.Equal(22, physical.FontSize);
+        }
+        Assert.Equal(physical.FontSize, mental.FontSize);
+        Assert.Equal(expectedMentalSize, mental.FontSize);
+        Assert.Equal(mental.FontSize, energy.FontSize);
+        Assert.Equal(energy.FontSize, wild.FontSize);
+        Assert.All([physical, mental, energy, wild], metrics =>
+            Assert.InRange(metrics.FontSize, 1, metrics.SlotSize));
+    }
+
+    [Theory]
     [InlineData(1000, 400, 300, 200, 416)]
     [InlineData(1000, 600, 300, 200, 284)]
     public void FloatingInspectorUsesTheRoomierSideOfThePointer(
@@ -192,8 +225,10 @@ public sealed class VisualSystemTests
 
             Assert.True(full.Width > board.Width);
             Assert.True(full.MinimumHeight > board.MinimumHeight);
-            Assert.True(board.Width >= hand.Width);
+            Assert.True(board.Width > hand.Width);
             Assert.True(board.MinimumHeight > hand.MinimumHeight);
+            Assert.True(board.MinimumHeight < board.Width);
+            Assert.True(board.MinimumHeight * 2 < full.MinimumHeight);
             Assert.False(board.ShowSubtitle);
             Assert.False(board.ShowTraits);
             Assert.True(board.ShowPrintedStats);
@@ -240,17 +275,18 @@ public sealed class VisualSystemTests
             1280, 720, InterfaceScale.Standard);
         DesktopPlayMetrics desktop = VisualSystem.DesktopPlay(
             1920, 1080, InterfaceScale.Standard);
-        int twoCards = VisualSystem.Card(
-            CardDisplaySize.Board, InterfaceScale.Standard).Width * 2;
+        int singletonArea = VisualSystem.Card(
+                CardDisplaySize.Board, InterfaceScale.Standard).Width
+            + 32;
 
         Assert.InRange(compact.DecisionWidth, 390, 440);
-        Assert.InRange(laptop.DecisionWidth, 500, 560);
+        Assert.InRange(laptop.DecisionWidth, 450, 500);
         Assert.InRange(desktop.DecisionWidth, 680, 720);
         Assert.True(desktop.DecisionWidth > laptop.DecisionWidth);
         Assert.True(laptop.DecisionWidth > compact.DecisionWidth);
         Assert.True(compact.DecisionMinimumHeight >= 270);
         Assert.True(desktop.DecisionMinimumHeight > compact.DecisionMinimumHeight);
-        Assert.Equal(twoCards, desktop.BoardAreaWidth);
+        Assert.Equal(singletonArea, desktop.BoardAreaWidth);
     }
 
     [Fact]

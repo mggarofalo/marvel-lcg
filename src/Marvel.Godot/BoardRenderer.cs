@@ -151,6 +151,7 @@ public static class BoardRenderer
             SetExpanded(true);
         });
         foreach (BoardAreaPresentation area in areas
+                     .Where(area => area.Cards.Count > 0 || area.Removed.Count > 0)
                      .OrderByDescending(area => area.Prominence)
                      .ThenBy(area => area.Title, StringComparer.Ordinal))
         {
@@ -220,7 +221,6 @@ public static class BoardRenderer
             disclosure.SetPressedNoSignal(true);
             SetExpanded(true);
         });
-        body.AddChild(Label(area.Context, GodotThemeVariations.Caption));
         if (area.Depth > 0)
         {
             body.AddChild(Label(
@@ -228,7 +228,13 @@ public static class BoardRenderer
                 GodotThemeVariations.StatusText,
                 wrap: true));
         }
-        AddCards(body, area.Cards, "CARDS", area.Zone, result, scale, art);
+        BoardCardPresentation[] primaryCards =
+            [.. area.Cards.Where(card => card.StageRole != BoardStageRole.Upcoming)];
+        BoardCardPresentation[] upcomingStages =
+            [.. area.Cards.Where(card => card.StageRole == BoardStageRole.Upcoming)];
+        AddCards(body, primaryCards, "CARDS", area.Zone, result, scale, art);
+        AddUpcomingStages(
+            body, upcomingStages, area.Id, result, scale, expandedAreas, art);
         if (area.Removed.Count > 0)
         {
             body.AddChild(new HSeparator());
@@ -237,6 +243,70 @@ public static class BoardRenderer
 
         return panel;
     }
+
+    private static void AddUpcomingStages(
+        VBoxContainer destination,
+        BoardCardPresentation[] cards,
+        int areaId,
+        BoardRenderResult result,
+        InterfaceScale scale,
+        IDictionary<int, bool> expandedAreas,
+        ICardArtProvider? art)
+    {
+        if (cards.Length == 0)
+        {
+            return;
+        }
+
+        int count = cards.Sum(card => card.Count);
+        int stateKey = UpcomingStagesStateKey(areaId);
+        bool expanded = expandedAreas.TryGetValue(stateKey, out bool remembered)
+            && remembered;
+        var section = new VBoxContainer
+        {
+            Name = "UpcomingStages",
+            ThemeTypeVariation = GodotThemeVariations.TightStack,
+        };
+        var disclosure = new Button
+        {
+            Name = "UpcomingStagesDisclosure",
+            Text = $"{(expanded ? "▾" : "▸")}  Upcoming stages  ·  {count}",
+            Alignment = HorizontalAlignment.Left,
+            ToggleMode = true,
+            ButtonPressed = expanded,
+            TooltipText = "Show or hide the stages that follow the current stage.",
+        };
+        var list = new VBoxContainer
+        {
+            Name = "UpcomingStagesList",
+            Visible = expanded,
+            ThemeTypeVariation = GodotThemeVariations.TightStack,
+        };
+        disclosure.Pressed += () =>
+        {
+            expandedAreas[stateKey] = disclosure.ButtonPressed;
+            list.Visible = disclosure.ButtonPressed;
+            disclosure.Text = $"{(disclosure.ButtonPressed ? "▾" : "▸")}  Upcoming stages  ·  {count}";
+        };
+        section.AddChild(disclosure);
+        section.AddChild(list);
+        destination.AddChild(section);
+
+        foreach (BoardCardPresentation card in cards)
+        {
+            CardControl control = CardControl.Create(card, CardDisplaySize.Board, scale, art);
+            control.SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin;
+            list.AddChild(control);
+            if (card.TargetId is { } target)
+            {
+                result.Register(target, control);
+            }
+            result.TrackCard(control, card);
+        }
+    }
+
+    internal static int UpcomingStagesStateKey(int areaId) =>
+        checked(-1_000_000 - areaId);
 
     private static void AddCards(
         VBoxContainer destination,
@@ -247,13 +317,15 @@ public static class BoardRenderer
         InterfaceScale scale,
         ICardArtProvider? art)
     {
-        destination.AddChild(Label(
-            $"{section}  ·  {cards.Sum(card => card.Count)}",
-            GodotThemeVariations.Caption));
         if (cards.Count == 0)
         {
-            destination.AddChild(Label("Empty", GodotThemeVariations.MutedText));
             return;
+        }
+        if (section != "CARDS")
+        {
+            destination.AddChild(Label(
+                $"{section}  ·  {cards.Sum(card => card.Count)}",
+                GodotThemeVariations.Caption));
         }
 
         bool list = zone is "DiscardPile" or "EncounterDiscardPile";
@@ -439,7 +511,7 @@ public sealed class BoardRenderResult
                     Callable.From(() =>
                     {
                         scroll.EnsureControlVisible(target);
-                        Callable.From(() => AlignBoardToTitle(scroll, target, 3)).CallDeferred();
+                        Callable.From(() => AlignBoardToCardFrame(scroll, target, 3)).CallDeferred();
                     }).CallDeferred();
                 }
                 else
@@ -459,18 +531,63 @@ public sealed class BoardRenderResult
         }
     }
 
-    private static void AlignBoardToTitle(
+    private static void AlignBoardToCardFrame(
         ScrollContainer board,
         Control title,
         int remainingPasses)
     {
+        const int topInset = 12;
         Rect2 viewport = board.GetGlobalRect();
-        Rect2 titleRect = title.GetGlobalRect();
-        board.ScrollVertical += Mathf.RoundToInt(titleRect.Position.Y - viewport.Position.Y);
+        Control card = CardContaining(board, title) ?? title;
+        Control? area = AreaContaining(board, card);
+        Control? disclosure = area is null ? null : DisclosureIn(area);
+        Rect2 cardRect = card.GetGlobalRect();
+        float contentTop = disclosure?.GetGlobalRect().Position.Y ?? cardRect.Position.Y;
+        float alignTop = contentTop - (viewport.Position.Y + topInset);
+        float revealBottom = cardRect.End.Y - (viewport.End.Y - topInset);
+        float delta = revealBottom <= alignTop ? alignTop : revealBottom;
+        VScrollBar bar = board.GetVScrollBar();
+        int maximum = Math.Max(0, Mathf.CeilToInt((float)(bar.MaxValue - bar.Page)));
+        board.ScrollVertical = Math.Clamp(
+            board.ScrollVertical + Mathf.RoundToInt(delta),
+            0,
+            maximum);
         if (remainingPasses > 0)
         {
-            Callable.From(() => AlignBoardToTitle(board, title, remainingPasses - 1)).CallDeferred();
+            Callable.From(() => AlignBoardToCardFrame(board, title, remainingPasses - 1))
+                .CallDeferred();
         }
+    }
+
+    private static CardControl? CardContaining(ScrollContainer scroll, Control control)
+    {
+        Node? candidate = control;
+        while (candidate is not null && candidate != scroll)
+        {
+            if (candidate is CardControl card)
+            {
+                return card;
+            }
+            candidate = candidate.GetParent();
+        }
+        return null;
+    }
+
+    private static Button? DisclosureIn(Control area)
+    {
+        foreach (Node child in area.GetChildren())
+        {
+            foreach (Node candidate in child.GetChildren())
+            {
+                if (candidate is Button button
+                    && button.Name.ToString().StartsWith("Area", StringComparison.Ordinal)
+                    && button.Name.ToString().EndsWith("Disclosure", StringComparison.Ordinal))
+                {
+                    return button;
+                }
+            }
+        }
+        return null;
     }
 
     private static Control? AreaContaining(ScrollContainer scroll, Control control)
