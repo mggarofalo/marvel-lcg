@@ -42,6 +42,7 @@ public sealed class PresentationBoundaryTests
             "Marvel.Client.GameSeed",
             "Marvel.Client.GameSetupSelection",
             "Marvel.Client.InteractionTranscript",
+            "Marvel.Client.InteractionTranscriptSetup",
             "Marvel.Client.LocalClientConnection",
             "Marvel.Client.LocalGameClient",
             "Marvel.Client.ModularConfiguration",

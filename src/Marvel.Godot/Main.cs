@@ -778,7 +778,8 @@ public sealed partial class Main : Control
             currentProgress = null;
             transcript.Reset(
                 uint.Parse(seed.Text, CultureInfo.InvariantCulture),
-                available.Choices!.Runtime);
+                available.Choices!.Runtime,
+                InteractionTranscriptSetup.FromSelection(available.Choices, selection));
             transientInvitation = startup.Invitations.Count == 0
                 ? null
                 : startup.Invitations[0].Invitation;
@@ -845,7 +846,10 @@ public sealed partial class Main : Control
 
             session = attached.Session;
             currentProgress = null;
-            transcript.Reset(seed: null, runtime: available.Choices!.Runtime);
+            transcript.Reset(
+                seed: null,
+                runtime: available.Choices!.Runtime,
+                InteractionTranscriptSetup.Unavailable("unavailable_to_attached_viewer"));
             RenderGame(
                 attached.Response!,
                 resetEvents: true,
@@ -946,7 +950,23 @@ public sealed partial class Main : Control
 
             if (result.HasAuthoritativeView)
             {
-                RenderGame(result.Response!);
+                if (result.Error is null)
+                {
+                    RenderGame(result.Response!);
+                }
+                else
+                {
+                    transcript.RecordFailure(
+                        EngineProtocol.Resolve,
+                        CurrentGame!.Revision,
+                        result.Error,
+                        result.MutationDisposition);
+                    RenderGame(
+                        result.Response!,
+                        preserveEvents: true,
+                        priorProgress: currentProgress,
+                        operation: EngineProtocol.Sync);
+                }
                 decisionPending = false;
                 uncertainMutationError = null;
                 if (result.Error is not null)
@@ -1249,7 +1269,6 @@ public sealed partial class Main : Control
         GameProgressPresentation? priorProgress = null,
         string operation = EngineProtocol.Resolve)
     {
-        transcript.RecordResponse(operation, response);
         Outcome previousOutcome = CurrentGame?.World?.Outcome ?? Outcome.Unfinished;
         HashSet<int> priorHistory = CurrentGame?.History?.Entries
             .Select(entry => entry.Cursor)
@@ -1262,6 +1281,7 @@ public sealed partial class Main : Control
         synchronize.Visible = true;
         RenderPromptSummary(response.Prompt, world);
         decisions.Render(response.Prompt, world);
+        IReadOnlyList<EventPresentation> reportNarrative = [];
         if (!preserveEvents)
         {
             EventBatchPresentation presented = EventCuePlanner.Plan(
@@ -1278,16 +1298,28 @@ public sealed partial class Main : Control
             }
 
             RenderEvents();
-            HistoryEntryDescriptor? completed = operation == EngineProtocol.Resolve
-                ? response.History?.Entries.LastOrDefault(entry =>
-                    !priorHistory.Contains(entry.Cursor)
-                    && entry.Summary.Contains(" played ", StringComparison.Ordinal))
-                : null;
+            HistoryEntryDescriptor[] completedActions =
+                operation == EngineProtocol.Resolve
+                    ? response.History?.Entries
+                        .Where(entry => !priorHistory.Contains(entry.Cursor))
+                        .ToArray() ?? []
+                    : [];
+            HistoryEntryDescriptor? completed = completedActions.LastOrDefault(entry =>
+                entry.Summary.Contains(" played ", StringComparison.Ordinal));
             IReadOnlyList<EventPresentation> highlights = response.History?.ActionOpen == true
                 ? []
                 : completed is null
                     ? presented.Highlights
                     : completed.Details.Prepend(completed.Summary)
+                        .Select(summary => new EventPresentation(
+                            summary, "Action", [], EventMotionKind.State))
+                        .ToArray();
+            reportNarrative = response.History?.ActionOpen == true
+                ? []
+                : completedActions.Length == 0
+                    ? presented.History
+                    : completedActions
+                        .SelectMany(entry => entry.Details.Prepend(entry.Summary))
                         .Select(summary => new EventPresentation(
                             summary, "Action", [], EventMotionKind.State))
                         .ToArray();
@@ -1298,6 +1330,7 @@ public sealed partial class Main : Control
         {
             RenderEvents();
         }
+        transcript.RecordResponse(operation, response, reportNarrative);
         // A synchronized snapshot is authoritative but is not a new
         // transition, so it does not alter the diagnostic chronology.
         ApplyProgress(GameProgressPresentation.FromSynchronization(

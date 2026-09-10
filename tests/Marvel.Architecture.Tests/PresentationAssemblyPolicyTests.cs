@@ -142,6 +142,7 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.View.AreaDescriptor",
             "Marvel.View.CardDescriptor",
             "Marvel.View.CardFaceDescriptor",
+            "Marvel.View.EventPresentation",
             "Marvel.View.GameAreaDescriptor",
             "Marvel.View.IVisibilityPolicy",
             "Marvel.View.PlayerDescriptor",
