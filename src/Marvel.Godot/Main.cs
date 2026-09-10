@@ -1382,8 +1382,10 @@ public sealed partial class Main : Control
             child.QueueFree();
         }
 
+        InterfaceScale inspectionScale = FittedInspectionScale(
+            card, interfaceScale, Size.Y);
         CardControl detail = CardControl.Create(
-            card, CardDisplaySize.Full, interfaceScale, art);
+            card, CardDisplaySize.Full, inspectionScale, art);
         detail.FocusMode = FocusModeEnum.All;
         IgnoreMouseRecursively(detail);
         cardInspectorContent.AddChild(detail);
@@ -1471,6 +1473,22 @@ public sealed partial class Main : Control
             HideCardInspector();
             GetViewport().SetInputAsHandled();
         }
+    }
+
+    private static InterfaceScale FittedInspectionScale(
+        BoardCardPresentation card,
+        InterfaceScale requested,
+        float viewportHeight)
+    {
+        bool landscape = VisualSystem.CardFrame(card.Kind).Family == CardFrameFamily.Scheme;
+        int baseHeight = landscape ? 400 : 560;
+        int availablePercent = (int)MathF.Floor(
+            Math.Max(1, viewportHeight - 48) * 100 / baseHeight / 10) * 10;
+        int fittedPercent = Math.Clamp(
+            Math.Min((int)requested, availablePercent),
+            (int)InterfaceScale.Percent50,
+            (int)InterfaceScale.Percent150);
+        return (InterfaceScale)fittedPercent;
     }
 
     private static bool IsInsideCard(Node? node)
