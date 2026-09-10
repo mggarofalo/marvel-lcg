@@ -823,7 +823,8 @@ func _procedural_cards_are_safe() -> bool:
 		_fail("the card inspector exposed scrollbar chrome")
 		return false
 	var detail := inspector.get_node("Frame/Stack/Scroll/Content").get_child(0) as Control
-	if not inspector_scroll.get_global_rect().encloses(detail.get_global_rect()):
+	# Font metrics can place the themed border on a fractional pixel across renderers.
+	if not inspector_scroll.get_global_rect().grow(1.0).encloses(detail.get_global_rect()):
 		_fail("the full card does not fit inside the scrollbar-free inspector")
 		return false
 	var rules := detail.find_child("RulesText", true, false) as RichTextLabel
