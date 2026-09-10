@@ -454,6 +454,11 @@ public sealed partial class CardControl : PanelContainer
             case CardFrameFamily.Enemy:
                 if (HasLiveField(card, "HEALTH"))
                 {
+                    if (card.Kind.Contains("VILLAIN", StringComparison.OrdinalIgnoreCase))
+                    {
+                        AddPresentedOrPrinted(
+                            values, card, "Stage", "Stage", "PRINTED_STAGE");
+                    }
                     AddPresented(values, card, "SCH", "SCHEME");
                     AddPresented(values, card, "ATK", "ATTACK");
                     AddPresented(values, card, "HEALTH", "HEALTH");

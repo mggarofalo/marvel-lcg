@@ -122,6 +122,41 @@ public sealed class CardControlTests
             Assert.Single(values, value => value.Name == "HEALTH")));
     }
 
+    [Theory]
+    [InlineData("1", "1", "2", "14/14")]
+    [InlineData("2", "1", "3", "15/15")]
+    public void SameTitleCoreVillainStagesRetainOneStageBesideLiveStats(
+        string stage,
+        string scheme,
+        string attack,
+        string health)
+    {
+        BoardCardPresentation rhino = Card(
+            "ENCOUNTER VILLAIN",
+            fields:
+            [
+                new BoardFieldPresentation("SCHEME", scheme),
+                new BoardFieldPresentation("ATTACK", attack),
+                new BoardFieldPresentation("HEALTH", health),
+            ]) with
+        {
+            Title = "Rhino",
+            PrintedStats =
+            [
+                new BoardFieldPresentation("Stage", stage),
+                new BoardFieldPresentation("Boost", "2"),
+            ],
+        };
+
+        IReadOnlyList<BoardFieldPresentation> values =
+            CardControl.CompactValues(rhino, CardDisplaySize.Board);
+
+        Assert.Equal(["Stage", "SCH", "ATK", "HEALTH"],
+            values.Select(value => value.Name));
+        Assert.Equal(stage, Assert.Single(values, value => value.Name == "Stage").Value);
+        Assert.DoesNotContain(values, value => value.Name == "Boost");
+    }
+
     [Fact]
     public void FutureEnemyStageDoesNotCompeteWithTheActiveEnemy()
     {

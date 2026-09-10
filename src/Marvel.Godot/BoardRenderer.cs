@@ -233,7 +233,8 @@ public static class BoardRenderer
         BoardCardPresentation[] upcomingStages =
             [.. area.Cards.Where(card => card.StageRole == BoardStageRole.Upcoming)];
         AddCards(body, primaryCards, "CARDS", area.Zone, result, scale, art);
-        AddUpcomingStages(body, upcomingStages, result, scale, art);
+        AddUpcomingStages(
+            body, upcomingStages, area.Id, result, scale, expandedAreas, art);
         if (area.Removed.Count > 0)
         {
             body.AddChild(new HSeparator());
@@ -246,8 +247,10 @@ public static class BoardRenderer
     private static void AddUpcomingStages(
         VBoxContainer destination,
         BoardCardPresentation[] cards,
+        int areaId,
         BoardRenderResult result,
         InterfaceScale scale,
+        IDictionary<int, bool> expandedAreas,
         ICardArtProvider? art)
     {
         if (cards.Length == 0)
@@ -256,6 +259,9 @@ public static class BoardRenderer
         }
 
         int count = cards.Sum(card => card.Count);
+        int stateKey = UpcomingStagesStateKey(areaId);
+        bool expanded = expandedAreas.TryGetValue(stateKey, out bool remembered)
+            && remembered;
         var section = new VBoxContainer
         {
             Name = "UpcomingStages",
@@ -264,19 +270,21 @@ public static class BoardRenderer
         var disclosure = new Button
         {
             Name = "UpcomingStagesDisclosure",
-            Text = $"▸  Upcoming stages  ·  {count}",
+            Text = $"{(expanded ? "▾" : "▸")}  Upcoming stages  ·  {count}",
             Alignment = HorizontalAlignment.Left,
             ToggleMode = true,
+            ButtonPressed = expanded,
             TooltipText = "Show or hide the stages that follow the current stage.",
         };
         var list = new VBoxContainer
         {
             Name = "UpcomingStagesList",
-            Visible = false,
+            Visible = expanded,
             ThemeTypeVariation = GodotThemeVariations.TightStack,
         };
         disclosure.Pressed += () =>
         {
+            expandedAreas[stateKey] = disclosure.ButtonPressed;
             list.Visible = disclosure.ButtonPressed;
             disclosure.Text = $"{(disclosure.ButtonPressed ? "▾" : "▸")}  Upcoming stages  ·  {count}";
         };
@@ -296,6 +304,9 @@ public static class BoardRenderer
             result.TrackCard(control, card);
         }
     }
+
+    internal static int UpcomingStagesStateKey(int areaId) =>
+        checked(-1_000_000 - areaId);
 
     private static void AddCards(
         VBoxContainer destination,

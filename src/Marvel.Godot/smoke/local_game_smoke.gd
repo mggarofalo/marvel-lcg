@@ -698,6 +698,7 @@ func _procedural_cards_are_safe() -> bool:
 	var saw_type_specific_value := false
 	var saw_health := false
 	var saw_progress := false
+	var saw_active_villain_stage := false
 	for card in cards:
 		var in_hand := hand_shelf.is_ancestor_of(card)
 		var expected_width := expected_hand_width if in_hand else expected_board_width
@@ -828,9 +829,17 @@ func _procedural_cards_are_safe() -> bool:
 						_fail("a hand resource exposes a printed abbreviation")
 						return false
 			var stage := face.find_child("SummaryValuesStage", true, false)
-			if stage != null and (health != null or threat != null \
+			if stage != null and health != null:
+				if face.find_child("SummaryValuesSCH", true, false) == null \
+						or face.find_child("SummaryValuesATK", true, false) == null \
+						or face.find_children(
+							"SummaryValuesStage", "Label", true, false).size() != 1:
+					_fail("an active villain stage is missing or repeated beside live stats")
+					return false
+				saw_active_villain_stage = true
+			elif stage != null and (threat != null \
 					or face.find_child("SummaryValuesHP", true, false) != null):
-				_fail("a stored stage competes with active health or threat progress")
+				_fail("a stored stage competes with active threat or printed health")
 				return false
 		elif back != null:
 			saw_back = true
@@ -846,7 +855,8 @@ func _procedural_cards_are_safe() -> bool:
 				return false
 
 	if not saw_face or not saw_back or not saw_compact_summary \
-			or not saw_type_specific_value or not saw_health or not saw_progress:
+			or not saw_type_specific_value or not saw_health or not saw_progress \
+			or not saw_active_villain_stage:
 		_fail("the table did not exercise private backs and type-specific compact progress summaries")
 		return false
 
@@ -880,6 +890,25 @@ func _procedural_cards_are_safe() -> bool:
 				return false
 			if upcoming_card.find_child("ProgressValues", true, false) != null:
 				_fail("an upcoming stage competes with the current stage's live progress")
+				return false
+
+	var scale_slider := _node("Toolbar/InterfaceScale") as HSlider
+	var original_scale := scale_slider.value
+	for rebuilt_scale in [90.0 if original_scale != 90.0 else 80.0, original_scale]:
+		scale_slider.value = rebuilt_scale
+		await process_frame
+		await process_frame
+		var rebuilt_upcoming := main.find_children(
+			"UpcomingStagesDisclosure", "Button", true, false)
+		if rebuilt_upcoming.size() != upcoming_disclosures.size():
+			_fail("a board rebuild changed the upcoming-stages disclosure set")
+			return false
+		for rebuilt_node in rebuilt_upcoming:
+			var rebuilt_disclosure := rebuilt_node as Button
+			var rebuilt_list := rebuilt_disclosure.get_parent().get_node(
+				"UpcomingStagesList") as VBoxContainer
+			if not rebuilt_disclosure.button_pressed or not rebuilt_list.visible:
+				_fail("an open upcoming-stages disclosure collapsed during board rebuild")
 				return false
 
 	for secondary in main.find_children("SecondaryAreas", "VBoxContainer", true, false):
