@@ -768,11 +768,12 @@ func _procedural_cards_are_safe() -> bool:
 		return false
 	action_card.mouse_entered.emit()
 	await process_frame
-	var inspector := main.get_node("CardInspector") as PanelContainer
+	var inspector := main.get_node("CardInspector") as Control
 	if inspector == null or not inspector.visible:
 		_fail("hovering a card-naming action did not preview its hand card")
 		return false
-	if inspector.get_global_rect().end.y > hand_card.get_global_rect().position.y + 1.0:
+	var inspector_frame := inspector.get_node("Frame") as PanelContainer
+	if inspector_frame.get_global_rect().end.y > hand_card.get_global_rect().position.y + 1.0:
 		_fail("the action-card preview was not placed above the hand card")
 		return false
 	action_card.mouse_exited.emit()
@@ -793,9 +794,16 @@ func _procedural_cards_are_safe() -> bool:
 			or inspected_face.find_child("RulesText", true, false) == null:
 		_fail("the card inspector did not render full authorized card data")
 		return false
-	if inspector.get_global_rect().intersection(
-			Rect2(Vector2.ZERO, _viewport_size())).size != inspector.size:
+	if inspector_frame.get_global_rect().intersection(
+			Rect2(Vector2.ZERO, _viewport_size())).size != inspector_frame.size:
 		_fail("the pointer-aware card inspector left the visible viewport")
+		return false
+	if inspected_face.find_child("IllustrationRegion", true, false) == null:
+		_fail("the full card frame did not reserve an illustration region")
+		return false
+	if inspected_face.find_child("PrimaryValue", true, false) == null \
+			or inspected_face.find_child("ResourceIcons", true, false) == null:
+		_fail("the player-card frame did not keep cost and resource positions")
 		return false
 	if not await _capture_checkpoint("card-inspector"):
 		return false
@@ -809,19 +817,124 @@ func _procedural_cards_are_safe() -> bool:
 	if not inspector.visible:
 		_fail("the card inspector closed while the pointer was over its scrollable content")
 		return false
-	var inspector_scroll := inspector.get_node("Scroll") as ScrollContainer
-	if inspector_scroll.mouse_filter == Control.MOUSE_FILTER_IGNORE:
-		_fail("the card inspector cannot receive scrolling input")
+	var inspector_scroll := inspector.get_node("Frame/Stack/Scroll") as ScrollContainer
+	if inspector_scroll.horizontal_scroll_mode != ScrollContainer.SCROLL_MODE_SHOW_NEVER \
+			or inspector_scroll.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_SHOW_NEVER:
+		_fail("the card inspector exposed scrollbar chrome")
 		return false
-	hand_card.gui_input.emit(click)
+	var detail := inspector.get_node("Frame/Stack/Scroll/Content").get_child(0) as Control
+	if not inspector_scroll.get_global_rect().encloses(detail.get_global_rect()):
+		_fail("the full card does not fit inside the scrollbar-free inspector")
+		return false
+	var rules := detail.find_child("RulesText", true, false) as RichTextLabel
+	if rules != null and rules.get_content_height() > rules.size.y:
+		_fail("the inspected card clips its rules text without a scrollbar")
+		return false
+	var kind := detail.find_child("Kind", true, false) as Label
+	if kind == null or kind.text in ["Player card", "Identity", "Enemy", "Scheme", "Environment"]:
+		_fail("the inspected player card did not prioritize its printed card type")
+		return false
+	var detail_text := _visible_text(detail)
+	if "Web-Shooter" in detail_text and detail_text.count("Uses (3 web counters)") != 1:
+		_fail("the inspected player card duplicated its Uses text")
+		return false
+	if (inspector.get_node("Frame/Stack/Header") as Control).visible:
+		_fail("the card inspector exposed a redundant modal header")
+		return false
+	var decision_before_backdrop := _visible_text(_decision())
+	var background_action := _button_named("Keep hand")
+	var backdrop_click := InputEventMouseButton.new()
+	backdrop_click.button_index = MOUSE_BUTTON_LEFT
+	backdrop_click.pressed = true
+	backdrop_click.position = background_action.get_global_rect().get_center()
+	render_viewport.push_input(backdrop_click)
 	await process_frame
 	if inspector.visible:
-		_fail("clicking the inspected card again did not close the inspector")
+		_fail("clicking outside the inspected card did not close the inspector")
+		return false
+	if _visible_text(_decision()) != decision_before_backdrop:
+		_fail("the inspector backdrop click activated its underlying control")
 		return false
 	var restore_focus := _first_enabled_choice()
 	if restore_focus != null:
 		restore_focus.grab_focus()
 		await process_frame
+		hand_card.grab_focus()
+		var enter := InputEventKey.new()
+		enter.keycode = KEY_ENTER
+		enter.pressed = true
+		hand_card.gui_input.emit(enter)
+		await process_frame
+		if not inspector.visible:
+			_fail("keyboard activation did not open the card inspector")
+			return false
+		detail = inspector.get_node("Frame/Stack/Scroll/Content").get_child(0) as Control
+		if render_viewport.gui_get_focus_owner() != detail:
+			_fail("the opened card inspector did not move focus to its card")
+			return false
+		var tab := InputEventKey.new()
+		tab.keycode = KEY_TAB
+		tab.pressed = true
+		render_viewport.push_input(tab)
+		await process_frame
+		if render_viewport.gui_get_focus_owner() != detail:
+			_fail("Tab escaped the pinned card inspector")
+			return false
+		tab.echo = true
+		render_viewport.push_input(tab)
+		await process_frame
+		if render_viewport.gui_get_focus_owner() != detail:
+			_fail("a repeated Tab event escaped the pinned card inspector")
+			return false
+		var escape := InputEventAction.new()
+		escape.action = "ui_cancel"
+		escape.pressed = true
+		render_viewport.push_input(escape)
+		await process_frame
+		if inspector.visible:
+			_fail("Escape did not close the card inspector")
+			return false
+		if render_viewport.gui_get_focus_owner() != hand_card:
+			_fail("closing the card inspector did not restore card focus")
+			return false
+		if not await _capture_named_card("Web-Shooter", "card-inspector-long-text"):
+			return false
+		if not await _capture_named_card("The Break-In!", "card-inspector-main-scheme"):
+			return false
+		if not await _capture_named_card("Peter Parker", "card-inspector-identity-current"):
+			return false
+		restore_focus.grab_focus()
+		await process_frame
+	return true
+
+
+func _capture_named_card(title: String, checkpoint: String) -> bool:
+	var card: Control = null
+	for candidate in main.find_children("*", "", true, false):
+		var face := candidate.find_child("CardFace", false, false)
+		if face == null:
+			continue
+		var title_label := face.find_child("Title", false, false) as Label
+		if title_label != null and title_label.text == title:
+			card = candidate as Control
+			break
+	if card == null:
+		_fail("the table has no readable '%s' card for visual inspection" % title)
+		return false
+	var click := InputEventMouseButton.new()
+	click.button_index = MOUSE_BUTTON_LEFT
+	click.pressed = true
+	card.gui_input.emit(click)
+	await process_frame
+	var inspector := main.get_node("CardInspector") as Control
+	if not inspector.visible:
+		_fail("'%s' did not open for visual inspection" % title)
+		return false
+	if not await _capture_checkpoint(checkpoint):
+		return false
+	var close := inspector.get_node("Frame/Stack/Header/Close") as Button
+	close.pressed.emit()
+	await process_frame
 	return true
 
 

@@ -245,6 +245,16 @@ public interface ICardFacts
     /// <param name="faceId">A printed card id.</param>
     string Text(string faceId) => string.Empty;
 
+    /// <summary>The face's printed rules text with display emphasis and symbols.</summary>
+    /// <remarks>
+    /// This is display-only source material. Rules execution continues to use
+    /// authored abilities, and clients must treat this as formatted text rather
+    /// than infer legality from it. The plain-text default keeps hand-built facts
+    /// compatible.
+    /// </remarks>
+    /// <param name="faceId">A printed card id.</param>
+    string FormattedText(string faceId) => Text(faceId);
+
     /// <summary>The keyword labels printed by this face, in display order.</summary>
     /// <remarks>
     /// Keywords are explicit catalog facts rather than words a client guesses

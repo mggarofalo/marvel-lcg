@@ -96,6 +96,20 @@ public sealed record CardFaceDescriptor(
     /// <summary>The printed rules text.</summary>
     public string RulesText { get; init; } = string.Empty;
 
+    /// <summary>Printed rules text with the source's display-only emphasis and symbols.</summary>
+    /// <remarks>
+    /// This additive protocol field is a product choice. It carries no executable
+    /// rules meaning; clients render only the formatting vocabulary they support.
+    /// </remarks>
+    public string RulesMarkup { get; init; } = string.Empty;
+
+    /// <summary>The visible printed face id a client may use for optional local art.</summary>
+    /// <remarks>
+    /// This is distinct from <see cref="Id"/> because an effective public identity,
+    /// such as a facedown Drone, must never reveal or request its underlying art.
+    /// </remarks>
+    public string? ArtFaceId { get; init; }
+
     /// <summary>Damage currently on the card.</summary>
     public long Damage { get; init; }
 

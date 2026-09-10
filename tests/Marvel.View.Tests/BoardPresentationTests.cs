@@ -192,15 +192,18 @@ public sealed class BoardPresentationTests
                 })
             {
                 Traits = ["AVENGER", "AERIAL"],
+                ArtFaceId = "01010",
                 Cost = "3",
                 PrintedStats = new Dictionary<string, string>(StringComparer.Ordinal)
                 {
                     ["THW"] = "2",
                     ["ATK"] = "2",
+                    ["RES"] = "B",
                     ["Class"] = "Leadership",
                 },
                 Keywords = ["Steady"],
                 RulesText = "Action: Draw a card.",
+                RulesMarkup = "<b>Action</b>: Draw a card.",
                 Damage = 2,
                 Counters = new Dictionary<string, long>(StringComparer.Ordinal)
                 {
@@ -223,10 +226,12 @@ public sealed class BoardPresentationTests
         Assert.Equal(["11/13", "2"], card.Fields.Select(field => field.Value));
         Assert.Equal(["AVENGER", "AERIAL"], card.Traits);
         Assert.Equal("3", card.Cost);
-        Assert.Equal(["THW", "ATK"], card.PrintedStats.Select(field => field.Name));
+        Assert.Equal(["THW", "ATK", "RES"], card.PrintedStats.Select(field => field.Name));
         Assert.Equal("Leadership", card.Classification);
         Assert.Equal(["Steady"], card.Keywords);
         Assert.Equal("Action: Draw a card.", card.RulesText);
+        Assert.Equal("<b>Action</b>: Draw a card.", card.RulesMarkup);
+        Assert.Contains(card.PrintedStats, field => field.Name == "RES" && field.Value == "B");
         Assert.Equal(2, card.Damage);
         Assert.Equal("ENERGY", Assert.Single(card.Counters).Name);
         Assert.Equal("3", Assert.Single(card.Counters).Value);

@@ -233,6 +233,8 @@ public sealed class VisibilityTests
         Assert.Null(face.Cost);
         Assert.Equal(["Guard"], face.Keywords);
         Assert.Equal("Guard.", face.RulesText);
+        Assert.Equal("<b>Guard</b>.", face.RulesMarkup);
+        Assert.Equal("public-villain", face.ArtFaceId);
         Assert.Equal(2, face.Damage);
         Assert.Equal(3, face.Counters["test"]);
         Assert.Null(hidden.Face);
@@ -445,6 +447,10 @@ public sealed class VisibilityTests
             : [];
 
         public string Text(string faceId) => faceId == "public-villain" ? "Guard." : string.Empty;
+
+        public string FormattedText(string faceId) => faceId == "public-villain"
+            ? "<b>Guard</b>."
+            : string.Empty;
 
         public long PrintedValue(
             string faceId, string attribute, int players, long fallback = 0) =>

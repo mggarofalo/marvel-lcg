@@ -43,6 +43,11 @@ public sealed class CardCatalogTests
             "Hero Action (attack): Deal 8 damage",
             Cards.Text("01005"),
             StringComparison.Ordinal);
+        Assert.StartsWith(
+            "<b>Hero Action</b> <i>(attack)</i>",
+            Cards.FormattedText("01005"),
+            StringComparison.Ordinal);
+        Assert.Contains("[wild]", Cards.FormattedText("01008"), StringComparison.Ordinal);
         Assert.Contains("Guard", Cards.Keywords("01101"));
         Assert.Contains("Surge", Cards.Keywords("01121"));
         Assert.Contains("Uses (3 web counters)", Cards.Keywords("01008"));

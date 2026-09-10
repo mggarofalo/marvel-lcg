@@ -77,6 +77,11 @@ public static class ClientTheme
 
         theme.SetColor("default_color", "RichTextLabel", Muted);
         theme.SetFontSize("normal_font_size", "RichTextLabel", type.Caption);
+        Variation(theme, GodotThemeVariations.CardRulesRich, "RichTextLabel");
+        theme.SetColor("default_color", GodotThemeVariations.CardRulesRich, Ink);
+        theme.SetFontSize("normal_font_size", GodotThemeVariations.CardRulesRich, type.Body);
+        theme.SetFontSize("bold_font_size", GodotThemeVariations.CardRulesRich, type.Body);
+        theme.SetFontSize("italics_font_size", GodotThemeVariations.CardRulesRich, type.Body);
     }
 
     private static void DefineSurfaces(Theme theme)
@@ -100,6 +105,19 @@ public static class ClientTheme
             1, 6, 11, 9, 11, 9));
         Panel(theme, GodotThemeVariations.FocusedCard, Flat(
             Raised.Lightened(0.12f), Amber, 3, 6, 11, 9, 11, 9, left: 7));
+        Panel(theme, GodotThemeVariations.IdentityCard, Flat(
+            Raised.Lightened(0.06f), Hero, 1, 12, 16, 14, 16, 14, left: 8));
+        Panel(theme, GodotThemeVariations.PlayerCard, Flat(
+            Raised.Lightened(0.06f), Amber, 1, 12, 16, 14, 16, 14, left: 8));
+        Panel(theme, GodotThemeVariations.EnemyCard, Flat(
+            Raised.Lightened(0.02f), Encounter, 2, 12, 16, 14, 16, 14, left: 10));
+        Panel(theme, GodotThemeVariations.SchemeCard, Flat(
+            Surface.Lightened(0.08f), Encounter, 2, 12, 16, 14, 16, 14, bottom: 8));
+        Panel(theme, GodotThemeVariations.EnvironmentCard, Flat(
+            Surface.Lightened(0.05f), Outline, 2, 12, 16, 14, 16, 14, left: 5));
+        Panel(theme, GodotThemeVariations.CardArtWell, Flat(
+            Surface.Darkened(0.18f), Alpha(Outline, 0.55f),
+            1, 7, 8, 8, 8, 8));
     }
 
     private static void DefineLayout(Theme theme, SpacingMetrics spacing)

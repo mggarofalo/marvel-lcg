@@ -69,7 +69,7 @@ theme_type_variation = &"CompactRow"
 layout_mode = 2
 size_flags_vertical = 3
 theme_type_variation = &"Caption"
-text = "v0.1.0-dev.0 · engine engine-replay-v1 · protocol 12 · save 2"
+text = "v0.1.0-dev.0 · engine engine-replay-v1 · protocol 13 · save 2"
 
 [node name="Spacer" type="Control" parent="StatusBar" unique_id=1000000009]
 layout_mode = 2
@@ -718,21 +718,62 @@ layout_mode = 2
 theme_type_variation = &"StatusText"
 text = "LOADING ASSIGNMENTS"
 
-[node name="CardInspector" type="PanelContainer" parent="." unique_id=1000000107]
+[node name="CardInspector" type="Control" parent="." unique_id=1000000107]
 visible = false
 z_index = 20
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 1
+
+[node name="Backdrop" type="ColorRect" parent="CardInspector"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0.015, 0.035, 0.045, 0.72)
+
+[node name="Frame" type="PanelContainer" parent="CardInspector"]
+layout_mode = 0
+mouse_filter = 0
 focus_mode = 0
-custom_minimum_size = Vector2(280, 480)
+custom_minimum_size = Vector2(320, 480)
 theme_type_variation = &"SurfacePanel"
 
-[node name="Scroll" type="ScrollContainer" parent="CardInspector" unique_id=1000000108]
+[node name="Stack" type="VBoxContainer" parent="CardInspector/Frame"]
 layout_mode = 2
+theme_type_variation = &"TightStack"
+
+[node name="Header" type="HBoxContainer" parent="CardInspector/Frame/Stack"]
+visible = false
+layout_mode = 2
+theme_type_variation = &"CompactRow"
+
+[node name="Title" type="Label" parent="CardInspector/Frame/Stack/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"Caption"
+text = "Inspecting card"
+
+[node name="Close" type="Button" parent="CardInspector/Frame/Stack/Header"]
+layout_mode = 2
+focus_mode = 2
+text = "Close"
+
+[node name="Scroll" type="ScrollContainer" parent="CardInspector/Frame/Stack" unique_id=1000000108]
+layout_mode = 2
+size_flags_vertical = 3
 mouse_filter = 0
 focus_mode = 0
 horizontal_scroll_mode = 0
 
-[node name="Content" type="VBoxContainer" parent="CardInspector/Scroll" unique_id=1000000109]
+[node name="Content" type="VBoxContainer" parent="CardInspector/Frame/Stack/Scroll" unique_id=1000000109]
 layout_mode = 2
 mouse_filter = 2
 theme_type_variation = &"TightStack"

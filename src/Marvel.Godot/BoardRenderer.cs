@@ -361,7 +361,14 @@ public sealed class BoardRenderResult
     {
         control.GuiInput += input =>
         {
-            if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true })
+            bool pointer = input is InputEventMouseButton
+            {
+                ButtonIndex: MouseButton.Left,
+                Pressed: true,
+            };
+            bool keyboard = input is InputEventKey { Echo: false }
+                && input.IsActionPressed("ui_accept");
+            if (pointer || keyboard)
             {
                 CardActivated?.Invoke(card, control);
                 control.AcceptEvent();

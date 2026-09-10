@@ -181,7 +181,10 @@ visibility configuration, durable sessions and shutdown behavior.
 
 The socket protocol uses source-generated JSON inside a 4-byte big-endian length
 frame. Frames are bounded. Unknown operations, unsupported protocol versions and
-unknown JSON members fail before they reach the engine. Protocol 12 adds
+unknown JSON members fail before they reach the engine. Protocol 13 adds
+display-only card markup and a separate art-safe face id so full card frames
+can preserve printed emphasis and symbols without requesting concealed art.
+Protocol 12 adds
 visibility-safe completed-action summaries at the cursor immediately before each
 action, their visibility-safe discard-result details, and whether an action is
 still open, so a client can offer an authoritative history target without

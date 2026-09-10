@@ -21,7 +21,7 @@ public static class EngineProtocol
     /// Version 10 also tells clients
     /// when a wild-resource declaration is observable by the resolving effect.
     /// </summary>
-    public const int Version = 12;
+    public const int Version = 13;
 
     /// <summary>The largest request or game id accepted or echoed.</summary>
     public const int MaximumIdentifierLength = 256;
