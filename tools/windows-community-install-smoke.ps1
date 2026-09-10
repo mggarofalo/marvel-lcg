@@ -3,6 +3,7 @@ param(
     [Parameter(Mandatory = $true)][string]$Package,
     [Parameter(Mandatory = $true)][string]$Certificate,
     [ValidateRange(1, 300)][int]$SmokeSeconds = 8,
+    [switch]$AutomatedGameSmoke,
     [switch]$Interactive
 )
 
@@ -79,14 +80,36 @@ try {
         "Packages\$($installedPackage.PackageFamilyName)"
     $priorProcesses = @(Get-Process MarvelChampions -ErrorAction SilentlyContinue |
         Select-Object -ExpandProperty Id)
-    Start-Process explorer.exe `
-        "shell:AppsFolder\$($installedPackage.PackageFamilyName)!MarvelChampions"
-    Start-Sleep -Seconds $SmokeSeconds
-    $launchedProcess = Get-Process MarvelChampions -ErrorAction SilentlyContinue |
-        Where-Object Id -NotIn $priorProcesses |
-        Select-Object -First 1
-    if ($null -eq $launchedProcess -or $launchedProcess.HasExited) {
-        throw 'the packaged entry point did not remain running for the smoke interval'
+    if ($AutomatedGameSmoke) {
+        if ([string]::IsNullOrWhiteSpace($env:MARVEL_ENGINE_ENDPOINT)) {
+            throw 'MARVEL_ENGINE_ENDPOINT must name the disposable test server'
+        }
+        $stdout = Join-Path $env:RUNNER_TEMP "marvel-msix-$([Guid]::NewGuid()).out"
+        $stderr = Join-Path $env:RUNNER_TEMP "marvel-msix-$([Guid]::NewGuid()).err"
+        $executable = Join-Path $installedPackage.InstallLocation 'MarvelChampions.exe'
+        $launchedProcess = Start-Process -FilePath $executable `
+            -ArgumentList '--script', 'res://smoke/hosted_multiplayer_smoke.gd' `
+            -RedirectStandardOutput $stdout `
+            -RedirectStandardError $stderr `
+            -PassThru
+        if (-not $launchedProcess.WaitForExit(120000) -or
+            $launchedProcess.ExitCode -ne 0 -or
+            -not (Select-String -LiteralPath $stdout -SimpleMatch 'HOSTED_MULTIPLAYER_SMOKE_OK')) {
+            Get-Content -LiteralPath $stdout, $stderr -ErrorAction SilentlyContinue
+            throw 'the installed package did not complete its hosted game smoke'
+        }
+        Remove-Item -LiteralPath $stdout, $stderr -Force -ErrorAction SilentlyContinue
+    }
+    else {
+        Start-Process explorer.exe `
+            "shell:AppsFolder\$($installedPackage.PackageFamilyName)!MarvelChampions"
+        Start-Sleep -Seconds $SmokeSeconds
+        $launchedProcess = Get-Process MarvelChampions -ErrorAction SilentlyContinue |
+            Where-Object Id -NotIn $priorProcesses |
+            Select-Object -First 1
+        if ($null -eq $launchedProcess -or $launchedProcess.HasExited) {
+            throw 'the packaged entry point did not remain running for the smoke interval'
+        }
     }
 
     Write-Output "installed $($installedPackage.PackageFullName)"

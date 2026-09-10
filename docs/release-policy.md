@@ -316,6 +316,8 @@ and all of these checks pass:
 MARVEL-347 owns clean-install, upgrade, interruption and downgrade verification.
 MARVEL-349 owns the final two-client release-candidate journey. A failure in
 either is a failed release, not permission to publish with a warning.
+The concrete supported combinations and their artifact-level gates are recorded
+in [release-test-matrix.md](release-test-matrix.md).
 
 The desktop implementation and exact local commands are documented in
 [godot-client.md](godot-client.md#desktop-artifacts). The tag-only protected
