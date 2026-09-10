@@ -83,8 +83,14 @@ public sealed class BoardPresentationTests
         Assert.Equal(2, board.Areas.Count);
         Assert.Equal(["Rhino I", "Rhino II"], board.Areas[0].Cards.Select(card => card.Title));
         Assert.Equal(
+            [BoardStageRole.Current, BoardStageRole.Upcoming],
+            board.Areas[0].Cards.Select(card => card.StageRole));
+        Assert.Equal(
             ["The Break-In!", "The Break-In! 2"],
             board.Areas[1].Cards.Select(card => card.Title));
+        Assert.Equal(
+            [BoardStageRole.Current, BoardStageRole.Upcoming],
+            board.Areas[1].Cards.Select(card => card.StageRole));
     }
 
     [Fact]
@@ -288,6 +294,39 @@ public sealed class BoardPresentationTests
         Assert.Equal(
             new BoardFieldPresentation("THREAT", "0"),
             Assert.Single(board.Areas[1].Cards).Fields.Single());
+    }
+
+    [Fact]
+    public void AuthorizedEffectiveZeroCombatStatsRemainVisibleInPlay()
+    {
+        CardDescriptor identity = new(
+            9,
+            CardBack.Player,
+            FaceUp: true,
+            Ready: true,
+            Host: -1,
+            new CardFaceDescriptor(
+                "01001b",
+                "Spider-Man",
+                "Peter Parker",
+                CardKind.Hero,
+                new Dictionary<string, long>(StringComparer.Ordinal)
+                {
+                    ["attack"] = 0,
+                    ["defense"] = 0,
+                    ["recover"] = 0,
+                    ["thwart"] = 0,
+                    ["amplify"] = 0,
+                }));
+
+        BoardCardPresentation card = Assert.Single(
+            Assert.Single(BoardPresentation.From(
+                World(areas: [Area(1, "HeroArea", 0, [identity])])).Areas).Cards);
+
+        Assert.Equal(
+            ["ATTACK", "DEFENSE", "RECOVER", "THWART"],
+            card.Fields.Select(field => field.Name));
+        Assert.All(card.Fields, field => Assert.Equal("0", field.Value));
     }
 
     [Fact]

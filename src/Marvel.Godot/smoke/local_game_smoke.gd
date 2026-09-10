@@ -689,12 +689,18 @@ func _procedural_cards_are_safe() -> bool:
 		_fail("the opened table has no procedural card controls")
 		return false
 
-	var expected_width := _scaled_metric(125)
+	var expected_board_width := _scaled_metric(125)
+	var expected_hand_width := _scaled_metric(100)
+	var hand_shelf := _node("Play/Board/HandShelf")
 	var saw_face := false
 	var saw_back := false
-	var saw_current := false
+	var saw_compact_summary := false
+	var saw_type_specific_value := false
 	var saw_health := false
+	var saw_progress := false
 	for card in cards:
+		var in_hand := hand_shelf.is_ancestor_of(card)
+		var expected_width := expected_hand_width if in_hand else expected_board_width
 		if card.custom_minimum_size.x < expected_width:
 			_fail("a board card does not honor the selected card geometry")
 			return false
@@ -702,9 +708,19 @@ func _procedural_cards_are_safe() -> bool:
 		var back := card.find_child("CardBack", true, false)
 		if face != null:
 			saw_face = true
+			var kind := face.find_child("Kind", true, false) as Label
+			if in_hand and kind == null:
+				_fail("a hand card does not retain subordinate type information")
+				return false
+			if not in_hand and kind != null:
+				_fail("a board card repeats type context already conveyed by its area")
+				return false
 			var title := face.find_child("Title", true, false) as Label
 			if title == null or title.max_lines_visible != -1:
 				_fail("a board card title is truncated")
+				return false
+			if title.text_overrun_behavior == TextServer.OVERRUN_TRIM_ELLIPSIS:
+				_fail("a compact card title uses ellipsis instead of wrapping")
 				return false
 			if title.size.y < title.get_theme_font_size("font_size"):
 				_fail("a board card title collapsed out of its card: %s title=%s face=%s card=%s parent=%s" % [
@@ -719,17 +735,103 @@ func _procedural_cards_are_safe() -> bool:
 			if rules != null:
 				_fail("a compact board or hand card exposed full rules text")
 				return false
-			saw_current = saw_current or face.find_child("LiveValues", true, false) != null
-			var health := face.find_child("LiveValuesHEALTH", true, false) as Label
+			if face.find_child("PrintedValues", true, false) != null \
+					or face.find_child("LiveValues", true, false) != null:
+				_fail("a compact card retained a PRINTED or CURRENT value region")
+				return false
+			if face.find_child("ReadyIndicator", true, false) != null:
+				_fail("a compact card retained a standalone READY indicator")
+				return false
+			var summary := face.find_child("SummaryValues", true, false)
+			saw_compact_summary = saw_compact_summary or summary != null
+			if summary != null:
+				for badge in summary.find_children("*", "Label", true, false):
+					if badge.text_overrun_behavior == TextServer.OVERRUN_TRIM_ELLIPSIS:
+						_fail("a compact semantic badge uses ellipsis instead of whole-badge wrapping")
+						return false
+			for forbidden_name in [
+				"SummaryValuesALLY_LIMIT",
+				"SummaryValuesHAND_SIZE",
+				"SummaryValuesFIRST_PLAYER_TOKEN",
+				"SummaryValuesRESTRICTED_LIMIT",
+			]:
+				if face.find_child(forbidden_name, true, false) != null:
+					_fail("a compact card exposed an unmatched diagnostic field")
+					return false
+			var health := face.find_child("ProgressValuesHEALTH", true, false) as Label
 			if health != null:
 				saw_health = true
 				if "/" not in health.text:
 					_fail("current health is not represented as current/maximum")
 					return false
-				if face.find_child("LiveValuesDAMAGE", true, false) != null \
-						or face.find_child("PrintedValuesHP", true, false) != null:
+				if face.find_child("SummaryValuesDAMAGE", true, false) != null \
+						or face.find_child("SummaryValuesHP", true, false) != null:
 					_fail("a character splits health across multiple displayed values")
 					return false
+			var threat := face.find_child("ProgressValuesTHREAT", true, false) as Label
+			if threat != null:
+				saw_progress = true
+				if threat.text.strip_edges().is_empty():
+					_fail("scheme threat progress is empty")
+					return false
+			for value_name in [
+				"SummaryValuesREC",
+				"SummaryValuesTHW",
+				"SummaryValuesATK",
+				"SummaryValuesDEF",
+				"SummaryValuesSCH",
+				"SummaryValuesACCELERATION",
+				"SummaryValuesAMPLIFY",
+				"SummaryValuesCRISIS",
+				"SummaryValuesHAZARD",
+				"SummaryValuesESCALATION_THREAT",
+				"SummaryValuesCOST",
+				"SummaryValuesRES",
+			]:
+				if face.find_child(value_name, true, false) != null:
+					saw_type_specific_value = true
+					break
+			var resource := face.find_child("SummaryValuesRES", true, false) as HFlowContainer
+			if resource != null:
+				if not FileAccess.file_exists("res://assets/fonts/ChampionsIcons.ttf"):
+					_fail("the pinned Champions icon font is outside the project resource root")
+					return false
+				var resource_tokens := resource.find_children(
+					"ResourceToken*", "HBoxContainer", false, false)
+				if resource_tokens.is_empty():
+					_fail("a compact resource has no non-splitting name and icon token")
+					return false
+				var slot_size := Vector2.ZERO
+				for token_node in resource_tokens:
+					var token := token_node as HBoxContainer
+					var resource_name := token.find_child("ResourceName*", true, false) as Label
+					var slot := token.find_child("ResourceIconSlot*", true, false) as Label
+					if resource_name == null or slot == null \
+							or resource_name.text not in ["Mental", "Physical", "Energy", "Wild"] \
+							or token.tooltip_text != "Resource %s" % resource_name.text \
+							or resource_name.text_overrun_behavior == TextServer.OVERRUN_TRIM_ELLIPSIS:
+						_fail("a compact resource token lost its readable accessible name")
+						return false
+					if slot_size == Vector2.ZERO:
+						slot_size = slot.custom_minimum_size
+					if slot.custom_minimum_size.x != slot.custom_minimum_size.y \
+							or slot.custom_minimum_size != slot_size \
+							or slot.horizontal_alignment != HORIZONTAL_ALIGNMENT_CENTER \
+							or slot.vertical_alignment != VERTICAL_ALIGNMENT_CENTER \
+							or slot.text not in ["P", "M", "E", "W"] \
+							or not slot.has_theme_font_override("font") \
+							or slot.get_theme_font("font").resource_path \
+									!= "res://assets/fonts/ChampionsIcons.runtime.tres":
+						_fail("resource glyphs do not share centered fixed square slots")
+						return false
+					if resource_name.text in ["R", "B", "Y", "W"]:
+						_fail("a hand resource exposes a printed abbreviation")
+						return false
+			var stage := face.find_child("SummaryValuesStage", true, false)
+			if stage != null and (health != null or threat != null \
+					or face.find_child("SummaryValuesHP", true, false) != null):
+				_fail("a stored stage competes with active health or threat progress")
+				return false
 		elif back != null:
 			saw_back = true
 			if back.find_child("Title", true, false) != null or back.find_child("RulesText", true, false) != null:
@@ -743,9 +845,51 @@ func _procedural_cards_are_safe() -> bool:
 				_fail("a concealed card back leaked an identity")
 				return false
 
-	if not saw_face or not saw_back or not saw_current or not saw_health:
-		_fail("the table did not exercise face, back, health, and current-value card regions")
+	if not saw_face or not saw_back or not saw_compact_summary \
+			or not saw_type_specific_value or not saw_health or not saw_progress:
+		_fail("the table did not exercise private backs and type-specific compact progress summaries")
 		return false
+
+	var upcoming_disclosures := main.find_children(
+		"UpcomingStagesDisclosure", "Button", true, false)
+	if upcoming_disclosures.is_empty():
+		_fail("progressive scenario areas have no upcoming-stages disclosure")
+		return false
+	for upcoming_node in upcoming_disclosures:
+		var upcoming_disclosure := upcoming_node as Button
+		if not upcoming_disclosure.toggle_mode or "Upcoming stages" not in upcoming_disclosure.text:
+			_fail("an upcoming-stages disclosure is not clearly labeled and collapsible")
+			return false
+		var upcoming_list := upcoming_disclosure.get_parent().get_node(
+			"UpcomingStagesList") as VBoxContainer
+		upcoming_disclosure.button_pressed = true
+		upcoming_disclosure.pressed.emit()
+		await process_frame
+		if not upcoming_list.visible:
+			_fail("opening upcoming stages did not reveal its compact list")
+			return false
+		for upcoming_card in upcoming_list.find_children(
+			"ProceduralCard", "PanelContainer", true, false):
+			var upcoming_face := upcoming_card.find_child("CardFace", true, false)
+			var upcoming_back := upcoming_card.find_child("CardBack", true, false)
+			if upcoming_face != null and upcoming_card.focus_mode != Control.FOCUS_ALL:
+				_fail("an upcoming stage cannot receive keyboard focus for inspection")
+				return false
+			if upcoming_back != null and upcoming_card.focus_mode != Control.FOCUS_NONE:
+				_fail("a concealed upcoming stage gained face-level focus behavior")
+				return false
+			if upcoming_card.find_child("ProgressValues", true, false) != null:
+				_fail("an upcoming stage competes with the current stage's live progress")
+				return false
+
+	for secondary in main.find_children("SecondaryAreas", "VBoxContainer", true, false):
+		var secondary_body := secondary.find_child("SecondaryAreaFlow", false, false)
+		if secondary_body == null:
+			continue
+		for area in secondary_body.get_children():
+			if area.find_child("ProceduralCard", true, false) == null:
+				_fail("an empty secondary area rendered individual panel chrome")
+				return false
 
 	var hand_card := _node("Play/Board/HandShelf").find_child(
 		"ProceduralCard", true, false) as Control
@@ -801,9 +945,29 @@ func _procedural_cards_are_safe() -> bool:
 	if inspected_face.find_child("IllustrationRegion", true, false) == null:
 		_fail("the full card frame did not reserve an illustration region")
 		return false
+	var inspector_resources := inspected_face.find_child(
+		"ResourceIcons", true, false) as HBoxContainer
 	if inspected_face.find_child("PrimaryValue", true, false) == null \
-			or inspected_face.find_child("ResourceIcons", true, false) == null:
+			or inspector_resources == null:
 		_fail("the player-card frame did not keep cost and resource positions")
+		return false
+	var inspector_resource_label := inspector_resources.find_child(
+		"ResourceLabel", true, false) as Label
+	var inspector_resource_icon := inspector_resources.find_child(
+		"InspectorResourceIconSlot0", true, false) as Label
+	if inspector_resource_label == null or inspector_resource_label.text != "RESOURCE" \
+			or inspector_resource_icon == null or inspector_resource_icon.text != "M" \
+			or inspector_resource_icon.tooltip_text != "Resource Mental" \
+			or inspector_resource_icon.custom_minimum_size.x \
+					!= inspector_resource_icon.custom_minimum_size.y \
+			or inspector_resource_icon.horizontal_alignment \
+					!= HORIZONTAL_ALIGNMENT_CENTER \
+			or inspector_resource_icon.vertical_alignment \
+					!= VERTICAL_ALIGNMENT_CENTER \
+			or not inspector_resource_icon.has_theme_font_override("font") \
+			or inspector_resource_icon.get_theme_font("font").resource_path \
+					!= "res://assets/fonts/ChampionsIcons.runtime.tres":
+		_fail("the inspector resource footer did not render the canonical mental glyph")
 		return false
 	if not await _capture_checkpoint("card-inspector"):
 		return false
@@ -988,7 +1152,6 @@ func _board_layout_is_resolved() -> bool:
 		_fail("the opened table has no rendered areas")
 		return false
 	var disclosures := main.find_children("Area*Disclosure", "Button", true, false)
-	var saw_empty_collapsed := false
 	var toggled_nonempty := false
 	for disclosure_node in disclosures:
 		var disclosure := disclosure_node as Button
@@ -996,8 +1159,9 @@ func _board_layout_is_resolved() -> bool:
 			_fail("a table section is not collapsible: %s" % disclosure.name)
 			return false
 		if disclosure.text.ends_with("·  0"):
-			saw_empty_collapsed = saw_empty_collapsed or not disclosure.button_pressed
-		elif not toggled_nonempty:
+			_fail("an empty table section rendered individual disclosure chrome")
+			return false
+		if not toggled_nonempty:
 			var body := disclosure.get_parent().get_node("Body") as Control
 			disclosure.button_pressed = false
 			disclosure.pressed.emit()
@@ -1008,8 +1172,22 @@ func _board_layout_is_resolved() -> bool:
 			disclosure.button_pressed = true
 			disclosure.pressed.emit()
 			toggled_nonempty = true
-	if not saw_empty_collapsed or not toggled_nonempty:
-		_fail("table disclosures did not cover empty and populated sections")
+	var saw_populated_secondary := false
+	for secondary_flow in main.find_children("SecondaryAreaFlow", "HFlowContainer", true, false):
+		for secondary_area in secondary_flow.get_children():
+			if secondary_area.find_child("Area*Disclosure", true, false) == null:
+				_fail("a populated secondary section has no disclosure")
+				return false
+			saw_populated_secondary = true
+	var aggregate_reports_populated := false
+	var aggregate_reports_empty := false
+	for aggregate_node in main.find_children("SecondaryAreasDisclosure", "Button", true, false):
+		var aggregate := aggregate_node as Button
+		aggregate_reports_populated = aggregate_reports_populated or "with cards" in aggregate.text
+		aggregate_reports_empty = aggregate_reports_empty or "empty" in aggregate.text
+	if not toggled_nonempty or not saw_populated_secondary \
+			or not aggregate_reports_populated or not aggregate_reports_empty:
+		_fail("secondary disclosures did not preserve populated panels and aggregate empty counts")
 		return false
 
 	var area_flow := scenario_lane.find_child("LiveAreaFlow", true, false) as HFlowContainer
@@ -1203,6 +1381,18 @@ func _focused_board_area_is_visible() -> bool:
 		if area_rect.position.x < board_rect.position.x - 1.0 \
 				or area_rect.end.x > board_rect.end.x + 1.0:
 			_fail("keyboard highlighting clipped the focused board area's heading")
+			return false
+		var disclosure := area.find_child("Area*Disclosure", true, false) as Control
+		var card_rect: Rect2 = card.get_global_rect()
+		if disclosure == null:
+			_fail("a focused board card has no enclosing area disclosure")
+			return false
+		var disclosure_rect: Rect2 = disclosure.get_global_rect()
+		if disclosure_rect.position.y < board_rect.position.y + 8.0 \
+				or disclosure_rect.end.y > board_rect.end.y - 1.0 \
+				or card_rect.position.y < board_rect.position.y + 8.0 \
+				or card_rect.end.y > board_rect.end.y - 1.0:
+			_fail("focused-card alignment clipped its area disclosure or full frame")
 			return false
 		var title := card.find_child("Title", true, false) as Label
 		if title != null:
