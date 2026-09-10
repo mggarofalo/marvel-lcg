@@ -197,6 +197,55 @@ jobs:
           path: ${{ runner.temp }}/windows-community/*
           if-no-files-found: error
 
+  macos-install:
+    name: Install and remove macOS community artifact
+    needs: [identity, macos-input]
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref }}
+      - uses: actions/download-artifact@v8
+        with:
+          name: desktop-macos-community
+          path: ${{ runner.temp }}/macos-community
+      - name: Verify trust warning, override, packaged game, and removal
+        shell: bash
+        run: |
+          archive=$(find "$RUNNER_TEMP/macos-community" -name '*-adhoc.zip' -print -quit)
+          bash tools/macos-community-install-smoke.sh "$archive"
+
+  windows-install:
+    name: Install and remove Windows community artifacts
+    needs: [identity, windows-input, windows-community]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref }}
+      - uses: actions/download-artifact@v8
+        with:
+          name: desktop-windows-community
+          path: ${{ runner.temp }}/windows-community
+      - uses: actions/download-artifact@v8
+        with:
+          name: desktop-windows-unsigned-input
+          path: ${{ runner.temp }}/windows-input
+      - name: Trust only Trusted People, install, run, uninstall, and remove trust
+        shell: pwsh
+        run: |
+          $package = Get-ChildItem "$env:RUNNER_TEMP\windows-community" -Filter '*.msix' | Select-Object -First 1
+          $certificate = Get-ChildItem "$env:RUNNER_TEMP\windows-community" -Filter '*.cer' | Select-Object -First 1
+          tools/windows-community-install-smoke.ps1 `
+            -Package $package.FullName `
+            -Certificate $certificate.FullName `
+            -AutomatedGameSmoke
+      - name: Extract, run, and remove the unsigned portable fallback
+        shell: pwsh
+        run: |
+          $portable = Get-ChildItem "$env:RUNNER_TEMP\windows-input" -Filter '*-portable-unsigned.zip' | Select-Object -First 1
+          tools/windows-portable-install-smoke.ps1 -Archive $portable.FullName
+
   server-sign:
     name: Publish and sign Linux server image
     needs: [identity, quality]
@@ -292,7 +341,7 @@ jobs:
           [[ $actual_version == "$VERSION" ]] || { echo 'server image label differs from release version' >&2; exit 2; }
           docker run --rm --read-only --entrypoint dotnet "$reference" \
             Marvel.Server.dll --version | grep -F \
-            "v$VERSION · engine engine-replay-v1 · protocol 12 · save 2"
+            "v$VERSION · engine engine-replay-v2 · protocol 14 · save 2"
           identity="https://github.com/$GITHUB_WORKFLOW_REF"
           bundle="$artifact/MarvelServer-$VERSION-linux-amd64.sigstore.json"
           cosign sign --yes --bundle "$bundle" "$reference"
@@ -311,7 +360,7 @@ jobs:
             --arg cards "$(sha256sum datasets/cards/cards.json | cut -d' ' -f1)" \
             --arg setup "$(sha256sum datasets/setup/setup.json | cut -d' ' -f1)" \
             --arg abilities "$(sha256sum datasets/abilities/abilities.json | cut -d' ' -f1)" \
-            '{format:"marvel-server-release",schema:1,product_version:$product_version,commit:$commit,image:$image,digest:$digest,engine_replay:"engine-replay-v1",rng:"mt19937-iso-cxx",state_digest:"state-digest-v2",protocol:11,save_schema:2,datasets:{cards_sha256:$cards,setup_sha256:$setup,abilities_sha256:$abilities}}' \
+            '{format:"marvel-server-release",schema:1,product_version:$product_version,commit:$commit,image:$image,digest:$digest,engine_replay:"engine-replay-v2",rng:"mt19937-iso-cxx",state_digest:"state-digest-v2",protocol:14,save_schema:2,datasets:{cards_sha256:$cards,setup_sha256:$setup,abilities_sha256:$abilities}}' \
             > "$artifact/MarvelServer-$VERSION-linux-amd64.provenance.json"
 
       - uses: actions/upload-artifact@v7
@@ -320,9 +369,45 @@ jobs:
           path: ${{ runner.temp }}/server-signed/*
           if-no-files-found: error
 
+  server-install:
+    name: Verify server installation and upgrade matrix
+    needs: [identity, server-sign]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref }}
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.0.424
+      - name: Install pinned Godot runner
+        shell: bash
+        run: |
+          curl --fail --location --silent --show-error \
+            --output "$RUNNER_TEMP/godot.zip" \
+            https://github.com/godotengine/godot-builds/releases/download/4.7.1-stable/Godot_v4.7.1-stable_mono_linux_x86_64.zip
+          echo '6ca7ff0459f1b806900be683c1b0837c607a9c16834c530dc68c81b9fc3ae1f6  '${RUNNER_TEMP}'/godot.zip' | sha256sum --check
+          unzip -q "$RUNNER_TEMP/godot.zip" -d "$RUNNER_TEMP/godot"
+          godot=$(find "$RUNNER_TEMP/godot" -type f -name 'Godot*_mono_linux.*' -print -quit)
+          chmod +x "$godot"
+          echo "GODOT_BIN=$godot" >> "$GITHUB_ENV"
+      - name: Verify empty start, upgrade, backup, interruption, diagnostics, and downgrade
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          image="ghcr.io/${{ github.repository_owner }}/marvel-server@${{ needs.server-sign.outputs.digest }}"
+          bash tools/server-community-upgrade-smoke.sh \
+            "$image" '${{ needs.identity.outputs.version }}' "$GODOT_BIN"
+
   publish:
     name: Publish immutable community release
-    needs: [identity, macos-input, windows-input, windows-community, server-sign]
+    needs: [identity, macos-install, windows-install, server-sign, server-install]
     runs-on: ubuntu-latest
     environment: desktop-release
     permissions:

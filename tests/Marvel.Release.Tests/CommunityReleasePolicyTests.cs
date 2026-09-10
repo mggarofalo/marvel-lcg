@@ -34,6 +34,51 @@ public sealed class CommunityReleasePolicyTests
     }
 
     [Fact]
+    public void ReleaseWorkflowInstallsEveryPublishedArtifactInDisposableEnvironments()
+    {
+        string workflow = File.ReadAllText(Path.Combine(
+            RepositoryPaths.Root, ".github", "workflows", "release-desktop.yml"));
+
+        Assert.Contains("macos-community-install-smoke.sh", workflow, StringComparison.Ordinal);
+        Assert.Contains("windows-community-install-smoke.ps1", workflow, StringComparison.Ordinal);
+        Assert.Contains("windows-portable-install-smoke.ps1", workflow, StringComparison.Ordinal);
+        Assert.Contains("server-community-upgrade-smoke.sh", workflow, StringComparison.Ordinal);
+        Assert.Contains("needs: [identity, macos-install, windows-install, server-sign, server-install]",
+            workflow, StringComparison.Ordinal);
+        Assert.Contains("engine-replay-v2 · protocol 14 · save 2", workflow,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("engine-replay-v1", workflow, StringComparison.Ordinal);
+        Assert.DoesNotContain("protocol:11", workflow, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SupportedReleaseMatrixNamesCompatibilityTrustAndFailureCases()
+    {
+        string matrix = File.ReadAllText(Path.Combine(
+            RepositoryPaths.Root, "docs", "release-test-matrix.md"));
+
+        foreach (string required in new[]
+        {
+            "macOS desktop ZIP",
+            "Windows community MSIX",
+            "Windows portable ZIP",
+            "Linux server forward upgrade",
+            "Linux server backup restore",
+            "Linux server interrupted candidate",
+            "Linux server downgrade",
+            "unsupported_downgrade",
+            "engine-replay-v2",
+            "protocol `14`",
+            "TrustedPeople",
+        })
+        {
+            Assert.Contains(required, matrix, StringComparison.Ordinal);
+        }
+        Assert.Contains("No row claims Apple notarization", matrix, StringComparison.Ordinal);
+        Assert.Contains("CA-backed Authenticode", matrix, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void MacArtifactReplacesInheritedIdentityWithAdHocSigning()
     {
         string script = File.ReadAllText(Path.Combine(
