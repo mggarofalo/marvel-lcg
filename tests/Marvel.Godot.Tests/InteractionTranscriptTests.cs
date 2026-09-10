@@ -13,30 +13,15 @@ public sealed class InteractionTranscriptTests
     [Fact]
     public void ExportKeepsAuthorizedGameContentAndRemovesOperationalSecrets()
     {
-        var runtime = new RuntimeIdentity(
-            "1.2.3", "commit", "replay", "rng", "digest", 11, 1,
-            "cards", "setup", "abilities");
-        var world = new WorldDescriptor(
-            [new PlayerDescriptor(0, "Player 1", false)],
-            [new AreaDescriptor(
-                1, "HandsArea", 0, -1,
-                [new CardDescriptor(
-                    42, CardBack.Player, true, true, -1,
-                    new CardFaceDescriptor(
-                        "01005", "Webbed Up", "", Marvel.Rules.State.CardKind.Upgrade,
-                        new Dictionary<string, long>()))],
-                [])],
-            [],
-            Outcome.Unfinished);
         var response = new EngineResponse(
             11, "machine-request", "private-deployment-label", "bearer-secret",
-            null, [], world,
+            null, [], World(),
             Invitations: [new SeatInvitation(1, "invitation-secret")], Revision: 7);
         var transcript = new InteractionTranscript();
-
-        transcript.Reset(12345, runtime);
+        transcript.Reset(12345, Runtime());
         transcript.RecordDecision(6, new EngineDecision(9, [42]));
         transcript.RecordResponse(EngineProtocol.Resolve, response);
+
         string report = transcript.Export();
 
         Assert.Contains("Webbed Up", report, StringComparison.Ordinal);
@@ -51,54 +36,131 @@ public sealed class InteractionTranscriptTests
     }
 
     [Fact]
+    public void ExportPreservesPolymorphicEventsAndPresentedNarrativeInResponseOrder()
+    {
+        var response = new EngineResponse(
+            EngineProtocol.Version, "request", "game", "secret", Prompt: null,
+            Events:
+            [
+                new CardsMoved(
+                    AreaRef.Player("HandsArea", 0),
+                    AreaRef.Player("DiscardPile", 0),
+                    [new Landing(42, 0)])
+                {
+                    Trigger = CardPlay.Verb,
+                    Verb = "Discard",
+                },
+                new FieldSet(42, "damage", 0, 1),
+            ],
+            World: World(), Revision: 7);
+        var transcript = new InteractionTranscript();
+        transcript.RecordResponse(EngineProtocol.Resolve, response);
+
+        string report = transcript.Export();
+        InteractionTranscriptReport roundTrip = InteractionTranscript.Read(report);
+        InteractionTranscriptResponse recorded = Assert.Single(roundTrip.Entries).Response!;
+
+        Assert.Equal(2, roundTrip.Schema);
+        Assert.Collection(
+            recorded.Events!,
+            moved => Assert.IsType<CardsMoved>(moved),
+            changed => Assert.IsType<FieldSet>(changed));
+        Assert.NotEmpty(recorded.Narrative!);
+        Assert.Contains("\"kind\": \"CardsMoved\"", report, StringComparison.Ordinal);
+        Assert.Contains("\"field\": \"damage\"", report, StringComparison.Ordinal);
+        Assert.Contains("Webbed Up", recorded.Narrative![0].Summary, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ExportDistinguishesKnownEmptyEventsFromLegacyMissingEvidence()
+    {
+        var transcript = new InteractionTranscript();
+        transcript.RecordResponse(
+            EngineProtocol.Sync,
+            new EngineResponse(
+                EngineProtocol.Version, "request", "game", "secret", null, [], World()));
+
+        InteractionTranscriptReport current = InteractionTranscript.Read(transcript.Export());
+        Assert.Empty(Assert.Single(current.Entries).Response!.Events!);
+        Assert.Empty(current.Limitations);
+
+        const string legacy = """
+            {
+              "format": "marvel-client-interaction",
+              "schema": 1,
+              "seed": 9,
+              "runtime": null,
+              "entries": [{
+                "kind": "sync",
+                "revision": 0,
+                "response": {
+                  "version": 13,
+                  "request_id": "",
+                  "game_id": "",
+                  "capability": null,
+                  "prompt": null,
+                  "events": []
+                }
+              }]
+            }
+            """;
+        InteractionTranscriptReport upgraded = InteractionTranscript.Read(legacy);
+
+        Assert.Null(Assert.Single(upgraded.Entries).Response!.Events);
+        Assert.Equal("legacy_report", upgraded.Setup.Availability);
+        Assert.Equal(2, upgraded.Limitations.Count);
+    }
+
+    [Fact]
+    public void SetupEvidenceIncludesModeOrderedSeatsAndResolvedModularSets()
+    {
+        SetupChoices choices = new(
+            [new("spider-man", "Spider-Man"), new("captain-marvel", "Captain Marvel")],
+            [new("rhino-expert", "Rhino", true, ["bomb-scare"])],
+            [new("bomb-scare", "Bomb Scare")],
+            Runtime());
+        var selection = new GameSetupSelection(
+            ["captain-marvel", "spider-man"], "rhino-expert",
+            ModularConfiguration.Recommended, [], "123");
+        var transcript = new InteractionTranscript();
+        transcript.Reset(123, choices.Runtime,
+            InteractionTranscriptSetup.FromSelection(choices, selection));
+
+        InteractionTranscriptReport report = InteractionTranscript.Read(transcript.Export());
+
+        Assert.Equal("known", report.Setup.Availability);
+        Assert.Equal("rhino-expert", report.Setup.Scenario);
+        Assert.Equal("expert", report.Setup.Mode);
+        Assert.Equal(["captain-marvel", "spider-man"], report.Setup.Seats);
+        Assert.Equal("recommended", report.Setup.ModularSelection);
+        Assert.Equal(["bomb-scare"], report.Setup.ModularSets);
+    }
+
+    [Fact]
     public void ResetDoesNotMixTwoTables()
     {
         var transcript = new InteractionTranscript();
         transcript.Reset(1, runtime: null);
         transcript.RecordDecision(0, new EngineDecision(1, []));
-
         transcript.Reset(2, runtime: null);
 
         Assert.Empty(transcript.Entries);
         Assert.Equal((uint)2, transcript.Seed);
     }
 
-    [Fact]
-    public void ExportUsesActionHistoryWithoutRawEventCauses()
-    {
-        var response = new EngineResponse(
-            EngineProtocol.Version,
-            "request",
-            "game",
-            "secret",
-            Prompt: null,
-            Events:
-            [
-                new CardsMoved(
-                    AreaRef.Player("HandsArea", 0),
-                    AreaRef.Player("DiscardPile", 0),
-                    [new Landing(7, 0)])
-                {
-                    Trigger = CardPlay.Verb,
-                    Verb = "Discard",
-                },
-            ],
-            History: new HistoryDescriptor(
-                1,
-                [0],
-                [],
-                [new HistoryEntryDescriptor(
-                    0,
-                    "Spider-Man played Black Cat, generating resources from First Aid.",
-                    [])],
-                ActionOpen: false));
-        var transcript = new InteractionTranscript();
+    private static RuntimeIdentity Runtime() => new(
+        "1.2.3", "commit", "replay", "rng", "digest", 11, 1,
+        "cards", "setup", "abilities");
 
-        transcript.RecordResponse(EngineProtocol.Resolve, response);
-        string report = transcript.Export();
-
-        Assert.Contains("Spider-Man played Black Cat", report, StringComparison.Ordinal);
-        Assert.DoesNotContain("trigger", report, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("CardsMoved", report, StringComparison.Ordinal);
-    }
+    private static WorldDescriptor World() => new(
+        [new PlayerDescriptor(0, "Player 1", false)],
+        [new AreaDescriptor(
+            1, "HandsArea", 0, -1,
+            [new CardDescriptor(
+                42, CardBack.Player, true, true, -1,
+                new CardFaceDescriptor(
+                    "01005", "Webbed Up", "", Marvel.Rules.State.CardKind.Upgrade,
+                    new Dictionary<string, long>()))],
+            [])],
+        [], Outcome.Unfinished);
 }

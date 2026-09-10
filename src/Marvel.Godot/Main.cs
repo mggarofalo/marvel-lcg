@@ -778,7 +778,8 @@ public sealed partial class Main : Control
             currentProgress = null;
             transcript.Reset(
                 uint.Parse(seed.Text, CultureInfo.InvariantCulture),
-                available.Choices!.Runtime);
+                available.Choices!.Runtime,
+                InteractionTranscriptSetup.FromSelection(available.Choices, selection));
             transientInvitation = startup.Invitations.Count == 0
                 ? null
                 : startup.Invitations[0].Invitation;
@@ -845,7 +846,10 @@ public sealed partial class Main : Control
 
             session = attached.Session;
             currentProgress = null;
-            transcript.Reset(seed: null, runtime: available.Choices!.Runtime);
+            transcript.Reset(
+                seed: null,
+                runtime: available.Choices!.Runtime,
+                InteractionTranscriptSetup.Unavailable("unavailable_to_attached_viewer"));
             RenderGame(
                 attached.Response!,
                 resetEvents: true,

@@ -290,7 +290,15 @@ individual card movements. A card play names its payment cards and resource
 abilities in the same sentence; genuine discard results remain subordinate
 narrative lines. An action with dependent decisions does not enter History or
 replace Last Resolved until it completes. The shareable interaction report uses
-the same action history and omits the raw animation-event causes.
+schema 2 of the distinct, non-authoritative report contract. It preserves each
+response boundary, the visibility-filtered semantic events in their explicit
+polymorphic wire form, and the exact narrative presented to the player. Opened
+games record scenario, mode, ordered seats, and resolved modular sets; attached
+viewers explicitly report that setup as unavailable. Credentials, invitations,
+deployment labels, and concealed engine truth remain absent. Schema 1 reports
+can be read, but identify their missing event, narrative, and setup evidence as
+diagnostic limitations rather than treating their fabricated empty event arrays
+as evidence that nothing happened.
 `Undo last action` and the eligible history-row
 links submit only cursor boundaries advertised by the server. A draw, search,
 reveal, shuffle, random selection, open action or another seat's authority can
