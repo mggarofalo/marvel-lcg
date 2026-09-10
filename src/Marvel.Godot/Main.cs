@@ -950,7 +950,23 @@ public sealed partial class Main : Control
 
             if (result.HasAuthoritativeView)
             {
-                RenderGame(result.Response!);
+                if (result.Error is null)
+                {
+                    RenderGame(result.Response!);
+                }
+                else
+                {
+                    transcript.RecordFailure(
+                        EngineProtocol.Resolve,
+                        CurrentGame!.Revision,
+                        result.Error,
+                        result.MutationDisposition);
+                    RenderGame(
+                        result.Response!,
+                        preserveEvents: true,
+                        priorProgress: currentProgress,
+                        operation: EngineProtocol.Sync);
+                }
                 decisionPending = false;
                 uncertainMutationError = null;
                 if (result.Error is not null)
@@ -1253,7 +1269,6 @@ public sealed partial class Main : Control
         GameProgressPresentation? priorProgress = null,
         string operation = EngineProtocol.Resolve)
     {
-        transcript.RecordResponse(operation, response);
         Outcome previousOutcome = CurrentGame?.World?.Outcome ?? Outcome.Unfinished;
         HashSet<int> priorHistory = CurrentGame?.History?.Entries
             .Select(entry => entry.Cursor)
@@ -1266,6 +1281,7 @@ public sealed partial class Main : Control
         synchronize.Visible = true;
         RenderPromptSummary(response.Prompt, world);
         decisions.Render(response.Prompt, world);
+        IReadOnlyList<EventPresentation> reportNarrative = [];
         if (!preserveEvents)
         {
             EventBatchPresentation presented = EventCuePlanner.Plan(
@@ -1295,6 +1311,11 @@ public sealed partial class Main : Control
                         .Select(summary => new EventPresentation(
                             summary, "Action", [], EventMotionKind.State))
                         .ToArray();
+            reportNarrative = response.History?.ActionOpen == true
+                ? []
+                : completed is null
+                    ? presented.History
+                    : highlights;
             RenderLastResult(highlights, resetEvents);
             PresentEvents(presented.Cues);
         }
@@ -1302,6 +1323,7 @@ public sealed partial class Main : Control
         {
             RenderEvents();
         }
+        transcript.RecordResponse(operation, response, reportNarrative);
         // A synchronized snapshot is authoritative but is not a new
         // transition, so it does not alter the diagnostic chronology.
         ApplyProgress(GameProgressPresentation.FromSynchronization(

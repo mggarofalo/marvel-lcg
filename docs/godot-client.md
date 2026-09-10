@@ -292,7 +292,10 @@ narrative lines. An action with dependent decisions does not enter History or
 replace Last Resolved until it completes. The shareable interaction report uses
 schema 2 of the distinct, non-authoritative report contract. It preserves each
 response boundary, the visibility-filtered semantic events in their explicit
-polymorphic wire form, and the exact narrative presented to the player. Opened
+polymorphic wire form, and the response-scoped narrative selected by the client
+for presentation. Synchronization records an explicitly empty narrative instead
+of inventing a transition. A failed resolve and its recovered synchronization
+remain separate report boundaries. Opened
 games record scenario, mode, ordered seats, and resolved modular sets; attached
 viewers explicitly report that setup as unavailable. Credentials, invitations,
 deployment labels, and concealed engine truth remain absent. Schema 1 reports

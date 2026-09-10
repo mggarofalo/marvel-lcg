@@ -20,7 +20,7 @@ public sealed class InteractionTranscriptTests
         var transcript = new InteractionTranscript();
         transcript.Reset(12345, Runtime());
         transcript.RecordDecision(6, new EngineDecision(9, [42]));
-        transcript.RecordResponse(EngineProtocol.Resolve, response);
+        transcript.RecordResponse(EngineProtocol.Resolve, response, []);
 
         string report = transcript.Export();
 
@@ -54,7 +54,12 @@ public sealed class InteractionTranscriptTests
             ],
             World: World(), Revision: 7);
         var transcript = new InteractionTranscript();
-        transcript.RecordResponse(EngineProtocol.Resolve, response);
+        EventPresentation[] displayed =
+        [
+            new("Spider-Man played Webbed Up, generating resources from Scientist.",
+                "Action", [], EventMotionKind.State),
+        ];
+        transcript.RecordResponse(EngineProtocol.Resolve, response, displayed);
 
         string report = transcript.Export();
         InteractionTranscriptReport roundTrip = InteractionTranscript.Read(report);
@@ -65,10 +70,14 @@ public sealed class InteractionTranscriptTests
             recorded.Events!,
             moved => Assert.IsType<CardsMoved>(moved),
             changed => Assert.IsType<FieldSet>(changed));
-        Assert.NotEmpty(recorded.Narrative!);
+        EventPresentation narrative = Assert.Single(recorded.Narrative!);
+        Assert.Equal(displayed[0].Summary, narrative.Summary);
+        Assert.Equal(displayed[0].Cause, narrative.Cause);
+        Assert.Equal(displayed[0].Motion, narrative.Motion);
+        Assert.Equal(displayed[0].Anchors, narrative.Anchors);
         Assert.Contains("\"kind\": \"CardsMoved\"", report, StringComparison.Ordinal);
         Assert.Contains("\"field\": \"damage\"", report, StringComparison.Ordinal);
-        Assert.Contains("Webbed Up", recorded.Narrative![0].Summary, StringComparison.Ordinal);
+        Assert.Contains("Scientist", narrative.Summary, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -78,7 +87,8 @@ public sealed class InteractionTranscriptTests
         transcript.RecordResponse(
             EngineProtocol.Sync,
             new EngineResponse(
-                EngineProtocol.Version, "request", "game", "secret", null, [], World()));
+                EngineProtocol.Version, "request", "game", "secret", null, [], World()),
+            []);
 
         InteractionTranscriptReport current = InteractionTranscript.Read(transcript.Export());
         Assert.Empty(Assert.Single(current.Entries).Response!.Events!);
@@ -109,6 +119,29 @@ public sealed class InteractionTranscriptTests
         Assert.Null(Assert.Single(upgraded.Entries).Response!.Events);
         Assert.Equal("legacy_report", upgraded.Setup.Availability);
         Assert.Equal(2, upgraded.Limitations.Count);
+    }
+
+    [Theory]
+    [InlineData(ClientMutationDisposition.Rejected, true)]
+    [InlineData(ClientMutationDisposition.Uncertain, false)]
+    public void FailureBoundaryPreservesWhetherAResponseWasReceived(
+        ClientMutationDisposition disposition,
+        bool evidenceAvailable)
+    {
+        var transcript = new InteractionTranscript();
+
+        transcript.RecordFailure(
+            EngineProtocol.Resolve,
+            4,
+            new ClientStartupError("stale_decision", "The prompt changed."),
+            disposition);
+        InteractionTranscriptEntry entry = Assert.Single(
+            InteractionTranscript.Read(transcript.Export()).Entries);
+
+        Assert.Equal("resolve", entry.Kind);
+        Assert.Equal(disposition.ToString().ToLowerInvariant(), entry.Disposition);
+        Assert.Equal("stale_decision", entry.Response!.Error!.Code);
+        Assert.Equal(evidenceAvailable, entry.Response.Events is not null);
     }
 
     [Fact]

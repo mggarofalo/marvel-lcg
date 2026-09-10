@@ -2,7 +2,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Marvel.Decisions;
 using Marvel.Rules.Events;
-using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Server;
 using Marvel.View;
@@ -22,7 +21,6 @@ public sealed class InteractionTranscript
         WriteIndented = true,
     };
     private readonly List<InteractionTranscriptEntry> entries = [];
-    private Outcome previousOutcome = Outcome.Unfinished;
 
     /// <summary>The complete ordered interaction history collected by this client.</summary>
     public IReadOnlyList<InteractionTranscriptEntry> Entries => entries;
@@ -46,7 +44,6 @@ public sealed class InteractionTranscript
         Seed = seed;
         Runtime = runtime;
         Setup = setup ?? InteractionTranscriptSetup.Unavailable("not_recorded");
-        previousOutcome = Outcome.Unfinished;
         entries.Clear();
     }
 
@@ -55,18 +52,14 @@ public sealed class InteractionTranscript
         entries.Add(new InteractionTranscriptEntry("decision", revision, Decision: decision));
 
     /// <summary>Records one visibility-filtered authoritative response.</summary>
-    public void RecordResponse(string operation, EngineResponse response)
+    public void RecordResponse(
+        string operation,
+        EngineResponse response,
+        IReadOnlyList<EventPresentation> narrative)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(operation);
         ArgumentNullException.ThrowIfNull(response);
-
-        IReadOnlyList<EventPresentation>? narrative = response.World is null
-            ? response.Events.Count == 0 ? [] : null
-            : EventCuePlanner.Plan(response.Events, response.World, previousOutcome).History;
-        if (response.World is not null)
-        {
-            previousOutcome = response.World.Outcome;
-        }
+        ArgumentNullException.ThrowIfNull(narrative);
 
         entries.Add(new InteractionTranscriptEntry(
             operation,
@@ -80,6 +73,31 @@ public sealed class InteractionTranscript
                 response.Error,
                 response.Revision,
                 response.History)));
+    }
+
+    /// <summary>Records a mutation boundary that did not itself return a renderable view.</summary>
+    public void RecordFailure(
+        string operation,
+        long revision,
+        ClientStartupError error,
+        ClientMutationDisposition disposition)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(operation);
+        ArgumentNullException.ThrowIfNull(error);
+        bool responseWasReceived = disposition == ClientMutationDisposition.Rejected;
+        entries.Add(new InteractionTranscriptEntry(
+            operation,
+            revision,
+            Disposition: disposition.ToString().ToLowerInvariant(),
+            Response: new InteractionTranscriptResponse(
+                EngineProtocol.Version,
+                Prompt: null,
+                Events: responseWasReceived ? [] : null,
+                Narrative: responseWasReceived ? [] : null,
+                World: null,
+                new EngineError(error.Code, error.Message),
+                revision,
+                History: null)));
     }
 
     /// <summary>Serializes one canonical report suitable for copying or saving.</summary>
@@ -225,4 +243,5 @@ public sealed record InteractionTranscriptEntry(
     string Kind,
     long Revision,
     EngineDecision? Decision = null,
-    InteractionTranscriptResponse? Response = null);
+    InteractionTranscriptResponse? Response = null,
+    string? Disposition = null);
