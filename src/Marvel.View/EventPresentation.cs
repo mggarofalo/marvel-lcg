@@ -331,7 +331,7 @@ public static class EventPresenter
         (string summary, IReadOnlyList<int> anchors, EventMotionKind motion) = happened switch
         {
             CardsCreated created => (
-                $"Created {Cards(created.Cards.Select(card => card.Id), world)} in {Area(created.Area, world)}.",
+                $"Created {Cards(created.Cards.Select(card => card.Id), world, created)} in {Area(created.Area, world)}.",
                 created.Cards.Select(card => card.Id).ToArray(),
                 IsStatus(created.Area) ? EventMotionKind.Status : EventMotionKind.Create),
             CardsMoved moved when string.Equals(
@@ -350,7 +350,7 @@ public static class EventPresenter
                 Array.Empty<int>(),
                 EventMotionKind.Move),
             CardFormChanged changed => (
-                $"{Card(changed.Card, world)} changed form.",
+                $"{Card(changed.Card, world, changed)} changed form.",
                 [changed.Card],
                 EventMotionKind.Flip),
             CardsFlipped flipped => (
@@ -358,15 +358,15 @@ public static class EventPresenter
                 flipped.Cards.ToArray(),
                 EventMotionKind.Flip),
             CardAttached attached => (
-                $"Attached {Card(attached.Card, world)} to {Card(attached.Host, world)}.",
+                $"Attached {Card(attached.Card, world, attached)} to {Card(attached.Host, world, attached)}.",
                 [attached.Card, attached.Host],
                 EventMotionKind.Move),
             CardDetached detached => (
-                $"Detached {Card(detached.Card, world)} from {Card(detached.Host, world)}.",
+                $"Detached {Card(detached.Card, world, detached)} from {Card(detached.Host, world, detached)}.",
                 [detached.Card, detached.Host],
                 EventMotionKind.Move),
             ControlChanged changed => (
-                $"{Card(changed.Card, world)} changed control from {Player(changed.From, world)} to {Player(changed.To, world)}.",
+                $"{Card(changed.Card, world, changed)} changed control from {Player(changed.From, world)} to {Player(changed.To, world)}.",
                 [changed.Card],
                 EventMotionKind.Move),
             PlayAreaJoined joined => (
@@ -434,7 +434,7 @@ public static class EventPresenter
 
     private static string FieldSummary(FieldSet set, WorldDescriptor world)
     {
-        string subject = Card(set.Card, world);
+        string subject = Card(set.Card, world, set);
         if (set.Field == "is_exhaust")
         {
             return set.To == 1
@@ -460,7 +460,7 @@ public static class EventPresenter
 
     private static string FlippedSummary(CardsFlipped flipped, WorldDescriptor world)
     {
-        string cards = Cards(flipped.Cards, world);
+        string cards = Cards(flipped.Cards, world, flipped);
         if (!flipped.FaceUp)
         {
             return $"Turned {cards} face down.";
@@ -478,9 +478,10 @@ public static class EventPresenter
             : $"Revealed {cards}: {string.Join(" ", text)}";
     }
 
-    private static string Cards(IEnumerable<int> ids, WorldDescriptor world)
+    private static string Cards(
+        IEnumerable<int> ids, WorldDescriptor world, GameEvent? happened = null)
     {
-        string[] names = ids.Select(id => Card(id, world)).ToArray();
+        string[] names = ids.Select(id => Card(id, world, happened)).ToArray();
         return names.Length switch
         {
             0 => "no cards",
@@ -492,7 +493,7 @@ public static class EventPresenter
 
     private static string MovementSummary(CardsMoved moved, WorldDescriptor world)
     {
-        string cards = Cards(moved.Cards.Select(card => card.Card), world);
+        string cards = Cards(moved.Cards.Select(card => card.Card), world, moved);
         if (ZoneIs(moved.From, "PlayerDeck")
             && ZoneIs(moved.To, "HandsArea")
             && string.Equals(moved.Verb, "Draw", StringComparison.Ordinal))
@@ -548,7 +549,7 @@ public static class EventPresenter
     private static string DefeatedSummary(CardsMoved moved, WorldDescriptor world)
     {
         string[] names = moved.Cards.Select(card =>
-            DefeatedCard(card.Card, world)).ToArray();
+            DefeatedCard(card.Card, world, moved)).ToArray();
         string cards = names.Length switch
         {
             0 => "no cards",
@@ -559,8 +560,13 @@ public static class EventPresenter
         return $"{cards} {(moved.Cards.Count == 1 ? "was" : "were")} defeated.";
     }
 
-    private static string DefeatedCard(int id, WorldDescriptor world)
+    private static string DefeatedCard(int id, WorldDescriptor world, GameEvent happened)
     {
+        if (happened.Subjects?.TryGetValue(id, out string? subject) == true)
+        {
+            return subject;
+        }
+
         CardDescriptor? card = world.Areas
             .SelectMany(area => area.Cards.Concat(area.Removed))
             .FirstOrDefault(candidate => candidate.Id == id);
@@ -569,11 +575,17 @@ public static class EventPresenter
         {
             return $"{face.Title} stage {stage}";
         }
-        return Card(id, world);
+        return Card(id, world, happened);
     }
 
-    private static string Card(int id, WorldDescriptor world)
+    private static string Card(
+        int id, WorldDescriptor world, GameEvent? happened = null)
     {
+        if (happened?.Subjects?.TryGetValue(id, out string? subject) == true)
+        {
+            return subject;
+        }
+
         CardDescriptor? card = world.Areas
             .SelectMany(area => area.Cards.Concat(area.Removed))
             .FirstOrDefault(candidate => candidate.Id == id);

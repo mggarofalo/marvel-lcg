@@ -430,7 +430,7 @@ public static class Defeat
     /// <summary>Commits a Victory destination already proved on the trigger board.</summary>
     private static void MoveToVictoryDisplay(
         World world, Card card, string trigger, List<GameEvent> events,
-        string verb = "Victory")
+        string verb = "Victory", string? subject = null)
     {
         var display = world.AreaOf(DeckType.VictoryDisplay);
         var from = card.Area;
@@ -443,7 +443,11 @@ public static class Defeat
             Places.Reference(from), Places.Reference(display),
             [new Landing(card.ObjectId, display.Cards.Count - 1)])
         {
-            Trigger = trigger, Verb = verb,
+            Trigger = trigger,
+            Verb = verb,
+            Subjects = subject is null
+                ? null
+                : new Dictionary<int, string> { [card.ObjectId] = subject },
         });
         constantsEnding.Complete(trigger, events);
     }
@@ -500,6 +504,7 @@ public static class Defeat
         World world, ICardFacts facts, Card host, string trigger,
         List<GameEvent> events)
     {
+        string subject = FacedownDrones.Title(host, facts);
         var victory = PreflightDefeatAttachments(world, facts, host);
         bool hostHasVictory = Timing.Keywords.Has(world, host, "victory", facts);
         var victoryRoots = victory.Select(card => card.ObjectId).ToHashSet();
@@ -510,11 +515,12 @@ public static class Defeat
         VictoryAttachments(world, victory, trigger, events);
         if (hostHasVictory)
         {
-            MoveToVictoryDisplay(world, host, trigger, events, verb: "Defeat");
+            MoveToVictoryDisplay(
+                world, host, trigger, events, verb: "Defeat", subject: subject);
         }
         else
         {
-            Discard.Card(world, host, trigger, events, verb: "Defeat");
+            Discard.Card(world, host, trigger, events, verb: "Defeat", subject: subject);
         }
 
         constantsEnding.Complete(trigger, events);

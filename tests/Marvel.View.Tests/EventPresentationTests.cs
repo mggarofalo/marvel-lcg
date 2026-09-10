@@ -369,6 +369,34 @@ public sealed class EventPresentationTests
     }
 
     [Fact]
+    public void OccurrenceSubjectsSurviveLaterIdentityChangesAndHistoryReconstruction()
+    {
+        var damage = new FieldSet(7, "health", 1, 0)
+        {
+            Subjects = new Dictionary<int, string> { [7] = "Drone" },
+        };
+        var defeated = new CardsMoved(
+            AreaRef.Player("EngagedEnemiesArea", 0),
+            AreaRef.Player("DiscardPile", 0),
+            [new Landing(7, 0)])
+        {
+            Verb = "Defeat",
+            Subjects = new Dictionary<int, string> { [7] = "Drone" },
+        };
+        WorldDescriptor after = NarrativeWorld();
+
+        var chronology = new EventChronology();
+        chronology.Reset([damage, defeated], after);
+
+        Assert.Equal(
+            ["Drone changed health from 1 to 0.", "Drone was defeated."],
+            chronology.Entries.Select(entry => entry.Summary));
+        Assert.Equal(
+            "Spider-Tracer changed health from 0 to 1.",
+            EventPresenter.Present(new FieldSet(7, "health", 0, 1), after).Summary);
+    }
+
+    [Fact]
     public void MulliganMovementsBecomeTwoNarrativeActions()
     {
         GameEvent[] happened =

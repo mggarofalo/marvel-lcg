@@ -62,8 +62,12 @@ directly:
 | `PlayAreaJoined` | `play_area`, `game_area` |
 | `PlayAreaDetached` | `play_area`, `game_area` |
 
-Every event also carries `kind`, `trigger`, and `verb`. The tables above are the
-public serialized union and are checked directly against the C# records.
+Every event also carries `kind`, `trigger`, and `verb`. An event may carry a
+`subjects` object mapping card object ids to visibility-safe names captured when
+the event occurred. This preserves an effective identity through later changes
+in the same response; when absent, presentation uses the resulting snapshot.
+The tables above are the public serialized union and are checked directly
+against the C# records.
 
 ## Areas
 
@@ -162,8 +166,8 @@ Those would make the same seed and decisions produce different records.
 ## Wire boundary
 
 `Marvel.Server` serializes events as a versioned polymorphic union. Adding an
-event kind is a protocol compatibility decision because an older client cannot
-interpret an unknown discriminator.
+event kind or payload field is a protocol compatibility decision because an
+older client cannot safely interpret the changed contract.
 
 The server filters the prompt, events and world descriptor as one result. A
 concealed creation, move, reorder, flip or field change cannot reintroduce a

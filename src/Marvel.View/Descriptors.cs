@@ -72,7 +72,15 @@ public sealed record CardDescriptor(
     internal bool Addressable { get; init; }
 }
 
-/// <summary>The readable face and its current state.</summary>
+/// <summary>The readable printed or effective identity and its current state.</summary>
+/// <param name="Id">
+/// A printed face id, or a stable presentation id when an effect replaces the visible
+/// gameplay identity. Only <see cref="ArtFaceId"/> may be used to request card art.
+/// </param>
+/// <param name="Title">The visible printed or effective title.</param>
+/// <param name="Subtitle">The visible subtitle.</param>
+/// <param name="Kind">The card's effective kind.</param>
+/// <param name="Fields">Its current visibility-safe gameplay fields.</param>
 public sealed record CardFaceDescriptor(
     string Id,
     string Title,

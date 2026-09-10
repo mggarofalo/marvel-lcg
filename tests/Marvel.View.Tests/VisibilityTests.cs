@@ -1,4 +1,5 @@
 using Marvel.Rules.Events;
+using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
@@ -168,23 +169,49 @@ public sealed class VisibilityTests
     }
 
     [Fact]
-    public void AFacedownCardInPlayKeepsAHandleButNotItsFace()
+    public void AFacedownDroneShowsOnlyItsEffectivePublicIdentity()
     {
         var board = Board();
         Area engaged = board.AreaOf(
             DeckType.EngagedEnemiesArea, PlayArea.Of(1));
-        Card drone = board.CreateCard("underlying-player-card", engaged);
+        Card drone = board.CreateCard("underlying-player-card", board.Seats[1].Deck);
+        World.MoveToTop(drone, engaged);
         drone.TurnFaceDown();
-        ViewScope scope = new RestrictedVisibilityPolicy(0).Authorize(null, board.Players);
+        drone.TakeDamage(1);
+        board.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect, "attack", Amount: 2, Affects: drone.ObjectId));
+        board.Effects.Register(new ContinuousEffect(
+            EffectSource.LastingEffect, "health", Amount: 2, Affects: drone.ObjectId));
+        ViewScope[] scopes =
+        [
+            new RestrictedVisibilityPolicy(0).Authorize(null, board.Players),
+            new PermissiveVisibilityPolicy().Authorize(null, board.Players),
+        ];
 
-        CardDescriptor visible = Assert.Single(
-            Assert.Single(
-                WorldProjection.For(board, null, [], scope).World.Areas,
-                area => area.Id == engaged.Id).Cards);
+        Assert.All(scopes, scope =>
+        {
+            CardDescriptor visible = Assert.Single(
+                Assert.Single(
+                    WorldProjection.For(board, null, [], scope).World.Areas,
+                    area => area.Id == engaged.Id).Cards);
 
-        Assert.Equal(drone.ObjectId, visible.Id);
-        Assert.Equal(CardBack.Player, visible.Back);
-        Assert.Null(visible.Face);
+            Assert.Equal(drone.ObjectId, visible.Id);
+            Assert.Equal(CardBack.Player, visible.Back);
+            CardFaceDescriptor face = Assert.IsType<CardFaceDescriptor>(visible.Face);
+            Assert.Equal(FacedownDrones.EffectiveFaceId, face.Id);
+            Assert.Equal("Drone", face.Title);
+            Assert.Equal(CardKind.Minion, face.Kind);
+            Assert.Equal(["DRONE"], face.Traits);
+            Assert.Equal(1, face.Fields["scheme"]);
+            Assert.Equal(3, face.Fields["attack"]);
+            Assert.Equal(2, face.Fields["health"]);
+            Assert.Equal(1, face.Damage);
+            Assert.Equal("1", face.PrintedStats["SCH"]);
+            Assert.Equal("1", face.PrintedStats["ATK"]);
+            Assert.Equal("1", face.PrintedStats["HP"]);
+            Assert.Null(face.ArtFaceId);
+            Assert.Empty(face.RulesText);
+        });
     }
 
     [Fact]
@@ -425,8 +452,13 @@ public sealed class VisibilityTests
             "public-villain" => CardKind.EncounterVillain,
             "player-ally" => CardKind.Ally,
             "rule-insert" => CardKind.Insert,
+            "underlying-player-card" => CardKind.Support,
             _ => CardKind.Event,
         };
+
+        public string Title(string faceId) => faceId == "underlying-player-card"
+            ? "Avengers Mansion"
+            : faceId;
 
         public IReadOnlyList<string> Traits(string faceId) => faceId == "public-villain"
             ? ["BRUTE"]
@@ -439,6 +471,8 @@ public sealed class VisibilityTests
                     { ["SCH"] = "4", ["Class"] = "Encounter" },
                 "player-ally" => new Dictionary<string, string>(StringComparer.Ordinal)
                     { ["HP"] = "3" },
+                "underlying-player-card" => new Dictionary<string, string>(StringComparer.Ordinal)
+                    { ["SCH"] = "8", ["ATK"] = "9", ["HP"] = "7" },
                 _ => new Dictionary<string, string>(StringComparer.Ordinal),
             };
 

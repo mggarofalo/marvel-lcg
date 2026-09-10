@@ -48,6 +48,15 @@ namespace Marvel.Rules.Events;
 [JsonDerivedType(typeof(PlayAreaDetached), nameof(PlayAreaDetached))]
 public abstract record GameEvent
 {
+    /// <summary>Occurrence-time public names for card subjects, keyed by object id.</summary>
+    /// <remarks>
+    /// This optional evidence preserves an effective identity across later transitions in
+    /// the same response. The view still authorizes the event before this data crosses the
+    /// wire; an absent entry deliberately falls back to the resulting snapshot.
+    /// </remarks>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyDictionary<int, string>? Subjects { get; init; }
+
     /// <summary>
     /// The timing point that opened the decision this event came out of, e.g.
     /// <c>WhenPlayerInTurn</c>. Empty when nothing opened it.
