@@ -55,7 +55,7 @@ if xattr -p com.apple.quarantine "$app" >/dev/null 2>&1; then
   exit 2
 fi
 
-"$executable" --headless --script res://smoke/hosted_multiplayer_smoke.gd \
+"$executable" --script res://smoke/hosted_multiplayer_smoke.gd \
   >"$log" 2>&1
 grep -q 'HOSTED_MULTIPLAYER_SMOKE_OK' "$log" || {
   cat "$log" >&2

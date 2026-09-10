@@ -88,7 +88,7 @@ try {
         $stderr = Join-Path $env:RUNNER_TEMP "marvel-msix-$([Guid]::NewGuid()).err"
         $executable = Join-Path $installedPackage.InstallLocation 'MarvelChampions.exe'
         $launchedProcess = Start-Process -FilePath $executable `
-            -ArgumentList '--headless', '--script', 'res://smoke/hosted_multiplayer_smoke.gd' `
+            -ArgumentList '--script', 'res://smoke/hosted_multiplayer_smoke.gd' `
             -RedirectStandardOutput $stdout `
             -RedirectStandardError $stderr `
             -PassThru

@@ -32,7 +32,7 @@ try {
         throw 'portable application executable is absent'
     }
     $process = Start-Process -FilePath $executable `
-        -ArgumentList '--headless', '--script', 'res://smoke/hosted_multiplayer_smoke.gd' `
+        -ArgumentList '--script', 'res://smoke/hosted_multiplayer_smoke.gd' `
         -RedirectStandardOutput $stdout `
         -RedirectStandardError $stderr `
         -PassThru

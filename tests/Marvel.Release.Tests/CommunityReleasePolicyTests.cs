@@ -43,15 +43,18 @@ public sealed class CommunityReleasePolicyTests
         Assert.Contains("windows-community-install-smoke.ps1", workflow, StringComparison.Ordinal);
         Assert.Contains("windows-portable-install-smoke.ps1", workflow, StringComparison.Ordinal);
         Assert.Contains("server-community-upgrade-smoke.sh", workflow, StringComparison.Ordinal);
-        Assert.Contains("hosted_multiplayer_smoke.gd", File.ReadAllText(Path.Combine(
-            RepositoryPaths.Root, "tools", "macos-community-install-smoke.sh")),
-            StringComparison.Ordinal);
-        Assert.Contains("hosted_multiplayer_smoke.gd", File.ReadAllText(Path.Combine(
-            RepositoryPaths.Root, "tools", "windows-community-install-smoke.ps1")),
-            StringComparison.Ordinal);
-        Assert.Contains("hosted_multiplayer_smoke.gd", File.ReadAllText(Path.Combine(
-            RepositoryPaths.Root, "tools", "windows-portable-install-smoke.ps1")),
-            StringComparison.Ordinal);
+        foreach (string script in new[]
+        {
+            "macos-community-install-smoke.sh",
+            "windows-community-install-smoke.ps1",
+            "windows-portable-install-smoke.ps1",
+        })
+        {
+            string content = File.ReadAllText(Path.Combine(
+                RepositoryPaths.Root, "tools", script));
+            Assert.Contains("hosted_multiplayer_smoke.gd", content, StringComparison.Ordinal);
+            Assert.DoesNotContain("--headless", content, StringComparison.Ordinal);
+        }
         Assert.Contains("needs: [identity, macos-install, windows-install, server-sign, server-install]",
             workflow, StringComparison.Ordinal);
         Assert.Contains("engine-replay-v2 · protocol 14 · save 2", workflow,
