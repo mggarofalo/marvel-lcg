@@ -14,18 +14,22 @@ prefix=marvel-upgrade-${GITHUB_RUN_ID:-$$}
 previous_image=$prefix-previous:0.0.0
 sessions=$prefix-sessions
 restored=$prefix-restored
+interrupted=$prefix-interrupted
+rollback=$prefix-rollback-volume
 downgrade=$prefix-downgrade
 diagnostics=$prefix-diagnostics
 backup=$(mktemp)
+diagnostic_record=$(mktemp)
 containers=()
 cleanup() {
   for container in "${containers[@]}"; do
     docker rm --force "$container" >/dev/null 2>&1 || true
   done
-  docker volume rm "$sessions" "$restored" "$downgrade" "$diagnostics" \
+  docker volume rm "$sessions" "$restored" "$interrupted" "$rollback" \
+    "$downgrade" "$diagnostics" \
     >/dev/null 2>&1 || true
   docker image rm "$previous_image" >/dev/null 2>&1 || true
-  rm -f "$backup"
+  rm -f "$backup" "$diagnostic_record"
 }
 trap cleanup EXIT
 
@@ -39,7 +43,8 @@ docker build --quiet \
   --build-arg MARVEL_VERSION_PATCH=0 \
   --tag "$previous_image" "$repo_root" >/dev/null
 
-for volume in "$sessions" "$restored" "$downgrade" "$diagnostics"; do
+for volume in "$sessions" "$restored" "$interrupted" "$rollback" \
+    "$downgrade" "$diagnostics"; do
   docker volume create "$volume" >/dev/null
 done
 
@@ -82,17 +87,29 @@ start_server "$prefix-previous" "$previous_image" "$sessions" 41924
 run_game 41924
 stop_server "$prefix-previous"
 
+docker run --rm --volume "$diagnostics:/diagnostics:ro" --entrypoint sh \
+  "$current_image" -c 'head -n 1 /diagnostics/operational.jsonl' \
+  > "$diagnostic_record"
+[[ -s "$diagnostic_record" ]] || { echo 'pre-upgrade diagnostic record is absent' >&2; exit 2; }
+
 # Preserve a complete stopped-volume backup before attempting the upgrade.
 docker run --rm --volume "$sessions:/source:ro" --volume "$(dirname "$backup"):/backup" \
   alpine:3.23.3 tar -C /source -czf "/backup/$(basename "$backup")" .
 
-# A candidate that fails before startup must not replace or mutate the prior installation.
-if docker run --rm --volume "$sessions:/var/lib/marvel/sessions" \
-    "$current_image" --unsupported-upgrade-probe >/dev/null 2>&1; then
-  echo 'invalid upgrade candidate unexpectedly started' >&2
-  exit 2
-fi
-start_server "$prefix-rollback" "$previous_image" "$sessions" 41924
+# Interrupt a valid candidate after it has opened and restored the copied save.
+docker run --rm --volume "$sessions:/source:ro" --volume "$interrupted:/target" \
+  alpine:3.23.3 sh -c 'cd /source && tar -cf - . | tar -C /target -xf -'
+start_server "$prefix-interrupted" "$current_image" "$interrupted" 41924
+docker kill --signal KILL "$prefix-interrupted" >/dev/null
+[[ $(docker inspect --format '{{.State.ExitCode}}' "$prefix-interrupted") != 0 ]]
+start_server "$prefix-interrupted-recovery" "$current_image" "$interrupted" 41925
+docker logs "$prefix-interrupted-recovery" 2>&1 | grep -q 'session.restore.completed'
+stop_server "$prefix-interrupted-recovery"
+
+# The pre-upgrade backup remains a runnable rollback unit with the prior image.
+docker run --rm --volume "$rollback:/target" --volume "$(dirname "$backup"):/backup:ro" \
+  alpine:3.23.3 tar -C /target -xzf "/backup/$(basename "$backup")"
+start_server "$prefix-rollback" "$previous_image" "$rollback" 41924
 docker logs "$prefix-rollback" 2>&1 | grep -q 'session.restore.completed'
 stop_server "$prefix-rollback"
 
@@ -100,7 +117,10 @@ stop_server "$prefix-rollback"
 start_server "$prefix-current" "$current_image" "$sessions" 41924
 docker logs "$prefix-current" 2>&1 | grep -q 'session.restore.completed'
 docker run --rm --volume "$diagnostics:/diagnostics:ro" --entrypoint sh \
-  "$current_image" -c 'grep -q session.restore.completed /diagnostics/operational.jsonl'
+  "$current_image" -c 'cat /diagnostics/operational.jsonl' > "$backup.diagnostics"
+grep -F -x -f "$diagnostic_record" "$backup.diagnostics" >/dev/null
+grep -F '"product_version":"'"$current_version"'"' "$backup.diagnostics" >/dev/null
+rm -f "$backup.diagnostics"
 stop_server "$prefix-current"
 
 # A backup restores into a fresh volume and remains runnable under the release image.

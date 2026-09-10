@@ -81,19 +81,22 @@ try {
     $priorProcesses = @(Get-Process MarvelChampions -ErrorAction SilentlyContinue |
         Select-Object -ExpandProperty Id)
     if ($AutomatedGameSmoke) {
+        if ([string]::IsNullOrWhiteSpace($env:MARVEL_ENGINE_ENDPOINT)) {
+            throw 'MARVEL_ENGINE_ENDPOINT must name the disposable test server'
+        }
         $stdout = Join-Path $env:RUNNER_TEMP "marvel-msix-$([Guid]::NewGuid()).out"
         $stderr = Join-Path $env:RUNNER_TEMP "marvel-msix-$([Guid]::NewGuid()).err"
         $executable = Join-Path $installedPackage.InstallLocation 'MarvelChampions.exe'
         $launchedProcess = Start-Process -FilePath $executable `
-            -ArgumentList '--headless', '--script', 'res://smoke/local_game_smoke.gd' `
+            -ArgumentList '--headless', '--script', 'res://smoke/hosted_multiplayer_smoke.gd' `
             -RedirectStandardOutput $stdout `
             -RedirectStandardError $stderr `
             -PassThru
         if (-not $launchedProcess.WaitForExit(120000) -or
             $launchedProcess.ExitCode -ne 0 -or
-            -not (Select-String -LiteralPath $stdout -SimpleMatch 'LOCAL_GAME_SMOKE_OK')) {
+            -not (Select-String -LiteralPath $stdout -SimpleMatch 'HOSTED_MULTIPLAYER_SMOKE_OK')) {
             Get-Content -LiteralPath $stdout, $stderr -ErrorAction SilentlyContinue
-            throw 'the installed package did not complete its packaged game smoke'
+            throw 'the installed package did not complete its hosted game smoke'
         }
         Remove-Item -LiteralPath $stdout, $stderr -Force -ErrorAction SilentlyContinue
     }

@@ -5,6 +5,9 @@ param(
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+if ([string]::IsNullOrWhiteSpace($env:MARVEL_ENGINE_ENDPOINT)) {
+    throw 'MARVEL_ENGINE_ENDPOINT must name the disposable test server'
+}
 
 $archivePath = (Resolve-Path -LiteralPath $Archive).Path
 $hashFile = "$archivePath.sha256"
@@ -29,7 +32,7 @@ try {
         throw 'portable application executable is absent'
     }
     $process = Start-Process -FilePath $executable `
-        -ArgumentList '--headless', '--script', 'res://smoke/local_game_smoke.gd' `
+        -ArgumentList '--headless', '--script', 'res://smoke/hosted_multiplayer_smoke.gd' `
         -RedirectStandardOutput $stdout `
         -RedirectStandardError $stderr `
         -PassThru
@@ -38,9 +41,9 @@ try {
         throw 'portable application game smoke timed out'
     }
     if ($process.ExitCode -ne 0 -or
-        -not (Select-String -LiteralPath $stdout -SimpleMatch 'LOCAL_GAME_SMOKE_OK')) {
+        -not (Select-String -LiteralPath $stdout -SimpleMatch 'HOSTED_MULTIPLAYER_SMOKE_OK')) {
         Get-Content -LiteralPath $stdout, $stderr -ErrorAction SilentlyContinue
-        throw 'portable application did not complete its packaged game smoke'
+        throw 'portable application did not complete its hosted game smoke'
     }
 }
 finally {

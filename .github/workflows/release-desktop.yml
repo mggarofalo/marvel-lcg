@@ -205,6 +205,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.ref }}
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.0.424
       - uses: actions/download-artifact@v8
         with:
           name: desktop-macos-community
@@ -212,8 +215,28 @@ jobs:
       - name: Verify trust warning, override, packaged game, and removal
         shell: bash
         run: |
+          save_root=$(mktemp -d)
+          server_log=$(mktemp)
+          server_pid=
+          cleanup() {
+            [[ -z $server_pid ]] || kill -TERM "$server_pid" >/dev/null 2>&1 || true
+            [[ -z $server_pid ]] || wait "$server_pid" 2>/dev/null || true
+            rm -rf "$save_root" "$server_log"
+          }
+          trap cleanup EXIT
+          dotnet run --project src/Marvel.Server/Marvel.Server.csproj --configuration Release -- \
+            --listen 127.0.0.1 --port 41924 --data-root . --save-root "$save_root" \
+            --visibility restricted --seat 0 2>"$server_log" &
+          server_pid=$!
+          for _ in {1..300}; do
+            grep -q '"event_id":"server.listener.started"' "$server_log" && break
+            kill -0 "$server_pid" 2>/dev/null || { cat "$server_log" >&2; exit 1; }
+            sleep 0.1
+          done
+          grep -q '"event_id":"server.listener.started"' "$server_log"
           archive=$(find "$RUNNER_TEMP/macos-community" -name '*-adhoc.zip' -print -quit)
-          bash tools/macos-community-install-smoke.sh "$archive"
+          MARVEL_ENGINE_ENDPOINT=tcp://127.0.0.1:41924 \
+            bash tools/macos-community-install-smoke.sh "$archive"
 
   windows-install:
     name: Install and remove Windows community artifacts
@@ -234,17 +257,59 @@ jobs:
       - name: Trust only Trusted People, install, run, uninstall, and remove trust
         shell: pwsh
         run: |
+          $saveRoot = Join-Path $env:RUNNER_TEMP "marvel-msix-save-$([Guid]::NewGuid())"
+          $serverLog = Join-Path $env:RUNNER_TEMP "marvel-msix-server-$([Guid]::NewGuid()).log"
+          $server = Start-Process dotnet -ArgumentList @(
+            'run', '--project', 'src/Marvel.Server/Marvel.Server.csproj',
+            '--configuration', 'Release', '--', '--listen', '127.0.0.1',
+            '--port', '41924', '--data-root', '.', '--save-root', $saveRoot,
+            '--visibility', 'restricted', '--seat', '0') `
+            -RedirectStandardError $serverLog -PassThru
+          for ($attempt = 0; $attempt -lt 300; $attempt++) {
+            if ((Test-Path $serverLog) -and
+                (Select-String $serverLog -SimpleMatch 'server.listener.started' -Quiet)) { break }
+            if ($server.HasExited) { Get-Content $serverLog; throw 'test server exited' }
+            Start-Sleep -Milliseconds 100
+          }
           $package = Get-ChildItem "$env:RUNNER_TEMP\windows-community" -Filter '*.msix' | Select-Object -First 1
           $certificate = Get-ChildItem "$env:RUNNER_TEMP\windows-community" -Filter '*.cer' | Select-Object -First 1
-          tools/windows-community-install-smoke.ps1 `
-            -Package $package.FullName `
-            -Certificate $certificate.FullName `
-            -AutomatedGameSmoke
+          try {
+            $env:MARVEL_ENGINE_ENDPOINT = 'tcp://127.0.0.1:41924'
+            tools/windows-community-install-smoke.ps1 `
+              -Package $package.FullName `
+              -Certificate $certificate.FullName `
+              -AutomatedGameSmoke
+          }
+          finally {
+            Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue
+            Remove-Item $saveRoot, $serverLog -Recurse -Force -ErrorAction SilentlyContinue
+          }
       - name: Extract, run, and remove the unsigned portable fallback
         shell: pwsh
         run: |
+          $saveRoot = Join-Path $env:RUNNER_TEMP "marvel-portable-save-$([Guid]::NewGuid())"
+          $serverLog = Join-Path $env:RUNNER_TEMP "marvel-portable-server-$([Guid]::NewGuid()).log"
+          $server = Start-Process dotnet -ArgumentList @(
+            'run', '--project', 'src/Marvel.Server/Marvel.Server.csproj',
+            '--configuration', 'Release', '--', '--listen', '127.0.0.1',
+            '--port', '41924', '--data-root', '.', '--save-root', $saveRoot,
+            '--visibility', 'restricted', '--seat', '0') `
+            -RedirectStandardError $serverLog -PassThru
+          for ($attempt = 0; $attempt -lt 300; $attempt++) {
+            if ((Test-Path $serverLog) -and
+                (Select-String $serverLog -SimpleMatch 'server.listener.started' -Quiet)) { break }
+            if ($server.HasExited) { Get-Content $serverLog; throw 'test server exited' }
+            Start-Sleep -Milliseconds 100
+          }
           $portable = Get-ChildItem "$env:RUNNER_TEMP\windows-input" -Filter '*-portable-unsigned.zip' | Select-Object -First 1
-          tools/windows-portable-install-smoke.ps1 -Archive $portable.FullName
+          try {
+            $env:MARVEL_ENGINE_ENDPOINT = 'tcp://127.0.0.1:41924'
+            tools/windows-portable-install-smoke.ps1 -Archive $portable.FullName
+          }
+          finally {
+            Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue
+            Remove-Item $saveRoot, $serverLog -Recurse -Force -ErrorAction SilentlyContinue
+          }
 
   server-sign:
     name: Publish and sign Linux server image

@@ -2,8 +2,10 @@
 set -euo pipefail
 
 archive=${1:-}
-if [[ -z "$archive" || ! -f "$archive" || ! -f "$archive.sha256" ]]; then
+if [[ -z "$archive" || ! -f "$archive" || ! -f "$archive.sha256" \
+    || -z ${MARVEL_ENGINE_ENDPOINT:-} ]]; then
   echo 'usage: macos-community-install-smoke.sh APPLICATION.zip' >&2
+  echo 'MARVEL_ENGINE_ENDPOINT must name the disposable test server.' >&2
   exit 2
 fi
 
@@ -53,11 +55,11 @@ if xattr -p com.apple.quarantine "$app" >/dev/null 2>&1; then
   exit 2
 fi
 
-"$executable" --headless --script res://smoke/local_game_smoke.gd \
+"$executable" --headless --script res://smoke/hosted_multiplayer_smoke.gd \
   >"$log" 2>&1
-grep -q 'LOCAL_GAME_SMOKE_OK' "$log" || {
+grep -q 'HOSTED_MULTIPLAYER_SMOKE_OK' "$log" || {
   cat "$log" >&2
-  echo 'the extracted macOS application did not complete its packaged game smoke' >&2
+  echo 'the extracted macOS application did not complete its hosted game smoke' >&2
   exit 1
 }
 
