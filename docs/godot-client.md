@@ -277,9 +277,10 @@ chronology remains in History.
 Compact is the default interface scale. The toolbar slider switches among the
 eleven supported scales immediately, including card geometry and the prompt rail,
 and the adjacent motion toggle controls event animation. Table and hand cards
-expose a concise summary; clicking a readable card opens the full card inspector
-beside that card. The inspector remains pinned and scrollable until the same card
-or the surrounding interface is clicked. Character
+expose a concise summary; clicking or keyboard-activating a readable card opens
+the full card inspector beside that card. The modal moves focus to its explicit
+Close control, closes with Escape or the surrounding backdrop, restores focus to
+the source card, and keeps long rules text independently scrollable. Character
 health is one current/maximum value rather than separate hit-point and damage
 values.
 Settled synchronization uses the toolbar indicator rather than reserving a
@@ -429,7 +430,8 @@ and defaults to 80%. For automated desktop checks or local use,
 
 ## Optional local art pack
 
-The client can place local illustrations inside the procedural card face. Art
+The client can place local illustrations inside the procedural card face. Every
+full frame reserves the same illustration region when no image is available. Art
 never replaces the title, rules text, live values or other visibility-safe
 information, and it is never fetched over the network.
 

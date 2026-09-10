@@ -225,7 +225,7 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
                 .ToArray())
         {
             Back = card.Back.ToString().ToUpperInvariant(),
-            FaceId = card.Face.Id,
+            FaceId = card.Face.ArtFaceId,
             Traits = card.Face.Traits,
             Cost = card.Face.Cost,
             PrintedStats = card.Face.PrintedStats
@@ -235,6 +235,7 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
             Classification = card.Face.PrintedStats.GetValueOrDefault("Class", string.Empty),
             Keywords = card.Face.Keywords,
             RulesText = card.Face.RulesText,
+            RulesMarkup = card.Face.RulesMarkup,
             Damage = card.Face.Damage,
             Counters = card.Face.Counters
                 .OrderBy(counter => counter.Key, StringComparer.Ordinal)
@@ -364,6 +365,9 @@ public sealed record BoardCardPresentation(
 
     /// <summary>Printed rules text.</summary>
     public string RulesText { get; init; } = string.Empty;
+
+    /// <summary>Printed rules text with display-only emphasis and symbol tokens.</summary>
+    public string RulesMarkup { get; init; } = string.Empty;
 
     /// <summary>Damage currently on the card.</summary>
     public long Damage { get; init; }

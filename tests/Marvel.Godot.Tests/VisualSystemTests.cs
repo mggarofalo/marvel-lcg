@@ -206,6 +206,29 @@ public sealed class VisualSystemTests
         Assert.True(
             VisualSystem.Card(CardDisplaySize.Board, InterfaceScale.Large).Width
             < VisualSystem.Card(CardDisplaySize.Board, InterfaceScale.ExtraLarge).Width);
+        CardLayoutMetrics standardFull = VisualSystem.Card(
+            CardDisplaySize.Full, InterfaceScale.Standard);
+        Assert.Equal(
+            5d / 7d,
+            (double)standardFull.Width / standardFull.MinimumHeight,
+            precision: 3);
+    }
+
+    [Theory]
+    [InlineData("HERO", CardFrameFamily.Identity, GodotThemeVariations.IdentityCard)]
+    [InlineData("UPGRADE", CardFrameFamily.Player, GodotThemeVariations.PlayerCard)]
+    [InlineData("MINION", CardFrameFamily.Enemy, GodotThemeVariations.EnemyCard)]
+    [InlineData("MAIN SCHEME", CardFrameFamily.Scheme, GodotThemeVariations.SchemeCard)]
+    [InlineData("ENVIRONMENT", CardFrameFamily.Environment, GodotThemeVariations.EnvironmentCard)]
+    public void VisibleKindsChooseDistinctFullFrameFamilies(
+        string kind,
+        CardFrameFamily expectedFamily,
+        string expectedVariation)
+    {
+        CardFrameProfile profile = VisualSystem.CardFrame(kind);
+
+        Assert.Equal(expectedFamily, profile.Family);
+        Assert.Equal(expectedVariation, profile.ThemeVariation);
     }
 
     [Fact]
@@ -260,8 +283,15 @@ public sealed class VisualSystemTests
             GodotThemeVariations.BoardCard,
             GodotThemeVariations.ConcealedCard,
             GodotThemeVariations.FocusedCard,
+            GodotThemeVariations.IdentityCard,
+            GodotThemeVariations.PlayerCard,
+            GodotThemeVariations.EnemyCard,
+            GodotThemeVariations.SchemeCard,
+            GodotThemeVariations.EnvironmentCard,
+            GodotThemeVariations.CardArtWell,
             GodotThemeVariations.CardTitle,
             GodotThemeVariations.CardRules,
+            GodotThemeVariations.CardRulesRich,
             GodotThemeVariations.CardLiveValue,
             GodotThemeVariations.CardPrintedValue,
             GodotThemeVariations.CardState,

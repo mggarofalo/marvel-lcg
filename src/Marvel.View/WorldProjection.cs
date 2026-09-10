@@ -89,6 +89,8 @@ public static class WorldProjection
                 PrintedStats = PrintedStats(attributes),
                 Keywords = [.. world.Facts.Keywords(card.FaceId)],
                 RulesText = world.Facts.Text(card.FaceId),
+                RulesMarkup = world.Facts.FormattedText(card.FaceId),
+                ArtFaceId = FacedownDrones.Is(card) ? null : card.FaceId,
                 Damage = card.Damage,
                 Counters = card.Tokens
                     .Where(token => token.Key.StartsWith("c_", StringComparison.Ordinal))
@@ -155,7 +157,7 @@ public static class WorldProjection
         [
             "REC", "THW", "ATK", "DEF", "SCH", "HP", "HS", "Stage",
             "REC+", "THW+", "ATK+", "DEF+", "SCH+", "HP+",
-            "StartingThreat", "TargetThreat", "EscalationThreat", "Boost", "Class",
+            "StartingThreat", "TargetThreat", "EscalationThreat", "Boost", "RES", "Class",
         ];
         return names
             .Where(attributes.ContainsKey)

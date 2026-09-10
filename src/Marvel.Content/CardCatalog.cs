@@ -150,6 +150,9 @@ public sealed class CardCatalog : ICardFacts
     public string Text(string faceId) => Find(faceId).Text;
 
     /// <inheritdoc/>
+    public string FormattedText(string faceId) => Find(faceId).FormattedText;
+
+    /// <inheritdoc/>
     public IReadOnlyList<string> Keywords(string faceId) => Find(faceId).Keywords;
 
     /// <inheritdoc/>
@@ -396,10 +399,13 @@ public sealed class CardCatalog : ICardFacts
         string printed = element.TryGetProperty("text_plain", out var textBox)
             ? textBox.GetString() ?? string.Empty
             : string.Empty;
+        string formatted = element.TryGetProperty("text", out var formattedText)
+            ? formattedText.GetString() ?? printed
+            : printed;
 
         return new Entry(
             kind, set, linkedTo, traits, printedTraitLabels, attributes, title, subtitle, printed,
-            KeywordsOf(attributes),
+            formatted, KeywordsOf(attributes),
             CounterTypesOf(printed, attributes), CounterMaximumsOf(printed));
     }
 
@@ -640,6 +646,7 @@ public sealed class CardCatalog : ICardFacts
         string Title,
         string Subtitle,
         string Text,
+        string FormattedText,
         IReadOnlyList<string> Keywords,
         IReadOnlyList<string> CounterTypes,
         IReadOnlyDictionary<string, long> CounterMaximums);

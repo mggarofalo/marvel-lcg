@@ -24,9 +24,14 @@ public sealed partial class Main : Control
     private BoardPresentation? boardPresentation;
     private HSplitContainer playLayout = null!;
     private BoardRenderResult? boardRender;
-    private PanelContainer cardInspector = null!;
+    private Control cardInspector = null!;
+    private ColorRect cardInspectorBackdrop = null!;
+    private PanelContainer cardInspectorFrame = null!;
+    private Button cardInspectorClose = null!;
+    private Label cardInspectorTitle = null!;
     private ScrollContainer cardInspectorScroll = null!;
     private VBoxContainer cardInspectorContent = null!;
+    private Control? cardInspectorReturnFocus;
     private int cardInspectorGeneration;
     private bool cardInspectorHovered;
     private bool cardInspectorPinned;
@@ -294,22 +299,29 @@ public sealed partial class Main : Control
         decisions.AnchorFocused += ids => boardRender?.Highlight(ids);
         decisions.CardHovered += PreviewHandCard;
         decisions.ProgressChanged += RenderDecisionProgress;
-        cardInspector = GetNode<PanelContainer>("CardInspector");
-        cardInspectorScroll = GetNode<ScrollContainer>("CardInspector/Scroll");
-        cardInspectorContent = GetNode<VBoxContainer>("CardInspector/Scroll/Content");
-        cardInspector.MouseEntered += () =>
+        cardInspector = GetNode<Control>("CardInspector");
+        cardInspectorBackdrop = GetNode<ColorRect>("CardInspector/Backdrop");
+        cardInspectorFrame = GetNode<PanelContainer>("CardInspector/Frame");
+        cardInspectorClose = GetNode<Button>("CardInspector/Frame/Stack/Header/Close");
+        cardInspectorTitle = GetNode<Label>("CardInspector/Frame/Stack/Header/Title");
+        cardInspectorScroll = GetNode<ScrollContainer>("CardInspector/Frame/Stack/Scroll");
+        cardInspectorContent = GetNode<VBoxContainer>(
+            "CardInspector/Frame/Stack/Scroll/Content");
+        cardInspectorFrame.MouseEntered += () =>
         {
             cardInspectorHovered = true;
             cardInspectorGeneration++;
-            cardInspector.FocusMode = FocusModeEnum.Click;
+            cardInspectorFrame.FocusMode = FocusModeEnum.Click;
             cardInspectorScroll.FocusMode = FocusModeEnum.Click;
         };
-        cardInspector.MouseExited += () =>
+        cardInspectorFrame.MouseExited += () =>
         {
             cardInspectorHovered = false;
             ScheduleCardInspectorHide();
         };
-        BindCardInspectorFocus(cardInspector);
+        cardInspectorClose.Pressed += HideCardInspector;
+        BindCardInspectorFocus(cardInspectorFrame);
+        BindCardInspectorFocus(cardInspectorClose);
         BindCardInspectorFocus(cardInspectorScroll);
         interfaceScaleSlider = GetNode<HSlider>("StatusBar/InterfaceScale");
         interfaceScaleValue = GetNode<Label>("StatusBar/ScaleValue");
@@ -1370,20 +1382,27 @@ public sealed partial class Main : Control
             child.QueueFree();
         }
 
+        InterfaceScale inspectionScale = FittedInspectionScale(
+            card, interfaceScale, Size.Y);
         CardControl detail = CardControl.Create(
-            card, CardDisplaySize.Full, interfaceScale, art);
+            card, CardDisplaySize.Full, inspectionScale, art);
+        detail.FocusMode = FocusModeEnum.All;
         IgnoreMouseRecursively(detail);
         cardInspectorContent.AddChild(detail);
-        float width = detail.CustomMinimumSize.X + 24;
-        float height = Math.Min(Size.Y - 48, detail.CustomMinimumSize.Y + 24);
+        cardInspectorScroll.HorizontalScrollMode = ScrollContainer.ScrollMode.ShowNever;
+        cardInspectorScroll.VerticalScrollMode = ScrollContainer.ScrollMode.ShowNever;
+        cardInspectorFrame.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
+        Vector2 detailSize = detail.GetCombinedMinimumSize();
+        float width = detailSize.X;
+        float height = Math.Min(Size.Y - 48, detailSize.Y);
         Rect2 sourceRect = source?.GetGlobalRect() ?? new Rect2(
             GetViewport().GetMousePosition(), Vector2.Zero);
         if (!pinned)
         {
             height = Math.Min(height, Math.Max(160, sourceRect.Position.Y - 24));
         }
-        cardInspector.CustomMinimumSize = Vector2.Zero;
-        cardInspector.Size = new Vector2(width, Math.Max(pinned ? 240 : 160, height));
+        cardInspectorFrame.CustomMinimumSize = Vector2.Zero;
+        cardInspectorFrame.Size = new Vector2(width, Math.Max(pinned ? 240 : 160, height));
         Vector2 anchor = sourceRect.Position + sourceRect.Size / 2;
         FloatingPanelPosition position = pinned
             ? VisualSystem.PlaceFloatingPanel(
@@ -1397,10 +1416,20 @@ public sealed partial class Main : Control
                 Mathf.RoundToInt(Mathf.Clamp(
                     anchor.X - width / 2, 12, Math.Max(12, Size.X - width - 12))),
                 Mathf.RoundToInt(Mathf.Max(12, sourceRect.Position.Y - height - 12)));
-        cardInspector.Position = new Vector2(position.X, position.Y);
+        cardInspectorFrame.Position = new Vector2(position.X, position.Y);
         cardInspectorPinned = pinned;
+        cardInspector.MouseFilter = pinned
+            ? MouseFilterEnum.Stop
+            : MouseFilterEnum.Ignore;
+        cardInspectorBackdrop.Visible = pinned;
+        cardInspectorClose.Visible = false;
         cardInspector.Visible = true;
-        if (priorFocus is not null && !cardInspector.IsAncestorOf(priorFocus))
+        if (pinned)
+        {
+            cardInspectorReturnFocus = priorFocus;
+            Callable.From(detail.GrabFocus).CallDeferred();
+        }
+        else if (priorFocus is not null && !cardInspector.IsAncestorOf(priorFocus))
         {
             Callable.From(priorFocus.GrabFocus).CallDeferred();
         }
@@ -1409,16 +1438,57 @@ public sealed partial class Main : Control
     public override void _Input(InputEvent @event)
     {
         if (cardInspector.Visible
+            && cardInspectorPinned
+            && @event is InputEventKey
+            {
+                Keycode: Key.Tab,
+                Pressed: true,
+            })
+        {
+            if (cardInspectorContent.GetChildCount() > 0
+                && cardInspectorContent.GetChild(0) is Control detail)
+            {
+                detail.GrabFocus();
+            }
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        if (cardInspector.Visible && @event.IsActionPressed("ui_cancel"))
+        {
+            HideCardInspector();
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        if (cardInspector.Visible
+            && cardInspectorPinned
             && @event is InputEventMouseButton
             {
                 ButtonIndex: MouseButton.Left,
                 Pressed: true,
             } click
-            && !cardInspector.GetGlobalRect().HasPoint(click.Position)
-            && !IsInsideCard(GetViewport()?.GuiGetHoveredControl()))
+            && !cardInspectorFrame.GetGlobalRect().HasPoint(click.Position))
         {
             HideCardInspector();
+            GetViewport().SetInputAsHandled();
         }
+    }
+
+    private static InterfaceScale FittedInspectionScale(
+        BoardCardPresentation card,
+        InterfaceScale requested,
+        float viewportHeight)
+    {
+        bool landscape = VisualSystem.CardFrame(card.Kind).Family == CardFrameFamily.Scheme;
+        int baseHeight = landscape ? 400 : 560;
+        int availablePercent = (int)MathF.Floor(
+            Math.Max(1, viewportHeight - 48) * 100 / baseHeight / 10) * 10;
+        int fittedPercent = Math.Clamp(
+            Math.Min((int)requested, availablePercent),
+            (int)InterfaceScale.Percent50,
+            (int)InterfaceScale.Percent150);
+        return (InterfaceScale)fittedPercent;
     }
 
     private static bool IsInsideCard(Node? node)
@@ -1444,7 +1514,7 @@ public sealed partial class Main : Control
                 && !cardInspectorHovered
                 && !CardInspectorHasFocus())
             {
-                cardInspector.FocusMode = FocusModeEnum.None;
+                cardInspectorFrame.FocusMode = FocusModeEnum.None;
                 cardInspectorScroll.FocusMode = FocusModeEnum.None;
                 inspectedCardId = null;
                 cardInspector.Visible = false;
@@ -1462,22 +1532,36 @@ public sealed partial class Main : Control
     {
         Control? focused = GetViewport()?.GuiGetFocusOwner();
         return focused is not null
-            && (focused == cardInspector || cardInspector.IsAncestorOf(focused));
+            && (focused == cardInspectorFrame || cardInspectorFrame.IsAncestorOf(focused));
     }
 
     private void HideCardInspector()
     {
+        Control? returnFocus = cardInspectorPinned ? cardInspectorReturnFocus : null;
         cardInspectorGeneration++;
         cardInspectorPinned = false;
         cardInspectorHovered = false;
-        cardInspector.FocusMode = FocusModeEnum.None;
+        cardInspectorFrame.FocusMode = FocusModeEnum.None;
         cardInspectorScroll.FocusMode = FocusModeEnum.None;
         inspectedCardId = null;
+        cardInspectorReturnFocus = null;
         cardInspector.Visible = false;
+        if (returnFocus is not null
+            && GodotObject.IsInstanceValid(returnFocus)
+            && returnFocus.IsInsideTree()
+            && !returnFocus.IsQueuedForDeletion())
+        {
+            Callable.From(returnFocus.GrabFocus).CallDeferred();
+        }
     }
 
     private static void IgnoreMouseRecursively(Node node)
     {
+        if (node is RichTextLabel rules)
+        {
+            rules.MouseFilter = Control.MouseFilterEnum.Stop;
+            return;
+        }
         if (node is Control control)
         {
             control.MouseFilter = Control.MouseFilterEnum.Ignore;

@@ -101,6 +101,22 @@ public sealed record CardLayoutMetrics(
     bool ShowTraits,
     bool ShowPrintedStats);
 
+/// <summary>The visual family selected from an already-visible printed card kind.</summary>
+public enum CardFrameFamily
+{
+    Identity,
+    Player,
+    Enemy,
+    Scheme,
+    Environment,
+}
+
+/// <summary>Presentation-only treatment for one full card frame.</summary>
+public sealed record CardFrameProfile(
+    CardFrameFamily Family,
+    string ThemeVariation,
+    string FamilyLabel);
+
 /// <summary>Font sizes in logical pixels for one supported interface scale.</summary>
 public sealed record TypeMetrics(
     int DisplayTitle,
@@ -343,7 +359,7 @@ public static class VisualSystem
     public static CardLayoutMetrics Card(CardDisplaySize size, InterfaceScale scale) => size switch
     {
         CardDisplaySize.Full => new(
-            Scale(320, scale), Scale(520, scale),
+            Scale(400, scale), Scale(560, scale),
             ShowSubtitle: true, ShowTraits: true, ShowPrintedStats: true),
         CardDisplaySize.Board => new(
             Scale(210, scale), Scale(190, scale),
@@ -352,6 +368,22 @@ public static class VisualSystem
             Scale(210, scale), Scale(52, scale),
             ShowSubtitle: false, ShowTraits: false, ShowPrintedStats: false),
         _ => throw new ArgumentOutOfRangeException(nameof(size), size, "unsupported card size"),
+    };
+
+    /// <summary>Maps a visible card kind to its presentation-only frame family.</summary>
+    public static CardFrameProfile CardFrame(string kind) => kind switch
+    {
+        "ALTER EGO" or "HERO" => new(
+            CardFrameFamily.Identity, GodotThemeVariations.IdentityCard, "Identity"),
+        "ALLY" or "EVENT" or "RESOURCE" or "SUPPORT" or "UPGRADE"
+            or "PLAYER SIDE SCHEME" => new(
+                CardFrameFamily.Player, GodotThemeVariations.PlayerCard, "Player card"),
+        "ENCOUNTER VILLAIN" or "LEADER" or "MINION" => new(
+            CardFrameFamily.Enemy, GodotThemeVariations.EnemyCard, "Enemy"),
+        "MAIN SCHEME" or "ENCOUNTER SIDE SCHEME" => new(
+            CardFrameFamily.Scheme, GodotThemeVariations.SchemeCard, "Scheme"),
+        _ => new(
+            CardFrameFamily.Environment, GodotThemeVariations.EnvironmentCard, "Encounter card"),
     };
 
     /// <summary>Computes the WCAG contrast ratio for two sRGB colors.</summary>
@@ -415,8 +447,15 @@ public static class GodotThemeVariations
     public const string BoardCard = nameof(BoardCard);
     public const string ConcealedCard = nameof(ConcealedCard);
     public const string FocusedCard = nameof(FocusedCard);
+    public const string IdentityCard = nameof(IdentityCard);
+    public const string PlayerCard = nameof(PlayerCard);
+    public const string EnemyCard = nameof(EnemyCard);
+    public const string SchemeCard = nameof(SchemeCard);
+    public const string EnvironmentCard = nameof(EnvironmentCard);
+    public const string CardArtWell = nameof(CardArtWell);
     public const string CardTitle = nameof(CardTitle);
     public const string CardRules = nameof(CardRules);
+    public const string CardRulesRich = nameof(CardRulesRich);
     public const string CardLiveValue = nameof(CardLiveValue);
     public const string CardPrintedValue = nameof(CardPrintedValue);
     public const string CardState = nameof(CardState);
