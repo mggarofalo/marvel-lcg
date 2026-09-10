@@ -1298,11 +1298,14 @@ public sealed partial class Main : Control
             }
 
             RenderEvents();
-            HistoryEntryDescriptor? completed = operation == EngineProtocol.Resolve
-                ? response.History?.Entries.LastOrDefault(entry =>
-                    !priorHistory.Contains(entry.Cursor)
-                    && entry.Summary.Contains(" played ", StringComparison.Ordinal))
-                : null;
+            HistoryEntryDescriptor[] completedActions =
+                operation == EngineProtocol.Resolve
+                    ? response.History?.Entries
+                        .Where(entry => !priorHistory.Contains(entry.Cursor))
+                        .ToArray() ?? []
+                    : [];
+            HistoryEntryDescriptor? completed = completedActions.LastOrDefault(entry =>
+                entry.Summary.Contains(" played ", StringComparison.Ordinal));
             IReadOnlyList<EventPresentation> highlights = response.History?.ActionOpen == true
                 ? []
                 : completed is null
@@ -1313,9 +1316,13 @@ public sealed partial class Main : Control
                         .ToArray();
             reportNarrative = response.History?.ActionOpen == true
                 ? []
-                : completed is null
+                : completedActions.Length == 0
                     ? presented.History
-                    : highlights;
+                    : completedActions
+                        .SelectMany(entry => entry.Details.Prepend(entry.Summary))
+                        .Select(summary => new EventPresentation(
+                            summary, "Action", [], EventMotionKind.State))
+                        .ToArray();
             RenderLastResult(highlights, resetEvents);
             PresentEvents(presented.Cues);
         }
