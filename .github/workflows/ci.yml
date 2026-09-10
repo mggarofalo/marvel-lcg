@@ -25,7 +25,7 @@ jobs:
   dotnet:
     name: C# engine (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
