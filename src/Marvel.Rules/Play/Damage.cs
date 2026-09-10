@@ -390,7 +390,12 @@ public static class Damage
         long after = Math.Max(0, printed - placed.Target.Damage);
         events.Add(new FieldSet(placed.Target.ObjectId, "health", before, after)
         {
-            Trigger = trigger, Verb = verb,
+            Trigger = trigger,
+            Verb = verb,
+            Subjects = FacedownDrones.Is(placed.Target)
+                ? new Dictionary<int, string>
+                    { [placed.Target.ObjectId] = FacedownDrones.EffectiveTitle }
+                : null,
         });
     }
 
@@ -838,7 +843,12 @@ public static class Damage
 
         events.Add(new FieldSet(target.ObjectId, "health", before, after)
         {
-            Trigger = trigger, Verb = verb,
+            Trigger = trigger,
+            Verb = verb,
+            Subjects = FacedownDrones.Is(target)
+                ? new Dictionary<int, string>
+                    { [target.ObjectId] = FacedownDrones.EffectiveTitle }
+                : null,
         });
 
         return healed;

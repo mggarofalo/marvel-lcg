@@ -24,11 +24,12 @@ public static class JournalJson
         return options;
     }
 
-    /// <summary>Captures one semantic event without changing its wire shape.</summary>
+    /// <summary>Captures one semantic event without presentation-only evidence.</summary>
     public static JsonElement Event(GameEvent happened)
     {
         ArgumentNullException.ThrowIfNull(happened);
-        return JsonSerializer.SerializeToElement<GameEvent>(happened, EventJson.Options);
+        return JsonSerializer.SerializeToElement<GameEvent>(
+            happened with { Subjects = null }, EventJson.Options);
     }
 }
 

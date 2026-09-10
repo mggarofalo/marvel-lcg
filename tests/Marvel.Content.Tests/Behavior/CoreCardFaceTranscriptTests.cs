@@ -31,7 +31,7 @@ public sealed class CoreCardFaceTranscriptTests
             "f166b2a393eb1cbf8a63bec8ca05525a2406fee737e5db370c893bd39ffe0fe7",
             results["behavior:card:01001a:printed-name"].Digest);
         Assert.Equal(
-            "9c0d8ada5ab4241a49f9ced9fa27fdb0e067765eae1d436ced7e9a018a05245b",
+            "16883a0c4b1d4529fe7959615147f48dc5625d4c5d59d69a41c2742bfb0947ea",
             results["behavior:card:01149:printed-name"].Digest);
     }
 
@@ -450,24 +450,24 @@ public sealed class CoreCardFaceTranscriptTests
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
         Assert.Equal(8, results.Count);
-        Assert.Equal("696ffec6d3bb2318e9e579fc9c641b1e644901d0575ad7fabf2c98aa23cce1c7",
+        Assert.Equal("d47348ca653b6a5fdbc3eeefb922a6c0819d5cb5e3eeaf58c9b36d41ca43023a",
             results["behavior:card:01141:attach-ultron"].Digest);
-        Assert.Equal("30e13fd0a5f990c2226821e4608adfa2c16a7bdd9e835e58d59688b0fe34828b",
+        Assert.Equal("fd743efb40ef3ab7fa472ef6c1b5abd1420f345a7d0b8ebe62fc2403ad15999f",
             results[
                 "behavior:card:01141:after-ultron-schemes-place-1-threat-on"].Digest);
-        Assert.Equal("58469c039eac98cf8d206316fd966bfe9510ffa4dec69d06ac0d8c8494eae7b8",
+        Assert.Equal("9f892b0fa86bb594301459256e76651d183d9e1935550b29ef96eed266241b23",
             results["behavior:card:01142:attach-ultron-drones-environment"].Digest);
-        Assert.Equal("e363a3261dcf9430f5ba72925925e24fdc8bb026f8fbae2cb599c7b6a3a2c608",
+        Assert.Equal("c684041c13b6c765501c2d87fae29b1a0143853ce4d52b740b8042146705eeac",
             results[
                 "behavior:card:01142:each-facedown-drone-minion-gets-1-atk"].Digest);
-        Assert.Equal("0e5f834f33625cb9711cbd0cc12778cc48cc690d6c3a0efce0f1c97ea6e5dc45",
+        Assert.Equal("37cdc0f822ae81c74b505a8ac23bedfb6047b7f3937fad7a10d13f5b5f204ade",
             results["behavior:card:01152:attach-villain"].Digest);
-        Assert.Equal("5d1cb132912f2871d45cc0cf72228c7b02a4d57562da59fde9813631dfae039a",
+        Assert.Equal("b1c54c623200c938d57d291c232e8ef2714e3c3e7c7bbc8d57411ac912391cb1",
             results[
                 "behavior:card:01152:exhaust-your-hero-and-spend-physical-physical"].Digest);
-        Assert.Equal("8ea3d59c89c882d6f09e11418e50d15515e4dcad31a2556e65b010aa5aff211b",
+        Assert.Equal("91eb6b7c43cb50554760ac8c94eeca57a623bc81498646128b08319d3cc827e2",
             results["behavior:card:01153:attach-villain"].Digest);
-        Assert.Equal("1666fd4af0d6e26a278040f0cefab41e79fae25ef5a7c8a78162584c5a3b8477",
+        Assert.Equal("7947684fdac3d097c67aa1b544cf4a9578574867ebe9fb5e301338d4ff5cc80f",
             results[
                 "behavior:card:01153:exhaust-your-hero-and-spend-energy-energy"].Digest);
     }
@@ -482,34 +482,34 @@ public sealed class CoreCardFaceTranscriptTests
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
         Assert.Equal(11, results.Count);
-        Assert.Equal("870ef71d126c3054f1cab459a87cd77c57574103989b59e5c5ad8edc1de47cb2",
+        Assert.Equal("1ed9b2e8d664d216742899ecccecf7143a91544f297173255b19e4c9af0f106a",
             results[
                 "behavior:card:01137b:each-player-puts-top-card-their-deck-one-player"].Digest);
-        Assert.Equal("752f0c5a0c37a57ac883ad303132756d01dfe2fbef6c3ebb096e103631b44229",
+        Assert.Equal("481eb54c792ffc96310fb66f99b52cd87c7fc2005f20434ee3018906027ebe5e",
             results[
                 "behavior:card:01138a:each-player-puts-top-card-their-deck-one-player"].Digest);
-        Assert.Equal("bcd21d2b1f3234cbb96c205c4fef652855549a66586d78f03bdfe54d237b31d3",
+        Assert.Equal("96349bb0461f1b912c277de872799a9281dabe0d771c5643e4e0ce58a44d893f",
             results[
                 "behavior:card:01138a:each-player-puts-top-card-their-deck-multiple-players"].Digest);
-        Assert.Equal("b7c8df04402215deca6dced9aa21d321a6caf2c2c834e66ed84ede797c8b00ca",
+        Assert.Equal("8813d11be4464b4fb09a77a5c79407c0be14bb38ded334b2ead82b4c5cfe0c2e",
             results[
                 "behavior:card:01138b:after-placing-threat-here-during-step-one-choice-1"].Digest);
-        Assert.Equal("f984963f28550ede2397f1ab3dfc9507a8c4d3a4d9ae322afbf10d719d943a64",
+        Assert.Equal("b29655ea24519eb6c79729ebbab3d58ff237a75a728a370d83c7628c1302bd63",
             results[
                 "behavior:card:01138b:after-placing-threat-here-during-step-one-choice-2"].Digest);
-        Assert.Equal("54c6e0a39a203a0628704f0b042b7c425f6547794a15b95f57c3a7e8ef5dd528",
+        Assert.Equal("efb913d129dfda89fba118d8bd564f8560f964c85aa43a03c6c102491fdea11f",
             results[
                 "behavior:card:01138b:after-placing-threat-here-during-step-one-multiple-players"].Digest);
-        Assert.Equal("b29b9adc130f46013c2a9ffde4cf409f842954139bfa8ca05643e7efa6905376",
+        Assert.Equal("1b611b59c6739b2390bf13014ff63bd11aa14716efcc2b9d8e58381a9c21af99",
             results[
                 "behavior:card:01139a:each-player-puts-top-card-their-deck-one-player"].Digest);
-        Assert.Equal("18f3ee0620c9b832469f495abd3b1641d0893fd13da693ea9773ea52ca2108b1",
+        Assert.Equal("bdc625bced855385ba07a91e548262db258348b125018474b72f97bbed3b8204",
             results[
                 "behavior:card:01139a:each-player-puts-top-card-their-deck-multiple-players"].Digest);
-        Assert.Equal("4c66d517451ee97afd628431786f97ed368a3735f3fd77f698260913f382a7cb",
+        Assert.Equal("2a916c677a5dc8e974b9a7d871416d606f58c086ff443d1cce59d8fa65f75abf",
             results[
                 "behavior:card:01139b:threat-cannot-be-removed-from-scheme"].Digest);
-        Assert.Equal("2291b4105b519ef1c2299ee8a8c48cb160873eb704241d3654db2163515656cd",
+        Assert.Equal("65dd8b02e0eff5f1b2401de90f58635f8f34ceffc6e84f1cb30cd5070bd39649",
             results[
                 "behavior:card:01139b:if-stage-is-completed-players-lose-game-condition-met"].Digest);
     }
@@ -524,18 +524,18 @@ public sealed class CoreCardFaceTranscriptTests
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
         Assert.Equal(6, results.Count);
-        Assert.Equal("4f27ab7cd4c7b20239b62f64c7c2a125c0d89dc4ba17a47650a38b6174804c03",
+        Assert.Equal("b2d267387f8aade24f697235f414353116c2d29dba3cef89511e6c3002527a01",
             results[
                 "behavior:card:01148:each-player-puts-top-card-their-deck-one-player"].Digest);
-        Assert.Equal("a1c11bb5a7edcc4481714ed279151acf925c990907adad40d62161cd5e87699d",
+        Assert.Equal("00a373a9decb0150276082f82220269d346e4ecf785f592b0d929cfc978c620f",
             results[
                 "behavior:card:01148:each-player-puts-top-card-their-deck-multiple-players"].Digest);
-        Assert.Equal("72c93ed5545f7f2804293890329445abd3deb4d66f712f793df636fdb781769b",
+        Assert.Equal("f7cfcdc519d7f9203f77b1bb2c0224dee8f9aff362f1e64b4143511939a6ca02",
             results["behavior:card:01150:first-player-puts-top-2-cards-their"].Digest);
-        Assert.Equal("2e41788ec0dfc9e7afc9e32723b6e982a077db3e59f3699beefbd90adea442d6",
+        Assert.Equal("2ab9bb12c964bda69776e9b7e2b2ef4e8b7ca5a58b4bab428b53e4d63087474b",
             results[
                 "behavior:card:01151:each-player-chooses-either-place-2-threat-one-player"].Digest);
-        Assert.Equal("a2d48433c8b39881085acfe0ad754f08cfcbb056ef10ae8295620194224d2e74",
+        Assert.Equal("6bb8381b12adfe8f7d18dd2e25630b1d8993ee9f507c88f9fc750cd7b2c06af7",
             results[
                 "behavior:card:01151:each-player-chooses-either-place-2-threat-multiple-players"].Digest);
     }
@@ -550,24 +550,24 @@ public sealed class CoreCardFaceTranscriptTests
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
         Assert.Equal(9, results.Count);
-        Assert.Equal("62e1050af2ffdf32d28bd699913ac85c574dc84925b9f00f12489b224ab00470",
+        Assert.Equal("aaeb948fc666c867361349845c4701e3df2d81868c87e24c152a8a98e9c4d2ea",
             results[
                 "behavior:card:01134:after-ultron-attacks-you-choose-either-place-choice-1"].Digest);
-        Assert.Equal("e04919326d0ec2813485e5713081af2781c4aacf909e0248c09e79108abbfa32",
+        Assert.Equal("de3133968bda6e0964c9435b7d541cf7f7c0480ab4544e7f1ff26d6eb66eef65",
             results[
                 "behavior:card:01134:after-ultron-attacks-you-choose-either-place-choice-2"].Digest);
-        Assert.Equal("5e4b05ed76aa73828f89d2c973f4c4636d2c0425edc15bbee6526c06815b2795",
+        Assert.Equal("618ee72094549b0dffe92955fb9f7ce1f6bf5360363fc4f205741c024402b8a6",
             results["behavior:card:01135:when-ultron-attacks-you-put-top-card"].Digest);
-        Assert.Equal("549db6712688b546a0d194f7888eca5f410af51b59a1876873115aefff542035",
+        Assert.Equal("bdf5137cb3cb9f8fdb2538ba98c455be0f315d933d5f32bdc769d8041d93f926",
             results[
                 "behavior:card:01135:until-end-his-attack-ultron-gets-1-multiple"].Digest);
-        Assert.Equal("c3ecbd73663ad43c562303b1d865b94b15997b2f292501e47ff0a10ad488a7d4",
+        Assert.Equal("4240266093a99be345fd994d782027252bae1efa014e9d24ffb1c68570555c01",
             results[
                 "behavior:card:01136:search-encounter-deck-and-discard-pile-for"].Digest);
-        Assert.Equal("063becf8f5e8de57fbb8428c234ce4daa4e9465913bad9d6018d7b7c4a70809a",
+        Assert.Equal("d096f36908bd3cea85f07ce5aff7f14b2539698225ff8df4c73583700e38d2a6",
             results[
                 "behavior:card:01140:each-facedown-drone-minion-engaged-with-player"].Digest);
-        Assert.Equal("7d03e747b7fbaf6bb091c9c373aad404bc940e7789ada4869ec76e646fd10e7d",
+        Assert.Equal("5b6f1601f9f5524d3384cacc6b854b89ebe4505f4b16c91f4f1b73d0df104d3f",
             results["behavior:card:01143:guard"].Digest);
     }
 
@@ -581,44 +581,44 @@ public sealed class CoreCardFaceTranscriptTests
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
         Assert.Equal(16, results.Count);
-        Assert.Equal("5f832f8f13b1ee16b00e3fc8a1fffcc83efaea50eae119b97433aa43f8085ec9",
+        Assert.Equal("c16629fe4acf20f408201ea8fb4a5dd59904d038a5a0a9790d7c28f7ed4aa910",
             results["behavior:card:01145:ultron-schemes"].Digest);
-        Assert.Equal("0328de1a7b9d93b8fd925cc2ea430d80ad685fddf34f20e82e3082b27d0927a9",
+        Assert.Equal("cea2e995905d36175fa351b5d584293a8309ec4e0037addca64684e994f1b5a6",
             results[
                 "behavior:card:01145:discard-top-card-your-deck-for-each-zero"].Digest);
-        Assert.Equal("4f161f028d4914d2a1a6f18be176121fb0e78bf8454a522bc0a04e23b7b21ae5",
+        Assert.Equal("09147c5858fbcdf4dfe14be1080229550bcf3d9e67cb39c994d5ebdddbe6b281",
             results[
                 "behavior:card:01145:discard-top-card-your-deck-for-each-multiple"].Digest);
-        Assert.Equal("1584bf1a9b5c84d91cc2a9cb66352d75238e50274ce06e6b027f7e9f9737f6fc",
+        Assert.Equal("875d4f8cefd3ebc57909722fef4eb5f94f5fc15e8d857d37be5b38e0be10671c",
             results["behavior:card:01145:ultron-attacks-you"].Digest);
-        Assert.Equal("47d858c343bdee8e8bd36840591df5e53d5b8761069f5182cb8079b6fd63be83",
+        Assert.Equal("e57d9c90aa0da7b119fa579b0d5ad65bec3befbca4f35b89956db040203fa62e",
             results[
                 "behavior:card:01145:discard-top-card-your-deck-for-each-one-2"].Digest);
-        Assert.Equal("9dd62faf7bdc21b8cf7339243e944016a85ec1d05ae6ce7ebbeaef4aeed1826a",
+        Assert.Equal("e0c4d06ae046bbf60899a7b039a298f7260b2c2a9d18ddc953de73ea4b2cab98",
             results[
                 "behavior:card:01145:discard-top-card-your-deck-for-each-multiple-2"].Digest);
         Assert.Equal("2a7e50bdcf1ead787b8dd6b2db5b386171f7b2e59b2a62d16d77b80a638da6e9",
             results[
                 "behavior:card:01146:ultron-heals-2-damage-for-each-drone-zero"].Digest);
-        Assert.Equal("f5a42d105f821e37818e28841cf0f8df473d328585a2bc2030d19e31a79820a6",
+        Assert.Equal("4dde25e48109e3c2abe221ae0276bd952cd4aca11d0ec6ddb8429a19741e9c30",
             results[
                 "behavior:card:01146:ultron-heals-2-damage-for-each-drone-one"].Digest);
-        Assert.Equal("79f1ead61fee95706c46d02bb9a1733537816dfe17f766e1590ae2a8dc0ba89a",
+        Assert.Equal("26bdaec62ac20b30e608ee46f23fc17e2ae5f143dc0eea2821440e5005fc45c1",
             results[
                 "behavior:card:01146:ultron-heals-2-damage-for-each-drone-multiple"].Digest);
         Assert.Equal("526cfdf1ee73f3d75a279e9496e61d51f6b6707ee282b3e2acbf5818035a5358",
             results[
                 "behavior:card:01146:ultron-heals-1-damage-for-each-drone-zero"].Digest);
-        Assert.Equal("b2d12aeecaa69d5db0fa76ddf7bf02d5ec071ee6d73deb0f8369c467196bffdf",
+        Assert.Equal("1c2ca7defbe12ffe14da38b9f3825cd1300b52ee7799dec39460daad4ae48c4f",
             results[
                 "behavior:card:01146:ultron-heals-1-damage-for-each-drone-one"].Digest);
-        Assert.Equal("cefe505d1fdf9fc59f312cda5162fbd118b235cc5ab8bebcb1ea01cd519d56f9",
+        Assert.Equal("8dfd1de9e5ed5d58f0b5f74920bde1ecd712bf627fd6edc3526cda984116d9b8",
             results[
                 "behavior:card:01146:ultron-heals-1-damage-for-each-drone-multiple"].Digest);
-        Assert.Equal("fa0dcb4232851887fd6482ed5c3953fd916eca40de292e010ee32f039d7d5627",
+        Assert.Equal("6dd97999c3bcc2c3c1cd0a82758312cb722b53b2d2a956fef145033994661abf",
             results[
                 "behavior:card:01147:each-drone-minion-engaged-with-your-hero"].Digest);
-        Assert.Equal("5f714ff8b81a3a0dd8f613eb45285f2a24eb583218dd49fe065f3441dc688112",
+        Assert.Equal("08064ea4e0d9e557ab393de03b46d72f4033c26ff5ac1b4c0b6c1a3f09978b89",
             results[
                 "behavior:card:01147:if-no-attack-was-made-way-put-condition-met"].Digest);
     }
@@ -723,7 +723,7 @@ public sealed class CoreCardFaceTranscriptTests
             "950eedb06dc1e8f1260ddb00deac232e94da07ebc99018474f5bcb439810d3f6",
             results["behavior:rr:ability.13:hero-form-required"].Digest);
         Assert.Equal(
-            "55f512a54aefb56447e6c96eddd9f9d0d5103281bba5ee8a354129c5d79d1397",
+            "ea364f0282c5ba559af800c34faca79dace2e903fd6a7575fc6be8da763f3fd5",
             results["behavior:card:01018:spend-x-energy-resources-put-x-energy"].Digest);
         Assert.Equal(
             "c2e7c43beec3fc5fb3641766933b850a168e95a54ec83e44afb67629c75622e0",
@@ -792,18 +792,18 @@ public sealed class CoreCardFaceTranscriptTests
             .ToDictionary(result => result.Obligation, StringComparer.Ordinal);
 
         Assert.Equal(12, results.Count);
-        Assert.Equal("14bf07d3dc98972cde907cce6b21dacde5af2a6c3c1e346bb051569cc72ce8ce", results["behavior:card:01144a:each-player-puts-top-card-their-deck-one-player"].Digest);
-        Assert.Equal("9c036fd1843d99c807d64bd14c5639bee76916422d54d56a91a859f075a5b8c4", results["behavior:card:01144a:each-player-puts-top-card-their-deck-multiple-players"].Digest);
-        Assert.Equal("39b85d4384ea45b98d2fa462c889c3a59cb7092e285863dbb77fd6544ff818e0", results["behavior:card:01144a:choose-either-spend-energy-resource-or-put-choice-1"].Digest);
-        Assert.Equal("8e8c6197dba3df98061895a3633fbdf8ab11a1313f90b926ba0cdce2c3b800c1", results["behavior:card:01144a:choose-either-spend-energy-resource-or-put-choice-2"].Digest);
-        Assert.Equal("096d4613217bc5929309c1fb0723b20217e267becf36493d4a8f27bd0a71a0ad", results["behavior:card:01144b:each-player-puts-top-card-their-deck-one-player"].Digest);
-        Assert.Equal("58ff8401bcddc55bdf6a0e62a6f44203e3421bf7044bd7c80dc77345024a84d6", results["behavior:card:01144b:each-player-puts-top-card-their-deck-multiple-players"].Digest);
-        Assert.Equal("29f1095eef367e71c9aab57fbb4f23bb198387a3b61c6ce5462b37299cd1b451", results["behavior:card:01144b:choose-either-spend-mental-resource-or-put-choice-1"].Digest);
-        Assert.Equal("f3ba42b9c596c5651f8a72ab967d313af3d7e5a72dbfb371c38b6981cf8df8d5", results["behavior:card:01144b:choose-either-spend-mental-resource-or-put-choice-2"].Digest);
-        Assert.Equal("e36585247f82927f4f9d333f76d39a6a7d7761f566ca9c09b9fe8c9e333bab07", results["behavior:card:01144c:each-player-puts-top-card-their-deck-one-player"].Digest);
-        Assert.Equal("47f6d9099f8c21b363ac820052eb125d9a7db63885254739af431be5c94f99d3", results["behavior:card:01144c:each-player-puts-top-card-their-deck-multiple-players"].Digest);
-        Assert.Equal("85eca6d9d215f3d432566425f737a8679d718aa0dcecef376b35cd8426be1abb", results["behavior:card:01144c:choose-either-spend-physical-resource-or-put-choice-1"].Digest);
-        Assert.Equal("f27de204583d55c36d530d8dd157fe6a30b01bea3257329085428ca9402b4e20", results["behavior:card:01144c:choose-either-spend-physical-resource-or-put-choice-2"].Digest);
+        Assert.Equal("bbe032304d13d8cfd8a7696556682cbecf9ba57b8275b5eb1362339bdf756199", results["behavior:card:01144a:each-player-puts-top-card-their-deck-one-player"].Digest);
+        Assert.Equal("09e8e4ef168d9b167c525b5a60650ee9a53436185bab5f692ae358d67e1c366e", results["behavior:card:01144a:each-player-puts-top-card-their-deck-multiple-players"].Digest);
+        Assert.Equal("89df8e965c3719a7fdc7bcdacb2fa9fe03ca1b1fe940099f15d82721aa712878", results["behavior:card:01144a:choose-either-spend-energy-resource-or-put-choice-1"].Digest);
+        Assert.Equal("1e8a79eb942e3af0c1a6651d632d23b255ab614648654794fb3fe3c3e9b22fa1", results["behavior:card:01144a:choose-either-spend-energy-resource-or-put-choice-2"].Digest);
+        Assert.Equal("7b889d7f730555af20449a95661d8400b78b72ba1f23bf94f63201e54ff25ed3", results["behavior:card:01144b:each-player-puts-top-card-their-deck-one-player"].Digest);
+        Assert.Equal("a719cf944daedbf3508a4435e4be20e37e2264f1aaa89cf57859bc0c33984b36", results["behavior:card:01144b:each-player-puts-top-card-their-deck-multiple-players"].Digest);
+        Assert.Equal("a7073c316c5b5585ba88b5b2939bdc8819e5041a71d521b417f479f47c958314", results["behavior:card:01144b:choose-either-spend-mental-resource-or-put-choice-1"].Digest);
+        Assert.Equal("6ceacf96af5d753693d0f559cd05d0105018c9b09a1a48ca6e4e77d8e0fd2376", results["behavior:card:01144b:choose-either-spend-mental-resource-or-put-choice-2"].Digest);
+        Assert.Equal("1e6ff1e05033f3c3a2a8e6a74371ff126e9b5227ee93f3ebfde557e55c6d4740", results["behavior:card:01144c:each-player-puts-top-card-their-deck-one-player"].Digest);
+        Assert.Equal("1acff8e0df5dc455f25574dc94334c94588d6d7e02ad1a399c58479f8936dd0a", results["behavior:card:01144c:each-player-puts-top-card-their-deck-multiple-players"].Digest);
+        Assert.Equal("81b8d05378e418d625600e7a76f4e60a27aa5481d5b08cf0376180e225db13f1", results["behavior:card:01144c:choose-either-spend-physical-resource-or-put-choice-1"].Digest);
+        Assert.Equal("8a9b8c8817a841b1959cd228f62484ff460edb650c4041f1c610b369bcf768c6", results["behavior:card:01144c:choose-either-spend-physical-resource-or-put-choice-2"].Digest);
     }
 
     [Fact]
@@ -987,7 +987,7 @@ public sealed class CoreCardFaceTranscriptTests
             ["specs/behavior/core/core-modular-nemesis.feature::The Doomsday Chair does not search when M.O.D.O.K. is in play"] = "646837941474844b69d5de2a3a96a050f38580ddc430edf07c44bea92c1e6bb6",
             ["specs/behavior/core/core-modular-nemesis.feature::M.O.D.O.K. retaliates against an attacking hero"] = "66bd9dc80319e667ff05b617c2f4e7ca8724392141294818958527befff01336",
             ["specs/behavior/core/core-modular-nemesis.feature::Biomechanical Upgrades attaches to the highest printed hit points and surges"] = "c475ca3a6a440e1eb2644e8fa651fdaed063a30029abb7d389107d53b93b4f9f",
-            ["specs/behavior/core/core-modular-nemesis.feature::Biomechanical Upgrades can attach to a facedown Drone"] = "2e5b4236db564a60d1f739b1665ac1e6dbd34312525cd2f94db08fc18294f45e",
+            ["specs/behavior/core/core-modular-nemesis.feature::Biomechanical Upgrades can attach to a facedown Drone"] = "04e04e14e9f06e21bf07f2cd575a7d266beb0aa484d5a1b5ec2fda750035af4b",
         };
 
         Assert.Equal(expected.Count, results.Count);

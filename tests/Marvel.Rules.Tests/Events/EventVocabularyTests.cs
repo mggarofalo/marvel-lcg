@@ -166,6 +166,24 @@ public sealed partial class EventVocabularyTests
     }
 
     [Fact]
+    public void OccurrenceSubjectsAreOptionalAndSurviveARoundTrip()
+    {
+        var happened = new FieldSet(7, "health", 1, 0)
+        {
+            Subjects = new Dictionary<int, string> { [7] = "Drone" },
+        };
+
+        string written = EventJson.Write(happened);
+        var again = Assert.IsType<FieldSet>(EventJson.Read(written));
+
+        Assert.Contains("\"subjects\":{\"7\":\"Drone\"}", written, StringComparison.Ordinal);
+        Assert.Equal("Drone", again.Subjects?[7]);
+        Assert.DoesNotContain(
+            "\"subjects\"", EventJson.Write(new FieldSet(7, "health", 1, 0)),
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void KeysAreSnakeCaseAndNotCamel()
     {
         // `face_up`, not `faceUp`. One key is enough to pin the policy, and

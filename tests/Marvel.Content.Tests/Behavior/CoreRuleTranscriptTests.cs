@@ -138,7 +138,7 @@ public sealed class CoreRuleTranscriptTests
             "34c725e7bf00f8edee5d88a05622b4ea7331342e372910a124114a8527af9a28",
             results["behavior:card:01039:you-get-1-hit-point"].Digest);
         Assert.Equal(
-            "c8e8488adad559d9a8ca35d7dc9d5ca8a622053f27abc0abfa1287c692ccdeb1",
+            "5f922258b17be5385f9204dbebd9a27de7765b60d786dacdbae421e0abeb5038",
             results["behavior:rr:attachment.1:published-result"].Digest);
         Assert.Equal(
             "c5a14e8a14152ebd20333940065ac44678643817379e43da317231a6c4a05571",
@@ -162,7 +162,7 @@ public sealed class CoreRuleTranscriptTests
 
         Assert.Single(results);
         Assert.Equal(
-            "e20aa23bd8ccbea05ac162a7817ce670663981f006508cbf0de63d714746eda6",
+            "3d1a9d514dfecae1def8df553d07f182622b997475dfb65643d3156817885ec4",
             results["behavior:rr:play-area.1:published-result"].Digest);
     }
 
@@ -244,11 +244,11 @@ public sealed class CoreRuleTranscriptTests
             "eae3014b5502cdd02cd7694ea2a6332b306a402acf3e089126d2a661a7df28e4",
             results["behavior:card:01106:rhino-attacks-you"].Digest);
         Assert.Equal(
-            "6eb0932507b48f8cec8946effe4790e1781011da17b8dc828f7088db0916042f",
+            "864e7268a6c38b29c45295e15c084b720cd0fe603b0fc79009a34514eeec9f5d",
             results[
                 "behavior:card:01149:each-player-discards-top-3-cards-their-one-player"].Digest);
         Assert.Equal(
-            "704da517e0a7d6338dc8e094c2f13c78b68471e1b0bc9b07598869048424b71a",
+            "72f55a96a9339d9f95c5ada89dce89c3bc02717abfbf1b857bc5f4438edd2d70",
             results[
                 "behavior:card:01149:each-player-discards-top-3-cards-their-multiple-players"].Digest);
     }
@@ -560,13 +560,13 @@ public sealed class CoreRuleTranscriptTests
             "54c2bb02467e434575b767f841c9e99797e185436585685909b148dba160dd7a",
             results["behavior:card:01116a:search-encounter-deck-for-defense-network-side"].Digest);
         Assert.Equal(
-            "06aa63dd18da1c434ba94187777bbcc4255d9ef0615767a157e6735757674f84",
+            "708cb068b79e9ff498f862223936f2a47b8d97828f2ec789570316f24e6aeedf",
             results["behavior:card:01137a:put-ultron-drones-environment-into-play"].Digest);
         Assert.Equal(
             "da08994da99e4acd226173b829814a8f0df15b7707bfe6f89f1db11194e194df",
             results["behavior:card:01116a:klaw-ii-and-klaw-iii-instead-for"].Digest);
         Assert.Equal(
-            "81235bf82be267f8c5d4698982d2599205fdbc61020006db754755dddb52f40c",
+            "1be5c9432ce787a74e6be9eee98ae73fbff3a8966a33924dd282003dc8307a25",
             results["behavior:card:01137a:ultron-ii-and-ultron-iii-instead-for"].Digest);
     }
 

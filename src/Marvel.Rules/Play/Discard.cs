@@ -68,9 +68,10 @@ public static class Discard
     /// <param name="trigger">What caused it, for the event stream.</param>
     /// <param name="events">Where to record what moved.</param>
     /// <param name="verb">The semantic reason the card moved.</param>
+    /// <param name="subject">Its effective public name before movement, when required.</param>
     public static void Card(
         World world, State.Card card, string trigger, List<GameEvent> events,
-        string verb = "Discard")
+        string verb = "Discard", string? subject = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(card);
@@ -121,7 +122,11 @@ public static class Discard
             Places.Reference(from), Places.Reference(pile),
             [new Landing(card.ObjectId, pile.Cards.Count - 1)])
         {
-            Trigger = trigger, Verb = verb,
+            Trigger = trigger,
+            Verb = verb,
+            Subjects = subject is null
+                ? null
+                : new Dictionary<int, string> { [card.ObjectId] = subject },
         });
 
         constantsEnding.Complete(trigger, events);

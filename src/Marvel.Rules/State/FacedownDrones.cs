@@ -19,6 +19,12 @@ namespace Marvel.Rules.State;
 /// </remarks>
 public static class FacedownDrones
 {
+    /// <summary>The stable presentation identity of the blank facedown minion.</summary>
+    public const string EffectiveFaceId = "effective-drone";
+
+    /// <summary>The public title supplied by the effect that creates the minion.</summary>
+    public const string EffectiveTitle = "Drone";
+
     /// <summary>The trait given to every facedown Drone minion.</summary>
     public const string Trait = "DRONE";
 
@@ -39,6 +45,14 @@ public static class FacedownDrones
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(facts);
         return Is(card) ? CardKind.Minion : facts.Kind(card.FaceId);
+    }
+
+    /// <summary>The card's current public title, accounting for a facedown Drone.</summary>
+    public static string Title(Card card, ICardFacts facts)
+    {
+        ArgumentNullException.ThrowIfNull(card);
+        ArgumentNullException.ThrowIfNull(facts);
+        return Is(card) ? EffectiveTitle : facts.Title(card.FaceId);
     }
 
     /// <summary>The card's current base value before modifiers.</summary>
@@ -105,7 +119,9 @@ public static class FacedownDrones
             Places.Reference(from), Places.Reference(engaged),
             [new Landing(card.ObjectId, engaged.Cards.Count - 1)])
         {
-            Trigger = trigger, Verb = verb,
+            Trigger = trigger,
+            Verb = verb,
+            Subjects = new Dictionary<int, string> { [card.ObjectId] = EffectiveTitle },
         });
 
         // `rr:player-deck.1` triggers when the deck empties, not when the

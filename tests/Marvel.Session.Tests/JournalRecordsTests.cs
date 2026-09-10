@@ -134,6 +134,20 @@ public sealed class JournalRecordsTests
             JournalReplay.RequireFingerprint("abc", "abd", "digest"));
     }
 
+    [Fact]
+    public void ReplayRecordsOmitPresentationOnlyEventSubjects()
+    {
+        var happened = new FieldSet(7, "health", 1, 0)
+        {
+            Subjects = new Dictionary<int, string> { [7] = "Drone" },
+        };
+
+        JsonElement recorded = JournalJson.Event(happened);
+
+        Assert.False(recorded.TryGetProperty("subjects", out _));
+        JournalReplay.RequireEvents([recorded], [happened], "events");
+    }
+
     private static Prompt Prompt(params Affordance[] affordances) => new(
         0,
         Question.TurnOption,

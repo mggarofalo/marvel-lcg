@@ -70,12 +70,13 @@ public sealed class FacedownDroneTests
         var world = Board(facts, players: 1);
         world.CreateCard("bottom", world.Seats[0].Deck);
         var underneath = world.CreateCard("player-card", world.Seats[0].Deck);
+        var events = new List<GameEvent>();
         var drone = Assert.IsType<Card>(
-            FacedownDrones.EngageTop(world, 0, "01140", "Create_Drone", []));
+            FacedownDrones.EngageTop(world, 0, "01140", "Create_Drone", events));
         Agendas.Happening(world);
 
         bool defeated = Damage.Deal(
-            world, facts, drone, drone, 1, "test", "Deal_Damage", []);
+            world, facts, drone, drone, 1, "test", "Deal_Damage", events);
         var resolved = new Resolution(world, Prompt: null, Events: []);
 
         Assert.True(defeated);
@@ -89,6 +90,10 @@ public sealed class FacedownDroneTests
         Assert.Contains(
             resolved.Information,
             signal => signal.Kind == InformationKind.Reveal);
+        Assert.All(
+            events.Where(happened => happened is FieldSet
+                || happened is CardsMoved { Verb: "Defeat" }),
+            happened => Assert.Equal("Drone", happened.Subjects?[drone.ObjectId]));
     }
 
     [Rule("rr:engage.1")]
@@ -150,7 +155,7 @@ public sealed class FacedownDroneTests
                 "hero" => new Dictionary<string, string> { ["HP"] = "10" },
                 "player-card" => new Dictionary<string, string>
                 {
-                    ["SCH"] = "8", ["ATK"] = "9", ["HP"] = "7", ["Retaliate"] = "3",
+                    ["HP"] = "7", ["Retaliate"] = "3",
                     ["Victory"] = "5",
                 },
                 _ => new Dictionary<string, string>(),

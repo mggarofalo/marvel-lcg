@@ -45,7 +45,10 @@ public static class WorldProjection
         var cards = new Dictionary<int, CardDescriptor>();
         foreach (Card card in world.Cards)
         {
-            CardAudience audience = Audience(card, prompt, searchVisible);
+            bool isDrone = FacedownDrones.Is(card);
+            CardAudience audience = isDrone
+                ? CardAudience.Everyone
+                : Audience(card, prompt, searchVisible);
             bool inPlay = DeckTypes.IsInPlay(card.Area.Type);
             CardKind kind = FacedownDrones.Kind(card, world.Facts);
             CardKind printedKind = world.Facts.Kind(card.FaceId);
@@ -57,40 +60,51 @@ public static class WorldProjection
             {
                 continue;
             }
-            IReadOnlyDictionary<string, string> attributes = world.Facts.Attributes(card.FaceId);
+            IReadOnlyDictionary<string, string> attributes = isDrone
+                ? new Dictionary<string, string>(StringComparer.Ordinal)
+                {
+                    ["SCH"] = "1",
+                    ["ATK"] = "1",
+                    ["HP"] = "1",
+                }
+                : world.Facts.Attributes(card.FaceId);
             IReadOnlyDictionary<string, long> projectedFields = StateFields.For(
                 card, world.Facts, world.Players, inPlay,
                 card.HasRegisteredTokens,
                 card.Owner == world.FirstPlayer && card.Area.Type == DeckType.HeroArea,
                 world);
-            if (inPlay && kind == CardKind.Ally)
+            if (inPlay && kind is CardKind.Ally or CardKind.Minion)
             {
                 // The digest deliberately retains its historical registered
                 // field shape. The view still owes players the rule-defined
-                // remaining hit points of an ally in play (rr:damage.1).
+                // modified remaining hit points of a character in play
+                // (rr:damage.1, rr:modifiers.1).
                 projectedFields = new Dictionary<string, long>(projectedFields,
                     StringComparer.Ordinal)
                 {
                     ["health"] = Math.Max(
                         0,
-                        world.Facts.PrintedValue(card.FaceId, "HP", world.Players)
-                            - card.Damage),
+                        FacedownDrones.BaseValue(
+                            card, world.Facts, "HP", world.Players)
+                        + StateFields.Modified(
+                            world, card, "health", world.Facts, world.Players)
+                        - card.Damage),
                 };
             }
             var face = new CardFaceDescriptor(
-                card.FaceId,
-                world.Facts.Title(card.FaceId),
-                world.Facts.Subtitle(card.FaceId),
+                isDrone ? FacedownDrones.EffectiveFaceId : card.FaceId,
+                FacedownDrones.Title(card, world.Facts),
+                isDrone ? string.Empty : world.Facts.Subtitle(card.FaceId),
                 kind,
                 projectedFields)
             {
                 Traits = DisplayTraits(world, card),
                 Cost = attributes.TryGetValue("Cost", out string? cost) ? cost : null,
                 PrintedStats = PrintedStats(attributes),
-                Keywords = [.. world.Facts.Keywords(card.FaceId)],
-                RulesText = world.Facts.Text(card.FaceId),
-                RulesMarkup = world.Facts.FormattedText(card.FaceId),
-                ArtFaceId = FacedownDrones.Is(card) ? null : card.FaceId,
+                Keywords = isDrone ? [] : [.. world.Facts.Keywords(card.FaceId)],
+                RulesText = isDrone ? string.Empty : world.Facts.Text(card.FaceId),
+                RulesMarkup = isDrone ? string.Empty : world.Facts.FormattedText(card.FaceId),
+                ArtFaceId = isDrone ? null : card.FaceId,
                 Damage = card.Damage,
                 Counters = card.Tokens
                     .Where(token => token.Key.StartsWith("c_", StringComparison.Ordinal))
@@ -291,13 +305,36 @@ public static class WorldProjection
     private static CardsCreated? KeepCreated(CardsCreated created, HashSet<int> visible)
     {
         var cards = created.Cards.Where(card => visible.Contains(card.Id)).ToList();
-        return cards.Count == 0 ? null : created with { Cards = cards };
+        return cards.Count == 0 ? null : created with
+        {
+            Cards = cards,
+            Subjects = KeepSubjects(created.Subjects, cards.Select(card => card.Id)),
+        };
     }
 
     private static CardsMoved? KeepMoved(CardsMoved moved, HashSet<int> visible)
     {
         var cards = moved.Cards.Where(card => visible.Contains(card.Card)).ToList();
-        return cards.Count == 0 ? null : moved with { Cards = cards };
+        return cards.Count == 0 ? null : moved with
+        {
+            Cards = cards,
+            Subjects = KeepSubjects(moved.Subjects, cards.Select(card => card.Card)),
+        };
+    }
+
+    private static Dictionary<int, string>? KeepSubjects(
+        IReadOnlyDictionary<int, string>? subjects, IEnumerable<int> visible)
+    {
+        if (subjects is null)
+        {
+            return null;
+        }
+
+        HashSet<int> ids = visible.ToHashSet();
+        var kept = subjects
+            .Where(subject => ids.Contains(subject.Key))
+            .ToDictionary(subject => subject.Key, subject => subject.Value);
+        return kept.Count == 0 ? null : kept;
     }
 
     private static CardsFlipped? KeepFlipped(CardsFlipped flipped, HashSet<int> visible)

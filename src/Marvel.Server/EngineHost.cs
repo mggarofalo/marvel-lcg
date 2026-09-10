@@ -1372,7 +1372,7 @@ public sealed class EngineHost : IEngineEndpoint
 
     private static SessionCompatibility TestCompatibility() => new(
         Application: "test",
-        ReplayContract: "engine-replay-v1",
+        ReplayContract: EngineBuildIdentity.ReplayContract,
         RngContract: "mt19937-iso-cxx",
         StateDigest: "state-digest-v2",
         CardsSha256: new string('0', 64),
