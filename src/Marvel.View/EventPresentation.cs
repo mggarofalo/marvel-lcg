@@ -312,6 +312,7 @@ public static class EventPresenter
                 combined[^1] = prior with
                 {
                     Cards = prior.Cards.Concat(moved.Cards).ToArray(),
+                    Subjects = CombineSubjects(prior.Subjects, moved.Subjects),
                 };
                 continue;
             }
@@ -320,6 +321,33 @@ public static class EventPresenter
         }
 
         return Present(combined, world);
+    }
+
+    private static Dictionary<int, string>? CombineSubjects(
+        IReadOnlyDictionary<int, string>? first,
+        IReadOnlyDictionary<int, string>? second)
+    {
+        if (first is null && second is null)
+        {
+            return null;
+        }
+
+        var combined = new Dictionary<int, string>();
+        if (first is not null)
+        {
+            foreach ((int id, string subject) in first)
+            {
+                combined.Add(id, subject);
+            }
+        }
+        if (second is not null)
+        {
+            foreach ((int id, string subject) in second)
+            {
+                combined[id] = subject;
+            }
+        }
+        return combined;
     }
 
     /// <summary>Presents one event using only its authorized response snapshot.</summary>

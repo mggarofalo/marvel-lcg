@@ -392,10 +392,10 @@ public static class Damage
         {
             Trigger = trigger,
             Verb = verb,
-            Subjects = new Dictionary<int, string>
-            {
-                [placed.Target.ObjectId] = FacedownDrones.Title(placed.Target, facts),
-            },
+            Subjects = FacedownDrones.Is(placed.Target)
+                ? new Dictionary<int, string>
+                    { [placed.Target.ObjectId] = FacedownDrones.EffectiveTitle }
+                : null,
         });
     }
 
@@ -845,10 +845,10 @@ public static class Damage
         {
             Trigger = trigger,
             Verb = verb,
-            Subjects = new Dictionary<int, string>
-            {
-                [target.ObjectId] = FacedownDrones.Title(target, facts),
-            },
+            Subjects = FacedownDrones.Is(target)
+                ? new Dictionary<int, string>
+                    { [target.ObjectId] = FacedownDrones.EffectiveTitle }
+                : null,
         });
 
         return healed;

@@ -504,7 +504,9 @@ public static class Defeat
         World world, ICardFacts facts, Card host, string trigger,
         List<GameEvent> events)
     {
-        string subject = FacedownDrones.Title(host, facts);
+        string? subject = FacedownDrones.Is(host)
+            ? FacedownDrones.EffectiveTitle
+            : null;
         var victory = PreflightDefeatAttachments(world, facts, host);
         bool hostHasVictory = Timing.Keywords.Has(world, host, "victory", facts);
         var victoryRoots = victory.Select(card => card.ObjectId).ToHashSet();

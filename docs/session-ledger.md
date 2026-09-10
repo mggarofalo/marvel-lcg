@@ -187,6 +187,11 @@ It also records:
 - the engine result after resolution, which is null until the game is terminal
   and otherwise includes the outcome and terminal round.
 
+Occurrence-time event `subjects` are presentation evidence rather than semantic
+gameplay state. The session journal omits them, so adding or improving a safe
+description does not change deterministic replay or invalidate an older save.
+Fresh replay reconstructs that evidence for the response being presented.
+
 Schema 2 defines the state fingerprint as `World.Digest()` plus the recorded
 engine result. `World.Digest()` alone contains card state and cannot distinguish
 a win from a loss on an otherwise identical terminal board. Replay verifies

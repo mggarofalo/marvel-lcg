@@ -383,13 +383,21 @@ public sealed class EventPresentationTests
             Verb = "Defeat",
             Subjects = new Dictionary<int, string> { [7] = "Drone" },
         };
+        var secondDefeated = new CardsMoved(
+            AreaRef.Player("EngagedEnemiesArea", 0),
+            AreaRef.Player("DiscardPile", 0),
+            [new Landing(13, 1)])
+        {
+            Verb = "Defeat",
+            Subjects = new Dictionary<int, string> { [13] = "Drone" },
+        };
         WorldDescriptor after = NarrativeWorld();
 
         var chronology = new EventChronology();
-        chronology.Reset([damage, defeated], after);
+        chronology.Reset([damage, defeated, secondDefeated], after);
 
         Assert.Equal(
-            ["Drone changed health from 1 to 0.", "Drone was defeated."],
+            ["Drone changed health from 1 to 0.", "Drone and Drone were defeated."],
             chronology.Entries.Select(entry => entry.Summary));
         Assert.Equal(
             "Spider-Tracer changed health from 0 to 1.",

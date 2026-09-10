@@ -155,7 +155,7 @@ public sealed class FacedownDroneTests
                 "hero" => new Dictionary<string, string> { ["HP"] = "10" },
                 "player-card" => new Dictionary<string, string>
                 {
-                    ["SCH"] = "8", ["ATK"] = "9", ["HP"] = "7", ["Retaliate"] = "3",
+                    ["HP"] = "7", ["Retaliate"] = "3",
                     ["Victory"] = "5",
                 },
                 _ => new Dictionary<string, string>(),

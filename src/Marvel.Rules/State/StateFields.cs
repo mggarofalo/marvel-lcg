@@ -418,6 +418,7 @@ public static class StateFields
 
         if (PrintedFrom.TryGetValue(field, out string? printedAttribute)
             && PowerAttributes.Contains(printedAttribute)
+            && !FacedownDrones.Is(card)
             && !HasUsablePrintedPower(facts, card.FaceId, printedAttribute))
         {
             // `rr:dash-value.3`: a referenced dash is an unmodifiable zero.
@@ -465,6 +466,7 @@ public static class StateFields
             }
 
             if (PowerAttributes.Contains(attribute)
+                && !FacedownDrones.Is(card)
                 && !HasUsablePrintedPower(facts, faceId, attribute))
             {
                 fields[field] = 0;
