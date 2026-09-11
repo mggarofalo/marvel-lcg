@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Content;
@@ -953,11 +952,17 @@ internal static class SimulationHarness
 
     private static T Read<T>(string line, string expectedType, int schema = RecordSchema)
     {
-        string readable = schema == PreviousRecordSchema
-            && (typeof(T) == typeof(StepRecord) || typeof(T) == typeof(FailureRecord))
-                ? CanonicalizeSchemaTwoPrompts(line)
-                : line;
-        return JsonSerializer.Deserialize<T>(readable, RecordJson.Options)
+        if (schema == PreviousRecordSchema && typeof(T) == typeof(StepRecord))
+        {
+            return (T)(object)ReadSchemaTwoStep(line);
+        }
+
+        if (schema == PreviousRecordSchema && typeof(T) == typeof(FailureRecord))
+        {
+            return (T)(object)ReadSchemaTwoFailure(line);
+        }
+
+        return JsonSerializer.Deserialize<T>(line, RecordJson.Options)
             ?? throw new JsonException($"{expectedType} record was null");
     }
 
@@ -971,38 +976,54 @@ internal static class SimulationHarness
         }
     }
 
-    private static string CanonicalizeSchemaTwoPrompts(string line)
+    private static StepRecord ReadSchemaTwoStep(string line)
     {
-        JsonObject root = JsonNode.Parse(line) as JsonObject
-            ?? throw new JsonException("schema 2 record is not an object");
-        CanonicalizePrompt(root);
-        if (root["recent_steps"] is JsonArray recent)
-        {
-            foreach (JsonNode? node in recent)
-            {
-                if (node is not JsonObject step)
-                {
-                    throw new JsonException("schema 2 recent step is not an object");
-                }
-
-                CanonicalizePrompt(step);
-            }
-        }
-
-        return root.ToJsonString(RecordJson.Options);
+        var step = JsonSerializer.Deserialize<SchemaTwoStepRecord>(line, RecordJson.Options)
+            ?? throw new JsonException("schema 2 step record was null");
+        return ConvertSchemaTwoStep(step);
     }
 
-    private static void CanonicalizePrompt(JsonObject record)
-    {
-        if (record["prompt"] is null)
-        {
-            return;
-        }
+    private static StepRecord ConvertSchemaTwoStep(SchemaTwoStepRecord step) =>
+        new(
+            step.Type,
+            step.Game,
+            step.Step,
+            SchemaTwoPromptJson.Read(step.Prompt),
+            step.Decision,
+            step.Targets,
+            step.Resources,
+            step.Values,
+            step.Allocations,
+            step.Events,
+            step.Digest);
 
-        JsonElement legacy = JsonSerializer.SerializeToElement(
-            record["prompt"], RecordJson.Options);
-        record["prompt"] = JsonSerializer.SerializeToNode(
-            SchemaTwoPromptJson.Read(legacy), RecordJson.Options);
+    private static FailureRecord ReadSchemaTwoFailure(string line)
+    {
+        var failure = JsonSerializer.Deserialize<SchemaTwoFailureRecord>(
+            line, RecordJson.Options)
+            ?? throw new JsonException("schema 2 failure record was null");
+        return new FailureRecord(
+            failure.Type,
+            failure.Category,
+            failure.Game,
+            failure.Seed,
+            failure.Step,
+            failure.Round,
+            failure.Metrics,
+            failure.Exception,
+            failure.Message,
+            failure.Prompt is null || failure.Prompt.Value.ValueKind == JsonValueKind.Null
+                ? null
+                : SchemaTwoPromptJson.Read(failure.Prompt.Value),
+            failure.Decision,
+            failure.Targets,
+            failure.Resources,
+            failure.Values,
+            failure.Allocations,
+            failure.LastGoodDigest,
+            failure.PostFailureDigest,
+            [.. failure.RecentSteps.Select(ConvertSchemaTwoStep)],
+            failure.Reproduce);
     }
 
     private static void ValidateHeaderSeeds(HeaderRecord header)

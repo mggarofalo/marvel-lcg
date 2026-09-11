@@ -57,6 +57,19 @@ internal sealed record StepRecord(
     IReadOnlyList<JsonElement> Events,
     string Digest);
 
+internal sealed record SchemaTwoStepRecord(
+    string Type,
+    int Game,
+    int Step,
+    JsonElement Prompt,
+    DecisionSelector Decision,
+    IReadOnlyList<int> Targets,
+    IReadOnlyList<int> Resources,
+    IReadOnlyDictionary<string, long> Values,
+    IReadOnlyList<ResourceAllocation> Allocations,
+    IReadOnlyList<JsonElement> Events,
+    string Digest);
+
 internal sealed record ResultRecord(
     string Type,
     int Game,
@@ -86,6 +99,27 @@ internal sealed record FailureRecord(
     string? LastGoodDigest,
     string? PostFailureDigest,
     IReadOnlyList<StepRecord> RecentSteps,
+    string Reproduce);
+
+internal sealed record SchemaTwoFailureRecord(
+    string Type,
+    string Category,
+    int Game,
+    uint Seed,
+    int Step,
+    int Round,
+    PolicyMetrics Metrics,
+    string Exception,
+    string Message,
+    JsonElement? Prompt,
+    DecisionSelector? Decision,
+    IReadOnlyList<int> Targets,
+    IReadOnlyList<int> Resources,
+    IReadOnlyDictionary<string, long> Values,
+    IReadOnlyList<ResourceAllocation> Allocations,
+    string? LastGoodDigest,
+    string? PostFailureDigest,
+    IReadOnlyList<SchemaTwoStepRecord> RecentSteps,
     string Reproduce);
 
 internal sealed record SummaryRecord(

@@ -132,6 +132,15 @@ public sealed record TargetRequestRecord(
     [property: JsonRequired] IReadOnlyDictionary<int, int>? MaximumOccurrences,
     [property: JsonRequired] IReadOnlyDictionary<int, string>? Details)
 {
+    [JsonIgnore]
+    internal bool LegacyAllowRepeatedRecorded { get; init; } = true;
+
+    [JsonIgnore]
+    internal bool LegacyMaximumOccurrencesRecorded { get; init; } = true;
+
+    [JsonIgnore]
+    internal bool LegacyDetailsRecorded { get; init; } = true;
+
     /// <summary>Captures source fields without the derived grouped alias.</summary>
     public static TargetRequestRecord From(TargetRequest request)
     {
@@ -197,6 +206,9 @@ public sealed record CostOptionRecord(
     [property: JsonRequired] IReadOnlyList<ResourceCostComponentRecord>? Components,
     [property: JsonRequired] bool DeclarationSensitive)
 {
+    [JsonIgnore]
+    internal bool LegacyDeclarationSensitiveRecorded { get; init; } = true;
+
     /// <summary>Captures source fields without computed cost aliases.</summary>
     public static CostOptionRecord From(CostOption option)
     {
@@ -301,6 +313,9 @@ public static class SchemaTwoPromptJson
             throw new JsonException("schema 2 target is_grouped does not match groups");
         }
 
+        bool allowRepeatedRecorded = Recorded(request.AllowRepeated);
+        bool maximumOccurrencesRecorded = Recorded(request.MaximumOccurrences);
+        bool detailsRecorded = Recorded(request.Details);
         return new TargetRequestRecord(
             request.Legal,
             request.Min,
@@ -309,9 +324,14 @@ public static class SchemaTwoPromptJson
             request.MustIncludeTraits,
             request.Rule,
             request.IsSearch,
-            request.AllowRepeated,
-            request.MaximumOccurrences,
-            request.Details);
+            allowRepeatedRecorded ? request.AllowRepeated.GetBoolean() : false,
+            ReadOptional<IReadOnlyDictionary<int, int>>(request.MaximumOccurrences),
+            ReadOptional<IReadOnlyDictionary<int, string>>(request.Details))
+        {
+            LegacyAllowRepeatedRecorded = allowRepeatedRecorded,
+            LegacyMaximumOccurrencesRecorded = maximumOccurrencesRecorded,
+            LegacyDetailsRecorded = detailsRecorded,
+        };
     }
 
     private static CostOptionRecord Convert(LegacyCostOption option)
@@ -336,6 +356,7 @@ public static class SchemaTwoPromptJson
             throw new JsonException("schema 2 cost computed aliases do not match source fields");
         }
 
+        bool declarationSensitiveRecorded = Recorded(option.DeclarationSensitive);
         return new CostOptionRecord(
             option.Target,
             option.Cost,
@@ -355,7 +376,10 @@ public static class SchemaTwoPromptJson
                 : [.. option.Components.Select(component =>
                     new ResourceCostComponentRecord(
                         component.Cost, component.Rule, component.Printed))],
-            option.DeclarationSensitive);
+            declarationSensitiveRecorded ? option.DeclarationSensitive.GetBoolean() : false)
+        {
+            LegacyDeclarationSensitiveRecorded = declarationSensitiveRecorded,
+        };
     }
 
     private static bool SequenceEqual<T>(
@@ -375,6 +399,14 @@ public static class SchemaTwoPromptJson
                 ? pair.Second.Rule is null
                 : pair.Second.Rule is not null
                     && pair.First.Rule.SequenceEqual(pair.Second.Rule)));
+
+    private static bool Recorded(JsonElement value) =>
+        value.ValueKind != JsonValueKind.Undefined;
+
+    private static T? ReadOptional<T>(JsonElement value) where T : class =>
+        !Recorded(value) || value.ValueKind == JsonValueKind.Null
+            ? null
+            : value.Deserialize<T>(Options);
 
     private static JsonSerializerOptions CreateOptions()
     {
@@ -413,10 +445,10 @@ public static class SchemaTwoPromptJson
         [property: JsonRequired] IReadOnlyList<string>? MustIncludeTraits,
         [property: JsonRequired] string Rule,
         [property: JsonRequired] bool IsSearch,
-        [property: JsonRequired] bool AllowRepeated,
-        [property: JsonRequired] IReadOnlyDictionary<int, int>? MaximumOccurrences,
-        [property: JsonRequired] IReadOnlyDictionary<int, string>? Details,
-        [property: JsonRequired] bool IsGrouped);
+        [property: JsonRequired] bool IsGrouped,
+        JsonElement AllowRepeated = default,
+        JsonElement MaximumOccurrences = default,
+        JsonElement Details = default);
 
     private sealed record LegacyCostOption(
         [property: JsonRequired] int Target,
@@ -427,11 +459,11 @@ public static class SchemaTwoPromptJson
         [property: JsonRequired] IReadOnlyList<LegacyResourceSource>? Sources,
         [property: JsonRequired] IReadOnlyList<LegacyVariableRequest>? Variables,
         [property: JsonRequired] IReadOnlyList<LegacyResourceCost>? Components,
-        [property: JsonRequired] bool DeclarationSensitive,
         [property: JsonRequired] bool HasAlternative,
         [property: JsonRequired] IReadOnlyList<LegacyResourceSource> Generators,
         [property: JsonRequired] IReadOnlyList<LegacyVariableRequest> VariableRequests,
-        [property: JsonRequired] IReadOnlyList<LegacyResourceCost> ResourceCosts);
+        [property: JsonRequired] IReadOnlyList<LegacyResourceCost> ResourceCosts,
+        JsonElement DeclarationSensitive = default);
 
     private readonly record struct LegacyResourceSource(
         [property: JsonRequired] int Effect,
@@ -706,10 +738,70 @@ public static class JournalReplay
     {
         ArgumentNullException.ThrowIfNull(expected);
         ArgumentNullException.ThrowIfNull(actual);
+        PromptRecord recorded = NormalizeUnrecordedSchemaTwoFields(
+            expected, PromptRecord.From(actual));
         RequireEqual(
             JsonSerializer.Serialize(expected, JournalJson.Options),
-            JsonSerializer.Serialize(PromptRecord.From(actual), JournalJson.Options),
+            JsonSerializer.Serialize(recorded, JournalJson.Options),
             context);
+    }
+
+    private static PromptRecord NormalizeUnrecordedSchemaTwoFields(
+        PromptRecord expected, PromptRecord actual)
+    {
+        if (expected.Affordances is null
+            || expected.Affordances.Count != actual.Affordances.Count)
+        {
+            return actual;
+        }
+
+        var affordances = new List<AffordanceRecord>(actual.Affordances.Count);
+        for (int index = 0; index < actual.Affordances.Count; index++)
+        {
+            if (expected.Affordances[index] is not AffordanceRecord expectedAffordance
+                || expectedAffordance.Costs is null)
+            {
+                return actual;
+            }
+
+            AffordanceRecord actualAffordance = actual.Affordances[index];
+            TargetRequestRecord? targets = actualAffordance.Targets;
+            if (expectedAffordance.Targets is TargetRequestRecord expectedTargets
+                && targets is not null)
+            {
+                targets = targets with
+                {
+                    AllowRepeated = expectedTargets.LegacyAllowRepeatedRecorded
+                        ? targets.AllowRepeated
+                        : expectedTargets.AllowRepeated,
+                    MaximumOccurrences = expectedTargets.LegacyMaximumOccurrencesRecorded
+                        ? targets.MaximumOccurrences
+                        : expectedTargets.MaximumOccurrences,
+                    Details = expectedTargets.LegacyDetailsRecorded
+                        ? targets.Details
+                        : expectedTargets.Details,
+                };
+            }
+
+            IReadOnlyList<CostOptionRecord> costs = actualAffordance.Costs;
+            if (expectedAffordance.Costs.Count == costs.Count)
+            {
+                costs = [.. costs.Select((cost, costIndex) =>
+                {
+                    CostOptionRecord expectedCost = expectedAffordance.Costs[costIndex];
+                    return expectedCost.LegacyDeclarationSensitiveRecorded
+                        ? cost
+                        : cost with
+                        {
+                            DeclarationSensitive = expectedCost.DeclarationSensitive,
+                        };
+                })];
+            }
+
+            affordances.Add(actualAffordance with { Targets = targets, Costs = costs });
+        }
+
+        return actual with { Affordances = affordances };
     }
 
     /// <summary>Requires semantic events to retain their exact count, order and shape.</summary>

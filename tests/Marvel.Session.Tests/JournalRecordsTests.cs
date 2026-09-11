@@ -224,6 +224,19 @@ public sealed class JournalRecordsTests
         Assert.Equal(
             JsonSerializer.Serialize(current, JournalJson.Options),
             JsonSerializer.Serialize(parsed, JournalJson.Options));
+        JsonObject oldestSchemaTwo = Assert.IsType<JsonObject>(legacy.DeepClone());
+        JsonObject oldestAffordance = oldestSchemaTwo["affordances"]![0]!.AsObject();
+        JsonObject oldestTarget = oldestAffordance["targets"]!.AsObject();
+        _ = oldestTarget.Remove("allow_repeated");
+        _ = oldestTarget.Remove("maximum_occurrences");
+        _ = oldestTarget.Remove("details");
+        _ = oldestAffordance["costs"]![0]!.AsObject().Remove("declaration_sensitive");
+        PromptRecord oldestParsed = SchemaTwoPromptJson.Read(
+            JsonSerializer.SerializeToElement(oldestSchemaTwo, JournalJson.Options));
+        Assert.Equal(
+            JsonSerializer.Serialize(current, JournalJson.Options),
+            JsonSerializer.Serialize(oldestParsed, JournalJson.Options));
+
         legacy["affordances"]![0]!["costs"]![0]!["generators"] = new JsonArray();
         Assert.Throws<JsonException>(() => SchemaTwoPromptJson.Read(
             JsonSerializer.SerializeToElement(legacy, JournalJson.Options)));

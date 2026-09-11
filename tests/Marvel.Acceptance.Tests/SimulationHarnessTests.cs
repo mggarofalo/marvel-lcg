@@ -120,6 +120,12 @@ public sealed class SimulationHarnessTests
                 SimulationHarness.Replay(
                     new ReplayConfig(path, RepositoryRoot()), TextWriter.Null).Games);
             Assert.Equal(1, SimulationHarness.Report(path).Games);
+            File.WriteAllLines(path, OldestSchemaTwoLines(legacy));
+            Assert.Equal(
+                1,
+                SimulationHarness.Replay(
+                    new ReplayConfig(path, RepositoryRoot()), TextWriter.Null).Games);
+            Assert.Equal(1, SimulationHarness.Report(path).Games);
         }
         finally
         {
@@ -610,6 +616,48 @@ public sealed class SimulationHarnessTests
         }
 
         return legacy;
+    }
+
+    private static IEnumerable<string> OldestSchemaTwoLines(IEnumerable<string> legacy)
+    {
+        foreach (string line in legacy)
+        {
+            JsonObject record = Assert.IsType<JsonObject>(JsonNode.Parse(line));
+            RemoveLaterSchemaTwoPromptFields(record);
+            if (record["recent_steps"] is JsonArray recent)
+            {
+                foreach (JsonNode? recentStep in recent)
+                {
+                    RemoveLaterSchemaTwoPromptFields(recentStep!.AsObject());
+                }
+            }
+
+            yield return record.ToJsonString(RecordJson.Options);
+        }
+    }
+
+    private static void RemoveLaterSchemaTwoPromptFields(JsonObject record)
+    {
+        if (record["prompt"] is not JsonObject prompt)
+        {
+            return;
+        }
+
+        foreach (JsonNode? affordanceNode in prompt["affordances"]!.AsArray())
+        {
+            JsonObject affordance = affordanceNode!.AsObject();
+            if (affordance["targets"] is JsonObject target)
+            {
+                _ = target.Remove("allow_repeated");
+                _ = target.Remove("maximum_occurrences");
+                _ = target.Remove("details");
+            }
+
+            foreach (JsonNode? costNode in affordance["costs"]!.AsArray())
+            {
+                _ = costNode!.AsObject().Remove("declaration_sensitive");
+            }
+        }
     }
 
     private static void AddSchemaTwoPrompt(JsonObject record)

@@ -1109,20 +1109,15 @@ public sealed class EngineHost : IEngineEndpoint
             try
             {
                 StoredSession current = stored;
-                if (current.Save.Schema == 2)
+                bool migration = current.Save.Schema == 2;
+                if (migration)
                 {
                     SessionSave migrated = SessionReplay.MigrateSchemaTwo(
                         current.Save, compatibility, ReplayOpen);
                     current = current with { Save = migrated };
-                    // Publish only after replay has verified the predecessor trace and
-                    // the complete schema 3 generation is durable.
-                    selectedGeneration = store.Commit(current);
-                    saveCommitted = true;
                 }
 
                 Game game = SessionReplay.Verify(current.Save, compatibility, ReplayOpen);
-                var session = new HostedSession(current.Save.Session.Label, game, current.Save);
-                restoring = session;
                 foreach (StoredAuthority authority in current.Authorities)
                 {
                     if (authority.Seats.Any(seat => seat >= game.State.Players))
@@ -1130,7 +1125,20 @@ public sealed class EngineHost : IEngineEndpoint
                         throw new SessionSaveException(
                             "stored authority seat is outside its game");
                     }
+                }
 
+                if (migration)
+                {
+                    // Publish only after replay and every authority have verified, and
+                    // only make the session available after schema 3 is durable.
+                    selectedGeneration = store.Commit(current);
+                    saveCommitted = true;
+                }
+
+                var session = new HostedSession(current.Save.Session.Label, game, current.Save);
+                restoring = session;
+                foreach (StoredAuthority authority in current.Authorities)
+                {
                     var scope = new ViewScope(authority.Seats);
                     if (authority.Invitation)
                     {

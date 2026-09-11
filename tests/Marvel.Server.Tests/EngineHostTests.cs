@@ -1663,6 +1663,32 @@ public sealed class EngineHostTests
     }
 
     [Fact]
+    public void InvalidAuthorityDoesNotDisplaceTheSchemaTwoGeneration()
+    {
+        var source = new MemorySessionStore();
+        IDurableGameFactory factory = DatasetGameFactory.Load(RepositoryPaths.Root);
+        var first = new EngineHost(
+            factory,
+            new SequenceCapabilities("migration-authority-owner"),
+            store: source);
+        _ = first.Exchange(EngineRequest.OpenGame(
+            "open",
+            "migration-authority-table",
+            new GameSpecification("rhino", ["spider_man"], [], Seed: 73)));
+        StoredSession current = Assert.Single(source.Load());
+        var predecessor = new MigrationSessionStore(current with
+        {
+            Save = current.Save with { Schema = 2 },
+            Authorities = [current.Authorities[0] with { Seats = [1] }],
+        });
+
+        _ = new EngineHost(factory, store: predecessor);
+
+        Assert.Equal(0, predecessor.Commits);
+        Assert.Equal(2, Assert.Single(predecessor.Load()).Save.Schema);
+    }
+
+    [Fact]
     public void ChoosingNoMulliganCardsBeforeAnotherPlayersPromptRevealsNothingNew()
     {
         var store = new MemorySessionStore();
