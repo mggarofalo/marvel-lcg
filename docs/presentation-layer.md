@@ -160,8 +160,16 @@ viewers or network authorization.
 
 ## Engine host
 
-`EngineHost` owns live game sessions. `IEngineTransport.ExchangeAsync` is the
-one interface a client uses in either deployment:
+`EngineHost` is the synchronous protocol dispatcher for live game sessions.
+`SessionAuthorityRegistry` owns capabilities, invitations and lifecycle
+publication; `SessionTransaction` owns durable candidate publication;
+`AuthorizedSessionProjector` owns visibility-safe response and history shaping;
+and `RequestExecution` owns request-local operational outcomes. Dataset loading
+and the public host, transport and factory contracts live independently of that
+application composition.
+
+`IEngineTransport.ExchangeAsync` is the one interface a client uses in either
+deployment:
 
 - `InProcessTransport` calls the host in the same process; and
 - `SocketTransport` sends the same request to `SocketEngineServer`.
