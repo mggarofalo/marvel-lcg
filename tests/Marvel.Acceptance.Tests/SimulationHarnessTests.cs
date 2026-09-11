@@ -79,6 +79,61 @@ public sealed class SimulationHarnessTests
     }
 
     [Fact]
+    public void CanonicalPromptSchemaShrinksPaymentRecordsAndSchemaTwoStillReplays()
+    {
+        List<string> current = SuccessfulLines();
+        Assert.Equal(3, JsonNode.Parse(current[0])!["schema"]!.GetValue<int>());
+        foreach (string line in current)
+        {
+            JsonNode? node = JsonNode.Parse(line);
+            if (node?["type"]?.GetValue<string>() != "step")
+            {
+                continue;
+            }
+
+            foreach (JsonNode? affordance in node["prompt"]!["affordances"]!.AsArray())
+            {
+                Assert.Null(affordance!["targets"]?["is_grouped"]);
+                foreach (JsonNode? cost in affordance["costs"]!.AsArray())
+                {
+                    Assert.Null(cost!["has_alternative"]);
+                    Assert.Null(cost["generators"]);
+                    Assert.Null(cost["variable_requests"]);
+                    Assert.Null(cost["resource_costs"]);
+                }
+            }
+        }
+
+        List<string> legacy = SchemaTwoLines(current);
+        long legacyBytes = legacy.Sum(line => (long)Encoding.UTF8.GetByteCount(line));
+        long currentBytes = current.Sum(line => (long)Encoding.UTF8.GetByteCount(line));
+        Assert.True(
+            currentBytes * 100 <= legacyBytes * 95,
+            $"schema 3 used {currentBytes} bytes versus schema 2's {legacyBytes}");
+        string path = Path.Combine(
+            Path.GetTempPath(), $"marvel-sim-schema-two-{Guid.NewGuid():N}.jsonl");
+        try
+        {
+            File.WriteAllLines(path, legacy);
+            Assert.Equal(
+                1,
+                SimulationHarness.Replay(
+                    new ReplayConfig(path, RepositoryRoot()), TextWriter.Null).Games);
+            Assert.Equal(1, SimulationHarness.Report(path).Games);
+            File.WriteAllLines(path, OldestSchemaTwoLines(legacy));
+            Assert.Equal(
+                1,
+                SimulationHarness.Replay(
+                    new ReplayConfig(path, RepositoryRoot()), TextWriter.Null).Games);
+            Assert.Equal(1, SimulationHarness.Report(path).Games);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public void ACompressedSoloRunPreservesJsonlAndReadsByMagicBytes()
     {
         string root = Path.Combine(
@@ -270,6 +325,15 @@ public sealed class SimulationHarnessTests
                 1,
                 SimulationHarness.Replay(
                     new ReplayConfig(path, RepositoryRoot()), TextWriter.Null).Games);
+            File.WriteAllLines(
+                path,
+                SchemaTwoLines(record.ToString().Split(
+                    ['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)));
+            Assert.Equal(
+                1,
+                SimulationHarness.Replay(
+                    new ReplayConfig(path, RepositoryRoot()), TextWriter.Null).Games);
+            Assert.Equal(1, SimulationHarness.Report(path).Games);
         }
         finally
         {
@@ -523,6 +587,109 @@ public sealed class SimulationHarnessTests
         return record.ToString()
             .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
             .ToList();
+    }
+
+    private static List<string> SchemaTwoLines(IEnumerable<string> current)
+    {
+        var legacy = new List<string>();
+        foreach (string line in current)
+        {
+            JsonObject record = Assert.IsType<JsonObject>(JsonNode.Parse(line));
+            string type = record["type"]!.GetValue<string>();
+            if (type == "header")
+            {
+                record["schema"] = 2;
+            }
+            else if (type is "step" or "failure")
+            {
+                AddSchemaTwoPrompt(record);
+                if (record["recent_steps"] is JsonArray recent)
+                {
+                    foreach (JsonNode? recentStep in recent)
+                    {
+                        AddSchemaTwoPrompt(recentStep!.AsObject());
+                    }
+                }
+            }
+
+            legacy.Add(record.ToJsonString(RecordJson.Options));
+        }
+
+        return legacy;
+    }
+
+    private static IEnumerable<string> OldestSchemaTwoLines(IEnumerable<string> legacy)
+    {
+        foreach (string line in legacy)
+        {
+            JsonObject record = Assert.IsType<JsonObject>(JsonNode.Parse(line));
+            RemoveLaterSchemaTwoPromptFields(record);
+            if (record["recent_steps"] is JsonArray recent)
+            {
+                foreach (JsonNode? recentStep in recent)
+                {
+                    RemoveLaterSchemaTwoPromptFields(recentStep!.AsObject());
+                }
+            }
+
+            yield return record.ToJsonString(RecordJson.Options);
+        }
+    }
+
+    private static void RemoveLaterSchemaTwoPromptFields(JsonObject record)
+    {
+        if (record["prompt"] is not JsonObject prompt)
+        {
+            return;
+        }
+
+        foreach (JsonNode? affordanceNode in prompt["affordances"]!.AsArray())
+        {
+            JsonObject affordance = affordanceNode!.AsObject();
+            if (affordance["targets"] is JsonObject target)
+            {
+                _ = target.Remove("allow_repeated");
+                _ = target.Remove("maximum_occurrences");
+                _ = target.Remove("details");
+            }
+
+            foreach (JsonNode? costNode in affordance["costs"]!.AsArray())
+            {
+                _ = costNode!.AsObject().Remove("declaration_sensitive");
+            }
+        }
+    }
+
+    private static void AddSchemaTwoPrompt(JsonObject record)
+    {
+        if (record["prompt"] is not JsonObject prompt)
+        {
+            return;
+        }
+
+        foreach (JsonNode? affordanceNode in prompt["affordances"]!.AsArray())
+        {
+            JsonObject affordance = affordanceNode!.AsObject();
+            if (affordance["targets"] is JsonObject target)
+            {
+                target["is_grouped"] = target["groups"] is JsonArray { Count: > 0 };
+            }
+
+            foreach (JsonNode? costNode in affordance["costs"]!.AsArray())
+            {
+                JsonObject cost = costNode!.AsObject();
+                cost["has_alternative"] = cost["or_cost"]!.GetValue<string>().Length > 0;
+                cost["generators"] = cost["sources"]?.DeepClone() ?? new JsonArray();
+                cost["variable_requests"] = cost["variables"]?.DeepClone() ?? new JsonArray();
+                cost["resource_costs"] = cost["components"]?.DeepClone()
+                    ?? new JsonArray(new JsonObject
+                    {
+                        ["cost"] = cost["cost"]!.GetValue<string>(),
+                        ["rule"] = cost["rule"]?.DeepClone(),
+                        ["printed"] = false,
+                    });
+            }
+        }
     }
 
     private static IEnumerable<JsonElement> Lines(StringWriter writer)

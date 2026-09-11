@@ -301,6 +301,14 @@ anchor, anchor player, label, legality, target request and cost options. A
 `ResourceSource.Effect` is currently a card object id and remains in the record
 as part of the payment menu.
 
+Schema 3 records those target requests and costs through the same typed
+canonical prompt records as the session ledger. Targets omit the derived
+`is_grouped` alias; costs omit `has_alternative`, `generators`,
+`variable_requests`, and `resource_costs`, retaining their independent source
+fields instead. Null, empty, and populated `sources` remain different values.
+The rules do not define a research-record JSON shape, so this omission of
+computed aliases is an engine format choice.
+
 ## Game record stream
 
 One run is one UTF-8 JSON Lines stream. Every JSON value is one physical line.
@@ -308,9 +316,10 @@ Arrays retain domain order. The stream starts with one run header, then contains
 one `start`, zero or more `step` records, and one `result` or `failure` record
 per game. One final `summary` record makes the aggregate machine-readable.
 
-The numeric `schema` is `2`. Replay rejects any other value. Schema 2 adds the
-explicit numerical variables chosen while initiating a cost; without them a
-record could not replay a cost of X independently of its payment.
+The current numeric `schema` is `3`. Replay and reporting read schemas 2 and 3
+so existing research records remain usable. New runs write schema 3. Schema 2
+keeps its frozen prompt shape with computed aliases; readers validate those
+aliases before converting the prompt to the canonical record used for replay.
 
 ### Header record
 
@@ -319,7 +328,7 @@ The run header records the configuration shared by every game:
 ```json
 {
   "type": "header",
-  "schema": 2,
+  "schema": 3,
   "scenario": "rhino",
   "difficulty": "expert",
   "heroes": ["spider_man", "she_hulk"],

@@ -38,6 +38,8 @@ public sealed class CommunityReleasePolicyTests
     {
         string workflow = File.ReadAllText(Path.Combine(
             RepositoryPaths.Root, ".github", "workflows", "release-desktop.yml"));
+        string serverUpgrade = File.ReadAllText(Path.Combine(
+            RepositoryPaths.Root, "tools", "server-community-upgrade-smoke.sh"));
 
         Assert.Contains("macos-community-install-smoke.sh", workflow, StringComparison.Ordinal);
         Assert.Contains("windows-community-install-smoke.ps1", workflow, StringComparison.Ordinal);
@@ -57,8 +59,11 @@ public sealed class CommunityReleasePolicyTests
         }
         Assert.Contains("needs: [identity, macos-install, windows-install, server-sign, server-install]",
             workflow, StringComparison.Ordinal);
-        Assert.Contains("engine-replay-v2 · protocol 14 · save 2", workflow,
+        Assert.Contains("engine-replay-v2 · protocol 14 · save 3", workflow,
             StringComparison.Ordinal);
+        Assert.Contains("def schema_two_prompt", serverUpgrade, StringComparison.Ordinal);
+        Assert.Contains("\"stage\":\"migration\"", serverUpgrade, StringComparison.Ordinal);
+        Assert.Contains("\"save_committed\":true", serverUpgrade, StringComparison.Ordinal);
         Assert.DoesNotContain("engine-replay-v1", workflow, StringComparison.Ordinal);
         Assert.DoesNotContain("protocol:11", workflow, StringComparison.Ordinal);
     }

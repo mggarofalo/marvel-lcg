@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
@@ -147,6 +148,210 @@ public sealed class JournalRecordsTests
         Assert.False(recorded.TryGetProperty("subjects", out _));
         JournalReplay.RequireEvents([recorded], [happened], "events");
     }
+
+    [Fact]
+    public void CanonicalPromptRecordsContainEachIndependentCostAndTargetFieldOnce()
+    {
+        var target = new TargetRequest(
+            [20, 10],
+            1,
+            2,
+            Groups: [[20], [10]],
+            MustIncludeTraits: ["t_hero"],
+            Rule: "named",
+            IsSearch: true,
+            AllowRepeated: true,
+            MaximumOccurrences: new Dictionary<int, int> { [20] = 2 })
+        {
+            Details = new Dictionary<int, string> { [20] = "two damage" },
+        };
+        CostOption[] costs =
+        [
+            new(0, "0", Sources: null),
+            new(0, "0", Sources: []),
+            new(
+                20,
+                "X",
+                Rule: ["mental"],
+                OrCost: "2",
+                OrRule: ["any"],
+                Sources: [new ResourceSource(8, "BY")],
+                Variables: [new VariableRequest("X", 1, 3)],
+                Components: [new ResourceCost("1", ["energy"], Printed: true)],
+                DeclarationSensitive: true),
+        ];
+        PromptRecord record = PromptRecord.From(Prompt(new Affordance(
+            4, "Action", 3, 1, "Pay", target, costs)));
+
+        string json = JsonSerializer.Serialize(record, JournalJson.Options);
+        using JsonDocument document = JsonDocument.Parse(json);
+        JsonElement affordance = document.RootElement.GetProperty("affordances")[0];
+        JsonElement recordedTarget = affordance.GetProperty("targets");
+        JsonElement recordedCosts = affordance.GetProperty("costs");
+
+        Assert.True(recordedTarget.TryGetProperty("groups", out _));
+        Assert.False(recordedTarget.TryGetProperty("is_grouped", out _));
+        Assert.Equal(JsonValueKind.Null, recordedCosts[0].GetProperty("sources").ValueKind);
+        Assert.Empty(recordedCosts[1].GetProperty("sources").EnumerateArray());
+        Assert.Equal(8, recordedCosts[2].GetProperty("sources")[0].GetProperty("effect").GetInt32());
+        Assert.Equal(3, Count(json, "\"sources\""));
+        Assert.DoesNotContain("has_alternative", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("generators", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("variable_requests", json, StringComparison.Ordinal);
+        Assert.DoesNotContain("resource_costs", json, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SchemaTwoPromptReaderVerifiesAliasesBeforeCanonicalizing()
+    {
+        PromptRecord current = PromptRecord.From(Prompt(new Affordance(
+            4,
+            "Action",
+            3,
+            1,
+            "Pay",
+            new TargetRequest([20], 1, 1, Groups: [[20]]),
+            [new CostOption(
+                20,
+                "1",
+                Sources: [new ResourceSource(8, "M")],
+                Components: [new ResourceCost("1", ["mental"], Printed: true)])])));
+        JsonObject legacy = SchemaTwoPrompt(current);
+
+        PromptRecord parsed = SchemaTwoPromptJson.Read(
+            JsonSerializer.SerializeToElement(legacy, JournalJson.Options));
+
+        Assert.Equal(
+            JsonSerializer.Serialize(current, JournalJson.Options),
+            JsonSerializer.Serialize(parsed, JournalJson.Options));
+        JsonObject oldestSchemaTwo = Assert.IsType<JsonObject>(legacy.DeepClone());
+        JsonObject oldestAffordance = oldestSchemaTwo["affordances"]![0]!.AsObject();
+        JsonObject oldestTarget = oldestAffordance["targets"]!.AsObject();
+        _ = oldestTarget.Remove("allow_repeated");
+        _ = oldestTarget.Remove("maximum_occurrences");
+        _ = oldestTarget.Remove("details");
+        _ = oldestAffordance["costs"]![0]!.AsObject().Remove("declaration_sensitive");
+        PromptRecord oldestParsed = SchemaTwoPromptJson.Read(
+            JsonSerializer.SerializeToElement(oldestSchemaTwo, JournalJson.Options));
+        Assert.Equal(
+            JsonSerializer.Serialize(current, JournalJson.Options),
+            JsonSerializer.Serialize(oldestParsed, JournalJson.Options));
+
+        legacy["affordances"]![0]!["costs"]![0]!["generators"] = new JsonArray();
+        Assert.Throws<JsonException>(() => SchemaTwoPromptJson.Read(
+            JsonSerializer.SerializeToElement(legacy, JournalJson.Options)));
+    }
+
+    [Fact]
+    public void ReplayPinsIndependentTargetCostAndUnchosenAffordanceFields()
+    {
+        var asked = Prompt(
+            new Affordance(
+                4,
+                "Action",
+                3,
+                1,
+                "Pay",
+                new TargetRequest([20], 1, 1, Groups: [[20]]),
+                [new CostOption(
+                    20,
+                    "X",
+                    Rule: ["mental"],
+                    OrCost: "2",
+                    OrRule: ["any"],
+                    Sources: [new ResourceSource(8, "M")],
+                    Variables: [new VariableRequest("X", 1, 3)],
+                    Components: [new ResourceCost("1", ["energy"], Printed: true)],
+                    DeclarationSensitive: true)]),
+            new Affordance(5, "Action", 9, 1, "Unchosen", Illegal: "blocked"));
+        PromptRecord recorded = PromptRecord.From(asked);
+        AffordanceRecord first = recorded.Affordances[0];
+        TargetRequestRecord target = first.Targets!;
+        CostOptionRecord cost = first.Costs[0];
+        PromptRecord[] changed =
+        [
+            recorded with
+            {
+                Affordances = [first with { Targets = target with { Groups = [[20, 21]] } },
+                    recorded.Affordances[1]],
+            },
+            recorded with
+            {
+                Affordances = [first with
+                {
+                    Costs = [cost with
+                    {
+                        Sources = [new ResourceSourceRecord(8, "E")],
+                    }],
+                }, recorded.Affordances[1]],
+            },
+            recorded with
+            {
+                Affordances = [first with
+                {
+                    Costs = [cost with
+                    {
+                        Variables = [new VariableRequestRecord("X", 1, 4)],
+                    }],
+                }, recorded.Affordances[1]],
+            },
+            recorded with
+            {
+                Affordances = [first with
+                {
+                    Costs = [cost with
+                    {
+                        Components = [new ResourceCostComponentRecord(
+                            "1", ["mental"], Printed: true)],
+                    }],
+                }, recorded.Affordances[1]],
+            },
+            recorded with
+            {
+                Affordances = [first, recorded.Affordances[1] with { Illegal = null }],
+            },
+        ];
+
+        foreach (PromptRecord mutation in changed)
+        {
+            Assert.Throws<ReplayDivergenceException>(() =>
+                JournalReplay.RequirePrompt(mutation, asked, "prompt"));
+        }
+    }
+
+    internal static JsonObject SchemaTwoPrompt(PromptRecord prompt)
+    {
+        JsonObject root = Assert.IsType<JsonObject>(JsonSerializer.SerializeToNode(
+            prompt, JournalJson.Options));
+        foreach (JsonNode? affordanceNode in root["affordances"]!.AsArray())
+        {
+            JsonObject affordance = affordanceNode!.AsObject();
+            if (affordance["targets"] is JsonObject target)
+            {
+                target["is_grouped"] = target["groups"] is JsonArray { Count: > 0 };
+            }
+
+            foreach (JsonNode? costNode in affordance["costs"]!.AsArray())
+            {
+                JsonObject cost = costNode!.AsObject();
+                cost["has_alternative"] = cost["or_cost"]!.GetValue<string>().Length > 0;
+                cost["generators"] = cost["sources"]?.DeepClone() ?? new JsonArray();
+                cost["variable_requests"] = cost["variables"]?.DeepClone() ?? new JsonArray();
+                cost["resource_costs"] = cost["components"]?.DeepClone()
+                    ?? new JsonArray(new JsonObject
+                    {
+                        ["cost"] = cost["cost"]!.GetValue<string>(),
+                        ["rule"] = cost["rule"]?.DeepClone(),
+                        ["printed"] = false,
+                    });
+            }
+        }
+
+        return root;
+    }
+
+    private static int Count(string value, string needle) =>
+        value.Split(needle, StringSplitOptions.None).Length - 1;
 
     private static Prompt Prompt(params Affordance[] affordances) => new(
         0,

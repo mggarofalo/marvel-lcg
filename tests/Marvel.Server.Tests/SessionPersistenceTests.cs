@@ -1,6 +1,8 @@
 using Marvel.Decisions;
 using Marvel.Session;
 using System.Security.Cryptography;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Xunit;
 
 namespace Marvel.Server.Tests;
@@ -50,20 +52,12 @@ public sealed class SessionPersistenceTests
                 new EngineDecision(mulligan.Id, []),
                 opened.Revision)).Error);
 
-            // Simulate the exact predecessor generation written before schema 2.
+            // Simulate the exact predecessor generation written before schema 3.
             // The next host must verify it and atomically publish the migrated save.
             string directory = Assert.Single(Directory.GetDirectories(root));
             string generation = File.ReadAllText(Path.Combine(directory, "current")).Trim();
             string predecessor = Path.Combine(directory, generation + ".session.json");
-            File.WriteAllText(
-                predecessor,
-                File.ReadAllText(predecessor).Replace(
-                    "\"schema\":2",
-                    "\"schema\":1",
-                    StringComparison.Ordinal).Replace(
-                    ",\"exposures\":[]",
-                    string.Empty,
-                    StringComparison.Ordinal));
+            File.WriteAllText(predecessor, SchemaTwo(File.ReadAllText(predecessor)));
 
             var restarted = new EngineHost(
                 factory,
@@ -312,7 +306,7 @@ public sealed class SessionPersistenceTests
                     File.WriteAllText(
                         badSave,
                         File.ReadAllText(badSave).Replace(
-                            "\"schema\":2",
+                            "\"schema\":3",
                             "\"schema\":999999999999999999999",
                             StringComparison.Ordinal));
                     break;
@@ -402,6 +396,53 @@ public sealed class SessionPersistenceTests
         Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Path.Combine(
                 Marvel.Tests.RepositoryPaths.Root, "datasets", dataset, file))))
             .ToLowerInvariant();
+
+    private static string SchemaTwo(string json)
+    {
+        JsonObject root = Assert.IsType<JsonObject>(JsonNode.Parse(json));
+        root["schema"] = 2;
+        if (root["current_prompt"] is JsonObject current)
+        {
+            AddSchemaTwoAliases(current);
+        }
+
+        foreach (JsonNode? unitNode in root["units"]!.AsArray())
+        {
+            foreach (JsonNode? stepNode in unitNode!["decisions"]!.AsArray())
+            {
+                AddSchemaTwoAliases(stepNode!["prompt"]!.AsObject());
+            }
+        }
+
+        return root.ToJsonString(SessionSaveJson.Options);
+    }
+
+    private static void AddSchemaTwoAliases(JsonObject prompt)
+    {
+        foreach (JsonNode? affordanceNode in prompt["affordances"]!.AsArray())
+        {
+            JsonObject affordance = affordanceNode!.AsObject();
+            if (affordance["targets"] is JsonObject target)
+            {
+                target["is_grouped"] = target["groups"] is JsonArray { Count: > 0 };
+            }
+
+            foreach (JsonNode? costNode in affordance["costs"]!.AsArray())
+            {
+                JsonObject cost = costNode!.AsObject();
+                cost["has_alternative"] = cost["or_cost"]!.GetValue<string>().Length > 0;
+                cost["generators"] = cost["sources"]?.DeepClone() ?? new JsonArray();
+                cost["variable_requests"] = cost["variables"]?.DeepClone() ?? new JsonArray();
+                cost["resource_costs"] = cost["components"]?.DeepClone()
+                    ?? new JsonArray(new JsonObject
+                    {
+                        ["cost"] = cost["cost"]!.GetValue<string>(),
+                        ["rule"] = cost["rule"]?.DeepClone(),
+                        ["printed"] = false,
+                    });
+            }
+        }
+    }
 
     private sealed class FixedCapabilities(params string[] values) : ISessionCapabilityIssuer
     {

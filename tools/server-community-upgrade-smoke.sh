@@ -20,6 +20,7 @@ downgrade=$prefix-downgrade
 diagnostics=$prefix-diagnostics
 backup=$(mktemp)
 diagnostic_record=$(mktemp)
+schema_two_copy=$(mktemp -d)
 containers=()
 cleanup() {
   for container in "${containers[@]}"; do
@@ -30,6 +31,7 @@ cleanup() {
     >/dev/null 2>&1 || true
   docker image rm "$previous_image" >/dev/null 2>&1 || true
   rm -f "$backup" "$diagnostic_record"
+  rm -rf "$schema_two_copy"
 }
 trap cleanup EXIT
 
@@ -87,6 +89,37 @@ start_server "$prefix-previous" "$previous_image" "$sessions" 41924
 run_game 41924
 stop_server "$prefix-previous"
 
+# The lower product uses the current protocol so the packaged client can drive
+# it, then its stopped generation is converted to the exact schema 2 prompt
+# shape that the release reader promises to migrate.
+docker cp "$prefix-previous:/var/lib/marvel/sessions/." "$schema_two_copy"
+mapfile -t predecessor_saves < <(find "$schema_two_copy" -type f -name '*.session.json')
+[[ ${#predecessor_saves[@]} == 1 ]] || {
+  echo 'expected exactly one predecessor session save' >&2
+  exit 2
+}
+predecessor_save=${predecessor_saves[0]}
+jq '
+  def schema_two_prompt:
+    .affordances |= map(
+      (if .targets != null then
+        .targets.is_grouped = ((.targets.groups // []) | length > 0)
+      else . end)
+      | .costs |= map(
+        .has_alternative = ((.or_cost | length) > 0)
+        | .generators = (.sources // [])
+        | .variable_requests = (.variables // [])
+        | .resource_costs = (.components // [{cost: .cost, rule: .rule, printed: false}])));
+  .schema = 2
+  | (if .current_prompt != null then .current_prompt |= schema_two_prompt else . end)
+  | .units |= map(.decisions |= map(.prompt |= schema_two_prompt))
+' "$predecessor_save" > "$predecessor_save.tmp"
+mv "$predecessor_save.tmp" "$predecessor_save"
+relative_save=${predecessor_save#"$schema_two_copy"/}
+docker cp "$predecessor_save" \
+  "$prefix-previous:/var/lib/marvel/sessions/$relative_save"
+jq -e '.schema == 2' "$predecessor_save" >/dev/null
+
 docker run --rm --volume "$diagnostics:/diagnostics:ro" --entrypoint sh \
   "$current_image" -c 'head -n 1 /diagnostics/operational.jsonl' \
   > "$diagnostic_record"
@@ -115,7 +148,10 @@ stop_server "$prefix-rollback"
 
 # The exact release image restores the existing save and retains diagnostics.
 start_server "$prefix-current" "$current_image" "$sessions" 41924
-docker logs "$prefix-current" 2>&1 | grep -q 'session.restore.completed'
+current_logs=$(docker logs "$prefix-current" 2>&1)
+grep -q 'session.restore.completed' <<< "$current_logs"
+grep -q '"stage":"migration"' <<< "$current_logs"
+grep -q '"save_committed":true' <<< "$current_logs"
 docker run --rm --volume "$diagnostics:/diagnostics:ro" --entrypoint sh \
   "$current_image" -c 'cat /diagnostics/operational.jsonl' > "$backup.diagnostics"
 grep -F -x -f "$diagnostic_record" "$backup.diagnostics" >/dev/null
@@ -139,5 +175,5 @@ docker logs "$prefix-downgraded" 2>&1 | grep -q 'unsupported_downgrade'
 stop_server "$prefix-downgraded"
 
 docker run --rm --entrypoint dotnet "$current_image" Marvel.Server.dll --version |
-  grep -F "v$current_version · engine engine-replay-v2 · protocol 14 · save 2"
+  grep -F "v$current_version · engine engine-replay-v2 · protocol 14 · save 3"
 echo 'SERVER_COMMUNITY_UPGRADE_SMOKE_OK'

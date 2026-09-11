@@ -27,7 +27,7 @@ The engine already has the determinism, stable decision selectors and replay
 checks needed by this design. `Marvel.Sim` records setup, prompts, decisions,
 events and digests, then deals and resolves the game again to find divergence.
 
-Schema 2 save, atomic generation commit, strict load, verified replay, the
+Schema 3 save, atomic generation commit, strict load, verified replay, the
 information frontier, linear undo and redo, legal action reordering, and the
 redacted structured operational-log boundary are implemented for hosted
 sessions. The embedded host uses the same ledger and replay path with an
@@ -76,13 +76,13 @@ server replay but must never cross the client boundary. A visibility-safe
 
 ## The save is a decision trace
 
-A save is one strict UTF-8 JSON document. Schema 2 has these top-level members
+A save is one strict UTF-8 JSON document. Schema 3 has these top-level members
 in this order:
 
 ```json
 {
   "format": "marvel-session",
-  "schema": 2,
+  "schema": 3,
   "compatibility": {},
   "session": {},
   "setup": {},
@@ -95,12 +95,12 @@ in this order:
 }
 ```
 
-Schema 1 is the single readable predecessor. On startup the server parses it
-with its original strict shape, replays the complete trace to derive every
-information signal, and atomically commits a schema 2 generation before making
-the session available. It never rewrites the active generation in place and
-never publishes a partially migrated session. New saves and every later commit
-write schema 2 only.
+Schema 2 is the single readable predecessor. On startup the server parses it
+with its frozen prompt shape, checks each computed prompt alias against its
+source fields, replays and verifies the complete trace, and atomically commits
+a schema 3 generation before making the session available. It never rewrites
+the active generation in place and never publishes a partially migrated
+session. New saves and every later commit write schema 3 only.
 
 Unknown members fail loading. Missing members fail loading. A later schema uses
 a new number and an explicit migration; a reader never guesses how to interpret
@@ -192,7 +192,7 @@ gameplay state. The session journal omits them, so adding or improving a safe
 description does not change deterministic replay or invalidate an older save.
 Fresh replay reconstructs that evidence for the response being presented.
 
-Schema 2 defines the state fingerprint as `World.Digest()` plus the recorded
+Schemas 2 and 3 define the state fingerprint as `World.Digest()` plus the recorded
 engine result. `World.Digest()` alone contains card state and cannot distinguish
 a win from a loss on an otherwise identical terminal board. Replay verifies
 both parts after every decision.
@@ -210,7 +210,18 @@ Unit ids are their zero-based positions in `units`; they are not random values.
 A unit records its role, `open` or `complete` status, initiating seat, active
 seat, round, phase, ordered decision records and derived frontier signals. The
 serializer pins each nested record's exact member set and order with schema
-tests before schema 2 ships.
+tests.
+
+Schema 3 gives durable prompts a canonical engine-chosen persistence shape.
+Target records keep `legal`, `min`, `max`, `groups`, `must_include_traits`,
+`rule`, `is_search`, `allow_repeated`, `maximum_occurrences`, and `details`; the
+derived `is_grouped` alias is not stored. Cost records keep `target`, `cost`,
+`rule`, `or_cost`, `or_rule`, `sources`, `variables`, `components`, and
+`declaration_sensitive`; the derived `has_alternative`, `generators`,
+`variable_requests`, and `resource_costs` aliases are not stored. Null, empty,
+and populated source collections remain distinct. The tabletop rules define
+none of these JSON member choices, so this canonical shape is an engine wire
+format decision rather than a rules-derived result.
 
 ## History units
 
@@ -544,7 +555,7 @@ their respective interfaces. A client cache is not a backup.
 
 The subsystem requires executable examples for:
 
-- byte-stable schema 2 records and strict parsing;
+- byte-stable schema 3 records and strict parsing;
 - atomic open with its initial save and owner authority, including crashes at
   each persistence boundary;
 - durable attach, credential revocation and owner retirement, including restart
