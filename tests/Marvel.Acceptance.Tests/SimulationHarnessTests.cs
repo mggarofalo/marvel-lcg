@@ -1,3 +1,5 @@
+using System.IO.Compression;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Marvel.Tests;
@@ -74,6 +76,131 @@ public sealed class SimulationHarnessTests
     public void ASoloGameWritesARecordThatReplaysWithoutDivergence()
     {
         RoundTrip(Config(games: 1, seeds: [265], selectionSeed: null));
+    }
+
+    [Fact]
+    public void ACompressedSoloRunPreservesJsonlAndReadsByMagicBytes()
+    {
+        string root = Path.Combine(
+            Path.GetTempPath(), $"marvel-sim-gzip-{Guid.NewGuid():N}");
+        string plainPath = Path.Combine(root, "record.jsonl");
+        string gzipPath = Path.Combine(root, "record.jsonl.gz");
+        string disguisedPath = Path.Combine(root, "record.saved");
+        string plainDisguisedPath = Path.Combine(root, "plain.jsonl.gz");
+        string concatenatedPath = Path.Combine(root, "concatenated.data");
+        try
+        {
+            Assert.Equal(0, RunTo(plainPath));
+            Assert.Equal(0, RunTo(gzipPath));
+
+            byte[] compressed = File.ReadAllBytes(gzipPath);
+            Assert.Equal(0x1f, compressed[0]);
+            Assert.Equal(0x8b, compressed[1]);
+            string plain = File.ReadAllText(plainPath);
+            using var gzip = new GZipStream(
+                new MemoryStream(compressed), CompressionMode.Decompress);
+            using var reader = new StreamReader(gzip, Encoding.UTF8);
+            Assert.Equal(plain, reader.ReadToEnd());
+            Assert.True(compressed.Length < Encoding.UTF8.GetByteCount(plain) / 2);
+
+            File.Move(gzipPath, disguisedPath);
+            Assert.Equal(
+                1,
+                SimulationHarness.Replay(
+                    new ReplayConfig(disguisedPath, RepositoryRoot()), TextWriter.Null).Games);
+            Assert.Equal(1, SimulationHarness.Report(disguisedPath).Games);
+
+            File.Copy(plainPath, plainDisguisedPath);
+            Assert.Equal(1, SimulationHarness.Report(plainDisguisedPath).Games);
+
+            int memberBoundary = plain.IndexOf('\n', StringComparison.Ordinal) + 1;
+            File.WriteAllBytes(
+                concatenatedPath,
+                [
+                    .. WithFileName(
+                        Gzip(plain[..memberBoundary], CompressionLevel.Optimal),
+                        "first.jsonl"),
+                    .. WithFileName(
+                        Gzip(plain[memberBoundary..], CompressionLevel.Optimal),
+                        "second.jsonl"),
+                ]);
+            Assert.Equal(
+                1,
+                SimulationHarness.Replay(
+                    new ReplayConfig(concatenatedPath, RepositoryRoot()), TextWriter.Null).Games);
+            Assert.Equal(1, SimulationHarness.Report(concatenatedPath).Games);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void CorruptAndTruncatedGzipRecordsFailAsUsageErrors()
+    {
+        string root = Path.Combine(
+            Path.GetTempPath(), $"marvel-sim-bad-gzip-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+        try
+        {
+            string corruptPath = Path.Combine(root, "corrupt.jsonl");
+            File.WriteAllBytes(corruptPath, [0x1f, 0x8b, 0x08, 0xff, 0xff]);
+
+            var corrupt = Assert.Throws<SimulationUsageException>(() =>
+                SimulationHarness.Replay(
+                    new ReplayConfig(corruptPath, RepositoryRoot()), TextWriter.Null));
+            Assert.Equal(
+                $"record is not valid gzip: {Path.GetFullPath(corruptPath)}",
+                corrupt.Message);
+
+            string completePath = Path.Combine(root, "complete.jsonl.gz");
+            Assert.Equal(0, RunTo(completePath));
+
+            byte[] complete = File.ReadAllBytes(completePath);
+            using var source = new GZipStream(
+                new MemoryStream(complete), CompressionMode.Decompress);
+            using var sourceReader = new StreamReader(source, Encoding.UTF8);
+            byte[] changedPayload = Gzip(
+                sourceReader.ReadToEnd(), CompressionLevel.NoCompression);
+            int changed = Array.IndexOf(changedPayload, (byte)'{', 10);
+            Assert.True(changed > 0);
+            changedPayload[changed] = (byte)'[';
+            string changedPath = Path.Combine(root, "changed-payload.data");
+            File.WriteAllBytes(changedPath, changedPayload);
+            var changedError = Assert.Throws<SimulationUsageException>(() =>
+                SimulationHarness.Report(changedPath));
+            Assert.Equal(
+                $"record is not valid gzip: {Path.GetFullPath(changedPath)}",
+                changedError.Message);
+
+            string truncatedPath = Path.Combine(root, "truncated.data");
+            File.WriteAllBytes(truncatedPath, complete[..^8]);
+            var truncated = Assert.Throws<SimulationUsageException>(() =>
+                SimulationHarness.Report(truncatedPath));
+            Assert.Equal(
+                $"record is not valid gzip: {Path.GetFullPath(truncatedPath)}",
+                truncated.Message);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void StandardOutputRemainsPlainJsonl()
+    {
+        var output = new StringWriter(System.Globalization.CultureInfo.InvariantCulture);
+
+        Assert.Equal(0, CommandLine.Run(
+            RunArguments(output: null), output, TextWriter.Null));
+
+        Assert.StartsWith("{\"type\":\"header\"", output.ToString());
+        Assert.Contains("\"type\":\"summary\"", output.ToString());
     }
 
     [Rule("rr:obligation.4")]
@@ -292,7 +419,7 @@ public sealed class SimulationHarnessTests
     public void InvalidConfigurationDoesNotCreateTheRequestedOutput()
     {
         string path = Path.Combine(
-            Path.GetTempPath(), $"marvel-sim-invalid-{Guid.NewGuid():N}.jsonl");
+            Path.GetTempPath(), $"marvel-sim-invalid-{Guid.NewGuid():N}.jsonl.gz");
         Assert.Throws<SimulationUsageException>(() => CommandLine.Run(
             [
                 "run", "--scenario", "not_a_scenario", "--difficulty", "standard",
@@ -302,6 +429,45 @@ public sealed class SimulationHarnessTests
             TextWriter.Null,
             TextWriter.Null));
         Assert.False(File.Exists(path));
+    }
+
+    private static int RunTo(string path) => CommandLine.Run(
+        RunArguments(path), TextWriter.Null, TextWriter.Null);
+
+    private static byte[] Gzip(string content, CompressionLevel level)
+    {
+        var compressed = new MemoryStream();
+        using (var gzip = new GZipStream(compressed, level, leaveOpen: true))
+        {
+            gzip.Write(Encoding.UTF8.GetBytes(content));
+        }
+
+        return compressed.ToArray();
+    }
+
+    private static byte[] WithFileName(byte[] gzip, string name)
+    {
+        byte[] header = gzip[..10];
+        header[3] |= 0x08;
+        return [.. header, .. Encoding.Latin1.GetBytes(name), 0, .. gzip[10..]];
+    }
+
+    private static string[] RunArguments(string? output)
+    {
+        var args = new List<string>
+        {
+            "run", "--scenario", "rhino", "--difficulty", "standard",
+            "--hero", "spider_man", "--modular", "bomb_scare",
+            "--seed", "265", "--policy-seed", "9001", "--decision-limit", "800",
+            "--repo-root", RepositoryRoot(),
+        };
+        if (output is not null)
+        {
+            args.Add("--output");
+            args.Add(output);
+        }
+
+        return [.. args];
     }
 
     private static List<JsonElement> RoundTrip(SimulationConfig config)

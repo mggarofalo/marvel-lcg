@@ -12,8 +12,8 @@ internal static class CommandLine
         + "[--seed-mode explicit|consecutive|random] "
         + "[--seed N ...|--seed-start N|--selection-seed N] "
         + "[--policy-seed N] [--decision-limit N] [--output FILE] [--repo-root DIR]\n"
-        + "  Marvel.Sim replay RECORD.jsonl [--repo-root DIR]\n"
-        + "  Marvel.Sim report RECORD.jsonl";
+        + "  Marvel.Sim replay RECORD.jsonl[.gz] [--repo-root DIR]\n"
+        + "  Marvel.Sim report RECORD.jsonl[.gz]";
 
     public static int Run(string[] args, TextWriter output, TextWriter diagnostics)
     {
@@ -53,14 +53,12 @@ internal static class CommandLine
 
         SimulationHarness.ValidateConfig(config);
         string path = Path.GetFullPath(config.Output);
-        string? parent = Path.GetDirectoryName(path);
-        if (!string.IsNullOrEmpty(parent))
+        SimulationSummary summary;
+        using (TextWriter records = SimulationRecordFiles.CreateWriter(path))
         {
-            Directory.CreateDirectory(parent);
+            summary = SimulationHarness.Run(config, records, diagnostics);
         }
 
-        using var records = new StreamWriter(path, append: false);
-        var summary = SimulationHarness.Run(config, records, diagnostics);
         output.WriteLine(summary.Human(path));
         return summary.ExitCode;
     }
@@ -296,4 +294,14 @@ internal sealed record SimulationConfig(
 
 internal sealed record ReplayConfig(string Path, string? RepoRoot);
 
-internal sealed class SimulationUsageException(string message) : Exception(message);
+internal sealed class SimulationUsageException : Exception
+{
+    public SimulationUsageException(string message) : base(message)
+    {
+    }
+
+    public SimulationUsageException(string message, Exception innerException)
+        : base(message, innerException)
+    {
+    }
+}
