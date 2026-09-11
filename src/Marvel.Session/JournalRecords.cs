@@ -119,14 +119,115 @@ public sealed record PromptRecord(
     }
 }
 
+/// <summary>The independent values in one durable target request.</summary>
+public sealed record TargetRequestRecord(
+    [property: JsonRequired] IReadOnlyList<int> Legal,
+    [property: JsonRequired] int Min,
+    [property: JsonRequired] int Max,
+    [property: JsonRequired] IReadOnlyList<IReadOnlyList<int>>? Groups,
+    [property: JsonRequired] IReadOnlyList<string>? MustIncludeTraits,
+    [property: JsonRequired] string Rule,
+    [property: JsonRequired] bool IsSearch,
+    [property: JsonRequired] bool AllowRepeated,
+    [property: JsonRequired] IReadOnlyDictionary<int, int>? MaximumOccurrences,
+    [property: JsonRequired] IReadOnlyDictionary<int, string>? Details)
+{
+    /// <summary>Captures source fields without the derived grouped alias.</summary>
+    public static TargetRequestRecord From(TargetRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        return new(
+            request.Legal,
+            request.Min,
+            request.Max,
+            request.Groups,
+            request.MustIncludeTraits,
+            request.Rule,
+            request.IsSearch,
+            request.AllowRepeated,
+            request.MaximumOccurrences,
+            request.Details);
+    }
+}
+
+/// <summary>One resource generator in a durable cost menu.</summary>
+public readonly record struct ResourceSourceRecord(
+    [property: JsonRequired] int Effect,
+    [property: JsonRequired] string Generates)
+{
+    /// <summary>Captures one engine-authored generator.</summary>
+    public static ResourceSourceRecord From(ResourceSource source) =>
+        new(source.Effect, source.Generates);
+}
+
+/// <summary>One numerical value requested by a durable cost.</summary>
+public readonly record struct VariableRequestRecord(
+    [property: JsonRequired] string Name,
+    [property: JsonRequired] long Min,
+    [property: JsonRequired] long Max)
+{
+    /// <summary>Captures one engine-authored variable range.</summary>
+    public static VariableRequestRecord From(VariableRequest request) =>
+        new(request.Name, request.Min, request.Max);
+}
+
+/// <summary>One independent component of a durable simultaneous payment.</summary>
+public sealed record ResourceCostComponentRecord(
+    [property: JsonRequired] string Cost,
+    [property: JsonRequired] IReadOnlyList<string>? Rule,
+    [property: JsonRequired] bool Printed)
+{
+    /// <summary>Captures one engine-authored payment component.</summary>
+    public static ResourceCostComponentRecord From(ResourceCost component)
+    {
+        ArgumentNullException.ThrowIfNull(component);
+        return new(component.Cost, component.Rule, component.Printed);
+    }
+}
+
+/// <summary>The independent values in one durable cost option.</summary>
+public sealed record CostOptionRecord(
+    [property: JsonRequired] int Target,
+    [property: JsonRequired] string Cost,
+    [property: JsonRequired] IReadOnlyList<string>? Rule,
+    [property: JsonRequired] string OrCost,
+    [property: JsonRequired] IReadOnlyList<string>? OrRule,
+    [property: JsonRequired] IReadOnlyList<ResourceSourceRecord>? Sources,
+    [property: JsonRequired] IReadOnlyList<VariableRequestRecord>? Variables,
+    [property: JsonRequired] IReadOnlyList<ResourceCostComponentRecord>? Components,
+    [property: JsonRequired] bool DeclarationSensitive)
+{
+    /// <summary>Captures source fields without computed cost aliases.</summary>
+    public static CostOptionRecord From(CostOption option)
+    {
+        ArgumentNullException.ThrowIfNull(option);
+        return new(
+            option.Target,
+            option.Cost,
+            option.Rule,
+            option.OrCost,
+            option.OrRule,
+            option.Sources is null
+                ? null
+                : [.. option.Sources.Select(ResourceSourceRecord.From)],
+            option.Variables is null
+                ? null
+                : [.. option.Variables.Select(VariableRequestRecord.From)],
+            option.Components is null
+                ? null
+                : [.. option.Components.Select(ResourceCostComponentRecord.From)],
+            option.DeclarationSensitive);
+    }
+}
+
 /// <summary>A stable snapshot of an offered choice, excluding its live handle.</summary>
 public sealed record AffordanceRecord(
     [property: JsonRequired] string Verb,
     [property: JsonRequired] int AnchorId,
     [property: JsonRequired] int AnchorPlayer,
     [property: JsonRequired] string Label,
-    [property: JsonRequired] JsonElement? Targets,
-    [property: JsonRequired] IReadOnlyList<JsonElement> Costs,
+    [property: JsonRequired] TargetRequestRecord? Targets,
+    [property: JsonRequired] IReadOnlyList<CostOptionRecord> Costs,
     [property: JsonRequired] string? Illegal)
 {
     /// <summary>Captures an affordance in domain order.</summary>
@@ -138,14 +239,213 @@ public sealed record AffordanceRecord(
             affordance.AnchorId,
             affordance.AnchorPlayer,
             affordance.Label,
-            affordance.Targets is null
-                ? null
-                : JsonSerializer.SerializeToElement(
-                    affordance.Targets, JournalJson.Options),
-            [.. affordance.CostOptions.Select(cost =>
-                JsonSerializer.SerializeToElement(cost, JournalJson.Options))],
+            affordance.Targets is null ? null : TargetRequestRecord.From(affordance.Targets),
+            [.. affordance.CostOptions.Select(CostOptionRecord.From)],
             affordance.Illegal);
     }
+}
+
+/// <summary>Reads the frozen prompt shape written by schema 2 journals.</summary>
+public static class SchemaTwoPromptJson
+{
+    private static readonly JsonSerializerOptions Options = CreateOptions();
+
+    /// <summary>
+    /// Parses every schema 2 member and verifies that its computed aliases still
+    /// agree with the independent values before producing a canonical record.
+    /// </summary>
+    public static PromptRecord Read(JsonElement element)
+    {
+        var legacy = element.Deserialize<LegacyPromptRecord>(Options)
+            ?? throw new JsonException("schema 2 prompt is null");
+        if (legacy.Affordances is null)
+        {
+            throw new JsonException("schema 2 prompt affordances are null");
+        }
+
+        return new PromptRecord(
+            legacy.Player,
+            legacy.Asking,
+            legacy.When,
+            legacy.Trigger,
+            legacy.Label,
+            legacy.Cancellable,
+            [.. legacy.Affordances.Select(affordance =>
+                Convert(affordance
+                    ?? throw new JsonException("schema 2 affordance is null")))]);
+    }
+
+    private static AffordanceRecord Convert(LegacyAffordanceRecord affordance)
+    {
+        if (affordance.Costs is null)
+        {
+            throw new JsonException("schema 2 affordance costs are null");
+        }
+
+        return new(
+            affordance.Verb,
+            affordance.AnchorId,
+            affordance.AnchorPlayer,
+            affordance.Label,
+            affordance.Targets is null ? null : Convert(affordance.Targets),
+            [.. affordance.Costs.Select(cost =>
+                Convert(cost ?? throw new JsonException("schema 2 cost is null")))],
+            affordance.Illegal);
+    }
+
+    private static TargetRequestRecord Convert(LegacyTargetRequest request)
+    {
+        bool grouped = request.Groups is { Count: > 0 };
+        if (request.IsGrouped != grouped)
+        {
+            throw new JsonException("schema 2 target is_grouped does not match groups");
+        }
+
+        return new TargetRequestRecord(
+            request.Legal,
+            request.Min,
+            request.Max,
+            request.Groups,
+            request.MustIncludeTraits,
+            request.Rule,
+            request.IsSearch,
+            request.AllowRepeated,
+            request.MaximumOccurrences,
+            request.Details);
+    }
+
+    private static CostOptionRecord Convert(LegacyCostOption option)
+    {
+        if (option.OrCost is null
+            || option.Generators is null
+            || option.VariableRequests is null
+            || option.ResourceCosts is null)
+        {
+            throw new JsonException("schema 2 cost has a null computed alias");
+        }
+
+        IReadOnlyList<LegacyResourceSource> generators = option.Sources ?? [];
+        IReadOnlyList<LegacyVariableRequest> variables = option.Variables ?? [];
+        IReadOnlyList<LegacyResourceCost> resourceCosts = option.Components
+            ?? [new LegacyResourceCost(option.Cost, option.Rule, Printed: false)];
+        if (option.HasAlternative != (option.OrCost.Length > 0)
+            || !SequenceEqual(option.Generators, generators)
+            || !SequenceEqual(option.VariableRequests, variables)
+            || !ResourceCostsEqual(option.ResourceCosts, resourceCosts))
+        {
+            throw new JsonException("schema 2 cost computed aliases do not match source fields");
+        }
+
+        return new CostOptionRecord(
+            option.Target,
+            option.Cost,
+            option.Rule,
+            option.OrCost,
+            option.OrRule,
+            option.Sources is null
+                ? null
+                : [.. option.Sources.Select(source =>
+                    new ResourceSourceRecord(source.Effect, source.Generates))],
+            option.Variables is null
+                ? null
+                : [.. option.Variables.Select(variable =>
+                    new VariableRequestRecord(variable.Name, variable.Min, variable.Max))],
+            option.Components is null
+                ? null
+                : [.. option.Components.Select(component =>
+                    new ResourceCostComponentRecord(
+                        component.Cost, component.Rule, component.Printed))],
+            option.DeclarationSensitive);
+    }
+
+    private static bool SequenceEqual<T>(
+        IReadOnlyList<T> left, IReadOnlyList<T> right) where T : notnull =>
+        left.Count == right.Count && left.SequenceEqual(right);
+
+    private static bool ResourceCostsEqual(
+        IReadOnlyList<LegacyResourceCost> left,
+        IReadOnlyList<LegacyResourceCost> right) =>
+        left.Count == right.Count
+        && left.Zip(right).All(pair =>
+            pair.First is not null
+            && pair.Second is not null
+            && string.Equals(pair.First.Cost, pair.Second.Cost, StringComparison.Ordinal)
+            && pair.First.Printed == pair.Second.Printed
+            && (pair.First.Rule is null
+                ? pair.Second.Rule is null
+                : pair.Second.Rule is not null
+                    && pair.First.Rule.SequenceEqual(pair.Second.Rule)));
+
+    private static JsonSerializerOptions CreateOptions()
+    {
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+            UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
+        };
+        options.MakeReadOnly(populateMissingResolver: true);
+        return options;
+    }
+
+    private sealed record LegacyPromptRecord(
+        [property: JsonRequired] int Player,
+        [property: JsonRequired] string Asking,
+        [property: JsonRequired] string When,
+        [property: JsonRequired] string Trigger,
+        [property: JsonRequired] string Label,
+        [property: JsonRequired] bool Cancellable,
+        [property: JsonRequired] IReadOnlyList<LegacyAffordanceRecord> Affordances);
+
+    private sealed record LegacyAffordanceRecord(
+        [property: JsonRequired] string Verb,
+        [property: JsonRequired] int AnchorId,
+        [property: JsonRequired] int AnchorPlayer,
+        [property: JsonRequired] string Label,
+        [property: JsonRequired] LegacyTargetRequest? Targets,
+        [property: JsonRequired] IReadOnlyList<LegacyCostOption> Costs,
+        [property: JsonRequired] string? Illegal);
+
+    private sealed record LegacyTargetRequest(
+        [property: JsonRequired] IReadOnlyList<int> Legal,
+        [property: JsonRequired] int Min,
+        [property: JsonRequired] int Max,
+        [property: JsonRequired] IReadOnlyList<IReadOnlyList<int>>? Groups,
+        [property: JsonRequired] IReadOnlyList<string>? MustIncludeTraits,
+        [property: JsonRequired] string Rule,
+        [property: JsonRequired] bool IsSearch,
+        [property: JsonRequired] bool AllowRepeated,
+        [property: JsonRequired] IReadOnlyDictionary<int, int>? MaximumOccurrences,
+        [property: JsonRequired] IReadOnlyDictionary<int, string>? Details,
+        [property: JsonRequired] bool IsGrouped);
+
+    private sealed record LegacyCostOption(
+        [property: JsonRequired] int Target,
+        [property: JsonRequired] string Cost,
+        [property: JsonRequired] IReadOnlyList<string>? Rule,
+        [property: JsonRequired] string OrCost,
+        [property: JsonRequired] IReadOnlyList<string>? OrRule,
+        [property: JsonRequired] IReadOnlyList<LegacyResourceSource>? Sources,
+        [property: JsonRequired] IReadOnlyList<LegacyVariableRequest>? Variables,
+        [property: JsonRequired] IReadOnlyList<LegacyResourceCost>? Components,
+        [property: JsonRequired] bool DeclarationSensitive,
+        [property: JsonRequired] bool HasAlternative,
+        [property: JsonRequired] IReadOnlyList<LegacyResourceSource> Generators,
+        [property: JsonRequired] IReadOnlyList<LegacyVariableRequest> VariableRequests,
+        [property: JsonRequired] IReadOnlyList<LegacyResourceCost> ResourceCosts);
+
+    private readonly record struct LegacyResourceSource(
+        [property: JsonRequired] int Effect,
+        [property: JsonRequired] string Generates);
+
+    private readonly record struct LegacyVariableRequest(
+        [property: JsonRequired] string Name,
+        [property: JsonRequired] long Min,
+        [property: JsonRequired] long Max);
+
+    private sealed record LegacyResourceCost(
+        [property: JsonRequired] string Cost,
+        [property: JsonRequired] IReadOnlyList<string>? Rule,
+        [property: JsonRequired] bool Printed);
 }
 
 /// <summary>

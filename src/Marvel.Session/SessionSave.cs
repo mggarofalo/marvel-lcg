@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
@@ -48,7 +47,7 @@ public sealed record JournalUnit(
     [property: JsonRequired] IReadOnlyList<JournalStep> Decisions,
     [property: JsonRequired] IReadOnlyList<InformationExposure> Exposures);
 
-/// <summary>Schema 2's complete, capability-free deterministic session authority.</summary>
+/// <summary>Schema 3's complete, capability-free deterministic session authority.</summary>
 public sealed record SessionSave(
     [property: JsonRequired] string Format,
     [property: JsonRequired] int Schema,
@@ -65,8 +64,8 @@ public sealed record SessionSave(
     /// <summary>The required schema family marker.</summary>
     public const string FormatName = "marvel-session";
 
-    /// <summary>The schema this runtime writes; schema 1 is read only for migration.</summary>
-    public const int CurrentSchema = 2;
+    /// <summary>The schema this runtime writes; schema 2 is read only for migration.</summary>
+    public const int CurrentSchema = 3;
 
     /// <summary>Creates the zero-decision authority for a freshly dealt game.</summary>
     public static SessionSave Open(
@@ -96,7 +95,7 @@ public sealed record SessionSave(
 /// <summary>Strict, deterministic JSON for the canonical save document.</summary>
 public static class SessionSaveJson
 {
-    /// <summary>The strict snake-case serialization contract for schema 2.</summary>
+    /// <summary>The strict snake-case serialization contract for schema 3.</summary>
     public static JsonSerializerOptions Options { get; } = CreateOptions();
 
     /// <summary>Validates and writes one canonical save document.</summary>
@@ -116,9 +115,9 @@ public static class SessionSaveJson
             if (document.RootElement.ValueKind == JsonValueKind.Object
                 && document.RootElement.TryGetProperty("schema", out JsonElement schema)
                 && schema.ValueKind == JsonValueKind.Number
-                && schema.GetInt32() == 1)
+                && schema.GetInt32() == 2)
             {
-                return ReadSchemaOne(json);
+                return ReadSchemaTwo(json);
             }
 
             var save = JsonSerializer.Deserialize<SessionSave>(json, Options)
@@ -139,9 +138,9 @@ public static class SessionSaveJson
     public static void ValidateReadable(SessionSave save)
     {
         ArgumentNullException.ThrowIfNull(save);
-        if (save.Schema == 1)
+        if (save.Schema == 2)
         {
-            ValidateSchemaOne(save);
+            ValidateSchemaTwo(save);
             return;
         }
 
@@ -259,51 +258,73 @@ public static class SessionSaveJson
         value is { Length: 32 } && value.All(character =>
             character is (>= '0' and <= '9') or (>= 'a' and <= 'f'));
 
-    private static SessionSave ReadSchemaOne(string json)
+    private static SessionSave ReadSchemaTwo(string json)
     {
-        JsonObject root = JsonNode.Parse(json) as JsonObject
-            ?? throw new JsonException("schema 1 save is not an object");
-        if (root["units"] is not JsonArray units)
-        {
-            throw new JsonException("schema 1 save has no units array");
-        }
-
-        foreach (JsonNode? node in units)
-        {
-            if (node is not JsonObject unit || unit.ContainsKey("exposures"))
-            {
-                throw new JsonException("schema 1 unit shape is invalid");
-            }
-
-            unit.Add("exposures", new JsonArray());
-        }
-
-        var save = JsonSerializer.Deserialize<SessionSave>(root.ToJsonString(), Options)
+        var legacy = JsonSerializer.Deserialize<SchemaTwoSessionSave>(json, Options)
             ?? throw new SessionSaveException("save contains no session document");
-        ValidateSchemaOne(save);
+        if (legacy.Units is null)
+        {
+            throw new JsonException("schema 2 units are null");
+        }
+
+        var save = new SessionSave(
+            legacy.Format,
+            legacy.Schema,
+            legacy.Compatibility,
+            legacy.Session,
+            legacy.Setup,
+            legacy.Initial,
+            legacy.Revision,
+            legacy.Cursor,
+            legacy.EditFrontier,
+            ReadSchemaTwoPrompt(legacy.CurrentPrompt),
+            [.. legacy.Units.Select(unit => ConvertSchemaTwoUnit(
+                unit ?? throw new JsonException("schema 2 unit is null")))]);
+        ValidateSchemaTwo(save);
         return save;
     }
 
-    private static void ValidateSchemaOne(SessionSave save)
+    private static JournalUnit ConvertSchemaTwoUnit(SchemaTwoJournalUnit unit)
     {
-        if (save.Schema != 1)
+        if (unit.Decisions is null)
         {
-            throw new SessionSaveException("schema 1 save is not migratable");
+            throw new JsonException("schema 2 unit decisions are null");
         }
 
-        // Validate the shared document shape before inspecting collections that
-        // a malformed predecessor document could have omitted.
+        return new JournalUnit(
+            unit.Role,
+            unit.Status,
+            unit.InitiatingSeat,
+            unit.ActiveSeat,
+            unit.Round,
+            unit.Phase,
+            [.. unit.Decisions.Select(step => ConvertSchemaTwoStep(
+                step ?? throw new JsonException("schema 2 step is null")))],
+            unit.Exposures);
+    }
+
+    private static JournalStep ConvertSchemaTwoStep(SchemaTwoJournalStep step) =>
+        new(
+            SchemaTwoPromptJson.Read(step.Prompt),
+            step.Decision,
+            step.Events,
+            step.RngWords,
+            step.StateFingerprint,
+            step.Result);
+
+    private static PromptRecord? ReadSchemaTwoPrompt(JsonElement? prompt) =>
+        prompt is null || prompt.Value.ValueKind == JsonValueKind.Null
+            ? null
+            : SchemaTwoPromptJson.Read(prompt.Value);
+
+    private static void ValidateSchemaTwo(SessionSave save)
+    {
+        if (save.Schema != 2)
+        {
+            throw new SessionSaveException("schema 2 save is not migratable");
+        }
+
         Validate(save with { Schema = SessionSave.CurrentSchema });
-        if (save.EditFrontier != 0
-            || save.Cursor != save.Units.Count
-            || save.Units.Any(unit => unit.Exposures.Count != 0))
-        {
-            throw new SessionSaveException("schema 1 save is not migratable");
-        }
-
-        // Schema 1 has the same shape except for per-unit exposure records. It
-        // predates history editing, so only the complete active trace with the
-        // original zero frontier is a state this runtime ever wrote.
     }
 
     private static JsonSerializerOptions CreateOptions()
@@ -319,6 +340,40 @@ public static class SessionSaveJson
         return options;
     }
 }
+
+/// <summary>The frozen session envelope written by schema 2.</summary>
+internal sealed record SchemaTwoSessionSave(
+    [property: JsonRequired] string Format,
+    [property: JsonRequired] int Schema,
+    [property: JsonRequired] SessionCompatibility Compatibility,
+    [property: JsonRequired] SessionIdentity Session,
+    [property: JsonRequired] SessionSetup Setup,
+    [property: JsonRequired] InitialRecord Initial,
+    [property: JsonRequired] long Revision,
+    [property: JsonRequired] int Cursor,
+    [property: JsonRequired] int EditFrontier,
+    [property: JsonRequired] JsonElement? CurrentPrompt,
+    [property: JsonRequired] IReadOnlyList<SchemaTwoJournalUnit> Units);
+
+/// <summary>One frozen schema 2 history unit.</summary>
+internal sealed record SchemaTwoJournalUnit(
+    [property: JsonRequired] string Role,
+    [property: JsonRequired] string Status,
+    [property: JsonRequired] int InitiatingSeat,
+    [property: JsonRequired] int ActiveSeat,
+    [property: JsonRequired] int Round,
+    [property: JsonRequired] string Phase,
+    [property: JsonRequired] IReadOnlyList<SchemaTwoJournalStep> Decisions,
+    [property: JsonRequired] IReadOnlyList<InformationExposure> Exposures);
+
+/// <summary>One frozen schema 2 decision and its derived replay facts.</summary>
+internal sealed record SchemaTwoJournalStep(
+    [property: JsonRequired] JsonElement Prompt,
+    [property: JsonRequired] DurableDecision Decision,
+    [property: JsonRequired] IReadOnlyList<JsonElement> Events,
+    [property: JsonRequired] long RngWords,
+    [property: JsonRequired] string StateFingerprint,
+    [property: JsonRequired] EngineResultRecord? Result);
 
 /// <summary>The game and setup events freshly produced by a replay factory.</summary>
 public sealed record ReplayOpenedGame(Game Game, IReadOnlyList<GameEvent> SetupEvents);
@@ -524,40 +579,33 @@ public static class SessionReplay
     }
 
     /// <summary>
-    /// Replays the strict predecessor format and derives schema 2's knowledge records.
+    /// Replays the strict predecessor format before producing schema 3.
     /// </summary>
-    public static SessionSave MigrateSchemaOne(
+    public static SessionSave MigrateSchemaTwo(
         SessionSave save,
         SessionCompatibility expected,
         Func<SessionSetup, ReplayOpenedGame> open)
     {
         SessionSaveJson.ValidateReadable(save);
-        if (save.Schema != 1)
+        if (save.Schema != 2)
         {
-            throw new SessionSaveException("only schema 1 can be migrated");
+            throw new SessionSaveException("only schema 2 can be migrated");
         }
 
         ArgumentNullException.ThrowIfNull(expected);
         ArgumentNullException.ThrowIfNull(open);
         RequireCompatibility(expected, save.Compatibility);
-        ReplayResult replayed = Replay(
-            save, save.Units.Count, open, requireExposures: false);
+        ReplayResult replayed = Replay(save, save.Units.Count, open, requireExposures: true);
         RequireCurrentPrompt(save.CurrentPrompt, replayed.Game.Pending);
-        var units = save.Units.Select((unit, index) => unit with
-        {
-            Decisions = [.. unit.Decisions],
-            Exposures = replayed.Exposures[index],
-        }).ToList();
-        int frontier = units
-            .Select((unit, index) => unit.Exposures.Count > 0 ? index + 1 : 0)
-            .DefaultIfEmpty(0)
-            .Max();
         SessionSave migrated = save with
         {
             Schema = SessionSave.CurrentSchema,
             Compatibility = expected,
-            EditFrontier = frontier,
-            Units = units,
+            Units = [.. save.Units.Select(unit => unit with
+            {
+                Decisions = [.. unit.Decisions],
+                Exposures = [.. unit.Exposures],
+            })],
         };
         SessionSaveJson.Validate(migrated);
         return migrated;

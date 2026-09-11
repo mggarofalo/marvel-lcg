@@ -1579,9 +1579,7 @@ public sealed class EngineHostTests
         {
             Save = save with
             {
-                Schema = 1,
-                EditFrontier = 0,
-                Units = [unit with { Exposures = [] }],
+                Schema = 2,
             },
         });
         var restarted = new EngineHost(
@@ -1597,6 +1595,71 @@ public sealed class EngineHostTests
             Assert.Single(Assert.Single(migrated.Save.Units).Exposures).Reason);
         Assert.Null(restarted.Exchange(EngineRequest.SyncGame(
             "sync", "frontier-table", opened.Capability!)).Error);
+    }
+
+    [Fact]
+    public void FailedSchemaTwoMigrationLeavesThePredecessorAuthoritative()
+    {
+        var source = new MemorySessionStore();
+        IDurableGameFactory factory = DatasetGameFactory.Load(RepositoryPaths.Root);
+        var first = new EngineHost(
+            factory,
+            new SequenceCapabilities("migration-failure-owner"),
+            store: source);
+        EngineResponse opened = first.Exchange(EngineRequest.OpenGame(
+            "open",
+            "migration-failure-table",
+            new GameSpecification("rhino", ["spider_man"], [], Seed: 73)));
+        StoredSession current = Assert.Single(source.Load());
+        var predecessor = new MigrationSessionStore(current with
+        {
+            Save = current.Save with { Schema = 2 },
+        });
+
+        var restarted = new EngineHost(
+            factory,
+            store: new FailingSessionStore(predecessor, failAtCommit: 1));
+
+        Assert.Equal(
+            2,
+            Assert.Single(predecessor.Load()).Save.Schema);
+        Assert.Equal(0, predecessor.Commits);
+        Assert.Equal(
+            "session_not_found",
+            restarted.Exchange(EngineRequest.SyncGame(
+                "sync", "migration-failure-table", opened.Capability!)).Error?.Code);
+    }
+
+    [Fact]
+    public void DivergentSchemaTwoMigrationIsRejectedBeforeCommit()
+    {
+        var source = new MemorySessionStore();
+        IDurableGameFactory factory = DatasetGameFactory.Load(RepositoryPaths.Root);
+        var first = new EngineHost(
+            factory,
+            new SequenceCapabilities("migration-divergence-owner"),
+            store: source);
+        EngineResponse opened = first.Exchange(EngineRequest.OpenGame(
+            "open",
+            "migration-divergence-table",
+            new GameSpecification("rhino", ["spider_man"], [], Seed: 73)));
+        StoredSession current = Assert.Single(source.Load());
+        var predecessor = new MigrationSessionStore(current with
+        {
+            Save = current.Save with
+            {
+                Schema = 2,
+                CurrentPrompt = current.Save.CurrentPrompt! with { Label = "changed" },
+            },
+        });
+
+        var restarted = new EngineHost(factory, store: predecessor);
+
+        Assert.Equal(0, predecessor.Commits);
+        Assert.Equal(
+            "session_not_found",
+            restarted.Exchange(EngineRequest.SyncGame(
+                "sync", "migration-divergence-table", opened.Capability!)).Error?.Code);
     }
 
     [Fact]

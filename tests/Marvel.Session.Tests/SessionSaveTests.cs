@@ -1,5 +1,8 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
+using Marvel.Rules.Timing;
 using Marvel.Session;
 using Xunit;
 
@@ -42,7 +45,7 @@ public sealed class SessionSaveTests
     }
 
     [Fact]
-    public void SchemaTwoHasAStableStrictTopLevelDocument()
+    public void SchemaThreeHasAStableStrictTopLevelDocument()
     {
         SessionSave save = Save();
 
@@ -51,7 +54,7 @@ public sealed class SessionSaveTests
 
         Assert.Equal(json, SessionSaveJson.Write(parsed));
         Assert.StartsWith(
-            "{\"format\":\"marvel-session\",\"schema\":2,\"compatibility\":",
+            "{\"format\":\"marvel-session\",\"schema\":3,\"compatibility\":",
             json,
             StringComparison.Ordinal);
         Assert.Contains(
@@ -78,8 +81,8 @@ public sealed class SessionSaveTests
                 "\"format\":\"future-session\"",
                 StringComparison.Ordinal),
             "schema" => json.Replace(
-                "\"schema\":2",
                 "\"schema\":3",
+                "\"schema\":4",
                 StringComparison.Ordinal),
             _ => throw new InvalidOperationException(change),
         };
@@ -124,17 +127,52 @@ public sealed class SessionSaveTests
     }
 
     [Fact]
-    public void SchemaOneCanBeReadStrictlyButCannotBeWrittenAsCurrent()
+    public void SchemaTwoCanBeReadStrictlyButCannotBeWrittenAsCurrent()
     {
         string legacyJson = SessionSaveJson.Write(Save()).Replace(
+            "\"schema\":3",
             "\"schema\":2",
-            "\"schema\":1",
             StringComparison.Ordinal);
 
         SessionSave legacy = SessionSaveJson.Read(legacyJson);
 
-        Assert.Equal(1, legacy.Schema);
+        Assert.Equal(2, legacy.Schema);
         Assert.Throws<SessionSaveException>(() => SessionSaveJson.Write(legacy));
+    }
+
+    [Fact]
+    public void SchemaTwoPromptsUseTheirFrozenShapeBeforeConversion()
+    {
+        Prompt prompt = new(
+            0,
+            Question.TurnOption,
+            TimingPriority.Untimed,
+            string.Empty,
+            "Pay",
+            false,
+            [new Affordance(
+                7,
+                "Play",
+                20,
+                0,
+                "Pay",
+                new TargetRequest([20], 1, 1),
+                [new CostOption(20, "1", Sources: [new ResourceSource(8, "M")])])]);
+        PromptRecord currentPrompt = PromptRecord.From(prompt);
+        JsonObject legacy = Assert.IsType<JsonObject>(JsonSerializer.SerializeToNode(
+            Save() with { CurrentPrompt = currentPrompt }, SessionSaveJson.Options));
+        legacy["schema"] = 2;
+        legacy["current_prompt"] = JournalRecordsTests.SchemaTwoPrompt(currentPrompt);
+
+        SessionSave parsed = SessionSaveJson.Read(legacy.ToJsonString(SessionSaveJson.Options));
+
+        Assert.Equal(2, parsed.Schema);
+        Assert.Equal(
+            JsonSerializer.Serialize(currentPrompt, JournalJson.Options),
+            JsonSerializer.Serialize(parsed.CurrentPrompt, JournalJson.Options));
+        legacy["current_prompt"]!["affordances"]![0]!["targets"]!["is_grouped"] = true;
+        Assert.Throws<SessionSaveException>(() =>
+            SessionSaveJson.Read(legacy.ToJsonString(SessionSaveJson.Options)));
     }
 
     private static SessionSave Save() => new(

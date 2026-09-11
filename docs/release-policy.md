@@ -171,9 +171,9 @@ when all of the following hold:
 - complete deterministic replay verifies every recorded prompt, event, RNG
   count and state fingerprint.
 
-Schema 2 is the current writer. Schema 1 is its single readable predecessor.
-Reading schema 1 performs the implemented replay-verified, atomic migration and
-commits schema 2 before publishing the session. “Same final board” is never
+Schema 3 is the current writer. Schema 2 is its single readable predecessor.
+Reading schema 2 performs the implemented replay-verified, atomic migration and
+commits schema 3 before publishing the session. “Same final board” is never
 sufficient evidence for migration.
 
 An unknown schema, replay identity, RNG identity, digest identity or dataset

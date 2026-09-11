@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Marvel.Cards.Dsl;
 using Marvel.Cards.Run;
 using Marvel.Content;
@@ -13,7 +14,8 @@ namespace Marvel.Sim;
 
 internal static class SimulationHarness
 {
-    private const int RecordSchema = 2;
+    private const int RecordSchema = 3;
+    private const int PreviousRecordSchema = 2;
     private const int RecentEventLimit = 20;
 
     public static void ValidateConfig(SimulationConfig config)
@@ -215,11 +217,7 @@ internal static class SimulationHarness
         }
 
         var header = Read<HeaderRecord>(first, "header");
-        if (header.Schema != RecordSchema)
-        {
-            throw new SimulationUsageException(
-                $"record schema {header.Schema} is not supported; expected {RecordSchema}");
-        }
+        ValidateRecordSchema(header.Schema);
 
         if (!string.Equals(header.Policy, ActingPolicy.Name, StringComparison.Ordinal)
             || header.PolicyVersion != ActingPolicy.Version)
@@ -317,7 +315,7 @@ internal static class SimulationHarness
                 }
                 case "step":
                 {
-                    var step = Read<StepRecord>(line, type);
+                    var step = Read<StepRecord>(line, type, header.Schema);
                     RequireGame(game, currentGame, step.Game);
                     RequireEqual(
                         currentSteps, step.Step,
@@ -429,7 +427,7 @@ internal static class SimulationHarness
                 }
                 case "failure":
                 {
-                    var failure = Read<FailureRecord>(line, type);
+                    var failure = Read<FailureRecord>(line, type, header.Schema);
                     if (failure.Game < 0 || failure.Game >= header.Seeds.Count)
                     {
                         throw new ReplayDivergenceException(
@@ -694,6 +692,7 @@ internal static class SimulationHarness
                     }
 
                     reportHeader = Read<HeaderRecord>(line, type);
+                    ValidateRecordSchema(reportHeader.Schema);
                     break;
                 case "start":
                     break;
@@ -732,7 +731,9 @@ internal static class SimulationHarness
                 }
                 case "failure":
                 {
-                    var failure = Read<FailureRecord>(line, type);
+                    int schema = reportHeader?.Schema
+                        ?? throw new ReplayDivergenceException("record has no leading header");
+                    var failure = Read<FailureRecord>(line, type, schema);
                     RequireEqual(games, failure.Game, "failure game index");
                     games++;
                     rounds += failure.Round;
@@ -769,13 +770,6 @@ internal static class SimulationHarness
         if (reportHeader is null)
         {
             throw new ReplayDivergenceException("record has no header");
-        }
-
-        if (reportHeader.Schema != RecordSchema)
-        {
-            throw new SimulationUsageException(
-                $"record schema {reportHeader.Schema} is not supported; "
-                + $"expected {RecordSchema}");
         }
 
         RequireEqual(reportHeader.Seeds.Count, games, "recorded game count");
@@ -957,9 +951,59 @@ internal static class SimulationHarness
             ? config.Scenario + "_expert"
             : config.Scenario;
 
-    private static T Read<T>(string line, string expectedType) =>
-        JsonSerializer.Deserialize<T>(line, RecordJson.Options)
-        ?? throw new JsonException($"{expectedType} record was null");
+    private static T Read<T>(string line, string expectedType, int schema = RecordSchema)
+    {
+        string readable = schema == PreviousRecordSchema
+            && (typeof(T) == typeof(StepRecord) || typeof(T) == typeof(FailureRecord))
+                ? CanonicalizeSchemaTwoPrompts(line)
+                : line;
+        return JsonSerializer.Deserialize<T>(readable, RecordJson.Options)
+            ?? throw new JsonException($"{expectedType} record was null");
+    }
+
+    private static void ValidateRecordSchema(int schema)
+    {
+        if (schema is not (PreviousRecordSchema or RecordSchema))
+        {
+            throw new SimulationUsageException(
+                $"record schema {schema} is not supported; expected "
+                + $"{PreviousRecordSchema} or {RecordSchema}");
+        }
+    }
+
+    private static string CanonicalizeSchemaTwoPrompts(string line)
+    {
+        JsonObject root = JsonNode.Parse(line) as JsonObject
+            ?? throw new JsonException("schema 2 record is not an object");
+        CanonicalizePrompt(root);
+        if (root["recent_steps"] is JsonArray recent)
+        {
+            foreach (JsonNode? node in recent)
+            {
+                if (node is not JsonObject step)
+                {
+                    throw new JsonException("schema 2 recent step is not an object");
+                }
+
+                CanonicalizePrompt(step);
+            }
+        }
+
+        return root.ToJsonString(RecordJson.Options);
+    }
+
+    private static void CanonicalizePrompt(JsonObject record)
+    {
+        if (record["prompt"] is null)
+        {
+            return;
+        }
+
+        JsonElement legacy = JsonSerializer.SerializeToElement(
+            record["prompt"], RecordJson.Options);
+        record["prompt"] = JsonSerializer.SerializeToNode(
+            SchemaTwoPromptJson.Read(legacy), RecordJson.Options);
+    }
 
     private static void ValidateHeaderSeeds(HeaderRecord header)
     {

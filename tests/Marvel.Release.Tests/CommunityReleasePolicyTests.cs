@@ -57,7 +57,7 @@ public sealed class CommunityReleasePolicyTests
         }
         Assert.Contains("needs: [identity, macos-install, windows-install, server-sign, server-install]",
             workflow, StringComparison.Ordinal);
-        Assert.Contains("engine-replay-v2 · protocol 14 · save 2", workflow,
+        Assert.Contains("engine-replay-v2 · protocol 14 · save 3", workflow,
             StringComparison.Ordinal);
         Assert.DoesNotContain("engine-replay-v1", workflow, StringComparison.Ordinal);
         Assert.DoesNotContain("protocol:11", workflow, StringComparison.Ordinal);

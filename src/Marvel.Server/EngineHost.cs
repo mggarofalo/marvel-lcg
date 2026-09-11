@@ -1109,13 +1109,13 @@ public sealed class EngineHost : IEngineEndpoint
             try
             {
                 StoredSession current = stored;
-                if (current.Save.Schema == 1)
+                if (current.Save.Schema == 2)
                 {
-                    SessionSave migrated = SessionReplay.MigrateSchemaOne(
+                    SessionSave migrated = SessionReplay.MigrateSchemaTwo(
                         current.Save, compatibility, ReplayOpen);
                     current = current with { Save = migrated };
                     // Publish only after replay has verified the predecessor trace and
-                    // the complete schema 2 generation is durable.
+                    // the complete schema 3 generation is durable.
                     selectedGeneration = store.Commit(current);
                     saveCommitted = true;
                 }
