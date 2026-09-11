@@ -201,17 +201,13 @@ internal static class SimulationHarness
         ArgumentNullException.ThrowIfNull(config);
         ArgumentNullException.ThrowIfNull(diagnostics);
         string path = Path.GetFullPath(config.Path);
-        if (!File.Exists(path))
-        {
-            throw new SimulationUsageException($"record does not exist: {path}");
-        }
-
-        using var reader = File.OpenText(path);
-        string? first = reader.ReadLine();
-        if (first is null)
+        using IEnumerator<string> lines = SimulationRecordFiles.ReadLines(path).GetEnumerator();
+        if (!lines.MoveNext())
         {
             throw new SimulationUsageException("record is empty");
         }
+
+        string first = lines.Current;
 
         using (var document = JsonDocument.Parse(first))
         {
@@ -262,9 +258,9 @@ internal static class SimulationHarness
         var replaySignatures = new Dictionary<string, int>(StringComparer.Ordinal);
         var replayRecent = new Queue<StepRecord>();
         bool sawSummary = false;
-        string? line;
-        while ((line = reader.ReadLine()) is not null)
+        while (lines.MoveNext())
         {
+            string line = lines.Current;
             if (sawSummary)
             {
                 throw new ReplayDivergenceException(
@@ -663,11 +659,6 @@ internal static class SimulationHarness
     public static SimulationSummary Report(string path)
     {
         string fullPath = Path.GetFullPath(path);
-        if (!File.Exists(fullPath))
-        {
-            throw new SimulationUsageException($"record does not exist: {fullPath}");
-        }
-
         SummaryRecord? found = null;
         HeaderRecord? reportHeader = null;
         bool sawAny = false;
@@ -683,7 +674,7 @@ internal static class SimulationHarness
         int payments = 0;
         int resourceAbilities = 0;
         var signatures = new Dictionary<string, int>(StringComparer.Ordinal);
-        foreach (string line in File.ReadLines(fullPath))
+        foreach (string line in SimulationRecordFiles.ReadLines(fullPath))
         {
             if (found is not null)
             {

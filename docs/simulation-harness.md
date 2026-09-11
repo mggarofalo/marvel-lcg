@@ -75,15 +75,17 @@ dotnet run --project src/Marvel.Sim -- run \
   --policy acting@1 \
   --policy-seed 9001 \
   --decision-limit 600 \
-  --output artifacts/sim/rhino-expert-two-player.jsonl
+  --output artifacts/sim/rhino-expert-two-player.jsonl.gz
 ```
 
 Repeated `--hero` and `--modular` flags preserve their order. Hero order is
 seat order. Modular-set order is the order passed to `Dealer.DealOrder`.
 
 When `--output` is omitted, JSONL goes to standard output and the human summary
-goes to standard error. Naming an output file is explicit permission to write
-that file. See [Output behavior](#output-behavior).
+goes to standard error. Saved research traces should use a `.jsonl.gz` name;
+the harness then compresses the JSONL without changing its schema or record
+order. Naming an output file is explicit permission to write that file. See
+[Output behavior](#output-behavior).
 
 ## Configuration rules
 
@@ -442,7 +444,7 @@ occurrence is itself the divergence.
 The command is:
 
 ```bash
-dotnet run --project src/Marvel.Sim -- replay artifacts/sim/rhino-expert-two-player.jsonl
+dotnet run --project src/Marvel.Sim -- replay artifacts/sim/rhino-expert-two-player.jsonl.gz
 ```
 
 It writes diagnostics to standard error and changes no file unless an explicit
@@ -492,6 +494,10 @@ The run appends one `summary` JSON value after all selected games finish and
 prints the same values as one concise human sentence. `Marvel.Sim report`
 renders that summary again from a saved stream.
 
+```bash
+dotnet run --project src/Marvel.Sim -- report artifacts/sim/rhino-expert-two-player.jsonl.gz
+```
+
 The summary contains:
 
 - Selected and failed game counts.
@@ -509,6 +515,15 @@ With no `--output`, JSONL is written to standard output. With `--output FILE`,
 the command creates or replaces that explicit file and prints the human summary
 to standard output. Its parent directory is created when needed. The user chose
 the path, so the write is authorized and unsurprising.
+
+An output name ending in `.jsonl.gz` stores that same UTF-8 JSONL stream in a
+gzip container. Other output names and standard output remain uncompressed.
+Replay and report detect gzip from its magic bytes, so renamed gzip records
+remain readable and a `.gz` suffix never causes plain input to be decompressed.
+The reader validates every member, including a sequence of concatenated gzip
+members, before parsing records. Corrupt or truncated gzip input is a
+configuration/input error with a concise diagnostic. Compression is a harness
+storage choice, not an engine or record schema rule.
 
 The harness creates no file when validation fails. It never writes to
 `datasets/`, `src/`, `tests/` or `docs/` unless the caller explicitly names one
@@ -539,6 +554,7 @@ harness contract with small, named tests:
 - Configuration validation and the three seed-plan vectors.
 - Per-seat policy seed derivation.
 - JSONL record and report round trips.
+- Plain and gzip-equivalent JSONL, magic-byte detection and corrupt input.
 - One solo game that generates and replays a record.
 - One two-player game that generates and replays a record.
 - A two-player obligation case that places the card with the matching identity
@@ -562,9 +578,9 @@ The first implementation lands in three reviewable stages:
 3. Add multiplayer dispatch, implied Actions, obligation coverage and failure
    capsules plus aggregate summaries.
 
-Deterministic sharding and gzip are compatible future extensions. They do not
-belong in the initial contract and are not required to run large sequential
-research batches.
+Deterministic sharding remains a compatible future extension. Gzip is the
+recommended container for saved research traces but is not required for plain
+streams or standard-output pipelines.
 
 Each stage must keep the solution green on Windows and Linux. A stage that
 cannot replay what it writes is incomplete.
