@@ -1118,12 +1118,21 @@ public sealed class EngineHost : IEngineEndpoint
                 }
 
                 Game game = SessionReplay.Verify(current.Save, compatibility, ReplayOpen);
+                var authorityVerifiers = new HashSet<string>(StringComparer.Ordinal);
                 foreach (StoredAuthority authority in current.Authorities)
                 {
                     if (authority.Seats.Any(seat => seat >= game.State.Players))
                     {
                         throw new SessionSaveException(
                             "stored authority seat is outside its game");
+                    }
+
+                    if (!authorityVerifiers.Add(authority.Verifier)
+                        || sessions.ContainsKey(authority.Verifier)
+                        || invitations.ContainsKey(authority.Verifier))
+                    {
+                        throw new SessionSaveException(
+                            "stored authority verifier is duplicated");
                     }
                 }
 

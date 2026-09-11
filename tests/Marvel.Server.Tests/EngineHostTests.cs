@@ -1689,6 +1689,50 @@ public sealed class EngineHostTests
     }
 
     [Fact]
+    public void DuplicateAuthorityDoesNotDisplaceTheSchemaTwoGeneration()
+    {
+        var source = new MemorySessionStore();
+        IDurableGameFactory factory = DatasetGameFactory.Load(RepositoryPaths.Root);
+        var first = new EngineHost(
+            factory,
+            new SequenceCapabilities("migration-first-owner", "migration-second-owner"),
+            store: source);
+        _ = first.Exchange(EngineRequest.OpenGame(
+            "open-first",
+            "migration-first-table",
+            new GameSpecification("rhino", ["spider_man"], [], Seed: 73)));
+        _ = first.Exchange(EngineRequest.OpenGame(
+            "open-second",
+            "migration-second-table",
+            new GameSpecification("rhino", ["spider_man"], [], Seed: 79)));
+        StoredSession restored = source.Load().Single(session =>
+            session.Save.Session.Label == "migration-first-table");
+        StoredSession current = source.Load().Single(session =>
+            session.Save.Session.Label == "migration-second-table");
+        var predecessor = new MigrationSessionStore(
+            restored,
+            current with
+            {
+                Save = current.Save with { Schema = 2 },
+                Authorities =
+                [
+                    current.Authorities[0] with
+                    {
+                        Verifier = restored.Authorities[0].Verifier,
+                    },
+                ],
+            });
+
+        _ = new EngineHost(factory, store: predecessor);
+
+        Assert.Equal(0, predecessor.Commits);
+        Assert.Equal(
+            2,
+            predecessor.Load().Single(session =>
+                session.Save.Session.Label == "migration-second-table").Save.Schema);
+    }
+
+    [Fact]
     public void ChoosingNoMulliganCardsBeforeAnotherPlayersPromptRevealsNothingNew()
     {
         var store = new MemorySessionStore();
@@ -2000,18 +2044,25 @@ public sealed class EngineHostTests
         public OpenedGame Create(GameSpecification specification) => inner.Create(specification);
     }
 
-    private sealed class MigrationSessionStore(StoredSession session) : ISessionStore
+    private sealed class MigrationSessionStore(params StoredSession[] sessions) : ISessionStore
     {
-        private StoredSession session = session;
+        private readonly List<StoredSession> sessions = [.. sessions];
 
         public int Commits { get; private set; }
 
-        public IReadOnlyList<StoredSession> Load() => [session];
+        public IReadOnlyList<StoredSession> Load() => [.. sessions];
 
         public string? Commit(StoredSession replacement)
         {
             SessionSaveJson.Validate(replacement.Save);
-            session = replacement;
+            int index = sessions.FindIndex(session =>
+                session.Save.Session.StorageId == replacement.Save.Session.StorageId);
+            if (index < 0)
+            {
+                throw new InvalidOperationException("replacement session was not loaded");
+            }
+
+            sessions[index] = replacement;
             Commits++;
             return null;
         }
