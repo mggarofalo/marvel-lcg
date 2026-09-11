@@ -323,14 +323,26 @@ Resolve, undo, redo and reorder follow one gameplay transaction:
    session.
 4. Deal a fresh game and replay the complete proposed active prefix.
 5. Validate prompts, selectors, events, RNG consumption and state digests.
-6. Write the complete proposed save to a sibling temporary file.
-7. Flush it and atomically replace the prior save.
-8. Swap the candidate ledger, game and next revision into the live session.
-9. Return the authorized snapshot.
+6. Construct the visibility-safe response from the verified candidate.
+7. Write the complete proposed save to a sibling temporary file.
+8. Flush it and atomically replace the prior save.
+9. Swap the candidate ledger, game and next revision into the live session.
+10. Return the already-projected authorized response.
 
-If validation, replay or persistence fails, the candidate is discarded and the
-live session remains unchanged. A response never claims a mutation succeeded
-before its canonical save is committed.
+If validation, replay, projection or persistence fails, the candidate is
+discarded and the live session remains unchanged. No fallible response
+projection remains after a successful commit. If delivery fails after commit,
+the mutation remains authoritative and the client recovers with `sync`; a
+response never claims success before its canonical save is committed.
+
+The server application boundary assigns these jobs to concrete owners.
+`SessionAuthorityRegistry` owns capabilities, invitations and lifecycle
+publication. `SessionTransaction` owns projection-before-commit and
+commit-before-live-publication for gameplay and history mutations.
+`AuthorizedSessionProjector` owns visibility-safe snapshots and retained-history
+descriptions. `RequestExecution` owns one request's replay, persistence and
+completion telemetry. `EngineHost` remains the synchronous protocol dispatcher
+that applies operation-specific validation and candidate construction.
 
 Session lifecycle commands have the same save-before-ack rule:
 
