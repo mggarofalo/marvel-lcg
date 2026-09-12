@@ -283,16 +283,11 @@ public sealed partial class CardControl : PanelContainer
             Name = "ResourceIcons",
             ThemeTypeVariation = GodotThemeVariations.CompactRow,
             SizeFlagsHorizontal = SizeFlags.ShrinkBegin,
-            TooltipText = $"Resource {CardRulesMarkup.ResourceNames(resource.Value)}",
         };
-        presentation.AddChild(Label(
-            "RESOURCE",
-            GodotThemeVariations.CardPrintedValue,
-            "ResourceLabel"));
 
         Font iconFont = CardRulesMarkup.ResourceFont();
         int index = 0;
-        foreach ((string name, string glyph) in CardRulesMarkup.ResourceTokens(resource.Value))
+        foreach ((_, string glyph) in CardRulesMarkup.ResourceTokens(resource.Value))
         {
             ResourceIconMetrics metrics = VisualSystem.ResourceIcon(glyph, scale);
             Label slot = Label(
@@ -302,7 +297,6 @@ public sealed partial class CardControl : PanelContainer
             slot.CustomMinimumSize = new Vector2(metrics.SlotSize, metrics.SlotSize);
             slot.HorizontalAlignment = HorizontalAlignment.Center;
             slot.VerticalAlignment = VerticalAlignment.Center;
-            slot.TooltipText = $"Resource {name}";
             slot.AddThemeFontOverride("font", iconFont);
             slot.AddThemeFontSizeOverride("font_size", metrics.FontSize);
             presentation.AddChild(slot);
@@ -368,23 +362,18 @@ public sealed partial class CardControl : PanelContainer
         {
             Name = "SummaryValuesRES",
             ThemeTypeVariation = GodotThemeVariations.CompactRow,
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            SizeFlagsHorizontal = SizeFlags.ShrinkBegin,
         };
         Font iconFont = CardRulesMarkup.ResourceFont();
         int index = 0;
-        foreach ((string name, string glyph) in CardRulesMarkup.ResourceTokens(resource.Value))
+        foreach ((_, string glyph) in CardRulesMarkup.ResourceTokens(resource.Value))
         {
             var token = new HBoxContainer
             {
                 Name = $"ResourceToken{index}",
                 ThemeTypeVariation = GodotThemeVariations.CompactRow,
                 SizeFlagsHorizontal = SizeFlags.ShrinkBegin,
-                TooltipText = $"Resource {name}",
             };
-            token.AddChild(Label(
-                name,
-                GodotThemeVariations.CardLiveValue,
-                $"ResourceName{index}"));
             ResourceIconMetrics metrics = VisualSystem.ResourceIcon(glyph, scale);
             Label slot = Label(
                 glyph,
@@ -695,8 +684,7 @@ public sealed partial class CardControl : PanelContainer
             string displayed = value.Name switch
             {
                 "Boost" => new string('◆', int.TryParse(value.Value, out int boost) ? boost : 0),
-                "RES" => $"{CardRulesMarkup.ResourceNames(value.Value)}  "
-                    + CardRulesMarkup.ResourceIcons(value.Value),
+                "RES" => CardRulesMarkup.ResourceIcons(value.Value),
                 _ => value.Value,
             };
             Label field = Label(

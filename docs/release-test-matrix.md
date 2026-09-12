@@ -15,6 +15,7 @@ the artifact produced earlier in the same protected-tag workflow.
 | Linux server backup restore | Exact release digest with a stopped-volume archive restored into a fresh volume | Same signed release image | Same as forward upgrade | Restored schema `2` save | Replay-verify, migrate to schema `3`, and publish the saved session |
 | Linux server interrupted candidate | Exact release digest killed after valid restore against a copied pre-upgrade volume | No weakened trust or parsing | Abrupt termination uses the last atomic generation | Interrupted volume remains recoverable; matching backup and prior image remain runnable |
 | Linux server downgrade | Lower product `0.0.0` over a save last written by the release | Deliberately local test image, never published | Product version is below the save's last-writer floor | Newer schema `3` save preserved | Quarantine as `unsupported_downgrade`; direct recovery to newer image or matching backup |
+| Release-candidate journey | Exact desktop artifact identities plus the immutable signed server digest | Each platform keeps its community trust limitation | Two authorized clients synchronize after a lower-version restart and a monotonic upgrade to the release image | One saved Core game remains authoritative throughout | Complete the game, retain redacted diagnostics and a read-only incident manifest, then publish one hash-bound acceptance record |
 
 Schema `2` to schema `3` migration, unknown-schema quarantine, replay/RNG/digest
 refusal, dataset mismatch, atomic storage failure, and last-writer stamping are
@@ -23,3 +24,5 @@ public package interface would bypass the strict parser being tested. The
 release workflow runs those tests before artifact installation and then runs the
 artifact-level matrix above. No row claims Apple notarization, Developer ID,
 CA-backed Authenticode, a trusted timestamp, or frictionless public installation.
+The published acceptance record is deterministic release metadata: it contains
+no wall-clock result, local path, credential, private key or save body.

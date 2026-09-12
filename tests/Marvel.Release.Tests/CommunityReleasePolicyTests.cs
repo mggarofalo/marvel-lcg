@@ -59,13 +59,37 @@ public sealed class CommunityReleasePolicyTests
         }
         Assert.Contains("needs: [identity, macos-install, windows-install, server-sign, server-install]",
             workflow, StringComparison.Ordinal);
+        Assert.Contains("needs: [identity, acceptance-record, server-sign]",
+            workflow, StringComparison.Ordinal);
         Assert.Contains("engine-replay-v2 · protocol 14 · save 3", workflow,
             StringComparison.Ordinal);
         Assert.Contains("def schema_two_prompt", serverUpgrade, StringComparison.Ordinal);
         Assert.Contains("\"stage\":\"migration\"", serverUpgrade, StringComparison.Ordinal);
         Assert.Contains("\"save_committed\":true", serverUpgrade, StringComparison.Ordinal);
+        Assert.Contains("MARVEL_HOSTED_SMOKE_CHECKPOINT_DIR", serverUpgrade,
+            StringComparison.Ordinal);
+        Assert.Contains("continue-after-restart", serverUpgrade, StringComparison.Ordinal);
+        Assert.Contains("continue-after-upgrade", serverUpgrade, StringComparison.Ordinal);
+        Assert.Contains("--export-incident -", serverUpgrade, StringComparison.Ordinal);
+        Assert.Contains("marvel-server-release-candidate", serverUpgrade,
+            StringComparison.Ordinal);
         Assert.DoesNotContain("engine-replay-v1", workflow, StringComparison.Ordinal);
         Assert.DoesNotContain("protocol:11", workflow, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ReleaseWorkflowPublishesOneValidatedAcceptanceRecordAndItsEvidence()
+    {
+        string workflow = File.ReadAllText(Path.Combine(
+            RepositoryPaths.Root, ".github", "workflows", "release-desktop.yml"));
+
+        Assert.Contains("acceptance-record:", workflow, StringComparison.Ordinal);
+        Assert.Contains("Marvel.Release.csproj", workflow, StringComparison.Ordinal);
+        Assert.Contains("--artifacts \"$RUNNER_TEMP/release-candidate\"", workflow,
+            StringComparison.Ordinal);
+        Assert.Contains("release-candidate-server-evidence", workflow, StringComparison.Ordinal);
+        Assert.Contains("release-candidate-record", workflow, StringComparison.Ordinal);
+        Assert.Contains("MarvelChampions-*-acceptance.json", workflow, StringComparison.Ordinal);
     }
 
     [Fact]

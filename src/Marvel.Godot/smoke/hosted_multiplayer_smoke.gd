@@ -10,6 +10,8 @@ const GAME_LABEL := "hosted-multiplayer-smoke"
 var host: Control
 var guest: Control
 var failed := false
+var checkpoint_directory := ""
+var upgraded := false
 
 
 func _initialize() -> void:
@@ -17,6 +19,7 @@ func _initialize() -> void:
 
 
 func _run() -> void:
+	checkpoint_directory = OS.get_environment("MARVEL_HOSTED_SMOKE_CHECKPOINT_DIR")
 	var packed := load("res://Main.tscn") as PackedScene
 	if packed == null:
 		_fail("Main.tscn could not be loaded")
@@ -91,6 +94,11 @@ func _run() -> void:
 	if not invitation_field.text.is_empty():
 		_fail("the guest retained the invitation after attach")
 		return
+	if not checkpoint_directory.is_empty():
+		if not await _checkpoint("clients-connected", "continue-after-restart"):
+			return
+		if not await _synchronize(host) or not await _synchronize(guest):
+			return
 
 	var host_acted := false
 	var guest_acted := false
@@ -136,6 +144,12 @@ func _run() -> void:
 		# now stale by definition.
 		if not _complete(other) and not await _synchronize(other):
 			return
+		if not checkpoint_directory.is_empty() and not upgraded:
+			if not await _checkpoint("upgrade-ready", "continue-after-upgrade"):
+				return
+			if not await _synchronize(host) or not await _synchronize(guest):
+				return
+			upgraded = true
 
 	if not host_acted or not guest_acted:
 		_fail("both independently authorized clients did not answer a decision")
@@ -146,9 +160,32 @@ func _run() -> void:
 	if not _decision_is_terminal(host) or not _decision_is_terminal(guest):
 		_fail("a terminal client still exposes an operable decision")
 		return
+	if not checkpoint_directory.is_empty():
+		_write_checkpoint("journey-complete")
 
 	print("HOSTED_MULTIPLAYER_SMOKE_OK decisions=%d" % decisions)
 	quit(0)
+
+
+func _checkpoint(ready_name: String, continue_name: String) -> bool:
+	_write_checkpoint(ready_name)
+	if failed:
+		return false
+	if not await _wait_for(func() -> bool:
+		return FileAccess.file_exists(checkpoint_directory.path_join(continue_name))):
+		_fail("the hosted release checkpoint '%s' was not continued" % ready_name)
+		return false
+	return true
+
+
+func _write_checkpoint(name: String) -> void:
+	var marker := FileAccess.open(
+		checkpoint_directory.path_join(name), FileAccess.WRITE)
+	if marker == null:
+		_fail("the hosted release checkpoint '%s' could not be written" % name)
+		return
+	marker.store_line("ready")
+	marker.close()
 
 
 func _configure_connection(main: Control) -> void:

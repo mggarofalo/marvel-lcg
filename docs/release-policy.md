@@ -313,6 +313,23 @@ and all of these checks pass:
 - the Windows self-signature, publisher and absent timestamp verify; and
 - installation tests exercise the produced artifact rather than rebuilding it.
 
+The release also publishes
+`MarvelChampions-VERSION-acceptance.json`. This schema-1 record is generated
+only after every platform installation succeeds. It binds the exact desktop
+artifact hashes, public Windows certificate, server image digest, server
+provenance and Sigstore bundle to one source commit and one set of runtime
+identities. Its result names the deliberately limited community trust model;
+`passed` does not mean Apple notarization, a publicly trusted Windows publisher
+or a trusted timestamp.
+
+The same release retains the server journey record and its read-only incident
+manifest. The journey keeps two independently authorized clients alive through
+a graceful restart and then a monotonic image upgrade, synchronizes both after
+each interruption, and completes the saved game. The incident export contains
+only the bounded operational schema and hashes of saved generations. It does
+not publish save bodies, capabilities, invitations, concealed cards or private
+certificate material.
+
 MARVEL-347 owns clean-install, upgrade, interruption and downgrade verification.
 MARVEL-349 owns the final two-client release-candidate journey. A failure in
 either is a failed release, not permission to publish with a warning.

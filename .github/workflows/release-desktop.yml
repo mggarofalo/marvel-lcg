@@ -465,14 +465,65 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          mkdir -p "$RUNNER_TEMP/server-acceptance"
           echo "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
           image="ghcr.io/${{ github.repository_owner }}/marvel-server@${{ needs.server-sign.outputs.digest }}"
           bash tools/server-community-upgrade-smoke.sh \
-            "$image" '${{ needs.identity.outputs.version }}' "$GODOT_BIN"
+            "$image" '${{ needs.identity.outputs.version }}' "$GODOT_BIN" \
+            "$RUNNER_TEMP/server-acceptance"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-candidate-server-evidence
+          path: ${{ runner.temp }}/server-acceptance/*
+          if-no-files-found: error
+
+  acceptance-record:
+    name: Bind release-candidate evidence to exact artifacts
+    needs: [identity, macos-install, windows-install, server-sign, server-install]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref }}
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.0.424
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: desktop-*-community
+          path: ${{ runner.temp }}/release-candidate
+          merge-multiple: true
+      - uses: actions/download-artifact@v8
+        with:
+          name: desktop-windows-unsigned-input
+          path: ${{ runner.temp }}/release-candidate
+      - uses: actions/download-artifact@v8
+        with:
+          name: server-linux-signed
+          path: ${{ runner.temp }}/release-candidate
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-candidate-server-evidence
+          path: ${{ runner.temp }}/release-candidate
+      - name: Verify identities and write the immutable acceptance record
+        shell: bash
+        run: |
+          dotnet run --project tools/Marvel.Release/Marvel.Release.csproj \
+            --configuration Release -- acceptance-record \
+            --version '${{ needs.identity.outputs.version }}' \
+            --commit '${{ needs.identity.outputs.commit }}' \
+            --artifacts "$RUNNER_TEMP/release-candidate" \
+            --output "$RUNNER_TEMP/MarvelChampions-${{ needs.identity.outputs.version }}-acceptance.json"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-candidate-record
+          path: ${{ runner.temp }}/MarvelChampions-*-acceptance.json
+          if-no-files-found: error
 
   publish:
     name: Publish immutable community release
-    needs: [identity, macos-install, windows-install, server-sign, server-install]
+    needs: [identity, acceptance-record, server-sign]
     runs-on: ubuntu-latest
     environment: desktop-release
     permissions:
@@ -493,6 +544,16 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: server-linux-signed
+          path: release
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-candidate-server-evidence
+          path: release
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-candidate-record
           path: release
 
       - uses: docker/setup-buildx-action@v4

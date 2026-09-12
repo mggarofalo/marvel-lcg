@@ -282,7 +282,9 @@ the full card inspector beside that card. The modal moves focus to its explicit
 Close control, closes with Escape or the surrounding backdrop, restores focus to
 the source card, and keeps long rules text independently scrollable. Character
 health is one current/maximum value rather than separate hit-point and damage
-values.
+values. Printed resources use only their canonical icon row everywhere,
+including the full inspector, matching the printed card rather than adding
+resource names or tooltips.
 Settled synchronization uses the toolbar indicator rather than reserving a
 large event-cue box, and the History tab gives its log a readable minimum height.
 Completed history units appear there as one player action rather than as their
