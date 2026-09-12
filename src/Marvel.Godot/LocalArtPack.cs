@@ -40,35 +40,7 @@ public sealed class ArtPackCatalog
 
         try
         {
-            string fullRoot = Path.GetFullPath(root);
-            string manifestPath = Path.Combine(fullRoot, "manifest.json");
-            if (!File.Exists(manifestPath)
-                || new FileInfo(manifestPath).Length > MaximumManifestBytes)
-            {
-                return new ArtPackCatalog([]);
-            }
-
-            ArtPackManifest? manifest = JsonSerializer.Deserialize<ArtPackManifest>(
-                File.ReadAllText(manifestPath), JsonOptions);
-            if (manifest?.Version != 1 || manifest.Entries is null)
-            {
-                return new ArtPackCatalog([]);
-            }
-
-            var accepted = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-            long acceptedBytes = 0;
-            foreach ((string faceId, ArtPackEntry? entry) in manifest.Entries.Take(MaximumEntries))
-            {
-                long remaining = MaximumPackBytes - acceptedBytes;
-                byte[]? asset = ReadAsset(fullRoot, entry, remaining);
-                if (asset is not null)
-                {
-                    accepted.TryAdd(faceId, asset);
-                    acceptedBytes += asset.Length;
-                }
-            }
-
-            return new ArtPackCatalog(accepted);
+            return LoadLocalPack(Path.GetFullPath(root));
         }
         catch (Exception exception) when (exception is IOException
             or UnauthorizedAccessException
@@ -78,6 +50,35 @@ public sealed class ArtPackCatalog
         {
             return new ArtPackCatalog([]);
         }
+    }
+
+    private static ArtPackCatalog LoadLocalPack(string fullRoot)
+    {
+        ArtPackManifest? manifest = ReadManifest(fullRoot);
+        if (manifest?.Version != 1 || manifest.Entries is null)
+        {
+            return new ArtPackCatalog([]);
+        }
+        var accepted = new Dictionary<string, byte[]>(StringComparer.Ordinal);
+        long acceptedBytes = 0;
+        foreach ((string faceId, ArtPackEntry? entry) in manifest.Entries.Take(MaximumEntries))
+        {
+            byte[]? asset = ReadAsset(fullRoot, entry, MaximumPackBytes - acceptedBytes);
+            if (asset is not null)
+            {
+                accepted.TryAdd(faceId, asset);
+                acceptedBytes += asset.Length;
+            }
+        }
+        return new ArtPackCatalog(accepted);
+    }
+
+    private static ArtPackManifest? ReadManifest(string fullRoot)
+    {
+        string path = Path.Combine(fullRoot, "manifest.json");
+        return File.Exists(path) && new FileInfo(path).Length <= MaximumManifestBytes
+            ? JsonSerializer.Deserialize<ArtPackManifest>(File.ReadAllText(path), JsonOptions)
+            : null;
     }
 
     private static bool IsNetworkOrDevicePath(string path) =>
@@ -102,41 +103,20 @@ public sealed class ArtPackCatalog
         ArtPackEntry? entry,
         long remainingBytes)
     {
-        if (entry is null
-            || !entry.Authorized
-            || string.IsNullOrWhiteSpace(entry.Rights)
-            || string.IsNullOrWhiteSpace(entry.File)
-            || Path.IsPathRooted(entry.File)
-            || entry.File.Contains("://", StringComparison.Ordinal))
+        if (!IsAuthorizedEntry(entry))
         {
             return null;
         }
 
         try
         {
-            string candidate = Path.GetFullPath(entry.File, fullRoot);
+            string candidate = Path.GetFullPath(entry!.File, fullRoot);
             string relative = Path.GetRelativePath(fullRoot, candidate);
-            if (Path.IsPathRooted(relative)
-                || relative == ".."
-                || relative.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal)
-                || !string.Equals(Path.GetExtension(candidate), ".png", StringComparison.OrdinalIgnoreCase)
-                || !File.Exists(candidate)
-                || HasLinkInPath(fullRoot, relative))
+            if (!IsSafeAssetPath(fullRoot, candidate, relative))
             {
                 return null;
             }
-
-            using FileStream stream = File.Open(
-                candidate, FileMode.Open, System.IO.FileAccess.Read, FileShare.Read);
-            if (stream.Length is <= 24 or > MaximumFileBytes
-                || stream.Length > remainingBytes)
-            {
-                return null;
-            }
-
-            var bytes = new byte[checked((int)stream.Length)];
-            stream.ReadExactly(bytes);
-            return HasBoundedPngHeader(bytes) ? bytes : null;
+            return ReadBoundedPng(candidate, remainingBytes);
         }
         catch (Exception exception) when (exception is IOException
             or UnauthorizedAccessException
@@ -145,6 +125,35 @@ public sealed class ArtPackCatalog
         {
             return null;
         }
+    }
+
+    private static bool IsAuthorizedEntry(ArtPackEntry? entry) =>
+        entry is not null
+        && entry.Authorized
+        && !string.IsNullOrWhiteSpace(entry.Rights)
+        && !string.IsNullOrWhiteSpace(entry.File)
+        && !Path.IsPathRooted(entry.File)
+        && !entry.File.Contains("://", StringComparison.Ordinal);
+
+    private static bool IsSafeAssetPath(string root, string candidate, string relative) =>
+        !Path.IsPathRooted(relative)
+        && relative != ".."
+        && !relative.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal)
+        && string.Equals(Path.GetExtension(candidate), ".png", StringComparison.OrdinalIgnoreCase)
+        && File.Exists(candidate)
+        && !HasLinkInPath(root, relative);
+
+    private static byte[]? ReadBoundedPng(string candidate, long remainingBytes)
+    {
+        using FileStream stream = File.Open(
+            candidate, FileMode.Open, System.IO.FileAccess.Read, FileShare.Read);
+        if (stream.Length is <= 24 or > MaximumFileBytes || stream.Length > remainingBytes)
+        {
+            return null;
+        }
+        var bytes = new byte[checked((int)stream.Length)];
+        stream.ReadExactly(bytes);
+        return HasBoundedPngHeader(bytes) ? bytes : null;
     }
 
     private static bool HasBoundedPngHeader(byte[] bytes)

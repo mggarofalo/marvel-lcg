@@ -63,7 +63,8 @@ public static class Deal
             Places.Reference(deck), Places.Reference(queue),
             [new Landing(card.ObjectId, queue.Cards.Count - 1)])
         {
-            Trigger = trigger, Verb = "Deal",
+            Trigger = trigger,
+            Verb = "Deal",
         });
 
         return card;
@@ -90,7 +91,8 @@ public static class Deal
             Places.Reference(from), Places.Reference(queue),
             [new Landing(card.ObjectId, queue.Cards.Count - 1)])
         {
-            Trigger = trigger, Verb = "Deal",
+            Trigger = trigger,
+            Verb = "Deal",
         });
     }
 

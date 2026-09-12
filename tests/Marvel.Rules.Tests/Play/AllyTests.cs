@@ -30,7 +30,7 @@ public sealed class AllyTests
         var ally = Ally(world, "ally");
         var villain = world.TheCardIn(DeckType.VillainArea)!;
 
-        BasicPowers.AllyPower(world, printed, ally, villain, BasicPowers.AttackVerb, []);
+        AllyBasicPowers.AllyPower(world, printed, ally, villain, BasicPowers.AttackVerb, []);
         Agendas.Finish(world, printed);
 
         Assert.False(ally.Ready);
@@ -52,7 +52,7 @@ public sealed class AllyTests
         world.Seats[0].IdentityCard.Exhaust();
         var villain = world.TheCardIn(DeckType.VillainArea)!;
 
-        BasicPowers.AllyPower(world, printed, ally, villain, BasicPowers.AttackVerb, []);
+        AllyBasicPowers.AllyPower(world, printed, ally, villain, BasicPowers.AttackVerb, []);
         Agendas.Finish(world, printed);
 
         Assert.Equal(2, villain.Damage);
@@ -76,7 +76,7 @@ public sealed class AllyTests
             ? world.TheCardIn(DeckType.VillainArea)!
             : Threatened(world);
 
-        BasicPowers.AllyPower(world, printed, ally, target, verb, []);
+        AllyBasicPowers.AllyPower(world, printed, ally, target, verb, []);
         Agendas.Finish(world, printed);
 
         Assert.Equal(expected, ally.Damage);
@@ -96,7 +96,7 @@ public sealed class AllyTests
         world.CreateCard("ally", world.Seats[0].Deck);
 
         var events = new List<GameEvent>();
-        BasicPowers.AllyPower(
+        AllyBasicPowers.AllyPower(
             world, printed, ally, world.TheCardIn(DeckType.VillainArea)!,
             BasicPowers.AttackVerb, events);
         events.AddRange(Agendas.Finish(world, printed));
@@ -119,10 +119,10 @@ public sealed class AllyTests
         var ally = Ally(world, "ally");
         ally.Exhaust();
 
-        Assert.Empty(BasicPowers.Allies(world, 0));
+        Assert.Empty(AllyBasicPowers.Allies(world, 0));
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => BasicPowers.AllyPower(
+            () => AllyBasicPowers.AllyPower(
                 world, printed, ally, world.TheCardIn(DeckType.VillainArea)!,
                 BasicPowers.AttackVerb, []));
 
@@ -141,7 +141,7 @@ public sealed class AllyTests
         var scheme = Threatened(world);
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => BasicPowers.AllyPower(
+            () => AllyBasicPowers.AllyPower(
                 world, printed, ally, scheme, BasicPowers.AttackVerb, []));
 
         Assert.Contains("is not something", thrown.Message, StringComparison.Ordinal);

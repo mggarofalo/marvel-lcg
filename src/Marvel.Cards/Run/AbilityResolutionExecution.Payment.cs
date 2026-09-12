@@ -5,27 +5,15 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Cards.Run;
 
-internal sealed partial class AbilityResolutionExecution
+internal static class AbilityResolutionPayment
 {
-    private static void DiscardEvent(Card card, AbilityResolutionState cast)
+    internal static void DiscardEvent(this AbilityResolutionExecution execution, Card card, AbilityResolutionState cast)
     {
-        bool playedInWindow = !cast.Suspended
-            && cast.World.Facts.Kind(card.FaceId) == CardKind.Event
-            && card.Area.Type == DeckType.RevealingArea
-            && card.Area.PlayArea == PlayArea.Of(card.Owner)
-            && !cast.Occurrence.Is(Steps.TurnAction);
-        if (!cast.Suspended
-            && cast.World.Facts.Kind(card.FaceId) == CardKind.Event
-            && card.Area.Type == DeckType.RevealingArea
-            && card.Area.PlayArea == PlayArea.Of(card.Owner))
+        if (IsResolvingEvent(cast, card))
         {
+            bool playedInWindow = !cast.Occurrence.Is(Steps.TurnAction);
             Rules.Play.Discard.Card(cast.World, card, CardPlay.Verb, cast.Events);
-            foreach (var payment in cast.World.Effects.Active().Where(effect =>
-                effect.Card == card.ObjectId
-                && effect.Kind.StartsWith("paid:", StringComparison.Ordinal)).ToList())
-            {
-                cast.World.Effects.Use(payment);
-            }
+            ConsumePaymentMarkers(cast.World, card);
 
             if (playedInWindow)
             {
@@ -37,7 +25,21 @@ internal sealed partial class AbilityResolutionExecution
         }
     }
 
-    private static void ApplyPayment(AbilityPaymentResult result, AbilityResolutionState cast)
+    private static bool IsResolvingEvent(AbilityResolutionState cast, Card card) =>
+        !cast.Suspended
+        && cast.World.Facts.Kind(card.FaceId) == CardKind.Event
+        && card.Area.Type == DeckType.RevealingArea
+        && card.Area.PlayArea == PlayArea.Of(card.Owner);
+
+    private static void ConsumePaymentMarkers(World world, Card card)
+    {
+        foreach (var payment in world.Effects.Active().Where(effect =>
+            effect.Card == card.ObjectId
+            && effect.Kind.StartsWith("paid:", StringComparison.Ordinal)).ToList())
+            world.Effects.Use(payment);
+    }
+
+    internal static void ApplyPayment(this AbilityResolutionExecution execution, AbilityPaymentResult result, AbilityResolutionState cast)
     {
         if (result.Healed is { } healed) cast.Results["healed"] = healed;
         if (result.Energy is { } energy) cast.Results["energy"] = energy;

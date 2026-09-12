@@ -98,26 +98,7 @@ internal static class AbilityStructuralQueries
     {
         var evidence = NewEvidence();
         if (choice is AbilityEffect.ChooseCard chooseCard)
-        {
-            var selected = LegalCards(context, chooseCard, continuation, evidence)
-                .FirstOrDefault(card => card.ObjectId == answer.Affordance);
-            if (selected is null)
-                return new Unsupported(
-                    $"'{context.SourceFace}' did not offer card {answer.Affordance} to choose");
-
-            var selectedContext = WithSelection(context, selected);
-            AbilityStructuralOutcome? pending = null;
-            if (context.HasPendingDependency
-                && !AbilityInitiation.ActiveChoices(
-                    chooseCard.Effect, selectedContext.Admission()).Any())
-            {
-                pending = Outcome(AbilityInitiation.ResolutionOf(
-                    chooseCard.Effect, selectedContext.Admission()));
-            }
-            return new RunChoice(
-                chooseCard.Effect, new ChoiceFrame(null, selected.ObjectId), selected,
-                BindsPlayerSelection: true, pending, Admission(evidence));
-        }
+            return AnswerCardChoice(context, chooseCard, continuation, answer, evidence);
 
         var options = (AbilityEffect.Choose)choice;
         if (answer.IsDecline || answer.Affordance < 0
@@ -138,12 +119,35 @@ internal static class AbilityStructuralQueries
         }
 
         AbilityStructuralOutcome? optionOutcome = context.HasPendingDependency
-            ? Outcome(AbilityInitiation.ResolutionOf(
+            ? Outcome(AbilityResolutionAdmission.ResolutionOf(
                 selectedOption, context.Admission()))
             : null;
         return new RunChoice(
             selectedOption, new ChoiceFrame(answer.Affordance, null), null,
             BindsPlayerSelection: false, optionOutcome, Admission(evidence));
+    }
+
+    private static AbilityStructuralTransition AnswerCardChoice(
+        AbilityStructuralContext context, AbilityEffect.ChooseCard choice,
+        AbilityContinuationFacts continuation, Decision answer,
+        HashSet<AbilityEffect> evidence)
+    {
+        var selected = LegalCards(context, choice, continuation, evidence)
+            .FirstOrDefault(card => card.ObjectId == answer.Affordance);
+        if (selected is null)
+            return new Unsupported(
+                $"'{context.SourceFace}' did not offer card {answer.Affordance} to choose");
+        var selectedContext = WithSelection(context, selected);
+        AbilityStructuralOutcome? pending = null;
+        if (context.HasPendingDependency
+            && !AbilityChoiceAnalysis.ActiveChoices(choice.Effect, selectedContext.Admission()).Any())
+        {
+            pending = Outcome(AbilityResolutionAdmission.ResolutionOf(
+                choice.Effect, selectedContext.Admission()));
+        }
+        return new RunChoice(
+            choice.Effect, new ChoiceFrame(null, selected.ObjectId), selected,
+            BindsPlayerSelection: true, pending, Admission(evidence));
     }
 
     /// <summary>Whether one listed option may be chosen and leaves its suffix resolvable.</summary>
@@ -158,19 +162,19 @@ internal static class AbilityStructuralQueries
         HashSet<AbilityEffect> evidence)
     {
         var admission = context.Admission();
-        bool local = AbilityInitiation.IsOptionLegal(option, admission)
+        bool local = AbilityAdmission.IsOptionLegal(option, admission)
             && (!requireStateChange || IsExplicitDecline(option)
-                || AbilityInitiation.CanPartiallyResolve(option, admission));
+                || AbilityResolutionAdmission.CanPartiallyResolve(option, admission));
         if (!local || !continuation.HasPath)
             return local;
 
         var prior = admission.Query.ChosenBinding;
-        AbilityInitiation.ResolutionOutcome? pending = context.HasPendingDependency
-            ? AbilityInitiation.ResolutionOf(option, admission)
+        AbilityAdmission.AdmissionResolution? pending = context.HasPendingDependency
+            ? AbilityResolutionAdmission.ResolutionOf(option, admission)
             : null;
-        var outcomes = AbilityInitiation.BindingCandidates(
+        var outcomes = AbilityAdmission.BindingCandidates(
             option, admission,
-            new AbilityInitiation.BindingCandidateState(
+            new BindingCandidateState(
                 prior is null ? [] : [prior.Card], prior is null));
         var after = admission.WithReachability(admission.Reachability with
         {
@@ -190,20 +194,20 @@ internal static class AbilityStructuralQueries
         AbilityStructuralContext context, AbilityEffect.ChooseCard choice,
         AbilityContinuationFacts continuation, HashSet<AbilityEffect> evidence)
     {
-        var legal = AbilityInitiation.LegalCardChoices(choice, context.Admission());
+        var legal = AbilityAdmission.LegalCardChoices(choice, context.Admission());
         if (!continuation.HasPath)
             return legal;
 
         return legal.Where(candidate =>
         {
             var selected = context.Admission().WithSelection(candidate);
-            AbilityInitiation.ResolutionOutcome? pending = context.HasPendingDependency
-                && !AbilityInitiation.ActiveChoices(choice.Effect, selected).Any()
-                    ? AbilityInitiation.ResolutionOf(choice.Effect, selected)
+            AbilityAdmission.AdmissionResolution? pending = context.HasPendingDependency
+                && !AbilityChoiceAnalysis.ActiveChoices(choice.Effect, selected).Any()
+                    ? AbilityResolutionAdmission.ResolutionOf(choice.Effect, selected)
                     : null;
-            var outcomes = AbilityInitiation.BindingCandidates(
+            var outcomes = AbilityAdmission.BindingCandidates(
                 choice.Effect, selected,
-                new AbilityInitiation.BindingCandidateState([candidate], false));
+                new BindingCandidateState([candidate], false));
             var after = selected.WithReachability(selected.Reachability with
             {
                 PriorSteps = selected.Reachability.PriorSteps.Add(choice.Effect),
@@ -216,9 +220,9 @@ internal static class AbilityStructuralQueries
 
     private static bool ContinuationCanResolve(
         AbilityStructuralContext context, AbilityContinuationFacts continuation,
-        AbilityInitiation.BindingCandidateState outcomes,
+        BindingCandidateState outcomes,
         AbilityAdmissionContext admission,
-        AbilityInitiation.ResolutionOutcome? pending,
+        AbilityAdmission.AdmissionResolution? pending,
         HashSet<AbilityEffect> evidence)
     {
         bool CanResolve(Card? binding)
@@ -245,10 +249,10 @@ internal static class AbilityStructuralQueries
             }
 
             var sequence = new AbilityEffect.Sequence([.. remaining]);
-            var admitted = AbilityInitiation.AdmitStructure(sequence, selected);
+            var admitted = AbilityAdmission.AdmitStructure(sequence, selected);
             AddEvidence(evidence, admitted);
             return admitted.IsAdmissible
-                && AbilityInitiation.TargetsAreValid(sequence, selected);
+                && AbilityAdmission.TargetsAreValid(sequence, selected);
         }
 
         return outcomes.Cards.Any(CanResolve)
@@ -258,45 +262,57 @@ internal static class AbilityStructuralQueries
     private static List<AbilityEffect> Remaining(
         AbilityStructuralContext context, AbilityContinuationFacts continuation,
         AbilityAdmissionContext admission,
-        AbilityInitiation.ResolutionOutcome? pending,
+        AbilityAdmission.AdmissionResolution? pending,
         HashSet<AbilityEffect> evidence)
     {
         var remaining = new List<AbilityEffect>();
         for (int position = continuation.Frames.Length - 1; position >= 0; position--)
         {
-            switch (continuation.Frames[position])
-            {
-                case EachPlayerContinuationFrame { StopsOuterContinuation: true }:
-                    return remaining;
-                case SequenceContinuationFrame sequence:
-                    remaining.AddRange(sequence.Parent.Effects.Skip(sequence.Current + 1));
-                    break;
-                case DependentContinuationFrame dependent
-                    when dependent.Predecessor:
-                    AbilityStructuralOutcome? outcome = dependent.Outcome
-                        ?? (pending is { } recorded ? Outcome(recorded) : null);
-                    var required = dependent.Parent.OnFull
-                        ? AbilityStructuralOutcome.Full
-                        : AbilityStructuralOutcome.None;
-                    if (outcome == required)
-                        remaining.Add(dependent.Parent.Continuation);
-                    break;
-                case SimultaneousContinuationFrame simultaneous:
-                    remaining.AddRange(simultaneous.Remaining.Select(
-                        index => simultaneous.Parent.Effects[index]));
-                    break;
-                case ForEachContinuationFrame repeated:
-                    for (long next = repeated.Current + 1; next < repeated.Count; next++)
-                        remaining.Add(repeated.Parent.Effect);
-                    break;
-                case EachTimeContinuationFrame repeated
-                    when repeated.Current + 1 < repeated.Count
-                        && LaterEachTimePromptIsGuaranteed(
-                            context, repeated, admission, evidence):
-                    return remaining;
-            }
+            var frame = continuation.Frames[position];
+            if (frame is EachPlayerContinuationFrame { StopsOuterContinuation: true })
+                return remaining;
+            if (frame is EachTimeContinuationFrame repeated
+                && repeated.Current + 1 < repeated.Count
+                && LaterEachTimePromptIsGuaranteed(
+                    context, repeated, admission, evidence))
+                return remaining;
+            AppendRemainingFrame(frame, remaining, pending);
         }
         return remaining;
+    }
+
+    private static void AppendRemainingFrame(
+        AbilityContinuationFrame frame, List<AbilityEffect> remaining,
+        AbilityAdmission.AdmissionResolution? pending)
+    {
+        switch (frame)
+        {
+            case SequenceContinuationFrame sequence:
+                remaining.AddRange(sequence.Parent.Effects.Skip(sequence.Current + 1));
+                break;
+            case DependentContinuationFrame dependent when dependent.Predecessor:
+                AppendDependentContinuation(dependent, remaining, pending);
+                break;
+            case SimultaneousContinuationFrame simultaneous:
+                remaining.AddRange(simultaneous.Remaining.Select(
+                    index => simultaneous.Parent.Effects[index]));
+                break;
+            case ForEachContinuationFrame repeated:
+                for (long next = repeated.Current + 1; next < repeated.Count; next++)
+                    remaining.Add(repeated.Parent.Effect);
+                break;
+        }
+    }
+
+    private static void AppendDependentContinuation(
+        DependentContinuationFrame dependent, List<AbilityEffect> remaining,
+        AbilityAdmission.AdmissionResolution? pending)
+    {
+        AbilityStructuralOutcome? outcome = dependent.Outcome
+            ?? (pending is { } recorded ? Outcome(recorded) : null);
+        var required = dependent.Parent.OnFull
+            ? AbilityStructuralOutcome.Full : AbilityStructuralOutcome.None;
+        if (outcome == required) remaining.Add(dependent.Parent.Continuation);
     }
 
     private static bool LaterEachTimePromptIsGuaranteed(
@@ -313,9 +329,9 @@ internal static class AbilityStructuralQueries
         {
             var altered = admission.WithAltered(card);
             if (Test(repeated.Parent.When, altered.Expressions)
-                && AbilityInitiation.ActiveChoices(repeated.Parent.Then, altered).Any())
+                && AbilityChoiceAnalysis.ActiveChoices(repeated.Parent.Then, altered).Any())
             {
-                var admitted = AbilityInitiation.Admit(repeated.Parent.Then, altered);
+                var admitted = AbilityAdmission.Admit(repeated.Parent.Then, altered);
                 AddEvidence(evidence, admitted);
                 if (admitted.IsAdmissible)
                     return true;
@@ -447,7 +463,7 @@ internal static class AbilityStructuralQueries
             ReferenceEqualityComparer.Instance, evidence));
 
     private static AbilityStructuralOutcome Outcome(
-        AbilityInitiation.ResolutionOutcome outcome) =>
+        AbilityAdmission.AdmissionResolution outcome) =>
         (AbilityStructuralOutcome)(int)outcome;
 
     private static T Publish<T>(AbilityQueryResult<T> result, World world)

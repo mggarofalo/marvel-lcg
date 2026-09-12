@@ -91,6 +91,12 @@ public static class Pages
 
     private static List<PackLine> Lines(List<Letter> letters)
     {
+        var rows = Rows(letters);
+        return [.. rows.Select(Line).Where(line => line is not null).Cast<PackLine>()];
+    }
+
+    private static List<List<Letter>> Rows(List<Letter> letters)
+    {
         var rows = new List<List<Letter>>();
         List<Letter>? current = null;
         double? baseline = null;
@@ -110,43 +116,36 @@ public static class Pages
         }
 
         if (current is not null)
-        {
             rows.Add(current);
-        }
+        return rows;
+    }
 
-        var lines = new List<PackLine>();
-        foreach (var row in rows)
+    private static PackLine? Line(List<Letter> row)
+    {
+        row.Sort((left, right) =>
+            left.GlyphRectangle.Left.CompareTo(right.GlyphRectangle.Left));
+        Letter marker = row.FirstOrDefault(letter =>
+            !string.IsNullOrWhiteSpace(letter.Value)) ?? row[0];
+        var spans = Spans(row);
+        return string.IsNullOrWhiteSpace(string.Concat(spans.Select(span => span.Text)))
+            ? null : new PackLine(spans, IsHeading(marker));
+    }
+
+    private static List<Span> Spans(IEnumerable<Letter> row)
+    {
+        var spans = new List<Span>();
+        foreach (Letter letter in row)
         {
-            row.Sort((left, right) => left.GlyphRectangle.Left.CompareTo(right.GlyphRectangle.Left));
-            Letter marker = row.FirstOrDefault(letter => !string.IsNullOrWhiteSpace(letter.Value))
-                ?? row[0];
-            bool heading = IsHeading(marker);
-            var spans = new List<Span>();
-            foreach (Letter letter in row)
-            {
-                string text = Decoded(letter.Value);
-                string font = Font(letter);
-                bool bold = BoldFonts.Any(face => font.Contains(face, StringComparison.Ordinal));
-                bool italic = ItalicFonts.Any(face => font.Contains(face, StringComparison.Ordinal));
-                if (spans.Count > 0
-                    && spans[^1].Bold == bold
-                    && spans[^1].Italic == italic)
-                {
-                    spans[^1] = spans[^1] with { Text = spans[^1].Text + text };
-                }
-                else
-                {
-                    spans.Add(new Span(text, bold, italic));
-                }
-            }
-
-            if (!string.IsNullOrWhiteSpace(string.Concat(spans.Select(span => span.Text))))
-            {
-                lines.Add(new PackLine(spans, heading));
-            }
+            string text = Decoded(letter.Value);
+            string font = Font(letter);
+            bool bold = BoldFonts.Any(face => font.Contains(face, StringComparison.Ordinal));
+            bool italic = ItalicFonts.Any(face => font.Contains(face, StringComparison.Ordinal));
+            if (spans.Count > 0 && spans[^1].Bold == bold
+                && spans[^1].Italic == italic)
+                spans[^1] = spans[^1] with { Text = spans[^1].Text + text };
+            else spans.Add(new Span(text, bold, italic));
         }
-
-        return lines;
+        return spans;
     }
 
     private static bool IsHeading(Letter letter)

@@ -39,12 +39,14 @@ public static class Counters
         to.PlaceTokens(destinationKey, moved);
         events.Add(new FieldSet(from.ObjectId, sourceKey, held, held - moved)
         {
-            Trigger = trigger, Verb = "Move_Counter",
+            Trigger = trigger,
+            Verb = "Move_Counter",
         });
         events.Add(new FieldSet(
             to.ObjectId, destinationKey, beforeDestination, beforeDestination + moved)
         {
-            Trigger = trigger, Verb = "Move_Counter",
+            Trigger = trigger,
+            Verb = "Move_Counter",
         });
         return moved;
     }

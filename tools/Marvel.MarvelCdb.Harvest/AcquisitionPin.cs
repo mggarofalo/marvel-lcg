@@ -40,22 +40,28 @@ public sealed record AcquisitionPin(
                 query.GetProperty("algorithm").GetString() ?? string.Empty,
                 query.GetProperty("count").GetInt32(),
                 query.GetProperty("hash").GetString() ?? string.Empty));
-        if (pin.Version != 1
-            || !string.Equals(pin.Format, "marvelcdb-faq-candidate-v1", StringComparison.Ordinal)
-            || !string.Equals(pin.Algorithm, "sha256", StringComparison.Ordinal)
-            || !pin.Hash.StartsWith("sha256:", StringComparison.Ordinal)
-            || pin.Query.Version != 1
-            || !string.Equals(
-                pin.Query.Algorithm,
-                "sha256-length-prefixed-utf8",
-                StringComparison.Ordinal)
-            || !pin.Query.Hash.StartsWith("sha256:", StringComparison.Ordinal))
-        {
-            throw new InvalidDataException("unsupported MarvelCDB acquisition pin");
-        }
-
+        Validate(pin);
         return pin;
     }
+
+    private static void Validate(AcquisitionPin pin)
+    {
+        if (!ValidCandidate(pin) || !ValidQuery(pin.Query))
+            throw new InvalidDataException("unsupported MarvelCDB acquisition pin");
+    }
+
+    private static bool ValidCandidate(AcquisitionPin pin) =>
+        pin.Version == 1
+        && string.Equals(
+            pin.Format, "marvelcdb-faq-candidate-v1", StringComparison.Ordinal)
+        && string.Equals(pin.Algorithm, "sha256", StringComparison.Ordinal)
+        && pin.Hash.StartsWith("sha256:", StringComparison.Ordinal);
+
+    private static bool ValidQuery(QueryPin pin) =>
+        pin.Version == 1
+        && string.Equals(
+            pin.Algorithm, "sha256-length-prefixed-utf8", StringComparison.Ordinal)
+        && pin.Hash.StartsWith("sha256:", StringComparison.Ordinal);
 
     public void Verify(byte[] bytes, Snapshot candidate)
     {

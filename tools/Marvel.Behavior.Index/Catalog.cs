@@ -280,67 +280,54 @@ internal static class Catalog
     {
         string id = $"behavior:{sourceId}:{item.Key}";
         if (!IsBranchKey(item.Key) || string.IsNullOrWhiteSpace(item.Summary))
-        {
             throw new InvalidDataException($"{id} has an invalid key or summary");
-        }
-
         if (!Dispositions.Contains(item.Disposition))
-        {
             throw new InvalidDataException($"{id} has invalid disposition {item.Disposition}");
-        }
+        if (item.Disposition == "executable") ValidateExecutable(id, item);
+        else ValidateNonExecutable(id, item);
+        ValidateTarget(id, item, known);
+    }
 
-        if (item.Disposition == "executable")
-        {
-            if (item.Reason is not null || item.Target is not null)
-            {
-                throw new InvalidDataException(
-                    $"{id} is executable and cannot carry reason or target");
-            }
+    private static void ValidateExecutable(string id, Obligation item)
+    {
+        if (item.Reason is not null || item.Target is not null)
+            throw new InvalidDataException(
+                $"{id} is executable and cannot carry reason or target");
+        if (item.Implementation is null || !Implementations.Contains(item.Implementation))
+            throw new InvalidDataException(
+                $"{id} has invalid implementation {item.Implementation ?? "(none)"}");
+        if (item.Implementation == "unimplemented"
+            && (string.IsNullOrWhiteSpace(item.WorkItem)
+                || string.IsNullOrWhiteSpace(item.Exception)))
+            throw new InvalidDataException(
+                $"{id} is unimplemented without work_item and exception");
+    }
 
-            if (item.Implementation is null || !Implementations.Contains(item.Implementation))
-            {
-                throw new InvalidDataException(
-                    $"{id} has invalid implementation {item.Implementation ?? "(none)"}");
-            }
+    private static void ValidateNonExecutable(string id, Obligation item)
+    {
+        if (string.IsNullOrWhiteSpace(item.Reason))
+            throw new InvalidDataException($"{id} disposition requires a reason");
+        if (item.Implementation is not null || item.WorkItem is not null
+            || item.Exception is not null)
+            throw new InvalidDataException(
+                $"{id} is non-executable but carries implementation fields");
+    }
 
-            if (item.Implementation == "unimplemented"
-                && (string.IsNullOrWhiteSpace(item.WorkItem)
-                    || string.IsNullOrWhiteSpace(item.Exception)))
-            {
-                throw new InvalidDataException(
-                    $"{id} is unimplemented without work_item and exception");
-            }
-        }
-        else
-        {
-            if (string.IsNullOrWhiteSpace(item.Reason))
-            {
-                throw new InvalidDataException($"{id} disposition requires a reason");
-            }
-
-            if (item.Implementation is not null
-                || item.WorkItem is not null
-                || item.Exception is not null)
-            {
-                throw new InvalidDataException(
-                    $"{id} is non-executable but carries implementation fields");
-            }
-        }
-
+    private static void ValidateTarget(
+        string id, Obligation item, IReadOnlyDictionary<string, string> known)
+    {
         if (item.Disposition is "narrower" or "superseded")
         {
             if (item.Target is null
-                || !known.TryGetValue(item.Target, out string? targetDisposition)
-                || targetDisposition != "executable")
-            {
+                || !known.TryGetValue(item.Target, out string? disposition)
+                || disposition != "executable")
                 throw new InvalidDataException(
                     $"{id} names no executable target {item.Target ?? "(none)"}");
-            }
+            return;
         }
-        else if (item.Target is not null)
-        {
-            throw new InvalidDataException($"{id} carries a target but is not narrower");
-        }
+        if (item.Target is not null)
+            throw new InvalidDataException(
+                $"{id} carries a target but is not narrower");
     }
 
     private static bool IsBranchKey(string key) => key.Length > 0 && key.All(character =>

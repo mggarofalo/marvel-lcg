@@ -2,22 +2,24 @@
   "$schema": "https://alirezanet.github.io/Husky.Net/schema.json",
   "tasks": [
     {
+      "name": "no-partial-types",
+      "group": "pre-commit",
+      "command": "dotnet",
+      "args": [
+        "husky",
+        "exec",
+        ".husky/csx/no-partial-types.csx"
+      ]
+    },
+    {
       "name": "cyclomatic-complexity",
       "group": "pre-commit",
-      "command": "lizard",
+      "command": "dotnet",
       "args": [
-        "--CCN",
-        "10",
-        "--warnings_only",
-        "${staged}"
-      ],
-      "include": [
-        "src/**/*.cs",
-        "src/**/*.gd",
-        "tests/**/*.cs",
-        "tools/**/*.cs"
-      ],
-      "filteringRule": "staged"
+        "husky",
+        "exec",
+        ".husky/csx/complexity.csx"
+      ]
     },
     {
       "name": "file-length",
@@ -26,32 +28,17 @@
       "args": [
         "husky",
         "exec",
-        ".husky/csx/file-length.csx",
-        "--args",
-        "${staged}"
-      ],
-      "include": [
-        "**/*.cs",
-        "**/*.csx",
-        "**/*.gd",
-        "**/*.ps1",
-        "**/*.sh"
-      ],
-      "exclude": [
-        "datasets/**/*"
-      ],
-      "filteringRule": "staged"
+        ".husky/csx/file-length.csx"
+      ]
     },
     {
       "name": "unit-tests",
       "group": "pre-commit",
       "command": "dotnet",
       "args": [
-        "test",
-        "tests/Marvel.UnitTests.slnx",
-        "--configuration",
-        "Release",
-        "--nologo"
+        "husky",
+        "exec",
+        ".husky/csx/unit-tests.csx"
       ]
     }
   ]

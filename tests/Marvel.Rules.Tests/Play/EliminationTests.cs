@@ -152,7 +152,7 @@ public sealed partial class EliminationTests
         var borrowed = world.CreateCard(
             "ally", world.AreaOf(
                 DeckType.AlliesArea, PlayArea.Of(1), cardOwner: 1));
-        CardPlay.TakeControl(world, printed, borrowed, 0);
+        CardControlTransfer.TakeControl(world, printed, borrowed, 0);
 
         Elimination.Eliminate(world, printed, 0, "test", []);
 
@@ -174,7 +174,7 @@ public sealed partial class EliminationTests
         var borrowed = world.CreateCard(
             "ally", world.AreaOf(
                 DeckType.AlliesArea, PlayArea.Of(1), cardOwner: 1));
-        CardPlay.TakeControl(world, printed, borrowed, 0);
+        CardControlTransfer.TakeControl(world, printed, borrowed, 0);
 
         Elimination.Eliminate(world, printed, 0, "test", []);
 
@@ -305,7 +305,7 @@ public sealed partial class EliminationTests
         var side = world.CreateCard("sideScheme", world.AreaOf(DeckType.SideSchemesArea));
         side.PlaceTokens("k_threat", 2);
 
-        BasicPowers.BasicThwart(world, printed, 0, side, []);
+        BasicThwartPowers.BasicThwart(world, printed, 0, side, []);
         Agendas.Finish(world, printed);
 
         Assert.Equal(DeckType.EncounterDiscardPile, side.Area.Type);
@@ -323,7 +323,7 @@ public sealed partial class EliminationTests
         var main = world.TheCardIn(DeckType.MainSchemesArea)!;
         main.PlaceTokens("k_threat", 2);
 
-        BasicPowers.BasicThwart(world, printed, 0, main, []);
+        BasicThwartPowers.BasicThwart(world, printed, 0, main, []);
         Agendas.Finish(world, printed);
 
         Assert.Equal(DeckType.MainSchemesArea, main.Area.Type);

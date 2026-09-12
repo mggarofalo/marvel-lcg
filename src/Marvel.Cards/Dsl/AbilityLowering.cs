@@ -1,12 +1,40 @@
 using System.Collections.Immutable;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
+using static Marvel.Cards.Dsl.AbilityConditionLowering;
+using static Marvel.Cards.Dsl.AbilitySelectorLowering;
 
 namespace Marvel.Cards.Dsl;
 
 /// <summary>Checks authored syntax and lowers it into engine-owned language operations.</summary>
-public static partial class AbilityLowering
+public static class AbilityLowering
 {
+    /// <summary>Lowers the complete authored ability book.</summary>
+    public static AbilityProgram Book(AbilityBook book) =>
+        AbilityBookLowering.LowerBook(book);
+
+    /// <summary>Lowers a card-selection expression.</summary>
+    public static AbilityCardSelection Cards(
+        AbilityValue value, AbilityLocation location) =>
+        AbilitySelectorLowering.SelectCards(value, location);
+
+    /// <summary>Lowers an ability cost.</summary>
+    public static AbilityCost Cost(AbilityValue value, AbilityLocation location) =>
+        AbilityCostLowering.LowerCost(value, location);
+
+    /// <summary>Lowers an ability effect.</summary>
+    public static AbilityEffect Effect(AbilityValue value, AbilityLocation location) =>
+        AbilityEffectLowering.LowerEffect(value, location);
+
+    /// <summary>Lowers an ability condition.</summary>
+    public static AbilityCondition Condition(
+        AbilityValue value, AbilityLocation location) =>
+        AbilityConditionLowering.LowerCondition(value, location);
+
+    /// <summary>Lowers a player reference.</summary>
+    public static AbilityPlayer Player(AbilityValue value, AbilityLocation location) =>
+        AbilityConditionLowering.LowerPlayer(value, location);
+
     /// <summary>Lowers a numeric expression, including its queries and conditions.</summary>
     /// <remarks>
     /// This method does not evaluate a game or select a
@@ -41,7 +69,7 @@ public static partial class AbilityLowering
             "startingHealth" => CardNumber(argument, child, AbilityCardNumberProperty.StartingHealth),
             "countersOn" => Counters(argument, child),
             "modified" => Modified(argument, child),
-            "count" => new AbilityNumber.Count(Cards(argument, child)),
+            "count" => new AbilityNumber.Count(SelectCards(argument, child)),
             "if" => ConditionalNumber(argument, child),
             "printedResourceCountDiscarded" => new AbilityNumber.PrintedResourcesDiscarded(Resource(argument, child)),
             "discardedWithResource" => new AbilityNumber.DiscardedWithResource(Resource(argument, child)),
@@ -52,7 +80,7 @@ public static partial class AbilityLowering
         };
     }
 
-    private static ImmutableArray<AbilityNumber> Operands(
+    internal static ImmutableArray<AbilityNumber> Operands(
         AbilityValue value, AbilityLocation location, bool nonempty)
     {
         if (value is not AbilityValue.List list)
@@ -72,55 +100,55 @@ public static partial class AbilityLowering
         return lowered.MoveToImmutable();
     }
 
-    private static long Integer(AbilityValue value, AbilityLocation location) =>
+    internal static long Integer(AbilityValue value, AbilityLocation location) =>
         value is AbilityValue.Number number
             ? number.Value
             : throw location.Error("expected an integer");
 
-    private static string Text(AbilityValue value, AbilityLocation location) =>
+    internal static string Text(AbilityValue value, AbilityLocation location) =>
         value is AbilityValue.Word word
             ? word.Value
             : throw location.Error("expected a word");
 
-    private static AbilityNumber.CardValue CardNumber(
+    internal static AbilityNumber.CardValue CardNumber(
         AbilityValue value, AbilityLocation location, AbilityCardNumberProperty property) =>
-        new(Cards(value, location), property);
+        new(SelectCards(value, location), property);
 
-    private static AbilityNumber.Counters Counters(AbilityValue value, AbilityLocation location)
+    internal static AbilityNumber.Counters Counters(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "card", "counter");
-        return new(Cards(Required(fields, "card", location), location.Child("card")),
+        return new(SelectCards(Required(fields, "card", location), location.Child("card")),
             Text(Required(fields, "counter", location), location.Child("counter")));
     }
 
-    private static AbilityNumber.Modified Modified(AbilityValue value, AbilityLocation location)
+    internal static AbilityNumber.Modified Modified(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "card", "field");
         string field = Text(Required(fields, "field", location), location.Child("field"));
-        if (!StateFields.IsModifiable(field))
+        if (!StateFieldCatalog.IsModifiable(field))
         {
             throw location.Child("field").Error($"'{field}' is not an engine-owned modifiable field");
         }
-        return new(Cards(Required(fields, "card", location), location.Child("card")), field);
+        return new(SelectCards(Required(fields, "card", location), location.Child("card")), field);
     }
 
-    private static AbilityNumber.Conditional ConditionalNumber(AbilityValue value, AbilityLocation location)
+    internal static AbilityNumber.Conditional ConditionalNumber(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "test", "then", "else");
-        return new(Condition(Required(fields, "test", location), location.Child("test")),
+        return new(LowerCondition(Required(fields, "test", location), location.Child("test")),
             Number(Required(fields, "then", location), location.Child("then")),
             fields.TryGetValue("else", out var otherwise)
                 ? Number(otherwise, location.Child("else")) : new AbilityNumber.Constant(0));
     }
 
-    private static AbilityNumber.ResolutionValue FixedNumber(
+    internal static AbilityNumber.ResolutionValue FixedNumber(
         AbilityValue value, AbilityLocation location, string expected, AbilityResolutionNumber kind)
     {
         FixedWord(value, location, expected);
         return new(kind);
     }
 
-    private static void FixedWord(AbilityValue value, AbilityLocation location, string expected)
+    internal static void FixedWord(AbilityValue value, AbilityLocation location, string expected)
     {
         if (!string.Equals(Text(value, location), expected, StringComparison.Ordinal))
         {
@@ -128,14 +156,14 @@ public static partial class AbilityLowering
         }
     }
 
-    private static char Resource(AbilityValue value, AbilityLocation location)
+    internal static char Resource(AbilityValue value, AbilityLocation location)
     {
         string text = Text(value, location);
         return text.Length == 1 && text[0] is Resources.Mental or Resources.Energy or Resources.Physical or Resources.Wild
             ? text[0] : throw location.Error("expected one supported resource symbol");
     }
 
-    private static string ResultName(AbilityValue value, AbilityLocation location)
+    internal static string ResultName(AbilityValue value, AbilityLocation location)
     {
         string name = Text(value, location);
         return name is "healed" or "discarded" or "found" or "energy" or "resourceTypes"

@@ -76,60 +76,8 @@ public sealed class SocketTransport(
 
         try
         {
-            byte[] requestFrame = EngineJson.Write(request);
-            SocketFrame.ValidatePayloadLength(requestFrame.Length);
-            using var client = new TcpClient();
-            await client.ConnectAsync(host, port, cancellationToken).ConfigureAwait(false);
-            using NetworkStream stream = client.GetStream();
-            // A frame is written in more than one socket operation. Once the
-            // first operation can begin, a later client-side failure cannot
-            // prove that the server did not receive and apply the whole frame.
-            requestMayHaveCommitted = true;
-            onRequestWriteStarting?.Invoke();
-            await SocketFrame.WriteAsync(
-                stream, requestFrame, cancellationToken).ConfigureAwait(false);
-            onRequestCommitted?.Invoke();
-            // The server may already have mutated game state, so cancellation
-            // after transmission begins cannot discard the only authoritative
-            // prompt and event list.
-            byte[] response = await SocketFrame.ReadAsync(stream, CancellationToken.None)
-                .ConfigureAwait(false)
-                ?? throw new EndOfStreamException("the engine host closed without a response");
-            int responseVersion = EngineJson.ReadResponseVersion(response);
-            if (responseVersion != EngineProtocol.Version)
-            {
-                // A future response schema cannot be decoded strictly. The
-                // transport preserves only its version mismatch and uses the
-                // request's correlation labels so the client can report that
-                // incompatibility instead of mistaking it for an outage. This is
-                // our wire-compatibility choice, not a game rule.
-                EngineResponse mismatch = new(
-                    responseVersion,
-                    request.RequestId,
-                    request.GameId,
-                    Capability: null,
-                    Prompt: null,
-                    Events: []);
-                Observe(request, elapsed, "rejected", "unsupported_version");
-                return mismatch;
-            }
-
-            EngineResponse parsed = EngineJson.ReadResponse(response);
-            string disposition = parsed.Error is null
-                ? "accepted"
-                : parsed.Error.Code.StartsWith("stale_", StringComparison.Ordinal)
-                    ? "stale"
-                    : "rejected";
-            Observe(
-                request,
-                elapsed,
-                disposition,
-                parsed.Error?.Code,
-                parsed.Error is null
-                    && request.Operation is not (EngineProtocol.Setup or EngineProtocol.Close)
-                        ? parsed.Revision
-                        : null);
-            return parsed;
+            return await PerformAsync(request, elapsed,
+                () => requestMayHaveCommitted = true, cancellationToken).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (
             !requestMayHaveCommitted && cancellationToken.IsCancellationRequested)
@@ -159,6 +107,49 @@ public sealed class SocketTransport(
             throw new EngineTransportException(requestMayHaveCommitted, failure);
         }
     }
+
+    private async ValueTask<EngineResponse> PerformAsync(
+        EngineRequest request, Stopwatch elapsed, Action markCommitted,
+        CancellationToken cancellationToken)
+    {
+        byte[] requestFrame = EngineJson.Write(request);
+        SocketFrame.ValidatePayloadLength(requestFrame.Length);
+        using var client = new TcpClient();
+        await client.ConnectAsync(host, port, cancellationToken).ConfigureAwait(false);
+        using NetworkStream stream = client.GetStream();
+        markCommitted();
+        onRequestWriteStarting?.Invoke();
+        await SocketFrame.WriteAsync(stream, requestFrame, cancellationToken).ConfigureAwait(false);
+        onRequestCommitted?.Invoke();
+        byte[] response = await SocketFrame.ReadAsync(stream, CancellationToken.None)
+            .ConfigureAwait(false)
+            ?? throw new EndOfStreamException("the engine host closed without a response");
+        return ParseResponse(request, elapsed, response);
+    }
+
+    private EngineResponse ParseResponse(
+        EngineRequest request, Stopwatch elapsed, byte[] response)
+    {
+        int version = EngineJson.ReadResponseVersion(response);
+        if (version != EngineProtocol.Version)
+        {
+            var mismatch = new EngineResponse(version, request.RequestId, request.GameId,
+                Capability: null, Prompt: null, Events: []);
+            Observe(request, elapsed, "rejected", "unsupported_version");
+            return mismatch;
+        }
+        EngineResponse parsed = EngineJson.ReadResponse(response);
+        string disposition = Disposition(parsed);
+        long? revision = parsed.Error is null
+            && request.Operation is not (EngineProtocol.Setup or EngineProtocol.Close)
+            ? parsed.Revision : null;
+        Observe(request, elapsed, disposition, parsed.Error?.Code, revision);
+        return parsed;
+    }
+
+    private static string Disposition(EngineResponse response) => response.Error is null
+        ? "accepted"
+        : response.Error.Code.StartsWith("stale_", StringComparison.Ordinal) ? "stale" : "rejected";
 
     private void Observe(
         EngineRequest request,
@@ -219,34 +210,7 @@ public sealed class SocketEngineServer(IEngineEndpoint endpoint, IPAddress addre
             }
 
             onListening?.Invoke((IPEndPoint)listener.LocalEndpoint);
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                using TcpClient client = listener.AcceptTcpClient();
-                client.ReceiveTimeout = ClientTimeoutMilliseconds;
-                client.SendTimeout = ClientTimeoutMilliseconds;
-                using CancellationTokenRegistration disconnecting =
-                    cancellationToken.Register(client.Close);
-                try
-                {
-                    Serve(client);
-                }
-                catch (IOException)
-                {
-                    // A client that disappears or never finishes its frame
-                    // cannot take down the listener or hold its one engine
-                    // thread indefinitely. No game-state work happens after a
-                    // failed read; a failed response is simply disconnected.
-                }
-                catch (SocketException)
-                {
-                }
-                catch (InvalidDataException)
-                {
-                }
-                catch (JsonException)
-                {
-                }
-            }
+            ServeUntilCancelled(listener, cancellationToken);
         }
         catch (SocketException) when (cancellationToken.IsCancellationRequested)
         {
@@ -258,6 +222,28 @@ public sealed class SocketEngineServer(IEngineEndpoint endpoint, IPAddress addre
         {
             listener.Stop();
         }
+    }
+
+    private void ServeUntilCancelled(TcpListener listener, CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            using TcpClient client = listener.AcceptTcpClient();
+            client.ReceiveTimeout = ClientTimeoutMilliseconds;
+            client.SendTimeout = ClientTimeoutMilliseconds;
+            using CancellationTokenRegistration disconnecting =
+                cancellationToken.Register(client.Close);
+            TryServe(client);
+        }
+    }
+
+    private void TryServe(TcpClient client)
+    {
+        try { Serve(client); }
+        catch (IOException) { }
+        catch (SocketException) { }
+        catch (InvalidDataException) { }
+        catch (JsonException) { }
     }
 
     internal void Serve(TcpClient client)

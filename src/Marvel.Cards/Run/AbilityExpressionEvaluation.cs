@@ -54,7 +54,7 @@ internal sealed class AbilityExpressionEvaluation(
         {
             AbilityCardNumberProperty.Threat => card.Tokens.GetValueOrDefault("k_threat"),
             AbilityCardNumberProperty.Damage => card.Damage,
-            AbilityCardNumberProperty.RemainingHealth => Math.Max(0, Damage.Health(context.World, context.World.Facts, card) - card.Damage),
+            AbilityCardNumberProperty.RemainingHealth => Math.Max(0, DamagePlacement.Health(context.World, context.World.Facts, card) - card.Damage),
             AbilityCardNumberProperty.StartingHealth => StartingHealth(card),
             _ => throw new InvalidOperationException("Unknown compiled card number"),
         };
@@ -75,7 +75,7 @@ internal sealed class AbilityExpressionEvaluation(
             .Any(card => card.ObjectId != context.Source.ObjectId)
             && selectors.Every(practice.Schemes).Any(card => card.Tokens.GetValueOrDefault("k_threat") > 0),
         AbilityCondition.AutomaticThwart thwart => selectors.Find(thwart.Scheme) is { } scheme
-            && BasicPowers.CanAutomaticallyThwart(context.World, context.World.Facts, context.Player, scheme),
+            && BasicThwartPowers.CanAutomaticallyThwart(context.World, context.World.Facts, context.Player, scheme),
         AbilityCondition.TitleInPlay title => context.World.Areas.Where(area => DeckTypes.IsInPlay(area.Type))
             .SelectMany(area => area.Cards).Any(card => string.Equals(context.World.Facts.Title(card.FaceId), title.Title, StringComparison.Ordinal)),
         AbilityCondition.AtLeast comparison => Amount(comparison.Value) >= Amount(comparison.Count),
@@ -186,7 +186,7 @@ internal sealed class AbilityExpressionEvaluation(
         World world, int player, Card source, Card ally,
         IResourceCardAbilities resourceAbilities) =>
     [
-        .. CardPlay.Generators(
+        .. CardPayment.Generators(
                 world, world.Facts, world.Seats[player], resourceAbilities, payingFor: ally)
             .Where(generator => generator.Effect != source.ObjectId),
     ];

@@ -101,22 +101,14 @@ public static class Discard
         // encounter card and therefore has no encounter discard pile. The
         // engine chooses RemovedArea as the out-of-play home for spent status
         // components; the Rules Reference does not name a separate status pile.
-        var pile = card.Area.Type == DeckType.StatusArea
-            ? world.AreaOf(DeckType.RemovedArea)
-            : card.Owner < 0
-                ? world.AreaOf(DeckType.EncounterDiscardPile)
-                : world.AreaOf(
-                    DeckType.DiscardPile, PlayArea.Of(card.Owner), cardOwner: card.Owner);
+        var pile = DiscardPile(world, card);
 
         var from = card.Area;
         bool exposesIdentity = DeckTypes.IsConcealedPile(from.Type)
             || FacedownDrones.Is(card);
         int host = from.Host;
         World.MoveToTop(card, pile);
-        if (exposesIdentity && card.FaceUp)
-        {
-            world.RecordInformation(InformationKind.Reveal);
-        }
+        if (exposesIdentity && card.FaceUp) world.RecordInformation(InformationKind.Reveal);
 
         events.Add(new CardsMoved(
             Places.Reference(from), Places.Reference(pile),
@@ -135,10 +127,7 @@ public static class Discard
         // "does not reset until there is at least one card in the player's
         // discard pile, **then** the player deals themself one facedown
         // encounter card". This is *then* -- a card has just landed there.
-        if (card.Owner >= 0)
-        {
-            PlayerDeck.Reset(world, card.Owner, events);
-        }
+        if (card.Owner >= 0) PlayerDeck.Reset(world, card.Owner, events);
 
         if (host >= 0)
         {
@@ -146,7 +135,8 @@ public static class Discard
             // drew it hanging off the villain has to be told to take it away.
             events.Add(new CardDetached(card.ObjectId, host)
             {
-                Trigger = trigger, Verb = "Discard",
+                Trigger = trigger,
+                Verb = "Discard",
             });
         }
 
@@ -155,8 +145,16 @@ public static class Discard
         // count is over the live limit, not only when the latest ally entered.
         foreach (int player in world.PlayerOrder)
         {
-            CardPlay.CheckAllyLimit(world, world.Facts, player);
+            CardEntry.CheckAllyLimit(world, world.Facts, player);
         }
+    }
+
+    private static Area DiscardPile(World world, State.Card card)
+    {
+        if (card.Area.Type == DeckType.StatusArea) return world.AreaOf(DeckType.RemovedArea);
+        if (card.Owner < 0) return world.AreaOf(DeckType.EncounterDiscardPile);
+        return world.AreaOf(DeckType.DiscardPile,
+            PlayArea.Of(card.Owner), cardOwner: card.Owner);
     }
 
     /// <summary>Discard every non-permanent card hosted by a game element leaving play.</summary>
@@ -277,7 +275,8 @@ public static class Discard
         events.Add(new FieldSet(
             card.ObjectId, EncounterDeck.AccelerationToken, held, 0)
         {
-            Trigger = trigger, Verb = "Remove",
+            Trigger = trigger,
+            Verb = "Remove",
         });
     }
 }

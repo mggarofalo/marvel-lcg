@@ -21,8 +21,11 @@ public static class EachPlayerEffects
         }
         world.Agenda.Then(template with
         {
-            What = Steps.OrderEachPlayer, Round = world.Agenda.Current?.Round ?? 0,
-            Number = 2, Seat = world.FirstPlayer, Plan = true,
+            What = Steps.OrderEachPlayer,
+            Round = world.Agenda.Current?.Round ?? 0,
+            Number = 2,
+            Seat = world.FirstPlayer,
+            Plan = true,
         });
     }
 
@@ -109,9 +112,13 @@ public static class EachPlayerEffects
         {
             world.Agenda.Then(template with
             {
-                What = Steps.ResolveEachPlayer, Round = round, Number = 2,
-                Seat = players[position], Plan = true,
-                FinalPlayer = position == players.Count - 1, EachPlayerFrame = true,
+                What = Steps.ResolveEachPlayer,
+                Round = round,
+                Number = 2,
+                Seat = players[position],
+                Plan = true,
+                FinalPlayer = position == players.Count - 1,
+                EachPlayerFrame = true,
             });
         }
     }

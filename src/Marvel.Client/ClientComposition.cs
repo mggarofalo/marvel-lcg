@@ -59,19 +59,9 @@ public static class ClientComposition
     {
         host = string.Empty;
         port = 0;
-        if (configuredEndpoint.Length > MaximumEndpointLength
-            || configuredEndpoint.Any(character =>
-                char.IsWhiteSpace(character) || char.IsControl(character))
+        if (!ValidEndpointText(configuredEndpoint)
             || !Uri.TryCreate(configuredEndpoint, UriKind.Absolute, out Uri? endpoint)
-            || !string.Equals(endpoint.Scheme, "tcp", StringComparison.OrdinalIgnoreCase)
-            || endpoint.UserInfo.Length != 0
-            || endpoint.Host.Length == 0
-            || endpoint.IdnHost.Length > MaximumHostLength
-            || endpoint.Port is <= 0 or > ushort.MaxValue
-            || endpoint.AbsolutePath is not ("" or "/")
-            || endpoint.Query.Length != 0
-            || endpoint.Fragment.Length != 0
-            || endpoint.HostNameType == UriHostNameType.Unknown)
+            || !ValidEndpoint(endpoint))
         {
             return false;
         }
@@ -80,4 +70,17 @@ public static class ClientComposition
         port = endpoint.Port;
         return true;
     }
+
+    private static bool ValidEndpointText(string value) =>
+        value.Length <= MaximumEndpointLength
+        && !value.Any(character => char.IsWhiteSpace(character) || char.IsControl(character));
+
+    private static bool ValidEndpoint(Uri endpoint) =>
+        string.Equals(endpoint.Scheme, "tcp", StringComparison.OrdinalIgnoreCase)
+        && endpoint.UserInfo.Length == 0 && endpoint.Host.Length > 0
+        && endpoint.IdnHost.Length <= MaximumHostLength
+        && endpoint.Port is > 0 and <= ushort.MaxValue
+        && endpoint.AbsolutePath is "" or "/"
+        && endpoint.Query.Length == 0 && endpoint.Fragment.Length == 0
+        && endpoint.HostNameType != UriHostNameType.Unknown;
 }

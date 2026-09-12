@@ -42,42 +42,41 @@ public sealed class CoreGamePolicy(ICardFacts facts)
         var world = game.State;
         Answered++;
 
-        if (world.TheCardIn(DeckType.VillainArea) is { } villain)
-        {
-            villainStages.Add(villain.FaceId);
-        }
-
-        if (asked.Affordances.Any(option =>
-                string.Equals(option.Verb, Game.ResolveMulligans, StringComparison.Ordinal)))
-        {
-            return Decision.Decline;
-        }
-
-        if (asked.Asking == Question.Defender)
-        {
-            var defender = asked.Affordances.LastOrDefault(option => option.IsLegal);
-            return defender is null ? Decision.Decline : Taking(game, defender, []);
-        }
-
+        ObserveVillain(world);
+        if (IsMulligan(asked)) return Decision.Decline;
+        if (asked.Asking == Question.Defender) return Defender(game, asked);
         if (asked.Asking is Question.Element or Question.Option or Question.Order)
-        {
-            var choice = asked.Affordances.First(option => option.IsLegal);
-            return Taking(game, choice, Payment(choice) ?? []);
-        }
+            return RequiredChoice(game, asked);
+        return PhaseChoice(game, asked);
+    }
 
-        var ending = asked.Affordances.FirstOrDefault(option =>
-            option.IsLegal
-            && string.Equals(option.Verb, Game.EndPhaseVerb, StringComparison.Ordinal));
+    private void ObserveVillain(World world)
+    {
+        if (world.TheCardIn(DeckType.VillainArea) is { } villain)
+            villainStages.Add(villain.FaceId);
+    }
+
+    private static bool IsMulligan(Prompt asked) => asked.Affordances.Any(option =>
+        string.Equals(option.Verb, Game.ResolveMulligans, StringComparison.Ordinal));
+
+    private Decision Defender(Game game, Prompt asked)
+    {
+        var option = asked.Affordances.LastOrDefault(candidate => candidate.IsLegal);
+        return option is null ? Decision.Decline : Taking(game, option, []);
+    }
+
+    private Decision RequiredChoice(Game game, Prompt asked)
+    {
+        var option = asked.Affordances.First(candidate => candidate.IsLegal);
+        return Taking(game, option, Payment(option) ?? []);
+    }
+
+    private Decision PhaseChoice(Game game, Prompt asked)
+    {
+        var ending = Find(asked, Game.EndPhaseVerb);
         if (ending is not null)
-        {
-            return Taking(game, ending, [], Excess(world, asked.Player));
-        }
-
-        if (asked.Asking == Question.TurnOption)
-        {
-            return Turn(game, asked);
-        }
-
+            return Taking(game, ending, [], Excess(game.State, asked.Player));
+        if (asked.Asking == Question.TurnOption) return Turn(game, asked);
         return asked.Cancellable
             ? Decision.Decline
             : Taking(game, asked.Affordances.First(option => option.IsLegal), []);
@@ -88,46 +87,53 @@ public sealed class CoreGamePolicy(ICardFacts facts)
         var world = game.State;
         var seat = world.Seats[asked.Player];
         bool hero = Forms.In(world, seat, facts, Forms.Hero);
+        return SetupAction(game, asked, seat, hero)
+            ?? PaidAction(game, asked, seat)
+            ?? PlayCard(game, asked)
+            ?? UsePower(game, asked)
+            ?? Decision.Decline;
+    }
 
-        if (!hero && ResourceAbilityPlay(asked, seat.IdentityCard.ObjectId) is { } resourcePlay)
-        {
-            return Taking(game, resourcePlay.Option, resourcePlay.Payment);
-        }
+    private Decision? SetupAction(Game game, Prompt asked, Seat seat, bool hero)
+    {
+        if (hero) return null;
+        var resource = ResourceAbilityPlay(asked, seat.IdentityCard.ObjectId);
+        if (resource is { } play)
+            return Taking(game, play.Option, play.Payment);
+        var change = Find(asked, Game.ChangeForm);
+        return change is null ? null : Taking(game, change, []);
+    }
 
-        if (!hero && Find(asked, Game.ChangeForm) is { } change)
-        {
-            return Taking(game, change, []);
-        }
-
+    private Decision? PaidAction(Game game, Prompt asked, Seat seat)
+    {
         // This research policy does not knowingly take an action at one hit
-        // point. Some action costs deal damage, and choosing a likely-suicidal
-        // optional action is neither useful play nor required coverage.
-        long health = Damage.Health(world, facts, seat.IdentityCard) - seat.IdentityCard.Damage;
-        if (health > 1
-            && Find(asked, Game.ActionVerb) is { } action
-            && Payment(action) is { } actionPayment)
-        {
-            return Taking(game, action, actionPayment);
-        }
+        // point because some action costs deal damage.
+        long health = DamagePlacement.Health(
+            game.State, facts, seat.IdentityCard) - seat.IdentityCard.Damage;
+        if (health <= 1 || Find(asked, Game.ActionVerb) is not { } action) return null;
+        var payment = Payment(action);
+        return payment is null ? null : Taking(game, action, payment);
+    }
 
-        if (asked.Affordances.FirstOrDefault(option =>
-                option.IsLegal
-                && string.Equals(option.Verb, CardPlay.Verb, StringComparison.Ordinal)
-                && Payment(option) is not null) is { } play)
-        {
-            return Taking(game, play, Payment(play)!);
-        }
+    private Decision? PlayCard(Game game, Prompt asked)
+    {
+        var play = asked.Affordances.FirstOrDefault(option =>
+            option.IsLegal
+            && string.Equals(option.Verb, CardPlay.Verb, StringComparison.Ordinal)
+            && Payment(option) is not null);
+        return play is null ? null : Taking(game, play, Payment(play)!);
+    }
 
-        long threat = world.TheCardIn(DeckType.MainSchemesArea)
+    private Decision? UsePower(Game game, Prompt asked)
+    {
+        long threat = game.State.TheCardIn(DeckType.MainSchemesArea)
             ?.Tokens.GetValueOrDefault("k_threat") ?? 0;
-        string preferredPower = threat >= 5
-            ? BasicPowers.ThwartVerb
-            : BasicPowers.AttackVerb;
-        var power = Find(asked, preferredPower)
+        string preferred = threat >= 5
+            ? BasicPowers.ThwartVerb : BasicPowers.AttackVerb;
+        var power = Find(asked, preferred)
             ?? Find(asked, BasicPowers.ThwartVerb)
             ?? Find(asked, BasicPowers.AttackVerb);
-
-        return power is null ? Decision.Decline : Taking(game, power, []);
+        return power is null ? null : Taking(game, power, []);
     }
 
     private Decision Taking(

@@ -156,7 +156,8 @@ public static class Forms
 
         events.Add(new Events.CardsFlipped([formCard.ObjectId], faceUp)
         {
-            Trigger = trigger, Verb = "Change_Form",
+            Trigger = trigger,
+            Verb = "Change_Form",
         });
         world.Agenda.Then(new PhaseStep(
             Steps.FormChanged,

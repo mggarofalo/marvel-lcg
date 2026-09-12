@@ -35,22 +35,55 @@ internal static class AbilityPlayerBindingAnalysis
             "Unknown compiled cost in player-binding analysis"),
     };
 
-    internal static bool Contains(AbilityEffect? effect) => effect switch
+    internal static bool Contains(AbilityEffect? effect)
     {
-        null => false,
+        if (effect is null) return false;
+        return AbilityEffectBindingAnalysis.GroupOf(effect) switch
+        {
+            AbilityEffectBindingAnalysis.EffectGroup.Ordered => ContainsOrdered(effect),
+            AbilityEffectBindingAnalysis.EffectGroup.Branching => ContainsBranching(effect),
+            AbilityEffectBindingAnalysis.EffectGroup.Wrapped => ContainsWrapped(effect),
+            AbilityEffectBindingAnalysis.EffectGroup.BasicCard => ContainsBasicCard(effect),
+            AbilityEffectBindingAnalysis.EffectGroup.ThreatAndGrant =>
+                ContainsThreatAndGrant(effect),
+            AbilityEffectBindingAnalysis.EffectGroup.Player => ContainsPlayer(effect),
+            AbilityEffectBindingAnalysis.EffectGroup.Placement => ContainsPlacement(effect),
+            AbilityEffectBindingAnalysis.EffectGroup.Power => ContainsPower(effect),
+            _ => ContainsOther(effect),
+        };
+    }
+
+    private static bool ContainsOrdered(AbilityEffect effect) => effect switch
+    {
         AbilityEffect.Sequence sequence => sequence.Effects.Any(Contains),
         AbilityEffect.Simultaneous simultaneous => simultaneous.Effects.Any(Contains),
+        AbilityEffect.Choose choose => choose.Options.Any(Contains),
+        _ => throw new InvalidOperationException("Unknown ordered player-binding effect"),
+    };
+
+    private static bool ContainsBranching(AbilityEffect effect) => effect switch
+    {
         AbilityEffect.Conditional conditional => Contains(conditional.Test)
             || Contains(conditional.Then) || Contains(conditional.Else),
         AbilityEffect.Dependent dependent => Contains(dependent.Effect)
             || Contains(dependent.Continuation),
-        AbilityEffect.EachPlayer each => Contains(each.Effect),
-        AbilityEffect.ForEach repeated => Contains(repeated.Count) || Contains(repeated.Effect),
         AbilityEffect.EachTime each => Contains(each.Effect)
             || Contains(each.When) || Contains(each.Then),
-        AbilityEffect.Choose choose => choose.Options.Any(Contains),
+        _ => throw new InvalidOperationException("Unknown branching player-binding effect"),
+    };
+
+    private static bool ContainsWrapped(AbilityEffect effect) => effect switch
+    {
+        AbilityEffect.EachPlayer each => Contains(each.Effect),
+        AbilityEffect.ForEach repeated => Contains(repeated.Count) || Contains(repeated.Effect),
         AbilityEffect.ChooseCard choose => Contains(choose.From) || Contains(choose.Effect),
         AbilityEffect.AfterActivation after => Contains(after.Effect),
+        AbilityEffect.PayOrEffect payment => Contains(payment.Otherwise),
+        _ => throw new InvalidOperationException("Unknown wrapped player-binding effect"),
+    };
+
+    private static bool ContainsBasicCard(AbilityEffect effect) => effect switch
+    {
         AbilityEffect.CardAction action => Contains(action.Selection),
         AbilityEffect.Heal heal => Contains(heal.Card) || Contains(heal.Amount),
         AbilityEffect.Damage damage => Contains(damage.Cards) || Contains(damage.Amount),
@@ -58,26 +91,39 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityEffect.MoveDamage move => Contains(move.From) || Contains(move.To) || Contains(move.Amount),
         AbilityEffect.IndirectDamage damage => Contains(damage.Among) || Contains(damage.Amount),
         AbilityEffect.GiveStatus status => Contains(status.Cards),
-        AbilityEffect.ChangeForm form => form.Player == AbilityPlayer.You,
-        AbilityEffect.Draw draw => Contains(draw.Players),
-        AbilityEffect.DrawToHandSize draw => draw.Player == AbilityPlayer.You,
+        _ => throw new InvalidOperationException("Unknown basic-card player-binding effect"),
+    };
+
+    private static bool ContainsThreatAndGrant(AbilityEffect effect) => effect switch
+    {
         AbilityEffect.PlaceThreat threat => Contains(threat.Schemes) || Contains(threat.Amount),
         AbilityEffect.RemoveThreat threat => Contains(threat.Schemes) || Contains(threat.Amount)
             || threat.OverridesCannotFrom is { } source && Contains(source),
         AbilityEffect.PreventThreat threat => Contains(threat.Amount),
         AbilityEffect.PreventDamage damage => Contains(damage.Amount),
-        AbilityEffect.Shuffle shuffle => shuffle.Area == AbilitySearchArea.YourDeck,
-        AbilityEffect.PayOrEffect payment => Contains(payment.Otherwise),
         AbilityEffect.GrantTrait grant => Contains(grant.Cards),
         AbilityEffect.GrantField grant => Contains(grant.Cards) || Contains(grant.Amount),
+        AbilityEffect.PreventDamageWhile prevention => Contains(prevention.Condition),
+        _ => throw new InvalidOperationException("Unknown threat player-binding effect"),
+    };
+
+    private static bool ContainsPlayer(AbilityEffect effect) => effect switch
+    {
+        AbilityEffect.ChangeForm form => form.Player == AbilityPlayer.You,
+        AbilityEffect.Draw draw => Contains(draw.Players),
+        AbilityEffect.DrawToHandSize draw => draw.Player == AbilityPlayer.You,
         AbilityEffect.GrantControlledCharacters grant =>
             grant.Player == AbilityPlayer.You || Contains(grant.Amount),
-        AbilityEffect.PreventDamageWhile prevention => Contains(prevention.Condition),
-        AbilityEffect.DelayedDiscard delayed => Contains(delayed.Card),
         AbilityEffect.DealEncounterCards deal => Contains(deal.Players),
         AbilityEffect.CreateDrones create => Contains(create.Players),
         AbilityEffect.DealEncounterCard deal =>
             Contains(deal.Card) || deal.Player == AbilityPlayer.You,
+        _ => throw new InvalidOperationException("Unknown player-target player-binding effect"),
+    };
+
+    private static bool ContainsPlacement(AbilityEffect effect) => effect switch
+    {
+        AbilityEffect.DelayedDiscard delayed => Contains(delayed.Card),
         AbilityEffect.DiscardAtRandom discard => Contains(discard.Players) || Contains(discard.Count),
         AbilityEffect.PlaceAtRandom place =>
             Contains(place.Players) || Contains(place.Count) || Contains(place.Host),
@@ -85,11 +131,15 @@ internal static class AbilityPlayerBindingAnalysis
             || discard.Players is { } players && Contains(players) || Contains(discard.Count),
         AbilityEffect.ShuffleInto shuffle =>
             Contains(shuffle.Cards) || shuffle.Deck == AbilitySearchArea.YourDeck,
-        AbilityEffect.Search search => search.Areas.Contains(AbilitySearchArea.YourDeck),
         AbilityEffect.PutIntoPlay entering =>
             !entering.PrintedDestination || Contains(entering.Card),
         AbilityEffect.PlaceCounters counters => Contains(counters.Card) || Contains(counters.Count),
         AbilityEffect.RemoveCounters counters => Contains(counters.Card),
+        _ => throw new InvalidOperationException("Unknown placement player-binding effect"),
+    };
+
+    private static bool ContainsPower(AbilityEffect effect) => effect switch
+    {
         AbilityEffect.ReduceNextCardCost reduction =>
             reduction.Player == AbilityPlayer.You || Contains(reduction.Amount),
         AbilityEffect.Power power =>
@@ -97,6 +147,13 @@ internal static class AbilityPlayerBindingAnalysis
         AbilityEffect.ThwartGroup thwart => Contains(thwart.Schemes) || Contains(thwart.Thwart),
         AbilityEffect.ActivateEnemies activate => Contains(activate.Enemies)
             || activate.Against is { } target && Contains(target),
+        _ => throw new InvalidOperationException("Unknown power player-binding effect"),
+    };
+
+    private static bool ContainsOther(AbilityEffect effect) => effect switch
+    {
+        AbilityEffect.Shuffle shuffle => shuffle.Area == AbilitySearchArea.YourDeck,
+        AbilityEffect.Search search => search.Areas.Contains(AbilitySearchArea.YourDeck),
         AbilityEffect.GainSurge or AbilityEffect.Fixed or AbilityEffect.Generate
             or AbilityEffect.DoubleResourceFor or AbilityEffect.PreventDamageFrom
             or AbilityEffect.DelayedStun or AbilityEffect.DiscardUntil

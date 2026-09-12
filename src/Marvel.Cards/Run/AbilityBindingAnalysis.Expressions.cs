@@ -2,8 +2,14 @@ using Marvel.Cards.Dsl;
 
 namespace Marvel.Cards.Run;
 
-internal static partial class AbilityBindingAnalysis
+internal static class AbilityBindingAnalysis
 {
+    internal static bool BindingCanChange(AbilityEffect? effect) =>
+        AbilityEffectBindingAnalysis.BindingCanChange(effect);
+
+    internal static bool BindingCanChange(AbilityPlayerSelection players) =>
+        AbilityEffectBindingAnalysis.BindingCanChange(players);
+
     internal static bool BindingCanChange(AbilityCondition condition) => condition switch
     {
         AbilityCondition.All all => all.Operands.Any(BindingCanChange),

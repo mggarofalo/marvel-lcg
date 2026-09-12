@@ -54,203 +54,179 @@ public static class Sequence
 
         while (world.Agenda.Current is { } step)
         {
-            // `rr:activation.6`: once an activating minion leaves play, no
-            // further steps of its activation resolve. A response belongs to
-            // an occurrence that already happened, so let that window finish;
-            // before any later interrupt, Apply body, or plan runs, replace
-            // the unfinished work with the activation's normal end window.
-            if (step.What is not (Steps.EndAttack or Steps.EndSchemeEarly)
-                && world.Activation is { } activation
-                && step.ActivationId == activation.Id
-                && !DeckTypes.IsInPlay(world.Cards[activation.Enemy].Area.Type)
-                && world.Agenda.Stage != Stage.Responses)
+            if (EndDepartedActivation(world, step))
             {
-                if (world.Windows.Current is not null)
-                {
-                    world.Windows.Close();
-                }
-
-                world.Agenda.EndActivationEarly(
-                    activation.Id, preserveCurrentOccurrence: false);
-                world.Agenda.Now(new PhaseStep(
-                    activation.Attacking ? Steps.EndAttack : Steps.EndSchemeEarly,
-                    step.Round,
-                    activation.Attacking ? 6 : 3,
-                    Index: activation.Player,
-                    Subject: activation.Enemy,
-                    Seat: activation.Player,
-                    ActivationId: activation.Id));
                 continue;
             }
-
-            // A plan is a heading rather than something that happens, so it
-            // opens no windows: `rr:villain-phase.step.2` is "Enemies
-            // Activate", and the activations under it are the occurrences.
-            if (step.Plan)
+            if (TryWorkNonApplying(
+                    world, facts, abilities, events, scope, step, out Prompt? question))
             {
-                var planOccurrence = world.Agenda.Occurrence
-                    ?? throw new InvalidOperationException(
-                        $"a planning '{step.What}' agenda step has no occurrence");
-                if (world.Agenda.Stage == Stage.Apply)
-                {
-                    if (AgendaProcedures.ApplyWithWorldAbilities(world, facts, step, events) is { } planQuestion)
-                    {
-                        return planQuestion;
-                    }
-                }
-
-                // Answering a plan may schedule nested work. Advance the plan
-                // that was being worked rather than whichever item is now at
-                // the front of the agenda.
-                world.Agenda.Advance(step, planOccurrence);
+                if (question is not null) return question;
                 continue;
             }
-
-            if (world.Agenda.Stage is Stage.Interrupts or Stage.Responses)
-            {
-                var kind = world.Agenda.Stage == Stage.Interrupts
-                    ? WindowKind.Interrupt
-                    : WindowKind.Response;
-
-                // The agenda's occurrence and not a fresh one per read:
-                // `rr:triggering-condition.1` is per occurrence, and the
-                // occurrence is what remembers which abilities have used it.
-                var occurrence = world.Agenda.Begin(world, facts);
-
-                if (step.What == Steps.PrepareIndirectAttackDamage)
-                {
-                    long prepared = Attack.PrepareIndirectDamage(
-                        world, step, events);
-                    if (prepared <= 0)
-                    {
-                        // `rr:replacement-effect.1`: a fully replaced effect
-                        // is no longer imminent, so it has neither optional
-                        // interrupts nor a response window.
-                        if (world.Windows.Current is not null)
-                        {
-                            world.Windows.Close();
-                        }
-                        world.Agenda.Cancel(occurrence);
-                        continue;
-                    }
-                }
-
-                // `rr:status-cards.2`: status-card abilities have timing
-                // priority over every conflicting triggered ability. A stun
-                // replaces the attack before its initiation interrupt window,
-                // so neither "when this enemy attacks" text nor a response to
-                // an attack that never happened may resolve. Basic and card
-                // attacks spend their stun before they reach the agenda; this
-                // is the enemy-activation path.
-                bool statusCancelled = false;
-                bool occurrenceCancelled = false;
-                bool ResolvePriorityStatus()
-                {
-                    if (!world.Agenda.IsOutstanding(step, occurrence))
-                    {
-                        occurrenceCancelled = true;
-                        return true;
-                    }
-                    statusCancelled = kind == WindowKind.Interrupt
-                        && step.What == Steps.Attack
-                        && BasicPowers.Cancelled(
-                            world, facts, world.Cards[step.Subject], Statuses.Stunned, events);
-                    if (!statusCancelled
-                        && kind == WindowKind.Interrupt
-                        && step.What == Steps.Attack)
-                    {
-                        Attack.Prepare(world, facts, step);
-                    }
-                    return statusCancelled;
-                }
-
-                IWindowAbilities offeredAbilities =
-                    step.What == Steps.PrepareIndirectAttackDamage
-                        ? new OptionalDamageInterrupts(abilities)
-                        : abilities;
-                if (Offering.Work(
-                    world, offeredAbilities, occurrence, kind, events, scope,
-                    ResolvePriorityStatus) is { } asked)
-                {
-                    return WithAttackContext(world, facts, step, asked);
-                }
-
-                // A replacement interrupt can cancel its containing occurrence
-                // while Offering resolves it. Re-check before advancing so the
-                // agenda cannot accidentally advance whatever followed it.
-                occurrenceCancelled |= !world.Agenda.IsOutstanding(step, occurrence);
-
-                if (statusCancelled)
-                {
-                    Attack.CancelPrepared(world, step.Subject);
-                    world.PendingAdditionalAttackPlayers = [];
-                    if (world.Windows.Current is not null)
-                    {
-                        world.Windows.Close();
-                    }
-                    world.Agenda.Cancel(occurrence);
-                    continue;
-                }
-                if (occurrenceCancelled)
-                {
-                    Attack.CancelPrepared(world, step.Subject);
-                    world.PendingAdditionalAttackPlayers = [];
-                    if (world.Windows.Current is not null)
-                    {
-                        world.Windows.Close();
-                    }
-                    continue;
-                }
-
-                world.Agenda.Advance(occurrence);
-                continue;
-            }
-
-            // A step may itself have a question -- declaring a defender is one
-            // -- and until it is answered the step has not happened, so the
-            // agenda stays where it is.
-            var applying = world.Agenda.Occurrence
-                ?? throw new InvalidOperationException(
-                    $"an applying '{step.What}' agenda step has no occurrence");
-            var healthBefore = world.Effects.CaptureCharacterHealth();
-            if (AgendaProcedures.ApplyWithWorldAbilities(world, facts, step, events) is { } asking)
-            {
-                return WithAttackContext(world, facts, step, asking);
-            }
-
-            // State changed during the step can switch on a conditional
-            // Stalwart constant. Its existing status cards leave before the
-            // response window to that step opens (`rr:stalwart.2`).
-            Statuses.RemoveAfflictionsIfStalwart(
-                world, facts, "stalwart", events);
-            world.Effects.SettleLostHealth(healthBefore, step.What, events);
-
-            // A player Action advances itself before moving any suspended
-            // continuations in front of its response window. Those children
-            // share the occurrence, so advancing by identity here would move
-            // the first child instead and apply the Action a second time.
-            if (step.What != Steps.TurnAction)
-            {
-                world.Agenda.Advance(step, applying);
-            }
-
-            if (world.IsOver)
-            {
-                // `rr:main-scheme-main-scheme-deck.2.1` -- the villain wins
-                // outright, and the rest of the phase does not happen.
-                world.Agenda.Abandon();
-            }
+            Prompt? applyingQuestion = ApplyStep(world, facts, step, events);
+            if (applyingQuestion is not null) return applyingQuestion;
         }
 
         return null;
+    }
+
+    private static bool TryWorkNonApplying(
+        World world, ICardFacts facts, IWindowAbilities abilities,
+        List<GameEvent> events, WindowAbilityScope scope, PhaseStep step,
+        out Prompt? question)
+    {
+        if (step.Plan)
+        {
+            question = WorkPlan(world, facts, step, events);
+            return true;
+        }
+        if (world.Agenda.Stage is Stage.Interrupts or Stage.Responses)
+        {
+            question = WorkWindow(world, facts, abilities, events, scope, step);
+            return true;
+        }
+        question = null;
+        return false;
+    }
+
+    private static bool EndDepartedActivation(World world, PhaseStep step)
+    {
+        if (step.What is Steps.EndAttack or Steps.EndSchemeEarly
+            || world.Activation is not { } activation
+            || step.ActivationId != activation.Id
+            || DeckTypes.IsInPlay(world.Cards[activation.Enemy].Area.Type)
+            || world.Agenda.Stage == Stage.Responses)
+        {
+            return false;
+        }
+        if (world.Windows.Current is not null) world.Windows.Close();
+        world.Agenda.EndActivationEarly(activation.Id, preserveCurrentOccurrence: false);
+        world.Agenda.Now(new PhaseStep(
+            activation.Attacking ? Steps.EndAttack : Steps.EndSchemeEarly,
+            step.Round, activation.Attacking ? 6 : 3,
+            Index: activation.Player, Subject: activation.Enemy,
+            Seat: activation.Player, ActivationId: activation.Id));
+        return true;
+    }
+
+    private static Prompt? WorkPlan(
+        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
+    {
+        var occurrence = world.Agenda.Occurrence
+            ?? throw new InvalidOperationException(
+                $"a planning '{step.What}' agenda step has no occurrence");
+        Prompt? question = world.Agenda.Stage == Stage.Apply
+            ? AgendaProcedures.ApplyWithWorldAbilities(world, facts, step, events)
+            : null;
+        if (question is null) world.Agenda.Advance(step, occurrence);
+        return question;
+    }
+
+    private static Prompt? WorkWindow(
+        World world, ICardFacts facts, IWindowAbilities abilities,
+        List<GameEvent> events, WindowAbilityScope scope, PhaseStep step)
+    {
+        var kind = world.Agenda.Stage == Stage.Interrupts
+            ? WindowKind.Interrupt : WindowKind.Response;
+        var occurrence = world.Agenda.Begin(world, facts);
+        if (!PrepareIndirectWindow(world, step, occurrence, events)) return null;
+
+        var status = new PriorityStatusResolution(world, facts, step, occurrence, kind, events);
+        IWindowAbilities offered = step.What == Steps.PrepareIndirectAttackDamage
+            ? new OptionalDamageInterrupts(abilities) : abilities;
+        Prompt? question = Offering.Work(
+            world, offered, occurrence, kind, events, scope, status.Resolve);
+        if (question is not null) return WithAttackContext(world, facts, step, question);
+
+        status.ObserveCancellation();
+        if (status.CancelledByStatus)
+        {
+            CancelAttackWindow(world, step, occurrence, cancelOccurrence: true);
+        }
+        else if (status.CancelledOccurrence)
+        {
+            CancelAttackWindow(world, step, occurrence, cancelOccurrence: false);
+        }
+        else
+        {
+            world.Agenda.Advance(occurrence);
+        }
+        return null;
+    }
+
+    private static bool PrepareIndirectWindow(
+        World world, PhaseStep step, Occurrence occurrence, List<GameEvent> events)
+    {
+        if (step.What != Steps.PrepareIndirectAttackDamage
+            || Attack.PrepareIndirectDamage(world, step, events) > 0)
+        {
+            return true;
+        }
+        if (world.Windows.Current is not null) world.Windows.Close();
+        world.Agenda.Cancel(occurrence);
+        return false;
+    }
+
+    private static void CancelAttackWindow(
+        World world, PhaseStep step, Occurrence occurrence, bool cancelOccurrence)
+    {
+        Attack.CancelPrepared(world, step.Subject);
+        world.PendingAdditionalAttackPlayers = [];
+        if (world.Windows.Current is not null) world.Windows.Close();
+        if (cancelOccurrence) world.Agenda.Cancel(occurrence);
+    }
+
+    private static Prompt? ApplyStep(
+        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
+    {
+        var occurrence = world.Agenda.Occurrence
+            ?? throw new InvalidOperationException(
+                $"an applying '{step.What}' agenda step has no occurrence");
+        var healthBefore = world.Effects.CaptureCharacterHealth();
+        Prompt? question = AgendaProcedures.ApplyWithWorldAbilities(world, facts, step, events);
+        if (question is not null) return WithAttackContext(world, facts, step, question);
+        Statuses.RemoveAfflictionsIfStalwart(world, facts, "stalwart", events);
+        world.Effects.SettleLostHealth(healthBefore, step.What, events);
+        if (step.What != Steps.TurnAction) world.Agenda.Advance(step, occurrence);
+        if (world.IsOver) world.Agenda.Abandon();
+        return null;
+    }
+
+    private sealed class PriorityStatusResolution(
+        World world, ICardFacts facts, PhaseStep step, Occurrence occurrence,
+        WindowKind kind, List<GameEvent> events)
+    {
+        public bool CancelledByStatus { get; private set; }
+        public bool CancelledOccurrence { get; private set; }
+
+        public bool Resolve()
+        {
+            if (!world.Agenda.IsOutstanding(step, occurrence))
+            {
+                CancelledOccurrence = true;
+                return true;
+            }
+            CancelledByStatus = kind == WindowKind.Interrupt
+                && step.What == Steps.Attack
+                && BasicPowerStatus.Cancelled(
+                    world, facts, world.Cards[step.Subject], Statuses.Stunned, events);
+            if (!CancelledByStatus && kind == WindowKind.Interrupt && step.What == Steps.Attack)
+            {
+                Attack.Prepare(world, facts, step);
+            }
+            return CancelledByStatus;
+        }
+
+        public void ObserveCancellation() =>
+            CancelledOccurrence |= !world.Agenda.IsOutstanding(step, occurrence);
     }
 
     private static Prompt WithAttackContext(
         World world, ICardFacts facts, PhaseStep step, Prompt prompt)
     {
         bool finished = world.Attack is null && step.What == Steps.EndAttack;
-        EnemyAttack? attack = world.Attack
-            ?? (step.What == Steps.EndAttack ? world.FinishedAttack : null);
+        EnemyAttack? attack = AttackForPrompt(world, step);
         if (attack is null || attack.Enemy < 0 || attack.Target < 0)
         {
             return prompt;
@@ -258,47 +234,75 @@ public static class Sequence
 
         Card enemy = world.Cards[attack.Enemy];
         Card target = world.Cards[attack.Target];
-        string player = attack.Player >= 0 && attack.Player < world.Seats.Count
-            ? world.Seats[attack.Player].Name
-            : $"Player {attack.Player + 1}";
-        string[] attachments = world.Areas
-            .Where(area => area.Host == enemy.ObjectId && DeckTypes.IsInPlay(area.Type))
-            .SelectMany(area => area.Cards)
-            .Select(card => facts.Title(card.FaceId))
-            .ToArray();
-        string stage = AttackStage(step.What);
-        string window = world.Agenda.Stage switch
-        {
-            Stage.Interrupts => "Interrupt window",
-            Stage.Responses => "Response window",
-            _ => "Resolve step",
-        };
-        long attackValue = StateFields.Modified(
-            world, enemy, "attack", facts, world.Players);
-        string situation = finished
-            ? FinishedAttackSituation(world, facts, attack, enemy, target, player)
-            : attack.CalculatedDamage is { } damage
-            ? $"{facts.Title(enemy.FaceId)} is attacking {facts.Title(target.FaceId)} "
-                + $"for {damage} damage against {player}. "
-                + Damage.PreviewAttack(world, facts, enemy, enemy, target, damage)
-            : $"{facts.Title(enemy.FaceId)} is initiating an attack against {player}. "
-                + $"Target: {facts.Title(target.FaceId)}. "
-                + $"ATK {attackValue} before boost icons and defense.";
-        if (attachments.Length > 0)
-        {
-            situation += $" Attacker attachments: {string.Join(", ", attachments)}.";
-        }
-
-        if (!string.IsNullOrWhiteSpace(prompt.Description)
-            && !situation.Contains(prompt.Description, StringComparison.Ordinal))
-        {
-            situation += $" {prompt.Description}";
-        }
+        string player = AttackPlayerName(world, attack.Player);
+        string stage = SequenceDescriptions.AttackStage(step.What);
+        string window = AttackWindowDescription(world.Agenda.Stage);
+        string situation = AttackSituation(
+            world, facts, attack, enemy, target, player, finished);
+        string[] attachments = AttackAttachments(world, facts, enemy);
+        situation = AppendAttackContext(situation, attachments, prompt.Description);
 
         return prompt with
         {
             Description = $"Enemy attack · {stage} · {window}\n{situation}",
         };
+    }
+
+    private static EnemyAttack? AttackForPrompt(World world, PhaseStep step) =>
+        world.Attack ?? (step.What == Steps.EndAttack ? world.FinishedAttack : null);
+
+    private static string AttackPlayerName(World world, int player) =>
+        player >= 0 && player < world.Seats.Count
+            ? world.Seats[player].Name
+            : $"Player {player + 1}";
+
+    private static string AppendAttackContext(
+        string situation, string[] attachments, string? description)
+    {
+        if (attachments.Length > 0)
+        {
+            situation += $" Attacker attachments: {string.Join(", ", attachments)}.";
+        }
+        if (!string.IsNullOrWhiteSpace(description)
+            && !situation.Contains(description, StringComparison.Ordinal))
+        {
+            situation += $" {description}";
+        }
+        return situation;
+    }
+
+    private static string AttackWindowDescription(Stage stage) => stage switch
+    {
+        Stage.Interrupts => "Interrupt window",
+        Stage.Responses => "Response window",
+        _ => "Resolve step",
+    };
+
+    private static string[] AttackAttachments(World world, ICardFacts facts, Card enemy) =>
+        world.Areas
+            .Where(area => area.Host == enemy.ObjectId && DeckTypes.IsInPlay(area.Type))
+            .SelectMany(area => area.Cards)
+            .Select(card => facts.Title(card.FaceId))
+            .ToArray();
+
+    private static string AttackSituation(
+        World world, ICardFacts facts, EnemyAttack attack, Card enemy, Card target,
+        string player, bool finished)
+    {
+        if (finished)
+        {
+            return FinishedAttackSituation(world, facts, attack, enemy, target, player);
+        }
+        if (attack.CalculatedDamage is { } damage)
+        {
+            return $"{facts.Title(enemy.FaceId)} is attacking {facts.Title(target.FaceId)} "
+                + $"for {damage} damage against {player}. "
+                + Damage.PreviewAttack(world, facts, enemy, enemy, target, damage);
+        }
+        long attackValue = StateFields.Modified(world, enemy, "attack", facts, world.Players);
+        return $"{facts.Title(enemy.FaceId)} is initiating an attack against {player}. "
+            + $"Target: {facts.Title(target.FaceId)}. "
+            + $"ATK {attackValue} before boost icons and defense.";
     }
 
     private static string FinishedAttackSituation(
@@ -312,7 +316,7 @@ public static class Sequence
         }
         else
         {
-            long maximum = Damage.Health(world, facts, target);
+            long maximum = DamagePlacement.Health(world, facts, target);
             long current = Math.Max(0, maximum - target.Damage);
             targetState = $"{facts.Title(target.FaceId)} is now at {current}/{maximum} HP.";
         }
@@ -324,44 +328,6 @@ public static class Sequence
             + damage
             + (attack.Damaged ? " The attack dealt damage. " : " No damage was dealt. ")
             + targetState;
-    }
-
-    private static string AttackStage(string step) => step switch
-    {
-        Steps.Attack => "Initiation",
-        Steps.GiveBoostCard => "Step 1 of 6 · Give boost card",
-        Steps.DeclareDefender => "Step 2 of 6 · Declare defender",
-        Steps.FlipBoostCards => "Step 3 of 6 · Reveal boost cards",
-        Steps.CalculateAttackDamage => "Step 4 of 6 · Calculate damage",
-        Steps.DealAttackDamage => "Step 5 of 6 · Deal damage",
-        Steps.NextAttackTarget => "Choose the next target",
-        Steps.EndAttack => "Step 6 of 6 · End attack",
-        _ => step,
-    };
-
-    private sealed class OptionalDamageInterrupts(IWindowAbilities inner)
-        : IWindowAbilities
-    {
-        public IReadOnlyList<PendingAbility> Waiting(
-            World world, Occurrence occurrence, WindowKind window) =>
-            [.. inner.Waiting(world, occurrence, window).Where(ability =>
-                window != WindowKind.Interrupt
-                || !AbilityTypes.IsMandatory(ability.Type))];
-
-        public IReadOnlyList<GameEvent> Resolve(
-            World world, Occurrence occurrence, PendingAbility ability,
-            IReadOnlyList<int> paying, IReadOnlyList<int> chosen) =>
-            inner.Resolve(world, occurrence, ability, paying, chosen);
-
-        public IReadOnlyList<GameEvent> Resolve(
-            World world, Occurrence occurrence, PendingAbility ability,
-            IReadOnlyList<int> paying, IReadOnlyList<int> chosen,
-            IReadOnlyDictionary<string, long>? values = null,
-            IReadOnlyList<ResourceAllocation>? allocations = null) =>
-            inner.Resolve(world, occurrence, ability, paying, chosen, values, allocations);
-
-        public Affordance Describe(World world, PendingAbility ability) =>
-            inner.Describe(world, ability);
     }
 
     /// <summary>
@@ -401,36 +367,7 @@ public static class Sequence
 
         if (world.Windows.Current is not { } window)
         {
-            // No window means the step itself asked. `Work` left the agenda on
-            // that step's `Apply`, so answering it is what makes the step
-            // happen -- and then it advances like any other.
-            if (world.Agenda.Current is not { } step)
-            {
-                throw new RulesNotImplementedException(
-                    $"'{asked.Label}' was answered with nothing outstanding");
-            }
-
-            var occurrence = world.Agenda.Occurrence
-                ?? throw new InvalidOperationException("an asking agenda step has no occurrence");
-            AgendaProcedures.AnswerWithWorldAbilities(world, facts, step, input, events);
-            if ((step.What is Steps.ChooseOption
-                or Steps.ChooseWouldBeDefeated
-                or Steps.ChooseCardDefeatedAbility
-                or Steps.ChooseRevealAbility
-                or Steps.AssignIndirectAttackDamage)
-                && world.Agenda.IsOutstanding(step, occurrence))
-            {
-                // Resolving one selected ability can insert its own work and a
-                // procedure continuation ahead of this question. These paths
-                // deliberately share the containing occurrence, so identity
-                // alone would advance the new continuation and replay the
-                // answered question.
-                world.Agenda.Advance(step, occurrence);
-            }
-            else
-            {
-                world.Agenda.Advance(occurrence);
-            }
+            AnswerAgendaStep(world, facts, asked, input, events);
             return;
         }
 
@@ -489,6 +426,35 @@ public static class Sequence
         // gives everybody another opportunity and the step stays where it is.
         world.Windows.Used();
     }
+
+    private static void AnswerAgendaStep(
+        World world, ICardFacts facts, Prompt asked, Decision input, List<GameEvent> events)
+    {
+        if (world.Agenda.Current is not { } step)
+        {
+            throw new RulesNotImplementedException(
+                $"'{asked.Label}' was answered with nothing outstanding");
+        }
+        var occurrence = world.Agenda.Occurrence
+            ?? throw new InvalidOperationException("an asking agenda step has no occurrence");
+        AgendaProcedures.AnswerWithWorldAbilities(world, facts, step, input, events);
+        if (QuestionAdvancesByIdentity(step)
+            && world.Agenda.IsOutstanding(step, occurrence))
+        {
+            world.Agenda.Advance(step, occurrence);
+        }
+        else
+        {
+            world.Agenda.Advance(occurrence);
+        }
+    }
+
+    private static bool QuestionAdvancesByIdentity(PhaseStep step) =>
+        step.What is Steps.ChooseOption
+            or Steps.ChooseWouldBeDefeated
+            or Steps.ChooseCardDefeatedAbility
+            or Steps.ChooseRevealAbility
+            or Steps.AssignIndirectAttackDamage;
 
     // Answering the last question of a window finishes that part of the step.
     // Without this the walk would find no window open, take that for "not yet
