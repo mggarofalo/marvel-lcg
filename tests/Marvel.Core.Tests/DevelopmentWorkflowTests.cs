@@ -39,6 +39,7 @@ public sealed class DevelopmentWorkflowTests
         Assert.Contains("dotnet husky run --group pre-commit", hook, StringComparison.Ordinal);
         string buildTargets = File.ReadAllText(Path.Combine(root, "Directory.Build.targets"));
         Assert.Contains("Name=\"MarvelInstallHusky\"", buildTargets, StringComparison.Ordinal);
+        Assert.Contains("Exists('$(MSBuildThisFileDirectory).git')", buildTargets, StringComparison.Ordinal);
         Assert.Contains("'$(CI)' != 'true'", buildTargets, StringComparison.Ordinal);
         string lengthGate = File.ReadAllText(Path.Combine(
             root, ".husky", "csx", "file-length.csx"));

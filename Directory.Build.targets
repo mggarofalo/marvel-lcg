@@ -1,11 +1,12 @@
 <Project>
 
-  <!-- Husky.Net is a developer-workstation concern. Restore the pinned local
-       tool and install the checked-in hooks after the first ordinary restore;
-       CI runs the same gates directly and must not rewrite its Git config. -->
+  <!-- Husky.Net is a developer-worktree concern. Restore the pinned local tool
+       and install the checked-in hooks after the first ordinary restore. CI
+       runs the same gates directly, while source packages and container build
+       contexts have no Git metadata in which a hook could be installed. -->
   <Target Name="MarvelInstallHusky"
           AfterTargets="Restore"
-          Condition="'$(HUSKY)' != '0' and '$(CI)' != 'true' and '$(DesignTimeBuild)' != 'true'"
+          Condition="Exists('$(MSBuildThisFileDirectory).git') and '$(HUSKY)' != '0' and '$(CI)' != 'true' and '$(DesignTimeBuild)' != 'true'"
           Inputs="$(MSBuildThisFileDirectory).config/dotnet-tools.json"
           Outputs="$(MSBuildThisFileDirectory).husky/_/install.stamp">
     <Exec Command="dotnet tool restore"
