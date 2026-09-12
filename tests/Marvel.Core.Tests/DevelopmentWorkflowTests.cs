@@ -26,9 +26,22 @@ public sealed class DevelopmentWorkflowTests
         Assert.Equal(
             ["--CCN", "10", "--warnings_only", "${staged}"],
             Arguments(tasks["cyclomatic-complexity"]));
+        Assert.Equal("staged", tasks["cyclomatic-complexity"]
+            .GetProperty("filteringRule").GetString());
+        Assert.Equal(
+            ["src/**/*.cs", "src/**/*.gd", "tests/**/*.cs", "tools/**/*.cs"],
+            Includes(tasks["cyclomatic-complexity"]));
         Assert.Equal(
             ["husky", "exec", ".husky/csx/file-length.csx", "--args", "${staged}"],
             Arguments(tasks["file-length"]));
+        Assert.Equal("staged", tasks["file-length"]
+            .GetProperty("filteringRule").GetString());
+        Assert.Equal(
+            ["**/*.cs", "**/*.csx", "**/*.gd", "**/*.ps1", "**/*.sh"],
+            Includes(tasks["file-length"]));
+        Assert.Equal(
+            ["datasets/**/*"],
+            Strings(tasks["file-length"], "exclude"));
         Assert.Equal(
             ["test", "tests/Marvel.UnitTests.slnx", "--configuration", "Release", "--nologo"],
             Arguments(tasks["unit-tests"]));
@@ -43,11 +56,19 @@ public sealed class DevelopmentWorkflowTests
         Assert.Contains("'$(CI)' != 'true'", buildTargets, StringComparison.Ordinal);
         string lengthGate = File.ReadAllText(Path.Combine(
             root, ".husky", "csx", "file-length.csx"));
-        Assert.Contains("const int MaximumLines = 1000;", lengthGate, StringComparison.Ordinal);
+        Assert.Contains("const int MaximumLines = 500;", lengthGate, StringComparison.Ordinal);
     }
 
     private static string[] Arguments(JsonElement task) => task.GetProperty("args")
         .EnumerateArray()
         .Select(argument => argument.GetString()!)
+        .ToArray();
+
+    private static string[] Includes(JsonElement task) => Strings(task, "include");
+
+    private static string[] Strings(JsonElement task, string property) => task
+        .GetProperty(property)
+        .EnumerateArray()
+        .Select(element => element.GetString()!)
         .ToArray();
 }

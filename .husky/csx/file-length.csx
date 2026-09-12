@@ -1,4 +1,4 @@
-const int MaximumLines = 1000;
+const int MaximumLines = 500;
 
 var failed = false;
 var visited = new HashSet<string>(StringComparer.Ordinal);
