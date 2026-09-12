@@ -8,6 +8,8 @@ using Marvel.View;
 using System.Diagnostics;
 using System.Security.Cryptography;
 
+using static Marvel.Server.EngineHostLifecycle;
+
 namespace Marvel.Server;
 
 /// <summary>A single-threaded collection of deterministic engine sessions.</summary>
@@ -23,13 +25,13 @@ namespace Marvel.Server;
 /// </remarks>
 public sealed class EngineHost : IEngineEndpoint
 {
-    private readonly IGameFactory factory;
-    private readonly IVisibilityPolicy visibility;
-    private readonly ISessionStore store;
-    private readonly SessionCompatibility compatibility;
-    private readonly OperationalLog log;
-    private readonly SessionAuthorityRegistry authority;
-    private readonly AuthorizedSessionProjector projector;
+    internal readonly IGameFactory factory;
+    internal readonly IVisibilityPolicy visibility;
+    internal readonly ISessionStore store;
+    internal readonly SessionCompatibility compatibility;
+    internal readonly OperationalLog log;
+    internal readonly SessionAuthorityRegistry authority;
+    internal readonly AuthorizedSessionProjector projector;
 
     /// <summary>Creates an engine host with cryptographically random session capabilities.</summary>
     public EngineHost(
@@ -55,8 +57,8 @@ public sealed class EngineHost : IEngineEndpoint
         compatibility = factory is IDurableGameFactory durable
             ? durable.Compatibility
             : TestCompatibility();
-        projector = new AuthorizedSessionProjector(compatibility, ReplayOpen);
-        Restore();
+        projector = new AuthorizedSessionProjector(compatibility, this.ReplayOpen);
+        this.Restore();
     }
 
     /// <inheritdoc />
@@ -140,11 +142,11 @@ public sealed class EngineHost : IEngineEndpoint
             EngineProtocol.Open => Open(request, execution),
             EngineProtocol.Attach => Attach(request, execution),
             EngineProtocol.Sync => Sync(request),
-            EngineProtocol.Resolve => Resolve(request, execution),
-            EngineProtocol.Undo => MoveHistory(request, execution, undo: true),
-            EngineProtocol.Redo => MoveHistory(request, execution, undo: false),
-            EngineProtocol.Reorder => ReorderHistory(request, execution),
-            EngineProtocol.Close => Close(request, execution),
+            EngineProtocol.Resolve => this.Resolve(request, execution),
+            EngineProtocol.Undo => this.MoveHistory(request, execution, undo: true),
+            EngineProtocol.Redo => this.MoveHistory(request, execution, undo: false),
+            EngineProtocol.Reorder => this.ReorderHistory(request, execution),
+            EngineProtocol.Close => this.Close(request, execution),
             _ => Failed(
                 request, "invalid_request",
                 $"operation '{request.Operation}' is not supported"),
@@ -187,62 +189,20 @@ public sealed class EngineHost : IEngineEndpoint
 
     private EngineResponse Open(EngineRequest request, RequestExecution execution)
     {
-        if (request.Game is null
-            || request.Decision is not null
-            || request.ExpectedRevision is not null
-            || request.Cursor is not null
-            || request.Order is not null)
-        {
-            return Failed(
-                request, "invalid_request",
-                "open requires game and does not accept decision");
-        }
+        EngineResponse? invalid = OpenRequestError(request);
+        if (invalid is not null) return invalid;
 
-        if (request.Capability is not null)
-        {
-            return Failed(request, "invalid_request", "open does not accept capability");
-        }
+        if (!TryAuthorizeOpen(request, out ViewScope scope,
+                out IReadOnlyList<SeatScope> additionalScopes, out EngineResponse? failure))
+            return failure!;
 
-        if (string.IsNullOrWhiteSpace(request.Game.Scenario))
-        {
-            return Failed(request, "invalid_request", "a game requires a scenario");
-        }
-
-        if (request.Game.Heroes is not { Count: > 0 }
-            || request.Game.Heroes.Any(string.IsNullOrWhiteSpace))
-        {
-            return Failed(request, "invalid_request", "a game requires at least one hero");
-        }
-
-        ViewScope scope;
-        IReadOnlyList<SeatScope> additionalScopes;
-        try
-        {
-            scope = visibility.Authorize(request.Viewer, request.Game.Heroes.Count);
-            if (scope is null)
-            {
-                throw new ArgumentException("visibility policy returned no primary scope");
-            }
-
-            IReadOnlyList<SeatScope> policyScopes = visibility.AdditionalScopes(
-                    request.Viewer, request.Game.Heroes.Count)
-                ?? throw new ArgumentException(
-                    "visibility policy returned no additional-scope collection");
-            additionalScopes = policyScopes.ToList();
-            ValidateAdditionalScopes(scope, additionalScopes, request.Game.Heroes.Count);
-        }
-        catch (Exception failure) when (failure is ArgumentException or InvalidOperationException)
-        {
-            return Failed(request, "invalid_request", failure.Message);
-        }
-
-        var opened = factory.Create(request.Game);
+        var opened = factory.Create(request.Game!);
         string storageId = NewStorageId();
         SessionSave save = SessionSave.Open(
             compatibility,
             storageId,
             request.GameId,
-            ToSessionSetup(request.Game),
+            ToSessionSetup(request.Game!),
             opened.Game,
             opened.SetupEvents);
         var session = new HostedSession(request.GameId, opened.Game, save);
@@ -270,7 +230,7 @@ public sealed class EngineHost : IEngineEndpoint
             SessionAuthorityRegistry.OpenAuthorities(
                 capability,
                 scope,
-                request.Game.Heroes.Count,
+                request.Game!.Heroes.Count,
                 issuedInvitations.Select(pair => (pair.grant, pair.token)).ToList());
         execution.ObservePersistence(() =>
             store.Commit(new StoredSession(save, proposedAuthorities)));
@@ -281,6 +241,48 @@ public sealed class EngineHost : IEngineEndpoint
             issuedInvitations.Select(pair => (pair.grant, pair.token)).ToList());
 
         return response;
+    }
+
+    private static EngineResponse? OpenRequestError(EngineRequest request)
+    {
+        if (request.Game is null || request.Decision is not null
+            || request.ExpectedRevision is not null || request.Cursor is not null
+            || request.Order is not null)
+            return Failed(request, "invalid_request",
+                "open requires game and does not accept decision");
+        if (request.Capability is not null)
+            return Failed(request, "invalid_request", "open does not accept capability");
+        if (string.IsNullOrWhiteSpace(request.Game.Scenario))
+            return Failed(request, "invalid_request", "a game requires a scenario");
+        if (request.Game.Heroes is not { Count: > 0 }
+            || request.Game.Heroes.Any(string.IsNullOrWhiteSpace))
+            return Failed(request, "invalid_request", "a game requires at least one hero");
+        return null;
+    }
+
+    private bool TryAuthorizeOpen(
+        EngineRequest request, out ViewScope scope,
+        out IReadOnlyList<SeatScope> additionalScopes, out EngineResponse? failure)
+    {
+        try
+        {
+            scope = visibility.Authorize(request.Viewer, request.Game!.Heroes.Count)
+                ?? throw new ArgumentException("visibility policy returned no primary scope");
+            additionalScopes = visibility.AdditionalScopes(
+                request.Viewer, request.Game.Heroes.Count)?.ToList()
+                ?? throw new ArgumentException(
+                    "visibility policy returned no additional-scope collection");
+            ValidateAdditionalScopes(scope, additionalScopes, request.Game.Heroes.Count);
+            failure = null;
+            return true;
+        }
+        catch (Exception error) when (error is ArgumentException or InvalidOperationException)
+        {
+            scope = null!;
+            additionalScopes = [];
+            failure = Failed(request, "invalid_request", error.Message);
+            return false;
+        }
     }
 
     private static void ValidateAdditionalScopes(
@@ -359,7 +361,7 @@ public sealed class EngineHost : IEngineEndpoint
                 pending.Session.Save, pending.Scope, pending.Session.Game));
         List<StoredAuthority> authorities = authority.AttachmentAuthorities(
             pending.Session, invitationVerifier, capability, pending.Scope);
-        SessionSave stamped = Stamp(pending.Session.Save);
+        SessionSave stamped = this.Stamp(pending.Session.Save);
         execution.ObservePersistence(() =>
             store.Commit(new StoredSession(stamped, authorities)));
         pending.Session.Publish(stamped);
@@ -394,660 +396,5 @@ public sealed class EngineHost : IEngineEndpoint
             history: projector.History(
                 access.Session.Save, access.Scope, access.Session.Game));
     }
-
-    private EngineResponse Resolve(EngineRequest request, RequestExecution execution)
-    {
-        if (request.Decision is null
-            || request.Game is not null
-            || request.Viewer is not null
-            || request.ExpectedRevision is null or < 0
-            || request.Cursor is not null
-            || request.Order is not null)
-        {
-            return Failed(
-                request, "invalid_request",
-                "resolve requires decision and does not accept game");
-        }
-
-        if (!authority.TrySession(request, out _, out var access))
-        {
-            return Failed(request, "session_not_found", "the session capability is not valid");
-        }
-
-        if (request.Decision.Targets is null)
-        {
-            return Failed(request, "invalid_request", "decision.targets is required");
-        }
-
-        if (request.ExpectedRevision != access.Session.Revision)
-        {
-            return Failed(
-                request,
-                "stale_decision",
-                "the decision was composed for an earlier table revision");
-        }
-
-        if (access.Session.Game.Pending is not { } pending)
-        {
-            return Failed(request, "not_your_turn", "this capability cannot answer the pending prompt");
-        }
-
-        Decision decision = request.Decision.ToDomain();
-        Affordance? selected = decision.IsDecline
-            ? null
-            : pending.Affordances.SingleOrDefault(option => option.Id == decision.Affordance);
-        if (!decision.IsDecline && selected is null)
-        {
-            return Failed(request, "invalid_decision", "the selected affordance is not pending");
-        }
-
-        int actor = selected is not null
-            && string.Equals(selected.Verb, Game.ActionVerb, StringComparison.Ordinal)
-            ? selected.AnchorPlayer
-            : pending.Player;
-        if (!access.Scope.Includes(actor))
-        {
-            return Failed(request, "not_your_turn", "this capability cannot submit that decision");
-        }
-
-        Prompt? authorized = access.Session.Game.PromptFor(actor);
-        if (authorized is null
-            || (!decision.IsDecline
-                && !authorized.Affordances.Any(option => option.Id == decision.Affordance)))
-        {
-            return Failed(request, "invalid_decision", "the decision is not available to that seat");
-        }
-
-        try
-        {
-            // This is a validation pass over immutable prompt values. It
-            // rejects forged targets, payments, variables, allocations and
-            // actor seats before the engine can mutate the world.
-            _ = DurableDecision.From(actor, pending, decision).Resolve(pending);
-        }
-        catch (Exception failure) when (failure is InvalidOperationException
-            or ReplayDivergenceException)
-        {
-            return Failed(request, "invalid_decision", "the decision is not legal for that seat");
-        }
-
-        try
-        {
-            Game candidate = execution.ObserveReplay(() => SessionReplay.Verify(
-                access.Session.Save, compatibility, ReplayOpen));
-            Prompt candidatePrompt = candidate.Pending
-                ?? throw new ReplayDivergenceException("candidate has no pending prompt");
-            JournalReplay.RequirePrompt(
-                PromptRecord.From(pending), candidatePrompt, "live prompt");
-            Decision replayDecision = DurableDecision.From(actor, pending, decision)
-                .Resolve(candidatePrompt);
-            bool root = candidate.IsRootPrompt;
-            int active = candidate.Active;
-            int round = candidate.Round;
-            string phase = candidate.Phase.ToString();
-            string role = SessionReplay.UnitRole(candidate, candidatePrompt, replayDecision);
-            long rngBefore = candidate.State.Random.Generator.WordsConsumed;
-            var resolved = candidate.Resolve(replayDecision);
-            IReadOnlyList<InformationExposure> exposures = InformationFrontier.Classify(
-                candidate.State.Players,
-                rngBefore,
-                candidate.State.Random.Generator.WordsConsumed,
-                resolved.Information,
-                resolved.Events,
-                candidate.Pending);
-            var step = JournalStep.From(
-                actor,
-                candidatePrompt,
-                replayDecision,
-                resolved.Events,
-                candidate.State.Random.Generator.WordsConsumed,
-                SessionReplay.Fingerprint(candidate),
-                SessionReplay.Result(candidate));
-            SessionSave proposed = Stamp(Append(
-                access.Session.Save,
-                step,
-                root,
-                candidate.IsRootPrompt || candidate.Pending is null,
-                role,
-                actor,
-                active,
-                round,
-                phase,
-                candidate.Pending,
-                exposures));
-            var transaction = new SessionTransaction(candidate, proposed);
-            return transaction.CommitAndPublish(
-                access.Session,
-                authority.Snapshot(access.Session),
-                stored => execution.ObservePersistence(() => store.Commit(stored)),
-                (verified, committed) => AuthorizedSessionProjector.Succeeded(
-                    request,
-                    verified,
-                    resolved.Prompt,
-                    resolved.Events,
-                    access.Scope,
-                    revision: committed.Revision,
-                    history: projector.History(committed, access.Scope, verified)));
-        }
-        catch (Exception failure) when (failure is IOException
-            or UnauthorizedAccessException
-            or SessionSaveException
-            or ReplayDivergenceException)
-        {
-            if (failure is ReplayDivergenceException)
-            {
-                execution.MarkReplayDiverged();
-            }
-            return Failed(
-                request,
-                "save_failed",
-                "the decision was not committed and the prior game remains authoritative");
-        }
-        catch (Exception)
-        {
-            // Resolution runs only on a freshly replayed candidate. Even an
-            // unexpected engine failure cannot partially mutate the live game.
-            return Failed(
-                request,
-                "game_aborted",
-                "the candidate decision failed and the prior game remains authoritative");
-        }
-    }
-
-    private EngineResponse MoveHistory(
-        EngineRequest request, RequestExecution execution, bool undo)
-    {
-        string operation = undo ? EngineProtocol.Undo : EngineProtocol.Redo;
-        if (request.Game is not null
-            || request.Decision is not null
-            || request.Viewer is not null
-            || request.ExpectedRevision is null or < 0
-            || request.Cursor is null or < 0
-            || request.Order is not null)
-        {
-            return Failed(
-                request,
-                "invalid_request",
-                $"{operation} requires an expected revision and history cursor");
-        }
-
-        if (!authority.TrySession(request, out _, out var access))
-        {
-            return Failed(request, "session_not_found", "the session capability is not valid");
-        }
-
-        SessionSave save = access.Session.Save;
-        if (request.ExpectedRevision != save.Revision)
-        {
-            return Failed(
-                request,
-                "stale_history",
-                "the history command was composed for an earlier table revision");
-        }
-
-        int target = request.Cursor.Value;
-        if (target > save.Units.Count
-            || (undo && target >= save.Cursor)
-            || (!undo && target <= save.Cursor))
-        {
-            return Failed(
-                request,
-                "history_direction",
-                $"{operation} cursor is not an available retained boundary");
-        }
-
-        if (save.Units.Any(unit => unit.Status != "complete"))
-        {
-            return Failed(
-                request,
-                "history_open",
-                "history cannot change while an operation has dependent decisions pending");
-        }
-
-        int first = Math.Min(target, save.Cursor);
-        int count = Math.Abs(target - save.Cursor);
-        IReadOnlyList<JournalUnit> affected = save.Units.Skip(first).Take(count).ToList();
-        if (!AuthorizedSessionProjector.EditableBy(affected, access.Scope))
-        {
-            return Failed(
-                request,
-                "history_authority",
-                "this capability cannot revise history submitted by another seat");
-        }
-
-        if (target < save.EditFrontier)
-        {
-            return Failed(
-                request,
-                "history_frontier",
-                "new information makes that earlier history boundary unavailable");
-        }
-
-        try
-        {
-            Game candidate = execution.ObserveReplay(() =>
-                SessionReplay.VerifyAtCursor(save, compatibility, ReplayOpen, target));
-            SessionSave proposed = save with
-            {
-                Compatibility = compatibility,
-                Revision = save.Revision + 1,
-                Cursor = target,
-                CurrentPrompt = candidate.Pending is null
-                    ? null
-                    : PromptRecord.From(candidate.Pending),
-            };
-            Game verified = execution.ObserveReplay(() =>
-                SessionReplay.Verify(proposed, compatibility, ReplayOpen));
-            var transaction = new SessionTransaction(verified, proposed);
-            return transaction.CommitAndPublish(
-                access.Session,
-                authority.Snapshot(access.Session),
-                stored => execution.ObservePersistence(() => store.Commit(stored)),
-                (published, committed) => AuthorizedSessionProjector.Succeeded(
-                    request,
-                    published,
-                    published.Pending,
-                    [],
-                    access.Scope,
-                    revision: committed.Revision,
-                    history: projector.History(committed, access.Scope, published)));
-        }
-        catch (Exception failure) when (failure is IOException
-            or UnauthorizedAccessException
-            or SessionSaveException
-            or ReplayDivergenceException)
-        {
-            if (failure is ReplayDivergenceException)
-            {
-                execution.MarkReplayDiverged();
-            }
-            return Failed(
-                request,
-                "history_failed",
-                "history replay was not committed and the prior game remains authoritative");
-        }
-    }
-
-    private EngineResponse ReorderHistory(
-        EngineRequest request, RequestExecution execution)
-    {
-        if (request.Game is not null
-            || request.Decision is not null
-            || request.Viewer is not null
-            || request.ExpectedRevision is null or < 0
-            || request.Cursor is not null
-            || request.Order is not { Count: >= 2 })
-        {
-            return Failed(
-                request,
-                "invalid_request",
-                "reorder requires an expected revision and at least two unit positions");
-        }
-
-        if (!authority.TrySession(request, out _, out var access))
-        {
-            return Failed(request, "session_not_found", "the session capability is not valid");
-        }
-
-        SessionSave save = access.Session.Save;
-        if (request.ExpectedRevision != save.Revision)
-        {
-            return Failed(
-                request,
-                "stale_history",
-                "the history command was composed for an earlier table revision");
-        }
-
-        int[] order = [.. request.Order];
-        if (order.Any(index => index < 0 || index >= save.Cursor)
-            || order.Distinct().Count() != order.Length)
-        {
-            return Failed(
-                request,
-                "reorder_shape",
-                "reorder positions must name distinct active history units");
-        }
-
-        int first = order.Min();
-        int last = order.Max();
-        if (last - first + 1 != order.Length
-            || order.SequenceEqual(Enumerable.Range(first, order.Length)))
-        {
-            return Failed(
-                request,
-                "reorder_shape",
-                "reorder must change one contiguous range of history units");
-        }
-
-        if (save.Units.Any(unit => unit.Status != "complete"))
-        {
-            return Failed(
-                request,
-                "history_open",
-                "history cannot change while an operation has dependent decisions pending");
-        }
-
-        List<JournalUnit> affected = save.Units.Skip(first).Take(order.Length).ToList();
-        if (!AuthorizedSessionProjector.EditableBy(affected, access.Scope))
-        {
-            return Failed(
-                request,
-                "history_authority",
-                "this capability cannot revise history submitted by another seat");
-        }
-
-        if (first < save.EditFrontier)
-        {
-            return Failed(
-                request,
-                "history_frontier",
-                "new information makes that history range unavailable");
-        }
-
-        JournalUnit position = affected[0];
-        if (affected.Any(unit => unit.Role != "turn_action"
-                || unit.ActiveSeat != position.ActiveSeat
-                || unit.Round != position.Round
-                || !string.Equals(unit.Phase, position.Phase, StringComparison.Ordinal)))
-        {
-            return Failed(
-                request,
-                "reorder_kind",
-                "only action units from one active-player turn can be reordered");
-        }
-
-        try
-        {
-            int[] sourceOrder =
-            [
-                .. Enumerable.Range(0, first),
-                .. order,
-                .. Enumerable.Range(last + 1, save.Cursor - last - 1),
-            ];
-            RewrittenTrace trace = SessionReplay.Rewrite(
-                save, compatibility, ReplayOpen, sourceOrder);
-            SessionSave proposed = save with
-            {
-                Compatibility = compatibility,
-                Revision = save.Revision + 1,
-                Cursor = trace.Units.Count,
-                EditFrontier = trace.EditFrontier,
-                CurrentPrompt = trace.Game.Pending is null
-                    ? null
-                    : PromptRecord.From(trace.Game.Pending),
-                Units = trace.Units,
-            };
-            Game verified = execution.ObserveReplay(() =>
-                SessionReplay.Verify(proposed, compatibility, ReplayOpen));
-            var transaction = new SessionTransaction(verified, proposed);
-            return transaction.CommitAndPublish(
-                access.Session,
-                authority.Snapshot(access.Session),
-                stored => execution.ObservePersistence(() => store.Commit(stored)),
-                (published, committed) => AuthorizedSessionProjector.Succeeded(
-                    request,
-                    published,
-                    published.Pending,
-                    [],
-                    access.Scope,
-                    revision: committed.Revision,
-                    history: projector.History(committed, access.Scope, published)));
-        }
-        catch (Exception failure) when (failure is IOException
-            or UnauthorizedAccessException
-            or SessionSaveException
-            or ReplayDivergenceException)
-        {
-            return Failed(
-                request,
-                "reorder_failed",
-                "the rewritten trace was not committed and the prior game remains authoritative");
-        }
-    }
-
-    private EngineResponse Close(EngineRequest request, RequestExecution execution)
-    {
-        if (request.Game is not null
-            || request.Decision is not null
-            || request.Viewer is not null
-            || request.ExpectedRevision is not null
-            || request.Cursor is not null
-            || request.Order is not null)
-        {
-            return Failed(
-                request, "invalid_request",
-                "close does not accept game or decision");
-        }
-
-        if (!authority.TrySession(request, out string capability, out var access))
-        {
-            return Failed(request, "session_not_found", "the session capability is not valid");
-        }
-
-        if (access.Owner)
-        {
-            SessionSave retired = access.Session.Save with
-            {
-                Compatibility = compatibility,
-                Session = access.Session.Save.Session with { Lifecycle = "retired" },
-            };
-            execution.ObservePersistence(() =>
-                store.Commit(new StoredSession(retired, [])));
-            authority.Remove(access.Session);
-            execution.MarkSessionRetired();
-        }
-        else
-        {
-            string verifier = SessionAuthorityRegistry.Verifier(capability);
-            List<StoredAuthority> authorities =
-                authority.RevokedAuthorities(access.Session, verifier);
-            SessionSave stamped = Stamp(access.Session.Save);
-            execution.ObservePersistence(() =>
-                store.Commit(new StoredSession(stamped, authorities)));
-            access.Session.Publish(stamped);
-            authority.Revoke(verifier);
-        }
-
-        return AuthorizedSessionProjector.Succeeded(request);
-    }
-
-    private void Restore()
-    {
-        foreach (SessionLoadResult candidate in store.LoadForRestore())
-        {
-            if (candidate.Session is not StoredSession stored)
-            {
-                log.Write(
-                    OperationalEventIds.SessionRestoreFailed,
-                    "rejected",
-                    gameId: candidate.StorageId,
-                    saveGeneration: candidate.Generation,
-                    stage: "quarantine",
-                    errorCode: candidate.ErrorCode ?? "restore_failed");
-                continue;
-            }
-
-            if (stored.Save.Session.Lifecycle == "retired")
-            {
-                continue;
-            }
-
-            var elapsed = Stopwatch.StartNew();
-            bool saveCommitted = false;
-            string? selectedGeneration = candidate.Generation;
-            HostedSession? restoring = null;
-            try
-            {
-                StoredSession current = stored;
-                bool migration = current.Save.Schema == 2;
-                if (migration)
-                {
-                    SessionSave migrated = SessionReplay.MigrateSchemaTwo(
-                        current.Save, compatibility, ReplayOpen);
-                    current = current with { Save = migrated };
-                }
-
-                Game game = SessionReplay.Verify(current.Save, compatibility, ReplayOpen);
-                authority.ValidateForRestore(current, game);
-
-                if (migration)
-                {
-                    // Publish only after replay and every authority have verified, and
-                    // only make the session available after schema 3 is durable.
-                    selectedGeneration = store.Commit(current);
-                    saveCommitted = true;
-                }
-
-                restoring = authority.PublishRestored(current, game);
-
-                elapsed.Stop();
-                log.Write(
-                    OperationalEventIds.SessionRestored,
-                    "accepted",
-                    elapsed.ElapsedMilliseconds,
-                    gameId: current.Save.Session.Label,
-                    revision: current.Save.Revision,
-                    saveCommitted: saveCommitted,
-                    replayVerified: true,
-                    saveGeneration: selectedGeneration,
-                    stage: saveCommitted ? "migration" : "restore");
-            }
-            catch (Exception failure)
-            {
-                if (restoring is not null)
-                {
-                    authority.Remove(restoring);
-                }
-
-                elapsed.Stop();
-                log.Write(
-                    OperationalEventIds.SessionRestoreFailed,
-                    "rejected",
-                    elapsed.ElapsedMilliseconds,
-                    gameId: stored.Save.Session.Label,
-                    revision: stored.Save.Revision,
-                    saveCommitted: saveCommitted,
-                    replayDiverged: failure is ReplayDivergenceException,
-                    saveGeneration: selectedGeneration,
-                    stage: "quarantine",
-                    errorCode: failure switch
-                    {
-                        ReplayDivergenceException => "replay_diverged",
-                        SessionCompatibilityException mismatch => mismatch.Category,
-                        _ => "restore_failed",
-                    });
-            }
-        }
-    }
-
-    private SessionSave Stamp(SessionSave save) => save with
-    {
-        Compatibility = compatibility,
-    };
-
-    private ReplayOpenedGame ReplayOpen(SessionSetup setup)
-    {
-        OpenedGame opened = factory.Create(new GameSpecification(
-            setup.Scenario, setup.Heroes, setup.ModularSets, setup.Seed));
-        return new ReplayOpenedGame(opened.Game, opened.SetupEvents);
-    }
-
-    private static string NewStorageId() =>
-        Convert.ToHexString(RandomNumberGenerator.GetBytes(16)).ToLowerInvariant();
-
-    private static SessionSetup ToSessionSetup(GameSpecification setup) =>
-        new(setup.Scenario, [.. setup.Heroes],
-            setup.ModularSets is null ? null : [.. setup.ModularSets], setup.Seed);
-
-    private static SessionSave Append(
-        SessionSave save,
-        JournalStep step,
-        bool startsUnit,
-        bool completesUnit,
-        string role,
-        int actor,
-        int active,
-        int round,
-        string phase,
-        Prompt? currentPrompt,
-        IReadOnlyList<InformationExposure> exposures)
-    {
-        var units = save.Units.Take(save.Cursor).Select(unit => unit with
-        {
-            Decisions = [.. unit.Decisions],
-        }).ToList();
-        if (startsUnit)
-        {
-            units.Add(new JournalUnit(
-                role,
-                completesUnit ? "complete" : "open",
-                actor,
-                active,
-                round,
-                phase,
-                [step],
-                exposures));
-        }
-        else
-        {
-            if (units.Count == 0 || units[^1].Status != "open")
-            {
-                throw new ReplayDivergenceException(
-                    "a dependent decision has no open history unit");
-            }
-
-            JournalUnit open = units[^1];
-            units[^1] = open with
-            {
-                Status = completesUnit ? "complete" : "open",
-                Decisions = [.. open.Decisions, step],
-                Exposures = InformationFrontier.Merge(open.Exposures, exposures),
-            };
-        }
-
-        if (currentPrompt is null)
-        {
-            units[^1] = units[^1] with { Role = "terminal", Status = "complete" };
-        }
-
-        return save with
-        {
-            Revision = save.Revision + 1,
-            Cursor = units.Count,
-            EditFrontier = exposures.Count > 0 ? units.Count : save.EditFrontier,
-            CurrentPrompt = currentPrompt is null ? null : PromptRecord.From(currentPrompt),
-            Units = units,
-        };
-    }
-
-    private static SessionCompatibility TestCompatibility() => new(
-        Application: "test",
-        ReplayContract: EngineBuildIdentity.ReplayContract,
-        RngContract: "mt19937-iso-cxx",
-        StateDigest: "state-digest-v2",
-        CardsSha256: new string('0', 64),
-        SetupSha256: new string('0', 64),
-        AbilitiesSha256: new string('0', 64));
-
-    private static EngineResponse Failed(
-        EngineRequest request, string code, string message) =>
-        new(
-            EngineProtocol.Version,
-            Bounded(request.RequestId, EngineProtocol.MaximumIdentifierLength),
-            Bounded(request.GameId, EngineProtocol.MaximumIdentifierLength),
-            Capability: null,
-            Prompt: null,
-            Events: [],
-            World: null,
-            Error: new EngineError(
-                Bounded(code, EngineProtocol.MaximumIdentifierLength),
-                Bounded(message, EngineProtocol.MaximumErrorLength)));
-
-    private static string Bounded(string? value, int maximum) => value switch
-    {
-        null => string.Empty,
-        { Length: var length } when length <= maximum => value,
-        _ => value[..maximum],
-    };
 
 }

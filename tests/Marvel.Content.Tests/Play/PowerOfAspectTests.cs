@@ -34,7 +34,7 @@ public sealed class PowerOfAspectTests
         Assert.Equal("GG", abilities.ResourcesGeneratedBy(world, source, matching));
         Assert.Equal("G", abilities.ResourcesGeneratedBy(world, source, basic));
 
-        var advertised = CardPlay.Generators(world, Cards, seat, matching)
+        var advertised = CardPayment.Generators(world, Cards, seat, matching)
             .Single(option => option.Effect == source.ObjectId);
         Assert.Equal("GG", advertised.Generates);
     }

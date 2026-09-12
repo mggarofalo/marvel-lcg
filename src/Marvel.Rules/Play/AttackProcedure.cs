@@ -14,67 +14,97 @@ internal static class AttackProcedure
     public static Prompt? Apply(
         World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
     {
+        if (TryApplyActivation(world, facts, step, events, out Prompt? prompt)) return prompt;
+        if (TryApplyDamage(world, facts, step, events, out prompt)) return prompt;
+        if (TryApplyCharacterPower(world, facts, step, events)) return null;
+        throw new RulesNotImplementedException(
+            $"the attack procedure has no step '{step.What}'");
+    }
+
+    private static bool TryApplyActivation(
+        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events,
+        out Prompt? prompt)
+    {
+        prompt = null;
         switch (step.What)
         {
             case Steps.CompleteAttackActivation:
             case Steps.CompleteSchemeActivation:
                 CompleteActivation(world, world.ActivationCompletionAbilities, step, events);
-                break;
+                return true;
             case Steps.Attack:
                 Attack.Initiate(world, facts, step, events);
-                break;
+                return true;
             case Steps.GiveBoostCard:
                 Attack.GiveBoostCard(world, facts, events);
-                break;
+                return true;
             case Steps.DeclareDefender:
-                return Attack.DeclareDefender(world, facts, world.AttackAbilities);
+                prompt = Attack.DeclareDefender(world, facts, world.AttackAbilities);
+                return true;
             case Steps.FlipBoostCards:
                 Attack.FlipBoostCards(world, facts, world.AttackAbilities, events);
-                break;
+                return true;
             case Steps.FinishBoostCard:
                 Attack.FinishBoostCard(world, facts, world.AttackAbilities, step, events);
-                break;
+                return true;
             case Steps.CalculateAttackDamage:
                 Attack.CalculateDamage(world, facts);
-                break;
+                return true;
+            default: return false;
+        }
+    }
+
+    private static bool TryApplyDamage(
+        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events,
+        out Prompt? prompt)
+    {
+        prompt = null;
+        switch (step.What)
+        {
             case Steps.DealAttackDamage:
                 Attack.DealDamage(world, facts, events);
-                break;
+                return true;
             case Steps.AssignIndirectAttackDamage:
-                return Attack.IndirectDamagePrompt(world, facts, step);
+                prompt = Attack.IndirectDamagePrompt(world, facts, step);
+                return true;
             case Steps.PrepareIndirectAttackDamage:
-                break;
+                return true;
             case Steps.ApplyIndirectAttackDamage:
                 Attack.ApplyIndirectDamage(world, facts, step, events);
-                break;
+                return true;
             case Steps.FinishIndirectAttackDamage:
                 Attack.FinishIndirectDamage(world, facts, step, events);
-                break;
+                return true;
             case Steps.NextAttackTarget:
                 Attack.NextTarget(world, step.Seat);
-                break;
+                return true;
+            case Steps.EndAttack:
+                Attack.End(world, events);
+                return true;
+            case Steps.FinishAttackDamage:
+                DamageAttacks.FinishAttack(world, facts, step, events);
+                return true;
+            default: return false;
+        }
+    }
+
+    private static bool TryApplyCharacterPower(
+        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
+    {
+        switch (step.What)
+        {
             case Steps.CharacterAttacks:
-                BasicPowers.ResolveCharacterAttack(world, facts, events, step.CharacterAttack);
-                break;
+                BasicPowerResolution.ResolveCharacterAttack(world, facts, events, step.CharacterAttack);
+                return true;
             case Steps.CharacterThwarts:
-                BasicPowers.ResolveCharacterThwart(world, facts, events, step.CharacterThwart);
-                break;
+                BasicPowerResolution.ResolveCharacterThwart(world, facts, events, step.CharacterThwart);
+                return true;
             case Steps.AllyConsequentialDamage:
             case Steps.AllyThwartConsequentialDamage:
                 AllyConsequentialDamage(world, facts, step, events);
-                break;
-            case Steps.EndAttack:
-                Attack.End(world, events);
-                break;
-            case Steps.FinishAttackDamage:
-                Damage.FinishAttack(world, facts, step, events);
-                break;
-            default:
-                throw new RulesNotImplementedException(
-                    $"the attack procedure has no step '{step.What}'");
+                return true;
+            default: return false;
         }
-
-        return null;
     }
 
     public static void Answer(
@@ -118,11 +148,11 @@ internal static class AttackProcedure
         bool attacked = string.Equals(
             step.What, Steps.AllyConsequentialDamage, StringComparison.Ordinal);
 
-        BasicPowers.Consequential(
+        BasicPowerResolution.Consequential(
             world,
             facts,
             world.Cards[step.Subject],
-            byAttack: attacked || BasicPowers.Assaulted(world, facts, world.Cards[step.Character]),
+            byAttack: attacked || BasicPowerStatus.Assaulted(world, facts, world.Cards[step.Character]),
             attacked ? BasicPowers.AttackVerb : BasicPowers.ThwartVerb,
             events);
     }

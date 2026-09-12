@@ -42,7 +42,7 @@ public sealed class FacedownDroneTests
         Assert.Equal([FacedownDrones.Trait], Traits.Of(world, drone, facts));
         Assert.Equal(1, FacedownDrones.BaseValue(drone, facts, "SCH", world.Players));
         Assert.Equal(1, StateFields.Modified(world, drone, "attack", facts, world.Players));
-        Assert.Equal(1, Damage.Health(world, facts, drone));
+        Assert.Equal(1, DamagePlacement.Health(world, facts, drone));
         Assert.False(Keywords.IsBoosted(world, drone, facts, world.Players));
         Assert.Contains(drone, BasicPowers.Attackable(world, facts, 1));
 
@@ -75,7 +75,7 @@ public sealed class FacedownDroneTests
             FacedownDrones.EngageTop(world, 0, "01140", "Create_Drone", events));
         Agendas.Happening(world);
 
-        bool defeated = Damage.Deal(
+        bool defeated = DamagePlacement.Deal(
             world, facts, drone, drone, 1, "test", "Deal_Damage", events);
         var resolved = new Resolution(world, Prompt: null, Events: []);
 

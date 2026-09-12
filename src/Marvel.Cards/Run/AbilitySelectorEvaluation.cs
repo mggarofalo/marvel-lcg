@@ -36,9 +36,12 @@ internal sealed class AbilitySelectorEvaluation(
                     $"'{context.Source.FaceId}' refers to {found.Count} cards titled '{titled.Title}' where one card is required"),
             };
         }
-        if (selector is AbilityCardSelection.Query { Kind:
+        if (selector is AbilityCardSelection.Query
+            {
+                Kind:
             AbilityCardQuery.Villain or AbilityCardQuery.MainScheme or AbilityCardQuery.YourAsideMinion
-            or AbilityCardQuery.YourAsideSideScheme or AbilityCardQuery.TopmostTechInChosenDiscard } query)
+            or AbilityCardQuery.YourAsideSideScheme or AbilityCardQuery.TopmostTechInChosenDiscard
+            } query)
             return AbilityCardQueries.Cards(query.Kind, context).SingleOrDefault();
         if (selector is AbilityCardSelection.InAreas areas)
         {

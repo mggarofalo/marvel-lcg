@@ -128,45 +128,43 @@ internal static class SimulationRecordFiles
         byte idTwo = ReadHeaderByte(input, checksum);
         byte compressionMethod = ReadHeaderByte(input, checksum);
         byte flags = ReadHeaderByte(input, checksum);
-        if (idOne != GzipIdOne || idTwo != GzipIdTwo || compressionMethod != 8
-            || (flags & 0xe0) != 0)
-        {
-            throw new InvalidDataException("gzip member header is invalid");
-        }
+        ValidateHeaderIdentity(idOne, idTwo, compressionMethod, flags);
 
         for (int index = 0; index < 6; index++)
         {
             _ = ReadHeaderByte(input, checksum);
         }
 
-        if ((flags & 0x04) != 0)
-        {
-            int extraLength = ReadHeaderByte(input, checksum)
-                | ReadHeaderByte(input, checksum) << 8;
-            for (int index = 0; index < extraLength; index++)
-            {
-                _ = ReadHeaderByte(input, checksum);
-            }
-        }
+        ReadOptionalHeaderFields(input, checksum, flags);
+    }
 
-        if ((flags & 0x08) != 0)
-        {
-            ReadNullTerminated(input, checksum);
-        }
+    private static void ValidateHeaderIdentity(
+        byte idOne, byte idTwo, byte compressionMethod, byte flags)
+    {
+        if (idOne != GzipIdOne || idTwo != GzipIdTwo || compressionMethod != 8
+            || (flags & 0xe0) != 0)
+            throw new InvalidDataException("gzip member header is invalid");
+    }
 
-        if ((flags & 0x10) != 0)
-        {
-            ReadNullTerminated(input, checksum);
-        }
+    private static void ReadOptionalHeaderFields(Stream input, Crc32 checksum, byte flags)
+    {
+        if ((flags & 0x04) != 0) ReadExtraField(input, checksum);
+        if ((flags & 0x08) != 0) ReadNullTerminated(input, checksum);
+        if ((flags & 0x10) != 0) ReadNullTerminated(input, checksum);
+        if ((flags & 0x02) != 0) ValidateHeaderChecksum(input, checksum);
+    }
 
-        if ((flags & 0x02) != 0)
-        {
-            int expected = ReadRequiredByte(input) | ReadRequiredByte(input) << 8;
-            if ((checksum.Value & 0xffff) != expected)
-            {
-                throw new InvalidDataException("gzip member header checksum is invalid");
-            }
-        }
+    private static void ReadExtraField(Stream input, Crc32 checksum)
+    {
+        int length = ReadHeaderByte(input, checksum) | ReadHeaderByte(input, checksum) << 8;
+        for (int index = 0; index < length; index++) _ = ReadHeaderByte(input, checksum);
+    }
+
+    private static void ValidateHeaderChecksum(Stream input, Crc32 checksum)
+    {
+        int expected = ReadRequiredByte(input) | ReadRequiredByte(input) << 8;
+        if ((checksum.Value & 0xffff) != expected)
+            throw new InvalidDataException("gzip member header checksum is invalid");
     }
 
     private static byte ReadHeaderByte(Stream input, Crc32 checksum)

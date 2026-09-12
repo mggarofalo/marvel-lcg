@@ -254,88 +254,80 @@ internal static class Program
     {
         public static ServerOptions Parse(string[] args)
         {
-            IPAddress address = IPAddress.Loopback;
-            int port = DefaultPort;
-            string dataRoot = Environment.CurrentDirectory;
-            string saveRoot = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "MarvelLCG",
-                "sessions");
-            string visibility = "cooperative";
-            int? seat = null;
-            Uri? telemetryEndpoint = null;
-            string? diagnosticsRoot = null;
-
+            var state = new ServerOptionState();
             for (int index = 0; index < args.Length; index++)
             {
-                switch (args[index])
+                state.Apply(args[index], args, ref index);
+            }
+            return state.Options();
+        }
+
+        private sealed class ServerOptionState
+        {
+            private IPAddress address = IPAddress.Loopback;
+            private int port = DefaultPort;
+            private string dataRoot = Environment.CurrentDirectory;
+            private string saveRoot = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "MarvelLCG", "sessions");
+            private string visibility = "cooperative";
+            private int? seat;
+            private Uri? telemetryEndpoint;
+            private string? diagnosticsRoot;
+
+            internal void Apply(string option, string[] args, ref int index)
+            {
+                switch (option)
                 {
-                    case "--listen":
-                        string printed = Value(args, ref index, "--listen");
-                        address = TryAddress(printed, out IPAddress? parsed)
-                            ? parsed
-                            : throw new ArgumentException(
-                                $"--listen requires an IP address, got '{printed}'");
-                        break;
-                    case "--port":
-                        string number = Value(args, ref index, "--port");
-                        port = int.TryParse(
-                            number, NumberStyles.None, CultureInfo.InvariantCulture,
-                            out int parsedPort)
-                            && parsedPort is > 0 and <= ushort.MaxValue
-                                ? parsedPort
-                                : throw new ArgumentException(
-                                    "--port requires an integer from 1 to 65535");
-                        break;
-                    case "--data-root":
-                        dataRoot = Value(args, ref index, "--data-root");
-                        break;
-                    case "--save-root":
-                        saveRoot = Value(args, ref index, "--save-root");
-                        break;
-                    case "--visibility":
-                        visibility = Value(args, ref index, "--visibility");
-                        break;
-                    case "--seat":
-                        string seatNumber = Value(args, ref index, "--seat");
-                        seat = int.TryParse(
-                            seatNumber, NumberStyles.None, CultureInfo.InvariantCulture,
-                            out int parsedSeat)
-                            && parsedSeat >= 0
-                            ? parsedSeat
-                            : throw new ArgumentException(
-                                "--seat requires a non-negative integer");
-                        break;
+                    case "--listen": address = ParseAddress(Value(args, ref index, option)); break;
+                    case "--port": port = ParsePort(Value(args, ref index, option)); break;
+                    case "--data-root": dataRoot = Value(args, ref index, option); break;
+                    case "--save-root": saveRoot = Value(args, ref index, option); break;
+                    case "--visibility": visibility = Value(args, ref index, option); break;
+                    case "--seat": seat = ParseSeat(Value(args, ref index, option)); break;
                     case "--telemetry-endpoint":
-                        string endpoint = Value(args, ref index, "--telemetry-endpoint");
-                        telemetryEndpoint = TryTelemetryEndpoint(endpoint, out Uri? parsedEndpoint)
-                            ? parsedEndpoint
-                            : throw new ArgumentException(
-                                "--telemetry-endpoint requires HTTPS or loopback HTTP");
-                        break;
-                    case "--diagnostics-root":
-                        diagnosticsRoot = Value(args, ref index, "--diagnostics-root");
-                        break;
-                    default:
-                        throw new ArgumentException($"unknown option '{args[index]}'");
+                        telemetryEndpoint = ParseTelemetry(Value(args, ref index, option)); break;
+                    case "--diagnostics-root": diagnosticsRoot = Value(args, ref index, option); break;
+                    default: throw new ArgumentException($"unknown option '{option}'");
                 }
             }
 
-            IVisibilityPolicy policy = visibility switch
-            {
-                "cooperative" when seat is null => new PermissiveVisibilityPolicy(),
-                "restricted" when seat is int authorized =>
-                    new RestrictedVisibilityPolicy(authorized),
-                "restricted" => throw new ArgumentException(
-                    "--visibility restricted requires --seat"),
-                "cooperative" => throw new ArgumentException(
-                    "--seat is only valid with --visibility restricted"),
-                _ => throw new ArgumentException(
-                    "--visibility must be cooperative or restricted"),
-            };
-            return new ServerOptions(
-                address, port, dataRoot, policy, saveRoot, telemetryEndpoint,
+            internal ServerOptions Options() => new(
+                address, port, dataRoot, Visibility(), saveRoot, telemetryEndpoint,
                 diagnosticsRoot);
+
+            private IVisibilityPolicy Visibility()
+            {
+                if (visibility == "cooperative" && seat is null)
+                    return new PermissiveVisibilityPolicy();
+                if (visibility == "restricted" && seat is int authorized)
+                    return new RestrictedVisibilityPolicy(authorized);
+                if (visibility == "restricted")
+                    throw new ArgumentException("--visibility restricted requires --seat");
+                if (visibility == "cooperative")
+                    throw new ArgumentException("--seat is only valid with --visibility restricted");
+                throw new ArgumentException("--visibility must be cooperative or restricted");
+            }
+
+            private static IPAddress ParseAddress(string printed) =>
+                TryAddress(printed, out IPAddress? parsed) ? parsed
+                : throw new ArgumentException(
+                    $"--listen requires an IP address, got '{printed}'");
+
+            private static int ParsePort(string printed) =>
+                int.TryParse(printed, NumberStyles.None, CultureInfo.InvariantCulture,
+                    out int parsed) && parsed is > 0 and <= ushort.MaxValue ? parsed
+                : throw new ArgumentException("--port requires an integer from 1 to 65535");
+
+            private static int ParseSeat(string printed) =>
+                int.TryParse(printed, NumberStyles.None, CultureInfo.InvariantCulture,
+                    out int parsed) && parsed >= 0 ? parsed
+                : throw new ArgumentException("--seat requires a non-negative integer");
+
+            private static Uri ParseTelemetry(string printed) =>
+                TryTelemetryEndpoint(printed, out Uri? parsed) ? parsed!
+                : throw new ArgumentException(
+                    "--telemetry-endpoint requires HTTPS or loopback HTTP");
         }
 
         private static string Value(
@@ -404,43 +396,41 @@ internal static class Program
             string? diagnosticsRoot = null;
             for (int index = 0; index < args.Length; index++)
             {
-                string value = index + 1 < args.Length
-                    ? args[index + 1]
-                    : string.Empty;
-                switch (args[index])
+                string option = args[index];
+                string value = NextValue(args, ref index, option);
+                switch (option)
                 {
                     case "--export-incident":
-                        output = Required(value, args[index]);
-                        index++;
+                        output = value;
                         break;
                     case "--data-root":
-                        dataRoot = Required(value, args[index]);
-                        index++;
+                        dataRoot = value;
                         break;
                     case "--save-root":
-                        saveRoot = Required(value, args[index]);
-                        index++;
+                        saveRoot = value;
                         break;
                     case "--diagnostics-root":
-                        diagnosticsRoot = Required(value, args[index]);
-                        index++;
+                        diagnosticsRoot = value;
                         break;
                     default:
                         throw new ArgumentException("unsupported incident export option");
                 }
             }
 
-            return new IncidentExportOptions(
-                output ?? throw new ArgumentException("--export-incident is required"),
-                dataRoot,
-                saveRoot ?? throw new ArgumentException("--save-root is required"),
-                diagnosticsRoot
-                    ?? throw new ArgumentException("--diagnostics-root is required"));
+            return RequiredOptions(output, dataRoot, saveRoot, diagnosticsRoot);
         }
 
-        private static string Required(string value, string option) =>
-            string.IsNullOrWhiteSpace(value)
-                ? throw new ArgumentException($"{option} requires a value")
-                : value;
+        private static IncidentExportOptions RequiredOptions(
+            string? output, string dataRoot, string? saveRoot, string? diagnosticsRoot) =>
+            new(output ?? throw new ArgumentException("--export-incident is required"),
+                dataRoot, saveRoot ?? throw new ArgumentException("--save-root is required"),
+                diagnosticsRoot ?? throw new ArgumentException("--diagnostics-root is required"));
+
+        private static string NextValue(string[] args, ref int index, string option)
+        {
+            if (++index >= args.Length || string.IsNullOrWhiteSpace(args[index]))
+                throw new ArgumentException($"{option} requires a value");
+            return args[index];
+        }
     }
 }

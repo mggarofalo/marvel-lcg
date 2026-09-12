@@ -5,11 +5,9 @@ using Marvel.Rules.State;
 
 namespace Marvel.Session;
 
-/// <content>Visibility-safe history facts collected during verified replay.</content>
-public static partial class SessionReplay
+/// <summary>Visibility-safe history facts collected during verified replay.</summary>
+internal sealed class ReplayHistory
 {
-    private sealed class ReplayHistory
-    {
         private readonly List<string> resources = [];
         private readonly List<int> resourceIdsInOrder = [];
         private readonly HashSet<int> resourceIds = [];
@@ -119,5 +117,4 @@ public static partial class SessionReplay
                 ? Game.EndPhaseVerb
                 : selected?.Verb;
         }
-    }
 }

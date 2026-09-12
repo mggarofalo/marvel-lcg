@@ -57,53 +57,16 @@ public sealed record EliminationLayout(
         ArgumentOutOfRangeException.ThrowIfNegative(player);
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(player, read.Players);
 
-        int? next = null;
+        int? next = FindNextPlayer(read, player);
         // rr:player-elimination.step.1: "the next clockwise player"; .6:
         // "Effects that refer to the players in the game ignore eliminated players".
-        for (int offset = 1; offset < read.Players; offset++)
-        {
-            int candidate = (player + offset) % read.Players;
-            if (!read.IsEliminated(candidate))
-            {
-                next = candidate;
-                break;
-            }
-        }
-
         // This is a bounded topology read, not a cloned game state. Area and
         // pile order are the engine's deterministic order for moving siblings.
         var cards = read.Cards.Select(id => (Id: id, At: read.Placement(id))).ToArray();
         var placements = cards.ToDictionary(card => card.Id, card => card.At);
         var children = cards.ToLookup(card => card.At.Host, card => card.Id);
         var retained = new HashSet<int>();
-        var relocations = ImmutableArray.CreateBuilder<EliminationRelocation>();
-        if (next is not null)
-        {
-            foreach (var root in cards.Where(card =>
-                card.At.Engaged && card.At.PlayArea == PlayArea.Of(player)))
-            {
-                // rr:player-elimination.step.2: "retaining any tokens, attached
-                // cards, boost cards, tucked cards, and status cards on them".
-                var hosted = ImmutableArray.CreateBuilder<int>();
-                var seen = new HashSet<int> { root.Id };
-                var pending = new Stack<int>(children[root.Id].Reverse());
-                while (pending.TryPop(out int card))
-                {
-                    if (!seen.Add(card))
-                    {
-                        throw new RulesNotImplementedException(
-                            $"attachment {card} forms a hosting cycle");
-                    }
-                    hosted.Add(card);
-                    foreach (int child in children[card].Reverse())
-                    {
-                        pending.Push(child);
-                    }
-                }
-                retained.UnionWith(seen);
-                relocations.Add(new EliminationRelocation(root.Id, hosted.ToImmutable()));
-            }
-        }
+        var relocations = BuildRelocations(cards, children, player, next, retained);
 
         // An area whose host belongs to another play area is not part of this
         // player's departure. Overlay readers supply projected locations here,
@@ -115,20 +78,60 @@ public sealed record EliminationLayout(
                     || placements.TryGetValue(card.At.Host, out var host)
                         && host.PlayArea == PlayArea.Of(player)))
             .Select(card => card.Id).ToImmutableArray();
-        foreach (int card in leaving)
+        ValidateLeaving(read, leaving);
+        return new EliminationLayout(next, relocations.ToImmutable(), leaving);
+    }
+
+    private static int? FindNextPlayer(IEliminationLayout read, int player)
+    {
+        for (int offset = 1; offset < read.Players; offset++)
         {
-            // rr:player-elimination.1: "resolve its 'attach to' text".
-            // That procedure is unsupported. Retained attachments never reach
-            // this boundary because step 2 moves them without a departure.
+            int candidate = (player + offset) % read.Players;
+            if (!read.IsEliminated(candidate)) return candidate;
+        }
+        return null;
+    }
+
+    private static ImmutableArray<EliminationRelocation>.Builder BuildRelocations(
+        (int Id, EliminationPlacement At)[] cards, ILookup<int, int> children,
+        int player, int? next, HashSet<int> retained)
+    {
+        var result = ImmutableArray.CreateBuilder<EliminationRelocation>();
+        if (next is null) return result;
+        foreach (var root in cards.Where(card =>
+            card.At.Engaged && card.At.PlayArea == PlayArea.Of(player)))
+        {
+            var hosted = Hosted(children, root.Id, out HashSet<int> seen);
+            retained.UnionWith(seen);
+            result.Add(new EliminationRelocation(root.Id, hosted));
+        }
+        return result;
+    }
+
+    private static ImmutableArray<int> Hosted(
+        ILookup<int, int> children, int root, out HashSet<int> seen)
+    {
+        var hosted = ImmutableArray.CreateBuilder<int>();
+        seen = [root];
+        var pending = new Stack<int>(children[root].Reverse());
+        while (pending.TryPop(out int card))
+        {
+            if (!seen.Add(card))
+                throw new RulesNotImplementedException($"attachment {card} forms a hosting cycle");
+            hosted.Add(card);
+            foreach (int child in children[card].Reverse()) pending.Push(child);
+        }
+        return hosted.ToImmutable();
+    }
+
+    private static void ValidateLeaving(IEliminationLayout read, ImmutableArray<int> leaving)
+    {
+        foreach (int card in leaving)
             if (read.RequiresAttachTo(card))
-            {
                 throw new RulesNotImplementedException(
                     $"card {card} is a permanent attachment on an eliminated "
                     + "player's board, and rr:player-elimination.1 resolves its "
                     + "'attach to' text, which is not modelled");
-            }
-        }
-        return new EliminationLayout(next, relocations.ToImmutable(), leaving);
     }
 }
 

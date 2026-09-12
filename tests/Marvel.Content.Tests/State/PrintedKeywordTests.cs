@@ -97,7 +97,7 @@ public sealed class PrintedKeywordTests
             {
                 string pascal = Pascal(field);
                 if (PrintedAttributes.Contains(pascal)
-                    && !StateFields.FilledFrom.ContainsKey(field))
+                    && !StateFieldCatalog.FilledFrom.ContainsKey(field))
                 {
                     missing.Add($"{field} <- {pascal}");
                 }
@@ -113,7 +113,7 @@ public sealed class PrintedKeywordTests
         // The other direction. A mapping naming an attribute no card prints is
         // dead weight that reads zero and looks implemented, which is the state
         // this whole file exists to end.
-        var unprinted = StateFields.FilledFrom.Values
+        var unprinted = StateFieldCatalog.FilledFrom.Values
             .Where(attribute => !PrintedAttributes.Contains(attribute))
             .Order(StringComparer.Ordinal);
 
@@ -141,7 +141,7 @@ public sealed class PrintedKeywordTests
             }
 
             if (element.TryGetProperty("text_plain", out var text)
-                && CardCatalog.FormOf(text.GetString()) is { } written)
+                && CardCatalogJson.FormOf(text.GetString()) is { } written)
             {
                 byText.Add($"{id}={written}");
             }

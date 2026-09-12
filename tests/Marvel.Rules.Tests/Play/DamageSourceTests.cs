@@ -26,7 +26,7 @@ public sealed partial class DamageSourceTests
         var abilities = new Prohibition(source);
         world.Abilities = abilities;
 
-        bool defeated = Damage.Deal(
+        bool defeated = DamagePlacement.Deal(
             world, facts, source, target, 3, "test", "Deal_Damage", []);
 
         Assert.False(defeated);
@@ -48,7 +48,7 @@ public sealed partial class DamageSourceTests
         var abilities = new Prohibition(null);
         world.Abilities = abilities;
 
-        Damage.Deal(world, facts, source, target, 1, "test", "Deal_Damage", []);
+        DamagePlacement.Deal(world, facts, source, target, 1, "test", "Deal_Damage", []);
 
         Assert.Same(source, abilities.ReplacementSource);
     }
@@ -72,7 +72,7 @@ public sealed partial class DamageSourceTests
         var abilities = new DamageModifier();
         world.Abilities = abilities;
 
-        Damage.Deal(world, facts, source, target, 3, "test", "Deal_Damage", []);
+        DamagePlacement.Deal(world, facts, source, target, 3, "test", "Deal_Damage", []);
 
         Assert.Equal(5, abilities.AmountThatWouldBeTaken);
         Assert.Equal(4, target.Damage);
@@ -96,7 +96,7 @@ public sealed partial class DamageSourceTests
             "retaliator", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         world.Abilities = new Prohibition(source);
 
-        Damage.Attack(
+        DamageAttacks.Attack(
             world, facts, attacker, source, target, 3, "test", "Attack", []);
 
         Assert.Equal(0, target.Damage);

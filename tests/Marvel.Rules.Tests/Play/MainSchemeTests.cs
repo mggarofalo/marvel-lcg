@@ -240,7 +240,7 @@ public sealed class MainSchemeTests
         Assert.Equal(3, scheme.Tokens["k_threat"]);
 
         world.Seats[0].IdentityCard.TurnTo("hero");
-        BasicPowers.BasicThwart(world, printed, 0, side, []);
+        BasicThwartPowers.BasicThwart(world, printed, 0, side, []);
         Agendas.Finish(world, printed);
         Assert.Equal(DeckType.EncounterDiscardPile, side.Area.Type);
         Assert.Equal(1, scheme.Tokens[EncounterDeck.AccelerationToken]);

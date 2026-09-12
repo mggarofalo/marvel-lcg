@@ -1,12 +1,20 @@
+using static Marvel.Cards.Dsl.AbilityLowering;
+using static Marvel.Cards.Dsl.AbilityBookLowering;
+using static Marvel.Cards.Dsl.AbilityConditionLowering;
+using static Marvel.Cards.Dsl.AbilityCostLowering;
+using static Marvel.Cards.Dsl.AbilityEffectLowering;
+using static Marvel.Cards.Dsl.AbilityModifierLowering;
+using static Marvel.Cards.Dsl.AbilityProcedureLowering;
+using static Marvel.Cards.Dsl.AbilitySelectorLowering;
 using System.Collections.Immutable;
 using Marvel.Rules.State;
 
 namespace Marvel.Cards.Dsl;
 
-public static partial class AbilityLowering
+internal static class AbilityEffectLowering
 {
     /// <summary>Lowers an effect and validates nested branches without executing them.</summary>
-    public static AbilityEffect Effect(AbilityValue value, AbilityLocation location)
+    internal static AbilityEffect LowerEffect(AbilityValue value, AbilityLocation location)
     {
         ArgumentNullException.ThrowIfNull(value);
         ArgumentNullException.ThrowIfNull(location);
@@ -50,7 +58,7 @@ public static partial class AbilityLowering
             "changeForm" => FormEffect(argument, child),
             "draw" => DrawEffect(argument, child),
             "drawToHandSize" or "drawToPrintedHandSize" => new AbilityEffect.DrawToHandSize(
-                Player(argument, child), node.Kind == "drawToPrintedHandSize"),
+                LowerPlayer(argument, child), node.Kind == "drawToPrintedHandSize"),
             "placeThreat" => PlaceThreatEffect(argument, child),
             "removeThreat" => RemoveThreatEffect(argument, child),
             "preventThreat" => new AbilityEffect.PreventThreat(Number(argument, child)),
@@ -100,7 +108,7 @@ public static partial class AbilityLowering
         };
     }
 
-    private static ImmutableArray<AbilityEffect> Effects(AbilityValue value, AbilityLocation location)
+    internal static ImmutableArray<AbilityEffect> Effects(AbilityValue value, AbilityLocation location)
     {
         if (value is not AbilityValue.List list)
         {
@@ -109,51 +117,51 @@ public static partial class AbilityLowering
         var builder = ImmutableArray.CreateBuilder<AbilityEffect>(list.Values.Count);
         for (int index = 0; index < list.Values.Count; index++)
         {
-            builder.Add(Effect(list.Values[index], location.Item(index)));
+            builder.Add(LowerEffect(list.Values[index], location.Item(index)));
         }
         return builder.MoveToImmutable();
     }
 
-    private static AbilityEffect OnlyEffect(AbilityValue value, AbilityLocation location)
+    internal static AbilityEffect OnlyEffect(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "effect");
-        return Effect(Required(fields, "effect", location), location.Child("effect"));
+        return LowerEffect(Required(fields, "effect", location), location.Child("effect"));
     }
 
-    private static AbilityEffect.Conditional ConditionalEffect(AbilityValue value, AbilityLocation location)
+    internal static AbilityEffect.Conditional ConditionalEffect(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "test", "then", "else");
-        return new(Condition(Required(fields, "test", location), location.Child("test")),
+        return new(LowerCondition(Required(fields, "test", location), location.Child("test")),
             OptionalEffect(fields, "then", location), OptionalEffect(fields, "else", location));
     }
 
-    private static AbilityEffect? OptionalEffect(
+    internal static AbilityEffect? OptionalEffect(
         IReadOnlyDictionary<string, AbilityValue> fields, string name, AbilityLocation location) =>
-        fields.TryGetValue(name, out var value) ? Effect(value, location.Child(name)) : null;
+        fields.TryGetValue(name, out var value) ? LowerEffect(value, location.Child(name)) : null;
 
-    private static AbilityEffect.Dependent DependentEffect(AbilityValue value, AbilityLocation location, string kind)
+    internal static AbilityEffect.Dependent DependentEffect(AbilityValue value, AbilityLocation location, string kind)
     {
         var fields = Fields(value, location, "effect", kind);
-        return new(Effect(Required(fields, "effect", location), location.Child("effect")),
-            Effect(Required(fields, kind, location), location.Child(kind)), kind == "then");
+        return new(LowerEffect(Required(fields, "effect", location), location.Child("effect")),
+            LowerEffect(Required(fields, kind, location), location.Child(kind)), kind == "then");
     }
 
-    private static AbilityEffect.ForEach RepeatedEffect(AbilityValue value, AbilityLocation location)
+    internal static AbilityEffect.ForEach RepeatedEffect(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "count", "effect");
         return new(Number(Required(fields, "count", location), location.Child("count")),
-            Effect(Required(fields, "effect", location), location.Child("effect")));
+            LowerEffect(Required(fields, "effect", location), location.Child("effect")));
     }
 
-    private static AbilityEffect.EachTime EachTimeEffect(AbilityValue value, AbilityLocation location)
+    internal static AbilityEffect.EachTime EachTimeEffect(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "effect", "when", "then");
-        return new(Effect(Required(fields, "effect", location), location.Child("effect")),
-            Condition(Required(fields, "when", location), location.Child("when")),
-            Effect(Required(fields, "then", location), location.Child("then")));
+        return new(LowerEffect(Required(fields, "effect", location), location.Child("effect")),
+            LowerCondition(Required(fields, "when", location), location.Child("when")),
+            LowerEffect(Required(fields, "then", location), location.Child("then")));
     }
 
-    private static AbilityEffect.Choose ChooseEffect(AbilityValue value, AbilityLocation location)
+    internal static AbilityEffect.Choose ChooseEffect(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "options", "descriptions");
         var options = Effects(Required(fields, "options", location), location.Child("options"));
@@ -173,67 +181,67 @@ public static partial class AbilityLowering
         return new(options, descriptions);
     }
 
-    private static AbilityEffect.ChooseCard ChooseCardEffect(AbilityValue value, AbilityLocation location)
+    internal static AbilityEffect.ChooseCard ChooseCardEffect(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "from", "effect");
         return new(Selected(fields, "from", location),
-            Effect(Required(fields, "effect", location), location.Child("effect")));
+            LowerEffect(Required(fields, "effect", location), location.Child("effect")));
     }
 
-    private static AbilityEffect.CardAction CardInstruction(
-        AbilityValue value, AbilityLocation location, AbilityCardInstruction instruction) => new(instruction, Cards(value, location));
+    internal static AbilityEffect.CardAction CardInstruction(
+        AbilityValue value, AbilityLocation location, AbilityCardInstruction instruction) => new(instruction, SelectCards(value, location));
 
-    private static AbilityEffect.CardAction FieldCardInstruction(
+    internal static AbilityEffect.CardAction FieldCardInstruction(
         AbilityValue value, AbilityLocation location, string field, AbilityCardInstruction instruction)
     {
         var fields = Fields(value, location, field);
         return new(instruction, Selected(fields, field, location));
     }
 
-    private static AbilityEffect.CardAction DiscardEffect(AbilityValue value, AbilityLocation location) =>
+    internal static AbilityEffect.CardAction DiscardEffect(AbilityValue value, AbilityLocation location) =>
         value is AbilityValue.Map map && map.Entries.ContainsKey("card")
             ? FieldCardInstruction(value, location, "card", AbilityCardInstruction.Discard)
             : CardInstruction(value, location, AbilityCardInstruction.Discard);
 
-    private static AbilityCardSelection Selected(
+    internal static AbilityCardSelection Selected(
         IReadOnlyDictionary<string, AbilityValue> fields, string name, AbilityLocation location) =>
-        Cards(Required(fields, name, location), location.Child(name));
+        SelectCards(Required(fields, name, location), location.Child(name));
 
-    private static AbilityNumber Numeric(
+    internal static AbilityNumber Numeric(
         IReadOnlyDictionary<string, AbilityValue> fields, string name, AbilityLocation location) =>
         Number(Required(fields, name, location), location.Child(name));
 
-    private static AbilityEffect.Heal HealEffect(AbilityValue value, AbilityLocation location)
+    internal static AbilityEffect.Heal HealEffect(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "card", "amount");
         return new(Selected(fields, "card", location), Numeric(fields, "amount", location));
     }
 
-    private static AbilityEffect.Damage DamageEffect(AbilityValue value, AbilityLocation location)
+    internal static AbilityEffect.Damage DamageEffect(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "cards", "amount", "attack");
         return new(Selected(fields, "cards", location), Numeric(fields, "amount", location), Marker(fields, "attack", location));
     }
 
-    private static AbilityEffect.AttackDamage AttackDamageEffect(AbilityValue value, AbilityLocation location)
+    internal static AbilityEffect.AttackDamage AttackDamageEffect(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "cards", "amount", "overkill");
         return new(Selected(fields, "cards", location), Numeric(fields, "amount", location), Marker(fields, "overkill", location));
     }
 
-    private static AbilityEffect.MoveDamage MoveDamageEffect(AbilityValue value, AbilityLocation location, bool attack)
+    internal static AbilityEffect.MoveDamage MoveDamageEffect(AbilityValue value, AbilityLocation location, bool attack)
     {
         var fields = Fields(value, location, "from", "to", "amount");
         return new(Selected(fields, "from", location), Selected(fields, "to", location), Numeric(fields, "amount", location), attack);
     }
 
-    private static AbilityEffect.IndirectDamage IndirectEffect(AbilityValue value, AbilityLocation location)
+    internal static AbilityEffect.IndirectDamage IndirectEffect(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "among", "amount");
         return new(Selected(fields, "among", location), Numeric(fields, "amount", location));
     }
 
-    private static AbilityEffect.GiveStatus StatusEffect(AbilityValue value, AbilityLocation location)
+    internal static AbilityEffect.GiveStatus StatusEffect(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "card", "status");
         string status = Text(Required(fields, "status", location), location.Child("status"));
@@ -244,7 +252,7 @@ public static partial class AbilityLowering
         return new(Selected(fields, "card", location), status);
     }
 
-    private static AbilityEffect.ChangeForm FormEffect(AbilityValue value, AbilityLocation location)
+    internal static AbilityEffect.ChangeForm FormEffect(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "player", "to");
         string form = Text(Required(fields, "to", location), location.Child("to"));
@@ -252,41 +260,41 @@ public static partial class AbilityLowering
         {
             throw location.Child("to").Error($"'{form}' is not a supported form");
         }
-        return new(Player(Required(fields, "player", location), location.Child("player")), form);
+        return new(LowerPlayer(Required(fields, "player", location), location.Child("player")), form);
     }
 
-    private static AbilityEffect.Draw DrawEffect(AbilityValue value, AbilityLocation location)
+    internal static AbilityEffect.Draw DrawEffect(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "player", "count");
         return new(Players(Required(fields, "player", location), location.Child("player")),
             NonnegativeCount(Required(fields, "count", location), location.Child("count")));
     }
 
-    private static AbilityPlayerSelection Players(AbilityValue value, AbilityLocation location) =>
+    internal static AbilityPlayerSelection Players(AbilityValue value, AbilityLocation location) =>
         value is AbilityValue.Word { Value: "each" } ? new AbilityPlayerSelection.AllPlayers()
-            : new AbilityPlayerSelection.OnePlayer(Player(value, location));
+            : new AbilityPlayerSelection.OnePlayer(LowerPlayer(value, location));
 
-    private static int NonnegativeCount(AbilityValue value, AbilityLocation location)
+    internal static int NonnegativeCount(AbilityValue value, AbilityLocation location)
     {
         long number = Integer(value, location);
         return number is >= 0 and <= int.MaxValue ? (int)number : throw location.Error("expected a nonnegative engine-sized count");
     }
 
-    private static AbilityEffect.PlaceThreat PlaceThreatEffect(AbilityValue value, AbilityLocation location)
+    internal static AbilityEffect.PlaceThreat PlaceThreatEffect(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "scheme", "amount");
         return new(Selected(fields, "scheme", location), Numeric(fields, "amount", location));
     }
 
-    private static AbilityEffect.RemoveThreat RemoveThreatEffect(AbilityValue value, AbilityLocation location)
+    internal static AbilityEffect.RemoveThreat RemoveThreatEffect(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "scheme", "amount", "ignoresCrisis", "overridesCannotFrom");
         return new(Selected(fields, "scheme", location), Numeric(fields, "amount", location),
             Boolean(fields, "ignoresCrisis", location),
-            fields.TryGetValue("overridesCannotFrom", out var source) ? Cards(source, location.Child("overridesCannotFrom")) : null);
+            fields.TryGetValue("overridesCannotFrom", out var source) ? SelectCards(source, location.Child("overridesCannotFrom")) : null);
     }
 
-    private static AbilityEffect.PreventDamage PreventDamageEffect(AbilityValue value, AbilityLocation location)
+    internal static AbilityEffect.PreventDamage PreventDamageEffect(AbilityValue value, AbilityLocation location)
     {
         if (value is AbilityValue.Word)
         {
@@ -298,7 +306,7 @@ public static partial class AbilityLowering
         return new(fields.ContainsKey("amount") ? Numeric(fields, "amount", location) : new AbilityNumber.Constant(long.MaxValue));
     }
 
-    private static bool Marker(IReadOnlyDictionary<string, AbilityValue> fields, string name, AbilityLocation location)
+    internal static bool Marker(IReadOnlyDictionary<string, AbilityValue> fields, string name, AbilityLocation location)
     {
         if (!fields.TryGetValue(name, out var value))
         {
@@ -311,7 +319,7 @@ public static partial class AbilityLowering
         return true;
     }
 
-    private static bool Boolean(IReadOnlyDictionary<string, AbilityValue> fields, string name, AbilityLocation location) =>
+    internal static bool Boolean(IReadOnlyDictionary<string, AbilityValue> fields, string name, AbilityLocation location) =>
         fields.TryGetValue(name, out var value) ? Text(value, location.Child(name)) switch
         {
             "true" => true,
@@ -319,14 +327,14 @@ public static partial class AbilityLowering
             _ => throw location.Child(name).Error("expected 'true' or 'false'"),
         } : false;
 
-    private static AbilityEffect.Fixed FixedEffect(
+    internal static AbilityEffect.Fixed FixedEffect(
         AbilityValue value, AbilityLocation location, string expected, AbilityFixedInstruction instruction)
     {
         FixedWord(value, location, expected);
         return new(instruction);
     }
 
-    private static AbilityEffect.Fixed FixedEffect(
+    internal static AbilityEffect.Fixed FixedEffect(
         AbilityValue value, AbilityLocation location, long expected, AbilityFixedInstruction instruction)
     {
         if (Integer(value, location) != expected)
@@ -336,10 +344,10 @@ public static partial class AbilityLowering
         return new(instruction);
     }
 
-    private static AbilityEffect.PayOrEffect PayAlternative(AbilityValue value, AbilityLocation location, bool exhaustOnly)
+    internal static AbilityEffect.PayOrEffect PayAlternative(AbilityValue value, AbilityLocation location, bool exhaustOnly)
     {
         var fields = Fields(value, location, "resources", "otherwise");
-        var otherwise = Effect(Required(fields, "otherwise", location), location.Child("otherwise"));
+        var otherwise = LowerEffect(Required(fields, "otherwise", location), location.Child("otherwise"));
         if (exhaustOnly && otherwise is not AbilityEffect.CardAction { Instruction: AbilityCardInstruction.Exhaust })
         {
             throw location.Child("otherwise").Error("payOrExhaust requires an exhaust alternative");

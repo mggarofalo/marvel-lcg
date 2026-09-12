@@ -126,49 +126,46 @@ public static class IncidentExporter
                      .OrderBy(path => path, StringComparer.Ordinal))
         {
             string storageId = Path.GetFileName(directory);
-            if (!ValidToken(storageId))
-            {
-                continue;
-            }
-
-            string manifest = Path.Combine(directory, "current");
-            string? selected = ReadManifest(manifest);
-            bool validSelection = selected is not null && ValidToken(selected);
-            string[] generations = Directory.GetFiles(directory, "*.session.json")
-                .Select(path => Path.GetFileName(path)[..^".session.json".Length])
-                .Concat(Directory.GetFiles(directory, "*.authority.json")
-                    .Select(path => Path.GetFileName(path)[..^".authority.json".Length]))
-                .Where(ValidToken)
-                .Distinct(StringComparer.Ordinal)
-                .OrderBy(value => value, StringComparer.Ordinal)
-                .ToArray();
-            foreach (string generation in generations)
-            {
-                string session = Path.Combine(directory, generation + ".session.json");
-                string authority = Path.Combine(directory, generation + ".authority.json");
-                bool complete = File.Exists(session) && File.Exists(authority);
-                result.Add(new IncidentSaveGeneration(
-                    storageId,
-                    generation,
-                    string.Equals(generation, selected, StringComparison.Ordinal),
-                    File.Exists(session) ? Hash(session) : null,
-                    File.Exists(authority) ? Hash(authority) : null,
-                    !complete ? "incomplete_generation" : null));
-            }
-
-            if (!validSelection || !generations.Contains(selected!, StringComparer.Ordinal))
-            {
-                result.Add(new IncidentSaveGeneration(
-                    storageId,
-                    validSelection ? selected! : "unknown",
-                    Selected: true,
-                    SessionSha256: null,
-                    AuthoritySha256: null,
-                    validSelection ? "incomplete_generation" : "invalid_manifest"));
-            }
+            if (ValidToken(storageId)) ReadSaveDirectory(directory, storageId, result);
         }
 
         return result;
+    }
+
+    private static void ReadSaveDirectory(
+        string directory, string storageId, List<IncidentSaveGeneration> result)
+    {
+        string? selected = ReadManifest(Path.Combine(directory, "current"));
+        bool validSelection = selected is not null && ValidToken(selected);
+        string[] generations = Generations(directory);
+        foreach (string generation in generations)
+            result.Add(ReadGeneration(directory, storageId, generation, selected));
+        if (validSelection && generations.Contains(selected!, StringComparer.Ordinal)) return;
+        result.Add(new IncidentSaveGeneration(
+            storageId, validSelection ? selected! : "unknown", true, null, null,
+            validSelection ? "incomplete_generation" : "invalid_manifest"));
+    }
+
+    private static string[] Generations(string directory) =>
+        Directory.GetFiles(directory, "*.session.json")
+            .Select(path => Path.GetFileName(path)[..^".session.json".Length])
+            .Concat(Directory.GetFiles(directory, "*.authority.json")
+                .Select(path => Path.GetFileName(path)[..^".authority.json".Length]))
+            .Where(ValidToken).Distinct(StringComparer.Ordinal)
+            .OrderBy(value => value, StringComparer.Ordinal).ToArray();
+
+    private static IncidentSaveGeneration ReadGeneration(
+        string directory, string storageId, string generation, string? selected)
+    {
+        string session = Path.Combine(directory, generation + ".session.json");
+        string authority = Path.Combine(directory, generation + ".authority.json");
+        bool hasSession = File.Exists(session);
+        bool hasAuthority = File.Exists(authority);
+        return new IncidentSaveGeneration(
+            storageId, generation,
+            string.Equals(generation, selected, StringComparison.Ordinal),
+            hasSession ? Hash(session) : null, hasAuthority ? Hash(authority) : null,
+            hasSession && hasAuthority ? null : "incomplete_generation");
     }
 
     private static bool ValidToken(string value) =>
@@ -188,39 +185,8 @@ public static class IncidentExporter
     private static IEnumerable<string?> ReadBoundedLines(string path)
     {
         using var reader = new StreamReader(path, detectEncodingFromByteOrderMarks: true);
-        var line = new System.Text.StringBuilder();
-        bool exceeded = false;
-        int character;
-        while ((character = reader.Read()) >= 0)
-        {
-            if (character == '\n')
-            {
-                if (!exceeded && line.Length > 0 && line[^1] == '\r')
-                {
-                    line.Length--;
-                }
-                yield return exceeded ? null : line.ToString();
-                line.Clear();
-                exceeded = false;
-            }
-            else if (!exceeded)
-            {
-                if (line.Length < MaximumDiagnosticLineCharacters)
-                {
-                    line.Append((char)character);
-                }
-                else
-                {
-                    exceeded = true;
-                    line.Clear();
-                }
-            }
-        }
-
-        if (exceeded || line.Length > 0)
-        {
-            yield return exceeded ? null : line.ToString();
-        }
+        var bounded = new BoundedLineReader(reader, MaximumDiagnosticLineCharacters);
+        while (bounded.Read(out string? line)) yield return line;
     }
 
     private static string Hash(string path)

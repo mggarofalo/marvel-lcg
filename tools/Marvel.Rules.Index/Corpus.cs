@@ -100,136 +100,82 @@ internal sealed class Corpus
     internal static Corpus Read(string indexPath, string graphPath, string rulingsPath)
     {
         var found = new Dictionary<string, Record>(StringComparer.Ordinal);
-
         using var index = JsonDocument.Parse(File.ReadAllBytes(indexPath));
         var root = index.RootElement;
+        ReadBase(root, found);
+        using var graph = JsonDocument.Parse(File.ReadAllBytes(graphPath));
+        if (graph.RootElement.GetProperty("version").GetInt32() != 2)
+            throw new InvalidDataException("rules-graph.json is not relationship schema version 2");
+        var authored = ReadEdges(graph.RootElement);
+        using var rulings = JsonDocument.Parse(File.ReadAllBytes(rulingsPath));
+        var published = ReadPublished(rulings.RootElement);
+        var modifications = ReadModifications(
+            graph.RootElement, published, found);
+        return new Corpus(found, authored, modifications)
+        {
+            Version = root.TryGetProperty("version", out var version)
+                ? version.GetString() ?? "unknown" : "unknown",
+        };
+    }
 
-        // An entry's own id is the prefix every one of its clauses shares, so
-        // the clause count is a group-by rather than a field. It is what
-        // `citations --sort` orders on: a rough proxy for how much engine
-        // surface an entry touches, and the index carries nothing better.
-        var clauses = new Dictionary<string, int>(StringComparer.Ordinal);
+    private static void ReadBase(
+        JsonElement root, Dictionary<string, Record> found)
+    {
         var entries = root.GetProperty("entries");
+        var clauses = new Dictionary<string, int>(StringComparer.Ordinal);
         foreach (var entry in entries.EnumerateArray())
         {
-            string id = entry.GetProperty("id").GetString()!;
-            string owner = EntryOf(id);
+            string owner = EntryOf(entry.GetProperty("id").GetString()!);
             clauses[owner] = clauses.GetValueOrDefault(owner) + 1;
         }
-
         foreach (var entry in entries.EnumerateArray())
         {
             string id = entry.GetProperty("id").GetString()!;
             found[id] = new Record(
-                id,
-                entry.TryGetProperty("title", out var title) ? title.GetString() ?? "" : "",
-                entry.TryGetProperty("fragment", out var text) ? text.GetString() ?? "" : "",
-                entry.TryGetProperty("hash", out var hash) ? hash.GetString() ?? "" : "",
-                id == EntryOf(id) ? clauses[id] : 0,
-                "base",
-                null);
+                id, Optional(entry, "title"), Optional(entry, "fragment"),
+                Optional(entry, "hash"), id == EntryOf(id) ? clauses[id] : 0,
+                "base", null);
         }
+    }
 
-        var authored = new List<Edge>();
-        using var graph = JsonDocument.Parse(File.ReadAllBytes(graphPath));
-        if (graph.RootElement.GetProperty("version").GetInt32() != 2)
-        {
-            throw new InvalidDataException("rules-graph.json is not relationship schema version 2");
-        }
+    private static string Optional(JsonElement element, string name) =>
+        element.TryGetProperty(name, out var value) ? value.GetString() ?? "" : "";
 
-        foreach (var from in graph.RootElement.GetProperty("edges").EnumerateObject())
+    private static List<Edge> ReadEdges(JsonElement graph)
+    {
+        var result = new List<Edge>();
+        foreach (var from in graph.GetProperty("edges").EnumerateObject())
         {
-            string why = from.Value.TryGetProperty("why", out var reason)
-                ? reason.GetString() ?? ""
-                : "";
+            string why = Optional(from.Value, "why");
             foreach (var to in from.Value.GetProperty("references").EnumerateArray())
-            {
-                authored.Add(new Edge(from.Name, to.GetString()!, why));
-            }
+                result.Add(new Edge(from.Name, to.GetString()!, why));
         }
+        return result;
+    }
 
-        using var rulings = JsonDocument.Parse(File.ReadAllBytes(rulingsPath));
+    private static Dictionary<string, JsonElement> ReadPublished(JsonElement root)
+    {
         var published = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
-        foreach (var ruling in rulings.RootElement.GetProperty("rulings").EnumerateArray())
+        foreach (var ruling in root.GetProperty("rulings").EnumerateArray())
         {
             string rulingId = ruling.GetProperty("id").GetString()!;
             if (!published.TryAdd(rulingId, ruling.Clone()))
-            {
                 throw new InvalidDataException($"rulings.json contains duplicate id {rulingId}");
-            }
         }
+        return published;
+    }
 
+    private static List<Modification> ReadModifications(
+        JsonElement graph, Dictionary<string, JsonElement> published,
+        Dictionary<string, Record> found)
+    {
         var modifications = new List<Modification>();
-        foreach (var mapped in graph.RootElement.GetProperty("modifications").EnumerateObject())
+        foreach (var mapped in graph.GetProperty("modifications").EnumerateObject())
         {
-            if (!published.TryGetValue(mapped.Name, out var ruling))
-            {
-                throw new InvalidDataException($"rules modification {mapped.Name} has no published ruling");
-            }
-
-            if (!string.Equals(
-                ruling.GetProperty("kind").GetString(),
-                "rules",
-                StringComparison.Ordinal))
-            {
-                throw new InvalidDataException(
-                    $"rules modification {mapped.Name} is a card ruling, not a rules ruling");
-            }
-
-            string baseId = mapped.Value.GetProperty("base").GetString()!;
-            if (!found.TryGetValue(baseId, out var baseRecord))
-            {
-                throw new InvalidDataException($"rules modification {mapped.Name} names no base rule {baseId}");
-            }
-
-            string supersedesHash = mapped.Value.GetProperty("supersedes_hash").GetString()!;
-            if (!string.Equals(supersedesHash, baseRecord.Hash, StringComparison.Ordinal))
-            {
-                throw new InvalidDataException(
-                    $"rules modification {mapped.Name} pins {supersedesHash}, not {baseRecord.Hash} for {baseId}");
-            }
-
-            string rulingHash = ruling.GetProperty("hash").GetString()!;
-            string expectedRulingHash = mapped.Value.GetProperty("ruling_hash").GetString()!;
-            if (!string.Equals(expectedRulingHash, rulingHash, StringComparison.Ordinal))
-            {
-                throw new InvalidDataException(
-                    $"rules modification {mapped.Name} pins ruling {expectedRulingHash}, not {rulingHash}");
-            }
-
-            string why = mapped.Value.GetProperty("why").GetString()!;
-            string source = ruling.GetProperty("source").GetString()!;
-            string via = ruling.GetProperty("via").GetString()!;
-            string scope = ruling.GetProperty("rrg_scope").GetString()!;
-            string? absorbedIn = mapped.Value.GetProperty("absorbed_in").GetString();
-            if (string.IsNullOrWhiteSpace(why)
-                || string.IsNullOrWhiteSpace(source)
-                || string.IsNullOrWhiteSpace(via)
-                || string.IsNullOrWhiteSpace(scope))
-            {
-                throw new InvalidDataException(
-                    $"rules modification {mapped.Name} has incomplete provenance");
-            }
-
-            if (absorbedIn is not null
-                && CompareVersions(absorbedIn, EffectiveVersion(scope)) < 0)
-            {
-                throw new InvalidDataException(
-                    $"rules modification {mapped.Name} is absorbed before its RRG scope");
-            }
-
-            var modification = new Modification(
-                mapped.Name,
-                baseId,
-                supersedesHash,
-                absorbedIn,
-                why,
-                source,
-                via,
-                scope,
-                ruling.GetProperty("observed").GetString(),
-                rulingHash);
+            var modification = ReadModification(mapped, published, found);
             modifications.Add(modification);
+            var ruling = published[mapped.Name];
+            var baseRecord = found[modification.BaseId];
             found.Add(mapped.Name, new Record(
                 mapped.Name,
                 $"RULING — {baseRecord.Title}",
@@ -237,15 +183,81 @@ internal sealed class Corpus
                 modification.Hash,
                 0,
                 "modification",
-                baseId));
+                modification.BaseId));
         }
+        return modifications;
+    }
 
-        return new Corpus(found, authored, modifications)
-        {
-            Version = root.TryGetProperty("version", out var version)
-                ? version.GetString() ?? "unknown"
-                : "unknown",
-        };
+    private static Modification ReadModification(
+        JsonProperty mapped,
+        Dictionary<string, JsonElement> published,
+        Dictionary<string, Record> found)
+    {
+        if (!published.TryGetValue(mapped.Name, out var ruling))
+            throw new InvalidDataException(
+                $"rules modification {mapped.Name} has no published ruling");
+        RequireRulesRuling(mapped.Name, ruling);
+        string baseId = mapped.Value.GetProperty("base").GetString()!;
+        if (!found.TryGetValue(baseId, out var baseRecord))
+            throw new InvalidDataException(
+                $"rules modification {mapped.Name} names no base rule {baseId}");
+        string supersedes = mapped.Value.GetProperty("supersedes_hash").GetString()!;
+        RequireHash(mapped.Name, baseId, supersedes, baseRecord.Hash);
+        string rulingHash = ruling.GetProperty("hash").GetString()!;
+        string expected = mapped.Value.GetProperty("ruling_hash").GetString()!;
+        RequireRulingHash(mapped.Name, expected, rulingHash);
+        string why = mapped.Value.GetProperty("why").GetString()!;
+        string source = ruling.GetProperty("source").GetString()!;
+        string via = ruling.GetProperty("via").GetString()!;
+        string scope = ruling.GetProperty("rrg_scope").GetString()!;
+        RequireProvenance(mapped.Name, why, source, via, scope);
+        string? absorbed = mapped.Value.GetProperty("absorbed_in").GetString();
+        RequireAbsorption(mapped.Name, absorbed, scope);
+        return new Modification(
+            mapped.Name, baseId, supersedes, absorbed, why, source, via, scope,
+            ruling.GetProperty("observed").GetString(), rulingHash);
+    }
+
+    private static void RequireRulesRuling(string id, JsonElement ruling)
+    {
+        if (!string.Equals(
+            ruling.GetProperty("kind").GetString(), "rules", StringComparison.Ordinal))
+            throw new InvalidDataException(
+                $"rules modification {id} is a card ruling, not a rules ruling");
+    }
+
+    private static void RequireHash(
+        string id, string baseId, string pinned, string actual)
+    {
+        if (!string.Equals(pinned, actual, StringComparison.Ordinal))
+            throw new InvalidDataException(
+                $"rules modification {id} pins {pinned}, not {actual} for {baseId}");
+    }
+
+    private static void RequireRulingHash(
+        string id, string pinned, string actual)
+    {
+        if (!string.Equals(pinned, actual, StringComparison.Ordinal))
+            throw new InvalidDataException(
+                $"rules modification {id} pins ruling {pinned}, not {actual}");
+    }
+
+    private static void RequireProvenance(
+        string id, string why, string source, string via, string scope)
+    {
+        if (string.IsNullOrWhiteSpace(why) || string.IsNullOrWhiteSpace(source)
+            || string.IsNullOrWhiteSpace(via) || string.IsNullOrWhiteSpace(scope))
+            throw new InvalidDataException(
+                $"rules modification {id} has incomplete provenance");
+    }
+
+    private static void RequireAbsorption(
+        string id, string? absorbed, string scope)
+    {
+        if (absorbed is not null
+            && CompareVersions(absorbed, EffectiveVersion(scope)) < 0)
+            throw new InvalidDataException(
+                $"rules modification {id} is absorbed before its RRG scope");
     }
 
     /// <summary>The entry a citation belongs to.</summary>

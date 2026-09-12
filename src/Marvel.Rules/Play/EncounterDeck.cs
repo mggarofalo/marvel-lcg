@@ -245,14 +245,16 @@ public static class EncounterDeck
         events.Add(new CardsMoved(
             Places.Reference(pile), Places.Reference(deck), landings)
         {
-            Trigger = trigger, Verb = "Reset",
+            Trigger = trigger,
+            Verb = "Reset",
         });
 
         world.Shuffle(deck);
         events.Add(new AreaReordered(
             Places.Reference(deck), [.. deck.Cards.Select(card => card.ObjectId)])
         {
-            Trigger = trigger, Verb = "Shuffle",
+            Trigger = trigger,
+            Verb = "Shuffle",
         });
 
         PlaceAccelerationToken(world, trigger, events);
@@ -286,7 +288,8 @@ public static class EncounterDeck
         scheme.PlaceTokens(AccelerationToken, 1);
         events.Add(new FieldSet(scheme.ObjectId, AccelerationToken, before, before + 1)
         {
-            Trigger = trigger, Verb = "Accelerate",
+            Trigger = trigger,
+            Verb = "Accelerate",
         });
         return true;
     }

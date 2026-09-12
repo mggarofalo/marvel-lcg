@@ -122,65 +122,44 @@ internal static class Cards
 
         foreach (var element in document.RootElement.GetProperty("cards").EnumerateArray())
         {
-            string id = element.GetProperty("card_id").GetString()!;
-            bool nested = element.TryGetProperty("engine", out var engine)
-                && engine.ValueKind == JsonValueKind.Object;
-
-            // The old dataset carried an `engine` block only for the cards
-            // that engine had, and a copy of MarvelSDB's own record for every
-            // card beside it. Falling through to the record would read
-            // upstream's lowercase `type_code` as a card type and report 345
-            // cards as having changed kind, when what changed is that they are
-            // now in the engine's view at all.
-            if (!nested && element.TryGetProperty("engine", out _))
-            {
-                continue;
-            }
-
-            var facts = nested ? engine : element;
-            if (!nested && !element.TryGetProperty("attributes", out _))
-            {
-                continue;
-            }
-
-            var attributes = new SortedDictionary<string, string>(StringComparer.Ordinal);
-            if (facts.TryGetProperty("attributes", out var printed)
-                && printed.ValueKind == JsonValueKind.Object)
-            {
-                foreach (var attribute in printed.EnumerateObject())
-                {
-                    attributes[attribute.Name] = attribute.Value.GetString() ?? "";
-                }
-            }
-
-            var traits = new List<string>();
-            if (facts.TryGetProperty("traits", out var written)
-                && written.ValueKind == JsonValueKind.Array)
-            {
-                traits.AddRange(written.EnumerateArray().Select(trait => trait.GetString()!));
-            }
-
-            var linkedTo = new List<string>();
-            if (facts.TryGetProperty("linked_to", out var linked)
-                && linked.ValueKind == JsonValueKind.Array)
-            {
-                linkedTo.AddRange(linked.EnumerateArray().Select(face => face.GetString()!));
-            }
-
-            found[id] = new Card(
-                id,
-                Field(element, "name"),
-                Field(element, "subname"),
-                facts.TryGetProperty("type", out var kind) ? kind.GetString() ?? "" : "",
-                traits,
-                attributes,
-                linkedTo,
-                Field(element, "text"),
-                Field(element, "pack"),
-                Field(element, "set"));
+            if (ReadCard(element) is { } card) found[card.Id] = card;
         }
 
         return found;
+    }
+
+    private static Card? ReadCard(JsonElement element)
+    {
+        string id = element.GetProperty("card_id").GetString()!;
+        bool nested = element.TryGetProperty("engine", out var engine)
+            && engine.ValueKind == JsonValueKind.Object;
+        // The old dataset carried an `engine` block only for engine cards.
+        if (!nested && element.TryGetProperty("engine", out _)) return null;
+        var facts = nested ? engine : element;
+        if (!nested && !element.TryGetProperty("attributes", out _)) return null;
+        return new Card(
+            id, Field(element, "name"), Field(element, "subname"),
+            facts.TryGetProperty("type", out var kind) ? kind.GetString() ?? "" : "",
+            StringList(facts, "traits"), Attributes(facts),
+            StringList(facts, "linked_to"), Field(element, "text"),
+            Field(element, "pack"), Field(element, "set"));
+    }
+
+    private static SortedDictionary<string, string> Attributes(JsonElement facts)
+    {
+        var attributes = new SortedDictionary<string, string>(StringComparer.Ordinal);
+        if (!facts.TryGetProperty("attributes", out var printed)
+            || printed.ValueKind != JsonValueKind.Object) return attributes;
+        foreach (var attribute in printed.EnumerateObject())
+            attributes[attribute.Name] = attribute.Value.GetString() ?? "";
+        return attributes;
+    }
+
+    private static List<string> StringList(JsonElement facts, string name)
+    {
+        if (!facts.TryGetProperty(name, out var values)
+            || values.ValueKind != JsonValueKind.Array) return [];
+        return [.. values.EnumerateArray().Select(value => value.GetString()!)];
     }
 
     /// <summary>Prints what changed between two datasets, and how much.</summary>

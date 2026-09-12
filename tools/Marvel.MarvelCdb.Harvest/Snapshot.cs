@@ -20,51 +20,53 @@ public sealed record Snapshot(
         using var document = JsonDocument.Parse(json);
         JsonElement root = document.RootElement;
         if (root.GetProperty("version").GetInt32() != 1)
-        {
             throw new InvalidDataException("unsupported MarvelCDB FAQ snapshot version");
-        }
+        var queried = ReadQueried(root);
+        var entries = root.GetProperty("entries").EnumerateArray()
+            .Select(entry => entry.Clone()).ToList();
+        ValidateEntries(queried, entries);
+        return new Snapshot(
+            Required(root, "harvested", "the harvest date is missing"),
+            Required(root, "harvester", "the harvester version is missing"),
+            queried, entries,
+            root.TryGetProperty("candidate_complete", out JsonElement complete)
+                && complete.ValueKind == JsonValueKind.True,
+            ReadOutcomes(root));
+    }
 
+    private static List<string> ReadQueried(JsonElement root)
+    {
         var queried = root.GetProperty("queried").EnumerateArray()
             .Select(code => code.GetString()
                 ?? throw new InvalidDataException("a queried card code is null"))
             .ToList();
         if (queried.Count != queried.Distinct(StringComparer.Ordinal).Count())
-        {
             throw new InvalidDataException("queried card codes must be unique");
-        }
+        return queried;
+    }
 
-        var entries = root.GetProperty("entries").EnumerateArray()
-            .Select(entry => entry.Clone()).ToList();
+    private static void ValidateEntries(
+        IEnumerable<string> queried, IEnumerable<JsonElement> entries)
+    {
         var asked = queried.ToHashSet(StringComparer.Ordinal);
         foreach (JsonElement entry in entries)
         {
-            string code = entry.GetProperty("code").GetString()
-                ?? throw new InvalidDataException("a FAQ entry has no card code");
+            string code = Required(entry, "code", "a FAQ entry has no card code");
             if (!asked.Contains(code))
-            {
                 throw new InvalidDataException(
                     $"FAQ entry {code} was not recorded in the queried set");
-            }
         }
-
-        IReadOnlyList<QueryOutcome>? outcomes = root.TryGetProperty("outcomes", out JsonElement observed)
-            ? observed.EnumerateArray().Select(outcome => new QueryOutcome(
-                outcome.GetProperty("code").GetString()
-                    ?? throw new InvalidDataException("an outcome has no card code"),
-                outcome.GetProperty("result").GetString()
-                    ?? throw new InvalidDataException("an outcome has no result"))).ToList()
-            : null;
-        return new Snapshot(
-            root.GetProperty("harvested").GetString()
-                ?? throw new InvalidDataException("the harvest date is missing"),
-            root.GetProperty("harvester").GetString()
-                ?? throw new InvalidDataException("the harvester version is missing"),
-            queried,
-            entries,
-            root.TryGetProperty("candidate_complete", out JsonElement complete)
-                && complete.ValueKind == JsonValueKind.True,
-            outcomes);
     }
+
+    private static List<QueryOutcome>? ReadOutcomes(JsonElement root) =>
+        root.TryGetProperty("outcomes", out JsonElement observed)
+            ? observed.EnumerateArray().Select(outcome => new QueryOutcome(
+                Required(outcome, "code", "an outcome has no card code"),
+                Required(outcome, "result", "an outcome has no result"))).ToList()
+            : null;
+
+    private static string Required(JsonElement element, string name, string error) =>
+        element.GetProperty(name).GetString() ?? throw new InvalidDataException(error);
 
     public string Json() => Render(candidate: false);
 

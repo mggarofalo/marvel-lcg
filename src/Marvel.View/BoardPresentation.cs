@@ -8,6 +8,10 @@ namespace Marvel.View;
 /// <summary>A display-only board derived from one visibility-safe snapshot.</summary>
 public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Areas)
 {
+    private static readonly HashSet<string> LiveZeroFields = new(
+        ["attack", "defense", "recover", "scheme", "thwart"],
+        StringComparer.Ordinal);
+
     /// <summary>Scenario, player, and fallback lanes used by the tabletop renderer.</summary>
     public IReadOnlyList<BoardLanePresentation> Lanes { get; init; } = [];
 
@@ -46,26 +50,12 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
             {
                 continue;
             }
-            if (area.Zone is "VillainDeck" or "MainSchemesDeck"
-                && source.Any(candidate => candidate.Seat == area.Seat
-                    && candidate.Host == area.Host
-                    && candidate.Zone == (area.Zone == "VillainDeck"
-                        ? "VillainArea"
-                        : "MainSchemesArea")))
+            if (ShouldHideProgressiveDeck(area, source))
             {
                 continue;
             }
 
-            string? deckZone = area.Zone switch
-            {
-                "VillainArea" => "VillainDeck",
-                "MainSchemesArea" => "MainSchemesDeck",
-                _ => null,
-            };
-            BoardAreaPresentation? upcoming = deckZone is null
-                ? null
-                : source.FirstOrDefault(candidate => candidate.Zone == deckZone
-                    && candidate.Seat == area.Seat && candidate.Host == area.Host);
+            BoardAreaPresentation? upcoming = UpcomingArea(area, source);
             if (upcoming is null)
             {
                 result.Add(area);
@@ -86,6 +76,34 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
         }
 
         return [.. result];
+    }
+
+    private static bool ShouldHideProgressiveDeck(
+        BoardAreaPresentation area, BoardAreaPresentation[] source)
+    {
+        string? currentZone = area.Zone switch
+        {
+            "VillainDeck" => "VillainArea",
+            "MainSchemesDeck" => "MainSchemesArea",
+            _ => null,
+        };
+        return currentZone is not null && source.Any(candidate =>
+            candidate.Seat == area.Seat
+            && candidate.Host == area.Host
+            && candidate.Zone == currentZone);
+    }
+
+    private static BoardAreaPresentation? UpcomingArea(
+        BoardAreaPresentation area, BoardAreaPresentation[] source)
+    {
+        string? deckZone = area.Zone switch
+        {
+            "VillainArea" => "VillainDeck",
+            "MainSchemesArea" => "MainSchemesDeck",
+            _ => null,
+        };
+        return deckZone is null ? null : source.FirstOrDefault(candidate =>
+            candidate.Zone == deckZone && candidate.Seat == area.Seat && candidate.Host == area.Host);
     }
 
     private static BoardAreaPresentation Present(
@@ -206,26 +224,10 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
             Humanize(card.Face.Kind.ToString(), trimArea: false).ToUpperInvariant(),
             Status(card, zone, card.Face.Kind),
             card.Face.Fields
-                .Where(field => !field.Key.StartsWith("t_", StringComparison.Ordinal))
-                .Where(field => field.Key != "is_exhaust")
-                .Where(field => field.Key != "k_threat"
-                    || card.Face.Kind is CardKind.MainScheme or CardKind.EncounterSideScheme)
-                .Where(field => field.Value != 0
-                    || inPlay && field.Key is
-                        "attack" or "defense" or "recover" or "scheme" or "thwart"
-                    || inPlay && field.Key == "health"
-                    || inPlay && field.Key == "k_threat"
-                        && card.Face.Kind is CardKind.MainScheme or CardKind.EncounterSideScheme)
+                .Where(field => VisibleField(field, inPlay, card.Face.Kind))
                 .OrderBy(field => field.Key, StringComparer.Ordinal)
                 .Select(field => new BoardFieldPresentation(
-                    Humanize(
-                        field.Key.StartsWith("k_", StringComparison.Ordinal)
-                            ? field.Key[2..]
-                            : field.Key,
-                        trimArea: false).ToUpperInvariant(),
-                    field.Key == "health"
-                        ? $"{field.Value.ToString(CultureInfo.InvariantCulture)}/{(field.Value + card.Face.Damage).ToString(CultureInfo.InvariantCulture)}"
-                        : field.Value.ToString(CultureInfo.InvariantCulture)))
+                    FieldName(field.Key), FieldValue(field, card.Face.Damage)))
                 .ToArray())
         {
             Back = card.Back.ToString().ToUpperInvariant(),
@@ -250,6 +252,34 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
                 .ToArray(),
         };
     }
+
+    private static bool VisibleField(
+        KeyValuePair<string, long> field, bool inPlay, CardKind kind)
+    {
+        if (field.Key.StartsWith("t_", StringComparison.Ordinal) || field.Key == "is_exhaust")
+        {
+            return false;
+        }
+        bool schemeThreat = field.Key == "k_threat"
+            && kind is CardKind.MainScheme or CardKind.EncounterSideScheme;
+        if (field.Key == "k_threat" && !schemeThreat)
+        {
+            return false;
+        }
+        return field.Value != 0 || inPlay && ShowsZero(field.Key, schemeThreat);
+    }
+
+    private static bool ShowsZero(string key, bool schemeThreat) =>
+        LiveZeroFields.Contains(key) || key == "health" || schemeThreat;
+
+    private static string FieldName(string key) => Humanize(
+        key.StartsWith("k_", StringComparison.Ordinal) ? key[2..] : key,
+        trimArea: false).ToUpperInvariant();
+
+    private static string FieldValue(KeyValuePair<string, long> field, long damage) =>
+        field.Key == "health"
+            ? $"{field.Value.ToString(CultureInfo.InvariantCulture)}/{(field.Value + damage).ToString(CultureInfo.InvariantCulture)}"
+            : field.Value.ToString(CultureInfo.InvariantCulture);
 
     private static BoardStageRole ProgressiveStageRole(string zone) => zone switch
     {

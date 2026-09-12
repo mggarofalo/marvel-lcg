@@ -15,13 +15,7 @@ public static partial class Harvest
     public static (string Code, string Kind)? Classify(string filename)
     {
         string low = filename.ToLowerInvariant();
-        if (low.Contains("campaign_log", StringComparison.Ordinal)
-            || low.Contains("campaignlog", StringComparison.Ordinal)
-            || low.Contains("campaign-log", StringComparison.Ordinal)
-            || low.Contains("rulesreference", StringComparison.Ordinal))
-        {
-            return null;
-        }
+        if (Excluded(low)) return null;
 
         Match match = PackCode().Match(low);
         if (!match.Success)
@@ -31,22 +25,29 @@ public static partial class Harvest
         }
 
         string code = match.Groups[1].Value;
-        string kind = low.Contains("learn_to_play", StringComparison.Ordinal)
-            || low.Contains("learntoplay", StringComparison.Ordinal)
-                ? "learn-to-play"
-            : low.Contains("rules_insert", StringComparison.Ordinal)
-                || low.Contains("rulesinsert", StringComparison.Ordinal)
-                || low.Contains("rules_website", StringComparison.Ordinal)
-                ? "insert"
-            : low.Contains("rulesheet", StringComparison.Ordinal)
-                ? "rulesheet"
-            : low.Contains("rulebook", StringComparison.Ordinal)
-                || low.Contains("_rules_", StringComparison.Ordinal)
-                || low.Contains("_rules-", StringComparison.Ordinal)
-                ? "rulebook"
-            : "other";
-        return (code, kind);
+        return (code, Kind(low));
     }
+
+    private static bool Excluded(string filename) =>
+        Contains(filename, "campaign_log")
+        || Contains(filename, "campaignlog")
+        || Contains(filename, "campaign-log")
+        || Contains(filename, "rulesreference");
+
+    private static string Kind(string filename)
+    {
+        if (Contains(filename, "learn_to_play") || Contains(filename, "learntoplay"))
+            return "learn-to-play";
+        if (Contains(filename, "rules_insert") || Contains(filename, "rulesinsert")
+            || Contains(filename, "rules_website")) return "insert";
+        if (Contains(filename, "rulesheet")) return "rulesheet";
+        if (Contains(filename, "rulebook") || Contains(filename, "_rules_")
+            || Contains(filename, "_rules-")) return "rulebook";
+        return "other";
+    }
+
+    private static bool Contains(string value, string fragment) =>
+        value.Contains(fragment, StringComparison.Ordinal);
 
     public static IReadOnlyList<string> Sources(string library) => Directory.Exists(library)
         ? Directory.EnumerateFiles(library)
@@ -56,114 +57,7 @@ public static partial class Harvest
         : [];
 
     public static PackDocument Read(string path)
-    {
-        string filename = Path.GetFileName(path);
-        var (code, kind) = Classify(filename)
-            ?? throw new InvalidDataException($"{filename} is outside the pack-rules corpus");
-        var sections = new List<Section>();
-        Section? section = null;
-        NamedRule? rule = null;
-        var buffer = new List<string>();
-        var headingBuffer = new List<string>();
-        string title = string.Empty;
-
-        void Flush()
-        {
-            if (section is not null && buffer.Count > 0)
-            {
-                string paragraph = Clean(string.Join(' ', buffer));
-                if (paragraph.Length > 0)
-                {
-                    (rule?.Paragraphs ?? section.Paragraphs).Add(paragraph);
-                }
-            }
-
-            buffer.Clear();
-        }
-
-        void CloseHeading()
-        {
-            if (headingBuffer.Count == 0)
-            {
-                return;
-            }
-
-            string heading = Clean(string.Join(' ', headingBuffer));
-            headingBuffer.Clear();
-            if (section is not null && heading.Length > 0)
-            {
-                rule = new NamedRule(heading);
-                section.Rules.Add(rule);
-            }
-        }
-
-        using var pdf = PdfDocument.Open(path);
-        for (int page = 1; page <= pdf.NumberOfPages; page++)
-        {
-            foreach (PackLine line in Pages.Read(pdf.GetPage(page)))
-            {
-                string text = line.Text.Trim();
-                if (text.Length == 0)
-                {
-                    continue;
-                }
-
-                if (line.Heading)
-                {
-                    string heading = Clean(text);
-                    if (heading.Length == 0 || NumericFurniture().IsMatch(heading))
-                    {
-                        continue;
-                    }
-
-                    Flush();
-                    headingBuffer.Clear();
-                    rule = null;
-                    section = new Section(heading, page);
-                    sections.Add(section);
-                    if (title.Length == 0)
-                    {
-                        title = heading;
-                    }
-
-                    continue;
-                }
-
-                if (section is null)
-                {
-                    continue;
-                }
-
-                if (line.Spans.Count > 0
-                    && line.Spans.All(span => span.Italic || string.IsNullOrWhiteSpace(span.Text)))
-                {
-                    continue;
-                }
-
-                if (line.Spans.Count > 0
-                    && line.Spans.All(span => span.Bold || string.IsNullOrWhiteSpace(span.Text)))
-                {
-                    if (headingBuffer.Count == 0)
-                    {
-                        Flush();
-                    }
-
-                    headingBuffer.Add(text);
-                    continue;
-                }
-
-                CloseHeading();
-                buffer.Add(text);
-            }
-        }
-
-        CloseHeading();
-        Flush();
-        sections = sections.Where(candidate =>
-            (candidate.Paragraphs.Count > 0 || candidate.Rules.Count > 0)
-            && !NotRules.Contains(candidate.Heading.ToUpperInvariant())).ToList();
-        return new PackDocument(filename, code, kind, title, sections);
-    }
+        => new PackDocumentReader(path).Read();
 
     public static string Slug(string text)
     {
@@ -180,8 +74,15 @@ public static partial class Harvest
             ? string.Concat(Enumerable.Range(0, word.Length / 2).Select(index => word[index * 2]))
             : word));
 
-    private static string Clean(string text) =>
+    internal static string Clean(string text) =>
         Undouble(Whitespace().Replace(text, " ").Trim());
+
+    internal static bool IsNumericFurniture(string text) =>
+        NumericFurniture().IsMatch(text);
+
+    internal static bool IsRulesSection(Section section) =>
+        (section.Paragraphs.Count > 0 || section.Rules.Count > 0)
+        && !NotRules.Contains(section.Heading.ToUpperInvariant());
 
     [GeneratedRegex("^(mc\\d+|mvc\\d+)(?:[_-]|$)", RegexOptions.CultureInvariant)]
     private static partial Regex PackCode();

@@ -100,7 +100,7 @@ public sealed partial class EliminationTests
             DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
         var borrowed = world.CreateCard("ally", world.AreaOf(
             DeckType.AlliesArea, PlayArea.Of(1), cardOwner: 1));
-        CardPlay.TakeControl(world, facts, borrowed, 0);
+        CardControlTransfer.TakeControl(world, facts, borrowed, 0);
 
         var layout = EliminationLayout.Calculate(new WorldEliminationLayout(world), 0);
 

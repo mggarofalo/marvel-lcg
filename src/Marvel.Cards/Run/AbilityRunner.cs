@@ -79,8 +79,8 @@ public sealed class AbilityRunner : ICardAbilities
     public IReadOnlyList<GameEvent> Boost(World world, Card card, int player) => resolution.Boost(world, card, player);
     public IReadOnlyList<GameEvent> ResolveSpecial(World world, Card card, int player, bool finalStep) => resolution.ResolveSpecial(world, card, player, finalStep);
     public long WouldBeDealt(World world, Card target, Card source, long amount, List<GameEvent> events) => resolution.WouldBeDealt(world, target, source, amount, events);
-    public long WouldTake(World world, Card target, Card source, long amount, List<GameEvent> events) => AbilityResolutionExecution.WouldTake(world, target, source, amount, events);
-    public void DamagePreventedByTough(World world, Card target, Card source, List<GameEvent> events) => AbilityResolutionExecution.DamagePreventedByTough(world, target, source, events);
+    public long WouldTake(World world, Card target, Card source, long amount, List<GameEvent> events) => resolution.WouldTake(world, target, source, amount, events);
+    public void DamagePreventedByTough(World world, Card target, Card source, List<GameEvent> events) => resolution.DamagePreventedByTough(world, target, source, events);
     public void WouldBeDefeated(World world, Card target, List<GameEvent> events) => resolution.WouldBeDefeated(world, target, events);
     public bool WouldBeDefeated(World world, Card target, Card source, string trigger, string verb, int by, List<GameEvent> events, Occurrence? recordDefeatOn = null) => resolution.WouldBeDefeated(world, target, source, trigger, verb, by, events, recordDefeatOn);
     public IReadOnlyList<GameEvent> Setup(World world, Card card) => resolution.Setup(world, card);

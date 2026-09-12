@@ -122,54 +122,6 @@ public static class Harvest
         // second-level marker attaches.
         bool stepping = false;
 
-        void Close()
-        {
-            string text = Markdown.Of(held).Trim();
-            held = [];
-            if (text.Length == 0)
-            {
-                return;
-            }
-
-            switch (into)
-            {
-                case Starts.Clause:
-                    clauses.Add(new Clause(clauses.Count + 1, text, []));
-                    break;
-
-                // The second-level marker means "one level down from whatever
-                // we are in": a qualification under a clause, and a lettered
-                // step under a numbered one. `rr:attack-enemy-activation`'s
-                // step 3 has five.
-                case Starts.SubClause when stepping && steps.Count > 0:
-                    var above = steps[^1];
-                    steps[^1] = above with { Substeps = [.. above.Substeps, text] };
-                    break;
-
-                case Starts.SubClause when clauses.Count > 0:
-                    var last = clauses[^1];
-                    clauses[^1] = last with { Qualifications = [.. last.Qualifications, text] };
-                    break;
-
-                case Starts.Step:
-                    steps.Add(new Numbered(steps.Count + 1, text, []));
-                    break;
-
-                case Starts.SubStep when steps.Count > 0:
-                    var under = steps[^1];
-                    steps[^1] = under with { Substeps = [.. under.Substeps, text] };
-                    break;
-
-                case Starts.SeeAlso:
-                    seeAlso.AddRange(References(text));
-                    break;
-
-                default:
-                    opening.Add(text);
-                    break;
-            }
-        }
-
         foreach (var (line, _) in lines.Skip(1))
         {
             // "COUNTER / **See**: All-Purpose Counter" -- an entry that is
@@ -177,11 +129,7 @@ public static class Harvest
             // cross-reference and the entry has no text of its own, which is
             // why it is caught before a plain line is folded into whatever
             // came before it.
-            bool pointer = into == Starts.More
-                && held.Count == 0
-                && line.Runs.Count > 0
-                && line.Runs[0].Bold
-                && line.Runs[0].Text.TrimStart().StartsWith("See", StringComparison.Ordinal);
+            bool pointer = IsPointer(into, held, line);
 
             if (line.Kind == Starts.More && !pointer)
             {
@@ -189,29 +137,87 @@ public static class Harvest
                 continue;
             }
 
-            Close();
+            Close(ref held, into, stepping, opening, steps, clauses, seeAlso);
             into = pointer ? Starts.SeeAlso : line.Kind;
-            stepping = into switch
-            {
-                Starts.Step or Starts.SubStep => true,
-                Starts.Clause or Starts.SeeAlso => false,
-                _ => stepping,
-            };
+            stepping = IsStepping(into, stepping);
 
             // The marker introduces the text and is not part of it.
-            held = [.. into switch
-            {
-                Starts.Clause => Cut(line.Runs, "•"),
-                Starts.Step or Starts.SubStep => Upto(line.Runs, '.'),
-                Starts.SeeAlso => Upto(line.Runs, ':'),
-                _ => line.Runs,
-            }];
+            held = [.. ContentRuns(into, line.Runs)];
         }
 
-        Close();
+        Close(ref held, into, stepping, opening, steps, clauses, seeAlso);
 
         return new Entry(
             Entry.Slug(title), title, lines[0].Page, opening, steps, clauses, seeAlso);
+    }
+
+    private static bool IsPointer(Starts into, List<Run> held, Line line) =>
+        into == Starts.More && held.Count == 0 && line.Runs.Count > 0
+        && line.Runs[0].Bold
+        && line.Runs[0].Text.TrimStart().StartsWith("See", StringComparison.Ordinal);
+
+    private static bool IsStepping(Starts into, bool current) => into switch
+    {
+        Starts.Step or Starts.SubStep => true,
+        Starts.Clause or Starts.SeeAlso => false,
+        _ => current,
+    };
+
+    private static IReadOnlyList<Run> ContentRuns(
+        Starts into, IReadOnlyList<Run> runs) => into switch
+        {
+            Starts.Clause => Cut(runs, "•"),
+            Starts.Step or Starts.SubStep => Upto(runs, '.'),
+            Starts.SeeAlso => Upto(runs, ':'),
+            _ => runs,
+        };
+
+    private static void Close(
+        ref List<Run> held, Starts into, bool stepping,
+        List<string> opening, List<Numbered> steps,
+        List<Clause> clauses, List<string> seeAlso)
+    {
+        string text = Markdown.Of(held).Trim();
+        held = [];
+        if (text.Length == 0) return;
+        if (into == Starts.Clause)
+            clauses.Add(new Clause(clauses.Count + 1, text, []));
+        else if (into == Starts.SubClause)
+            AddSubClause(text, stepping, opening, steps, clauses);
+        else if (into == Starts.Step)
+            steps.Add(new Numbered(steps.Count + 1, text, []));
+        else if (into == Starts.SubStep && steps.Count > 0)
+            AddSubstep(text, steps);
+        else if (into == Starts.SeeAlso)
+            seeAlso.AddRange(References(text));
+        else opening.Add(text);
+    }
+
+    private static void AddSubClause(
+        string text, bool stepping, List<string> opening,
+        List<Numbered> steps, List<Clause> clauses)
+    {
+        if (stepping && steps.Count > 0)
+        {
+            AddSubstep(text, steps);
+            return;
+        }
+        if (clauses.Count == 0)
+        {
+            opening.Add(text);
+            return;
+        }
+        var last = clauses[^1];
+        clauses[^1] = last with
+        {
+            Qualifications = [.. last.Qualifications, text],
+        };
+    }
+
+    private static void AddSubstep(string text, List<Numbered> steps)
+    {
+        var above = steps[^1];
+        steps[^1] = above with { Substeps = [.. above.Substeps, text] };
     }
 
     // "See also: Ability, Cost Arrow Icon, Game Element" -- printed titles,

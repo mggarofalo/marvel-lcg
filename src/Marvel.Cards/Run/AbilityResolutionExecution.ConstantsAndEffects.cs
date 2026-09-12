@@ -10,7 +10,7 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Cards.Run;
 
-internal sealed partial class AbilityResolutionExecution
+internal static class AbilityResolutionStructure
 {
     // ---- reading a value ---------------------------------------------------
 
@@ -32,12 +32,12 @@ internal sealed partial class AbilityResolutionExecution
     /// arrive at the wrong one.
     /// </para>
     /// </remarks>
-    private static AbilityEffect.ChangeForm FormChangeOf(AbilityEffect node, AbilityResolutionState cast) =>
+    internal static AbilityEffect.ChangeForm FormChangeOf(this AbilityResolutionExecution execution, AbilityEffect node, AbilityResolutionState cast) =>
         (AbilityEffect.ChangeForm)node;
 
-    private bool AlreadyInForm(AbilityEffect.ChangeForm change, AbilityResolutionState cast) =>
+    internal static bool AlreadyInForm(this AbilityResolutionExecution execution, AbilityEffect.ChangeForm change, AbilityResolutionState cast) =>
         AbilityAdmissionFacts.AlreadyInForm(
-            cast.World, Seat(change.Player, cast), change.Form);
+            cast.World, execution.Seat(change.Player, cast), change.Form);
 
     /// <summary>"Exhaust …" — <c>rr:exhausted</c>.</summary>
     /// <remarks>
@@ -45,12 +45,12 @@ internal sealed partial class AbilityResolutionExecution
     /// <c>rr:exhausted</c> is a state and not a counter, so exhausting
     /// twice is not two exhaustions and must not be two events on the wire.
     /// </remarks>
-    private bool CanDrawToPrintedHandSize(AbilityEffect node, AbilityResolutionState cast)
+    internal static bool CanDrawToPrintedHandSize(this AbilityResolutionExecution execution, AbilityEffect node, AbilityResolutionState cast)
         => AbilityAdmissionFacts.CanDrawToPrintedHandSize(
             cast.World, cast.Source,
-            Seat(EffectOf<AbilityEffect.DrawToHandSize>(node, cast).Player, cast));
+            execution.Seat(execution.EffectOf<AbilityEffect.DrawToHandSize>(node, cast).Player, cast));
 
-    private static AbilityEffect.RemoveCounters CounterRemovalOf(AbilityEffect node, AbilityResolutionState cast) =>
+    internal static AbilityEffect.RemoveCounters CounterRemovalOf(this AbilityResolutionExecution execution, AbilityEffect node, AbilityResolutionState cast) =>
         (AbilityEffect.RemoveCounters)node;
 
     /// <summary>
@@ -65,7 +65,7 @@ internal sealed partial class AbilityResolutionExecution
     /// engine's choice; stage-addressed advancement needs a separate
     /// implementation.
     /// </remarks>
-    private static bool CanAdvanceMainScheme(AbilityResolutionState cast) =>
+    internal static bool CanAdvanceMainScheme(this AbilityResolutionExecution execution, AbilityResolutionState cast) =>
         AbilityAdmissionFacts.CanAdvanceMainScheme(cast.World);
 
     /// <summary>
@@ -80,7 +80,7 @@ internal sealed partial class AbilityResolutionExecution
     /// to it can see every <c>c_*</c> pool regardless of the type a card gave
     /// that physical counter.
     /// </remarks>
-    private static long CounterCount(Card card, string type) =>
+    internal static long CounterCount(this AbilityResolutionExecution execution, Card card, string type) =>
         AbilityExpressionEvaluation.CounterCount(card, type);
 
     /// <summary>
@@ -99,25 +99,25 @@ internal sealed partial class AbilityResolutionExecution
     /// sequences and branches without rerunning completed effects.
     /// </para>
     /// </remarks>
-    private void Sequence(AbilityEffect node, AbilityResolutionState cast, int from)
+    internal static void Sequence(this AbilityResolutionExecution execution, AbilityEffect node, AbilityResolutionState cast, int from)
     {
         bool outerContinuation = cast.HasContinuation;
-        var transition = AbilityStructuralExecution.SequenceStart(
-            StructuralContext(cast), (AbilityEffect.Sequence)node, from);
+        var transition = AbilityStructuralFlowExecution.SequenceStart(
+            execution.StructuralContext(cast), (AbilityEffect.Sequence)node, from);
         while (transition is RunLeaf leaf
             && leaf.Frames[^1] is SequenceFrame frame)
         {
-            RunStructuralLeaf(leaf, cast);
+            execution.RunStructuralLeaf(leaf, cast);
             var observation = new AbilityStructuralObservation(cast.Suspended);
             if (!cast.Suspended)
                 cast.SetContinuation(outerContinuation);
-            transition = AbilityStructuralExecution.NextSequence(
-                StructuralContext(cast), (AbilityEffect.Sequence)node, frame,
+            transition = AbilityStructuralFlowExecution.NextSequence(
+                execution.StructuralContext(cast), (AbilityEffect.Sequence)node, frame,
                 observation);
             if (cast.Suspended)
                 return;
         }
-        ApplyStructuralCompletion(transition, cast);
+        execution.ApplyStructuralCompletion(transition, cast);
         cast.SetContinuation(outerContinuation);
     }
 
@@ -139,31 +139,31 @@ internal sealed partial class AbilityResolutionExecution
     /// <c>rr:for-each.4</c>.
     /// </para>
     /// </remarks>
-    private void ForEach(AbilityEffect node, AbilityResolutionState cast)
+    internal static void ForEach(this AbilityResolutionExecution execution, AbilityEffect node, AbilityResolutionState cast)
     {
         var repeated = (AbilityEffect.ForEach)node;
         bool outerContinuation = cast.HasContinuation;
-        var transition = AbilityStructuralExecution.ForEachStart(
-            StructuralContext(cast), repeated);
+        var transition = AbilityStructuralFlowExecution.ForEachStart(
+            execution.StructuralContext(cast), repeated);
         if (transition is RunCombinedForEach combined)
         {
-            RunCombinedForEach(combined, cast);
+            execution.RunCombinedForEach(combined, cast);
             return;
         }
         while (transition is RunLeaf leaf
             && leaf.Frames[^1] is ForEachFrame frame)
         {
-            RunStructuralLeaf(leaf, cast);
+            execution.RunStructuralLeaf(leaf, cast);
             var observation = new AbilityStructuralObservation(cast.Suspended);
             if (!cast.Suspended)
                 cast.SetContinuation(outerContinuation);
-            transition = AbilityStructuralExecution.NextForEach(
-                StructuralContext(cast), repeated, frame,
+            transition = AbilityStructuralFlowExecution.NextForEach(
+                execution.StructuralContext(cast), repeated, frame,
                 observation);
             if (cast.Suspended)
                 return;
         }
-        ApplyStructuralCompletion(transition, cast);
+        execution.ApplyStructuralCompletion(transition, cast);
         cast.SetContinuation(outerContinuation);
     }
 
@@ -175,25 +175,25 @@ internal sealed partial class AbilityResolutionExecution
     /// observable: its alteration finishes before the next card is discarded.
     /// The exact-card binding survives an immediate encounter-deck reset.
     /// </remarks>
-    private void EachTime(AbilityEffect node, AbilityResolutionState cast)
-        => ContinueEachTime((AbilityEffect.EachTime)node, cast, from: 0, count: null);
+    internal static void EachTime(this AbilityResolutionExecution execution, AbilityEffect node, AbilityResolutionState cast)
+        => execution.ContinueEachTime((AbilityEffect.EachTime)node, cast, from: 0, count: null);
 
-    private void ContinueEachTime(
+    internal static void ContinueEachTime(this AbilityResolutionExecution execution,
         AbilityEffect.EachTime repeated, AbilityResolutionState cast, long from, long? count)
     {
         bool outerContinuation = cast.HasContinuation;
-        var transition = AbilityStructuralExecution.EachTimeStart(
-            StructuralContext(cast), repeated, from, count);
+        var transition = AbilityStructuralFlowExecution.EachTimeStart(
+            execution.StructuralContext(cast), repeated, from, count);
         while (transition is DiscardEachTime discard)
         {
             int before = cast.Discarded.Count;
-            if (!TryRunCardState(discard.Effect, cast))
+            if (!execution.TryRunCardState(discard.Effect, cast))
                 throw new InvalidOperationException("The card-state owner refused discardTop");
             var discarded = cast.Discarded.Skip(before).SingleOrDefault();
             if (discarded is not null)
                 cast.BindAlteration(discarded);
-            transition = AbilityStructuralExecution.AfterEachTimeDiscard(
-                StructuralContext(cast), repeated, discard.Frame,
+            transition = AbilityStructuralFlowExecution.AfterEachTimeDiscard(
+                execution.StructuralContext(cast), repeated, discard.Frame,
                 new AbilityStructuralObservation(false, discarded));
             if (transition is not RunLeaf leaf
                 || leaf.Frames[^1] is not EachTimeFrame frame)
@@ -201,42 +201,42 @@ internal sealed partial class AbilityResolutionExecution
                 continue;
             }
 
-            RunStructuralLeaf(leaf, cast);
+            execution.RunStructuralLeaf(leaf, cast);
             var observation = new AbilityStructuralObservation(cast.Suspended);
             if (!cast.Suspended)
                 cast.SetContinuation(outerContinuation);
-            transition = AbilityStructuralExecution.NextEachTime(
-                StructuralContext(cast), repeated, frame,
+            transition = AbilityStructuralFlowExecution.NextEachTime(
+                execution.StructuralContext(cast), repeated, frame,
                 observation);
             if (cast.Suspended)
                 return;
         }
-        ApplyStructuralCompletion(transition, cast);
+        execution.ApplyStructuralCompletion(transition, cast);
         cast.SetContinuation(outerContinuation);
     }
 
-    private void RunCombinedForEach(RunCombinedForEach combined, AbilityResolutionState cast)
+    internal static void RunCombinedForEach(this AbilityResolutionExecution execution, RunCombinedForEach combined, AbilityResolutionState cast)
     {
         switch (combined.Effect)
         {
             case AbilityEffect.Damage damage:
-                if (DamageTargets(damage.Cards, cast).Count != 1)
+                if (execution.DamageTargets(damage.Cards, cast).Count != 1)
                 {
                     throw new RulesNotImplementedException(
                         $"'{cast.Source.FaceId}' has a for-each damage effect without "
                         + "choose and does not resolve to one target");
                 }
-                DealDamage(damage, combined.Effect, cast, combined.Multiplier);
+                execution.DealDamage(damage, combined.Effect, cast, combined.Multiplier);
                 return;
 
             case AbilityEffect.RemoveThreat removal:
-                if (Every(removal.Schemes, cast).Count != 1)
+                if (execution.Every(removal.Schemes, cast).Count != 1)
                 {
                     throw new RulesNotImplementedException(
                         $"'{cast.Source.FaceId}' has a for-each threat-removal effect "
                         + "without choose and does not resolve to one target");
                 }
-                RemoveThreat(removal, cast, combined.Multiplier);
+                execution.RemoveThreat(removal, cast, combined.Multiplier);
                 return;
 
             default:
@@ -245,13 +245,13 @@ internal sealed partial class AbilityResolutionExecution
         }
     }
 
-    private static void ApplyStructuralCompletion(
+    internal static void ApplyStructuralCompletion(this AbilityResolutionExecution execution,
         AbilityStructuralTransition transition, AbilityResolutionState cast)
     {
         switch (transition)
         {
             case Complete { Admission: { } admission }:
-                _ = ApplyAdmission(admission, cast);
+                _ = execution.ApplyAdmission(admission, cast);
                 break;
             case Rejected rejected:
                 throw new AbilityException(rejected.Reason);
@@ -265,17 +265,17 @@ internal sealed partial class AbilityResolutionExecution
         }
     }
 
-    private void RunStructuralLeaf(RunLeaf leaf, AbilityResolutionState cast)
+    internal static void RunStructuralLeaf(this AbilityResolutionExecution execution, RunLeaf leaf, AbilityResolutionState cast)
     {
         if (leaf.Admission is { } admission)
-            _ = ApplyAdmission(admission, cast);
+            _ = execution.ApplyAdmission(admission, cast);
         var frame = leaf.Frames[^1];
         cast.At(leaf.Position);
         cast.SetContinuation(leaf.HasContinuation);
         cast.StructuralPath.Add(frame);
         try
         {
-            Run(leaf.Effect, cast);
+            execution.Run(leaf.Effect, cast);
         }
         finally
         {
@@ -283,13 +283,13 @@ internal sealed partial class AbilityResolutionExecution
         }
     }
 
-    private void RunChild(
+    internal static void RunChild(this AbilityResolutionExecution execution,
         AbilityEffect node, AbilityStructuralFrame frame, AbilityResolutionState cast)
     {
         cast.StructuralPath.Add(frame);
         try
         {
-            Run(node, cast);
+            execution.Run(node, cast);
         }
         finally
         {
@@ -297,24 +297,24 @@ internal sealed partial class AbilityResolutionExecution
         }
     }
 
-    private int AbilityOrdinal(AbilityEffect node, AbilityResolutionState cast)
+    internal static int AbilityOrdinal(this AbilityResolutionExecution execution, AbilityEffect node, AbilityResolutionState cast)
     {
         if (cast.AbilityOrdinal >= 0)
         {
             return cast.AbilityOrdinal;
         }
 
-        return AbilityContinuationCodec.OrdinalForNode(
-            program, cast.Source, cast.AbilityFace, cast.Tier,
+        return AbilityContinuationWireCodec.OrdinalForNode(
+            execution.program, cast.Source, cast.AbilityFace, cast.Tier,
             cast.StructuralPath, node);
     }
 
-    private ImmutableArray<CompiledCardAbility> AbilitiesOn(Card source, string? face) =>
-        AbilityContinuationCodec.AbilitiesOn(program, source, face);
+    internal static ImmutableArray<CompiledCardAbility> AbilitiesOn(this AbilityResolutionExecution execution, Card source, string? face) =>
+        AbilityContinuationWireCodec.AbilitiesOn(execution.program, source, face);
 
-    private void TrackResolution(AbilityResolutionState cast, CompiledCardAbility ability)
+    internal static void TrackResolution(this AbilityResolutionExecution execution, AbilityResolutionState cast, CompiledCardAbility ability)
     {
-        var sameTier = AbilitiesOn(cast.Source, cast.AbilityFace)
+        var sameTier = execution.AbilitiesOn(cast.Source, cast.AbilityFace)
             .Where(candidate => candidate.Trigger.Timing == ability.Trigger.Timing)
             .ToList();
         int ordinal = sameTier.FindIndex(candidate => ReferenceEquals(candidate, ability));
@@ -331,30 +331,30 @@ internal sealed partial class AbilityResolutionExecution
         cast.TrackResolution(ordinal);
     }
 
-    private CompiledCardAbility AbilityAt(
+    internal static CompiledCardAbility AbilityAt(this AbilityResolutionExecution execution,
         Card source, AbilityType? tier, int ordinal, string? face = null) =>
-        AbilityContinuationCodec.AbilityAt(program, source, tier, ordinal, face);
+        AbilityContinuationWireCodec.AbilityAt(execution.program, source, tier, ordinal, face);
 
-    private static void RestorePersisted(AbilityResolutionState cast, PhaseStep? continuation)
+    internal static void RestorePersisted(this AbilityResolutionExecution execution, AbilityResolutionState cast, PhaseStep? continuation)
     {
         if (continuation is not { } step)
         {
             return;
         }
-        ApplyRestored(cast, AbilityContinuationCodec.RestoreState(
+        execution.ApplyRestored(cast, AbilityContinuationCodec.RestoreState(
             cast.World.Cards, step.Discarded, step.AbilityResults,
             step.AbilityActor, cast.Source.FaceId));
     }
 
-    private static void RestorePersisted(
+    internal static void RestorePersisted(this AbilityResolutionExecution execution,
         AbilityResolutionState cast, IReadOnlyList<int>? discarded,
         IReadOnlyDictionary<string, long>? results)
     {
-        ApplyRestored(cast, AbilityContinuationCodec.RestoreState(
+        execution.ApplyRestored(cast, AbilityContinuationCodec.RestoreState(
             cast.World.Cards, discarded, results, -1, cast.Source.FaceId));
     }
 
-    private static void ApplyRestored(AbilityResolutionState cast, RestoredContinuationState state)
+    internal static void ApplyRestored(this AbilityResolutionExecution execution, AbilityResolutionState cast, RestoredContinuationState state)
     {
         cast.Discarded.Clear();
         cast.Discarded.AddRange(state.Discarded);
@@ -371,9 +371,9 @@ internal sealed partial class AbilityResolutionExecution
         cast.AbilityActor = state.Actor;
     }
 
-    private static PhaseStep? ContinuationStep(
+    internal static PhaseStep? ContinuationStep(this AbilityResolutionExecution execution,
         World world, Card source, int stoppedAt, AbilityType? tier)
-        => AbilityContinuationCodec.ContinuationStep(
+        => AbilityContinuationWireCodec.ContinuationStep(
             world.Agenda.Current, world.Agenda.Outstanding, source.ObjectId, stoppedAt, tier);
 
 }

@@ -92,7 +92,7 @@ public sealed class RhinoThreeTests
 
         Agendas.Happening(world);
 
-        Damage.Deal(
+        DamagePlacement.Deal(
             world, Cards, villain, villain,
             Cards.PrintedValue(villain.FaceId, "HP", world.Players),
             "test", "Attack", []);

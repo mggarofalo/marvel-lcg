@@ -29,7 +29,8 @@ public static class Tuck
             Places.Reference(from), Places.Reference(under),
             [new Landing(card.ObjectId, under.Cards.Count - 1)])
         {
-            Trigger = trigger, Verb = "Tuck",
+            Trigger = trigger,
+            Verb = "Tuck",
         });
     }
 }

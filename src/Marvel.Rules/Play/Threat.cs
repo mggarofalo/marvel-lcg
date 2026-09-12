@@ -70,22 +70,9 @@ public static class Threat
         int index = current?.Index ?? 0;
         PhaseStep[] placements =
         [
-            .. schemes.Select((scheme, offset) =>
-            {
-                ArgumentNullException.ThrowIfNull(scheme);
-                return new PhaseStep(
-                    Steps.PlaceThreatEffect,
-                    round,
-                    number,
-                    Index: index + offset,
-                    Subject: scheme.ObjectId,
-                    Seat: player,
-                    Placement: new ThreatPlacement(
-                        scheme.ObjectId, source?.ObjectId ?? -1, amount, cause, trigger, player),
-                    Tier: resolution?.Type,
-                    AbilityOrdinal: resolution?.Ordinal ?? -1,
-                    AbilityOccurrence: abilityOccurrence);
-            }),
+            .. schemes.Select((scheme, offset) => Placement(
+                scheme, source, amount, cause, trigger, player, resolution,
+                abilityOccurrence, round, number, index + offset)),
         ];
 
         if (current is not null)
@@ -102,6 +89,20 @@ public static class Threat
         {
             world.Agenda.Add(placement);
         }
+    }
+
+    private static PhaseStep Placement(
+        Card scheme, Card? source, long amount, ThreatCause cause, string trigger,
+        int player, PendingAbility? resolution, Occurrence? abilityOccurrence,
+        int round, int number, int index)
+    {
+        ArgumentNullException.ThrowIfNull(scheme);
+        return new PhaseStep(Steps.PlaceThreatEffect, round, number, Index: index,
+            Subject: scheme.ObjectId, Seat: player,
+            Placement: new ThreatPlacement(
+                scheme.ObjectId, source?.ObjectId ?? -1, amount, cause, trigger, player),
+            Tier: resolution?.Type, AbilityOrdinal: resolution?.Ordinal ?? -1,
+            AbilityOccurrence: abilityOccurrence);
     }
 
     /// <summary>Apply the threat assignment on an agenda occurrence.</summary>
@@ -195,7 +196,8 @@ public static class Threat
         scheme.PlaceTokens("k_threat", -removed);
         events.Add(new FieldSet(scheme.ObjectId, "k_threat", held, held - removed)
         {
-            Trigger = trigger, Verb = verb,
+            Trigger = trigger,
+            Verb = verb,
         });
 
         if (scheme.Area.Type == DeckType.SideSchemesArea
@@ -233,7 +235,8 @@ public static class Threat
             scheme.PlaceTokens("k_threat", amount);
             events.Add(new FieldSet(scheme.ObjectId, "k_threat", before, before + amount)
             {
-                Trigger = trigger, Verb = "Place_Threat",
+                Trigger = trigger,
+                Verb = "Place_Threat",
             });
         }
 
@@ -285,7 +288,8 @@ public static class Threat
         scheme.PlaceTokens("is_completed", 1);
         events.Add(new FieldSet(scheme.ObjectId, "is_completed", 0, 1)
         {
-            Trigger = "main scheme completed", Verb = "Complete",
+            Trigger = "main scheme completed",
+            Verb = "Complete",
         });
 
         if (world.AreaOf(DeckType.MainSchemesDeck).Cards.Count > 0)

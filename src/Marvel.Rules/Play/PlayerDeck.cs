@@ -99,7 +99,8 @@ public static class PlayerDeck
         events.Add(new CardsMoved(
             Places.Reference(pile), Places.Reference(seat.Deck), landings)
         {
-            Trigger = "player deck empty", Verb = "Reset",
+            Trigger = "player deck empty",
+            Verb = "Reset",
         });
 
         // Drawn from the game's one stream, so *when* this happens is part of
@@ -111,7 +112,8 @@ public static class PlayerDeck
             Places.Reference(seat.Deck),
             [.. seat.Deck.Cards.Select(card => card.ObjectId)])
         {
-            Trigger = "player deck empty", Verb = "Shuffle",
+            Trigger = "player deck empty",
+            Verb = "Shuffle",
         });
 
         // The price. `rr:deal-deal-an-encounter-card` puts it facedown in the
