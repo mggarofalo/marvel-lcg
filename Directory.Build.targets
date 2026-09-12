@@ -1,5 +1,29 @@
 <Project>
 
+  <!-- Husky.Net is a developer-workstation concern. Restore the pinned local
+       tool and install the checked-in hooks after the first ordinary restore;
+       CI runs the same gates directly and must not rewrite its Git config. -->
+  <Target Name="MarvelInstallHusky"
+          AfterTargets="Restore"
+          Condition="'$(HUSKY)' != '0' and '$(CI)' != 'true' and '$(DesignTimeBuild)' != 'true'"
+          Inputs="$(MSBuildThisFileDirectory).config/dotnet-tools.json"
+          Outputs="$(MSBuildThisFileDirectory).husky/_/install.stamp">
+    <Exec Command="dotnet tool restore"
+          WorkingDirectory="$(MSBuildThisFileDirectory)"
+          StandardOutputImportance="Low"
+          StandardErrorImportance="High" />
+    <Exec Command="dotnet husky install"
+          WorkingDirectory="$(MSBuildThisFileDirectory)"
+          StandardOutputImportance="Low"
+          StandardErrorImportance="High" />
+    <Touch Files="$(MSBuildThisFileDirectory).husky/_/install.stamp"
+           AlwaysCreate="true"
+           Condition="Exists('$(MSBuildThisFileDirectory).husky/_')" />
+    <ItemGroup>
+      <FileWrites Include="$(MSBuildThisFileDirectory).husky/_/install.stamp" />
+    </ItemGroup>
+  </Target>
+
   <!-- The dependency wall.
 
        docs/presentation-layer.md draws a line around the Godot implementation.
