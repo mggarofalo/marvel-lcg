@@ -800,18 +800,18 @@ func _procedural_cards_are_safe() -> bool:
 				var resource_tokens := resource.find_children(
 					"ResourceToken*", "HBoxContainer", false, false)
 				if resource_tokens.is_empty():
-					_fail("a compact resource has no non-splitting name and icon token")
+					_fail("a compact resource has no icon token")
 					return false
 				var slot_size := Vector2.ZERO
 				for token_node in resource_tokens:
 					var token := token_node as HBoxContainer
-					var resource_name := token.find_child("ResourceName*", true, false) as Label
 					var slot := token.find_child("ResourceIconSlot*", true, false) as Label
-					if resource_name == null or slot == null \
-							or resource_name.text not in ["Mental", "Physical", "Energy", "Wild"] \
-							or token.tooltip_text != "Resource %s" % resource_name.text \
-							or resource_name.text_overrun_behavior == TextServer.OVERRUN_TRIM_ELLIPSIS:
-						_fail("a compact resource token lost its readable accessible name")
+					if resource.size_flags_horizontal != Control.SIZE_SHRINK_BEGIN \
+							or slot == null \
+							or token.find_child("ResourceName*", true, false) != null \
+							or not token.tooltip_text.is_empty() \
+							or not slot.tooltip_text.is_empty():
+						_fail("a compact printed resource is not an icon-only row")
 						return false
 					if slot_size == Vector2.ZERO:
 						slot_size = slot.custom_minimum_size
@@ -824,9 +824,6 @@ func _procedural_cards_are_safe() -> bool:
 							or slot.get_theme_font("font").resource_path \
 									!= "res://assets/fonts/ChampionsIcons.runtime.tres":
 						_fail("resource glyphs do not share centered fixed square slots")
-						return false
-					if resource_name.text in ["R", "B", "Y", "W"]:
-						_fail("a hand resource exposes a printed abbreviation")
 						return false
 			var stage := face.find_child("SummaryValuesStage", true, false)
 			if stage != null and health != null:
@@ -980,13 +977,12 @@ func _procedural_cards_are_safe() -> bool:
 			or inspector_resources == null:
 		_fail("the player-card frame did not keep cost and resource positions")
 		return false
-	var inspector_resource_label := inspector_resources.find_child(
-		"ResourceLabel", true, false) as Label
 	var inspector_resource_icon := inspector_resources.find_child(
 		"InspectorResourceIconSlot0", true, false) as Label
-	if inspector_resource_label == null or inspector_resource_label.text != "RESOURCE" \
+	if inspector_resources.find_child("ResourceLabel", true, false) != null \
+			or not inspector_resources.tooltip_text.is_empty() \
 			or inspector_resource_icon == null or inspector_resource_icon.text != "M" \
-			or inspector_resource_icon.tooltip_text != "Resource Mental" \
+			or not inspector_resource_icon.tooltip_text.is_empty() \
 			or inspector_resource_icon.custom_minimum_size.x \
 					!= inspector_resource_icon.custom_minimum_size.y \
 			or inspector_resource_icon.horizontal_alignment \
@@ -996,7 +992,7 @@ func _procedural_cards_are_safe() -> bool:
 			or not inspector_resource_icon.has_theme_font_override("font") \
 			or inspector_resource_icon.get_theme_font("font").resource_path \
 					!= "res://assets/fonts/ChampionsIcons.runtime.tres":
-		_fail("the inspector resource footer did not render the canonical mental glyph")
+		_fail("the inspector printed resources did not render as an icon-only row")
 		return false
 	if not await _capture_checkpoint("card-inspector"):
 		return false
