@@ -292,25 +292,3 @@ internal static class AbilityDeckAndRevealExecution
         return result.Value;
     }
 }
-
-internal sealed record AbilityDeckAndRevealContext(
-    AbilityExpressionContext Expressions, string Trigger, List<GameEvent> Events,
-    ICardPlayAbilities CardPlayAbilities, ICardReadinessAbilities Readiness,
-    ImmutableArray<Card> Discarded)
-{
-    internal World World => Expressions.World;
-    internal Card Source => Expressions.Source;
-    internal int Player => Expressions.Player;
-}
-
-internal sealed record AbilityRevealRequest(int Card, int Player);
-
-internal sealed record AbilityDeckAndRevealResult(
-    bool IsHandled, bool ResolveEffect, AbilityRevealRequest? Reveal,
-    ImmutableDictionary<string, long> Values)
-{
-    internal static AbilityDeckAndRevealResult Handled { get; } =
-        new(true, false, null, ImmutableDictionary<string, long>.Empty);
-    internal static AbilityDeckAndRevealResult NotHandled { get; } =
-        new(false, false, null, ImmutableDictionary<string, long>.Empty);
-}

@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Marvel.Rules.Harvest;
-using HarvestRecord = Marvel.Rules.Harvest.Record;
+using HarvestRecord = Marvel.Rules.Harvest.RuleRecord;
 using Marvel.Tests;
 using Xunit;
 
@@ -42,7 +42,7 @@ public sealed class HarvestTests
                 continue;
             }
 
-            Assert.Equal(id, Entry.Slug(entry.GetProperty("title").GetString()!));
+            Assert.Equal(id, RulesReferenceEntry.Slug(entry.GetProperty("title").GetString()!));
             checkedIds += 1;
         }
 
@@ -61,7 +61,7 @@ public sealed class HarvestTests
     // An icon printed beside a heading names the glyph, not the entry.
     [InlineData("CRISIS ICON ([crisis])", "rr:crisis-icon")]
     public void AHeadingBecomesAnId(string title, string id) =>
-        Assert.Equal(id, Entry.Slug(title));
+        Assert.Equal(id, RulesReferenceEntry.Slug(title));
 
     [Fact]
     public void EmphasisSpanningALineBreakIsOneAside()

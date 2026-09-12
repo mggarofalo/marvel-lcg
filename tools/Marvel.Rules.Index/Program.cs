@@ -155,7 +155,7 @@ internal static class Program
 
         var corpus = Corpus.Read();
         string version = args.Length == 2 ? args[1] : corpus.Version;
-        Record record = corpus.Resolve(args[0], version);
+        RuleRecord record = corpus.Resolve(args[0], version);
         Console.WriteLine($"{args[0]} @ Rules Reference v{version}");
         Console.WriteLine($"current: {record.Id}");
         Console.WriteLine($"hash:    {record.Hash}");

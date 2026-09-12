@@ -2,6 +2,16 @@
   "$schema": "https://alirezanet.github.io/Husky.Net/schema.json",
   "tasks": [
     {
+      "name": "source-layout",
+      "group": "pre-commit",
+      "command": "dotnet",
+      "args": [
+        "husky",
+        "exec",
+        ".husky/csx/source-layout.csx"
+      ]
+    },
+    {
       "name": "no-partial-types",
       "group": "pre-commit",
       "command": "dotnet",

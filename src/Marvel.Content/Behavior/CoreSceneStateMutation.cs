@@ -5,8 +5,6 @@ using static Marvel.Content.Behavior.CoreSceneValidation;
 
 namespace Marvel.Content.Behavior;
 
-/// <summary>A legal Core Set deal from which one behavioral transcript begins.</summary>
-
 /// <summary>
 /// Deals a complete legal Core Set game, then applies a small invariant-checked state vocabulary.
 /// </summary>

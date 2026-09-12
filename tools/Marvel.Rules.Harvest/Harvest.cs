@@ -33,9 +33,9 @@ public static class Harvest
 
     /// <summary>Reads every glossary entry.</summary>
     /// <param name="document">The Rules Reference.</param>
-    public static IReadOnlyList<Entry> Read(PdfDocument document)
+    public static IReadOnlyList<RulesReferenceEntry> Read(PdfDocument document)
     {
-        var entries = new List<Entry>();
+        var entries = new List<RulesReferenceEntry>();
         var lines = new List<(Line Line, int Page)>();
 
         for (int number = First; number <= Last; number++)
@@ -103,7 +103,7 @@ public static class Harvest
         return entries;
     }
 
-    private static Entry Assemble(List<(Line Line, int Page)> lines)
+    private static RulesReferenceEntry Assemble(List<(Line Line, int Page)> lines)
     {
         string title = lines[0].Line.Text.Trim();
         var opening = new List<string>();
@@ -147,8 +147,8 @@ public static class Harvest
 
         Close(ref held, into, stepping, opening, steps, clauses, seeAlso);
 
-        return new Entry(
-            Entry.Slug(title), title, lines[0].Page, opening, steps, clauses, seeAlso);
+        return new RulesReferenceEntry(
+            RulesReferenceEntry.Slug(title), title, lines[0].Page, opening, steps, clauses, seeAlso);
     }
 
     private static bool IsPointer(Starts into, List<Run> held, Line line) =>

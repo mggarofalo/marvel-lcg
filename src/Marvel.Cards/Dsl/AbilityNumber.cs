@@ -46,27 +46,3 @@ public abstract record AbilityNumber
     /// <summary>A numeric value supplied directly by the resolution.</summary>
     public sealed record ResolutionValue(AbilityResolutionNumber Kind) : AbilityNumber;
 }
-
-/// <summary>Card values that numeric expressions can read.</summary>
-public enum AbilityCardNumberProperty
-{
-    /// <summary>Threat tokens.</summary>
-    Threat,
-    /// <summary>Damage tokens.</summary>
-    Damage,
-    /// <summary>Modified health less damage, bounded below by zero.</summary>
-    RemainingHealth,
-    /// <summary>The identity's printed starting health.</summary>
-    StartingHealth,
-}
-
-/// <summary>Resolution-owned numeric bindings with fixed authored arguments.</summary>
-public enum AbilityResolutionNumber
-{
-    /// <summary>The paid or selected amount for a basic power.</summary>
-    PowerAmount,
-    /// <summary>Printed boost icons on all cards discarded this way.</summary>
-    PrintedBoostIconsDiscarded,
-    /// <summary>One plus printed boost icons on the last card discarded this way.</summary>
-    TopEncounterDiscardBoostPlusOne,
-}

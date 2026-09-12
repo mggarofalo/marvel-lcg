@@ -5,115 +5,52 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Rules.Play;
 
-/// <summary>Dispatches phase-neutral agenda operations to their rules procedures.</summary>
+/// <summary>
+/// The villain phase, step by step, as <c>rr:villain-phase</c> lists them.
+/// </summary>
 /// <remarks>
-/// The engine chooses this dispatch boundary. The Rules Reference defines the
-/// procedures and their order, but not the software component that routes a
-/// scheduled operation to its owner. <see cref="Sequence"/> retains timing and
-/// scheduling; this type applies or answers the current operation.
+/// <para>
+/// The steps are numbered here as the Rules Reference numbers them, so a
+/// divergence can be argued against the published text rather than against this
+/// file. What is implemented is what the recorded milestone game reaches; the
+/// rest throws rather than silently doing nothing, because a villain phase that
+/// quietly skipped minion activation would produce a plausible board that is
+/// wrong.
+/// </para>
+/// <para>
+/// <b>The order is the whole thing.</b> The boost card is drawn before the
+/// encounter card and discarded before it, which is why the recorded discard
+/// pile holds the boost card at index 0 and the encounter card at index 1. Draw
+/// them the other way round and every subsequent card in the encounter deck
+/// shifts.
+/// </para>
 /// </remarks>
-public static class AgendaProcedures
+public static class VillainPhase
 {
-    /// <summary>Apply one agenda operation.</summary>
+    /// <summary>Schedule the villain phase's six steps.</summary>
     /// <remarks>
-    /// Returns a prompt when the step itself has something to ask, which one of
-    /// them does: <c>rr:attack-enemy-activation.step.2</c> asks whether anybody
-    /// defends. That is not a window — nobody is using an ability — so it is the
-    /// step that stops, and the answer comes back to
-    /// <see cref="Answer"/>.
+    /// <para>
+    /// <c>rr:villain-phase</c> lists six, and they are six values here rather
+    /// than the order of six method calls. That is not tidiness: a window may
+    /// hold an ability somebody has to be asked about, and a phase that is a
+    /// call has nowhere to stop. See <see cref="Agenda"/>.
+    /// </para>
+    /// <para>
+    /// Steps 2 and 4 are headings rather than occurrences, so they open no
+    /// windows of their own; what happens under them — one activation, one card
+    /// revealed — is scheduled when they are reached.
+    /// </para>
     /// </remarks>
-    /// <param name="world">The board.</param>
-    /// <param name="facts">The printed card data.</param>
-    /// <param name="abilities">What cards do.</param>
-    /// <param name="step">Which step.</param>
-    /// <param name="events">Where to record what happened.</param>
-    /// <returns>The question the step is waiting on, or null.</returns>
-    /// <exception cref="RulesNotImplementedException">
-    /// The board reached a rule this engine does not have — a minion engaged
-    /// with a player, or an attack that would defeat its target.
-    /// </exception>
-    public static Prompt? Apply(
-        World world, ICardFacts facts, ICardAbilities abilities,
-        PhaseStep step, List<GameEvent> events)
+    /// <param name="agenda">What the game still has to do.</param>
+    /// <param name="round">Which round this is.</param>
+    public static void Schedule(Agenda agenda, int round)
     {
-        ArgumentNullException.ThrowIfNull(abilities);
-        world.Abilities = abilities;
-        return ApplyWithWorldAbilities(world, facts, step, events);
+        ArgumentNullException.ThrowIfNull(agenda);
+        agenda.Add(new PhaseStep(Steps.PlaceThreat, round, 1));
+        agenda.Add(new PhaseStep(Steps.EnemiesActivate, round, 2, Plan: true));
+        agenda.Add(new PhaseStep(Steps.DealEncounterCards, round, 3));
+        agenda.Add(new PhaseStep(Steps.RevealEncounterCards, round, 4, Plan: true));
+        agenda.Add(new PhaseStep(Steps.PassFirstPlayerToken, round, 5));
+        agenda.Add(new PhaseStep(Steps.EndVillainPhase, round, 6));
     }
-
-    internal static Prompt? ApplyWithWorldAbilities(
-        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
-    {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(facts);
-        ArgumentNullException.ThrowIfNull(events);
-
-        return step.Operation.Procedure switch
-        {
-            AgendaProcedureKind.Attack => AttackProcedure.Apply(world, facts, step, events),
-            AgendaProcedureKind.Threat => ThreatProcedure.Apply(world, facts, step, events),
-            AgendaProcedureKind.Reveal => RevealProcedure.Apply(world, facts, step, events),
-            AgendaProcedureKind.Defeat => DefeatProcedure.Apply(world, facts, step, events),
-            AgendaProcedureKind.PlayerAction =>
-                PlayerActionProcedure.Apply(world, facts, step, events),
-            AgendaProcedureKind.AbilityContinuation =>
-                AbilityContinuationProcedure.Apply(world, step, events),
-            AgendaProcedureKind.Activation => ActivationProcedure.Apply(world, facts, step),
-            AgendaProcedureKind.PhaseTransition =>
-                PhaseTransitionProcedure.Apply(world, facts, step, events),
-            AgendaProcedureKind.Lifecycle => null,
-            _ => throw new RulesNotImplementedException(
-                $"the agenda has no procedure for '{step.What}'"),
-        };
-    }
-
-    /// <summary>Give a step the answer it stopped for.</summary>
-    /// <param name="world">The board.</param>
-    /// <param name="facts">The printed card data.</param>
-    /// <param name="abilities">What cards do.</param>
-    /// <param name="step">The step that asked.</param>
-    /// <param name="input">The player's answer.</param>
-    /// <param name="events">Where to record what happened.</param>
-    public static void Answer(
-        World world, ICardFacts facts, ICardAbilities abilities, PhaseStep step, Decision input,
-        List<GameEvent> events)
-    {
-        ArgumentNullException.ThrowIfNull(abilities);
-        world.Abilities = abilities;
-        AnswerWithWorldAbilities(world, facts, step, input, events);
-    }
-
-    internal static void AnswerWithWorldAbilities(
-        World world, ICardFacts facts, PhaseStep step, Decision input,
-        List<GameEvent> events)
-    {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(events);
-
-        switch (step.Operation.Procedure)
-        {
-            case AgendaProcedureKind.Attack:
-                AttackProcedure.Answer(world, facts, step, input, events);
-                break;
-            case AgendaProcedureKind.Reveal:
-                RevealProcedure.Answer(world, facts, step, input, events);
-                break;
-            case AgendaProcedureKind.Defeat:
-                DefeatProcedure.Answer(world, facts, step, input, events);
-                break;
-            case AgendaProcedureKind.PlayerAction:
-                PlayerActionProcedure.Answer(world, facts, step, input, events);
-                break;
-            case AgendaProcedureKind.AbilityContinuation:
-                AbilityContinuationProcedure.Answer(world, step, input, events);
-                break;
-            case AgendaProcedureKind.Activation:
-                ActivationProcedure.Answer(world, step, input);
-                break;
-            default:
-                throw new RulesNotImplementedException(
-                    $"step '{step.What}' asked nothing and cannot take an answer");
-        }
-    }
-
 }

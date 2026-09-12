@@ -338,18 +338,3 @@ internal sealed class CoreTranscriptSuite
         return new CatalogEvidence(sources, obligations);
     }
 }
-
-internal sealed record CatalogObligation(
-    string Id,
-    string Source,
-    string Disposition,
-    string? Implementation,
-    IReadOnlyList<string> Scenarios,
-    string? Mutation,
-    string? Exception);
-
-internal sealed record CatalogSource(string Disposition);
-
-internal sealed record CatalogEvidence(
-    IReadOnlyDictionary<string, CatalogSource> Sources,
-    IReadOnlyDictionary<string, CatalogObligation> Obligations);

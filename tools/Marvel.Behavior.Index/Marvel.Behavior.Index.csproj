@@ -12,6 +12,9 @@
          used by Marvel.Rules.Index. Linking keeps one implementation of the
          rules graph rather than teaching this catalog a second one. -->
     <Compile Include="../Marvel.Rules.Index/Corpus.cs" Link="RulesCorpus.cs" />
+    <Compile Include="../Marvel.Rules.Index/Edge.cs" Link="RulesEdge.cs" />
+    <Compile Include="../Marvel.Rules.Index/Modification.cs" Link="RulesModification.cs" />
+    <Compile Include="../Marvel.Rules.Index/RuleRecord.cs" Link="RuleRecord.cs" />
     <Compile Include="../../tests/Shared/RepositoryPaths.cs" Link="RepositoryPaths.cs" />
   </ItemGroup>
 

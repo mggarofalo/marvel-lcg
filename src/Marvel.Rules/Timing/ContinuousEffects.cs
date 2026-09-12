@@ -46,8 +46,8 @@ namespace Marvel.Rules.Timing;
 public sealed class ContinuousEffects(World state)
 {
     internal readonly World world = state;
-    internal readonly List<Entry> entries = [];
-    internal readonly HashSet<Entry> suppressed = [];
+    internal readonly List<ContinuousEffectEntry> entries = [];
+    internal readonly HashSet<ContinuousEffectEntry> suppressed = [];
     internal readonly List<ContinuousEffect> suppressedConstants = [];
     internal readonly HashSet<int> departing = [];
     internal readonly HashSet<int> healthDefeatPending = [];
@@ -457,10 +457,10 @@ public sealed class ContinuousEffects(World state)
     public sealed class Registration : IDisposable
     {
         private readonly ContinuousEffects effects;
-        private readonly Entry entry;
+        private readonly ContinuousEffectEntry entry;
         private bool disposed;
 
-        internal Registration(ContinuousEffects effects, Entry entry)
+        internal Registration(ContinuousEffects effects, ContinuousEffectEntry entry)
         {
             this.effects = effects;
             this.entry = entry;

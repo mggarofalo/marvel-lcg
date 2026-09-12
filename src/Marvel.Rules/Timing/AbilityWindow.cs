@@ -1,33 +1,5 @@
 namespace Marvel.Rules.Timing;
 
-/// <summary>One ability waiting in a window.</summary>
-/// <param name="Card">The object id of the card carrying it.</param>
-/// <param name="Type">Its bold timing trigger.</param>
-/// <param name="Player">
-/// The seat that would resolve it, or <c>-1</c> for an ability on an encounter
-/// card that no player has claimed. <c>rr:ability.8</c> lets any player use an
-/// optional ability on an encounter card, so who resolves it is settled when it
-/// is offered, not when it is collected.
-/// </param>
-/// <param name="Ordinal">
-/// Which ability at this timing on the card is waiting, in printed/data order.
-/// Most cards have one and therefore use zero.
-/// </param>
-public readonly record struct PendingAbility(
-    int Card, AbilityType Type, int Player, int Ordinal = 0);
-
-/// <summary>Everything waiting at one priority, which resolves before the next.</summary>
-/// <param name="Priority">The tier.</param>
-/// <param name="Abilities">What is waiting in it.</param>
-/// <remarks>
-/// A tier holding more than one ability is a <b>decision</b>, not an ordering
-/// this code can make: <c>rr:forced.5</c> gives the choice to the first player,
-/// and <c>rr:simultaneous-resolution</c> says the same of any two effects
-/// sharing a bold trigger. Returning the group rather than a sorted list is what
-/// keeps that choice visible instead of quietly resolving it by object id.
-/// </remarks>
-public readonly record struct AbilityTier(TimingPriority Priority, IReadOnlyList<PendingAbility> Abilities);
-
 /// <summary>
 /// What resolves, and in what order, in the window around an occurrence.
 /// </summary>

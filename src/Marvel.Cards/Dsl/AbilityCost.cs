@@ -28,24 +28,3 @@ public abstract record AbilityCost
     /// <summary>Deal damage, or require that all of it be taken to pay the cost.</summary>
     public sealed record Damage(AbilityCostCard Card, long Amount, bool MustTakeAll) : AbilityCost;
 }
-
-/// <summary>Cards a cost can identify without a player choice.</summary>
-public enum AbilityCostCard
-{
-    /// <summary>The ability's source.</summary>
-    Source,
-    /// <summary>The resolving player's identity.</summary>
-    Identity,
-}
-
-/// <summary>A checked cardinality for a cost's player selection.</summary>
-public abstract record AbilityCostRange
-{
-    private AbilityCostRange() { }
-    /// <summary>Exactly this many cards.</summary>
-    public sealed record Exact(int Count) : AbilityCostRange;
-    /// <summary>At least one and no more than this many cards.</summary>
-    public sealed record UpTo(int Count) : AbilityCostRange;
-    /// <summary>Any positive number of available cards.</summary>
-    public sealed record Any : AbilityCostRange;
-}

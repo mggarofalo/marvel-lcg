@@ -349,6 +349,3 @@ internal sealed class AbilityCostPayment
     private sealed record Heal(BoundCard Target, long Amount) : Step;
     private sealed record DealDamage(BoundCard Target, long Amount) : Step;
 }
-
-/// <summary>Only payment outcomes needed by post-arrow resolution.</summary>
-internal readonly record struct AbilityPaymentResult(long? Healed, long? Energy, bool Suspended);

@@ -44,11 +44,3 @@ internal static class EngineJson
         return value;
     }
 }
-
-[JsonSourceGenerationOptions(
-    PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower,
-    WriteIndented = false,
-    UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow)]
-[JsonSerializable(typeof(EngineRequest))]
-[JsonSerializable(typeof(EngineResponse))]
-internal sealed partial class EngineJsonContext : JsonSerializerContext;

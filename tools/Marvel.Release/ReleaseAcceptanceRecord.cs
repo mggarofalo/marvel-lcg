@@ -355,34 +355,3 @@ internal sealed record ReleaseAcceptanceRecord(
         return Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
     }
 }
-
-internal sealed record ReleaseAcceptanceTrust(
-    [property: JsonPropertyName("macos")] string Macos,
-    [property: JsonPropertyName("windows_community_msix")] string WindowsCommunityMsix,
-    [property: JsonPropertyName("windows_portable")] string WindowsPortable,
-    [property: JsonPropertyName("server")] string Server);
-
-internal sealed record ReleaseAcceptedArtifact(
-    [property: JsonPropertyName("kind")] string Kind,
-    [property: JsonPropertyName("name")] string Name,
-    [property: JsonPropertyName("sha256")] string Sha256);
-
-internal sealed record ReleaseAcceptedServer(
-    [property: JsonPropertyName("image")] string Image,
-    [property: JsonPropertyName("digest")] string Digest,
-    [property: JsonPropertyName("sigstore_bundle")] string SigstoreBundle,
-    [property: JsonPropertyName("sigstore_bundle_sha256")] string SigstoreBundleSha256,
-    [property: JsonPropertyName("provenance")] string Provenance,
-    [property: JsonPropertyName("provenance_sha256")] string ProvenanceSha256);
-
-internal sealed record ReleaseAcceptanceEvidence(
-    [property: JsonPropertyName("server_journey")] string ServerJourney,
-    [property: JsonPropertyName("server_journey_sha256")] string ServerJourneySha256,
-    [property: JsonPropertyName("incident_manifest")] string IncidentManifest,
-    [property: JsonPropertyName("incident_manifest_sha256")] string IncidentManifestSha256);
-
-internal sealed record ReleaseAcceptanceResults(
-    [property: JsonPropertyName("macos_install_and_first_launch")] string MacosInstallAndFirstLaunch,
-    [property: JsonPropertyName("windows_community_install_and_trust")] string WindowsCommunityInstallAndTrust,
-    [property: JsonPropertyName("windows_portable_install")] string WindowsPortableInstall,
-    [property: JsonPropertyName("server_restart_upgrade_and_reconnect")] string ServerRestartUpgradeAndReconnect);

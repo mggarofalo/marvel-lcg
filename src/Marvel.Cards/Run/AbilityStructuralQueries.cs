@@ -7,35 +7,6 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Cards.Run;
 
-// Typed facts reconstructed at the legacy continuation boundary. These carry
-// authored nodes and cursor values, not the string wire that encoded them.
-internal abstract record AbilityContinuationFrame;
-internal sealed record SequenceContinuationFrame(
-    AbilityEffect.Sequence Parent, int Current) : AbilityContinuationFrame;
-internal sealed record DependentContinuationFrame(
-    AbilityEffect.Dependent Parent, bool Predecessor,
-    AbilityStructuralOutcome? Outcome) : AbilityContinuationFrame;
-internal sealed record SimultaneousContinuationFrame(
-    AbilityEffect.Simultaneous Parent, ImmutableArray<int> Remaining)
-    : AbilityContinuationFrame;
-internal sealed record ForEachContinuationFrame(
-    AbilityEffect.ForEach Parent, long Current, long Count)
-    : AbilityContinuationFrame;
-internal sealed record EachTimeContinuationFrame(
-    AbilityEffect.EachTime Parent, long Current, long Count)
-    : AbilityContinuationFrame;
-internal sealed record EachPlayerContinuationFrame(bool StopsOuterContinuation)
-    : AbilityContinuationFrame;
-
-internal sealed record AbilityContinuationFacts(
-    bool HasPath, ImmutableArray<AbilityContinuationFrame> Frames)
-{
-    internal static AbilityContinuationFacts Empty { get; } = new(false, []);
-}
-
-internal sealed record AbilityStructuralPrompt(
-    Prompt Prompt, AbilityAdmissionResult Admission);
-
 /// <summary>Choice legality over concrete immutable expression and suffix facts.</summary>
 internal static class AbilityStructuralQueries
 {

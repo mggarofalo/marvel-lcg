@@ -131,6 +131,3 @@ internal sealed class RequestExecution
         return response;
     }
 }
-
-internal sealed class PersistenceFailureException(Exception failure)
-    : IOException("session persistence failed", failure);

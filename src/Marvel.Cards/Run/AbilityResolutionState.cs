@@ -8,13 +8,6 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Cards.Run;
 
-internal enum ResolutionOutcome
-{
-    None,
-    Partial,
-    Full,
-}
-
 /// <summary>What one ability is resolving against.</summary>
 /// <param name="World">The board.</param>
 /// <param name="Source">The card whose text this is.</param>

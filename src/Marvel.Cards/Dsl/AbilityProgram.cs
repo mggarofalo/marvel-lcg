@@ -3,20 +3,6 @@ using Marvel.Rules.Play;
 
 namespace Marvel.Cards.Dsl;
 
-/// <summary>A deterministic address of an effect in one authored ability.</summary>
-/// <remarks>
-/// Paths use explicit DSL field names and ordered list indexes, never CLR type
-/// names. This internal lookup does not change the session-ledger wire format.
-/// </remarks>
-public sealed record AbilityEffectAddress(string Card, int Ability, string Path);
-
-/// <summary>One ability whose executable syntax has been lowered completely.</summary>
-public sealed record CompiledCardAbility(
-    string Card, string Name, AbilityTrigger Trigger, AbilityEffect Effect,
-    AbilityCost? Cost, AbilityCondition? When, long? Limit, bool AnyPlayer,
-    ImmutableArray<string> Labels, string PrintedResources, AbilityMaximum? Maximum,
-    AbilityEffectAddress Address);
-
 /// <summary>An immutable, validated ability book with deterministic effect addresses.</summary>
 public sealed class AbilityProgram
 {

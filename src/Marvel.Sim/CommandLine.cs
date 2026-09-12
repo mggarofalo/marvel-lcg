@@ -116,31 +116,3 @@ internal static class CommandLine
     }
 
 }
-
-internal sealed record SimulationConfig(
-    string Scenario,
-    string Difficulty,
-    IReadOnlyList<string> Heroes,
-    IReadOnlyList<string>? ModularSets,
-    int Games,
-    IReadOnlyList<uint> ExplicitSeeds,
-    uint? SeedStart,
-    uint? SelectionSeed,
-    uint PolicySeed,
-    int DecisionLimit,
-    string? Output,
-    string? RepoRoot);
-
-internal sealed record ReplayConfig(string Path, string? RepoRoot);
-
-internal sealed class SimulationUsageException : Exception
-{
-    public SimulationUsageException(string message) : base(message)
-    {
-    }
-
-    public SimulationUsageException(string message, Exception innerException)
-        : base(message, innerException)
-    {
-    }
-}

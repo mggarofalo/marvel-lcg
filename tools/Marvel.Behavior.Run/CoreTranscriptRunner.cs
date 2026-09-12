@@ -14,80 +14,6 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Behavior.Run;
 
-internal sealed record TranscriptResult(
-    string Obligation,
-    string Scenario,
-    string Digest,
-    IReadOnlyList<GameEvent> Events);
-
-internal sealed record TranscriptBinding(
-    string Name,
-    TranscriptStepKind Kind,
-    Regex Pattern,
-    Action<TranscriptContext, TranscriptStep, Match> Execute);
-
-internal sealed record BoundTranscriptStep(
-    TranscriptStep Step,
-    TranscriptBinding Binding,
-    Match Match);
-
-internal sealed class TranscriptContext
-{
-    public TranscriptContext(
-        string obligation,
-        SetupCatalog setup,
-        CardCatalog cards,
-        AbilityBook abilities)
-    {
-        Obligation = obligation;
-        Setup = setup;
-        Cards = cards;
-        Abilities = abilities;
-    }
-
-    public string Obligation { get; }
-
-    public SetupCatalog Setup { get; }
-
-    public CardCatalog Cards { get; }
-
-    public AbilityBook Abilities { get; }
-
-    public CanonicalCoreScene? Scene { get; set; }
-
-    public List<GameEvent> Events { get; } = [];
-
-    public string CurrentPrompt { get; set; } = "<none>";
-
-    public string? ExpectedException { get; set; }
-
-    public RulesNotImplementedException? PendingException { get; set; }
-
-    public string? ExceptionDigest { get; set; }
-
-    public bool ExceptionObserved { get; set; }
-
-    public (int Seat, string From, string To)? LastFormChange { get; set; }
-
-    public IReadOnlySet<int>? LastCardOptions { get; set; }
-
-    public bool? LastAvailability { get; set; }
-
-    public string? LastInspectedFace { get; set; }
-
-    public (int Card, string Resources)? LastResourceGeneration { get; set; }
-
-    public Prompt? PendingPrompt { get; set; }
-
-    public Game? Game { get; set; }
-
-    public (int Seat, IReadOnlyList<int> Unshuffled, IReadOnlyList<int> After)?
-        LastSetupDeckShuffle { get; set; }
-
-    public World World => Scene?.World
-        ?? throw new TranscriptException("a canonical Core scene has not been constructed");
-}
-
 internal sealed class CoreTranscriptRunner
 {
     internal static readonly TimeSpan PatternTimeout = TimeSpan.FromSeconds(1);
@@ -240,12 +166,4 @@ internal sealed class CoreTranscriptRunner
 
     internal static IReadOnlyList<TranscriptBinding> DefaultVocabulary() =>
         CoreTranscriptVocabulary.All();
-}
-
-internal static class TranscriptContextExtensions
-{
-    public static CanonicalCoreScene SceneRequired(
-        this TranscriptContext context, TranscriptStep step) =>
-        context.Scene ?? throw new TranscriptException(
-            $"{step.Location}: a canonical Core scene must be dealt first");
 }

@@ -6,11 +6,6 @@ using Marvel.Rules.State;
 
 namespace Marvel.Session;
 
-/// <summary>One bounded reason that committed history became unsafe to erase.</summary>
-public sealed record InformationExposure(
-    [property: JsonRequired] string Reason,
-    [property: JsonRequired] IReadOnlyList<int> Seats);
-
 /// <summary>
 /// Derives the audience-aware knowledge boundary from authoritative engine output.
 /// </summary>

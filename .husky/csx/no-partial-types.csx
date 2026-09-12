@@ -34,7 +34,7 @@ static bool IsRequiredGeneratedType(
         "src/Marvel.Godot/Main.cs" => (Namespace: "Marvel.Godot", Type: "Main"),
         "src/Marvel.Godot/CardControl.cs" => (Namespace: "Marvel.Godot", Type: "CardControl"),
         "src/Marvel.Godot/DecisionPanel.cs" => (Namespace: "Marvel.Godot", Type: "DecisionPanel"),
-        "src/Marvel.Server/EngineJson.cs" => (Namespace: "Marvel.Server", Type: "EngineJsonContext"),
+        "src/Marvel.Server/EngineJsonContext.cs" => (Namespace: "Marvel.Server", Type: "EngineJsonContext"),
         _ => default,
     };
     return required.Type is not null

@@ -272,17 +272,3 @@ public sealed record PromptPresentation(
         return result.ToString();
     }
 }
-
-/// <summary>One visible affordance row.</summary>
-public sealed record AffordancePresentation(
-    int Id,
-    string Label,
-    string? Description,
-    string Verb,
-    string Anchor,
-    int AnchorId,
-    int AnchorPlayer,
-    string? Illegal,
-    string Targets,
-    IReadOnlyList<string> Costs,
-    string? Consequence = null);

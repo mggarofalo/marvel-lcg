@@ -23,16 +23,3 @@ internal static class CoreTranscriptVocabulary
         .. ThenTranscriptVocabulary.Bindings(),
     ];
 }
-
-internal static class TranscriptBindingFactory
-{
-    internal static TranscriptBinding Bind(
-        string name,
-        TranscriptStepKind kind,
-        string pattern,
-        Action<TranscriptContext, TranscriptStep, Match> execute) =>
-        new(name, kind, new Regex(
-            $"\\A{pattern}\\z",
-            RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture,
-            CoreTranscriptRunner.PatternTimeout), execute);
-}

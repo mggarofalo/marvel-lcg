@@ -19,7 +19,7 @@ internal static class ContinuousEffectRegistry
     internal static ContinuousEffects.Registration RegisterCore(this ContinuousEffects effects, ContinuousEffect effect)
     {
         ArgumentNullException.ThrowIfNull(effect);
-        var entry = new Entry(effect);
+        var entry = new ContinuousEffectEntry(effect);
         effects.entries.Add(entry);
         return new ContinuousEffects.Registration(effects, entry);
     }
@@ -312,7 +312,7 @@ internal static class ContinuousEffectRegistry
             && DeckTypes.IsInPlay(effects.world.Cards[card].Area.Type);
     }
 
-    internal static void Remove(this ContinuousEffects effects, Entry entry)
+    internal static void Remove(this ContinuousEffects effects, ContinuousEffectEntry entry)
     {
         if (effects.entries.Contains(entry))
         {
@@ -322,7 +322,7 @@ internal static class ContinuousEffectRegistry
 
     private static void End(
         this ContinuousEffects effects,
-        List<Entry> ending,
+        List<ContinuousEffectEntry> ending,
         string trigger,
         List<GameEvent>? events)
     {

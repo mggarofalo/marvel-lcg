@@ -5,53 +5,6 @@ using Marvel.Tests;
 
 namespace Marvel.Behavior.Index;
 
-internal sealed record AdjudicationFile(
-    [property: JsonPropertyName("version")] int Version,
-    [property: JsonPropertyName("sources")] IReadOnlyList<Adjudication> Sources);
-
-internal sealed record Adjudication(
-    [property: JsonPropertyName("id")] string Id,
-    [property: JsonPropertyName("fingerprint")] string Fingerprint,
-    [property: JsonPropertyName("obligations")] IReadOnlyList<Obligation> Obligations);
-
-internal sealed record Obligation(
-    [property: JsonPropertyName("key")] string Key,
-    [property: JsonPropertyName("summary")] string Summary,
-    [property: JsonPropertyName("disposition")] string Disposition,
-    [property: JsonPropertyName("reason")] string? Reason,
-    [property: JsonPropertyName("target")] string? Target,
-    [property: JsonPropertyName("implementation")] string? Implementation,
-    [property: JsonPropertyName("work_item")] string? WorkItem,
-    [property: JsonPropertyName("exception")] string? Exception,
-    [property: JsonPropertyName("scenarios")] IReadOnlyList<string> Scenarios,
-    [property: JsonPropertyName("mutation")] string? Mutation);
-
-internal sealed record CatalogFile(
-    [property: JsonPropertyName("version")] int Version,
-    [property: JsonPropertyName("contract")] string Contract,
-    [property: JsonPropertyName("sources")] IReadOnlyList<CatalogEntry> Sources);
-
-internal sealed record CatalogEntry(
-    [property: JsonPropertyName("id")] string Id,
-    [property: JsonPropertyName("kind")] string Kind,
-    [property: JsonPropertyName("title")] string Title,
-    [property: JsonPropertyName("fingerprint")] string Fingerprint,
-    [property: JsonPropertyName("scope")] string Scope,
-    [property: JsonPropertyName("disposition")] string Disposition,
-    [property: JsonPropertyName("obligations")] IReadOnlyList<CatalogObligation> Obligations);
-
-internal sealed record CatalogObligation(
-    [property: JsonPropertyName("id")] string Id,
-    [property: JsonPropertyName("summary")] string Summary,
-    [property: JsonPropertyName("disposition")] string Disposition,
-    [property: JsonPropertyName("reason")] string? Reason,
-    [property: JsonPropertyName("target")] string? Target,
-    [property: JsonPropertyName("implementation")] string? Implementation,
-    [property: JsonPropertyName("work_item")] string? WorkItem,
-    [property: JsonPropertyName("exception")] string? Exception,
-    [property: JsonPropertyName("scenarios")] IReadOnlyList<string> Scenarios,
-    [property: JsonPropertyName("mutation")] string? Mutation);
-
 /// <summary>Joins canonical sources to reviewed obligation adjudications.</summary>
 internal static class Catalog
 {
