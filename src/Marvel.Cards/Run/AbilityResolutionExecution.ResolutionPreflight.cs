@@ -9,58 +9,58 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Cards.Run;
 
-internal sealed partial class AbilityResolutionExecution
+internal static class AbilityResolutionPreflight
 {
-    private bool CanPartiallyResolve(AbilityEffect node, AbilityResolutionState cast) =>
-        AbilityInitiation.CanPartiallyResolve(node, AdmissionContext(cast));
+    internal static bool CanPartiallyResolve(this AbilityResolutionExecution execution, AbilityEffect node, AbilityResolutionState cast) =>
+        AbilityResolutionAdmission.CanPartiallyResolve(node, execution.AdmissionContext(cast));
 
-    private ResolutionOutcome ResolutionOf(AbilityEffect node, AbilityResolutionState cast) =>
-        (ResolutionOutcome)(int)AbilityInitiation.ResolutionOf(node, AdmissionContext(cast));
+    internal static ResolutionOutcome ResolutionOf(this AbilityResolutionExecution execution, AbilityEffect node, AbilityResolutionState cast) =>
+        (ResolutionOutcome)(int)AbilityResolutionAdmission.ResolutionOf(node, execution.AdmissionContext(cast));
 
-    private ResolutionOutcome EnsureDependentSupported(
+    internal static ResolutionOutcome EnsureDependentSupported(this AbilityResolutionExecution execution,
         AbilityEffect node, AbilityResolutionState cast, AbilityEffect effect,
         AbilityEffect dependent, ResolutionOutcome required) =>
-        (ResolutionOutcome)(int)AbilityInitiation.EnsureDependentSupported(
-            node, AdmissionContext(cast), effect, dependent,
-            (AbilityInitiation.ResolutionOutcome)(int)required);
+        (ResolutionOutcome)(int)AbilityResolutionAdmission.EnsureDependentSupported(
+            node, execution.AdmissionContext(cast), effect, dependent,
+            (AbilityAdmission.AdmissionResolution)(int)required);
 
-    private void PreflightAnsweredOutcome(AbilityEffect node, AbilityResolutionState cast) =>
-        AbilityInitiation.PreflightAnsweredOutcome(node, AdmissionContext(cast));
+    internal static void PreflightAnsweredOutcome(this AbilityResolutionExecution execution, AbilityEffect node, AbilityResolutionState cast) =>
+        AbilityResolutionAdmission.PreflightAnsweredOutcome(node, execution.AdmissionContext(cast));
 
-    private void PreflightResolutionBranches(
+    internal static void PreflightResolutionBranches(this AbilityResolutionExecution execution,
         AbilityEffect node, AbilityResolutionState cast, bool allBranches = false) =>
-        AbilityInitiation.PreflightResolutionBranches(
-            node, AdmissionContext(cast), allBranches);
+        AbilityResolutionAdmission.PreflightResolutionBranches(
+            node, execution.AdmissionContext(cast), allBranches);
 
-    private static bool PaymentCanChange(AbilityCondition test) =>
-        AbilityInitiation.PaymentCanChange(test);
+    internal static bool PaymentCanChange(this AbilityResolutionExecution execution, AbilityCondition test) =>
+        AbilityAdmissionResolutionPreflight.PaymentCanChange(test);
 
-    private bool ContainsNode(AbilityEffect node, string kind, AbilityResolutionState cast) =>
-        AbilityInitiation.ContainsNode(node, kind, AdmissionContext(cast));
+    internal static bool ContainsNode(this AbilityResolutionExecution execution, AbilityEffect node, string kind, AbilityResolutionState cast) =>
+        AbilityResolutionAdmission.ContainsNode(node, kind, execution.AdmissionContext(cast));
 
-    private bool HasNestedEachPlayer(
+    internal static bool HasNestedEachPlayer(this AbilityResolutionExecution execution,
         AbilityEffect node, AbilityResolutionState cast, bool inside = false,
         bool stateMayChange = false, bool bindingMayChange = false,
         AbilityEffect? repeatedEffect = null) =>
-        AbilityInitiation.HasNestedEachPlayer(
-            node, AdmissionContext(cast), inside, stateMayChange,
+        AbilityResolutionAdmission.HasNestedEachPlayer(
+            node, execution.AdmissionContext(cast), inside, stateMayChange,
             bindingMayChange, repeatedEffect);
 
-    private void ResolveDependent(
+    internal static void ResolveDependent(this AbilityResolutionExecution execution,
         AbilityEffect.Dependent dependent, AbilityResolutionState cast)
     {
         bool outerContinuation = cast.HasContinuation;
-        var transition = AbilityStructuralExecution.Dependent(
-            StructuralContext(cast), dependent);
+        var transition = AbilityStructuralFlowExecution.Dependent(
+            execution.StructuralContext(cast), dependent);
         while (transition is RunLeaf leaf
             && leaf.Frames[^1] is DependentFrame frame)
         {
-            RunStructuralLeaf(leaf, cast);
+            execution.RunStructuralLeaf(leaf, cast);
             var observation = new AbilityStructuralObservation(cast.Suspended);
             if (!cast.Suspended)
                 cast.SetContinuation(outerContinuation);
-            transition = AbilityStructuralExecution.AfterDependentLeaf(
-                StructuralContext(cast), dependent, frame,
+            transition = AbilityStructuralFlowExecution.AfterDependentLeaf(
+                execution.StructuralContext(cast), dependent, frame,
                 observation);
             if (cast.Suspended)
                 return;

@@ -366,22 +366,22 @@ public static class ClientTheme
         float marginBottom,
         int? left = null,
         int? bottom = null) => new()
-    {
-        BgColor = background,
-        BorderColor = border,
-        BorderWidthLeft = left ?? width,
-        BorderWidthTop = width,
-        BorderWidthRight = width,
-        BorderWidthBottom = bottom ?? width,
-        CornerRadiusTopLeft = radius,
-        CornerRadiusTopRight = radius,
-        CornerRadiusBottomLeft = radius,
-        CornerRadiusBottomRight = radius,
-        ContentMarginLeft = marginLeft,
-        ContentMarginTop = marginTop,
-        ContentMarginRight = marginRight,
-        ContentMarginBottom = marginBottom,
-    };
+        {
+            BgColor = background,
+            BorderColor = border,
+            BorderWidthLeft = left ?? width,
+            BorderWidthTop = width,
+            BorderWidthRight = width,
+            BorderWidthBottom = bottom ?? width,
+            CornerRadiusTopLeft = radius,
+            CornerRadiusTopRight = radius,
+            CornerRadiusBottomLeft = radius,
+            CornerRadiusBottomRight = radius,
+            ContentMarginLeft = marginLeft,
+            ContentMarginTop = marginTop,
+            ContentMarginRight = marginRight,
+            ContentMarginBottom = marginBottom,
+        };
 
     private static Color C(VisualColor color) => new(
         color.Red / 255.0f,

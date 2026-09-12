@@ -1,3 +1,11 @@
+using static Marvel.Cards.Dsl.AbilityLowering;
+using static Marvel.Cards.Dsl.AbilityBookLowering;
+using static Marvel.Cards.Dsl.AbilityConditionLowering;
+using static Marvel.Cards.Dsl.AbilityCostLowering;
+using static Marvel.Cards.Dsl.AbilityEffectLowering;
+using static Marvel.Cards.Dsl.AbilityModifierLowering;
+using static Marvel.Cards.Dsl.AbilityProcedureLowering;
+using static Marvel.Cards.Dsl.AbilitySelectorLowering;
 using System.Collections.Immutable;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
@@ -5,9 +13,9 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Cards.Dsl;
 
-public static partial class AbilityLowering
+internal static class AbilityModifierLowering
 {
-    private static AbilityEffect GrantEffect(AbilityValue value, AbilityLocation location, bool each, bool lasting)
+    internal static AbilityEffect GrantEffect(AbilityValue value, AbilityLocation location, bool each, bool lasting)
     {
         string target = each ? "cards" : "card";
         var fields = lasting
@@ -35,7 +43,7 @@ public static partial class AbilityLowering
         return new AbilityEffect.GrantField(cards, field, amount, each, until);
     }
 
-    private static AbilityEffect.GrantControlledCharacters GrantControlledEffect(AbilityValue value, AbilityLocation location)
+    internal static AbilityEffect.GrantControlledCharacters GrantControlledEffect(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "player", "fields", "amount", "until");
         var authored = Required(fields, "fields", location);
@@ -45,18 +53,18 @@ public static partial class AbilityLowering
         }
         ImmutableArray<string> modifiers = [.. list.Values.Select((item, index) =>
             Modifier(item, location.Child("fields").Item(index), keyword: false))];
-        return new(Player(Required(fields, "player", location), location.Child("player")), modifiers,
+        return new(LowerPlayer(Required(fields, "player", location), location.Child("player")), modifiers,
             Numeric(fields, "amount", location), TimingPoint(Required(fields, "until", location), location.Child("until")));
     }
 
-    private static string Modifier(AbilityValue value, AbilityLocation location, bool keyword)
+    internal static string Modifier(AbilityValue value, AbilityLocation location, bool keyword)
     {
         string name = Text(value, location);
-        return StateFields.IsModifiable(name) || keyword && Keywords.Granted.Contains(name)
+        return StateFieldCatalog.IsModifiable(name) || keyword && Keywords.Granted.Contains(name)
             ? name : throw location.Error($"'{name}' is not a modifier implemented by the engine");
     }
 
-    private static string TimingPoint(AbilityValue value, AbilityLocation location)
+    internal static string TimingPoint(AbilityValue value, AbilityLocation location)
     {
         string name = Text(value, location);
         return name is TimingPoints.EndOfTurn or TimingPoints.EndOfPlayerPhase or TimingPoints.EndOfVillainPhase
@@ -64,7 +72,7 @@ public static partial class AbilityLowering
             ? name : throw location.Error($"'{name}' is not a supported timing point");
     }
 
-    private static AbilityEffect.PreventDamageFrom DamageProhibition(AbilityValue value, AbilityLocation location)
+    internal static AbilityEffect.PreventDamageFrom DamageProhibition(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "card", "sourceKind", "sourceTrait");
         FixedWord(Required(fields, "card", location), location.Child("card"), "this");
@@ -72,14 +80,14 @@ public static partial class AbilityLowering
             Text(Required(fields, "sourceTrait", location), location.Child("sourceTrait")));
     }
 
-    private static AbilityEffect.PreventDamageWhile ConditionalDamageProhibition(AbilityValue value, AbilityLocation location)
+    internal static AbilityEffect.PreventDamageWhile ConditionalDamageProhibition(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "card", "condition");
         FixedWord(Required(fields, "card", location), location.Child("card"), "this");
-        return new(Condition(Required(fields, "condition", location), location.Child("condition")));
+        return new(LowerCondition(Required(fields, "condition", location), location.Child("condition")));
     }
 
-    private static AbilityEffect DelayedEffect(AbilityValue value, AbilityLocation location)
+    internal static AbilityEffect DelayedEffect(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "condition", "effect", "within");
         string condition = Text(Required(fields, "condition", location), location.Child("condition"));

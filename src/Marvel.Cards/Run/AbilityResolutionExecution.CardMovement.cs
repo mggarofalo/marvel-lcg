@@ -4,14 +4,14 @@ using Marvel.Rules.State;
 
 namespace Marvel.Cards.Run;
 
-internal sealed partial class AbilityResolutionExecution
+internal static class AbilityResolutionCardMovement
 {
-    private bool TryRunCardMovement(AbilityEffect instruction, AbilityResolutionState cast)
+    internal static bool TryRunCardMovement(this AbilityResolutionExecution execution, AbilityEffect instruction, AbilityResolutionState cast)
     {
         var result = AbilityDeckAndRevealExecution.Run(instruction,
             new AbilityDeckAndRevealContext(
                 cast.ExpressionContext(), cast.Trigger, cast.Events,
-                cardPlayAbilities, readinessAbilities,
+                execution.cardPlayAbilities, execution.readinessAbilities,
                 [.. cast.Discarded]));
         if (!result.IsHandled)
         {
@@ -20,13 +20,13 @@ internal sealed partial class AbilityResolutionExecution
         foreach (var (key, value) in result.Values)
             cast.Results[key] = value;
         if (result.Reveal is { } reveal)
-            ScheduleReveal(reveal, cast.World);
+            execution.ScheduleReveal(reveal, cast.World);
         if (result.ResolveEffect)
             cast.ResolveEffect();
         return true;
     }
 
-    private static void ScheduleReveal(AbilityRevealRequest reveal, World world) =>
+    internal static void ScheduleReveal(this AbilityResolutionExecution execution, AbilityRevealRequest reveal, World world) =>
         world.Agenda.Then(new PhaseStep(
             Steps.RevealEncounterCard,
             world.Agenda.Current?.Round ?? 0,

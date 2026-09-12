@@ -421,27 +421,30 @@ public sealed class SessionPersistenceTests
     {
         foreach (JsonNode? affordanceNode in prompt["affordances"]!.AsArray())
         {
-            JsonObject affordance = affordanceNode!.AsObject();
-            if (affordance["targets"] is JsonObject target)
-            {
-                target["is_grouped"] = target["groups"] is JsonArray { Count: > 0 };
-            }
-
-            foreach (JsonNode? costNode in affordance["costs"]!.AsArray())
-            {
-                JsonObject cost = costNode!.AsObject();
-                cost["has_alternative"] = cost["or_cost"]!.GetValue<string>().Length > 0;
-                cost["generators"] = cost["sources"]?.DeepClone() ?? new JsonArray();
-                cost["variable_requests"] = cost["variables"]?.DeepClone() ?? new JsonArray();
-                cost["resource_costs"] = cost["components"]?.DeepClone()
-                    ?? new JsonArray(new JsonObject
-                    {
-                        ["cost"] = cost["cost"]!.GetValue<string>(),
-                        ["rule"] = cost["rule"]?.DeepClone(),
-                        ["printed"] = false,
-                    });
-            }
+            AddSchemaTwoAffordance(affordanceNode!.AsObject());
         }
+    }
+
+    private static void AddSchemaTwoAffordance(JsonObject affordance)
+    {
+        if (affordance["targets"] is JsonObject target)
+            target["is_grouped"] = target["groups"] is JsonArray { Count: > 0 };
+        foreach (JsonNode? cost in affordance["costs"]!.AsArray())
+            AddSchemaTwoCost(cost!.AsObject());
+    }
+
+    private static void AddSchemaTwoCost(JsonObject cost)
+    {
+        cost["has_alternative"] = cost["or_cost"]!.GetValue<string>().Length > 0;
+        cost["generators"] = cost["sources"]?.DeepClone() ?? new JsonArray();
+        cost["variable_requests"] = cost["variables"]?.DeepClone() ?? new JsonArray();
+        cost["resource_costs"] = cost["components"]?.DeepClone()
+            ?? new JsonArray(new JsonObject
+            {
+                ["cost"] = cost["cost"]!.GetValue<string>(),
+                ["rule"] = cost["rule"]?.DeepClone(),
+                ["printed"] = false,
+            });
     }
 
     private sealed class FixedCapabilities(params string[] values) : ISessionCapabilityIssuer

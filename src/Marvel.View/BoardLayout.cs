@@ -16,6 +16,26 @@ public static class BoardLayout
         ArgumentNullException.ThrowIfNull(players);
 
         var byId = areas.ToDictionary(area => area.Id);
+        (Dictionary<int, int> cardAreas, Dictionary<int, string> cardTitles) = IndexCards(areas);
+        (Dictionary<int, int> parents, HashSet<int> brokenHosts) =
+            IndexParents(areas, cardAreas);
+        Dictionary<int, string> laneByArea = ResolveLanes(areas, players, byId, parents, brokenHosts);
+        var lanes = new List<BoardLanePresentation>();
+        foreach ((string key, string title, int? seat) in LaneOrder(players))
+        {
+            BoardLanePresentation? lane = CreateLane(
+                key, title, seat, areas, laneByArea, parents, cardTitles);
+            if (lane is not null)
+            {
+                lanes.Add(lane);
+            }
+        }
+        return lanes;
+    }
+
+    private static (Dictionary<int, int> Areas, Dictionary<int, string> Titles) IndexCards(
+        IReadOnlyList<BoardAreaPresentation> areas)
+    {
         var cardAreas = new Dictionary<int, int>();
         var cardTitles = new Dictionary<int, string>();
         foreach (BoardAreaPresentation area in areas)
@@ -31,7 +51,13 @@ public static class BoardLayout
                 cardTitles[id] = card.Title;
             }
         }
+        return (cardAreas, cardTitles);
+    }
 
+    private static (Dictionary<int, int> Parents, HashSet<int> Broken) IndexParents(
+        IReadOnlyList<BoardAreaPresentation> areas,
+        Dictionary<int, int> cardAreas)
+    {
         var parents = new Dictionary<int, int>();
         var brokenHosts = new HashSet<int>();
         foreach (BoardAreaPresentation area in areas)
@@ -50,14 +76,28 @@ public static class BoardLayout
                 brokenHosts.Add(area.Id);
             }
         }
+        return (parents, brokenHosts);
+    }
 
+    private static Dictionary<int, string> ResolveLanes(
+        IReadOnlyList<BoardAreaPresentation> areas,
+        IReadOnlyList<BoardPlayerPresentation> players,
+        Dictionary<int, BoardAreaPresentation> byId,
+        Dictionary<int, int> parents,
+        HashSet<int> brokenHosts)
+    {
         var seats = players.Select(player => player.Seat).ToHashSet();
         var laneByArea = new Dictionary<int, string>();
         foreach (BoardAreaPresentation area in areas)
         {
             ResolveLane(area.Id, [], laneByArea, parents, brokenHosts, byId, seats);
         }
+        return laneByArea;
+    }
 
+    private static List<(string Key, string Title, int? Seat)> LaneOrder(
+        IReadOnlyList<BoardPlayerPresentation> players)
+    {
         var laneOrder = new List<(string Key, string Title, int? Seat)>
         {
             ("scenario", "SCENARIO TABLE", null),
@@ -66,57 +106,54 @@ public static class BoardLayout
             ($"player-{player.Seat}", $"PLAYER {player.Seat + 1}  ·  {player.Name.ToUpperInvariant()}",
              (int?)player.Seat)));
         laneOrder.Add(("other", "OTHER TABLE AREAS", null));
+        return laneOrder;
+    }
 
-        var lanes = new List<BoardLanePresentation>();
-        foreach ((string key, string title, int? seat) in laneOrder)
+    private static BoardLanePresentation? CreateLane(
+        string key,
+        string title,
+        int? seat,
+        IReadOnlyList<BoardAreaPresentation> areas,
+        Dictionary<int, string> laneByArea,
+        Dictionary<int, int> parents,
+        Dictionary<int, string> cardTitles)
+    {
+        List<BoardAreaPresentation> members = areas
+            .Where(area => laneByArea[area.Id] == key).ToList();
+        if (members.Count == 0)
         {
-            var members = areas.Where(area => laneByArea[area.Id] == key).ToList();
-            if (members.Count == 0)
+            return null;
+        }
+        if (key == "other")
+        {
+            return new BoardLanePresentation(key, title, seat, members.Select(area => area with
             {
-                continue;
-            }
-
-            if (key == "other")
-            {
-                lanes.Add(new BoardLanePresentation(
-                    key,
-                    title,
-                    seat,
-                    members.Select(area => area with
-                    {
-                        HostedBy = area.Host >= 0
-                            ? cardTitles.GetValueOrDefault(area.Host, $"CARD {area.Host}")
-                            : string.Empty,
-                    }).ToArray()));
-                continue;
-            }
-
-            var memberIds = members.Select(area => area.Id).ToHashSet();
-            var children = members
-                .Where(area => parents.TryGetValue(area.Id, out int parent)
-                    && memberIds.Contains(parent))
-                .GroupBy(area => parents[area.Id])
-                .ToDictionary(group => group.Key, group => group.ToList());
-            var emitted = new HashSet<int>();
-            var ordered = new List<BoardAreaPresentation>();
-
-            foreach (BoardAreaPresentation root in members.Where(area =>
-                         !parents.TryGetValue(area.Id, out int parent)
-                         || !memberIds.Contains(parent)))
-            {
-                Emit(root, 0, children, emitted, ordered, cardTitles);
-            }
-
-            // Defensive fallback for malformed cycles: retain every area once.
-            foreach (BoardAreaPresentation remaining in members)
-            {
-                Emit(remaining, 0, children, emitted, ordered, cardTitles);
-            }
-
-            lanes.Add(new BoardLanePresentation(key, title, seat, ordered));
+                HostedBy = area.Host >= 0
+                    ? cardTitles.GetValueOrDefault(area.Host, $"CARD {area.Host}")
+                    : string.Empty,
+            }).ToArray());
         }
 
-        return lanes;
+        var memberIds = members.Select(area => area.Id).ToHashSet();
+        var children = members
+            .Where(area => parents.TryGetValue(area.Id, out int parent) && memberIds.Contains(parent))
+            .GroupBy(area => parents[area.Id])
+            .ToDictionary(group => group.Key, group => group.ToList());
+        var emitted = new HashSet<int>();
+        var ordered = new List<BoardAreaPresentation>();
+
+        foreach (BoardAreaPresentation root in members.Where(area =>
+                     !parents.TryGetValue(area.Id, out int parent) || !memberIds.Contains(parent)))
+        {
+            Emit(root, 0, children, emitted, ordered, cardTitles);
+        }
+
+        // Defensive fallback for malformed cycles: retain every area once.
+        foreach (BoardAreaPresentation remaining in members)
+        {
+            Emit(remaining, 0, children, emitted, ordered, cardTitles);
+        }
+        return new BoardLanePresentation(key, title, seat, ordered);
     }
 
     private static string ResolveLane(

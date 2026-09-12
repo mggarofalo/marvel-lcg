@@ -270,41 +270,32 @@ public static class Resources
         var used = new bool[generated.Length];
         foreach (char type in required ?? string.Empty)
         {
-            int found = -1;
-            for (int index = 0; index < used.Length; index++)
-            {
-                if (!used[index] && generated[index] == type)
-                {
-                    found = index;
-                    break;
-                }
-            }
-            if (found < 0)
-            {
-                for (int index = 0; index < used.Length; index++)
-                {
-                    if (!used[index] && generated[index] == Wild)
-                    {
-                        found = index;
-                        break;
-                    }
-                }
-            }
-
+            int found = FindUnused(generated, used, type);
+            if (found < 0) found = FindUnused(generated, used, Wild);
             used[found] = true;
         }
 
+        FillPayment(used, cost);
+
+        return string.Concat(generated.Where((_, index) => used[index]));
+    }
+
+    private static int FindUnused(string generated, bool[] used, char type)
+    {
+        for (int index = 0; index < used.Length; index++)
+            if (!used[index] && generated[index] == type) return index;
+        return -1;
+    }
+
+    private static void FillPayment(bool[] used, long cost)
+    {
         long selected = used.LongCount(taken => taken);
         for (int index = 0; index < used.Length && selected < cost; index++)
         {
-            if (!used[index])
-            {
-                used[index] = true;
-                selected += 1;
-            }
+            if (used[index]) continue;
+            used[index] = true;
+            selected++;
         }
-
-        return string.Concat(generated.Where((_, index) => used[index]));
     }
 
     /// <summary>

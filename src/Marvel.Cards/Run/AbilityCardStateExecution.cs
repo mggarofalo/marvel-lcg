@@ -62,34 +62,56 @@ internal static class AbilityCardStateExecution
         var into = context.World.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(player));
         World.MoveToTop(card, into);
         context.Events.Add(new CardsMoved(Places.Reference(from), Places.Reference(into),
-            [new Landing(card.ObjectId, into.Cards.Count - 1)]) { Trigger = context.Trigger, Verb = "Put_Into_Play" });
+            [new Landing(card.ObjectId, into.Cards.Count - 1)])
+        { Trigger = context.Trigger, Verb = "Put_Into_Play" });
         Reveal.EnterPlay(
             context.World, context.World.Facts, card, context.Events,
             abilities: context.CardPlayAbilities);
     }
     internal static bool TryRun(AbilityEffect effect, AbilityCardStateContext context)
     {
+        if (TryRunStateEffect(effect, context)) return true;
+        if (effect is AbilityEffect.CardAction action)
+        {
+            return RunCardAction(action, context);
+        }
+        return TryRunRandomEffect(effect, context);
+    }
+
+    private static bool TryRunStateEffect(
+        AbilityEffect effect, AbilityCardStateContext context)
+    {
         switch (effect)
         {
             case AbilityEffect.PlaceCounters counters: PlaceCounters(counters, context); return true;
             case AbilityEffect.RemoveCounters counters: RemoveCounters(counters, context); return true;
             case AbilityEffect.GiveStatus status: GiveStatus(status, context); return true;
-            case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.Exhaust } exhaust:
-                Exhaust(exhaust.Selection, context); return true;
-            case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.Ready } ready:
-                Ready(ready.Selection, context); return true;
-            case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.Discard } discard:
-                Discard(discard.Selection, context); return true;
-            case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.RemoveFromGame } removal:
-                RemoveFromGame(removal.Selection, context); return true;
-            case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.AddToHand } added:
-                AddToHand(added.Selection, context); return true;
-            case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.ReturnOwnedToHand } returned:
-                ReturnOwnedToHand(returned.Selection, context); return true;
-            case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.ReturnToHand } returned:
-                ReturnToHand(returned.Selection, context); return true;
-            case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.AttachTo } attachment:
-                AttachTo(attachment.Selection, context); return true;
+            default: return false;
+        }
+    }
+
+    private static bool RunCardAction(
+        AbilityEffect.CardAction action, AbilityCardStateContext context)
+    {
+        switch (action.Instruction)
+        {
+            case AbilityCardInstruction.Exhaust: Exhaust(action.Selection, context); return true;
+            case AbilityCardInstruction.Ready: Ready(action.Selection, context); return true;
+            case AbilityCardInstruction.Discard: Discard(action.Selection, context); return true;
+            case AbilityCardInstruction.RemoveFromGame: RemoveFromGame(action.Selection, context); return true;
+            case AbilityCardInstruction.AddToHand: AddToHand(action.Selection, context); return true;
+            case AbilityCardInstruction.ReturnOwnedToHand: ReturnOwnedToHand(action.Selection, context); return true;
+            case AbilityCardInstruction.ReturnToHand: ReturnToHand(action.Selection, context); return true;
+            case AbilityCardInstruction.AttachTo: AttachTo(action.Selection, context); return true;
+            default: return false;
+        }
+    }
+
+    private static bool TryRunRandomEffect(
+        AbilityEffect effect, AbilityCardStateContext context)
+    {
+        switch (effect)
+        {
             case AbilityEffect.PlaceAtRandom placement: PlaceAtRandom(placement, context); return true;
             case AbilityEffect.DiscardAtRandom discard: DiscardAtRandom(discard, context); return true;
             case AbilityEffect.DiscardTop discard: DiscardTop(discard, context); return true;
@@ -216,7 +238,8 @@ internal static class AbilityCardStateExecution
             && context.World.Facts.Attributes(card.FaceId).ContainsKey("Linked")) card.TransferLinkedOwnership(context.Player);
         World.MoveToTop(card, hand);
         context.Events.Add(new CardsMoved(Places.Reference(from), Places.Reference(hand),
-            [new Landing(card.ObjectId, hand.Cards.Count - 1)]) { Trigger = context.Trigger, Verb = verb });
+            [new Landing(card.ObjectId, hand.Cards.Count - 1)])
+        { Trigger = context.Trigger, Verb = verb });
         ending.Complete(context.Trigger, context.Events);
     }
 
@@ -228,7 +251,8 @@ internal static class AbilityCardStateExecution
         var onto = context.World.AreaOf(DeckType.UpgradesArea, host.Area.PlayArea, host.ObjectId, host.Area.CardOwner);
         World.MoveToTop(context.Source, onto);
         context.Events.Add(new CardsMoved(Places.Reference(from), Places.Reference(onto),
-            [new Landing(context.Source.ObjectId, onto.Cards.Count - 1)]) { Trigger = context.Trigger, Verb = "Attach" });
+            [new Landing(context.Source.ObjectId, onto.Cards.Count - 1)])
+        { Trigger = context.Trigger, Verb = "Attach" });
         context.Events.Add(new CardAttached(context.Source.ObjectId, host.ObjectId) { Trigger = context.Trigger, Verb = "Attach" });
     }
 
@@ -246,7 +270,8 @@ internal static class AbilityCardStateExecution
                 var card = context.World.Random.Choice(hand.Cards); var from = card.Area;
                 World.MoveToTop(card, onto); card.TurnFaceDown();
                 context.Events.Add(new CardsMoved(Places.Reference(from), Places.Reference(onto),
-                    [new Landing(card.ObjectId, onto.Cards.Count - 1)]) { Trigger = context.Trigger, Verb = "Place" });
+                    [new Landing(card.ObjectId, onto.Cards.Count - 1)])
+                { Trigger = context.Trigger, Verb = "Place" });
                 context.Events.Add(new CardAttached(card.ObjectId, host.ObjectId) { Trigger = context.Trigger, Verb = "Place" });
             }
         }

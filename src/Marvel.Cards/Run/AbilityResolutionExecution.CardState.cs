@@ -4,14 +4,14 @@ using Marvel.Rules.State;
 
 namespace Marvel.Cards.Run;
 
-internal sealed partial class AbilityResolutionExecution
+internal static class AbilityResolutionCardState
 {
-    private bool TryRunCardState(AbilityEffect effect, AbilityResolutionState cast)
+    internal static bool TryRunCardState(this AbilityResolutionExecution execution, AbilityEffect effect, AbilityResolutionState cast)
     {
         var result = new AbilityCardStateResult();
         bool handled = AbilityCardStateExecution.TryRun(effect, new AbilityCardStateContext(
             cast.ExpressionContext(), cast.Trigger, cast.Events,
-            cardPlayAbilities, readinessAbilities, result));
+            execution.cardPlayAbilities, execution.readinessAbilities, result));
         if (!handled) return false;
         cast.Discarded.AddRange(result.Discarded);
         foreach (var (key, value) in result.Values) cast.Results[key] = value;

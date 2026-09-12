@@ -196,23 +196,21 @@ internal static class AgendaOperations
 
     internal static AgendaOperationData AttackPayload(AgendaOperationData data)
     {
-        if (data.Placement is not null
-            || data.PlayerAction is not null
-            || data.ProcedureAbilities is not null
-            || data.ProcedurePlayersPassed is not null
-            || data.AbilityOrdinal >= 0
-            || data.AbilityPath is not null
-            || data.AbilityActivationIds is not null
-            || data.AbilityResults is not null
-            || data.AbilityOccurrence is not null
-            || data.AbilityFace.Length > 0
-            || data.AbilityPlayer >= 0
-            || data.AbilityActor >= 0
-            || data.AbilityHasContinuation)
+        if (HasRevealOrActionPayload(data) || HasAbilityPayload(data))
         {
             throw new ArgumentException(
                 "an attack operation cannot carry reveal, action, or ability-continuation payload");
         }
         return data;
     }
+
+    private static bool HasRevealOrActionPayload(AgendaOperationData data) =>
+        data.Placement is not null || data.PlayerAction is not null
+        || data.ProcedureAbilities is not null || data.ProcedurePlayersPassed is not null;
+
+    private static bool HasAbilityPayload(AgendaOperationData data) =>
+        data.AbilityOrdinal >= 0 || data.AbilityPath is not null
+        || data.AbilityActivationIds is not null || data.AbilityResults is not null
+        || data.AbilityOccurrence is not null || data.AbilityFace.Length > 0
+        || data.AbilityPlayer >= 0 || data.AbilityActor >= 0 || data.AbilityHasContinuation;
 }

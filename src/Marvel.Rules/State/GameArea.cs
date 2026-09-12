@@ -46,7 +46,7 @@ namespace Marvel.Rules.State;
 /// </para>
 /// <para>
 /// <b>Not a card tag.</b> The state unit is a play area, and
-/// <see cref="World.Join"/> and <see cref="World.Detach"/> each emit one event
+/// <see cref="WorldTopology.Join"/> and <see cref="WorldTopology.Detach"/> each emit one event
 /// when membership changes. Every card follows through its play area without
 /// storing a second placement. See <c>docs/event-stream.md</c>, "Play areas and
 /// game areas".

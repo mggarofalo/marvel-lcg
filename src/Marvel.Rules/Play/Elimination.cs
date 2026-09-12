@@ -74,7 +74,8 @@ public static class Elimination
                     Places.Reference(from), Places.Reference(onto),
                     [new Landing(minion.ObjectId, onto.Cards.Count - 1)])
                 {
-                    Trigger = trigger, Verb = "Engage",
+                    Trigger = trigger,
+                    Verb = "Engage",
                 });
 
                 // "Retaining any tokens, attached cards, boost cards, tucked
@@ -101,7 +102,8 @@ public static class Elimination
                         Places.Reference(source), Places.Reference(destination),
                         [new Landing(card.ObjectId, destination.Cards.Count - 1)])
                     {
-                        Trigger = trigger, Verb = "Engage",
+                        Trigger = trigger,
+                        Verb = "Engage",
                     });
                 }
             }
@@ -221,7 +223,8 @@ public static class Elimination
             Places.Reference(from), Places.Reference(removed),
             [new Landing(card.ObjectId, removed.Cards.Count - 1)])
         {
-            Trigger = trigger, Verb = "Eliminate",
+            Trigger = trigger,
+            Verb = "Eliminate",
         });
         constantsEnding.Complete(trigger, events);
     }

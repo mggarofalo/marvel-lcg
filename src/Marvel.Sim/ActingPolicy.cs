@@ -32,8 +32,7 @@ internal sealed class ActingPolicy(ICardFacts facts, IReadOnlyList<uint> seatSee
             ?? throw new InvalidOperationException("a finished game has no prompt to answer");
         var world = game.State;
 
-        if (asked.Affordances.Any(option =>
-                string.Equals(option.Verb, Game.ResolveMulligans, StringComparison.Ordinal)))
+        if (IsMulligan(asked))
         {
             return Taking(
                 game,
@@ -42,19 +41,9 @@ internal sealed class ActingPolicy(ICardFacts facts, IReadOnlyList<uint> seatSee
                 []);
         }
 
-        if (asked.Asking == Question.Defender)
+        if (AnswerQuestion(game, asked) is { } answer)
         {
-            var defenders = asked.Affordances.Where(option => option.IsLegal).ToList();
-            return defenders.Count == 0
-                ? Decision.Decline
-                : Taking(game, random[asked.Player].Choice(defenders), []);
-        }
-
-        if (asked.Asking is Question.Element or Question.Option or Question.Order)
-        {
-            var choices = asked.Affordances.Where(option => option.IsLegal).ToList();
-            var choice = random[asked.Player].Choice(choices);
-            return Taking(game, choice, Payment(choice) ?? []);
+            return answer;
         }
 
         var ending = asked.Affordances.FirstOrDefault(option =>
@@ -75,6 +64,30 @@ internal sealed class ActingPolicy(ICardFacts facts, IReadOnlyList<uint> seatSee
             : Taking(game, asked.Affordances.First(option => option.IsLegal), []);
     }
 
+    private static bool IsMulligan(Prompt prompt) => prompt.Affordances.Any(option =>
+        string.Equals(option.Verb, Game.ResolveMulligans, StringComparison.Ordinal));
+
+    private static bool IsChoiceQuestion(Question question) =>
+        question is Question.Element or Question.Option or Question.Order;
+
+    private Decision? AnswerQuestion(Game game, Prompt asked)
+    {
+        if (asked.Asking == Question.Defender)
+        {
+            List<Affordance> defenders = asked.Affordances.Where(option => option.IsLegal).ToList();
+            return defenders.Count == 0
+                ? Decision.Decline
+                : Taking(game, random[asked.Player].Choice(defenders), []);
+        }
+        if (!IsChoiceQuestion(asked.Asking))
+        {
+            return null;
+        }
+        List<Affordance> choices = asked.Affordances.Where(option => option.IsLegal).ToList();
+        Affordance choice = random[asked.Player].Choice(choices);
+        return Taking(game, choice, Payment(choice) ?? []);
+    }
+
     public void DecisionResolved()
     {
         CardsPlayed += pending.CardsPlayed;
@@ -90,33 +103,17 @@ internal sealed class ActingPolicy(ICardFacts facts, IReadOnlyList<uint> seatSee
         var seat = world.Seats[asked.Player];
         bool hero = Forms.In(world, seat, facts, Forms.Hero);
 
-        if (!hero && ResourceAbilityPlay(asked, seat.IdentityCard.ObjectId) is { } resourcePlay)
+        if (OpeningAction(game, asked, seat, hero) is { } opening)
         {
-            return Taking(game, resourcePlay.Option, resourcePlay.Payment);
+            return opening;
         }
-
-        if (!hero && Find(asked, Game.ChangeForm) is { } change)
+        if (PayableAction(game, asked, world) is { } action)
         {
-            return Taking(game, change, []);
+            return action;
         }
-
-        var payableAction = asked.Affordances.FirstOrDefault(option =>
-            option.IsLegal
-            && string.Equals(option.Verb, Game.ActionVerb, StringComparison.Ordinal)
-            && ActingHealth(world, option.AnchorPlayer) > 1
-            && Payment(option) is not null);
-        if (payableAction is { } action
-            && Payment(action) is { } actionPayment)
+        if (PlayableCard(game, asked) is { } play)
         {
-            return Taking(game, action, actionPayment);
-        }
-
-        if (asked.Affordances.FirstOrDefault(option =>
-                option.IsLegal
-                && string.Equals(option.Verb, CardPlay.Verb, StringComparison.Ordinal)
-                && Payment(option) is not null) is { } play)
-        {
-            return Taking(game, play, Payment(play)!);
+            return play;
         }
 
         long threat = world.TheCardIn(DeckType.MainSchemesArea)
@@ -129,6 +126,40 @@ internal sealed class ActingPolicy(ICardFacts facts, IReadOnlyList<uint> seatSee
             ?? Find(asked, BasicPowers.AttackVerb);
 
         return power is null ? Decision.Decline : Taking(game, power, []);
+    }
+
+    private Decision? OpeningAction(Game game, Prompt asked, Seat seat, bool hero)
+    {
+        if (hero)
+        {
+            return null;
+        }
+        if (ResourceAbilityPlay(asked, seat.IdentityCard.ObjectId) is { } resourcePlay)
+        {
+            return Taking(game, resourcePlay.Option, resourcePlay.Payment);
+        }
+        Affordance? change = Find(asked, Game.ChangeForm);
+        return change is null ? null : Taking(game, change, []);
+    }
+
+    private Decision? PayableAction(Game game, Prompt asked, World world)
+    {
+        Affordance? action = asked.Affordances.FirstOrDefault(option =>
+            option.IsLegal
+            && string.Equals(option.Verb, Game.ActionVerb, StringComparison.Ordinal)
+            && ActingHealth(world, option.AnchorPlayer) > 1
+            && Payment(option) is not null);
+        IReadOnlyList<int>? payment = action is null ? null : Payment(action);
+        return action is null || payment is null ? null : Taking(game, action, payment);
+    }
+
+    private Decision? PlayableCard(Game game, Prompt asked)
+    {
+        Affordance? play = asked.Affordances.FirstOrDefault(option =>
+            option.IsLegal
+            && string.Equals(option.Verb, CardPlay.Verb, StringComparison.Ordinal)
+            && Payment(option) is not null);
+        return play is null ? null : Taking(game, play, Payment(play)!);
     }
 
     private Decision Taking(
@@ -200,7 +231,7 @@ internal sealed class ActingPolicy(ICardFacts facts, IReadOnlyList<uint> seatSee
     private long ActingHealth(World world, int player)
     {
         var identity = world.Seats[player].IdentityCard;
-        return Damage.Health(world, facts, identity) - identity.Damage;
+        return DamagePlacement.Health(world, facts, identity) - identity.Damage;
     }
 
     private static (Affordance Option, IReadOnlyList<int> Payment)? ResourceAbilityPlay(

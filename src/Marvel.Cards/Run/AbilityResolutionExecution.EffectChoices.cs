@@ -8,16 +8,16 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Cards.Run;
 
-internal sealed partial class AbilityResolutionExecution
+internal static class AbilityResolutionEffectChoices
 {
     /// <summary>Suspend an ability for one persisted player choice.</summary>
-    private void SuspendForChoice(AbilityEffect node, AbilityResolutionState cast)
+    internal static void SuspendForChoice(this AbilityResolutionExecution execution, AbilityEffect node, AbilityResolutionState cast)
     {
         // `Index` remains the legacy top-level resume point. New continuations
         // use AbilityOrdinal and AbilityPath below.
-        int abilityOrdinal = AbilityOrdinal(node, cast);
+        int abilityOrdinal = execution.AbilityOrdinal(node, cast);
         var continuation = AbilityContinuationCodec.Step(
-            Capture(cast, abilityOrdinal), Steps.ChooseOption,
+            execution.Capture(cast, abilityOrdinal), Steps.ChooseOption,
             cast.World.Agenda.Current?.Round ?? 0);
         if (cast.Occurrence.Is(Steps.TurnAction))
         {
@@ -31,8 +31,8 @@ internal sealed partial class AbilityResolutionExecution
         cast.Suspend();
     }
 
-    private IReadOnlyList<Card> DamageTargets(AbilityCardSelection targets, AbilityResolutionState cast) =>
-        AbilityDamageAndThreatExecution.DamageTargets(targets, DamageAndThreatContext(cast));
+    internal static IReadOnlyList<Card> DamageTargets(this AbilityResolutionExecution execution, AbilityCardSelection targets, AbilityResolutionState cast) =>
+        AbilityDamageAndThreatExecution.DamageTargets(targets, execution.DamageAndThreatContext(cast));
 
     /// <summary>Deals an assignment that is already worked out.</summary>
     /// <remarks>
@@ -40,42 +40,42 @@ internal sealed partial class AbilityResolutionExecution
     /// "simultaneously" and simultaneous still has to reach the event stream in
     /// some order — one the board cannot see and the wire can.
     /// </remarks>
-    private void Resolve(
+    internal static void Resolve(this AbilityResolutionExecution execution,
         AbilityEffect node, AbilityResolutionState cast, Dictionary<int, long> assigned)
-        => ApplyDamageAndThreat(
+        => execution.ApplyDamageAndThreat(
             AbilityDamageAndThreatExecution.ResolveAssigned(
-                node, assigned, DamageAndThreatContext(cast)),
+                node, assigned, execution.DamageAndThreatContext(cast)),
             node, cast);
 
     /// <summary>"Deal N damage to …" — <c>rr:damage</c>.</summary>
     /// <remarks>
-    /// Through <see cref="Damage.Deal"/> and not at the token, because damage
+    /// Through <see cref="DamagePlacement.Deal"/> and not at the token, because damage
     /// is one rule however it arrived: <c>rr:tough.2</c> prevents all of it and
     /// discards a status card instead, and <c>rr:defeat</c> is the other half
     /// of the same moment. A card that wrote to <c>k_damage</c> would skip
     /// both and leave a defeated character standing.
     /// </remarks>
-    private void DealDamage(AbilityEffect.Damage damage, AbilityEffect node, AbilityResolutionState cast, long multiplier = 1)
-        => ApplyDamageAndThreat(
+    internal static void DealDamage(this AbilityResolutionExecution execution, AbilityEffect.Damage damage, AbilityEffect node, AbilityResolutionState cast, long multiplier = 1)
+        => execution.ApplyDamageAndThreat(
             AbilityDamageAndThreatExecution.DealDamage(
-                damage, node, DamageAndThreatContext(cast), multiplier),
+                damage, node, execution.DamageAndThreatContext(cast), multiplier),
             node, cast);
 
-    private void SchedulePower(SchedulePowerCommand command, AbilityResolutionState cast)
+    internal static void SchedulePower(this AbilityResolutionExecution execution, SchedulePowerCommand command, AbilityResolutionState cast)
     {
         var continuationChosen = cast.CaptureCurrentSelection();
         cast.Choose(command.Target);
-        var capture = Capture(cast, command.AbilityIndex, continuationChosen);
+        var capture = execution.Capture(cast, command.AbilityIndex, continuationChosen);
         var continuation = AbilityContinuationCodec.Power(
             capture, command.PowerOrdinal, cast.HasContinuation);
         bool scheduled = command.Verb == BasicPowers.AttackVerb
             ? BasicPowers.CardAttack(
-                cast.World, cast.World.Facts, Resolver(cast), cast.Source,
+                cast.World, cast.World.Facts, execution.Resolver(cast), cast.Source,
                 command.Target, command.Amount,
                 cast.Trigger, cast.Events, continuation,
                 [.. command.Targets.Select(card => card.ObjectId)], cast.AbilityActor)
             : BasicPowers.CardThwart(
-                cast.World, cast.World.Facts, Resolver(cast), cast.Source,
+                cast.World, cast.World.Facts, execution.Resolver(cast), cast.Source,
                 command.Target, command.Amount,
                 cast.Trigger, cast.Events, continuation,
                 [.. command.Targets.Select(card => card.ObjectId)], cast.Occurrence.Threat,
@@ -88,21 +88,21 @@ internal sealed partial class AbilityResolutionExecution
         cast.Suspend();
     }
 
-    private void RemoveThreat(AbilityEffect.RemoveThreat removal, AbilityResolutionState cast, long multiplier = 1)
-        => ApplyDamageAndThreat(
+    internal static void RemoveThreat(this AbilityResolutionExecution execution, AbilityEffect.RemoveThreat removal, AbilityResolutionState cast, long multiplier = 1)
+        => execution.ApplyDamageAndThreat(
             AbilityDamageAndThreatExecution.RemoveThreat(
-                removal, DamageAndThreatContext(cast), multiplier),
+                removal, execution.DamageAndThreatContext(cast), multiplier),
             removal, cast);
 
-    private static long EventModifier(AbilityResolutionState cast, string kind) =>
+    internal static long EventModifier(this AbilityResolutionExecution execution, AbilityResolutionState cast, string kind) =>
         AbilityEventModifiers.Amount(cast.World, cast.Source, kind);
 
-    private static IReadOnlyList<ContinuousEffect> EventModifierEffects(
+    internal static IReadOnlyList<ContinuousEffect> EventModifierEffects(this AbilityResolutionExecution execution,
         AbilityResolutionState cast, string kind)
         => AbilityEventModifiers.Effects(cast.World, cast.Source, kind);
 
     /// <summary>Which card type a word names.</summary>
-    private static CardKind Kind(string named) => named switch
+    internal static CardKind Kind(this AbilityResolutionExecution execution, string named) => named switch
     {
         "sideScheme" => CardKind.EncounterSideScheme,
         "minion" => CardKind.Minion,
@@ -141,7 +141,7 @@ internal sealed partial class AbilityResolutionExecution
     /// after that ordered batch, excluding enemies it has already processed.
     /// </para>
     /// </remarks>
-    private void ScheduleActivations(
+    internal static void ScheduleActivations(this AbilityResolutionExecution execution,
         ScheduleActivationsCommand command, AbilityResolutionState cast)
     {
         int round = cast.World.Agenda.Current?.Round ?? 0;
@@ -173,9 +173,9 @@ internal sealed partial class AbilityResolutionExecution
 
         if (activationIds.Count > 0)
         {
-            int abilityOrdinal = AbilityOrdinal(command.Effect, cast);
+            int abilityOrdinal = execution.AbilityOrdinal(command.Effect, cast);
             var capture = AbilityContinuationCodec.ForActivations(
-                Capture(cast, abilityOrdinal), command.Dynamic);
+                execution.Capture(cast, abilityOrdinal), command.Dynamic);
             cast.World.Agenda.AfterActivations(activationIds, AbilityContinuationCodec.Step(
                 capture, Steps.ResumeAbility, round, plan: true, activationIds: activationIds));
             cast.WaitFor(activationIds);
@@ -188,13 +188,13 @@ internal sealed partial class AbilityResolutionExecution
     }
 
     /// <summary>Resume the containing ability after a rules procedure finishes.</summary>
-    private void SuspendAfterProcedure(
+    internal static void SuspendAfterProcedure(this AbilityResolutionExecution execution,
         AbilityEffect node, AbilityResolutionState cast, PhaseStep? agendaOwner = null,
         Occurrence? agendaOccurrence = null)
     {
-        int abilityOrdinal = AbilityOrdinal(node, cast);
+        int abilityOrdinal = execution.AbilityOrdinal(node, cast);
         var capture = AbilityContinuationCodec.ForEffectProcedure(
-            Capture(cast, abilityOrdinal));
+            execution.Capture(cast, abilityOrdinal));
         var continuation = AbilityContinuationCodec.Step(
             capture, Steps.ResumeAbility, cast.World.Agenda.Current?.Round ?? 0, plan: true);
         if (agendaOwner is null)
@@ -214,11 +214,11 @@ internal sealed partial class AbilityResolutionExecution
     }
 
     /// <summary>Resume an initiated ability after its cost procedure settles.</summary>
-    private void SuspendAfterCost(
+    internal static void SuspendAfterCost(this AbilityResolutionExecution execution,
         AbilityResolutionState cast, int abilityOrdinal, PhaseStep? owner, Occurrence? occurrence)
     {
         var capture = AbilityContinuationCodec.ForCostProcedure(
-            Capture(cast, abilityOrdinal));
+            execution.Capture(cast, abilityOrdinal));
         var continuation = AbilityContinuationCodec.Step(
             capture, Steps.ResumeAbility, cast.World.Agenda.Current?.Round ?? 0, plan: true);
         if (owner is null)
@@ -234,12 +234,12 @@ internal sealed partial class AbilityResolutionExecution
         }
     }
 
-    private AbilityContinuationCapture Capture(
+    internal static AbilityContinuationCapture Capture(this AbilityResolutionExecution execution,
         AbilityResolutionState cast, int ordinal, AbilityCardReference? chosen = null,
         IReadOnlyList<AbilityStructuralFrame>? frames = null)
     {
         var results = new Dictionary<string, long>(cast.Results, StringComparer.Ordinal);
-        var ability = AbilityAt(
+        var ability = execution.AbilityAt(
             cast.Source, cast.Tier, ordinal, cast.AbilityFace);
         var crisis = AbilityContinuationCodec.CrisisIgnoringThwartOrdinals(
             ability, cast.ValidatedCrisisIgnoringThwarts,

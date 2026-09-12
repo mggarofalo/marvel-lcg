@@ -195,47 +195,46 @@ internal static partial class Printed
         Extract.Keywords.Read(text, printed);
         Scheme(card, printed);
 
-        if (card.Flag("is_unique"))
-        {
-            // The star beside the title is upstream's structured `is_unique`
-            // fact. `Unique` is this dataset's spelling for that printed icon.
-            printed["Unique"] = "1";
-        }
+        Identity(card, kind, nemeses, printed);
+        Stage(card, printed);
+        Evidence(card, printed);
 
-        if (card.Text("stage") is { Length: > 0 } stage)
-        {
-            // Upstream writes a villain's stage as a roman numeral and a main
-            // scheme's as "1A"/"1B" — the same number with the face appended,
-            // and the face is which side of the card is up rather than which
-            // stage it is. Both become the number.
-            printed["Stage"] = Numbered(stage);
-        }
+        return printed;
+    }
 
+    private static void Identity(
+        SdbCard card, string kind, IReadOnlyDictionary<string, string> nemeses,
+        SortedDictionary<string, string> printed)
+    {
+        // The star beside the title is upstream's structured uniqueness fact.
+        if (card.Flag("is_unique")) printed["Unique"] = "1";
         if (Classed.Contains(kind, StringComparer.Ordinal)
             && card.Text("faction_code") is { Length: > 0 } faction)
         {
-            // Deadpool's class is printed `'Pool`, apostrophe and all, and
-            // upstream codes it `pool`. Capitalising the first letter is right
-            // for the other eight.
             printed["Class"] = string.Equals(faction, "pool", StringComparison.Ordinal)
                 ? "'Pool"
                 : char.ToUpperInvariant(faction[0]) + faction[1..];
         }
-
-        if (card.Text("set_code") is { } set && nemeses.TryGetValue(set, out string? owner))
-        {
+        if (card.Text("set_code") is { } set
+            && nemeses.TryGetValue(set, out string? owner))
             printed["Nemesis"] = owner;
-        }
+    }
 
-        if (card.Text("type_code") is { } code && code.StartsWith("evidence_", StringComparison.Ordinal))
-        {
-            // `rr:evidence` gives one card type three printed subtypes, and the
-            // type alone cannot tell them apart.
-            string subtype = code["evidence_".Length..];
-            printed["Subtype"] = char.ToUpperInvariant(subtype[0]) + subtype[1..];
-        }
+    private static void Stage(
+        SdbCard card, SortedDictionary<string, string> printed)
+    {
+        // A face suffix is not part of the printed stage number.
+        if (card.Text("stage") is { Length: > 0 } stage)
+            printed["Stage"] = Numbered(stage);
+    }
 
-        return printed;
+    private static void Evidence(
+        SdbCard card, SortedDictionary<string, string> printed)
+    {
+        if (card.Text("type_code") is not { } code
+            || !code.StartsWith("evidence_", StringComparison.Ordinal)) return;
+        string subtype = code["evidence_".Length..];
+        printed["Subtype"] = char.ToUpperInvariant(subtype[0]) + subtype[1..];
     }
 
     /// <summary>The text box with upstream's markup taken out.</summary>

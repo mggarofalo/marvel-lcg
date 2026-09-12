@@ -53,57 +53,66 @@ internal static class AbilityDamageAndThreatExecution
         AbilityEffect instruction, AbilityEffect syntax, AbilityDamageAndThreatContext context)
     {
         var state = new AbilityDamageAndThreatState();
+        if (RunDamageInstruction(instruction, syntax, context, state))
+            return state.ToResult();
+        if (RunThreatInstruction(instruction, syntax, context, state))
+            return state.ToResult();
+        return AbilityDamageAndThreatResult.NotHandled;
+    }
+
+    private static bool RunDamageInstruction(
+        AbilityEffect instruction, AbilityEffect syntax,
+        AbilityDamageAndThreatContext context, AbilityDamageAndThreatState state)
+    {
         switch (instruction)
         {
             case AbilityEffect.Damage damage:
                 DealDamage(damage, syntax, context, state);
-                break;
+                return true;
             case AbilityEffect.AttackDamage damage:
                 DealAttackDamage(damage, syntax, context, state);
-                break;
+                return true;
             case AbilityEffect.MoveDamage { Attack: false } movement:
                 MoveDamage(movement, syntax, context, state);
-                break;
+                return true;
             case AbilityEffect.MoveDamage movement:
                 MoveAttackDamage(movement, syntax, context, state);
-                break;
+                return true;
             case AbilityEffect.IndirectDamage damage:
                 Indirect(damage, syntax, context, state);
-                break;
-            case AbilityEffect.PlaceThreat threat:
-                PlaceThreat(threat, context, state);
-                break;
-            case AbilityEffect.RemoveThreat removal:
-                ExecuteRemoveThreat(removal, context);
-                break;
-            case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.SoakDamage } soak:
-                Soak(soak.Selection, context, state);
-                break;
-            case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.ReplaceThreatWithDamage } replacement:
-                ReplaceThreatWithDamage(replacement.Selection, syntax, context, state);
-                break;
+                return true;
             case AbilityEffect.Heal heal:
-                Heal(heal, context, state);
-                break;
+                Heal(heal, context, state); return true;
             case AbilityEffect.PreventDamage prevention:
-                PreventDamage(prevention, context);
-                state.ResolveEffect = true;
-                break;
-            case AbilityEffect.PreventThreat prevention:
-                PreventThreat(prevention, context);
-                state.ResolveEffect = true;
-                break;
-            default:
-                return AbilityDamageAndThreatResult.NotHandled;
+                PreventDamage(prevention, context); state.ResolveEffect = true; return true;
+            default: return false;
         }
+    }
 
-        return state.ToResult();
+    private static bool RunThreatInstruction(
+        AbilityEffect instruction, AbilityEffect syntax,
+        AbilityDamageAndThreatContext context, AbilityDamageAndThreatState state)
+    {
+        switch (instruction)
+        {
+            case AbilityEffect.PlaceThreat threat:
+                PlaceThreat(threat, context, state); return true;
+            case AbilityEffect.RemoveThreat removal:
+                ExecuteRemoveThreat(removal, context); return true;
+            case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.SoakDamage } soak:
+                Soak(soak.Selection, context, state); return true;
+            case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.ReplaceThreatWithDamage } replacement:
+                ReplaceThreatWithDamage(replacement.Selection, syntax, context, state); return true;
+            case AbilityEffect.PreventThreat prevention:
+                PreventThreat(prevention, context); state.ResolveEffect = true; return true;
+            default: return false;
+        }
     }
 
     private static void Heal(AbilityEffect.Heal heal, AbilityDamageAndThreatContext context, AbilityDamageAndThreatState state)
     {
         state.Healed = Find(heal.Card, context) is { } target
-            ? Damage.Heal(context.World, context.World.Facts, target, Amount(heal.Amount, context),
+            ? DamageRecovery.Heal(context.World, context.World.Facts, target, Amount(heal.Amount, context),
                 context.Trigger, "Heal", context.Events)
             : 0;
     }
@@ -132,7 +141,7 @@ internal static class AbilityDamageAndThreatExecution
             context.World, context.Program, target, context.Source))];
 
     private static long Room(AbilityDamageAndThreatContext context, Card card) =>
-        Damage.Health(context.World, context.World.Facts, card) - card.Damage;
+        DamagePlacement.Health(context.World, context.World.Facts, card) - card.Damage;
 
     private static void Assign(AbilityEffect node, AbilityDamageAndThreatContext context,
         AbilityDamageAndThreatState state, IReadOnlyList<Card> among, long amount)
@@ -156,7 +165,7 @@ internal static class AbilityDamageAndThreatExecution
         bool suspended = false;
         foreach (var (card, damage) in assigned.OrderBy(each => each.Key))
         {
-            suspended |= Damage.DealOutcome(context.World, context.World.Facts, context.Source,
+            suspended |= DamagePlacement.DealOutcome(context.World, context.World.Facts, context.Source,
                 context.World.Cards[card], damage, context.Trigger, "Indirect_Damage", context.Events)
                 == Damage.Outcome.Suspended;
         }
@@ -173,7 +182,7 @@ internal static class AbilityDamageAndThreatExecution
         foreach (var target in Every(damage.Cards, context))
         {
             long before = target.Damage;
-            suspended |= Damage.DealOutcome(context.World, context.World.Facts, context.Source, target,
+            suspended |= DamagePlacement.DealOutcome(context.World, context.World.Facts, context.Source, target,
                 amount, context.Trigger, verb, context.Events) == Damage.Outcome.Suspended;
             if (context.Power == BasicPowers.AttackVerb && target.Damage > before)
                 context.Occurrence.Also(Steps.DamageDealt);
@@ -199,8 +208,8 @@ internal static class AbilityDamageAndThreatExecution
         long amount = Math.Min(from.Damage, Amount(movement.Amount, context));
         if (amount <= 0 || !AbilityProgramQueries.CanTakeDamage(
                 context.World, context.Program, to, context.Source)) return;
-        Damage.Heal(context.World, context.World.Facts, from, amount, context.Trigger, "Move_Damage", context.Events);
-        if (Damage.DealOutcome(context.World, context.World.Facts, context.Source, to, amount,
+        DamageRecovery.Heal(context.World, context.World.Facts, from, amount, context.Trigger, "Move_Damage", context.Events);
+        if (DamagePlacement.DealOutcome(context.World, context.World.Facts, context.Source, to, amount,
             context.Trigger, "Attack", context.Events) == Damage.Outcome.Suspended)
             state.Suspension = AbilityDamageAndThreatSuspension.Procedure;
     }
@@ -225,7 +234,7 @@ internal static class AbilityDamageAndThreatExecution
         bool suspended = false;
         foreach (var target in DamageTargets(Every(damage.Cards, context), context))
         {
-            var damaged = Damage.Attack(context.World, context.World.Facts, attacker, context.Source, target,
+            var damaged = DamageAttacks.Attack(context.World, context.World.Facts, attacker, context.Source, target,
                 amount, context.Trigger, "Attack", context.Events, retaliate: false);
             state.Attacked.Add(target);
             if (damaged.Characters.Count > 0) context.Occurrence.Also(Steps.DamageDealt);
@@ -248,8 +257,8 @@ internal static class AbilityDamageAndThreatExecution
         long amount = Math.Min(from.Damage, Amount(movement.Amount, context));
         if (amount <= 0 || !AbilityProgramQueries.CanTakeDamage(
                 context.World, context.Program, to, context.Source)) return;
-        Damage.Heal(context.World, context.World.Facts, from, amount, context.Trigger, "Move_Damage", context.Events);
-        var damaged = Damage.Attack(context.World, context.World.Facts,
+        DamageRecovery.Heal(context.World, context.World.Facts, from, amount, context.Trigger, "Move_Damage", context.Events);
+        var damaged = DamageAttacks.Attack(context.World, context.World.Facts,
             context.PowerActor ?? context.AbilityActor ?? context.World.Seats[Resolver(context)].IdentityCard,
             context.Source, to, amount, context.Trigger, BasicPowers.AttackVerb, context.Events, retaliate: false);
         if (damaged.Characters.Count > 0) context.Occurrence.Also(Steps.DamageDealt);
@@ -290,7 +299,7 @@ internal static class AbilityDamageAndThreatExecution
         // open a defeat window. This is the one resolution-ledger fact this
         // domain procedure must commit mid-handler.
         context.ResolveEffect();
-        if (Damage.DealOutcome(context.World, context.World.Facts, context.Source, target, damage,
+        if (DamagePlacement.DealOutcome(context.World, context.World.Facts, context.Source, target, damage,
             context.Trigger, "Deal_Damage", context.Events) == Damage.Outcome.Suspended)
             state.Suspension = AbilityDamageAndThreatSuspension.Procedure;
     }

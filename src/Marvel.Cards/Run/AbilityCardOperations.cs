@@ -13,7 +13,8 @@ internal static class AbilityCardOperations
         target.Exhaust();
         events.Add(new FieldSet(target.ObjectId, "is_exhaust", 0, 1)
         {
-            Trigger = trigger, Verb = "Exhaust",
+            Trigger = trigger,
+            Verb = "Exhaust",
         });
     }
 
@@ -28,14 +29,15 @@ internal static class AbilityCardOperations
         card.PlaceTokens(key, -count);
         events.Add(new FieldSet(card.ObjectId, key, before, before - count)
         {
-            Trigger = trigger, Verb = "Remove_Counter",
+            Trigger = trigger,
+            Verb = "Remove_Counter",
         });
 
         if (AbilityExpressionEvaluation.CounterCount(card, "allPurpose") == 0
             && !Characteristics.IsLost(world, card, "uses")
             && pools.CounterPool(world, card)?.Uses == true)
         {
-            if (!Defeat.ToVictoryDisplay(world, world.Facts, card, trigger, events))
+            if (!VictoryDisplay.ToVictoryDisplay(world, world.Facts, card, trigger, events))
                 Discard.Card(world, card, trigger, events);
         }
     }

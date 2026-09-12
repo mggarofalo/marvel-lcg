@@ -95,7 +95,7 @@ public sealed class FormDataTests
     [InlineData("energy form. Permanent.")]
     public void ProseNamingAFormDoesNotGrantIt(string printed)
     {
-        Assert.Null(CardCatalog.FormOf(printed));
+        Assert.Null(CardCatalogJson.FormOf(printed));
     }
 
     [Theory]
@@ -106,7 +106,7 @@ public sealed class FormDataTests
     {
         // `21002` prints it first and `57046a` prints it second, so position is
         // not what identifies it.
-        Assert.Equal(form, CardCatalog.FormOf(printed));
+        Assert.Equal(form, CardCatalogJson.FormOf(printed));
     }
 
     [Rule("rr:form-change-form.7")]

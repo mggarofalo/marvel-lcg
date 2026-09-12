@@ -271,7 +271,8 @@ public static class PhaseEnd
                 card.Refresh();
                 events.Add(new FieldSet(card.ObjectId, "is_exhaust", 1, 0)
                 {
-                    Trigger = "end of player phase", Verb = "Ready",
+                    Trigger = "end of player phase",
+                    Verb = "Ready",
                 });
             }
         }

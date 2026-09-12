@@ -3,13 +3,13 @@ using Marvel.Rules.Play;
 
 namespace Marvel.Cards.Run;
 
-internal sealed partial class AbilityResolutionExecution
+internal static class AbilityResolutionImmediateEffects
 {
-    private bool TryRunImmediateEffect(AbilityEffect effect, AbilityResolutionState cast)
+    internal static bool TryRunImmediateEffect(this AbilityResolutionExecution execution, AbilityEffect effect, AbilityResolutionState cast)
     {
         var result = AbilityImmediateExecution.TryRun(effect, new AbilityImmediateContext(
-            AdmissionContext(cast), cast.Trigger, cast.Events, cast.GainedKeywords,
-            encounterAbilities));
+            execution.AdmissionContext(cast), cast.Trigger, cast.Events, cast.GainedKeywords,
+            execution.encounterAbilities));
         if (result.ResolveEffect) cast.ResolveEffect();
         return result.Handled;
     }

@@ -45,87 +45,11 @@ public static class WorldProjection
         var cards = new Dictionary<int, CardDescriptor>();
         foreach (Card card in world.Cards)
         {
-            bool isDrone = FacedownDrones.Is(card);
-            CardAudience audience = isDrone
-                ? CardAudience.Everyone
-                : Audience(card, prompt, searchVisible);
-            bool inPlay = DeckTypes.IsInPlay(card.Area.Type);
-            CardKind kind = FacedownDrones.Kind(card, world.Facts);
-            CardKind printedKind = world.Facts.Kind(card.FaceId);
-            // Insert pseudo-cards are engine bookkeeping, not physical game
-            // components. The client snapshot therefore does not place them
-            // in a visible area. This is a presentation-contract choice; the
-            // setup allocation and digest remain unchanged.
-            if (printedKind == CardKind.Insert)
+            CardDescriptor? descriptor = DescribeCard(world, prompt, searchVisible, card);
+            if (descriptor is not null)
             {
-                continue;
+                cards.Add(card.ObjectId, descriptor);
             }
-            IReadOnlyDictionary<string, string> attributes = isDrone
-                ? new Dictionary<string, string>(StringComparer.Ordinal)
-                {
-                    ["SCH"] = "1",
-                    ["ATK"] = "1",
-                    ["HP"] = "1",
-                }
-                : world.Facts.Attributes(card.FaceId);
-            IReadOnlyDictionary<string, long> projectedFields = StateFields.For(
-                card, world.Facts, world.Players, inPlay,
-                card.HasRegisteredTokens,
-                card.Owner == world.FirstPlayer && card.Area.Type == DeckType.HeroArea,
-                world);
-            if (inPlay && kind is CardKind.Ally or CardKind.Minion)
-            {
-                // The digest deliberately retains its historical registered
-                // field shape. The view still owes players the rule-defined
-                // modified remaining hit points of a character in play
-                // (rr:damage.1, rr:modifiers.1).
-                projectedFields = new Dictionary<string, long>(projectedFields,
-                    StringComparer.Ordinal)
-                {
-                    ["health"] = Math.Max(
-                        0,
-                        FacedownDrones.BaseValue(
-                            card, world.Facts, "HP", world.Players)
-                        + StateFields.Modified(
-                            world, card, "health", world.Facts, world.Players)
-                        - card.Damage),
-                };
-            }
-            var face = new CardFaceDescriptor(
-                isDrone ? FacedownDrones.EffectiveFaceId : card.FaceId,
-                FacedownDrones.Title(card, world.Facts),
-                isDrone ? string.Empty : world.Facts.Subtitle(card.FaceId),
-                kind,
-                projectedFields)
-            {
-                Traits = DisplayTraits(world, card),
-                Cost = attributes.TryGetValue("Cost", out string? cost) ? cost : null,
-                PrintedStats = PrintedStats(attributes),
-                Keywords = isDrone ? [] : [.. world.Facts.Keywords(card.FaceId)],
-                RulesText = isDrone ? string.Empty : world.Facts.Text(card.FaceId),
-                RulesMarkup = isDrone ? string.Empty : world.Facts.FormattedText(card.FaceId),
-                ArtFaceId = isDrone ? null : card.FaceId,
-                Damage = card.Damage,
-                Counters = card.Tokens
-                    .Where(token => token.Key.StartsWith("c_", StringComparison.Ordinal))
-                    .ToDictionary(
-                        token => token.Key[2..],
-                        token => token.Value,
-                        StringComparer.Ordinal),
-            };
-            cards.Add(
-                card.ObjectId,
-                new CardDescriptor(
-                    card.ObjectId,
-                    Back(printedKind),
-                    card.FaceUp,
-                    card.Ready,
-                    card.Area.Host,
-                    face)
-                {
-                    Audience = audience,
-                    Addressable = !DeckTypes.FaceDownOnEntry(card.Area.Type),
-                });
         }
 
         var areas = world.Areas.Select(area => new AreaDescriptor(
@@ -144,6 +68,86 @@ public static class WorldProjection
                 area.Id,
                 area.PlayAreas.Select(playArea => playArea.Player).Order().ToList())).ToList();
         return new WorldDescriptor(players, areas, gameAreas, world.Result);
+    }
+
+    private static CardDescriptor? DescribeCard(
+        World world, Prompt? prompt, IReadOnlySet<int> searchVisible, Card card)
+    {
+        CardKind printedKind = world.Facts.Kind(card.FaceId);
+        // Insert pseudo-cards are engine bookkeeping, not physical components.
+        if (printedKind == CardKind.Insert)
+        {
+            return null;
+        }
+        bool drone = FacedownDrones.Is(card);
+        CardKind kind = FacedownDrones.Kind(card, world.Facts);
+        IReadOnlyDictionary<string, string> attributes = Attributes(world, card, drone);
+        CardFaceDescriptor face = DescribeFace(world, card, kind, attributes, drone);
+        return new CardDescriptor(
+            card.ObjectId, Back(printedKind), card.FaceUp, card.Ready, card.Area.Host, face)
+        {
+            Audience = drone ? CardAudience.Everyone : Audience(card, prompt, searchVisible),
+            Addressable = !DeckTypes.FaceDownOnEntry(card.Area.Type),
+        };
+    }
+
+    private static CardFaceDescriptor DescribeFace(
+        World world,
+        Card card,
+        CardKind kind,
+        IReadOnlyDictionary<string, string> attributes,
+        bool drone)
+    {
+        var face = new CardFaceDescriptor(
+            drone ? FacedownDrones.EffectiveFaceId : card.FaceId,
+            FacedownDrones.Title(card, world.Facts),
+            drone ? string.Empty : world.Facts.Subtitle(card.FaceId),
+            kind,
+            ProjectedFields(world, card, kind))
+        {
+            Traits = DisplayTraits(world, card),
+            Cost = attributes.TryGetValue("Cost", out string? cost) ? cost : null,
+            PrintedStats = PrintedStats(attributes),
+            Keywords = drone ? [] : [.. world.Facts.Keywords(card.FaceId)],
+            RulesText = drone ? string.Empty : world.Facts.Text(card.FaceId),
+            RulesMarkup = drone ? string.Empty : world.Facts.FormattedText(card.FaceId),
+            ArtFaceId = drone ? null : card.FaceId,
+            Damage = card.Damage,
+            Counters = card.Tokens
+                .Where(token => token.Key.StartsWith("c_", StringComparison.Ordinal))
+                .ToDictionary(token => token.Key[2..], token => token.Value, StringComparer.Ordinal),
+        };
+        return face;
+    }
+
+    private static IReadOnlyDictionary<string, string> Attributes(
+        World world, Card card, bool drone) =>
+        drone
+            ? new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["SCH"] = "1", ["ATK"] = "1", ["HP"] = "1",
+            }
+            : world.Facts.Attributes(card.FaceId);
+
+    private static IReadOnlyDictionary<string, long> ProjectedFields(
+        World world, Card card, CardKind kind)
+    {
+        bool inPlay = DeckTypes.IsInPlay(card.Area.Type);
+        IReadOnlyDictionary<string, long> fields = StateFields.For(
+            card, world.Facts, world.Players, inPlay, card.HasRegisteredTokens,
+            card.Owner == world.FirstPlayer && card.Area.Type == DeckType.HeroArea, world);
+        if (!inPlay || kind is not (CardKind.Ally or CardKind.Minion))
+        {
+            return fields;
+        }
+        return new Dictionary<string, long>(fields, StringComparer.Ordinal)
+        {
+            ["health"] = Math.Max(
+                0,
+                FacedownDrones.BaseValue(card, world.Facts, "HP", world.Players)
+                + StateFields.Modified(world, card, "health", world.Facts, world.Players)
+                - card.Damage),
+        };
     }
 
     private static IReadOnlyList<string> DisplayTraits(World world, Card card)
@@ -270,29 +274,7 @@ public static class WorldProjection
         var filtered = new List<GameEvent>(events.Count);
         foreach (GameEvent happened in events)
         {
-            GameEvent? safe = happened switch
-            {
-                CardsCreated created => KeepCreated(created, readable),
-                CardsMoved moved => KeepMoved(moved, addressable),
-                AreaReordered reordered =>
-                    reordered.Order.All(addressable.Contains) ? reordered : null,
-                CardFormChanged changed => readable.Contains(changed.Card) ? changed : null,
-                CardsFlipped flipped => KeepFlipped(flipped, addressable),
-                CardAttached attached =>
-                    addressable.Contains(attached.Card) && addressable.Contains(attached.Host)
-                        ? attached
-                        : null,
-                CardDetached detached =>
-                    addressable.Contains(detached.Card) && addressable.Contains(detached.Host)
-                        ? detached
-                        : null,
-                ControlChanged changed => addressable.Contains(changed.Card) ? changed : null,
-                FieldSet set => readable.Contains(set.Card) ? set : null,
-                PlayAreaJoined joined => joined,
-                PlayAreaDetached detached => detached,
-                _ => throw new InvalidOperationException(
-                    $"event kind {happened.GetType().Name} has no visibility decision"),
-            };
+            GameEvent? safe = FilterEvent(happened, addressable, readable);
             if (safe is not null)
             {
                 filtered.Add(safe);
@@ -301,6 +283,31 @@ public static class WorldProjection
 
         return filtered;
     }
+
+    private static GameEvent? FilterEvent(
+        GameEvent happened, HashSet<int> addressable, HashSet<int> readable) =>
+        happened switch
+        {
+            CardsCreated created => KeepCreated(created, readable),
+            CardsMoved moved => KeepMoved(moved, addressable),
+            AreaReordered reordered => reordered.Order.All(addressable.Contains) ? reordered : null,
+            CardFormChanged changed => readable.Contains(changed.Card) ? changed : null,
+            CardsFlipped flipped => KeepFlipped(flipped, addressable),
+            CardAttached attached => KeepAttached(attached, addressable),
+            CardDetached detached => KeepDetached(detached, addressable),
+            ControlChanged changed => addressable.Contains(changed.Card) ? changed : null,
+            FieldSet set => readable.Contains(set.Card) ? set : null,
+            PlayAreaJoined joined => joined,
+            PlayAreaDetached detached => detached,
+            _ => throw new InvalidOperationException(
+                $"event kind {happened.GetType().Name} has no visibility decision"),
+        };
+
+    private static CardAttached? KeepAttached(CardAttached value, HashSet<int> visible) =>
+        visible.Contains(value.Card) && visible.Contains(value.Host) ? value : null;
+
+    private static CardDetached? KeepDetached(CardDetached value, HashSet<int> visible) =>
+        visible.Contains(value.Card) && visible.Contains(value.Host) ? value : null;
 
     private static CardsCreated? KeepCreated(CardsCreated created, HashSet<int> visible)
     {

@@ -37,11 +37,11 @@ internal sealed class AbilityDamageProjection
             Card card = candidate.Card;
             CompiledCardAbility ability = candidate.Ability;
             string name = world.Facts.Title(card.FaceId);
-            if (AbilityInitiation.ContainsEffect(ability.Effect, "soakDamage"))
+            if (AbilityRepeatedDamageAnalysis.ContainsEffect(ability.Effect, "soakDamage"))
             {
-                long threshold = AbilityInitiation.SoakDiscardThreshold(ability.Effect);
+                long threshold = AbilityRepeatedDamageAnalysis.SoakDiscardThreshold(ability.Effect);
                 bool discarded = threshold > 0
-                    && AbilityInitiation.SaturatingSum(card.Damage, [amount]) >= threshold;
+                    && AbilityRepeatedStatusTrace.SaturatingSum(card.Damage, [amount]) >= threshold;
                 return new DamageProjection(
                     0,
                     $"{name} takes the damage instead"
@@ -76,7 +76,7 @@ internal sealed class AbilityDamageProjection
                 return new DefeatProjection(
                     maximumHealth,
                     $"{name} heals all damage instead"
-                    + (AbilityInitiation.ContainsEffect(ability.Effect, "discard")
+                    + (AbilityRepeatedDamageAnalysis.ContainsEffect(ability.Effect, "discard")
                         ? " and will be discarded"
                         : string.Empty));
             }
@@ -91,5 +91,5 @@ internal sealed class AbilityDamageProjection
         {
             Amount: AbilityNumber.CardValue { Property: AbilityCardNumberProperty.Damage },
         }
-        || AbilityInitiation.MutationChildren(node).Any(HealsAllDamage);
+        || AbilityRepeatedStatusTrace.MutationChildren(node).Any(HealsAllDamage);
 }

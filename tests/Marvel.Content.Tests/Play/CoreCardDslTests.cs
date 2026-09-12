@@ -292,8 +292,8 @@ public sealed class CoreCardDslTests
             pending => pending.Card == flight.ObjectId);
         runner.Resolve(world, occurrence, interrupt, [], []);
 
-        Damage.Deal(world, Cards, villain, hero, 5, "test", "Damage", []);
-        Damage.Deal(world, Cards, villain, hero, 2, "test", "Damage", []);
+        DamagePlacement.Deal(world, Cards, villain, hero, 5, "test", "Damage", []);
+        DamagePlacement.Deal(world, Cards, villain, hero, 2, "test", "Damage", []);
 
         Assert.False(Statuses.Has(world, hero, Statuses.Tough));
         Assert.Equal(2, hero.Damage);

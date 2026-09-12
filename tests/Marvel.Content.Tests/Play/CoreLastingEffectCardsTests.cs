@@ -67,8 +67,8 @@ public sealed class CoreLastingEffectCardsTests
         AnswerCardChoice(world, runner, support, world.Seats[1].IdentityCard);
 
         Assert.False(support.Ready);
-        Assert.Equal(3, CardPlay.CostOf(world, Cards, world.Seats[0], mine).Amount);
-        Assert.Equal(2, CardPlay.CostOf(world, Cards, world.Seats[1], theirs).Amount);
+        Assert.Equal(3, CardPayment.CostOf(world, Cards, world.Seats[0], mine).Amount);
+        Assert.Equal(2, CardPayment.CostOf(world, Cards, world.Seats[1], theirs).Amount);
     }
 
     [Fact]
@@ -125,7 +125,7 @@ public sealed class CoreLastingEffectCardsTests
         runner.Act(world, action, [payment.ObjectId], []);
 
         Assert.Equal(DeckType.DiscardPile, payment.Area.Type);
-        Assert.Equal(3, CardPlay.CostOf(world, Cards, world.Seats[0], next).Amount);
+        Assert.Equal(3, CardPayment.CostOf(world, Cards, world.Seats[0], next).Amount);
     }
 
     [Rule("rr:initiating-abilities.step.5")]
@@ -151,7 +151,7 @@ public sealed class CoreLastingEffectCardsTests
 
         Assert.Throws<RulesNotImplementedException>(() => runner.Act(world, action, [], []));
 
-        Assert.Equal(2, CardPlay.CostOf(world, Cards, world.Seats[0], next).Amount);
+        Assert.Equal(2, CardPayment.CostOf(world, Cards, world.Seats[0], next).Amount);
     }
 
     [Rule("rr:play-put-into-play")]

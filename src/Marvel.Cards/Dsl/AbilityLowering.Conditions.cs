@@ -1,12 +1,20 @@
+using static Marvel.Cards.Dsl.AbilityLowering;
+using static Marvel.Cards.Dsl.AbilityBookLowering;
+using static Marvel.Cards.Dsl.AbilityConditionLowering;
+using static Marvel.Cards.Dsl.AbilityCostLowering;
+using static Marvel.Cards.Dsl.AbilityEffectLowering;
+using static Marvel.Cards.Dsl.AbilityModifierLowering;
+using static Marvel.Cards.Dsl.AbilityProcedureLowering;
+using static Marvel.Cards.Dsl.AbilitySelectorLowering;
 using System.Collections.Immutable;
 using Marvel.Rules.State;
 
 namespace Marvel.Cards.Dsl;
 
-public static partial class AbilityLowering
+internal static class AbilityConditionLowering
 {
     /// <summary>Lowers every operand and field of a supported condition.</summary>
-    public static AbilityCondition Condition(AbilityValue value, AbilityLocation location)
+    internal static AbilityCondition LowerCondition(AbilityValue value, AbilityLocation location)
     {
         ArgumentNullException.ThrowIfNull(value);
         ArgumentNullException.ThrowIfNull(location);
@@ -17,7 +25,7 @@ public static partial class AbilityLowering
         {
             "and" => new AbilityCondition.All(Conditions(argument, child)),
             "or" => new AbilityCondition.Any(Conditions(argument, child)),
-            "not" => new AbilityCondition.Negated(Condition(argument, child)),
+            "not" => new AbilityCondition.Negated(LowerCondition(argument, child)),
             "finalStep" => Flag(argument, child, "true", AbilityConditionFact.FinalStep),
             "canMakeTheCall" => Flag(argument, child, "game", AbilityConditionFact.CanMakeTheCall),
             "attackDamaged" => Flag(argument, child, "trigger.target", AbilityConditionFact.AttackDamaged),
@@ -36,9 +44,9 @@ public static partial class AbilityLowering
                 "cardAbility" => ThreatCause.CardAbility,
                 var cause => throw child.Error($"'{cause}' is not a threat cause"),
             }),
-            "exists" => new AbilityCondition.Exists(Cards(argument, child)),
-            "canLegalPractice" => new AbilityCondition.LegalPractice(Cards(argument, child)),
-            "canAutomaticThwart" => new AbilityCondition.AutomaticThwart(Cards(argument, child)),
+            "exists" => new AbilityCondition.Exists(SelectCards(argument, child)),
+            "canLegalPractice" => new AbilityCondition.LegalPractice(SelectCards(argument, child)),
+            "canAutomaticThwart" => new AbilityCondition.AutomaticThwart(SelectCards(argument, child)),
             "titleInPlay" => new AbilityCondition.TitleInPlay(Text(argument, child)),
             "atLeast" => AtLeast(argument, child),
             "inForm" => InForm(argument, child),
@@ -53,14 +61,14 @@ public static partial class AbilityLowering
             "cardSet" => CardText(argument, child, "set", AbilityCardTextProperty.Set),
             "isTitle" => CardText(argument, child, "title", AbilityCardTextProperty.Title),
             "isKind" => IsKind(argument, child),
-            "wasDefeated" => new AbilityCondition.WasDefeated(Cards(argument, child)),
-            "isYourIdentity" => new AbilityCondition.IsYourIdentity(Cards(argument, child)),
+            "wasDefeated" => new AbilityCondition.WasDefeated(SelectCards(argument, child)),
+            "isYourIdentity" => new AbilityCondition.IsYourIdentity(SelectCards(argument, child)),
             _ => throw child.Error($"'{node.Kind}' is not a condition"),
         };
     }
 
     /// <summary>Lowers a player relation without consulting the board.</summary>
-    public static AbilityPlayer Player(AbilityValue value, AbilityLocation location)
+    internal static AbilityPlayer LowerPlayer(AbilityValue value, AbilityLocation location)
     {
         ArgumentNullException.ThrowIfNull(value);
         ArgumentNullException.ThrowIfNull(location);
@@ -76,7 +84,7 @@ public static partial class AbilityLowering
         };
     }
 
-    private static ImmutableArray<AbilityCondition> Conditions(AbilityValue value, AbilityLocation location)
+    internal static ImmutableArray<AbilityCondition> Conditions(AbilityValue value, AbilityLocation location)
     {
         if (value is not AbilityValue.List list)
         {
@@ -85,26 +93,26 @@ public static partial class AbilityLowering
         var builder = ImmutableArray.CreateBuilder<AbilityCondition>(list.Values.Count);
         for (int index = 0; index < list.Values.Count; index++)
         {
-            builder.Add(Condition(list.Values[index], location.Item(index)));
+            builder.Add(LowerCondition(list.Values[index], location.Item(index)));
         }
         return builder.MoveToImmutable();
     }
 
-    private static AbilityCondition.Flag Flag(
+    internal static AbilityCondition.Flag Flag(
         AbilityValue value, AbilityLocation location, string expected, AbilityConditionFact kind)
     {
         FixedWord(value, location, expected);
         return new(kind);
     }
 
-    private static AbilityCondition.AtLeast AtLeast(AbilityValue value, AbilityLocation location)
+    internal static AbilityCondition.AtLeast AtLeast(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "value", "count");
         return new(Number(Required(fields, "value", location), location.Child("value")),
             Number(Required(fields, "count", location), location.Child("count")));
     }
 
-    private static AbilityCondition.InForm InForm(AbilityValue value, AbilityLocation location)
+    internal static AbilityCondition.InForm InForm(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "player", "form");
         string form = Text(Required(fields, "form", location), location.Child("form"));
@@ -112,10 +120,10 @@ public static partial class AbilityLowering
         {
             throw location.Child("form").Error($"'{form}' is not a supported form");
         }
-        return new(Player(Required(fields, "player", location), location.Child("player")), form);
+        return new(LowerPlayer(Required(fields, "player", location), location.Child("player")), form);
     }
 
-    private static AbilityCondition.CardText CardText(
+    internal static AbilityCondition.CardText CardText(
         AbilityValue value, AbilityLocation location, string name, AbilityCardTextProperty property)
     {
         var fields = Fields(value, location, "card", name);
@@ -125,17 +133,17 @@ public static partial class AbilityLowering
         {
             throw location.Child(name).Error($"'{text}' is not a status");
         }
-        return new(Cards(Required(fields, "card", location), location.Child("card")), property, text);
+        return new(SelectCards(Required(fields, "card", location), location.Child("card")), property, text);
     }
 
-    private static AbilityCondition.IsKind IsKind(AbilityValue value, AbilityLocation location)
+    internal static AbilityCondition.IsKind IsKind(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "card", "kind");
         var kind = ConditionCardKind(Required(fields, "kind", location), location.Child("kind"));
-        return new(Cards(Required(fields, "card", location), location.Child("card")), kind);
+        return new(SelectCards(Required(fields, "card", location), location.Child("card")), kind);
     }
 
-    private static CardKind ConditionCardKind(AbilityValue value, AbilityLocation location)
+    internal static CardKind ConditionCardKind(AbilityValue value, AbilityLocation location)
     {
         string name = Text(value, location);
         return name switch

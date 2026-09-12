@@ -120,55 +120,72 @@ public sealed class WholeGameTests
         for (int decisions = 0; game.Pending is not null; decisions++)
         {
             Assert.True(decisions < 600, $"still playing after {decisions} decisions");
-
-            var options = game.Pending.Affordances;
-            var ending = options.FirstOrDefault(option => option.Verb == Game.EndPhaseVerb);
-            var play = options.FirstOrDefault(option => option.Verb == CardPlay.Verb);
-            long threat = world.TheCardIn(DeckType.MainSchemesArea)
-                ?.Tokens.GetValueOrDefault("k_threat") ?? 0;
-
-            // Thwart once the scheme is climbing, attack otherwise.
-            var power = threat >= 5
-                ? options.FirstOrDefault(option => option.Verb == BasicPowers.ThwartVerb)
-                : options.FirstOrDefault(option => option.Verb == BasicPowers.AttackVerb);
-            power ??= options.FirstOrDefault(option => option.Verb == BasicPowers.ThwartVerb)
-                ?? options.FirstOrDefault(option => option.Verb == Game.ChangeForm);
-
-            if (ending is not null)
-            {
-                game.Resolve(Decision.Take(ending.Id, Excess(world, game), []));
-            }
-            else if (game.Pending.Asking == Question.Order)
-            {
-                var ordered = options[0];
-                game.Resolve(new Decision(
-                    ordered.Id,
-                    ordered.Targets is { } targets ? [.. targets.Legal] : []));
-            }
-            else if (game.Pending.Asking == Question.Defender)
-            {
-                // The last candidate, which is an ally when there is one --
-                // `rr:defend-defense.3`.
-                game.Resolve(Decision.Take(options[^1].Id));
-            }
-            else if (play is { } card && Payment(card) is { } paying)
-            {
-                game.Resolve(Decision.Take(card.Id, [card.Targets!.Legal[0]], paying));
-                played++;
-            }
-            else if (power is { } using_)
-            {
-                game.Resolve(using_.Targets is { } targets && targets.Legal.Count > 0
-                    ? Decision.Take(using_.Id, [targets.Legal[0]], [])
-                    : Decision.Take(using_.Id));
-            }
-            else
-            {
-                game.Resolve(Decision.Decline);
-            }
+            ResolvePrompt(game, world, ref played);
         }
 
         return played;
+    }
+
+    private static void ResolvePrompt(Game game, World world, ref int played)
+    {
+        var prompt = game.Pending!;
+        var options = prompt.Affordances;
+        var ending = options.FirstOrDefault(option => option.Verb == Game.EndPhaseVerb);
+        if (ending is not null)
+        {
+            game.Resolve(Decision.Take(ending.Id, Excess(world, game), []));
+            return;
+        }
+        if (prompt.Asking == Question.Order)
+        {
+            var ordered = options[0];
+            game.Resolve(new Decision(
+                ordered.Id,
+                ordered.Targets is { } targets ? [.. targets.Legal] : []));
+            return;
+        }
+        if (prompt.Asking == Question.Defender)
+        {
+            // The last candidate is an ally when one is available --
+            // `rr:defend-defense.3`.
+            game.Resolve(Decision.Take(options[^1].Id));
+            return;
+        }
+        ResolvePlayerChoice(game, world, options, ref played);
+    }
+
+    private static void ResolvePlayerChoice(
+        Game game, World world, IReadOnlyList<Affordance> options, ref int played)
+    {
+        var play = options.FirstOrDefault(option => option.Verb == CardPlay.Verb);
+        if (play is { } card && Payment(card) is { } paying)
+        {
+            game.Resolve(Decision.Take(card.Id, [card.Targets!.Legal[0]], paying));
+            played++;
+            return;
+        }
+        var power = PreferredPower(world, options);
+        if (power is null)
+        {
+            game.Resolve(Decision.Decline);
+            return;
+        }
+        game.Resolve(power.Targets is { } targets && targets.Legal.Count > 0
+            ? Decision.Take(power.Id, [targets.Legal[0]], [])
+            : Decision.Take(power.Id));
+    }
+
+    private static Affordance? PreferredPower(
+        World world, IReadOnlyList<Affordance> options)
+    {
+        long threat = world.TheCardIn(DeckType.MainSchemesArea)
+            ?.Tokens.GetValueOrDefault("k_threat") ?? 0;
+        // Thwart once the scheme is climbing, attack otherwise.
+        string preferred = threat >= 5
+            ? BasicPowers.ThwartVerb : BasicPowers.AttackVerb;
+        return options.FirstOrDefault(option => option.Verb == preferred)
+            ?? options.FirstOrDefault(option => option.Verb == BasicPowers.ThwartVerb)
+            ?? options.FirstOrDefault(option => option.Verb == Game.ChangeForm);
     }
 
     /// <summary>`rr:end-of-player-phase.step.1` — the cards over hand size.</summary>

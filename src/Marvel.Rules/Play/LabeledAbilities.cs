@@ -43,25 +43,25 @@ public static class LabeledAbilities
             && source.Area.Host < world.Cards.Count)
         {
             var host = world.Cards[source.Area.Host];
-            bool friendlyCharacter = host.Area.PlayArea.IsPlayers
-                && FacedownDrones.Kind(host, facts) is CardKind.Hero
-                    or CardKind.AlterEgo
-                    or CardKind.Ally;
+            bool friendlyCharacter = IsFriendlyCharacter(host, facts);
             if (friendlyCharacter && host.ObjectId != identity.ObjectId)
             {
                 return host;
             }
         }
 
-        return kind is CardKind.Hero
-                or CardKind.AlterEgo
-                or CardKind.Event
-                or CardKind.Resource
-                or CardKind.Upgrade
-            || source.Owner == player
+        return IsIdentityExtension(kind) || source.Owner == player
             ? identity
             : source;
     }
+
+    private static bool IsFriendlyCharacter(Card card, ICardFacts facts) =>
+        card.Area.PlayArea.IsPlayers
+        && FacedownDrones.Kind(card, facts) is CardKind.Hero or CardKind.AlterEgo or CardKind.Ally;
+
+    private static bool IsIdentityExtension(CardKind kind) =>
+        kind is CardKind.Hero or CardKind.AlterEgo or CardKind.Event
+            or CardKind.Resource or CardKind.Upgrade;
 
     /// <summary>Begins one ability carrying one or more labels.</summary>
     /// <returns>The performer, or <c>null</c> when a status cancels the ability.</returns>
@@ -99,7 +99,7 @@ public static class LabeledAbilities
         bool cancelled = false;
         foreach (string status in cancelling.Distinct(StringComparer.Ordinal))
         {
-            if (BasicPowers.Cancelled(world, facts, performer, status, events))
+            if (BasicPowerStatus.Cancelled(world, facts, performer, status, events))
             {
                 cancelled = true;
             }

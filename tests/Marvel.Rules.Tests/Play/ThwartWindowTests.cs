@@ -44,7 +44,7 @@ public sealed class ThwartWindowTests
         scheme.PlaceTokens("k_threat", 5);
         var cards = new Responder(Steps.CharacterThwartsScheme);
 
-        BasicPowers.BasicThwart(world, printed, 0, scheme, []);
+        BasicThwartPowers.BasicThwart(world, printed, 0, scheme, []);
         var asked = Sequence.Work(world, printed, cards, []);
 
         Assert.NotNull(asked);
@@ -66,7 +66,7 @@ public sealed class ThwartWindowTests
         scheme.PlaceTokens("k_threat", 5);
         var cards = new Responder(Steps.CharacterThwartsScheme, WindowKind.Interrupt);
 
-        BasicPowers.BasicThwart(world, printed, 0, scheme, []);
+        BasicThwartPowers.BasicThwart(world, printed, 0, scheme, []);
         var asked = Sequence.Work(world, printed, cards, []);
 
         Assert.NotNull(asked);
@@ -87,7 +87,7 @@ public sealed class ThwartWindowTests
         var scheme = world.TheCardIn(DeckType.MainSchemesArea)!;
         scheme.PlaceTokens("k_threat", 5);
 
-        BasicPowers.BasicThwart(world, printed, 1, scheme, []);
+        BasicThwartPowers.BasicThwart(world, printed, 1, scheme, []);
         var occurrence = world.Agenda.Begin(world, printed);
 
         Assert.Equal(scheme.ObjectId, occurrence.Subject);
@@ -116,7 +116,7 @@ public sealed class ThwartWindowTests
             "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
         var cards = new Responder(Steps.CharacterThwartsScheme);
 
-        BasicPowers.AllyPower(world, printed, ally, scheme, BasicPowers.ThwartVerb, []);
+        AllyBasicPowers.AllyPower(world, printed, ally, scheme, BasicPowers.ThwartVerb, []);
         var asked = Sequence.Work(world, printed, cards, []);
 
         Assert.NotNull(asked);
@@ -146,7 +146,7 @@ public sealed class ThwartWindowTests
         var ally = world.CreateCard(
             "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
 
-        BasicPowers.AllyPower(world, printed, ally, side, BasicPowers.ThwartVerb, []);
+        AllyBasicPowers.AllyPower(world, printed, ally, side, BasicPowers.ThwartVerb, []);
         Agendas.Finish(world, printed);
 
         Assert.Equal(6, side.Tokens["k_threat"]);
@@ -168,7 +168,7 @@ public sealed class ThwartWindowTests
         var ally = world.CreateCard(
             "ally", world.AreaOf(DeckType.AlliesArea, PlayArea.Of(0), cardOwner: 0));
 
-        BasicPowers.AllyPower(world, printed, ally, scheme, BasicPowers.ThwartVerb, []);
+        AllyBasicPowers.AllyPower(world, printed, ally, scheme, BasicPowers.ThwartVerb, []);
         var happened = Agendas.Finish(world, printed);
 
         var hurt = happened.OfType<FieldSet>().Single(
@@ -189,7 +189,7 @@ public sealed class ThwartWindowTests
         var world = Board(printed);
 
         Assert.Throws<RulesNotImplementedException>(
-            () => BasicPowers.ResolveCharacterThwart(world, printed, []));
+            () => BasicPowerResolution.ResolveCharacterThwart(world, printed, []));
     }
 
     private static World Board(Printed printed, int players = 1)

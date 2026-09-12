@@ -54,6 +54,19 @@ public static class InformationFrontier
 
         var audiences = new SortedDictionary<string, SortedSet<int>>(StringComparer.Ordinal);
         int[] everyone = [.. Enumerable.Range(0, players)];
+        AddSignals(audiences, information, everyone);
+        AddEvents(audiences, events, players, everyone);
+        AddPrompt(audiences, nextPrompt, players, everyone);
+        AddRandomness(audiences, rngBefore, rngAfter, everyone);
+        return [.. audiences.Select(pair =>
+            new InformationExposure(pair.Key, [.. pair.Value]))];
+    }
+
+    private static void AddSignals(
+        SortedDictionary<string, SortedSet<int>> audiences,
+        IReadOnlyList<InformationSignal> information,
+        int[] everyone)
+    {
         if (information.Any(signal => signal.Kind == InformationKind.Search))
         {
             Add(audiences, Search, everyone);
@@ -62,7 +75,14 @@ public static class InformationFrontier
         {
             Add(audiences, Reveal, everyone);
         }
+    }
 
+    private static void AddEvents(
+        SortedDictionary<string, SortedSet<int>> audiences,
+        IReadOnlyList<GameEvent> events,
+        int players,
+        int[] everyone)
+    {
         foreach (GameEvent happened in events)
         {
             switch (happened)
@@ -85,7 +105,14 @@ public static class InformationFrontier
                     break;
             }
         }
+    }
 
+    private static void AddPrompt(
+        SortedDictionary<string, SortedSet<int>> audiences,
+        Prompt? nextPrompt,
+        int players,
+        int[] everyone)
+    {
         if (nextPrompt is { ExposesConcealedCandidates: true })
         {
             if (nextPrompt.Player < 0 || nextPrompt.Player >= players)
@@ -96,7 +123,14 @@ public static class InformationFrontier
 
             Add(audiences, Search, everyone);
         }
+    }
 
+    private static void AddRandomness(
+        SortedDictionary<string, SortedSet<int>> audiences,
+        long rngBefore,
+        long rngAfter,
+        int[] everyone)
+    {
         // This is intentionally conservative. It prevents an edit from changing
         // which earlier operation consumes the one gameplay RNG stream and thereby
         // rerolling even a result that remains concealed.
@@ -104,9 +138,6 @@ public static class InformationFrontier
         {
             Add(audiences, Random, everyone);
         }
-
-        return [.. audiences.Select(pair =>
-            new InformationExposure(pair.Key, [.. pair.Value]))];
     }
 
     /// <summary>Combines signals from dependent decisions in one indivisible unit.</summary>

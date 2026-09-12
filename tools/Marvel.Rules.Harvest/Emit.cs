@@ -118,103 +118,99 @@ public static class Emit
     {
         var (resolved, unresolved) = References(entry, known);
         var written = new StringBuilder();
+        bool redirect = IsRedirect(entry);
+        WriteFrontMatter(written, entry, version, resolved, redirect);
+        WriteBody(written, entry);
+        WriteReferences(written, entry, known, resolved, unresolved, redirect);
+        return written.ToString();
+    }
 
+    private static bool IsRedirect(Entry entry) =>
+        entry.Opening.Count == 0 && entry.Clauses.Count == 0
+        && entry.Steps.Count == 0 && entry.SeeAlso.Count > 0;
+
+    private static void WriteFrontMatter(
+        StringBuilder written, Entry entry, string version,
+        List<string> resolved, bool redirect)
+    {
         written.Append("---\n");
         written.Append(CultureInfo.InvariantCulture, $"id: \"{entry.Id}\"\n");
         written.Append(CultureInfo.InvariantCulture, $"title: \"{Escaped(entry.Title)}\"\n");
         written.Append("document: \"Rules Reference\"\n");
         written.Append(CultureInfo.InvariantCulture, $"version: \"{version}\"\n");
         written.Append(CultureInfo.InvariantCulture, $"page: {entry.Page}\n");
-        // **An entry that is only a pointer is not a rule.** "COUNTER / See:
-        // All-Purpose Counter" has no text of its own, so it has no hash to
-        // fingerprint and nothing to cross-reference -- what it has is a
-        // redirect, which is a different claim from "these are related".
-        bool redirect = entry.Opening.Count == 0
-            && entry.Clauses.Count == 0
-            && entry.Steps.Count == 0
-            && entry.SeeAlso.Count > 0;
-
-        if (redirect)
-        {
-            written.Append(
-                CultureInfo.InvariantCulture,
-                $"redirect: \"{Escaped(string.Join(", ", entry.SeeAlso))}\"\n");
-            written.Append("see_also: []\n");
-        }
-        else
-        {
-            written.Append(CultureInfo.InvariantCulture, $"hash: \"{Head(entry).Hash}\"\n");
-            if (entry.Steps.Count > 0)
-            {
-                written.Append(CultureInfo.InvariantCulture, $"steps: {entry.Steps.Count}\n");
-            }
-
-            // The front matter carries only what resolves. What does not is in
-            // the index, which is where a reader goes to ask what the snapshot
-            // is missing; a document is where they go to read the rule.
-            written.Append(CultureInfo.InvariantCulture, $"see_also: [{Quoted(resolved)}]\n");
-        }
-
+        if (redirect) WriteRedirectFrontMatter(written, entry);
+        else WriteRuleFrontMatter(written, entry, resolved);
         written.Append("---\n\n");
+    }
+
+    private static void WriteRedirectFrontMatter(StringBuilder written, Entry entry)
+    {
+        written.Append(CultureInfo.InvariantCulture,
+            $"redirect: \"{Escaped(string.Join(", ", entry.SeeAlso))}\"\n");
+        written.Append("see_also: []\n");
+    }
+
+    private static void WriteRuleFrontMatter(
+        StringBuilder written, Entry entry, List<string> resolved)
+    {
+        written.Append(CultureInfo.InvariantCulture, $"hash: \"{Head(entry).Hash}\"\n");
+        if (entry.Steps.Count > 0)
+            written.Append(CultureInfo.InvariantCulture, $"steps: {entry.Steps.Count}\n");
+        written.Append(CultureInfo.InvariantCulture, $"see_also: [{Quoted(resolved)}]\n");
+    }
+
+    private static void WriteBody(StringBuilder written, Entry entry)
+    {
         written.Append(CultureInfo.InvariantCulture, $"# {entry.Title}\n");
-
         foreach (string paragraph in entry.Opening)
-        {
             written.Append(CultureInfo.InvariantCulture, $"\n{paragraph}\n");
-        }
-
         string anchor = entry.Id["rr:".Length..];
-        foreach (var step in entry.Steps)
+        foreach (var step in entry.Steps) WriteStep(written, anchor, step);
+        foreach (var clause in entry.Clauses) WriteClause(written, anchor, clause);
+    }
+
+    private static void WriteStep(StringBuilder written, string anchor, Numbered step)
+    {
+        string at = step.Number.ToString(CultureInfo.InvariantCulture);
+        written.Append(CultureInfo.InvariantCulture, $"\n<a id=\"{anchor}-step-{at}\"></a>\n");
+        written.Append(CultureInfo.InvariantCulture, $"{at}. {step.Text}\n");
+        for (int under = 0; under < step.Substeps.Count; under++)
         {
-            string at = step.Number.ToString(CultureInfo.InvariantCulture);
-            written.Append(CultureInfo.InvariantCulture, $"\n<a id=\"{anchor}-step-{at}\"></a>\n");
-            written.Append(CultureInfo.InvariantCulture, $"{at}. {step.Text}\n");
-            for (int under = 0; under < step.Substeps.Count; under++)
-            {
-                char letter = (char)('a' + under);
-                written.Append(
-                    CultureInfo.InvariantCulture,
-                    $"    <a id=\"{anchor}-step-{at}-{letter}\"></a>\n");
-                written.Append(
-                    CultureInfo.InvariantCulture, $"    - {step.Substeps[under]}\n");
-            }
+            char letter = (char)('a' + under);
+            written.Append(CultureInfo.InvariantCulture,
+                $"    <a id=\"{anchor}-step-{at}-{letter}\"></a>\n");
+            written.Append(CultureInfo.InvariantCulture, $"    - {step.Substeps[under]}\n");
         }
+    }
 
-        foreach (var clause in entry.Clauses)
+    private static void WriteClause(StringBuilder written, string anchor, Clause clause)
+    {
+        string at = clause.Number.ToString(CultureInfo.InvariantCulture);
+        written.Append(CultureInfo.InvariantCulture, $"\n<a id=\"{anchor}-{at}\"></a>\n");
+        written.Append(CultureInfo.InvariantCulture, $"{at}. {clause.Text}\n");
+        for (int under = 0; under < clause.Qualifications.Count; under++)
         {
-            string at = clause.Number.ToString(CultureInfo.InvariantCulture);
-            written.Append(CultureInfo.InvariantCulture, $"\n<a id=\"{anchor}-{at}\"></a>\n");
-            written.Append(CultureInfo.InvariantCulture, $"{at}. {clause.Text}\n");
-            for (int under = 0; under < clause.Qualifications.Count; under++)
-            {
-                string number = (under + 1).ToString(CultureInfo.InvariantCulture);
-                written.Append(
-                    CultureInfo.InvariantCulture, $"    <a id=\"{anchor}-{at}-{number}\"></a>\n");
-                written.Append(
-                    CultureInfo.InvariantCulture, $"    - {clause.Qualifications[under]}\n");
-            }
+            string number = (under + 1).ToString(CultureInfo.InvariantCulture);
+            written.Append(CultureInfo.InvariantCulture,
+                $"    <a id=\"{anchor}-{at}-{number}\"></a>\n");
+            written.Append(CultureInfo.InvariantCulture,
+                $"    - {clause.Qualifications[under]}\n");
         }
+    }
 
-        if (resolved.Count > 0 || unresolved.Count > 0)
-        {
-            // A redirect naming several entries is not a link, because there
-            // is nowhere single to go: "ATK / See: Attack (Player Ability
-            // Type), Basic Power" is telling a reader that the value is
-            // described in two places, and `redirect:` in the front matter is
-            // where a machine reads that.
-            bool linked = !redirect || entry.SeeAlso.Count == 1;
-            var links = entry.SeeAlso.Select(named =>
-                linked
-                && known.TryGetValue(Entry.Slug(named.ToUpperInvariant()), out string? id)
-                    ? $"[{named}]({id["rr:".Length..]}.md)"
-                    : named);
-
-            written.Append(
-                CultureInfo.InvariantCulture,
-                $"\n{(redirect ? "See:" : "**See also:**")} {string.Join(", ", links)}\n");
-        }
-
-        return written.ToString();
+    private static void WriteReferences(
+        StringBuilder written, Entry entry, Dictionary<string, string> known,
+        List<string> resolved, List<string> unresolved, bool redirect)
+    {
+        if (resolved.Count == 0 && unresolved.Count == 0) return;
+        bool linked = !redirect || entry.SeeAlso.Count == 1;
+        var links = entry.SeeAlso.Select(named =>
+            linked && known.TryGetValue(
+                Entry.Slug(named.ToUpperInvariant()), out string? id)
+                ? $"[{named}]({id["rr:".Length..]}.md)" : named);
+        written.Append(CultureInfo.InvariantCulture,
+            $"\n{(redirect ? "See:" : "**See also:**")} {string.Join(", ", links)}\n");
     }
 
     private static string Index(

@@ -187,7 +187,8 @@ public static class MainScheme
             Places.Reference(from), Places.Reference(removed),
             [new Landing(scheme.ObjectId, removed.Cards.Count - 1)])
         {
-            Trigger = trigger, Verb = "Advance",
+            Trigger = trigger,
+            Verb = "Advance",
         });
         constantsEnding.Complete(trigger, events);
 
@@ -200,7 +201,8 @@ public static class MainScheme
             Places.Reference(deck), Places.Reference(area2),
             [new Landing(next.ObjectId, area2.Cards.Count - 1)])
         {
-            Trigger = trigger, Verb = "Advance",
+            Trigger = trigger,
+            Verb = "Advance",
         });
 
         events.AddRange(abilities.WhenRevealed(world, next, world.FirstPlayer));
@@ -209,7 +211,8 @@ public static class MainScheme
         next.TurnTo(next.Faces[^1]);
         events.Add(new CardsFlipped([next.ObjectId], true)
         {
-            Trigger = trigger, Verb = "Advance",
+            Trigger = trigger,
+            Verb = "Advance",
         });
 
         // `.5` -- the acceleration tokens come across; `.4` -- the threat does
@@ -226,7 +229,8 @@ public static class MainScheme
             next.PlaceTokens("k_threat", starting);
             events.Add(new FieldSet(next.ObjectId, "k_threat", 0, starting)
             {
-                Trigger = trigger, Verb = "Advance",
+                Trigger = trigger,
+                Verb = "Advance",
             });
         }
 

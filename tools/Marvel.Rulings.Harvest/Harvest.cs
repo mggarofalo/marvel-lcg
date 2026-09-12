@@ -5,90 +5,87 @@ namespace Marvel.Rulings.Harvest;
 public static partial class Harvest
 {
     public static IReadOnlyList<Ruling> Read(string html, Page page)
+        => new PageReader(page).Read(html);
+
+    private sealed class PageReader(Page page)
     {
-        var result = new List<Ruling>();
-        string section = "Unsectioned";
-        var pending = new List<Pending>();
-        Pending? current = null;
-        Pending? bareQuestion = null;
+        private readonly List<Ruling> result = [];
+        private readonly List<Pending> pending = [];
+        private string section = "Unsectioned";
+        private Pending? current;
+        private Pending? bareQuestion;
 
-        foreach (Block block in Html.Blocks(EntryContent(html)))
+        internal List<Ruling> Read(string html)
         {
-            string tag = block.Tag;
-            string body = block.Body;
-            string text = Html.Text(body);
-            if (tag == "h2")
-            {
-                if (!string.IsNullOrWhiteSpace(text))
-                {
-                    section = text;
-                }
+            foreach (Block block in Html.Blocks(EntryContent(html))) Process(block);
+            return result;
+        }
 
+        private void Process(Block block)
+        {
+            string text = Html.Text(block.Body);
+            if (block.Tag == "h2") ReadHeading(text);
+            else if (block.Tag == "p" && IsAttribution(text)) Finish(text);
+            else if (string.IsNullOrWhiteSpace(text)) return;
+            else if (block.Tag == "blockquote") ReadBlockquote(block.Body);
+            else ReadParagraph(block.Tag, block.Body, text);
+        }
+
+        private void ReadHeading(string text)
+        {
+            if (!string.IsNullOrWhiteSpace(text)) section = text;
+            bareQuestion = null;
+        }
+
+        private void Finish(string attribution)
+        {
+            result.AddRange(pending.SelectMany(question =>
+                Harvest.Finish(question, attribution, page)));
+            pending.Clear();
+            current = null;
+            bareQuestion = null;
+        }
+
+        private void ReadBlockquote(string body)
+        {
+            if (bareQuestion is not null)
+            {
+                current = bareQuestion;
+                pending.Add(current);
+                AddAnswer(current, body);
                 bareQuestion = null;
-                continue;
+                return;
             }
-
-            if (tag == "p" && IsAttribution(text))
+            if (current is not null && current.Answers.Count == 0
+                && Html.ListItems(body).Count > 0)
             {
-                result.AddRange(pending.SelectMany(question => Finish(question, text, page)));
-                pending.Clear();
-                current = null;
-                bareQuestion = null;
-                continue;
+                AddAnswer(current, body);
+                return;
             }
+            current = new Pending(section, body);
+            pending.Add(current);
+        }
 
-            if (string.IsNullOrWhiteSpace(text))
-            {
-                continue;
-            }
-
-            if (tag == "blockquote")
-            {
-                if (bareQuestion is not null)
-                {
-                    current = bareQuestion;
-                    pending.Add(current);
-                    AddAnswer(current, body);
-                    bareQuestion = null;
-                }
-                else if (current is not null
-                    && current.Answers.Count == 0
-                    && Html.ListItems(body).Count > 0)
-                {
-                    AddAnswer(current, body);
-                }
-                else
-                {
-                    current = new Pending(section, body);
-                    pending.Add(current);
-                }
-
-                continue;
-            }
-
+        private void ReadParagraph(string tag, string body, string text)
+        {
             if (current is not null)
             {
                 AddAnswer(current, body);
-                continue;
+                return;
             }
-
-            if (tag == "p" && bareQuestion is not null && !LooksLikeQuestion(text))
+            if (tag != "p") return;
+            if (bareQuestion is not null && !LooksLikeQuestion(text))
             {
                 current = bareQuestion;
                 pending.Add(current);
                 current.Answers.Add(text);
                 current.AnswerHtml.Add(body);
                 bareQuestion = null;
-                continue;
+                return;
             }
-
-            if (tag == "p" && LooksLikeQuestion(text))
-            {
+            if (LooksLikeQuestion(text))
                 bareQuestion = new Pending(section, "<p>" + body + "</p>");
-            }
         }
-
-        return result;
     }
 
     private static IEnumerable<Ruling> Finish(Pending pending, string attribution, Page page)

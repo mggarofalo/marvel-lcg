@@ -369,7 +369,7 @@ public sealed class KeywordStackingTests
 
     private static void ResolveReveal(World world, Card card, AbilityRunner runner)
     {
-        Reveal.Keywords(world, Cards, runner, card, player: 0, []);
+        RevealKeywords.Keywords(world, Cards, runner, card, player: 0, []);
         runner.WhenRevealed(world, card, player: 0);
     }
 

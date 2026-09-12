@@ -1,3 +1,13 @@
+using static Marvel.Cards.Run.AbilityAdmission;
+using static Marvel.Cards.Run.AbilityChoiceAnalysis;
+using static Marvel.Cards.Run.AbilityDelayedReachability;
+using static Marvel.Cards.Run.AbilityPowerProjection;
+using static Marvel.Cards.Run.AbilityPowerTrace;
+using static Marvel.Cards.Run.AbilityInitiationPrimitives;
+using static Marvel.Cards.Run.AbilityProjection;
+using static Marvel.Cards.Run.AbilityRepeatedEffectAnalysis;
+using static Marvel.Cards.Run.AbilityResolutionAdmission;
+using static Marvel.Cards.Run.AbilityInitiation;
 using Marvel.Cards.Dsl;
 using Marvel.Rules.Play;
 using Marvel.Rules.State;
@@ -5,20 +15,20 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Cards.Run;
 
-internal static partial class AbilityInitiation
+internal static class AbilityInitiationPrimitives
 {
-    private static T EffectOf<T>(AbilityEffect effect, AbilityAdmissionScope _) where T : AbilityEffect =>
+    internal static T EffectOf<T>(AbilityEffect effect, AbilityAdmissionScope _) where T : AbilityEffect =>
         (T)effect;
 
-    private static AbilityEffect.Conditional ConditionalOf(
+    internal static AbilityEffect.Conditional ConditionalOf(
         AbilityEffect effect, AbilityAdmissionScope _) =>
         (AbilityEffect.Conditional)effect;
 
-    private static AbilityEffect.ForEach ForEachOf(
+    internal static AbilityEffect.ForEach ForEachOf(
         AbilityEffect effect, AbilityAdmissionScope _) =>
         (AbilityEffect.ForEach)effect;
 
-    private static AbilityEffect.DiscardTop EachTimePreceding(
+    internal static AbilityEffect.DiscardTop EachTimePreceding(
         AbilityEffect effect, AbilityAdmissionScope scope)
     {
         if (((AbilityEffect.EachTime)effect).Effect is not AbilityEffect.DiscardTop
@@ -30,19 +40,19 @@ internal static partial class AbilityInitiation
         return preceding;
     }
 
-    private static AbilityEffect.EachTime EachTimeOf(
+    internal static AbilityEffect.EachTime EachTimeOf(
         AbilityEffect effect, AbilityAdmissionScope _) =>
         (AbilityEffect.EachTime)effect;
 
-    private static AbilityEffect.ChangeForm FormChangeOf(
+    internal static AbilityEffect.ChangeForm FormChangeOf(
         AbilityEffect effect, AbilityAdmissionScope _) =>
         (AbilityEffect.ChangeForm)effect;
 
-    private static AbilityEffect.ActivateEnemies ActivationOf(
+    internal static AbilityEffect.ActivateEnemies ActivationOf(
         AbilityEffect effect, AbilityAdmissionScope _) =>
         (AbilityEffect.ActivateEnemies)effect;
 
-    private static AbilityCardSelection DamageSelectionOf(
+    internal static AbilityCardSelection DamageSelectionOf(
         AbilityEffect effect, AbilityAdmissionScope _) => effect switch
         {
             AbilityEffect.Damage damage => damage.Cards,
@@ -51,7 +61,7 @@ internal static partial class AbilityInitiation
             _ => throw new InvalidOperationException("Expected a compiled damage instruction"),
         };
 
-    private static AbilityNumber DamageAmountOf(
+    internal static AbilityNumber DamageAmountOf(
         AbilityEffect effect, AbilityAdmissionScope _) => effect switch
         {
             AbilityEffect.Damage damage => damage.Amount,
@@ -60,7 +70,7 @@ internal static partial class AbilityInitiation
             _ => throw new InvalidOperationException("Expected a compiled damage instruction"),
         };
 
-    private static AbilityCardSelection GrantSelectionOf(
+    internal static AbilityCardSelection GrantSelectionOf(
         AbilityEffect effect, AbilityAdmissionScope _) => effect switch
         {
             AbilityEffect.GrantField grant => grant.Cards,
@@ -68,7 +78,7 @@ internal static partial class AbilityInitiation
             _ => throw new InvalidOperationException("Expected a compiled grant instruction"),
         };
 
-    private static AbilityCardSelection ThreatSelectionOf(
+    internal static AbilityCardSelection ThreatSelectionOf(
         AbilityEffect effect, AbilityAdmissionScope _) => effect switch
         {
             AbilityEffect.PlaceThreat threat => threat.Schemes,
@@ -76,89 +86,89 @@ internal static partial class AbilityInitiation
             _ => throw new InvalidOperationException("Expected a compiled threat instruction"),
         };
 
-    private static AbilityExpressionEvaluation Expressions(AbilityAdmissionScope scope) =>
+    internal static AbilityExpressionEvaluation Expressions(AbilityAdmissionScope scope) =>
         scope.Context.Evaluator(
             areas => AbilityRuntimeQueries.SingularAreaQueryIsStable(areas, scope.Context));
 
-    private static long Amount(AbilityNumber number, AbilityAdmissionScope scope) =>
+    internal static long Amount(AbilityNumber number, AbilityAdmissionScope scope) =>
         Expressions(scope).Amount(number);
 
-    private static bool Test(AbilityCondition condition, AbilityAdmissionScope scope) =>
+    internal static bool Test(AbilityCondition condition, AbilityAdmissionScope scope) =>
         Expressions(scope).Test(condition);
 
-    private static int Seat(AbilityPlayer player, AbilityAdmissionScope scope) =>
+    internal static int Seat(AbilityPlayer player, AbilityAdmissionScope scope) =>
         Expressions(scope).Seat(player);
 
-    private static IReadOnlyList<Card> Every(
+    internal static IReadOnlyList<Card> Every(
         AbilityCardSelection selection, AbilityAdmissionScope scope) =>
         scope.Context.Selectors().Every(selection);
 
-    private static Card? Find(
+    internal static Card? Find(
         AbilityCardSelection selection, AbilityAdmissionScope scope) =>
         scope.Context.Selectors(
             areas => AbilityRuntimeQueries.SingularAreaQueryIsStable(areas, scope.Context))
             .Find(selection);
 
-    private static bool CanRemoveByEffect(
+    internal static bool CanRemoveByEffect(
         AbilityCardSelection selection, AbilityAdmissionScope scope, Card card) =>
         scope.Context.Selectors().CanRemove(selection, card);
 
-    private static int Resolver(AbilityAdmissionScope scope) =>
+    internal static int Resolver(AbilityAdmissionScope scope) =>
         AbilityCardQueries.Resolver(scope.Context.Query);
 
-    private static bool IsPlayerCard(AbilityAdmissionScope scope) =>
+    internal static bool IsPlayerCard(AbilityAdmissionScope scope) =>
         AbilityCardQueries.IsPlayerCard(scope.World.Facts, scope.Source);
 
-    private static IReadOnlyList<Card> DamageTargets(
+    internal static IReadOnlyList<Card> DamageTargets(
         AbilityCardSelection selection, AbilityAdmissionScope scope) =>
         [.. Every(selection, scope).Where(card => AbilityProgramQueries.CanTakeDamage(
             scope.World, scope.Context.Program, card, scope.Source))];
 
-    private static List<Card> Assignable(
+    internal static List<Card> Assignable(
         AbilityCardSelection selection, AbilityAdmissionScope scope) =>
         [.. DamageTargets(selection, scope).Where(card =>
-            Damage.Health(scope.World, scope.World.Facts, card) - card.Damage > 0)];
+            DamagePlacement.Health(scope.World, scope.World.Facts, card) - card.Damage > 0)];
 
-    private static bool MayChangeAnyArea(
+    internal static bool MayChangeAnyArea(
         AbilityEffect effect, IReadOnlySet<DeckType> areas, AbilityAdmissionScope scope) =>
         AbilityRuntimeQueries.MayChangeAnyArea(effect, areas, scope.Context);
 
-    private static ulong PlayerSeat(int player) => 1UL << player;
-    private static bool SeatMayChange(ulong seats, int player) =>
+    internal static ulong PlayerSeat(int player) => 1UL << player;
+    internal static bool SeatMayChange(ulong seats, int player) =>
         (seats & PlayerSeat(player)) != 0;
 
-    private static bool BindingCanChange(AbilityEffect? effect) =>
+    internal static bool BindingCanChange(AbilityEffect? effect) =>
         AbilityBindingAnalysis.BindingCanChange(effect);
 
-    private static bool BindingCanChange(AbilityPlayerSelection players) =>
+    internal static bool BindingCanChange(AbilityPlayerSelection players) =>
         AbilityBindingAnalysis.BindingCanChange(players);
 
-    private static bool BindingCanChange(AbilityCondition condition) =>
+    internal static bool BindingCanChange(AbilityCondition condition) =>
         AbilityBindingAnalysis.BindingCanChange(condition);
 
-    private static bool BindingCanChange(AbilityNumber number) =>
+    internal static bool BindingCanChange(AbilityNumber number) =>
         AbilityBindingAnalysis.BindingCanChange(number);
 
-    private static bool BindingCanChange(AbilityCardSelection selection) =>
+    internal static bool BindingCanChange(AbilityCardSelection selection) =>
         AbilityBindingAnalysis.BindingCanChange(selection);
 
-    private static bool AmountMayChange(AbilityNumber number) =>
+    internal static bool AmountMayChange(AbilityNumber number) =>
         AbilityBindingAnalysis.AmountMayChange(number);
 
-    private static bool ContainsPowerAmount(AbilityNumber number) =>
+    internal static bool ContainsPowerAmount(AbilityNumber number) =>
         AbilityBindingAnalysis.ContainsPowerAmount(number);
 
-    private static bool ContainsPowerAmount(AbilityCondition condition) =>
+    internal static bool ContainsPowerAmount(AbilityCondition condition) =>
         AbilityBindingAnalysis.ContainsPowerAmount(condition);
 
-    private static int ReplaceableDefenseDefender(AbilityAdmissionScope scope) =>
+    internal static int ReplaceableDefenseDefender(AbilityAdmissionScope scope) =>
         checked((int)scope.Context.Expressions.Results.GetValueOrDefault(
             "defenseAbilityDefender", -1));
 
-    private static int ControllerOf(World world, Card card) =>
+    internal static int ControllerOf(World world, Card card) =>
         AbilityCardQueries.ControllerOf(world, card);
 
-    private static IEnumerable<int> Seats(
+    internal static IEnumerable<int> Seats(
         AbilityPlayerSelection players, AbilityAdmissionScope scope) => players switch
         {
             AbilityPlayerSelection.OnePlayer one => [Seat(one.Player, scope)],
@@ -166,44 +176,44 @@ internal static partial class AbilityInitiation
             _ => throw new InvalidOperationException("Unknown compiled player selection"),
         };
 
-    private static bool AlreadyInForm(
+    internal static bool AlreadyInForm(
         AbilityEffect.ChangeForm change, AbilityAdmissionScope scope) =>
         AbilityAdmissionFacts.AlreadyInForm(
             scope.World, Seat(change.Player, scope), change.Form);
 
-    private static bool CanAdvanceMainScheme(AbilityAdmissionScope scope) =>
+    internal static bool CanAdvanceMainScheme(AbilityAdmissionScope scope) =>
         AbilityAdmissionFacts.CanAdvanceMainScheme(scope.World);
 
-    private static AbilityEffect.RemoveCounters CounterRemovalOf(
+    internal static AbilityEffect.RemoveCounters CounterRemovalOf(
         AbilityEffect effect, AbilityAdmissionScope _) =>
         (AbilityEffect.RemoveCounters)effect;
 
-    private static string? CounterKeyForRemoval(
+    internal static string? CounterKeyForRemoval(
         Card card, string type, long count) =>
         AbilityCostSelection.CounterKeyForRemoval(card, type, count);
 
-    private static bool CanDrawToPrintedHandSize(
+    internal static bool CanDrawToPrintedHandSize(
         AbilityEffect effect, AbilityAdmissionScope scope) =>
         AbilityAdmissionFacts.CanDrawToPrintedHandSize(
             scope.World, scope.Source,
             Seat(((AbilityEffect.DrawToHandSize)effect).Player, scope));
 
-    private static bool CanCreateDrones(
+    internal static bool CanCreateDrones(
         AbilityEffect effect, AbilityAdmissionScope scope) =>
         effect is AbilityEffect.CreateDrones drones
         && AbilityAdmissionFacts.CanCreateDrones(
             scope.World, Seats(drones.Players, scope), drones.Count);
 
-    private static IReadOnlyList<Card> QueryCards(
+    internal static IReadOnlyList<Card> QueryCards(
         AbilityCardQuery query, AbilityAdmissionScope scope) =>
         AbilityCardQueries.Cards(query, scope.Context.Query, scope.Context.Program);
 
-    private static HashSet<DeckType> SearchAreaTypes(
+    internal static HashSet<DeckType> SearchAreaTypes(
         AbilityEffect effect, AbilityAdmissionScope _) =>
         ((AbilityEffect.Search)effect).Areas
             .Select(AbilitySelectorEvaluation.AreaType).ToHashSet();
 
-    private static Area Area(AbilitySearchArea area, AbilityAdmissionScope scope) =>
+    internal static Area Area(AbilitySearchArea area, AbilityAdmissionScope scope) =>
         area switch
         {
             AbilitySearchArea.EncounterDeck => scope.World.AreaOf(DeckType.EncounterDeck),
@@ -213,17 +223,17 @@ internal static partial class AbilityInitiation
             _ => throw new InvalidOperationException("Unknown compiled search area"),
         };
 
-    private static bool CostMayChangeAnyArea(
+    internal static bool CostMayChangeAnyArea(
         AbilityCost cost, IReadOnlySet<DeckType> areas, AbilityAdmissionScope scope) =>
         AbilityRuntimeQueries.CostMayChangeAnyArea(cost, areas, scope.Context);
 
-    private static IReadOnlyList<Card> ActivationCandidates(
+    internal static IReadOnlyList<Card> ActivationCandidates(
         AbilityEffect.ActivateEnemies activation, AbilityAdmissionScope scope) =>
         [.. Every(activation.Enemies, scope).Where(enemy => !activation.Dynamic
             || scope.Context.Expressions.Results.GetValueOrDefault(
                 $"dynamicActivation:{enemy.ObjectId}") == 0)];
 
-    private static IEnumerable<AbilityEffect> ReachableMutationBranches(
+    internal static IEnumerable<AbilityEffect> ReachableMutationBranches(
         AbilityEffect effect, AbilityAdmissionScope scope) =>
         AbilityRuntimeQueries.ReachableMutationBranches(effect, scope.Context);
 

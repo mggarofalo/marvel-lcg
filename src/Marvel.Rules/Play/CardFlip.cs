@@ -48,7 +48,8 @@ public static class CardFlip
                 card.PlaceTokens(kind, -held);
                 events.Add(new FieldSet(card.ObjectId, kind, held, 0)
                 {
-                    Trigger = trigger, Verb = "Flip",
+                    Trigger = trigger,
+                    Verb = "Flip",
                 });
             }
         }
@@ -58,7 +59,8 @@ public static class CardFlip
         card.TurnTo(face);
         events.Add(new CardsFlipped([card.ObjectId], true)
         {
-            Trigger = trigger, Verb = "Flip",
+            Trigger = trigger,
+            Verb = "Flip",
         });
     }
 }

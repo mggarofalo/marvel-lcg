@@ -12,25 +12,11 @@ internal static class TranscriptParser
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
 
         string relative = Path.GetRelativePath(root, path).Replace('\\', '/');
-        GherkinDocument document;
-        try
-        {
-            document = new Parser().Parse(path);
-        }
-        catch (Exception error) when (error is CompositeParserException or ParserException)
-        {
-            throw new TranscriptException(
-                TranscriptFailureKind.Validation, $"{relative}: {error.Message}", error);
-        }
-
-        Feature feature = document.Feature
+        Feature feature = ParseDocument(path, relative).Feature
             ?? throw new TranscriptException($"{relative}:1:1: feature is missing");
         var backgrounds = feature.Children.OfType<Background>().ToList();
         if (backgrounds.Count > 1)
-        {
             throw At(relative, backgrounds[1].Location, "a feature may have only one Background");
-        }
-
         var prefix = backgrounds.Count == 0
             ? Array.Empty<Step>()
             : backgrounds[0].Steps.ToArray();
@@ -39,51 +25,59 @@ internal static class TranscriptParser
                      .Where(scenario => onlyScenario is null
                          || string.Equals(scenario.Name, onlyScenario, StringComparison.Ordinal)))
         {
-            if (scenario.Examples.Any())
-            {
-                throw At(relative, scenario.Location,
-                    "Scenario Outline is not part of the canonical transcript format");
-            }
-
-            IReadOnlyList<string> tags = [.. feature.Tags.Concat(scenario.Tags)
-                .Select(tag => tag.Name)
-                .Distinct(StringComparer.Ordinal)
-                .OrderBy(tag => tag, StringComparer.Ordinal)];
-            var obligations = tags
-                .Where(tag => tag.StartsWith("@behavior:", StringComparison.Ordinal))
-                .Select(tag => tag[1..])
-                .ToList();
-            if (obligations.Count != 1)
-            {
-                throw At(relative, scenario.Location,
-                    $"scenario must name exactly one @behavior: obligation; found {obligations.Count}");
-            }
-
-            var covered = tags
-                .Where(tag => tag.StartsWith("@covers:behavior:", StringComparison.Ordinal))
-                .Select(tag => tag[8..])
-                .ToList();
-            if (covered.Contains(obligations[0], StringComparer.Ordinal))
-            {
-                throw At(relative, scenario.Location,
-                    $"primary obligation '{obligations[0]}' cannot also be a @covers obligation");
-            }
-
-            var parsed = ParseSteps(relative, prefix.Concat(scenario.Steps));
-            scenarios.Add(new TranscriptScenario(
-                scenario.Name,
-                obligations[0],
-                covered,
-                [.. tags.Where(IsAuthority).Select(tag => tag[1..])],
-                parsed,
-                Locate(relative, scenario.Location)));
+            scenarios.Add(ParseScenario(relative, feature, scenario, prefix));
         }
+        ValidateScenarios(relative, feature, scenarios);
+        return new TranscriptFeature(
+            feature.Name, scenarios, Locate(relative, feature.Location));
+    }
 
-        if (scenarios.Count == 0)
+    private static GherkinDocument ParseDocument(string path, string relative)
+    {
+        try
         {
-            throw At(relative, feature.Location, "feature has no scenarios");
+            return new Parser().Parse(path);
         }
+        catch (Exception error) when (error is CompositeParserException or ParserException)
+        {
+            throw new TranscriptException(
+                TranscriptFailureKind.Validation, $"{relative}: {error.Message}", error);
+        }
+    }
 
+    private static TranscriptScenario ParseScenario(
+        string path, Feature feature, Scenario scenario, IReadOnlyList<Step> prefix)
+    {
+        if (scenario.Examples.Any())
+            throw At(path, scenario.Location,
+                "Scenario Outline is not part of the canonical transcript format");
+        IReadOnlyList<string> tags = [.. feature.Tags.Concat(scenario.Tags)
+            .Select(tag => tag.Name).Distinct(StringComparer.Ordinal)
+            .OrderBy(tag => tag, StringComparer.Ordinal)];
+        var obligations = tags.Where(tag =>
+                tag.StartsWith("@behavior:", StringComparison.Ordinal))
+            .Select(tag => tag[1..]).ToList();
+        if (obligations.Count != 1)
+            throw At(path, scenario.Location,
+                $"scenario must name exactly one @behavior: obligation; found {obligations.Count}");
+        var covered = tags.Where(tag =>
+                tag.StartsWith("@covers:behavior:", StringComparison.Ordinal))
+            .Select(tag => tag[8..]).ToList();
+        if (covered.Contains(obligations[0], StringComparer.Ordinal))
+            throw At(path, scenario.Location,
+                $"primary obligation '{obligations[0]}' cannot also be a @covers obligation");
+        return new TranscriptScenario(
+            scenario.Name, obligations[0], covered,
+            [.. tags.Where(IsAuthority).Select(tag => tag[1..])],
+            ParseSteps(path, prefix.Concat(scenario.Steps)),
+            Locate(path, scenario.Location));
+    }
+
+    private static void ValidateScenarios(
+        string path, Feature feature, List<TranscriptScenario> scenarios)
+    {
+        if (scenarios.Count == 0)
+            throw At(path, feature.Location, "feature has no scenarios");
         var duplicate = scenarios
             .GroupBy(scenario => scenario.Name, StringComparer.Ordinal)
             .FirstOrDefault(group => group.Count() > 1);
@@ -93,9 +87,6 @@ internal static class TranscriptParser
             throw new TranscriptException(
                 $"{repeated.Location}: duplicate scenario name '{duplicate.Key}'");
         }
-
-        return new TranscriptFeature(
-            feature.Name, scenarios, Locate(relative, feature.Location));
     }
 
     private static List<TranscriptStep> ParseSteps(
@@ -108,51 +99,17 @@ internal static class TranscriptParser
         foreach (Step step in source)
         {
             string keyword = step.Keyword.Trim();
-            TranscriptStepKind kind = keyword switch
-            {
-                "Given" => TranscriptStepKind.Given,
-                "When" => TranscriptStepKind.When,
-                "Then" => TranscriptStepKind.Then,
-                "And" or "But" when preceding is not null => preceding.Value,
-                "And" or "But" => throw At(path, step.Location,
-                    $"{keyword} has no preceding step kind"),
-                _ => throw At(path, step.Location,
-                    $"unsupported step keyword '{keyword}'"),
-            };
-
-            if (kind == TranscriptStepKind.Given && hasDecision)
-            {
-                throw At(path, step.Location, "Given cannot appear after the first When");
-            }
-
-            if (kind == TranscriptStepKind.Then && !hasDecision)
-            {
-                throw At(path, step.Location, "Then requires a preceding When");
-            }
-
+            TranscriptStepKind kind = StepKind(path, step, keyword, preceding);
+            ValidateTransition(path, step, kind, hasDecision, decisionObserved);
             if (kind == TranscriptStepKind.When)
             {
-                if (!decisionObserved)
-                {
-                    throw At(path, step.Location,
-                        "When cannot follow an unobserved decision; add a Then first");
-                }
-
                 hasDecision = true;
                 decisionObserved = false;
             }
-
-            if (kind == TranscriptStepKind.Then)
-            {
-                decisionObserved = true;
-            }
-
+            if (kind == TranscriptStepKind.Then) decisionObserved = true;
             if (step.Argument is DocString)
-            {
                 throw At(path, step.Location,
                     "doc strings are not consumed by the canonical step vocabulary");
-            }
-
             parsed.Add(new TranscriptStep(
                 kind, step.Text, ParseTable(path, step), Locate(path, step.Location)));
             preceding = kind;
@@ -175,6 +132,33 @@ internal static class TranscriptParser
         }
 
         return parsed;
+    }
+
+    private static TranscriptStepKind StepKind(
+        string path, Step step, string keyword, TranscriptStepKind? preceding) =>
+        keyword switch
+        {
+            "Given" => TranscriptStepKind.Given,
+            "When" => TranscriptStepKind.When,
+            "Then" => TranscriptStepKind.Then,
+            "And" or "But" when preceding is not null => preceding.Value,
+            "And" or "But" => throw At(path, step.Location,
+                $"{keyword} has no preceding step kind"),
+            _ => throw At(path, step.Location,
+                $"unsupported step keyword '{keyword}'"),
+        };
+
+    private static void ValidateTransition(
+        string path, Step step, TranscriptStepKind kind,
+        bool hasDecision, bool decisionObserved)
+    {
+        if (kind == TranscriptStepKind.Given && hasDecision)
+            throw At(path, step.Location, "Given cannot appear after the first When");
+        if (kind == TranscriptStepKind.Then && !hasDecision)
+            throw At(path, step.Location, "Then requires a preceding When");
+        if (kind == TranscriptStepKind.When && !decisionObserved)
+            throw At(path, step.Location,
+                "When cannot follow an unobserved decision; add a Then first");
     }
 
     private static TranscriptTable? ParseTable(string path, Step step)

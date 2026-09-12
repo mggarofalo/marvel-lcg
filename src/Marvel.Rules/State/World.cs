@@ -9,25 +9,17 @@ namespace Marvel.Rules.State;
 /// Every card in a game, and every place they can be.
 /// </summary>
 /// <remarks>
-/// <para>
-/// The board: the first argument whenever the game resolves a decision. Cards are held in a flat list indexed by
-/// <c>object_id</c>, which is also their creation order — the id allocator is a
-/// counter and ids are never reused, so the list is append-only and
-/// <c>cards[i].ObjectId == i</c> always.
-/// </para>
-/// <para>
-/// <b>Nothing is ever removed from it.</b> A card removed from the game moves to
-/// the removed area and is still recorded, so the set of ids in a digest is
-/// always <c>0..highest</c>. Dropping one would renumber nothing but would make
-/// the digest disagree.
-/// </para>
+/// Cards are held in an append-only list indexed by <c>object_id</c>, which is
+/// also their creation order: <c>Cards[i].ObjectId == i</c>. A card removed
+/// from the game moves to the removed area and remains in this list, so a
+/// digest always contains the complete range <c>0..highest</c>.
 /// </remarks>
 public sealed class World
 {
-    private readonly List<Card> cards = [];
-    private readonly List<Area> areas = [];
-    private readonly List<Seat> seats = [];
-    private readonly List<GameArea> gameAreas = [];
+    internal readonly List<Card> _cards = [];
+    internal readonly List<Area> _areas = [];
+    internal readonly List<Seat> _seats = [];
+    internal readonly List<GameArea> _gameAreas = [];
     private readonly List<InformationSignal> informationSignals = [];
     private readonly ICardFacts facts;
 
@@ -63,7 +55,7 @@ public sealed class World
         // and nothing in the rules distinguishes that from having none. Making
         // it here rather than lazily means every predicate about reach has the
         // same shape whether or not a scenario ever splits.
-        var whole = CreateGameArea();
+        var whole = this.CreateGameArea();
         whole.Add(PlayArea.Villains);
         for (int seat = 0; seat < players; seat++)
         {
@@ -108,20 +100,20 @@ public sealed class World
     public int Players { get; }
 
     /// <summary>Every card, ascending by <see cref="Card.ObjectId"/>.</summary>
-    public IReadOnlyList<Card> Cards => cards;
+    public IReadOnlyList<Card> Cards => _cards;
 
     /// <summary>Every area, in the order they were made.</summary>
-    public IReadOnlyList<Area> Areas => areas;
+    public IReadOnlyList<Area> Areas => _areas;
 
     /// <summary>The players, in seat order.</summary>
-    public IReadOnlyList<Seat> Seats => seats;
+    public IReadOnlyList<Seat> Seats => _seats;
 
     /// <summary>Every game area, in the order they were made.</summary>
     /// <remarks>
     /// Never empty: the first is made with the world and holds every play area.
     /// A scenario that splits adds more; see <see cref="GameArea"/>.
     /// </remarks>
-    public IReadOnlyList<GameArea> GameAreas => gameAreas;
+    public IReadOnlyList<GameArea> GameAreas => _gameAreas;
 
     /// <summary>
     /// The enemy activation being resolved, of either kind, or <c>null</c>.
@@ -374,6 +366,35 @@ public sealed class World
     /// </remarks>
     public EngineRandom Random { get; }
 
+    /// <inheritdoc cref="WorldTopology.Shuffle"/>
+    public bool Shuffle(Area area) => WorldTopology.Shuffle(this, area);
+    /// <inheritdoc cref="WorldTopology.CreateGameArea"/>
+    public GameArea CreateGameArea() => WorldTopology.CreateGameArea(this);
+    /// <inheritdoc cref="WorldTopology.Join"/>
+    public void Join(
+        PlayArea area, GameArea destination, string trigger, List<GameEvent> events) =>
+        WorldTopology.Join(this, area, destination, trigger, events);
+    /// <inheritdoc cref="WorldTopology.Detach"/>
+    public void Detach(PlayArea area, string trigger, List<GameEvent> events) =>
+        WorldTopology.Detach(this, area, trigger, events);
+    /// <inheritdoc cref="WorldTopology.GameAreaOf"/>
+    public GameArea? GameAreaOf(PlayArea area) => WorldTopology.GameAreaOf(this, area);
+    /// <inheritdoc cref="WorldTopology.CreateSeat"/>
+    public Seat CreateSeat(string name) => WorldTopology.CreateSeat(this, name);
+    /// <inheritdoc cref="WorldTopology.AreaOf"/>
+    public Area AreaOf(
+        DeckType type, PlayArea? playArea = null, int host = -1, int cardOwner = Scenario) =>
+        WorldTopology.AreaOf(this, type, playArea, host, cardOwner);
+    /// <inheritdoc cref="WorldTopology.TheCardIn"/>
+    public Card? TheCardIn(DeckType type) => WorldTopology.TheCardIn(this, type);
+    /// <inheritdoc cref="WorldTopology.CreateArea"/>
+    public Area CreateArea(
+        DeckType type, int cardOwner = -1, PlayArea? playArea = null, int host = -1) =>
+        WorldTopology.CreateArea(this, type, cardOwner, playArea, host);
+    /// <inheritdoc cref="WorldTopology.CreateCard"/>
+    public Card CreateCard(string spec, Area into) =>
+        WorldTopology.CreateCard(this, spec, into);
+
     /// <summary>
     /// The seats in player order — <c>rr:in-player-order</c>.
     /// </summary>
@@ -395,273 +416,12 @@ public sealed class World
                 // in the game ignore eliminated players." The seat stays in the
                 // list -- `Players` is the starting count and the per-player
                 // icon still uses it -- but nothing takes a turn there.
-                if (seats.Count > seat && !seats[seat].Eliminated)
+                if (_seats.Count > seat && !_seats[seat].Eliminated)
                 {
                     yield return seat;
                 }
             }
         }
-    }
-
-    /// <summary>
-    /// Shuffles a pile, drawing from the game's one stream.
-    /// </summary>
-    /// <remarks>
-    /// <b>A pile of fewer than two cards is not shuffled at all</b>, and that
-    /// is not an optimisation: there is nothing to shuffle, and calling through
-    /// would consume a slot in the shared stream and desynchronise every draw
-    /// after it.
-    /// </remarks>
-    /// <param name="area">The pile.</param>
-    /// <returns>Whether Fisher-Yates ran and consumed the shared random stream.</returns>
-    public bool Shuffle(Area area)
-    {
-        ArgumentNullException.ThrowIfNull(area);
-        if (area.Cards.Count < 2)
-        {
-            return false;
-        }
-
-        var order = area.Cards.ToList();
-        Random.Shuffle(order);
-        area.Replace(order);
-        return true;
-    }
-
-    /// <summary>Makes an empty game area.</summary>
-    /// <remarks>
-    /// Empty on purpose. Kang's stage 3A says "create your own game area and
-    /// place this scheme in it", so creating and populating are two steps, and
-    /// God of Lies keeps a game area with no players in it at all.
-    /// </remarks>
-    public GameArea CreateGameArea()
-    {
-        var area = new GameArea(gameAreas.Count);
-        gameAreas.Add(area);
-        return area;
-    }
-
-    /// <summary>Moves a play area into a game area, leaving whichever held it.</summary>
-    /// <remarks>
-    /// <para>
-    /// <c>pack:mc11:game-areas</c>: "choose a game area and reorient the cards
-    /// on the table to indicate that you have joined that game area."
-    /// </para>
-    /// <para>
-    /// <b>One operation, not one per card.</b> A play area moves and every card
-    /// in it comes along, because a card's game area is looked up through its
-    /// play area rather than stored on the card.
-    /// </para>
-    /// <para>
-    /// <b>This event is emitted, not derived.</b> A game area is invisible to
-    /// the v2 digest (the original investigation), so a before/after comparison can never find
-    /// the change. This method knows it performed the join and emits one
-    /// <see cref="PlayAreaJoined"/> for it.
-    /// </para>
-    /// </remarks>
-    /// <param name="area">The play area that is moving.</param>
-    /// <param name="destination">The game area it joins.</param>
-    /// <param name="trigger">The timing point that caused the join.</param>
-    /// <param name="events">The event stream to append to.</param>
-    public void Join(
-        PlayArea area, GameArea destination, string trigger, List<GameEvent> events)
-    {
-        ArgumentNullException.ThrowIfNull(destination);
-        ArgumentNullException.ThrowIfNull(trigger);
-        ArgumentNullException.ThrowIfNull(events);
-        if (!gameAreas.Contains(destination))
-        {
-            throw new ArgumentException("that game area is not in this world", nameof(destination));
-        }
-
-        if (destination.Contains(area))
-        {
-            return;
-        }
-
-        foreach (var existing in gameAreas)
-        {
-            existing.Remove(area);
-        }
-
-        destination.Add(area);
-        events.Add(new PlayAreaJoined(area.Player, destination.Id)
-        {
-            Trigger = trigger,
-            Verb = "Join",
-        });
-    }
-
-    /// <summary>Takes a play area out of its game area.</summary>
-    /// <remarks>
-    /// Kang's stage 2B "remains in play in a central location […] though it is
-    /// not part of any other game area", and its text stays active for everyone.
-    /// Being in no game area is a real placement with a rules consequence, not
-    /// an error state — see <c>Places.CanAffect</c>.
-    /// <para>
-    /// The topology change is invisible to the v2 digest, so this emits one
-    /// <see cref="PlayAreaDetached"/> naming the membership that was removed.
-    /// A play area already outside every game area is unchanged and silent.
-    /// </para>
-    /// </remarks>
-    /// <param name="area">The play area to detach.</param>
-    /// <param name="trigger">The timing point that caused the detachment.</param>
-    /// <param name="events">The event stream to append to.</param>
-    public void Detach(PlayArea area, string trigger, List<GameEvent> events)
-    {
-        ArgumentNullException.ThrowIfNull(trigger);
-        ArgumentNullException.ThrowIfNull(events);
-
-        var existing = GameAreaOf(area);
-        if (existing is null)
-        {
-            return;
-        }
-
-        if (!existing.Remove(area))
-        {
-            throw new InvalidOperationException(
-                $"play area {area} was not in its resolved game area");
-        }
-
-        events.Add(new PlayAreaDetached(area.Player, existing.Id)
-        {
-            Trigger = trigger,
-            Verb = "Detach",
-        });
-    }
-
-    /// <summary>Which game area a play area is in, or <c>null</c> when it is in none.</summary>
-    /// <param name="area">The play area.</param>
-    public GameArea? GameAreaOf(PlayArea area) =>
-        gameAreas.FirstOrDefault(candidate => candidate.Contains(area));
-
-    /// <summary>Makes a seat and the areas that belong to it.</summary>
-    /// <param name="name">The player's name, e.g. <c>Spider-Man</c>.</param>
-    /// <remarks>
-    /// The six areas are made in one fixed order, which is why this is one
-    /// call rather than five. Area ids are not on the wire, so the order does
-    /// not have to be this one — but it does have to be the same every time,
-    /// or two deals of a seed allocate ids differently.
-    /// </remarks>
-    public Seat CreateSeat(string name)
-    {
-        int index = seats.Count;
-        var seat = new Seat(
-            index,
-            name,
-            identity: CreateArea(DeckType.AsideDeck, index, PlayArea.Of(index)),
-            // The nemesis pile is the player's place and the scenario's
-            // property, so a card made in it is owned by the scenario. The
-            // recorded digest is unambiguous: an obligation sitting in a
-            // seat's pile records owner -1.
-            nemesis: CreateArea(DeckType.AsideDeck, Scenario, PlayArea.Of(index)),
-            deck: CreateArea(DeckType.PlayerDeck, index, PlayArea.Of(index)),
-            hand: CreateArea(DeckType.HandsArea, index, PlayArea.Of(index)),
-            hero: CreateArea(DeckType.HeroArea, index, PlayArea.Of(index)),
-            // Created last so the existing five area identities remain stable.
-            // It is in the player's play area but scenario-owned until a rule
-            // such as Linked transfers ownership of one of its cards.
-            setAside: CreateArea(DeckType.AsideDeck, Scenario, PlayArea.Of(index)));
-        seats.Add(seat);
-        return seat;
-    }
-
-    /// <summary>Finds the area matching a place, making it if there is none.</summary>
-    /// <remarks>
-    /// <para>
-    /// Areas appear during a game — an encounter discard pile the first time
-    /// something is discarded, a status area the first time a card gains a
-    /// status — so the engine needs to name a place before it necessarily exists.
-    /// </para>
-    /// <para>
-    /// Safe to find-or-create because an area's identity is not on the wire:
-    /// the digest records a card's <i>zone name</i>, index and host, none of
-    /// which move when an area is made earlier or later. <c>AreaRef.Id</c> does
-    /// carry it, and an event stream built across a session where an area was
-    /// created at a different moment would number them differently — which is
-    /// the same session-scoped-handle rule that governs affordance ids.
-    /// </para>
-    /// </remarks>
-    /// <param name="type">What kind of place it is.</param>
-    /// <param name="playArea">Which play area it sits in. Defaults to the villain's.</param>
-    /// <param name="host">The card it hangs off, or -1.</param>
-    /// <param name="cardOwner">Who a card made here belongs to, or -1.</param>
-    public Area AreaOf(
-        DeckType type, PlayArea? playArea = null, int host = -1, int cardOwner = Scenario)
-    {
-        var where = playArea ?? PlayArea.Villains;
-        foreach (var area in areas)
-        {
-            if (area.Type == type && area.PlayArea == where && area.Host == host)
-            {
-                return area;
-            }
-        }
-
-        return CreateArea(type, cardOwner, where, host);
-    }
-
-    /// <summary>The one card in an area of this type, or null.</summary>
-    /// <param name="type">What kind of place to look in.</param>
-    public Card? TheCardIn(DeckType type)
-    {
-        foreach (var area in areas)
-        {
-            if (area.Type == type && area.Cards.Count > 0)
-            {
-                return area.Cards[0];
-            }
-        }
-
-        return null;
-    }
-
-    /// <summary>Makes an area.</summary>
-    /// <param name="type">What kind of place it is.</param>
-    /// <param name="cardOwner">Who a card made here belongs to, or -1 for the scenario.</param>
-    /// <param name="playArea">Which play area it sits in. Defaults to the villain's.</param>
-    /// <param name="host">The card it is bound to, or -1.</param>
-    public Area CreateArea(
-        DeckType type, int cardOwner = -1, PlayArea? playArea = null, int host = -1)
-    {
-        Card? hostCard = null;
-        if (host >= 0)
-        {
-            if (host >= cards.Count)
-            {
-                throw new ArgumentOutOfRangeException(
-                    nameof(host), $"there is no host card {host}");
-            }
-            hostCard = cards[host];
-        }
-
-        var area = new Area(
-            areas.Count, type, cardOwner, playArea ?? PlayArea.Villains, host, hostCard);
-        areas.Add(area);
-        return area;
-    }
-
-    /// <summary>Makes a card and puts it in an area.</summary>
-    /// <remarks>
-    /// The id is the next one, so the order these calls are made in <b>is</b> the
-    /// wire format. See <c>Marvel.Content.Setup.Dealer</c>.
-    /// </remarks>
-    /// <param name="spec">Comma-separated face ids. One card, however many faces.</param>
-    /// <param name="into">Where it starts. Its owner becomes the card's owner.</param>
-    public Card CreateCard(string spec, Area into)
-    {
-        ArgumentNullException.ThrowIfNull(spec);
-        ArgumentNullException.ThrowIfNull(into);
-        into.ValidateCanAcceptCards();
-
-        // The engine's rule: a card belongs to whoever owns the place it was
-        // made in, falling back to the scenario. Not to the seat that asked for
-        // it -- an obligation is dealt for a player and owned by the scenario.
-        var card = new Card(cards.Count, spec.Split(','), into.CardOwner);
-        cards.Add(card);
-        into.Append(card);
-        return card;
     }
 
     /// <summary>Moves a card to the end (the top) of an area.</summary>
@@ -694,7 +454,7 @@ public sealed class World
     public StateDigest Digest()
     {
         var positions = new Dictionary<int, (string Zone, int Index)>();
-        foreach (var area in areas)
+        foreach (var area in _areas)
         {
             string zone = area.Type.ToString();
             for (int index = 0; index < area.Cards.Count; index++)
@@ -708,8 +468,8 @@ public sealed class World
             }
         }
 
-        var records = new List<CardRecord>(cards.Count);
-        foreach (var card in cards)
+        var records = new List<CardRecord>(_cards.Count);
+        foreach (var card in _cards)
         {
             // `/absent` should not happen. It is emitted rather than raised
             // because a digest that can crash while computing itself is worse

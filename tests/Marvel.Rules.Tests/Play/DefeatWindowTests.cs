@@ -36,7 +36,7 @@ public sealed class DefeatWindowTests
         // scheduled the defeat would show two: an ability answering both would
         // fire twice against what the rules call one moment.
         var world = Board(out var printed, out var minion);
-        BasicPowers.BasicAttack(world, printed, 0, minion, []);
+        BasicPowerInitiation.BasicAttack(world, printed, 0, minion, []);
         Assert.Equal(1, world.Agenda.Count);
 
         Sequence.Work(world, printed, new Responder(Steps.CardDefeated), []);
@@ -59,7 +59,7 @@ public sealed class DefeatWindowTests
         var world = Board(out var printed, out var minion);
         var cards = new Responder(Steps.CardDefeated);
 
-        BasicPowers.BasicAttack(world, printed, 0, minion, []);
+        BasicPowerInitiation.BasicAttack(world, printed, 0, minion, []);
         var asked = Sequence.Work(world, printed, cards, []);
 
         Assert.NotNull(asked);
@@ -85,7 +85,7 @@ public sealed class DefeatWindowTests
         printed.With("hero", ("ATK", "0"));
         var cards = new Responder(Steps.AttackEnds);
 
-        BasicPowers.BasicAttack(world, printed, 0, minion, []);
+        BasicPowerInitiation.BasicAttack(world, printed, 0, minion, []);
         var asked = Sequence.Work(world, printed, cards, []);
 
         Assert.NotNull(asked);
@@ -103,7 +103,7 @@ public sealed class DefeatWindowTests
         // the occurrence's opening window as predictions about the future.
         var world = Board(out var printed, out var minion);
 
-        BasicPowers.BasicAttack(world, printed, 0, minion, []);
+        BasicPowerInitiation.BasicAttack(world, printed, 0, minion, []);
         var occurrence = world.Agenda.Begin(world, printed);
 
         Assert.Contains(Steps.AttackInitiated, occurrence.Conditions);
@@ -122,7 +122,7 @@ public sealed class DefeatWindowTests
         // occurrence is the thing whose life is the right length.
         var world = Board(out var printed, out var minion);
 
-        BasicPowers.BasicAttack(world, printed, 0, minion, []);
+        BasicPowerInitiation.BasicAttack(world, printed, 0, minion, []);
         Sequence.Work(world, printed, new Responder(Steps.CardDefeated), []);
 
         var defeat = world.Agenda.Occurrence!.Defeat;
@@ -140,7 +140,7 @@ public sealed class DefeatWindowTests
         // and the defeat names them.
         var world = Board(out var printed, out var minion, players: 2);
 
-        BasicPowers.BasicAttack(world, printed, 1, minion, []);
+        BasicPowerInitiation.BasicAttack(world, printed, 1, minion, []);
         Sequence.Work(world, printed, new Responder(Steps.CardDefeated), []);
 
         Assert.Equal(1, world.Agenda.Occurrence!.Defeat!.By);
@@ -175,7 +175,7 @@ public sealed class DefeatWindowTests
         var world = Board(out var printed, out var minion);
 
         var thrown = Assert.Throws<RulesNotImplementedException>(
-            () => Damage.Deal(world, printed, minion, minion, 5, "test", "test", []));
+            () => DamagePlacement.Deal(world, printed, minion, minion, 5, "test", "test", []));
 
         Assert.Contains(
             "nothing is happening on the agenda", thrown.Message, StringComparison.Ordinal);

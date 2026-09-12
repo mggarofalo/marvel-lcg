@@ -151,20 +151,20 @@ internal static class AbilityProgramQueries
                      .SelectMany(area => area.Cards))
         {
             if (FacedownDrones.Is(card)) continue;
-        foreach (var ability in On(program, card).Where(ability =>
-                     ability.Trigger.Timing == AbilityType.Constant))
-        {
-            var bindings = new AbilityQueryContext(
-                world, card, new Occurrence(0, []),
-                AbilityCardQueries.ControllerOf(world, card), card.Incarnation,
-                null, null, null, []);
-            var selectors = new AbilitySelectorEvaluation(bindings, null, program);
-            var expressions = new AbilityExpressionEvaluation(
-                new AbilityExpressionContext(
-                    bindings, ImmutableDictionary<string, long>.Empty, [], string.Empty,
-                    -1, false, null), selectors);
-            if (ProhibitsReady(ability.Effect, target, selectors, expressions)) return false;
-        }
+            foreach (var ability in On(program, card).Where(ability =>
+                         ability.Trigger.Timing == AbilityType.Constant))
+            {
+                var bindings = new AbilityQueryContext(
+                    world, card, new Occurrence(0, []),
+                    AbilityCardQueries.ControllerOf(world, card), card.Incarnation,
+                    null, null, null, []);
+                var selectors = new AbilitySelectorEvaluation(bindings, null, program);
+                var expressions = new AbilityExpressionEvaluation(
+                    new AbilityExpressionContext(
+                        bindings, ImmutableDictionary<string, long>.Empty, [], string.Empty,
+                        -1, false, null), selectors);
+                if (ProhibitsReady(ability.Effect, target, selectors, expressions)) return false;
+            }
         }
         return true;
     }
@@ -218,50 +218,50 @@ internal static class AbilityProgramQueries
     private static bool ProhibitsThreatRemoval(
         AbilityEffect effect, Card scheme, AbilitySelectorEvaluation selectors,
         AbilityExpressionEvaluation expressions) => effect switch
-    {
-        AbilityEffect.Sequence sequence => sequence.Effects.Any(step =>
-            ProhibitsThreatRemoval(step, scheme, selectors, expressions)),
-        AbilityEffect.Simultaneous simultaneous => simultaneous.Effects.Any(step =>
-            ProhibitsThreatRemoval(step, scheme, selectors, expressions)),
-        AbilityEffect.Conditional conditional => (expressions.Test(conditional.Test)
-                ? conditional.Then : conditional.Else) is { } branch
-            && ProhibitsThreatRemoval(branch, scheme, selectors, expressions),
-        AbilityEffect.CardAction
+        {
+            AbilityEffect.Sequence sequence => sequence.Effects.Any(step =>
+                ProhibitsThreatRemoval(step, scheme, selectors, expressions)),
+            AbilityEffect.Simultaneous simultaneous => simultaneous.Effects.Any(step =>
+                ProhibitsThreatRemoval(step, scheme, selectors, expressions)),
+            AbilityEffect.Conditional conditional => (expressions.Test(conditional.Test)
+                    ? conditional.Then : conditional.Else) is { } branch
+                && ProhibitsThreatRemoval(branch, scheme, selectors, expressions),
+            AbilityEffect.CardAction
             { Instruction: AbilityCardInstruction.PreventThreatRemoval } prohibition =>
-            selectors.Find(prohibition.Selection)?.ObjectId == scheme.ObjectId,
-        _ => false,
-    };
+                selectors.Find(prohibition.Selection)?.ObjectId == scheme.ObjectId,
+            _ => false,
+        };
 
     private static bool ProhibitsDamage(
         AbilityEffect effect, World world, Card source, AbilityExpressionEvaluation expressions) => effect switch
-    {
-        AbilityEffect.Sequence sequence => sequence.Effects.Any(step =>
-            ProhibitsDamage(step, world, source, expressions)),
-        AbilityEffect.Simultaneous simultaneous => simultaneous.Effects.Any(step =>
-            ProhibitsDamage(step, world, source, expressions)),
-        AbilityEffect.Conditional conditional => (expressions.Test(conditional.Test)
-                ? conditional.Then : conditional.Else) is { } branch
-            && ProhibitsDamage(branch, world, source, expressions),
-        AbilityEffect.PreventDamageFrom prohibition => world.Facts.Kind(source.FaceId)
-            == prohibition.SourceKind && Rules.State.Traits.Has(
-                world, source, prohibition.SourceTrait, world.Facts),
-        AbilityEffect.PreventDamageWhile prohibition => expressions.Test(prohibition.Condition),
-        _ => false,
-    };
+        {
+            AbilityEffect.Sequence sequence => sequence.Effects.Any(step =>
+                ProhibitsDamage(step, world, source, expressions)),
+            AbilityEffect.Simultaneous simultaneous => simultaneous.Effects.Any(step =>
+                ProhibitsDamage(step, world, source, expressions)),
+            AbilityEffect.Conditional conditional => (expressions.Test(conditional.Test)
+                    ? conditional.Then : conditional.Else) is { } branch
+                && ProhibitsDamage(branch, world, source, expressions),
+            AbilityEffect.PreventDamageFrom prohibition => world.Facts.Kind(source.FaceId)
+                == prohibition.SourceKind && Rules.State.Traits.Has(
+                    world, source, prohibition.SourceTrait, world.Facts),
+            AbilityEffect.PreventDamageWhile prohibition => expressions.Test(prohibition.Condition),
+            _ => false,
+        };
 
     private static bool ProhibitsReady(
         AbilityEffect effect, Card target, AbilitySelectorEvaluation selectors,
         AbilityExpressionEvaluation expressions) => effect switch
-    {
-        AbilityEffect.Sequence sequence => sequence.Effects.Any(step =>
-            ProhibitsReady(step, target, selectors, expressions)),
-        AbilityEffect.Simultaneous simultaneous => simultaneous.Effects.Any(step =>
-            ProhibitsReady(step, target, selectors, expressions)),
-        AbilityEffect.Conditional conditional => (expressions.Test(conditional.Test)
-                ? conditional.Then : conditional.Else) is { } branch
-            && ProhibitsReady(branch, target, selectors, expressions),
-        AbilityEffect.CardAction { Instruction: AbilityCardInstruction.PreventReady } prohibition =>
-            selectors.Find(prohibition.Selection)?.ObjectId == target.ObjectId,
-        _ => false,
-    };
+        {
+            AbilityEffect.Sequence sequence => sequence.Effects.Any(step =>
+                ProhibitsReady(step, target, selectors, expressions)),
+            AbilityEffect.Simultaneous simultaneous => simultaneous.Effects.Any(step =>
+                ProhibitsReady(step, target, selectors, expressions)),
+            AbilityEffect.Conditional conditional => (expressions.Test(conditional.Test)
+                    ? conditional.Then : conditional.Else) is { } branch
+                && ProhibitsReady(branch, target, selectors, expressions),
+            AbilityEffect.CardAction { Instruction: AbilityCardInstruction.PreventReady } prohibition =>
+                selectors.Find(prohibition.Selection)?.ObjectId == target.ObjectId,
+            _ => false,
+        };
 }

@@ -9,7 +9,7 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Cards.Run;
 
-internal sealed partial class AbilityResolutionExecution
+internal static class AbilityResolutionContinuations
 {
     /// <summary>
     /// Runs what is left of the ability after the answered choice.
@@ -19,38 +19,38 @@ internal sealed partial class AbilityResolutionExecution
     /// was a step of. If the rest holds another choice, it suspends again and
     /// the step it schedules says where to pick up next.
     /// </remarks>
-    private List<GameEvent> Continue(Card source, AbilityResolutionState cast, int from)
+    internal static List<GameEvent> Continue(this AbilityResolutionExecution execution, Card source, AbilityResolutionState cast, int from)
     {
         if (cast.Suspended)
         {
             cast.CompleteResolution();
-            DiscardEvent(source, cast);
+            execution.DiscardEvent(source, cast);
             return cast.Events;
         }
 
         if (cast.AbilityOrdinal >= 0 && cast.StructuralPath.Count > 0)
         {
-            var ability = AbilityAt(
+            var ability = execution.AbilityAt(
                 source, cast.Tier, cast.AbilityOrdinal, cast.AbilityFace);
             var persisted = AbilityContinuationCodec.Step(
-                Capture(cast, cast.AbilityOrdinal), Steps.ResumeAbility,
+                execution.Capture(cast, cast.AbilityOrdinal), Steps.ResumeAbility,
                 cast.World.Agenda.Current?.Round ?? 0);
-            var state = AbilityContinuationCodec.Decode(
-                program, source, persisted, cast.Tier).State;
-            return ResumeContinuation(
+            var state = AbilityContinuationWireCodec.Decode(
+                execution.program, source, persisted, cast.Tier).State;
+            return execution.ResumeContinuation(
                 cast, source,
                 new ContinueAfterResumedNode(ability, state, EffectApplied: false));
         }
 
-        var legacy = ContinuationStep(cast.World, source, from, cast.Tier);
-        return ResumeContinuation(cast, source,
+        var legacy = execution.ContinuationStep(cast.World, source, from, cast.Tier);
+        return execution.ResumeContinuation(cast, source,
             AbilityContinuationCodec.BeginLegacyChoiceResume(
-                program, source, legacy, cast.Tier, from,
-                cast.EachPlayerFrame, cast.FinalPlayer, StructuralContext(cast)));
+                execution.program, source, legacy, cast.Tier, from,
+                cast.EachPlayerFrame, cast.FinalPlayer, execution.StructuralContext(cast)));
     }
 
     /// <summary>A fresh resolution of one card's ability, by one player.</summary>
-    private static AbilityResolutionState Resolving(
+    internal static AbilityResolutionState Resolving(this AbilityResolutionExecution execution,
         World world, Card source, int player, AbilityType? tier, bool finalStep = false,
         Occurrence? continuation = null) =>
         new(world,
@@ -65,11 +65,11 @@ internal sealed partial class AbilityResolutionExecution
         };
 
     /// <summary>A suspended resolution with its persisted card bindings restored.</summary>
-    private static AbilityResolutionState Resuming(
+    internal static AbilityResolutionState Resuming(this AbilityResolutionExecution execution,
         World world, Card source, int player, AbilityType? tier, bool finalStep = false,
         Occurrence? continuation = null)
     {
-        var cast = Resolving(world, source, player, tier, finalStep, continuation);
+        var cast = execution.Resolving(world, source, player, tier, finalStep, continuation);
         if (world.Agenda.Current?.Discarded is { } discarded)
         {
             cast.Discarded.AddRange(discarded.Select(id => world.Cards[id]));
@@ -77,18 +77,18 @@ internal sealed partial class AbilityResolutionExecution
         return cast;
     }
 
-    private static IEnumerable<AbilityEffect> Choices(AbilityEffect node) =>
-        AbilityInitiation.Choices(node);
+    internal static IEnumerable<AbilityEffect> Choices(this AbilityResolutionExecution execution, AbilityEffect node) =>
+        AbilityChoiceAnalysis.Choices(node);
 
-    private IEnumerable<AbilityEffect> ActiveChoices(AbilityEffect node, AbilityResolutionState cast) =>
-        AbilityInitiation.ActiveChoices(node, AdmissionContext(cast));
+    internal static IEnumerable<AbilityEffect> ActiveChoices(this AbilityResolutionExecution execution, AbilityEffect node, AbilityResolutionState cast) =>
+        AbilityChoiceAnalysis.ActiveChoices(node, execution.AdmissionContext(cast));
 
-    private static bool IsChoice(AbilityEffect node) => AbilityInitiation.IsChoice(node);
+    internal static bool IsChoice(this AbilityResolutionExecution execution, AbilityEffect node) => AbilityChoiceAnalysis.IsChoice(node);
 
-    private bool SuspendsInsideAnd(
+    internal static bool SuspendsInsideAnd(this AbilityResolutionExecution execution,
         AbilityEffect node, AbilityResolutionState cast, bool stateMayChange = false,
         bool bindingMayChange = false) =>
-        AbilityInitiation.SuspendsInsideAnd(
-            node, AdmissionContext(cast), stateMayChange, bindingMayChange);
+        AbilityChoiceAnalysis.SuspendsInsideAnd(
+            node, execution.AdmissionContext(cast), stateMayChange, bindingMayChange);
 
 }

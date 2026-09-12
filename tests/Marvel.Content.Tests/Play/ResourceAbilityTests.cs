@@ -32,7 +32,7 @@ public sealed class ResourceAbilityTests
     /// <summary>
     /// `01026` Superhuman Law Division — a non-unique support costing one. An
     /// <i>event</i> would not do:
-    /// `rr:player-turn.2` does not list one, so `CardPlay.Price` refuses to
+    /// `rr:player-turn.2` does not list one, so `CardPayment.Price` refuses to
     /// offer it and there would be no cost to pay.
     /// </summary>
     private const string Cheap = "01026";
@@ -51,7 +51,7 @@ public sealed class ResourceAbilityTests
         Empty(world);
         var card = world.CreateCard(Cheap, world.Seats[0].Hand);
 
-        var price = CardPlay.Price(world, Cards, world.Seats[0], card);
+        var price = CardPayment.Price(world, Cards, world.Seats[0], card);
 
         // The hand holds nothing but the card being played, so every generator
         // here is an ability. It is the identity's, and it makes a mental.
@@ -100,7 +100,7 @@ public sealed class ResourceAbilityTests
         Pay(world, first, world.Seats[0].IdentityCard.ObjectId);
 
         // Nothing left to pay with, so the second card is not offered at all.
-        Assert.Null(CardPlay.Price(world, Cards, world.Seats[0], second));
+        Assert.Null(CardPayment.Price(world, Cards, world.Seats[0], second));
     }
 
     [Rule("rr:limit")]
@@ -117,11 +117,11 @@ public sealed class ResourceAbilityTests
         var second = world.CreateCard(Cheap, world.Seats[0].Hand);
 
         Pay(world, first, world.Seats[0].IdentityCard.ObjectId);
-        Assert.Null(CardPlay.Price(world, Cards, world.Seats[0], second));
+        Assert.Null(CardPayment.Price(world, Cards, world.Seats[0], second));
 
         PhaseEnd.EndVillainPhase(world, Cards, []);
 
-        Assert.NotNull(CardPlay.Price(world, Cards, world.Seats[0], second));
+        Assert.NotNull(CardPayment.Price(world, Cards, world.Seats[0], second));
     }
 
     [Fact]

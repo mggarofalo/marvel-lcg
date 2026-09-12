@@ -19,7 +19,7 @@ public sealed class MoveDamageTests
             "source", world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0), cardOwner: 0));
         hero.TakeDamage(2);
 
-        long moved = Damage.MoveDamage(
+        long moved = DamageRecovery.MoveDamage(
             world, facts, source, hero, hero, 2, "test", "Move_Damage", []);
 
         Assert.Equal(0, moved);
@@ -44,7 +44,7 @@ public sealed class MoveDamageTests
             "enemy", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         hero.TakeDamage(3);
 
-        long moved = Damage.MoveDamage(
+        long moved = DamageRecovery.MoveDamage(
             world, facts, source, hero, enemy, 2, "test", "Move_Damage", []);
 
         Assert.Equal(2, moved);
@@ -65,7 +65,7 @@ public sealed class MoveDamageTests
             "enemy", world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
         hero.TakeDamage(1);
 
-        long moved = Damage.MoveDamage(
+        long moved = DamageRecovery.MoveDamage(
             world, facts, source, hero, enemy, 2, "test", "Move_Damage", []);
 
         Assert.Equal(1, moved);
@@ -88,7 +88,7 @@ public sealed class MoveDamageTests
         hero.TakeDamage(2);
         world.Abilities = new CannotTake(source);
 
-        long moved = Damage.MoveDamage(
+        long moved = DamageRecovery.MoveDamage(
             world, facts, source, hero, enemy, 2, "test", "Move_Damage", []);
 
         Assert.Equal(0, moved);

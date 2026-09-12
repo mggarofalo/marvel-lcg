@@ -58,49 +58,57 @@ public sealed class OperationalTelemetrySink(ITelemetryExporter exporter)
         ArgumentNullException.ThrowIfNull(record);
         var dimensions = Dimensions(record);
         var metrics = new List<TelemetryMetric>();
-        if (record.EventId == OperationalEventIds.RequestCompleted)
-        {
-            metrics.Add(new("marvel.request.outcomes", "counter", 1, dimensions));
-            metrics.Add(new(
-                "marvel.request.latency_ms", "histogram",
-                record.DurationMilliseconds, dimensions));
-        }
+        AddRequestMetrics(record, dimensions, metrics);
+        AddSessionMetric(record, metrics);
+        AddOutcomeCounters(record, dimensions, metrics);
+        Enqueue(record, dimensions, metrics);
+    }
 
+    private static void AddRequestMetrics(OperationalRecord record,
+        Dictionary<string, string> dimensions, List<TelemetryMetric> metrics)
+    {
+        if (record.EventId != OperationalEventIds.RequestCompleted) return;
+        metrics.Add(new("marvel.request.outcomes", "counter", 1, dimensions));
+        metrics.Add(new("marvel.request.latency_ms", "histogram",
+            record.DurationMilliseconds, dimensions));
+    }
+
+    private void AddSessionMetric(OperationalRecord record, List<TelemetryMetric> metrics)
+    {
         bool opened = record.EventId == OperationalEventIds.RequestCompleted
-            && record.Operation == EngineProtocol.Open
-            && record.Disposition == "accepted";
+            && record.Operation == EngineProtocol.Open && record.Disposition == "accepted";
         bool restored = record.EventId == OperationalEventIds.SessionRestored
             && record.Disposition == "accepted";
         bool closed = record.SessionRetired is true;
-        if (opened || restored || closed)
-        {
-            long current = closed
-                ? DecrementActiveSessions()
-                : Interlocked.Increment(ref activeSessions);
-            metrics.Add(new(
-                "marvel.sessions.active", "gauge", current,
-                new Dictionary<string, string>(StringComparer.Ordinal)
-                {
-                    ["process"] = record.Process,
-                }));
-        }
+        if (!opened && !restored && !closed) return;
+        long current = closed ? DecrementActiveSessions()
+            : Interlocked.Increment(ref activeSessions);
+        metrics.Add(new("marvel.sessions.active", "gauge", current,
+            new Dictionary<string, string>(StringComparer.Ordinal)
+            { ["process"] = record.Process }));
+    }
 
+    private static void AddOutcomeCounters(OperationalRecord record,
+        Dictionary<string, string> dimensions, List<TelemetryMetric> metrics)
+    {
         AddCounter(metrics, "marvel.saves.committed", dimensions,
-            record.SaveCommitted is true
-            && record.EventId is OperationalEventIds.PersistenceCompleted
-                or OperationalEventIds.SessionRestored);
+            record.SaveCommitted is true && record.EventId is
+                OperationalEventIds.PersistenceCompleted or OperationalEventIds.SessionRestored);
         AddCounter(metrics, "marvel.sessions.reconnects", dimensions,
             record.EventId == OperationalEventIds.ReconnectCompleted
             && record.Disposition == "accepted");
         AddCounter(metrics, "marvel.replay.divergences", dimensions,
-            record.ReplayDiverged is true
-            && record.EventId is OperationalEventIds.ReplayCompleted
-                or OperationalEventIds.SessionRestoreFailed);
+            record.ReplayDiverged is true && record.EventId is
+                OperationalEventIds.ReplayCompleted or OperationalEventIds.SessionRestoreFailed);
         AddCounter(metrics, "marvel.undo.refusals", dimensions,
             record.Operation == EngineProtocol.Undo && record.Disposition != "accepted");
         AddCounter(metrics, "marvel.trace_rewrites.accepted", dimensions,
             record.Operation == EngineProtocol.Reorder && record.Disposition == "accepted");
+    }
 
+    private void Enqueue(OperationalRecord record,
+        Dictionary<string, string> dimensions, List<TelemetryMetric> metrics)
+    {
         string traceId = TraceCorrelation(record);
         var attributes = new Dictionary<string, string>(dimensions, StringComparer.Ordinal)
         {

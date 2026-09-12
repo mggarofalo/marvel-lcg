@@ -19,93 +19,178 @@ internal static class AbilityImmediateExecution
 {
     internal static AbilityImmediateResult TryRun(AbilityEffect effect, AbilityImmediateContext context)
     {
-        World world = context.Admission.World;
-        Card source = context.Admission.Source;
-        var expressions = context.Admission.Evaluator();
-        Card? Find(AbilityCardSelection selection) => context.Admission.Selectors().Find(selection);
-        int Seat(AbilityPlayer player) => expressions.Seat(player);
-        long Amount(AbilityNumber number) => expressions.Amount(number);
-
-        switch (effect)
+        return effect switch
         {
-            case AbilityEffect.ChangeForm change:
-                ChangeForm(change, context, Seat);
-                return new(true, false);
-            case AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.AdvanceMainScheme }:
+            AbilityEffect.Fixed fixedEffect => RunFixed(fixedEffect, context),
+            AbilityEffect.CardAction action => RunCardAction(action, context),
+            AbilityEffect.ChangeForm or AbilityEffect.Generate =>
+                RunIdentityEffect(effect, context),
+            AbilityEffect.Draw or AbilityEffect.DrawToHandSize or AbilityEffect.GainSurge =>
+                RunPlayerEffect(effect, context),
+            AbilityEffect.GrantControlledCharacters or AbilityEffect.ReduceNextCardCost
+                or AbilityEffect.GrantField or AbilityEffect.GrantTrait =>
+                RunGrantEffect(effect, context),
+            AbilityEffect.DelayedStun or AbilityEffect.DelayedDiscard =>
+                RunDelayedEffect(effect, context),
+            _ => new(false, false),
+        };
+    }
+
+    private static AbilityImmediateResult RunFixed(
+        AbilityEffect.Fixed effect, AbilityImmediateContext context)
+    {
+        var world = context.Admission.World;
+        switch (effect.Instruction)
+        {
+            case AbilityFixedInstruction.AdvanceMainScheme:
                 AdvanceMainScheme(context);
                 return new(true, false);
-            case AbilityEffect.Generate:
-                throw new RulesNotImplementedException(
-                    $"'{source.FaceId}' generates a resource, which is read while a cost is paid rather than resolved as an effect");
-            case AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.CancelWhenRevealed }:
+            case AbilityFixedInstruction.CancelWhenRevealed:
                 CancelWhenRevealed(context);
                 return new(true, true);
-            case AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.CancelOccurrence }:
+            case AbilityFixedInstruction.CancelOccurrence:
                 if (world.Agenda.IsOutstanding(context.Admission.Query.Occurrence))
                     world.Agenda.Cancel(context.Admission.Query.Occurrence);
                 return new(true, true);
-            case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.GiveAdditionalBoost } boost:
-                Attack.GiveAdditionalBoostCard(world,
-                    Find(boost.Selection) ?? throw new AbilityException(
-                        $"'{source.FaceId}' cannot find the enemy receiving an additional boost card"),
-                    context.Trigger, context.Events);
-                return new(true, false);
-            case AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.AlsoAttackEachOtherHero }:
+            case AbilityFixedInstruction.AlsoAttackEachOtherHero:
                 Attack.AlsoResolveAgainstEachOtherHero(world);
                 return new(true, true);
-            case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.DeclareDefender } declare:
-                var declared = Find(declare.Selection) ?? throw new RulesNotImplementedException(
-                    $"'{source.FaceId}' cannot find the character it declares as defender");
-                Attack.DeclareByAbility(world, world.Facts, declared,
-                    checked((int)context.Admission.Expressions.Results.GetValueOrDefault("defenseAbilityDefender", -1)));
-                return new(true, true);
-            case AbilityEffect.GrantControlledCharacters grant:
-                foreach (string field in grant.Fields)
-                    world.Effects.GrantToCharactersControlledBy(source, Seat(grant.Player), field,
-                        Amount(grant.Amount), grant.Until);
-                return new(true, true);
-            case AbilityEffect.ReduceNextCardCost reduction:
-                CardPlay.ReduceNextCardCost(world, source, Seat(reduction.Player), Amount(reduction.Amount));
-                return new(true, true);
-            case AbilityEffect.GainSurge surge:
-                if (surge.Instances > 0
-                    && StateFields.Modified(world, source, "surge", world.Facts, world.Players) <= 0
-                    && context.GainedKeywords.Add("surge"))
-                {
-                    RememberGainedSurge(world, source.ObjectId);
-                    Deal.EncounterCard(world, context.Admission.Query.Player, context.Trigger, context.Events);
-                }
-                return new(true, false);
-            case AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.MakeAttackIndirect }:
+            case AbilityFixedInstruction.MakeAttackIndirect:
                 Attack.MakeIndirect(world);
                 return new(true, false);
-            case AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.PlaceAccelerationToken }:
+            case AbilityFixedInstruction.PlaceAccelerationToken:
                 EncounterDeck.PlaceAccelerationToken(world, context.Trigger, context.Events);
                 return new(true, false);
-            case AbilityEffect.Draw draw:
-                foreach (int player in Seats(draw.Players, Seat, world))
-                    if (AbilityInitiation.CanDraw(world, player))
-                        Draw.Cards(world, player, draw.Count, context.Trigger, context.Events);
+            default:
+                return new(false, false);
+        }
+    }
+
+    private static AbilityImmediateResult RunCardAction(
+        AbilityEffect.CardAction action, AbilityImmediateContext context)
+    {
+        var world = context.Admission.World;
+        var source = context.Admission.Source;
+        switch (action.Instruction)
+        {
+            case AbilityCardInstruction.GiveAdditionalBoost:
+                Attack.GiveAdditionalBoostCard(
+                    world,
+                    context.Admission.Selectors().Find(action.Selection)
+                        ?? throw new AbilityException(
+                            $"'{source.FaceId}' cannot find the enemy receiving an additional boost card"),
+                    context.Trigger, context.Events);
                 return new(true, false);
-            case AbilityEffect.DrawToHandSize handSize:
-                DrawToHandSize(handSize, context, Seat);
-                return new(true, false);
-            case AbilityEffect.GrantField { Until: { } until } fieldGrant:
-                GrantUntil(fieldGrant.Cards, fieldGrant.Field, fieldGrant.Amount, until, context, Find, Amount);
-                return new(true, true);
-            case AbilityEffect.GrantTrait { Until: { } until } traitGrant:
-                GrantUntil(traitGrant.Cards, Traits.Granted + traitGrant.Trait,
-                    new AbilityNumber.Constant(1), until, context, Find, Amount);
-                return new(true, true);
-            case AbilityEffect.DelayedStun delayed:
-                DelayUntil(delayed, context);
-                return new(true, true);
-            case AbilityEffect.DelayedDiscard delayed:
-                DelayUntil(delayed, context, Find);
+            case AbilityCardInstruction.DeclareDefender:
+                Attack.DeclareByAbility(
+                    world, world.Facts,
+                    context.Admission.Selectors().Find(action.Selection)
+                        ?? throw new RulesNotImplementedException(
+                            $"'{source.FaceId}' cannot find the character it declares as defender"),
+                    checked((int)context.Admission.Expressions.Results
+                        .GetValueOrDefault("defenseAbilityDefender", -1)));
                 return new(true, true);
             default:
                 return new(false, false);
         }
+    }
+
+    private static AbilityImmediateResult RunIdentityEffect(
+        AbilityEffect effect, AbilityImmediateContext context)
+    {
+        if (effect is AbilityEffect.Generate)
+        {
+            throw new RulesNotImplementedException(
+                $"'{context.Admission.Source.FaceId}' generates a resource, which is read "
+                + "while a cost is paid rather than resolved as an effect");
+        }
+        var change = (AbilityEffect.ChangeForm)effect;
+        ChangeForm(change, context, context.Admission.Evaluator().Seat);
+        return new(true, false);
+    }
+
+    private static AbilityImmediateResult RunPlayerEffect(
+        AbilityEffect effect, AbilityImmediateContext context)
+    {
+        var world = context.Admission.World;
+        var seat = context.Admission.Evaluator().Seat;
+        if (effect is AbilityEffect.Draw draw)
+        {
+            foreach (int player in Seats(draw.Players, seat, world))
+            {
+                if (AbilityRepeatedStatusTrace.CanDraw(world, player))
+                    Draw.Cards(world, player, draw.Count, context.Trigger, context.Events);
+            }
+        }
+        else if (effect is AbilityEffect.DrawToHandSize handSize)
+        {
+            DrawToHandSize(handSize, context, seat);
+        }
+        else
+        {
+            GainSurge((AbilityEffect.GainSurge)effect, context);
+        }
+        return new(true, false);
+    }
+
+    private static void GainSurge(
+        AbilityEffect.GainSurge surge, AbilityImmediateContext context)
+    {
+        var world = context.Admission.World;
+        var source = context.Admission.Source;
+        if (surge.Instances <= 0
+            || StateFields.Modified(world, source, "surge", world.Facts, world.Players) > 0
+            || !context.GainedKeywords.Add("surge")) return;
+        RememberGainedSurge(world, source.ObjectId);
+        Deal.EncounterCard(
+            world, context.Admission.Query.Player, context.Trigger, context.Events);
+    }
+
+    private static AbilityImmediateResult RunGrantEffect(
+        AbilityEffect effect, AbilityImmediateContext context)
+    {
+        var world = context.Admission.World;
+        var source = context.Admission.Source;
+        var evaluator = context.Admission.Evaluator();
+        switch (effect)
+        {
+            case AbilityEffect.GrantControlledCharacters grant:
+                foreach (string field in grant.Fields)
+                    world.Effects.GrantToCharactersControlledBy(
+                        source, evaluator.Seat(grant.Player), field,
+                        evaluator.Amount(grant.Amount), grant.Until);
+                return new(true, true);
+            case AbilityEffect.ReduceNextCardCost reduction:
+                CardPayment.ReduceNextCardCost(
+                    world, source, evaluator.Seat(reduction.Player),
+                    evaluator.Amount(reduction.Amount));
+                return new(true, true);
+            case AbilityEffect.GrantField { Until: { } until } field:
+                GrantUntil(
+                    field.Cards, field.Field, field.Amount, until, context,
+                    context.Admission.Selectors().Find, evaluator.Amount);
+                return new(true, true);
+            case AbilityEffect.GrantTrait { Until: { } until } trait:
+                GrantUntil(
+                    trait.Cards, Traits.Granted + trait.Trait,
+                    new AbilityNumber.Constant(1), until, context,
+                    context.Admission.Selectors().Find, evaluator.Amount);
+                return new(true, true);
+            default:
+                return new(false, false);
+        }
+    }
+
+    private static AbilityImmediateResult RunDelayedEffect(
+        AbilityEffect effect, AbilityImmediateContext context)
+    {
+        if (effect is AbilityEffect.DelayedStun stun)
+            DelayUntil(stun, context);
+        else
+            DelayUntil(
+                (AbilityEffect.DelayedDiscard)effect, context,
+                context.Admission.Selectors().Find);
+        return new(true, true);
     }
 
     private static void ChangeForm(AbilityEffect.ChangeForm change, AbilityImmediateContext context, Func<AbilityPlayer, int> seatOf)
@@ -140,7 +225,7 @@ internal static class AbilityImmediateExecution
         World world = context.Admission.World;
         var target = find(selection) ?? throw new RulesNotImplementedException(
             $"'{context.Admission.Source.FaceId}' would grant to a card that is not there");
-        if (!AbilityInitiation.LastingPeriodIsOpen(until, context.Admission))
+        if (!AbilityAdmission.LastingPeriodIsOpen(until, context.Admission))
             throw new RulesNotImplementedException(
                 $"'{context.Admission.Source.FaceId}' begins a lasting effect outside its named period");
         world.Effects.Register(new ContinuousEffect(EffectSource.LastingEffect, Kind: kind,

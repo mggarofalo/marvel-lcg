@@ -4,21 +4,20 @@ using System.Text.RegularExpressions;
 namespace Marvel.Session;
 
 /// <summary>A supported product SemVer used only for save compatibility ordering.</summary>
-internal sealed partial record ApplicationVersion(
+internal sealed record ApplicationVersion(
     int Major,
     int Minor,
     int Patch,
     IReadOnlyList<string> Prerelease) : IComparable<ApplicationVersion>
 {
-    [GeneratedRegex(
+    private static readonly Regex Pattern = new(
         "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$",
-        RegexOptions.CultureInvariant)]
-    private static partial Regex Pattern();
+        RegexOptions.CultureInvariant);
 
     public static ApplicationVersion Parse(string value)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(value);
-        Match match = Pattern().Match(value);
+        Match match = Pattern.Match(value);
         if (!match.Success
             || !int.TryParse(match.Groups[1].Value, NumberStyles.None,
                 CultureInfo.InvariantCulture, out int major)
@@ -53,9 +52,7 @@ internal sealed partial record ApplicationVersion(
             return 1;
         }
 
-        int core = Major.CompareTo(other.Major);
-        if (core == 0) core = Minor.CompareTo(other.Minor);
-        if (core == 0) core = Patch.CompareTo(other.Patch);
+        int core = CompareCore(other);
         if (core != 0) return core;
         if (Prerelease.Count == 0 || other.Prerelease.Count == 0)
         {
@@ -66,19 +63,33 @@ internal sealed partial record ApplicationVersion(
 
         for (int index = 0; index < Math.Min(Prerelease.Count, other.Prerelease.Count); index++)
         {
-            string left = Prerelease[index];
-            string right = other.Prerelease[index];
-            bool leftNumeric = left.All(char.IsAsciiDigit);
-            bool rightNumeric = right.All(char.IsAsciiDigit);
-            int part = leftNumeric && rightNumeric
-                ? CompareNumeric(left, right)
-                : leftNumeric ? -1
-                : rightNumeric ? 1
-                : string.Compare(left, right, StringComparison.Ordinal);
+            int part = ComparePrerelease(Prerelease[index], other.Prerelease[index]);
             if (part != 0) return part;
         }
 
         return Prerelease.Count.CompareTo(other.Prerelease.Count);
+    }
+
+    private int CompareCore(ApplicationVersion other)
+    {
+        int result = Major.CompareTo(other.Major);
+        result = result == 0 ? Minor.CompareTo(other.Minor) : result;
+        return result == 0 ? Patch.CompareTo(other.Patch) : result;
+    }
+
+    private static int ComparePrerelease(string left, string right)
+    {
+        bool leftNumeric = left.All(char.IsAsciiDigit);
+        bool rightNumeric = right.All(char.IsAsciiDigit);
+        if (leftNumeric && rightNumeric)
+        {
+            return CompareNumeric(left, right);
+        }
+        if (leftNumeric || rightNumeric)
+        {
+            return leftNumeric ? -1 : 1;
+        }
+        return string.Compare(left, right, StringComparison.Ordinal);
     }
 
     private static int CompareNumeric(string left, string right)

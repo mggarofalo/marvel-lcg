@@ -62,94 +62,120 @@ internal sealed class AbilityEventPayment
                 $"event '{card.FaceId}' has no payable printed cost");
         }
 
-        var adjusted = CardPlay.CostOf(
+        var adjusted = CardPayment.CostOf(
             world, world.Facts, world.Seats[player], card);
-        var payingSeats = CardPlay.Paying(
-            world, world.Facts, world.Seats[player], card);
-        var generators = payingSeats
-            .SelectMany(seat => CardPlay.Generators(
-                world, world.Facts, seat, resourceAbilities, card))
-            .Where(source => source.Effect != card.ObjectId)
-            .GroupBy(source => source.Effect)
-            .Select(group => group.First())
-            .ToList();
-        var resourcePayers = payingSeats
-            .SelectMany(seat => resourceAbilities.ResourceAbilities(
-                    world, seat.Index)
-                .Select(source => (source.Effect, seat.Index)))
-            .GroupBy(entry => entry.Effect)
-            .ToDictionary(group => group.Key, group => group.First().Index);
+        var sources = EventPaymentSources.Find(world, card, player, resourceAbilities);
+        ValidateSelectedSources(card, paying, sources.Generators);
+
+        string generated = GeneratedResources(sources.Generators, paying);
+        var requirements = EventPaymentRequirements.Create(
+            world, card, adjusted, additionalCost);
+        ValidateGeneratedPayment(generated, requirements);
+
+        var assigned = allocations ?? [];
+        string paid = ResolvePaidResources(
+            card, effect, sources.Generators, paying, assigned, generated, requirements);
+
+        return new AbilityEventPayment(world, card, player, resourceAbilities, [.. paying],
+            [.. sources.PayingSeats.Select(seat => seat.Hand)],
+            sources.ResourcePayers.ToImmutableDictionary(),
+            adjusted with { Modifiers = adjusted.Modifiers.ToImmutableArray() },
+            requirements.Total, requirements.Required, paid);
+    }
+
+    private static string GeneratedResources(
+        IReadOnlyList<ResourceSource> generators, IReadOnlyList<int> paying)
+    {
+        var selected = paying.ToHashSet();
+        return string.Concat(generators
+            .Where(source => selected.Contains(source.Effect))
+            .Select(source => source.Generates));
+    }
+
+    private static void ValidateSelectedSources(
+        Card card, IReadOnlyList<int> paying, IReadOnlyList<ResourceSource> generators)
+    {
         var selected = paying.ToHashSet();
         if (selected.Count != paying.Count
             || paying.Any(id => generators.All(source => source.Effect != id)))
-        {
             throw new RulesNotImplementedException(
                 $"the payment for event {card.ObjectId} names a source that is not available");
-        }
+    }
 
-        string generated = string.Concat(generators
-            .Where(source => selected.Contains(source.Effect))
-            .Select(source => source.Generates));
-        string printedRequired = Resources.Required(
-            world, card, world.Facts);
-        string additionalRequired = ResourceRequirement(additionalCost, card);
-        string required = printedRequired + additionalRequired;
-        long total = checked(adjusted.Amount + additionalRequired.Length);
-        var components = new List<ResourceCost>
-        {
-            new(
-                adjusted.Amount.ToString(
-                    System.Globalization.CultureInfo.InvariantCulture),
-                printedRequired.Length > 0 ? [printedRequired] : null),
-        };
-        if (additionalRequired.Length > 0)
-        {
-            components.Add(new ResourceCost(
-                additionalRequired.Length.ToString(
-                    System.Globalization.CultureInfo.InvariantCulture),
-                [additionalRequired]));
-        }
+    private static void ValidateGeneratedPayment(
+        string generated, EventPaymentRequirements requirements)
+    {
+        if (Resources.Pays(generated, requirements.Total, requirements.Required)) return;
+        throw new RulesNotImplementedException(
+            $"the cost is {requirements.Total}"
+            + (requirements.Required.Length > 0
+                ? $" requiring '{requirements.Required}'" : string.Empty)
+            + $" and the payment generates '{generated}'; "
+            + "rr:initiating-abilities.step.5 aborts without paying");
+    }
 
-        if (!Resources.Pays(generated, total, required))
-        {
+    private static string ResolvePaidResources(
+        Card card, AbilityEffect effect, IReadOnlyList<ResourceSource> generators,
+        IReadOnlyList<int> paying, IReadOnlyList<ResourceAllocation> assigned,
+        string generated, EventPaymentRequirements requirements)
+    {
+        if (requirements.Components.Count > 1 && assigned.Count == 0)
             throw new RulesNotImplementedException(
-                $"the cost is {total}"
-                + (required.Length > 0 ? $" requiring '{required}'" : string.Empty)
-                + $" and the payment generates '{generated}'; "
-                + "rr:initiating-abilities.step.5 aborts without paying");
-        }
-
-        var assigned = allocations ?? [];
-        if (components.Count > 1 && assigned.Count == 0)
-        {
-            throw new RulesNotImplementedException(
-                $"event {card.ObjectId} has simultaneous printed and arrow resource "
-                + "costs whose icon allocation was not supplied");
-        }
+                $"event {card.ObjectId} has simultaneous printed and arrow resource costs whose icon allocation was not supplied");
         if (assigned.Count == 0 && HasAmbiguousPaidResourceAllocation(
-                effect, generated, total, required))
-        {
+                effect, generated, requirements.Total, requirements.Required))
             throw new RulesNotImplementedException(
-                $"event {card.ObjectId} overpays with unlike resource types, whose paid "
-                + "allocation is not represented");
+                $"event {card.ObjectId} overpays with unlike resource types, whose paid allocation is not represented");
+        if (assigned.Count > 0)
+            return AllocatedResources(
+                generators, paying, assigned, requirements.Components, card);
+        return PaidResourceQueries(effect).Any()
+            ? DeclaredPaidResources(generated, requirements.Total, requirements.Required)
+            : Resources.Paid(generated, requirements.Total, requirements.Required);
+    }
+
+    private sealed record EventPaymentSources(
+        IReadOnlyList<Seat> PayingSeats, IReadOnlyList<ResourceSource> Generators,
+        Dictionary<int, int> ResourcePayers)
+    {
+        internal static EventPaymentSources Find(
+            World world, Card card, int player, IResourceCardAbilities abilities)
+        {
+            var seats = CardPayment.Paying(
+                world, world.Facts, world.Seats[player], card).ToList();
+            var generators = seats.SelectMany(seat => CardPayment.Generators(
+                    world, world.Facts, seat, abilities, card))
+                .Where(source => source.Effect != card.ObjectId)
+                .GroupBy(source => source.Effect).Select(group => group.First()).ToList();
+            var payers = seats.SelectMany(seat => abilities.ResourceAbilities(world, seat.Index)
+                    .Select(source => (source.Effect, seat.Index)))
+                .GroupBy(entry => entry.Effect)
+                .ToDictionary(group => group.Key, group => group.First().Index);
+            return new EventPaymentSources(seats, generators, payers);
         }
+    }
 
-        // Validate the player's complete icon allocation before step 1 moves
-        // the event. A malformed allocation is an invalid payment answer and
-        // `rr:initiating-abilities.step.5` must reject it without changing the
-        // board.
-        bool declarationSensitive = PaidResourceQueries(effect).Any();
-        string paid = assigned.Count > 0
-            ? AllocatedResources(generators, paying, assigned, components, card)
-            : declarationSensitive
-                ? DeclaredPaidResources(generated, total, required)
-                : Resources.Paid(generated, total, required);
-
-        return new AbilityEventPayment(world, card, player, resourceAbilities, [.. paying],
-            [.. payingSeats.Select(seat => seat.Hand)],
-            resourcePayers.ToImmutableDictionary(),
-            adjusted with { Modifiers = adjusted.Modifiers.ToImmutableArray() },
-            total, required, paid);
+    private sealed record EventPaymentRequirements(
+        long Total, string Required, List<ResourceCost> Components)
+    {
+        internal static EventPaymentRequirements Create(
+            World world, Card card, AdjustedCardCost adjusted, AbilityCost? additionalCost)
+        {
+            string printed = Resources.Required(world, card, world.Facts);
+            string additional = ResourceRequirement(additionalCost, card);
+            var components = new List<ResourceCost>
+            {
+                new(adjusted.Amount.ToString(
+                    System.Globalization.CultureInfo.InvariantCulture),
+                    printed.Length > 0 ? [printed] : null),
+            };
+            if (additional.Length > 0)
+                components.Add(new ResourceCost(
+                    additional.Length.ToString(
+                        System.Globalization.CultureInfo.InvariantCulture), [additional]));
+            return new EventPaymentRequirements(
+                checked(adjusted.Amount + additional.Length), printed + additional, components);
+        }
     }
 
     /// <summary>Commit the validated payment at the initiating boundary.</summary>
@@ -188,7 +214,7 @@ internal sealed class AbilityEventPayment
             required, card.ObjectId,
             player, events, payingFor: card,
             resourcePayers: resourcePayers);
-        CardPlay.UseCostModifiers(world, adjusted);
+        CardPayment.UseCostModifiers(world, adjusted);
 
         // `rr:initiating-abilities.step.6`: after its costs are paid, the
         // event is played and its effect resolves. The action's persistent
@@ -206,150 +232,105 @@ internal sealed class AbilityEventPayment
         IReadOnlyList<int> paying,
         IReadOnlyList<ResourceAllocation> allocations,
         List<ResourceCost> components,
-        Card card)
+        Card card) => new ResourceAllocationLedger(
+            generators, paying, components, card).Allocate(allocations);
+
+    private sealed class ResourceAllocationLedger
     {
-        var selected = paying.ToHashSet();
-        var remaining = generators
-            .Where(source => selected.Contains(source.Effect))
+        private readonly List<ResourceCost> components;
+        private readonly Card card;
+        private readonly Dictionary<int, List<char>> remaining;
+        private readonly List<System.Text.StringBuilder> paid;
+
+        internal ResourceAllocationLedger(
+            IReadOnlyList<ResourceSource> generators, IReadOnlyList<int> paying,
+            List<ResourceCost> components, Card card)
+        {
+            this.components = components;
+            this.card = card;
+            var selected = paying.ToHashSet();
+            remaining = generators.Where(source => selected.Contains(source.Effect))
             .ToDictionary(
                 source => source.Effect,
                 source => source.Generates.ToList());
-        var paid = Enumerable.Range(0, components.Count)
-            .Select(_ => new System.Text.StringBuilder())
-            .ToList();
+            paid = Enumerable.Range(0, components.Count)
+                .Select(_ => new System.Text.StringBuilder()).ToList();
+        }
 
-        foreach (var allocation in allocations)
+        internal string Allocate(IReadOnlyList<ResourceAllocation> allocations)
+        {
+            foreach (var allocation in allocations) Allocate(allocation);
+            ValidateComponents();
+            return string.Concat(paid.Select(component => component.ToString()));
+        }
+
+        private void Allocate(ResourceAllocation allocation)
         {
             if (!remaining.TryGetValue(allocation.Source, out var available)
                 || allocation.Cost < 0 || allocation.Cost >= components.Count
                 || allocation.PaidAs.Length == 0)
-            {
                 throw new RulesNotImplementedException(
                     $"event {card.ObjectId} carries an invalid resource allocation");
-            }
-
             foreach (char declared in allocation.PaidAs)
-            {
-                if (!Resources.Types.Contains(declared))
-                {
-                    throw new RulesNotImplementedException(
-                        $"event {card.ObjectId} declares unknown resource '{declared}'");
-                }
-
-                int icon = available.IndexOf(declared);
-                if (icon < 0
-                    && !components[allocation.Cost].Printed
-                    && declared != Resources.Wild)
-                {
-                    icon = available.IndexOf(Resources.Wild);
-                }
-                if (icon < 0)
-                {
-                    throw new RulesNotImplementedException(
-                        $"event {card.ObjectId} allocates '{declared}' from generator "
-                        + $"{allocation.Source}, which cannot produce it");
-                }
-
-                available.RemoveAt(icon);
-                paid[allocation.Cost].Append(declared);
-            }
+                Consume(allocation, available, declared);
         }
 
-        for (int index = 0; index < components.Count; index++)
+        private void Consume(ResourceAllocation allocation, List<char> available, char declared)
         {
-            if (!long.TryParse(
-                    components[index].Cost,
-                    System.Globalization.CultureInfo.InvariantCulture,
-                    out long amount))
-            {
+            if (!Resources.Types.Contains(declared))
                 throw new RulesNotImplementedException(
-                    $"event {card.ObjectId} has a non-numeric allocation component");
-            }
-            string assigned = paid[index].ToString();
-            string required = string.Concat(components[index].Rule ?? []);
-            if (assigned.Length != amount
-                || !Resources.PaysDeclared(assigned, amount, required))
-            {
+                    $"event {card.ObjectId} declares unknown resource '{declared}'");
+            int icon = available.IndexOf(declared);
+            if (icon < 0 && !components[allocation.Cost].Printed
+                && declared != Resources.Wild)
+                icon = available.IndexOf(Resources.Wild);
+            if (icon < 0)
                 throw new RulesNotImplementedException(
-                    $"event {card.ObjectId} assigns '{assigned}' to cost {index}, "
-                    + $"which costs {amount}"
-                    + (required.Length > 0 ? $" requiring '{required}'" : string.Empty));
-            }
+                    $"event {card.ObjectId} allocates '{declared}' from generator {allocation.Source}, which cannot produce it");
+            available.RemoveAt(icon);
+            paid[allocation.Cost].Append(declared);
         }
 
-        return string.Concat(paid.Select(component => component.ToString()));
+        private void ValidateComponents()
+        {
+            for (int index = 0; index < components.Count; index++)
+            {
+                if (!long.TryParse(components[index].Cost,
+                        System.Globalization.CultureInfo.InvariantCulture, out long amount))
+                    throw new RulesNotImplementedException(
+                        $"event {card.ObjectId} has a non-numeric allocation component");
+                string assigned = paid[index].ToString();
+                string required = string.Concat(components[index].Rule ?? []);
+                if (assigned.Length != amount
+                    || !Resources.PaysDeclared(assigned, amount, required))
+                    throw new RulesNotImplementedException(
+                        $"event {card.ObjectId} assigns '{assigned}' to cost {index}, which costs {amount}"
+                        + (required.Length > 0 ? $" requiring '{required}'" : string.Empty));
+            }
+        }
     }
 
     private static bool HasAmbiguousPaidResourceAllocation(
-        AbilityEffect effect, string generated, long cost, string required)
-    {
-        var queried = PaidResourceQueries(effect)
-            .Distinct()
-            .ToList();
-        if (queried.Count == 0)
-        {
-            return false;
-        }
+        AbilityEffect effect, string generated, long cost, string required) =>
+        new PaidResourceAmbiguitySearch(
+            PaidResourceQueries(effect).Distinct().ToList(),
+            generated, checked((int)cost), required).IsAmbiguous();
 
-        var outcomes = queried.ToDictionary(
+    private sealed class PaidResourceAmbiguitySearch(
+        List<char> queried, string generated, int cost, string required)
+    {
+        private readonly Dictionary<char, (bool Paid, bool NotPaid)> outcomes = queried.ToDictionary(
             resource => resource,
             _ => (Paid: false, NotPaid: false));
-        var selected = new char[(int)cost];
-        return Search(start: 0, chosen: 0);
+        private readonly char[] selected = new char[cost];
 
-        bool Search(int start, int chosen)
+        internal bool IsAmbiguous() => queried.Count > 0 && Search(start: 0, chosen: 0);
+
+        private bool Search(int start, int chosen)
         {
             if (chosen == selected.Length)
             {
-                string payment = new(selected);
-                var declared = payment.ToCharArray();
-                return DeclareWild(index: 0);
-
-                bool DeclareWild(int index)
-                {
-                    while (index < declared.Length && declared[index] != Resources.Wild)
-                    {
-                        index++;
-                    }
-                    if (index < declared.Length)
-                    {
-                        foreach (char declaration in Resources.Types)
-                        {
-                            declared[index] = declaration;
-                            if (DeclareWild(index + 1))
-                            {
-                                return true;
-                            }
-                        }
-                        declared[index] = Resources.Wild;
-                        return false;
-                    }
-
-                    var pool = declared.ToList();
-                    foreach (char requiredType in required)
-                    {
-                        int found = pool.IndexOf(requiredType);
-                        if (found < 0)
-                        {
-                            return false;
-                        }
-                        pool.RemoveAt(found);
-                    }
-
-                    foreach (char resource in queried)
-                    {
-                        bool paid = declared.Contains(resource);
-                        var seen = outcomes[resource];
-                        outcomes[resource] = paid
-                            ? (true, seen.NotPaid)
-                            : (seen.Paid, true);
-                        if (outcomes[resource] is (true, true))
-                        {
-                            return true;
-                        }
-                    }
-                    return false;
-                }
+                return DeclareWild(selected.ToArray(), index: 0);
             }
 
             int left = selected.Length - chosen;
@@ -360,62 +341,76 @@ internal sealed class AbilityEventPayment
                 {
                     return true;
                 }
+            }
+            return false;
+        }
+
+        private bool DeclareWild(char[] declared, int index)
+        {
+            while (index < declared.Length && declared[index] != Resources.Wild) index++;
+            if (index < declared.Length)
+            {
+                foreach (char declaration in Resources.Types)
+                {
+                    declared[index] = declaration;
+                    if (DeclareWild(declared, index + 1)) return true;
+                }
+                declared[index] = Resources.Wild;
+                return false;
+            }
+            if (!PaysRequirement(declared)) return false;
+            return Observe(declared);
+        }
+
+        private bool PaysRequirement(char[] declared)
+        {
+            var pool = declared.ToList();
+            foreach (char requiredType in required)
+            {
+                int found = pool.IndexOf(requiredType);
+                if (found < 0) return false;
+                pool.RemoveAt(found);
+            }
+            return true;
+        }
+
+        private bool Observe(char[] declared)
+        {
+            foreach (char resource in queried)
+            {
+                bool paid = declared.Contains(resource);
+                var seen = outcomes[resource];
+                outcomes[resource] = paid ? (true, seen.NotPaid) : (seen.Paid, true);
+                if (outcomes[resource] is (true, true)) return true;
             }
             return false;
         }
     }
 
     private static string DeclaredPaidResources(
-        string generated, long cost, string required)
-    {
-        var selected = new char[(int)cost];
-        string? declaredPayment = null;
-        Search(start: 0, chosen: 0);
-        return declaredPayment
-            ?? throw new RulesNotImplementedException(
-                "the generated resources have no legal declared payment");
+        string generated, long cost, string required) =>
+        new PaidResourceDeclarationSearch(generated, checked((int)cost), required).Find();
 
-        bool Search(int start, int chosen)
+    private sealed class PaidResourceDeclarationSearch(
+        string generated, int cost, string required)
+    {
+        private readonly char[] selected = new char[cost];
+        private string? declaredPayment;
+
+        internal string Find()
+        {
+            Search(start: 0, chosen: 0);
+            return declaredPayment
+                ?? throw new RulesNotImplementedException(
+                    "the generated resources have no legal declared payment");
+        }
+
+        private bool Search(int start, int chosen)
         {
             if (chosen == selected.Length)
             {
                 var declared = selected.ToArray();
                 return DeclareWild(index: 0);
-
-                bool DeclareWild(int index)
-                {
-                    while (index < declared.Length && declared[index] != Resources.Wild)
-                    {
-                        index++;
-                    }
-                    if (index < declared.Length)
-                    {
-                        foreach (char declaration in Resources.Types)
-                        {
-                            declared[index] = declaration;
-                            if (DeclareWild(index + 1))
-                            {
-                                return true;
-                            }
-                        }
-                        declared[index] = Resources.Wild;
-                        return false;
-                    }
-
-                    var pool = declared.ToList();
-                    foreach (char requiredType in required)
-                    {
-                        int found = pool.IndexOf(requiredType);
-                        if (found < 0)
-                        {
-                            return false;
-                        }
-                        pool.RemoveAt(found);
-                    }
-
-                    declaredPayment = new string(declared);
-                    return true;
-                }
             }
 
             int left = selected.Length - chosen;
@@ -428,6 +423,42 @@ internal sealed class AbilityEventPayment
                 }
             }
             return false;
+        }
+
+        private bool DeclareWild(int index)
+        {
+            var declared = selected.ToArray();
+            return DeclareWild(declared, index);
+        }
+
+        private bool DeclareWild(char[] declared, int index)
+        {
+            while (index < declared.Length && declared[index] != Resources.Wild) index++;
+            if (index < declared.Length)
+            {
+                foreach (char declaration in Resources.Types)
+                {
+                    declared[index] = declaration;
+                    if (DeclareWild(declared, index + 1)) return true;
+                }
+                declared[index] = Resources.Wild;
+                return false;
+            }
+            if (!SatisfiesRequired(declared)) return false;
+            declaredPayment = new string(declared);
+            return true;
+        }
+
+        private bool SatisfiesRequired(char[] declared)
+        {
+            var pool = declared.ToList();
+            foreach (char requiredType in required)
+            {
+                int found = pool.IndexOf(requiredType);
+                if (found < 0) return false;
+                pool.RemoveAt(found);
+            }
+            return true;
         }
     }
 

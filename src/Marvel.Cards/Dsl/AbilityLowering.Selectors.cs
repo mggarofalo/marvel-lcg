@@ -1,12 +1,20 @@
+using static Marvel.Cards.Dsl.AbilityLowering;
+using static Marvel.Cards.Dsl.AbilityBookLowering;
+using static Marvel.Cards.Dsl.AbilityConditionLowering;
+using static Marvel.Cards.Dsl.AbilityCostLowering;
+using static Marvel.Cards.Dsl.AbilityEffectLowering;
+using static Marvel.Cards.Dsl.AbilityModifierLowering;
+using static Marvel.Cards.Dsl.AbilityProcedureLowering;
+using static Marvel.Cards.Dsl.AbilitySelectorLowering;
 using System.Collections.Immutable;
 using Marvel.Rules.State;
 
 namespace Marvel.Cards.Dsl;
 
-public static partial class AbilityLowering
+internal static class AbilitySelectorLowering
 {
     /// <summary>Lowers card bindings, queries, and their supported selector composition.</summary>
-    public static AbilityCardSelection Cards(AbilityValue value, AbilityLocation location)
+    internal static AbilityCardSelection SelectCards(AbilityValue value, AbilityLocation location)
     {
         ArgumentNullException.ThrowIfNull(value);
         ArgumentNullException.ThrowIfNull(location);
@@ -38,15 +46,15 @@ public static partial class AbilityLowering
             "titled" => new AbilityCardSelection.Titled(Text(node.Argument, child)),
             "enemiesWithTrait" => new AbilityCardSelection.EnemiesWithTrait(Text(node.Argument, child)),
             "withTrait" => WithTrait(node.Argument, child),
-            "withoutAnotherCopyAttached" => new AbilityCardSelection.WithoutAnotherCopyAttached(Cards(node.Argument, child)),
-            "discardable" => new AbilityCardSelection.Discardable(Cards(node.Argument, child)),
+            "withoutAnotherCopyAttached" => new AbilityCardSelection.WithoutAnotherCopyAttached(SelectCards(node.Argument, child)),
+            "discardable" => new AbilityCardSelection.Discardable(SelectCards(node.Argument, child)),
             "minBy" or "maxBy" => Ranked(node.Argument, child, node.Kind == "maxBy"),
             "cardsIn" => InAreas(node.Argument, child),
             _ => throw child.Error($"'{node.Kind}' is not a card selector"),
         };
     }
 
-    private static AbilityCardQuery Query(string name, AbilityLocation location) => name switch
+    internal static AbilityCardQuery Query(string name, AbilityLocation location) => name switch
     {
         "villain" => AbilityCardQuery.Villain,
         "mainScheme" => AbilityCardQuery.MainScheme,
@@ -84,14 +92,14 @@ public static partial class AbilityLowering
         _ => throw location.Error($"'{name}' is not a card query"),
     };
 
-    private static AbilityCardSelection.WithTrait WithTrait(AbilityValue value, AbilityLocation location)
+    internal static AbilityCardSelection.WithTrait WithTrait(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "cards", "trait");
-        return new(Cards(Required(fields, "cards", location), location.Child("cards")),
+        return new(SelectCards(Required(fields, "cards", location), location.Child("cards")),
             Text(Required(fields, "trait", location), location.Child("trait")));
     }
 
-    private static AbilityCardSelection.Ranked Ranked(
+    internal static AbilityCardSelection.Ranked Ranked(
         AbilityValue value, AbilityLocation location, bool maximum)
     {
         var fields = Fields(value, location, "of", "by");
@@ -103,10 +111,10 @@ public static partial class AbilityLowering
             "printedHealth" => AbilityCardRank.PrintedHealth,
             _ => throw location.Child("by").Error($"'{by}' is not a card ranking"),
         };
-        return new(Cards(Required(fields, "of", location), location.Child("of")), rank, maximum);
+        return new(SelectCards(Required(fields, "of", location), location.Child("of")), rank, maximum);
     }
 
-    private static AbilityCardSelection.InAreas InAreas(AbilityValue value, AbilityLocation location)
+    internal static AbilityCardSelection.InAreas InAreas(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "area", "areas", "kind", "trait", "title");
         if (fields.ContainsKey("area") == fields.ContainsKey("areas"))
@@ -146,7 +154,7 @@ public static partial class AbilityLowering
         return new(areas, kind, OptionalText(fields, "trait", location), OptionalText(fields, "title", location));
     }
 
-    private static AbilitySearchArea SearchArea(AbilityValue value, AbilityLocation location) =>
+    internal static AbilitySearchArea SearchArea(AbilityValue value, AbilityLocation location) =>
         Text(value, location) switch
         {
             "encounterDeck" => AbilitySearchArea.EncounterDeck,
@@ -156,7 +164,7 @@ public static partial class AbilityLowering
             var name => throw location.Error($"'{name}' is not a supported search area"),
         };
 
-    private static AbilityNode Operation(AbilityValue value, AbilityLocation location)
+    internal static AbilityNode Operation(AbilityValue value, AbilityLocation location)
     {
         if (value is not AbilityValue.Map { Entries.Count: 1 } map)
         {
@@ -166,7 +174,7 @@ public static partial class AbilityLowering
         return new(kind, argument);
     }
 
-    private static IReadOnlyDictionary<string, AbilityValue> Fields(
+    internal static IReadOnlyDictionary<string, AbilityValue> Fields(
         AbilityValue value, AbilityLocation location, params string[] names)
     {
         if (value is not AbilityValue.Map map)
@@ -183,13 +191,13 @@ public static partial class AbilityLowering
         return map.Entries;
     }
 
-    private static AbilityValue Required(
+    internal static AbilityValue Required(
         IReadOnlyDictionary<string, AbilityValue> fields, string name, AbilityLocation location) =>
         fields.TryGetValue(name, out var value)
             ? value
             : throw location.Child(name).Error($"missing argument '{name}'");
 
-    private static string? OptionalText(
+    internal static string? OptionalText(
         IReadOnlyDictionary<string, AbilityValue> fields, string name, AbilityLocation location) =>
         fields.TryGetValue(name, out var value) ? Text(value, location.Child(name)) : null;
 }

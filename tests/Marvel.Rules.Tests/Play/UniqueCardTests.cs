@@ -59,7 +59,7 @@ public sealed class UniqueCardTests
         world.CreateCard("present", world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0)));
         var waiting = world.CreateCard("waiting", world.Seats[0].Hand);
 
-        Assert.Null(CardPlay.Price(world, facts, world.Seats[0], waiting));
+        Assert.Null(CardPayment.Price(world, facts, world.Seats[0], waiting));
     }
 
     [Rule("rr:unique-icon.4.1")]

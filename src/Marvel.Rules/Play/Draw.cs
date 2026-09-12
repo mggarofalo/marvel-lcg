@@ -50,7 +50,8 @@ public static class Draw
                 Places.Reference(from), Places.Reference(seat.Hand),
                 [new Landing(card.ObjectId, seat.Hand.Cards.Count - 1)])
             {
-                Trigger = trigger, Verb = "Draw",
+                Trigger = trigger,
+                Verb = "Draw",
             });
 
             // `rr:player-deck.1`'s trigger is the deck *emptying*, not the next

@@ -1,8 +1,21 @@
 namespace Marvel.Session;
 
-/// <content>Structural validation steps for the canonical session save.</content>
-public static partial class SessionSaveJson
+/// <summary>Structural validation for the canonical session save.</summary>
+internal static class SessionSaveValidation
 {
+    public static void Validate(SessionSave save)
+    {
+        ArgumentNullException.ThrowIfNull(save);
+        RequireSupportedEnvelope(save);
+        RequireRecords(save);
+        RequireCompatibilityIdentity(save.Compatibility);
+        RequireHistoryBounds(save);
+        RequireSetup(save.Setup);
+        RequireSessionIdentity(save.Session);
+        RequireReplayRecords(save);
+        RequireHistoryShape(save);
+    }
+
     private static void RequireSupportedEnvelope(SessionSave save)
     {
         if (!string.Equals(save.Format, SessionSave.FormatName, StringComparison.Ordinal))
@@ -39,6 +52,14 @@ public static partial class SessionSaveJson
             throw new SessionSaveException("save compatibility identity is invalid");
         }
     }
+
+    private static bool Sha256(string? value) =>
+        value is { Length: 64 } && value.All(character =>
+            character is (>= '0' and <= '9') or (>= 'a' and <= 'f'));
+
+    private static bool StorageId(string? value) =>
+        value is { Length: 32 } && value.All(character =>
+            character is (>= '0' and <= '9') or (>= 'a' and <= 'f'));
 
     private static void RequireHistoryBounds(SessionSave save)
     {

@@ -74,7 +74,7 @@ internal sealed class AbilityOfferQueries
             return new AbilityAdmissionResult(true, []);
         }
 
-        var result = AbilityInitiation.Admit(ability.Effect, context);
+        var result = AbilityAdmission.Admit(ability.Effect, context);
         return result.IsAdmissible ? result : null;
     }
 
@@ -143,11 +143,11 @@ internal sealed class AbilityOfferQueries
     private IEnumerable<Card> Triggerable(World world, int player)
     {
         foreach (var area in world.Areas.Where(area => DeckTypes.IsInPlay(area.Type)))
-        foreach (var card in area.Cards)
-            if (AbilityCardQueries.ControllerOf(world, card) == player
-                || card.Owner == World.Scenario
-                || AbilityProgramQueries.On(program, card).Any(ability => ability.AnyPlayer))
-                yield return card;
+            foreach (var card in area.Cards)
+                if (AbilityCardQueries.ControllerOf(world, card) == player
+                    || card.Owner == World.Scenario
+                    || AbilityProgramQueries.On(program, card).Any(ability => ability.AnyPlayer))
+                    yield return card;
 
         foreach (var card in world.Seats[player].Hand.Cards)
             if (world.Facts.Kind(card.FaceId) == CardKind.Event) yield return card;

@@ -60,20 +60,41 @@ internal sealed class AbilityConstantQueries
         AbilitySelectorEvaluation selectors, AbilityExpressionEvaluation expressions,
         List<ContinuousEffect> found)
     {
+        if (GrantStructural(effect, bindings, selectors, expressions, found)) return;
+        if (GrantContinuous(effect, bindings, selectors, expressions, found)) return;
+        RefuseUnsupportedConstant(effect, bindings);
+    }
+
+    private static bool GrantStructural(
+        AbilityEffect effect, AbilityQueryContext bindings,
+        AbilitySelectorEvaluation selectors, AbilityExpressionEvaluation expressions,
+        List<ContinuousEffect> found)
+    {
         switch (effect)
         {
             case AbilityEffect.Sequence sequence:
                 foreach (var step in sequence.Effects)
                     Grants(step, bindings, selectors, expressions, found);
-                break;
+                return true;
             case AbilityEffect.Simultaneous simultaneous:
                 foreach (var step in simultaneous.Effects)
                     Grants(step, bindings, selectors, expressions, found);
-                break;
+                return true;
             case AbilityEffect.Conditional conditional:
                 if ((expressions.Test(conditional.Test) ? conditional.Then : conditional.Else) is { } taken)
                     Grants(taken, bindings, selectors, expressions, found);
-                break;
+                return true;
+            default: return false;
+        }
+    }
+
+    private static bool GrantContinuous(
+        AbilityEffect effect, AbilityQueryContext bindings,
+        AbilitySelectorEvaluation selectors, AbilityExpressionEvaluation expressions,
+        List<ContinuousEffect> found)
+    {
+        switch (effect)
+        {
             case AbilityEffect.GrantField { Until: null } grant:
                 foreach (var target in ConstantTargets(grant.Cards, grant.EachCard, bindings, selectors))
                 {
@@ -82,7 +103,7 @@ internal sealed class AbilityConstantQueries
                         Amount: expressions.Amount(grant.Amount), Card: bindings.Source.ObjectId,
                         Affects: target.ObjectId, Lasts: Duration.WhileInPlay));
                 }
-                break;
+                return true;
             case AbilityEffect.GrantTrait { Until: null } grant:
                 foreach (var target in ConstantTargets(grant.Cards, grant.EachCard, bindings, selectors))
                 {
@@ -91,7 +112,16 @@ internal sealed class AbilityConstantQueries
                         Card: bindings.Source.ObjectId, Affects: target.ObjectId,
                         Lasts: Duration.WhileInPlay));
                 }
-                break;
+                return true;
+            default: return false;
+        }
+    }
+
+    private static void RefuseUnsupportedConstant(
+        AbilityEffect effect, AbilityQueryContext bindings)
+    {
+        switch (effect)
+        {
             case AbilityEffect.CardAction { Instruction: AbilityCardInstruction.PreventThreatRemoval }:
             case AbilityEffect.DoubleResourceFor:
             case AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.RequireAllyDefender }:

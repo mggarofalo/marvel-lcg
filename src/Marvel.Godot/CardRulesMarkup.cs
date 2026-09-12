@@ -58,95 +58,151 @@ internal static class CardRulesMarkup
         string source = string.IsNullOrWhiteSpace(markup) ? fallback : markup;
         var result = new StringBuilder(source.Length + 32);
         var literal = new StringBuilder();
-
-        void Flush()
-        {
-            if (literal.Length == 0)
-            {
-                return;
-            }
-            result.Append(WebUtility.HtmlDecode(literal.ToString())
-                .Replace("[", "[lb]", StringComparison.Ordinal));
-            literal.Clear();
-        }
-
         for (int index = 0; index < source.Length;)
         {
-            if (Token(source, index, "<b>", out int consumed)
-                || Token(source, index, "<b/>", out consumed))
-            {
-                Flush();
-                result.Append("[b]");
-                index += consumed;
-            }
-            else if (Token(source, index, "</b>", out consumed))
-            {
-                Flush();
-                result.Append("[/b]");
-                index += consumed;
-            }
-            else if (Token(source, index, "<i>", out consumed)
-                     || Token(source, index, "<em>", out consumed))
-            {
-                Flush();
-                result.Append("[i]");
-                index += consumed;
-            }
-            else if (Token(source, index, "</i>", out consumed)
-                     || Token(source, index, "</em>", out consumed))
-            {
-                Flush();
-                result.Append("[/i]");
-                index += consumed;
-            }
-            else if (Token(source, index, "<hr />", out consumed)
-                     || Token(source, index, "<hr/>", out consumed))
-            {
-                Flush();
-                result.Append("\n────────────\n");
-                index += consumed;
-            }
-            else if (source.AsSpan(index).StartsWith("[[", StringComparison.Ordinal)
-                     && source.IndexOf("]]", index + 2, StringComparison.Ordinal) is int end
-                     && end >= 0)
-            {
-                Flush();
-                AppendLiteral(result, source[(index + 2)..end], italic: true);
-                index = end + 2;
-            }
-            else if (source[index] == '['
-                     && source.IndexOf(']', index + 1) is int symbolEnd
-                     && symbolEnd >= 0
-                     && Symbols.TryGetValue(source[(index + 1)..symbolEnd], out string? symbol))
-            {
-                Flush();
-                string symbolName = source[(index + 1)..symbolEnd];
-                if (ResourceSymbols.Contains(symbolName))
-                {
-                    ResourceIconMetrics metrics = VisualSystem.ResourceIcon(symbol, scale);
-                    result.Append("[font=")
-                        .Append(ResourceFontPath)
-                        .Append("][font_size=")
-                        .Append(metrics.FontSize)
-                        .Append(']')
-                        .Append(symbol)
-                        .Append("[/font_size][/font]");
-                }
-                else
-                {
-                    result.Append("[b]").Append(symbol).Append("[/b]");
-                }
-                index = symbolEnd + 1;
-            }
-            else
+            if (!TryAppendToken(source, ref index, result, literal, scale))
             {
                 literal.Append(source[index]);
                 index++;
             }
         }
-
-        Flush();
+        FlushLiteral(result, literal);
         return result.ToString();
+    }
+
+    private static bool TryAppendToken(
+        string source,
+        ref int index,
+        StringBuilder result,
+        StringBuilder literal,
+        InterfaceScale scale) =>
+        TryAppendBold(source, ref index, result, literal)
+        || TryAppendItalic(source, ref index, result, literal)
+        || TryAppendRule(source, ref index, result, literal)
+        || TryAppendBracketedLiteral(source, ref index, result, literal)
+        || TryAppendSymbol(source, ref index, result, literal, scale);
+
+    private static bool TryAppendBold(
+        string source, ref int index, StringBuilder result, StringBuilder literal)
+    {
+        if (Token(source, index, "<b>", out int consumed)
+            || Token(source, index, "<b/>", out consumed))
+        {
+            AppendToken(result, literal, "[b]", ref index, consumed);
+            return true;
+        }
+        if (!Token(source, index, "</b>", out consumed))
+        {
+            return false;
+        }
+        AppendToken(result, literal, "[/b]", ref index, consumed);
+        return true;
+    }
+
+    private static bool TryAppendItalic(
+        string source, ref int index, StringBuilder result, StringBuilder literal)
+    {
+        if (Token(source, index, "<i>", out int consumed)
+            || Token(source, index, "<em>", out consumed))
+        {
+            AppendToken(result, literal, "[i]", ref index, consumed);
+            return true;
+        }
+        if (!Token(source, index, "</i>", out consumed)
+            && !Token(source, index, "</em>", out consumed))
+        {
+            return false;
+        }
+        AppendToken(result, literal, "[/i]", ref index, consumed);
+        return true;
+    }
+
+    private static bool TryAppendRule(
+        string source, ref int index, StringBuilder result, StringBuilder literal)
+    {
+        if (!Token(source, index, "<hr />", out int consumed)
+            && !Token(source, index, "<hr/>", out consumed))
+        {
+            return false;
+        }
+        AppendToken(result, literal, "\n────────────\n", ref index, consumed);
+        return true;
+    }
+
+    private static bool TryAppendBracketedLiteral(
+        string source, ref int index, StringBuilder result, StringBuilder literal)
+    {
+        if (!source.AsSpan(index).StartsWith("[[", StringComparison.Ordinal))
+        {
+            return false;
+        }
+        int end = source.IndexOf("]]", index + 2, StringComparison.Ordinal);
+        if (end < 0)
+        {
+            return false;
+        }
+        FlushLiteral(result, literal);
+        AppendLiteral(result, source[(index + 2)..end], italic: true);
+        index = end + 2;
+        return true;
+    }
+
+    private static bool TryAppendSymbol(
+        string source,
+        ref int index,
+        StringBuilder result,
+        StringBuilder literal,
+        InterfaceScale scale)
+    {
+        if (source[index] != '[')
+        {
+            return false;
+        }
+        int end = source.IndexOf(']', index + 1);
+        if (end < 0 || !Symbols.TryGetValue(source[(index + 1)..end], out string? symbol))
+        {
+            return false;
+        }
+        FlushLiteral(result, literal);
+        AppendSymbol(result, source[(index + 1)..end], symbol, scale);
+        index = end + 1;
+        return true;
+    }
+
+    private static void AppendSymbol(
+        StringBuilder result, string name, string symbol, InterfaceScale scale)
+    {
+        if (!ResourceSymbols.Contains(name))
+        {
+            result.Append("[b]").Append(symbol).Append("[/b]");
+            return;
+        }
+        ResourceIconMetrics metrics = VisualSystem.ResourceIcon(symbol, scale);
+        result.Append("[font=").Append(ResourceFontPath).Append("][font_size=")
+            .Append(metrics.FontSize).Append(']').Append(symbol).Append("[/font_size][/font]");
+    }
+
+    private static void AppendToken(
+        StringBuilder result,
+        StringBuilder literal,
+        string token,
+        ref int index,
+        int consumed)
+    {
+        FlushLiteral(result, literal);
+        result.Append(token);
+        index += consumed;
+    }
+
+    private static void FlushLiteral(StringBuilder result, StringBuilder literal)
+    {
+        if (literal.Length == 0)
+        {
+            return;
+        }
+        result.Append(WebUtility.HtmlDecode(literal.ToString())
+            .Replace("[", "[lb]", StringComparison.Ordinal));
+        literal.Clear();
     }
 
     /// <summary>Turns printed resource codes into stable, readable glyphs.</summary>

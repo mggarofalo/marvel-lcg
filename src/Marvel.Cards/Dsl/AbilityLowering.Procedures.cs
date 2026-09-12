@@ -1,10 +1,18 @@
+using static Marvel.Cards.Dsl.AbilityLowering;
+using static Marvel.Cards.Dsl.AbilityBookLowering;
+using static Marvel.Cards.Dsl.AbilityConditionLowering;
+using static Marvel.Cards.Dsl.AbilityCostLowering;
+using static Marvel.Cards.Dsl.AbilityEffectLowering;
+using static Marvel.Cards.Dsl.AbilityModifierLowering;
+using static Marvel.Cards.Dsl.AbilityProcedureLowering;
+using static Marvel.Cards.Dsl.AbilitySelectorLowering;
 using System.Collections.Immutable;
 
 namespace Marvel.Cards.Dsl;
 
-public static partial class AbilityLowering
+internal static class AbilityProcedureLowering
 {
-    private static AbilityEffect DealOrCreate(AbilityValue value, AbilityLocation location, bool drones)
+    internal static AbilityEffect DealOrCreate(AbilityValue value, AbilityLocation location, bool drones)
     {
         var fields = Fields(value, location, "player", "count");
         var players = fields.TryGetValue("player", out var player)
@@ -14,13 +22,13 @@ public static partial class AbilityLowering
         return drones ? new AbilityEffect.CreateDrones(players, count) : new AbilityEffect.DealEncounterCards(players, count);
     }
 
-    private static AbilityEffect.DealEncounterCard DealCardEffect(AbilityValue value, AbilityLocation location)
+    internal static AbilityEffect.DealEncounterCard DealCardEffect(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "card", "player");
-        return new(Selected(fields, "card", location), Player(Required(fields, "player", location), location.Child("player")));
+        return new(Selected(fields, "card", location), LowerPlayer(Required(fields, "player", location), location.Child("player")));
     }
 
-    private static AbilityEffect RandomCardsEffect(AbilityValue value, AbilityLocation location, bool place)
+    internal static AbilityEffect RandomCardsEffect(AbilityValue value, AbilityLocation location, bool place)
     {
         var fields = place ? Fields(value, location, "player", "count", "on") : Fields(value, location, "player", "count");
         var players = Players(Required(fields, "player", location), location.Child("player"));
@@ -29,7 +37,7 @@ public static partial class AbilityLowering
             : new AbilityEffect.DiscardAtRandom(players, count);
     }
 
-    private static AbilityEffect.DiscardTop DiscardTopEffect(AbilityValue value, AbilityLocation location)
+    internal static AbilityEffect.DiscardTop DiscardTopEffect(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "from", "count", "player");
         var from = SearchArea(Required(fields, "from", location), location.Child("from"));
@@ -45,7 +53,7 @@ public static partial class AbilityLowering
         return new(from, players, Numeric(fields, "count", location));
     }
 
-    private static AbilityEffect.DiscardUntil DiscardUntilEffect(AbilityValue value, AbilityLocation location)
+    internal static AbilityEffect.DiscardUntil DiscardUntilEffect(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "from", "kind", "trait", "then");
         FixedWord(Required(fields, "from", location), location.Child("from"), "encounterDeck");
@@ -59,13 +67,13 @@ public static partial class AbilityLowering
             OptionalText(fields, "trait", location), putIntoPlay);
     }
 
-    private static AbilityEffect.ShuffleInto ShuffleIntoEffect(AbilityValue value, AbilityLocation location)
+    internal static AbilityEffect.ShuffleInto ShuffleIntoEffect(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "cards", "deck");
         return new(Selected(fields, "cards", location), SearchArea(Required(fields, "deck", location), location.Child("deck")));
     }
 
-    private static AbilityEffect.Search SearchEffect(AbilityValue value, AbilityLocation location)
+    internal static AbilityEffect.Search SearchEffect(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "for", "in");
         if (Required(fields, "in", location) is not AbilityValue.List list)
@@ -86,7 +94,7 @@ public static partial class AbilityLowering
         return new(Text(Required(fields, "for", location), location.Child("for")), builder.MoveToImmutable());
     }
 
-    private static AbilityEffect.PutIntoPlay PutIntoPlayEffect(AbilityValue value, AbilityLocation location)
+    internal static AbilityEffect.PutIntoPlay PutIntoPlayEffect(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "card", "where");
         bool printed = Text(Required(fields, "where", location), location.Child("where")) switch
@@ -98,7 +106,7 @@ public static partial class AbilityLowering
         return new(Selected(fields, "card", location), printed);
     }
 
-    private static AbilityEffect ChoiceFromPile(AbilityValue value, AbilityLocation location, bool top)
+    internal static AbilityEffect ChoiceFromPile(AbilityValue value, AbilityLocation location, bool top)
     {
         string count = top ? "count" : "max";
         var fields = Fields(value, location, count);
@@ -106,7 +114,7 @@ public static partial class AbilityLowering
         return top ? new AbilityEffect.ChooseTopForHand(maximum) : new AbilityEffect.ChooseDiscardToShuffle(maximum);
     }
 
-    private static AbilityEffect CountersEffect(AbilityValue value, AbilityLocation location, bool remove)
+    internal static AbilityEffect CountersEffect(AbilityValue value, AbilityLocation location, bool remove)
     {
         var fields = Fields(value, location, "card", "counter", "count");
         string counter = Text(Required(fields, "counter", location), location.Child("counter"));
@@ -120,26 +128,26 @@ public static partial class AbilityLowering
             : new AbilityEffect.PlaceCounters(card, counter, Numeric(fields, "count", location));
     }
 
-    private static AbilityEffect.ReduceNextCardCost ReduceCostEffect(AbilityValue value, AbilityLocation location)
+    internal static AbilityEffect.ReduceNextCardCost ReduceCostEffect(AbilityValue value, AbilityLocation location)
     {
         var fields = Fields(value, location, "player", "amount");
-        return new(Player(Required(fields, "player", location), location.Child("player")), Numeric(fields, "amount", location));
+        return new(LowerPlayer(Required(fields, "player", location), location.Child("player")), Numeric(fields, "amount", location));
     }
 
-    private static AbilityEffect.Power PowerEffect(AbilityValue value, AbilityLocation location, AbilityPowerKind kind)
+    internal static AbilityEffect.Power PowerEffect(AbilityValue value, AbilityLocation location, AbilityPowerKind kind)
     {
         var fields = kind == AbilityPowerKind.Defense ? Fields(value, location, "effect")
             : kind == AbilityPowerKind.Thwart ? Fields(value, location, "target", "effect", "automaticTarget")
                 : Fields(value, location, "target", "effect");
         bool automatic = Marker(fields, "automaticTarget", location);
         return new(kind, kind == AbilityPowerKind.Defense ? null : Selected(fields, "target", location),
-            Effect(Required(fields, "effect", location), location.Child("effect")), automatic);
+            LowerEffect(Required(fields, "effect", location), location.Child("effect")), automatic);
     }
 
-    private static AbilityEffect.ThwartGroup GroupThwartEffect(AbilityValue value, AbilityLocation location, AbilityThwartSelection selection)
+    internal static AbilityEffect.ThwartGroup GroupThwartEffect(AbilityValue value, AbilityLocation location, AbilityThwartSelection selection)
     {
         var fields = Fields(value, location, "schemes", "power");
-        var power = Effect(Required(fields, "power", location), location.Child("power"));
+        var power = LowerEffect(Required(fields, "power", location), location.Child("power"));
         if (power is not AbilityEffect.Power { Kind: AbilityPowerKind.Thwart } thwart)
         {
             throw location.Child("power").Error("expected a thwart power");
@@ -147,7 +155,7 @@ public static partial class AbilityLowering
         return new(selection, Selected(fields, "schemes", location), thwart);
     }
 
-    private static AbilityEffect.ActivateEnemies ActivationEffect(AbilityValue value, AbilityLocation location, bool attack)
+    internal static AbilityEffect.ActivateEnemies ActivationEffect(AbilityValue value, AbilityLocation location, bool attack)
     {
         var fields = Fields(value, location, "enemies", "against", "first", "dynamic");
         AbilityCardSelection? against = null;
@@ -157,7 +165,7 @@ public static partial class AbilityLowering
             engagedHero = target is AbilityValue.Word { Value: "engagedHero" };
             if (!engagedHero)
             {
-                against = Cards(target, location.Child("against"));
+                against = SelectCards(target, location.Child("against"));
             }
         }
         return new(attack, Selected(fields, "enemies", location), against, engagedHero,

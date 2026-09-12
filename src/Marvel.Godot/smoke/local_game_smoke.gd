@@ -1,22 +1,12 @@
-extends SceneTree
-
-const TIMEOUT_MILLISECONDS := 15000
-const MAX_DECISIONS := 20
-
-var main: Control
-var failed := false
-var motion_enabled := true
-var render_viewport: Viewport
-
+extends "res://smoke/local_game_smoke_decision_checks.gd"
 
 func _initialize() -> void:
 	_prepare_art_pack()
 	motion_enabled = OS.get_environment("MARVEL_SMOKE_MOTION") != "disabled"
 	var viewport := OS.get_environment("MARVEL_SMOKE_VIEWPORT").split("x")
 	if viewport.size() == 2:
-		var requested := Vector2i(int(viewport[0]), int(viewport[1]))
 		var fixed_viewport := SubViewport.new()
-		fixed_viewport.size = requested
+		fixed_viewport.size = Vector2i(int(viewport[0]), int(viewport[1]))
 		fixed_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 		root.add_child(fixed_viewport)
 		render_viewport = fixed_viewport
@@ -30,257 +20,18 @@ func _run() -> void:
 	if packed == null:
 		_fail("Main.tscn could not be loaded")
 		return
-
-	main = packed.instantiate() as Control
-	render_viewport.add_child(main)
-	if not await _wait_for(func() -> bool: return _button_named("Start game") != null):
-		_fail("setup never became ready")
+	if not await _open_setup(packed):
 		return
-	if not await _visual_system_is_resolved():
+	await _configure_seeded_game()
+	if not await _open_and_validate_table():
 		return
-	if not await _entry_modes_are_explicit():
+	var journey := await _play_seeded_journey()
+	if journey.is_empty():
 		return
-	if not await _capture_checkpoint("setup"):
+	if not await _terminal_table_is_safe(journey):
 		return
-
-	_select_named_option(_node("Setup/Selections/Fields/Grid/Hero"), "Spider-Man")
-	_select_named_option(_node("Setup/Selections/Fields/Grid/Scenario"), "Rhino")
-	_select_named_option(_node("Setup/Selections/Fields/Grid/Mode"), "Standard")
-	var seed := _node("Setup/Selections/Fields/Grid/Seed") as LineEdit
-	seed.text = "1"
-	seed.text_changed.emit(seed.text)
-	var configured_motion := _node("Toolbar/Motion") as CheckButton
-	configured_motion.button_pressed = motion_enabled
-	configured_motion.toggled.emit(motion_enabled)
-	await process_frame
-
-	var start := _button_named("Start game")
-	if start == null or start.disabled:
-		_fail("the visible Start game control is unavailable")
-		return
-	start.pressed.emit()
-	if not await _wait_for(func() -> bool: return _play().visible and _decision() != null):
-		_fail("the opened table never became visible")
-		return
-	if not await _live_scale_rebuilds_the_decision():
-		return
-	if not await _procedural_cards_are_safe():
-		return
-	if not await _board_layout_is_resolved():
-		return
-	if not await _keyboard_selection_is_operable():
-		return
-	if not await _event_presentation_is_nonblocking():
-		return
-	if not await _synchronization_preserves_history(false):
-		return
-	if not await _capture_checkpoint("open-table-prompt-dense-concealed"):
-		return
-	if not await _mulligan_result_and_payment_are_operable():
-		return
-
-	var saw_mulligan := true
-	var saw_pass := false
-	var saw_end_phase := false
-	var saw_nonblocking_motion := false
-	var tested_active_motion_toggle := false
-	var captured_villain_phase := false
-	var changed_form := false
-	var tested_undo := false
-	var saw_attack_resolution := false
-	var decisions := 0
-	while not _is_complete():
-		if decisions >= MAX_DECISIONS:
-			_fail("the visible-control journey exceeded %d decisions" % MAX_DECISIONS)
-			return
-		if not _visible_buttons_meet_pointer_floor():
-			return
-
-		var decision_text := _visible_text(_decision())
-		saw_mulligan = saw_mulligan or "discard and redraw" in decision_text.to_lower()
-		saw_end_phase = saw_end_phase or "End Phase" in decision_text
-		var ending_player_phase := "End Phase" in decision_text
-		if ending_player_phase and not await _capture_checkpoint("player-phase"):
-			return
-		var change_form := _visible_button_beginning(_decision(), "Change Form")
-		var pass_button := _visible_button(_decision(), "Pass / decline")
-		if not changed_form and change_form != null and not change_form.disabled:
-			change_form.pressed.emit()
-			await process_frame
-			var change_submit := _submit_button()
-			if change_submit == null or change_submit.disabled:
-				_fail("the selected form change cannot be submitted")
-				return
-			change_submit.pressed.emit()
-			changed_form = true
-		elif pass_button != null and not pass_button.disabled:
-			saw_pass = true
-			pass_button.pressed.emit()
-		else:
-			var submit := _submit_button()
-			for selection in 3:
-				if submit != null and not submit.disabled:
-					break
-				var choice := _first_enabled_target()
-				if choice == null:
-					choice = _first_enabled_choice()
-				if choice == null:
-					_fail("no visible control can advance the current decision")
-					return
-				choice.pressed.emit()
-				await process_frame
-				submit = _submit_button()
-			if submit == null or submit.disabled:
-				_fail("the selected visible decision cannot be submitted")
-				return
-			submit.pressed.emit()
-
-		decisions += 1
-		await process_frame
-		if not await _wait_for(func() -> bool:
-			return _is_complete() or not _status().text.begins_with("DECISION SENT")):
-			_fail("the engine did not reconcile decision %d" % decisions)
-			return
-		if changed_form and not tested_undo:
-			var history := _node(
-				"Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel
-			var undo := _node(
-				"Play/Prompt/Margin/Stack/Workbench/History/EventHeader/UndoLast") as Button
-			if undo.disabled or "Spider-Man changed form." not in history.get_parsed_text() \
-					or "Undo to before this action" not in history.get_parsed_text():
-				_fail("the reversible form change has no authoritative undo controls")
-				return
-			undo.pressed.emit()
-			if not await _wait_for(func() -> bool:
-				return not (_node("Play/Prompt/Margin/Stack/PromptHeader/Progress") as Label) \
-					.text.begins_with("UNDOING")):
-				_fail("undoing the form change did not settle")
-				return
-			if "Peter Parker" not in _visible_text(_play()):
-				_fail("undoing the form change did not restore alter-ego form")
-				return
-			tested_undo = true
-			changed_form = false
-			continue
-		var event_skip := _node("Play/Prompt/Margin/Stack/Workbench/History/EventHeader/Skip") as Button
-		if motion_enabled and not event_skip.disabled \
-				and (_is_complete() or _first_enabled_choice() != null):
-			saw_nonblocking_motion = true
-			if not tested_active_motion_toggle:
-				var motion_history := (_node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel).text
-				var motion := _node("Toolbar/Motion") as CheckButton
-				motion.button_pressed = false
-				motion.toggled.emit(false)
-				await process_frame
-				if not event_skip.disabled or motion_history != \
-						(_node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel).text:
-					_fail("disabling active motion did not settle without changing history")
-					return
-				motion.button_pressed = true
-				motion.toggled.emit(true)
-				tested_active_motion_toggle = true
-		if not motion_enabled and not _disabled_motion_is_settled(event_skip):
-			return
-		var active_resolution := _node("Play/Prompt/Margin/Stack/ActiveResolution") as Control
-		if active_resolution.visible:
-			var resolution_text := _visible_text(active_resolution).to_lower()
-			if "enemy attack" in resolution_text and "interrupt window" in resolution_text:
-				saw_attack_resolution = true
-				if "rhino" not in resolution_text or "spider-man" not in resolution_text:
-					_fail("the attack resolution does not name its actor and target")
-					return
-				if not await _capture_checkpoint("attack-interrupt"):
-					return
-				if not captured_villain_phase:
-					if not await _capture_checkpoint("villain-phase"):
-						return
-					captured_villain_phase = true
-		var history_text := (_node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel) \
-			.get_parsed_text().to_lower()
-		if not captured_villain_phase and not _is_complete() and "villain phase" in history_text:
-			if not await _capture_checkpoint("villain-phase"):
-				return
-			captured_villain_phase = true
-
-	if not saw_mulligan or not saw_pass or not saw_end_phase or not changed_form or not tested_undo:
-		_fail("the journey missed a required visible decision path")
-		return
-	if not saw_attack_resolution:
-		_fail("the journey never exposed the containing enemy attack for its interrupt")
-		return
-	if not captured_villain_phase:
-		_fail("the journey never reached a non-terminal villain-phase checkpoint")
-		return
-	if motion_enabled and not saw_nonblocking_motion:
-		_fail("the journey never exposed an operable prompt while event motion was active")
-		return
-	if motion_enabled and not tested_active_motion_toggle:
-		_fail("the journey never disabled event motion during active playback")
-		return
-	if not motion_enabled and saw_nonblocking_motion:
-		_fail("the motion-disabled journey exposed active event playback")
-		return
-	if "VILLAIN WINS" not in _status().text and "PLAYERS LOSE" not in _status().text:
-		_fail("the terminal UI did not report the seeded loss")
-		return
-	if not await _synchronization_preserves_history(true):
-		return
-	var terminal_decision := _visible_text(_decision()).to_upper()
-	var terminal_prompt := _visible_text(
-		_node("Play/Prompt/Margin/Stack/PromptHeader")).to_upper()
-	var terminal_names_loss := "VILLAIN WON" in terminal_decision \
-			or "PLAYERS LOST" in terminal_decision
-	if "DEFEAT" not in terminal_decision or not terminal_names_loss \
-			or ("VILLAIN WON" not in terminal_prompt and "PLAYERS LOST" not in terminal_prompt):
-		_fail("the null-prompt terminal decision copy does not identify the loss")
-		return
-	if _node("Status").theme_type_variation != &"DangerStatusPanel":
-		_fail("the loss did not receive the semantic danger treatment")
-		return
-	var event_log := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel
-	var event_text := event_log.get_parsed_text().strip_edges()
-	if event_text.is_empty() or event_text == "No events yet.":
-		_fail("the visible event log is empty")
-		return
-	if "villain won the game" not in event_text.to_lower() \
-			and "players lost the game" not in event_text.to_lower():
-		_fail("the terminal outcome did not remain in recent history")
-		return
-	var last_result := _node("Play/Prompt/Margin/Stack/Workbench/Action/LastResult") as Control
-	var result_text := _visible_text(last_result).to_lower()
-	if not last_result.visible or ("villain won the game" not in result_text \
-			and "players lost the game" not in result_text):
-		_fail("the terminal outcome did not remain in the primary action pane")
-		return
-	if not await _wait_for(func() -> bool:
-		return _control_text_is_visible(_node("Title") as Control) \
-			and _control_text_is_visible(_node("Description") as Control)):
-		var terminal_title := _node("Title") as Control
-		var terminal_description := _node("Description") as Control
-		var page := main.get_node("Margin") as ScrollContainer
-		_fail("the terminal page did not reveal its outcome and explanation" \
-			+ "\nPage rect: %s scroll: %d" % [page.get_global_rect(), page.scroll_vertical] \
-			+ "\nTitle rect: %s visible: %s" % [
-				terminal_title.get_global_rect(),
-				_visible_control_rect(terminal_title),
-			] \
-			+ "\nDescription rect: %s visible: %s" % [
-				terminal_description.get_global_rect(),
-				_visible_control_rect(terminal_description),
-			])
-		return
-	if not await _capture_checkpoint("terminal"):
-		return
-	var dismiss_result := _node(
-		"Play/Prompt/Margin/Stack/Workbench/Action/LastResult/Margin/Copy/Header/Dismiss") as Button
-	dismiss_result.pressed.emit()
-	await process_frame
-	if last_result.visible:
-		_fail("the latest result cannot be dismissed")
-		return
-
 	print("LOCAL_GAME_SMOKE_OK decisions=%d motion=%s" % [
-		decisions,
+		journey.decisions,
 		"enabled" if motion_enabled else "disabled",
 	])
 	main.queue_free()
@@ -289,1388 +40,362 @@ func _run() -> void:
 	quit(0)
 
 
-func _mulligan_result_and_payment_are_operable() -> bool:
-	var mulligan := _visible_button_beginning(_decision(), "Choose cards to discard and redraw")
-	if mulligan == null or mulligan.disabled:
-		_fail("the seeded opening hand has no operable mulligan action")
+func _open_setup(packed: PackedScene) -> bool:
+	main = packed.instantiate() as Control
+	render_viewport.add_child(main)
+	if not await _wait_for(func() -> bool: return _button_named("Start game") != null):
+		_fail("setup never became ready")
 		return false
-	mulligan.pressed.emit()
-	await process_frame
-	var wanted := ["Avengers Mansion", "Aunt May", "Swinging Web Kick"]
-	for title in wanted:
-		var target: Button = null
-		for candidate in _visible_buttons(_decision()):
-			if candidate.text.begins_with("◇ DISCARD AND REDRAW") and title in candidate.text:
-				target = candidate
-				break
-		if target == null:
-			_fail("the seeded mulligan cannot select %s" % title)
-			return false
-		target.pressed.emit()
-		await process_frame
+	if not await _visual_system_is_resolved():
+		return false
+	if not await _entry_modes_are_explicit():
+		return false
+	return await _capture_checkpoint("setup")
 
+
+func _configure_seeded_game() -> void:
+	_select_named_option(_node("Setup/Selections/Fields/Grid/Hero"), "Spider-Man")
+	_select_named_option(_node("Setup/Selections/Fields/Grid/Scenario"), "Rhino")
+	_select_named_option(_node("Setup/Selections/Fields/Grid/Mode"), "Standard")
+	var seed := _node("Setup/Selections/Fields/Grid/Seed") as LineEdit
+	seed.text = "1"
+	seed.text_changed.emit(seed.text)
+	var motion := _node("Toolbar/Motion") as CheckButton
+	motion.button_pressed = motion_enabled
+	motion.toggled.emit(motion_enabled)
+	await process_frame
+
+
+func _open_and_validate_table() -> bool:
+	var start := _button_named("Start game")
+	if start == null or start.disabled:
+		_fail("the visible Start game control is unavailable")
+		return false
+	start.pressed.emit()
+	if not await _wait_for(func() -> bool: return _play().visible and _decision() != null):
+		_fail("the opened table never became visible")
+		return false
+	if not await _live_scale_rebuilds_the_decision():
+		return false
+	if not await _procedural_cards_are_safe():
+		return false
+	if not await _board_layout_is_resolved():
+		return false
+	if not await _keyboard_selection_is_operable():
+		return false
+	if not await _event_presentation_is_nonblocking():
+		return false
+	if not await _synchronization_preserves_history(false):
+		return false
+	if not await _capture_checkpoint("open-table-prompt-dense-concealed"):
+		return false
+	return await _mulligan_result_and_payment_are_operable()
+
+
+func _play_seeded_journey() -> Dictionary:
+	var state := {
+		"saw_mulligan": true,
+		"saw_pass": false,
+		"saw_end_phase": false,
+		"saw_nonblocking_motion": false,
+		"tested_active_motion_toggle": false,
+		"captured_villain_phase": false,
+		"changed_form": false,
+		"tested_undo": false,
+		"saw_attack_resolution": false,
+		"decisions": 0,
+	}
+	while not _is_complete():
+		if not await _play_one_decision(state):
+			return {}
+	return state
+
+
+func _play_one_decision(state: Dictionary) -> bool:
+	if state.decisions >= MAX_DECISIONS:
+		_fail("the visible-control journey exceeded %d decisions" % MAX_DECISIONS)
+		return false
+	if not _visible_buttons_meet_pointer_floor():
+		return false
+	var ending_player_phase := _observe_decision(state)
+	if ending_player_phase and not await _capture_checkpoint("player-phase"):
+		return false
+	if not await _advance_visible_decision(state):
+		return false
+	state.decisions += 1
+	await process_frame
+	if not await _settle_decision(state.decisions):
+		return false
+	var had_tested_undo: bool = state.tested_undo
+	if not await _undo_first_form_change(state):
+		return false
+	if not had_tested_undo and state.tested_undo:
+		return true
+	if not await _motion_state_is_safe(state):
+		return false
+	if not await _active_resolution_is_safe(state):
+		return false
+	return await _villain_history_checkpoint_is_safe(state)
+
+
+func _observe_decision(state: Dictionary) -> bool:
+	var text := _visible_text(_decision())
+	state.saw_mulligan = state.saw_mulligan or "discard and redraw" in text.to_lower()
+	var ending_player_phase := "End Phase" in text
+	state.saw_end_phase = state.saw_end_phase or ending_player_phase
+	return ending_player_phase
+
+
+func _advance_visible_decision(state: Dictionary) -> bool:
+	var change_form := _visible_button_beginning(_decision(), "Change Form")
+	var pass_button := _visible_button(_decision(), "Pass / decline")
+	if not state.changed_form and change_form != null and not change_form.disabled:
+		change_form.pressed.emit()
+		await process_frame
+		var submit := _submit_button()
+		if submit == null or submit.disabled:
+			_fail("the selected form change cannot be submitted")
+			return false
+		submit.pressed.emit()
+		state.changed_form = true
+		return true
+	if pass_button != null and not pass_button.disabled:
+		state.saw_pass = true
+		pass_button.pressed.emit()
+		return true
+	return await _compose_visible_decision()
+
+
+func _compose_visible_decision() -> bool:
 	var submit := _submit_button()
-	if submit == null or submit.disabled or "Discard 3 and redraw" not in submit.text:
-		_fail("the three-card mulligan cannot be submitted")
+	for selection in 3:
+		if submit != null and not submit.disabled:
+			break
+		var choice := _first_enabled_target()
+		if choice == null:
+			choice = _first_enabled_choice()
+		if choice == null:
+			_fail("no visible control can advance the current decision")
+			return false
+		choice.pressed.emit()
+		await process_frame
+		submit = _submit_button()
+	if submit == null or submit.disabled:
+		_fail("the selected visible decision cannot be submitted")
 		return false
 	submit.pressed.emit()
+	return true
+
+
+func _settle_decision(decisions: int) -> bool:
+	if await _wait_for(func() -> bool:
+		return _is_complete() or not _status().text.begins_with("DECISION SENT")):
+		return true
+	_fail("the engine did not reconcile decision %d" % decisions)
+	return false
+
+
+func _undo_first_form_change(state: Dictionary) -> bool:
+	if not state.changed_form or state.tested_undo:
+		return true
+	var history := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel
+	var undo := _node(
+		"Play/Prompt/Margin/Stack/Workbench/History/EventHeader/UndoLast") as Button
+	if undo.disabled or "Spider-Man changed form." not in history.get_parsed_text():
+		_fail("the reversible form change has no authoritative undo action")
+		return false
+	if "Undo to before this action" not in history.get_parsed_text():
+		_fail("the reversible form change has no authoritative undo description")
+		return false
+	undo.pressed.emit()
 	if not await _wait_for(func() -> bool:
-		return "turn" in (_node("Play/Prompt/Margin/Stack/PromptHeader/Heading") as Label).text.to_lower()):
-		_fail("the seeded mulligan did not reach the player turn")
+		return not (_node("Play/Prompt/Margin/Stack/PromptHeader/Progress") as Label) \
+			.text.begins_with("UNDOING")):
+		_fail("undoing the form change did not settle")
 		return false
-
-	var last_result := _node("Play/Prompt/Margin/Stack/Workbench/Action/LastResult") as Control
-	var result_summary := _node(
-		"Play/Prompt/Margin/Stack/Workbench/Action/LastResult/Margin/Copy/Summary") as Label
-	var result_text := result_summary.text
-	if not last_result.visible \
-			or "Spider-Man discarded Avengers Mansion, Aunt May, and Swinging Web Kick." not in result_text \
-			or "Spider-Man drew Daredevil, Black Cat, and Jessica Jones." not in result_text:
-		_fail("the mulligan result is not consolidated narrative copy: %s" % result_text)
+	if "Peter Parker" not in _visible_text(_play()):
+		_fail("undoing the form change did not restore alter-ego form")
 		return false
-	if not await _capture_checkpoint("mulligan-result"):
-		return false
-	var toggle := _node(
-		"Play/Prompt/Margin/Stack/Workbench/Action/LastResult/Margin/Copy/Header/Toggle") as Button
-	toggle.pressed.emit()
-	await process_frame
-	if result_summary.visible or toggle.text != "Expand":
-		_fail("the transient result cannot be collapsed")
-		return false
-	toggle.pressed.emit()
-	await process_frame
-	if not result_summary.visible or toggle.text != "Collapse":
-		_fail("the transient result cannot be expanded")
-		return false
-
-	var web_shooter := _visible_button_beginning(_decision(), "Play Web-Shooter")
-	if web_shooter == null or web_shooter.disabled:
-		_fail("Web-Shooter is not playable after the mulligan")
-		return false
-	web_shooter.pressed.emit()
-	await process_frame
-	await process_frame
-	if last_result.visible:
-		_fail("opening a new draft did not clear the transient result")
-		return false
-
-	var generators := _decision().find_children("Resource*", "Button", true, false)
-	if generators.is_empty():
-		_fail("Web-Shooter exposes no post-mulligan payment generators")
-		return false
-	var generator := generators[0] as Button
-	generator.grab_focus()
-	await process_frame
-	await process_frame
-	if render_viewport.gui_get_focus_owner() != generator \
-			or _visible_control_rect(generator).size.y < _scaled_metric(24):
-		_fail("Web-Shooter's post-mulligan resource controls cannot be reached")
-		return false
-	var press := InputEventAction.new()
-	press.action = &"ui_accept"
-	press.pressed = true
-	render_viewport.push_input(press)
-	await process_frame
-	var release := InputEventAction.new()
-	release.action = &"ui_accept"
-	release.pressed = false
-	render_viewport.push_input(release)
-	await process_frame
-	await process_frame
-	var progress := _node("Play/Prompt/Margin/Stack/PromptHeader/Progress") as Label
-	if "PAYMENT 1/1 ICONS" not in progress.text or "READY" not in progress.text:
-		_fail("Peter Parker's post-mulligan resource cannot complete Web-Shooter's payment")
-		return false
-	if not await _capture_checkpoint("post-mulligan-payment"):
-		return false
+	state.tested_undo = true
+	state.changed_form = false
 	return true
 
 
-func _synchronization_preserves_history(expect_terminal: bool) -> bool:
-	var synchronize := main.find_child("Synchronize", true, false) as Button
-	if synchronize == null or not synchronize.visible or synchronize.disabled:
-		_fail("the table has no operable always-visible synchronization control")
-		return false
-	if synchronize.custom_minimum_size.y < 32:
-		_fail("the compact synchronization control is too small to operate")
-		return false
-
-	var event_log := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel
-	var history_before := event_log.text
-	synchronize.pressed.emit()
-	if not await _wait_for(func() -> bool:
-		return not _status().text.begins_with("SYNCHRONIZING")):
-		_fail("the explicit table synchronization did not settle")
-		return false
-	if history_before != event_log.text:
-		_fail("synchronization replayed or cleared the visible event history")
-		return false
-	if expect_terminal:
-		if "VILLAIN WINS" not in _status().text and "PLAYERS LOSE" not in _status().text:
-			_fail("synchronizing the terminal table lost its authoritative outcome")
-			return false
-	elif _first_enabled_choice() == null \
-			and _visible_button(_decision(), "Pass / decline") == null:
-		_fail("synchronizing an ordinary prompt left the decision inoperable")
-		return false
-	return true
-
-
-func _visual_system_is_resolved() -> bool:
-	if main.theme == null:
-		_fail("the root scene has no reusable client theme")
-		return false
-
-	var start := _button_named("Start game")
-	var expected_height := _scaled_metric(44)
-	var expected_body := _scaled_metric(15)
-	var expected_focus := _scaled_metric(3)
-	if start.theme_type_variation != &"PrimaryButton":
-		_fail("the primary action does not use its semantic theme role")
-		return false
-	if start.custom_minimum_size.y < expected_height:
-		_fail("the primary action is smaller than the pointer-target floor")
-		return false
-	if start.get_theme_font_size("font_size") < expected_body:
-		_fail("the primary action did not adopt the selected type scale")
-		return false
-	var slider := _node("Toolbar/InterfaceScale") as HSlider
-	var scale_value := _node("Toolbar/ScaleValue") as Label
-	if slider == null or scale_value == null:
-		_fail("the density toolbar has no interface scale control")
-		return false
-	if slider.min_value != 50.0 or slider.max_value != 150.0 or slider.step != 10.0:
-		_fail("the interface scale slider does not expose 50–150% in ten-percent steps")
-		return false
-	await process_frame
-	await process_frame
-	await main.get_tree().create_timer(0.05).timeout
-	var original_scale := slider.value
-	var original_font := start.get_theme_font_size("font_size")
-	var original_slider_rect := slider.get_global_rect()
-	slider.value = 50.0 if original_scale != 50.0 else 60.0
-	await process_frame
-	await process_frame
-	if start.get_theme_font_size("font_size") == original_font:
-		_fail("the interface scale slider did not update the live theme")
-		return false
-	if not slider.get_global_rect().is_equal_approx(original_slider_rect):
-		_fail("the interface scale slider changed geometry or absolute position: %s -> %s" % [
-			original_slider_rect,
-			slider.get_global_rect(),
-		])
-		return false
-	slider.value = original_scale
-	await process_frame
-	if "Scale" not in scale_value.text:
-		_fail("the interface scale slider has no readable value")
-		return false
-
-	var focus := start.get_theme_stylebox("focus") as StyleBoxFlat
-	var normal := start.get_theme_stylebox("normal") as StyleBoxFlat
-	var hover := start.get_theme_stylebox("hover") as StyleBoxFlat
-	var disabled := start.get_theme_stylebox("disabled") as StyleBoxFlat
-	if focus == null or normal == null or hover == null or disabled == null:
-		_fail("the primary action is missing a required interaction style")
-		return false
-	if focus.border_width_left < expected_focus or focus.expand_margin_left < expected_focus:
-		_fail("keyboard focus has no structural focus ring")
-		return false
-	if hover.border_width_bottom == normal.border_width_bottom:
-		_fail("pointer hover differs from rest by color alone")
-		return false
-	if disabled.border_width_bottom == normal.border_width_bottom:
-		_fail("unavailable actions differ from rest by color alone")
-		return false
-
-	var theme := main.theme
-	var legal := theme.get_stylebox("normal", &"LegalTargetButton") as StyleBoxFlat
-	var selected := theme.get_stylebox("normal", &"SelectedTargetButton") as StyleBoxFlat
-	var unavailable := theme.get_stylebox("normal", &"UnavailableButton") as StyleBoxFlat
-	if legal == null or selected == null or unavailable == null:
-		_fail("the theme does not define every semantic action state")
-		return false
-	if legal.border_width_left == selected.border_width_left:
-		_fail("legal and selected targets differ by color alone")
-		return false
-	if unavailable.border_width_left == legal.border_width_left:
-		_fail("unavailable and legal actions differ by color alone")
-		return false
-
-	var page_scroll := main.get_node("Margin") as ScrollContainer
-	if page_scroll == null:
-		_fail("the scaled page has no outer scroll container")
-		return false
-	var page_bounds := Rect2(Vector2.ZERO, _viewport_size())
-	var setup_bounds: Rect2 = (_node("Setup") as Control).get_global_rect()
-	if setup_bounds.position.x < page_bounds.position.x - 1.0 \
-			or setup_bounds.end.x > page_bounds.end.x + 1.0:
-		if page_scroll.horizontal_scroll_mode != ScrollContainer.SCROLL_MODE_AUTO:
-			_fail("the scaled setup overflow is not horizontally accessible: setup=%s page=%s" % [
-				setup_bounds,
-				page_bounds,
-			])
-			return false
-	for path in [
-		"Setup/Selections/Fields/ConnectionGrid/Endpoint",
-		"Setup/Selections/Fields/ConnectionGrid/GameId",
-		"Setup/Selections/Fields/Grid/Hero",
-		"Setup/Selections/Fields/Grid/SecondHero",
-		"Setup/Selections/Fields/Grid/Scenario",
-		"Setup/Selections/Fields/Grid/Mode",
-		"Setup/Selections/Fields/Grid/Modular",
-		"Setup/Selections/Fields/Grid/Seed",
-	]:
-		var control := _node(path) as Control
-		if control.custom_minimum_size.y < expected_height:
-			_fail("setup control '%s' is smaller than the pointer-target floor" % path)
-			return false
-		control.grab_focus()
-		await process_frame
-		await process_frame
-		var page_rect := page_scroll.get_global_rect().intersection(
-			Rect2(Vector2.ZERO, _viewport_size()))
-		var control_rect := control.get_global_rect()
-		if control_rect.end.y > page_rect.end.y:
-			page_scroll.scroll_vertical += ceili(control_rect.end.y - page_rect.end.y)
-		elif control_rect.position.y < page_rect.position.y:
-			page_scroll.scroll_vertical -= ceili(page_rect.position.y - control_rect.position.y)
-		await process_frame
-		var visible_rect := control.get_global_rect().intersection(
-			page_rect)
-		if visible_rect.size.x < expected_height or visible_rect.size.y < expected_height:
-			_fail("setup control '%s' cannot be brought into the viewport: control=%s visible=%s scroll=%s/%s" % [
-				path,
-				control.get_global_rect(),
-				visible_rect,
-				page_scroll.scroll_vertical,
-				page_scroll.get_v_scroll_bar().max_value,
-			])
-			return false
-
-	return true
-
-
-func _live_scale_rebuilds_the_decision() -> bool:
-	var slider := _node("Toolbar/InterfaceScale") as HSlider
-	var original := slider.value
-	var choice := _first_enabled_choice()
-	if choice == null:
-		_fail("the live scale check has no decision action")
-		return false
-	var original_height := choice.custom_minimum_size.y
-	slider.value = 60.0 if original == 50.0 else 50.0
-	await process_frame
-	await process_frame
-	var resized_choice := _first_enabled_choice()
-	if resized_choice == null or resized_choice.custom_minimum_size.y == original_height:
-		_fail("changing scale did not rebuild the open decision controls")
-		return false
-	slider.value = original
-	await process_frame
-	await process_frame
-	return true
-
-
-func _entry_modes_are_explicit() -> bool:
-	var endpoint := _node("Setup/Selections/Fields/ConnectionGrid/Endpoint") as LineEdit
-	var game_id := _node("Setup/Selections/Fields/ConnectionGrid/GameId") as LineEdit
-	var second_hero := _node("Setup/Selections/Fields/Grid/SecondHero") as OptionButton
-	var reload_setup := _button_named("Reload setup options")
-	var join_flow := _button_named("Join a game")
-	if endpoint == null or endpoint.max_length != 512:
-		_fail("the engine endpoint is not visibly bounded to 512 characters")
-		return false
-	if game_id == null or game_id.text.is_empty():
-		_fail("the start flow has no opaque game label")
-		return false
-	if second_hero == null or second_hero.item_count < 2 \
-			or not second_hero.get_item_text(0).begins_with("Solo table"):
-		_fail("the start flow does not offer an optional second hero (items=%d selected=%d)" % [
-			second_hero.item_count if second_hero != null else -1,
-			second_hero.selected if second_hero != null else -1,
-		])
-		return false
-	if reload_setup == null or reload_setup.disabled:
-		_fail("the start flow has no operable setup reload action")
-		return false
-
-	var host_name := (_node("Setup/Briefing/Frame/Copy/Hero") as Label).text
-	second_hero.select(1)
-	second_hero.item_selected.emit(1)
-	await process_frame
-	var guest_name := second_hero.get_item_text(1)
-	var briefing_heroes := (_node("Setup/Briefing/Frame/Copy/Hero") as Label).text
-	if host_name not in briefing_heroes or guest_name not in briefing_heroes:
-		_fail("selecting a second hero did not refresh the encounter briefing")
-		return false
-	second_hero.select(0)
-	second_hero.item_selected.emit(0)
-	await process_frame
-	if (_node("Setup/Briefing/Frame/Copy/Hero") as Label).text != host_name:
-		_fail("returning to solo did not refresh the encounter briefing")
-		return false
-
-	var modular := _node("Setup/Selections/Fields/Grid/Modular") as MenuButton
-	var seed := _node("Setup/Selections/Fields/Grid/Seed") as LineEdit
-	if modular == null or modular.get_popup().item_count < 7:
-		_fail("the start flow has no complete modular-set multi-select menu")
-		return false
-	if seed == null or not seed.text.is_empty() or (_button_named("Start game") as Button).disabled:
-		_fail("a blank seed does not remain an available random-deal choice")
-		return false
-	modular.get_popup().id_pressed.emit(2)
-	modular.get_popup().id_pressed.emit(3)
-	await process_frame
-	if modular.text.count(",") < 1 \
-			or not modular.get_popup().is_item_checked(3) \
-			or not modular.get_popup().is_item_checked(4):
-		_fail("modular encounter sets cannot be selected together")
-		return false
-	modular.get_popup().id_pressed.emit(0)
-	await process_frame
-	if not modular.text.begins_with("Use recommended"):
-		_fail("the modular menu cannot return to the authored recommendation")
-		return false
-
-	endpoint.text = "not-an-endpoint"
-	endpoint.text_changed.emit(endpoint.text)
-	await process_frame
-	if reload_setup.disabled or not (_button_named("Start game") as Button).disabled:
-		_fail("changing the endpoint did not require an explicit setup reload")
-		return false
-	endpoint.text = ""
-	endpoint.text_changed.emit(endpoint.text)
-	reload_setup.pressed.emit()
-	if not await _wait_for(func() -> bool:
-		return not reload_setup.disabled and not (_button_named("Start game") as Button).disabled):
-		_fail("correcting the endpoint and retrying did not restore setup options")
-		return false
-	if (_node("Title") as Label).text != "Assemble the table." \
-			or _node("Status").theme_type_variation != &"StatusPanel":
-		_fail("a successful setup retry did not clear the unavailable presentation")
-		return false
-	if join_flow == null:
-		_fail("the setup screen has no explicit Join a game action")
-		return false
-
-	join_flow.pressed.emit()
-	await process_frame
-	var invitation := _node(
-		"Setup/Selections/Fields/JoinFields/Invitation") as LineEdit
-	var join := _button_named("Join game")
-	if invitation == null or not invitation.secret or invitation.max_length != 256:
-		_fail("the join invitation is not a bounded masked secret")
-		return false
-	if join == null or not join.disabled:
-		_fail("join is available without an explicit remote endpoint and invitation")
-		return false
-	if _node("Setup/Selections/Fields/Grid").visible:
-		_fail("the join flow exposes unrelated start-game assignment controls")
-		return false
-	if not await _capture_checkpoint("join-setup"):
-		return false
-
-	var start_flow := _button_named("Start a game")
-	if start_flow == null:
-		_fail("the setup screen cannot return to the explicit start flow")
-		return false
-	start_flow.pressed.emit()
-	await process_frame
-	if not _node("Setup/Selections/Fields/Grid").visible:
-		_fail("returning to start did not restore assignment controls")
-		return false
-	return true
-
-
-func _procedural_cards_are_safe() -> bool:
-	var cards := main.find_children("ProceduralCard", "PanelContainer", true, false)
-	if cards.is_empty():
-		_fail("the opened table has no procedural card controls")
-		return false
-
-	var expected_board_width := _scaled_metric(125)
-	var expected_hand_width := _scaled_metric(100)
-	var hand_shelf := _node("Play/Board/HandShelf")
-	var saw_face := false
-	var saw_back := false
-	var saw_compact_summary := false
-	var saw_type_specific_value := false
-	var saw_health := false
-	var saw_progress := false
-	var saw_active_villain_stage := false
-	for card in cards:
-		var in_hand := hand_shelf.is_ancestor_of(card)
-		var expected_width := expected_hand_width if in_hand else expected_board_width
-		if card.custom_minimum_size.x < expected_width:
-			_fail("a board card does not honor the selected card geometry")
-			return false
-		var face := card.find_child("CardFace", true, false)
-		var back := card.find_child("CardBack", true, false)
-		if face != null:
-			saw_face = true
-			var kind := face.find_child("Kind", true, false) as Label
-			if in_hand and kind == null:
-				_fail("a hand card does not retain subordinate type information")
-				return false
-			if not in_hand and kind != null:
-				_fail("a board card repeats type context already conveyed by its area")
-				return false
-			var title := face.find_child("Title", true, false) as Label
-			if title == null or title.max_lines_visible != -1:
-				_fail("a board card title is truncated")
-				return false
-			if title.text_overrun_behavior == TextServer.OVERRUN_TRIM_ELLIPSIS:
-				_fail("a compact card title uses ellipsis instead of wrapping")
-				return false
-			if title.size.y < title.get_theme_font_size("font_size"):
-				_fail("a board card title collapsed out of its card: %s title=%s face=%s card=%s parent=%s" % [
-					title.text,
-					title.size,
-					face.size,
-					card.size,
-					card.get_parent().size,
-				])
-				return false
-			var rules := face.find_child("RulesText", true, false) as Label
-			if rules != null:
-				_fail("a compact board or hand card exposed full rules text")
-				return false
-			if face.find_child("PrintedValues", true, false) != null \
-					or face.find_child("LiveValues", true, false) != null:
-				_fail("a compact card retained a PRINTED or CURRENT value region")
-				return false
-			if face.find_child("ReadyIndicator", true, false) != null:
-				_fail("a compact card retained a standalone READY indicator")
-				return false
-			var summary := face.find_child("SummaryValues", true, false)
-			saw_compact_summary = saw_compact_summary or summary != null
-			if summary != null:
-				for badge in summary.find_children("*", "Label", true, false):
-					if badge.text_overrun_behavior == TextServer.OVERRUN_TRIM_ELLIPSIS:
-						_fail("a compact semantic badge uses ellipsis instead of whole-badge wrapping")
-						return false
-			for forbidden_name in [
-				"SummaryValuesALLY_LIMIT",
-				"SummaryValuesHAND_SIZE",
-				"SummaryValuesFIRST_PLAYER_TOKEN",
-				"SummaryValuesRESTRICTED_LIMIT",
-			]:
-				if face.find_child(forbidden_name, true, false) != null:
-					_fail("a compact card exposed an unmatched diagnostic field")
-					return false
-			var health := face.find_child("ProgressValuesHEALTH", true, false) as Label
-			if health != null:
-				saw_health = true
-				if "/" not in health.text:
-					_fail("current health is not represented as current/maximum")
-					return false
-				if face.find_child("SummaryValuesDAMAGE", true, false) != null \
-						or face.find_child("SummaryValuesHP", true, false) != null:
-					_fail("a character splits health across multiple displayed values")
-					return false
-			var threat := face.find_child("ProgressValuesTHREAT", true, false) as Label
-			if threat != null:
-				saw_progress = true
-				if threat.text.strip_edges().is_empty():
-					_fail("scheme threat progress is empty")
-					return false
-			for value_name in [
-				"SummaryValuesREC",
-				"SummaryValuesTHW",
-				"SummaryValuesATK",
-				"SummaryValuesDEF",
-				"SummaryValuesSCH",
-				"SummaryValuesACCELERATION",
-				"SummaryValuesAMPLIFY",
-				"SummaryValuesCRISIS",
-				"SummaryValuesHAZARD",
-				"SummaryValuesESCALATION_THREAT",
-				"SummaryValuesCOST",
-				"SummaryValuesRES",
-			]:
-				if face.find_child(value_name, true, false) != null:
-					saw_type_specific_value = true
-					break
-			var resource := face.find_child("SummaryValuesRES", true, false) as HFlowContainer
-			if resource != null:
-				if not FileAccess.file_exists("res://assets/fonts/ChampionsIcons.ttf"):
-					_fail("the pinned Champions icon font is outside the project resource root")
-					return false
-				var resource_tokens := resource.find_children(
-					"ResourceToken*", "HBoxContainer", false, false)
-				if resource_tokens.is_empty():
-					_fail("a compact resource has no icon token")
-					return false
-				var slot_size := Vector2.ZERO
-				for token_node in resource_tokens:
-					var token := token_node as HBoxContainer
-					var slot := token.find_child("ResourceIconSlot*", true, false) as Label
-					if resource.size_flags_horizontal != Control.SIZE_SHRINK_BEGIN \
-							or slot == null \
-							or token.find_child("ResourceName*", true, false) != null \
-							or not token.tooltip_text.is_empty() \
-							or not slot.tooltip_text.is_empty():
-						_fail("a compact printed resource is not an icon-only row")
-						return false
-					if slot_size == Vector2.ZERO:
-						slot_size = slot.custom_minimum_size
-					if slot.custom_minimum_size.x != slot.custom_minimum_size.y \
-							or slot.custom_minimum_size != slot_size \
-							or slot.horizontal_alignment != HORIZONTAL_ALIGNMENT_CENTER \
-							or slot.vertical_alignment != VERTICAL_ALIGNMENT_CENTER \
-							or slot.text not in ["P", "M", "E", "W"] \
-							or not slot.has_theme_font_override("font") \
-							or slot.get_theme_font("font").resource_path \
-									!= "res://assets/fonts/ChampionsIcons.runtime.tres":
-						_fail("resource glyphs do not share centered fixed square slots")
-						return false
-			var stage := face.find_child("SummaryValuesStage", true, false)
-			if stage != null and health != null:
-				if face.find_child("SummaryValuesSCH", true, false) == null \
-						or face.find_child("SummaryValuesATK", true, false) == null \
-						or face.find_children(
-							"SummaryValuesStage", "Label", true, false).size() != 1:
-					_fail("an active villain stage is missing or repeated beside live stats")
-					return false
-				saw_active_villain_stage = true
-			elif stage != null and (threat != null \
-					or face.find_child("SummaryValuesHP", true, false) != null):
-				_fail("a stored stage competes with active threat or printed health")
-				return false
-		elif back != null:
-			saw_back = true
-			if back.find_child("Title", true, false) != null or back.find_child("RulesText", true, false) != null:
-				_fail("a concealed card back contains face-identifying controls")
-				return false
-			if back.find_child("Illustration", true, false) != null:
-				_fail("a concealed card consulted the face-art path")
-				return false
-			var back_text := _visible_text(back)
-			if "secret" in back_text.to_lower() or "face-" in back_text.to_lower():
-				_fail("a concealed card back leaked an identity")
-				return false
-
-	if not saw_face or not saw_back or not saw_compact_summary \
-			or not saw_type_specific_value or not saw_health or not saw_progress \
-			or not saw_active_villain_stage:
-		_fail("the table did not exercise private backs and type-specific compact progress summaries")
-		return false
-
-	var upcoming_disclosures := main.find_children(
-		"UpcomingStagesDisclosure", "Button", true, false)
-	if upcoming_disclosures.is_empty():
-		_fail("progressive scenario areas have no upcoming-stages disclosure")
-		return false
-	for upcoming_node in upcoming_disclosures:
-		var upcoming_disclosure := upcoming_node as Button
-		if not upcoming_disclosure.toggle_mode or "Upcoming stages" not in upcoming_disclosure.text:
-			_fail("an upcoming-stages disclosure is not clearly labeled and collapsible")
-			return false
-		var upcoming_list := upcoming_disclosure.get_parent().get_node(
-			"UpcomingStagesList") as VBoxContainer
-		upcoming_disclosure.button_pressed = true
-		upcoming_disclosure.pressed.emit()
-		await process_frame
-		if not upcoming_list.visible:
-			_fail("opening upcoming stages did not reveal its compact list")
-			return false
-		for upcoming_card in upcoming_list.find_children(
-			"ProceduralCard", "PanelContainer", true, false):
-			var upcoming_face := upcoming_card.find_child("CardFace", true, false)
-			var upcoming_back := upcoming_card.find_child("CardBack", true, false)
-			if upcoming_face != null and upcoming_card.focus_mode != Control.FOCUS_ALL:
-				_fail("an upcoming stage cannot receive keyboard focus for inspection")
-				return false
-			if upcoming_back != null and upcoming_card.focus_mode != Control.FOCUS_NONE:
-				_fail("a concealed upcoming stage gained face-level focus behavior")
-				return false
-			if upcoming_card.find_child("ProgressValues", true, false) != null:
-				_fail("an upcoming stage competes with the current stage's live progress")
-				return false
-
-	var scale_slider := _node("Toolbar/InterfaceScale") as HSlider
-	var original_scale := scale_slider.value
-	for rebuilt_scale in [90.0 if original_scale != 90.0 else 80.0, original_scale]:
-		scale_slider.value = rebuilt_scale
-		await process_frame
-		await process_frame
-		var rebuilt_upcoming := main.find_children(
-			"UpcomingStagesDisclosure", "Button", true, false)
-		if rebuilt_upcoming.size() != upcoming_disclosures.size():
-			_fail("a board rebuild changed the upcoming-stages disclosure set")
-			return false
-		for rebuilt_node in rebuilt_upcoming:
-			var rebuilt_disclosure := rebuilt_node as Button
-			var rebuilt_list := rebuilt_disclosure.get_parent().get_node(
-				"UpcomingStagesList") as VBoxContainer
-			if not rebuilt_disclosure.button_pressed or not rebuilt_list.visible:
-				_fail("an open upcoming-stages disclosure collapsed during board rebuild")
-				return false
-
-	for secondary in main.find_children("SecondaryAreas", "VBoxContainer", true, false):
-		var secondary_body := secondary.find_child("SecondaryAreaFlow", false, false)
-		if secondary_body == null:
-			continue
-		for area in secondary_body.get_children():
-			if area.find_child("ProceduralCard", true, false) == null:
-				_fail("an empty secondary area rendered individual panel chrome")
-				return false
-
-	var hand_card := _node("Play/Board/HandShelf").find_child(
-		"ProceduralCard", true, false) as Control
-	if hand_card == null:
-		_fail("the pinned hand has no readable card to inspect")
-		return false
-	var mulligan_action := _first_enabled_choice()
-	if mulligan_action == null:
-		_fail("the mulligan decision has no selectable action")
-		return false
-	mulligan_action.pressed.emit()
-	await process_frame
-	var action_card: Button = null
-	for candidate in main.find_children("Target*", "Button", true, false):
-		if "Avengers Mansion" in (candidate as Button).text:
-			action_card = candidate as Button
-			break
-	if action_card == null:
-		_fail("the mulligan action has no card-naming option to preview")
-		return false
-	action_card.mouse_entered.emit()
-	await process_frame
-	var inspector := main.get_node("CardInspector") as Control
-	if inspector == null or not inspector.visible:
-		_fail("hovering a card-naming action did not preview its hand card")
-		return false
-	var inspector_frame := inspector.get_node("Frame") as PanelContainer
-	if inspector_frame.get_global_rect().end.y > hand_card.get_global_rect().position.y + 1.0:
-		_fail("the action-card preview was not placed above the hand card")
-		return false
-	action_card.mouse_exited.emit()
-	await main.get_tree().create_timer(0.35).timeout
-	if inspector.visible:
-		_fail("the temporary action-card preview remained after hover ended")
-		return false
-	var click := InputEventMouseButton.new()
-	click.button_index = MOUSE_BUTTON_LEFT
-	click.pressed = true
-	hand_card.gui_input.emit(click)
-	await process_frame
-	if inspector == null or not inspector.visible:
-		_fail("clicking a card did not open the card inspector")
-		return false
-	var inspected_face := inspector.find_child("CardFace", true, false)
-	if inspected_face == null \
-			or inspected_face.find_child("RulesText", true, false) == null:
-		_fail("the card inspector did not render full authorized card data")
-		return false
-	if inspector_frame.get_global_rect().intersection(
-			Rect2(Vector2.ZERO, _viewport_size())).size != inspector_frame.size:
-		_fail("the pointer-aware card inspector left the visible viewport")
-		return false
-	if inspected_face.find_child("IllustrationRegion", true, false) == null:
-		_fail("the full card frame did not reserve an illustration region")
-		return false
-	var inspector_resources := inspected_face.find_child(
-		"ResourceIcons", true, false) as HBoxContainer
-	if inspected_face.find_child("PrimaryValue", true, false) == null \
-			or inspector_resources == null:
-		_fail("the player-card frame did not keep cost and resource positions")
-		return false
-	var inspector_resource_icon := inspector_resources.find_child(
-		"InspectorResourceIconSlot0", true, false) as Label
-	if inspector_resources.find_child("ResourceLabel", true, false) != null \
-			or not inspector_resources.tooltip_text.is_empty() \
-			or inspector_resource_icon == null or inspector_resource_icon.text != "M" \
-			or not inspector_resource_icon.tooltip_text.is_empty() \
-			or inspector_resource_icon.custom_minimum_size.x \
-					!= inspector_resource_icon.custom_minimum_size.y \
-			or inspector_resource_icon.horizontal_alignment \
-					!= HORIZONTAL_ALIGNMENT_CENTER \
-			or inspector_resource_icon.vertical_alignment \
-					!= VERTICAL_ALIGNMENT_CENTER \
-			or not inspector_resource_icon.has_theme_font_override("font") \
-			or inspector_resource_icon.get_theme_font("font").resource_path \
-					!= "res://assets/fonts/ChampionsIcons.runtime.tres":
-		_fail("the inspector printed resources did not render as an icon-only row")
-		return false
-	if not await _capture_checkpoint("card-inspector"):
-		return false
-	hand_card.mouse_exited.emit()
-	await main.get_tree().create_timer(0.35).timeout
-	if not inspector.visible:
-		_fail("the clicked card inspector did not remain pinned")
-		return false
-	inspector.mouse_entered.emit()
-	await main.get_tree().create_timer(0.4).timeout
-	if not inspector.visible:
-		_fail("the card inspector closed while the pointer was over its scrollable content")
-		return false
-	var inspector_scroll := inspector.get_node("Frame/Stack/Scroll") as ScrollContainer
-	if inspector_scroll.horizontal_scroll_mode != ScrollContainer.SCROLL_MODE_SHOW_NEVER \
-			or inspector_scroll.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_SHOW_NEVER:
-		_fail("the card inspector exposed scrollbar chrome")
-		return false
-	var detail := inspector.get_node("Frame/Stack/Scroll/Content").get_child(0) as Control
-	# Font metrics can place the themed border on a fractional pixel across renderers.
-	if not inspector_scroll.get_global_rect().grow(1.0).encloses(detail.get_global_rect()):
-		_fail("the full card does not fit inside the scrollbar-free inspector")
-		return false
-	var rules := detail.find_child("RulesText", true, false) as RichTextLabel
-	if rules != null and rules.get_content_height() > rules.size.y:
-		_fail("the inspected card clips its rules text without a scrollbar")
-		return false
-	var kind := detail.find_child("Kind", true, false) as Label
-	if kind == null or kind.text in ["Player card", "Identity", "Enemy", "Scheme", "Environment"]:
-		_fail("the inspected player card did not prioritize its printed card type")
-		return false
-	var detail_text := _visible_text(detail)
-	if "Web-Shooter" in detail_text and detail_text.count("Uses (3 web counters)") != 1:
-		_fail("the inspected player card duplicated its Uses text")
-		return false
-	if (inspector.get_node("Frame/Stack/Header") as Control).visible:
-		_fail("the card inspector exposed a redundant modal header")
-		return false
-	var decision_before_backdrop := _visible_text(_decision())
-	var background_action := _button_named("Keep hand")
-	var backdrop_click := InputEventMouseButton.new()
-	backdrop_click.button_index = MOUSE_BUTTON_LEFT
-	backdrop_click.pressed = true
-	backdrop_click.position = background_action.get_global_rect().get_center()
-	render_viewport.push_input(backdrop_click)
-	await process_frame
-	if inspector.visible:
-		_fail("clicking outside the inspected card did not close the inspector")
-		return false
-	if _visible_text(_decision()) != decision_before_backdrop:
-		_fail("the inspector backdrop click activated its underlying control")
-		return false
-	var restore_focus := _first_enabled_choice()
-	if restore_focus != null:
-		restore_focus.grab_focus()
-		await process_frame
-		hand_card.grab_focus()
-		var enter := InputEventKey.new()
-		enter.keycode = KEY_ENTER
-		enter.pressed = true
-		hand_card.gui_input.emit(enter)
-		await process_frame
-		if not inspector.visible:
-			_fail("keyboard activation did not open the card inspector")
-			return false
-		detail = inspector.get_node("Frame/Stack/Scroll/Content").get_child(0) as Control
-		if render_viewport.gui_get_focus_owner() != detail:
-			_fail("the opened card inspector did not move focus to its card")
-			return false
-		var tab := InputEventKey.new()
-		tab.keycode = KEY_TAB
-		tab.pressed = true
-		render_viewport.push_input(tab)
-		await process_frame
-		if render_viewport.gui_get_focus_owner() != detail:
-			_fail("Tab escaped the pinned card inspector")
-			return false
-		tab.echo = true
-		render_viewport.push_input(tab)
-		await process_frame
-		if render_viewport.gui_get_focus_owner() != detail:
-			_fail("a repeated Tab event escaped the pinned card inspector")
-			return false
-		var escape := InputEventAction.new()
-		escape.action = "ui_cancel"
-		escape.pressed = true
-		render_viewport.push_input(escape)
-		await process_frame
-		if inspector.visible:
-			_fail("Escape did not close the card inspector")
-			return false
-		if render_viewport.gui_get_focus_owner() != hand_card:
-			_fail("closing the card inspector did not restore card focus")
-			return false
-		if not await _capture_named_card("Web-Shooter", "card-inspector-long-text"):
-			return false
-		if not await _capture_named_card("The Break-In!", "card-inspector-main-scheme"):
-			return false
-		if not await _capture_named_card("Peter Parker", "card-inspector-identity-current"):
-			return false
-		restore_focus.grab_focus()
-		await process_frame
-	return true
-
-
-func _capture_named_card(title: String, checkpoint: String) -> bool:
-	var card: Control = null
-	for candidate in main.find_children("*", "", true, false):
-		var face := candidate.find_child("CardFace", false, false)
-		if face == null:
-			continue
-		var title_label := face.find_child("Title", false, false) as Label
-		if title_label != null and title_label.text == title:
-			card = candidate as Control
-			break
-	if card == null:
-		_fail("the table has no readable '%s' card for visual inspection" % title)
-		return false
-	var click := InputEventMouseButton.new()
-	click.button_index = MOUSE_BUTTON_LEFT
-	click.pressed = true
-	card.gui_input.emit(click)
-	await process_frame
-	var inspector := main.get_node("CardInspector") as Control
-	if not inspector.visible:
-		_fail("'%s' did not open for visual inspection" % title)
-		return false
-	if not await _capture_checkpoint(checkpoint):
-		return false
-	var close := inspector.get_node("Frame/Stack/Header/Close") as Button
-	close.pressed.emit()
-	await process_frame
-	return true
-
-
-func _prepare_art_pack() -> void:
-	var root_path := ProjectSettings.globalize_path("user://smoke-art-pack")
-	DirAccess.make_dir_recursive_absolute(root_path)
-	var illustration := Image.create(4, 4, false, Image.FORMAT_RGBA8)
-	illustration.fill(Color(0.2, 0.55, 0.75, 1.0))
-	illustration.save_png(root_path.path_join("peter-parker.png"))
-	var invalid := FileAccess.open(root_path.path_join("rhino.png"), FileAccess.WRITE)
-	invalid.store_string("not an image")
-	invalid.close()
-	var manifest := FileAccess.open(root_path.path_join("manifest.json"), FileAccess.WRITE)
-	manifest.store_string(JSON.stringify({
-		"version": 1,
-		"entries": {
-			"01001b": {
-				"file": "peter-parker.png",
-				"authorized": true,
-				"rights": "Generated by the native smoke test for local verification."
-			},
-			"01094": {
-				"file": "rhino.png",
-				"authorized": true,
-				"rights": "Invalid fixture generated by the native smoke test."
-			}
-		}
-	}))
-	manifest.close()
-	OS.set_environment("MARVEL_ART_PACK", root_path)
-
-
-func _board_layout_is_resolved() -> bool:
-	var scenario_lane := _node("Play/Board/TableScroll/Margin/Areas").find_child(
-		"ScenarioLane", true, false) as Control
-	var player_lane := _node("Play/Board/TableScroll/Margin/Areas").find_child(
-		"PlayerLane0", true, false) as Control
-	if scenario_lane == null or player_lane == null:
-		_fail("the opened table does not expose scenario and player lanes")
-		return false
-
-	var areas := main.find_children("Area*", "PanelContainer", true, false)
-	var area_ids: Dictionary = {}
-	for area in areas:
-		if area.name in area_ids:
-			_fail("a board area was rendered more than once: %s" % area.name)
-			return false
-		area_ids[area.name] = true
-	if areas.is_empty():
-		_fail("the opened table has no rendered areas")
-		return false
-	var disclosures := main.find_children("Area*Disclosure", "Button", true, false)
-	var toggled_nonempty := false
-	for disclosure_node in disclosures:
-		var disclosure := disclosure_node as Button
-		if not disclosure.toggle_mode:
-			_fail("a table section is not collapsible: %s" % disclosure.name)
-			return false
-		if disclosure.text.ends_with("·  0"):
-			_fail("an empty table section rendered individual disclosure chrome")
-			return false
-		if not toggled_nonempty:
-			var body := disclosure.get_parent().get_node("Body") as Control
-			disclosure.button_pressed = false
-			disclosure.pressed.emit()
-			await process_frame
-			if body.visible:
-				_fail("collapsing a populated table section left its cards visible")
-				return false
-			disclosure.button_pressed = true
-			disclosure.pressed.emit()
-			toggled_nonempty = true
-	var saw_populated_secondary := false
-	for secondary_flow in main.find_children("SecondaryAreaFlow", "HFlowContainer", true, false):
-		for secondary_area in secondary_flow.get_children():
-			if secondary_area.find_child("Area*Disclosure", true, false) == null:
-				_fail("a populated secondary section has no disclosure")
-				return false
-			saw_populated_secondary = true
-	var aggregate_reports_populated := false
-	var aggregate_reports_empty := false
-	for aggregate_node in main.find_children("SecondaryAreasDisclosure", "Button", true, false):
-		var aggregate := aggregate_node as Button
-		aggregate_reports_populated = aggregate_reports_populated or "with cards" in aggregate.text
-		aggregate_reports_empty = aggregate_reports_empty or "empty" in aggregate.text
-	if not toggled_nonempty or not saw_populated_secondary \
-			or not aggregate_reports_populated or not aggregate_reports_empty:
-		_fail("secondary disclosures did not preserve populated panels and aggregate empty counts")
-		return false
-
-	var area_flow := scenario_lane.find_child("LiveAreaFlow", true, false) as HFlowContainer
-	var card_scroll := main.find_child("CARDSScroll", true, false) as ScrollContainer
-	var decision_scroll := main.find_child(
-		"DecisionBodyScroll", true, false) as ScrollContainer
-	var commit_bar := main.find_child("CommitBar", true, false) as Control
-	if area_flow == null or card_scroll == null or decision_scroll == null:
-		_fail("the table is missing its wrapped areas or bounded overflow rails")
-		return false
-	if card_scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED \
-			or decision_scroll.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED:
-		_fail("a dense card or prompt rail cannot reach its overflow")
-		return false
-	if commit_bar == null or decision_scroll.is_ancestor_of(commit_bar):
-		_fail("the decision commitment is not fixed outside the scrolling editor")
-		return false
-	if scenario_lane.find_child("AreaScroll", true, false) != null:
-		_fail("the finite area layout still requires its own scrollbar")
-		return false
-
-	await process_frame
-	await process_frame
-	var board := _node("Play/Board") as Control
-	var prompt := _node("Play/Prompt") as Control
-	var page := main.get_node("Margin") as ScrollContainer
-	if _scale_percentage() <= 100 \
-			and (page.scroll_vertical != 0 \
-			or not _control_text_is_visible(_node("Eyebrow") as Control) \
-			or not _control_text_is_visible(_node("Title") as Control) \
-			or not _control_text_is_visible(_node("Description") as Control)):
-		_fail("the play layout moved its fixed header outside the viewport: page=%s scroll=%d" % [
-			page.get_global_rect(),
-			page.scroll_vertical,
-		])
-		return false
-	if board.size.x < 480.0 or prompt.size.x < 330.0 or prompt.size.x > board.size.x:
-		_fail("the responsive table did not preserve usable board and prompt widths: %s/%s" % [
-			board.size.x,
-			prompt.size.x,
-		])
-		return false
-	var viewport := OS.get_environment("MARVEL_SMOKE_VIEWPORT")
-	var scale := OS.get_environment("MARVEL_UI_SCALE")
-	if viewport == "1600x900" and scale == "standard" \
-			and (prompt.size.x < 595.0 or prompt.size.x > 605.0):
-		_fail("the wide desktop prompt did not grow to its 600px workbench width: %s" % prompt.size.x)
-		return false
-	if board.get_global_rect().intersects(prompt.get_global_rect()):
-		_fail("the prompt rail overlaps the board")
-		return false
-	var hand := _node("Play/Board/HandShelf") as Control
-	if hand == null or not hand.visible or "HAND" not in _visible_text(hand):
-		_fail("the player's hand is not pinned to the bottom of the table viewport")
-		return false
-	return true
-
-
-func _keyboard_selection_is_operable() -> bool:
-	var header := _node("Play/Prompt/Margin/Stack/PromptHeader") as Control
-	var decision_scroll := main.find_child(
-		"DecisionBodyScroll", true, false) as ScrollContainer
-	if header == null or decision_scroll == null or decision_scroll.is_ancestor_of(header):
-		_fail("the active seat and question are not pinned above the decision body")
-		return false
-	var header_text := _visible_text(header)
-	var readable_header := header_text.to_upper()
-	if "SPIDER-MAN" not in readable_header or "OPENING HAND" not in readable_header \
-			or ("CHOOSE TO CONTINUE" not in readable_header \
-			and "MAY PASS" not in readable_header):
-		_fail("the pinned prompt summary omits seat, question, or cancellability")
-		return false
-
-	await process_frame
-	await process_frame
-	var focus_owner := render_viewport.gui_get_focus_owner()
-	var focused := focus_owner as Button
-	if focused == null or not _decision().is_ancestor_of(focused) or focused.disabled:
-		_fail("a fresh prompt did not focus its first keyboard-operable action: %s" % focus_owner)
-		return false
-	var focus_name := focused.name
-	var press := InputEventAction.new()
-	press.action = &"ui_accept"
-	press.pressed = true
-	render_viewport.push_input(press)
-	await process_frame
-	var release := InputEventAction.new()
-	release.action = &"ui_accept"
-	release.pressed = false
-	render_viewport.push_input(release)
-	await process_frame
-	await process_frame
-	var restored := render_viewport.gui_get_focus_owner() as Button
-	if restored == null or restored.name != focus_name or not _decision().is_ancestor_of(restored):
-		_fail("keyboard focus was lost when the selected decision control rebuilt")
-		return false
-	if not await _wait_for(func() -> bool: return _focused_control_is_visible(restored)):
-		var focused_scroll := main.find_child(
-			"DecisionBodyScroll", true, false) as ScrollContainer
-		var page_scroll := main.get_node("Margin") as ScrollContainer
-		_fail("keyboard focus moved outside the visible viewport: control=%s decision=%s page=%s root=%s scroll=%d/%d" % [
-			restored.get_global_rect(),
-			focused_scroll.get_global_rect(),
-			page_scroll.get_global_rect(),
-			_viewport_size(),
-			focused_scroll.scroll_vertical,
-			page_scroll.scroll_vertical,
-		])
-		return false
-	decision_scroll = main.find_child(
-		"DecisionBodyScroll", true, false) as ScrollContainer
-	if decision_scroll.scroll_horizontal != 0:
-		_fail("keyboard focus horizontally clipped the selected decision label")
-		return false
-	for prompt_path in [
-		"Play/Prompt/Margin/Stack/PromptHeader/Eyebrow",
-		"Play/Prompt/Margin/Stack/PromptHeader/Heading",
-		"Play/Prompt/Margin/Stack/PromptHeader/Context",
-	]:
-		if not _control_text_is_visible(_node(prompt_path) as Control):
-			_fail("keyboard focus hid active prompt context: %s" % prompt_path)
-			return false
-	if not restored.text.begins_with("✓"):
-		_fail("ui_accept did not select the focused decision action")
-		return false
-	var action_summary := main.find_child("ActionSummary", true, false) as Control
-	var commit_bar := main.find_child("CommitBar", true, false) as Control
-	var submit := main.find_child("Submit", true, false) as Button
-	if action_summary == null or commit_bar == null or submit == null \
-			or decision_scroll.is_ancestor_of(action_summary) \
-			or decision_scroll.is_ancestor_of(commit_bar) \
-			or not _focused_control_is_visible(submit):
-		_fail("the selected action or its commitment moved into the scrolling editor")
-		return false
-	var progress := _node("Play/Prompt/Margin/Stack/PromptHeader/Progress") as Label
-	if progress == null or ("READY" not in progress.text and "INCOMPLETE" not in progress.text) \
-			or ("TARGETS" not in progress.text and "GROUP" not in progress.text \
-			and "NO TARGETS" not in progress.text):
-		_fail("the pinned prompt summary did not update target and readiness progress")
-		return false
-	if not await _focused_board_area_is_visible():
-		return false
-	if not await _capture_checkpoint("action-composition"):
-		return false
-	return true
-
-
-func _focused_control_is_visible(control: Control) -> bool:
-	var visible_rect := _visible_control_rect(control)
-	var expected := _scaled_metric(44)
-	return visible_rect.size.x >= expected and visible_rect.size.y >= expected
-
-
-func _control_text_is_visible(control: Control) -> bool:
-	var visible_rect := _visible_control_rect(control)
-	return visible_rect.size.x >= minf(100.0, control.size.x) \
-		and visible_rect.size.y >= control.size.y - 1.0
-
-
-func _visible_control_rect(control: Control) -> Rect2:
-	var visible_rect := control.get_global_rect().intersection(Rect2(Vector2.ZERO, _viewport_size()))
-	var ancestor := control.get_parent()
-	while ancestor != null:
-		if ancestor is ScrollContainer:
-			visible_rect = visible_rect.intersection(ancestor.get_global_rect())
-		ancestor = ancestor.get_parent()
-	return visible_rect
-
-
-func _viewport_size() -> Vector2:
-	return Vector2(render_viewport.size)
-
-
-func _focused_board_area_is_visible() -> bool:
-	await process_frame
-	await process_frame
-	var saw_focused_card := false
-	for card in main.find_children("ProceduralCard", "PanelContainer", true, false):
-		if card.theme_type_variation != &"FocusedCard":
-			continue
-		saw_focused_card = true
-		var area := card.get_parent()
-		while area != null and not (area is PanelContainer and area.name.begins_with("Area")):
-			area = area.get_parent()
-		var board := _node("Play/Board/TableScroll") as ScrollContainer
-		if area == null or board == null:
-			_fail("a focused board card is not contained by the board viewport")
-			return false
-		var area_rect: Rect2 = area.get_global_rect()
-		var board_rect: Rect2 = board.get_global_rect()
-		if area_rect.position.x < board_rect.position.x - 1.0 \
-				or area_rect.end.x > board_rect.end.x + 1.0:
-			_fail("keyboard highlighting clipped the focused board area's heading")
-			return false
-		var disclosure := area.find_child("Area*Disclosure", true, false) as Control
-		var card_rect: Rect2 = card.get_global_rect()
-		if disclosure == null:
-			_fail("a focused board card has no enclosing area disclosure")
-			return false
-		var disclosure_rect: Rect2 = disclosure.get_global_rect()
-		if disclosure_rect.position.y < board_rect.position.y + 8.0 \
-				or disclosure_rect.end.y > board_rect.end.y - 1.0 \
-				or card_rect.position.y < board_rect.position.y + 8.0 \
-				or card_rect.end.y > board_rect.end.y - 1.0:
-			_fail("focused-card alignment clipped its area disclosure or full frame")
-			return false
-		var title := card.find_child("Title", true, false) as Label
-		if title != null:
-			var title_rect := title.get_global_rect()
-			if title_rect.position.y < board_rect.position.y - 1.0 \
-					or title_rect.end.y > board_rect.end.y + 1.0:
-				_fail("keyboard highlighting did not reveal the focused card title: title=%s board=%s scroll=%d/%d" % [
-					title_rect,
-					board_rect,
-					board.scroll_vertical,
-					board.get_v_scroll_bar().max_value,
-				])
-				return false
-	if not saw_focused_card:
-		_fail("keyboard selection did not highlight its board anchor")
-		return false
-	return true
-
-
-func _event_presentation_is_nonblocking() -> bool:
-	var cue := _node("Play/Prompt/Margin/Stack/Workbench/History/EventCue") as Control
-	var motion := _node("Toolbar/Motion") as CheckButton
+func _motion_state_is_safe(state: Dictionary) -> bool:
 	var skip := _node("Play/Prompt/Margin/Stack/Workbench/History/EventHeader/Skip") as Button
-	var log := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel
-	var expected_height := _scaled_metric(44)
-	if cue == null:
-		_fail("event presentation has no cue region")
-		return false
-	if motion == null or skip == null \
-			or motion.custom_minimum_size.y < 44.0 \
-			or skip.custom_minimum_size.y < expected_height:
-		_fail("event presentation controls miss the pointer-target floor")
-		return false
-	if motion.button_pressed != motion_enabled:
-		_fail("the configured motion preference was not applied before the game opened")
-		return false
-	var action := _first_enabled_choice()
-	if action == null or action.disabled:
-		_fail("event presentation blocked the current engine decision")
-		return false
-
-	var history := log.text
-	if motion_enabled and not skip.disabled:
-		skip.pressed.emit()
-		await process_frame
-	if not skip.disabled or log.text != history:
-		_fail("skipping motion changed or cleared event history")
-		return false
-	var sync_status := _node("Toolbar/SyncStatus") as Label
-	if cue.visible or sync_status == null or not sync_status.text.begins_with("✓ Synced"):
-		_fail("settled motion did not collapse its cue or retain the compact sync status")
-		return false
-
+	if motion_enabled and not skip.disabled \
+			and (_is_complete() or _first_enabled_choice() != null):
+		state.saw_nonblocking_motion = true
+		if not state.tested_active_motion_toggle:
+			if not await _toggle_active_motion(skip):
+				return false
+			state.tested_active_motion_toggle = true
 	if not motion_enabled and not _disabled_motion_is_settled(skip):
 		return false
 	return true
 
 
-func _disabled_motion_is_settled(skip: Button) -> bool:
+func _toggle_active_motion(skip: Button) -> bool:
+	var history := (_node(
+		"Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel).text
+	var motion := _node("Toolbar/Motion") as CheckButton
+	motion.button_pressed = false
+	motion.toggled.emit(false)
+	await process_frame
 	if not skip.disabled:
-		_fail("motion-disabled presentation left playback active")
+		_fail("disabling active motion did not settle playback")
 		return false
-	var cue := _node("Play/Prompt/Margin/Stack/Workbench/History/EventCue") as Control
-	var sync_status := _node("Toolbar/SyncStatus") as Label
-	if cue.visible or sync_status == null or not sync_status.text.begins_with("✓ Synced"):
-		_fail("motion-disabled presentation did not retain the compact sync status")
+	if history != (_node(
+			"Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel).text:
+		_fail("disabling active motion changed history")
 		return false
+	motion.button_pressed = true
+	motion.toggled.emit(true)
 	return true
 
 
-func _capture_checkpoint(checkpoint: String) -> bool:
-	var capture_dir := OS.get_environment("MARVEL_SMOKE_CAPTURE_DIR")
-	if capture_dir.is_empty():
+func _active_resolution_is_safe(state: Dictionary) -> bool:
+	var active := _node("Play/Prompt/Margin/Stack/ActiveResolution") as Control
+	if not active.visible:
 		return true
-	await process_frame
-	await process_frame
-	if checkpoint == "open-table-prompt-dense-concealed" \
-			and not await _focused_board_area_is_visible():
+	var text := _visible_text(active).to_lower()
+	if "enemy attack" not in text or "interrupt window" not in text:
+		return true
+	state.saw_attack_resolution = true
+	if "rhino" not in text or "spider-man" not in text:
+		_fail("the attack resolution does not name its actor and target")
 		return false
-	var image := render_viewport.get_texture().get_image()
-	if image == null or image.is_empty():
-		_fail("visual checkpoint '%s' needs a non-headless rendering driver" % checkpoint)
+	if not await _capture_checkpoint("attack-interrupt"):
 		return false
-	var requested_viewport := OS.get_environment("MARVEL_SMOKE_VIEWPORT").split("x")
-	if requested_viewport.size() == 2 \
-			and image.get_size() != Vector2i(
-				int(requested_viewport[0]), int(requested_viewport[1])):
-		_fail("visual checkpoint '%s' has size %s instead of %s" % [
-			checkpoint,
-			image.get_size(),
-			OS.get_environment("MARVEL_SMOKE_VIEWPORT"),
-		])
-		return false
-
-	var colors: Dictionary = {}
-	var sample := image.duplicate()
-	sample.resize(32, 18, Image.INTERPOLATE_NEAREST)
-	for x_step in sample.get_width():
-		for y_step in sample.get_height():
-			var pixel: Color = sample.get_pixel(x_step, y_step)
-			colors[pixel.to_html()] = true
-	if colors.size() < 6:
-		_fail("visual checkpoint '%s' is blank or materially unrendered" % checkpoint)
-		return false
-
-	var absolute_dir := ProjectSettings.globalize_path(capture_dir)
-	var error := DirAccess.make_dir_recursive_absolute(absolute_dir)
-	if error != OK:
-		_fail("visual checkpoint directory could not be created: %s" % absolute_dir)
-		return false
-	var viewport := OS.get_environment("MARVEL_SMOKE_VIEWPORT")
-	var scale := OS.get_environment("MARVEL_UI_SCALE")
-	var motion := "motion" if motion_enabled else "reduced-motion"
-	var path := absolute_dir.path_join("%s-%s-%s-%s.png" % [
-		viewport,
-		scale,
-		motion,
-		checkpoint,
-	])
-	if image.save_png(path) != OK:
-		_fail("visual checkpoint could not be saved: %s" % path)
-		return false
-	return true
-
-
-func _first_enabled_choice() -> Button:
-	for button in _visible_buttons(_decision()):
-		if not button.disabled and button.name != "Submit" \
-				and button.text not in ["Pass / decline", "+", "−"]:
-			return button
-	return null
-
-
-func _first_enabled_target() -> Button:
-	for button in _visible_buttons(_decision()):
-		if not button.disabled and button.text.begins_with("◇"):
-			return button
-	return null
-
-
-func _submit_button() -> Button:
-	var submit := _decision().find_child("Submit", true, false) as Button
-	return submit if submit != null and submit.is_visible_in_tree() else null
-
-
-func _visible_buttons_meet_pointer_floor() -> bool:
-	var expected := _scaled_metric(44)
-	for button in _visible_buttons(_decision()):
-		if button.size.x < expected or button.size.y < expected:
-			_fail("visible decision control '%s' misses the pointer-target floor" % button.text)
+	if not state.captured_villain_phase:
+		if not await _capture_checkpoint("villain-phase"):
 			return false
+		state.captured_villain_phase = true
 	return true
 
 
-func _select_named_option(option: OptionButton, wanted: String) -> void:
-	for index in option.item_count:
-		if option.get_item_text(index).begins_with(wanted):
-			option.select(index)
-			option.item_selected.emit(index)
-			return
-	_fail("visible option '%s' is unavailable" % wanted)
+func _villain_history_checkpoint_is_safe(state: Dictionary) -> bool:
+	if state.captured_villain_phase or _is_complete():
+		return true
+	var history := (_node(
+		"Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel) \
+		.get_parsed_text().to_lower()
+	if "villain phase" not in history:
+		return true
+	if not await _capture_checkpoint("villain-phase"):
+		return false
+	state.captured_villain_phase = true
+	return true
 
 
-func _scale_percentage() -> int:
-	var configured := OS.get_environment("MARVEL_UI_SCALE").strip_edges().to_lower()
-	match configured:
-		"compact", "":
-			return 80
-		"standard":
-			return 100
-		"large":
-			return 120
-		"extra-large":
-			return 150
-	return int(configured.trim_suffix("%"))
+func _terminal_table_is_safe(state: Dictionary) -> bool:
+	if not _required_journey_paths_were_seen(state):
+		return false
+	if not await _synchronization_preserves_history(true):
+		return false
+	if not _terminal_decision_is_safe():
+		return false
+	if not _terminal_history_is_safe():
+		return false
+	if not _terminal_result_is_safe():
+		return false
+	if not await _terminal_page_is_visible():
+		return false
+	if not await _capture_checkpoint("terminal"):
+		return false
+	return await _dismiss_terminal_result()
 
 
-func _scaled_metric(base: int) -> int:
-	return ceili(base * _scale_percentage() / 100.0)
+func _required_journey_paths_were_seen(state: Dictionary) -> bool:
+	if not state.saw_mulligan or not state.saw_pass or not state.saw_end_phase:
+		_fail("the journey missed a required visible decision path")
+		return false
+	if not state.changed_form or not state.tested_undo:
+		_fail("the journey did not change form again after proving undo")
+		return false
+	if not state.saw_attack_resolution or not state.captured_villain_phase:
+		_fail("the journey did not expose its attack and villain-phase checkpoints")
+		return false
+	if motion_enabled and not state.saw_nonblocking_motion:
+		_fail("the journey never exposed an operable prompt during event motion")
+		return false
+	if motion_enabled and not state.tested_active_motion_toggle:
+		_fail("the journey never disabled event motion during active playback")
+		return false
+	if not motion_enabled and state.saw_nonblocking_motion:
+		_fail("the motion-disabled journey exposed active event playback")
+		return false
+	return true
 
 
-func _button_named(wanted: String) -> Button:
-	return _visible_button(main, wanted)
+func _terminal_decision_is_safe() -> bool:
+	if "VILLAIN WINS" not in _status().text and "PLAYERS LOSE" not in _status().text:
+		_fail("the terminal UI did not report the seeded loss")
+		return false
+	var decision := _visible_text(_decision()).to_upper()
+	var prompt := _visible_text(_node("Play/Prompt/Margin/Stack/PromptHeader")).to_upper()
+	if "DEFEAT" not in decision:
+		_fail("the null-prompt terminal decision copy does not identify defeat")
+		return false
+	if "VILLAIN WON" not in decision and "PLAYERS LOST" not in decision:
+		_fail("the null-prompt terminal decision copy does not identify the loss")
+		return false
+	if "VILLAIN WON" not in prompt and "PLAYERS LOST" not in prompt:
+		_fail("the terminal prompt header does not identify the loss")
+		return false
+	if _node("Status").theme_type_variation != &"DangerStatusPanel":
+		_fail("the loss did not receive the semantic danger treatment")
+		return false
+	return true
 
 
-func _visible_button(node: Node, wanted: String) -> Button:
-	for button in _visible_buttons(node):
-		if button.text == wanted:
-			return button
-	return null
+func _terminal_history_is_safe() -> bool:
+	var event_log := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel
+	var text := event_log.get_parsed_text().strip_edges()
+	if text.is_empty() or text == "No events yet.":
+		_fail("the visible event log is empty")
+		return false
+	if "villain won the game" not in text.to_lower() \
+			and "players lost the game" not in text.to_lower():
+		_fail("the terminal outcome did not remain in recent history")
+		return false
+	return true
 
 
-func _visible_button_beginning(node: Node, wanted: String) -> Button:
-	for button in _visible_buttons(node):
-		if button.text.begins_with(wanted):
-			return button
-	return null
-
-
-func _visible_buttons(node: Node) -> Array[Button]:
-	var found: Array[Button] = []
-	for child in node.get_children():
-		if child is Button and child.is_visible_in_tree():
-			found.append(child)
-		found.append_array(_visible_buttons(child))
-	return found
-
-
-func _visible_text(node: Node) -> String:
-	var text := ""
-	for child in node.get_children():
-		if child is Label and child.is_visible_in_tree():
-			text += child.text + "\n"
-		elif child is Button and child.is_visible_in_tree():
-			text += child.text + "\n"
-		text += _visible_text(child)
-	return text
-
-
-func _wait_for(condition: Callable) -> bool:
-	var started := Time.get_ticks_msec()
-	while Time.get_ticks_msec() - started < TIMEOUT_MILLISECONDS:
-		if condition.call():
-			return true
-		await process_frame
+func _terminal_result_is_safe() -> bool:
+	var result := _node("Play/Prompt/Margin/Stack/Workbench/Action/LastResult") as Control
+	var text := _visible_text(result).to_lower()
+	if result.visible and ("villain won the game" in text or "players lost the game" in text):
+		return true
+	_fail("the terminal outcome did not remain in the primary action pane")
 	return false
 
 
-func _is_complete() -> bool:
-	return _status().text.begins_with("GAME COMPLETE")
+func _terminal_page_is_visible() -> bool:
+	if await _wait_for(func() -> bool:
+		return _control_text_is_visible(_node("Title") as Control) \
+			and _control_text_is_visible(_node("Description") as Control)):
+		return true
+	var title := _node("Title") as Control
+	var description := _node("Description") as Control
+	var page := main.get_node("Margin") as ScrollContainer
+	_fail("the terminal page did not reveal its outcome and explanation" \
+		+ "\nPage rect: %s scroll: %d" % [page.get_global_rect(), page.scroll_vertical] \
+		+ "\nTitle rect: %s visible: %s" % [title.get_global_rect(), _visible_control_rect(title)] \
+		+ "\nDescription rect: %s visible: %s" % [
+			description.get_global_rect(),
+			_visible_control_rect(description),
+		])
+	return false
 
 
-func _node(relative: String) -> Node:
-	if relative.begins_with("Toolbar/"):
-		return main.get_node("StatusBar/" + relative.trim_prefix("Toolbar/"))
-	return main.get_node("Margin/Shell/Content/" + relative)
-
-
-func _play() -> Control:
-	return _node("Play") as Control
-
-
-func _decision() -> Control:
-	return _node("Play/Prompt/Margin/Stack/Workbench/Action/Decision") as Control
-
-
-func _status() -> Label:
-	return _node("Status/Text") as Label
-
-
-func _fail(message: String) -> void:
-	if failed:
-		return
-	failed = true
-	push_error(message + "\nVisible UI:\n" + (_visible_text(main) if main != null else "<none>"))
-	quit(1)
+func _dismiss_terminal_result() -> bool:
+	var result := _node("Play/Prompt/Margin/Stack/Workbench/Action/LastResult") as Control
+	var dismiss := _node(
+		"Play/Prompt/Margin/Stack/Workbench/Action/LastResult/Margin/Copy/Header/Dismiss") as Button
+	dismiss.pressed.emit()
+	await process_frame
+	if result.visible:
+		_fail("the latest result cannot be dismissed")
+		return false
+	return true

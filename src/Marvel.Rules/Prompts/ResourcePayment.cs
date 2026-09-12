@@ -72,57 +72,55 @@ public static class ResourcePayment
             .ToList();
         foreach (ResourceAllocation allocation in allocations)
         {
-            if (!availableBySource.TryGetValue(
-                    allocation.Source, out List<char>? available)
-                || allocation.Cost < 0 || allocation.Cost >= costs.Count
-                || allocation.PaidAs.Length == 0)
-            {
-                return false;
-            }
-
-            ResourceCost cost = costs[allocation.Cost];
-            foreach (char declared in allocation.PaidAs)
-            {
-                if (!Resources.Types.Contains(declared))
-                {
-                    return false;
-                }
-
-                int icon = available.IndexOf(declared);
-                if (icon < 0 && !cost.Printed && declared != Resources.Wild)
-                {
-                    icon = available.IndexOf(Resources.Wild);
-                }
-                if (icon < 0)
-                {
-                    return false;
-                }
-
-                available.RemoveAt(icon);
-                paid[allocation.Cost].Append(declared);
-            }
+            if (!ApplyAllocation(allocation, costs, availableBySource, paid)) return false;
         }
 
         for (int index = 0; index < costs.Count; index++)
         {
-            ResourceCost cost = costs[index];
-            if (!Amount(cost.Cost, values, out long amount)
-                || amount < 0 || amount > int.MaxValue)
-            {
-                return false;
-            }
-
-            string assigned = paid[index].ToString();
-            string required = string.Concat(cost.Rule ?? []);
-            if (assigned.Length != amount
-                || required.Any(resource => !Resources.Types.Contains(resource))
-                || !Resources.PaysDeclared(assigned, amount, required))
-            {
-                return false;
-            }
+            if (!ComponentPaid(costs[index], paid[index], values)) return false;
         }
 
         return true;
+    }
+
+    private static bool ApplyAllocation(
+        ResourceAllocation allocation, IReadOnlyList<ResourceCost> costs,
+        Dictionary<int, List<char>> availableBySource,
+        List<System.Text.StringBuilder> paid)
+    {
+        if (!availableBySource.TryGetValue(allocation.Source, out List<char>? available)
+            || allocation.Cost < 0 || allocation.Cost >= costs.Count
+            || allocation.PaidAs.Length == 0) return false;
+        ResourceCost cost = costs[allocation.Cost];
+        foreach (char declared in allocation.PaidAs)
+        {
+            if (!TakeIcon(available, declared, cost.Printed)) return false;
+            paid[allocation.Cost].Append(declared);
+        }
+        return true;
+    }
+
+    private static bool TakeIcon(List<char> available, char declared, bool printedCost)
+    {
+        if (!Resources.Types.Contains(declared)) return false;
+        int icon = available.IndexOf(declared);
+        if (icon < 0 && !printedCost && declared != Resources.Wild)
+            icon = available.IndexOf(Resources.Wild);
+        if (icon < 0) return false;
+        available.RemoveAt(icon);
+        return true;
+    }
+
+    private static bool ComponentPaid(ResourceCost cost, System.Text.StringBuilder paid,
+        IReadOnlyDictionary<string, long>? values)
+    {
+        if (!Amount(cost.Cost, values, out long amount)
+            || amount < 0 || amount > int.MaxValue) return false;
+        string assigned = paid.ToString();
+        string required = string.Concat(cost.Rule ?? []);
+        return assigned.Length == amount
+            && required.All(Resources.Types.Contains)
+            && Resources.PaysDeclared(assigned, amount, required);
     }
 
     /// <summary>
@@ -171,28 +169,8 @@ public static class ResourcePayment
         IReadOnlyList<ResourceSource> sources,
         IReadOnlyDictionary<string, long>? values)
     {
-        var slots = new List<Slot>();
-        for (int component = 0; component < costs.Count; component++)
-        {
-            if (!Amount(costs[component].Cost, values, out long amount)
-                || amount < 0 || amount > int.MaxValue)
-            {
-                return null;
-            }
-
-            string required = string.Concat(costs[component].Rule ?? []);
-            if (required.Length > amount
-                || required.Any(resource => !Resources.Types.Contains(resource)))
-            {
-                return null;
-            }
-
-            slots.AddRange(required.Select(resource =>
-                new Slot(component, resource, costs[component].Printed)));
-            slots.AddRange(Enumerable.Repeat(
-                new Slot(component, Required: null, costs[component].Printed),
-                checked((int)amount - required.Length)));
-        }
+        List<Slot>? slots = Slots(costs, values);
+        if (slots is null) return null;
 
         var icons = sources
             .SelectMany(source => source.Generates.Select(resource =>
@@ -203,47 +181,66 @@ public static class ResourcePayment
             return null;
         }
 
-        var used = new bool[icons.Count];
-        var choices = new Choice[slots.Count];
-        return Search(0) ? Collapse() : null;
+        return new AllocationSearch(slots, icons).Allocate();
+    }
 
-        bool Search(int slotIndex)
+    private static List<Slot>? Slots(
+        IReadOnlyList<ResourceCost> costs, IReadOnlyDictionary<string, long>? values)
+    {
+        var slots = new List<Slot>();
+        for (int component = 0; component < costs.Count; component++)
         {
-            if (slotIndex == slots.Count)
-            {
-                return true;
-            }
+            if (!Amount(costs[component].Cost, values, out long amount)
+                || amount < 0 || amount > int.MaxValue) return null;
+            string required = string.Concat(costs[component].Rule ?? []);
+            if (required.Length > amount || required.Any(resource => !Resources.Types.Contains(resource)))
+                return null;
+            slots.AddRange(required.Select(resource =>
+                new Slot(component, resource, costs[component].Printed)));
+            slots.AddRange(Enumerable.Repeat(
+                new Slot(component, Required: null, costs[component].Printed),
+                checked((int)amount - required.Length)));
+        }
+        return slots;
+    }
 
-            var slot = slots[slotIndex];
-            IEnumerable<int> candidates = Enumerable.Range(0, icons.Count)
-                .Where(index => !used[index]
-                    && Accepts(icons[index].Printed, slot.Required, slot.Printed));
-            if (slot.Required is { } required)
-            {
-                // Spend the exact type before a wild. This is deterministic
-                // and preserves wilds for later required slots when possible.
-                candidates = candidates.OrderBy(index => icons[index].Printed == required ? 0 : 1);
-            }
+    private sealed class AllocationSearch(List<Slot> slots, List<Icon> icons)
+    {
+        private readonly bool[] used = new bool[icons.Count];
+        private readonly Choice[] choices = new Choice[slots.Count];
 
-            foreach (int index in candidates)
+        internal IReadOnlyList<ResourceAllocation>? Allocate() => Search(0) ? Collapse() : null;
+
+        private bool Search(int slotIndex)
+        {
+            if (slotIndex == slots.Count) return true;
+            Slot slot = slots[slotIndex];
+            foreach (int index in Candidates(slot))
             {
                 used[index] = true;
-                char declared = slot.Required ?? icons[index].Printed;
-                choices[slotIndex] = new Choice(icons[index].Source, slot.Component, declared);
-                if (Search(slotIndex + 1))
-                {
-                    return true;
-                }
+                choices[slotIndex] = new Choice(icons[index].Source, slot.Component,
+                    slot.Required ?? icons[index].Printed);
+                if (Search(slotIndex + 1)) return true;
                 used[index] = false;
             }
             return false;
         }
 
-        IReadOnlyList<ResourceAllocation> Collapse()
+        private IEnumerable<int> Candidates(Slot slot)
+        {
+            IEnumerable<int> candidates = Enumerable.Range(0, icons.Count)
+                .Where(index => !used[index]
+                    && Accepts(icons[index].Printed, slot.Required, slot.Printed));
+            return slot.Required is { } required
+                ? candidates.OrderBy(index => icons[index].Printed == required ? 0 : 1)
+                : candidates;
+        }
+
+        private IReadOnlyList<ResourceAllocation> Collapse()
         {
             var order = new List<(int Source, int Cost)>();
             var paid = new Dictionary<(int Source, int Cost), System.Text.StringBuilder>();
-            foreach (var choice in choices)
+            foreach (Choice choice in choices)
             {
                 var key = (choice.Source, choice.Component);
                 if (!paid.TryGetValue(key, out var declared))
@@ -254,7 +251,6 @@ public static class ResourcePayment
                 }
                 declared.Append(choice.Declared);
             }
-
             return [.. order.Select(key =>
                 new ResourceAllocation(key.Source, key.Cost, paid[key].ToString()))];
         }

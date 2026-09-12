@@ -261,24 +261,24 @@ internal static class AbilityDeckAndRevealExecution
 
     private static Area Area(
         AbilitySearchArea area, AbilityDeckAndRevealContext context) => area switch
-    {
-        AbilitySearchArea.EncounterDeck => context.World.AreaOf(DeckType.EncounterDeck),
-        AbilitySearchArea.EncounterDiscardPile =>
-            context.World.AreaOf(DeckType.EncounterDiscardPile),
-        AbilitySearchArea.ScenarioSetAside => context.World.AreaOf(DeckType.AsideDeck),
-        AbilitySearchArea.YourDeck => context.World.Seats[context.Player].Deck,
-        _ => throw new InvalidOperationException("Unknown compiled search area"),
-    };
+        {
+            AbilitySearchArea.EncounterDeck => context.World.AreaOf(DeckType.EncounterDeck),
+            AbilitySearchArea.EncounterDiscardPile =>
+                context.World.AreaOf(DeckType.EncounterDiscardPile),
+            AbilitySearchArea.ScenarioSetAside => context.World.AreaOf(DeckType.AsideDeck),
+            AbilitySearchArea.YourDeck => context.World.Seats[context.Player].Deck,
+            _ => throw new InvalidOperationException("Unknown compiled search area"),
+        };
 
     private static IEnumerable<int> Players(
         AbilityPlayerSelection players, AbilityDeckAndRevealContext context) => players switch
-    {
-        AbilityPlayerSelection.AllPlayers => context.World.PlayerOrder,
-        AbilityPlayerSelection.OnePlayer one =>
-            [new AbilityExpressionEvaluation(context.Expressions,
+        {
+            AbilityPlayerSelection.AllPlayers => context.World.PlayerOrder,
+            AbilityPlayerSelection.OnePlayer one =>
+                [new AbilityExpressionEvaluation(context.Expressions,
                 new AbilitySelectorEvaluation(context.Expressions.Bindings)).Seat(one.Player)],
-        _ => throw new InvalidOperationException("Unknown compiled player selection"),
-    };
+            _ => throw new InvalidOperationException("Unknown compiled player selection"),
+        };
 
     private static int Player(
         AbilityPlayer player, AbilityDeckAndRevealContext context) =>

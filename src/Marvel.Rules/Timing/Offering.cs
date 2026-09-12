@@ -176,41 +176,16 @@ public static class Offering
             // Status cards have priority over the remaining authored tier, so
             // the caller must get a chance to consume that replacement before
             // this loop re-reads and offers another ability.
-            if (priorityResolved?.Invoke() == true)
-            {
-                return null;
-            }
+            if (PriorityResolved(priorityResolved)) return null;
 
-            var waiting = abilities.Waiting(world, occurrence, kind);
-            if (scope == WindowAbilityScope.EncounterCardsOnly)
-            {
-                // `rr:ability.6`: "Player card abilities cannot resolve during
-                // game setup, unless prefaced by a 'Setup' timing trigger."
-                // Setup abilities are the setup step itself; anything waiting
-                // in one of its nested windows is therefore encounter-card text.
-                waiting =
-                [
-                    .. waiting.Where(ability =>
-                        ability.Card >= 0
-                        && ability.Card < world.Cards.Count
-                        && world.Cards[ability.Card].Owner == World.Scenario),
-                ];
-            }
+            var waiting = WaitingInScope(world, abilities, occurrence, kind, scope);
 
             var tiers = AbilityWindow.Tiers(waiting, kind, occurrence);
 
             var forced = Forced(tiers);
             if (forced.Count == 1)
             {
-                occurrence.Trigger(kind, forced[0].Card);
-                // `rr:forced.1` -- a forced ability resolves without anybody being
-                // asked, so there is no payment to carry. A forced ability with
-                // a cost is refused by the runner rather than paid for here.
-                events.AddRange(abilities.Resolve(world, occurrence, forced[0], [], []));
-
-                // rr:forced.6 -- each resolves as completely as possible before
-                // the next initiates, so the board is re-read rather than the
-                // rest of this tier being applied from a stale list.
+                ResolveForced(world, abilities, occurrence, kind, events, forced[0]);
                 continue;
             }
 
@@ -228,6 +203,27 @@ public static class Offering
 
             return null;
         }
+    }
+
+    private static bool PriorityResolved(Func<bool>? resolve) => resolve is not null && resolve();
+
+    private static IReadOnlyList<PendingAbility> WaitingInScope(
+        World world, IWindowAbilities abilities, Occurrence occurrence,
+        WindowKind kind, WindowAbilityScope scope)
+    {
+        var waiting = abilities.Waiting(world, occurrence, kind);
+        if (scope != WindowAbilityScope.EncounterCardsOnly) return waiting;
+        return [.. waiting.Where(ability => ability.Card >= 0
+            && ability.Card < world.Cards.Count
+            && world.Cards[ability.Card].Owner == World.Scenario)];
+    }
+
+    private static void ResolveForced(
+        World world, IWindowAbilities abilities, Occurrence occurrence,
+        WindowKind kind, List<GameEvent> events, PendingAbility ability)
+    {
+        occurrence.Trigger(kind, ability.Card);
+        events.AddRange(abilities.Resolve(world, occurrence, ability, [], []));
     }
 
     /// <summary>

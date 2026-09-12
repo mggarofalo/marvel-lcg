@@ -22,40 +22,10 @@ switch (verb)
         return await Fetch(args.Length > 1 ? args[1] : DefaultCache(), pages);
 
     case "write":
-        {
-            string from = args.Length > 1 ? args[1] : Path.Combine(dataset, "pages");
-            string into = args.Length > 2 ? args[2] : dataset;
-            if (!TryRead(from, pages, out var rulings, out var pageBytes))
-            {
-                return 1;
-            }
-
-            string harvested = args.Length > 3 ? args[3] : Harvested(Path.Combine(dataset, "rulings.json"));
-            Directory.CreateDirectory(into);
-            File.WriteAllBytes(Path.Combine(into, "rulings.json"), Emit.JsonBytes(rulings, harvested));
-            File.WriteAllBytes(Path.Combine(into, "pages.manifest.json"), Emit.ManifestBytes(pageBytes));
-            Console.Error.WriteLine($"wrote {rulings.Count} rulings into {into}");
-            return 0;
-        }
+        return Write(args, dataset, pages);
 
     case "check":
-        {
-            string from = args.Length > 1 ? args[1] : Path.Combine(dataset, "pages");
-            bool pinned = args.Length <= 1;
-            if (pinned && !VerifyManifest(dataset, pages))
-            {
-                return 1;
-            }
-
-            if (!TryRead(from, pages, out var rulings, out _))
-            {
-                // A local acquisition cache is optional. The committed pages
-                // are not: CI's offline gate must fail if its input vanished.
-                return args.Length > 1 ? 0 : 1;
-            }
-
-            return Parity(rulings, Path.Combine(dataset, "rulings.json"));
-        }
+        return Check(args, dataset, pages);
 
     default:
         Console.Error.WriteLine(
@@ -69,6 +39,37 @@ switch (verb)
             `write` and `check` are offline. `--check` is accepted as an alias.
             """);
         return 2;
+}
+
+static int Write(string[] arguments, string dataset, IReadOnlyList<Page> pages)
+{
+    string from = arguments.Length > 1
+        ? arguments[1] : Path.Combine(dataset, "pages");
+    string into = arguments.Length > 2 ? arguments[2] : dataset;
+    if (!TryRead(from, pages, out var rulings, out var pageBytes)) return 1;
+    string harvested = arguments.Length > 3
+        ? arguments[3] : Harvested(Path.Combine(dataset, "rulings.json"));
+    Directory.CreateDirectory(into);
+    File.WriteAllBytes(
+        Path.Combine(into, "rulings.json"), Emit.JsonBytes(rulings, harvested));
+    File.WriteAllBytes(
+        Path.Combine(into, "pages.manifest.json"), Emit.ManifestBytes(pageBytes));
+    Console.Error.WriteLine($"wrote {rulings.Count} rulings into {into}");
+    return 0;
+}
+
+static int Check(string[] arguments, string dataset, IReadOnlyList<Page> pages)
+{
+    string from = arguments.Length > 1
+        ? arguments[1] : Path.Combine(dataset, "pages");
+    bool pinned = arguments.Length <= 1;
+    if (pinned && !VerifyManifest(dataset, pages)) return 1;
+    if (!TryRead(from, pages, out var rulings, out _))
+    {
+        // An explicit local cache is optional; committed pages are not.
+        return arguments.Length > 1 ? 0 : 1;
+    }
+    return Parity(rulings, Path.Combine(dataset, "rulings.json"));
 }
 
 static bool TryRead(

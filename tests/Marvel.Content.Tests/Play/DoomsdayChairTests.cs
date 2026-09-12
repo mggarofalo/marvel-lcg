@@ -151,7 +151,7 @@ public sealed class DoomsdayChairTests
             AuthoredCards.Modok,
             world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(0)));
 
-        BasicPowers.BasicAttack(world, Cards, 0, modok, []);
+        BasicPowerInitiation.BasicAttack(world, Cards, 0, modok, []);
         Agendas.Finish(world, Cards, AuthoredCards.Runner());
 
         Assert.Equal(2, modok.Damage);

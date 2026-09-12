@@ -4,56 +4,56 @@ using Marvel.Rules.State;
 
 namespace Marvel.Cards.Run;
 
-internal sealed partial class AbilityResolutionExecution
+internal static class AbilityResolutionExpressions
 {
-    private static bool BindingCanChange(AbilityCondition condition) =>
+    internal static bool BindingCanChange(this AbilityResolutionExecution execution, AbilityCondition condition) =>
         AbilityBindingAnalysis.BindingCanChange(condition);
 
-    private static bool BindingCanChange(AbilityNumber number) =>
+    internal static bool BindingCanChange(this AbilityResolutionExecution execution, AbilityNumber number) =>
         AbilityBindingAnalysis.BindingCanChange(number);
 
-    private static bool BindingCanChange(AbilityCardSelection selector) =>
+    internal static bool BindingCanChange(this AbilityResolutionExecution execution, AbilityCardSelection selector) =>
         AbilityBindingAnalysis.BindingCanChange(selector);
 
-    private static bool AmountMayChange(AbilityNumber number) =>
+    internal static bool AmountMayChange(this AbilityResolutionExecution execution, AbilityNumber number) =>
         AbilityBindingAnalysis.AmountMayChange(number);
 
-    private static bool ContainsPowerAmount(AbilityNumber number) =>
+    internal static bool ContainsPowerAmount(this AbilityResolutionExecution execution, AbilityNumber number) =>
         AbilityBindingAnalysis.ContainsPowerAmount(number);
 
-    private static bool ContainsPowerAmount(AbilityCondition condition) =>
+    internal static bool ContainsPowerAmount(this AbilityResolutionExecution execution, AbilityCondition condition) =>
         AbilityBindingAnalysis.ContainsPowerAmount(condition);
 
-    private bool WhenHolds(CompiledCardAbility ability, AbilityResolutionState cast) =>
-        ability.When is not { } condition || Test(condition, cast);
+    internal static bool WhenHolds(this AbilityResolutionExecution execution, CompiledCardAbility ability, AbilityResolutionState cast) =>
+        ability.When is not { } condition || execution.Test(condition, cast);
 
-    private static bool ContainsYouOrYour(AbilityNumber number) =>
+    internal static bool ContainsYouOrYour(this AbilityResolutionExecution execution, AbilityNumber number) =>
         AbilityPlayerBindingAnalysis.Contains(number);
 
-    private static bool ContainsYouOrYour(AbilityCondition condition) =>
+    internal static bool ContainsYouOrYour(this AbilityResolutionExecution execution, AbilityCondition condition) =>
         AbilityPlayerBindingAnalysis.Contains(condition);
 
-    private AbilityExpressionEvaluation Expressions(AbilityResolutionState cast)
+    internal static AbilityExpressionEvaluation Expressions(this AbilityResolutionExecution execution, AbilityResolutionState cast)
     {
         var context = cast.ExpressionContext();
         return new AbilityExpressionEvaluation(
             context, new AbilitySelectorEvaluation(
-                context.Bindings, SingularAreaAdmission(cast), program),
-            resourceAbilities);
+                context.Bindings, execution.SingularAreaAdmission(cast), execution.program),
+            execution.resourceAbilities);
     }
 
-    private long Amount(AbilityNumber number, AbilityResolutionState cast) =>
-        Expressions(cast).Amount(number);
+    internal static long Amount(this AbilityResolutionExecution execution, AbilityNumber number, AbilityResolutionState cast) =>
+        execution.Expressions(cast).Amount(number);
 
-    private bool Test(AbilityCondition condition, AbilityResolutionState cast) =>
-        Expressions(cast).Test(condition);
+    internal static bool Test(this AbilityResolutionExecution execution, AbilityCondition condition, AbilityResolutionState cast) =>
+        execution.Expressions(cast).Test(condition);
 
-    private int Seat(AbilityPlayer player, AbilityResolutionState cast) =>
-        Expressions(cast).Seat(player);
+    internal static int Seat(this AbilityResolutionExecution execution, AbilityPlayer player, AbilityResolutionState cast) =>
+        execution.Expressions(cast).Seat(player);
 
-    private AbilityQueryResult<bool> EvaluateCondition(AbilityCondition condition, AbilityResolutionState cast)
+    internal static AbilityQueryResult<bool> EvaluateCondition(this AbilityResolutionExecution execution, AbilityCondition condition, AbilityResolutionState cast)
     {
-        var evaluation = Expressions(cast);
+        var evaluation = execution.Expressions(cast);
         return evaluation.Result(evaluation.Test(condition));
     }
 }

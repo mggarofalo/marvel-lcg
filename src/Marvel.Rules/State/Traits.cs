@@ -54,27 +54,7 @@ public static class Traits
                 && effect.Kind.StartsWith(Characteristics.Lost + Granted, StringComparison.Ordinal))
             .Select(effect => effect.Kind[(Characteristics.Lost + Granted).Length..])
             .ToHashSet(StringComparer.Ordinal);
-        List<string>? all = null;
-
-        foreach (var effect in active)
-        {
-            if (effect.Affects != card.ObjectId
-                || !effect.Kind.StartsWith(Granted, StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            string gained = effect.Kind[Granted.Length..];
-            if (lost.Contains(gained))
-            {
-                continue;
-            }
-            all ??= [.. printed];
-            if (!all.Contains(gained, StringComparer.Ordinal))
-            {
-                all.Add(gained);
-            }
-        }
+        List<string>? all = GrantedTraits(active, card, printed, lost);
 
         // The printed list unchanged when nothing was granted, which is the
         // common case by a very long way: one allocation per card per ask would
@@ -88,6 +68,26 @@ public static class Traits
         all.RemoveAll(lost.Contains);
         return all;
     }
+
+    private static List<string>? GrantedTraits(
+        IReadOnlyList<ContinuousEffect> active, Card card,
+        IReadOnlyList<string> printed, HashSet<string> lost)
+    {
+        List<string>? all = null;
+        foreach (var effect in active)
+        {
+            if (!GrantsTo(effect, card)) continue;
+            string gained = effect.Kind[Granted.Length..];
+            if (lost.Contains(gained)) continue;
+            all ??= [.. printed];
+            if (!all.Contains(gained, StringComparer.Ordinal)) all.Add(gained);
+        }
+        return all;
+    }
+
+    private static bool GrantsTo(ContinuousEffect effect, Card card) =>
+        effect.Affects == card.ObjectId
+        && effect.Kind.StartsWith(Granted, StringComparison.Ordinal);
 
     /// <summary>Whether a card has one trait, printed or granted.</summary>
     /// <param name="world">The board.</param>

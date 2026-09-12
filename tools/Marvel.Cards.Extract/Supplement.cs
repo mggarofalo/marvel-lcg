@@ -52,79 +52,81 @@ internal sealed class Supplement
         using var document = JsonDocument.Parse(File.ReadAllText(path));
         var found = new Dictionary<string, Entry>(StringComparer.Ordinal);
         var only = new List<Card>();
+        ReadGroups(document.RootElement, found, only);
+        return new Supplement(found, only)
+        {
+            Dropped = ReadDropped(document.RootElement),
+        };
+    }
 
-        // Grouped by reason rather than listed flat: the reason is what tells a
-        // reader whether an entry is a transcription or a guess, and repeating
-        // it per card would make it something nobody reads.
-        foreach (var element in document.RootElement.GetProperty("groups")
-            .EnumerateArray()
+    private static void ReadGroups(
+        JsonElement root, Dictionary<string, Entry> found, List<Card> only)
+    {
+        // Grouping keeps each transcription beside its reason.
+        foreach (var element in root.GetProperty("groups").EnumerateArray()
             .SelectMany(group => group.GetProperty("cards").EnumerateArray()))
         {
-            string id = element.GetProperty("card_id").GetString()!;
-            var attributes = new SortedDictionary<string, string>(StringComparer.Ordinal);
-            if (element.TryGetProperty("attributes", out var printed))
-            {
-                foreach (var attribute in printed.EnumerateObject())
-                {
-                    attributes[attribute.Name] = attribute.Value.GetString() ?? "";
-                }
-            }
-
-            var traits = new List<string>();
-            if (element.TryGetProperty("traits", out var written))
-            {
-                traits.AddRange(written.EnumerateArray().Select(trait => trait.GetString()!));
-            }
-
-            if (element.TryGetProperty("type", out var kind))
-            {
-                // A whole card rather than a correction: the snapshot has no
-                // record to correct.
-                only.Add(new Card(
-                    id,
-                    Field(element, "name"),
-                    Field(element, "subname"),
-                    kind.GetString() ?? "",
-                    traits,
-                    attributes,
-                    [],
-                    Field(element, "text"),
-                    Field(element, "pack"),
-                    Field(element, "set")));
-                continue;
-            }
-
-            // Merged rather than replaced: a card can want an entry in two
-            // groups -- 12028 Size Increase is missing a trait *and* an
-            // abbreviated `Uses`, which are two different reasons -- and each
-            // group is written to say one thing about it.
-            var already = found.GetValueOrDefault(id);
-            var merged = new SortedDictionary<string, string>(
-                already?.Attributes.ToDictionary(
-                    pair => pair.Key, pair => pair.Value, StringComparer.Ordinal)
-                    ?? new Dictionary<string, string>(StringComparer.Ordinal),
-                StringComparer.Ordinal);
-
-            foreach (var (key, value) in attributes)
-            {
-                merged[key] = value;
-            }
-
-            found[id] = new Entry(
-                merged,
-                element.TryGetProperty("traits", out _) ? traits : already?.Traits);
+            ReadEntry(element, found, only);
         }
+    }
 
-        var dropped = new HashSet<string>(StringComparer.Ordinal);
-        if (document.RootElement.TryGetProperty("dropped", out var leave))
+    private static void ReadEntry(
+        JsonElement element, Dictionary<string, Entry> found, List<Card> only)
+    {
+        string id = element.GetProperty("card_id").GetString()!;
+        var attributes = ReadAttributes(element);
+        var traits = ReadTraits(element);
+        if (element.TryGetProperty("type", out var kind))
         {
-            foreach (var card in leave.GetProperty("cards").EnumerateArray())
-            {
-                dropped.Add(card.GetString()!);
-            }
+            only.Add(new Card(
+                id, Field(element, "name"), Field(element, "subname"),
+                kind.GetString() ?? "", traits, attributes, [],
+                Field(element, "text"), Field(element, "pack"),
+                Field(element, "set")));
+            return;
         }
+        MergeCorrection(element, id, attributes, traits, found);
+    }
 
-        return new Supplement(found, only) { Dropped = dropped };
+    private static SortedDictionary<string, string> ReadAttributes(JsonElement element)
+    {
+        var result = new SortedDictionary<string, string>(StringComparer.Ordinal);
+        if (!element.TryGetProperty("attributes", out var printed)) return result;
+        foreach (var attribute in printed.EnumerateObject())
+            result[attribute.Name] = attribute.Value.GetString() ?? "";
+        return result;
+    }
+
+    private static List<string> ReadTraits(JsonElement element) =>
+        element.TryGetProperty("traits", out var written)
+            ? [.. written.EnumerateArray().Select(trait => trait.GetString()!)]
+            : [];
+
+    private static void MergeCorrection(
+        JsonElement element, string id,
+        SortedDictionary<string, string> attributes, List<string> traits,
+        Dictionary<string, Entry> found)
+    {
+        // Corrections merge because one card can appear under several reasons.
+        var already = found.GetValueOrDefault(id);
+        var merged = new SortedDictionary<string, string>(
+            already?.Attributes.ToDictionary(
+                pair => pair.Key, pair => pair.Value, StringComparer.Ordinal)
+                ?? new Dictionary<string, string>(StringComparer.Ordinal),
+            StringComparer.Ordinal);
+        foreach (var (key, value) in attributes) merged[key] = value;
+        found[id] = new Entry(
+            merged,
+            element.TryGetProperty("traits", out _) ? traits : already?.Traits);
+    }
+
+    private static HashSet<string> ReadDropped(JsonElement root)
+    {
+        var result = new HashSet<string>(StringComparer.Ordinal);
+        if (!root.TryGetProperty("dropped", out var leave)) return result;
+        foreach (var card in leave.GetProperty("cards").EnumerateArray())
+            result.Add(card.GetString()!);
+        return result;
     }
 
     /// <summary>Applies whatever the supplement says about one card.</summary>
