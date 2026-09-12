@@ -9,9 +9,10 @@ internal static class Program
             return args.FirstOrDefault() switch
             {
                 "manifest" => Manifest(args[1..]),
+                "acceptance-record" => AcceptanceRecord(args[1..]),
                 "msix-version" => MsixVersion(args[1..]),
                 _ => throw new ArgumentException(
-                    "usage: Marvel.Release manifest --version V --commit SHA --data-root DIR --output FILE | msix-version V"),
+                    "usage: Marvel.Release manifest --version V --commit SHA --data-root DIR --output FILE | acceptance-record --version V --commit SHA --artifacts DIR --output FILE | msix-version V"),
             };
         }
         catch (Exception failure) when (failure is ArgumentException
@@ -25,7 +26,8 @@ internal static class Program
 
     private static int Manifest(string[] args)
     {
-        Dictionary<string, string> options = Options(args);
+        Dictionary<string, string> options = Options(
+            args, ["--version", "--commit", "--data-root", "--output"]);
         string output = Required(options, "--output");
         string? directory = Path.GetDirectoryName(Path.GetFullPath(output));
         if (directory is null || !Directory.Exists(directory))
@@ -46,6 +48,30 @@ internal static class Program
         return 0;
     }
 
+    private static int AcceptanceRecord(string[] args)
+    {
+        Dictionary<string, string> options = Options(
+            args, ["--version", "--commit", "--artifacts", "--output"]);
+        string output = Required(options, "--output");
+        string? directory = Path.GetDirectoryName(Path.GetFullPath(output));
+        if (directory is null || !Directory.Exists(directory))
+        {
+            throw new ArgumentException("acceptance record output directory does not exist");
+        }
+
+        if (File.Exists(output))
+        {
+            throw new ArgumentException("acceptance record output already exists");
+        }
+
+        ReleaseAcceptanceRecord record = ReleaseAcceptanceRecord.Create(
+            ReleaseVersion.Parse(Required(options, "--version")),
+            Required(options, "--commit"),
+            Required(options, "--artifacts"));
+        File.WriteAllText(output, record.Json());
+        return 0;
+    }
+
     private static int MsixVersion(string[] args)
     {
         if (args.Length != 1)
@@ -57,7 +83,9 @@ internal static class Program
         return 0;
     }
 
-    private static Dictionary<string, string> Options(string[] args)
+    private static Dictionary<string, string> Options(
+        string[] args,
+        IReadOnlyCollection<string> allowed)
     {
         if (args.Length == 0 || args.Length % 2 != 0)
         {
@@ -73,7 +101,6 @@ internal static class Program
             }
         }
 
-        string[] allowed = ["--version", "--commit", "--data-root", "--output"];
         string? unknown = parsed.Keys.FirstOrDefault(key => !allowed.Contains(key, StringComparer.Ordinal));
         if (unknown is not null)
         {
