@@ -101,8 +101,11 @@ public sealed class PackRulesHarvestTests
             {
                 Directory.CreateSymbolicLink(Path.Combine(root, "mc09"), outside);
             }
+            // Windows reports a disabled or unprivileged symlink facility as
+            // IOException; hosted CI exercises the wall where it is enabled.
             catch (Exception exception) when (exception is UnauthorizedAccessException
-                or PlatformNotSupportedException)
+                or PlatformNotSupportedException
+                || OperatingSystem.IsWindows() && exception is IOException)
             {
                 return;
             }

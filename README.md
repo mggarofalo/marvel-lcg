@@ -36,6 +36,21 @@ CI also runs the integration and acceptance lanes before a merge. See
 
 Contributors should start with [AGENTS.md](AGENTS.md).
 
+## Commit gates
+
+The first local `dotnet restore` restores the pinned Husky.Net tool and installs
+the repository's pre-commit hook. Install the pinned Python development tools
+once as well:
+
+```bash
+python -m pip install -r requirements-dev.txt
+```
+
+Each commit runs Lizard against staged C# and GDScript with a maximum CCN of
+10, rejects staged authored source files over 1,000 physical lines, and runs
+the fast unit-test solution. Set `HUSKY=0` only when diagnosing the hook itself;
+it is not a way to merge code that fails a gate.
+
 ## Documents
 
 | Document | Description |

@@ -16,6 +16,7 @@ __pycache__/
 *.user
 *.csproj.old
 .vs/
+.husky/_/
 
 # Agent working state: scratch plans and per-agent worktrees. Not project data.
 /.claude/
