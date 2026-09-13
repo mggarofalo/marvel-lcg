@@ -59,7 +59,7 @@ try {
     $smokeOutput = & $GodotBin --path "$repoRoot/src/Marvel.Godot" `
         --script res://smoke/hosted_multiplayer_smoke_runner.gd 2>&1
     $smokeOutput | Write-Output
-    if ($LASTEXITCODE -ne 0 -or `
+    if ($LASTEXITCODE -ne 0 -or ($smokeOutput -match "ERROR:") -or `
         -not ($smokeOutput -match "HOSTED_MULTIPLAYER_SMOKE_OK")) {
         exit 1
     }

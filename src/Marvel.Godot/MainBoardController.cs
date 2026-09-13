@@ -22,26 +22,30 @@ internal sealed class MainBoardController
         GameProgressPresentation? priorProgress = null,
         string operation = EngineProtocol.Resolve)
     {
+        int renderGeneration = main.renderGeneration.Advance();
         Outcome previousOutcome = main.CurrentGame?.World?.Outcome ?? Outcome.Unfinished;
         HashSet<int> priorHistory = main.CurrentGame?.History?.Entries
             .Select(entry => entry.Cursor)
             .ToHashSet() ?? [];
         main.CurrentGame = response;
         WorldDescriptor world = response.World!;
-        RenderCurrentResponse(response, world);
+        RenderCurrentResponse(response, world, renderGeneration);
         IReadOnlyList<EventPresentation> reportNarrative = UpdateEvents(
             response, world, previousOutcome, priorHistory, resetEvents, preserveEvents, operation);
-        FinishRender(response, world, priorProgress, operation, reportNarrative);
+        FinishRender(response, world, priorProgress, operation, reportNarrative, renderGeneration);
     }
 
-    private void RenderCurrentResponse(EngineResponse response, WorldDescriptor world)
+    private void RenderCurrentResponse(
+        EngineResponse response,
+        WorldDescriptor world,
+        int renderGeneration)
     {
-        RenderBoard(world);
+        RenderBoard(world, renderGeneration);
         main.syncStatus.Visible = true;
         main.syncStatus.Text = $"✓ Synced · r{response.Revision}";
         main.synchronize.Visible = true;
         main.RenderPromptSummary(response.Prompt, world);
-        main.decisions.Render(response.Prompt, world);
+        main.decisions.Render(response.Prompt, world, response.Revision);
     }
 
     private IReadOnlyList<EventPresentation> UpdateEvents(
@@ -122,7 +126,8 @@ internal sealed class MainBoardController
         WorldDescriptor world,
         GameProgressPresentation? priorProgress,
         string operation,
-        IReadOnlyList<EventPresentation> reportNarrative)
+        IReadOnlyList<EventPresentation> reportNarrative,
+        int renderGeneration)
     {
         main.transcript.RecordResponse(operation, response, reportNarrative);
         // A synchronized snapshot is authoritative but is not a new
@@ -131,18 +136,32 @@ internal sealed class MainBoardController
             response,
             priorProgress ?? main.currentProgress));
         main.pageScroll.ScrollVertical = 0;
-        main.pageScroll.SetDeferred("scroll_vertical", 0);
+        Callable.From(() => ResetPageScroll(renderGeneration)).CallDeferred();
         main.RefreshSynchronizeAvailability();
         if (response.Prompt is null && world.Outcome != Outcome.Unfinished)
         {
-            main.CallDeferred(Main.MethodName.RevealOutcome);
+            Callable.From(() =>
+            {
+                if (main.IsCurrentRender(renderGeneration))
+                {
+                    main.RevealOutcome();
+                }
+            }).CallDeferred();
         }
     }
 
-    internal void RenderBoard(WorldDescriptor world)
+    private void ResetPageScroll(int renderGeneration)
+    {
+        if (main.IsCurrentRender(renderGeneration) && InteractionControl.IsUsable(main.pageScroll))
+        {
+            main.pageScroll.ScrollVertical = 0;
+        }
+    }
+
+    internal void RenderBoard(WorldDescriptor world, int? renderGeneration = null)
     {
         main.boardPresentation = BoardPresentation.From(world);
-        main.boardRender = BoardRenderer.Render(
+        BoardRenderResult rendered = BoardRenderer.Render(
             main.boardAreas,
             main.boardPresentation,
             main.handRail,
@@ -150,7 +169,10 @@ internal sealed class MainBoardController
             main.interfaceScale,
             main.expandedAreas,
             main.art);
-        main.boardRender.CardActivated += (card, control) => ToggleCardInspector(card, control);
+        main.boardRender = rendered;
+        rendered.CardActivated += (card, control) => ToggleCardInspector(card, control);
+        rendered.IsCurrent = () => ReferenceEquals(main.boardRender, rendered)
+            && main.IsCurrentRender(renderGeneration ?? main.renderGeneration.Current);
         HideCardInspector();
     }
 
@@ -199,9 +221,11 @@ internal sealed class MainBoardController
     internal void ShowCardInspector(
         BoardCardPresentation card, Control? source, bool pinned)
     {
-        main.cardInspectorGeneration++;
+        int inspectorGeneration = checked(++main.cardInspectorGeneration);
         main.inspectedCardId = card.TargetId;
-        Control? priorFocus = main.GetViewport()?.GuiGetFocusOwner();
+        int? sourceId = source is CardControl sourceCard
+            ? sourceCard.TargetId
+            : card.TargetId;
         ClearInspectorContent();
         InterfaceScale inspectionScale = FittedInspectionScale(
             card, main.interfaceScale, main.Size.Y);
@@ -212,7 +236,7 @@ internal sealed class MainBoardController
         main.cardInspectorContent.AddChild(detail);
         ConfigureInspectorFrame();
         PositionInspector(card, source, pinned);
-        ShowInspector(detail, priorFocus, pinned);
+        ShowInspector(detail, sourceId, pinned, inspectorGeneration);
     }
 
     private void ClearInspectorContent()
@@ -237,7 +261,10 @@ internal sealed class MainBoardController
         Vector2 detailSize = detail.GetCombinedMinimumSize();
         float width = detailSize.X;
         float height = Math.Min(main.Size.Y - 48, detailSize.Y);
-        Rect2 sourceRect = source?.GetGlobalRect() ?? new Rect2(
+        Control? currentSource = InteractionControl.IsUsable(source)
+            ? source
+            : card.TargetId is { } target ? main.boardRender?.ControlFor(target) : null;
+        Rect2 sourceRect = currentSource?.GetGlobalRect() ?? new Rect2(
             main.GetViewport().GetMousePosition(), Vector2.Zero);
         if (!pinned)
         {
@@ -261,7 +288,11 @@ internal sealed class MainBoardController
         main.cardInspectorFrame.Position = new Vector2(position.X, position.Y);
     }
 
-    private void ShowInspector(Control detail, Control? priorFocus, bool pinned)
+    private void ShowInspector(
+        Control detail,
+        int? sourceId,
+        bool pinned,
+        int inspectorGeneration)
     {
         main.cardInspectorPinned = pinned;
         main.cardInspector.MouseFilter = pinned
@@ -272,13 +303,25 @@ internal sealed class MainBoardController
         main.cardInspector.Visible = true;
         if (pinned)
         {
-            main.cardInspectorReturnFocus = priorFocus;
-            Callable.From(detail.GrabFocus).CallDeferred();
+            main.cardInspectorReturnTargetId = sourceId;
+            Callable.From(() => FocusInspectorDetail(inspectorGeneration)).CallDeferred();
         }
-        else if (priorFocus is not null && !main.cardInspector.IsAncestorOf(priorFocus))
+    }
+
+    private void FocusInspectorDetail(int inspectorGeneration)
+    {
+        if (inspectorGeneration != main.cardInspectorGeneration
+            || !InteractionControl.IsUsable(main.cardInspector)
+            || !main.cardInspector.Visible
+            || main.cardInspectorContent.GetChildCount() != 1
+            || main.cardInspectorContent.GetChild(0) is not Control detail
+            || !InteractionControl.IsUsable(detail)
+            || !main.cardInspector.IsAncestorOf(detail))
         {
-            Callable.From(priorFocus.GrabFocus).CallDeferred();
+            return;
         }
+
+        detail.GrabFocus();
     }
 
     internal void Input(InputEvent @event)
@@ -361,6 +404,8 @@ internal sealed class MainBoardController
         main.GetTree().CreateTimer(0.3).Timeout += () =>
         {
             if (generation == main.cardInspectorGeneration
+                && main.IsInsideTree()
+                && InteractionControl.IsUsable(main.cardInspector)
                 && !main.cardInspectorPinned
                 && !main.cardInspectorHovered
                 && !CardInspectorHasFocus())
@@ -382,28 +427,38 @@ internal sealed class MainBoardController
     internal bool CardInspectorHasFocus()
     {
         Control? focused = main.GetViewport()?.GuiGetFocusOwner();
-        return focused is not null
+        return InteractionControl.IsUsable(focused)
             && (focused == main.cardInspectorFrame || main.cardInspectorFrame.IsAncestorOf(focused));
     }
 
     internal void HideCardInspector()
     {
-        Control? returnFocus = main.cardInspectorPinned ? main.cardInspectorReturnFocus : null;
-        main.cardInspectorGeneration++;
+        int? returnTargetId = main.cardInspectorPinned ? main.cardInspectorReturnTargetId : null;
+        int inspectorGeneration = checked(++main.cardInspectorGeneration);
         main.cardInspectorPinned = false;
         main.cardInspectorHovered = false;
         main.cardInspectorFrame.FocusMode = Control.FocusModeEnum.None;
         main.cardInspectorScroll.FocusMode = Control.FocusModeEnum.None;
         main.inspectedCardId = null;
-        main.cardInspectorReturnFocus = null;
+        main.cardInspectorReturnTargetId = null;
         main.cardInspector.Visible = false;
-        if (returnFocus is not null
-            && GodotObject.IsInstanceValid(returnFocus)
-            && returnFocus.IsInsideTree()
-            && !returnFocus.IsQueuedForDeletion())
+        if (returnTargetId is not null)
         {
-            Callable.From(returnFocus.GrabFocus).CallDeferred();
+            Callable.From(() => RestoreCardFocus(returnTargetId.Value, inspectorGeneration)).CallDeferred();
         }
+    }
+
+    private void RestoreCardFocus(int targetId, int inspectorGeneration)
+    {
+        if (inspectorGeneration != main.cardInspectorGeneration
+            || main.cardInspector.Visible
+            || main.boardRender?.ControlFor(targetId) is not Control source
+            || !InteractionControl.IsUsable(source))
+        {
+            return;
+        }
+
+        source.GrabFocus();
     }
 
     internal static void IgnoreMouseRecursively(Node node)

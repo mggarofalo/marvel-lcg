@@ -30,29 +30,34 @@ if [[ "$(uname -s)" == Linux ]]; then
 fi
 
 mkdir -p "$capture_dir"
+smoke_log=$(mktemp)
+cleanup() { rm -f "$smoke_log"; }
+trap cleanup EXIT
+run_visual_smoke() {
+  set +e
+  local status
+  if [[ "$use_xvfb" == true ]]; then
+    xvfb-run -a "$godot_bin" --rendering-method gl_compatibility \
+      --resolution "$MARVEL_SMOKE_VIEWPORT" --path "$repo_root/src/Marvel.Godot" \
+      --script res://smoke/local_game_smoke.gd 2>&1 | tee "$smoke_log"
+    status=${PIPESTATUS[0]}
+  else
+    "$godot_bin" --rendering-method gl_compatibility \
+      --resolution "$MARVEL_SMOKE_VIEWPORT" --path "$repo_root/src/Marvel.Godot" \
+      --script res://smoke/local_game_smoke.gd 2>&1 | tee "$smoke_log"
+    status=${PIPESTATUS[0]}
+  fi
+  set -e
+  if [[ $status -ne 0 ]] || grep -q 'ERROR:' "$smoke_log"; then
+    echo "Godot visual smoke reported an unexpected failure diagnostic." >&2
+    exit 1
+  fi
+}
 for viewport in 1280x720 1920x1080; do
   for motion in enabled disabled; do
-    if [[ "$use_xvfb" == true ]]; then
-      MARVEL_UI_SCALE=compact \
-        MARVEL_SMOKE_VIEWPORT="$viewport" \
-        MARVEL_SMOKE_MOTION="$motion" \
-        MARVEL_SMOKE_CAPTURE_DIR="$capture_dir" \
-      xvfb-run -a "$godot_bin" \
-        --rendering-method gl_compatibility \
-        --resolution "$viewport" \
-        --path "$repo_root/src/Marvel.Godot" \
-          --script res://smoke/local_game_smoke.gd
-    else
-      MARVEL_UI_SCALE=compact \
-        MARVEL_SMOKE_VIEWPORT="$viewport" \
-        MARVEL_SMOKE_MOTION="$motion" \
-        MARVEL_SMOKE_CAPTURE_DIR="$capture_dir" \
-      "$godot_bin" \
-        --rendering-method gl_compatibility \
-        --resolution "$viewport" \
-        --path "$repo_root/src/Marvel.Godot" \
-          --script res://smoke/local_game_smoke.gd
-    fi
+    MARVEL_UI_SCALE=compact MARVEL_SMOKE_VIEWPORT="$viewport" \
+      MARVEL_SMOKE_MOTION="$motion" MARVEL_SMOKE_CAPTURE_DIR="$capture_dir" \
+      run_visual_smoke
   done
 done
 

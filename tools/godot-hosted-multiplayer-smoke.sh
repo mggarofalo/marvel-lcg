@@ -79,6 +79,7 @@ MARVEL_ENGINE_ENDPOINT="tcp://127.0.0.1:$smoke_port" \
   2>&1 | tee "$smoke_log"
 smoke_status=${PIPESTATUS[0]}
 set -e
-if [[ $smoke_status -ne 0 ]] || ! grep -q "HOSTED_MULTIPLAYER_SMOKE_OK" "$smoke_log"; then
+if [[ $smoke_status -ne 0 ]] || grep -q 'ERROR:' "$smoke_log" \
+  || ! grep -q "HOSTED_MULTIPLAYER_SMOKE_OK" "$smoke_log"; then
   exit 1
 fi

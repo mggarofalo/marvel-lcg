@@ -22,7 +22,8 @@ func _action_card_preview_is_safe(hand_card: Control) -> bool:
 	if mulligan_action == null:
 		_fail("the mulligan decision has no selectable action")
 		return false
-	mulligan_action.pressed.emit()
+	if not await _pointer_activate(mulligan_action):
+		return false
 	await process_frame
 	var action_card: Button = null
 	for candidate in main.find_children("Target*", "Button", true, false):
@@ -51,10 +52,8 @@ func _action_card_preview_is_safe(hand_card: Control) -> bool:
 
 
 func _open_card_inspector(hand_card: Control) -> Control:
-	var click := InputEventMouseButton.new()
-	click.button_index = MOUSE_BUTTON_LEFT
-	click.pressed = true
-	hand_card.gui_input.emit(click)
+	if not await _pointer_activate(hand_card):
+		return null
 	await process_frame
 	var inspector := main.get_node("CardInspector") as Control
 	if inspector == null or not inspector.visible:
@@ -212,10 +211,8 @@ func _keyboard_inspector_is_safe(hand_card: Control, inspector: Control) -> bool
 
 
 func _open_inspector_with_keyboard(hand_card: Control, inspector: Control) -> bool:
-	var enter := InputEventKey.new()
-	enter.keycode = KEY_ENTER
-	enter.pressed = true
-	hand_card.gui_input.emit(enter)
+	if not await _keyboard_activate(hand_card):
+		return false
 	await process_frame
 	if not inspector.visible:
 		_fail("keyboard activation did not open the card inspector")
@@ -274,10 +271,8 @@ func _capture_named_card(title: String, checkpoint: String) -> bool:
 	if card == null:
 		_fail("the table has no readable '%s' card for visual inspection" % title)
 		return false
-	var click := InputEventMouseButton.new()
-	click.button_index = MOUSE_BUTTON_LEFT
-	click.pressed = true
-	card.gui_input.emit(click)
+	if not await _pointer_activate(card):
+		return false
 	await process_frame
 	var inspector := main.get_node("CardInspector") as Control
 	if not inspector.visible:
@@ -286,7 +281,8 @@ func _capture_named_card(title: String, checkpoint: String) -> bool:
 	if not await _capture_checkpoint(checkpoint):
 		return false
 	var close := inspector.get_node("Frame/Stack/Header/Close") as Button
-	close.pressed.emit()
+	if not await _pointer_activate(close):
+		return false
 	await process_frame
 	return true
 

@@ -9,6 +9,9 @@ public sealed class BoardRenderResult
     private readonly Dictionary<int, List<CardControl>> controls = [];
     private readonly Dictionary<Control, Action> areaExpanders = [];
 
+    /// <summary>Identifies whether this render remains the board currently shown by its owner.</summary>
+    internal Func<bool>? IsCurrent { get; set; }
+
     /// <summary>Raised with the card under the pointer, or null when it leaves.</summary>
     public event Action<BoardCardPresentation, Control>? CardActivated;
 
@@ -48,7 +51,7 @@ public sealed class BoardRenderResult
     /// <summary>Returns the visible control for an engine-provided card id.</summary>
     public Control? ControlFor(int id) =>
         controls.TryGetValue(id, out List<CardControl>? matches)
-            ? matches.LastOrDefault()
+            ? matches.LastOrDefault(InteractionControl.IsUsable)
             : null;
 
     /// <summary>Highlights every visible control matching server-provided ids.</summary>
@@ -58,12 +61,12 @@ public sealed class BoardRenderResult
         HashSet<int> highlighted = ids.ToHashSet();
         foreach ((int key, List<CardControl> matches) in controls)
         {
-            foreach (CardControl match in matches)
+            foreach (CardControl match in matches.Where(InteractionControl.IsUsable))
             {
                 match.SetHighlighted(highlighted.Contains(key));
                 if (highlighted.Contains(key))
                 {
-                    EnsureVisible(match);
+                    EnsureVisible(key);
                 }
             }
         }
@@ -76,21 +79,30 @@ public sealed class BoardRenderResult
         HashSet<int> presented = ids.ToHashSet();
         foreach ((int key, List<CardControl> matches) in controls)
         {
-            foreach (CardControl match in matches)
+            foreach (CardControl match in matches.Where(InteractionControl.IsUsable))
             {
                 match.SetPresented(presented.Contains(key));
                 if (presented.Contains(key))
                 {
-                    EnsureVisible(match);
+                    EnsureVisible(key);
                 }
             }
         }
     }
 
-    private void EnsureVisible(Control control)
+    private void EnsureVisible(int key)
     {
-        Node? ancestor = control.GetParent();
-        while (ancestor is not null)
+        if (!TryCurrentControl(key, out Control? control))
+        {
+            return;
+        }
+
+        RevealAncestors(key, control!);
+    }
+
+    private void RevealAncestors(int key, Control control)
+    {
+        for (Node? ancestor = control.GetParent(); ancestor is not null; ancestor = ancestor.GetParent())
         {
             if (ancestor is Control areaBody)
             {
@@ -98,7 +110,12 @@ public sealed class BoardRenderResult
             }
             if (ancestor is ScrollContainer scroll)
             {
-                RevealInScroll(scroll, control);
+                if (!CanReveal(scroll, control))
+                {
+                    return;
+                }
+
+                RevealInScroll(key, scroll.Name);
                 // The board owns card navigation. Continuing into the outer
                 // page would hide the table heading whenever prompt focus
                 // highlights a card below the fold.
@@ -108,9 +125,11 @@ public sealed class BoardRenderResult
                 }
             }
 
-            ancestor = ancestor.GetParent();
         }
     }
+
+    private static bool CanReveal(ScrollContainer scroll, Control control) =>
+        InteractionControl.IsUsable(scroll) && scroll.IsAncestorOf(control);
 
     private void ExpandArea(Control areaBody)
     {
@@ -120,29 +139,79 @@ public sealed class BoardRenderResult
         }
     }
 
-    private static void RevealInScroll(ScrollContainer scroll, Control control)
+    private void RevealInScroll(int key, StringName scrollName)
     {
-        bool table = scroll.Name == "TableScroll";
-        Control target = table
-            ? control.GetNodeOrNull<Control>("CardFace/Title") ?? control
-            : AreaContaining(scroll, control) ?? control;
-        if (!table)
+        if (!TryFindScrollControl(key, scrollName, out ScrollContainer? scroll, out Control? control))
         {
-            scroll.CallDeferred(ScrollContainer.MethodName.EnsureControlVisible, target);
             return;
         }
+
+        if (scroll!.Name == "TableScroll")
+        {
+            RevealTableWhenSettled(key, scrollName);
+            return;
+        }
+
+        RevealAreaWhenSettled(key, scrollName);
+    }
+
+    private void RevealAreaWhenSettled(int key, StringName scrollName)
+    {
         Callable.From(() =>
         {
-            scroll.EnsureControlVisible(target);
-            Callable.From(() => AlignBoardToCardFrame(scroll, target, 3)).CallDeferred();
+            if (TryFindScrollControl(key, scrollName, out ScrollContainer? current, out Control? card))
+            {
+                ScrollContainer settledScroll = current!;
+                Control settledCard = card!;
+                settledScroll.EnsureControlVisible(
+                    AreaContaining(settledScroll, settledCard) ?? settledCard);
+            }
         }).CallDeferred();
     }
 
-    private static void AlignBoardToCardFrame(
-        ScrollContainer board,
-        Control title,
+    private void RevealTableWhenSettled(int key, StringName scrollName)
+    {
+        Callable.From(() =>
+        {
+            if (!TryFindScrollControl(key, scrollName, out ScrollContainer? current, out Control? card))
+            {
+                return;
+            }
+            Control settledCard = card!;
+            Control title = settledCard.GetNodeOrNull<Control>("CardFace/Title") ?? settledCard;
+            current!.EnsureControlVisible(title);
+            Callable.From(() => AlignBoardToCardFrame(key, scrollName, 3)).CallDeferred();
+        }).CallDeferred();
+    }
+
+    private void AlignBoardToCardFrame(
+        int key,
+        StringName scrollName,
         int remainingPasses)
     {
+        if (!TryFindScrollControl(key, scrollName, out ScrollContainer? board, out Control? resolved))
+        {
+            return;
+        }
+
+        ScrollContainer currentBoard = board!;
+        Control currentControl = resolved!;
+        currentBoard.ScrollVertical = Math.Clamp(
+            currentBoard.ScrollVertical + FrameAlignmentDelta(currentBoard, currentControl),
+            0,
+            ScrollMaximum(currentBoard));
+        ScheduleAlignment(key, scrollName, remainingPasses);
+    }
+
+    private static int ScrollMaximum(ScrollContainer board)
+    {
+        VScrollBar bar = board.GetVScrollBar();
+        return Math.Max(0, Mathf.CeilToInt((float)(bar.MaxValue - bar.Page)));
+    }
+
+    private static int FrameAlignmentDelta(ScrollContainer board, Control resolved)
+    {
+        Control title = resolved.GetNodeOrNull<Control>("CardFace/Title") ?? resolved;
         const int topInset = 12;
         Rect2 viewport = board.GetGlobalRect();
         Control card = CardContaining(board, title) ?? title;
@@ -153,17 +222,46 @@ public sealed class BoardRenderResult
         float alignTop = contentTop - (viewport.Position.Y + topInset);
         float revealBottom = cardRect.End.Y - (viewport.End.Y - topInset);
         float delta = revealBottom <= alignTop ? alignTop : revealBottom;
-        VScrollBar bar = board.GetVScrollBar();
-        int maximum = Math.Max(0, Mathf.CeilToInt((float)(bar.MaxValue - bar.Page)));
-        board.ScrollVertical = Math.Clamp(
-            board.ScrollVertical + Mathf.RoundToInt(delta),
-            0,
-            maximum);
+        return Mathf.RoundToInt(delta);
+    }
+
+    private void ScheduleAlignment(int key, StringName scrollName, int remainingPasses)
+    {
         if (remainingPasses > 0)
         {
-            Callable.From(() => AlignBoardToCardFrame(board, title, remainingPasses - 1))
+            Callable.From(() => AlignBoardToCardFrame(key, scrollName, remainingPasses - 1))
                 .CallDeferred();
         }
+    }
+
+    private bool TryCurrentControl(int key, out Control? control)
+    {
+        control = IsCurrent?.Invoke() == true ? ControlFor(key) : null;
+        return control is not null;
+    }
+
+    private bool TryFindScrollControl(
+        int key,
+        StringName scrollName,
+        out ScrollContainer? scroll,
+        out Control? control)
+    {
+        scroll = null;
+        control = null;
+        if (!TryCurrentControl(key, out Control? found))
+        {
+            return false;
+        }
+
+        ScrollContainer? containing = InteractionControl.ScrollAncestor(found!, scrollName.ToString());
+        if (containing is null)
+        {
+            return false;
+        }
+
+        scroll = containing;
+        control = found;
+        return true;
     }
 
     private static CardControl? CardContaining(ScrollContainer scroll, Control control)

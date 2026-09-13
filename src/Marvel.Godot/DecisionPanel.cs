@@ -16,6 +16,9 @@ public sealed partial class DecisionPanel : VBoxContainer
     private VBoxContainer? content;
     private VBoxContainer? commit;
     private bool submitting;
+    private int renderGeneration;
+    private long promptRevision;
+    private readonly PromptSubmissionLatch submission = new();
     private WorldDescriptor? world;
 
     /// <summary>Raised with one answer built from the current prompt.</summary>
@@ -49,12 +52,22 @@ public sealed partial class DecisionPanel : VBoxContainer
     }
 
     /// <summary>Discards the old draft and renders the response's current prompt.</summary>
-    public void Render(Prompt? prompt, WorldDescriptor currentWorld)
+    public void Render(Prompt? prompt, WorldDescriptor currentWorld, long revision)
     {
         world = currentWorld ?? throw new ArgumentNullException(nameof(currentWorld));
         composer = prompt is null ? null : new DecisionComposer(prompt);
-        submitting = false;
+        promptRevision = revision;
+        submission.Render(revision);
+        submitting = submission.IsSubmitted;
         Rebuild(focusFirst: true);
+    }
+
+    /// <summary>Reopens a prompt only after the client proved its request was not sent.</summary>
+    public void AllowRetry(long revision)
+    {
+        submission.AllowRetry(revision);
+        submitting = submission.IsSubmitted;
+        Rebuild();
     }
 
     /// <summary>Prevents a second mutation while one response is outstanding.</summary>
@@ -68,11 +81,23 @@ public sealed partial class DecisionPanel : VBoxContainer
     internal void NotifyAnchorFocused(IReadOnlyList<int> ids) =>
         AnchorFocused?.Invoke(ids);
 
-    internal void NotifySubmitted(EngineDecision decision) =>
+    internal int GetRenderGeneration() => renderGeneration;
+
+    internal void NotifySubmitted(EngineDecision decision)
+    {
+        if (composer is null || !submission.TrySubmit(promptRevision))
+        {
+            return;
+        }
+
+        submitting = true;
+        Rebuild();
         Submitted?.Invoke(decision);
+    }
 
     internal void Rebuild(bool focusFirst = false)
     {
+        int generation = checked(++renderGeneration);
         Control? focused = GetViewport()?.GuiGetFocusOwner();
         string? focusName = focused is not null && IsAncestorOf(focused)
             ? FocusKey(focused)
@@ -90,7 +115,7 @@ public sealed partial class DecisionPanel : VBoxContainer
         AddSelectedDraft();
         AddDecline();
         ProgressChanged?.Invoke(composer.Progress());
-        Callable.From(() => RestoreFocus(focusName, focusFirst)).CallDeferred();
+        Callable.From(() => RestoreFocus(focusName, focusFirst, generation)).CallDeferred();
     }
 
     private void ClearPanel()
@@ -189,7 +214,7 @@ public sealed partial class DecisionPanel : VBoxContainer
             && composer.Prompt.Affordances.Count == 1
             && composer.TryBuild(out EngineDecision? automatic, out _))
         {
-            Submitted?.Invoke(automatic!);
+            NotifySubmitted(automatic!);
             return;
         }
         Rebuild();
@@ -230,7 +255,7 @@ public sealed partial class DecisionPanel : VBoxContainer
         {
             if (composer.TryDecline(out EngineDecision? decision, out _))
             {
-                Submitted?.Invoke(decision!);
+                NotifySubmitted(decision!);
             }
         };
         AddCommit(pass);
@@ -348,8 +373,13 @@ public sealed partial class DecisionPanel : VBoxContainer
         };
     }
 
-    private void RestoreFocus(string? requested, bool focusFirst) =>
-        DecisionFocus.Restore(this, requested, focusFirst);
+    private void RestoreFocus(string? requested, bool focusFirst, int generation)
+    {
+        if (generation == renderGeneration)
+        {
+            DecisionFocus.Restore(this, requested, focusFirst, generation);
+        }
+    }
 
     private string? FocusKey(Control focused) => DecisionFocus.Key(this, focused);
 

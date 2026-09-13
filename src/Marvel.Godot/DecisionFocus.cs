@@ -5,7 +5,11 @@ namespace Marvel.Godot;
 /// <summary>Restores decision focus and keeps nested decision scrolling readable.</summary>
 internal static class DecisionFocus
 {
-    internal static void Restore(DecisionPanel panel, string? requested, bool focusFirst)
+    internal static void Restore(
+        DecisionPanel panel,
+        string? requested,
+        bool focusFirst,
+        int renderGeneration)
     {
         Control? candidate = EnabledControl(panel, requested);
         if (candidate is null && requested is not null)
@@ -16,7 +20,11 @@ internal static class DecisionFocus
         candidate ??= FirstEnabledButton(panel, focusFirst || requested is not null);
         if (candidate is not null)
         {
-            FocusWhenLayoutSettles(candidate);
+            string? key = Key(panel, candidate);
+            if (key is not null)
+            {
+                FocusWhenLayoutSettles(panel, key, renderGeneration);
+            }
         }
     }
 
@@ -49,27 +57,60 @@ internal static class DecisionFocus
                 .FirstOrDefault(button => !button.Disabled)
             : null;
 
-    private static void FocusWhenLayoutSettles(Control candidate)
+    private static void FocusWhenLayoutSettles(
+        DecisionPanel panel,
+        string key,
+        int renderGeneration)
     {
+        Control? candidate = InteractionControl.Find(panel, key);
+        if (candidate is null)
+        {
+            return;
+        }
+
         candidate.GrabFocus();
         Callable.From(() =>
         {
-            EnsureVisible(candidate);
+            Control? settled = CurrentControl(panel, key, renderGeneration);
+            if (settled is null)
+            {
+                return;
+            }
+
+            EnsureVisible(settled);
             // Nested scroll containers settle from the decision rail out to the page.
-            Callable.From(() => EnsureVisible(candidate)).CallDeferred();
+            Callable.From(() =>
+            {
+                Control? final = CurrentControl(panel, key, renderGeneration);
+                if (final is not null)
+                {
+                    EnsureVisible(final);
+                }
+            }).CallDeferred();
         }).CallDeferred();
     }
 
+    private static Control? CurrentControl(
+        DecisionPanel panel,
+        string key,
+        int renderGeneration) =>
+        panel.IsInsideTree() && renderGeneration == panel.GetRenderGeneration()
+            ? InteractionControl.Find(panel, key)
+            : null;
+
     private static void EnsureVisible(Control control)
     {
-        Node? ancestor = control.GetParent();
-        while (ancestor is not null)
+        for (Node? ancestor = control.GetParent(); ancestor is not null; ancestor = ancestor.GetParent())
         {
             if (ancestor is ScrollContainer scroll)
             {
+                if (!InteractionControl.IsUsable(scroll) || !scroll.IsAncestorOf(control))
+                {
+                    return;
+                }
+
                 EnsureVisibleWithin(scroll, control);
             }
-            ancestor = ancestor.GetParent();
         }
     }
 

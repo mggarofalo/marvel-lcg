@@ -84,6 +84,7 @@ internal sealed class MainSessionController
     {
         main.decisionPending = false;
         main.uncertainMutationError = null;
+        main.decisions.AllowRetry(main.CurrentGame!.Revision);
         main.ApplyProgress(GameProgressPresentation.DecisionNotSent(error ?? new ClientStartupError(
             "decision_not_sent", "The decision did not reach the game service.")));
         main.promptProgress.Text = "NOT SENT  ·  RETRY SAFE";

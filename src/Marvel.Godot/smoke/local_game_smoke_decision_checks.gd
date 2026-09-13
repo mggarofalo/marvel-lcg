@@ -17,14 +17,16 @@ func _select_mulligan_cards() -> bool:
 	if mulligan == null or mulligan.disabled:
 		_fail("the seeded opening hand has no operable mulligan action")
 		return false
-	mulligan.pressed.emit()
+	if not await _pointer_activate(mulligan):
+		return false
 	await process_frame
 	for title in ["Avengers Mansion", "Aunt May", "Swinging Web Kick"]:
 		var target := _mulligan_target(title)
 		if target == null:
 			_fail("the seeded mulligan cannot select %s" % title)
 			return false
-		target.pressed.emit()
+		if not await _pointer_activate(target):
+			return false
 		await process_frame
 	return true
 
@@ -41,7 +43,8 @@ func _submit_mulligan() -> bool:
 	if submit == null or submit.disabled or "Discard 3 and redraw" not in submit.text:
 		_fail("the three-card mulligan cannot be submitted")
 		return false
-	submit.pressed.emit()
+	if not await _pointer_activate(submit):
+		return false
 	if not await _wait_for(func() -> bool:
 		return "turn" in (_node("Play/Prompt/Margin/Stack/PromptHeader/Heading") as Label).text.to_lower()):
 		_fail("the seeded mulligan did not reach the player turn")
@@ -88,7 +91,8 @@ func _start_web_shooter_draft() -> bool:
 	if web_shooter == null or web_shooter.disabled:
 		_fail("Web-Shooter is not playable after the mulligan")
 		return false
-	web_shooter.pressed.emit()
+	if not await _pointer_activate(web_shooter):
+		return false
 	await process_frame
 	await process_frame
 	var result := _node("Play/Prompt/Margin/Stack/Workbench/Action/LastResult") as Control
@@ -139,7 +143,8 @@ func _synchronization_preserves_history(expect_terminal: bool) -> bool:
 		return false
 	var event_log := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel
 	var history_before := event_log.text
-	synchronize.pressed.emit()
+	if not await _pointer_activate(synchronize):
+		return false
 	if not await _wait_for(func() -> bool:
 		return not _status().text.begins_with("SYNCHRONIZING")):
 		_fail("the explicit table synchronization did not settle")

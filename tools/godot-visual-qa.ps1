@@ -22,17 +22,23 @@ if ($LASTEXITCODE -ne 0 -or -not $version.StartsWith("4.7.")) {
 dotnet build "$repoRoot/src/Marvel.Godot/Marvel.Godot.csproj" --nologo
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 New-Item -ItemType Directory -Force -Path $CaptureDir | Out-Null
+function Invoke-VisualSmoke {
+    $output = & $GodotBin --rendering-method gl_compatibility `
+        --resolution $env:MARVEL_SMOKE_VIEWPORT `
+        --path "$repoRoot/src/Marvel.Godot" `
+        --script res://smoke/local_game_smoke.gd 2>&1
+    $output | Write-Output
+    if ($LASTEXITCODE -ne 0 -or ($output -match "ERROR:")) {
+        throw "Godot visual smoke reported an unexpected failure diagnostic."
+    }
+}
 foreach ($viewport in @("1280x720", "1920x1080")) {
     foreach ($motion in @("enabled", "disabled")) {
         $env:MARVEL_UI_SCALE = "compact"
         $env:MARVEL_SMOKE_VIEWPORT = $viewport
         $env:MARVEL_SMOKE_MOTION = $motion
         $env:MARVEL_SMOKE_CAPTURE_DIR = $CaptureDir
-        & $GodotBin --rendering-method gl_compatibility `
-            --resolution $viewport `
-            --path "$repoRoot/src/Marvel.Godot" `
-            --script res://smoke/local_game_smoke.gd
-        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        Invoke-VisualSmoke
     }
 }
 

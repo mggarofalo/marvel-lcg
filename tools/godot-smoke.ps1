@@ -19,6 +19,15 @@ if ($LASTEXITCODE -ne 0 -or -not $version.StartsWith("4.7.")) {
 dotnet build "$repoRoot/src/Marvel.Godot/Marvel.Godot.csproj" --nologo
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+function Invoke-LocalSmoke {
+    $output = & $GodotBin --headless --path "$repoRoot/src/Marvel.Godot" `
+        --script res://smoke/local_game_smoke.gd 2>&1
+    $output | Write-Output
+    if ($LASTEXITCODE -ne 0 -or ($output -match "ERROR:")) {
+        throw "Godot local smoke reported an unexpected failure diagnostic."
+    }
+}
+
 $viewports = if ($Representative) {
     @("1280x720")
 }
@@ -37,15 +46,11 @@ foreach ($viewport in $viewports) {
         $env:MARVEL_UI_SCALE = $scale
         $env:MARVEL_SMOKE_VIEWPORT = $viewport
         $env:MARVEL_SMOKE_MOTION = "enabled"
-        & $GodotBin --headless --path "$repoRoot/src/Marvel.Godot" `
-            --script res://smoke/local_game_smoke.gd
-        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        Invoke-LocalSmoke
     }
 }
 $env:MARVEL_UI_SCALE = "100"
 $env:MARVEL_SMOKE_VIEWPORT = "1280x720"
 $env:MARVEL_SMOKE_MOTION = "disabled"
-& $GodotBin --headless --path "$repoRoot/src/Marvel.Godot" `
-    --script res://smoke/local_game_smoke.gd
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+Invoke-LocalSmoke
 exit 0

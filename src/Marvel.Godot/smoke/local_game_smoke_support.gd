@@ -25,10 +25,79 @@ func _visible_control_rect(control: Control) -> Rect2:
 	var visible_rect := control.get_global_rect().intersection(Rect2(Vector2.ZERO, _viewport_size()))
 	var ancestor := control.get_parent()
 	while ancestor != null:
-		if ancestor is ScrollContainer:
+		if ancestor is ScrollContainer or (ancestor is Control and ancestor.clip_contents):
 			visible_rect = visible_rect.intersection(ancestor.get_global_rect())
 		ancestor = ancestor.get_parent()
 	return visible_rect
+
+
+func _control_owns_point(control: Control, point: Vector2) -> bool:
+	if not _visible_control_rect(control).has_point(point):
+		return false
+	var move := InputEventMouseMotion.new()
+	move.position = point
+	move.global_position = point
+	render_viewport.push_input(move)
+	await process_frame
+	var hovered := render_viewport.gui_get_hovered_control()
+	return hovered == control or (hovered != null and control.is_ancestor_of(hovered))
+
+
+func _control_has_real_hit_area(control: Control) -> bool:
+	var rect := _visible_control_rect(control)
+	if rect.size.x < 4.0 or rect.size.y < 4.0:
+		_fail("control '%s' has no unclipped hit area" % control.name)
+		return false
+	var inset := minf(2.0, minf(rect.size.x, rect.size.y) / 4.0)
+	var points := [
+		rect.get_center(),
+		rect.position + Vector2(inset, inset),
+		Vector2(rect.end.x - inset, rect.position.y + inset),
+		Vector2(rect.position.x + inset, rect.end.y - inset),
+		rect.end - Vector2(inset, inset),
+	]
+	for point in points:
+		if not await _control_owns_point(control, point):
+			_fail("control '%s' loses a center or interior-edge hit to clipping or occlusion" % control.name)
+			return false
+	return true
+
+
+func _pointer_activate(control: Control) -> bool:
+	if not await _control_has_real_hit_area(control):
+		return false
+	var point := _visible_control_rect(control).get_center()
+	var press := InputEventMouseButton.new()
+	press.button_index = MOUSE_BUTTON_LEFT
+	press.pressed = true
+	press.position = point
+	press.global_position = point
+	render_viewport.push_input(press)
+	var release := InputEventMouseButton.new()
+	release.button_index = MOUSE_BUTTON_LEFT
+	release.position = point
+	release.global_position = point
+	render_viewport.push_input(release)
+	await process_frame
+	return true
+
+
+func _keyboard_activate(control: Control, repeats := 1) -> bool:
+	control.grab_focus()
+	await process_frame
+	if render_viewport.gui_get_focus_owner() != control:
+		_fail("keyboard activation could not focus '%s'" % control.name)
+		return false
+	for index in repeats:
+		var press := InputEventAction.new()
+		press.action = &"ui_accept"
+		press.pressed = true
+		render_viewport.push_input(press)
+		var release := InputEventAction.new()
+		release.action = &"ui_accept"
+		render_viewport.push_input(release)
+	await process_frame
+	return true
 
 
 func _viewport_size() -> Vector2:
