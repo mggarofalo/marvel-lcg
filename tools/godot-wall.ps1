@@ -92,3 +92,5 @@ try {
 finally {
     Remove-Item -LiteralPath $log -Force -ErrorAction SilentlyContinue
 }
+
+exit 0
