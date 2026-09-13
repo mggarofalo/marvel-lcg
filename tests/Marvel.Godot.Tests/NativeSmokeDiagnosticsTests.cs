@@ -42,6 +42,23 @@ public sealed class NativeSmokeDiagnosticsTests
     }
 
     [Fact]
+    public void HostedSmokeUsesUntransformedViewportCoordinatesAtWindowsDpi()
+    {
+        string script = File.ReadAllText(Path.Combine(
+            RepositoryPaths.Root, "src", "Marvel.Godot", "smoke",
+            "hosted_multiplayer_smoke_support.gd"));
+
+        Assert.Contains("func _embedder_point(viewport: Viewport, local_point: Vector2)", script, StringComparison.Ordinal);
+        Assert.Contains("return viewport.get_final_transform() * local_point", script, StringComparison.Ordinal);
+        Assert.Contains("viewport.push_input(move)", script, StringComparison.Ordinal);
+        Assert.Contains("viewport.push_input(press)", script, StringComparison.Ordinal);
+        Assert.Contains("viewport.push_input(release)", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("push_input(move, true)", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("push_input(press, true)", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("push_input(release, true)", script, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void PowerShellErrorContractMakesGodotErrorAProcessFailure()
     {
         string helper = Path.Combine(RepositoryPaths.Root, "tools/godot-smoke-diagnostics.ps1");

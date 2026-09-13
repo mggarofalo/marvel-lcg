@@ -33,10 +33,11 @@ func _control_owns_point(control: Control, point: Vector2) -> bool:
 	if not _visible_control_rect(control).has_point(point):
 		return false
 	var viewport := control.get_viewport()
+	var input_point := _embedder_point(viewport, point)
 	var move := InputEventMouseMotion.new()
-	move.position = point
-	move.global_position = point
-	viewport.push_input(move, true)
+	move.position = input_point
+	move.global_position = input_point
+	viewport.push_input(move)
 	await get_tree().process_frame
 	return _owns_pointer_target(control, viewport.gui_get_hovered_control())
 
@@ -71,21 +72,26 @@ func _pointer_activate(control: Control) -> bool:
 		return false
 	var viewport := control.get_viewport()
 	var point := _visible_control_rect(control).get_center()
+	var input_point := _embedder_point(viewport, point)
 	var press := InputEventMouseButton.new()
 	press.button_index = MOUSE_BUTTON_LEFT
 	press.pressed = true
-	press.position = point
-	press.global_position = point
-	viewport.push_input(press, true)
+	press.position = input_point
+	press.global_position = input_point
+	viewport.push_input(press)
 	var release := InputEventMouseButton.new()
 	release.button_index = MOUSE_BUTTON_LEFT
-	release.position = point
-	release.global_position = point
-	viewport.push_input(release, true)
+	release.position = input_point
+	release.global_position = input_point
+	viewport.push_input(release)
 	await get_tree().process_frame
 	inactive.visible = true
 	await get_tree().process_frame
 	return true
+
+
+func _embedder_point(viewport: Viewport, local_point: Vector2) -> Vector2:
+	return viewport.get_final_transform() * local_point
 
 
 func _hide_overlapping_client(control: Control) -> Control:

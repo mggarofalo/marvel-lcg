@@ -160,13 +160,10 @@ func _viewport_size() -> Vector2:
 
 
 func _focused_board_area_is_visible() -> bool:
-	await process_frame
-	await process_frame
-	var saw_focused_card := false
-	for card in main.find_children("ProceduralCard", "PanelContainer", true, false):
-		if card.theme_type_variation != &"FocusedCard":
-			continue
-		saw_focused_card = true
+	if not await _wait_for(func() -> bool: return not _focused_board_cards().is_empty()):
+		_fail("keyboard selection did not highlight its board anchor")
+		return false
+	for card in _focused_board_cards():
 		var area := card.get_parent()
 		while area != null and not (area is PanelContainer and area.name.begins_with("Area")):
 			area = area.get_parent()
@@ -194,10 +191,19 @@ func _focused_board_area_is_visible() -> bool:
 			return false
 		if not _focused_card_title_is_visible(card, board, board_rect):
 			return false
-	if not saw_focused_card:
-		_fail("keyboard selection did not highlight its board anchor")
-		return false
 	return true
+
+
+func _focused_board_cards() -> Array[Control]:
+	var focused: Array[Control] = []
+	# CardControl is a managed PanelContainer. Native backends do not expose the
+	# managed type name consistently to find_children, so identify the rendered
+	# card by its stable node name and then inspect its actual Control state.
+	for candidate in main.find_children("ProceduralCard", "", true, false):
+		var card := candidate as Control
+		if card != null and card.theme_type_variation == &"FocusedCard":
+			focused.append(card)
+	return focused
 
 
 func _focused_card_title_is_visible(card: Control, board: ScrollContainer, board_rect: Rect2) -> bool:
@@ -274,9 +280,6 @@ func _capture_checkpoint(checkpoint: String) -> bool:
 		return true
 	await process_frame
 	await process_frame
-	if checkpoint == "open-table-prompt-dense-concealed" \
-			and not await _focused_board_area_is_visible():
-		return false
 	var image := render_viewport.get_texture().get_image()
 	if image == null or image.is_empty():
 		_fail("visual checkpoint '%s' needs a non-headless rendering driver" % checkpoint)

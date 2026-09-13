@@ -214,6 +214,8 @@ func _activate_focused_decision() -> Button:
 	if expected == null:
 		_fail("the current prompt has no keyboard-operable action")
 		return null
+	render_viewport.gui_release_focus()
+	await process_frame
 	expected.grab_focus()
 	await process_frame
 	await process_frame
@@ -222,18 +224,15 @@ func _activate_focused_decision() -> Button:
 		_fail("the current prompt could not focus its keyboard-operable action")
 		return null
 	var focus_name := focused.name
+	var issued_id := focused.get_instance_id()
 	_accept_repeats_without_settle()
-	await process_frame
-	await process_frame
-	await process_frame
-	var restored := render_viewport.gui_get_focus_owner() as Button
-	if restored == null or restored.name != focus_name or not _decision().is_ancestor_of(restored):
+	if not await _wait_for(func() -> bool:
+		var replacement := _decision().find_child(focus_name, true, false) as Button
+		return replacement != null and replacement.get_instance_id() != issued_id \
+			and replacement.has_focus() and replacement.text.begins_with("✓")):
 		_fail("keyboard focus was lost when the selected decision control rebuilt")
 		return null
-	if not restored.text.begins_with("✓"):
-		_fail("ui_accept did not select the focused decision action")
-		return null
-	return restored
+	return _decision().find_child(focus_name, true, false) as Button
 
 
 func _focused_decision_is_visible(restored: Button, decision_scroll: ScrollContainer) -> bool:
