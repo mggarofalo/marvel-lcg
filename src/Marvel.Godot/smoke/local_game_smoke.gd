@@ -199,6 +199,8 @@ func _settle_decision(decisions: int) -> bool:
 func _undo_first_form_change(state: Dictionary) -> bool:
 	if not state.changed_form or state.tested_undo:
 		return true
+	if not await _show_history_tab():
+		return false
 	var history := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel
 	var undo := _node(
 		"Play/Prompt/Margin/Stack/Workbench/History/EventHeader/UndoLast") as Button
@@ -218,9 +220,43 @@ func _undo_first_form_change(state: Dictionary) -> bool:
 	if "Peter Parker" not in _visible_text(_play()):
 		_fail("undoing the form change did not restore alter-ego form")
 		return false
+	if not await _show_action_tab():
+		return false
 	state.tested_undo = true
 	state.changed_form = false
 	return true
+
+
+func _show_history_tab() -> bool:
+	var workbench := _node("Play/Prompt/Margin/Stack/Workbench") as TabContainer
+	if workbench.current_tab == 1:
+		return true
+	return await _navigate_workbench_tab(workbench, KEY_RIGHT, 1)
+
+
+func _show_action_tab() -> bool:
+	var workbench := _node("Play/Prompt/Margin/Stack/Workbench") as TabContainer
+	if workbench.current_tab == 0:
+		return true
+	return await _navigate_workbench_tab(workbench, KEY_LEFT, 0)
+
+
+func _navigate_workbench_tab(workbench: TabContainer, key: Key, expected: int) -> bool:
+	var tabs := workbench.get_tab_bar()
+	tabs.grab_focus()
+	await process_frame
+	var press := InputEventKey.new()
+	press.keycode = key
+	press.pressed = true
+	render_viewport.push_input(press)
+	var release := InputEventKey.new()
+	release.keycode = key
+	render_viewport.push_input(release)
+	await process_frame
+	if workbench.current_tab == expected:
+		return true
+	_fail("keyboard navigation did not select the requested workbench tab")
+	return false
 
 
 func _motion_state_is_safe(state: Dictionary) -> bool:

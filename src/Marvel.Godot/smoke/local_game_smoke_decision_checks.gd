@@ -73,13 +73,13 @@ func _mulligan_result_is_operable() -> bool:
 func _result_toggle_is_operable(summary: Label) -> bool:
 	var toggle := _node(
 		"Play/Prompt/Margin/Stack/Workbench/Action/LastResult/Margin/Copy/Header/Toggle") as Button
-	toggle.pressed.emit()
-	await process_frame
+	if not await _pointer_activate(toggle):
+		return false
 	if summary.visible or toggle.text != "Expand":
 		_fail("the transient result cannot be collapsed")
 		return false
-	toggle.pressed.emit()
-	await process_frame
+	if not await _pointer_activate(toggle):
+		return false
 	if not summary.visible or toggle.text != "Collapse":
 		_fail("the transient result cannot be expanded")
 		return false
@@ -430,7 +430,8 @@ func _endpoint_retry_is_safe(endpoint: LineEdit, reload_setup: Button) -> bool:
 		return false
 	endpoint.text = ""
 	endpoint.text_changed.emit(endpoint.text)
-	reload_setup.pressed.emit()
+	if not await _pointer_activate(reload_setup):
+		return false
 	if not await _wait_for(func() -> bool:
 		return not reload_setup.disabled and not (_button_named("Start game") as Button).disabled):
 		_fail("correcting the endpoint and retrying did not restore setup options")
@@ -449,8 +450,8 @@ func _join_flow_is_safe() -> bool:
 	if join_flow == null:
 		_fail("the setup screen has no explicit Join a game action")
 		return false
-	join_flow.pressed.emit()
-	await process_frame
+	if not await _pointer_activate(join_flow):
+		return false
 	var invitation := _node("Setup/Selections/Fields/JoinFields/Invitation") as LineEdit
 	var join := _button_named("Join game")
 	if invitation == null or not invitation.secret or invitation.max_length != 256:
@@ -468,8 +469,8 @@ func _join_flow_is_safe() -> bool:
 	if start_flow == null:
 		_fail("the setup screen cannot return to the explicit start flow")
 		return false
-	start_flow.pressed.emit()
-	await process_frame
+	if not await _pointer_activate(start_flow):
+		return false
 	if not _node("Setup/Selections/Fields/Grid").visible:
 		_fail("returning to start did not restore assignment controls")
 		return false

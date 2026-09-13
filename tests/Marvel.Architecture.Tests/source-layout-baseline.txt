@@ -101,7 +101,6 @@ src/Marvel.Godot/ClientTheme.cs:358: SL005: Flat=10
 src/Marvel.Godot/ClientTheme.cs:6: SL003: ClientTheme=387
 src/Marvel.Godot/Main.cs:14: SL003: Main=472
 src/Marvel.Godot/MainEventController.cs:14: SL003: MainEventController=348
-src/Marvel.Godot/MainSessionController.cs:11: SL003: MainSessionController=390
 src/Marvel.Godot/MainSetupController.cs:10: SL003: MainSetupController=480
 src/Marvel.Godot/VisualSystem.cs:55: SL005: PlaceFloatingPanel=8
 src/Marvel.Rules/Play/Agenda.cs:29: SL003: Agenda=327

@@ -205,6 +205,8 @@ func _keyboard_inspector_is_safe(hand_card: Control, inspector: Control) -> bool
 		return false
 	if not await _capture_named_card("Peter Parker", "card-inspector-identity-current"):
 		return false
+	await process_frame
+	await process_frame
 	restore_focus.grab_focus()
 	await process_frame
 	return true
@@ -244,10 +246,13 @@ func _inspector_traps_tab(inspector: Control) -> bool:
 
 
 func _close_inspector_with_keyboard(hand_card: Control, inspector: Control) -> bool:
-	var escape := InputEventAction.new()
-	escape.action = "ui_cancel"
+	var escape := InputEventKey.new()
+	escape.keycode = KEY_ESCAPE
 	escape.pressed = true
 	render_viewport.push_input(escape)
+	var release := InputEventKey.new()
+	release.keycode = KEY_ESCAPE
+	render_viewport.push_input(release)
 	await process_frame
 	if inspector.visible:
 		_fail("Escape did not close the card inspector")
@@ -280,11 +285,7 @@ func _capture_named_card(title: String, checkpoint: String) -> bool:
 		return false
 	if not await _capture_checkpoint(checkpoint):
 		return false
-	var close := inspector.get_node("Frame/Stack/Header/Close") as Button
-	if not await _pointer_activate(close):
-		return false
-	await process_frame
-	return true
+	return await _close_inspector_with_keyboard(card, inspector)
 
 
 func _prepare_art_pack() -> void:

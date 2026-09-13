@@ -67,4 +67,36 @@ public sealed class InteractionLifecycleTests
 
         Assert.True(latch.TrySubmit(7));
     }
+
+    [Fact]
+    public void AnUncertainSameRevisionRemainsLockedUntilAuthoritativeSynchronization()
+    {
+        var latch = new PromptSubmissionLatch();
+
+        latch.Render(7);
+        Assert.True(latch.TrySubmit(7));
+        latch.Render(7); // The uncertain failure carried no authoritative table.
+
+        Assert.False(latch.TrySubmit(7));
+
+        latch.AuthoritativeSynchronization(7);
+
+        Assert.True(latch.TrySubmit(7));
+    }
+
+    [Fact]
+    public void ARejectedSameRevisionRemainsLockedUntilAuthoritativeSynchronization()
+    {
+        var latch = new PromptSubmissionLatch();
+
+        latch.Render(7);
+        Assert.True(latch.TrySubmit(7));
+        latch.Render(7); // The rejected failure carried no authoritative table.
+
+        Assert.False(latch.TrySubmit(7));
+
+        latch.AuthoritativeSynchronization(7);
+
+        Assert.True(latch.TrySubmit(7));
+    }
 }

@@ -36,6 +36,13 @@ internal sealed class DecisionPanelLifecycle
         panel.Rebuild();
     }
 
+    internal void AuthoritativeSynchronization(long currentRevision)
+    {
+        submission.AuthoritativeSynchronization(currentRevision);
+        panel.submitting = submission.IsSubmitted;
+        panel.Rebuild();
+    }
+
     internal bool TrySubmit()
     {
         if (panel.composer is null || !submission.TrySubmit(revision))

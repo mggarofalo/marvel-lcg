@@ -56,6 +56,10 @@ public sealed partial class DecisionPanel : VBoxContainer
     /// <summary>Reopens a prompt only after the client proved its request was not sent.</summary>
     public void AllowRetry(long revision) => lifecycle.AllowRetry(revision);
 
+    /// <summary>Reopens the prompt after an authoritative table synchronization.</summary>
+    internal void AuthoritativeSynchronization(long revision) =>
+        lifecycle.AuthoritativeSynchronization(revision);
+
     /// <summary>Prevents a second mutation while one response is outstanding.</summary>
     public void SetSubmitting(bool value)
     {

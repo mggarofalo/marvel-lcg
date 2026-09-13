@@ -79,9 +79,36 @@ func _control_has_real_hit_area(control: Control) -> bool:
 	return true
 
 
+func _scroll_control_into_view(control: Control) -> void:
+	var scrolls: Array[ScrollContainer] = []
+	var ancestor := control.get_parent()
+	while ancestor != null:
+		if ancestor is ScrollContainer:
+			scrolls.append(ancestor)
+		ancestor = ancestor.get_parent()
+	for scroll in scrolls:
+		scroll.ensure_control_visible(control)
+		await process_frame
+	await process_frame
+
+
+func _prepare_activation(control: Control) -> bool:
+	# Setup actions can begin below the page fold. Move the real scroll viewport
+	# first, then prove that the control owns an unclipped input area.
+	await _scroll_control_into_view(control)
+	return await _control_has_real_hit_area(control)
+
+
 func _pointer_activate(control: Control) -> bool:
-	if not await _control_has_real_hit_area(control):
+	if not await _prepare_activation(control):
 		return false
+	if not _pointer_activate_without_settle(control):
+		return false
+	await process_frame
+	return true
+
+
+func _pointer_activate_without_settle(control: Control) -> bool:
 	var point := _visible_control_rect(control).get_center()
 	var press := InputEventMouseButton.new()
 	press.button_index = MOUSE_BUTTON_LEFT
@@ -94,7 +121,6 @@ func _pointer_activate(control: Control) -> bool:
 	release.position = point
 	release.global_position = point
 	render_viewport.push_input(release)
-	await process_frame
 	return true
 
 
@@ -104,16 +130,29 @@ func _keyboard_activate(control: Control, repeats := 1) -> bool:
 	if render_viewport.gui_get_focus_owner() != control:
 		_fail("keyboard activation could not focus '%s'" % control.name)
 		return false
-	for index in repeats:
-		var press := InputEventAction.new()
-		press.action = &"ui_accept"
-		press.pressed = true
-		render_viewport.push_input(press)
-		var release := InputEventAction.new()
-		release.action = &"ui_accept"
-		render_viewport.push_input(release)
+	_accept_repeats_without_settle(repeats)
 	await process_frame
 	return true
+
+
+func _keyboard_activate_without_settle(control: Control, repeats := 1) -> bool:
+	control.grab_focus()
+	if render_viewport.gui_get_focus_owner() != control:
+		_fail("keyboard activation could not focus '%s'" % control.name)
+		return false
+	_accept_repeats_without_settle(repeats)
+	return true
+
+
+func _accept_repeats_without_settle(repeats := 1) -> void:
+	for index in repeats:
+		var press := InputEventKey.new()
+		press.keycode = KEY_ENTER
+		press.pressed = true
+		render_viewport.push_input(press)
+		var release := InputEventKey.new()
+		release.keycode = KEY_ENTER
+		render_viewport.push_input(release)
 
 
 func _viewport_size() -> Vector2:
@@ -202,8 +241,8 @@ func _event_presentation_is_nonblocking() -> bool:
 
 	var history := log.text
 	if motion_enabled and not skip.disabled:
-		skip.pressed.emit()
-		await process_frame
+		if not await _pointer_activate(skip):
+			return false
 	if not skip.disabled or log.text != history:
 		_fail("skipping motion changed or cleared event history")
 		return false

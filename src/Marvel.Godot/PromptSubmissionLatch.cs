@@ -35,4 +35,7 @@ internal sealed class PromptSubmissionLatch
             submitted = false;
         }
     }
+
+    internal void AuthoritativeSynchronization(long currentRevision) =>
+        AllowRetry(currentRevision);
 }
