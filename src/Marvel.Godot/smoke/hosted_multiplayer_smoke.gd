@@ -1,4 +1,4 @@
-extends Node
+extends "res://smoke/hosted_multiplayer_smoke_support.gd"
 
 # The Windows CI runner falls back to software-rendered ANGLE. Socket decisions
 # must still complete there, but rendering two live Main scenes can take longer
@@ -7,9 +7,6 @@ const TIMEOUT_MILLISECONDS := 60000
 const MAX_DECISIONS := 600
 const GAME_LABEL := "hosted-multiplayer-smoke"
 
-var host: Control
-var guest: Control
-var failed := false
 var checkpoint_directory := ""
 var upgraded := false
 
@@ -45,7 +42,8 @@ func _run() -> void:
 
 func _open_host(packed: PackedScene) -> bool:
 	host = packed.instantiate() as Control
-	get_tree().root.add_child(host)
+	host_viewport = _new_client_viewport()
+	host_viewport.add_child(host)
 	if not await _wait_for(func() -> bool:
 		var ready := _button(host, "Start game")
 		return ready != null and not ready.disabled):
@@ -65,7 +63,8 @@ func _open_host(packed: PackedScene) -> bool:
 	if start == null or start.disabled:
 		_fail("the configured two-hero hosted game cannot start")
 		return false
-	start.pressed.emit()
+	if not await _pointer_activate(start):
+		return false
 	if not await _wait_for(func() -> bool:
 		return _play(host).visible and _button(host, "Copy invitation") != null):
 		_fail("the host did not open a two-seat table with an invitation")
@@ -76,8 +75,8 @@ func _open_host(packed: PackedScene) -> bool:
 func _copy_invitation() -> String:
 	DisplayServer.clipboard_set("")
 	var copy := _button(host, "Copy invitation")
-	copy.pressed.emit()
-	await get_tree().process_frame
+	if copy == null or not await _pointer_activate(copy):
+		return ""
 	var invitation := DisplayServer.clipboard_get()
 	if invitation.is_empty():
 		_fail("copying the one-time invitation did not reach the clipboard")
@@ -90,13 +89,15 @@ func _copy_invitation() -> String:
 
 func _open_guest(packed: PackedScene, invitation: String) -> bool:
 	guest = packed.instantiate() as Control
-	get_tree().root.add_child(guest)
+	guest_viewport = _new_client_viewport()
+	guest_viewport.add_child(guest)
 	if not await _wait_for(func() -> bool: return _button(guest, "Join a game") != null):
 		_fail("the guest entry screen never became ready")
 		return false
 	_configure_connection(guest)
-	_button(guest, "Join a game").pressed.emit()
-	await get_tree().process_frame
+	var join_flow := _button(guest, "Join a game")
+	if join_flow == null or not await _pointer_activate(join_flow):
+		return false
 	var field := _node(guest, "Setup/Selections/Fields/JoinFields/Invitation") as LineEdit
 	if not field.secret:
 		_fail("the guest invitation field is not masked")
@@ -108,7 +109,8 @@ func _open_guest(packed: PackedScene, invitation: String) -> bool:
 	if join == null or join.disabled:
 		_fail("the guest cannot redeem the copied invitation")
 		return false
-	join.pressed.emit()
+	if not await _pointer_activate(join):
+		return false
 	invitation = ""
 	DisplayServer.clipboard_set("")
 	if not await _wait_for(func() -> bool: return _play(guest).visible):
@@ -241,7 +243,8 @@ func _answer_visible_decision(main: Control) -> bool:
 	var decision := _decision(main)
 	var decline := _button(decision, "Pass / decline")
 	if decline != null and not decline.disabled:
-		decline.pressed.emit()
+		if not await _pointer_activate(decline):
+			return false
 	else:
 		var submit := _submit_button(decision)
 		if submit == null or submit.disabled:
@@ -249,13 +252,14 @@ func _answer_visible_decision(main: Control) -> bool:
 			if choice == null:
 				_fail("the active client has no visible control that can advance its prompt")
 				return false
-			choice.pressed.emit()
-			await get_tree().process_frame
+			if not await _pointer_activate(choice):
+				return false
 			submit = _submit_button(decision)
 		if submit == null or submit.disabled:
 			_fail("the active client's selected decision cannot be submitted")
 			return false
-		submit.pressed.emit()
+		if not await _pointer_activate(submit):
+			return false
 
 	if not await _wait_for(func() -> bool:
 		return not _status(main).text.begins_with("DECISION SENT")):
@@ -275,7 +279,8 @@ func _synchronize(main: Control) -> bool:
 	if sync == null or sync.disabled:
 		_fail("a waiting client cannot synchronize its hosted table")
 		return false
-	sync.pressed.emit()
+	if not await _pointer_activate(sync):
+		return false
 	if not await _wait_for(func() -> bool:
 		return not _status(main).text.begins_with("SYNCHRONIZING")):
 		_fail("a hosted table synchronization did not settle")
@@ -384,11 +389,3 @@ func _wait_for(condition: Callable) -> bool:
 			return true
 		await get_tree().process_frame
 	return false
-
-
-func _fail(message: String) -> void:
-	if failed:
-		return
-	failed = true
-	push_error(message)
-	get_tree().quit(1)

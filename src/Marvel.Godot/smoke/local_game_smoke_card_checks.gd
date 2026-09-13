@@ -78,9 +78,8 @@ func _upcoming_disclosure_is_safe(disclosure: Button) -> bool:
 		_fail("an upcoming-stages disclosure is not clearly labeled and collapsible")
 		return false
 	var cards := disclosure.get_parent().get_node("UpcomingStagesList") as VBoxContainer
-	disclosure.button_pressed = true
-	disclosure.pressed.emit()
-	await process_frame
+	if not await _pointer_activate(disclosure):
+		return false
 	if not cards.visible:
 		_fail("opening upcoming stages did not reveal its compact list")
 		return false

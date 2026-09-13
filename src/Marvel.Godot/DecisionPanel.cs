@@ -12,11 +12,13 @@ public sealed partial class DecisionPanel : VBoxContainer
 {
     private InterfaceScale interfaceScale = ClientTheme.ConfiguredScale();
     internal ControlMetrics ControlMetrics => VisualSystem.Controls(interfaceScale);
-    private DecisionComposer? composer;
+    internal DecisionComposer? composer;
     private VBoxContainer? content;
     private VBoxContainer? commit;
-    private bool submitting;
-    private WorldDescriptor? world;
+    internal bool submitting;
+    private readonly DecisionPanelLifecycle lifecycle;
+    internal WorldDescriptor? world;
+    public DecisionPanel() => lifecycle = new DecisionPanelLifecycle(this);
 
     /// <summary>Raised with one answer built from the current prompt.</summary>
     public event Action<EngineDecision>? Submitted;
@@ -32,7 +34,6 @@ public sealed partial class DecisionPanel : VBoxContainer
 
     /// <summary>Raised when a player opens one action's target and payment editor.</summary>
     public event Action? DraftStarted;
-
     /// <summary>Applies the current presentation-only desktop scale.</summary>
     public void SetInterfaceScale(InterfaceScale scale)
     {
@@ -49,13 +50,15 @@ public sealed partial class DecisionPanel : VBoxContainer
     }
 
     /// <summary>Discards the old draft and renders the response's current prompt.</summary>
-    public void Render(Prompt? prompt, WorldDescriptor currentWorld)
-    {
-        world = currentWorld ?? throw new ArgumentNullException(nameof(currentWorld));
-        composer = prompt is null ? null : new DecisionComposer(prompt);
-        submitting = false;
-        Rebuild(focusFirst: true);
-    }
+    public void Render(Prompt? prompt, WorldDescriptor currentWorld, long revision) =>
+        lifecycle.Render(prompt, currentWorld, revision);
+
+    /// <summary>Reopens a prompt only after the client proved its request was not sent.</summary>
+    public void AllowRetry(long revision) => lifecycle.AllowRetry(revision);
+
+    /// <summary>Reopens the prompt after an authoritative table synchronization.</summary>
+    internal void AuthoritativeSynchronization(long revision) =>
+        lifecycle.AuthoritativeSynchronization(revision);
 
     /// <summary>Prevents a second mutation while one response is outstanding.</summary>
     public void SetSubmitting(bool value)
@@ -68,11 +71,23 @@ public sealed partial class DecisionPanel : VBoxContainer
     internal void NotifyAnchorFocused(IReadOnlyList<int> ids) =>
         AnchorFocused?.Invoke(ids);
 
-    internal void NotifySubmitted(EngineDecision decision) =>
-        Submitted?.Invoke(decision);
+    internal int GetRenderGeneration() => lifecycle.RenderGeneration;
+
+    internal void NotifySubmitted(EngineDecision decision, int generation) =>
+        lifecycle.NotifySubmitted(decision, generation);
+
+    internal void SelectAffordance(int id, int generation) => lifecycle.SelectAffordance(id, generation);
+
+    internal bool IsCurrentDraft(DecisionComposer expected, int generation) =>
+        ReferenceEquals(composer, expected) && lifecycle.CanMutate(generation);
+
+    internal void RaiseSubmitted(EngineDecision decision) => Submitted?.Invoke(decision);
+
+    internal void RaiseDraftStarted() => DraftStarted?.Invoke();
 
     internal void Rebuild(bool focusFirst = false)
     {
+        int generation = lifecycle.NextRenderGeneration();
         Control? focused = GetViewport()?.GuiGetFocusOwner();
         string? focusName = focused is not null && IsAncestorOf(focused)
             ? FocusKey(focused)
@@ -85,12 +100,12 @@ public sealed partial class DecisionPanel : VBoxContainer
         }
 
         PromptPresentation prompt = PromptPresentation.From(composer.Prompt, world);
-        CreateDecisionLayout(prompt);
-        AddAffordances(prompt);
+        DecisionPanelPromptRenderer.CreateLayout(this, composer, prompt);
+        DecisionPanelPromptRenderer.AddAffordances(this, prompt, lifecycle.RenderGeneration);
         AddSelectedDraft();
         AddDecline();
         ProgressChanged?.Invoke(composer.Progress());
-        Callable.From(() => RestoreFocus(focusName, focusFirst)).CallDeferred();
+        Callable.From(() => lifecycle.RestoreFocus(focusName, focusFirst, generation)).CallDeferred();
     }
 
     private void ClearPanel()
@@ -120,80 +135,6 @@ public sealed partial class DecisionPanel : VBoxContainer
         AddChild(Text(detail, GodotThemeVariations.Body, wrap: true));
     }
 
-    private void AddAffordances(PromptPresentation prompt)
-    {
-        var basicCharacters = new HashSet<int>();
-        foreach (AffordancePresentation view in prompt.Affordances)
-        {
-            if (view.Verb is "Attack" or "Thwart" or "Recover"
-                && basicCharacters.Add(view.AnchorId))
-            {
-                AddContent(Text(
-                    $"BASIC ACTIONS  ·  {view.Anchor}",
-                    GodotThemeVariations.Eyebrow,
-                    wrap: true));
-            }
-            AddAffordance(view);
-        }
-    }
-
-    private void AddAffordance(AffordancePresentation view)
-    {
-        Affordance option = composer!.Prompt.Affordances.Single(candidate => candidate.Id == view.Id);
-        bool unavailable = submitting || !option.IsLegal;
-        bool selected = composer.Selected?.Id == option.Id;
-        bool resolving = submitting && selected;
-        string action = DecisionCopy.Choice(view);
-        var choose = new Button
-        {
-            Name = $"Affordance{option.Id}",
-            Text = AffordanceText(action, unavailable, selected, resolving),
-            Alignment = HorizontalAlignment.Left,
-            Disabled = unavailable,
-            ToggleMode = true,
-            ButtonPressed = selected,
-            TooltipText = option.Illegal ?? $"Anchor {option.AnchorId}, player {option.AnchorPlayer}",
-        };
-        StyleButton(choose, AffordanceState(option, selected, resolving));
-        choose.Pressed += () => SelectAffordance(option);
-        BindAnchors(choose, option.AnchorId);
-        AddContent(choose);
-        if (option.Illegal is not null)
-        {
-            AddContent(Text($"! {option.Illegal}", GodotThemeVariations.DangerText, wrap: true));
-        }
-    }
-
-    private static string AffordanceText(
-        string action, bool unavailable, bool selected, bool resolving) =>
-        resolving
-            ? $"✓ {action}  ·  resolving"
-            : unavailable
-                ? $"— Unavailable  ·  {action}"
-                : selected ? $"✓ {action}" : action;
-
-    private InteractiveVisualState AffordanceState(
-        Affordance option, bool selected, bool resolving) =>
-        resolving
-            ? InteractiveVisualState.Selected
-            : !option.IsLegal || submitting
-                ? InteractiveVisualState.Unavailable
-                : selected ? InteractiveVisualState.Selected : InteractiveVisualState.Resting;
-
-    private void SelectAffordance(Affordance option)
-    {
-        composer!.SelectAffordance(option.Id);
-        DraftStarted?.Invoke();
-        AnchorFocused?.Invoke([option.AnchorId]);
-        if (composer.Prompt.Asking == Question.Element
-            && composer.Prompt.Affordances.Count == 1
-            && composer.TryBuild(out EngineDecision? automatic, out _))
-        {
-            Submitted?.Invoke(automatic!);
-            return;
-        }
-        Rebuild();
-    }
 
     private void AddSelectedDraft()
     {
@@ -203,10 +144,11 @@ public sealed partial class DecisionPanel : VBoxContainer
         }
         DecisionProgressPresentation progress = composer.Progress();
         AddContent(new HSeparator());
-        AddContent(Text(TargetProgressText(progress.Targets), GodotThemeVariations.Eyebrow));
-        new DecisionDraftRenderer(this, composer, world!, submitting)
+        AddContent(Text(DecisionPanelCopy.TargetProgress(composer, progress.Targets), GodotThemeVariations.Eyebrow));
+        int generation = lifecycle.RenderGeneration;
+        new DecisionDraftRenderer(this, composer, world!, submitting, generation)
             .AddTargets(selected, progress.Targets);
-        var payment = new DecisionPaymentRenderer(this, composer, world!, submitting);
+        var payment = new DecisionPaymentRenderer(this, composer, world!, submitting, generation);
         payment.AddCosts(selected);
         payment.AddSubmit(composer.Progress());
     }
@@ -226,71 +168,22 @@ public sealed partial class DecisionPanel : VBoxContainer
         StyleButton(pass, submitting
             ? InteractiveVisualState.Unavailable
             : InteractiveVisualState.Resting);
+        int generation = lifecycle.RenderGeneration;
         pass.Pressed += () =>
         {
-            if (composer.TryDecline(out EngineDecision? decision, out _))
+            if (lifecycle.CanMutate(generation)
+                && composer!.TryDecline(out EngineDecision? decision, out _))
             {
-                Submitted?.Invoke(decision!);
+                NotifySubmitted(decision!, generation);
             }
         };
         AddCommit(pass);
     }
 
-    private void CreateDecisionLayout(PromptPresentation prompt)
+    internal void InstallLayout(VBoxContainer body, VBoxContainer commitBar)
     {
-        SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        SizeFlagsVertical = SizeFlags.ExpandFill;
-        AffordancePresentation? selected = composer!.Selected is { } option
-            ? prompt.Affordances.Single(view => view.Id == option.Id)
-            : null;
-        if (selected is not null)
-        {
-            var summary = new VBoxContainer
-            {
-                Name = "ActionSummary",
-                ThemeTypeVariation = GodotThemeVariations.TightStack,
-            };
-            summary.AddChild(Text("Preparing", GodotThemeVariations.Eyebrow));
-            summary.AddChild(Text(
-                DecisionCopy.ActionSummary(selected),
-                selected.Consequence is null
-                    ? GodotThemeVariations.StatusText
-                    : GodotThemeVariations.DangerText,
-                wrap: true));
-            AddChild(summary);
-            AddChild(new HSeparator());
-        }
-
-        var scroll = new ScrollContainer
-        {
-            Name = "DecisionBodyScroll",
-            CustomMinimumSize = composer.Selected?.CostOptions.Any(cost =>
-                cost.Generators.Count > 0) == true
-                    ? new Vector2(0, ControlMetrics.MinimumPointerTarget)
-                    : Vector2.Zero,
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            SizeFlagsVertical = SizeFlags.ExpandFill,
-            FollowFocus = true,
-            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
-            VerticalScrollMode = ScrollContainer.ScrollMode.Auto,
-        };
-        content = new VBoxContainer
-        {
-            Name = "DecisionBody",
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            ThemeTypeVariation = GodotThemeVariations.TightStack,
-        };
-        scroll.AddChild(content);
-        AddChild(scroll);
-
-        commit = new VBoxContainer
-        {
-            Name = "CommitBar",
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            ThemeTypeVariation = GodotThemeVariations.TightStack,
-        };
-        AddChild(new HSeparator());
-        AddChild(commit);
+        content = body;
+        commit = commitBar;
     }
 
     internal void AddContent(Control control) =>
@@ -300,56 +193,6 @@ public sealed partial class DecisionPanel : VBoxContainer
     internal void AddCommit(Control control) =>
         (commit ?? throw new InvalidOperationException("decision commit bar is unavailable"))
             .AddChild(control);
-
-    internal string TargetProgressText(TargetSelectionProgress progress) =>
-        composer?.Selected?.Verb == "Resolve Mulligans"
-            ? $"DISCARD AND REDRAW  ·  {progress.Selected} CHOSEN"
-                + (progress.IsSatisfied ? "  ·  READY" : "  ·  INCOMPLETE")
-            : progress.Mode switch
-            {
-                TargetSelectionMode.None => "NO TARGET SELECTION",
-                TargetSelectionMode.Grouped => $"GROUP  ·  {progress.Selected}/1 CHOSEN"
-                    + (progress.IsSatisfied ? "  ·  COMPLETE" : "  ·  INCOMPLETE"),
-                _ => $"TARGETS  ·  {progress.Selected} CHOSEN"
-                    + (progress.Minimum == progress.Maximum
-                        ? $"  ·  REQUIRED {progress.Minimum}"
-                        : $"  ·  REQUIRED {progress.Minimum}–{progress.Maximum}")
-                    + (progress.IsSatisfied ? "  ·  COMPLETE" : "  ·  INCOMPLETE"),
-            };
-
-    internal string TargetAction(bool selected) => composer!.Selected?.Verb switch
-    {
-        "Resolve Mulligans" => "DISCARD AND REDRAW",
-        "End Phase" => "DISCARD",
-        "Attack" => "ATTACK",
-        "Thwart" => "THWART",
-        _ => selected ? "CHOSEN" : "TARGET",
-    };
-
-    internal string SubmitAction()
-    {
-        Affordance selected = composer!.Selected!;
-        int count = composer.Targets.Count;
-        return selected.Verb switch
-        {
-            "Resolve Mulligans" when count == 0 => "Keep hand",
-            "Resolve Mulligans" => $"Discard {count} and redraw",
-            "End Phase" when count == 0 => "End player phase",
-            "End Phase" => $"Discard {count} and end player phase",
-            "Play" => $"Play {PromptPresentation.Describe(selected.AnchorId, world!)}",
-            "Attack" when count == 1 =>
-                $"Attack {PromptPresentation.Describe(composer.Targets[0], world!)}",
-            "Thwart" when count == 1 =>
-                $"Thwart {PromptPresentation.Describe(composer.Targets[0], world!)}",
-            _ => DecisionCopy.GenericCommit(
-                selected.Verb,
-                selected.Label,
-                PromptPresentation.Describe(selected.AnchorId, world!)),
-        };
-    }
-
-    private void RestoreFocus(string? requested, bool focusFirst) =>
-        DecisionFocus.Restore(this, requested, focusFirst);
 
     private string? FocusKey(Control focused) => DecisionFocus.Key(this, focused);
 

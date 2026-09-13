@@ -1,4 +1,4 @@
-extends "res://smoke/local_game_smoke_decision_checks.gd"
+extends "res://smoke/local_game_smoke_lifecycle_checks.gd"
 
 func _initialize() -> void:
 	_prepare_art_pack()
@@ -71,7 +71,8 @@ func _open_and_validate_table() -> bool:
 	if start == null or start.disabled:
 		_fail("the visible Start game control is unavailable")
 		return false
-	start.pressed.emit()
+	if not await _pointer_activate(start):
+		return false
 	if not await _wait_for(func() -> bool: return _play().visible and _decision() != null):
 		_fail("the opened table never became visible")
 		return false
@@ -81,15 +82,21 @@ func _open_and_validate_table() -> bool:
 		return false
 	if not await _board_layout_is_resolved():
 		return false
-	if not await _keyboard_selection_is_operable():
-		return false
-	if not await _event_presentation_is_nonblocking():
-		return false
-	if not await _synchronization_preserves_history(false):
+	if not await _table_interactions_are_safe():
 		return false
 	if not await _capture_checkpoint("open-table-prompt-dense-concealed"):
 		return false
 	return await _mulligan_result_and_payment_are_operable()
+
+
+func _table_interactions_are_safe() -> bool:
+	if not await _keyboard_selection_is_operable():
+		return false
+	if not await _interaction_lifecycle_is_safe():
+		return false
+	if not await _event_presentation_is_nonblocking():
+		return false
+	return await _synchronization_preserves_history(false)
 
 
 func _play_seeded_journey() -> Dictionary:
@@ -150,19 +157,13 @@ func _advance_visible_decision(state: Dictionary) -> bool:
 	var change_form := _visible_button_beginning(_decision(), "Change Form")
 	var pass_button := _visible_button(_decision(), "Pass / decline")
 	if not state.changed_form and change_form != null and not change_form.disabled:
-		change_form.pressed.emit()
-		await process_frame
-		var submit := _submit_button()
-		if submit == null or submit.disabled:
-			_fail("the selected form change cannot be submitted")
+		if not await _mixed_submit_is_single_shot():
 			return false
-		submit.pressed.emit()
 		state.changed_form = true
 		return true
 	if pass_button != null and not pass_button.disabled:
 		state.saw_pass = true
-		pass_button.pressed.emit()
-		return true
+		return await _pointer_activate(pass_button)
 	return await _compose_visible_decision()
 
 
@@ -177,14 +178,14 @@ func _compose_visible_decision() -> bool:
 		if choice == null:
 			_fail("no visible control can advance the current decision")
 			return false
-		choice.pressed.emit()
+		if not await _pointer_activate(choice):
+			return false
 		await process_frame
 		submit = _submit_button()
 	if submit == null or submit.disabled:
 		_fail("the selected visible decision cannot be submitted")
 		return false
-	submit.pressed.emit()
-	return true
+	return await _pointer_activate(submit)
 
 
 func _settle_decision(decisions: int) -> bool:
@@ -198,6 +199,8 @@ func _settle_decision(decisions: int) -> bool:
 func _undo_first_form_change(state: Dictionary) -> bool:
 	if not state.changed_form or state.tested_undo:
 		return true
+	if not await _show_history_tab():
+		return false
 	var history := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel
 	var undo := _node(
 		"Play/Prompt/Margin/Stack/Workbench/History/EventHeader/UndoLast") as Button
@@ -207,7 +210,8 @@ func _undo_first_form_change(state: Dictionary) -> bool:
 	if "Undo to before this action" not in history.get_parsed_text():
 		_fail("the reversible form change has no authoritative undo description")
 		return false
-	undo.pressed.emit()
+	if not await _pointer_activate(undo):
+		return false
 	if not await _wait_for(func() -> bool:
 		return not (_node("Play/Prompt/Margin/Stack/PromptHeader/Progress") as Label) \
 			.text.begins_with("UNDOING")):
@@ -216,9 +220,43 @@ func _undo_first_form_change(state: Dictionary) -> bool:
 	if "Peter Parker" not in _visible_text(_play()):
 		_fail("undoing the form change did not restore alter-ego form")
 		return false
+	if not await _show_action_tab():
+		return false
 	state.tested_undo = true
 	state.changed_form = false
 	return true
+
+
+func _show_history_tab() -> bool:
+	var workbench := _node("Play/Prompt/Margin/Stack/Workbench") as TabContainer
+	if workbench.current_tab == 1:
+		return true
+	return await _navigate_workbench_tab(workbench, KEY_RIGHT, 1)
+
+
+func _show_action_tab() -> bool:
+	var workbench := _node("Play/Prompt/Margin/Stack/Workbench") as TabContainer
+	if workbench.current_tab == 0:
+		return true
+	return await _navigate_workbench_tab(workbench, KEY_LEFT, 0)
+
+
+func _navigate_workbench_tab(workbench: TabContainer, key: Key, expected: int) -> bool:
+	var tabs := workbench.get_tab_bar()
+	tabs.grab_focus()
+	await process_frame
+	var press := InputEventKey.new()
+	press.keycode = key
+	press.pressed = true
+	render_viewport.push_input(press)
+	var release := InputEventKey.new()
+	release.keycode = key
+	render_viewport.push_input(release)
+	await process_frame
+	if workbench.current_tab == expected:
+		return true
+	_fail("keyboard navigation did not select the requested workbench tab")
+	return false
 
 
 func _motion_state_is_safe(state: Dictionary) -> bool:
@@ -393,7 +431,8 @@ func _dismiss_terminal_result() -> bool:
 	var result := _node("Play/Prompt/Margin/Stack/Workbench/Action/LastResult") as Control
 	var dismiss := _node(
 		"Play/Prompt/Margin/Stack/Workbench/Action/LastResult/Margin/Copy/Header/Dismiss") as Button
-	dismiss.pressed.emit()
+	if not await _pointer_activate(dismiss):
+		return false
 	await process_frame
 	if result.visible:
 		_fail("the latest result cannot be dismissed")

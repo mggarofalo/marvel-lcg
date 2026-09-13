@@ -14,17 +14,20 @@ internal sealed class DecisionDraftRenderer
     private readonly DecisionComposer composer;
     private readonly WorldDescriptor world;
     private readonly bool submitting;
+    private readonly int generation;
 
     internal DecisionDraftRenderer(
         DecisionPanel panel,
         DecisionComposer composer,
         WorldDescriptor world,
-        bool submitting)
+        bool submitting,
+        int generation)
     {
         this.panel = panel;
         this.composer = composer;
         this.world = world;
         this.submitting = submitting;
+        this.generation = generation;
     }
     internal void AddTargets(Affordance selected, TargetSelectionProgress progress)
     {
@@ -49,7 +52,7 @@ internal sealed class DecisionDraftRenderer
         }
 
         string badge = request.IsSearch ? "SEARCH RESULTS" : "TARGETS";
-        panel.AddContent(DecisionPanel.Text($"{badge}  ·  " + panel.TargetProgressText(progress),
+        panel.AddContent(DecisionPanel.Text($"{badge}  ·  " + DecisionPanelCopy.TargetProgress(composer, progress),
             GodotThemeVariations.Caption, wrap: true));
         AddTargetInstructions(request);
 
@@ -101,6 +104,7 @@ internal sealed class DecisionDraftRenderer
                 : InteractiveVisualState.Legal);
             choose.Pressed += () =>
             {
+                if (!panel.IsCurrentDraft(composer, generation)) return;
                 composer.SelectTargets(group);
                 panel.Rebuild();
             };
@@ -145,8 +149,8 @@ internal sealed class DecisionDraftRenderer
         {
             Name = $"Target{target}",
             Text = composer!.Targets.Contains(target)
-                ? $"✓ {panel.TargetAction(selected: true)}  ·  {targetName}{detail}"
-                : $"◇ {panel.TargetAction(selected: false)}  ·  {targetName}{detail}",
+                ? $"✓ {DecisionPanelCopy.TargetAction(composer, selected: true)}  ·  {targetName}{detail}"
+                : $"◇ {DecisionPanelCopy.TargetAction(composer, selected: false)}  ·  {targetName}{detail}",
             Alignment = HorizontalAlignment.Left,
             ToggleMode = true,
             ButtonPressed = composer!.Targets.Contains(target),
@@ -159,6 +163,7 @@ internal sealed class DecisionDraftRenderer
                 : InteractiveVisualState.Legal);
         choose.Pressed += () =>
         {
+            if (!panel.IsCurrentDraft(composer, generation)) return;
             if (composer.Targets.Contains(target))
             {
                 composer.RemoveTarget(target);
@@ -196,6 +201,7 @@ internal sealed class DecisionDraftRenderer
             compact: true);
         remove.Pressed += () =>
         {
+            if (!panel.IsCurrentDraft(composer, generation)) return;
             composer.RemoveTarget(target);
             panel.Rebuild();
         };
@@ -220,6 +226,7 @@ internal sealed class DecisionDraftRenderer
             compact: true);
         add.Pressed += () =>
         {
+            if (!panel.IsCurrentDraft(composer, generation)) return;
             composer.AddTarget(target);
             panel.NotifyAnchorFocused([target]);
             panel.Rebuild();

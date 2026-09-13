@@ -25,10 +25,134 @@ func _visible_control_rect(control: Control) -> Rect2:
 	var visible_rect := control.get_global_rect().intersection(Rect2(Vector2.ZERO, _viewport_size()))
 	var ancestor := control.get_parent()
 	while ancestor != null:
-		if ancestor is ScrollContainer:
+		if ancestor is ScrollContainer or (ancestor is Control and ancestor.clip_contents):
 			visible_rect = visible_rect.intersection(ancestor.get_global_rect())
 		ancestor = ancestor.get_parent()
 	return visible_rect
+
+
+func _control_owns_point(control: Control, point: Vector2) -> bool:
+	if not _visible_control_rect(control).has_point(point):
+		return false
+	# A disabled control intentionally does not claim pointer input. It is not an
+	# operable hit target even if its painted rectangle is visible.
+	if control.mouse_filter == Control.MOUSE_FILTER_IGNORE or control is BaseButton and control.disabled:
+		return false
+	var move := InputEventMouseMotion.new()
+	move.position = point
+	move.global_position = point
+	render_viewport.push_input(move)
+	await process_frame
+	var hovered := render_viewport.gui_get_hovered_control()
+	if hovered == control or (hovered != null and control.is_ancestor_of(hovered)):
+		return true
+	# Containers using Pass may be reported as the hovered owner while delivering
+	# the event to an eligible descendant. Follow that actual mouse-filter path;
+	# a Stop ancestor is an occluder and must still fail this probe.
+	if hovered != null and hovered.is_ancestor_of(control):
+		var current: Control = control
+		while current != hovered:
+			if current.mouse_filter == Control.MOUSE_FILTER_STOP:
+				return false
+			current = current.get_parent() as Control
+		return hovered.mouse_filter == Control.MOUSE_FILTER_PASS
+	return false
+
+
+func _control_has_real_hit_area(control: Control) -> bool:
+	var rect := _visible_control_rect(control)
+	if rect.size.x < 4.0 or rect.size.y < 4.0:
+		_fail("control '%s' has no unclipped hit area" % control.name)
+		return false
+	var inset := minf(2.0, minf(rect.size.x, rect.size.y) / 4.0)
+	var points := [
+		rect.get_center(),
+		rect.position + Vector2(inset, inset),
+		Vector2(rect.end.x - inset, rect.position.y + inset),
+		Vector2(rect.position.x + inset, rect.end.y - inset),
+		rect.end - Vector2(inset, inset),
+	]
+	for point in points:
+		if not await _control_owns_point(control, point):
+			_fail("control '%s' loses a center or interior-edge hit to clipping or occlusion" % control.name)
+			return false
+	return true
+
+
+func _scroll_control_into_view(control: Control) -> void:
+	var scrolls: Array[ScrollContainer] = []
+	var ancestor := control.get_parent()
+	while ancestor != null:
+		if ancestor is ScrollContainer:
+			scrolls.append(ancestor)
+		ancestor = ancestor.get_parent()
+	for scroll in scrolls:
+		scroll.ensure_control_visible(control)
+		await process_frame
+	await process_frame
+
+
+func _prepare_activation(control: Control) -> bool:
+	# Setup actions can begin below the page fold. Move the real scroll viewport
+	# first, then prove that the control owns an unclipped input area.
+	await _scroll_control_into_view(control)
+	return await _control_has_real_hit_area(control)
+
+
+func _pointer_activate(control: Control) -> bool:
+	if not await _prepare_activation(control):
+		return false
+	if not _pointer_activate_without_settle(control):
+		return false
+	await process_frame
+	return true
+
+
+func _pointer_activate_without_settle(control: Control) -> bool:
+	var point := _visible_control_rect(control).get_center()
+	var press := InputEventMouseButton.new()
+	press.button_index = MOUSE_BUTTON_LEFT
+	press.pressed = true
+	press.position = point
+	press.global_position = point
+	render_viewport.push_input(press)
+	var release := InputEventMouseButton.new()
+	release.button_index = MOUSE_BUTTON_LEFT
+	release.position = point
+	release.global_position = point
+	render_viewport.push_input(release)
+	return true
+
+
+func _keyboard_activate(control: Control, repeats := 1) -> bool:
+	control.grab_focus()
+	await process_frame
+	if render_viewport.gui_get_focus_owner() != control:
+		_fail("keyboard activation could not focus '%s'" % control.name)
+		return false
+	_accept_repeats_without_settle(repeats)
+	await process_frame
+	return true
+
+
+func _keyboard_activate_without_settle(control: Control, repeats := 1) -> bool:
+	control.grab_focus()
+	if render_viewport.gui_get_focus_owner() != control:
+		_fail("keyboard activation could not focus '%s'" % control.name)
+		return false
+	_accept_repeats_without_settle(repeats)
+	return true
+
+
+func _accept_repeats_without_settle(repeats := 1) -> void:
+	for index in repeats:
+		var press := InputEventKey.new()
+		press.keycode = KEY_ENTER
+		press.pressed = true
+		render_viewport.push_input(press)
+		var release := InputEventKey.new()
+		release.keycode = KEY_ENTER
+		render_viewport.push_input(release)
 
 
 func _viewport_size() -> Vector2:
@@ -36,13 +160,10 @@ func _viewport_size() -> Vector2:
 
 
 func _focused_board_area_is_visible() -> bool:
-	await process_frame
-	await process_frame
-	var saw_focused_card := false
-	for card in main.find_children("ProceduralCard", "PanelContainer", true, false):
-		if card.theme_type_variation != &"FocusedCard":
-			continue
-		saw_focused_card = true
+	if not await _wait_for(func() -> bool: return not _focused_board_cards().is_empty()):
+		_fail("keyboard selection did not highlight its board anchor")
+		return false
+	for card in _focused_board_cards():
 		var area := card.get_parent()
 		while area != null and not (area is PanelContainer and area.name.begins_with("Area")):
 			area = area.get_parent()
@@ -70,10 +191,19 @@ func _focused_board_area_is_visible() -> bool:
 			return false
 		if not _focused_card_title_is_visible(card, board, board_rect):
 			return false
-	if not saw_focused_card:
-		_fail("keyboard selection did not highlight its board anchor")
-		return false
 	return true
+
+
+func _focused_board_cards() -> Array[Control]:
+	var focused: Array[Control] = []
+	# CardControl is a managed PanelContainer. Native backends do not expose the
+	# managed type name consistently to find_children, so identify the rendered
+	# card by its stable node name and then inspect its actual Control state.
+	for candidate in main.find_children("ProceduralCard", "", true, false):
+		var card := candidate as Control
+		if card != null and card.theme_type_variation == &"FocusedCard":
+			focused.append(card)
+	return focused
 
 
 func _focused_card_title_is_visible(card: Control, board: ScrollContainer, board_rect: Rect2) -> bool:
@@ -117,8 +247,8 @@ func _event_presentation_is_nonblocking() -> bool:
 
 	var history := log.text
 	if motion_enabled and not skip.disabled:
-		skip.pressed.emit()
-		await process_frame
+		if not await _pointer_activate(skip):
+			return false
 	if not skip.disabled or log.text != history:
 		_fail("skipping motion changed or cleared event history")
 		return false
@@ -150,9 +280,6 @@ func _capture_checkpoint(checkpoint: String) -> bool:
 		return true
 	await process_frame
 	await process_frame
-	if checkpoint == "open-table-prompt-dense-concealed" \
-			and not await _focused_board_area_is_visible():
-		return false
 	var image := render_viewport.get_texture().get_image()
 	if image == null or image.is_empty():
 		_fail("visual checkpoint '%s' needs a non-headless rendering driver" % checkpoint)

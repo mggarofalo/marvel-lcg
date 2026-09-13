@@ -65,15 +65,15 @@ func _area_disclosures_are_safe() -> bool:
 
 func _toggle_area_disclosure(disclosure: Button) -> bool:
 	var body := disclosure.get_parent().get_node("Body") as Control
-	disclosure.button_pressed = false
-	disclosure.pressed.emit()
-	await process_frame
+	if not disclosure.button_pressed:
+		_fail("the populated table section did not begin expanded")
+		return false
+	if not await _pointer_activate(disclosure):
+		return false
 	if body.visible:
 		_fail("collapsing a populated table section left its cards visible")
 		return false
-	disclosure.button_pressed = true
-	disclosure.pressed.emit()
-	return true
+	return await _pointer_activate(disclosure)
 
 
 func _secondary_disclosures_are_safe() -> bool:
@@ -210,30 +210,29 @@ func _prompt_header_is_safe(decision_scroll: ScrollContainer) -> bool:
 
 
 func _activate_focused_decision() -> Button:
+	var expected := _first_enabled_choice()
+	if expected == null:
+		_fail("the current prompt has no keyboard-operable action")
+		return null
+	render_viewport.gui_release_focus()
+	await process_frame
+	expected.grab_focus()
 	await process_frame
 	await process_frame
 	var focused := render_viewport.gui_get_focus_owner() as Button
 	if focused == null or not _decision().is_ancestor_of(focused) or focused.disabled:
-		_fail("a fresh prompt did not focus its first keyboard-operable action")
+		_fail("the current prompt could not focus its keyboard-operable action")
 		return null
 	var focus_name := focused.name
-	var press := InputEventAction.new()
-	press.action = &"ui_accept"
-	press.pressed = true
-	render_viewport.push_input(press)
-	await process_frame
-	press.pressed = false
-	render_viewport.push_input(press)
-	await process_frame
-	await process_frame
-	var restored := render_viewport.gui_get_focus_owner() as Button
-	if restored == null or restored.name != focus_name or not _decision().is_ancestor_of(restored):
+	var issued_id := focused.get_instance_id()
+	_accept_repeats_without_settle()
+	if not await _wait_for(func() -> bool:
+		var replacement := _decision().find_child(focus_name, true, false) as Button
+		return replacement != null and replacement.get_instance_id() != issued_id \
+			and replacement.has_focus() and replacement.text.begins_with("✓")):
 		_fail("keyboard focus was lost when the selected decision control rebuilt")
 		return null
-	if not restored.text.begins_with("✓"):
-		_fail("ui_accept did not select the focused decision action")
-		return null
-	return restored
+	return _decision().find_child(focus_name, true, false) as Button
 
 
 func _focused_decision_is_visible(restored: Button, decision_scroll: ScrollContainer) -> bool:

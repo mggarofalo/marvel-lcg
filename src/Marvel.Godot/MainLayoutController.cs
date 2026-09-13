@@ -108,11 +108,15 @@ internal sealed class MainLayoutController
         main.pageScroll.HorizontalScrollMode = main.board.Visible
             ? ScrollContainer.ScrollMode.Disabled
             : ScrollContainer.ScrollMode.Auto;
-        main.pageScroll.FollowFocus = !main.board.Visible;
-        main.pageScroll.VerticalScrollMode = main.board.Visible
-            ? (int)main.interfaceScale <= 100
-                ? ScrollContainer.ScrollMode.Disabled
-                : ScrollContainer.ScrollMode.Auto
-            : ScrollContainer.ScrollMode.Auto;
+        main.pageScroll.FollowFocus = !main.board.Visible || main.invitationOffer.Visible;
+        main.pageScroll.VerticalScrollMode = PageVerticalScrollMode(
+            main.board.Visible, main.invitationOffer.Visible, main.interfaceScale);
     }
+
+    internal static ScrollContainer.ScrollMode PageVerticalScrollMode(
+        bool boardVisible,
+        bool invitationVisible,
+        InterfaceScale scale) => !boardVisible || invitationVisible || (int)scale > 100
+            ? ScrollContainer.ScrollMode.Auto
+            : ScrollContainer.ScrollMode.Disabled;
 }

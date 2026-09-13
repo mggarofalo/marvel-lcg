@@ -11,10 +11,14 @@ namespace Marvel.Godot;
 internal sealed class MainSessionController
 {
     private readonly Main main;
+    private readonly MainSynchronizationController synchronization;
+    private readonly MainSessionLossRecovery recovery;
 
     internal MainSessionController(Main main)
     {
         this.main = main;
+        synchronization = new MainSynchronizationController(main);
+        recovery = new MainSessionLossRecovery(main);
     }
     internal async void OnDecisionSubmitted(EngineDecision decision)
     {
@@ -22,7 +26,6 @@ internal sealed class MainSessionController
         {
             return;
         }
-
         main.resolveInFlight = true;
         main.RefreshSynchronizeAvailability();
         try
@@ -59,7 +62,6 @@ internal sealed class MainSessionController
             }
         }
     }
-
     private void HandleDecisionResult(ClientResolutionResult result)
     {
         if (result.SessionDisposition == ClientSessionDisposition.Unavailable)
@@ -79,17 +81,16 @@ internal sealed class MainSessionController
         }
         ShowUnresolvedDecision(result);
     }
-
     private void ShowDecisionNotSent(ClientStartupError? error)
     {
         main.decisionPending = false;
         main.uncertainMutationError = null;
+        main.decisions.AllowRetry(main.CurrentGame!.Revision);
         main.ApplyProgress(GameProgressPresentation.DecisionNotSent(error ?? new ClientStartupError(
             "decision_not_sent", "The decision did not reach the game service.")));
         main.promptProgress.Text = "NOT SENT  ·  RETRY SAFE";
         main.promptProgress.ThemeTypeVariation = GodotThemeVariations.StatusText;
     }
-
     private void ShowAuthoritativeDecision(ClientResolutionResult result)
     {
         if (result.Error is null)
@@ -109,10 +110,13 @@ internal sealed class MainSessionController
         main.uncertainMutationError = null;
         if (result.Error is not null)
         {
+            main.decisions.AuthoritativeSynchronization(result.Response!.Revision);
+        }
+        if (result.Error is not null)
+        {
             main.ApplyProgress(GameProgressPresentation.Recovered(result.Response!, result.Error));
         }
     }
-
     private void ShowUnresolvedDecision(ClientResolutionResult result)
     {
         ClientStartupError failure = result.Error ?? new ClientStartupError(
@@ -277,124 +281,14 @@ internal sealed class MainSessionController
         main.synchronize.TooltipText = "Reconnect to the current authoritative table.";
     }
 
-    internal async void OnSynchronizePressed()
-    {
-        if (!CanSynchronize())
-        {
-            return;
-        }
-
-        GameProgressPresentation prior = main.currentProgress
-            ?? GameProgressPresentation.FromResponse(main.CurrentGame!);
-        bool hadUncertainMutation = main.decisionPending;
-        main.synchronizing = true;
-        main.RefreshSynchronizeAvailability();
-        main.ApplyProgress(GameProgressPresentation.Synchronizing());
-        try
-        {
-            ClientSynchronizationResult result = await main.client!.SynchronizeAsync(main.session!);
-            if (!main.IsInsideTree())
-            {
-                return;
-            }
-
-            HandleSynchronizationResult(result, prior, hadUncertainMutation);
-        }
-        catch (Exception)
-        {
-            if (main.IsInsideTree())
-            {
-                ApplySynchronizationFailure(new ClientStartupError(
-                    "synchronization_failed",
-                    "The current table could not be read. Try reconnecting again."),
-                    prior,
-                    hadUncertainMutation);
-            }
-        }
-        finally
-        {
-            main.synchronizing = false;
-            if (main.IsInsideTree())
-            {
-                main.RefreshSynchronizeAvailability();
-            }
-        }
-    }
-
-    private bool CanSynchronize() =>
-        !main.synchronizing && !main.resolveInFlight && main.client is not null && main.session is not null;
-
-    private void HandleSynchronizationResult(
-        ClientSynchronizationResult result,
-        GameProgressPresentation prior,
-        bool hadUncertainMutation)
-    {
-        if (result.Succeeded)
-        {
-            main.decisionPending = false;
-            main.uncertainMutationError = null;
-            main.RenderGame(
-                result.Response!, preserveEvents: true, priorProgress: prior,
-                operation: EngineProtocol.Sync);
-            main.synchronize.TooltipText = "Read the current authoritative table.";
-            return;
-        }
-        if (result.SessionDisposition == ClientSessionDisposition.Unavailable)
-        {
-            main.ReturnToJoinAfterSessionLoss(result.Error!);
-            return;
-        }
-        ApplySynchronizationFailure(result.Error!, prior, hadUncertainMutation);
-    }
+    internal void OnSynchronizePressed() => synchronization.OnPressed();
 
     internal void ApplySynchronizationFailure(
         ClientStartupError error,
         GameProgressPresentation prior,
-        bool hadUncertainMutation)
-    {
-        if (hadUncertainMutation)
-        {
-            main.decisionPending = true;
-            ShowUnconfirmed(main.uncertainMutationError ?? error);
-        }
-        else
-        {
-            main.ApplyProgress(GameProgressPresentation.SynchronizationUnavailable(
-                error,
-                prior.LocksDecisions,
-                prior.OperationalLock));
-        }
-        main.syncStatus.Text = "⚠ Sync needed";
-        main.synchronize.TooltipText = "Reconnect to the current authoritative table.";
-    }
+        bool hadUncertainMutation) => synchronization.ApplyFailure(
+            error, prior, hadUncertainMutation);
 
-    internal void ReturnToJoinAfterSessionLoss(ClientStartupError error)
-    {
-        main.session = null;
-        main.client = null;
-        main.CurrentGame = null;
-        main.transientInvitation = null;
-        main.invitation.Clear();
-        main.invitationOffer.Visible = false;
-        main.boardRender = null;
-        main.events.Reset([]);
-        main.activeResolution.Visible = false;
-        main.lastResult.Visible = false;
-        main.lastResultGeneration++;
-        main.RenderEvents();
-        main.boardAreas.GetChildren().ToList().ForEach(node => node.QueueFree());
-        main.board.Visible = false;
-        main.setupPanel.Visible = true;
-        main.decisionPending = false;
-        main.resolveInFlight = false;
-        main.uncertainMutationError = null;
-        main.synchronize.TooltipText = "Read the current authoritative table.";
-        main.synchronize.Disabled = true;
-        main.synchronize.Visible = false;
-        main.syncStatus.Visible = false;
-        main.cardInspector.Visible = false;
-        main.SetSetupControlsEnabled(true);
-        main.ShowEntryMode(joinMode: true);
-        main.ShowFailure(error);
-    }
+    internal void ReturnToJoinAfterSessionLoss(ClientStartupError error) =>
+        recovery.ReturnToJoin(error);
 }
