@@ -82,6 +82,7 @@ public sealed class CommunityReleasePolicyTests
         Assert.Contains("engine-replay-v2 · protocol 14 · save 3", workflow,
             StringComparison.Ordinal);
         Assert.Contains("def schema_two_prompt", serverUpgrade, StringComparison.Ordinal);
+        Assert.Contains("jq --compact-output '", serverUpgrade, StringComparison.Ordinal);
         Assert.Contains("find \"$schema_two_copy\" -type f -name current", serverUpgrade,
             StringComparison.Ordinal);
         Assert.Contains("$predecessor_generation.session.json", serverUpgrade,
@@ -96,6 +97,10 @@ public sealed class CommunityReleasePolicyTests
             StringComparison.Ordinal);
         Assert.DoesNotContain("$(dirname \"$backup\"):/backup", serverUpgrade,
             StringComparison.Ordinal);
+        Assert.Contains("wait_for_container_log()", serverUpgrade, StringComparison.Ordinal);
+        Assert.Contains("did not log: $expected", serverUpgrade, StringComparison.Ordinal);
+        Assert.DoesNotContain("docker logs \"$prefix-interrupted-recovery\" 2>&1 | grep",
+            serverUpgrade, StringComparison.Ordinal);
         Assert.Contains("\"stage\":\"migration\"", serverUpgrade, StringComparison.Ordinal);
         Assert.Contains("\"save_committed\":true", serverUpgrade, StringComparison.Ordinal);
         Assert.Contains("MARVEL_HOSTED_SMOKE_CHECKPOINT_DIR", serverUpgrade,
