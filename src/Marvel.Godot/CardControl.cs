@@ -48,9 +48,10 @@ public sealed partial class CardControl : PanelContainer
             ThemeTypeVariation = variation,
         };
         Control body = CardFaceRendering.CreateBody(card, size, layout, scale, art);
-        body.CustomMinimumSize = new Vector2(
-            Math.Max(1, layout.Width - 32),
-            Math.Max(1, layout.MinimumHeight - 32));
+        // The frame variation owns its scale-aware content inset. Giving the
+        // child a second fixed inset compounds padding and makes compact cards
+        // denser at higher scales than at the default scale.
+        body.CustomMinimumSize = Vector2.Zero;
         control.AddChild(body);
         return control;
     }

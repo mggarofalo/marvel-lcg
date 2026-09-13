@@ -34,10 +34,6 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 20.0
-offset_top = 20.0
-offset_right = -20.0
-offset_bottom = -20.0
 grow_horizontal = 2
 grow_vertical = 2
 follow_focus = true
@@ -58,10 +54,6 @@ z_index = 10
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_left = 20.0
-offset_top = 20.0
-offset_right = -20.0
-offset_bottom = 64.0
 grow_horizontal = 2
 theme_type_variation = &"CompactRow"
 
@@ -107,7 +99,6 @@ step = 10.0
 tooltip_text = "Adjust interface scale."
 
 [node name="Motion" type="CheckButton" parent="StatusBar" unique_id=1000000014]
-custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 size_flags_vertical = 3
 button_pressed = true
@@ -415,8 +406,6 @@ horizontal_scroll_mode = 0
 [node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Board/TableScroll" unique_id=1000000067]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 10
 
 [node name="Areas" type="VBoxContainer" parent="Margin/Shell/Content/Play/Board/TableScroll/Margin" unique_id=1000000068]
 layout_mode = 2
@@ -430,10 +419,6 @@ theme_type_variation = &"SurfacePanel"
 
 [node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Board/HandShelf" unique_id=1000000070]
 layout_mode = 2
-theme_override_constants/margin_left = 8
-theme_override_constants/margin_top = 6
-theme_override_constants/margin_right = 8
-theme_override_constants/margin_bottom = 6
 
 [node name="Stack" type="VBoxContainer" parent="Margin/Shell/Content/Play/Board/HandShelf/Margin" unique_id=1000000071]
 layout_mode = 2
@@ -461,10 +446,6 @@ theme_type_variation = &"SurfacePanel"
 
 [node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Prompt" unique_id=1000000076]
 layout_mode = 2
-theme_override_constants/margin_left = 0
-theme_override_constants/margin_top = 0
-theme_override_constants/margin_right = 0
-theme_override_constants/margin_bottom = 0
 
 [node name="Stack" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin" unique_id=1000000077]
 layout_mode = 2
@@ -479,10 +460,6 @@ theme_type_variation = &"StatusPanel"
 
 [node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/InvitationOffer" unique_id=1000000079]
 layout_mode = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 8
 
 [node name="Row" type="HBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/InvitationOffer/Margin" unique_id=1000000080]
 layout_mode = 2
@@ -541,10 +518,6 @@ theme_type_variation = &"StatusPanel"
 
 [node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/ActiveResolution"]
 layout_mode = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 8
 
 [node name="Copy" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/ActiveResolution/Margin"]
 layout_mode = 2
@@ -580,10 +553,6 @@ theme_type_variation = &"StatusPanel"
 
 [node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/Action/LastResult"]
 layout_mode = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 8
 
 [node name="Copy" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/Action/LastResult/Margin"]
 layout_mode = 2
@@ -677,10 +646,6 @@ theme_type_variation = &"StatusPanel"
 
 [node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History/EventCue" unique_id=1000000100]
 layout_mode = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 8
 
 [node name="Copy" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History/EventCue/Margin" unique_id=1000000101]
 layout_mode = 2

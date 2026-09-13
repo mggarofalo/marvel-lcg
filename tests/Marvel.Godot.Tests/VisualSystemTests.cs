@@ -1,3 +1,4 @@
+using Marvel.Tests;
 using Xunit;
 
 namespace Marvel.Godot.Tests;
@@ -153,6 +154,66 @@ public sealed class VisualSystemTests
         Assert.True(largeControls.MinimumPointerTarget < extraLargeControls.MinimumPointerTarget);
     }
 
+    [Fact]
+    public void ContentInsetsUseTheNamedDensityRhythmAtEveryScale()
+    {
+        foreach (InterfaceScale scale in VisualSystem.SupportedScales)
+        {
+            DensityMetrics density = VisualSystem.Density(scale);
+
+            Assert.True(density.ViewportInset >= density.StatusVertical);
+            Assert.True(density.ShellHorizontal > density.SurfaceHorizontal);
+            Assert.True(density.SurfaceHorizontal >= density.StatusHorizontal);
+            Assert.True(density.BoardHorizontal >= density.CompactCardHorizontal);
+            Assert.True(density.FullCardHorizontal > density.CompactCardHorizontal);
+            Assert.True(density.InputHorizontal >= density.ButtonHorizontal);
+            Assert.True(density.PrimaryButtonHorizontal > density.ButtonHorizontal);
+            Assert.True(density.ArtWellInset < density.FullCardHorizontal);
+            Assert.All(
+                new[]
+                {
+                    density.ShellVertical,
+                    density.SurfaceVertical,
+                    density.StatusVertical,
+                    density.BoardVertical,
+                    density.CompactCardVertical,
+                    density.FullCardVertical,
+                    density.InputVertical,
+                    density.ButtonVertical,
+                    density.PrimaryButtonVertical,
+                },
+                value => Assert.True(value > 0));
+        }
+    }
+
+    [Fact]
+    public void CompactDensityPreservesOneFrameInsetWithoutFixedScaleLeakage()
+    {
+        DensityMetrics compact = VisualSystem.Density(InterfaceScale.Compact);
+        DensityMetrics standard = VisualSystem.Density(InterfaceScale.Standard);
+        DensityMetrics extraLarge = VisualSystem.Density(InterfaceScale.ExtraLarge);
+
+        Assert.True(compact.SurfaceHorizontal < standard.SurfaceHorizontal);
+        Assert.True(standard.SurfaceHorizontal < extraLarge.SurfaceHorizontal);
+        Assert.True(compact.ButtonVertical < standard.ButtonVertical);
+        Assert.True(standard.ButtonVertical < extraLarge.ButtonVertical);
+        Assert.True(standard.CompactCardHorizontal < standard.FullCardHorizontal);
+        Assert.True(standard.BoardAreaAllowance < standard.BoardHorizontal * 2);
+        Assert.Equal(
+            VisualSystem.Card(CardDisplaySize.Board, InterfaceScale.Standard).Width
+            + standard.BoardAreaAllowance,
+            VisualSystem.DesktopPlay(1920, 1080, InterfaceScale.Standard).BoardAreaWidth);
+    }
+
+    [Fact]
+    public void AuthoredSceneDoesNotAddFixedMarginsInsideTheThemeOwnedFrames()
+    {
+        string scene = File.ReadAllText(Path.Combine(
+            RepositoryPaths.Root, "src", "Marvel.Godot", "Main.tscn"));
+
+        Assert.DoesNotContain("theme_override_constants/margin_", scene);
+    }
+
     [Theory]
     [InlineData(InterfaceScale.Percent80, 18)]
     [InlineData(InterfaceScale.Percent100, 22)]
@@ -277,7 +338,7 @@ public sealed class VisualSystemTests
             1920, 1080, InterfaceScale.Standard);
         int singletonArea = VisualSystem.Card(
                 CardDisplaySize.Board, InterfaceScale.Standard).Width
-            + 32;
+            + VisualSystem.Density(InterfaceScale.Standard).BoardAreaAllowance;
 
         Assert.InRange(compact.DecisionWidth, 390, 440);
         Assert.InRange(laptop.DecisionWidth, 450, 500);
@@ -341,4 +402,5 @@ public sealed class VisualSystemTests
         Assert.All(variations, variation => Assert.False(string.IsNullOrWhiteSpace(variation)));
         Assert.Equal(variations.Length, variations.Distinct(StringComparer.Ordinal).Count());
     }
+
 }

@@ -178,6 +178,35 @@ public static class VisualSystem
         FocusRingWidth: Scale(3, scale),
         CornerRadius: Scale(8, scale));
 
+    /// <summary>
+    /// Returns the compact content-inset rhythm for one supported scale.
+    ///
+    /// This is presentation policy: frames own their inset once and nested
+    /// content uses container separation rather than another fixed margin.
+    /// </summary>
+    public static DensityMetrics Density(InterfaceScale scale) => new(
+        ViewportInset: Scale(16, scale),
+        ShellHorizontal: Scale(14, scale),
+        ShellVertical: Scale(12, scale),
+        SurfaceHorizontal: Scale(10, scale),
+        SurfaceVertical: Scale(8, scale),
+        StatusHorizontal: Scale(9, scale),
+        StatusVertical: Scale(6, scale),
+        BoardHorizontal: Scale(10, scale),
+        BoardVertical: Scale(8, scale),
+        CompactCardHorizontal: Scale(7, scale),
+        CompactCardVertical: Scale(5, scale),
+        FullCardHorizontal: Scale(12, scale),
+        FullCardVertical: Scale(10, scale),
+        InputHorizontal: Scale(10, scale),
+        InputVertical: Scale(6, scale),
+        ButtonHorizontal: Scale(10, scale),
+        ButtonVertical: Scale(7, scale),
+        PrimaryButtonHorizontal: Scale(12, scale),
+        PrimaryButtonVertical: Scale(8, scale),
+        ArtWellInset: Scale(6, scale),
+        BoardAreaAllowance: Scale(16, scale));
+
     /// <summary>Keeps the active decision dominant while preserving a usable table.</summary>
     public static DesktopPlayMetrics DesktopPlay(
         int viewportWidth,
@@ -200,7 +229,7 @@ public static class VisualSystem
             DecisionMinimumHeight: viewportHeight < 800
                 ? Math.Max(270, Scale(220, scale))
                 : Math.Max(300, Scale(320, scale)),
-            BoardAreaWidth: checked(card.Width + 32));
+            BoardAreaWidth: checked(card.Width + Density(scale).BoardAreaAllowance));
     }
 
     /// <summary>Returns card geometry without shrinking type to fit content.</summary>

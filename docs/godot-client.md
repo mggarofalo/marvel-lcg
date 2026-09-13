@@ -428,6 +428,12 @@ to one inherited Godot theme. Authored scene controls and controls created by
 the board and decision renderers use named theme variations instead of local
 colors, font sizes or style boxes.
 
+Frame content insets use `VisualSystem.Density(scale)`. The viewport, shell,
+surface, status, board area, card frame, input, and button each own one named,
+scale-aware inset; nested scene containers use separation rather than repeating
+that inset. Pointer targets and focus-ring clearance remain governed by
+`VisualSystem.Controls(scale)`.
+
 The direction is a dark tabletop mission dossier: warm paper text, an amber
 briefing signal, blue legal-target markers and a red encounter rail. The thick
 left rail is the signature cue shared by cards, status notices and selected

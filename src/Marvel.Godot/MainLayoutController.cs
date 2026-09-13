@@ -21,7 +21,20 @@ internal sealed class MainLayoutController
         main.GetNode<Control>("StatusBar").Theme = ClientTheme.Create(InterfaceScale.Compact);
         main.interfaceScaleValue.Text = $"Scale {Mathf.RoundToInt(VisualSystem.ScalePercent(scale))}%";
         main.decisions.SetInterfaceScale(scale);
+        DensityMetrics density = VisualSystem.Density(scale);
         float minimumHeight = VisualSystem.Controls(scale).MinimumHeight;
+        Control page = main.pageScroll;
+        page.OffsetLeft = density.ViewportInset;
+        page.OffsetTop = density.ViewportInset;
+        page.OffsetRight = -density.ViewportInset;
+        page.OffsetBottom = -density.ViewportInset;
+        Control statusBar = main.GetNode<Control>("StatusBar");
+        statusBar.OffsetLeft = density.ViewportInset;
+        statusBar.OffsetTop = density.ViewportInset;
+        statusBar.OffsetRight = -density.ViewportInset;
+        statusBar.OffsetBottom = density.ViewportInset + minimumHeight;
+        main.GetNode<Control>("Margin/Shell/Content/StatusBarClearance").CustomMinimumSize =
+            new Vector2(0, minimumHeight);
         foreach (Control control in new Control[]
                  {
                      main.endpoint, main.gameId, main.hero, main.secondHero, main.scenario, main.mode, main.modular, main.seed,
