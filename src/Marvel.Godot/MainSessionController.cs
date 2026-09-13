@@ -108,9 +108,9 @@ internal sealed class MainSessionController
         }
         main.decisionPending = false;
         main.uncertainMutationError = null;
-        if (result.MutationDisposition == ClientMutationDisposition.Rejected)
+        if (result.Error is not null)
         {
-            main.decisions.AllowRetry(result.Response!.Revision);
+            main.decisions.AuthoritativeSynchronization(result.Response!.Revision);
         }
         if (result.Error is not null)
         {

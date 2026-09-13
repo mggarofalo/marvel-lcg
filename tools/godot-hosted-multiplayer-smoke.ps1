@@ -57,7 +57,7 @@ try {
 
     $env:MARVEL_ENGINE_ENDPOINT = "tcp://127.0.0.1:$Port"
     $env:MARVEL_UI_SCALE = "compact"
-    $smokeOutput = & $GodotBin --path "$repoRoot/src/Marvel.Godot" `
+    $smokeOutput = & $GodotBin --audio-driver Dummy --path "$repoRoot/src/Marvel.Godot" `
         --script res://smoke/hosted_multiplayer_smoke_runner.gd 2>&1
     $smokeOutput | Write-Output
     if ($LASTEXITCODE -ne 0 -or (Test-GodotSmokeDiagnostics $smokeOutput) -or `

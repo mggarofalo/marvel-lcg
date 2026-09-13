@@ -38,7 +38,7 @@ trap cleanup EXIT
 
 run_local_smoke() {
   set +e
-  "$godot_bin" --headless --path "$repo_root/src/Marvel.Godot" \
+  "$godot_bin" --headless --audio-driver Dummy --path "$repo_root/src/Marvel.Godot" \
     --script res://smoke/local_game_smoke.gd 2>&1 | tee "$smoke_log"
   local status=${PIPESTATUS[0]}
   set -e

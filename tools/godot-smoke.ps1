@@ -21,7 +21,7 @@ dotnet build "$repoRoot/src/Marvel.Godot/Marvel.Godot.csproj" --nologo
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 function Invoke-LocalSmoke {
-    $output = & $GodotBin --headless --path "$repoRoot/src/Marvel.Godot" `
+    $output = & $GodotBin --headless --audio-driver Dummy --path "$repoRoot/src/Marvel.Godot" `
         --script res://smoke/local_game_smoke.gd 2>&1
     $output | Write-Output
     if ($LASTEXITCODE -ne 0 -or (Test-GodotSmokeDiagnostics $output)) {

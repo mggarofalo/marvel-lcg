@@ -24,7 +24,7 @@ dotnet build "$repoRoot/src/Marvel.Godot/Marvel.Godot.csproj" --nologo
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 New-Item -ItemType Directory -Force -Path $CaptureDir | Out-Null
 function Invoke-VisualSmoke {
-    $output = & $GodotBin --rendering-method gl_compatibility `
+    $output = & $GodotBin --audio-driver Dummy --rendering-method gl_compatibility `
         --resolution $env:MARVEL_SMOKE_VIEWPORT `
         --path "$repoRoot/src/Marvel.Godot" `
         --script res://smoke/local_game_smoke.gd 2>&1

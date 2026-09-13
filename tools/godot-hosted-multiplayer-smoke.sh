@@ -62,13 +62,13 @@ if [[ "$external_server" != true ]]; then
   fi
 fi
 
-smoke_command=("$godot_bin")
+smoke_command=("$godot_bin" --audio-driver Dummy)
 if [[ $(uname -s) == Linux ]]; then
   if ! command -v xvfb-run >/dev/null 2>&1; then
     echo "xvfb-run is required for the hosted clipboard smoke on Linux." >&2
     exit 2
   fi
-  smoke_command=(xvfb-run -a "$godot_bin")
+  smoke_command=(xvfb-run -a "$godot_bin" --audio-driver Dummy)
 fi
 
 set +e

@@ -69,7 +69,7 @@ public sealed class InteractionLifecycleTests
     }
 
     [Fact]
-    public void AnUncertainSameRevisionRemainsLockedUntilAuthoritativeSynchronization()
+    public void AnUncertainRecoveryViewReopensOnlyAfterAuthoritativeSynchronization()
     {
         var latch = new PromptSubmissionLatch();
 
@@ -79,7 +79,7 @@ public sealed class InteractionLifecycleTests
 
         Assert.False(latch.TrySubmit(7));
 
-        latch.AuthoritativeSynchronization(7);
+        latch.AuthoritativeSynchronization(7); // Recovery returned the same authoritative revision.
 
         Assert.True(latch.TrySubmit(7));
     }

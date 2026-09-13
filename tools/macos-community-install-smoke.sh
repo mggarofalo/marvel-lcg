@@ -61,7 +61,7 @@ if xattr -p com.apple.quarantine "$app" >/dev/null 2>&1; then
   exit 2
 fi
 
-"$executable" -- --marvel-hosted-multiplayer-smoke \
+"$executable" --audio-driver Dummy -- --marvel-hosted-multiplayer-smoke \
   >"$log" 2>&1 &
 app_pid=$!
 deadline=$((SECONDS + smoke_timeout_seconds))

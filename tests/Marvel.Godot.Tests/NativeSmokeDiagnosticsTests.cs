@@ -23,6 +23,24 @@ public sealed class NativeSmokeDiagnosticsTests
         Assert.Contains(contract, script, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("tools/godot-smoke.ps1")]
+    [InlineData("tools/godot-smoke.sh")]
+    [InlineData("tools/godot-hosted-multiplayer-smoke.ps1")]
+    [InlineData("tools/godot-hosted-multiplayer-smoke.sh")]
+    [InlineData("tools/godot-visual-qa.ps1")]
+    [InlineData("tools/godot-visual-qa.sh")]
+    [InlineData("tools/windows-portable-install-smoke.ps1")]
+    [InlineData("tools/windows-community-install-smoke.ps1")]
+    [InlineData("tools/macos-community-install-smoke.sh")]
+    public void NativeSmokeWrappersForceGodotsDummyAudioDriver(string relativePath)
+    {
+        string script = File.ReadAllText(Path.Combine(RepositoryPaths.Root, relativePath));
+
+        Assert.Contains("--audio-driver", script, StringComparison.Ordinal);
+        Assert.Contains("Dummy", script, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void PowerShellErrorContractMakesGodotErrorAProcessFailure()
     {

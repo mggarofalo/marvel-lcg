@@ -38,12 +38,12 @@ run_visual_smoke() {
   set +e
   local status
   if [[ "$use_xvfb" == true ]]; then
-    xvfb-run -a "$godot_bin" --rendering-method gl_compatibility \
+    xvfb-run -a "$godot_bin" --audio-driver Dummy --rendering-method gl_compatibility \
       --resolution "$MARVEL_SMOKE_VIEWPORT" --path "$repo_root/src/Marvel.Godot" \
       --script res://smoke/local_game_smoke.gd 2>&1 | tee "$smoke_log"
     status=${PIPESTATUS[0]}
   else
-    "$godot_bin" --rendering-method gl_compatibility \
+    "$godot_bin" --audio-driver Dummy --rendering-method gl_compatibility \
       --resolution "$MARVEL_SMOKE_VIEWPORT" --path "$repo_root/src/Marvel.Godot" \
       --script res://smoke/local_game_smoke.gd 2>&1 | tee "$smoke_log"
     status=${PIPESTATUS[0]}

@@ -33,7 +33,7 @@ try {
         throw 'portable application executable is absent'
     }
     $process = Start-Process -FilePath $executable `
-        -ArgumentList '--', '--marvel-hosted-multiplayer-smoke' `
+        -ArgumentList '--audio-driver', 'Dummy', '--', '--marvel-hosted-multiplayer-smoke' `
         -RedirectStandardOutput $stdout `
         -RedirectStandardError $stderr `
         -PassThru
