@@ -136,6 +136,7 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.State.Card.Owner",
             "Marvel.Rules.State.Card.Ready",
             "Marvel.Rules.State.Card.Tokens",
+            "Marvel.Rules.State.CardControl.ControllerOf(Marvel.Rules.State.World, Marvel.Rules.State.Card)",
             "Marvel.Rules.State.CardKind.Ally",
             "Marvel.Rules.State.CardKind.AlterEgo",
             "Marvel.Rules.State.CardKind.EncounterSideScheme",

@@ -123,6 +123,31 @@ public sealed class TableContractTests
     }
 
     [Fact]
+    public void InPlayPlayerCardsUseTheirControllerWhileScenarioOutOfPlayCardsKeepTheirOwner()
+    {
+        World world = Board(out _, out Card remoteDefender, out _);
+        Card controlled = world.CreateCard("duplicate", world.AreaOf(
+            DeckType.DiscardPile, PlayArea.Of(1), cardOwner: 1));
+        CardPlay.PutAllyIntoPlay(world, world.Facts, new NoCardAbilities(), controlled,
+            controller: 0, trigger: "test", events: []);
+        Area scenarioAside = world.CreateArea(DeckType.AsideDeck, World.Scenario, PlayArea.Of(0));
+        Card scenario = world.CreateCard("villain", scenarioAside);
+        Area attachment = world.CreateArea(DeckType.UpgradesArea, cardOwner: 0,
+            playArea: PlayArea.Of(1), host: remoteDefender.ObjectId);
+        Card upgrade = world.CreateCard("attachment", attachment);
+
+        WorldDescriptor view = WorldProjection.For(world, null, [],
+            new PermissiveVisibilityPolicy().Authorize(null, world.Players)).World;
+
+        Assert.Equal(1, controlled.Owner);
+        Assert.Equal(0, controlled.Area.PlayArea.Player);
+        Assert.Equal(0, Card(view, controlled.ObjectId).Location?.Controller);
+        Assert.Equal(World.Scenario, Card(view, scenario.ObjectId).Location?.Controller);
+        Assert.Equal(0, upgrade.Owner);
+        Assert.Equal(1, Card(view, upgrade.ObjectId).Location?.Controller);
+    }
+
+    [Fact]
     public void DeclaredAnchorKindPreventsCollidingCardAndRuntimeAreaIdsFromChangingSource()
     {
         var card = new CardDescriptor(4, CardBack.Player, true, true, -1,
@@ -186,7 +211,7 @@ public sealed class TableContractTests
             "duplicate" => CardKind.Ally,
             "villain" => CardKind.EncounterVillain,
             "minion" => CardKind.Minion,
-            "attachment" => CardKind.Attachment,
+            "attachment" => CardKind.Upgrade,
             _ => CardKind.Event,
         };
 

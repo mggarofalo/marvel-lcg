@@ -41,6 +41,7 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.Prompts.TargetRequest",
             "Marvel.Rules.State.Area",
             "Marvel.Rules.State.Card",
+            "Marvel.Rules.State.CardControl",
             "Marvel.Rules.State.CardKind",
             "Marvel.Rules.State.DeckType",
             "Marvel.Rules.State.DeckTypes",

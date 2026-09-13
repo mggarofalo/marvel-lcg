@@ -91,4 +91,16 @@ public sealed class DesktopDataRootTests
         Assert.Equal("Opening hand", header.Heading);
         Assert.Contains("Spider-Man", header.Context, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void NativeMulliganSmokeWaitsForPlayerActionsInsteadOfPromptProse()
+    {
+        string smoke = File.ReadAllText(Path.Combine(RepositoryPaths.Root, "src",
+            "Marvel.Godot", "smoke", "local_game_smoke_decision_checks.gd"));
+
+        Assert.Contains("Change Form", smoke, StringComparison.Ordinal);
+        Assert.Contains("Play Web-Shooter", smoke, StringComparison.Ordinal);
+        Assert.DoesNotContain("the seeded mulligan did not reach the player turn", smoke,
+            StringComparison.Ordinal);
+    }
 }
