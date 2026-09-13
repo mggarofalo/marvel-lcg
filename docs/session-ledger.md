@@ -27,7 +27,7 @@ The engine already has the determinism, stable decision selectors and replay
 checks needed by this design. `Marvel.Sim` records setup, prompts, decisions,
 events and digests, then deals and resolves the game again to find divergence.
 
-Schema 3 save, atomic generation commit, strict load, verified replay, the
+Schema 4 save, atomic generation commit, strict load, verified replay, the
 information frontier, linear undo and redo, legal action reordering, and the
 redacted structured operational-log boundary are implemented for hosted
 sessions. The embedded host uses the same ledger and replay path with an
@@ -76,13 +76,13 @@ server replay but must never cross the client boundary. A visibility-safe
 
 ## The save is a decision trace
 
-A save is one strict UTF-8 JSON document. Schema 3 has these top-level members
+A save is one strict UTF-8 JSON document. Schema 4 has these top-level members
 in this order:
 
 ```json
 {
   "format": "marvel-session",
-  "schema": 3,
+  "schema": 4,
   "compatibility": {},
   "session": {},
   "setup": {},
@@ -95,12 +95,13 @@ in this order:
 }
 ```
 
-Schema 2 is the single readable predecessor. On startup the server parses it
-with its frozen prompt shape, checks each computed prompt alias against its
-source fields, replays and verifies the complete trace, and atomically commits
-a schema 3 generation before making the session available. It never rewrites
+Schemas 2 and 3 are explicit readable predecessors. Schema 2 uses its frozen
+prompt shape and schema 3 predates the anchor namespace discriminator; their
+readers respectively validate aliases and assign the historic card namespace.
+The server then replays and verifies the complete trace and atomically commits
+a schema 4 generation before making the session available. It never rewrites
 the active generation in place and never publishes a partially migrated
-session. New saves and every later commit write schema 3 only.
+session. New saves and every later commit write schema 4 only.
 
 Unknown members fail loading. Missing members fail loading. A later schema uses
 a new number and an explicit migration; a reader never guesses how to interpret
@@ -170,7 +171,7 @@ An affordance id is a live-session handle and never enters a save. A taken
 decision records the stable selector already proven by `Marvel.Sim`:
 
 ```text
-(anchor_id, anchor_player, verb, label, occurrence among exact matches)
+(anchor_kind, anchor_id, anchor_player, verb, label, occurrence among exact matches)
 ```
 
 It also records:
@@ -192,7 +193,7 @@ gameplay state. The session journal omits them, so adding or improving a safe
 description does not change deterministic replay or invalidate an older save.
 Fresh replay reconstructs that evidence for the response being presented.
 
-Schemas 2 and 3 define the state fingerprint as `World.Digest()` plus the recorded
+Schemas 2, 3 and 4 define the state fingerprint as `World.Digest()` plus the recorded
 engine result. `World.Digest()` alone contains card state and cannot distinguish
 a win from a loss on an otherwise identical terminal board. Replay verifies
 both parts after every decision.
@@ -212,7 +213,11 @@ seat, round, phase, ordered decision records and derived frontier signals. The
 serializer pins each nested record's exact member set and order with schema
 tests.
 
-Schema 3 gives durable prompts a canonical engine-chosen persistence shape.
+Schema 4 gives durable prompts a canonical engine-chosen persistence shape.
+Each affordance retains `anchor_kind` with its `anchor_id`; card and area ids
+have separate allocation namespaces, so replay never infers one by probing an
+id in either collection. Schema 3 records migrate their historic card-only
+anchors explicitly before replay.
 Target records keep `legal`, `min`, `max`, `groups`, `must_include_traits`,
 `rule`, `is_search`, `allow_repeated`, `maximum_occurrences`, and `details`; the
 derived `is_grouped` alias is not stored. Cost records keep `target`, `cost`,
@@ -567,7 +572,7 @@ their respective interfaces. A client cache is not a backup.
 
 The subsystem requires executable examples for:
 
-- byte-stable schema 3 records and strict parsing;
+- byte-stable schema 4 records and strict parsing;
 - atomic open with its initial save and owner authority, including crashes at
   each persistence boundary;
 - durable attach, credential revocation and owner retirement, including restart

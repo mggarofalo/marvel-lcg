@@ -122,11 +122,13 @@ public abstract class SimulationHarnessTestBase
             else if (type is "step" or "failure")
             {
                 AddSchemaTwoPrompt(record);
+                RemoveSchemaTwoSelector(record);
                 if (record["recent_steps"] is JsonArray recent)
                 {
                     foreach (JsonNode? recentStep in recent)
                     {
                         AddSchemaTwoPrompt(recentStep!.AsObject());
+                        RemoveSchemaTwoSelector(recentStep.AsObject());
                     }
                 }
             }
@@ -135,6 +137,32 @@ public abstract class SimulationHarnessTestBase
         }
 
         return legacy;
+    }
+
+    protected static List<string> SchemaThreeLines(IEnumerable<string> current)
+    {
+        var predecessor = new List<string>();
+        foreach (string line in current)
+        {
+            JsonObject record = Assert.IsType<JsonObject>(JsonNode.Parse(line));
+            if (record["type"]!.GetValue<string>() == "header")
+            {
+                record["schema"] = 3;
+            }
+            else if (record["type"]!.GetValue<string>() is "step" or "failure")
+            {
+                RemoveSchemaThreeAnchorKinds(record);
+                if (record["recent_steps"] is JsonArray recent)
+                {
+                    foreach (JsonNode? recentStep in recent)
+                        RemoveSchemaThreeAnchorKinds(recentStep!.AsObject());
+                }
+            }
+
+            predecessor.Add(record.ToJsonString(RecordJson.Options));
+        }
+
+        return predecessor;
     }
 
     protected static IEnumerable<string> OldestSchemaTwoLines(IEnumerable<string> legacy)
@@ -194,10 +222,28 @@ public abstract class SimulationHarnessTestBase
 
     protected static void AddSchemaTwoAffordance(JsonObject affordance)
     {
+        _ = affordance.Remove("anchor_kind");
         if (affordance["targets"] is JsonObject target)
             target["is_grouped"] = target["groups"] is JsonArray { Count: > 0 };
         foreach (JsonNode? cost in affordance["costs"]!.AsArray())
             AddSchemaTwoCost(cost!.AsObject());
+    }
+
+    private static void RemoveSchemaTwoSelector(JsonObject record)
+    {
+        if (record["decision"] is JsonObject selector)
+            _ = selector.Remove("anchor_kind");
+    }
+
+    private static void RemoveSchemaThreeAnchorKinds(JsonObject record)
+    {
+        if (record["prompt"] is JsonObject prompt)
+        {
+            foreach (JsonNode? affordance in prompt["affordances"]!.AsArray())
+                _ = affordance!.AsObject().Remove("anchor_kind");
+        }
+
+        RemoveSchemaTwoSelector(record);
     }
 
     protected static void AddSchemaTwoCost(JsonObject cost)

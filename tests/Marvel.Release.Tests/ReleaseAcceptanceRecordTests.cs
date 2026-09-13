@@ -112,7 +112,7 @@ public sealed class ReleaseAcceptanceRecordTests
             Commit,
             "0.1.0.0",
             new ReleaseEngineIdentity(
-                "engine-replay-v2", "mt19937-iso-cxx", "state-digest-v2", 15, 3),
+                "engine-replay-v2", "mt19937-iso-cxx", "state-digest-v2", 15, 4),
             new ReleaseDatasetIdentity("cards", "setup", "abilities"));
         string manifestJson = manifest.Json();
 
@@ -174,7 +174,7 @@ public sealed class ReleaseAcceptanceRecordTests
                 rng = "mt19937-iso-cxx",
                 state_digest = "state-digest-v2",
                 protocol = 15,
-                save_schema = 3,
+                save_schema = 4,
                 datasets = new
                 {
                     cards_sha256 = "cards",

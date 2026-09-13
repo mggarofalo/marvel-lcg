@@ -52,7 +52,7 @@ public sealed class SessionPersistenceTests
                 new EngineDecision(mulligan.Id, []),
                 opened.Revision)).Error);
 
-            // Simulate the exact predecessor generation written before schema 3.
+            // Simulate the frozen schema-2 predecessor generation.
             // The next host must verify it and atomically publish the migrated save.
             string directory = Assert.Single(Directory.GetDirectories(root));
             string generation = File.ReadAllText(Path.Combine(directory, "current")).Trim();
@@ -306,7 +306,7 @@ public sealed class SessionPersistenceTests
                     File.WriteAllText(
                         badSave,
                         File.ReadAllText(badSave).Replace(
-                            "\"schema\":3",
+                            "\"schema\":4",
                             "\"schema\":999999999999999999999",
                             StringComparison.Ordinal));
                     break;
@@ -411,6 +411,7 @@ public sealed class SessionPersistenceTests
             foreach (JsonNode? stepNode in unitNode!["decisions"]!.AsArray())
             {
                 AddSchemaTwoAliases(stepNode!["prompt"]!.AsObject());
+                _ = stepNode["decision"]!["selector"]!.AsObject().Remove("anchor_kind");
             }
         }
 
@@ -427,6 +428,7 @@ public sealed class SessionPersistenceTests
 
     private static void AddSchemaTwoAffordance(JsonObject affordance)
     {
+        _ = affordance.Remove("anchor_kind");
         if (affordance["targets"] is JsonObject target)
             target["is_grouped"] = target["groups"] is JsonArray { Count: > 0 };
         foreach (JsonNode? cost in affordance["costs"]!.AsArray())

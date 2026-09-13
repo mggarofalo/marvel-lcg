@@ -18,6 +18,10 @@ public sealed record DecisionSelector(
     [property: JsonRequired] string? Label,
     [property: JsonRequired] int Occurrence)
 {
+    /// <summary>The namespace of <see cref="AnchorId"/>, or null for a decline.</summary>
+    [JsonRequired]
+    public AffordanceAnchorKind? AnchorKind { get; init; }
+
     /// <summary>Captures a decision without retaining <see cref="Affordance.Id"/>.</summary>
     public static DecisionSelector From(Prompt prompt, Decision decision)
     {
@@ -32,6 +36,7 @@ public sealed record DecisionSelector(
         var exact = prompt.Affordances.Where(option =>
             option.IsLegal
             && option.AnchorId == selected.AnchorId
+            && option.AnchorKind == selected.AnchorKind
             && option.AnchorPlayer == selected.AnchorPlayer
             && string.Equals(option.Verb, selected.Verb, StringComparison.Ordinal)
             && string.Equals(option.Label, selected.Label, StringComparison.Ordinal));
@@ -42,7 +47,10 @@ public sealed record DecisionSelector(
             selected.AnchorPlayer,
             selected.Verb,
             selected.Label,
-            occurrence);
+            occurrence)
+        {
+            AnchorKind = selected.AnchorKind,
+        };
     }
 
     /// <summary>Resolves and validates a recorded answer against a fresh prompt.</summary>
@@ -78,6 +86,7 @@ public sealed record DecisionSelector(
         List<Affordance> exact = prompt.Affordances.Where(option =>
                 option.IsLegal
                 && option.AnchorId == AnchorId
+                && option.AnchorKind == AnchorKind
                 && option.AnchorPlayer == AnchorPlayer
                 && string.Equals(option.Verb, Verb, StringComparison.Ordinal)
                 && string.Equals(option.Label, Label, StringComparison.Ordinal))

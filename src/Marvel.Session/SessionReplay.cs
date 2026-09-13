@@ -79,7 +79,7 @@ public static class SessionReplay
     }
 
     /// <summary>
-    /// Replays the strict predecessor format before producing schema 3.
+    /// Replays frozen schema 2 before producing the current schema.
     /// </summary>
     public static SessionSave MigrateSchemaTwo(
         SessionSave save,
@@ -91,6 +91,30 @@ public static class SessionReplay
         {
             throw new SessionSaveException("only schema 2 can be migrated");
         }
+
+        return Migrate(save, expected, open);
+    }
+
+    /// <summary>Replays schema 3 before adding durable anchor namespaces.</summary>
+    public static SessionSave MigrateSchemaThree(
+        SessionSave save,
+        SessionCompatibility expected,
+        Func<SessionSetup, ReplayOpenedGame> open)
+    {
+        SessionSaveJson.ValidateReadable(save);
+        if (save.Schema != 3)
+        {
+            throw new SessionSaveException("only schema 3 can be migrated");
+        }
+
+        return Migrate(save, expected, open);
+    }
+
+    private static SessionSave Migrate(
+        SessionSave save,
+        SessionCompatibility expected,
+        Func<SessionSetup, ReplayOpenedGame> open)
+    {
 
         ArgumentNullException.ThrowIfNull(expected);
         ArgumentNullException.ThrowIfNull(open);

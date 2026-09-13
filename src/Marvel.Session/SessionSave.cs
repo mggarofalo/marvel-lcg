@@ -7,7 +7,7 @@ using Marvel.Rules.State;
 
 namespace Marvel.Session;
 
-/// <summary>Schema 3's complete, capability-free deterministic session authority.</summary>
+/// <summary>Schema 4's complete, capability-free deterministic session authority.</summary>
 public sealed record SessionSave(
     [property: JsonRequired] string Format,
     [property: JsonRequired] int Schema,
@@ -24,8 +24,8 @@ public sealed record SessionSave(
     /// <summary>The required schema family marker.</summary>
     public const string FormatName = "marvel-session";
 
-    /// <summary>The schema this runtime writes; schema 2 is read only for migration.</summary>
-    public const int CurrentSchema = 3;
+    /// <summary>The schema this runtime writes; schemas 2 and 3 are read only for migration.</summary>
+    public const int CurrentSchema = 4;
 
     /// <summary>Creates the zero-decision authority for a freshly dealt game.</summary>
     public static SessionSave Open(

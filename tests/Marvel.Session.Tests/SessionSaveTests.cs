@@ -45,7 +45,7 @@ public sealed class SessionSaveTests
     }
 
     [Fact]
-    public void SchemaThreeHasAStableStrictTopLevelDocument()
+    public void SchemaFourHasAStableStrictTopLevelDocument()
     {
         SessionSave save = Save();
 
@@ -54,7 +54,7 @@ public sealed class SessionSaveTests
 
         Assert.Equal(json, SessionSaveJson.Write(parsed));
         Assert.StartsWith(
-            "{\"format\":\"marvel-session\",\"schema\":3,\"compatibility\":",
+            "{\"format\":\"marvel-session\",\"schema\":4,\"compatibility\":",
             json,
             StringComparison.Ordinal);
         Assert.Contains(
@@ -81,8 +81,8 @@ public sealed class SessionSaveTests
                 "\"format\":\"future-session\"",
                 StringComparison.Ordinal),
             "schema" => json.Replace(
-                "\"schema\":3",
                 "\"schema\":4",
+                "\"schema\":5",
                 StringComparison.Ordinal),
             _ => throw new InvalidOperationException(change),
         };
@@ -130,7 +130,7 @@ public sealed class SessionSaveTests
     public void SchemaTwoCanBeReadStrictlyButCannotBeWrittenAsCurrent()
     {
         string legacyJson = SessionSaveJson.Write(Save()).Replace(
-            "\"schema\":3",
+            "\"schema\":4",
             "\"schema\":2",
             StringComparison.Ordinal);
 
@@ -138,6 +138,33 @@ public sealed class SessionSaveTests
 
         Assert.Equal(2, legacy.Schema);
         Assert.Throws<SessionSaveException>(() => SessionSaveJson.Write(legacy));
+    }
+
+    [Fact]
+    public void SchemaThreeReaderAssignsTheHistoricCardNamespaceBeforeMigration()
+    {
+        PromptRecord prompt = PromptRecord.From(new Prompt(
+            0,
+            Question.TurnOption,
+            TimingPriority.Untimed,
+            string.Empty,
+            "Choose",
+            false,
+            [new Affordance(7, "Use", 4, 0, "Choose")]));
+        JsonObject predecessor = Assert.IsType<JsonObject>(JsonSerializer.SerializeToNode(
+            Save() with { CurrentPrompt = prompt }, SessionSaveJson.Options));
+        predecessor["schema"] = 3;
+        _ = predecessor["current_prompt"]!["affordances"]![0]!.AsObject().Remove("anchor_kind");
+
+        SessionSave parsed = SessionSaveJson.Read(predecessor.ToJsonString(SessionSaveJson.Options));
+
+        Assert.Equal(3, parsed.Schema);
+        Assert.Equal(AffordanceAnchorKind.Card, parsed.CurrentPrompt!.Affordances[0].AnchorKind);
+        Assert.Throws<SessionSaveException>(() => SessionSaveJson.Write(parsed));
+        predecessor["current_prompt"]!["affordances"]![0]!["anchor_kind"] =
+            (int)AffordanceAnchorKind.Area;
+        Assert.Throws<SessionSaveException>(() =>
+            SessionSaveJson.Read(predecessor.ToJsonString(SessionSaveJson.Options)));
     }
 
     [Fact]
@@ -162,6 +189,7 @@ public sealed class SessionSaveTests
         JsonObject legacy = Assert.IsType<JsonObject>(JsonSerializer.SerializeToNode(
             Save() with { CurrentPrompt = currentPrompt }, SessionSaveJson.Options));
         legacy["schema"] = 2;
+        _ = legacy["current_prompt"]!["affordances"]![0]!.AsObject().Remove("anchor_kind");
         legacy["current_prompt"] = JournalRecordsTests.SchemaTwoPrompt(currentPrompt);
 
         SessionSave parsed = SessionSaveJson.Read(legacy.ToJsonString(SessionSaveJson.Options));
