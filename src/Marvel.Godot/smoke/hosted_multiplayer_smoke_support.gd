@@ -12,10 +12,18 @@ func _scroll_control_into_view(control: Control) -> void:
 		if ancestor is ScrollContainer:
 			scrolls.append(ancestor)
 		ancestor = ancestor.get_parent()
-	for scroll in scrolls:
-		scroll.ensure_control_visible(control)
+	# The root scroll container follows real keyboard focus. This is the same
+	# viewport route a player takes to a prompt action, and lets nested layouts
+	# update their visible rect before the pointer proof samples it.
+	control.grab_focus()
+	for attempt in 12:
+		for scroll in scrolls:
+			scroll.ensure_control_visible(control)
 		await get_tree().process_frame
-	await get_tree().process_frame
+		if _visible_control_rect(control).size.x >= 4.0 \
+				and _visible_control_rect(control).size.y >= 4.0:
+			await get_tree().process_frame
+			return
 
 
 func _visible_control_rect(control: Control) -> Rect2:

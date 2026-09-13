@@ -50,6 +50,8 @@ public sealed class NativeSmokeDiagnosticsTests
 
         Assert.Contains("func _embedder_point(viewport: Viewport, local_point: Vector2)", script, StringComparison.Ordinal);
         Assert.Contains("return viewport.get_final_transform() * local_point", script, StringComparison.Ordinal);
+        Assert.Contains("control.grab_focus()", script, StringComparison.Ordinal);
+        Assert.Contains("scroll.ensure_control_visible(control)", script, StringComparison.Ordinal);
         Assert.Contains("viewport.push_input(move)", script, StringComparison.Ordinal);
         Assert.Contains("viewport.push_input(press)", script, StringComparison.Ordinal);
         Assert.Contains("viewport.push_input(release)", script, StringComparison.Ordinal);
