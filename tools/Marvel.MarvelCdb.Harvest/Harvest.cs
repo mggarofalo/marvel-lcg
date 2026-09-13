@@ -156,7 +156,3 @@ public static partial class Harvest
     [GeneratedRegex("^no FAQ entries for (\\S+)$", RegexOptions.CultureInvariant)]
     private static partial Regex NoEntries();
 }
-
-public sealed record BatchResult(
-    IReadOnlyList<JsonElement> Entries,
-    IReadOnlyList<QueryOutcome> Outcomes);

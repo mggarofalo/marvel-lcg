@@ -9,13 +9,6 @@ using Marvel.Rules.Timing;
 namespace Marvel.Rules.Play;
 
 /// <summary>
-/// The legal defenders for one attack and whether a defender is mandatory.
-/// </summary>
-/// <param name="Candidates">The characters that may defend.</param>
-/// <param name="Required">Whether declining to defend is illegal.</param>
-public sealed record DefenderChoice(IReadOnlyList<Card> Candidates, bool Required);
-
-/// <summary>
 /// An enemy attack, as <c>rr:attack-enemy-activation</c> lists its steps.
 /// </summary>
 /// <remarks>

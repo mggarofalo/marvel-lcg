@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 using Marvel.Rules.Index;
 using Marvel.Tests;
 using Xunit;
-using RuleRecord = Marvel.Rules.Index.Record;
+using RuleRecord = Marvel.Rules.Index.RuleRecord;
 
 namespace Marvel.Rules.Tests.Rules;
 

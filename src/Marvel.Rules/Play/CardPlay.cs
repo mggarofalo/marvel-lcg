@@ -10,21 +10,6 @@ using static Marvel.Rules.Play.CardEntry;
 namespace Marvel.Rules.Play;
 
 /// <summary>
-/// A card's cost after modifiers, together with the one-use effects that
-/// produced it.
-/// </summary>
-/// <remarks>
-/// Kept as data because determining a cost and paying it are separate steps of
-/// <c>rr:initiating-abilities</c>. The effects are consumed only after the card
-/// has successfully been played; merely describing an affordance does not use
-/// them.
-/// </remarks>
-/// <param name="Amount">The cost after modifiers, never less than zero.</param>
-/// <param name="Modifiers">The effects applied while determining it.</param>
-public sealed record AdjustedCardCost(
-    long Amount, IReadOnlyList<ContinuousEffect> Modifiers);
-
-/// <summary>
 /// Playing a card from hand — <c>rr:play-put-into-play</c>,
 /// <c>rr:initiating-abilities</c>.
 /// </summary>

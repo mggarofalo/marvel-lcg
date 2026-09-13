@@ -70,7 +70,7 @@ content, view, decision, client or server project may reference Godot assemblies
 
 `Directory.Build.targets` enforces that rule. The projects under
 `tests/godot-wall/` intentionally violate individual constraints, and
-`tools/godot-wall.sh` proves each violation fails the build.
+`tools/godot-wall.ps1` proves each violation fails the build.
 
 The same targets give each presentation project an exact project-reference
 allowlist. They also disable transitive project references, so `Marvel.Client`

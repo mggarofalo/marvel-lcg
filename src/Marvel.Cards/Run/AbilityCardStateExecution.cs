@@ -356,19 +356,3 @@ internal static class AbilityCardStateExecution
     private static T Publish<T>(AbilityQueryResult<T> result, World world)
     { foreach (var observation in result.Information) world.RecordInformation(observation); return result.Value; }
 }
-
-internal sealed record AbilityCardStateContext(AbilityExpressionContext Expressions, string Trigger,
-    List<GameEvent> Events, ICardPlayAbilities CardPlayAbilities,
-    ICardReadinessAbilities Readiness,
-    AbilityCardStateResult Result)
-{
-    internal World World => Expressions.World;
-    internal Card Source => Expressions.Source;
-    internal int Player => Expressions.Player;
-}
-
-internal sealed class AbilityCardStateResult
-{
-    internal List<Card> Discarded { get; } = [];
-    internal Dictionary<string, long> Values { get; } = new(StringComparer.Ordinal);
-}

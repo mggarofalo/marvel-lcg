@@ -53,16 +53,3 @@ public sealed record Ruling(
     private static string Digest(string value) =>
         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value))).ToLowerInvariant();
 }
-
-public sealed record Page(
-    string Name,
-    string FileName,
-    string Via,
-    string RulesReferenceScope,
-    PageShape Shape);
-
-public enum PageShape
-{
-    Compendium,
-    Chronological,
-}

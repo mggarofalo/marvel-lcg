@@ -37,7 +37,7 @@ public sealed class AgendaProcedureBoundaryTests
     {
         string dispatcher = File.ReadAllText(Path.Combine(
             Marvel.Tests.RepositoryPaths.Root,
-            "src", "Marvel.Rules", "Play", "VillainPhase.cs"));
+            "src", "Marvel.Rules", "Play", "AgendaProcedures.cs"));
 
         Assert.Contains("AttackProcedure.Apply", dispatcher, StringComparison.Ordinal);
         Assert.Contains("AttackProcedure.Answer", dispatcher, StringComparison.Ordinal);
@@ -50,7 +50,7 @@ public sealed class AgendaProcedureBoundaryTests
     {
         string source = File.ReadAllText(Path.Combine(
             Marvel.Tests.RepositoryPaths.Root,
-            "src", "Marvel.Rules", "Play", "VillainPhase.cs"));
+            "src", "Marvel.Rules", "Play", "AgendaProcedures.cs"));
 
         string[] owners =
         [

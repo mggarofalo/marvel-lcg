@@ -156,6 +156,7 @@ Seven, all run by hand and none on any path a game takes.
 | launching or smoke-testing the Godot client | [godot-client.md](docs/godot-client.md) |
 | releases, artifact versions, signing, compatibility, installation or upgrades | [release-policy.md](docs/release-policy.md) |
 | adding a C# project, or changing a `TargetFramework` | [presentation-layer.md](docs/presentation-layer.md#build-boundary) |
+| C# type or file layout, class size, parameter lists or type naming | [source-layout.md](docs/source-layout.md) |
 | Plane issues, modules, labels, priority | [plane.md](docs/plane.md) |
 | why the engine is shaped as it is | [migration.md](docs/migration.md) |
 
@@ -167,8 +168,8 @@ dotnet test tests/Marvel.UnitTests.slnx -c Release  # fast merge preparation
 dotnet test tests/Marvel.IntegrationTests.slnx -c Release
 dotnet test tests/Marvel.Acceptance.Tests/Marvel.Acceptance.Tests.csproj -c Release
 dotnet test Marvel.slnx -c Release     # every test lane
-bash tools/godot-wall.sh               # prove the build gates still fire
-bash tools/presentation-wall.sh        # prove project ownership gates fire
+pwsh tools/godot-wall.ps1              # prove the build gates still fire
+pwsh tools/presentation-wall.ps1       # prove project ownership gates fire
 ```
 
 See [docs/testing.md](docs/testing.md) for the boundary between focused tests
@@ -180,6 +181,15 @@ New code needs its own tests: test behaviour not implementation, no
 assertion-free tests, coverage is an observed outcome and never a target.
 **Mutation testing is the discipline** — a new decision earns a mutant, and a
 survivor buys a test or is documented as equivalent in place.
+
+One top-level type lives in one matching file. A class is never more than 500
+lines, and a class over 300 lines is a deterministic remediation finding;
+reaching either threshold calls for a cohesive decomposition, not formatting
+the same responsibility into fewer lines. A behavioural method or constructor
+takes no more than seven parameters. Roslyn architecture tests and Husky
+pre-commit tasks enforce these constraints. See
+[source-layout.md](docs/source-layout.md) for the exceptions, remediation order
+and naming review.
 
 ## Behavioral specs, in one paragraph
 

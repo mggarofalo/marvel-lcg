@@ -66,15 +66,3 @@ internal sealed record ReleaseManifest(
 
     public string Json() => JsonSerializer.Serialize(this, Options) + "\n";
 }
-
-internal sealed record ReleaseEngineIdentity(
-    [property: JsonPropertyName("replay_contract")] string ReplayContract,
-    [property: JsonPropertyName("rng_contract")] string RngContract,
-    [property: JsonPropertyName("state_digest")] string StateDigest,
-    [property: JsonPropertyName("protocol")] int Protocol,
-    [property: JsonPropertyName("save_schema")] int SaveSchema);
-
-internal sealed record ReleaseDatasetIdentity(
-    [property: JsonPropertyName("cards_sha256")] string CardsSha256,
-    [property: JsonPropertyName("setup_sha256")] string SetupSha256,
-    [property: JsonPropertyName("abilities_sha256")] string AbilitiesSha256);

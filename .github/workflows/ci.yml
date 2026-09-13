@@ -109,8 +109,8 @@ jobs:
       # The solution build proves every allowed presentation dependency. These
       # probes prove that each role's forbidden-reference branch also fires.
       - name: The presentation project walls fire
-        shell: bash
-        run: bash tools/presentation-wall.sh
+        shell: pwsh
+        run: ./tools/presentation-wall.ps1
 
       - name: A complete local game is playable through native Godot controls (Linux)
         if: runner.os == 'Linux'
@@ -271,7 +271,8 @@ jobs:
       # about a build rather than a property of one. Offline -- the GodotSharp
       # reference is a stub. See tests/godot-wall/README.md.
       - name: The wall's gates fire
-        run: bash tools/godot-wall.sh
+        shell: pwsh
+        run: ./tools/godot-wall.ps1
 
   desktop-package:
     name: Windows desktop community package

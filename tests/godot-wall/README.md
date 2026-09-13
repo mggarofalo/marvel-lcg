@@ -2,7 +2,7 @@
 
 Four verdict projects exist only to be built by this script, with two support
 projects supplying the transitive reference. They are not in `Marvel.slnx`, so
-`dotnet build` and `dotnet test` never see them; `tools/godot-wall.sh` builds
+`dotnet build` and `dotnet test` never see them; `tools/godot-wall.ps1` builds
 the verdicts one at a time and checks whether each must pass or fail.
 
 ```

@@ -3,13 +3,6 @@ using System.Text.RegularExpressions;
 
 namespace Marvel.Release;
 
-internal enum ReleaseChannel
-{
-    Developer,
-    Preview,
-    Stable,
-}
-
 internal sealed partial record ReleaseVersion(
     int Major,
     int Minor,

@@ -19,13 +19,3 @@ internal sealed record AbilityReachabilityContext
     internal ImmutableList<Card> PriorBindingCandidates { get; init; } = [];
     internal bool PriorBindingMayBeEmpty { get; init; }
 }
-
-// The output of initiation checks belongs to the enclosing ability resolution.
-// Probes can establish a target exception without changing the board or another
-// probe's assumptions. Persisted continuations copy these values by address.
-internal sealed class AbilityInitiationEvidence
-{
-    internal bool LabelsPreflighted { get; set; }
-    internal HashSet<AbilityEffect> CrisisIgnoringThwarts { get; } = new(ReferenceEqualityComparer.Instance);
-    internal HashSet<int> PersistedCrisisIgnoringThwarts { get; } = [];
-}

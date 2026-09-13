@@ -7,42 +7,6 @@ using Marvel.Tests;
 
 namespace Marvel.Rules.Index;
 
-/// <summary>One citable unit of the Rules Reference.</summary>
-/// <param name="Id">Its citation id — <c>rr:forced.4</c>.</param>
-/// <param name="Title">The entry it belongs to, in the document's own casing.</param>
-/// <param name="Fragment">The clause, as the index records it for legibility.</param>
-/// <param name="Clauses">
-/// How many citable records the entry holds, counting itself. Zero on anything
-/// that is not an entry.
-/// </param>
-internal readonly record struct Record(
-    string Id,
-    string Title,
-    string Fragment,
-    string Hash,
-    int Clauses,
-    string Kind,
-    string? BaseId);
-
-/// <summary>One authored edge of the rule reference graph.</summary>
-/// <param name="From">The rule that names another.</param>
-/// <param name="To">What it names.</param>
-/// <param name="Why">Why the edge is there, as the dataset records it.</param>
-internal readonly record struct Edge(string From, string To, string Why);
-
-/// <summary>A published ruling layered over one citable Rules Reference record.</summary>
-internal readonly record struct Modification(
-    string Id,
-    string BaseId,
-    string SupersedesHash,
-    string? AbsorbedIn,
-    string Why,
-    string Source,
-    string Via,
-    string Scope,
-    string? Observed,
-    string Hash);
-
 /// <summary>
 /// The vendored Rules Reference index, and the authored graph over it.
 /// </summary>
@@ -64,12 +28,12 @@ internal readonly record struct Modification(
 /// </remarks>
 internal sealed class Corpus
 {
-    private readonly Dictionary<string, Record> records;
+    private readonly Dictionary<string, RuleRecord> records;
     private readonly List<Edge> edges;
     private readonly List<Modification> modifications;
 
     private Corpus(
-        Dictionary<string, Record> records,
+        Dictionary<string, RuleRecord> records,
         List<Edge> edges,
         List<Modification> modifications)
     {
@@ -82,7 +46,7 @@ internal sealed class Corpus
     public string Version { get; private set; } = "unknown";
 
     /// <summary>Every citable record, in the document's order.</summary>
-    public IReadOnlyCollection<Record> Records => records.Values;
+    public IReadOnlyCollection<RuleRecord> Records => records.Values;
 
     /// <summary>Every authored edge, in the order the dataset lists them.</summary>
     public IReadOnlyList<Edge> Edges => edges;
@@ -99,7 +63,7 @@ internal sealed class Corpus
     /// <summary>Reads the three corpus inputs from explicit paths.</summary>
     internal static Corpus Read(string indexPath, string graphPath, string rulingsPath)
     {
-        var found = new Dictionary<string, Record>(StringComparer.Ordinal);
+        var found = new Dictionary<string, RuleRecord>(StringComparer.Ordinal);
         using var index = JsonDocument.Parse(File.ReadAllBytes(indexPath));
         var root = index.RootElement;
         ReadBase(root, found);
@@ -119,7 +83,7 @@ internal sealed class Corpus
     }
 
     private static void ReadBase(
-        JsonElement root, Dictionary<string, Record> found)
+        JsonElement root, Dictionary<string, RuleRecord> found)
     {
         var entries = root.GetProperty("entries");
         var clauses = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -131,7 +95,7 @@ internal sealed class Corpus
         foreach (var entry in entries.EnumerateArray())
         {
             string id = entry.GetProperty("id").GetString()!;
-            found[id] = new Record(
+            found[id] = new RuleRecord(
                 id, Optional(entry, "title"), Optional(entry, "fragment"),
                 Optional(entry, "hash"), id == EntryOf(id) ? clauses[id] : 0,
                 "base", null);
@@ -167,7 +131,7 @@ internal sealed class Corpus
 
     private static List<Modification> ReadModifications(
         JsonElement graph, Dictionary<string, JsonElement> published,
-        Dictionary<string, Record> found)
+        Dictionary<string, RuleRecord> found)
     {
         var modifications = new List<Modification>();
         foreach (var mapped in graph.GetProperty("modifications").EnumerateObject())
@@ -176,7 +140,7 @@ internal sealed class Corpus
             modifications.Add(modification);
             var ruling = published[mapped.Name];
             var baseRecord = found[modification.BaseId];
-            found.Add(mapped.Name, new Record(
+            found.Add(mapped.Name, new RuleRecord(
                 mapped.Name,
                 $"RULING — {baseRecord.Title}",
                 ruling.GetProperty("answer").GetString()!,
@@ -191,7 +155,7 @@ internal sealed class Corpus
     private static Modification ReadModification(
         JsonProperty mapped,
         Dictionary<string, JsonElement> published,
-        Dictionary<string, Record> found)
+        Dictionary<string, RuleRecord> found)
     {
         if (!published.TryGetValue(mapped.Name, out var ruling))
             throw new InvalidDataException(
@@ -279,7 +243,7 @@ internal sealed class Corpus
 
     /// <summary>One record, or null.</summary>
     /// <param name="id">A citation id.</param>
-    public Record? Find(string id) => records.TryGetValue(id, out var record) ? record : null;
+    public RuleRecord? Find(string id) => records.TryGetValue(id, out var record) ? record : null;
 
     /// <summary>What a rule names.</summary>
     /// <param name="id">A citation id.</param>
@@ -322,7 +286,7 @@ internal sealed class Corpus
     ];
 
     /// <summary>The one text current for a base record in the vendored RR version.</summary>
-    public Record Resolve(string id, string version)
+    public RuleRecord Resolve(string id, string version)
     {
         if (!string.Equals(version, Version, StringComparison.Ordinal))
         {

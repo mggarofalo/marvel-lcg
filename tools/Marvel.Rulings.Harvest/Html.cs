@@ -133,10 +133,3 @@ internal static partial class Html
     [GeneratedRegex("<(/)?(h2|blockquote|p|ol|ul)\\b[^>]*>", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex BlockTag();
 }
-
-internal sealed record Block(string Tag, string Body);
-
-internal static class MatchExtensions
-{
-    public static int End(this Match match) => match.Index + match.Length;
-}

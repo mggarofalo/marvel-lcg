@@ -4,15 +4,6 @@ using Marvel.Tests;
 
 namespace Marvel.Behavior.Index;
 
-/// <summary>One canonical authority unit before behavioral adjudication.</summary>
-internal sealed record AuthoritySource(
-    string Id,
-    string Kind,
-    string Title,
-    string Fingerprint,
-    string Scope,
-    string Text);
-
 /// <summary>Enumerates the closed authority universes in contract order.</summary>
 internal static class AuthoritySources
 {

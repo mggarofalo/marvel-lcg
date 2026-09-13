@@ -31,6 +31,8 @@
     <Compile Include="../Shared/DigestDiff.cs" Link="DigestDiff.cs" />
     <Compile Include="../Shared/Rule.cs" Link="Rule.cs" />
     <Compile Include="../Shared/RuleCitations.cs" Link="RuleCitations.cs" />
+    <Compile Include="../Shared/Citation.cs" Link="Citation.cs" />
+    <Compile Include="../Shared/RuleCitationTests.cs" Link="RuleCitationTests.cs" />
 
     <!-- One file, so one project holds it. See tests/Shared/RulesGraphTests.cs. -->
     <Compile Include="../Shared/RulesGraphTests.cs" Link="RulesGraphTests.cs" />
@@ -39,11 +41,23 @@
     <!-- The source reader is the report's behavior. Linking it makes the
          regression independent of whether the tool or the suite has built. -->
     <Compile Include="../../tools/Marvel.Rules.Index/Citations.cs" Link="Citations.cs" />
+    <Compile Include="../../tools/Marvel.Rules.Index/Cited.cs" Link="Cited.cs" />
     <Compile Include="../../tools/Marvel.Rules.Index/Corpus.cs" Link="Corpus.cs" />
+    <Compile Include="../../tools/Marvel.Rules.Index/Edge.cs" Link="Edge.cs" />
+    <Compile Include="../../tools/Marvel.Rules.Index/Modification.cs" Link="Modification.cs" />
+    <Compile Include="../../tools/Marvel.Rules.Index/ParsedCitation.cs" Link="ParsedCitation.cs" />
+    <Compile Include="../../tools/Marvel.Rules.Index/RuleRecord.cs" Link="RuleRecord.cs" />
+    <Compile Include="../../tools/Marvel.Behavior.Index/Adjudication.cs" Link="Behavior/Adjudication.cs" />
+    <Compile Include="../../tools/Marvel.Behavior.Index/AdjudicationFile.cs" Link="Behavior/AdjudicationFile.cs" />
+    <Compile Include="../../tools/Marvel.Behavior.Index/AuthoritySource.cs" Link="Behavior/AuthoritySource.cs" />
     <Compile Include="../../tools/Marvel.Behavior.Index/CanonicalJson.cs" Link="Behavior/CanonicalJson.cs" />
     <Compile Include="../../tools/Marvel.Behavior.Index/AuthoritySources.cs" Link="Behavior/AuthoritySources.cs" />
     <Compile Include="../../tools/Marvel.Behavior.Index/CardFaceSpecifications.cs" Link="Behavior/CardFaceSpecifications.cs" />
     <Compile Include="../../tools/Marvel.Behavior.Index/Catalog.cs" Link="Behavior/Catalog.cs" />
+    <Compile Include="../../tools/Marvel.Behavior.Index/CatalogEntry.cs" Link="Behavior/CatalogEntry.cs" />
+    <Compile Include="../../tools/Marvel.Behavior.Index/CatalogFile.cs" Link="Behavior/CatalogFile.cs" />
+    <Compile Include="../../tools/Marvel.Behavior.Index/CatalogObligation.cs" Link="Behavior/CatalogObligation.cs" />
+    <Compile Include="../../tools/Marvel.Behavior.Index/Obligation.cs" Link="Behavior/Obligation.cs" />
   </ItemGroup>
 
 </Project>

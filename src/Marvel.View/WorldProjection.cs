@@ -350,9 +350,3 @@ public static class WorldProjection
         return cards.Count == 0 ? null : flipped with { Cards = cards };
     }
 }
-
-/// <summary>The complete response payload after visibility enforcement.</summary>
-public sealed record VisibleResult(
-    WorldDescriptor World,
-    Prompt? Prompt,
-    IReadOnlyList<GameEvent> Events);

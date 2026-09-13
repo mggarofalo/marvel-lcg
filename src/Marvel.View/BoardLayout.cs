@@ -216,13 +216,3 @@ public static class BoardLayout
         }
     }
 }
-
-/// <summary>One scenario, player, or fallback board lane.</summary>
-public sealed record BoardLanePresentation(
-    string Key,
-    string Title,
-    int? Seat,
-    IReadOnlyList<BoardAreaPresentation> Areas);
-
-/// <summary>The seat-order identity needed to arrange player lanes.</summary>
-public sealed record BoardPlayerPresentation(int Seat, string Name);

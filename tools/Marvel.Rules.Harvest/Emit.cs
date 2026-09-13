@@ -24,7 +24,7 @@ public static class Emit
     /// <param name="version">The Rules Reference version.</param>
     /// <param name="icons">The glyph legend.</param>
     public static void Write(
-        IReadOnlyList<Entry> entries,
+        IReadOnlyList<RulesReferenceEntry> entries,
         string into,
         string version,
         IReadOnlyDictionary<string, string> icons)
@@ -57,13 +57,13 @@ public static class Emit
     /// <param name="entry">An entry.</param>
     /// <param name="known">Every entry id.</param>
     public static (List<string> Resolved, List<string> Unresolved) References(
-        Entry entry, Dictionary<string, string> known)
+        RulesReferenceEntry entry, Dictionary<string, string> known)
     {
         var resolved = new List<string>();
         var unresolved = new List<string>();
         foreach (string named in entry.SeeAlso)
         {
-            if (known.TryGetValue(Entry.Slug(named.ToUpperInvariant()), out string? id))
+            if (known.TryGetValue(RulesReferenceEntry.Slug(named.ToUpperInvariant()), out string? id))
             {
                 resolved.Add(id);
             }
@@ -90,7 +90,7 @@ public static class Emit
     /// snapshot's gaps records the harvester's instead.
     /// </remarks>
     /// <param name="entries">The harvested entries.</param>
-    public static Dictionary<string, string> Names(IReadOnlyList<Entry> entries)
+    public static Dictionary<string, string> Names(IReadOnlyList<RulesReferenceEntry> entries)
     {
         var known = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var entry in entries)
@@ -106,7 +106,7 @@ public static class Emit
             foreach (string half in entry.Title.Split(
                 ',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             {
-                known.TryAdd(Entry.Slug(half), entry.Id);
+                known.TryAdd(RulesReferenceEntry.Slug(half), entry.Id);
             }
         }
 
@@ -114,7 +114,7 @@ public static class Emit
     }
 
     private static string Document(
-        Entry entry, string version, Dictionary<string, string> known)
+        RulesReferenceEntry entry, string version, Dictionary<string, string> known)
     {
         var (resolved, unresolved) = References(entry, known);
         var written = new StringBuilder();
@@ -125,12 +125,12 @@ public static class Emit
         return written.ToString();
     }
 
-    private static bool IsRedirect(Entry entry) =>
+    private static bool IsRedirect(RulesReferenceEntry entry) =>
         entry.Opening.Count == 0 && entry.Clauses.Count == 0
         && entry.Steps.Count == 0 && entry.SeeAlso.Count > 0;
 
     private static void WriteFrontMatter(
-        StringBuilder written, Entry entry, string version,
+        StringBuilder written, RulesReferenceEntry entry, string version,
         List<string> resolved, bool redirect)
     {
         written.Append("---\n");
@@ -144,7 +144,7 @@ public static class Emit
         written.Append("---\n\n");
     }
 
-    private static void WriteRedirectFrontMatter(StringBuilder written, Entry entry)
+    private static void WriteRedirectFrontMatter(StringBuilder written, RulesReferenceEntry entry)
     {
         written.Append(CultureInfo.InvariantCulture,
             $"redirect: \"{Escaped(string.Join(", ", entry.SeeAlso))}\"\n");
@@ -152,7 +152,7 @@ public static class Emit
     }
 
     private static void WriteRuleFrontMatter(
-        StringBuilder written, Entry entry, List<string> resolved)
+        StringBuilder written, RulesReferenceEntry entry, List<string> resolved)
     {
         written.Append(CultureInfo.InvariantCulture, $"hash: \"{Head(entry).Hash}\"\n");
         if (entry.Steps.Count > 0)
@@ -160,7 +160,7 @@ public static class Emit
         written.Append(CultureInfo.InvariantCulture, $"see_also: [{Quoted(resolved)}]\n");
     }
 
-    private static void WriteBody(StringBuilder written, Entry entry)
+    private static void WriteBody(StringBuilder written, RulesReferenceEntry entry)
     {
         written.Append(CultureInfo.InvariantCulture, $"# {entry.Title}\n");
         foreach (string paragraph in entry.Opening)
@@ -200,21 +200,21 @@ public static class Emit
     }
 
     private static void WriteReferences(
-        StringBuilder written, Entry entry, Dictionary<string, string> known,
+        StringBuilder written, RulesReferenceEntry entry, Dictionary<string, string> known,
         List<string> resolved, List<string> unresolved, bool redirect)
     {
         if (resolved.Count == 0 && unresolved.Count == 0) return;
         bool linked = !redirect || entry.SeeAlso.Count == 1;
         var links = entry.SeeAlso.Select(named =>
             linked && known.TryGetValue(
-                Entry.Slug(named.ToUpperInvariant()), out string? id)
+                RulesReferenceEntry.Slug(named.ToUpperInvariant()), out string? id)
                 ? $"[{named}]({id["rr:".Length..]}.md)" : named);
         written.Append(CultureInfo.InvariantCulture,
             $"\n{(redirect ? "See:" : "**See also:**")} {string.Join(", ", links)}\n");
     }
 
     private static string Index(
-        IReadOnlyList<Entry> entries,
+        IReadOnlyList<RulesReferenceEntry> entries,
         string version,
         IReadOnlyDictionary<string, string> icons,
         Dictionary<string, string> known)
@@ -299,7 +299,7 @@ public static class Emit
             .Replace("\r\n", "\n", StringComparison.Ordinal) + "\n";
     }
 
-    private static Record Head(Entry entry) => entry.Records().First();
+    private static RuleRecord Head(RulesReferenceEntry entry) => entry.Records().First();
 
     // The front matter is read by anything that reads YAML, and a curly quote
     // in a double-quoted scalar is legal but not portable -- so it is escaped

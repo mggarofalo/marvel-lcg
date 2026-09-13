@@ -21,7 +21,3 @@ internal sealed class AbilityGameRuntime
     internal IReadOnlyList<ActivationEffect> CompleteActivation(int activation) =>
         activationEffects.Remove(activation, out var waiting) ? waiting : [];
 }
-
-internal sealed record ActivationEffect(
-    int Source, int Player, AbilityType? Tier, AbilityEffect Effect, int Altered,
-    int AbilityActor);

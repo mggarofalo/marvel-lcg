@@ -1,12 +1,5 @@
 namespace Marvel.Cards.Run;
 
-[Flags]
-internal enum PowerReadiness
-{
-    Ready = 1,
-    Exhausted = 2,
-}
-
 internal readonly record struct AbilityPowerState(
     ulong FormsMayChange, int FirstPlayer,
     long FirstPlayerDamage, bool FirstPlayerTough,

@@ -55,7 +55,7 @@ switch (verb)
         return 2;
 }
 
-static int Parity(IReadOnlyList<Entry> entries)
+static int Parity(IReadOnlyList<RulesReferenceEntry> entries)
 {
     using var index = JsonDocument.Parse(
         File.ReadAllText(RepositoryPaths.Dataset("rules-reference", "index.json")));

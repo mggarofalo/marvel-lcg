@@ -9,16 +9,6 @@ using Marvel.Tests;
 
 namespace Marvel.Rules.Index;
 
-/// <summary>One <c>[Rule]</c> attribute, and where it sits.</summary>
-/// <param name="Id">The cited id.</param>
-/// <param name="Site">The file it was found in, relative to the repository root.</param>
-internal readonly record struct Cited(string Id, string Site);
-
-/// <summary>One citation as it appears in a parsed source configuration.</summary>
-/// <param name="Position">The attribute's source position.</param>
-/// <param name="Id">The cited id.</param>
-internal readonly record struct ParsedCitation(int Position, string Id);
-
 /// <summary>
 /// Every citation the test suite makes, read off the source.
 /// </summary>
