@@ -34,7 +34,7 @@ session may name something else in another session.
 A consumer that must re-identify an affordance records the stable public tuple:
 
 ```text
-(AnchorId, AnchorPlayer, Verb, Label, occurrence among exact matches)
+(AnchorKind, AnchorId, AnchorPlayer, Verb, Label, occurrence among exact matches)
 ```
 
 The occurrence index matters because repeated choice nodes can be identical on

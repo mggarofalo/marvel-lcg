@@ -117,6 +117,19 @@ public sealed class CommunityReleasePolicyTests
     }
 
     [Fact]
+    public void ReleaseMatrixPinsSchemaFourAsTheCurrentMigrationDestination()
+    {
+        string matrix = File.ReadAllText(Path.Combine(
+            RepositoryPaths.Root, "docs", "release-test-matrix.md"));
+
+        Assert.Contains("Empty schema `4` volume", matrix, StringComparison.Ordinal);
+        Assert.Contains("Existing schema `2` or `3` save", matrix, StringComparison.Ordinal);
+        Assert.Contains("migrate to schema `4`", matrix, StringComparison.Ordinal);
+        Assert.Contains("Newer schema `4` save preserved", matrix, StringComparison.Ordinal);
+        Assert.DoesNotContain("migrate to schema `3`", matrix, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void ReleaseWorkflowPublishesOneValidatedAcceptanceRecordAndItsEvidence()
     {
         string workflow = File.ReadAllText(Path.Combine(

@@ -44,11 +44,12 @@ namespace Marvel.Rules.Prompts;
 /// </para>
 /// <para>
 /// In that corpus, <paramref name="AnchorId"/> and <paramref name="Verb"/>
-/// resolved every drifted input uniquely. Multiplayer requires
+/// resolved every drifted input uniquely. <see cref="AnchorKind"/> is part of
+/// that identity because card and area ids have separate namespaces. Multiplayer requires
 /// <paramref name="AnchorPlayer"/> to distinguish who takes an implied shared
 /// action, and multiple actions on one card require <paramref name="Label"/>.
 /// A consumer that persists an affordance must therefore persist
-/// (AnchorId, AnchorPlayer, Verb, Label) plus its zero-based occurrence among
+/// (AnchorKind, AnchorId, AnchorPlayer, Verb, Label) plus its zero-based occurrence among
 /// exact matches, and never persist the id. Repeated choice nodes in printed
 /// order can otherwise be identical on every public field. The rules define
 /// no persistent command identifier; this is the engine's wire-format choice.
