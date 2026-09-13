@@ -13,6 +13,13 @@ internal sealed class ModularMenuFocus
         this.main = main;
     }
 
+    internal static void Bind(MenuButton modular, Main main)
+    {
+        var focus = new ModularMenuFocus(main);
+        modular.GetPopup().AboutToPopup += focus.Focus;
+        modular.GetPopup().PopupHide += focus.Restore;
+    }
+
     internal void Focus()
     {
         int token = checked(++generation);

@@ -7,6 +7,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
+. "$PSScriptRoot/godot-smoke-diagnostics.ps1"
 if ([string]::IsNullOrWhiteSpace($GodotBin)) {
     throw "Set GODOT_BIN or pass -GodotBin with the Godot 4.7 .NET executable."
 }
@@ -23,7 +24,7 @@ function Invoke-LocalSmoke {
     $output = & $GodotBin --headless --path "$repoRoot/src/Marvel.Godot" `
         --script res://smoke/local_game_smoke.gd 2>&1
     $output | Write-Output
-    if ($LASTEXITCODE -ne 0 -or ($output -match "ERROR:")) {
+    if ($LASTEXITCODE -ne 0 -or (Test-GodotSmokeDiagnostics $output)) {
         throw "Godot local smoke reported an unexpected failure diagnostic."
     }
 }

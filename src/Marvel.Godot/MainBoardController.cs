@@ -10,10 +10,13 @@ namespace Marvel.Godot;
 internal sealed class MainBoardController
 {
     private readonly Main main;
+    private readonly CardInspectorFocus inspector;
+    private readonly InteractionGeneration renderGeneration = new();
 
     internal MainBoardController(Main main)
     {
         this.main = main;
+        inspector = new CardInspectorFocus(main);
     }
     internal void RenderGame(
         EngineResponse response,
@@ -22,7 +25,7 @@ internal sealed class MainBoardController
         GameProgressPresentation? priorProgress = null,
         string operation = EngineProtocol.Resolve)
     {
-        int renderGeneration = main.renderGeneration.Advance();
+        int renderGeneration = this.renderGeneration.Advance();
         Outcome previousOutcome = main.CurrentGame?.World?.Outcome ?? Outcome.Unfinished;
         HashSet<int> priorHistory = main.CurrentGame?.History?.Entries
             .Select(entry => entry.Cursor)
@@ -142,7 +145,7 @@ internal sealed class MainBoardController
         {
             Callable.From(() =>
             {
-                if (main.IsCurrentRender(renderGeneration))
+                if (IsCurrentRender(renderGeneration))
                 {
                     main.RevealOutcome();
                 }
@@ -152,7 +155,7 @@ internal sealed class MainBoardController
 
     private void ResetPageScroll(int renderGeneration)
     {
-        if (main.IsCurrentRender(renderGeneration) && InteractionControl.IsUsable(main.pageScroll))
+        if (IsCurrentRender(renderGeneration) && InteractionControl.IsUsable(main.pageScroll))
         {
             main.pageScroll.ScrollVertical = 0;
         }
@@ -172,8 +175,8 @@ internal sealed class MainBoardController
         main.boardRender = rendered;
         rendered.CardActivated += (card, control) => ToggleCardInspector(card, control);
         rendered.IsCurrent = () => ReferenceEquals(main.boardRender, rendered)
-            && main.IsCurrentRender(renderGeneration ?? main.renderGeneration.Current);
-        HideCardInspector();
+            && IsCurrentRender(renderGeneration ?? this.renderGeneration.Current);
+        inspector.Hide();
     }
 
     internal void PreviewHandCard(int? id)
@@ -185,7 +188,7 @@ internal sealed class MainBoardController
 
         if (id is null)
         {
-            HideCardInspector();
+            inspector.Hide();
             return;
         }
 
@@ -211,7 +214,7 @@ internal sealed class MainBoardController
 
         if (main.cardInspector.Visible && main.inspectedCardId == card.TargetId)
         {
-            HideCardInspector();
+            inspector.Hide();
             return;
         }
 
@@ -227,12 +230,12 @@ internal sealed class MainBoardController
             ? sourceCard.TargetId
             : card.TargetId;
         ClearInspectorContent();
-        InterfaceScale inspectionScale = FittedInspectionScale(
+        InterfaceScale inspectionScale = CardInspectorFocus.FittedScale(
             card, main.interfaceScale, main.Size.Y);
         CardControl detail = CardControl.Create(
             card, CardDisplaySize.Full, inspectionScale, main.art);
         detail.FocusMode = Control.FocusModeEnum.All;
-        IgnoreMouseRecursively(detail);
+        CardInspectorFocus.IgnoreMouseRecursively(detail);
         main.cardInspectorContent.AddChild(detail);
         ConfigureInspectorFrame();
         PositionInspector(card, source, pinned);
@@ -303,178 +306,21 @@ internal sealed class MainBoardController
         main.cardInspector.Visible = true;
         if (pinned)
         {
-            main.cardInspectorReturnTargetId = sourceId;
-            Callable.From(() => FocusInspectorDetail(inspectorGeneration)).CallDeferred();
+            inspector.RememberSource(sourceId);
+            Callable.From(() => inspector.FocusDetail(inspectorGeneration)).CallDeferred();
         }
     }
 
-    private void FocusInspectorDetail(int inspectorGeneration)
-    {
-        if (inspectorGeneration != main.cardInspectorGeneration
-            || !InteractionControl.IsUsable(main.cardInspector)
-            || !main.cardInspector.Visible
-            || main.cardInspectorContent.GetChildCount() != 1
-            || main.cardInspectorContent.GetChild(0) is not Control detail
-            || !InteractionControl.IsUsable(detail)
-            || !main.cardInspector.IsAncestorOf(detail))
-        {
-            return;
-        }
+    internal void Input(InputEvent input) => inspector.Input(input);
+    internal void ScheduleCardInspectorHide() => inspector.ScheduleHide();
+    internal void BindCardInspectorFocus(Control control) => inspector.BindFocus(control);
+    internal bool CardInspectorHasFocus() => inspector.HasFocus();
+    internal void HideCardInspector() => inspector.Hide();
+    internal static InterfaceScale FittedInspectionScale(BoardCardPresentation card, InterfaceScale requested,
+        float viewportHeight) => CardInspectorFocus.FittedScale(card, requested, viewportHeight);
+    internal static bool IsInsideCard(Node? node) => CardInspectorFocus.IsInsideCard(node);
+    internal static void IgnoreMouseRecursively(Node node) => CardInspectorFocus.IgnoreMouseRecursively(node);
 
-        detail.GrabFocus();
-    }
-
-    internal void Input(InputEvent @event)
-    {
-        if (IsInspectorTab(@event))
-        {
-            if (main.cardInspectorContent.GetChildCount() > 0
-                && main.cardInspectorContent.GetChild(0) is Control detail)
-            {
-                detail.GrabFocus();
-            }
-            main.GetViewport().SetInputAsHandled();
-            return;
-        }
-
-        if (IsInspectorCancel(@event))
-        {
-            HideCardInspector();
-            main.GetViewport().SetInputAsHandled();
-            return;
-        }
-
-        if (IsOutsideInspectorClick(@event))
-        {
-            HideCardInspector();
-            main.GetViewport().SetInputAsHandled();
-        }
-    }
-
-    private bool IsInspectorTab(InputEvent @event) =>
-        main.cardInspector.Visible
-        && main.cardInspectorPinned
-        && @event is InputEventKey { Keycode: Key.Tab, Pressed: true };
-
-    private bool IsInspectorCancel(InputEvent @event) =>
-        main.cardInspector.Visible && @event.IsActionPressed("ui_cancel");
-
-    private bool IsOutsideInspectorClick(InputEvent @event) =>
-        main.cardInspector.Visible
-        && main.cardInspectorPinned
-        && @event is InputEventMouseButton
-        {
-            ButtonIndex: MouseButton.Left,
-            Pressed: true,
-        } click
-        && !main.cardInspectorFrame.GetGlobalRect().HasPoint(click.Position);
-
-    internal static InterfaceScale FittedInspectionScale(
-        BoardCardPresentation card,
-        InterfaceScale requested,
-        float viewportHeight)
-    {
-        bool landscape = VisualSystem.CardFrame(card.Kind).Family == CardFrameFamily.Scheme;
-        int baseHeight = landscape ? 400 : 560;
-        int availablePercent = (int)MathF.Floor(
-            Math.Max(1, viewportHeight - 48) * 100 / baseHeight / 10) * 10;
-        int fittedPercent = Math.Clamp(
-            Math.Min((int)requested, availablePercent),
-            (int)InterfaceScale.Percent50,
-            (int)InterfaceScale.Percent150);
-        return (InterfaceScale)fittedPercent;
-    }
-
-    internal static bool IsInsideCard(Node? node)
-    {
-        for (Node? current = node; current is not null; current = current.GetParent())
-        {
-            if (current is CardControl)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    internal void ScheduleCardInspectorHide()
-    {
-        int generation = ++main.cardInspectorGeneration;
-        main.GetTree().CreateTimer(0.3).Timeout += () =>
-        {
-            if (generation == main.cardInspectorGeneration
-                && main.IsInsideTree()
-                && InteractionControl.IsUsable(main.cardInspector)
-                && !main.cardInspectorPinned
-                && !main.cardInspectorHovered
-                && !CardInspectorHasFocus())
-            {
-                main.cardInspectorFrame.FocusMode = Control.FocusModeEnum.None;
-                main.cardInspectorScroll.FocusMode = Control.FocusModeEnum.None;
-                main.inspectedCardId = null;
-                main.cardInspector.Visible = false;
-            }
-        };
-    }
-
-    internal void BindCardInspectorFocus(Control control)
-    {
-        control.FocusEntered += () => main.cardInspectorGeneration++;
-        control.FocusExited += ScheduleCardInspectorHide;
-    }
-
-    internal bool CardInspectorHasFocus()
-    {
-        Control? focused = main.GetViewport()?.GuiGetFocusOwner();
-        return InteractionControl.IsUsable(focused)
-            && (focused == main.cardInspectorFrame || main.cardInspectorFrame.IsAncestorOf(focused));
-    }
-
-    internal void HideCardInspector()
-    {
-        int? returnTargetId = main.cardInspectorPinned ? main.cardInspectorReturnTargetId : null;
-        int inspectorGeneration = checked(++main.cardInspectorGeneration);
-        main.cardInspectorPinned = false;
-        main.cardInspectorHovered = false;
-        main.cardInspectorFrame.FocusMode = Control.FocusModeEnum.None;
-        main.cardInspectorScroll.FocusMode = Control.FocusModeEnum.None;
-        main.inspectedCardId = null;
-        main.cardInspectorReturnTargetId = null;
-        main.cardInspector.Visible = false;
-        if (returnTargetId is not null)
-        {
-            Callable.From(() => RestoreCardFocus(returnTargetId.Value, inspectorGeneration)).CallDeferred();
-        }
-    }
-
-    private void RestoreCardFocus(int targetId, int inspectorGeneration)
-    {
-        if (inspectorGeneration != main.cardInspectorGeneration
-            || main.cardInspector.Visible
-            || main.boardRender?.ControlFor(targetId) is not Control source
-            || !InteractionControl.IsUsable(source))
-        {
-            return;
-        }
-
-        source.GrabFocus();
-    }
-
-    internal static void IgnoreMouseRecursively(Node node)
-    {
-        if (node is RichTextLabel rules)
-        {
-            rules.MouseFilter = Control.MouseFilterEnum.Stop;
-            return;
-        }
-        if (node is Control control)
-        {
-            control.MouseFilter = Control.MouseFilterEnum.Ignore;
-        }
-        foreach (Node child in node.GetChildren())
-        {
-            IgnoreMouseRecursively(child);
-        }
-    }
+    private bool IsCurrentRender(int generation) => main.IsInsideTree()
+        && generation == renderGeneration.Current;
 }

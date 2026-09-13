@@ -14,17 +14,20 @@ internal sealed class DecisionDraftRenderer
     private readonly DecisionComposer composer;
     private readonly WorldDescriptor world;
     private readonly bool submitting;
+    private readonly int generation;
 
     internal DecisionDraftRenderer(
         DecisionPanel panel,
         DecisionComposer composer,
         WorldDescriptor world,
-        bool submitting)
+        bool submitting,
+        int generation)
     {
         this.panel = panel;
         this.composer = composer;
         this.world = world;
         this.submitting = submitting;
+        this.generation = generation;
     }
     internal void AddTargets(Affordance selected, TargetSelectionProgress progress)
     {
@@ -101,6 +104,7 @@ internal sealed class DecisionDraftRenderer
                 : InteractiveVisualState.Legal);
             choose.Pressed += () =>
             {
+                if (!panel.IsCurrentDraft(composer, generation)) return;
                 composer.SelectTargets(group);
                 panel.Rebuild();
             };
@@ -159,6 +163,7 @@ internal sealed class DecisionDraftRenderer
                 : InteractiveVisualState.Legal);
         choose.Pressed += () =>
         {
+            if (!panel.IsCurrentDraft(composer, generation)) return;
             if (composer.Targets.Contains(target))
             {
                 composer.RemoveTarget(target);
@@ -196,6 +201,7 @@ internal sealed class DecisionDraftRenderer
             compact: true);
         remove.Pressed += () =>
         {
+            if (!panel.IsCurrentDraft(composer, generation)) return;
             composer.RemoveTarget(target);
             panel.Rebuild();
         };
@@ -220,6 +226,7 @@ internal sealed class DecisionDraftRenderer
             compact: true);
         add.Pressed += () =>
         {
+            if (!panel.IsCurrentDraft(composer, generation)) return;
             composer.AddTarget(target);
             panel.NotifyAnchorFocused([target]);
             panel.Rebuild();

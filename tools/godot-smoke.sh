@@ -2,6 +2,7 @@
 set -euo pipefail
 
 repo_root=$(cd "$(dirname "$0")/.." && pwd)
+. "$(dirname "$0")/godot-smoke-diagnostics.sh"
 godot_bin=${GODOT_BIN:-${1:-}}
 profile=${2:---exhaustive}
 
@@ -41,7 +42,7 @@ run_local_smoke() {
     --script res://smoke/local_game_smoke.gd 2>&1 | tee "$smoke_log"
   local status=${PIPESTATUS[0]}
   set -e
-  if [[ $status -ne 0 ]] || grep -q 'ERROR:' "$smoke_log"; then
+  if [[ $status -ne 0 ]] || godot_smoke_has_error "$smoke_log"; then
     echo "Godot local smoke reported an unexpected failure diagnostic." >&2
     exit 1
   fi

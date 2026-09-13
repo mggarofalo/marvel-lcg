@@ -14,17 +14,20 @@ internal sealed class DecisionPaymentRenderer
     private readonly DecisionComposer composer;
     private readonly WorldDescriptor world;
     private readonly bool submitting;
+    private readonly int generation;
 
     internal DecisionPaymentRenderer(
         DecisionPanel panel,
         DecisionComposer composer,
         WorldDescriptor world,
-        bool submitting)
+        bool submitting,
+        int generation)
     {
         this.panel = panel;
         this.composer = composer;
         this.world = world;
         this.submitting = submitting;
+        this.generation = generation;
     }
     internal void AddCosts(Affordance selected)
     {
@@ -33,7 +36,6 @@ internal sealed class DecisionPaymentRenderer
             panel.AddContent(DecisionPanel.Text("PAYMENT  ·  FREE  ·  READY", GodotThemeVariations.StatusText));
             return;
         }
-
         panel.AddContent(DecisionPanel.Text("COST", GodotThemeVariations.Caption));
         AddCostOptions(selected);
         if (composer.SelectedCost < 0)
@@ -41,7 +43,6 @@ internal sealed class DecisionPaymentRenderer
             AddPendingCostChoice();
             return;
         }
-
         CostOption selectedCost = selected.CostOptions[composer.SelectedCost];
         AddVariables(selectedCost);
         AddGenerators(selectedCost);
@@ -49,7 +50,6 @@ internal sealed class DecisionPaymentRenderer
         AddComponents(selectedCost);
         AddPaymentProgress();
     }
-
     private void AddCostOptions(Affordance selected)
     {
         for (int index = 0; index < selected.CostOptions.Count; index++)
@@ -81,6 +81,7 @@ internal sealed class DecisionPaymentRenderer
                         : InteractiveVisualState.Legal);
             choose.Pressed += () =>
             {
+                if (!panel.IsCurrentDraft(composer, generation)) return;
                 composer.SelectCost(costIndex);
                 foreach (VariableRequest variable in cost.VariableRequests)
                 {
@@ -95,7 +96,6 @@ internal sealed class DecisionPaymentRenderer
             panel.AddContent(choose);
         }
     }
-
     private void AddPendingCostChoice()
     {
         PaymentProgress pending = composer.Progress().Payment;
@@ -112,7 +112,6 @@ internal sealed class DecisionPaymentRenderer
             {
                 composer.Define(variable.Name, variable.Min);
             }
-
             var row = new HBoxContainer();
             var name = DecisionPanel.Text(
                 $"{variable.Name}  ·  {variable.Min}–{variable.Max}",
@@ -135,6 +134,7 @@ internal sealed class DecisionPaymentRenderer
             };
             value.ValueChanged += chosen =>
             {
+                if (!panel.IsCurrentDraft(composer, generation)) return;
                 composer.Define(variable.Name, checked((long)chosen));
                 panel.Rebuild();
             };
@@ -167,6 +167,7 @@ internal sealed class DecisionPaymentRenderer
                     : InteractiveVisualState.Legal);
             choose.Pressed += () =>
             {
+                if (!panel.IsCurrentDraft(composer, generation)) return;
                 composer.ToggleResource(source.Effect);
                 panel.Rebuild();
             };
@@ -174,7 +175,6 @@ internal sealed class DecisionPaymentRenderer
             panel.AddContent(choose);
         }
     }
-
     private void AddComponents(CostOption cost)
     {
         if (cost.ResourceCosts.Count > 1)
@@ -212,25 +212,9 @@ internal sealed class DecisionPaymentRenderer
     {
         if (composer!.UsesAutomaticResourceAllocation)
         {
-            foreach (ResourceSource source in cost.Generators.Where(generator =>
-                         composer.Resources.Contains(generator.Effect)))
-            {
-                int assigned = composer.Assignments.Count(assignment =>
-                    assignment.Source == source.Effect);
-                panel.AddContent(DecisionPanel.Text(
-                    $"{PromptPresentation.Describe(source.Effect, world!)}"
-                    + $"  ·  PRINTED {string.Join(" + ", source.Generates.Select(DecisionPanel.ResourceName))}"
-                    + $"  ·  {assigned} APPLIED"
-                    + (source.Generates.Length > assigned
-                        ? $"  ·  {source.Generates.Length - assigned} EXCESS"
-                        : string.Empty),
-                    GodotThemeVariations.StatusText,
-                    wrap: true));
-            }
-
+            AddAutomaticAssignments(cost);
             return;
         }
-
         foreach (ResourceSource source in cost.Generators.Where(generator =>
                      composer.Resources.Contains(generator.Effect)))
         {
@@ -260,7 +244,6 @@ internal sealed class DecisionPaymentRenderer
                             $"Cost {component + 1} as {DecisionPanel.ResourceName(printed)}"));
                     }
                 }
-
                 var row = new HBoxContainer();
                 var label = DecisionPanel.Text(
                     $"Icon {icon + 1} · {DecisionPanel.ResourceName(printed)}",
@@ -279,7 +262,6 @@ internal sealed class DecisionPaymentRenderer
                 {
                     allocation.AddItem(choice.Label);
                 }
-
                 ResourceIconAssignment current = composer!.Assignments.FirstOrDefault(
                     assignment => assignment.Source == source.Effect
                         && assignment.Icon == iconIndex);
@@ -291,6 +273,7 @@ internal sealed class DecisionPaymentRenderer
                 allocation.Select(Math.Max(0, currentIndex));
                 allocation.ItemSelected += selected =>
                 {
+                    if (!panel.IsCurrentDraft(composer, generation)) return;
                     AllocationChoice choice = choices[(int)selected];
                     composer.AssignResource(
                         source.Effect, iconIndex, choice.Cost, choice.PaidAs);
@@ -302,7 +285,21 @@ internal sealed class DecisionPaymentRenderer
             }
         }
     }
-
+    private void AddAutomaticAssignments(CostOption cost)
+    {
+        foreach (ResourceSource source in cost.Generators.Where(generator =>
+                     composer.Resources.Contains(generator.Effect)))
+        {
+            int assigned = composer.Assignments.Count(assignment => assignment.Source == source.Effect);
+            panel.AddContent(DecisionPanel.Text(
+                $"{PromptPresentation.Describe(source.Effect, world!)}"
+                + $"  ·  PRINTED {string.Join(" + ", source.Generates.Select(DecisionPanel.ResourceName))}"
+                + $"  ·  {assigned} APPLIED"
+                + (source.Generates.Length > assigned
+                    ? $"  ·  {source.Generates.Length - assigned} EXCESS" : string.Empty),
+                GodotThemeVariations.StatusText, wrap: true));
+        }
+    }
     internal void AddSubmit(DecisionProgressPresentation progress)
     {
         if (!progress.IsReady && progress.Error is not null)
@@ -340,14 +337,17 @@ internal sealed class DecisionPaymentRenderer
             submit.Disabled
                 ? InteractiveVisualState.Unavailable
                 : InteractiveVisualState.Danger);
-        submit.Pressed += () =>
-        {
-            if (composer!.TryBuild(out EngineDecision? decision, out _))
-            {
-                panel.NotifySubmitted(decision!);
-            }
-        };
+        submit.Pressed += TrySubmit;
         panel.AddCommit(submit);
+    }
+
+    private void TrySubmit()
+    {
+        if (panel.IsCurrentDraft(composer, generation)
+            && composer.TryBuild(out EngineDecision? decision, out _))
+        {
+            panel.NotifySubmitted(decision!, generation);
+        }
     }
     private readonly record struct AllocationChoice(
         int? Cost,

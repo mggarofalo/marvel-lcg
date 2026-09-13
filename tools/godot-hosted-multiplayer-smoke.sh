@@ -2,6 +2,7 @@
 set -euo pipefail
 
 repo_root=$(cd "$(dirname "$0")/.." && pwd)
+. "$(dirname "$0")/godot-smoke-diagnostics.sh"
 godot_bin=${GODOT_BIN:-${1:-}}
 smoke_port=${MARVEL_HOSTED_SMOKE_PORT:-41924}
 external_server=${MARVEL_HOSTED_SMOKE_EXTERNAL_SERVER:-false}
@@ -79,7 +80,7 @@ MARVEL_ENGINE_ENDPOINT="tcp://127.0.0.1:$smoke_port" \
   2>&1 | tee "$smoke_log"
 smoke_status=${PIPESTATUS[0]}
 set -e
-if [[ $smoke_status -ne 0 ]] || grep -q 'ERROR:' "$smoke_log" \
+if [[ $smoke_status -ne 0 ]] || godot_smoke_has_error "$smoke_log" \
   || ! grep -q "HOSTED_MULTIPLAYER_SMOKE_OK" "$smoke_log"; then
   exit 1
 fi

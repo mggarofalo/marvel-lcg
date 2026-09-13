@@ -34,13 +34,29 @@ func _visible_control_rect(control: Control) -> Rect2:
 func _control_owns_point(control: Control, point: Vector2) -> bool:
 	if not _visible_control_rect(control).has_point(point):
 		return false
+	# A disabled control intentionally does not claim pointer input. It is not an
+	# operable hit target even if its painted rectangle is visible.
+	if control.mouse_filter == Control.MOUSE_FILTER_IGNORE or control is BaseButton and control.disabled:
+		return false
 	var move := InputEventMouseMotion.new()
 	move.position = point
 	move.global_position = point
 	render_viewport.push_input(move)
 	await process_frame
 	var hovered := render_viewport.gui_get_hovered_control()
-	return hovered == control or (hovered != null and control.is_ancestor_of(hovered))
+	if hovered == control or (hovered != null and control.is_ancestor_of(hovered)):
+		return true
+	# Containers using Pass may be reported as the hovered owner while delivering
+	# the event to an eligible descendant. Follow that actual mouse-filter path;
+	# a Stop ancestor is an occluder and must still fail this probe.
+	if hovered != null and hovered.is_ancestor_of(control):
+		var current: Control = control
+		while current != hovered:
+			if current.mouse_filter == Control.MOUSE_FILTER_STOP:
+				return false
+			current = current.get_parent() as Control
+		return hovered.mouse_filter == Control.MOUSE_FILTER_PASS
+	return false
 
 
 func _control_has_real_hit_area(control: Control) -> bool:

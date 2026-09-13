@@ -38,9 +38,16 @@ func _mixed_submit_is_single_shot() -> bool:
 		_fail("the rapid-input probe cannot prepare a submit")
 		return false
 	var revision := (_node("Toolbar/SyncStatus") as Label).text
+	var submit_key := submit.name
 	if not await _pointer_activate(submit):
 		return false
-	if not await _keyboard_activate(submit, 2):
+	# Pointer activation rebuilds the decision tree. Reacquire by the stable
+	# control key before checking that queued keyboard repetition cannot reuse it.
+	submit = _decision().find_child(submit_key, true, false) as Button
+	if submit == null:
+		_fail("the submit control was not recreated after pointer activation")
+		return false
+	if not submit.disabled and not await _keyboard_activate(submit, 2):
 		return false
 	if not submit.disabled:
 		_fail("the submit control did not synchronously lock after its first activation")

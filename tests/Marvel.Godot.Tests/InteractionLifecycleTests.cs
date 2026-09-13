@@ -53,4 +53,18 @@ public sealed class InteractionLifecycleTests
 
         Assert.True(latch.TrySubmit(7));
     }
+
+    [Fact]
+    public void ARejectedAuthoritativeViewCanReopenItsSameRevision()
+    {
+        var latch = new PromptSubmissionLatch();
+
+        latch.Render(7);
+        Assert.True(latch.TrySubmit(7));
+        latch.Render(7); // A synchronization alone must preserve the lock.
+        Assert.False(latch.TrySubmit(7));
+        latch.AllowRetry(7); // The engine explicitly rejected this decision.
+
+        Assert.True(latch.TrySubmit(7));
+    }
 }

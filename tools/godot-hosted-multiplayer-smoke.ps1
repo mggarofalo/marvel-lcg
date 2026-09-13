@@ -7,6 +7,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path -Parent $PSScriptRoot
+. "$PSScriptRoot/godot-smoke-diagnostics.ps1"
 if ([string]::IsNullOrWhiteSpace($GodotBin)) {
     throw "Set GODOT_BIN or pass -GodotBin with the Godot 4.7 .NET executable."
 }
@@ -59,7 +60,7 @@ try {
     $smokeOutput = & $GodotBin --path "$repoRoot/src/Marvel.Godot" `
         --script res://smoke/hosted_multiplayer_smoke_runner.gd 2>&1
     $smokeOutput | Write-Output
-    if ($LASTEXITCODE -ne 0 -or ($smokeOutput -match "ERROR:") -or `
+    if ($LASTEXITCODE -ne 0 -or (Test-GodotSmokeDiagnostics $smokeOutput) -or `
         -not ($smokeOutput -match "HOSTED_MULTIPLAYER_SMOKE_OK")) {
         exit 1
     }

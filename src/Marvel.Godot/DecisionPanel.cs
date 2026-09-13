@@ -12,14 +12,13 @@ public sealed partial class DecisionPanel : VBoxContainer
 {
     private InterfaceScale interfaceScale = ClientTheme.ConfiguredScale();
     internal ControlMetrics ControlMetrics => VisualSystem.Controls(interfaceScale);
-    private DecisionComposer? composer;
+    internal DecisionComposer? composer;
     private VBoxContainer? content;
     private VBoxContainer? commit;
-    private bool submitting;
-    private int renderGeneration;
-    private long promptRevision;
-    private readonly PromptSubmissionLatch submission = new();
-    private WorldDescriptor? world;
+    internal bool submitting;
+    private readonly DecisionPanelLifecycle lifecycle;
+    internal WorldDescriptor? world;
+    public DecisionPanel() => lifecycle = new DecisionPanelLifecycle(this);
 
     /// <summary>Raised with one answer built from the current prompt.</summary>
     public event Action<EngineDecision>? Submitted;
@@ -35,7 +34,6 @@ public sealed partial class DecisionPanel : VBoxContainer
 
     /// <summary>Raised when a player opens one action's target and payment editor.</summary>
     public event Action? DraftStarted;
-
     /// <summary>Applies the current presentation-only desktop scale.</summary>
     public void SetInterfaceScale(InterfaceScale scale)
     {
@@ -52,23 +50,11 @@ public sealed partial class DecisionPanel : VBoxContainer
     }
 
     /// <summary>Discards the old draft and renders the response's current prompt.</summary>
-    public void Render(Prompt? prompt, WorldDescriptor currentWorld, long revision)
-    {
-        world = currentWorld ?? throw new ArgumentNullException(nameof(currentWorld));
-        composer = prompt is null ? null : new DecisionComposer(prompt);
-        promptRevision = revision;
-        submission.Render(revision);
-        submitting = submission.IsSubmitted;
-        Rebuild(focusFirst: true);
-    }
+    public void Render(Prompt? prompt, WorldDescriptor currentWorld, long revision) =>
+        lifecycle.Render(prompt, currentWorld, revision);
 
     /// <summary>Reopens a prompt only after the client proved its request was not sent.</summary>
-    public void AllowRetry(long revision)
-    {
-        submission.AllowRetry(revision);
-        submitting = submission.IsSubmitted;
-        Rebuild();
-    }
+    public void AllowRetry(long revision) => lifecycle.AllowRetry(revision);
 
     /// <summary>Prevents a second mutation while one response is outstanding.</summary>
     public void SetSubmitting(bool value)
@@ -81,23 +67,21 @@ public sealed partial class DecisionPanel : VBoxContainer
     internal void NotifyAnchorFocused(IReadOnlyList<int> ids) =>
         AnchorFocused?.Invoke(ids);
 
-    internal int GetRenderGeneration() => renderGeneration;
+    internal int GetRenderGeneration() => lifecycle.RenderGeneration;
 
-    internal void NotifySubmitted(EngineDecision decision)
-    {
-        if (composer is null || !submission.TrySubmit(promptRevision))
-        {
-            return;
-        }
+    internal void NotifySubmitted(EngineDecision decision, int generation) =>
+        lifecycle.NotifySubmitted(decision, generation);
 
-        submitting = true;
-        Rebuild();
-        Submitted?.Invoke(decision);
-    }
+    internal bool IsCurrentDraft(DecisionComposer expected, int generation) =>
+        ReferenceEquals(composer, expected) && lifecycle.CanMutate(generation);
+
+    internal void RaiseSubmitted(EngineDecision decision) => Submitted?.Invoke(decision);
+
+    internal void RaiseDraftStarted() => DraftStarted?.Invoke();
 
     internal void Rebuild(bool focusFirst = false)
     {
-        int generation = checked(++renderGeneration);
+        int generation = lifecycle.NextRenderGeneration();
         Control? focused = GetViewport()?.GuiGetFocusOwner();
         string? focusName = focused is not null && IsAncestorOf(focused)
             ? FocusKey(focused)
@@ -115,7 +99,7 @@ public sealed partial class DecisionPanel : VBoxContainer
         AddSelectedDraft();
         AddDecline();
         ProgressChanged?.Invoke(composer.Progress());
-        Callable.From(() => RestoreFocus(focusName, focusFirst, generation)).CallDeferred();
+        Callable.From(() => lifecycle.RestoreFocus(focusName, focusFirst, generation)).CallDeferred();
     }
 
     private void ClearPanel()
@@ -180,7 +164,8 @@ public sealed partial class DecisionPanel : VBoxContainer
             TooltipText = option.Illegal ?? $"Anchor {option.AnchorId}, player {option.AnchorPlayer}",
         };
         StyleButton(choose, AffordanceState(option, selected, resolving));
-        choose.Pressed += () => SelectAffordance(option);
+        int generation = lifecycle.RenderGeneration;
+        choose.Pressed += () => lifecycle.SelectAffordance(option.Id, generation);
         BindAnchors(choose, option.AnchorId);
         AddContent(choose);
         if (option.Illegal is not null)
@@ -205,21 +190,6 @@ public sealed partial class DecisionPanel : VBoxContainer
                 ? InteractiveVisualState.Unavailable
                 : selected ? InteractiveVisualState.Selected : InteractiveVisualState.Resting;
 
-    private void SelectAffordance(Affordance option)
-    {
-        composer!.SelectAffordance(option.Id);
-        DraftStarted?.Invoke();
-        AnchorFocused?.Invoke([option.AnchorId]);
-        if (composer.Prompt.Asking == Question.Element
-            && composer.Prompt.Affordances.Count == 1
-            && composer.TryBuild(out EngineDecision? automatic, out _))
-        {
-            NotifySubmitted(automatic!);
-            return;
-        }
-        Rebuild();
-    }
-
     private void AddSelectedDraft()
     {
         if (composer!.Selected is not { } selected)
@@ -229,9 +199,10 @@ public sealed partial class DecisionPanel : VBoxContainer
         DecisionProgressPresentation progress = composer.Progress();
         AddContent(new HSeparator());
         AddContent(Text(TargetProgressText(progress.Targets), GodotThemeVariations.Eyebrow));
-        new DecisionDraftRenderer(this, composer, world!, submitting)
+        int generation = lifecycle.RenderGeneration;
+        new DecisionDraftRenderer(this, composer, world!, submitting, generation)
             .AddTargets(selected, progress.Targets);
-        var payment = new DecisionPaymentRenderer(this, composer, world!, submitting);
+        var payment = new DecisionPaymentRenderer(this, composer, world!, submitting, generation);
         payment.AddCosts(selected);
         payment.AddSubmit(composer.Progress());
     }
@@ -251,11 +222,13 @@ public sealed partial class DecisionPanel : VBoxContainer
         StyleButton(pass, submitting
             ? InteractiveVisualState.Unavailable
             : InteractiveVisualState.Resting);
+        int generation = lifecycle.RenderGeneration;
         pass.Pressed += () =>
         {
-            if (composer.TryDecline(out EngineDecision? decision, out _))
+            if (lifecycle.CanMutate(generation)
+                && composer!.TryDecline(out EngineDecision? decision, out _))
             {
-                NotifySubmitted(decision!);
+                NotifySubmitted(decision!, generation);
             }
         };
         AddCommit(pass);
@@ -371,14 +344,6 @@ public sealed partial class DecisionPanel : VBoxContainer
                 selected.Label,
                 PromptPresentation.Describe(selected.AnchorId, world!)),
         };
-    }
-
-    private void RestoreFocus(string? requested, bool focusFirst, int generation)
-    {
-        if (generation == renderGeneration)
-        {
-            DecisionFocus.Restore(this, requested, focusFirst, generation);
-        }
     }
 
     private string? FocusKey(Control focused) => DecisionFocus.Key(this, focused);

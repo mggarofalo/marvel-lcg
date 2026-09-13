@@ -18,7 +18,6 @@ public sealed partial class Main : Control
     internal readonly List<ScenarioSetupChoice> visibleModes = [];
     internal readonly ICardArtProvider art = LocalArtPack.OpenConfigured();
     internal readonly Dictionary<int, bool> expandedAreas = [];
-    internal readonly InteractionGeneration renderGeneration = new();
     internal Control board = null!;
     internal VBoxContainer boardAreas = null!;
     internal Label buildIdentity = null!;
@@ -32,7 +31,6 @@ public sealed partial class Main : Control
     internal Label cardInspectorTitle = null!;
     internal ScrollContainer cardInspectorScroll = null!;
     internal VBoxContainer cardInspectorContent = null!;
-    internal int? cardInspectorReturnTargetId;
     internal int cardInspectorGeneration;
     internal bool cardInspectorHovered;
     internal bool cardInspectorPinned;
@@ -76,7 +74,6 @@ public sealed partial class Main : Control
     internal MainBoardController boardController = null!;
     internal MainEventController eventController = null!;
     internal MainLayoutController layoutController = null!;
-    internal ModularMenuFocus modularMenuFocus = null!;
     internal LocalGameClient? client;
     internal ClientSession? session;
     internal VBoxContainer contentStack = null!;
@@ -144,7 +141,6 @@ public sealed partial class Main : Control
             ClientTheme.ToGodot(VisualSystem.Palette.Danger);
         GetWindow().MinSize = new Vector2I(1040, 680);
         layoutController = new MainLayoutController(this);
-        modularMenuFocus = new ModularMenuFocus(this);
         setupController = new MainSetupController(this);
         sessionController = new MainSessionController(this);
         boardController = new MainBoardController(this);
@@ -170,8 +166,7 @@ public sealed partial class Main : Control
             RefreshBriefing();
         };
         modular.GetPopup().IdPressed += OnModularChoicePressed;
-        modular.GetPopup().AboutToPopup += modularMenuFocus.Focus;
-        modular.GetPopup().PopupHide += modularMenuFocus.Restore;
+        ModularMenuFocus.Bind(modular, this);
         seed.TextChanged += _ => RefreshStartAvailability();
         endpoint.TextChanged += _ => OnEndpointChanged();
         gameId.TextChanged += _ => RefreshEntryAvailability();
@@ -399,8 +394,6 @@ public sealed partial class Main : Control
         GameProgressPresentation? priorProgress = null,
         string operation = EngineProtocol.Resolve) =>
         boardController.RenderGame(response, resetEvents, preserveEvents, priorProgress, operation);
-    internal bool IsCurrentRender(int generation) =>
-        IsInsideTree() && renderGeneration.IsCurrent(generation);
     internal void RenderBoard(WorldDescriptor world) => boardController.RenderBoard(world);
     internal void PreviewHandCard(int? id) => boardController.PreviewHandCard(id);
     internal void ToggleCardInspector(BoardCardPresentation card, Control? source) =>

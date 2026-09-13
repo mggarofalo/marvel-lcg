@@ -22,7 +22,6 @@ internal sealed class MainSessionController
         {
             return;
         }
-
         main.resolveInFlight = true;
         main.RefreshSynchronizeAvailability();
         try
@@ -59,7 +58,6 @@ internal sealed class MainSessionController
             }
         }
     }
-
     private void HandleDecisionResult(ClientResolutionResult result)
     {
         if (result.SessionDisposition == ClientSessionDisposition.Unavailable)
@@ -79,7 +77,6 @@ internal sealed class MainSessionController
         }
         ShowUnresolvedDecision(result);
     }
-
     private void ShowDecisionNotSent(ClientStartupError? error)
     {
         main.decisionPending = false;
@@ -90,7 +87,6 @@ internal sealed class MainSessionController
         main.promptProgress.Text = "NOT SENT  ·  RETRY SAFE";
         main.promptProgress.ThemeTypeVariation = GodotThemeVariations.StatusText;
     }
-
     private void ShowAuthoritativeDecision(ClientResolutionResult result)
     {
         if (result.Error is null)
@@ -108,12 +104,15 @@ internal sealed class MainSessionController
         }
         main.decisionPending = false;
         main.uncertainMutationError = null;
+        if (result.MutationDisposition == ClientMutationDisposition.Rejected)
+        {
+            main.decisions.AllowRetry(result.Response!.Revision);
+        }
         if (result.Error is not null)
         {
             main.ApplyProgress(GameProgressPresentation.Recovered(result.Response!, result.Error));
         }
     }
-
     private void ShowUnresolvedDecision(ClientResolutionResult result)
     {
         ClientStartupError failure = result.Error ?? new ClientStartupError(

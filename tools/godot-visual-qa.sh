@@ -2,6 +2,7 @@
 set -euo pipefail
 
 repo_root=$(cd "$(dirname "$0")/.." && pwd)
+. "$(dirname "$0")/godot-smoke-diagnostics.sh"
 godot_bin=${GODOT_BIN:-${1:-}}
 capture_dir=${MARVEL_SMOKE_CAPTURE_DIR:-${2:-}}
 
@@ -48,7 +49,7 @@ run_visual_smoke() {
     status=${PIPESTATUS[0]}
   fi
   set -e
-  if [[ $status -ne 0 ]] || grep -q 'ERROR:' "$smoke_log"; then
+  if [[ $status -ne 0 ]] || godot_smoke_has_error "$smoke_log"; then
     echo "Godot visual smoke reported an unexpected failure diagnostic." >&2
     exit 1
   fi
