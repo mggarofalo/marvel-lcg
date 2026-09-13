@@ -45,6 +45,12 @@ public sealed class CommunityReleasePolicyTests
         Assert.Contains("windows-community-install-smoke.ps1", workflow, StringComparison.Ordinal);
         Assert.Contains("windows-portable-install-smoke.ps1", workflow, StringComparison.Ordinal);
         Assert.Contains("server-community-upgrade-smoke.sh", workflow, StringComparison.Ordinal);
+        Assert.Contains("macos-install:\n    name: Install and remove macOS community artifact\n" +
+            "    needs: [identity, macos-input]\n    runs-on: macos-latest\n    timeout-minutes: 30",
+            workflow.ReplaceLineEndings("\n"), StringComparison.Ordinal);
+        Assert.Contains("windows-install:\n    name: Install and remove Windows community artifacts\n" +
+            "    needs: [identity, windows-input, windows-community]\n    runs-on: windows-latest\n" +
+            "    timeout-minutes: 30", workflow.ReplaceLineEndings("\n"), StringComparison.Ordinal);
         foreach (string script in new[]
         {
             "macos-community-install-smoke.sh",
