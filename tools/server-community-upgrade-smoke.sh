@@ -246,9 +246,11 @@ docker run --rm --volume "$diagnostics:/diagnostics:ro" --entrypoint sh \
   > "$diagnostic_record"
 [[ -s "$diagnostic_record" ]] || { echo 'pre-upgrade diagnostic record is absent' >&2; exit 2; }
 
-# Preserve a complete stopped-volume backup before attempting the upgrade.
-docker run --rm --volume "$sessions:/source:ro" --volume "$(dirname "$backup"):/backup" \
-  alpine:3.23.3 tar -C /source -czf "/backup/$(basename "$backup")" .
+# Preserve a complete stopped-volume backup before attempting the upgrade. The
+# host shell owns the archive so container user mappings cannot make the runner's
+# temporary directory unwritable.
+docker run --rm --volume "$sessions:/source:ro" \
+  alpine:3.23.3 tar -C /source -czf - . > "$backup"
 
 # Interrupt a valid candidate after it has opened and restored the copied save.
 docker run --rm --volume "$sessions:/source:ro" --volume "$interrupted:/target" \
@@ -261,8 +263,8 @@ docker logs "$prefix-interrupted-recovery" 2>&1 | grep -q 'session.restore.compl
 stop_server "$prefix-interrupted-recovery"
 
 # The pre-upgrade backup remains a runnable rollback unit with the prior image.
-docker run --rm --volume "$rollback:/target" --volume "$(dirname "$backup"):/backup:ro" \
-  alpine:3.23.3 tar -C /target -xzf "/backup/$(basename "$backup")"
+docker run --rm --interactive --volume "$rollback:/target" \
+  alpine:3.23.3 tar -C /target -xzf - < "$backup"
 start_server "$prefix-rollback" "$previous_image" "$rollback" 41924
 docker logs "$prefix-rollback" 2>&1 | grep -q 'session.restore.completed'
 stop_server "$prefix-rollback"
@@ -281,8 +283,8 @@ rm -f "$backup.diagnostics"
 stop_server "$prefix-current"
 
 # A backup restores into a fresh volume and remains runnable under the release image.
-docker run --rm --volume "$restored:/target" --volume "$(dirname "$backup"):/backup:ro" \
-  alpine:3.23.3 tar -C /target -xzf "/backup/$(basename "$backup")"
+docker run --rm --interactive --volume "$restored:/target" \
+  alpine:3.23.3 tar -C /target -xzf - < "$backup"
 start_server "$prefix-restored" "$current_image" "$restored" 41924
 docker logs "$prefix-restored" 2>&1 | grep -q 'session.restore.completed'
 stop_server "$prefix-restored"
