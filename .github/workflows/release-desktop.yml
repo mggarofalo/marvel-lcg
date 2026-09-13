@@ -267,7 +267,7 @@ jobs:
             -RedirectStandardError $serverLog -PassThru
           for ($attempt = 0; $attempt -lt 300; $attempt++) {
             if ((Test-Path $serverLog) -and
-                (Select-String $serverLog -SimpleMatch 'server.listener.started' -Quiet)) { break }
+                (Select-String -LiteralPath $serverLog -Pattern 'server.listener.started' -SimpleMatch -Quiet)) { break }
             if ($server.HasExited) { Get-Content $serverLog; throw 'test server exited' }
             Start-Sleep -Milliseconds 100
           }
@@ -297,7 +297,7 @@ jobs:
             -RedirectStandardError $serverLog -PassThru
           for ($attempt = 0; $attempt -lt 300; $attempt++) {
             if ((Test-Path $serverLog) -and
-                (Select-String $serverLog -SimpleMatch 'server.listener.started' -Quiet)) { break }
+                (Select-String -LiteralPath $serverLog -Pattern 'server.listener.started' -SimpleMatch -Quiet)) { break }
             if ($server.HasExited) { Get-Content $serverLog; throw 'test server exited' }
             Start-Sleep -Milliseconds 100
           }
@@ -411,7 +411,6 @@ jobs:
           bundle="$artifact/MarvelServer-$VERSION-linux-amd64.sigstore.json"
           cosign sign --yes --bundle "$bundle" "$reference"
           cosign verify \
-            --bundle "$bundle" \
             --certificate-identity "$identity" \
             --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
             "$reference" >/dev/null

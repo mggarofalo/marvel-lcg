@@ -81,7 +81,11 @@ public sealed class CommunityReleasePolicyTests
     public void ReleaseWorkflowPublishesOneValidatedAcceptanceRecordAndItsEvidence()
     {
         string workflow = File.ReadAllText(Path.Combine(
-            RepositoryPaths.Root, ".github", "workflows", "release-desktop.yml"));
+            RepositoryPaths.Root, ".github", "workflows", "release-desktop.yml"))
+            .ReplaceLineEndings("\n");
+        string serverGuide = File.ReadAllText(Path.Combine(
+            RepositoryPaths.Root, "docs", "server.md"))
+            .ReplaceLineEndings("\n");
 
         Assert.Contains("acceptance-record:", workflow, StringComparison.Ordinal);
         Assert.Contains("Marvel.Release.csproj", workflow, StringComparison.Ordinal);
@@ -90,6 +94,19 @@ public sealed class CommunityReleasePolicyTests
         Assert.Contains("release-candidate-server-evidence", workflow, StringComparison.Ordinal);
         Assert.Contains("release-candidate-record", workflow, StringComparison.Ordinal);
         Assert.Contains("MarvelChampions-*-acceptance.json", workflow, StringComparison.Ordinal);
+        Assert.Contains("cosign-release: v3.1.3", workflow, StringComparison.Ordinal);
+        Assert.Contains("cosign sign --yes --bundle \"$bundle\" \"$reference\"", workflow,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("cosign verify \\\n            --bundle", workflow,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Select-String -LiteralPath $serverLog -Pattern 'server.listener.started' -SimpleMatch -Quiet",
+            workflow,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("Select-String $serverLog -SimpleMatch", workflow,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("cosign verify \\\n  --bundle", serverGuide,
+            StringComparison.Ordinal);
     }
 
     [Fact]
