@@ -2,7 +2,17 @@ extends Node
 
 var host: Control
 var guest: Control
+var host_viewport: SubViewport
+var guest_viewport: SubViewport
 var failed := false
+
+
+func _new_client_viewport() -> SubViewport:
+	var viewport := SubViewport.new()
+	viewport.size = Vector2i(1280, 720)
+	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	get_tree().root.add_child(viewport)
+	return viewport
 
 
 func _scroll_control_into_view(control: Control) -> void:
@@ -71,12 +81,10 @@ func _control_has_real_hit_area(control: Control) -> bool:
 
 
 func _pointer_activate(control: Control) -> bool:
-	var inactive := await _hide_overlapping_client(control)
-	if inactive == null:
+	if not _is_client_control(control):
 		return false
 	await _scroll_control_into_view(control)
 	if not await _control_has_real_hit_area(control):
-		inactive.visible = true
 		return false
 	var viewport := control.get_viewport()
 	var point := _visible_control_rect(control).get_center()
@@ -93,8 +101,6 @@ func _pointer_activate(control: Control) -> bool:
 	release.global_position = input_point
 	viewport.push_input(release)
 	await get_tree().process_frame
-	inactive.visible = true
-	await get_tree().process_frame
 	return true
 
 
@@ -102,19 +108,13 @@ func _embedder_point(viewport: Viewport, local_point: Vector2) -> Vector2:
 	return viewport.get_final_transform() * local_point
 
 
-func _hide_overlapping_client(control: Control) -> Control:
-	if host.is_ancestor_of(control):
-		if guest != null:
-			guest.visible = false
-			await get_tree().process_frame
-			return guest
-		return host
-	if guest.is_ancestor_of(control):
-		host.visible = false
-		await get_tree().process_frame
-		return host
+func _is_client_control(control: Control) -> bool:
+	if host != null and host.is_ancestor_of(control):
+		return true
+	if guest != null and guest.is_ancestor_of(control):
+		return true
 	_fail("a hosted pointer control does not belong to either client")
-	return null
+	return false
 
 
 func _owns_pointer_target(control: Control, hovered: Control) -> bool:

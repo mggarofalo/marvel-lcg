@@ -42,7 +42,8 @@ func _run() -> void:
 
 func _open_host(packed: PackedScene) -> bool:
 	host = packed.instantiate() as Control
-	get_tree().root.add_child(host)
+	host_viewport = _new_client_viewport()
+	host_viewport.add_child(host)
 	if not await _wait_for(func() -> bool:
 		var ready := _button(host, "Start game")
 		return ready != null and not ready.disabled):
@@ -88,7 +89,8 @@ func _copy_invitation() -> String:
 
 func _open_guest(packed: PackedScene, invitation: String) -> bool:
 	guest = packed.instantiate() as Control
-	get_tree().root.add_child(guest)
+	guest_viewport = _new_client_viewport()
+	guest_viewport.add_child(guest)
 	if not await _wait_for(func() -> bool: return _button(guest, "Join a game") != null):
 		_fail("the guest entry screen never became ready")
 		return false
