@@ -72,6 +72,8 @@ public sealed partial class DecisionPanel : VBoxContainer
     internal void NotifySubmitted(EngineDecision decision, int generation) =>
         lifecycle.NotifySubmitted(decision, generation);
 
+    internal void SelectAffordance(int id, int generation) => lifecycle.SelectAffordance(id, generation);
+
     internal bool IsCurrentDraft(DecisionComposer expected, int generation) =>
         ReferenceEquals(composer, expected) && lifecycle.CanMutate(generation);
 
@@ -94,8 +96,8 @@ public sealed partial class DecisionPanel : VBoxContainer
         }
 
         PromptPresentation prompt = PromptPresentation.From(composer.Prompt, world);
-        CreateDecisionLayout(prompt);
-        AddAffordances(prompt);
+        DecisionPanelPromptRenderer.CreateLayout(this, composer, prompt);
+        DecisionPanelPromptRenderer.AddAffordances(this, prompt, lifecycle.RenderGeneration);
         AddSelectedDraft();
         AddDecline();
         ProgressChanged?.Invoke(composer.Progress());
@@ -129,66 +131,6 @@ public sealed partial class DecisionPanel : VBoxContainer
         AddChild(Text(detail, GodotThemeVariations.Body, wrap: true));
     }
 
-    private void AddAffordances(PromptPresentation prompt)
-    {
-        var basicCharacters = new HashSet<int>();
-        foreach (AffordancePresentation view in prompt.Affordances)
-        {
-            if (view.Verb is "Attack" or "Thwart" or "Recover"
-                && basicCharacters.Add(view.AnchorId))
-            {
-                AddContent(Text(
-                    $"BASIC ACTIONS  ·  {view.Anchor}",
-                    GodotThemeVariations.Eyebrow,
-                    wrap: true));
-            }
-            AddAffordance(view);
-        }
-    }
-
-    private void AddAffordance(AffordancePresentation view)
-    {
-        Affordance option = composer!.Prompt.Affordances.Single(candidate => candidate.Id == view.Id);
-        bool unavailable = submitting || !option.IsLegal;
-        bool selected = composer.Selected?.Id == option.Id;
-        bool resolving = submitting && selected;
-        string action = DecisionCopy.Choice(view);
-        var choose = new Button
-        {
-            Name = $"Affordance{option.Id}",
-            Text = AffordanceText(action, unavailable, selected, resolving),
-            Alignment = HorizontalAlignment.Left,
-            Disabled = unavailable,
-            ToggleMode = true,
-            ButtonPressed = selected,
-            TooltipText = option.Illegal ?? $"Anchor {option.AnchorId}, player {option.AnchorPlayer}",
-        };
-        StyleButton(choose, AffordanceState(option, selected, resolving));
-        int generation = lifecycle.RenderGeneration;
-        choose.Pressed += () => lifecycle.SelectAffordance(option.Id, generation);
-        BindAnchors(choose, option.AnchorId);
-        AddContent(choose);
-        if (option.Illegal is not null)
-        {
-            AddContent(Text($"! {option.Illegal}", GodotThemeVariations.DangerText, wrap: true));
-        }
-    }
-
-    private static string AffordanceText(
-        string action, bool unavailable, bool selected, bool resolving) =>
-        resolving
-            ? $"✓ {action}  ·  resolving"
-            : unavailable
-                ? $"— Unavailable  ·  {action}"
-                : selected ? $"✓ {action}" : action;
-
-    private InteractiveVisualState AffordanceState(
-        Affordance option, bool selected, bool resolving) =>
-        resolving
-            ? InteractiveVisualState.Selected
-            : !option.IsLegal || submitting
-                ? InteractiveVisualState.Unavailable
-                : selected ? InteractiveVisualState.Selected : InteractiveVisualState.Resting;
 
     private void AddSelectedDraft()
     {
@@ -198,7 +140,7 @@ public sealed partial class DecisionPanel : VBoxContainer
         }
         DecisionProgressPresentation progress = composer.Progress();
         AddContent(new HSeparator());
-        AddContent(Text(TargetProgressText(progress.Targets), GodotThemeVariations.Eyebrow));
+        AddContent(Text(DecisionPanelCopy.TargetProgress(composer, progress.Targets), GodotThemeVariations.Eyebrow));
         int generation = lifecycle.RenderGeneration;
         new DecisionDraftRenderer(this, composer, world!, submitting, generation)
             .AddTargets(selected, progress.Targets);
@@ -234,61 +176,10 @@ public sealed partial class DecisionPanel : VBoxContainer
         AddCommit(pass);
     }
 
-    private void CreateDecisionLayout(PromptPresentation prompt)
+    internal void InstallLayout(VBoxContainer body, VBoxContainer commitBar)
     {
-        SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        SizeFlagsVertical = SizeFlags.ExpandFill;
-        AffordancePresentation? selected = composer!.Selected is { } option
-            ? prompt.Affordances.Single(view => view.Id == option.Id)
-            : null;
-        if (selected is not null)
-        {
-            var summary = new VBoxContainer
-            {
-                Name = "ActionSummary",
-                ThemeTypeVariation = GodotThemeVariations.TightStack,
-            };
-            summary.AddChild(Text("Preparing", GodotThemeVariations.Eyebrow));
-            summary.AddChild(Text(
-                DecisionCopy.ActionSummary(selected),
-                selected.Consequence is null
-                    ? GodotThemeVariations.StatusText
-                    : GodotThemeVariations.DangerText,
-                wrap: true));
-            AddChild(summary);
-            AddChild(new HSeparator());
-        }
-
-        var scroll = new ScrollContainer
-        {
-            Name = "DecisionBodyScroll",
-            CustomMinimumSize = composer.Selected?.CostOptions.Any(cost =>
-                cost.Generators.Count > 0) == true
-                    ? new Vector2(0, ControlMetrics.MinimumPointerTarget)
-                    : Vector2.Zero,
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            SizeFlagsVertical = SizeFlags.ExpandFill,
-            FollowFocus = true,
-            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
-            VerticalScrollMode = ScrollContainer.ScrollMode.Auto,
-        };
-        content = new VBoxContainer
-        {
-            Name = "DecisionBody",
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            ThemeTypeVariation = GodotThemeVariations.TightStack,
-        };
-        scroll.AddChild(content);
-        AddChild(scroll);
-
-        commit = new VBoxContainer
-        {
-            Name = "CommitBar",
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            ThemeTypeVariation = GodotThemeVariations.TightStack,
-        };
-        AddChild(new HSeparator());
-        AddChild(commit);
+        content = body;
+        commit = commitBar;
     }
 
     internal void AddContent(Control control) =>
@@ -298,53 +189,6 @@ public sealed partial class DecisionPanel : VBoxContainer
     internal void AddCommit(Control control) =>
         (commit ?? throw new InvalidOperationException("decision commit bar is unavailable"))
             .AddChild(control);
-
-    internal string TargetProgressText(TargetSelectionProgress progress) =>
-        composer?.Selected?.Verb == "Resolve Mulligans"
-            ? $"DISCARD AND REDRAW  ·  {progress.Selected} CHOSEN"
-                + (progress.IsSatisfied ? "  ·  READY" : "  ·  INCOMPLETE")
-            : progress.Mode switch
-            {
-                TargetSelectionMode.None => "NO TARGET SELECTION",
-                TargetSelectionMode.Grouped => $"GROUP  ·  {progress.Selected}/1 CHOSEN"
-                    + (progress.IsSatisfied ? "  ·  COMPLETE" : "  ·  INCOMPLETE"),
-                _ => $"TARGETS  ·  {progress.Selected} CHOSEN"
-                    + (progress.Minimum == progress.Maximum
-                        ? $"  ·  REQUIRED {progress.Minimum}"
-                        : $"  ·  REQUIRED {progress.Minimum}–{progress.Maximum}")
-                    + (progress.IsSatisfied ? "  ·  COMPLETE" : "  ·  INCOMPLETE"),
-            };
-
-    internal string TargetAction(bool selected) => composer!.Selected?.Verb switch
-    {
-        "Resolve Mulligans" => "DISCARD AND REDRAW",
-        "End Phase" => "DISCARD",
-        "Attack" => "ATTACK",
-        "Thwart" => "THWART",
-        _ => selected ? "CHOSEN" : "TARGET",
-    };
-
-    internal string SubmitAction()
-    {
-        Affordance selected = composer!.Selected!;
-        int count = composer.Targets.Count;
-        return selected.Verb switch
-        {
-            "Resolve Mulligans" when count == 0 => "Keep hand",
-            "Resolve Mulligans" => $"Discard {count} and redraw",
-            "End Phase" when count == 0 => "End player phase",
-            "End Phase" => $"Discard {count} and end player phase",
-            "Play" => $"Play {PromptPresentation.Describe(selected.AnchorId, world!)}",
-            "Attack" when count == 1 =>
-                $"Attack {PromptPresentation.Describe(composer.Targets[0], world!)}",
-            "Thwart" when count == 1 =>
-                $"Thwart {PromptPresentation.Describe(composer.Targets[0], world!)}",
-            _ => DecisionCopy.GenericCommit(
-                selected.Verb,
-                selected.Label,
-                PromptPresentation.Describe(selected.AnchorId, world!)),
-        };
-    }
 
     private string? FocusKey(Control focused) => DecisionFocus.Key(this, focused);
 

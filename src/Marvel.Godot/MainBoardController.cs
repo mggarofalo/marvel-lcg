@@ -33,8 +33,9 @@ internal sealed class MainBoardController
         main.CurrentGame = response;
         WorldDescriptor world = response.World!;
         RenderCurrentResponse(response, world, renderGeneration);
-        IReadOnlyList<EventPresentation> reportNarrative = UpdateEvents(
-            response, world, previousOutcome, priorHistory, resetEvents, preserveEvents, operation);
+        IReadOnlyList<EventPresentation> reportNarrative = BoardResponsePresentation.Update(
+            main,
+            response, previousOutcome, priorHistory, resetEvents, preserveEvents, operation);
         FinishRender(response, world, priorProgress, operation, reportNarrative, renderGeneration);
     }
 
@@ -50,79 +51,6 @@ internal sealed class MainBoardController
         main.RenderPromptSummary(response.Prompt, world);
         main.decisions.Render(response.Prompt, world, response.Revision);
     }
-
-    private IReadOnlyList<EventPresentation> UpdateEvents(
-        EngineResponse response,
-        WorldDescriptor world,
-        Outcome previousOutcome,
-        IReadOnlySet<int> priorHistory,
-        bool resetEvents,
-        bool preserveEvents,
-        string operation)
-    {
-        if (preserveEvents)
-        {
-            main.RenderEvents();
-            return [];
-        }
-        EventBatchPresentation presented = EventCuePlanner.Plan(response.Events, world, previousOutcome);
-        if (resetEvents)
-        {
-            main.events.Reset(presented.History);
-        }
-        else
-        {
-            main.events.Append(presented.History);
-        }
-        main.RenderEvents();
-        HistoryEntryDescriptor[] completedActions = CompletedActions(response, priorHistory, operation);
-        main.RenderLastResult(Highlights(response, presented, completedActions), resetEvents);
-        main.PresentEvents(presented.Cues);
-        return ReportNarrative(response, presented, completedActions);
-    }
-
-    private static HistoryEntryDescriptor[] CompletedActions(
-        EngineResponse response, IReadOnlySet<int> priorHistory, string operation) =>
-        operation == EngineProtocol.Resolve
-            ? response.History?.Entries
-                .Where(entry => !priorHistory.Contains(entry.Cursor))
-                .ToArray() ?? []
-            : [];
-
-    private static IReadOnlyList<EventPresentation> Highlights(
-        EngineResponse response,
-        EventBatchPresentation presented,
-        HistoryEntryDescriptor[] completedActions)
-    {
-        if (response.History?.ActionOpen == true)
-        {
-            return [];
-        }
-        HistoryEntryDescriptor? completed = completedActions.LastOrDefault(entry =>
-            entry.Summary.Contains(" played ", StringComparison.Ordinal));
-        return completed is null
-            ? presented.Highlights
-            : PresentAction(completed.Details.Prepend(completed.Summary));
-    }
-
-    private static IReadOnlyList<EventPresentation> ReportNarrative(
-        EngineResponse response,
-        EventBatchPresentation presented,
-        HistoryEntryDescriptor[] completedActions)
-    {
-        if (response.History?.ActionOpen == true)
-        {
-            return [];
-        }
-        return completedActions.Length == 0
-            ? presented.History
-            : PresentAction(completedActions.SelectMany(entry =>
-                entry.Details.Prepend(entry.Summary)));
-    }
-
-    private static EventPresentation[] PresentAction(IEnumerable<string> summaries) =>
-        summaries.Select(summary => new EventPresentation(
-            summary, "Action", [], EventMotionKind.State)).ToArray();
 
     private void FinishRender(
         EngineResponse response,

@@ -52,7 +52,7 @@ internal sealed class DecisionDraftRenderer
         }
 
         string badge = request.IsSearch ? "SEARCH RESULTS" : "TARGETS";
-        panel.AddContent(DecisionPanel.Text($"{badge}  ·  " + panel.TargetProgressText(progress),
+        panel.AddContent(DecisionPanel.Text($"{badge}  ·  " + DecisionPanelCopy.TargetProgress(composer, progress),
             GodotThemeVariations.Caption, wrap: true));
         AddTargetInstructions(request);
 
@@ -149,8 +149,8 @@ internal sealed class DecisionDraftRenderer
         {
             Name = $"Target{target}",
             Text = composer!.Targets.Contains(target)
-                ? $"✓ {panel.TargetAction(selected: true)}  ·  {targetName}{detail}"
-                : $"◇ {panel.TargetAction(selected: false)}  ·  {targetName}{detail}",
+                ? $"✓ {DecisionPanelCopy.TargetAction(composer, selected: true)}  ·  {targetName}{detail}"
+                : $"◇ {DecisionPanelCopy.TargetAction(composer, selected: false)}  ·  {targetName}{detail}",
             Alignment = HorizontalAlignment.Left,
             ToggleMode = true,
             ButtonPressed = composer!.Targets.Contains(target),
