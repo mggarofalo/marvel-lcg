@@ -1,5 +1,6 @@
 using Marvel.Tests;
 using Xunit;
+using Godot;
 
 namespace Marvel.Godot.Tests;
 
@@ -58,6 +59,19 @@ public sealed class NativeSmokeDiagnosticsTests
         Assert.DoesNotContain("push_input(move, true)", script, StringComparison.Ordinal);
         Assert.DoesNotContain("push_input(press, true)", script, StringComparison.Ordinal);
         Assert.DoesNotContain("push_input(release, true)", script, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void HostedInvitationKeepsCompactPlayPageScrollable()
+    {
+        Assert.Equal(
+            ScrollContainer.ScrollMode.Auto,
+            MainLayoutController.PageVerticalScrollMode(
+                boardVisible: true, invitationVisible: true, scale: InterfaceScale.Percent80));
+        Assert.Equal(
+            ScrollContainer.ScrollMode.Disabled,
+            MainLayoutController.PageVerticalScrollMode(
+                boardVisible: true, invitationVisible: false, scale: InterfaceScale.Percent80));
     }
 
     [Fact]
