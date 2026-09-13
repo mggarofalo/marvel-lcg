@@ -45,6 +45,17 @@ public sealed class CommunityReleasePolicyTests
         Assert.Contains("windows-community-install-smoke.ps1", workflow, StringComparison.Ordinal);
         Assert.Contains("windows-portable-install-smoke.ps1", workflow, StringComparison.Ordinal);
         Assert.Contains("server-community-upgrade-smoke.sh", workflow, StringComparison.Ordinal);
+        string macInstall = File.ReadAllText(Path.Combine(
+            RepositoryPaths.Root, "tools", "macos-community-install-smoke.sh"));
+        Assert.Contains("smoke_timeout_seconds=120", macInstall, StringComparison.Ordinal);
+        Assert.Contains("kill -0 \"$app_pid\"", macInstall, StringComparison.Ordinal);
+        Assert.Contains("wait \"$app_pid\"", macInstall, StringComparison.Ordinal);
+        Assert.Contains("macos-install:\n    name: Install and remove macOS community artifact\n" +
+            "    needs: [identity, macos-input]\n    runs-on: macos-latest\n    timeout-minutes: 30",
+            workflow.ReplaceLineEndings("\n"), StringComparison.Ordinal);
+        Assert.Contains("windows-install:\n    name: Install and remove Windows community artifacts\n" +
+            "    needs: [identity, windows-input, windows-community]\n    runs-on: windows-latest\n" +
+            "    timeout-minutes: 30", workflow.ReplaceLineEndings("\n"), StringComparison.Ordinal);
         foreach (string script in new[]
         {
             "macos-community-install-smoke.sh",
@@ -81,7 +92,11 @@ public sealed class CommunityReleasePolicyTests
     public void ReleaseWorkflowPublishesOneValidatedAcceptanceRecordAndItsEvidence()
     {
         string workflow = File.ReadAllText(Path.Combine(
-            RepositoryPaths.Root, ".github", "workflows", "release-desktop.yml"));
+            RepositoryPaths.Root, ".github", "workflows", "release-desktop.yml"))
+            .ReplaceLineEndings("\n");
+        string serverGuide = File.ReadAllText(Path.Combine(
+            RepositoryPaths.Root, "docs", "server.md"))
+            .ReplaceLineEndings("\n");
 
         Assert.Contains("acceptance-record:", workflow, StringComparison.Ordinal);
         Assert.Contains("Marvel.Release.csproj", workflow, StringComparison.Ordinal);
@@ -90,6 +105,19 @@ public sealed class CommunityReleasePolicyTests
         Assert.Contains("release-candidate-server-evidence", workflow, StringComparison.Ordinal);
         Assert.Contains("release-candidate-record", workflow, StringComparison.Ordinal);
         Assert.Contains("MarvelChampions-*-acceptance.json", workflow, StringComparison.Ordinal);
+        Assert.Contains("cosign-release: v3.1.3", workflow, StringComparison.Ordinal);
+        Assert.Contains("cosign sign --yes --bundle \"$bundle\" \"$reference\"", workflow,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("cosign verify \\\n            --bundle", workflow,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "Select-String -LiteralPath $serverLog -Pattern 'server.listener.started' -SimpleMatch -Quiet",
+            workflow,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("Select-String $serverLog -SimpleMatch", workflow,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("cosign verify \\\n  --bundle", serverGuide,
+            StringComparison.Ordinal);
     }
 
     [Fact]

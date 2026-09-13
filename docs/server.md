@@ -180,12 +180,14 @@ launch forms. Never add `--volumes` unless the saved sessions have been backed
 up and are deliberately being destroyed.
 
 The release includes a Sigstore bundle named
-`MarvelServer-VERSION-linux-amd64.sigstore.json`. Verify the image before first
-use, substituting the released version, digest, repository owner and tag:
+`MarvelServer-VERSION-linux-amd64.sigstore.json` as retained transparency-log
+evidence. Cosign v3 reads the OCI signature during image verification rather
+than accepting that bundle as an image-verification input. Verify the image
+before first use, substituting the released version, digest, repository owner
+and tag:
 
 ```bash
 cosign verify \
-  --bundle MarvelServer-VERSION-linux-amd64.sigstore.json \
   --certificate-identity \
     'https://github.com/OWNER/REPOSITORY/.github/workflows/release-desktop.yml@refs/tags/vVERSION' \
   --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
