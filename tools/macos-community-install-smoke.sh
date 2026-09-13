@@ -2,6 +2,7 @@
 set -euo pipefail
 
 archive=${1:-}
+smoke_timeout_seconds=120
 if [[ -z "$archive" || ! -f "$archive" || ! -f "$archive.sha256" \
     || -z ${MARVEL_ENGINE_ENDPOINT:-} ]]; then
   echo 'usage: macos-community-install-smoke.sh APPLICATION.zip' >&2
@@ -24,7 +25,12 @@ actual=$(shasum -a 256 "$archive" | awk '{ print $1 }')
 
 install_root=$(mktemp -d)
 log=$(mktemp)
+app_pid=
 cleanup() {
+  if [[ -n "$app_pid" ]]; then
+    kill -KILL "$app_pid" 2>/dev/null || true
+    wait "$app_pid" 2>/dev/null || true
+  fi
   rm -rf "$install_root"
   rm -f "$log"
 }
@@ -56,7 +62,25 @@ if xattr -p com.apple.quarantine "$app" >/dev/null 2>&1; then
 fi
 
 "$executable" --script res://smoke/hosted_multiplayer_smoke.gd \
-  >"$log" 2>&1
+  >"$log" 2>&1 &
+app_pid=$!
+deadline=$((SECONDS + smoke_timeout_seconds))
+while kill -0 "$app_pid" 2>/dev/null && ((SECONDS < deadline)); do
+  sleep 1
+done
+if kill -0 "$app_pid" 2>/dev/null; then
+  cat "$log" >&2
+  echo "the extracted macOS application game smoke timed out after ${smoke_timeout_seconds}s" >&2
+  exit 1
+fi
+status=0
+wait "$app_pid" || status=$?
+app_pid=
+if ((status != 0)); then
+  cat "$log" >&2
+  echo 'the extracted macOS application game smoke failed' >&2
+  exit 1
+fi
 grep -q 'HOSTED_MULTIPLAYER_SMOKE_OK' "$log" || {
   cat "$log" >&2
   echo 'the extracted macOS application did not complete its hosted game smoke' >&2
