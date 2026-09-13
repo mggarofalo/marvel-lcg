@@ -11,10 +11,9 @@ internal sealed class MainBoardController
 {
     private readonly Main main;
 
-    internal MainBoardController(Main main)
-    {
+    internal MainBoardController(Main main) =>
         this.main = main;
-    }
+
     internal void RenderGame(
         EngineResponse response,
         bool resetEvents = false,
@@ -36,12 +35,12 @@ internal sealed class MainBoardController
 
     private void RenderCurrentResponse(EngineResponse response, WorldDescriptor world)
     {
-        RenderBoard(world);
         main.syncStatus.Visible = true;
         main.syncStatus.Text = $"✓ Synced · r{response.Revision}";
         main.synchronize.Visible = true;
         main.RenderPromptSummary(response.Prompt, world);
         main.decisions.Render(response.Prompt, world);
+        RenderBoard(world);
     }
 
     private IReadOnlyList<EventPresentation> UpdateEvents(
@@ -142,15 +141,16 @@ internal sealed class MainBoardController
     internal void RenderBoard(WorldDescriptor world)
     {
         main.boardPresentation = BoardPresentation.From(world);
+        if (main.viewedSeat is not null
+            && !world.Players.Any(player => player.Seat == main.viewedSeat))
+        {
+            main.viewedSeat = null;
+        }
         main.boardRender = BoardRenderer.Render(
-            main.boardAreas,
-            main.boardPresentation,
-            main.handRail,
-            main.handHeading,
-            main.interfaceScale,
-            main.expandedAreas,
-            main.art);
+            BoardRenderRequestFactory.Create(main, main.boardPresentation));
+        main.viewedSeat = main.boardRender.ViewedSeat;
         main.boardRender.CardActivated += (card, control) => ToggleCardInspector(card, control);
+        BoardWorkspaceBindings.Bind(main, main.boardRender, world, RenderBoard);
         HideCardInspector();
     }
 
@@ -201,7 +201,11 @@ internal sealed class MainBoardController
     {
         main.cardInspectorGeneration++;
         main.inspectedCardId = card.TargetId;
+        main.cardInspectorState.Card = card;
         Control? priorFocus = main.GetViewport()?.GuiGetFocusOwner();
+        ClearInspectedSource();
+        main.cardInspectorState.Source = source;
+        SetInspectedSource(source, value: true);
         ClearInspectorContent();
         InterfaceScale inspectionScale = FittedInspectionScale(
             card, main.interfaceScale, main.Size.Y);
@@ -211,8 +215,8 @@ internal sealed class MainBoardController
         IgnoreMouseRecursively(detail);
         main.cardInspectorContent.AddChild(detail);
         ConfigureInspectorFrame();
-        PositionInspector(card, source, pinned);
-        ShowInspector(detail, priorFocus, pinned);
+        InspectorPlacement placement = CardInspectorPlacement.Position(main, detail, source, pinned);
+        CardInspectorDisplay.Show(main, detail, priorFocus, pinned, placement.IsAttached);
     }
 
     private void ClearInspectorContent()
@@ -229,56 +233,6 @@ internal sealed class MainBoardController
         main.cardInspectorScroll.HorizontalScrollMode = ScrollContainer.ScrollMode.ShowNever;
         main.cardInspectorScroll.VerticalScrollMode = ScrollContainer.ScrollMode.ShowNever;
         main.cardInspectorFrame.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
-    }
-
-    private void PositionInspector(BoardCardPresentation card, Control? source, bool pinned)
-    {
-        Control detail = (Control)main.cardInspectorContent.GetChild(0);
-        Vector2 detailSize = detail.GetCombinedMinimumSize();
-        float width = detailSize.X;
-        float height = Math.Min(main.Size.Y - 48, detailSize.Y);
-        Rect2 sourceRect = source?.GetGlobalRect() ?? new Rect2(
-            main.GetViewport().GetMousePosition(), Vector2.Zero);
-        if (!pinned)
-        {
-            height = Math.Min(height, Math.Max(160, sourceRect.Position.Y - 24));
-        }
-        main.cardInspectorFrame.CustomMinimumSize = Vector2.Zero;
-        main.cardInspectorFrame.Size = new Vector2(width, Math.Max(pinned ? 240 : 160, height));
-        Vector2 anchor = sourceRect.Position + sourceRect.Size / 2;
-        FloatingPanelPosition position = pinned
-            ? VisualSystem.PlaceFloatingPanel(
-                Mathf.RoundToInt(main.Size.X),
-                Mathf.RoundToInt(main.Size.Y),
-                Mathf.RoundToInt(anchor.X),
-                Mathf.RoundToInt(anchor.Y),
-                Mathf.RoundToInt(width),
-                Mathf.RoundToInt(height))
-            : new FloatingPanelPosition(
-                Mathf.RoundToInt(Mathf.Clamp(
-                    anchor.X - width / 2, 12, Math.Max(12, main.Size.X - width - 12))),
-                Mathf.RoundToInt(Mathf.Max(12, sourceRect.Position.Y - height - 12)));
-        main.cardInspectorFrame.Position = new Vector2(position.X, position.Y);
-    }
-
-    private void ShowInspector(Control detail, Control? priorFocus, bool pinned)
-    {
-        main.cardInspectorPinned = pinned;
-        main.cardInspector.MouseFilter = pinned
-            ? Control.MouseFilterEnum.Stop
-            : Control.MouseFilterEnum.Ignore;
-        main.cardInspectorBackdrop.Visible = pinned;
-        main.cardInspectorClose.Visible = false;
-        main.cardInspector.Visible = true;
-        if (pinned)
-        {
-            main.cardInspectorReturnFocus = priorFocus;
-            Callable.From(detail.GrabFocus).CallDeferred();
-        }
-        else if (priorFocus is not null && !main.cardInspector.IsAncestorOf(priorFocus))
-        {
-            Callable.From(priorFocus.GrabFocus).CallDeferred();
-        }
     }
 
     internal void Input(InputEvent @event)
@@ -368,6 +322,9 @@ internal sealed class MainBoardController
                 main.cardInspectorFrame.FocusMode = Control.FocusModeEnum.None;
                 main.cardInspectorScroll.FocusMode = Control.FocusModeEnum.None;
                 main.inspectedCardId = null;
+                main.cardInspectorState.Card = null;
+                ClearInspectedSource();
+                CardInspectorPlacement.Connector(main).Visible = false;
                 main.cardInspector.Visible = false;
             }
         };
@@ -388,14 +345,17 @@ internal sealed class MainBoardController
 
     internal void HideCardInspector()
     {
-        Control? returnFocus = main.cardInspectorPinned ? main.cardInspectorReturnFocus : null;
+        Control? returnFocus = main.cardInspectorPinned ? main.cardInspectorState.ReturnFocus : null;
         main.cardInspectorGeneration++;
         main.cardInspectorPinned = false;
         main.cardInspectorHovered = false;
         main.cardInspectorFrame.FocusMode = Control.FocusModeEnum.None;
         main.cardInspectorScroll.FocusMode = Control.FocusModeEnum.None;
         main.inspectedCardId = null;
-        main.cardInspectorReturnFocus = null;
+        main.cardInspectorState.Card = null;
+        main.cardInspectorState.ReturnFocus = null;
+        ClearInspectedSource();
+        CardInspectorPlacement.Connector(main).Visible = false;
         main.cardInspector.Visible = false;
         if (returnFocus is not null
             && GodotObject.IsInstanceValid(returnFocus)
@@ -404,6 +364,20 @@ internal sealed class MainBoardController
         {
             Callable.From(returnFocus.GrabFocus).CallDeferred();
         }
+    }
+
+    private static void SetInspectedSource(Control? source, bool value)
+    {
+        if (source is CardControl card && CardInspectorPlacement.IsLive(card))
+        {
+            card.SetInspected(value);
+        }
+    }
+
+    private void ClearInspectedSource()
+    {
+        SetInspectedSource(main.cardInspectorState.Source, value: false);
+        main.cardInspectorState.Source = null;
     }
 
     internal static void IgnoreMouseRecursively(Node node)

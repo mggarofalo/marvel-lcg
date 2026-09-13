@@ -30,7 +30,7 @@ if [[ "$(uname -s)" == Linux ]]; then
 fi
 
 mkdir -p "$capture_dir"
-for viewport in 1280x720 1920x1080; do
+for viewport in 1920x1080 2560x1440; do
   for motion in enabled disabled; do
     if [[ "$use_xvfb" == true ]]; then
       MARVEL_UI_SCALE=compact \

@@ -48,9 +48,9 @@ public sealed class ContinuousIntegrationPolicyTests
         string powershell = Read("tools", "godot-smoke.ps1");
 
         Assert.Contains("profile=${2:---exhaustive}", bash, StringComparison.Ordinal);
-        Assert.Contains("viewports=(1280x720)", bash, StringComparison.Ordinal);
+        Assert.Contains("viewports=(1920x1080)", bash, StringComparison.Ordinal);
         Assert.Contains("[switch]$Representative", powershell, StringComparison.Ordinal);
-        Assert.Contains("@(\"1280x720\")", powershell, StringComparison.Ordinal);
+        Assert.Contains("@(\"1920x1080\")", powershell, StringComparison.Ordinal);
     }
 
     private static string Read(params string[] path) =>

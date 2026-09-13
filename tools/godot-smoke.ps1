@@ -20,10 +20,10 @@ dotnet build "$repoRoot/src/Marvel.Godot/Marvel.Godot.csproj" --nologo
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 $viewports = if ($Representative) {
-    @("1280x720")
+    @("1920x1080")
 }
 else {
-    @("1040x680", "1280x720", "1600x900", "1920x1080")
+    @("1920x1080", "2560x1440")
 }
 $scales = if ($Representative) {
     @("100")
@@ -43,7 +43,7 @@ foreach ($viewport in $viewports) {
     }
 }
 $env:MARVEL_UI_SCALE = "100"
-$env:MARVEL_SMOKE_VIEWPORT = "1280x720"
+$env:MARVEL_SMOKE_VIEWPORT = "1920x1080"
 $env:MARVEL_SMOKE_MOTION = "disabled"
 & $GodotBin --headless --path "$repoRoot/src/Marvel.Godot" `
     --script res://smoke/local_game_smoke.gd

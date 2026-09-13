@@ -8,6 +8,7 @@ public sealed partial class CardControl : PanelContainer
 {
     private string baseVariation = GodotThemeVariations.BoardCard;
     private bool highlighted;
+    private bool inspected;
     private bool presented;
 
     private CardControl()
@@ -48,9 +49,10 @@ public sealed partial class CardControl : PanelContainer
             ThemeTypeVariation = variation,
         };
         Control body = CardFaceRendering.CreateBody(card, size, layout, scale, art);
-        body.CustomMinimumSize = new Vector2(
-            Math.Max(1, layout.Width - 32),
-            Math.Max(1, layout.MinimumHeight - 32));
+        // The frame variation owns its scale-aware content inset. Giving the
+        // child a second fixed inset compounds padding and makes compact cards
+        // denser at higher scales than at the default scale.
+        body.CustomMinimumSize = Vector2.Zero;
         control.AddChild(body);
         return control;
     }
@@ -83,6 +85,10 @@ public sealed partial class CardControl : PanelContainer
         CardLayoutMetrics layout,
         CardDisplaySize size)
     {
+        if (size == CardDisplaySize.Hand)
+        {
+            return layout.MinimumHeight;
+        }
         IReadOnlyList<BoardFieldPresentation> values = CompactValues(card, size);
         int progressRows = values.Count(IsCompactProgressValue);
         int resourcesRows = values.Count(value => value.Name == "RES");
@@ -92,8 +98,7 @@ public sealed partial class CardControl : PanelContainer
         int titleRows = Math.Max(
             1,
             (int)Math.Ceiling(card.Title.Length / (double)titleCharactersPerLine));
-        int textRows = (size == CardDisplaySize.Hand ? 1 : 0)
-            + titleRows
+        int textRows = titleRows
             + (CompactState(card, size) is null ? 0 : 1)
             + valueRows;
         float scale = layout.Width / (size == CardDisplaySize.Hand ? 172.0f : 210.0f);
@@ -114,8 +119,15 @@ public sealed partial class CardControl : PanelContainer
         RefreshTreatment();
     }
 
+    /// <summary>Retains a structural source cue while this card's detail is open.</summary>
+    public void SetInspected(bool value)
+    {
+        inspected = value;
+        RefreshTreatment();
+    }
+
     private void RefreshTreatment() =>
-        ThemeTypeVariation = highlighted || presented
+        ThemeTypeVariation = highlighted || presented || inspected
             ? GodotThemeVariations.FocusedCard
             : baseVariation;
 

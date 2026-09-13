@@ -14,12 +14,12 @@ internal static class CardFaceRendering
         CardLayoutMetrics layout,
         InterfaceScale scale,
         ICardArtProvider? art) =>
-        card.Concealed
-            ? Back(card)
-            : size == CardDisplaySize.Full
-                ? FullFace(card, layout, scale, art)
-                : CompactFace(card, size, scale);
-
+        card.Concealed ? Back(card) : size switch
+        {
+            CardDisplaySize.Full => FullFace(card, layout, scale, art),
+            CardDisplaySize.Hand => HandCardFaceRendering.Create(card, scale),
+            _ => CompactFace(card, size, scale),
+        };
     internal static VBoxContainer Back(BoardCardPresentation card)
     {
         var content = Stack();
@@ -312,7 +312,7 @@ internal static class CardFaceRendering
         return content;
     }
 
-    private static HFlowContainer ResourceValue(
+    internal static HFlowContainer ResourceValue(
         BoardFieldPresentation resource,
         InterfaceScale scale)
     {

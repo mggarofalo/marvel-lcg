@@ -34,10 +34,6 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 20.0
-offset_top = 20.0
-offset_right = -20.0
-offset_bottom = -20.0
 grow_horizontal = 2
 grow_vertical = 2
 follow_focus = true
@@ -58,10 +54,6 @@ z_index = 10
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_left = 20.0
-offset_top = 20.0
-offset_right = -20.0
-offset_bottom = 64.0
 grow_horizontal = 2
 theme_type_variation = &"CompactRow"
 
@@ -107,7 +99,6 @@ step = 10.0
 tooltip_text = "Adjust interface scale."
 
 [node name="Motion" type="CheckButton" parent="StatusBar" unique_id=1000000014]
-custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 size_flags_vertical = 3
 button_pressed = true
@@ -393,35 +384,23 @@ theme_type_variation = &"Body"
 text = "—"
 autowrap_mode = 2
 
-[node name="Play" type="HSplitContainer" parent="Margin/Shell/Content" unique_id=1000000064]
+[node name="Play" type="VBoxContainer" parent="Margin/Shell/Content" unique_id=1000000064]
 visible = false
 custom_minimum_size = Vector2(0, 260)
 layout_mode = 2
 size_flags_vertical = 3
+theme_type_variation = &"TightStack"
 
 [node name="Board" type="VBoxContainer" parent="Margin/Shell/Content/Play" unique_id=1000000065]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="TableScroll" type="ScrollContainer" parent="Margin/Shell/Content/Play/Board" unique_id=1000000066]
+[node name="Areas" type="VBoxContainer" parent="Margin/Shell/Content/Play/Board" unique_id=1000000068]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-focus_mode = 2
-follow_focus = true
-horizontal_scroll_mode = 0
-
-[node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Board/TableScroll" unique_id=1000000067]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 10
-
-[node name="Areas" type="VBoxContainer" parent="Margin/Shell/Content/Play/Board/TableScroll/Margin" unique_id=1000000068]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_type_variation = &"Stack"
+theme_type_variation = &"TightStack"
 
 [node name="HandShelf" type="PanelContainer" parent="Margin/Shell/Content/Play/Board" unique_id=1000000069]
 custom_minimum_size = Vector2(0, 84)
@@ -430,10 +409,6 @@ theme_type_variation = &"SurfacePanel"
 
 [node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Board/HandShelf" unique_id=1000000070]
 layout_mode = 2
-theme_override_constants/margin_left = 8
-theme_override_constants/margin_top = 6
-theme_override_constants/margin_right = 8
-theme_override_constants/margin_bottom = 6
 
 [node name="Stack" type="VBoxContainer" parent="Margin/Shell/Content/Play/Board/HandShelf/Margin" unique_id=1000000071]
 layout_mode = 2
@@ -444,27 +419,18 @@ layout_mode = 2
 theme_type_variation = &"Heading"
 text = "HAND  ·  0"
 
-[node name="Scroll" type="ScrollContainer" parent="Margin/Shell/Content/Play/Board/HandShelf/Margin/Stack" unique_id=1000000073]
+[node name="Rail" type="HFlowContainer" parent="Margin/Shell/Content/Play/Board/HandShelf/Margin/Stack" unique_id=1000000074]
 layout_mode = 2
 size_flags_horizontal = 3
-horizontal_scroll_mode = 2
-vertical_scroll_mode = 0
-
-[node name="Rail" type="HBoxContainer" parent="Margin/Shell/Content/Play/Board/HandShelf/Margin/Stack/Scroll" unique_id=1000000074]
-layout_mode = 2
 theme_type_variation = &"CompactRow"
 
 [node name="Prompt" type="PanelContainer" parent="Margin/Shell/Content/Play" unique_id=1000000075]
-custom_minimum_size = Vector2(330, 0)
+custom_minimum_size = Vector2(0, 260)
 layout_mode = 2
 theme_type_variation = &"SurfacePanel"
 
 [node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Prompt" unique_id=1000000076]
 layout_mode = 2
-theme_override_constants/margin_left = 0
-theme_override_constants/margin_top = 0
-theme_override_constants/margin_right = 0
-theme_override_constants/margin_bottom = 0
 
 [node name="Stack" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin" unique_id=1000000077]
 layout_mode = 2
@@ -479,10 +445,6 @@ theme_type_variation = &"StatusPanel"
 
 [node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/InvitationOffer" unique_id=1000000079]
 layout_mode = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 8
 
 [node name="Row" type="HBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/InvitationOffer/Margin" unique_id=1000000080]
 layout_mode = 2
@@ -501,9 +463,9 @@ layout_mode = 2
 theme_type_variation = &"PrimaryButton"
 text = "Copy invitation"
 
-[node name="PromptHeader" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack" unique_id=1000000083]
+[node name="PromptHeader" type="HFlowContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack" unique_id=1000000083]
 layout_mode = 2
-theme_type_variation = &"TightStack"
+theme_type_variation = &"CompactRow"
 
 [node name="Eyebrow" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader" unique_id=1000000084]
 layout_mode = 2
@@ -511,12 +473,14 @@ theme_type_variation = &"Eyebrow"
 text = "CURRENT DECISION"
 
 [node name="Heading" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader" unique_id=1000000085]
+custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 theme_type_variation = &"Heading"
 text = "Waiting for the engine…"
 autowrap_mode = 2
 
 [node name="Context" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader" unique_id=1000000086]
+custom_minimum_size = Vector2(220, 0)
 layout_mode = 2
 theme_type_variation = &"Caption"
 text = "PLAYER · QUESTION · TIMING"
@@ -529,6 +493,7 @@ text = "DECISION REQUIRED"
 autowrap_mode = 2
 
 [node name="Progress" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader" unique_id=1000000088]
+custom_minimum_size = Vector2(420, 0)
 layout_mode = 2
 theme_type_variation = &"StatusText"
 text = "CHOOSE AN ACTION"
@@ -541,10 +506,6 @@ theme_type_variation = &"StatusPanel"
 
 [node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/ActiveResolution"]
 layout_mode = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 8
 
 [node name="Copy" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/ActiveResolution/Margin"]
 layout_mode = 2
@@ -580,10 +541,6 @@ theme_type_variation = &"StatusPanel"
 
 [node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/Action/LastResult"]
 layout_mode = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 8
 
 [node name="Copy" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/Action/LastResult/Margin"]
 layout_mode = 2
@@ -617,7 +574,7 @@ theme_type_variation = &"Body"
 autowrap_mode = 2
 
 [node name="Decision" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/Action" unique_id=1000000093]
-custom_minimum_size = Vector2(0, 180)
+custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -677,10 +634,6 @@ theme_type_variation = &"StatusPanel"
 
 [node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History/EventCue" unique_id=1000000100]
 layout_mode = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 8
 
 [node name="Copy" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History/EventCue/Margin" unique_id=1000000101]
 layout_mode = 2
@@ -739,7 +692,14 @@ grow_vertical = 2
 mouse_filter = 0
 color = Color(0.015, 0.035, 0.045, 0.72)
 
+[node name="Connector" type="Line2D" parent="CardInspector"]
+visible = false
+z_index = 1
+width = 3.0
+default_color = Color(0.949, 0.757, 0.306, 1)
+
 [node name="Frame" type="PanelContainer" parent="CardInspector"]
+z_index = 2
 layout_mode = 0
 mouse_filter = 0
 focus_mode = 0

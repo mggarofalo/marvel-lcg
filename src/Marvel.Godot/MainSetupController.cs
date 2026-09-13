@@ -373,8 +373,8 @@ internal sealed class MainSetupController
                 ? $"CORE SET  /  EMBEDDED TABLE  /  SEED {main.seed.Text}"
                 : $"CORE SET  /  HOSTED TABLE  /  SEED {main.seed.Text}";
             main.title.ThemeTypeVariation = GodotThemeVariations.BriefingTitle;
+            MainPlayChrome.Enter(main);
             main.ApplyResponsivePlayLayout();
-            main.description.Visible = true;
             main.pageScroll.ScrollVertical = 0;
             main.pageScroll.SetDeferred("scroll_vertical", 0);
         }
@@ -440,8 +440,8 @@ internal sealed class MainSetupController
             main.board.Visible = true;
             main.eyebrow.Text = "CORE SET  /  JOINED TABLE";
             main.title.ThemeTypeVariation = GodotThemeVariations.BriefingTitle;
+            MainPlayChrome.Enter(main);
             main.ApplyResponsivePlayLayout();
-            main.description.Visible = true;
             main.pageScroll.ScrollVertical = 0;
             main.pageScroll.SetDeferred("scroll_vertical", 0);
         }

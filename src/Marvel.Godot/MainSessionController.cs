@@ -12,10 +12,9 @@ internal sealed class MainSessionController
 {
     private readonly Main main;
 
-    internal MainSessionController(Main main)
-    {
+    internal MainSessionController(Main main) =>
         this.main = main;
-    }
+
     internal async void OnDecisionSubmitted(EngineDecision decision)
     {
         if (main.decisionPending || main.resolveInFlight)
@@ -385,6 +384,7 @@ internal sealed class MainSessionController
         main.boardAreas.GetChildren().ToList().ForEach(node => node.QueueFree());
         main.board.Visible = false;
         main.setupPanel.Visible = true;
+        MainPlayChrome.Leave(main);
         main.decisionPending = false;
         main.resolveInFlight = false;
         main.uncertainMutationError = null;

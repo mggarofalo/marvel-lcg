@@ -7,10 +7,26 @@ namespace Marvel.Godot;
 public sealed class BoardRenderResult
 {
     private readonly Dictionary<int, List<CardControl>> controls = [];
+    private readonly Dictionary<int, Control> seats = [];
     private readonly Dictionary<Control, Action> areaExpanders = [];
 
     /// <summary>Raised with the card under the pointer, or null when it leaves.</summary>
     public event Action<BoardCardPresentation, Control>? CardActivated;
+
+    /// <summary>Raised when the player explicitly chooses a workspace to view.</summary>
+    public event Action<int, Control>? ViewedSeatRequested;
+
+    /// <summary>Raised for a source-local action supplied by the current prompt.</summary>
+    public event Action<int>? AffordanceRequested;
+
+    /// <summary>Raised for an ordinary source-local target supplied by the current prompt.</summary>
+    public event Action<int>? TargetRequested;
+
+    /// <summary>Raised after presentation-only paging changes.</summary>
+    public event Action<string>? RefreshRequested;
+
+    /// <summary>The seat chosen for this render pass after applying safe defaults.</summary>
+    public int? ViewedSeat { get; internal set; }
 
     internal void Register(int id, CardControl control)
     {
@@ -45,11 +61,25 @@ public sealed class BoardRenderResult
         };
     }
 
+    internal void RequestViewedSeat(int seat, Control source) =>
+        ViewedSeatRequested?.Invoke(seat, source);
+
+    internal void RegisterSeat(int seat, Control control) => seats[seat] = control;
+
+    internal void RequestAffordance(int id) => AffordanceRequested?.Invoke(id);
+
+    internal void RequestTarget(int id) => TargetRequested?.Invoke(id);
+
+    internal void RequestRefresh(string focusName) => RefreshRequested?.Invoke(focusName);
+
     /// <summary>Returns the visible control for an engine-provided card id.</summary>
     public Control? ControlFor(int id) =>
         controls.TryGetValue(id, out List<CardControl>? matches)
             ? matches.LastOrDefault()
             : null;
+
+    /// <summary>Returns the stable switcher control for one visible seat.</summary>
+    public Control? SeatControlFor(int seat) => seats.GetValueOrDefault(seat);
 
     /// <summary>Highlights every visible control matching server-provided ids.</summary>
     public void Highlight(IEnumerable<int> ids)
@@ -99,13 +129,6 @@ public sealed class BoardRenderResult
             if (ancestor is ScrollContainer scroll)
             {
                 RevealInScroll(scroll, control);
-                // The board owns card navigation. Continuing into the outer
-                // page would hide the table heading whenever prompt focus
-                // highlights a card below the fold.
-                if (scroll.Name == "TableScroll")
-                {
-                    break;
-                }
             }
 
             ancestor = ancestor.GetParent();
@@ -122,79 +145,8 @@ public sealed class BoardRenderResult
 
     private static void RevealInScroll(ScrollContainer scroll, Control control)
     {
-        bool table = scroll.Name == "TableScroll";
-        Control target = table
-            ? control.GetNodeOrNull<Control>("CardFace/Title") ?? control
-            : AreaContaining(scroll, control) ?? control;
-        if (!table)
-        {
-            scroll.CallDeferred(ScrollContainer.MethodName.EnsureControlVisible, target);
-            return;
-        }
-        Callable.From(() =>
-        {
-            scroll.EnsureControlVisible(target);
-            Callable.From(() => AlignBoardToCardFrame(scroll, target, 3)).CallDeferred();
-        }).CallDeferred();
-    }
-
-    private static void AlignBoardToCardFrame(
-        ScrollContainer board,
-        Control title,
-        int remainingPasses)
-    {
-        const int topInset = 12;
-        Rect2 viewport = board.GetGlobalRect();
-        Control card = CardContaining(board, title) ?? title;
-        Control? area = AreaContaining(board, card);
-        Control? disclosure = area is null ? null : DisclosureIn(area);
-        Rect2 cardRect = card.GetGlobalRect();
-        float contentTop = disclosure?.GetGlobalRect().Position.Y ?? cardRect.Position.Y;
-        float alignTop = contentTop - (viewport.Position.Y + topInset);
-        float revealBottom = cardRect.End.Y - (viewport.End.Y - topInset);
-        float delta = revealBottom <= alignTop ? alignTop : revealBottom;
-        VScrollBar bar = board.GetVScrollBar();
-        int maximum = Math.Max(0, Mathf.CeilToInt((float)(bar.MaxValue - bar.Page)));
-        board.ScrollVertical = Math.Clamp(
-            board.ScrollVertical + Mathf.RoundToInt(delta),
-            0,
-            maximum);
-        if (remainingPasses > 0)
-        {
-            Callable.From(() => AlignBoardToCardFrame(board, title, remainingPasses - 1))
-                .CallDeferred();
-        }
-    }
-
-    private static CardControl? CardContaining(ScrollContainer scroll, Control control)
-    {
-        Node? candidate = control;
-        while (candidate is not null && candidate != scroll)
-        {
-            if (candidate is CardControl card)
-            {
-                return card;
-            }
-            candidate = candidate.GetParent();
-        }
-        return null;
-    }
-
-    private static Button? DisclosureIn(Control area)
-    {
-        foreach (Node child in area.GetChildren())
-        {
-            foreach (Node candidate in child.GetChildren())
-            {
-                if (candidate is Button button
-                    && button.Name.ToString().StartsWith("Area", StringComparison.Ordinal)
-                    && button.Name.ToString().EndsWith("Disclosure", StringComparison.Ordinal))
-                {
-                    return button;
-                }
-            }
-        }
-        return null;
+        scroll.CallDeferred(ScrollContainer.MethodName.EnsureControlVisible,
+            AreaContaining(scroll, control) ?? control);
     }
 
     private static Control? AreaContaining(ScrollContainer scroll, Control control)

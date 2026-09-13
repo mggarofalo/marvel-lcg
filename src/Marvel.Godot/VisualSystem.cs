@@ -41,6 +41,13 @@ public static class VisualSystem
     /// <summary>Every scale the client promises to render and test.</summary>
     public static IReadOnlyList<InterfaceScale> SupportedScales => Scales;
 
+    /// <summary>
+    /// Keeps the glanceable tabletop dense while the full inspector and decision
+    /// composer continue to honor larger accessibility scales.
+    /// </summary>
+    public static InterfaceScale TabletopScale(InterfaceScale scale) =>
+        scale > InterfaceScale.Standard ? InterfaceScale.Standard : scale;
+
     /// <summary>The user-facing percentage for a discrete interface scale.</summary>
     public static double ScalePercent(InterfaceScale scale)
     {
@@ -79,6 +86,13 @@ public static class VisualSystem
             Math.Clamp(desiredX, margin, maximumX),
             Math.Clamp(desiredY, margin, maximumY));
     }
+
+    /// <summary>
+    /// Attaches a full-card inspector to a visible source whenever the complete
+    /// inspector fits; otherwise returns a centered, deliberately unanchored fallback.
+    /// </summary>
+    public static InspectorPlacement PlaceAnchoredInspector(InspectorPlacementRequest request) =>
+        InspectorPositioning.Place(request);
 
     /// <summary>Returns the semantic treatment for one interactive state.</summary>
     public static InteractiveStyle For(InteractiveVisualState state) => state switch
@@ -172,13 +186,42 @@ public static class VisualSystem
         Scale(32, scale));
 
     public static ControlMetrics Controls(InterfaceScale scale) => new(
-        MinimumHeight: Scale(44, scale),
-        MinimumPointerTarget: Scale(44, scale),
+        MinimumHeight: Math.Max(44, Scale(44, scale)),
+        MinimumPointerTarget: Math.Max(44, Scale(44, scale)),
         MinimumButtonWidth: Scale(96, scale),
         FocusRingWidth: Scale(3, scale),
         CornerRadius: Scale(8, scale));
 
-    /// <summary>Keeps the active decision dominant while preserving a usable table.</summary>
+    /// <summary>
+    /// Returns the compact content-inset rhythm for one supported scale.
+    ///
+    /// This is presentation policy: frames own their inset once and nested
+    /// content uses container separation rather than another fixed margin.
+    /// </summary>
+    public static DensityMetrics Density(InterfaceScale scale) => new(
+        ViewportInset: Scale(16, scale),
+        ShellHorizontal: Scale(14, scale),
+        ShellVertical: Scale(12, scale),
+        SurfaceHorizontal: Scale(10, scale),
+        SurfaceVertical: Scale(8, scale),
+        StatusHorizontal: Scale(9, scale),
+        StatusVertical: Scale(6, scale),
+        BoardHorizontal: Scale(10, scale),
+        BoardVertical: Scale(8, scale),
+        CompactCardHorizontal: Scale(7, scale),
+        CompactCardVertical: Scale(5, scale),
+        FullCardHorizontal: Scale(12, scale),
+        FullCardVertical: Scale(10, scale),
+        InputHorizontal: Scale(10, scale),
+        InputVertical: Scale(6, scale),
+        ButtonHorizontal: Scale(10, scale),
+        ButtonVertical: Scale(7, scale),
+        PrimaryButtonHorizontal: Scale(12, scale),
+        PrimaryButtonVertical: Scale(8, scale),
+        ArtWellInset: Scale(6, scale),
+        BoardAreaAllowance: Scale(16, scale));
+
+    /// <summary>Budgets the fixed tabletop and bottom decision dock at desktop size.</summary>
     public static DesktopPlayMetrics DesktopPlay(
         int viewportWidth,
         int viewportHeight,
@@ -187,20 +230,10 @@ public static class VisualSystem
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(viewportWidth);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(viewportHeight);
 
-        int decisionWidth = viewportWidth switch
-        {
-            >= 1800 => Math.Clamp((int)Math.Ceiling(viewportWidth * 0.37), 680, 720),
-            >= 1500 => 600,
-            >= 1200 => Math.Clamp((int)Math.Ceiling(viewportWidth * 0.36), 450, 500),
-            _ => Math.Clamp((int)Math.Ceiling(viewportWidth * 0.39), 390, 440),
-        };
         CardLayoutMetrics card = Card(CardDisplaySize.Board, scale);
         return new DesktopPlayMetrics(
-            decisionWidth,
-            DecisionMinimumHeight: viewportHeight < 800
-                ? Math.Max(270, Scale(220, scale))
-                : Math.Max(300, Scale(320, scale)),
-            BoardAreaWidth: checked(card.Width + 32));
+            DecisionDockHeight: Math.Clamp(Scale(220, scale), 220, 330),
+            BoardAreaWidth: checked(card.Width + Density(scale).BoardAreaAllowance));
     }
 
     /// <summary>Returns card geometry without shrinking type to fit content.</summary>

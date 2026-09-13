@@ -27,10 +27,10 @@ public sealed class CardControlTests
             [("Energy", "E")],
             CardRulesMarkup.ResourceTokens(Assert.Single(
                 values, value => value.Name == "RES").Value));
-        Assert.True(CardControl.CompactHeight(
+        Assert.Equal(72, CardControl.CompactHeight(
             card,
             VisualSystem.Card(CardDisplaySize.Hand, InterfaceScale.Standard),
-            CardDisplaySize.Hand) >= 108);
+            CardDisplaySize.Hand));
         Assert.Null(CardControl.CompactState(card, CardDisplaySize.Hand));
     }
 
@@ -213,7 +213,7 @@ public sealed class CardControlTests
     }
 
     [Fact]
-    public void HandHeightGrowsForAWrappedUntruncatedTitle()
+    public void HandHeightStaysBoundedForTitlesDisclosedByInspection()
     {
         CardLayoutMetrics layout = VisualSystem.Card(
             CardDisplaySize.Hand, InterfaceScale.Standard);
@@ -223,9 +223,9 @@ public sealed class CardControlTests
             Title = "A Very Long Opening Hand Card Title That Must Wrap",
         };
 
-        Assert.True(
-            CardControl.CompactHeight(longTitle, layout, CardDisplaySize.Hand)
-            > CardControl.CompactHeight(shortTitle, layout, CardDisplaySize.Hand));
+        Assert.Equal(
+            CardControl.CompactHeight(shortTitle, layout, CardDisplaySize.Hand),
+            CardControl.CompactHeight(longTitle, layout, CardDisplaySize.Hand));
     }
 
     [Fact]

@@ -30,7 +30,7 @@ internal sealed class DecisionPaymentRenderer
     {
         if (selected.CostOptions.Count == 0)
         {
-            panel.AddContent(DecisionPanel.Text("PAYMENT  ·  FREE  ·  READY", GodotThemeVariations.StatusText));
+            // The dock progress line already identifies a free action.
             return;
         }
 
