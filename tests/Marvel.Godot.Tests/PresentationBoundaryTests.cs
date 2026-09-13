@@ -70,8 +70,6 @@ public sealed class PresentationBoundaryTests
             "Marvel.View.BoardCardPresentation",
             "Marvel.View.BoardFieldPresentation",
             "Marvel.View.BoardLanePresentation",
-            "Marvel.View.BoardLayout",
-            "Marvel.View.BoardPlayerPresentation",
             "Marvel.View.BoardPresentation",
             "Marvel.View.BoardStageRole",
             "Marvel.View.EventBatchPresentation",
@@ -79,6 +77,7 @@ public sealed class PresentationBoundaryTests
             "Marvel.View.EventCuePlanner",
             "Marvel.View.EventMotionKind",
             "Marvel.View.EventPresentation",
+            "Marvel.View.PlayerDescriptor",
             "Marvel.View.PromptPresentation",
             "Marvel.View.WorldDescriptor");
     }

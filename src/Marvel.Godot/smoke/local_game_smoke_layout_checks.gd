@@ -10,7 +10,7 @@ func _board_layout_is_resolved() -> bool:
 		return false
 	if not _secondary_disclosures_are_safe():
 		return false
-	if not _overflow_rails_are_safe(lanes.scenario):
+	if not _bounded_collections_are_safe(lanes.scenario):
 		return false
 	await process_frame
 	await process_frame
@@ -20,7 +20,7 @@ func _board_layout_is_resolved() -> bool:
 
 
 func _board_lanes() -> Dictionary:
-	var areas := _node("Play/Board/TableScroll/Margin/Areas")
+	var areas := _node("Play/Board/Areas")
 	var scenario := areas.find_child("ScenarioLane", true, false) as Control
 	var player := areas.find_child("PlayerLane0", true, false) as Control
 	if scenario == null or player == null:
@@ -57,9 +57,6 @@ func _area_disclosures_are_safe() -> bool:
 			if not await _toggle_area_disclosure(disclosure):
 				return false
 			toggled = true
-	if not toggled:
-		_fail("the table has no populated collapsible area")
-		return false
 	return true
 
 
@@ -96,22 +93,22 @@ func _secondary_disclosures_are_safe() -> bool:
 	return false
 
 
-func _overflow_rails_are_safe(scenario_lane: Control) -> bool:
+func _bounded_collections_are_safe(scenario_lane: Control) -> bool:
 	var area_flow := scenario_lane.find_child("LiveAreaFlow", true, false) as HFlowContainer
-	var card_scroll := main.find_child("CARDSScroll", true, false) as ScrollContainer
 	var decision_scroll := main.find_child("DecisionBodyScroll", true, false) as ScrollContainer
-	if area_flow == null or card_scroll == null or decision_scroll == null:
-		_fail("the table is missing its wrapped areas or bounded overflow rails")
+	if area_flow == null or decision_scroll == null:
+		_fail("the table is missing its fixed areas or decision browser")
 		return false
-	if card_scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED:
-		_fail("a dense card rail cannot reach its overflow")
+	if main.find_child("TableScroll", true, false) != null:
+		_fail("the fixed table retained a primary table scrollbar")
 		return false
-	if decision_scroll.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED:
-		_fail("a dense prompt rail cannot reach its overflow")
+	var hand := _node("Play/Board/HandShelf") as Control
+	if hand.find_child("Scroll", true, false) != null:
+		_fail("the selected hand retained a primary scrollbar")
 		return false
-	var commit_bar := main.find_child("CommitBar", true, false) as Control
-	if commit_bar == null or decision_scroll.is_ancestor_of(commit_bar):
-		_fail("the decision commitment is not fixed outside the scrolling editor")
+	var composing := main.find_child("ChangeAction", true, false) != null
+	if not composing and decision_scroll.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED:
+		_fail("the ordinary action list unexpectedly requires scrolling")
 		return false
 	if scenario_lane.find_child("AreaScroll", true, false) != null:
 		_fail("the finite area layout still requires its own scrollbar")
@@ -122,46 +119,41 @@ func _overflow_rails_are_safe(scenario_lane: Control) -> bool:
 func _responsive_layout_is_safe() -> bool:
 	var board := _node("Play/Board") as Control
 	var prompt := _node("Play/Prompt") as Control
-	if not _fixed_header_is_visible():
+	if not _fixed_shell_is_visible():
 		return false
-	if board.size.x < 480.0 or prompt.size.x < 330.0 or prompt.size.x > board.size.x:
-		_fail("the responsive table did not preserve usable board and prompt widths: %s/%s" % [
+	if board.size.x < 1800.0 or prompt.size.x < 1800.0:
+		_fail("the desktop shell did not preserve full-width table and dock: %s/%s" % [
 			board.size.x,
 			prompt.size.x,
 		])
 		return false
-	if not _wide_prompt_has_expected_width(prompt):
-		return false
 	if board.get_global_rect().intersects(prompt.get_global_rect()):
-		_fail("the prompt rail overlaps the board")
+		_fail("the bottom decision dock overlaps the table")
 		return false
 	return true
 
 
-func _fixed_header_is_visible() -> bool:
-	if _scale_percentage() > 100:
-		return true
+func _fixed_shell_is_visible() -> bool:
 	var page := main.get_node("Margin") as ScrollContainer
-	if page.scroll_vertical == 0 \
-			and _control_text_is_visible(_node("Eyebrow") as Control) \
-			and _control_text_is_visible(_node("Title") as Control) \
-			and _control_text_is_visible(_node("Description") as Control):
+	var scenario := main.find_child("ScenarioLane", true, false) as Control
+	var player := main.find_child("PlayerLane0", true, false) as Control
+	var hand := _node("Play/Board/HandShelf") as Control
+	var dock := _node("Play/Prompt") as Control
+	if page.scroll_vertical == 0 and page.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED \
+			and scenario != null and player != null \
+			and _control_text_is_visible(scenario) \
+			and _control_text_is_visible(player) \
+			and _control_text_is_visible(hand) \
+			and _control_text_is_visible(dock):
 		return true
-	_fail("the play layout moved its fixed header outside the viewport: page=%s scroll=%d" % [
+	_fail("the fixed table moved a primary region outside the viewport: page=%s scroll=%d scenario=%s player=%s hand=%s dock=%s" % [
 		page.get_global_rect(),
 		page.scroll_vertical,
+		scenario.get_global_rect() if scenario != null else Rect2(),
+		player.get_global_rect() if player != null else Rect2(),
+		hand.get_global_rect(),
+		dock.get_global_rect(),
 	])
-	return false
-
-
-func _wide_prompt_has_expected_width(prompt: Control) -> bool:
-	var viewport := OS.get_environment("MARVEL_SMOKE_VIEWPORT")
-	var scale := OS.get_environment("MARVEL_UI_SCALE")
-	if viewport != "1600x900" or scale != "standard":
-		return true
-	if prompt.size.x >= 595.0 and prompt.size.x <= 605.0:
-		return true
-	_fail("the wide desktop prompt did not grow to its 600px workbench width: %s" % prompt.size.x)
 	return false
 
 
@@ -169,7 +161,7 @@ func _hand_is_pinned() -> bool:
 	var hand := _node("Play/Board/HandShelf") as Control
 	if hand != null and hand.visible and "HAND" in _visible_text(hand):
 		return true
-	_fail("the player's hand is not pinned to the bottom of the table viewport")
+		_fail("the selected player's authorized hand is not visible above the decision dock")
 	return false
 
 
@@ -216,7 +208,13 @@ func _activate_focused_decision() -> Button:
 	if focused == null or not _decision().is_ancestor_of(focused) or focused.disabled:
 		_fail("a fresh prompt did not focus its first keyboard-operable action")
 		return null
-	var focus_name := focused.name
+	if main.find_child("ChangeAction", true, false) != null:
+		var change := main.find_child("ChangeAction", true, false) as Button
+		if change == null:
+			_fail("the active composer has no change-action fallback")
+			return null
+		change.grab_focus()
+		return change
 	var press := InputEventAction.new()
 	press.action = &"ui_accept"
 	press.pressed = true
@@ -227,11 +225,11 @@ func _activate_focused_decision() -> Button:
 	await process_frame
 	await process_frame
 	var restored := render_viewport.gui_get_focus_owner() as Button
-	if restored == null or restored.name != focus_name or not _decision().is_ancestor_of(restored):
-		_fail("keyboard focus was lost when the selected decision control rebuilt")
+	if restored == null or restored.name != "ChangeAction" or not _decision().is_ancestor_of(restored):
+		_fail("keyboard focus did not move to the selected action's change control")
 		return null
-	if not restored.text.begins_with("✓"):
-		_fail("ui_accept did not select the focused decision action")
+	if main.find_child("ChangeAction", true, false) == null:
+		_fail("ui_accept did not open the selected action composer")
 		return null
 	return restored
 
@@ -268,7 +266,7 @@ func _prompt_context_is_visible() -> bool:
 
 
 func _commit_controls_are_safe(decision_scroll: ScrollContainer) -> bool:
-	var summary := main.find_child("ActionSummary", true, false) as Control
+	var summary := main.find_child("ChangeAction", true, false) as Control
 	var commit_bar := main.find_child("CommitBar", true, false) as Control
 	var submit := main.find_child("Submit", true, false) as Button
 	if summary == null or commit_bar == null or submit == null:

@@ -18,11 +18,13 @@ public sealed partial class Main : Control
     internal readonly List<ScenarioSetupChoice> visibleModes = [];
     internal readonly ICardArtProvider art = LocalArtPack.OpenConfigured();
     internal readonly Dictionary<int, bool> expandedAreas = [];
+    internal readonly BoardPageState boardPages = new();
+    internal int? viewedSeat;
     internal Control board = null!;
     internal VBoxContainer boardAreas = null!;
     internal Label buildIdentity = null!;
     internal BoardPresentation? boardPresentation;
-    internal HSplitContainer playLayout = null!;
+    internal VBoxContainer playLayout = null!;
     internal BoardRenderResult? boardRender;
     internal Control cardInspector = null!;
     internal ColorRect cardInspectorBackdrop = null!;
@@ -107,7 +109,7 @@ public sealed partial class Main : Control
     internal PanelContainer statusPanel = null!;
     internal Button synchronize = null!;
     internal Label syncStatus = null!;
-    internal HBoxContainer handRail = null!;
+    internal HFlowContainer handRail = null!;
     internal Label handHeading = null!;
     internal PanelContainer lastResult = null!;
     internal Button lastResultDismiss = null!;
@@ -124,10 +126,8 @@ public sealed partial class Main : Control
     internal bool setupLoading;
     internal bool synchronizing;
     internal ClientStartupError? uncertainMutationError;
-
     /// <summary>The latest complete visibility-safe response accepted as authoritative.</summary>
     public EngineResponse? CurrentGame { get; internal set; }
-
     /// <inheritdoc />
     public override void _Ready()
     {
@@ -140,7 +140,7 @@ public sealed partial class Main : Control
         GetNode<ColorRect>(
             "Margin/Shell/Content/Setup/Briefing/Frame/EncounterRail").Color =
             ClientTheme.ToGodot(VisualSystem.Palette.Danger);
-        GetWindow().MinSize = new Vector2I(1040, 680);
+        GetWindow().MinSize = new Vector2I(1920, 1080);
         layoutController = new MainLayoutController(this);
         setupController = new MainSetupController(this);
         sessionController = new MainSessionController(this);
@@ -202,7 +202,7 @@ public sealed partial class Main : Control
         title = GetNode<Label>($"{content}/Title");
         setupPanel = GetNode<Control>($"{content}/Setup");
         board = GetNode<Control>($"{content}/Play");
-        playLayout = GetNode<HSplitContainer>($"{content}/Play");
+        playLayout = GetNode<VBoxContainer>($"{content}/Play");
         promptPanel = GetNode<PanelContainer>($"{content}/Play/Prompt");
         promptStack = GetNode<VBoxContainer>($"{content}/Play/Prompt/Margin/Stack");
         promptEyebrow = GetNode<Label>(
@@ -221,10 +221,10 @@ public sealed partial class Main : Control
             $"{content}/Play/Prompt/Margin/Stack/ActiveResolution/Margin/Copy/Summary");
         promptDiagnostic = GetNode<Label>(
             $"{content}/Play/Prompt/Margin/Stack/Workbench/History/PromptDiagnostic");
-        boardAreas = GetNode<VBoxContainer>($"{content}/Play/Board/TableScroll/Margin/Areas");
+        boardAreas = GetNode<VBoxContainer>($"{content}/Play/Board/Areas");
         handHeading = GetNode<Label>($"{content}/Play/Board/HandShelf/Margin/Stack/Heading");
-        handRail = GetNode<HBoxContainer>(
-            $"{content}/Play/Board/HandShelf/Margin/Stack/Scroll/Rail");
+        handRail = GetNode<HFlowContainer>(
+            $"{content}/Play/Board/HandShelf/Margin/Stack/Rail");
         decisions = GetNode<DecisionPanel>(
             $"{content}/Play/Prompt/Margin/Stack/Workbench/Action/Decision");
         lastResult = GetNode<PanelContainer>(

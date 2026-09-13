@@ -11,10 +11,9 @@ internal sealed class MainBoardController
 {
     private readonly Main main;
 
-    internal MainBoardController(Main main)
-    {
+    internal MainBoardController(Main main) =>
         this.main = main;
-    }
+
     internal void RenderGame(
         EngineResponse response,
         bool resetEvents = false,
@@ -36,12 +35,12 @@ internal sealed class MainBoardController
 
     private void RenderCurrentResponse(EngineResponse response, WorldDescriptor world)
     {
-        RenderBoard(world);
         main.syncStatus.Visible = true;
         main.syncStatus.Text = $"✓ Synced · r{response.Revision}";
         main.synchronize.Visible = true;
         main.RenderPromptSummary(response.Prompt, world);
         main.decisions.Render(response.Prompt, world);
+        RenderBoard(world);
     }
 
     private IReadOnlyList<EventPresentation> UpdateEvents(
@@ -142,15 +141,16 @@ internal sealed class MainBoardController
     internal void RenderBoard(WorldDescriptor world)
     {
         main.boardPresentation = BoardPresentation.From(world);
+        if (main.viewedSeat is not null
+            && !world.Players.Any(player => player.Seat == main.viewedSeat))
+        {
+            main.viewedSeat = null;
+        }
         main.boardRender = BoardRenderer.Render(
-            main.boardAreas,
-            main.boardPresentation,
-            main.handRail,
-            main.handHeading,
-            main.interfaceScale,
-            main.expandedAreas,
-            main.art);
+            BoardRenderRequestFactory.Create(main, main.boardPresentation));
+        main.viewedSeat = main.boardRender.ViewedSeat;
         main.boardRender.CardActivated += (card, control) => ToggleCardInspector(card, control);
+        BoardWorkspaceBindings.Bind(main, main.boardRender, world, RenderBoard);
         HideCardInspector();
     }
 

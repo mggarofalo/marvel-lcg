@@ -15,10 +15,8 @@ internal sealed class MainEventController
 {
     private readonly Main main;
 
-    internal MainEventController(Main main)
-    {
-        this.main = main;
-    }
+    internal MainEventController(Main main) => this.main = main;
+
     internal void RevealOutcome()
     {
         main.pageScroll.ScrollVertical = 0;
@@ -27,6 +25,7 @@ internal sealed class MainEventController
 
     internal void RenderPromptSummary(Prompt? prompt, WorldDescriptor world)
     {
+        main.promptContext.ThemeTypeVariation = GodotThemeVariations.Caption;
         if (prompt is null)
         {
             main.activeResolution.Visible = false;
@@ -337,6 +336,7 @@ internal sealed class MainEventController
         main.status.ThemeTypeVariation = danger
             ? GodotThemeVariations.DangerText
             : GodotThemeVariations.StatusText;
+        MainPlayChrome.ApplyProgress(main, progress, danger);
         main.decisions.SetSubmitting(progress.LocksDecisions);
     }
 

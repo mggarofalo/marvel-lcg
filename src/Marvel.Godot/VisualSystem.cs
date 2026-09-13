@@ -41,6 +41,13 @@ public static class VisualSystem
     /// <summary>Every scale the client promises to render and test.</summary>
     public static IReadOnlyList<InterfaceScale> SupportedScales => Scales;
 
+    /// <summary>
+    /// Keeps the glanceable tabletop dense while the full inspector and decision
+    /// composer continue to honor larger accessibility scales.
+    /// </summary>
+    public static InterfaceScale TabletopScale(InterfaceScale scale) =>
+        scale > InterfaceScale.Standard ? InterfaceScale.Standard : scale;
+
     /// <summary>The user-facing percentage for a discrete interface scale.</summary>
     public static double ScalePercent(InterfaceScale scale)
     {
@@ -172,8 +179,8 @@ public static class VisualSystem
         Scale(32, scale));
 
     public static ControlMetrics Controls(InterfaceScale scale) => new(
-        MinimumHeight: Scale(44, scale),
-        MinimumPointerTarget: Scale(44, scale),
+        MinimumHeight: Math.Max(44, Scale(44, scale)),
+        MinimumPointerTarget: Math.Max(44, Scale(44, scale)),
         MinimumButtonWidth: Scale(96, scale),
         FocusRingWidth: Scale(3, scale),
         CornerRadius: Scale(8, scale));
@@ -207,7 +214,7 @@ public static class VisualSystem
         ArtWellInset: Scale(6, scale),
         BoardAreaAllowance: Scale(16, scale));
 
-    /// <summary>Keeps the active decision dominant while preserving a usable table.</summary>
+    /// <summary>Budgets the fixed tabletop and bottom decision dock at desktop size.</summary>
     public static DesktopPlayMetrics DesktopPlay(
         int viewportWidth,
         int viewportHeight,
@@ -216,19 +223,9 @@ public static class VisualSystem
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(viewportWidth);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(viewportHeight);
 
-        int decisionWidth = viewportWidth switch
-        {
-            >= 1800 => Math.Clamp((int)Math.Ceiling(viewportWidth * 0.37), 680, 720),
-            >= 1500 => 600,
-            >= 1200 => Math.Clamp((int)Math.Ceiling(viewportWidth * 0.36), 450, 500),
-            _ => Math.Clamp((int)Math.Ceiling(viewportWidth * 0.39), 390, 440),
-        };
         CardLayoutMetrics card = Card(CardDisplaySize.Board, scale);
         return new DesktopPlayMetrics(
-            decisionWidth,
-            DecisionMinimumHeight: viewportHeight < 800
-                ? Math.Max(270, Scale(220, scale))
-                : Math.Max(300, Scale(320, scale)),
+            DecisionDockHeight: Math.Clamp(Scale(220, scale), 220, 330),
             BoardAreaWidth: checked(card.Width + Density(scale).BoardAreaAllowance));
     }
 

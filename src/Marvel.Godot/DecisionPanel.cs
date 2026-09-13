@@ -10,10 +10,16 @@ namespace Marvel.Godot;
 /// <summary>Renders one current prompt and composes its typed decision.</summary>
 public sealed partial class DecisionPanel : VBoxContainer
 {
+    // Ordinary prompts stay wholly visible in the fixed dock. Complex shapes
+    // continue through the complete composer. Board-local controls call into that same draft;
+    // they never duplicate legality or create a second selection state. These
+    // boundaries keep the dock compact without hiding an engine prompt shape.
+    // Prompt replacement alone discards the draft; presentation rerenders do not.
+
     private InterfaceScale interfaceScale = ClientTheme.ConfiguredScale();
     internal ControlMetrics ControlMetrics => VisualSystem.Controls(interfaceScale);
     private DecisionComposer? composer;
-    private VBoxContainer? content;
+    private Container? content;
     private VBoxContainer? commit;
     private bool submitting;
     private WorldDescriptor? world;
@@ -32,6 +38,12 @@ public sealed partial class DecisionPanel : VBoxContainer
 
     /// <summary>Raised when a player opens one action's target and payment editor.</summary>
     public event Action? DraftStarted;
+
+    /// <summary>The prompt-supplied action currently being composed.</summary>
+    public int? SelectedAffordanceId => composer?.Selected?.Id;
+
+    /// <summary>The prompt-supplied target order currently being composed.</summary>
+    public IReadOnlyList<int> SelectedTargets => composer?.Targets ?? [];
 
     /// <summary>Applies the current presentation-only desktop scale.</summary>
     public void SetInterfaceScale(InterfaceScale scale)
@@ -61,7 +73,7 @@ public sealed partial class DecisionPanel : VBoxContainer
     public void SetSubmitting(bool value)
     {
         submitting = value;
-        Rebuild();
+        Rebuild(focusFirst: true);
     }
 
 
@@ -122,6 +134,11 @@ public sealed partial class DecisionPanel : VBoxContainer
 
     private void AddAffordances(PromptPresentation prompt)
     {
+        if (composer!.Selected is not null)
+        {
+            return;
+        }
+
         var basicCharacters = new HashSet<int>();
         foreach (AffordancePresentation view in prompt.Affordances)
         {
@@ -137,6 +154,16 @@ public sealed partial class DecisionPanel : VBoxContainer
         }
     }
 
+    private void ChangeAction()
+    {
+        if (composer is null || submitting)
+        {
+            return;
+        }
+        composer = new DecisionComposer(composer.Prompt);
+        Rebuild(focusFirst: true);
+    }
+
     private void AddAffordance(AffordancePresentation view)
     {
         Affordance option = composer!.Prompt.Affordances.Single(candidate => candidate.Id == view.Id);
@@ -147,14 +174,16 @@ public sealed partial class DecisionPanel : VBoxContainer
         var choose = new Button
         {
             Name = $"Affordance{option.Id}",
-            Text = AffordanceText(action, unavailable, selected, resolving),
+            Text = DecisionAffordanceStyle.Text(action, unavailable, selected, resolving),
             Alignment = HorizontalAlignment.Left,
             Disabled = unavailable,
             ToggleMode = true,
             ButtonPressed = selected,
             TooltipText = option.Illegal ?? $"Anchor {option.AnchorId}, player {option.AnchorPlayer}",
         };
-        StyleButton(choose, AffordanceState(option, selected, resolving));
+        StyleButton(choose, DecisionAffordanceStyle.State(
+            option.IsLegal, submitting, selected, resolving));
+        choose.CustomMinimumSize = new(Math.Max(choose.CustomMinimumSize.X, 240), choose.CustomMinimumSize.Y);
         choose.Pressed += () => SelectAffordance(option);
         BindAnchors(choose, option.AnchorId);
         AddContent(choose);
@@ -163,22 +192,6 @@ public sealed partial class DecisionPanel : VBoxContainer
             AddContent(Text($"! {option.Illegal}", GodotThemeVariations.DangerText, wrap: true));
         }
     }
-
-    private static string AffordanceText(
-        string action, bool unavailable, bool selected, bool resolving) =>
-        resolving
-            ? $"✓ {action}  ·  resolving"
-            : unavailable
-                ? $"— Unavailable  ·  {action}"
-                : selected ? $"✓ {action}" : action;
-
-    private InteractiveVisualState AffordanceState(
-        Affordance option, bool selected, bool resolving) =>
-        resolving
-            ? InteractiveVisualState.Selected
-            : !option.IsLegal || submitting
-                ? InteractiveVisualState.Unavailable
-                : selected ? InteractiveVisualState.Selected : InteractiveVisualState.Resting;
 
     private void SelectAffordance(Affordance option)
     {
@@ -192,6 +205,43 @@ public sealed partial class DecisionPanel : VBoxContainer
             Submitted?.Invoke(automatic!);
             return;
         }
+        Rebuild(focusFirst: true);
+    }
+
+    /// <summary>Selects an action reached from its prompt-mapped board source.</summary>
+    public void SelectAffordanceFromBoard(int id)
+    {
+        Affordance? option = composer?.Prompt.Affordances.FirstOrDefault(candidate =>
+            candidate.Id == id && candidate.IsLegal);
+        if (option is not null && !submitting)
+        {
+            SelectAffordance(option);
+        }
+    }
+
+    /// <summary>Toggles only an ordinary target mapped by the selected prompt.</summary>
+    public void ToggleOrdinaryTargetFromBoard(int id)
+    {
+        TargetRequest? request = composer?.Selected?.Targets;
+        if (composer is null || submitting || request is not
+            {
+                IsGrouped: false,
+                IsSearch: false,
+                AllowRepeated: false,
+            } || !request.Legal.Contains(id))
+        {
+            return;
+        }
+
+        if (composer.Targets.Contains(id))
+        {
+            composer.RemoveTarget(id);
+        }
+        else
+        {
+            composer.AddTarget(id);
+        }
+        NotifyAnchorFocused([id]);
         Rebuild();
     }
 
@@ -203,7 +253,6 @@ public sealed partial class DecisionPanel : VBoxContainer
         }
         DecisionProgressPresentation progress = composer.Progress();
         AddContent(new HSeparator());
-        AddContent(Text(TargetProgressText(progress.Targets), GodotThemeVariations.Eyebrow));
         new DecisionDraftRenderer(this, composer, world!, submitting)
             .AddTargets(selected, progress.Targets);
         var payment = new DecisionPaymentRenderer(this, composer, world!, submitting);
@@ -238,59 +287,10 @@ public sealed partial class DecisionPanel : VBoxContainer
 
     private void CreateDecisionLayout(PromptPresentation prompt)
     {
-        SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        SizeFlagsVertical = SizeFlags.ExpandFill;
-        AffordancePresentation? selected = composer!.Selected is { } option
-            ? prompt.Affordances.Single(view => view.Id == option.Id)
-            : null;
-        if (selected is not null)
-        {
-            var summary = new VBoxContainer
-            {
-                Name = "ActionSummary",
-                ThemeTypeVariation = GodotThemeVariations.TightStack,
-            };
-            summary.AddChild(Text("Preparing", GodotThemeVariations.Eyebrow));
-            summary.AddChild(Text(
-                DecisionCopy.ActionSummary(selected),
-                selected.Consequence is null
-                    ? GodotThemeVariations.StatusText
-                    : GodotThemeVariations.DangerText,
-                wrap: true));
-            AddChild(summary);
-            AddChild(new HSeparator());
-        }
-
-        var scroll = new ScrollContainer
-        {
-            Name = "DecisionBodyScroll",
-            CustomMinimumSize = composer.Selected?.CostOptions.Any(cost =>
-                cost.Generators.Count > 0) == true
-                    ? new Vector2(0, ControlMetrics.MinimumPointerTarget)
-                    : Vector2.Zero,
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            SizeFlagsVertical = SizeFlags.ExpandFill,
-            FollowFocus = true,
-            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
-            VerticalScrollMode = ScrollContainer.ScrollMode.Auto,
-        };
-        content = new VBoxContainer
-        {
-            Name = "DecisionBody",
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            ThemeTypeVariation = GodotThemeVariations.TightStack,
-        };
-        scroll.AddChild(content);
-        AddChild(scroll);
-
-        commit = new VBoxContainer
-        {
-            Name = "CommitBar",
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            ThemeTypeVariation = GodotThemeVariations.TightStack,
-        };
-        AddChild(new HSeparator());
-        AddChild(commit);
+        DecisionPanelLayout layout = DecisionPanelLayout.Build(
+            this, prompt, composer!, submitting, ChangeAction);
+        content = layout.Content;
+        commit = layout.Commit;
     }
 
     internal void AddContent(Control control) =>

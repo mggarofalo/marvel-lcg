@@ -22,7 +22,7 @@ if ($LASTEXITCODE -ne 0 -or -not $version.StartsWith("4.7.")) {
 dotnet build "$repoRoot/src/Marvel.Godot/Marvel.Godot.csproj" --nologo
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 New-Item -ItemType Directory -Force -Path $CaptureDir | Out-Null
-foreach ($viewport in @("1280x720", "1920x1080")) {
+foreach ($viewport in @("1920x1080", "2560x1440")) {
     foreach ($motion in @("enabled", "disabled")) {
         $env:MARVEL_UI_SCALE = "compact"
         $env:MARVEL_SMOKE_VIEWPORT = $viewport

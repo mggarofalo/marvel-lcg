@@ -267,7 +267,7 @@ func _capture_named_card(title: String, checkpoint: String) -> bool:
 		var face := candidate.find_child("CardFace", false, false)
 		if face == null:
 			continue
-		var title_label := face.find_child("Title", false, false) as Label
+		var title_label := face.find_child("Title", true, false) as Label
 		if title_label != null and title_label.text == title:
 			card = candidate as Control
 			break

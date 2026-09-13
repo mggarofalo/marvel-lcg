@@ -84,6 +84,10 @@ public sealed partial class CardControl : PanelContainer
         CardLayoutMetrics layout,
         CardDisplaySize size)
     {
+        if (size == CardDisplaySize.Hand)
+        {
+            return layout.MinimumHeight;
+        }
         IReadOnlyList<BoardFieldPresentation> values = CompactValues(card, size);
         int progressRows = values.Count(IsCompactProgressValue);
         int resourcesRows = values.Count(value => value.Name == "RES");
@@ -93,8 +97,7 @@ public sealed partial class CardControl : PanelContainer
         int titleRows = Math.Max(
             1,
             (int)Math.Ceiling(card.Title.Length / (double)titleCharactersPerLine));
-        int textRows = (size == CardDisplaySize.Hand ? 1 : 0)
-            + titleRows
+        int textRows = titleRows
             + (CompactState(card, size) is null ? 0 : 1)
             + valueRows;
         float scale = layout.Width / (size == CardDisplaySize.Hand ? 172.0f : 210.0f);

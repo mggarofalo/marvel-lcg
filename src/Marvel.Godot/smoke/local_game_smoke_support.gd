@@ -11,7 +11,7 @@ var render_viewport: Viewport
 
 func _focused_control_is_visible(control: Control) -> bool:
 	var visible_rect := _visible_control_rect(control)
-	var expected := _scaled_metric(44)
+	var expected := 44.0
 	return visible_rect.size.x >= expected and visible_rect.size.y >= expected
 
 
@@ -39,36 +39,16 @@ func _focused_board_area_is_visible() -> bool:
 	await process_frame
 	await process_frame
 	var saw_focused_card := false
+	var board := _node("Play/Board") as Control
+	if board == null:
+		_fail("a focused board card has no board viewport")
+		return false
+	var board_rect: Rect2 = board.get_global_rect()
 	for card in main.find_children("ProceduralCard", "PanelContainer", true, false):
 		if card.theme_type_variation != &"FocusedCard":
 			continue
 		saw_focused_card = true
-		var area := card.get_parent()
-		while area != null and not (area is PanelContainer and area.name.begins_with("Area")):
-			area = area.get_parent()
-		var board := _node("Play/Board/TableScroll") as ScrollContainer
-		if area == null or board == null:
-			_fail("a focused board card is not contained by the board viewport")
-			return false
-		var area_rect: Rect2 = area.get_global_rect()
-		var board_rect: Rect2 = board.get_global_rect()
-		if area_rect.position.x < board_rect.position.x - 1.0 \
-				or area_rect.end.x > board_rect.end.x + 1.0:
-			_fail("keyboard highlighting clipped the focused board area's heading")
-			return false
-		var disclosure := area.find_child("Area*Disclosure", true, false) as Control
-		var card_rect: Rect2 = card.get_global_rect()
-		if disclosure == null:
-			_fail("a focused board card has no enclosing area disclosure")
-			return false
-		var disclosure_rect: Rect2 = disclosure.get_global_rect()
-		if disclosure_rect.position.y < board_rect.position.y + 8.0 \
-				or disclosure_rect.end.y > board_rect.end.y - 1.0 \
-				or card_rect.position.y < board_rect.position.y + 8.0 \
-				or card_rect.end.y > board_rect.end.y - 1.0:
-			_fail("focused-card alignment clipped its area disclosure or full frame")
-			return false
-		if not _focused_card_title_is_visible(card, board, board_rect):
+		if not _focused_card_is_visible(card, board, board_rect):
 			return false
 	if not saw_focused_card:
 		_fail("keyboard selection did not highlight its board anchor")
@@ -76,7 +56,44 @@ func _focused_board_area_is_visible() -> bool:
 	return true
 
 
-func _focused_card_title_is_visible(card: Control, board: ScrollContainer, board_rect: Rect2) -> bool:
+func _focused_card_is_visible(card: Control, board: Control, board_rect: Rect2) -> bool:
+	var area := _focused_card_area(card)
+	if area == null:
+		_fail("a focused board card is not contained by the board viewport")
+		return false
+	if not board_rect.grow(1.0).encloses(area.get_global_rect()):
+		_fail("keyboard highlighting clipped the focused board area's heading")
+		return false
+	var disclosure := area.find_child("Area*Disclosure", true, false) as Control
+	var heading := disclosure if disclosure != null else area.find_child("Heading", true, false)
+	if heading == null:
+		_fail("a focused card has no enclosing area or hand heading")
+		return false
+	var heading_rect: Rect2 = heading.get_global_rect()
+	var card_rect: Rect2 = card.get_global_rect()
+	if not board_rect.grow(-1.0).encloses(heading_rect):
+		_fail("focused-card alignment clipped its area heading: heading=%s board=%s" % [
+			heading_rect,
+			board_rect,
+		])
+		return false
+	if not board_rect.grow(-1.0).encloses(card_rect):
+		_fail("focused-card alignment clipped its card: card=%s board=%s" % [card_rect, board_rect])
+		return false
+	return _focused_card_title_is_visible(card, board, board_rect)
+
+
+func _focused_card_area(card: Control) -> PanelContainer:
+	var area := card.get_parent()
+	while area != null:
+		if area is PanelContainer:
+			if area.name.begins_with("Area") or area.name == "HandShelf":
+				return area
+		area = area.get_parent()
+	return null
+
+
+func _focused_card_title_is_visible(card: Control, board: Control, board_rect: Rect2) -> bool:
 	var title := card.find_child("Title", true, false) as Label
 	if title == null:
 		return true
@@ -84,11 +101,9 @@ func _focused_card_title_is_visible(card: Control, board: ScrollContainer, board
 	if title_rect.position.y >= board_rect.position.y - 1.0 \
 			and title_rect.end.y <= board_rect.end.y + 1.0:
 		return true
-	_fail("keyboard highlighting did not reveal the focused card title: title=%s board=%s scroll=%d/%d" % [
+	_fail("keyboard highlighting did not reveal the focused card title: title=%s board=%s" % [
 		title_rect,
 		board_rect,
-		board.scroll_vertical,
-		board.get_v_scroll_bar().max_value,
 	])
 	return false
 
@@ -98,36 +113,71 @@ func _event_presentation_is_nonblocking() -> bool:
 	var motion := _node("Toolbar/Motion") as CheckButton
 	var skip := _node("Play/Prompt/Margin/Stack/Workbench/History/EventHeader/Skip") as Button
 	var log := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel
-	var expected_height := _scaled_metric(44)
+	var expected_height := 44.0
 	if cue == null:
 		_fail("event presentation has no cue region")
 		return false
-	if motion == null or skip == null \
-			or motion.custom_minimum_size.y < 44.0 \
-			or skip.custom_minimum_size.y < expected_height:
-		_fail("event presentation controls miss the pointer-target floor")
+	if not _event_controls_are_reachable(motion, skip, expected_height):
 		return false
 	if motion.button_pressed != motion_enabled:
 		_fail("the configured motion preference was not applied before the game opened")
 		return false
-	var action := _first_enabled_choice()
-	if action == null or action.disabled:
+	if not _current_action_is_available():
 		_fail("event presentation blocked the current engine decision")
 		return false
+	if not await _skip_motion_preserves_history(skip, log):
+		return false
+	if not _settled_event_status_is_visible(cue):
+		return false
 
+	if not motion_enabled and not _disabled_motion_is_settled(skip):
+		return false
+	return true
+
+
+func _event_controls_are_reachable(
+		motion: CheckButton, skip: Button, expected_height: float) -> bool:
+	if motion == null:
+		_fail("event presentation has no motion control")
+		return false
+	if skip == null:
+		_fail("event presentation has no skip control")
+		return false
+	if motion.custom_minimum_size.y < 44.0:
+		_fail("motion control misses the pointer-target floor")
+		return false
+	if skip.custom_minimum_size.y < expected_height:
+		_fail("skip control misses the pointer-target floor")
+		return false
+	return true
+
+
+func _current_action_is_available() -> bool:
+	var action := _first_enabled_choice()
+	return action != null and not action.disabled
+
+
+func _skip_motion_preserves_history(skip: Button, log: RichTextLabel) -> bool:
 	var history := log.text
 	if motion_enabled and not skip.disabled:
 		skip.pressed.emit()
 		await process_frame
-	if not skip.disabled or log.text != history:
+	if not skip.disabled:
+		_fail("settled event playback retained an enabled skip control")
+		return false
+	if log.text != history:
 		_fail("skipping motion changed or cleared event history")
 		return false
-	var sync_status := _node("Toolbar/SyncStatus") as Label
-	if cue.visible or sync_status == null or not sync_status.text.begins_with("✓ Synced"):
-		_fail("settled motion did not collapse its cue or retain the compact sync status")
-		return false
+	return true
 
-	if not motion_enabled and not _disabled_motion_is_settled(skip):
+
+func _settled_event_status_is_visible(cue: Control) -> bool:
+	var sync_status := _node("Toolbar/SyncStatus") as Label
+	if cue.visible:
+		_fail("settled motion did not collapse its cue")
+		return false
+	if sync_status == null or not sync_status.text.begins_with("✓ Synced"):
+		_fail("settled motion did not retain the compact sync status")
 		return false
 	return true
 
@@ -229,7 +279,7 @@ func _submit_button() -> Button:
 
 
 func _visible_buttons_meet_pointer_floor() -> bool:
-	var expected := _scaled_metric(44)
+	var expected := 44.0
 	for button in _visible_buttons(_decision()):
 		if button.size.x < expected or button.size.y < expected:
 			_fail("visible decision control '%s' misses the pointer-target floor" % button.text)

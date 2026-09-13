@@ -5,6 +5,18 @@ namespace Marvel.Godot.Tests;
 
 public sealed class VisualSystemTests
 {
+    [Theory]
+    [InlineData(80, 80)]
+    [InlineData(100, 100)]
+    [InlineData(120, 100)]
+    [InlineData(150, 100)]
+    public void TabletopScalePreservesAReadableFixedDensity(int requested, int expected)
+    {
+        Assert.Equal(
+            (InterfaceScale)expected,
+            VisualSystem.TabletopScale((InterfaceScale)requested));
+    }
+
     [Fact]
     public void TextAndInteractiveLabelsMeetReadableContrast()
     {
@@ -109,8 +121,8 @@ public sealed class VisualSystemTests
             Assert.True(spacing.Medium < spacing.Large);
             Assert.True(spacing.Large < spacing.ExtraLarge);
             Assert.True(spacing.ExtraLarge < spacing.Section);
-            Assert.True(controls.MinimumHeight >= 22);
-            Assert.True(controls.MinimumPointerTarget >= 22);
+            Assert.True(controls.MinimumHeight >= 44);
+            Assert.True(controls.MinimumPointerTarget >= 44);
             Assert.True(controls.MinimumButtonWidth >= 48);
             Assert.True(controls.FocusRingWidth >= 2);
         });
@@ -269,10 +281,10 @@ public sealed class VisualSystemTests
     public void FloatingInspectorStaysInsideTheViewport()
     {
         FloatingPanelPosition position = VisualSystem.PlaceFloatingPanel(
-            1040, 680, 1030, 670, 480, 600);
+            1920, 1080, 1910, 1070, 480, 600);
 
-        Assert.Equal(534, position.X);
-        Assert.Equal(68, position.Y);
+        Assert.Equal(1414, position.X);
+        Assert.Equal(468, position.Y);
     }
 
     [Fact]
@@ -328,25 +340,18 @@ public sealed class VisualSystemTests
     }
 
     [Fact]
-    public void DesktopWorkbenchMakesDecisionsAndAreaShelvesReadable()
+    public void DesktopWorkspaceUsesABottomDockAndCompactAreaShelves()
     {
-        DesktopPlayMetrics compact = VisualSystem.DesktopPlay(
-            1040, 680, InterfaceScale.Standard);
-        DesktopPlayMetrics laptop = VisualSystem.DesktopPlay(
-            1280, 720, InterfaceScale.Standard);
         DesktopPlayMetrics desktop = VisualSystem.DesktopPlay(
             1920, 1080, InterfaceScale.Standard);
+        DesktopPlayMetrics accessible = VisualSystem.DesktopPlay(
+            1920, 1080, InterfaceScale.Percent150);
         int singletonArea = VisualSystem.Card(
                 CardDisplaySize.Board, InterfaceScale.Standard).Width
             + VisualSystem.Density(InterfaceScale.Standard).BoardAreaAllowance;
 
-        Assert.InRange(compact.DecisionWidth, 390, 440);
-        Assert.InRange(laptop.DecisionWidth, 450, 500);
-        Assert.InRange(desktop.DecisionWidth, 680, 720);
-        Assert.True(desktop.DecisionWidth > laptop.DecisionWidth);
-        Assert.True(laptop.DecisionWidth > compact.DecisionWidth);
-        Assert.True(compact.DecisionMinimumHeight >= 270);
-        Assert.True(desktop.DecisionMinimumHeight > compact.DecisionMinimumHeight);
+        Assert.Equal(220, desktop.DecisionDockHeight);
+        Assert.Equal(330, accessible.DecisionDockHeight);
         Assert.Equal(singletonArea, desktop.BoardAreaWidth);
     }
 

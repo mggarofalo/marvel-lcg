@@ -25,6 +25,9 @@ func _compact_card_title_is_safe(card: Control, face: Control, in_hand: bool) ->
 	if title == null or title.max_lines_visible != -1:
 		_fail("a board card title is truncated")
 		return false
+	if in_hand and title.text_overrun_behavior == TextServer.OVERRUN_TRIM_ELLIPSIS \
+			and title.tooltip_text == title.text:
+		return true
 	if title.text_overrun_behavior == TextServer.OVERRUN_TRIM_ELLIPSIS:
 		_fail("a compact card title uses ellipsis instead of wrapping")
 		return false

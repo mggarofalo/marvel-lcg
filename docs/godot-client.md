@@ -201,13 +201,14 @@ order. Spider-Man, standard Rhino, the recommended selection, no modular set,
 or one or more authored modular sets and an optional unsigned 32-bit seed open
 a local game. Leaving the seed blank
 chooses one before setup and displays it throughout play, so the resulting deal
-can be replayed. All subsequent decisions are made in the right-hand decision
-rail; no console or debug action is part of play.
+can be replayed. All subsequent decisions are made in the persistent bottom
+decision dock; no console or debug action is part of play.
 
-The project opens at 1920x1080 by default. Its compact layout remains supported
-down to 1040x680, but the large desktop canvas is the intended play profile: it
-keeps setup controls and the decision rail visible while leaving the table room
-for complete card names, printed text, traits, statistics and live values.
+The project opens at 1920x1080, which is also the minimum supported drawable
+canvas. Play uses a fixed desktop shell: the scenario, one selected player's
+workspace, that seat's authorized hand, and the current decision remain visible
+together without primary page, table, hand, or ordinary action-list scrolling.
+Larger canvases add breathing room without changing the structure.
 
 Leave the endpoint blank to start against the embedded engine. Enter a trusted
 private-network endpoint to host through a standalone engine. A 2-hero game on
@@ -252,31 +253,37 @@ the frame was sent but its response was lost, the table stays locked until a
 sync succeeds. An expired or closed capability returns the client to Join and
 must be replaced with a new invitation.
 
-The rail is a desktop workbench rather than a summary card. Its Action tab owns
-the available height and shows several affordances at once; the complete
-diagnostic chronology remains in the adjacent History tab. At wide desktop
-sizes the rail grows to 680–720 logical pixels. Board areas use fixed shelves so
-multiple areas wrap into each lane instead of stretching one area across the
-whole remaining table. Occupied villain, scheme, identity and other live-play
-areas begin open; draw piles, discard piles and empty engine areas sit behind a
-single More areas disclosure in each scenario or player lane. A prompt target
-opens either disclosure automatically when needed. A player's visible hand is
-pinned below the table scroll so it does not disappear while inspecting another
-area, and its wider cards keep complete Core Set titles readable at the desktop
-profile.
+The scenario remains fixed above one full-width player workspace. In
+multiplayer, a stable seat switcher replaces that workspace and hand in place;
+the viewed, answering, and first-player seats remain distinct. Prompt-derived
+action, target, and selected counts mark non-visible seats without inferring
+anything from card text. Cooperative views expose each authorized hand in turn,
+while restricted views retain the server-supplied concealed count/back
+treatment.
 
-The decision header asks a player-facing question and names its visible card
+Occupied villain, scheme, identity and other live-play areas begin open. Draw
+piles, discard piles, empty engine areas, hosted areas and unknown areas remain
+reachable through explicit disclosures. Multi-card areas and large hands use
+stable bounded pagers with action and selection counts instead of clipping or
+primary scrolling. The bottom dock retains the complete composer for every
+prompt shape and every non-card action, target, or payment source. Source-local
+controls are convenience paths derived only from prompt mappings.
+
+The decision dock asks a player-facing question and names its visible card
 source. Wire label, question-kind and timing metadata remain selectable in the
-History tab. After an action is selected, its summary stays above an independently
-scrolling target and payment editor, while validation, overpayment consequences
-and the final commitment stay fixed below it. A newly resolved action appears as
-a compact narrative result above the editor. It can be collapsed or dismissed,
-clears when the next action is opened, and expires after eight seconds; the full
-chronology remains in History.
+History tab. Ordinary actions wrap across the dock without scrolling. After an
+action is selected, alternatives move behind **Change action**; its summary stays
+above a bounded composition editor, while validation, overpayment consequences
+and final commitment remain fixed below it. Complex grouped, ordered, repeated,
+search, variable and resource-allocation prompts retain their dedicated composer
+controls. A newly resolved action appears as a compact temporary notification;
+the full chronology remains in History.
 
 Compact is the default interface scale. The toolbar slider switches among the
-eleven supported scales immediately, including card geometry and the prompt rail,
-and the adjacent motion toggle controls event animation. Table and hand cards
+eleven supported scales immediately. Setup, the full card inspector, text, and
+controls honor the complete range; above 100%, the fixed tabletop, hand, and
+decision dock retain their standard geometry so all persistent play regions stay
+inside the minimum canvas. The adjacent motion toggle controls event animation. Table and hand cards
 expose a concise summary; clicking or keyboard-activating a readable card opens
 the full card inspector beside that card. The modal moves focus to its explicit
 Close control, closes with Escape or the surrounding backdrop, restores focus to
@@ -383,9 +390,9 @@ tools/godot-hosted-multiplayer-smoke.ps1 `
 The smoke uses `--headless`; it does not use movie capture. The visual QA tools
 additionally check and retain rendered viewport images at
 setup, open-table/prompt, player-phase, villain-phase and terminal checkpoints.
-The open-table checkpoint includes the dense horizontal rails and both visible
-player cards and concealed deck cards. They run both motion preferences at the
-default 1920x1080 profile and the compact 1280x720 regression profile:
+The open-table checkpoint includes bounded collections, the selected workspace,
+its authorized hand, and concealed deck cards. They run both motion preferences
+at the minimum 1920x1080 profile and a larger 2560x1440 profile:
 
 ```bash
 GODOT_BIN="/path/to/Godot" bash tools/godot-visual-qa.sh

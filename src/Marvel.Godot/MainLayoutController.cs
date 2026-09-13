@@ -15,6 +15,8 @@ internal sealed class MainLayoutController
     {
         main.interfaceScale = scale;
         main.Theme = ClientTheme.Create(scale);
+        InterfaceScale workspaceScale = VisualSystem.TabletopScale(scale);
+        main.board.Theme = ClientTheme.Create(workspaceScale);
         // The scale control is the ruler for the rest of the interface. Keep
         // its own geometry fixed so changing the value does not move the
         // pointer target beneath the user's hand.
@@ -22,6 +24,7 @@ internal sealed class MainLayoutController
         main.interfaceScaleValue.Text = $"Scale {Mathf.RoundToInt(VisualSystem.ScalePercent(scale))}%";
         main.decisions.SetInterfaceScale(scale);
         DensityMetrics density = VisualSystem.Density(scale);
+        DensityMetrics toolbarDensity = VisualSystem.Density(InterfaceScale.Compact);
         float minimumHeight = VisualSystem.Controls(scale).MinimumHeight;
         Control page = main.pageScroll;
         page.OffsetLeft = density.ViewportInset;
@@ -29,12 +32,13 @@ internal sealed class MainLayoutController
         page.OffsetRight = -density.ViewportInset;
         page.OffsetBottom = -density.ViewportInset;
         Control statusBar = main.GetNode<Control>("StatusBar");
-        statusBar.OffsetLeft = density.ViewportInset;
-        statusBar.OffsetTop = density.ViewportInset;
-        statusBar.OffsetRight = -density.ViewportInset;
-        statusBar.OffsetBottom = density.ViewportInset + minimumHeight;
+        statusBar.OffsetLeft = toolbarDensity.ViewportInset;
+        statusBar.OffsetTop = toolbarDensity.ViewportInset;
+        statusBar.OffsetRight = -toolbarDensity.ViewportInset;
+        statusBar.OffsetBottom = toolbarDensity.ViewportInset
+            + VisualSystem.Controls(InterfaceScale.Compact).MinimumHeight;
         main.GetNode<Control>("Margin/Shell/Content/StatusBarClearance").CustomMinimumSize =
-            new Vector2(0, minimumHeight);
+            new Vector2(0, VisualSystem.Controls(InterfaceScale.Standard).MinimumHeight);
         foreach (Control control in new Control[]
                  {
                      main.endpoint, main.gameId, main.hero, main.secondHero, main.scenario, main.mode, main.modular, main.seed,
@@ -56,9 +60,12 @@ internal sealed class MainLayoutController
                 control.CustomMinimumSize.X,
                 minimumHeight);
         }
+        main.eventMotion.CustomMinimumSize = new Vector2(
+            main.eventMotion.CustomMinimumSize.X,
+            VisualSystem.Controls(InterfaceScale.Standard).MinimumHeight);
         main.eventSkip.CustomMinimumSize = new Vector2(
             main.eventSkip.CustomMinimumSize.X,
-            minimumHeight);
+            VisualSystem.Controls(workspaceScale).MinimumHeight);
         if (main.CurrentGame?.World is { } world)
         {
             main.RenderBoard(world);
@@ -89,6 +96,8 @@ internal sealed class MainLayoutController
             : "CORE SET  /  MISSION BRIEFING";
         main.title.ThemeTypeVariation = GodotThemeVariations.DisplayTitle;
         main.description.Visible = true;
+        main.title.Visible = true;
+        main.eyebrow.Visible = true;
         main.description.Text = joinMode
             ? "Connect to an already-running engine and use a one-time seat invitation."
             : "Choose an authored Core Set assignment. The engine validates it again when play starts.";
@@ -97,35 +106,28 @@ internal sealed class MainLayoutController
 
     internal void ApplyResponsivePlayLayout()
     {
-        // This is a presentation choice: keep the prompt rail stable and give
-        // the scrollable table every remaining pixel at desktop window sizes.
+        // This is a presentation choice: the scenario, selected player, hand,
+        // and decision dock share one fixed 1920x1080 desktop canvas.
         DesktopPlayMetrics layout = VisualSystem.DesktopPlay(
             Math.Max(1, Mathf.RoundToInt(main.Size.X)),
             Math.Max(1, Mathf.RoundToInt(main.Size.Y)),
-            main.interfaceScale);
-        bool compactHeight = main.Size.Y < 800;
-        main.promptPanel.CustomMinimumSize = new Vector2(layout.DecisionWidth, 0);
-        main.setupGrid.Columns = main.Size.X >= 1500 ? 4 : 2;
-        main.contentStack.ThemeTypeVariation = main.board.Visible && compactHeight
+            VisualSystem.TabletopScale(main.interfaceScale));
+        main.promptPanel.CustomMinimumSize = new Vector2(0, layout.DecisionDockHeight);
+        main.setupGrid.Columns = 4;
+        main.contentStack.ThemeTypeVariation = main.board.Visible
             ? GodotThemeVariations.TightStack
             : GodotThemeVariations.Stack;
-        main.promptStack.ThemeTypeVariation = compactHeight
-            ? GodotThemeVariations.TightStack
-            : GodotThemeVariations.Stack;
+        main.promptStack.ThemeTypeVariation = GodotThemeVariations.TightStack;
         main.decisions.CustomMinimumSize = new Vector2(
-            0,
-            layout.DecisionMinimumHeight);
-        main.eventCue.CustomMinimumSize = new Vector2(0, 68);
-        main.eventLog.CustomMinimumSize = new Vector2(0, compactHeight ? 180 : 300);
-        main.playLayout.SplitOffsets = [0];
+            0, Math.Max(80, layout.DecisionDockHeight / 2));
+        main.eventCue.CustomMinimumSize = new Vector2(0, 52);
+        main.eventLog.CustomMinimumSize = new Vector2(0, 140);
         main.pageScroll.HorizontalScrollMode = main.board.Visible
             ? ScrollContainer.ScrollMode.Disabled
             : ScrollContainer.ScrollMode.Auto;
         main.pageScroll.FollowFocus = !main.board.Visible;
         main.pageScroll.VerticalScrollMode = main.board.Visible
-            ? (int)main.interfaceScale <= 100
-                ? ScrollContainer.ScrollMode.Disabled
-                : ScrollContainer.ScrollMode.Auto
+            ? ScrollContainer.ScrollMode.Disabled
             : ScrollContainer.ScrollMode.Auto;
     }
 }

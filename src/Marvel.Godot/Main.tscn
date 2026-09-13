@@ -384,33 +384,23 @@ theme_type_variation = &"Body"
 text = "—"
 autowrap_mode = 2
 
-[node name="Play" type="HSplitContainer" parent="Margin/Shell/Content" unique_id=1000000064]
+[node name="Play" type="VBoxContainer" parent="Margin/Shell/Content" unique_id=1000000064]
 visible = false
 custom_minimum_size = Vector2(0, 260)
 layout_mode = 2
 size_flags_vertical = 3
+theme_type_variation = &"TightStack"
 
 [node name="Board" type="VBoxContainer" parent="Margin/Shell/Content/Play" unique_id=1000000065]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="TableScroll" type="ScrollContainer" parent="Margin/Shell/Content/Play/Board" unique_id=1000000066]
+[node name="Areas" type="VBoxContainer" parent="Margin/Shell/Content/Play/Board" unique_id=1000000068]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-focus_mode = 2
-follow_focus = true
-horizontal_scroll_mode = 0
-
-[node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Board/TableScroll" unique_id=1000000067]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="Areas" type="VBoxContainer" parent="Margin/Shell/Content/Play/Board/TableScroll/Margin" unique_id=1000000068]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_type_variation = &"Stack"
+theme_type_variation = &"TightStack"
 
 [node name="HandShelf" type="PanelContainer" parent="Margin/Shell/Content/Play/Board" unique_id=1000000069]
 custom_minimum_size = Vector2(0, 84)
@@ -429,18 +419,13 @@ layout_mode = 2
 theme_type_variation = &"Heading"
 text = "HAND  ·  0"
 
-[node name="Scroll" type="ScrollContainer" parent="Margin/Shell/Content/Play/Board/HandShelf/Margin/Stack" unique_id=1000000073]
+[node name="Rail" type="HFlowContainer" parent="Margin/Shell/Content/Play/Board/HandShelf/Margin/Stack" unique_id=1000000074]
 layout_mode = 2
 size_flags_horizontal = 3
-horizontal_scroll_mode = 2
-vertical_scroll_mode = 0
-
-[node name="Rail" type="HBoxContainer" parent="Margin/Shell/Content/Play/Board/HandShelf/Margin/Stack/Scroll" unique_id=1000000074]
-layout_mode = 2
 theme_type_variation = &"CompactRow"
 
 [node name="Prompt" type="PanelContainer" parent="Margin/Shell/Content/Play" unique_id=1000000075]
-custom_minimum_size = Vector2(330, 0)
+custom_minimum_size = Vector2(0, 260)
 layout_mode = 2
 theme_type_variation = &"SurfacePanel"
 
@@ -478,9 +463,9 @@ layout_mode = 2
 theme_type_variation = &"PrimaryButton"
 text = "Copy invitation"
 
-[node name="PromptHeader" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack" unique_id=1000000083]
+[node name="PromptHeader" type="HFlowContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack" unique_id=1000000083]
 layout_mode = 2
-theme_type_variation = &"TightStack"
+theme_type_variation = &"CompactRow"
 
 [node name="Eyebrow" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader" unique_id=1000000084]
 layout_mode = 2
@@ -488,12 +473,14 @@ theme_type_variation = &"Eyebrow"
 text = "CURRENT DECISION"
 
 [node name="Heading" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader" unique_id=1000000085]
+custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 theme_type_variation = &"Heading"
 text = "Waiting for the engine…"
 autowrap_mode = 2
 
 [node name="Context" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader" unique_id=1000000086]
+custom_minimum_size = Vector2(220, 0)
 layout_mode = 2
 theme_type_variation = &"Caption"
 text = "PLAYER · QUESTION · TIMING"
@@ -506,6 +493,7 @@ text = "DECISION REQUIRED"
 autowrap_mode = 2
 
 [node name="Progress" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader" unique_id=1000000088]
+custom_minimum_size = Vector2(420, 0)
 layout_mode = 2
 theme_type_variation = &"StatusText"
 text = "CHOOSE AN ACTION"
@@ -586,7 +574,7 @@ theme_type_variation = &"Body"
 autowrap_mode = 2
 
 [node name="Decision" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/Action" unique_id=1000000093]
-custom_minimum_size = Vector2(0, 180)
+custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3

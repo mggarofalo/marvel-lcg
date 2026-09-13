@@ -124,6 +124,11 @@ func _upcoming_disclosures_survive_scale(expected_count: int) -> bool:
 			if not disclosure.button_pressed or not cards.visible:
 				_fail("an open upcoming-stages disclosure collapsed during board rebuild")
 				return false
+	for node in main.find_children("UpcomingStagesDisclosure", "Button", true, false):
+		var disclosure := node as Button
+		disclosure.button_pressed = false
+		disclosure.pressed.emit()
+	await process_frame
 	return true
 
 
