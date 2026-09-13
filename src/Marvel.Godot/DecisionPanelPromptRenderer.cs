@@ -70,6 +70,10 @@ internal static class DecisionPanelPromptRenderer
 
     internal static void AddAffordances(DecisionPanel panel, PromptPresentation prompt, int generation)
     {
+        if (MulliganPrompt.IsOpening(panel.composer?.Prompt))
+        {
+            return;
+        }
         var basic = new HashSet<int>();
         foreach (AffordancePresentation view in prompt.Affordances)
         {

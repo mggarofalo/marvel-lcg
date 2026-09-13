@@ -90,11 +90,28 @@ func _open_and_validate_table() -> bool:
 
 
 func _table_interactions_are_safe() -> bool:
+	if main.find_child("VillainTable", true, false) != null:
+		return await _mulligan_dock_is_safe()
 	if not await _keyboard_selection_is_operable():
 		return false
 	if not await _interaction_lifecycle_is_safe():
 		return false
 	if not await _event_presentation_is_nonblocking():
+		return false
+	return await _synchronization_preserves_history(false)
+
+
+func _mulligan_dock_is_safe() -> bool:
+	var dock := _node("Play/Prompt") as Control
+	var sheet := main.find_child("CompleteChoiceSheet", true, false) as Button
+	var submit := _submit_button()
+	if dock == null or sheet == null or submit == null or submit.disabled:
+		_fail("the opening table has no operable compact decision dock")
+		return false
+	if not await _prepare_activation(sheet) or not await _prepare_activation(submit):
+		return false
+	if not _visible_control_rect(submit).has_point(submit.get_global_rect().get_center()):
+		_fail("the opening commit is not fixed inside the viewport")
 		return false
 	return await _synchronization_preserves_history(false)
 

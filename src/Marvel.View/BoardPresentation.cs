@@ -15,6 +15,12 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
     /// <summary>Scenario, player, and fallback lanes used by the tabletop renderer.</summary>
     public IReadOnlyList<BoardLanePresentation> Lanes { get; init; } = [];
 
+    /// <summary>Visibility-safe compact seat facts for the tabletop seat strip.</summary>
+    public IReadOnlyList<PlayerSummaryDescriptor> PlayerSummaries { get; init; } = [];
+
+    /// <summary>Host-selected table roles; this never contains private card detail.</summary>
+    public TableContextDescriptor? Table { get; init; }
+
     /// <summary>Builds a fresh presentation without retaining or enriching engine state.</summary>
     public static BoardPresentation From(WorldDescriptor world)
     {
@@ -36,6 +42,8 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
         return new BoardPresentation(areas)
         {
             Lanes = BoardLayout.Arrange(areas, seats),
+            PlayerSummaries = world.PlayerSummaries,
+            Table = world.Table,
         };
     }
 
@@ -121,7 +129,7 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
             "VillainDeck" => "UPCOMING VILLAIN STAGES",
             "AsideDeck" when asideOrdinal == 1 => $"{owner.ToUpperInvariant()}'S NEMESIS SET",
             "AsideDeck" => $"{owner.ToUpperInvariant()}'S SET-ASIDE AREA",
-            _ => Humanize(area.Zone, trimArea: true).ToUpperInvariant(),
+            _ => BoardCardPresentationFactory.Humanize(area.Zone, trimArea: true).ToUpperInvariant(),
         };
         string context = area.Zone == "VillainDeck"
             ? "Out of play · enters after the current stage"
@@ -135,8 +143,8 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
             area.Id,
             title,
             context,
-            Present(area.Cards, area.Zone),
-            Present(area.Removed, area.Zone))
+            BoardCardPresentationFactory.Present(area.Cards, area.Zone),
+            BoardCardPresentationFactory.Present(area.Removed, area.Zone))
         {
             Zone = area.Zone,
             Seat = area.Owner,
@@ -152,183 +160,9 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
             return BoardAreaProminence.Empty;
         }
 
-        return IsInPlay(zone) || zone == "StatusArea"
+        return BoardCardPresentationFactory.IsInPlay(zone) || zone == "StatusArea"
             ? BoardAreaProminence.Live
             : BoardAreaProminence.Supporting;
     }
 
-    private static List<BoardCardPresentation> Present(
-        IReadOnlyList<CardDescriptor> cards,
-        string zone)
-    {
-        var presented = new List<BoardCardPresentation>();
-        var concealed = new Dictionary<CardBack, int>();
-        foreach (CardDescriptor card in cards)
-        {
-            if (card.Face is null && card.Id is null)
-            {
-                concealed[card.Back] = concealed.GetValueOrDefault(card.Back) + 1;
-                continue;
-            }
-
-            presented.Add(Present(card, zone));
-        }
-
-        foreach ((CardBack back, int count) in concealed)
-        {
-            string noun = count == 1 ? "card" : "cards";
-            presented.Add(new BoardCardPresentation(
-                TargetId: null,
-                Count: count,
-                Concealed: true,
-                Title: $"{count} concealed {back.ToString().ToLowerInvariant()} {noun}",
-                Subtitle: "Identity and order hidden",
-                Kind: "CONCEALED PILE",
-                Status: $"{back.ToString().ToUpperInvariant()} BACK",
-                Fields: [])
-            {
-                Back = back.ToString().ToUpperInvariant(),
-                StageRole = ProgressiveStageRole(zone),
-            });
-        }
-
-        return presented;
-    }
-
-    private static BoardCardPresentation Present(CardDescriptor card, string zone)
-    {
-        if (card.Face is null)
-        {
-            return new BoardCardPresentation(
-                card.Id,
-                Count: 1,
-                Concealed: true,
-                Title: $"Face-down {card.Back.ToString().ToLowerInvariant()} card",
-                Subtitle: "Identity hidden",
-                Kind: "CONCEALED CARD",
-                Status: Status(card, zone, kind: null),
-                Fields: [])
-            {
-                Back = card.Back.ToString().ToUpperInvariant(),
-                StageRole = ProgressiveStageRole(zone),
-            };
-        }
-
-        bool inPlay = IsInPlay(zone);
-        return new BoardCardPresentation(
-            card.Id,
-            Count: 1,
-            Concealed: false,
-            card.Face.Title,
-            card.Face.Subtitle,
-            Humanize(card.Face.Kind.ToString(), trimArea: false).ToUpperInvariant(),
-            Status(card, zone, card.Face.Kind),
-            card.Face.Fields
-                .Where(field => VisibleField(field, inPlay, card.Face.Kind))
-                .OrderBy(field => field.Key, StringComparer.Ordinal)
-                .Select(field => new BoardFieldPresentation(
-                    FieldName(field.Key), FieldValue(field, card.Face.Damage)))
-                .ToArray())
-        {
-            Back = card.Back.ToString().ToUpperInvariant(),
-            FaceId = card.Face.ArtFaceId,
-            StageRole = ProgressiveStageRole(zone),
-            Traits = card.Face.Traits,
-            Cost = card.Face.Cost,
-            PrintedStats = card.Face.PrintedStats
-                .Where(field => field.Key != "Class")
-                .Select(field => new BoardFieldPresentation(field.Key, field.Value))
-                .ToArray(),
-            Classification = card.Face.PrintedStats.GetValueOrDefault("Class", string.Empty),
-            Keywords = card.Face.Keywords,
-            RulesText = card.Face.RulesText,
-            RulesMarkup = card.Face.RulesMarkup,
-            Damage = card.Face.Damage,
-            Counters = card.Face.Counters
-                .OrderBy(counter => counter.Key, StringComparer.Ordinal)
-                .Select(counter => new BoardFieldPresentation(
-                    Humanize(counter.Key, trimArea: false).ToUpperInvariant(),
-                    counter.Value.ToString(CultureInfo.InvariantCulture)))
-                .ToArray(),
-        };
-    }
-
-    private static bool VisibleField(
-        KeyValuePair<string, long> field, bool inPlay, CardKind kind)
-    {
-        if (field.Key.StartsWith("t_", StringComparison.Ordinal) || field.Key == "is_exhaust")
-        {
-            return false;
-        }
-        bool schemeThreat = field.Key == "k_threat"
-            && kind is CardKind.MainScheme or CardKind.EncounterSideScheme;
-        if (field.Key == "k_threat" && !schemeThreat)
-        {
-            return false;
-        }
-        return field.Value != 0 || inPlay && ShowsZero(field.Key, schemeThreat);
-    }
-
-    private static bool ShowsZero(string key, bool schemeThreat) =>
-        LiveZeroFields.Contains(key) || key == "health" || schemeThreat;
-
-    private static string FieldName(string key) => Humanize(
-        key.StartsWith("k_", StringComparison.Ordinal) ? key[2..] : key,
-        trimArea: false).ToUpperInvariant();
-
-    private static string FieldValue(KeyValuePair<string, long> field, long damage) =>
-        field.Key == "health"
-            ? $"{field.Value.ToString(CultureInfo.InvariantCulture)}/{(field.Value + damage).ToString(CultureInfo.InvariantCulture)}"
-            : field.Value.ToString(CultureInfo.InvariantCulture);
-
-    private static BoardStageRole ProgressiveStageRole(string zone) => zone switch
-    {
-        "VillainArea" or "MainSchemesArea" => BoardStageRole.Current,
-        "VillainDeck" or "MainSchemesDeck" => BoardStageRole.Upcoming,
-        _ => BoardStageRole.None,
-    };
-
-    private static string Status(CardDescriptor card, string zone, CardKind? kind)
-    {
-        bool inPlay = IsInPlay(zone);
-        bool canExhaust = kind is null or CardKind.AlterEgo or CardKind.Hero
-            or CardKind.Ally or CardKind.Support or CardKind.Upgrade;
-        string status = inPlay && canExhaust
-            ? card.Ready ? "READY" : "EXHAUSTED"
-            : string.Empty;
-        if (inPlay && !card.FaceUp)
-        {
-            status += status.Length == 0 ? "FACE DOWN" : "  ·  FACE DOWN";
-        }
-        if (card.Host >= 0)
-        {
-            status += status.Length == 0 ? $"HOST {card.Host}" : $"  ·  HOST {card.Host}";
-        }
-        return status;
-    }
-
-    private static bool IsInPlay(string zone) =>
-        Enum.TryParse(zone, out DeckType deckType) && DeckTypes.IsInPlay(deckType);
-
-    private static string Humanize(string value, bool trimArea)
-    {
-        string text = trimArea && value.EndsWith("Area", StringComparison.Ordinal)
-            ? value[..^"Area".Length]
-            : value;
-        var result = new StringBuilder(text.Length + 8);
-        for (int index = 0; index < text.Length; index++)
-        {
-            char current = text[index];
-            if (index > 0 && char.IsUpper(current)
-                && (char.IsLower(text[index - 1])
-                    || index + 1 < text.Length && char.IsLower(text[index + 1])))
-            {
-                result.Append(' ');
-            }
-
-            result.Append(current);
-        }
-
-        return result.ToString();
-    }
 }

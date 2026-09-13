@@ -52,7 +52,7 @@ internal sealed class DecisionPaymentResourceAssignmentRenderer
         List<AllocationChoice> choices = Choices(printed, componentCount);
         var row = new HBoxContainer();
         var label = DecisionPanel.Text(
-            $"Icon {iconIndex + 1} · {DecisionPanel.ResourceName(printed)}",
+            $"Icon {iconIndex + 1} · {DecisionResourceName.For(printed)}",
             GodotThemeVariations.Body);
         label.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         row.AddChild(label);
@@ -104,14 +104,14 @@ internal sealed class DecisionPaymentResourceAssignmentRenderer
                 choices.AddRange(Resources.Types.Select(declared => new AllocationChoice(
                     component,
                     declared,
-                    $"Cost {component + 1} as {DecisionPanel.ResourceName(declared)}")));
+                    $"Cost {component + 1} as {DecisionResourceName.For(declared)}")));
             }
             else
             {
                 choices.Add(new AllocationChoice(
                     component,
                     printed,
-                    $"Cost {component + 1} as {DecisionPanel.ResourceName(printed)}"));
+                    $"Cost {component + 1} as {DecisionResourceName.For(printed)}"));
             }
         }
         return choices;
@@ -125,7 +125,7 @@ internal sealed class DecisionPaymentResourceAssignmentRenderer
             int assigned = composer.Assignments.Count(assignment => assignment.Source == source.Effect);
             panel.AddContent(DecisionPanel.Text(
                 $"{PromptPresentation.Describe(source.Effect, world)}"
-                + $"  ·  PRINTED {string.Join(" + ", source.Generates.Select(DecisionPanel.ResourceName))}"
+                + $"  ·  PRINTED {string.Join(" + ", source.Generates.Select(DecisionResourceName.For))}"
                 + $"  ·  {assigned} APPLIED"
                 + (source.Generates.Length > assigned
                     ? $"  ·  {source.Generates.Length - assigned} EXCESS" : string.Empty),

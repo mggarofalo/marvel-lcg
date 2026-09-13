@@ -23,6 +23,7 @@ internal sealed class DecisionPanelLifecycle
     {
         panel.world = world ?? throw new ArgumentNullException(nameof(world));
         panel.composer = prompt is null ? null : new DecisionComposer(prompt);
+        panel.mulliganChoiceSheetOpen = false;
         if (panel.composer is not null && MulliganPrompt.IsOpening(prompt))
         {
             // This is a client presentation choice. The engine offered exactly

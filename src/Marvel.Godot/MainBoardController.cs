@@ -13,6 +13,7 @@ internal sealed class MainBoardController
     private readonly Main main;
     private readonly CardInspectorFocus inspector;
     private readonly InteractionGeneration renderGeneration = new();
+    private int? displayedSeat;
 
     internal MainBoardController(Main main)
     {
@@ -97,7 +98,7 @@ internal sealed class MainBoardController
     {
         prompt ??= main.CurrentGame?.Prompt;
         main.boardPresentation = BoardPresentation.From(world);
-        BoardRenderResult rendered = UseTabletopMulligan(prompt)
+        BoardRenderResult rendered = MulliganPrompt.UsesDesktopTable(prompt, main.Size)
             ? RenderMulliganTable(prompt!)
             : BoardRenderer.Render(
                 main.boardAreas, main.boardPresentation, main.handRail, main.handHeading,
@@ -112,19 +113,43 @@ internal sealed class MainBoardController
 
     private BoardRenderResult RenderMulliganTable(Prompt prompt)
     {
+        BoardRenderCleanup.Clear(main.boardAreas);
+        BoardRenderCleanup.Clear(main.handRail);
         int cards = main.boardPresentation!.Areas.FirstOrDefault(area =>
             area.Zone == "HandsArea" && area.Seat == prompt.Player)?.Cards.Sum(card => card.Count) ?? 0;
         main.handHeading.Text = $"OPENING HAND  ·  {cards}  ·  SELECT REPLACEMENTS";
         var rendered = new BoardRenderResult();
-        MulliganTableRenderer.Render(main.boardAreas, main.boardPresentation, main.handRail,
-            rendered, main.interfaceScale, main.art, prompt.Player);
+        int focusSeat = displayedSeat ?? prompt.Player;
+        MulliganTableRenderer.Render(main.boardAreas, new MulliganTableContext
+        {
+            Board = main.boardPresentation,
+            Hand = main.handRail,
+            Result = rendered,
+            Scale = main.interfaceScale,
+            Art = main.art,
+            Player = focusSeat,
+            PromptOwner = prompt.Player,
+            SwitchSeat = SwitchSeat,
+        });
         return rendered;
     }
 
-    private static bool IsMulligan(Prompt? prompt) => MulliganPrompt.IsOpening(prompt);
+    private void SwitchSeat(int seat)
+    {
+        if (main.boardPresentation?.Lanes.Any(lane => lane.Seat == seat) != true
+            || displayedSeat == seat)
+        {
+            return;
+        }
 
-    private bool UseTabletopMulligan(Prompt? prompt) => IsMulligan(prompt)
-        && main.Size.X >= 1800 && main.Size.Y >= 900;
+        // This changes only the expanded public workspace. The pending prompt
+        // and its composer remain owned by the server-provided prompt player.
+        displayedSeat = seat;
+        if (main.CurrentGame?.World is { } world)
+        {
+            RenderBoard(world, main.CurrentGame.Prompt);
+        }
+    }
 
     internal void PreviewHandCard(int? id)
     {
@@ -245,6 +270,16 @@ internal sealed class MainBoardController
         int inspectorGeneration)
     {
         main.cardInspectorPinned = pinned;
+        if (pinned)
+        {
+            CardInspectorFocus.RestoreMouseRecursively(main.cardInspectorFrame);
+        }
+        else
+        {
+            // A hover preview is informational only; it must never cover a
+            // decision target that the pointer is travelling toward.
+            CardInspectorFocus.IgnoreMouseRecursively(main.cardInspectorFrame, interactiveRules: false);
+        }
         main.cardInspector.MouseFilter = pinned
             ? Control.MouseFilterEnum.Stop
             : Control.MouseFilterEnum.Ignore;

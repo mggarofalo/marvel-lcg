@@ -43,52 +43,38 @@ public sealed class BoardRenderResult
         Vector2? pressedAt = null;
         control.GuiInput += input =>
         {
-            if (input is InputEventMouseButton
-            {
-                ButtonIndex: MouseButton.Left,
-            } mouse)
-            {
-                if (mouse.Pressed)
-                {
-                    pressedAt = mouse.GlobalPosition;
-                    return;
-                }
-
-                if (pressedAt is not { } start)
-                {
-                    return;
-                }
-
-                pressedAt = null;
-                if (mulliganCards.TryGetValue(card.TargetId ?? int.MinValue, out CardControl? dragged)
-                    && InteractionControl.IsUsable(mulliganDiscard)
-                    && mulliganDiscard!.GetGlobalRect().HasPoint(mouse.GlobalPosition)
-                    && start.DistanceTo(mouse.GlobalPosition) >= 10)
-                {
-                    MulliganTargetRequested?.Invoke(dragged.TargetId!.Value);
-                    control.AcceptEvent();
-                    return;
-                }
-
-                if (start.DistanceTo(mouse.GlobalPosition) < 10
-                    && IsCurrent?.Invoke() == true && InteractionControl.IsUsable(control))
-                {
-                    CardActivated?.Invoke(card, control);
-                    control.AcceptEvent();
-                }
-                return;
-            }
-
-            bool keyboard = input is InputEventKey { Echo: false }
-                && input.IsActionPressed("ui_accept");
-            if (keyboard && IsCurrent?.Invoke() == true
-                && InteractionControl.IsUsable(control))
-            {
-                CardActivated?.Invoke(card, control);
-                control.AcceptEvent();
-            }
+            if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left } mouse) pressedAt = RouteMouse(control, card, mouse, pressedAt);
+            else if (input is InputEventKey { Echo: false } && input.IsActionPressed("ui_accept")) Activate(control, card);
         };
     }
+
+    private Vector2? RouteMouse(Control control, BoardCardPresentation card, InputEventMouseButton mouse, Vector2? pressedAt)
+    {
+        if (mouse.Pressed) return mouse.GlobalPosition;
+        if (pressedAt is not { } start) return null;
+        if (TryDrag(card, mouse.GlobalPosition, start)) { control.AcceptEvent(); return null; }
+        if (start.DistanceTo(mouse.GlobalPosition) < 10) Activate(control, card);
+        return null;
+    }
+
+    private bool TryDrag(BoardCardPresentation card, Vector2 finish, Vector2 start)
+    {
+        if (!IsCurrentRender() || start.DistanceTo(finish) < 10 || card.TargetId is not { } id
+            || !mulliganCards.TryGetValue(id, out CardControl? dragged)
+            || !InteractionControl.IsUsable(dragged) || !InteractionControl.IsUsable(mulliganDiscard)
+            || !mulliganDiscard!.GetGlobalRect().HasPoint(finish)) return false;
+        MulliganTargetRequested?.Invoke(id);
+        return true;
+    }
+
+    private void Activate(Control control, BoardCardPresentation card)
+    {
+        if (!IsCurrentRender() || !InteractionControl.IsUsable(control)) return;
+        CardActivated?.Invoke(card, control);
+        control.AcceptEvent();
+    }
+
+    private bool IsCurrentRender() => IsCurrent?.Invoke() == true;
 
     /// <summary>Raised when a tabletop mulligan checkbox or discard drag names a visible hand card.</summary>
     internal event Action<int>? MulliganTargetRequested;

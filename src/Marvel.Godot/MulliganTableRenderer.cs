@@ -17,29 +17,28 @@ internal static class MulliganTableRenderer
 
     private static readonly string[] PlayerOrder =
     [
-        "IdentityArea", "PlayerDeck", "DiscardPile",
+        "HeroArea", "IdentityArea", "PlayerDeck", "DiscardPile",
     ];
 
-    internal static void Render(
-        VBoxContainer destination,
-        BoardPresentation board,
-        HBoxContainer hand,
-        BoardRenderResult result,
-        InterfaceScale scale,
-        ICardArtProvider? art,
-        int player)
+    internal static void Render(VBoxContainer destination, MulliganTableContext context)
     {
         destination.AddChild(Row(
-            "VillainTable", "VILLAIN TABLE  ·  FAR SIDE", Ordered(board.Areas, -1, ScenarioOrder),
-            result, scale, art));
-        BoardAreaPresentation[] own = Ordered(board.Areas, player, PlayerOrder)
+            "VillainTable", "VILLAIN TABLE  ·  FAR SIDE", Ordered(context.Board.Areas, -1, ScenarioOrder),
+            context.Result, context.Scale, context.Art));
+        if (context.Board.PlayerSummaries.Count > 1)
+        {
+            destination.AddChild(MulliganSeatStripRenderer.Create(
+                context.Board, context.Player, context.SwitchSeat));
+        }
+        BoardAreaPresentation[] own = Ordered(context.Board.Areas, context.Player, PlayerOrder)
             .Where(area => PlayerOrder.Contains(area.Zone, StringComparer.Ordinal))
             .ToArray();
         destination.AddChild(Row(
-            "PlayerTable", $"PLAYER {player + 1}  ·  NEAR SIDE", own, result, scale, art,
+            "PlayerTable", $"PLAYER {context.Player + 1}  ·  NEAR SIDE", own,
+            context.Result, context.Scale, context.Art,
             addEmptyDiscard: own.All(area => area.Zone != "DiscardPile")));
-        AddOtherPlayers(destination, board, player);
-        RenderHand(hand, board.Areas, player, result, scale, art);
+        RenderHand(context.Hand, context.Board.Areas, context.PromptOwner,
+            context.Result, context.Scale, context.Art);
     }
 
     private static BoardAreaPresentation[] Ordered(
@@ -126,9 +125,21 @@ internal static class MulliganTableRenderer
         var stack = new VBoxContainer { ThemeTypeVariation = GodotThemeVariations.TightStack };
         stack.AddChild(Label(area.Title, GodotThemeVariations.Caption, wrap: true));
         var cards = new HBoxContainer { ThemeTypeVariation = GodotThemeVariations.CompactRow };
-        foreach (BoardCardPresentation card in area.Cards.Concat(area.Removed))
+        if (area.Zone is "HeroArea" or "VillainArea")
         {
-            AddCard(cards, card, result, CardDisplaySize.Board, scale, art);
+            BoardCardPresentation? current = area.Cards.FirstOrDefault(card =>
+                card.StageRole != BoardStageRole.Upcoming);
+            if (current is not null)
+            {
+                CardDisplaySize display = (int)scale > (int)InterfaceScale.Percent120
+                    ? CardDisplaySize.Hand
+                    : CardDisplaySize.Board;
+                AddCard(cards, current, result, display, scale, art);
+            }
+        }
+        else
+        {
+            cards.AddChild(Tile(area));
         }
 
         if (cards.GetChildCount() == 0)
@@ -146,17 +157,19 @@ internal static class MulliganTableRenderer
         return panel;
     }
 
-    private static void AddOtherPlayers(
-        VBoxContainer destination, BoardPresentation board, int expandedPlayer)
+    private static PanelContainer Tile(BoardAreaPresentation area)
     {
-        foreach (BoardLanePresentation lane in board.Lanes.Where(lane => lane.Seat is not null
-                     && lane.Seat != expandedPlayer))
+        int count = area.Cards.Sum(card => card.Count) + area.Removed.Sum(card => card.Count);
+        string detail = area.Cards.Count == 0 ? "Empty" : area.Cards[0].Title;
+        var tile = new PanelContainer
         {
-            // No private area is rendered here. This compact public label keeps
-            // cooperation legible without making a second hand or tableau.
-            destination.AddChild(Label(
-                $"{lane.Title}  ·  PUBLIC SUMMARY", GodotThemeVariations.Caption, wrap: true));
-        }
+            Name = $"PileTile{area.Id}",
+            CustomMinimumSize = new Vector2(124, 0),
+            ThemeTypeVariation = GodotThemeVariations.BoardArea,
+        };
+        tile.AddChild(Label($"{detail}\n{count} CARD{(count == 1 ? string.Empty : "S")}",
+            GodotThemeVariations.Caption, wrap: true));
+        return tile;
     }
 
     private static void RenderHand(
@@ -174,7 +187,7 @@ internal static class MulliganTableRenderer
         {
             int required = cards.Count * VisualSystem.Card(CardDisplaySize.Mulligan, scale).Width
                 + Math.Max(0, cards.Count - 1) * 8;
-            int available = Mathf.RoundToInt(hand.GetViewportRect().Size.X) - 360;
+            int available = Mathf.RoundToInt(hand.GetViewportRect().Size.X) - 24;
             // The 1920 desktop profile fits every opening choice at once. A
             // smaller diagnostic viewport keeps overflow local to this hand.
             scroll.HorizontalScrollMode = available >= required
@@ -199,7 +212,9 @@ internal static class MulliganTableRenderer
                     ToggleMode = true,
                     TooltipText = "Select this card for replacement. Space toggles this checkbox.",
                 };
-                discard.CustomMinimumSize = new Vector2(0, VisualSystem.Controls(scale).MinimumPointerTarget);
+                discard.CustomMinimumSize = new Vector2(
+                    0,
+                    VisualSystem.Controls(scale).MinimumPointerTarget);
                 discard.Pressed += () => result.RequestMulliganTarget(id);
                 choice.AddChild(discard);
                 result.RegisterMulliganToggle(id, discard);
@@ -217,7 +232,19 @@ internal static class MulliganTableRenderer
         InterfaceScale scale,
         ICardArtProvider? art)
     {
-        CardControl control = CardControl.Create(card, size, scale, art);
+        // The opening table reserves its extra-large scale for card width and
+        // hit targets. A fixed compact face keeps the six-card shelf and the
+        // fixed decision dock in one 1080px desktop viewport.
+        InterfaceScale faceScale = (int)scale > (int)InterfaceScale.Standard
+            ? InterfaceScale.Standard
+            : scale;
+        CardControl control = CardControl.Create(card, size, faceScale, art);
+        if (size == CardDisplaySize.Mulligan && faceScale != scale)
+        {
+            control.CustomMinimumSize = new Vector2(
+                VisualSystem.Card(CardDisplaySize.Mulligan, scale).Width,
+                control.CustomMinimumSize.Y);
+        }
         destination.AddChild(control);
         if (card.TargetId is { } id)
         {
