@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Marvel Champions · The Table</title>
+  <link rel="stylesheet" href="table.css">
+</head>
+<body>
+  <header class="chrome">
+    <div class="wordmark"><span>MARVEL</span> CHAMPIONS <small>THE CARD GAME</small></div>
+    <div class="session">Rhino · Standard <span>2 players</span></div>
+    <div class="phase" id="phase"></div>
+    <button id="choices">All offered choices</button>
+    <button id="scale">Text & controls · 100%</button>
+  </header>
+  <main id="table" aria-label="Game table">
+    <div class="villain-mat"></div><div class="player-mat"></div>
+    <div class="zone-title villain-label">VILLAIN'S PLAY AREA</div>
+    <div class="zone-title player-label" id="player-label"></div>
+    <div class="boundary"><span>ENGAGED WITH <b id="engaged-name">SPIDER-MAN</b></span></div>
+    <div id="piles"></div>
+    <div id="objects"></div>
+    <svg id="connections" aria-hidden="true"><defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="currentColor"/></marker></defs><g id="lines"></g></svg>
+    <aside id="seats" aria-label="Players"></aside>
+    <div id="moment" aria-live="polite"></div>
+    <section class="hand-zone" aria-labelledby="hand-label">
+      <div class="hand-caption"><span id="hand-label">YOUR HAND</span><span id="hand-help"></span></div>
+      <div id="hand"></div>
+    </section>
+    <div id="local-actions"></div>
+    <div id="receipt" aria-live="polite"></div>
+  </main>
+  <footer class="review-strip">
+    <strong>ASTRA / TABLE STUDY 02</strong>
+    <label>Review scene <select id="scene"><option value="mulligan">Opening mulligan</option><option value="actions">Player actions</option><option value="target">Target & payment</option><option value="defense">Villain attack</option><option value="encounter">Encounter reveal</option><option value="result">Action result</option></select></label>
+    <span>Illustrative fixtures · not an engine session</span>
+    <button id="guide">Geometry notes</button>
+  </footer>
+  <div id="overlay"></div>
+  <script src="cards.js"></script><script src="table.js"></script>
+</body>
+</html>
