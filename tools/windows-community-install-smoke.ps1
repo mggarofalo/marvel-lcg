@@ -11,6 +11,7 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $PackageName = 'mggarofalo.MarvelChampions'
 $Publisher = 'CN=Marvel Champions Community'
+$AutomatedGameSmokeTimeoutMilliseconds = 600000
 
 function Assert-Administrator {
     $principal = [Security.Principal.WindowsPrincipal]::new(
@@ -88,11 +89,11 @@ try {
         $stderr = Join-Path $env:RUNNER_TEMP "marvel-msix-$([Guid]::NewGuid()).err"
         $executable = Join-Path $installedPackage.InstallLocation 'MarvelChampions.exe'
         $launchedProcess = Start-Process -FilePath $executable `
-            -ArgumentList '--script', 'res://smoke/hosted_multiplayer_smoke.gd' `
+            -ArgumentList '--', '--marvel-hosted-multiplayer-smoke' `
             -RedirectStandardOutput $stdout `
             -RedirectStandardError $stderr `
             -PassThru
-        if (-not $launchedProcess.WaitForExit(120000) -or
+        if (-not $launchedProcess.WaitForExit($AutomatedGameSmokeTimeoutMilliseconds) -or
             $launchedProcess.ExitCode -ne 0 -or
             -not (Select-String -LiteralPath $stdout -SimpleMatch 'HOSTED_MULTIPLAYER_SMOKE_OK')) {
             Get-Content -LiteralPath $stdout, $stderr -ErrorAction SilentlyContinue

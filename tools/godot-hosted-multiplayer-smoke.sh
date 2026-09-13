@@ -75,7 +75,7 @@ MARVEL_ENGINE_ENDPOINT="tcp://127.0.0.1:$smoke_port" \
   MARVEL_UI_SCALE=compact \
   "${smoke_command[@]}" \
   --path "$repo_root/src/Marvel.Godot" \
-  --script res://smoke/hosted_multiplayer_smoke.gd \
+  --script res://smoke/hosted_multiplayer_smoke_runner.gd \
   2>&1 | tee "$smoke_log"
 smoke_status=${PIPESTATUS[0]}
 set -e

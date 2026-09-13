@@ -47,7 +47,7 @@ public sealed class CommunityReleasePolicyTests
         Assert.Contains("server-community-upgrade-smoke.sh", workflow, StringComparison.Ordinal);
         string macInstall = File.ReadAllText(Path.Combine(
             RepositoryPaths.Root, "tools", "macos-community-install-smoke.sh"));
-        Assert.Contains("smoke_timeout_seconds=120", macInstall, StringComparison.Ordinal);
+        Assert.Contains("smoke_timeout_seconds=600", macInstall, StringComparison.Ordinal);
         Assert.Contains("kill -0 \"$app_pid\"", macInstall, StringComparison.Ordinal);
         Assert.Contains("wait \"$app_pid\"", macInstall, StringComparison.Ordinal);
         Assert.Contains("macos-install:\n    name: Install and remove macOS community artifact\n" +
@@ -65,8 +65,15 @@ public sealed class CommunityReleasePolicyTests
         {
             string content = File.ReadAllText(Path.Combine(
                 RepositoryPaths.Root, "tools", script));
-            Assert.Contains("hosted_multiplayer_smoke.gd", content, StringComparison.Ordinal);
+            Assert.Contains("--marvel-hosted-multiplayer-smoke", content,
+                StringComparison.Ordinal);
+            Assert.DoesNotContain("--script", content, StringComparison.Ordinal);
             Assert.DoesNotContain("--headless", content, StringComparison.Ordinal);
+            if (script.EndsWith(".ps1", StringComparison.Ordinal))
+            {
+                Assert.Contains("AutomatedGameSmokeTimeoutMilliseconds = 600000", content,
+                    StringComparison.Ordinal);
+            }
         }
         Assert.Contains("needs: [identity, macos-install, windows-install, server-sign, server-install]",
             workflow, StringComparison.Ordinal);

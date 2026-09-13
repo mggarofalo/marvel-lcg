@@ -1,4 +1,4 @@
-extends SceneTree
+extends Node
 
 # The Windows CI runner falls back to software-rendered ANGLE. Socket decisions
 # must still complete there, but rendering two live Main scenes can take longer
@@ -14,7 +14,8 @@ var checkpoint_directory := ""
 var upgraded := false
 
 
-func _initialize() -> void:
+func _ready() -> void:
+	print("HOSTED_MULTIPLAYER_SMOKE_DRIVER_READY")
 	_run.call_deferred()
 
 
@@ -39,16 +40,17 @@ func _run() -> void:
 	if journey.is_empty() or not _hosted_terminal_is_safe(journey):
 		return
 	print("HOSTED_MULTIPLAYER_SMOKE_OK decisions=%d" % journey.decisions)
-	quit(0)
+	get_tree().quit(0)
 
 
 func _open_host(packed: PackedScene) -> bool:
 	host = packed.instantiate() as Control
-	root.add_child(host)
+	get_tree().root.add_child(host)
 	if not await _wait_for(func() -> bool:
 		var ready := _button(host, "Start game")
 		return ready != null and not ready.disabled):
-		_fail("the host setup never became ready")
+		var setup_status := _status(host)
+		_fail("the host setup never became ready: %s" % setup_status.text)
 		return false
 	_configure_connection(host)
 	_select_option(_node(host, "Setup/Selections/Fields/Grid/Hero"), "Spider-Man")
@@ -58,7 +60,7 @@ func _open_host(packed: PackedScene) -> bool:
 	var seed := _node(host, "Setup/Selections/Fields/Grid/Seed") as LineEdit
 	seed.text = "7"
 	seed.text_changed.emit(seed.text)
-	await process_frame
+	await get_tree().process_frame
 	var start := _button(host, "Start game")
 	if start == null or start.disabled:
 		_fail("the configured two-hero hosted game cannot start")
@@ -75,7 +77,7 @@ func _copy_invitation() -> String:
 	DisplayServer.clipboard_set("")
 	var copy := _button(host, "Copy invitation")
 	copy.pressed.emit()
-	await process_frame
+	await get_tree().process_frame
 	var invitation := DisplayServer.clipboard_get()
 	if invitation.is_empty():
 		_fail("copying the one-time invitation did not reach the clipboard")
@@ -88,20 +90,20 @@ func _copy_invitation() -> String:
 
 func _open_guest(packed: PackedScene, invitation: String) -> bool:
 	guest = packed.instantiate() as Control
-	root.add_child(guest)
+	get_tree().root.add_child(guest)
 	if not await _wait_for(func() -> bool: return _button(guest, "Join a game") != null):
 		_fail("the guest entry screen never became ready")
 		return false
 	_configure_connection(guest)
 	_button(guest, "Join a game").pressed.emit()
-	await process_frame
+	await get_tree().process_frame
 	var field := _node(guest, "Setup/Selections/Fields/JoinFields/Invitation") as LineEdit
 	if not field.secret:
 		_fail("the guest invitation field is not masked")
 		return false
 	field.text = invitation
 	field.text_changed.emit(invitation)
-	await process_frame
+	await get_tree().process_frame
 	var join := _button(guest, "Join game")
 	if join == null or join.disabled:
 		_fail("the guest cannot redeem the copied invitation")
@@ -248,7 +250,7 @@ func _answer_visible_decision(main: Control) -> bool:
 				_fail("the active client has no visible control that can advance its prompt")
 				return false
 			choice.pressed.emit()
-			await process_frame
+			await get_tree().process_frame
 			submit = _submit_button(decision)
 		if submit == null or submit.disabled:
 			_fail("the active client's selected decision cannot be submitted")
@@ -380,7 +382,7 @@ func _wait_for(condition: Callable) -> bool:
 	while Time.get_ticks_msec() - started < TIMEOUT_MILLISECONDS:
 		if condition.call():
 			return true
-		await process_frame
+		await get_tree().process_frame
 	return false
 
 
@@ -389,4 +391,4 @@ func _fail(message: String) -> void:
 		return
 	failed = true
 	push_error(message)
-	quit(1)
+	get_tree().quit(1)

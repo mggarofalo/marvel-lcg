@@ -5,6 +5,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+$AutomatedGameSmokeTimeoutMilliseconds = 600000
 if ([string]::IsNullOrWhiteSpace($env:MARVEL_ENGINE_ENDPOINT)) {
     throw 'MARVEL_ENGINE_ENDPOINT must name the disposable test server'
 }
@@ -32,11 +33,11 @@ try {
         throw 'portable application executable is absent'
     }
     $process = Start-Process -FilePath $executable `
-        -ArgumentList '--script', 'res://smoke/hosted_multiplayer_smoke.gd' `
+        -ArgumentList '--', '--marvel-hosted-multiplayer-smoke' `
         -RedirectStandardOutput $stdout `
         -RedirectStandardError $stderr `
         -PassThru
-    if (-not $process.WaitForExit(120000)) {
+    if (-not $process.WaitForExit($AutomatedGameSmokeTimeoutMilliseconds)) {
         Stop-Process -Id $process.Id -Force
         throw 'portable application game smoke timed out'
     }

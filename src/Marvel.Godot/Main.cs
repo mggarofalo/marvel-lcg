@@ -131,6 +131,7 @@ public sealed partial class Main : Control
     /// <inheritdoc />
     public override void _Ready()
     {
+        if (PackagedHostedSmoke.TryStart(this)) return;
         InterfaceScale scale = ClientTheme.ConfiguredScale();
         interfaceScale = scale;
         Theme = ClientTheme.Create(scale);
@@ -184,7 +185,7 @@ public sealed partial class Main : Control
     /// <inheritdoc />
     public override void _ExitTree()
     {
-        ReleaseEventTween();
+        eventController?.ReleaseEventTween();
         ClientComposition.Flush(TimeSpan.FromSeconds(3));
     }
 
