@@ -1,6 +1,8 @@
 param(
     [Parameter(Mandatory = $false)]
-    [string]$GodotBin = $env:GODOT_BIN
+    [string]$GodotBin = $env:GODOT_BIN,
+    [Parameter(Mandatory = $false)]
+    [switch]$Representative
 )
 
 $ErrorActionPreference = "Stop"
@@ -17,8 +19,21 @@ if ($LASTEXITCODE -ne 0 -or -not $version.StartsWith("4.7.")) {
 dotnet build "$repoRoot/src/Marvel.Godot/Marvel.Godot.csproj" --nologo
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-foreach ($viewport in @("1040x680", "1280x720", "1600x900", "1920x1080")) {
-    foreach ($scale in @("50", "60", "70", "80", "90", "100", "110", "120", "130", "140", "150")) {
+$viewports = if ($Representative) {
+    @("1280x720")
+}
+else {
+    @("1040x680", "1280x720", "1600x900", "1920x1080")
+}
+$scales = if ($Representative) {
+    @("100")
+}
+else {
+    @("50", "60", "70", "80", "90", "100", "110", "120", "130", "140", "150")
+}
+
+foreach ($viewport in $viewports) {
+    foreach ($scale in $scales) {
         $env:MARVEL_UI_SCALE = $scale
         $env:MARVEL_SMOKE_VIEWPORT = $viewport
         $env:MARVEL_SMOKE_MOTION = "enabled"

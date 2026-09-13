@@ -53,6 +53,8 @@ jobs:
     name: Ordinary release gates
     needs: identity
     uses: ./.github/workflows/ci.yml
+    with:
+      exhaustive: true
 
   macos-input:
     name: Reproducible ad-hoc macOS application

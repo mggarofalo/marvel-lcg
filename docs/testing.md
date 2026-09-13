@@ -45,6 +45,23 @@ These tests trade speed for breadth. They still block a merge, but their separat
 CI step makes their cost and failures visible instead of charging them to the
 unit-test lane.
 
+## CI assurance profiles
+
+Pull requests split assurance by what can vary. `Managed correctness` runs the
+unit, acceptance, behavioral-catalog, executable-specification and deterministic
+dataset checks once on Linux. `Native integration` builds and runs integration,
+architecture-wall, native Godot, hosted-client and rendered-state checks on both
+Windows and Linux; Linux also proves the supported server container. Windows
+desktop packaging remains an independent job.
+
+The pull-request native game uses one representative viewport at the default
+scale with both motion preferences. Pushes to `master`, manual runs and protected
+release calls replace it with the complete viewport and scale matrix and repeat
+the platform-neutral checks on both operating systems. A merged change therefore
+gets exhaustive cross-platform evidence, while a pull request gets an earlier
+answer from the same platform boundaries. Release automation explicitly requests
+the exhaustive profile from the exact protected tag.
+
 ## Behavioral evidence for refactoring
 
 [Architectural behavior contracts](architecture-behavior-contracts.md) identify
