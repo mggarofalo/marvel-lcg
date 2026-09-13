@@ -1,8 +1,8 @@
 name: CI
 
-# Every gate in this workflow is verified green on BOTH windows-latest and
-# ubuntu-latest. A red master must mean "something broke", never "that gate has
-# never worked on Linux".
+# Pull requests run platform-neutral correctness once and platform boundaries on
+# both supported runners. Master and protected release calls repeat the complete
+# profile on Windows and Linux. A red master must mean "something broke".
 
 on:
   push:
@@ -10,6 +10,12 @@ on:
   pull_request:
   workflow_dispatch:
   workflow_call:
+    inputs:
+      exhaustive:
+        description: Run the cross-platform exhaustive certification profile.
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -22,8 +28,47 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  dotnet:
-    name: C# engine (${{ matrix.os }})
+  managed:
+    name: Managed correctness
+    if: ${{ github.event_name == 'pull_request' && !inputs.exhaustive }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            8.0.424
+            10.0.400
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Fast unit and behavioral tests
+        run: dotnet test tests/Marvel.UnitTests.slnx --no-build --configuration Release
+
+      - name: Acceptance and regression sweeps
+        run: dotnet test tests/Marvel.Acceptance.Tests/Marvel.Acceptance.Tests.csproj --no-build --configuration Release
+
+      - name: The Core behavioral obligation catalog is complete
+        run: dotnet run --project tools/Marvel.Behavior.Index --no-build --configuration Release -- check
+
+      - name: The Core behavioral specification passes
+        run: dotnet run --project tools/Marvel.Behavior.Run --no-build --configuration Release -- check
+
+      - name: The card dataset is what the generator produces
+        run: dotnet run --project tools/Marvel.Cards.Extract --no-build --configuration Release -- check
+
+      - name: The rulings index is what the vendored pages produce
+        run: dotnet run --project tools/Marvel.Rulings.Harvest --no-build --configuration Release -- check
+
+  platform:
+    name: Native integration (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     strategy:
@@ -34,36 +79,37 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # Two installs on purpose. `global.json` pins the SDK that builds; the
-      # assemblies target `net8.0` so Godot can reference them
-      # (Directory.Build.props), and running the tests on the .NET 8 runtime
-      # rather than rolling forward to 10 is the point -- JSON escaping is
-      # runtime behaviour, so it has to be exercised on the runtime the client
-      # will actually host.
+      # Build with the pinned SDK and execute on the net8.0 runtime Godot hosts.
       - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: |
             8.0.424
             10.0.400
 
-      # `--locked-mode` would be better still, but central package management
-      # writes no lock file by default; the pins in Directory.Packages.props
-      # are what stops a transitive version from drifting between these two
-      # legs.
       - name: Restore
         run: dotnet restore
 
-      # Warnings are errors (Directory.Build.props). This engine is validated
-      # byte-for-byte against another implementation, so the class of bug a
-      # compiler can catch is exactly the class that is most expensive to find
-      # later.
       - name: Build
         run: dotnet build --no-restore --configuration Release
 
-      # Managed tests can prove the client assembly on both runners, but not
-      # that the native editor can load Main.tscn, bind its C# scripts and drive
-      # the real control signals. Pin the official .NET editor archives and
-      # verify their hashes before the local-game smoke below.
+      # Master, manual and protected release runs retain the complete
+      # cross-platform certification profile. Pull requests execute these
+      # platform-neutral checks once in Managed correctness instead.
+      - name: Fast unit and behavioral tests
+        if: ${{ github.event_name != 'pull_request' || inputs.exhaustive }}
+        run: dotnet test tests/Marvel.UnitTests.slnx --no-build --configuration Release
+
+      - name: Architecture, server, Godot and release integration tests
+        run: dotnet test tests/Marvel.IntegrationTests.slnx --no-build --configuration Release
+
+      - name: Acceptance and regression sweeps
+        if: ${{ github.event_name != 'pull_request' || inputs.exhaustive }}
+        run: dotnet test tests/Marvel.Acceptance.Tests/Marvel.Acceptance.Tests.csproj --no-build --configuration Release
+
+      - name: The presentation project walls fire
+        shell: pwsh
+        run: ./tools/presentation-wall.ps1
+
       - name: Install Godot 4.7 .NET (Linux)
         if: runner.os == 'Linux'
         shell: bash
@@ -93,32 +139,23 @@ jobs:
           if ($null -eq $godot) { throw "Godot .NET console executable was not found" }
           "GODOT_BIN=$($godot.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-      # `datasets/rules-reference/entries/*.md` is what these are held to.
-      # There was a time when the acceptance criteria were fixtures emitted by
-      # the Python engine, and disagreeing with them meant C# was wrong; that
-      # is no longer true and the fixtures are going. The rulebook decides.
-      - name: Fast unit and behavioral tests
-        run: dotnet test tests/Marvel.UnitTests.slnx --no-build --configuration Release
+      - name: A representative local game is playable through native Godot controls (Linux)
+        if: ${{ runner.os == 'Linux' && github.event_name == 'pull_request' && !inputs.exhaustive }}
+        shell: bash
+        run: bash tools/godot-smoke.sh "$GODOT_BIN" --representative
 
-      - name: Architecture, server, Godot and release integration tests
-        run: dotnet test tests/Marvel.IntegrationTests.slnx --no-build --configuration Release
-
-      - name: Acceptance and regression sweeps
-        run: dotnet test tests/Marvel.Acceptance.Tests/Marvel.Acceptance.Tests.csproj --no-build --configuration Release
-
-      # The solution build proves every allowed presentation dependency. These
-      # probes prove that each role's forbidden-reference branch also fires.
-      - name: The presentation project walls fire
+      - name: A representative local game is playable through native Godot controls (Windows)
+        if: ${{ runner.os == 'Windows' && github.event_name == 'pull_request' && !inputs.exhaustive }}
         shell: pwsh
-        run: ./tools/presentation-wall.ps1
+        run: tools/godot-smoke.ps1 -GodotBin $env:GODOT_BIN -Representative
 
-      - name: A complete local game is playable through native Godot controls (Linux)
-        if: runner.os == 'Linux'
+      - name: The local viewport and scale matrix passes (Linux)
+        if: ${{ runner.os == 'Linux' && (github.event_name != 'pull_request' || inputs.exhaustive) }}
         shell: bash
         run: bash tools/godot-smoke.sh "$GODOT_BIN"
 
-      - name: A complete local game is playable through native Godot controls (Windows)
-        if: runner.os == 'Windows'
+      - name: The local viewport and scale matrix passes (Windows)
+        if: ${{ runner.os == 'Windows' && (github.event_name != 'pull_request' || inputs.exhaustive) }}
         shell: pwsh
         run: tools/godot-smoke.ps1 -GodotBin $env:GODOT_BIN
 
@@ -229,47 +266,24 @@ jobs:
           name: godot-visual-qa-${{ runner.os }}
           path: ${{ runner.temp }}/godot-visual-qa/*.png
           if-no-files-found: error
+          retention-days: 7
 
-      # The catalog is derived from every committed Core authority, not from
-      # whichever rules and cards the implementation happens to cite. This
-      # gate rejects a changed authority, an unclassified source unit, an
-      # unverified executable obligation, or a transcript that does not name
-      # the exact reviewed obligation it proves.
       - name: The Core behavioral obligation catalog is complete
+        if: ${{ github.event_name != 'pull_request' || inputs.exhaustive }}
         run: dotnet run --project tools/Marvel.Behavior.Index --no-build --configuration Release -- check
 
-      # The admitted Gherkin is executable documentation. Run every transcript
-      # against a canonical legal Core game and separately require the
-      # deliberately false quarantine scenario to fail.
       - name: The Core behavioral specification passes
+        if: ${{ github.event_name != 'pull_request' || inputs.exhaustive }}
         run: dotnet run --project tools/Marvel.Behavior.Run --no-build --configuration Release -- check
 
-      # `AGENTS.md` non-negotiable 8: a generated dataset is rebuildable
-      # offline and byte-identically. `datasets/cards/` is generated from the
-      # vendored MarvelSDB snapshot and `datasets/cards/supplement.json`, and
-      # nothing else -- so regenerating it here and comparing is the whole of
-      # what "generated" means. It also makes a hand edit a red build, which is
-      # the situation that non-negotiable exists to prevent.
       - name: The card dataset is what the generator produces
+        if: ${{ github.event_name != 'pull_request' || inputs.exhaustive }}
         run: dotnet run --project tools/Marvel.Cards.Extract --no-build --configuration Release -- check
 
-      # Hall of Heroes is acquired only by an explicit harvest. The committed
-      # pages are the vendored authority, and the ruling index must reproduce
-      # from them byte-for-byte without a network connection.
       - name: The rulings index is what the vendored pages produce
+        if: ${{ github.event_name != 'pull_request' || inputs.exhaustive }}
         run: dotnet run --project tools/Marvel.Rulings.Harvest --no-build --configuration Release -- check
 
-      # The wall (MARVEL-162). `Directory.Build.targets` fails any build below
-      # `Marvel.Godot` that can see `GodotSharp`, or that targets a framework
-      # Godot cannot reference -- so the Build step above is already the
-      # positive case, on every project in the solution, on both legs.
-      #
-      # This is the other half: four throwaway verdict projects prove the
-      # opt-out restriction, transitive-reference wall and runtime floor fail
-      # for their stated reasons, while the allowed presentation case builds.
-      # An `<Error>` condition nobody has watched evaluate to true is a claim
-      # about a build rather than a property of one. Offline -- the GodotSharp
-      # reference is a stub. See tests/godot-wall/README.md.
       - name: The wall's gates fire
         shell: pwsh
         run: ./tools/godot-wall.ps1

@@ -3,6 +3,12 @@ set -euo pipefail
 
 repo_root=$(cd "$(dirname "$0")/.." && pwd)
 godot_bin=${GODOT_BIN:-${1:-}}
+profile=${2:---exhaustive}
+
+if [[ "$profile" != --representative && "$profile" != --exhaustive ]]; then
+  echo "usage: godot-smoke.sh [GODOT_BIN] [--representative|--exhaustive]" >&2
+  exit 2
+fi
 
 if [[ -z "$godot_bin" ]]; then
   for candidate in godot-mono godot; do
@@ -25,8 +31,16 @@ if [[ "$version" != 4.7.* ]]; then
 fi
 
 dotnet build "$repo_root/src/Marvel.Godot/Marvel.Godot.csproj" --nologo
-for viewport in 1040x680 1280x720 1600x900 1920x1080; do
-  for scale in 50 60 70 80 90 100 110 120 130 140 150; do
+if [[ "$profile" == --representative ]]; then
+  viewports=(1280x720)
+  scales=(100)
+else
+  viewports=(1040x680 1280x720 1600x900 1920x1080)
+  scales=(50 60 70 80 90 100 110 120 130 140 150)
+fi
+
+for viewport in "${viewports[@]}"; do
+  for scale in "${scales[@]}"; do
     MARVEL_UI_SCALE="$scale" MARVEL_SMOKE_VIEWPORT="$viewport" MARVEL_SMOKE_MOTION=enabled \
       "$godot_bin" --headless \
       --path "$repo_root/src/Marvel.Godot" \

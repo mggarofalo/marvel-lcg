@@ -353,12 +353,16 @@ macOS and Linux:
 
 ```bash
 GODOT_BIN="/path/to/Godot" bash tools/godot-smoke.sh
+# Faster pull-request profile:
+GODOT_BIN="/path/to/Godot" bash tools/godot-smoke.sh --representative
 ```
 
 Windows PowerShell:
 
 ```powershell
 tools/godot-smoke.ps1 -GodotBin "C:\path\to\Godot_v4.7.1-stable_mono_win64_console.exe"
+# Faster pull-request profile:
+tools/godot-smoke.ps1 -GodotBin "C:\path\to\Godot_v4.7.1-stable_mono_win64_console.exe" -Representative
 ```
 
 The hosted multiplayer smoke starts a real restricted server, loads two
@@ -395,10 +399,12 @@ Set `MARVEL_SMOKE_CAPTURE_DIR` to retain the PNGs at a chosen absolute path;
 otherwise the tools create a temporary directory and print it. No capture is
 written into the repository.
 
-CI downloads the official Godot 4.7.1 .NET archives, verifies their SHA-256
-digests and runs both native paths on Windows and Linux. macOS uses the same
-checked-in scripts as a local release check because the CI matrix has no macOS
-runner.
+CI downloads the official Godot 4.7.1 .NET archives and verifies their SHA-256
+digests. Pull requests run the representative native game on Windows and Linux;
+`master`, manual and protected release runs execute the complete viewport and
+scale matrix on both. The hosted and rendered-state paths always run on both
+operating systems. macOS uses the same checked-in scripts as a local release
+check because the ordinary CI matrix has no macOS runner.
 
 The companion managed test drives the same seed through `LocalGameClient` and
 `DecisionComposer`. It makes the deterministic gameplay path debuggable without
