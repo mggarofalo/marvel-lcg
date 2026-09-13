@@ -66,6 +66,7 @@ public sealed record DurableDecision(
         var exact = prompt.Affordances.Where(option =>
                 option.IsLegal
                 && option.AnchorId == selector.AnchorId
+                && option.AnchorKind == selector.AnchorKind
                 && option.AnchorPlayer == selector.AnchorPlayer
                 && string.Equals(option.Verb, selector.Verb, StringComparison.Ordinal)
                 && string.Equals(option.Label, selector.Label, StringComparison.Ordinal))

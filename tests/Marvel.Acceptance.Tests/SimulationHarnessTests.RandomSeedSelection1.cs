@@ -54,7 +54,7 @@ public sealed class SimulationHarnessRandomSeedSelectionTests : SimulationHarnes
     public void CanonicalPromptSchemaShrinksPaymentRecordsAndSchemaTwoStillReplays()
     {
         List<string> current = SuccessfulLines();
-        Assert.Equal(3, JsonNode.Parse(current[0])!["schema"]!.GetValue<int>());
+        Assert.Equal(4, JsonNode.Parse(current[0])!["schema"]!.GetValue<int>());
         foreach (string line in current)
         {
             JsonNode? node = JsonNode.Parse(line);
@@ -79,11 +79,14 @@ public sealed class SimulationHarnessRandomSeedSelectionTests : SimulationHarnes
         List<string> legacy = SchemaTwoLines(current);
         long legacyBytes = legacy.Sum(line => (long)Encoding.UTF8.GetByteCount(line));
         long currentBytes = current.Sum(line => (long)Encoding.UTF8.GetByteCount(line));
-        Assert.True(currentBytes * 100 <= legacyBytes * 95, $"schema 3 used {currentBytes} bytes versus schema 2's {legacyBytes}");
+        Assert.True(currentBytes * 100 <= legacyBytes * 97, $"schema 4 used {currentBytes} bytes versus schema 2's {legacyBytes}");
         string path = Path.Combine(Path.GetTempPath(), $"marvel-sim-schema-two-{Guid.NewGuid():N}.jsonl");
         try
         {
             File.WriteAllLines(path, legacy);
+            Assert.Equal(1, SimulationReplayHarness.Replay(new ReplayConfig(path, RepositoryRoot()), TextWriter.Null).Games);
+            Assert.Equal(1, SimulationReportReader.Report(path).Games);
+            File.WriteAllLines(path, SchemaThreeLines(current));
             Assert.Equal(1, SimulationReplayHarness.Replay(new ReplayConfig(path, RepositoryRoot()), TextWriter.Null).Games);
             Assert.Equal(1, SimulationReportReader.Report(path).Games);
             File.WriteAllLines(path, OldestSchemaTwoLines(legacy));

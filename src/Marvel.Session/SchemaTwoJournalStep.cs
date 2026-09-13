@@ -10,7 +10,7 @@ namespace Marvel.Session;
 /// <summary>One frozen schema 2 decision and its derived replay facts.</summary>
 internal sealed record SchemaTwoJournalStep(
     [property: JsonRequired] JsonElement Prompt,
-    [property: JsonRequired] DurableDecision Decision,
+    [property: JsonRequired] JsonElement Decision,
     [property: JsonRequired] IReadOnlyList<JsonElement> Events,
     [property: JsonRequired] long RngWords,
     [property: JsonRequired] string StateFingerprint,

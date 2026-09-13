@@ -46,8 +46,8 @@ independent identities do:
 
 | Identity | Current value | Changes when |
 |---|---:|---|
-| Engine protocol | `14` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
-| Session schema | `2` | The strict persisted JSON shape changes. |
+| Engine protocol | `15` | A request, response, affordance, event or descriptor change is not understood by the prior endpoint. |
+| Session schema | `4` | The strict persisted JSON shape changes. |
 | Engine replay contract | `engine-replay-v2` | The same setup and decision trace may resolve differently. |
 | RNG contract | `mt19937-iso-cxx` | The seeded random stream changes. |
 | State digest | `state-digest-v2` | The canonical hidden-state serialization changes. |
@@ -171,10 +171,12 @@ when all of the following hold:
 - complete deterministic replay verifies every recorded prompt, event, RNG
   count and state fingerprint.
 
-Schema 3 is the current writer. Schema 2 is its single readable predecessor.
-Reading schema 2 performs the implemented replay-verified, atomic migration and
-commits schema 3 before publishing the session. “Same final board” is never
-sufficient evidence for migration.
+Schema 4 is the current writer. Schemas 2 and 3 are explicit readable
+predecessors. Reading either performs the implemented replay-verified, atomic
+migration and commits schema 4 before publishing the session. Schema 3 gains
+the historic card anchor namespace during decoding; schema 2 also uses its
+frozen prompt reader. “Same final board” is never sufficient evidence for
+migration.
 
 An unknown schema, replay identity, RNG identity, digest identity or dataset
 hash is unsupported. The server quarantines that session and reports a bounded

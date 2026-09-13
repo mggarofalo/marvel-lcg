@@ -15,7 +15,7 @@ internal sealed record SchemaTwoFailureRecord(
     string Exception,
     string Message,
     JsonElement? Prompt,
-    DecisionSelector? Decision,
+    JsonElement? Decision,
     IReadOnlyList<int> Targets,
     IReadOnlyList<int> Resources,
     IReadOnlyDictionary<string, long> Values,

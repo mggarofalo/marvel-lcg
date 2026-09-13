@@ -30,6 +30,29 @@ public sealed class JournalRecordsTests
     }
 
     [Fact]
+    public void StableSelectorKeepsTheAnchorNamespaceWhenCardAndAreaIdsCollide()
+    {
+        var original = Prompt(
+            new Affordance(10, "Use", 4, 0, "Choose")
+            {
+                AnchorKind = AffordanceAnchorKind.Area,
+            },
+            new Affordance(11, "Use", 4, 0, "Choose"));
+        var recorded = DurableDecision.From(0, original, Decision.Take(10));
+        var replayed = Prompt(
+            new Affordance(110, "Use", 4, 0, "Choose"),
+            new Affordance(111, "Use", 4, 0, "Choose")
+            {
+                AnchorKind = AffordanceAnchorKind.Area,
+            });
+
+        Assert.Equal(AffordanceAnchorKind.Area, recorded.Selector.AnchorKind);
+        Assert.Equal(111, recorded.Resolve(replayed).Affordance);
+        Assert.Equal(0, DurableDecision.SimulationActor(replayed, recorded.Selector));
+        Assert.Contains("\"anchor_kind\":1", JsonSerializer.Serialize(recorded, JournalJson.Options));
+    }
+
+    [Fact]
     public void IllegalDuplicateDoesNotShiftTheRecordedLegalOccurrence()
     {
         var original = Prompt(
@@ -133,6 +156,23 @@ public sealed class JournalRecordsTests
             JournalReplay.RequireEvents(recordedEvents, [events[1], events[0]], "events"));
         Assert.Throws<ReplayDivergenceException>(() =>
             JournalReplay.RequireFingerprint("abc", "abd", "digest"));
+    }
+
+    [Fact]
+    public void PromptRecordPinsAnAffordanceAnchorNamespace()
+    {
+        var asked = Prompt(new Affordance(1, "Use", 4, 0, "Choose"));
+        PromptRecord recorded = PromptRecord.From(asked);
+        PromptRecord changed = recorded with
+        {
+            Affordances = [recorded.Affordances[0] with
+            {
+                AnchorKind = AffordanceAnchorKind.Area,
+            }],
+        };
+
+        Assert.Throws<ReplayDivergenceException>(() =>
+            JournalReplay.RequirePrompt(changed, asked, "prompt"));
     }
 
     [Fact]
@@ -333,6 +373,7 @@ public sealed class JournalRecordsTests
 
     private static void AddSchemaTwoAffordance(JsonObject affordance)
     {
+        _ = affordance.Remove("anchor_kind");
         if (affordance["targets"] is JsonObject target)
             target["is_grouped"] = target["groups"] is JsonArray { Count: > 0 };
         foreach (JsonNode? cost in affordance["costs"]!.AsArray())

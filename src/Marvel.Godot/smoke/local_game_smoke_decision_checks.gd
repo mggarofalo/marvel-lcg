@@ -46,8 +46,9 @@ func _submit_mulligan() -> bool:
 	if not await _pointer_activate(submit):
 		return false
 	if not await _wait_for(func() -> bool:
-		return "turn" in (_node("Play/Prompt/Margin/Stack/PromptHeader/Heading") as Label).text.to_lower()):
-		_fail("the seeded mulligan did not reach the player turn")
+		return _visible_button_beginning(_decision(), "Change Form") != null \
+			and _visible_button_beginning(_decision(), "Play Web-Shooter") != null):
+		_fail("the seeded mulligan did not reach the player-action affordances")
 		return false
 	return true
 

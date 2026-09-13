@@ -198,7 +198,10 @@ internal static class GamePhases
             // declining are the same answer, so a cancel would mean the same
             // thing twice.
             Cancellable: false,
-            Affordances: [game.HandChoice(seat, ResolveMulligans)]);
+            Affordances: [game.HandChoice(seat, ResolveMulligans)])
+        {
+            DisplayQuestion = "Opening hand",
+        };
     }
 
     /// <summary>

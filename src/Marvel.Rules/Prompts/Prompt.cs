@@ -58,6 +58,14 @@ public sealed record Prompt(
     /// <summary>Readable engine-authored context for the pending decision.</summary>
     public string? Description { get; init; }
 
+    /// <summary>Engine-authored, display-ready name of the question being asked.</summary>
+    /// <remarks>
+    /// This structured field is distinct from <see cref="Label"/>, whose
+    /// wording remains the domain trace. Consumers render this value directly
+    /// and never recover a question by parsing prose.
+    /// </remarks>
+    public string? DisplayQuestion { get; init; }
+
     /// <summary>
     /// Whether producing this prompt made concealed candidate identities knowable.
     /// </summary>

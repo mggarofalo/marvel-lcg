@@ -204,35 +204,11 @@ internal static class AbilityCardQueries
                 $"'{cast.Source.FaceId}' asks for the chosen player before one was chosen");
 
 
-    internal static bool IsPlayerCard(ICardFacts facts, Card card)
-    {
-        var kind = facts.Kind(card.FaceId);
+    internal static bool IsPlayerCard(ICardFacts facts, Card card) =>
+        CardControl.IsPlayerCard(facts, card);
 
-        // Player side schemes are not yet a modelled kind and answer Unknown.
-        // Unlike an unknown encounter card, one created in a player's deck has
-        // that player as its owner, which preserves the rule's distinction.
-        return kind is CardKind.AlterEgo
-                or CardKind.Hero
-                or CardKind.Ally
-                or CardKind.Event
-                or CardKind.Resource
-                or CardKind.Support
-                or CardKind.Upgrade
-            || (kind == CardKind.Unknown && card.Owner != World.Scenario);
-    }
-
-    /// <summary>The card's current controller, falling back to its owner out of play.</summary>
-    /// <remarks>
-    /// <c>rr:ownership-and-control.5</c> moves a changed-control player card to
-    /// its controller's play area. Ownership remains on <see cref="Card.Owner"/>,
-    /// so the two facts must not be read from the same field.
-    /// </remarks>
     internal static int ControllerOf(World world, Card card) =>
-        IsPlayerCard(world.Facts, card)
-        && DeckTypes.IsInPlay(card.Area.Type)
-        && card.Area.PlayArea.IsPlayers
-            ? card.Area.PlayArea.Player
-            : card.Owner;
+        CardControl.ControllerOf(world, card);
 
 
     internal static IReadOnlyList<Card> InArea(World world, DeckType type, PlayArea playArea) =>

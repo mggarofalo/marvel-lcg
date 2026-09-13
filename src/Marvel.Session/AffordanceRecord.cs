@@ -10,6 +10,7 @@ namespace Marvel.Session;
 public sealed record AffordanceRecord(
     [property: JsonRequired] string Verb,
     [property: JsonRequired] int AnchorId,
+    [property: JsonRequired] AffordanceAnchorKind AnchorKind,
     [property: JsonRequired] int AnchorPlayer,
     [property: JsonRequired] string Label,
     [property: JsonRequired] TargetRequestRecord? Targets,
@@ -23,6 +24,7 @@ public sealed record AffordanceRecord(
         return new(
             affordance.Verb,
             affordance.AnchorId,
+            affordance.AnchorKind,
             affordance.AnchorPlayer,
             affordance.Label,
             affordance.Targets is null ? null : TargetRequestRecord.From(affordance.Targets),

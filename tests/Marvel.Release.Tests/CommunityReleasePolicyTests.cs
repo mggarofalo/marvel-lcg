@@ -79,8 +79,10 @@ public sealed class CommunityReleasePolicyTests
             workflow, StringComparison.Ordinal);
         Assert.Contains("needs: [identity, acceptance-record, server-sign]",
             workflow, StringComparison.Ordinal);
-        Assert.Contains("engine-replay-v2 · protocol 14 · save 3", workflow,
+        Assert.Contains("engine-replay-v2 · protocol 15 · save 4", workflow,
             StringComparison.Ordinal);
+        Assert.Contains("protocol:15,save_schema:4", workflow, StringComparison.Ordinal);
+        Assert.DoesNotContain("protocol:14", workflow, StringComparison.Ordinal);
         Assert.Contains("def schema_two_prompt", serverUpgrade, StringComparison.Ordinal);
         Assert.Contains("jq --compact-output '", serverUpgrade, StringComparison.Ordinal);
         Assert.Contains("find \"$schema_two_copy\" -type f -name current", serverUpgrade,
@@ -112,6 +114,19 @@ public sealed class CommunityReleasePolicyTests
             StringComparison.Ordinal);
         Assert.DoesNotContain("engine-replay-v1", workflow, StringComparison.Ordinal);
         Assert.DoesNotContain("protocol:11", workflow, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ReleaseMatrixPinsSchemaFourAsTheCurrentMigrationDestination()
+    {
+        string matrix = File.ReadAllText(Path.Combine(
+            RepositoryPaths.Root, "docs", "release-test-matrix.md"));
+
+        Assert.Contains("Empty schema `4` volume", matrix, StringComparison.Ordinal);
+        Assert.Contains("Existing schema `2` or `3` save", matrix, StringComparison.Ordinal);
+        Assert.Contains("migrate to schema `4`", matrix, StringComparison.Ordinal);
+        Assert.Contains("Newer schema `4` save preserved", matrix, StringComparison.Ordinal);
+        Assert.DoesNotContain("migrate to schema `3`", matrix, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -163,7 +178,7 @@ public sealed class CommunityReleasePolicyTests
             "Linux server downgrade",
             "unsupported_downgrade",
             "engine-replay-v2",
-            "protocol `14`",
+            "protocol `15`",
             "TrustedPeople",
         })
         {

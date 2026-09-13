@@ -9,7 +9,7 @@ internal sealed record SchemaTwoStepRecord(
     int Game,
     int Step,
     JsonElement Prompt,
-    DecisionSelector Decision,
+    JsonElement Decision,
     IReadOnlyList<int> Targets,
     IReadOnlyList<int> Resources,
     IReadOnlyDictionary<string, long> Values,

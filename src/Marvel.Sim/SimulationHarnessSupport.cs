@@ -6,6 +6,7 @@ using Marvel.Content.Setup;
 using Marvel.Core.Random;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Session;
 
@@ -17,8 +18,9 @@ namespace Marvel.Sim;
 
 internal static class SimulationHarnessSupport
 {
-    internal const int RecordSchema = 3;
-    internal const int PreviousRecordSchema = 2;
+    internal const int RecordSchema = 4;
+    internal const int PreviousRecordSchema = 3;
+    private const int OldestRecordSchema = 2;
     internal const int RecentEventLimit = 20;
 
     internal static OpenedGame Open(
@@ -184,14 +186,20 @@ internal static class SimulationHarnessSupport
 
     internal static T Read<T>(string line, string expectedType, int schema = RecordSchema)
     {
-        if (schema == PreviousRecordSchema && typeof(T) == typeof(StepRecord))
+        if (schema == OldestRecordSchema && typeof(T) == typeof(StepRecord))
         {
             return (T)(object)ReadSchemaTwoStep(line);
         }
 
-        if (schema == PreviousRecordSchema && typeof(T) == typeof(FailureRecord))
+        if (schema == OldestRecordSchema && typeof(T) == typeof(FailureRecord))
         {
             return (T)(object)ReadSchemaTwoFailure(line);
+        }
+
+        if (schema == PreviousRecordSchema
+            && (typeof(T) == typeof(StepRecord) || typeof(T) == typeof(FailureRecord)))
+        {
+            return SimulationSchemaMigration.ReadSchemaThree<T>(line);
         }
 
         return JsonSerializer.Deserialize<T>(line, RecordJson.Options)
@@ -200,11 +208,11 @@ internal static class SimulationHarnessSupport
 
     internal static void ValidateRecordSchema(int schema)
     {
-        if (schema is not (PreviousRecordSchema or RecordSchema))
+        if (schema is not (OldestRecordSchema or PreviousRecordSchema or RecordSchema))
         {
             throw new SimulationUsageException(
                 $"record schema {schema} is not supported; expected "
-                + $"{PreviousRecordSchema} or {RecordSchema}");
+                + $"{OldestRecordSchema}, {PreviousRecordSchema} or {RecordSchema}");
         }
     }
 
@@ -221,7 +229,7 @@ internal static class SimulationHarnessSupport
             step.Game,
             step.Step,
             SchemaTwoPromptJson.Read(step.Prompt),
-            step.Decision,
+            SimulationSchemaMigration.ReadSchemaTwoSelector(step.Decision),
             step.Targets,
             step.Resources,
             step.Values,
@@ -247,7 +255,7 @@ internal static class SimulationHarnessSupport
             failure.Prompt is null || failure.Prompt.Value.ValueKind == JsonValueKind.Null
                 ? null
                 : SchemaTwoPromptJson.Read(failure.Prompt.Value),
-            failure.Decision,
+            failure.Decision is null ? null : SimulationSchemaMigration.ReadSchemaTwoSelector(failure.Decision.Value),
             failure.Targets,
             failure.Resources,
             failure.Values,

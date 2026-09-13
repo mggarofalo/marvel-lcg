@@ -12,4 +12,14 @@ public sealed record WorldDescriptor(
     IReadOnlyList<PlayerDescriptor> Players,
     IReadOnlyList<AreaDescriptor> Areas,
     IReadOnlyList<GameAreaDescriptor> GameAreas,
-    Outcome Outcome);
+    Outcome Outcome)
+{
+    /// <summary>Distinct seat roles for this response, selected by the authoritative host.</summary>
+    public TableContextDescriptor? Table { get; init; }
+
+    /// <summary>Compact public seat summaries suitable when one player area is expanded.</summary>
+    public IReadOnlyList<PlayerSummaryDescriptor> PlayerSummaries { get; init; } = [];
+
+    /// <summary>Explicit, visibility-reviewed card and prompt relationships.</summary>
+    public IReadOnlyList<TableRelationshipDescriptor> Relationships { get; init; } = [];
+}

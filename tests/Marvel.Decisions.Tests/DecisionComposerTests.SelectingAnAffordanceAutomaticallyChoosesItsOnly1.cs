@@ -70,9 +70,8 @@ public sealed class DecisionComposerSelectingAnAffordanceAutomaticallyChoosesIts
         var identity = new CardDescriptor(10, CardBack.Player, true, true, -1, new CardFaceDescriptor("01001a", "Spider-Man", "Peter Parker", CardKind.Hero, new Dictionary<string, long>(StringComparer.Ordinal)));
         var world = new WorldDescriptor([new PlayerDescriptor(0, "Peter Parker", false)], [new AreaDescriptor(2, "SupportsArea", 0, -1, [source, identity], [])], [], Outcome.Unfinished);
         PromptPresentation view = PromptPresentation.From(prompt, world);
-        Assert.Equal("Choose a player for Helicarrier", view.Heading);
-        Assert.Equal("From Helicarrier", view.Context);
-        Assert.DoesNotContain("01092", view.Heading);
+        Assert.Equal("Choose a game element", view.Heading);
+        Assert.Equal("Decision for Peter Parker", view.Context);
         Assert.Contains("Element", view.Diagnostic);
         Assert.Contains("01092: choose a card", view.Diagnostic);
     }
@@ -84,8 +83,8 @@ public sealed class DecisionComposerSelectingAnAffordanceAutomaticallyChoosesIts
         var card = new CardDescriptor(10, CardBack.Player, true, true, -1, new CardFaceDescriptor("01006", "Web-Shooter", "", CardKind.Upgrade, new Dictionary<string, long>(StringComparer.Ordinal)) { Cost = "1", });
         var world = new WorldDescriptor([new PlayerDescriptor(0, "Peter Parker", false)], [new AreaDescriptor(2, "HandsArea", 0, -1, [card], [])], [], Outcome.Unfinished);
         PromptPresentation view = PromptPresentation.From(prompt, world);
-        Assert.Equal("Peter Parker's turn", view.Heading);
-        Assert.Equal("Current cost 0; printed cost 1.", Assert.Single(view.Affordances).Consequence);
+        Assert.Equal("Choose an action", view.Heading);
+        Assert.Null(Assert.Single(view.Affordances).Consequence);
     }
 
     [Theory]
@@ -103,7 +102,7 @@ public sealed class DecisionComposerSelectingAnAffordanceAutomaticallyChoosesIts
     {
         var prompt = new Prompt(0, Question.TurnOption, TimingPriority.Untimed, "End Turn", "Peter Parker End Phase", false, [new Affordance(1, "End Phase", 10, 0, "End Phase")]);
         var world = new WorldDescriptor([new PlayerDescriptor(0, "Peter Parker", false)], [], [], Outcome.Unfinished);
-        Assert.Equal("Choose end-of-phase discards", PromptPresentation.From(prompt, world).Heading);
+        Assert.Equal("Choose an action", PromptPresentation.From(prompt, world).Heading);
     }
 
     [Fact]
@@ -114,9 +113,8 @@ public sealed class DecisionComposerSelectingAnAffordanceAutomaticallyChoosesIts
         var target = new CardDescriptor(10, CardBack.Player, true, true, -1, new CardFaceDescriptor("01031", "Repulsor Blast", "", CardKind.Event, new Dictionary<string, long>(StringComparer.Ordinal)));
         var world = new WorldDescriptor([new PlayerDescriptor(0, "Peter Parker", false)], [new AreaDescriptor(2, "RevealingArea", -1, -1, [source, target], [])], [], Outcome.Unfinished);
         PromptPresentation view = PromptPresentation.From(prompt, world);
-        Assert.Equal("Choose where to attach Biomechanical Upgrades", view.Heading);
-        Assert.DoesNotContain("01185", view.Heading);
-        Assert.Equal("Choose", Assert.Single(view.Affordances).Label);
+        Assert.Equal("Choose a game element", view.Heading);
+        Assert.Equal("01031", Assert.Single(view.Affordances).Label);
     }
 
     [Fact]

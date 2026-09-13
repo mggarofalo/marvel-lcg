@@ -235,7 +235,8 @@ predecessor_authority="$predecessor_directory/$predecessor_generation.authority.
 jq --compact-output '
   def schema_two_prompt:
     .affordances |= map(
-      (if .targets != null then
+      del(.anchor_kind)
+      | (if .targets != null then
         .targets.is_grouped = ((.targets.groups // []) | length > 0)
       else . end)
       | .costs |= map(
@@ -245,7 +246,9 @@ jq --compact-output '
         | .resource_costs = (.components // [{cost: .cost, rule: .rule, printed: false}])));
   .schema = 2
   | (if .current_prompt != null then .current_prompt |= schema_two_prompt else . end)
-  | .units |= map(.decisions |= map(.prompt |= schema_two_prompt))
+  | .units |= map(.decisions |= map(
+      .prompt |= schema_two_prompt
+      | .decision.selector |= del(.anchor_kind)))
 ' "$predecessor_save" > "$predecessor_save.tmp"
 mv "$predecessor_save.tmp" "$predecessor_save"
 relative_save=${predecessor_save#"$schema_two_copy"/}
@@ -309,5 +312,5 @@ wait_for_container_log "$prefix-downgraded" 'unsupported_downgrade'
 stop_server "$prefix-downgraded"
 
 docker run --rm --entrypoint dotnet "$current_image" Marvel.Server.dll --version |
-  grep -F "v$current_version · engine engine-replay-v2 · protocol 14 · save 3"
+  grep -F "v$current_version · engine engine-replay-v2 · protocol 15 · save 4"
 echo 'SERVER_COMMUNITY_UPGRADE_SMOKE_OK'

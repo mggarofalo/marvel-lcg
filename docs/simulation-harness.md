@@ -301,7 +301,7 @@ anchor, anchor player, label, legality, target request and cost options. A
 `ResourceSource.Effect` is currently a card object id and remains in the record
 as part of the payment menu.
 
-Schema 3 records those target requests and costs through the same typed
+Schema 4 records those target requests and costs through the same typed
 canonical prompt records as the session ledger. Targets omit the derived
 `is_grouped` alias; costs omit `has_alternative`, `generators`,
 `variable_requests`, and `resource_costs`, retaining their independent source
@@ -316,10 +316,12 @@ Arrays retain domain order. The stream starts with one run header, then contains
 one `start`, zero or more `step` records, and one `result` or `failure` record
 per game. One final `summary` record makes the aggregate machine-readable.
 
-The current numeric `schema` is `3`. Replay and reporting read schemas 2 and 3
-so existing research records remain usable. New runs write schema 3. Schema 2
-keeps its frozen prompt shape with computed aliases; readers validate those
-aliases before converting the prompt to the canonical record used for replay.
+The current numeric `schema` is `4`. Replay and reporting read schemas 2, 3
+and 4 so existing research records remain usable. New runs write schema 4.
+Schema 2 keeps its frozen prompt shape with computed aliases; readers validate
+those aliases before converting the prompt to the canonical record used for
+replay. Schema 3 predates the anchor namespace discriminator, so its reader
+assigns its historic card namespace before replay.
 
 ### Header record
 

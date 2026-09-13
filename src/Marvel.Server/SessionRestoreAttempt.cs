@@ -40,10 +40,11 @@ internal sealed class SessionRestoreAttempt(
 
     private StoredSession Migrate(StoredSession current, out bool migration)
     {
-        migration = current.Save.Schema == 2;
+        migration = current.Save.Schema is 2 or 3;
         if (!migration) return current;
-        SessionSave migrated = SessionReplay.MigrateSchemaTwo(
-            current.Save, host.compatibility, host.ReplayOpen);
+        SessionSave migrated = current.Save.Schema == 2
+            ? SessionReplay.MigrateSchemaTwo(current.Save, host.compatibility, host.ReplayOpen)
+            : SessionReplay.MigrateSchemaThree(current.Save, host.compatibility, host.ReplayOpen);
         return current with { Save = migrated };
     }
 

@@ -46,6 +46,7 @@ public static class SchemaTwoPromptJson
         return new(
             affordance.Verb,
             affordance.AnchorId,
+            AffordanceAnchorKind.Card,
             affordance.AnchorPlayer,
             affordance.Label,
             affordance.Targets is null ? null : Convert(affordance.Targets),
