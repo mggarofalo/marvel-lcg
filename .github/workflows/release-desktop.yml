@@ -428,7 +428,7 @@ jobs:
             --arg cards "$(sha256sum datasets/cards/cards.json | cut -d' ' -f1)" \
             --arg setup "$(sha256sum datasets/setup/setup.json | cut -d' ' -f1)" \
             --arg abilities "$(sha256sum datasets/abilities/abilities.json | cut -d' ' -f1)" \
-            '{format:"marvel-server-release",schema:1,product_version:$product_version,commit:$commit,image:$image,digest:$digest,engine_replay:"engine-replay-v2",rng:"mt19937-iso-cxx",state_digest:"state-digest-v2",protocol:14,save_schema:3,datasets:{cards_sha256:$cards,setup_sha256:$setup,abilities_sha256:$abilities}}' \
+            '{format:"marvel-server-release",schema:1,product_version:$product_version,commit:$commit,image:$image,digest:$digest,engine_replay:"engine-replay-v2",rng:"mt19937-iso-cxx",state_digest:"state-digest-v2",protocol:15,save_schema:3,datasets:{cards_sha256:$cards,setup_sha256:$setup,abilities_sha256:$abilities}}' \
             > "$artifact/MarvelServer-$VERSION-linux-amd64.provenance.json"
 
       - uses: actions/upload-artifact@v7

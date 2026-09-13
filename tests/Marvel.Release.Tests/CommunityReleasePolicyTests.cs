@@ -81,6 +81,8 @@ public sealed class CommunityReleasePolicyTests
             workflow, StringComparison.Ordinal);
         Assert.Contains("engine-replay-v2 · protocol 15 · save 3", workflow,
             StringComparison.Ordinal);
+        Assert.Contains("protocol:15,save_schema:3", workflow, StringComparison.Ordinal);
+        Assert.DoesNotContain("protocol:14", workflow, StringComparison.Ordinal);
         Assert.Contains("def schema_two_prompt", serverUpgrade, StringComparison.Ordinal);
         Assert.Contains("jq --compact-output '", serverUpgrade, StringComparison.Ordinal);
         Assert.Contains("find \"$schema_two_copy\" -type f -name current", serverUpgrade,
