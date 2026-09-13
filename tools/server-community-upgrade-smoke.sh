@@ -202,12 +202,24 @@ stop_server "$prefix-previous"
 # it, then its stopped generation is converted to the exact schema 2 prompt
 # shape that the release reader promises to migrate.
 docker cp "$prefix-previous:/var/lib/marvel/sessions/." "$schema_two_copy"
-mapfile -t predecessor_saves < <(find "$schema_two_copy" -type f -name '*.session.json')
-[[ ${#predecessor_saves[@]} == 1 ]] || {
-  echo 'expected exactly one predecessor session save' >&2
+mapfile -t predecessor_manifests < <(find "$schema_two_copy" -type f -name current)
+[[ ${#predecessor_manifests[@]} == 1 ]] || {
+  echo 'expected exactly one predecessor session manifest' >&2
   exit 2
 }
-predecessor_save=${predecessor_saves[0]}
+predecessor_manifest=${predecessor_manifests[0]}
+predecessor_generation=$(tr -d '\r\n' < "$predecessor_manifest")
+[[ $predecessor_generation =~ ^[0-9a-f]{32}$ ]] || {
+  echo 'predecessor session manifest names an invalid generation' >&2
+  exit 2
+}
+predecessor_directory=$(dirname "$predecessor_manifest")
+predecessor_save="$predecessor_directory/$predecessor_generation.session.json"
+predecessor_authority="$predecessor_directory/$predecessor_generation.authority.json"
+[[ -f "$predecessor_save" && -f "$predecessor_authority" ]] || {
+  echo 'selected predecessor generation is incomplete' >&2
+  exit 2
+}
 jq '
   def schema_two_prompt:
     .affordances |= map(
