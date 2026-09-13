@@ -400,6 +400,7 @@ public sealed class VisibilityTests
     {
         string[] publicWhileHidden = ["Back", "FaceUp", "Ready", "Host"];
         string[] redacted = ["Id", "Face"];
+        string[] readableOnly = ["Location", "State"];
         string[] declared = typeof(CardDescriptor).GetProperties()
             .Where(property => property.GetMethod?.IsPublic == true)
             .Select(property => property.Name)
@@ -407,7 +408,7 @@ public sealed class VisibilityTests
             .ToArray();
 
         Assert.Equal(
-            publicWhileHidden.Concat(redacted).Order().ToArray(),
+            publicWhileHidden.Concat(redacted).Concat(readableOnly).Order().ToArray(),
             declared);
     }
 

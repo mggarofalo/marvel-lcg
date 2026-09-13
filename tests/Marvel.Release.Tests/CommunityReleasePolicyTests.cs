@@ -79,7 +79,7 @@ public sealed class CommunityReleasePolicyTests
             workflow, StringComparison.Ordinal);
         Assert.Contains("needs: [identity, acceptance-record, server-sign]",
             workflow, StringComparison.Ordinal);
-        Assert.Contains("engine-replay-v2 · protocol 14 · save 3", workflow,
+        Assert.Contains("engine-replay-v2 · protocol 15 · save 3", workflow,
             StringComparison.Ordinal);
         Assert.Contains("def schema_two_prompt", serverUpgrade, StringComparison.Ordinal);
         Assert.Contains("jq --compact-output '", serverUpgrade, StringComparison.Ordinal);
@@ -163,7 +163,7 @@ public sealed class CommunityReleasePolicyTests
             "Linux server downgrade",
             "unsupported_downgrade",
             "engine-replay-v2",
-            "protocol `14`",
+            "protocol `15`",
             "TrustedPeople",
         })
         {

@@ -39,7 +39,7 @@ internal sealed class AuthorizedSessionProjector(
             ? game.PromptFor(seat)
             : prompt;
         VisibleResult visible = WorldProjection.For(
-            game.State, scopedPrompt, safeEvents, scope);
+            game.State, scopedPrompt, safeEvents, scope, game.Active);
         return new EngineResponse(
             EngineProtocol.Version, request.RequestId, request.GameId,
             capability,
@@ -54,7 +54,8 @@ internal sealed class AuthorizedSessionProjector(
     public HistoryDescriptor History(SessionSave save, ViewScope scope, Game game)
     {
         ArgumentNullException.ThrowIfNull(game);
-        WorldDescriptor world = WorldProjection.For(game.State, null, [], scope).World;
+        WorldDescriptor world = WorldProjection.For(
+            game.State, null, [], scope, game.Active).World;
         var entries = new List<HistoryEntryDescriptor>(save.Cursor);
         foreach (HistoryUnitInspection unit in SessionReplay.InspectActiveHistory(
                      save, compatibility, replayOpen))

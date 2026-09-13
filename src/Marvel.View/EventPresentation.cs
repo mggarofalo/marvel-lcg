@@ -12,4 +12,8 @@ public sealed record EventPresentation(
     string Summary,
     string Cause,
     IReadOnlyList<int> Anchors,
-    EventMotionKind Motion);
+    EventMotionKind Motion)
+{
+    /// <summary>Explicit result subjects; readable copy is never a relationship source.</summary>
+    public IReadOnlyList<TableRelationshipDescriptor> Relationships { get; init; } = [];
+}

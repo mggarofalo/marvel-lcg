@@ -248,6 +248,13 @@ The response types are stable wire records. Adding a new affordance, event or
 descriptor variant requires a protocol-version decision because older clients
 cannot infer an unknown union member.
 
+Table snapshots carry explicit seat roles (prompt owner, viewed private seat,
+active player, first player, and public focus), compact public summaries, and a
+small visibility-reviewed relationship vocabulary. A renderer uses those fields
+for attachment, engagement, offered target, generator, and result connections;
+it never extracts an attacker, payment anchor, focus, or threshold from readable
+copy or board counters. The fields were added with protocol version 15.
+
 ## Server safety
 
 The standalone process exposes only game protocol operations. It has no arbitrary

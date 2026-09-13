@@ -195,7 +195,6 @@ src/Marvel.Sim/SimulationHarnessSupport.cs:18: SL003: SimulationHarnessSupport=4
 src/Marvel.Sim/SimulationRecordFiles.cs:9: SL003: SimulationRecordFiles=354
 src/Marvel.View/BoardPresentation.cs:9: SL003: BoardPresentation=326
 src/Marvel.View/EventPresenter.cs:11: SL003: EventPresenter=447
-src/Marvel.View/WorldProjection.cs:8: SL003: WorldProjection=345
 tools/Marvel.Behavior.Index/Catalog.cs:9: SL003: Catalog=310
 tools/Marvel.Behavior.Run/CoreTranscriptBoardAssertions.cs:17: SL003: CoreTranscriptBoardAssertions=372
 tools/Marvel.Behavior.Run/CoreTranscriptCardAssertions.cs:17: SL003: CoreTranscriptCardAssertions=402

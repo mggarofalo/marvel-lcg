@@ -23,6 +23,12 @@ public sealed record CardDescriptor(
     int Host,
     CardFaceDescriptor? Face)
 {
+    /// <summary>Public placement and controller information, or null for an anonymous concealed pile entry.</summary>
+    public CardLocationDescriptor? Location { get; init; }
+
+    /// <summary>Public live values, or null when the card face is concealed.</summary>
+    public CardStateDescriptor? State { get; init; }
+
     /// <summary>The private audience used by the server-side filter.</summary>
     /// <remarks>Policy metadata is never serialized to the client.</remarks>
     internal CardAudience Audience { get; init; } = CardAudience.Nobody;

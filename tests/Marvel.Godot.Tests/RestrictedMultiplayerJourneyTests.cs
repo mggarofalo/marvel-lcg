@@ -227,11 +227,18 @@ public abstract class RestrictedMultiplayerJourneyTestBase
     protected static WorldDescriptor HideHands(WorldDescriptor world) => world with
     {
         Areas = world.Areas.Select(area => area.Zone == nameof(DeckType.HandsArea) ? area with { Cards = area.Cards.Select(Hide).ToArray(), Removed = area.Removed.Select(Hide).ToArray(), } : area).ToArray(),
+        Table = world.Table is { } table ? table with
+        {
+            PromptOwner = null,
+            ViewedPrivateSeat = null,
+        } : null,
     };
     protected static CardDescriptor Hide(CardDescriptor card) => card with
     {
         Id = null,
-        Face = null
+        Face = null,
+        Location = null,
+        State = null,
     };
     protected static IReadOnlyList<CardDescriptor> Hand(EngineResponse response, int seat) => Assert.Single(Assert.IsType<WorldDescriptor>(response.World).Areas, area => area.Zone == nameof(DeckType.HandsArea) && area.Owner == seat).Cards;
     protected static CardDescriptor[] HandAndRemoved(EngineResponse response, int seat)

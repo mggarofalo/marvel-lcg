@@ -18,183 +18,104 @@ public sealed record PromptPresentation(
     {
         ArgumentNullException.ThrowIfNull(prompt);
         ArgumentNullException.ThrowIfNull(world);
-        string player = world.Players.FirstOrDefault(candidate => candidate.Seat == prompt.Player)
-            ?.Name ?? $"Player {prompt.Player + 1}";
-        string? source = Source(prompt.Label, world);
         return new PromptPresentation(
-            PlayerQuestion(prompt, world, player, source),
-            source is null ? $"Decision for {player}" : $"From {source}",
+            BuildHeading(prompt),
+            BuildContext(prompt, world),
             prompt.Description?.Trim() ?? string.Empty,
             prompt.Cancellable ? "You may pass." : "Choose to continue.",
             $"Player {prompt.Player + 1} · {Words(prompt.Asking.ToString())}"
                 + $" · {Words(prompt.When.ToString())} · {Words(prompt.Trigger)}"
                 + $"\nWire label: {prompt.Label.Trim()}",
-            prompt.Affordances.Select(option => new AffordancePresentation(
-                option.Id,
-                DisplayLabel(option.Label, option.AnchorId, world),
-                option.Description,
-                Words(option.Verb),
-                Describe(option.AnchorId, world),
-                option.AnchorId,
-                option.AnchorPlayer,
-                option.Illegal,
-                option.Targets is null
-                    ? "No selection"
-                    : Describe(option.Targets),
-                option.CostOptions.Select(Describe).ToArray(),
-                CostConsequence(option, world))).ToArray());
+            prompt.Affordances.Select(option => Present(option, world)).ToArray());
     }
 
-    private static string PlayerQuestion(
-        Prompt prompt,
-        WorldDescriptor world,
-        string player,
-        string? source)
+    private static AffordancePresentation Present(Affordance option, WorldDescriptor world)
     {
-        if (prompt.Asking == Question.TurnOption)
+        AffordanceSourceDescriptor? source = Source(option, world);
+        return new AffordancePresentation(
+            option.Id,
+            option.Label,
+            option.Description,
+            Words(option.Verb),
+            Describe(option.AnchorId, world),
+            option.AnchorId,
+            option.AnchorPlayer,
+            option.Illegal,
+            option.Targets is null ? "No selection" : Describe(option.Targets),
+            option.CostOptions.Select(Describe).ToArray())
         {
-            if (prompt.Label.Contains("mulligan", StringComparison.OrdinalIgnoreCase))
-            {
-                return "Choose your opening hand";
-            }
-
-            if (prompt.Label.Contains("Forced Actions", StringComparison.OrdinalIgnoreCase))
-            {
-                return "Choose a Forced Action";
-            }
-
-            if (string.Equals(prompt.Trigger, "End Turn", StringComparison.Ordinal))
-            {
-                return "Choose end-of-phase discards";
-            }
-
-            return $"{player}'s turn";
-        }
-
-        string action = prompt.Asking switch
-        {
-            Question.Option => "Choose an option",
-            Question.Order => "Choose the order",
-            Question.Opportunity when prompt.When == TimingPriority.Interrupt =>
-                "Choose an interrupt",
-            Question.Opportunity when prompt.When == TimingPriority.Response =>
-                "Choose a response",
-            Question.Opportunity => "Choose an ability",
-            Question.Element when string.Equals(
-                prompt.Trigger, "ChooseAttachmentTarget", StringComparison.Ordinal) =>
-                source is null
-                    ? "Choose where to attach the revealed card"
-                    : $"Choose where to attach {source}",
-            Question.Element when ChoosesPlayer(prompt, world) => "Choose a player",
-            Question.Element => Instruction(prompt.Label),
-            _ => Instruction(prompt.Label),
+            Source = source,
+            TargetRequest = option.Targets,
+            CostOptions = option.CostOptions,
+            Relationships = Relationships(option, source, world),
         };
-        return source is null || action.Contains(source, StringComparison.Ordinal)
-            ? action
-            : $"{action} for {source}";
     }
 
-    private static bool ChoosesPlayer(Prompt prompt, WorldDescriptor world)
+    private static string BuildHeading(Prompt prompt) => prompt.Asking switch
     {
-        if (prompt.Affordances.Count == 0)
-        {
-            return false;
-        }
+        Question.TurnOption => "Choose an action",
+        Question.Option => "Choose an option",
+        Question.Order => "Choose an order",
+        Question.Opportunity when prompt.When == TimingPriority.Interrupt =>
+            "Choose an interrupt",
+        Question.Opportunity when prompt.When == TimingPriority.Response =>
+            "Choose a response",
+        Question.Opportunity => "Choose an ability",
+        Question.Element => "Choose a game element",
+        _ => "Choose what happens next",
+    };
 
-        var faces = world.Areas
-            .SelectMany(area => area.Cards.Concat(area.Removed))
-            .Where(card => card.Id is not null && card.Face is not null)
-            .ToDictionary(card => card.Id!.Value, card => card.Face!);
-        return prompt.Affordances.All(option =>
-            faces.TryGetValue(option.AnchorId, out CardFaceDescriptor? face)
-            && face.Kind is CardKind.Hero or CardKind.AlterEgo);
+    private static string BuildContext(Prompt prompt, WorldDescriptor world)
+    {
+        string player = world.Players.FirstOrDefault(candidate => candidate.Seat == prompt.Player)
+            ?.Name ?? $"Player {prompt.Player + 1}";
+        return $"Decision for {player}";
     }
 
-    private static string Instruction(string label)
+    private static AffordanceSourceDescriptor? Source(Affordance option, WorldDescriptor world)
     {
-        string instruction = label.Contains(':', StringComparison.Ordinal)
-            ? label[(label.IndexOf(':', StringComparison.Ordinal) + 1)..]
-            : label;
-        instruction = instruction.Trim().Trim('-').Trim();
-        if (instruction.Length == 0)
-        {
-            return "Choose what happens next";
-        }
-
-        string readable = Words(instruction);
-        return char.ToUpperInvariant(readable[0]) + readable[1..];
-    }
-
-    private static string? Source(string label, WorldDescriptor world)
-    {
-        int separator = label.IndexOf(':', StringComparison.Ordinal);
-        string? prefixedId = separator > 0 ? label[..separator].Trim() : null;
-        CardFaceDescriptor[] faces = [.. world.Areas
-            .SelectMany(area => area.Cards.Concat(area.Removed))
-            .Select(card => card.Face)
-            .OfType<CardFaceDescriptor>()];
-        CardFaceDescriptor? prefixed = faces.FirstOrDefault(face =>
-            string.Equals(face.Id, prefixedId, StringComparison.Ordinal));
-        if (prefixed is not null)
-        {
-            return prefixed.Title;
-        }
-
-        return faces
-            .OrderByDescending(face => face.Id.Length)
-            .FirstOrDefault(face => ContainsToken(label, face.Id))
-            ?.Title;
-    }
-
-    private static bool ContainsToken(string text, string token)
-    {
-        int start = text.IndexOf(token, StringComparison.Ordinal);
-        while (start >= 0)
-        {
-            int end = start + token.Length;
-            bool beginsAtBoundary = start == 0 || !char.IsLetterOrDigit(text[start - 1]);
-            bool endsAtBoundary = end == text.Length || !char.IsLetterOrDigit(text[end]);
-            if (beginsAtBoundary && endsAtBoundary)
-            {
-                return true;
-            }
-
-            start = text.IndexOf(token, start + 1, StringComparison.Ordinal);
-        }
-
-        return false;
-    }
-
-    private static string DisplayLabel(string label, int anchorId, WorldDescriptor world)
-    {
-        CardDescriptor? anchor = world.Areas
-            .SelectMany(area => area.Cards.Concat(area.Removed))
-            .FirstOrDefault(card => card.Id == anchorId);
-        return string.Equals(label, anchor?.Face?.Id, StringComparison.Ordinal)
-            ? "Choose"
-            : label;
-    }
-
-    private static string? CostConsequence(Affordance option, WorldDescriptor world)
-    {
-        if (!string.Equals(option.Verb, "Play", StringComparison.OrdinalIgnoreCase)
-            || option.CostOptions.Count != 1)
-        {
-            return null;
-        }
-
         CardDescriptor? card = world.Areas
             .SelectMany(area => area.Cards.Concat(area.Removed))
             .FirstOrDefault(candidate => candidate.Id == option.AnchorId);
-        string? printed = card?.Face?.Cost;
-        string current = option.CostOptions[0].Cost;
-        if (string.IsNullOrWhiteSpace(printed)
-            || string.Equals(printed, current, StringComparison.Ordinal))
+        if (card?.Id is not null && card.Location is not null)
         {
-            return null;
+            return new AffordanceSourceDescriptor(card.Id, card.Location.AreaId,
+                card.Location.Controller);
         }
 
-        return $"Current cost {current}; printed cost {printed}.";
+        AreaDescriptor? area = world.Areas.FirstOrDefault(candidate => candidate.Id == option.AnchorId);
+        return area is null
+            ? null
+            : new AffordanceSourceDescriptor(null, area.Id, area.Owner);
+    }
+
+    private static List<TableRelationshipDescriptor> Relationships(
+        Affordance option,
+        AffordanceSourceDescriptor? source,
+        WorldDescriptor world)
+    {
+        if (source?.CardId is not int sourceId)
+        {
+            return [];
+        }
+        var visible = world.Areas.SelectMany(area => area.Cards.Concat(area.Removed))
+            .Where(card => card.Id is not null).Select(card => card.Id!.Value).ToHashSet();
+        var relationships = new List<TableRelationshipDescriptor>();
+        if (option.Targets is not null)
+        {
+            relationships.AddRange(option.Targets.Legal.Where(visible.Contains)
+                .Select(target => new TableRelationshipDescriptor(
+                    RelationshipKind.OfferedTarget, sourceId, target)));
+        }
+        foreach (ResourceSource generator in option.CostOptions.SelectMany(cost => cost.Generators))
+        {
+            if (visible.Contains(generator.Effect))
+            {
+                relationships.Add(new TableRelationshipDescriptor(
+                    RelationshipKind.OfferedGenerator, sourceId, generator.Effect));
+            }
+        }
+        return relationships;
     }
 
     /// <summary>Names an authorized board object, or leaves an opaque fallback.</summary>

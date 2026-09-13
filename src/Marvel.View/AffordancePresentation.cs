@@ -16,4 +16,17 @@ public sealed record AffordancePresentation(
     string? Illegal,
     string Targets,
     IReadOnlyList<string> Costs,
-    string? Consequence = null);
+    string? Consequence = null)
+{
+    /// <summary>Structured source information; null is the complete fallback path.</summary>
+    public AffordanceSourceDescriptor? Source { get; init; }
+
+    /// <summary>The offered target structure without flattening groups, order, or repetition.</summary>
+    public TargetRequest? TargetRequest { get; init; }
+
+    /// <summary>The offered costs without flattening alternatives, components, variables, or generators.</summary>
+    public IReadOnlyList<CostOption> CostOptions { get; init; } = [];
+
+    /// <summary>Visible source-to-target and source-to-generator relationships in wire order.</summary>
+    public IReadOnlyList<TableRelationshipDescriptor> Relationships { get; init; } = [];
+}
