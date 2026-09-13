@@ -90,6 +90,12 @@ public sealed class CommunityReleasePolicyTests
             StringComparison.Ordinal);
         Assert.DoesNotContain("find \"$schema_two_copy\" -type f -name '*.session.json'",
             serverUpgrade, StringComparison.Ordinal);
+        Assert.Contains("tar -C /source -czf - . > \"$backup\"", serverUpgrade,
+            StringComparison.Ordinal);
+        Assert.Contains("tar -C /target -xzf - < \"$backup\"", serverUpgrade,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("$(dirname \"$backup\"):/backup", serverUpgrade,
+            StringComparison.Ordinal);
         Assert.Contains("\"stage\":\"migration\"", serverUpgrade, StringComparison.Ordinal);
         Assert.Contains("\"save_committed\":true", serverUpgrade, StringComparison.Ordinal);
         Assert.Contains("MARVEL_HOSTED_SMOKE_CHECKPOINT_DIR", serverUpgrade,
