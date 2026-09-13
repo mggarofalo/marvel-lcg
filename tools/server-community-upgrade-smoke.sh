@@ -103,6 +103,19 @@ stop_server() {
   [[ $(docker inspect --format '{{.State.ExitCode}}' "$1") == 0 ]]
 }
 
+wait_for_container_log() {
+  local name=$1 expected=$2 logs=
+  for _ in {1..300}; do
+    logs=$(docker logs "$name" 2>&1)
+    grep -Fq "$expected" <<< "$logs" && return
+    [[ $(docker inspect --format '{{.State.Running}}' "$name") == true ]] || break
+    sleep 0.1
+  done
+  echo "container $name did not log: $expected" >&2
+  printf '%s\n' "$logs" >&2
+  return 1
+}
+
 run_game() {
   MARVEL_HOSTED_SMOKE_EXTERNAL_SERVER=true \
     MARVEL_HOSTED_SMOKE_PORT="$1" \
@@ -140,16 +153,15 @@ wait_for_checkpoint clients-connected
 stop_server "$prefix-journey-previous"
 start_server "$prefix-journey-restarted" "$previous_image" "$journey_sessions" 41924 \
   "$journey_diagnostics"
-docker logs "$prefix-journey-restarted" 2>&1 | grep -q 'session.restore.completed'
+wait_for_container_log "$prefix-journey-restarted" 'session.restore.completed'
 touch "$checkpoint_directory/continue-after-restart"
 
 wait_for_checkpoint upgrade-ready
 stop_server "$prefix-journey-restarted"
 start_server "$prefix-journey-current" "$current_image" "$journey_sessions" 41924 \
   "$journey_diagnostics"
-journey_upgrade_logs=$(docker logs "$prefix-journey-current" 2>&1)
-grep -q 'session.restore.completed' <<< "$journey_upgrade_logs"
-grep -q '"replay_verified":true' <<< "$journey_upgrade_logs"
+wait_for_container_log "$prefix-journey-current" 'session.restore.completed'
+wait_for_container_log "$prefix-journey-current" '"replay_verified":true'
 touch "$checkpoint_directory/continue-after-upgrade"
 
 if ! wait "$journey_pid"; then
@@ -220,7 +232,7 @@ predecessor_authority="$predecessor_directory/$predecessor_generation.authority.
   echo 'selected predecessor generation is incomplete' >&2
   exit 2
 }
-jq '
+jq --compact-output '
   def schema_two_prompt:
     .affordances |= map(
       (if .targets != null then
@@ -259,22 +271,21 @@ start_server "$prefix-interrupted" "$current_image" "$interrupted" 41924
 docker kill --signal KILL "$prefix-interrupted" >/dev/null
 [[ $(docker inspect --format '{{.State.ExitCode}}' "$prefix-interrupted") != 0 ]]
 start_server "$prefix-interrupted-recovery" "$current_image" "$interrupted" 41925
-docker logs "$prefix-interrupted-recovery" 2>&1 | grep -q 'session.restore.completed'
+wait_for_container_log "$prefix-interrupted-recovery" 'session.restore.completed'
 stop_server "$prefix-interrupted-recovery"
 
 # The pre-upgrade backup remains a runnable rollback unit with the prior image.
 docker run --rm --interactive --volume "$rollback:/target" \
   alpine:3.23.3 tar -C /target -xzf - < "$backup"
 start_server "$prefix-rollback" "$previous_image" "$rollback" 41924
-docker logs "$prefix-rollback" 2>&1 | grep -q 'session.restore.completed'
+wait_for_container_log "$prefix-rollback" 'session.restore.completed'
 stop_server "$prefix-rollback"
 
 # The exact release image restores the existing save and retains diagnostics.
 start_server "$prefix-current" "$current_image" "$sessions" 41924
-current_logs=$(docker logs "$prefix-current" 2>&1)
-grep -q 'session.restore.completed' <<< "$current_logs"
-grep -q '"stage":"migration"' <<< "$current_logs"
-grep -q '"save_committed":true' <<< "$current_logs"
+wait_for_container_log "$prefix-current" 'session.restore.completed'
+wait_for_container_log "$prefix-current" '"stage":"migration"'
+wait_for_container_log "$prefix-current" '"save_committed":true'
 docker run --rm --volume "$diagnostics:/diagnostics:ro" --entrypoint sh \
   "$current_image" -c 'cat /diagnostics/operational.jsonl' > "$backup.diagnostics"
 grep -F -x -f "$diagnostic_record" "$backup.diagnostics" >/dev/null
@@ -286,7 +297,7 @@ stop_server "$prefix-current"
 docker run --rm --interactive --volume "$restored:/target" \
   alpine:3.23.3 tar -C /target -xzf - < "$backup"
 start_server "$prefix-restored" "$current_image" "$restored" 41924
-docker logs "$prefix-restored" 2>&1 | grep -q 'session.restore.completed'
+wait_for_container_log "$prefix-restored" 'session.restore.completed'
 stop_server "$prefix-restored"
 
 # A save written by the release cannot be handed to the lower product as rollback.
@@ -294,7 +305,7 @@ start_server "$prefix-writer" "$current_image" "$downgrade" 41924
 run_game 41924
 stop_server "$prefix-writer"
 start_server "$prefix-downgraded" "$previous_image" "$downgrade" 41924
-docker logs "$prefix-downgraded" 2>&1 | grep -q 'unsupported_downgrade'
+wait_for_container_log "$prefix-downgraded" 'unsupported_downgrade'
 stop_server "$prefix-downgraded"
 
 docker run --rm --entrypoint dotnet "$current_image" Marvel.Server.dll --version |
