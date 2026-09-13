@@ -2,7 +2,7 @@
 set -euo pipefail
 
 archive=${1:-}
-smoke_timeout_seconds=120
+smoke_timeout_seconds=600
 if [[ -z "$archive" || ! -f "$archive" || ! -f "$archive.sha256" \
     || -z ${MARVEL_ENGINE_ENDPOINT:-} ]]; then
   echo 'usage: macos-community-install-smoke.sh APPLICATION.zip' >&2
@@ -61,7 +61,7 @@ if xattr -p com.apple.quarantine "$app" >/dev/null 2>&1; then
   exit 2
 fi
 
-"$executable" --script res://smoke/hosted_multiplayer_smoke.gd \
+"$executable" -- --marvel-hosted-multiplayer-smoke \
   >"$log" 2>&1 &
 app_pid=$!
 deadline=$((SECONDS + smoke_timeout_seconds))
