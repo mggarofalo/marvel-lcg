@@ -33,7 +33,7 @@ public sealed partial class Main : Control
     internal Label cardInspectorTitle = null!;
     internal ScrollContainer cardInspectorScroll = null!;
     internal VBoxContainer cardInspectorContent = null!;
-    internal Control? cardInspectorReturnFocus;
+    internal readonly CardInspectorState cardInspectorState = new();
     internal int cardInspectorGeneration;
     internal bool cardInspectorHovered;
     internal bool cardInspectorPinned;

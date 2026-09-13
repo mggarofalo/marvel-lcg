@@ -288,6 +288,66 @@ public sealed class VisualSystemTests
     }
 
     [Fact]
+    public void BoardInspectorUsesTheRoomierCompleteHorizontalSideAtASourceEdge()
+    {
+        InspectorPlacement placement = VisualSystem.PlaceAnchoredInspector(new(
+            1920, 1080, 240, 360, 210, 112, 400, 560, HandSource: false));
+
+        Assert.Equal(InspectorAttachment.Right, placement.Attachment);
+        Assert.Equal(462, placement.X);
+        Assert.InRange(placement.Y, 12, 508);
+    }
+
+    [Fact]
+    public void BoardInspectorChoosesTheLeftEdgeWhenTheRightCannotFit()
+    {
+        InspectorPlacement placement = VisualSystem.PlaceAnchoredInspector(new(
+            1920, 1080, 1700, 900, 210, 112, 400, 560, HandSource: false));
+
+        Assert.Equal(InspectorAttachment.Left, placement.Attachment);
+        Assert.Equal(1288, placement.X);
+        Assert.Equal(508, placement.Y);
+    }
+
+    [Fact]
+    public void HandInspectorPrefersAnAboveCardAttachment()
+    {
+        InspectorPlacement placement = VisualSystem.PlaceAnchoredInspector(new(
+            1920, 1080, 960, 880, 172, 72, 400, 560, HandSource: true));
+
+        Assert.Equal(InspectorAttachment.Above, placement.Attachment);
+        Assert.Equal(308, placement.Y);
+        Assert.Equal(846, placement.X);
+    }
+
+    [Fact]
+    public void InspectorUsesAnExplicitCenteredFallbackWhenAttachmentCannotFit()
+    {
+        InspectorPlacement placement = VisualSystem.PlaceAnchoredInspector(new(
+            1920, 1080, 440, 100, 172, 72, 400, 560, HandSource: true));
+
+        Assert.Equal(InspectorAttachment.ViewportFallback, placement.Attachment);
+        Assert.Equal(760, placement.X);
+        Assert.Equal(260, placement.Y);
+        Assert.False(placement.IsAttached);
+    }
+
+    [Theory]
+    [InlineData(80)]
+    [InlineData(150)]
+    public void AnchoredInspectorKeepsTheCompleteFrameInsideTheDesktopViewport(int percentage)
+    {
+        InterfaceScale scale = (InterfaceScale)percentage;
+        CardLayoutMetrics card = VisualSystem.Card(CardDisplaySize.Full, scale);
+        InspectorPlacement placement = VisualSystem.PlaceAnchoredInspector(new(
+            1920, 1080, 1680, 900, 210, 112,
+            card.Width, Math.Min(card.MinimumHeight, 1056), HandSource: false));
+
+        Assert.InRange(placement.X, 12, 1920 - card.Width - 12);
+        Assert.InRange(placement.Y, 12, 1080 - Math.Min(card.MinimumHeight, 1056) - 12);
+    }
+
+    [Fact]
     public void CardSizesHavePredictableGeometryAndProgressiveDisclosure()
     {
         foreach (InterfaceScale scale in VisualSystem.SupportedScales)

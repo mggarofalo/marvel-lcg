@@ -87,6 +87,13 @@ public static class VisualSystem
             Math.Clamp(desiredY, margin, maximumY));
     }
 
+    /// <summary>
+    /// Attaches a full-card inspector to a visible source whenever the complete
+    /// inspector fits; otherwise returns a centered, deliberately unanchored fallback.
+    /// </summary>
+    public static InspectorPlacement PlaceAnchoredInspector(InspectorPlacementRequest request) =>
+        InspectorPositioning.Place(request);
+
     /// <summary>Returns the semantic treatment for one interactive state.</summary>
     public static InteractiveStyle For(InteractiveVisualState state) => state switch
     {

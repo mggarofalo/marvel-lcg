@@ -8,13 +8,17 @@ func _card_inspector_is_safe(hand_card: Control) -> bool:
 		return false
 	if not _inspector_frame_is_safe(inspector):
 		return false
+	if not _hand_inspector_is_anchored(hand_card, inspector):
+		return false
 	if not await _capture_checkpoint("card-inspector"):
 		return false
 	if not await _pinned_inspector_is_safe(inspector):
 		return false
 	if not await _inspector_backdrop_is_safe(inspector):
 		return false
-	return await _keyboard_inspector_is_safe(hand_card, inspector)
+	if not await _keyboard_inspector_is_safe(hand_card, inspector):
+		return false
+	return await _popup_card_inspector_is_safe()
 
 
 func _action_card_preview_is_safe(hand_card: Control) -> bool:
@@ -79,6 +83,23 @@ func _inspector_frame_is_safe(inspector: Control) -> bool:
 	if not _inspector_resources_are_safe(face):
 		return false
 	return _inspector_detail_is_safe(inspector)
+
+
+func _hand_inspector_is_anchored(hand_card: Control, inspector: Control) -> bool:
+	var frame := inspector.get_node("Frame") as PanelContainer
+	var connector := inspector.get_node("Connector") as Line2D
+	if frame.get_global_rect().end.y > hand_card.get_global_rect().position.y - 10.0:
+		if connector.visible or not (inspector.get_node("Backdrop") as ColorRect).visible:
+			_fail("a hand inspector without room did not use the explicit viewport fallback")
+			return false
+		return true
+	if connector == null or not connector.visible or connector.points.size() != 2:
+		_fail("the hand inspector has no persistent source connector")
+		return false
+	if hand_card.theme_type_variation != &"FocusedCard":
+		_fail("the inspected hand card lost its non-color source treatment")
+		return false
+	return true
 
 
 func _inspector_resources_are_safe(face: Control) -> bool:
@@ -175,7 +196,8 @@ func _inspector_backdrop_is_safe(inspector: Control) -> bool:
 	var click := InputEventMouseButton.new()
 	click.button_index = MOUSE_BUTTON_LEFT
 	click.pressed = true
-	click.position = background_action.get_global_rect().get_center()
+	click.position = Vector2(4.0, 4.0) if (inspector.get_node("Backdrop") as ColorRect).visible \
+		else background_action.get_global_rect().get_center()
 	render_viewport.push_input(click)
 	await process_frame
 	if inspector.visible:
@@ -283,10 +305,68 @@ func _capture_named_card(title: String, checkpoint: String) -> bool:
 	if not inspector.visible:
 		_fail("'%s' did not open for visual inspection" % title)
 		return false
+	if title == "The Break-In!" and not _board_inspector_is_anchored(card, inspector):
+		return false
 	if not await _capture_checkpoint(checkpoint):
 		return false
 	var close := inspector.get_node("Frame/Stack/Header/Close") as Button
 	close.pressed.emit()
+	await process_frame
+	return true
+
+
+func _board_inspector_is_anchored(card: Control, inspector: Control) -> bool:
+	var frame := inspector.get_node("Frame") as PanelContainer
+	var card_rect := card.get_global_rect()
+	var frame_rect := frame.get_global_rect()
+	var attached := frame_rect.position.x >= card_rect.end.x + 10.0 \
+		or frame_rect.end.x <= card_rect.position.x - 10.0
+	if not attached:
+		_fail("the board inspector was not attached to a horizontal source edge")
+		return false
+	var connector := inspector.get_node("Connector") as Line2D
+	if connector == null or not connector.visible or connector.points.size() != 2:
+		_fail("the board inspector has no persistent source connector")
+		return false
+	if card.theme_type_variation != &"FocusedCard":
+		_fail("the inspected board card lost its non-color source treatment")
+		return false
+	return true
+
+
+func _popup_card_inspector_is_safe() -> bool:
+	var disclosure := main.find_child("SecondaryAreasDisclosure", true, false) as Button
+	if disclosure == null:
+		return true
+	disclosure.button_pressed = true
+	disclosure.pressed.emit()
+	await process_frame
+	var popup := disclosure.get_parent().find_child("SecondaryAreaMenu", false, false) as PopupPanel
+	if popup == null:
+		_fail("More areas did not expose its source popup")
+		return false
+	var source: Control = null
+	for candidate in popup.find_children("ProceduralCard", "PanelContainer", true, false):
+		var card := candidate as Control
+		if card.focus_mode == Control.FOCUS_ALL:
+			source = card
+			break
+	if source == null:
+		popup.hide()
+		return true
+	var click := InputEventMouseButton.new()
+	click.button_index = MOUSE_BUTTON_LEFT
+	click.pressed = true
+	source.gui_input.emit(click)
+	await process_frame
+	var inspector := main.get_node("CardInspector") as Control
+	if inspector == null or not inspector.visible:
+		_fail("a More areas card did not open an inspector")
+		return false
+	if not _board_inspector_is_anchored(source, inspector):
+		return false
+	(inspector.get_node("Frame/Stack/Header/Close") as Button).pressed.emit()
+	popup.hide()
 	await process_frame
 	return true
 

@@ -285,9 +285,13 @@ controls honor the complete range; above 100%, the fixed tabletop, hand, and
 decision dock retain their standard geometry so all persistent play regions stay
 inside the minimum canvas. The adjacent motion toggle controls event animation. Table and hand cards
 expose a concise summary; clicking or keyboard-activating a readable card opens
-the full card inspector beside that card. The modal moves focus to its explicit
-Close control, closes with Escape or the surrounding backdrop, restores focus to
-the source card, and keeps long rules text independently scrollable. Character
+the full card inspector from that card's visible edge. Board cards use the
+nearest complete horizontal side and hand cards use the space above their source.
+The source keeps a thick structural treatment and a connector while the popover
+is attached. When no complete attachment fits, the client intentionally centers
+a dimmed viewport fallback without a connector. The inspector contains focus,
+closes with Escape or an outside click, restores focus to the source card when
+it still exists, and keeps long rules text independently scrollable. Character
 health is one current/maximum value rather than separate hit-point and damage
 values. Printed resources use only their canonical icon row everywhere,
 including the full inspector, matching the printed card rather than adding

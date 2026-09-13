@@ -1,4 +1,5 @@
 using Godot;
+using Marvel.View;
 
 namespace Marvel.Godot;
 
@@ -68,7 +69,16 @@ internal sealed class MainLayoutController
             VisualSystem.Controls(workspaceScale).MinimumHeight);
         if (main.CurrentGame?.World is { } world)
         {
+            BoardCardPresentation? inspected = main.cardInspector.Visible
+                ? main.cardInspectorState.Card
+                : null;
+            bool pinned = main.cardInspectorPinned;
             main.RenderBoard(world);
+            if (inspected?.TargetId is { } id
+                && main.boardRender?.ControlFor(id) is { } source)
+            {
+                main.ShowCardInspector(inspected, source, pinned);
+            }
         }
         ApplyResponsivePlayLayout();
     }
@@ -129,5 +139,6 @@ internal sealed class MainLayoutController
         main.pageScroll.VerticalScrollMode = main.board.Visible
             ? ScrollContainer.ScrollMode.Disabled
             : ScrollContainer.ScrollMode.Auto;
+        Callable.From(() => CardInspectorLifecycle.Reposition(main)).CallDeferred();
     }
 }

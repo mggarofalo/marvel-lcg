@@ -8,6 +8,7 @@ public sealed partial class CardControl : PanelContainer
 {
     private string baseVariation = GodotThemeVariations.BoardCard;
     private bool highlighted;
+    private bool inspected;
     private bool presented;
 
     private CardControl()
@@ -118,8 +119,15 @@ public sealed partial class CardControl : PanelContainer
         RefreshTreatment();
     }
 
+    /// <summary>Retains a structural source cue while this card's detail is open.</summary>
+    public void SetInspected(bool value)
+    {
+        inspected = value;
+        RefreshTreatment();
+    }
+
     private void RefreshTreatment() =>
-        ThemeTypeVariation = highlighted || presented
+        ThemeTypeVariation = highlighted || presented || inspected
             ? GodotThemeVariations.FocusedCard
             : baseVariation;
 

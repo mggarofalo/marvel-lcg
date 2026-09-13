@@ -692,7 +692,14 @@ grow_vertical = 2
 mouse_filter = 0
 color = Color(0.015, 0.035, 0.045, 0.72)
 
+[node name="Connector" type="Line2D" parent="CardInspector"]
+visible = false
+z_index = 1
+width = 3.0
+default_color = Color(0.949, 0.757, 0.306, 1)
+
 [node name="Frame" type="PanelContainer" parent="CardInspector"]
+z_index = 2
 layout_mode = 0
 mouse_filter = 0
 focus_mode = 0
