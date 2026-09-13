@@ -85,6 +85,15 @@ public sealed record Affordance(
     string? Illegal = null,
     string? Description = null)
 {
+    /// <summary>The namespace that authoritatively identifies <see cref="AnchorId"/>.</summary>
+    /// <remarks>
+    /// Existing engine producers anchor to cards. Area producers must opt in;
+    /// an unspecified anchor is intentionally rendered as an opaque fallback.
+    /// The game rules do not define this UI identity, so this is an engine wire
+    /// choice rather than a rules-derived distinction.
+    /// </remarks>
+    public AffordanceAnchorKind AnchorKind { get; init; } = AffordanceAnchorKind.Card;
+
     /// <summary>Whether the player can actually take this.</summary>
     /// <remarks>
     /// <para>

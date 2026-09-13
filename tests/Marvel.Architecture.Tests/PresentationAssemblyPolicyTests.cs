@@ -33,6 +33,7 @@ public sealed class PresentationAssemblyPolicyTests
             "Marvel.Rules.Events.PlayAreaJoined",
             "Marvel.Rules.Play.Outcome",
             "Marvel.Rules.Prompts.Affordance",
+            "Marvel.Rules.Prompts.AffordanceAnchorKind",
             "Marvel.Rules.Prompts.CostOption",
             "Marvel.Rules.Prompts.Prompt",
             "Marvel.Rules.Prompts.Question",

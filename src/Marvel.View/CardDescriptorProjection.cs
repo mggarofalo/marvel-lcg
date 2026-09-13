@@ -42,7 +42,7 @@ internal static class CardDescriptorProjection
             Location = new CardLocationDescriptor(
                 card.Area.Id,
                 card.Area.Type.ToString(),
-                card.Area.PlayArea.Player,
+                card.Owner,
                 card.Area.Type == DeckType.EngagedEnemiesArea ? card.Area.PlayArea.Player : -1),
             State = new CardStateDescriptor(
                 card.Ready,

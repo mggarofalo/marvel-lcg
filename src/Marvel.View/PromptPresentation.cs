@@ -37,13 +37,14 @@ public sealed record PromptPresentation(
             option.Label,
             option.Description,
             Words(option.Verb),
-            Describe(option.AnchorId, world),
+            DescribeAnchor(option, world),
             option.AnchorId,
             option.AnchorPlayer,
             option.Illegal,
             option.Targets is null ? "No selection" : Describe(option.Targets),
             option.CostOptions.Select(Describe).ToArray())
         {
+            AnchorKind = option.AnchorKind,
             Source = source,
             TargetRequest = option.Targets,
             CostOptions = option.CostOptions,
@@ -51,7 +52,12 @@ public sealed record PromptPresentation(
         };
     }
 
-    private static string BuildHeading(Prompt prompt) => prompt.Asking switch
+    private static string BuildHeading(Prompt prompt) =>
+        string.IsNullOrWhiteSpace(prompt.DisplayQuestion)
+            ? GenericHeading(prompt)
+            : prompt.DisplayQuestion.Trim();
+
+    private static string GenericHeading(Prompt prompt) => prompt.Asking switch
     {
         Question.TurnOption => "Choose an action",
         Question.Option => "Choose an option",
@@ -74,19 +80,25 @@ public sealed record PromptPresentation(
 
     private static AffordanceSourceDescriptor? Source(Affordance option, WorldDescriptor world)
     {
-        CardDescriptor? card = world.Areas
-            .SelectMany(area => area.Cards.Concat(area.Removed))
-            .FirstOrDefault(candidate => candidate.Id == option.AnchorId);
-        if (card?.Id is not null && card.Location is not null)
+        if (option.AnchorKind == AffordanceAnchorKind.Card)
         {
-            return new AffordanceSourceDescriptor(card.Id, card.Location.AreaId,
-                card.Location.Controller);
+            CardDescriptor? card = world.Areas
+                .SelectMany(area => area.Cards.Concat(area.Removed))
+                .FirstOrDefault(candidate => candidate.Id == option.AnchorId);
+            return card?.Id is not null && card.Location is not null
+                ? new AffordanceSourceDescriptor(option.AnchorKind, card.Id,
+                    card.Location.AreaId, card.Location.Controller)
+                : null;
+        }
+
+        if (option.AnchorKind != AffordanceAnchorKind.Area)
+        {
+            return null;
         }
 
         AreaDescriptor? area = world.Areas.FirstOrDefault(candidate => candidate.Id == option.AnchorId);
-        return area is null
-            ? null
-            : new AffordanceSourceDescriptor(null, area.Id, area.Owner);
+        return area is null ? null : new AffordanceSourceDescriptor(
+            option.AnchorKind, null, area.Id, area.Owner);
     }
 
     private static List<TableRelationshipDescriptor> Relationships(
@@ -136,6 +148,27 @@ public sealed record PromptPresentation(
             return $"Face-down {card.Back.ToString().ToLowerInvariant()} card";
         }
 
+        AreaDescriptor? area = world.Areas.FirstOrDefault(candidate => candidate.Id == id);
+        return area is null ? $"Object {id}" : Words(area.Zone);
+    }
+
+    private static string DescribeAnchor(Affordance option, WorldDescriptor world) =>
+        option.AnchorKind switch
+        {
+            AffordanceAnchorKind.Card => DescribeCard(option.AnchorId, world),
+            AffordanceAnchorKind.Area => DescribeArea(option.AnchorId, world),
+            _ => $"Object {option.AnchorId}",
+        };
+
+    private static string DescribeCard(int id, WorldDescriptor world)
+    {
+        CardDescriptor? card = world.Areas.SelectMany(area => area.Cards.Concat(area.Removed))
+            .FirstOrDefault(candidate => candidate.Id == id);
+        return card is null ? $"Object {id}" : Describe(id, world);
+    }
+
+    private static string DescribeArea(int id, WorldDescriptor world)
+    {
         AreaDescriptor? area = world.Areas.FirstOrDefault(candidate => candidate.Id == id);
         return area is null ? $"Object {id}" : Words(area.Zone);
     }

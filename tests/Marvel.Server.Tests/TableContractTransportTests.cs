@@ -1,6 +1,8 @@
 using System.Text.Json;
 using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
+using Marvel.Rules.Timing;
 using Marvel.View;
 using Xunit;
 
@@ -47,6 +49,32 @@ public sealed class TableContractTransportTests
         Assert.Equal([23, 17], restored.World.Relationships.Select(relationship => relationship.Related));
         Assert.Equal(0, restored.World.Table?.PromptOwner);
         Assert.Equal(1, restored.World.Table?.PublicFocusSeat);
+    }
+
+    [Fact]
+    public void VersionFifteenCarriesPromptQuestionAndAnchorNamespaceOverTheWire()
+    {
+        var prompt = new Prompt(0, Question.TurnOption, TimingPriority.Untimed,
+            "Mulligan", "Spider-Man resolves mulligans", false,
+            [new Affordance(7, "Choose", 4, 0, "unknown")
+                { AnchorKind = AffordanceAnchorKind.Area }])
+        {
+            DisplayQuestion = "Opening hand",
+        };
+        var response = new EngineResponse(EngineProtocol.Version, "prompt", "game",
+            Capability: null, prompt, Events: []);
+
+        byte[] json = EngineJson.Write(response);
+        using JsonDocument document = JsonDocument.Parse(json);
+        EngineResponse restored = EngineJson.ReadResponse(json);
+        JsonElement encoded = document.RootElement.GetProperty("prompt");
+
+        Assert.Equal(15, response.Version);
+        Assert.Equal("Opening hand", encoded.GetProperty("display_question").GetString());
+        Assert.Equal((int)AffordanceAnchorKind.Area, encoded.GetProperty("affordances")[0]
+            .GetProperty("anchor_kind").GetInt32());
+        Assert.Equal("Opening hand", restored.Prompt?.DisplayQuestion);
+        Assert.Equal(AffordanceAnchorKind.Area, restored.Prompt?.Affordances[0].AnchorKind);
     }
 
     private static CardDescriptor Card(int id, string title) => new(

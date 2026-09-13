@@ -41,15 +41,18 @@ public sealed class TableContractTests
         Area attachment = world.CreateArea(
             DeckType.UpgradesArea, cardOwner: 0, playArea: PlayArea.Of(1), host: remoteDefender.ObjectId);
         Card attachmentCard = world.CreateCard("attachment", attachment);
-        var prompt = new Prompt(0, Question.Element, TimingPriority.Untimed, "attack", "misleading label", false,
-        [
-            new Affordance(7, "Defend", remoteDefender.ObjectId, 1, "unknown label",
-                new TargetRequest([villain.ObjectId, minion.ObjectId], 1, 1),
+        world.Attack = new EnemyAttack(villain.ObjectId, 0, world.Seats[0].IdentityCard.ObjectId);
+        world.Activation = new EnemyActivation(villain.ObjectId, 0, Attacking: true);
+        Prompt prompt = Assert.IsType<Prompt>(
+            Attack.DeclareDefender(world, world.Facts, new NoCardAbilities())) with
+        {
+            Affordances = [new Affordance(7, Attack.DefenseVerb, remoteDefender.ObjectId, 1,
+                "unknown label", new TargetRequest([villain.ObjectId, minion.ObjectId], 1, 1),
                 [new CostOption(remoteDefender.ObjectId, "X", OrCost: "2", Sources:
                     [new ResourceSource(remoteDefender.ObjectId, "W")],
                     Variables: [new VariableRequest("X", 0, 3)],
-                    Components: [new ResourceCost("1"), new ResourceCost("1", ["W"])])]),
-        ]);
+                    Components: [new ResourceCost("1"), new ResourceCost("1", ["W"])])])],
+        };
         ViewScope scope = new PermissiveVisibilityPolicy().Authorize(null, world.Players);
         VisibleResult visible = WorldProjection.For(world, prompt, [], scope, activePlayer: 1);
         WorldDescriptor table = visible.World;
@@ -99,6 +102,55 @@ public sealed class TableContractTests
         Assert.DoesNotContain(other.World.PlayerSummaries,
             summary => summary.EngagedEnemies.Contains(secret.ObjectId)
                 || summary.OfferedDefenders.Contains(secret.ObjectId));
+    }
+
+    [Fact]
+    public void CardControllerComesFromTheCardWhenScenarioCardsSitOnAPlayerSide()
+    {
+        World world = Board(out Card host, out _, out _);
+        Area aside = world.CreateArea(DeckType.AsideDeck, World.Scenario, PlayArea.Of(0));
+        Card asideCard = world.CreateCard("villain", aside);
+        Card tucked = world.CreateCard("villain", world.AreaOf(DeckType.EncounterDeck));
+        Tuck.Card(world, tucked, host, "test", []);
+
+        WorldDescriptor view = WorldProjection.For(world, null, [],
+            new PermissiveVisibilityPolicy().Authorize(null, world.Players)).World;
+
+        Assert.Equal(World.Scenario, Card(view, asideCard.ObjectId).Location?.Controller);
+        Assert.Equal(World.Scenario, Card(view, tucked.ObjectId).Location?.Controller);
+        Assert.Equal(0, Assert.Single(view.Areas, area => area.Id == aside.Id).Owner);
+        Assert.Equal(nameof(DeckType.AsideDeck), Card(view, tucked.ObjectId).Location?.Zone);
+    }
+
+    [Fact]
+    public void DeclaredAnchorKindPreventsCollidingCardAndRuntimeAreaIdsFromChangingSource()
+    {
+        var card = new CardDescriptor(4, CardBack.Player, true, true, -1,
+            new CardFaceDescriptor("card", "Colliding card", string.Empty, CardKind.Ally,
+                new Dictionary<string, long>(StringComparer.Ordinal)))
+        {
+            Location = new CardLocationDescriptor(9, "AlliesArea", 1, -1),
+        };
+        var world = new WorldDescriptor([new PlayerDescriptor(0, "Zero", false)],
+            [new AreaDescriptor(4, "AdditionalDeck", 0, -1, [], []),
+                new AreaDescriptor(9, "AlliesArea", 1, -1, [card], [])], [], Outcome.Unfinished);
+        var prompt = new Prompt(0, Question.Element, TimingPriority.Untimed, "unknown", "misleading", false,
+        [
+            new Affordance(1, "Unknown", 4, 0, "unknown")
+                { AnchorKind = AffordanceAnchorKind.Area },
+            new Affordance(2, "Unknown", 4, 0, "unknown")
+                { AnchorKind = AffordanceAnchorKind.Unspecified },
+        ]);
+
+        AffordancePresentation[] presented = [.. PromptPresentation.From(prompt, world).Affordances];
+
+        Assert.Equal(AffordanceAnchorKind.Area, presented[0].Source?.AnchorKind);
+        Assert.Null(presented[0].Source?.CardId);
+        Assert.Equal(4, presented[0].Source?.AreaId);
+        Assert.Equal("Additional Deck", presented[0].Anchor);
+        Assert.Equal(AffordanceAnchorKind.Unspecified, presented[1].AnchorKind);
+        Assert.Null(presented[1].Source);
+        Assert.Equal("Object 4", presented[1].Anchor);
     }
 
     private static World Board(out Card duplicateOne, out Card duplicateTwo, out Area future)

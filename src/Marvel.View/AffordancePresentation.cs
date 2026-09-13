@@ -18,6 +18,9 @@ public sealed record AffordancePresentation(
     IReadOnlyList<string> Costs,
     string? Consequence = null)
 {
+    /// <summary>The declared namespace for <see cref="AnchorId"/>.</summary>
+    public AffordanceAnchorKind AnchorKind { get; init; } = AffordanceAnchorKind.Unspecified;
+
     /// <summary>Structured source information; null is the complete fallback path.</summary>
     public AffordanceSourceDescriptor? Source { get; init; }
 

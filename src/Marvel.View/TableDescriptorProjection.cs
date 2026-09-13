@@ -1,3 +1,4 @@
+using Marvel.Rules.Play;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 
@@ -89,7 +90,7 @@ internal static class TableDescriptorProjection
         HashSet<int> visible = [.. world.Areas.SelectMany(area => area.Cards.Concat(area.Removed))
             .Where(card => card.Id is not null).Select(card => card.Id!.Value)];
         return [.. prompt.Affordances
-            .Where(option => string.Equals(option.Verb, "Defend", StringComparison.Ordinal)
+            .Where(option => string.Equals(option.Verb, Attack.DefenseVerb, StringComparison.Ordinal)
                 && option.AnchorPlayer == player.Seat)
             .Select(option => option.AnchorId)
             .Where(visible.Contains)];

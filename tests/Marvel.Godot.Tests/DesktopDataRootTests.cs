@@ -1,4 +1,9 @@
 using Marvel.Server;
+using Marvel.Tests;
+using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
+using Marvel.Rules.Timing;
+using Marvel.View;
 using Xunit;
 
 namespace Marvel.Godot.Tests;
@@ -59,5 +64,31 @@ public sealed class DesktopDataRootTests
         Assert.Equal(
             "v0.1.0-dev.0 · engine engine-replay-v2 · protocol 15 · save 3",
             EngineBuildIdentity.Display);
+    }
+
+    [Fact]
+    public void ScenePinsTheCompiledBuildIdentity()
+    {
+        string scene = File.ReadAllText(Path.Combine(
+            RepositoryPaths.Root, "src", "Marvel.Godot", "Main.tscn"));
+
+        Assert.Contains(EngineBuildIdentity.Display, scene, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void NativePromptHeaderUsesTheStructuredQuestionAndAuthorizedSeat()
+    {
+        var prompt = new Prompt(0, Question.TurnOption, TimingPriority.Untimed,
+            "Mulligan", "Spider-Man resolves mulligans", false, [])
+        {
+            DisplayQuestion = "Opening hand",
+        };
+        var world = new WorldDescriptor([new PlayerDescriptor(0, "Spider-Man", false)],
+            [], [], Outcome.Unfinished);
+
+        PromptPresentation header = PromptPresentation.From(prompt, world);
+
+        Assert.Equal("Opening hand", header.Heading);
+        Assert.Contains("Spider-Man", header.Context, StringComparison.Ordinal);
     }
 }

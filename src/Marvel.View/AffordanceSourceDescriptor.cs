@@ -1,3 +1,5 @@
+using Marvel.Rules.Prompts;
+
 namespace Marvel.View;
 
 /// <summary>An authorized object from which an affordance originates.</summary>
@@ -6,6 +8,7 @@ namespace Marvel.View;
 /// client should guess a source from the affordance label.
 /// </remarks>
 public sealed record AffordanceSourceDescriptor(
+    AffordanceAnchorKind AnchorKind,
     int? CardId,
     int? AreaId,
     int Controller);

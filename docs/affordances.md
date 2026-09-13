@@ -15,6 +15,7 @@ text or duplicate engine rules.
 | `Id` | Opaque handle valid in the issuing session |
 | `Verb` | Domain action such as `Play`, `Attack`, `Thwart`, `Change_Form` or `Ask` |
 | `AnchorId` | Board object the player interacts with |
+| `AnchorKind` | Whether `AnchorId` is a card, area, or intentionally unspecified object |
 | `AnchorPlayer` | Seat whose board holds the anchor |
 | `Label` | Printed or domain-level option label |
 | `Description` | Optional readable action text authored by the engine/card DSL |
@@ -47,8 +48,10 @@ basic power anchors to the identity. A mid-resolution question anchors to the
 card or game element whose ability is waiting.
 
 Anchors let a client highlight the right object without inferring meaning from a
-label. `AnchorPlayer` distinguishes multiplayer actions that share the same
-domain shape.
+label. `AnchorKind` is required because card ids and area ids are independent
+namespaces; a consumer must not probe cards and then areas to infer which one
+the engine meant. `AnchorPlayer` distinguishes multiplayer actions that share
+the same domain shape.
 
 ## Target requests
 
@@ -122,9 +125,11 @@ forging a target, generator, variable or handle that was not offered.
 
 ## Prompt context
 
-`Prompt.Question` identifies why the engine is asking. It distinguishes a turn
+`Prompt.Asking` identifies why the engine is asking. It distinguishes a turn
 menu from target selection, payment, defending, ordering and other suspended
-resolution points.
+resolution points. `Prompt.DisplayQuestion`, when supplied, is the
+engine-authored display question; it is rendered directly rather than recovered
+from `Prompt.Label` prose.
 
 The prompt carries the seat that may answer. `Marvel.Server` withholds it from
 other visibility scopes and rejects an answer from a capability not authorized
