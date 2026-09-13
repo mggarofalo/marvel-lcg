@@ -1,6 +1,8 @@
 extends "res://smoke/local_game_smoke_card_inspector.gd"
 
 func _procedural_cards_are_safe() -> bool:
+	if main.find_child("VillainTable", true, false) != null:
+		return await _mulligan_cards_are_safe()
 	var cards := main.find_children("ProceduralCard", "PanelContainer", true, false)
 	if cards.is_empty():
 		_fail("the opened table has no procedural card controls")
@@ -28,6 +30,24 @@ func _procedural_cards_are_safe() -> bool:
 		_fail("the pinned hand has no readable card to inspect")
 		return false
 	return await _card_inspector_is_safe(hand_card)
+
+
+func _mulligan_cards_are_safe() -> bool:
+	var hand := _node("Play/Board/HandShelf") as Control
+	var cards := hand.find_children("ProceduralCard", "PanelContainer", true, false)
+	var toggles := hand.find_children("MulliganDiscard*", "Button", true, false)
+	if cards.size() != 6 or toggles.size() != 6:
+		_fail("the opening hand does not expose six readable cards and six discard checkboxes")
+		return false
+	for toggle_node in toggles:
+		var toggle := toggle_node as Button
+		if not toggle.toggle_mode or toggle.text != "□ DISCARD" \
+				or toggle.custom_minimum_size.y < _scaled_metric(44):
+			_fail("a mulligan checkbox is not explicit, keyboard-operable, and generously sized")
+			return false
+		if not await _prepare_activation(toggle):
+			return false
+	return true
 
 
 func _card_controls_are_safe(cards: Array[Node], observed: Dictionary) -> bool:

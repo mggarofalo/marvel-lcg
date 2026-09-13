@@ -91,7 +91,9 @@ internal sealed class MainLayoutController
             Math.Max(1, Mathf.RoundToInt(main.Size.Y)),
             main.interfaceScale);
         bool compactHeight = main.Size.Y < 800;
-        main.promptPanel.CustomMinimumSize = new Vector2(layout.DecisionWidth, 0);
+        bool mulligan = MulliganPrompt.IsOpening(main.CurrentGame?.Prompt)
+            && main.Size.X >= 1800 && main.Size.Y >= 900;
+        main.promptPanel.CustomMinimumSize = new Vector2(mulligan ? 360 : layout.DecisionWidth, 0);
         main.setupGrid.Columns = main.Size.X >= 1500 ? 4 : 2;
         main.contentStack.ThemeTypeVariation = main.board.Visible && compactHeight
             ? GodotThemeVariations.TightStack
@@ -109,8 +111,13 @@ internal sealed class MainLayoutController
             ? ScrollContainer.ScrollMode.Disabled
             : ScrollContainer.ScrollMode.Auto;
         main.pageScroll.FollowFocus = !main.board.Visible || main.invitationOffer.Visible;
-        main.pageScroll.VerticalScrollMode = PageVerticalScrollMode(
-            main.board.Visible, main.invitationOffer.Visible, main.interfaceScale);
+        main.pageScroll.VerticalScrollMode = mulligan
+            ? ScrollContainer.ScrollMode.Disabled
+            : PageVerticalScrollMode(main.board.Visible, main.invitationOffer.Visible, main.interfaceScale);
+        main.GetNode<ScrollContainer>(
+            "Margin/Shell/Content/Play/Board/TableScroll").VerticalScrollMode = mulligan
+                ? ScrollContainer.ScrollMode.Disabled
+                : ScrollContainer.ScrollMode.Auto;
     }
 
     internal static ScrollContainer.ScrollMode PageVerticalScrollMode(

@@ -13,21 +13,86 @@ func _mulligan_result_and_payment_are_operable() -> bool:
 
 
 func _select_mulligan_cards() -> bool:
+	if main.find_child("VillainTable", true, false) == null:
+		return await _select_mulligan_cards_from_fallback()
+	var mansion := _mulligan_discard("Avengers Mansion")
+	var aunt := _mulligan_card("Aunt May")
+	var kick := _mulligan_discard("Swinging Web Kick")
+	if mansion == null or aunt == null or kick == null:
+		_fail("the opening hand has no explicit discard controls for the seeded cards")
+		return false
+	if not await _pointer_activate(mansion):
+		return false
+	if not await _drag_mulligan_to_discard(aunt):
+		return false
+	if not await _keyboard_activate(kick):
+		return false
+	return mansion.text == "✓ DISCARD" and kick.text == "✓ DISCARD"
+
+
+func _select_mulligan_cards_from_fallback() -> bool:
 	var mulligan := _visible_button_beginning(_decision(), "Choose cards to discard and redraw")
+	if mulligan == null:
+		mulligan = _visible_button_beginning(_decision(), "✓ Choose cards to discard and redraw")
 	if mulligan == null or mulligan.disabled:
 		_fail("the seeded opening hand has no operable mulligan action")
 		return false
-	if not await _pointer_activate(mulligan):
+	if not mulligan.text.begins_with("✓") and not await _pointer_activate(mulligan):
 		return false
 	await process_frame
 	for title in ["Avengers Mansion", "Aunt May", "Swinging Web Kick"]:
 		var target := _mulligan_target(title)
-		if target == null:
+		if target == null or not await _pointer_activate(target):
 			_fail("the seeded mulligan cannot select %s" % title)
 			return false
-		if not await _pointer_activate(target):
-			return false
 		await process_frame
+	return true
+
+
+func _mulligan_discard(title: String) -> Button:
+	var card := _mulligan_card(title)
+	return card.get_parent().find_child("MulliganDiscard*", false, false) as Button if card != null else null
+
+
+func _mulligan_card(title: String) -> Control:
+	for candidate in (_node("Play/Board/HandShelf") as Control).find_children("ProceduralCard", "PanelContainer", true, false):
+		var card := candidate as Control
+		var name := card.find_child("Title", true, false) as Label
+		if name != null and name.text == title:
+			return card
+	return null
+
+
+func _drag_mulligan_to_discard(card: Control) -> bool:
+	var discard := main.find_child("MulliganDiscardPile", true, false) as Control
+	if discard == null:
+		# A populated pile retains its normal area identity.
+		for area_node in main.find_children("Area*", "PanelContainer", true, false):
+			var area := area_node as Control
+			if "DISCARD PILE" in _visible_text(area):
+				discard = area
+				break
+	if discard == null or not await _prepare_activation(card) or not await _prepare_activation(discard):
+		_fail("the player discard place is not a reachable mulligan drop destination")
+		return false
+	var start := _visible_control_rect(card).get_center()
+	var finish := _visible_control_rect(discard).get_center()
+	var press := InputEventMouseButton.new()
+	press.button_index = MOUSE_BUTTON_LEFT
+	press.pressed = true
+	press.position = start
+	press.global_position = start
+	render_viewport.push_input(press)
+	var move := InputEventMouseMotion.new()
+	move.position = finish
+	move.global_position = finish
+	render_viewport.push_input(move)
+	var release := InputEventMouseButton.new()
+	release.button_index = MOUSE_BUTTON_LEFT
+	release.position = finish
+	release.global_position = finish
+	render_viewport.push_input(release)
+	await process_frame
 	return true
 
 

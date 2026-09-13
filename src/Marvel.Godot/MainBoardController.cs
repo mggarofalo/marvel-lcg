@@ -1,6 +1,7 @@
 using Godot;
 using Marvel.Client;
 using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
 using Marvel.Server;
 using Marvel.View;
 
@@ -44,12 +45,14 @@ internal sealed class MainBoardController
         WorldDescriptor world,
         int renderGeneration)
     {
-        RenderBoard(world, renderGeneration);
+        RenderBoard(world, response.Prompt, renderGeneration);
         main.syncStatus.Visible = true;
         main.syncStatus.Text = $"✓ Synced · r{response.Revision}";
         main.synchronize.Visible = true;
         main.RenderPromptSummary(response.Prompt, world);
         main.decisions.Render(response.Prompt, world, response.Revision);
+        main.decisions.BindMulliganTargets(main.boardRender);
+        main.layoutController.ApplyResponsivePlayLayout();
     }
 
     private void FinishRender(
@@ -89,23 +92,39 @@ internal sealed class MainBoardController
         }
     }
 
-    internal void RenderBoard(WorldDescriptor world, int? renderGeneration = null)
+    internal void RenderBoard(
+        WorldDescriptor world, Prompt? prompt = null, int? renderGeneration = null)
     {
+        prompt ??= main.CurrentGame?.Prompt;
         main.boardPresentation = BoardPresentation.From(world);
-        BoardRenderResult rendered = BoardRenderer.Render(
-            main.boardAreas,
-            main.boardPresentation,
-            main.handRail,
-            main.handHeading,
-            main.interfaceScale,
-            main.expandedAreas,
-            main.art);
+        BoardRenderResult rendered = UseTabletopMulligan(prompt)
+            ? RenderMulliganTable(prompt!)
+            : BoardRenderer.Render(
+                main.boardAreas, main.boardPresentation, main.handRail, main.handHeading,
+                main.interfaceScale, main.expandedAreas, main.art);
         main.boardRender = rendered;
         rendered.CardActivated += (card, control) => ToggleCardInspector(card, control);
         rendered.IsCurrent = () => ReferenceEquals(main.boardRender, rendered)
             && IsCurrentRender(renderGeneration ?? this.renderGeneration.Current);
+        main.decisions.BindMulliganTargets(rendered);
         inspector.Hide();
     }
+
+    private BoardRenderResult RenderMulliganTable(Prompt prompt)
+    {
+        int cards = main.boardPresentation!.Areas.FirstOrDefault(area =>
+            area.Zone == "HandsArea" && area.Seat == prompt.Player)?.Cards.Sum(card => card.Count) ?? 0;
+        main.handHeading.Text = $"OPENING HAND  ·  {cards}  ·  SELECT REPLACEMENTS";
+        var rendered = new BoardRenderResult();
+        MulliganTableRenderer.Render(main.boardAreas, main.boardPresentation, main.handRail,
+            rendered, main.interfaceScale, main.art, prompt.Player);
+        return rendered;
+    }
+
+    private static bool IsMulligan(Prompt? prompt) => MulliganPrompt.IsOpening(prompt);
+
+    private bool UseTabletopMulligan(Prompt? prompt) => IsMulligan(prompt)
+        && main.Size.X >= 1800 && main.Size.Y >= 900;
 
     internal void PreviewHandCard(int? id)
     {

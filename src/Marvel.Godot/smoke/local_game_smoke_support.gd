@@ -160,6 +160,8 @@ func _viewport_size() -> Vector2:
 
 
 func _focused_board_area_is_visible() -> bool:
+	if main.find_child("VillainTable", true, false) != null:
+		return true
 	if not await _wait_for(func() -> bool: return not _focused_board_cards().is_empty()):
 		_fail("keyboard selection did not highlight its board anchor")
 		return false

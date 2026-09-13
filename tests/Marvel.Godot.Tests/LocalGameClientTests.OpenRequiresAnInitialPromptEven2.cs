@@ -15,6 +15,51 @@ namespace Marvel.Godot.Tests;
 public sealed class LocalGameClientOpenRequiresAnInitialPromptEvenTests : LocalGameClientTestBase
 {
     [Fact]
+    public void CoreOpeningMulliganUsesOneComposerDraftForZeroSomeAndAllSixCards()
+    {
+        var host = Host();
+        EngineResponse opened = host.Exchange(EngineRequest.OpenGame("open", "mulligan", Specification()));
+        Prompt prompt = Assert.IsType<Prompt>(opened.Prompt);
+        Affordance offered = Assert.Single(prompt.Affordances);
+        Assert.Equal(Game.ResolveMulligans, offered.Verb);
+        Assert.True(MulliganPrompt.IsOpening(prompt));
+        int[] candidates = Assert.IsType<TargetRequest>(offered.Targets).Legal.ToArray();
+        Assert.Equal(6, candidates.Length);
+
+        foreach (int count in new[] { 0, 3, 6 })
+        {
+            EngineHost table = count == 0 ? host : Host();
+            EngineResponse current = count == 0 ? opened : table.Exchange(
+                EngineRequest.OpenGame($"open-{count}", $"mulligan-{count}", Specification()));
+            Prompt currentPrompt = Assert.IsType<Prompt>(current.Prompt);
+            Affordance currentOffer = Assert.Single(currentPrompt.Affordances);
+            int[] currentCandidates = Assert.IsType<TargetRequest>(currentOffer.Targets).Legal.ToArray();
+            var composer = new DecisionComposer(currentPrompt);
+            composer.SelectAffordance(currentOffer.Id);
+            composer.SelectTargets(currentCandidates.Take(count));
+
+            Assert.True(composer.TryBuild(out EngineDecision? decision, out string? error), error);
+            Assert.Equal(currentOffer.Id, decision!.Affordance);
+            Assert.Equal(currentCandidates.Take(count), decision.Targets);
+
+            EngineResponse resolved = table.Exchange(EngineRequest.ResolveGame(
+                $"resolve-{count}", $"mulligan{(count == 0 ? string.Empty : $"-{count}")}",
+                current.Capability!, decision!, current.Revision));
+            WorldDescriptor world = Assert.IsType<WorldDescriptor>(resolved.World);
+            CardDescriptor[] hand = Assert.Single(world.Areas,
+                area => area.Zone == "HandsArea" && area.Owner == currentPrompt.Player).Cards.ToArray();
+            Assert.Equal(6, hand.Length);
+            CardDescriptor[] discarded = world.Areas
+                .Where(area => area.Zone == "DiscardPile" && area.Owner == currentPrompt.Player)
+                .SelectMany(area => area.Cards)
+                .ToArray();
+            Assert.Equal(count, discarded.Length);
+            Assert.All(currentCandidates.Take(count), id =>
+                Assert.Contains(discarded, card => card.Id == id));
+        }
+    }
+
+    [Fact]
     public async Task OpenRequiresAnInitialPromptEvenWhenTheReturnedWorldIsTerminal()
     {
         EngineResponse complete = Host().Exchange(EngineRequest.OpenGame("source", "table", Specification()));

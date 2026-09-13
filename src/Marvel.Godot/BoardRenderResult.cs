@@ -8,7 +8,10 @@ public sealed class BoardRenderResult
 {
     private readonly Dictionary<int, List<CardControl>> controls = [];
     private readonly Dictionary<Control, Action> areaExpanders = [];
+    private readonly Dictionary<int, Button> mulliganToggles = [];
+    private readonly Dictionary<int, CardControl> mulliganCards = [];
     private readonly BoardControlReveal reveal;
+    private Control? mulliganDiscard;
 
     public BoardRenderResult()
     {
@@ -37,22 +40,95 @@ public sealed class BoardRenderResult
 
     internal void TrackCard(Control control, BoardCardPresentation card)
     {
+        Vector2? pressedAt = null;
         control.GuiInput += input =>
         {
-            bool pointer = input is InputEventMouseButton
+            if (input is InputEventMouseButton
             {
                 ButtonIndex: MouseButton.Left,
-                Pressed: true,
-            };
+            } mouse)
+            {
+                if (mouse.Pressed)
+                {
+                    pressedAt = mouse.GlobalPosition;
+                    return;
+                }
+
+                if (pressedAt is not { } start)
+                {
+                    return;
+                }
+
+                pressedAt = null;
+                if (mulliganCards.TryGetValue(card.TargetId ?? int.MinValue, out CardControl? dragged)
+                    && InteractionControl.IsUsable(mulliganDiscard)
+                    && mulliganDiscard!.GetGlobalRect().HasPoint(mouse.GlobalPosition)
+                    && start.DistanceTo(mouse.GlobalPosition) >= 10)
+                {
+                    MulliganTargetRequested?.Invoke(dragged.TargetId!.Value);
+                    control.AcceptEvent();
+                    return;
+                }
+
+                if (start.DistanceTo(mouse.GlobalPosition) < 10
+                    && IsCurrent?.Invoke() == true && InteractionControl.IsUsable(control))
+                {
+                    CardActivated?.Invoke(card, control);
+                    control.AcceptEvent();
+                }
+                return;
+            }
+
             bool keyboard = input is InputEventKey { Echo: false }
                 && input.IsActionPressed("ui_accept");
-            if ((pointer || keyboard) && IsCurrent?.Invoke() == true
+            if (keyboard && IsCurrent?.Invoke() == true
                 && InteractionControl.IsUsable(control))
             {
                 CardActivated?.Invoke(card, control);
                 control.AcceptEvent();
             }
         };
+    }
+
+    /// <summary>Raised when a tabletop mulligan checkbox or discard drag names a visible hand card.</summary>
+    internal event Action<int>? MulliganTargetRequested;
+
+    internal void RegisterMulliganToggle(int id, Button toggle) => mulliganToggles[id] = toggle;
+
+    internal void RegisterMulliganCard(int id, CardControl card) => mulliganCards[id] = card;
+
+    internal void RegisterMulliganDiscard(Control discard) => mulliganDiscard = discard;
+
+    internal void BindMulliganTargets(
+        IReadOnlyCollection<int> legal, IReadOnlyCollection<int> selected, Action<int> choose)
+    {
+        MulliganTargetRequested = choose;
+        foreach ((int id, Button toggle) in mulliganToggles)
+        {
+            bool available = legal.Contains(id);
+            toggle.Visible = available;
+            toggle.Disabled = !available;
+            SetMulliganToggle(toggle, selected.Contains(id));
+        }
+    }
+
+    internal void RequestMulliganTarget(int id) => MulliganTargetRequested?.Invoke(id);
+
+    internal void SetMulliganTargets(IReadOnlyCollection<int> selected)
+    {
+        foreach ((int id, Button toggle) in mulliganToggles)
+        {
+            SetMulliganToggle(toggle, selected.Contains(id));
+        }
+    }
+
+    private static void SetMulliganToggle(Button toggle, bool selected)
+    {
+        toggle.SetPressedNoSignal(selected);
+        toggle.Text = selected ? "✓ DISCARD" : "□ DISCARD";
+        toggle.ThemeTypeVariation = selected
+            ? GodotThemeVariations.SelectedTargetButton
+            : GodotThemeVariations.LegalTargetButton;
     }
 
     /// <summary>Returns the visible control for an engine-provided card id.</summary>
