@@ -111,10 +111,10 @@ internal sealed class MainLayoutController
         main.promptPanel.CustomMinimumSize = new Vector2(
             0,
             mulligan
-                ? Math.Max(208, VisualSystem.Controls(dockScale).MinimumPointerTarget * 4 + 16)
+                ? Math.Max(172, VisualSystem.Controls(dockScale).MinimumPointerTarget * 3 + 16)
                 : layout.DecisionMinimumHeight);
         main.decisions.CustomMinimumSize = new Vector2(
-            0, mulligan ? 208 : layout.DecisionMinimumHeight);
+            0, mulligan ? 172 : layout.DecisionMinimumHeight);
         SetMulliganDockChrome(mulligan);
     }
 
@@ -186,5 +186,8 @@ internal sealed class MainLayoutController
             : null;
         main.board.Theme = compact ? ClientTheme.Create(InterfaceScale.Standard) : null;
         main.promptPanel.Theme = compact ? ClientTheme.Create(InterfaceScale.Standard) : null;
+        main.GetNode<PanelContainer>("Margin/Shell/Content/Play/Board/HandShelf").ThemeTypeVariation = compact
+            ? GodotThemeVariations.TabletopShelf
+            : GodotThemeVariations.SurfacePanel;
     }
 }

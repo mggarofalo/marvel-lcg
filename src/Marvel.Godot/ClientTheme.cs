@@ -1,7 +1,5 @@
 using Godot;
-
 namespace Marvel.Godot;
-
 /// <summary>Builds the reusable visual vocabulary for the desktop client.</summary>
 public static class ClientTheme
 {
@@ -16,16 +14,15 @@ public static class ClientTheme
     private static readonly Color Hero = C(VisualSystem.Palette.Legal);
     private static readonly Color Encounter = C(VisualSystem.Palette.Danger);
     private static readonly Color Outline = C(VisualSystem.Palette.Outline);
-
     /// <summary>Creates one theme shared by authored and procedural controls.</summary>
     public static Theme Create(InterfaceScale scale = InterfaceScale.Standard)
     {
         TypeMetrics type = VisualSystem.Type(scale);
         ControlMetrics controls = VisualSystem.Controls(scale);
         var theme = new Theme { DefaultFontSize = type.Body };
-        DefineText(theme, type);
-        DefineLayout(theme, VisualSystem.Spacing(scale));
-        DefineSurfaces(theme);
+        ClientThemeTypography.Define(theme, type, Ink, Muted, Amber, Canvas);
+        ClientThemeLayout.Define(theme, VisualSystem.Spacing(scale));
+        ClientThemeSurfaces.Define(theme, Surface, Raised, Outline, Amber, Encounter, Hero);
         DefineInputs(theme, controls);
         DefineButtons(theme, type, controls);
         DefineOtherControls(theme);
@@ -36,117 +33,18 @@ public static class ClientTheme
     public static Color ToGodot(VisualColor color) => C(color);
 
     /// <summary>Reads the optional presentation-only desktop scale.</summary>
-    public static InterfaceScale ConfiguredScale() =>
-        OS.GetEnvironment("MARVEL_UI_SCALE").Trim().ToLowerInvariant() switch
-        {
-            "50" or "50%" => InterfaceScale.Percent50,
-            "60" or "60%" => InterfaceScale.Percent60,
-            "70" or "70%" => InterfaceScale.Percent70,
-            "80" or "80%" or "compact" => InterfaceScale.Percent80,
-            "90" or "90%" => InterfaceScale.Percent90,
-            "100" or "100%" or "standard" => InterfaceScale.Percent100,
-            "110" or "110%" => InterfaceScale.Percent110,
-            "120" or "120%" or "large" => InterfaceScale.Percent120,
-            "130" or "130%" => InterfaceScale.Percent130,
-            "140" or "140%" => InterfaceScale.Percent140,
-            "150" or "150%" or "extra-large" => InterfaceScale.Percent150,
-            _ => InterfaceScale.Compact,
-        };
-
-    private static void DefineText(Theme theme, TypeMetrics type)
-    {
-        theme.SetColor("font_color", "Label", Ink);
-        theme.SetFontSize("font_size", "Label", type.Body);
-        Label(theme, GodotThemeVariations.DisplayTitle, Ink, type.DisplayTitle, outline: 8);
-        Label(theme, GodotThemeVariations.BriefingTitle, Ink,
-            (type.DisplayTitle + type.Heading) / 2);
-        Label(theme, GodotThemeVariations.Heading, Ink, type.Heading);
-        Label(theme, GodotThemeVariations.Body, Ink, type.Body);
-        Label(theme, GodotThemeVariations.BodyMuted, Muted, type.Body);
-        Label(theme, GodotThemeVariations.MutedText, Muted, type.Caption);
-        Label(theme, GodotThemeVariations.Eyebrow, Amber, type.Eyebrow);
-        Label(theme, GodotThemeVariations.Caption, Muted, type.Caption);
-        Label(theme, GodotThemeVariations.EncounterText, Ink, type.Body);
-        Label(theme, GodotThemeVariations.DangerText, Ink, type.Caption);
-        Label(theme, GodotThemeVariations.StatusText, Amber, type.Eyebrow);
-        Label(theme, GodotThemeVariations.CardTitle, Ink, type.Heading);
-        Label(theme, GodotThemeVariations.CardRules, Ink, type.Body);
-        Label(theme, GodotThemeVariations.CardLiveValue, Amber, type.Caption);
-        Label(theme, GodotThemeVariations.CardPrintedValue, Muted, type.Caption);
-        Label(theme, GodotThemeVariations.CardState, Amber, type.Eyebrow);
-
-        theme.SetColor("default_color", "RichTextLabel", Muted);
-        theme.SetFontSize("normal_font_size", "RichTextLabel", type.Caption);
-        Variation(theme, GodotThemeVariations.CardRulesRich, "RichTextLabel");
-        theme.SetColor("default_color", GodotThemeVariations.CardRulesRich, Ink);
-        theme.SetFontSize("normal_font_size", GodotThemeVariations.CardRulesRich, type.Body);
-        theme.SetFontSize("bold_font_size", GodotThemeVariations.CardRulesRich, type.Body);
-        theme.SetFontSize("italics_font_size", GodotThemeVariations.CardRulesRich, type.Body);
-    }
-
-    private static void DefineSurfaces(Theme theme)
-    {
-        Panel(theme, GodotThemeVariations.ShellPanel, Flat(
-            Surface, Alpha(Outline, 0.46f), 1, 18, 22, 18, 22, 18));
-        Panel(theme, GodotThemeVariations.SurfacePanel, Flat(
-            Raised, Alpha(Outline, 0.38f), 1, 12, 16, 14, 16, 14));
-        Panel(theme, GodotThemeVariations.StatusPanel, Flat(
-            Alpha(Amber, 0.14f), Alpha(Amber, 0.62f),
-            1, 8, 14, 9, 14, 9, left: 5));
-        Panel(theme, GodotThemeVariations.DangerStatusPanel, Flat(
-            Alpha(Encounter, 0.2f), Encounter, 2, 8, 14, 9, 14, 9, left: 7));
-        Panel(theme, GodotThemeVariations.BoardArea, Flat(
-            Raised, Alpha(Outline, 0.5f), 1, 10, 16, 14, 16, 14));
-        Panel(theme, GodotThemeVariations.BoardCard, Flat(
-            Raised.Lightened(0.06f), Alpha(Amber, 0.58f),
-            1, 6, 11, 9, 11, 9, left: 4));
-        Panel(theme, GodotThemeVariations.ConcealedCard, Flat(
-            Surface.Darkened(0.2f), Alpha(Outline, 0.55f),
-            1, 6, 11, 9, 11, 9));
-        Panel(theme, GodotThemeVariations.FocusedCard, Flat(
-            Raised.Lightened(0.12f), Amber, 3, 6, 11, 9, 11, 9, left: 7));
-        Panel(theme, GodotThemeVariations.IdentityCard, Flat(
-            Raised.Lightened(0.06f), Hero, 1, 12, 16, 14, 16, 14, left: 8));
-        Panel(theme, GodotThemeVariations.PlayerCard, Flat(
-            Raised.Lightened(0.06f), Amber, 1, 12, 16, 14, 16, 14, left: 8));
-        Panel(theme, GodotThemeVariations.EnemyCard, Flat(
-            Raised.Lightened(0.02f), Encounter, 2, 12, 16, 14, 16, 14, left: 10));
-        Panel(theme, GodotThemeVariations.SchemeCard, Flat(
-            Surface.Lightened(0.08f), Encounter, 2, 12, 16, 14, 16, 14, bottom: 8));
-        Panel(theme, GodotThemeVariations.EnvironmentCard, Flat(
-            Surface.Lightened(0.05f), Outline, 2, 12, 16, 14, 16, 14, left: 5));
-        Panel(theme, GodotThemeVariations.CardArtWell, Flat(
-            Surface.Darkened(0.18f), Alpha(Outline, 0.55f),
-            1, 7, 8, 8, 8, 8));
-    }
-
-    private static void DefineLayout(Theme theme, SpacingMetrics spacing)
-    {
-        Variation(theme, GodotThemeVariations.TightStack, "VBoxContainer");
-        theme.SetConstant("separation", GodotThemeVariations.TightStack, spacing.Small);
-        Variation(theme, GodotThemeVariations.Stack, "VBoxContainer");
-        theme.SetConstant("separation", GodotThemeVariations.Stack, spacing.Medium);
-        Variation(theme, GodotThemeVariations.WideRow, "HBoxContainer");
-        theme.SetConstant("separation", GodotThemeVariations.WideRow, spacing.Large);
-        Variation(theme, GodotThemeVariations.CompactRow, "HBoxContainer");
-        theme.SetConstant("separation", GodotThemeVariations.CompactRow, spacing.ExtraSmall);
-        Variation(theme, GodotThemeVariations.DataGrid, "GridContainer");
-        theme.SetConstant("h_separation", GodotThemeVariations.DataGrid, spacing.Large);
-        theme.SetConstant("v_separation", GodotThemeVariations.DataGrid, spacing.Small);
-        theme.SetConstant("h_separation", "HFlowContainer", spacing.Small);
-        theme.SetConstant("v_separation", "HFlowContainer", spacing.ExtraSmall);
-    }
+    public static InterfaceScale ConfiguredScale() => ClientThemeScale.Configured();
 
     private static void DefineInputs(Theme theme, ControlMetrics controls)
     {
         StyleBoxFlat normal = Flat(Input, Alpha(Outline, 0.62f),
-            1, controls.CornerRadius, 13, 9, 13, 9);
+            1, controls.CornerRadius, M(13, 9, 13, 9));
         StyleBoxFlat hover = Flat(
-            Raised, Amber, 2, controls.CornerRadius, 13, 9, 13, 9);
+            Raised, Amber, 2, controls.CornerRadius, M(13, 9, 13, 9));
         StyleBoxFlat focus = FocusBox(controls);
         StyleBoxFlat disabled = Flat(
             Surface.Darkened(0.08f), Alpha(Outline, 0.42f),
-            1, controls.CornerRadius, 13, 9, 13, 9);
+            1, controls.CornerRadius, M(13, 9, 13, 9));
 
         foreach (string type in new[] { "OptionButton", "LineEdit" })
         {
@@ -199,21 +97,21 @@ public static class ClientTheme
         }
         SetStylebox(theme, "normal", selected, Flat(
             Amber, Amber.Darkened(0.22f), 2, controls.CornerRadius,
-            12, 10, 12, 10, left: 7));
+            M(12, 10, 12, 10), left: 7));
         SetStylebox(theme, "hover", selected, Flat(
             Amber.Lightened(0.08f), OnAccent, 2, controls.CornerRadius,
-            12, 9, 12, 11, left: 8));
+            M(12, 9, 12, 11), left: 8));
         SetStylebox(theme, "pressed", selected, Flat(
             Amber, OnAccent, 2, controls.CornerRadius,
-            12, 12, 12, 8, left: 8));
+            M(12, 12, 12, 8), left: 8));
         SetStylebox(theme, "hover_pressed", selected, Flat(
             Amber.Lightened(0.08f), OnAccent, 3, controls.CornerRadius,
-            12, 12, 12, 8, left: 8));
+            M(12, 12, 12, 8), left: 8));
 
         string unavailable = GodotThemeVariations.UnavailableButton;
         SetStylebox(theme, "disabled", unavailable, Flat(
             Surface.Darkened(0.08f), Alpha(Outline, 0.42f),
-            1, controls.CornerRadius, 12, 10, 12, 10, left: 2));
+            1, controls.CornerRadius, M(12, 10, 12, 10), left: 2));
 
         string primary = GodotThemeVariations.PrimaryButton;
         Variation(theme, primary, "Button");
@@ -224,20 +122,20 @@ public static class ClientTheme
         theme.SetFontSize("font_size", primary, type.Body);
         SetStylebox(theme, "normal", primary, Flat(
             Encounter.Darkened(0.14f), Encounter, 1, controls.CornerRadius,
-            18, 11, 18, 11, bottom: 4));
+            M(18, 11, 18, 11), bottom: 4));
         SetStylebox(theme, "hover", primary, Flat(
             Encounter, Amber, 2, controls.CornerRadius,
-            18, 10, 18, 12, bottom: 5));
+            M(18, 10, 18, 12), bottom: 5));
         SetStylebox(theme, "pressed", primary, Flat(
             Encounter.Darkened(0.28f), Amber, 1, controls.CornerRadius,
-            18, 13, 18, 9, left: 5));
+            M(18, 13, 18, 9), left: 5));
         SetStylebox(theme, "hover_pressed", primary, Flat(
             Encounter.Darkened(0.18f), Amber, 2, controls.CornerRadius,
-            18, 13, 18, 9, left: 5));
+            M(18, 13, 18, 9), left: 5));
         SetStylebox(theme, "focus", primary, FocusBox(controls));
         SetStylebox(theme, "disabled", primary, Flat(
             Surface.Darkened(0.08f), Alpha(Outline, 0.42f),
-            1, controls.CornerRadius, 18, 11, 18, 11));
+            1, controls.CornerRadius, M(18, 11, 18, 11)));
     }
 
     private static void DefineOtherControls(Theme theme)
@@ -246,9 +144,9 @@ public static class ClientTheme
         theme.SetColor("font_hover_color", "PopupMenu", Ink);
         theme.SetColor("font_disabled_color", "PopupMenu", Muted);
         SetStylebox(theme, "panel", "PopupMenu", Flat(
-            Surface, Alpha(Outline, 0.62f), 1, 7, 8, 8, 8, 8));
+            Surface, Alpha(Outline, 0.62f), 1, 7, M(8, 8, 8, 8)));
         SetStylebox(theme, "hover", "PopupMenu", Flat(
-            Raised, Amber, 2, 5, 8, 6, 8, 6, left: 4));
+            Raised, Amber, 2, 5, M(8, 6, 8, 6), left: 4));
         SetStylebox(theme, "separator", "HSeparator", new StyleBoxLine
         {
             Color = Alpha(Outline, 0.46f),
@@ -303,22 +201,22 @@ public static class ClientTheme
         theme.SetColor("font_disabled_color", variation, Muted);
         SetStylebox(theme, "normal", variation, Flat(
             background, border, 1, controls.CornerRadius,
-            12, 10, 12, 10, left: left, bottom: 3));
+            M(12, 10, 12, 10), left: left, bottom: 3));
         SetStylebox(theme, "hover", variation, Flat(
             background.Lightened(0.08f), Amber, 2, controls.CornerRadius,
-            12, 9, 12, 11,
+            M(12, 9, 12, 11),
             left: Math.Max(2, left), bottom: 4));
         SetStylebox(theme, "pressed", variation, Flat(
             background.Darkened(0.08f), Amber, 1, controls.CornerRadius,
-            12, 12, 12, 8,
+            M(12, 12, 12, 8),
             left: Math.Max(6, left)));
         SetStylebox(theme, "hover_pressed", variation, Flat(
-            background, Amber, 2, controls.CornerRadius, 12, 12, 12, 8,
+            background, Amber, 2, controls.CornerRadius, M(12, 12, 12, 8),
             left: Math.Max(6, left)));
         SetStylebox(theme, "focus", variation, FocusBox(controls));
         SetStylebox(theme, "disabled", variation, Flat(
             Surface.Darkened(0.08f), Alpha(Outline, 0.42f),
-            1, 7, 12, 10, 12, 10));
+            1, 7, M(12, 10, 12, 10)));
     }
 
     private static void Variation(Theme theme, string variation, string basis) =>
@@ -360,10 +258,7 @@ public static class ClientTheme
         Color border,
         int width,
         int radius,
-        float marginLeft,
-        float marginTop,
-        float marginRight,
-        float marginBottom,
+        Vector4 margins,
         int? left = null,
         int? bottom = null) => new()
         {
@@ -377,11 +272,14 @@ public static class ClientTheme
             CornerRadiusTopRight = radius,
             CornerRadiusBottomLeft = radius,
             CornerRadiusBottomRight = radius,
-            ContentMarginLeft = marginLeft,
-            ContentMarginTop = marginTop,
-            ContentMarginRight = marginRight,
-            ContentMarginBottom = marginBottom,
+            ContentMarginLeft = margins.X,
+            ContentMarginTop = margins.Y,
+            ContentMarginRight = margins.Z,
+            ContentMarginBottom = margins.W,
         };
+
+    private static Vector4 M(float left, float top, float right, float bottom) =>
+        new(left, top, right, bottom);
 
     private static Color C(VisualColor color) => new(
         color.Red / 255.0f,

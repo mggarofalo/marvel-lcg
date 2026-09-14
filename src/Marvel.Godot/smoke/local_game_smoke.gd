@@ -25,12 +25,6 @@ func _run() -> void:
 	await _configure_seeded_game()
 	if not await _open_and_validate_table():
 		return
-	if OS.get_environment("MARVEL_SMOKE_TWO_PLAYER") == "true":
-		print("LOCAL_GAME_SMOKE_OK two-player-seat-switch")
-		main.queue_free()
-		await process_frame
-		quit(0)
-		return
 	var journey := await _play_seeded_journey()
 	if journey.is_empty():
 		return
@@ -84,8 +78,9 @@ func _open_and_validate_table() -> bool:
 	if not await _wait_for(func() -> bool: return _play().visible and _decision() != null):
 		_fail("the opened table never became visible")
 		return false
-	if OS.get_environment("MARVEL_SMOKE_TWO_PLAYER") == "true":
-		return await _cooperative_seat_switch_is_safe()
+	if OS.get_environment("MARVEL_SMOKE_TWO_PLAYER") == "true" \
+			and not await _cooperative_seat_switch_is_safe():
+		return false
 	if not await _live_scale_rebuilds_the_decision():
 		return false
 	if not await _procedural_cards_are_safe():
@@ -124,8 +119,8 @@ func _mulligan_dock_is_safe() -> bool:
 		return false
 	if not await _prepare_activation(sheet) or not await _prepare_activation(submit):
 		return false
-	if not _visible_control_rect(submit).has_point(submit.get_global_rect().get_center()):
-		_fail("the opening commit is not fixed inside the viewport")
+	if not _control_is_fully_visible(sheet) or not _control_is_fully_visible(submit):
+		_fail("the opening decision dock has a clipped required control")
 		return false
 	return await _synchronization_preserves_history(false)
 

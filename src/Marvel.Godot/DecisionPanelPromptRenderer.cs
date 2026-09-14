@@ -32,7 +32,10 @@ internal static class DecisionPanelPromptRenderer
                     : GodotThemeVariations.DangerText,
                 wrap: true));
             panel.AddChild(summary);
-            panel.AddChild(new HSeparator());
+            if (!MulliganPrompt.IsOpening(composer.Prompt))
+            {
+                panel.AddChild(new HSeparator());
+            }
         }
 
         var scroll = new ScrollContainer

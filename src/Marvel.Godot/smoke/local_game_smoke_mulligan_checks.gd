@@ -7,6 +7,9 @@ func _mulligan_result_and_payment_are_operable() -> bool:
 		return false
 	if not await _mulligan_result_is_operable():
 		return false
+	if OS.get_environment("MARVEL_SMOKE_TWO_PLAYER") == "true":
+		if not await _dismiss_mulligan_result() or not await _complete_second_opening_hand():
+			return false
 	if not await _start_web_shooter_draft():
 		return false
 	return await _payment_is_keyboard_operable()
@@ -22,6 +25,9 @@ func _fallback_mulligan_sheet_is_focus_safe() -> bool:
 			or render_viewport.gui_get_focus_owner() != target:
 		_fail("opening the complete choice sheet did not focus its first canonical target")
 		return false
+	var target_name := target.name
+	if not await _pointer_activate(target):
+		return false
 	var close := main.find_child("CloseChoiceSheet", true, false) as Button
 	if close == null or not await _keyboard_activate(close):
 		_fail("the complete choice sheet cannot return by keyboard")
@@ -30,6 +36,18 @@ func _fallback_mulligan_sheet_is_focus_safe() -> bool:
 		var restored := main.find_child("CompleteChoiceSheet", true, false) as Button
 		return restored != null and render_viewport.gui_get_focus_owner() == restored):
 		_fail("closing the complete choice sheet did not restore the opening-hand focus")
+		return false
+	if not await _keyboard_activate(main.find_child("CompleteChoiceSheet", true, false) as Button):
+		return false
+	var restored_target := _decision().find_child(target_name, true, false) as Button
+	if restored_target == null or not restored_target.text.begins_with("✓"):
+		_fail("returning to the generic choice sheet lost its shared opening-hand draft")
+		return false
+	if not await _pointer_activate(restored_target):
+		return false
+	close = main.find_child("CloseChoiceSheet", true, false) as Button
+	if close == null or not await _keyboard_activate(close):
+		_fail("the generic choice sheet cannot return after restoring its draft")
 		return false
 	return true
 
@@ -190,12 +208,52 @@ func _submit_mulligan() -> bool:
 		return false
 	if not await _pointer_activate(submit):
 		return false
+	if OS.get_environment("MARVEL_SMOKE_TWO_PLAYER") == "true":
+		if not await _wait_for(func() -> bool:
+			var heading := _node("Play/Board/HandShelf/Margin/Stack/Heading") as Label
+			return heading != null and heading.text.begins_with("PLAYER 2 OPENING HAND") \
+				and not (_node("Play/Board/HandShelf") as Control).find_children(
+					"MulliganDiscard*", "Button", true, false).is_empty()):
+			_fail("the first player's submission did not hand the opening decision to player 2")
+			return false
+		return true
 	if not await _wait_for(func() -> bool:
 		return _visible_button_beginning(_decision(), "Change Form") != null \
 			and _visible_button_beginning(_decision(), "Play Web-Shooter") != null):
 		_fail("the seeded mulligan did not reach the player-action affordances")
 		return false
 	return true
+
+
+func _complete_second_opening_hand() -> bool:
+	var toggles := (_node("Play/Board/HandShelf") as Control).find_children(
+		"MulliganDiscard*", "Button", true, false)
+	var second_toggle := toggles[0] as Button if not toggles.is_empty() else null
+	if second_toggle == null or not await _pointer_activate(second_toggle):
+		_fail("the second player's opening hand has no operable discard target")
+		return false
+	var submit := _submit_button()
+	if submit == null or submit.disabled or "Discard 1 and redraw" not in submit.text:
+		_fail("the second player's selected mulligan cannot be submitted once")
+		return false
+	if not await _pointer_activate(submit):
+		return false
+	if not await _wait_for(func() -> bool:
+		return _visible_button_beginning(_decision(), "Change Form") != null \
+			and _visible_button_beginning(_decision(), "Play Web-Shooter") != null):
+		_fail("the completed cooperative mulligan did not return to player one's actions")
+		return false
+	return true
+
+
+func _dismiss_mulligan_result() -> bool:
+	var dismiss := _node(
+		"Play/Prompt/Margin/Stack/Workbench/Action/LastResult/Margin/Copy/Header/Dismiss") as Button
+	if dismiss == null or not await _pointer_activate(dismiss):
+		_fail("the first player's mulligan result cannot be dismissed before the next seat answers")
+		return false
+	return await _wait_for(func() -> bool:
+		return not (_node("Play/Prompt/Margin/Stack/Workbench/Action/LastResult") as Control).visible)
 
 
 func _mulligan_result_is_operable() -> bool:

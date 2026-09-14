@@ -45,18 +45,19 @@ func _fallback_mulligan_is_safe() -> bool:
 	if header == null or history == null or workbench == null or scale == null \
 			or not header.visible or history.get_parent() != workbench or not workbench.tabs_visible \
 			or workbench.get_tab_title(1) != "History" \
-			or scale.text != "Scale %s%%" % OS.get_environment("MARVEL_UI_SCALE"):
+			or scale.text != "Scale %s%%" % _scale_percentage():
 		_fail("the compact opening-table chrome leaked into the generic mulligan fallback: header=%s history=%s tabs=%s scale=%s" % [
 			header.visible if header != null else false,
 			history.get_parent() == workbench if history != null and workbench != null else false,
 			workbench.tabs_visible if workbench != null else false,
 			scale.text if scale != null else "missing",
 		])
-		return true
+		return false
 	var hand := _node("Play/Board/HandShelf") as Control
 	var card := hand.find_child("ProceduralCard", true, false) as Control
 	if card == null or card.custom_minimum_size.x < _scaled_metric(172):
 		_fail("the generic mulligan fallback did not retain the selected card scale")
+		return false
 	return true
 
 

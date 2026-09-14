@@ -54,4 +54,10 @@ $env:MARVEL_UI_SCALE = "100"
 $env:MARVEL_SMOKE_VIEWPORT = "1280x720"
 $env:MARVEL_SMOKE_MOTION = "disabled"
 Invoke-LocalSmoke
+$env:MARVEL_UI_SCALE = "100"
+$env:MARVEL_SMOKE_VIEWPORT = "1920x1080"
+$env:MARVEL_SMOKE_MOTION = "enabled"
+$env:MARVEL_SMOKE_TWO_PLAYER = "true"
+Invoke-LocalSmoke
+Remove-Item Env:MARVEL_SMOKE_TWO_PLAYER -ErrorAction SilentlyContinue
 exit 0

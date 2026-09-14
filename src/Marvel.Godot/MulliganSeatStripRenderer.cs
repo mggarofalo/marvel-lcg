@@ -14,9 +14,9 @@ internal static class MulliganSeatStripRenderer
         var strip = new PanelContainer
         {
             Name = "SeatStrip",
-            ThemeTypeVariation = GodotThemeVariations.BoardArea,
+            ThemeTypeVariation = GodotThemeVariations.TabletopSeatStrip,
         };
-        var rail = new HFlowContainer
+        var rail = new HBoxContainer
         {
             Name = "SeatSwitcher",
             ThemeTypeVariation = GodotThemeVariations.CompactRow,
@@ -29,7 +29,9 @@ internal static class MulliganSeatStripRenderer
             {
                 Name = $"SeatSummary{summary.Seat}",
                 ThemeTypeVariation = GodotThemeVariations.TightStack,
+                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             };
+            seat.AddThemeConstantOverride("separation", 0);
             seat.AddChild(Label(lane?.Title ?? $"PLAYER {summary.Seat + 1}", GodotThemeVariations.Eyebrow));
             seat.AddChild(Label(Summary(board, summary), GodotThemeVariations.Caption, wrap: true));
             var select = new Button
@@ -55,7 +57,8 @@ internal static class MulliganSeatStripRenderer
         string statuses = seat.Statuses.Count == 0 ? "no statuses" : string.Join(", ", seat.Statuses);
         string enemies = Named(board, seat.EngagedEnemies, "no engaged enemies");
         string defenders = Named(board, seat.OfferedDefenders, "no offered defenders");
-        return $"{identity}  ·  {form}  ·  {health}\nSTATUS {statuses}\nENGAGED {enemies}\nDEFENDERS {defenders}";
+        return $"{identity}  ·  {form}  ·  {health}  ·  STATUS {statuses}"
+            + $"  ·  ENGAGED {enemies}  ·  DEFENDERS {defenders}";
     }
 
     private static string Named(BoardPresentation board, IReadOnlyList<int> ids, string empty) => ids.Count == 0

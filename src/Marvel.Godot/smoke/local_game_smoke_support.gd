@@ -1,8 +1,7 @@
-extends SceneTree
+extends "res://smoke/local_game_smoke_input_support.gd"
 
 const TIMEOUT_MILLISECONDS := 15000
 const MAX_DECISIONS := 20
-const BOARD_HELPERS := preload("res://smoke/local_game_smoke_board_helpers.gd")
 
 var main: Control
 var failed := false
@@ -60,8 +59,8 @@ func _control_owns_point(control: Control, point: Vector2) -> bool:
 
 func _control_has_real_hit_area(control: Control) -> bool:
 	var rect := _visible_control_rect(control)
-	if rect.size.x < 4.0 or rect.size.y < 4.0:
-		_fail("control '%s' has no unclipped hit area" % control.name)
+	if not _control_is_fully_visible(control) or rect.size.x < 4.0 or rect.size.y < 4.0:
+		_fail("control '%s' is clipped or has no unclipped hit area: visible %s of %s" % [control.name, rect, control.get_global_rect()])
 		return false
 	var inset := minf(2.0, minf(rect.size.x, rect.size.y) / 4.0)
 	var points := [
@@ -170,8 +169,8 @@ func _tabletop_board_area_is_visible() -> bool:
 	var board := _node("Play/Board/TableScroll") as ScrollContainer
 	var scheme := _tabletop_card_named("The Break-In!")
 	if villain == null or player == null or board == null or scheme == null \
-			or not _visible_control_rect(villain).intersects(villain.get_global_rect()) \
-			or not _visible_control_rect(player).intersects(player.get_global_rect()) \
+			or not _control_is_fully_visible(villain) \
+			or not _control_is_fully_visible(player) \
 			or board.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED:
 		_fail("the tabletop did not keep its far and near board areas visibly focusable")
 		return false
