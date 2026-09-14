@@ -714,10 +714,12 @@ text = "No events yet."
 [node name="Status" type="PanelContainer" parent="Margin/Shell/Content" unique_id=1000000105]
 layout_mode = 2
 size_flags_horizontal = 0
+mouse_filter = 2
 theme_type_variation = &"StatusPanel"
 
 [node name="Text" type="Label" parent="Margin/Shell/Content/Status" unique_id=1000000106]
 layout_mode = 2
+mouse_filter = 2
 theme_type_variation = &"StatusText"
 text = "LOADING ASSIGNMENTS"
 

@@ -67,6 +67,20 @@ func _scroll_control_into_view(control: Control) -> void:
 				or scroll.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED:
 			scroll.ensure_control_visible(control)
 		await process_frame
+	var page := main.get_node_or_null("Margin") as ScrollContainer
+	var status := main.get_node_or_null("StatusBar") as Control
+	if page != null and page.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED:
+		var rect := control.get_global_rect()
+		var page_rect := page.get_global_rect()
+		var safe_top := maxf(page_rect.position.y, status.get_global_rect().end.y + 4.0 \
+			if status != null else page_rect.position.y)
+		var safe_bottom := page_rect.end.y - 20.0
+		if rect.position.y < safe_top:
+			page.scroll_vertical = maxi(
+				0, page.scroll_vertical - ceili(safe_top - rect.position.y))
+		elif rect.end.y > safe_bottom:
+			page.scroll_vertical += ceili(rect.end.y - safe_bottom)
+		await process_frame
 	await process_frame
 
 
