@@ -31,16 +31,16 @@ func _relationship_path_tracks_table_scrolling(card: Control) -> bool:
 		return true
 	table.scroll_vertical = original_scroll + 50
 	if not await _wait_for(func() -> bool:
-			return target.get_global_rect().get_center().y < original_target.y - 49.0):
-		_fail("the linked table target did not move in global geometry when scrolled")
+			return target.get_global_rect().get_center().distance_to(
+					original_target - Vector2(0.0, 50.0)) < 1.0):
+		_fail("the linked table target did not move by the exact scroll offset")
 		return false
-	var moved_target := target.get_global_rect().get_center()
 	if not await _wait_for(func() -> bool:
 			var moved_line := _relationship_line_at(overlay, original_source)
-			return moved_line != null \
-					and _other_endpoint(moved_line, overlay, original_source).y \
-					< original_endpoint.y - 49.0):
-		_fail("table scrolling left the relationship path at its old endpoint")
+			return moved_line != null and _other_endpoint(
+				moved_line, overlay, original_source).distance_to(
+					original_endpoint - Vector2(0.0, 50.0)) < 1.0):
+		_fail("table scrolling measured the relationship endpoint at stale geometry")
 		return false
 	table.scroll_vertical = scroll_limit
 	if not await _wait_for(func() -> bool:
