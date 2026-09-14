@@ -55,8 +55,10 @@ func _align_attached_control_to_table(control: Control) -> bool:
 		var visible := table.get_global_rect()
 		var rect := control.get_global_rect()
 		var status := (main.get_node("StatusBar") as Control).get_global_rect()
-		var top := maxf(visible.position.y + 4.0, status.end.y + 4.0)
-		var bottom := visible.end.y - 4.0
+		# A compact viewport can fit the control exactly between these edges.
+		# Those pixels remain fully visible and pointer-operable without padding.
+		var top := maxf(visible.position.y, status.end.y)
+		var bottom := visible.end.y
 		if rect.position.y < top:
 			table.scroll_vertical = maxi(0, table.scroll_vertical - ceili(top - rect.position.y))
 		elif rect.end.y > bottom:
