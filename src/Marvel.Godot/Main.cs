@@ -22,7 +22,7 @@ public sealed partial class Main : Control
     internal VBoxContainer boardAreas = null!;
     internal Label buildIdentity = null!;
     internal BoardPresentation? boardPresentation;
-    internal HSplitContainer playLayout = null!;
+    internal VBoxContainer playLayout = null!;
     internal BoardRenderResult? boardRender;
     internal Control cardInspector = null!;
     internal ColorRect cardInspectorBackdrop = null!;
@@ -202,7 +202,7 @@ public sealed partial class Main : Control
         title = GetNode<Label>($"{content}/Title");
         setupPanel = GetNode<Control>($"{content}/Setup");
         board = GetNode<Control>($"{content}/Play");
-        playLayout = GetNode<HSplitContainer>($"{content}/Play");
+        playLayout = GetNode<VBoxContainer>($"{content}/Play");
         promptPanel = GetNode<PanelContainer>($"{content}/Play/Prompt");
         promptStack = GetNode<VBoxContainer>($"{content}/Play/Prompt/Margin/Stack");
         promptEyebrow = GetNode<Label>(
@@ -405,14 +405,14 @@ public sealed partial class Main : Control
         BoardCardPresentation card,
         InterfaceScale requested,
         float viewportHeight) =>
-        MainBoardController.FittedInspectionScale(card, requested, viewportHeight);
-    internal static bool IsInsideCard(Node? node) => MainBoardController.IsInsideCard(node);
+        CardInspectorFocus.FittedScale(card, requested, viewportHeight);
+    internal static bool IsInsideCard(Node? node) => CardInspectorFocus.IsInsideCard(node);
     internal void ScheduleCardInspectorHide() => boardController.ScheduleCardInspectorHide();
     internal void BindCardInspectorFocus(Control control) => boardController.BindCardInspectorFocus(control);
     internal bool CardInspectorHasFocus() => boardController.CardInspectorHasFocus();
     internal void HideCardInspector() => boardController.HideCardInspector();
     internal static void IgnoreMouseRecursively(Node node) =>
-        MainBoardController.IgnoreMouseRecursively(node);
+        CardInspectorFocus.IgnoreMouseRecursively(node);
     internal void RevealOutcome() => eventController.RevealOutcome();
     internal void RenderPromptSummary(Prompt? prompt, WorldDescriptor world) =>
         eventController.RenderPromptSummary(prompt, world);

@@ -270,7 +270,7 @@ internal static class CardFaceRendering
     {
         var content = Stack();
         content.Name = "CardFace";
-        if (size == CardDisplaySize.Hand)
+        if (size is CardDisplaySize.Hand or CardDisplaySize.Mulligan)
         {
             string identity = string.IsNullOrWhiteSpace(card.Classification)
                 ? card.Kind

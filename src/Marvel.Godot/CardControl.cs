@@ -88,15 +88,15 @@ public sealed partial class CardControl : PanelContainer
         int resourcesRows = values.Count(value => value.Name == "RES");
         int badgeCount = values.Count - progressRows - values.Count(value => value.Name == "RES");
         int valueRows = (badgeCount + 2) / 3 + progressRows + resourcesRows;
-        int titleCharactersPerLine = size == CardDisplaySize.Hand ? 18 : 24;
+        int titleCharactersPerLine = size is CardDisplaySize.Hand or CardDisplaySize.Mulligan ? 18 : 24;
         int titleRows = Math.Max(
             1,
             (int)Math.Ceiling(card.Title.Length / (double)titleCharactersPerLine));
-        int textRows = (size == CardDisplaySize.Hand ? 1 : 0)
+        int textRows = (size is CardDisplaySize.Hand or CardDisplaySize.Mulligan ? 1 : 0)
             + titleRows
             + (CompactState(card, size) is null ? 0 : 1)
             + valueRows;
-        float scale = layout.Width / (size == CardDisplaySize.Hand ? 172.0f : 210.0f);
+        float scale = layout.Width / (size is CardDisplaySize.Hand or CardDisplaySize.Mulligan ? 172.0f : 210.0f);
         return Math.Max(layout.MinimumHeight, textRows * 22 * scale + 20 * scale);
     }
 

@@ -80,6 +80,7 @@ public sealed class PresentationBoundaryTests
             "Marvel.View.EventMotionKind",
             "Marvel.View.EventPresentation",
             "Marvel.View.PromptPresentation",
+            "Marvel.View.PlayerSummaryDescriptor",
             "Marvel.View.WorldDescriptor");
     }
 }

@@ -126,9 +126,9 @@ internal sealed class CardInspectorFocus
         return false;
     }
 
-    internal static void IgnoreMouseRecursively(Node node)
+    internal static void IgnoreMouseRecursively(Node node, bool interactiveRules = true)
     {
-        if (node is RichTextLabel rules)
+        if (interactiveRules && node is RichTextLabel rules)
         {
             rules.MouseFilter = Control.MouseFilterEnum.Stop;
             return;
@@ -139,7 +139,24 @@ internal sealed class CardInspectorFocus
         }
         foreach (Node child in node.GetChildren())
         {
-            IgnoreMouseRecursively(child);
+            IgnoreMouseRecursively(child, interactiveRules);
+        }
+    }
+
+    internal static void RestoreMouseRecursively(Node node)
+    {
+        if (node is RichTextLabel rules)
+        {
+            rules.MouseFilter = Control.MouseFilterEnum.Stop;
+            return;
+        }
+        if (node is Control control)
+        {
+            control.MouseFilter = Control.MouseFilterEnum.Pass;
+        }
+        foreach (Node child in node.GetChildren())
+        {
+            RestoreMouseRecursively(child);
         }
     }
 

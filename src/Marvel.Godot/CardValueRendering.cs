@@ -17,7 +17,7 @@ internal static class CardValueRendering
         }
 
         var values = new List<BoardFieldPresentation>();
-        if (size == CardDisplaySize.Hand)
+        if (size is CardDisplaySize.Hand or CardDisplaySize.Mulligan)
         {
             if (card.Cost is not null)
             {
@@ -142,7 +142,7 @@ internal static class CardValueRendering
     internal static string? CompactState(BoardCardPresentation card, CardDisplaySize size)
     {
         ArgumentNullException.ThrowIfNull(card);
-        return size == CardDisplaySize.Hand
+        return size is CardDisplaySize.Hand or CardDisplaySize.Mulligan
             || string.IsNullOrWhiteSpace(card.Status)
             || card.Status == "READY"
                 ? null

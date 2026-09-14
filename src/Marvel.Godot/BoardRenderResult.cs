@@ -8,7 +8,11 @@ public sealed class BoardRenderResult
 {
     private readonly Dictionary<int, List<CardControl>> controls = [];
     private readonly Dictionary<Control, Action> areaExpanders = [];
+    private readonly Dictionary<int, Button> mulliganToggles = [];
+    private readonly Dictionary<int, CardControl> mulliganCards = [];
+    private readonly HashSet<int> legalMulliganTargets = [];
     private readonly BoardControlReveal reveal;
+    private Control? mulliganDiscard;
 
     public BoardRenderResult()
     {
@@ -37,22 +41,100 @@ public sealed class BoardRenderResult
 
     internal void TrackCard(Control control, BoardCardPresentation card)
     {
+        Vector2? pressedAt = null;
         control.GuiInput += input =>
         {
-            bool pointer = input is InputEventMouseButton
-            {
-                ButtonIndex: MouseButton.Left,
-                Pressed: true,
-            };
-            bool keyboard = input is InputEventKey { Echo: false }
-                && input.IsActionPressed("ui_accept");
-            if ((pointer || keyboard) && IsCurrent?.Invoke() == true
-                && InteractionControl.IsUsable(control))
-            {
-                CardActivated?.Invoke(card, control);
-                control.AcceptEvent();
-            }
+            if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left } mouse) pressedAt = RouteMouse(control, card, mouse, pressedAt);
+            else if (input is InputEventKey { Echo: false } && input.IsActionPressed("ui_accept")) Activate(control, card);
         };
+    }
+
+    private Vector2? RouteMouse(Control control, BoardCardPresentation card, InputEventMouseButton mouse, Vector2? pressedAt)
+    {
+        if (mouse.Pressed) return mouse.GlobalPosition;
+        if (pressedAt is not { } start) return null;
+        if (TryDrag(card, mouse.GlobalPosition, start)) { control.AcceptEvent(); return null; }
+        if (start.DistanceTo(mouse.GlobalPosition) < 10) Activate(control, card);
+        return null;
+    }
+
+    private bool TryDrag(BoardCardPresentation card, Vector2 finish, Vector2 start)
+    {
+        if (!IsCandidateDrag(card, start, finish, out int id)
+            || !mulliganCards.TryGetValue(id, out CardControl? dragged)
+            || !DragControlsAreUsable(dragged, finish)) return false;
+        MulliganTargetRequested?.Invoke(id);
+        return true;
+    }
+
+    private bool IsCandidateDrag(
+        BoardCardPresentation card, Vector2 start, Vector2 finish, out int id)
+    {
+        id = card.TargetId ?? -1;
+        return IsCurrentRender() && start.DistanceTo(finish) >= 10
+            && card.TargetId is not null && legalMulliganTargets.Contains(id);
+    }
+
+    private bool DragControlsAreUsable(CardControl dragged, Vector2 finish) =>
+        InteractionControl.IsUsable(dragged) && InteractionControl.IsUsable(mulliganDiscard)
+        && mulliganDiscard!.GetGlobalRect().HasPoint(finish);
+
+    private void Activate(Control control, BoardCardPresentation card)
+    {
+        if (!IsCurrentRender() || !InteractionControl.IsUsable(control)) return;
+        CardActivated?.Invoke(card, control);
+        control.AcceptEvent();
+    }
+
+    private bool IsCurrentRender() => IsCurrent?.Invoke() == true;
+
+    /// <summary>Raised when a tabletop mulligan checkbox or discard drag names a visible hand card.</summary>
+    internal event Action<int>? MulliganTargetRequested;
+
+    internal void RegisterMulliganToggle(int id, Button toggle) => mulliganToggles[id] = toggle;
+
+    internal void RegisterMulliganCard(int id, CardControl card) => mulliganCards[id] = card;
+
+    internal void RegisterMulliganDiscard(Control discard) => mulliganDiscard = discard;
+
+    internal void BindMulliganTargets(
+        IReadOnlyCollection<int> legal, IReadOnlyCollection<int> selected, Action<int> choose)
+    {
+        legalMulliganTargets.Clear();
+        legalMulliganTargets.UnionWith(legal);
+        MulliganTargetRequested = choose;
+        foreach ((int id, Button toggle) in mulliganToggles)
+        {
+            bool available = legal.Contains(id);
+            toggle.Visible = available;
+            toggle.Disabled = !available;
+            SetMulliganToggle(toggle, selected.Contains(id));
+        }
+    }
+
+    internal void RequestMulliganTarget(int id)
+    {
+        if (legalMulliganTargets.Contains(id))
+        {
+            MulliganTargetRequested?.Invoke(id);
+        }
+    }
+
+    internal void SetMulliganTargets(IReadOnlyCollection<int> selected)
+    {
+        foreach ((int id, Button toggle) in mulliganToggles)
+        {
+            SetMulliganToggle(toggle, selected.Contains(id));
+        }
+    }
+
+    private static void SetMulliganToggle(Button toggle, bool selected)
+    {
+        toggle.SetPressedNoSignal(selected);
+        toggle.Text = selected ? "✓ DISCARD" : "□ DISCARD";
+        toggle.ThemeTypeVariation = selected
+            ? GodotThemeVariations.SelectedTargetButton
+            : GodotThemeVariations.LegalTargetButton;
     }
 
     /// <summary>Returns the visible control for an engine-provided card id.</summary>

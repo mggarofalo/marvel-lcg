@@ -1,6 +1,10 @@
 extends "res://smoke/local_game_smoke_support.gd"
 
 func _board_layout_is_resolved() -> bool:
+	if main.find_child("VillainTable", true, false) != null:
+		return await _mulligan_table_layout_is_resolved()
+	if main.find_child("CompleteChoiceSheet", true, false) != null:
+		return await _fallback_mulligan_layout_is_resolved()
 	var lanes := _board_lanes()
 	if lanes.is_empty():
 		return false
@@ -15,6 +19,39 @@ func _board_layout_is_resolved() -> bool:
 	await process_frame
 	await process_frame
 	if not _responsive_layout_is_safe():
+		return false
+	return _hand_is_pinned()
+
+
+func _fallback_mulligan_layout_is_resolved() -> bool:
+	var page := main.get_node("Margin") as ScrollContainer
+	var table := _node("Play/Board/TableScroll") as ScrollContainer
+	var hand := _node("Play/Board/HandShelf") as Control
+	var prompt := _node("Play/Prompt") as Control
+	if page == null or table == null or hand == null or prompt == null \
+			or table.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED \
+			or hand.get_global_rect().intersects(prompt.get_global_rect()):
+		_fail("the generic mulligan fallback lost its bounded board or decision layout")
+		return false
+	return true
+
+
+func _mulligan_table_layout_is_resolved() -> bool:
+	var villain := main.find_child("VillainTable", true, false) as Control
+	var player := main.find_child("PlayerTable", true, false) as Control
+	var page := main.get_node("Margin") as ScrollContainer
+	var table := _node("Play/Board/TableScroll") as ScrollContainer
+	var hand_scroll := _node("Play/Board/HandShelf/Margin/Stack/Scroll") as ScrollContainer
+	if villain == null or player == null or villain.get_global_rect().position.y >= player.get_global_rect().position.y:
+		_fail("the mulligan table does not keep the villain far from the near player area")
+		return false
+	if page.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED \
+			or table.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED:
+		_fail("the opening desktop table introduced gameplay scrolling")
+		return false
+	if OS.get_environment("MARVEL_SMOKE_VIEWPORT") == "1920x1080" \
+			and hand_scroll.horizontal_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED:
+		_fail("the 1920 opening hand cannot show all six choices without scrolling")
 		return false
 	return _hand_is_pinned()
 
@@ -276,8 +313,8 @@ func _commit_controls_are_safe(decision_scroll: ScrollContainer) -> bool:
 	if decision_scroll.is_ancestor_of(summary) or decision_scroll.is_ancestor_of(commit_bar):
 		_fail("the selected action or its commitment moved into the scrolling editor")
 		return false
-	if not _focused_control_is_visible(submit):
-		_fail("the selected action's submit control is outside the viewport")
+	if not _control_is_fully_visible(submit):
+		_fail("the selected action's submit control is clipped or outside the viewport")
 		return false
 	return true
 

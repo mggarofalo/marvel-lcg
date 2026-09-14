@@ -11,63 +11,83 @@ namespace Marvel.Godot;
 public sealed partial class DecisionPanel : VBoxContainer
 {
     private InterfaceScale interfaceScale = ClientTheme.ConfiguredScale();
+    private InterfaceScale requestedScale = ClientTheme.ConfiguredScale();
     internal ControlMetrics ControlMetrics => VisualSystem.Controls(interfaceScale);
     internal DecisionComposer? composer;
     private VBoxContainer? content;
     private VBoxContainer? commit;
     internal bool submitting;
+    internal bool mulliganChoiceSheetOpen;
+    private bool compactMulliganChrome;
+    private BoardRenderResult? mulliganBoard;
     private readonly DecisionPanelLifecycle lifecycle;
     internal WorldDescriptor? world;
     public DecisionPanel() => lifecycle = new DecisionPanelLifecycle(this);
-
     /// <summary>Raised with one answer built from the current prompt.</summary>
     public event Action<EngineDecision>? Submitted;
-
     /// <summary>Raised when an affordance or target points at a board object.</summary>
     public event Action<IReadOnlyList<int>>? AnchorFocused;
-
     /// <summary>Raised with the visible card whose action or target is under the pointer.</summary>
     public event Action<int?>? CardHovered;
-
     /// <summary>Raised whenever the visible draft's count-only progress changes.</summary>
     public event Action<DecisionProgressPresentation?>? ProgressChanged;
-
     /// <summary>Raised when a player opens one action's target and payment editor.</summary>
     public event Action? DraftStarted;
     /// <summary>Applies the current presentation-only desktop scale.</summary>
     public void SetInterfaceScale(InterfaceScale scale)
     {
-        if (interfaceScale == scale)
+        requestedScale = scale;
+        // The tabletop owns the full desktop height. Its dock deliberately
+        // keeps one compact metric so a scale preference never moves Commit.
+        InterfaceScale effectiveScale = compactMulliganChrome && MulliganPrompt.IsOpening(composer?.Prompt)
+            ? InterfaceScale.Standard
+            : scale;
+        if (interfaceScale == effectiveScale)
         {
+            if (composer is not null)
+            {
+                Rebuild();
+            }
             return;
         }
 
-        interfaceScale = scale;
+        interfaceScale = effectiveScale;
         if (composer is not null)
         {
             Rebuild();
         }
     }
-
     /// <summary>Discards the old draft and renders the response's current prompt.</summary>
-    public void Render(Prompt? prompt, WorldDescriptor currentWorld, long revision) =>
+    public void Render(Prompt? prompt, WorldDescriptor currentWorld, long revision)
+    {
+        interfaceScale = compactMulliganChrome && MulliganPrompt.IsOpening(prompt)
+            ? InterfaceScale.Standard
+            : requestedScale;
         lifecycle.Render(prompt, currentWorld, revision);
+    }
 
+    internal void SetCompactMulliganChrome(bool value)
+    {
+        if (compactMulliganChrome == value)
+        {
+            return;
+        }
+
+        compactMulliganChrome = value;
+        SetInterfaceScale(requestedScale);
+    }
     /// <summary>Reopens a prompt only after the client proved its request was not sent.</summary>
     public void AllowRetry(long revision) => lifecycle.AllowRetry(revision);
 
     /// <summary>Reopens the prompt after an authoritative table synchronization.</summary>
     internal void AuthoritativeSynchronization(long revision) =>
         lifecycle.AuthoritativeSynchronization(revision);
-
     /// <summary>Prevents a second mutation while one response is outstanding.</summary>
     public void SetSubmitting(bool value)
     {
         submitting = value;
         Rebuild();
     }
-
-
     internal void NotifyAnchorFocused(IReadOnlyList<int> ids) =>
         AnchorFocused?.Invoke(ids);
 
@@ -78,6 +98,25 @@ public sealed partial class DecisionPanel : VBoxContainer
 
     internal void SelectAffordance(int id, int generation) => lifecycle.SelectAffordance(id, generation);
 
+    internal void BindMulliganTargets(BoardRenderResult? board)
+    {
+        mulliganBoard = board;
+        MulliganBinding.Bind(this, board);
+    }
+
+    internal void ToggleMulliganTarget(int target, DecisionComposer draft, int generation)
+    {
+        if (!IsCurrentDraft(draft, generation)
+            || draft.Selected?.Targets is not { } request
+            || !request.Legal.Contains(target))
+        {
+            return;
+        }
+        if (draft.Targets.Contains(target)) draft.RemoveTarget(target); else draft.AddTarget(target);
+        mulliganBoard?.SetMulliganTargets(draft.Targets);
+        NotifyAnchorFocused([target]);
+        Rebuild();
+    }
     internal bool IsCurrentDraft(DecisionComposer expected, int generation) =>
         ReferenceEquals(composer, expected) && lifecycle.CanMutate(generation);
 
@@ -143,6 +182,11 @@ public sealed partial class DecisionPanel : VBoxContainer
             return;
         }
         DecisionProgressPresentation progress = composer.Progress();
+        if (MulliganPrompt.IsOpening(composer.Prompt))
+        {
+            MulliganDecisionSurface.AddDraft(this, selected, progress);
+            return;
+        }
         AddContent(new HSeparator());
         AddContent(Text(DecisionPanelCopy.TargetProgress(composer, progress.Targets), GodotThemeVariations.Eyebrow));
         int generation = lifecycle.RenderGeneration;
@@ -196,62 +240,12 @@ public sealed partial class DecisionPanel : VBoxContainer
 
     private string? FocusKey(Control focused) => DecisionFocus.Key(this, focused);
 
-    internal void BindAnchors(Control control, params int[] ids)
-    {
-        if (ids.Length == 0)
-        {
-            return;
-        }
+    internal void BindAnchors(Control control, params int[] ids) => DecisionAnchorBinding.Bind(this, control, ids);
 
-        bool pointerInside = false;
-        control.MouseEntered += () =>
-        {
-            pointerInside = true;
-            AnchorFocused?.Invoke(ids);
-            CardHovered?.Invoke(ids[0]);
-        };
-        control.MouseExited += () =>
-        {
-            pointerInside = false;
-            if (!control.HasFocus())
-            {
-                CardHovered?.Invoke(null);
-            }
-        };
-        control.FocusEntered += () => AnchorFocused?.Invoke(ids);
-        control.FocusExited += () =>
-        {
-            if (!pointerInside)
-            {
-                CardHovered?.Invoke(null);
-            }
-        };
-    }
+    internal void NotifyCardHovered(int? id) => CardHovered?.Invoke(id);
 
     internal static string NodeKey(string value) => new(
         value.Select(character => char.IsLetterOrDigit(character) ? character : '_').ToArray());
-
-    internal string CostLabel(CostOption cost)
-    {
-        string primary = $"Pay {cost.Cost}";
-        if (cost.Rule is { Count: > 0 })
-        {
-            primary += $" [{string.Join(", ", cost.Rule)}]";
-        }
-        if (cost.HasAlternative)
-        {
-            primary += $"  OR  {cost.OrCost}";
-            if (cost.OrRule is { Count: > 0 })
-            {
-                primary += $" [{string.Join(", ", cost.OrRule)}]";
-            }
-        }
-        if (cost.Target != 0)
-        {
-            primary += $"  ·  {PromptPresentation.Describe(cost.Target, world!)}";
-        }
-        return primary;
-    }
 
     internal static Label Text(string text, string variation, bool wrap = false)
     {
@@ -282,12 +276,4 @@ public sealed partial class DecisionPanel : VBoxContainer
             ControlMetrics.MinimumHeight);
     }
 
-    internal static string ResourceName(char resource) => resource switch
-    {
-        Resources.Mental => "mental",
-        Resources.Energy => "energy",
-        Resources.Physical => "physical",
-        Resources.Wild => "wild",
-        _ => $"resource {resource}",
-    };
 }

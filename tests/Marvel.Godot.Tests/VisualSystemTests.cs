@@ -249,6 +249,22 @@ public sealed class VisualSystemTests
             precision: 3);
     }
 
+    [Fact]
+    public void OpeningMulliganCardsFitSixChoicesAcrossTheLargeDesktopTable()
+    {
+        CardLayoutMetrics standard = VisualSystem.Card(
+            CardDisplaySize.Mulligan, InterfaceScale.Standard);
+        CardLayoutMetrics large = VisualSystem.Card(
+            CardDisplaySize.Mulligan, InterfaceScale.Percent150);
+
+        Assert.Equal(195, standard.Width);
+        Assert.Equal(229, large.Width);
+        Assert.True(large.Width > standard.Width);
+        // 1920 less the fixed 360px composition rail leaves 1560px: six
+        // opening cards and their ordinary 8px gaps stay in the table.
+        Assert.True(6 * large.Width + 5 * 8 <= 1920 - 360);
+    }
+
     [Theory]
     [InlineData("HERO", CardFrameFamily.Identity, GodotThemeVariations.IdentityCard)]
     [InlineData("UPGRADE", CardFrameFamily.Player, GodotThemeVariations.PlayerCard)]

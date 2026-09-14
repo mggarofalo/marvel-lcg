@@ -64,10 +64,10 @@ internal sealed class DecisionPaymentRenderer
             {
                 Name = $"Cost{costIndex}",
                 Text = unavailable
-                    ? $"— UNAVAILABLE  ·  {panel.CostLabel(cost)}"
+                    ? $"— UNAVAILABLE  ·  {DecisionCostLabel.For(cost, world)}"
                     : isSelected
-                    ? $"✓ SELECTED  ·  {panel.CostLabel(cost)}"
-                    : $"◇ CHOOSE  ·  {panel.CostLabel(cost)}",
+                    ? $"✓ SELECTED  ·  {DecisionCostLabel.For(cost, world)}"
+                    : $"◇ CHOOSE  ·  {DecisionCostLabel.For(cost, world)}",
                 Alignment = HorizontalAlignment.Left,
                 ToggleMode = true,
                 ButtonPressed = isSelected,

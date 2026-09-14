@@ -6,4 +6,7 @@ public enum CardDisplaySize
     Full,
     Board,
     Hand,
+
+    /// <summary>A readable opening-hand card that fits all six mulligan choices on the desktop table.</summary>
+    Mulligan,
 }

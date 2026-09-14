@@ -1,6 +1,7 @@
 using Godot;
 using Marvel.Client;
 using Marvel.Rules.Play;
+using Marvel.Rules.Prompts;
 using Marvel.Server;
 using Marvel.View;
 
@@ -12,12 +13,14 @@ internal sealed class MainBoardController
     private readonly Main main;
     private readonly CardInspectorFocus inspector;
     private readonly InteractionGeneration renderGeneration = new();
+    private int? displayedSeat;
 
     internal MainBoardController(Main main)
     {
         this.main = main;
         inspector = new CardInspectorFocus(main);
     }
+
     internal void RenderGame(
         EngineResponse response,
         bool resetEvents = false,
@@ -30,6 +33,10 @@ internal sealed class MainBoardController
         HashSet<int> priorHistory = main.CurrentGame?.History?.Entries
             .Select(entry => entry.Cursor)
             .ToHashSet() ?? [];
+        if (!string.Equals(main.CurrentGame?.GameId, response.GameId, StringComparison.Ordinal))
+        {
+            displayedSeat = null;
+        }
         main.CurrentGame = response;
         WorldDescriptor world = response.World!;
         RenderCurrentResponse(response, world, renderGeneration);
@@ -44,12 +51,14 @@ internal sealed class MainBoardController
         WorldDescriptor world,
         int renderGeneration)
     {
-        RenderBoard(world, renderGeneration);
+        RenderBoard(world, response.Prompt, renderGeneration);
         main.syncStatus.Visible = true;
         main.syncStatus.Text = $"✓ Synced · r{response.Revision}";
         main.synchronize.Visible = true;
         main.RenderPromptSummary(response.Prompt, world);
         main.decisions.Render(response.Prompt, world, response.Revision);
+        main.decisions.BindMulliganTargets(main.boardRender);
+        main.layoutController.ApplyResponsivePlayLayout();
     }
 
     private void FinishRender(
@@ -89,22 +98,42 @@ internal sealed class MainBoardController
         }
     }
 
-    internal void RenderBoard(WorldDescriptor world, int? renderGeneration = null)
+    internal void RenderBoard(
+        WorldDescriptor world, Prompt? prompt = null, int? renderGeneration = null)
     {
+        prompt ??= main.CurrentGame?.Prompt;
         main.boardPresentation = BoardPresentation.From(world);
-        BoardRenderResult rendered = BoardRenderer.Render(
-            main.boardAreas,
-            main.boardPresentation,
-            main.handRail,
-            main.handHeading,
-            main.interfaceScale,
-            main.expandedAreas,
-            main.art);
+        BoardRenderResult rendered = MulliganPrompt.UsesDesktopTable(prompt, main.Size)
+            ? RenderMulliganTable(prompt!)
+            : BoardRenderer.Render(
+                main.boardAreas, main.boardPresentation, main.handRail, main.handHeading,
+                main.interfaceScale, main.expandedAreas, main.art);
         main.boardRender = rendered;
         rendered.CardActivated += (card, control) => ToggleCardInspector(card, control);
         rendered.IsCurrent = () => ReferenceEquals(main.boardRender, rendered)
             && IsCurrentRender(renderGeneration ?? this.renderGeneration.Current);
+        main.decisions.BindMulliganTargets(rendered);
         inspector.Hide();
+    }
+
+    private BoardRenderResult RenderMulliganTable(Prompt prompt) =>
+        MulliganTablePresentation.Render(main, prompt, displayedSeat ?? prompt.Player, SwitchSeat);
+
+    private void SwitchSeat(int seat)
+    {
+        if (main.boardPresentation?.Lanes.Any(lane => lane.Seat == seat) != true
+            || displayedSeat == seat)
+        {
+            return;
+        }
+
+        // This changes only the expanded public workspace. The pending prompt
+        // and its composer remain owned by the server-provided prompt player.
+        displayedSeat = seat;
+        if (main.CurrentGame?.World is { } world)
+        {
+            RenderBoard(world, main.CurrentGame.Prompt);
+        }
     }
 
     internal void PreviewHandCard(int? id)
@@ -226,7 +255,23 @@ internal sealed class MainBoardController
         int inspectorGeneration)
     {
         main.cardInspectorPinned = pinned;
+        if (pinned)
+        {
+            CardInspectorFocus.RestoreMouseRecursively(main.cardInspectorFrame);
+        }
+        else
+        {
+            // A hover preview is informational only; it must never cover a
+            // decision target that the pointer is travelling toward.
+            CardInspectorFocus.IgnoreMouseRecursively(main.cardInspectorFrame, interactiveRules: false);
+        }
         main.cardInspector.MouseFilter = pinned
+            ? Control.MouseFilterEnum.Stop
+            : Control.MouseFilterEnum.Ignore;
+        // The backdrop shares the inspector's full viewport bounds. Keep it
+        // transparent while previewing so a hover cannot replace the decision
+        // control that opened the preview as the pointer's GUI owner.
+        main.cardInspectorBackdrop.MouseFilter = pinned
             ? Control.MouseFilterEnum.Stop
             : Control.MouseFilterEnum.Ignore;
         main.cardInspectorBackdrop.Visible = pinned;
@@ -244,11 +289,6 @@ internal sealed class MainBoardController
     internal void BindCardInspectorFocus(Control control) => inspector.BindFocus(control);
     internal bool CardInspectorHasFocus() => inspector.HasFocus();
     internal void HideCardInspector() => inspector.Hide();
-    internal static InterfaceScale FittedInspectionScale(BoardCardPresentation card, InterfaceScale requested,
-        float viewportHeight) => CardInspectorFocus.FittedScale(card, requested, viewportHeight);
-    internal static bool IsInsideCard(Node? node) => CardInspectorFocus.IsInsideCard(node);
-    internal static void IgnoreMouseRecursively(Node node) => CardInspectorFocus.IgnoreMouseRecursively(node);
-
     private bool IsCurrentRender(int generation) => main.IsInsideTree()
         && generation == renderGeneration.Current;
 }

@@ -1,7 +1,9 @@
 extends "res://smoke/local_game_smoke_card_summary.gd"
 
+const WEB_SHOOTER_ACTION := "Play Web-Shooter"
+
 func _card_inspector_is_safe(hand_card: Control) -> bool:
-	if not await _action_card_preview_is_safe(hand_card):
+	if not await _action_card_preview_is_safe():
 		return false
 	var inspector := await _open_card_inspector(hand_card)
 	if inspector == null:
@@ -17,36 +19,134 @@ func _card_inspector_is_safe(hand_card: Control) -> bool:
 	return await _keyboard_inspector_is_safe(hand_card, inspector)
 
 
-func _action_card_preview_is_safe(hand_card: Control) -> bool:
-	var mulligan_action := _first_enabled_choice()
-	if mulligan_action == null:
-		_fail("the mulligan decision has no selectable action")
-		return false
-	if not await _pointer_activate(mulligan_action):
-		return false
-	await process_frame
-	var action_card: Button = null
-	for candidate in main.find_children("Target*", "Button", true, false):
-		if "Avengers Mansion" in (candidate as Button).text:
-			action_card = candidate as Button
-			break
+func _action_card_preview_is_safe() -> bool:
+	var action_card := _web_shooter_action()
 	if action_card == null:
-		_fail("the mulligan action has no card-naming option to preview")
+		_fail("the post-mulligan decision has no card-naming Web-Shooter action")
 		return false
-	action_card.mouse_entered.emit()
+	var inspector := await _show_action_card_preview(action_card)
+	if inspector == null:
+		return false
+	if not await _preview_keeps_action_operable(action_card, inspector):
+		return false
+	if not await _dismiss_action_card_preview(inspector):
+		return false
+	if not await _restore_unselected_action_prompt():
+		return false
+	print("CARD_PREVIEW_POINTER_PROBE_OK")
+	return true
+
+
+func _show_action_card_preview(action_card: Button) -> Control:
+	if not await _prepare_activation(action_card):
+		return null
+	var preview_point := _visible_control_rect(action_card).get_center()
+	var motion := InputEventMouseMotion.new()
+	motion.position = preview_point
+	motion.global_position = preview_point
+	render_viewport.push_input(motion)
 	await process_frame
 	var inspector := main.get_node("CardInspector") as Control
 	if inspector == null or not inspector.visible:
-		_fail("hovering a card-naming action did not preview its hand card")
-		return false
+		_fail("a real pointer hover over a card-naming action did not preview its hand card")
+		return null
 	var frame := inspector.get_node("Frame") as PanelContainer
-	if frame.get_global_rect().end.y > hand_card.get_global_rect().position.y + 1.0:
-		_fail("the action-card preview was not placed above the hand card")
+	var visible := frame.get_global_rect().intersection(Rect2(Vector2.ZERO, _viewport_size()))
+	if visible.size != frame.size:
+		_fail("the action-card preview does not fit the visible viewport")
+		return null
+	var backdrop := inspector.get_node("Backdrop") as Control
+	if backdrop.mouse_filter != Control.MOUSE_FILTER_IGNORE:
+		_fail("the unpinned preview backdrop is not pointer-transparent")
+		return null
+	return inspector
+
+
+func _preview_keeps_action_operable(action_card: Button, inspector: Control) -> bool:
+	var preview_point := _visible_control_rect(action_card).get_center()
+	if not await _control_owns_point(action_card, preview_point):
+		_fail("the preview backdrop replaced its card-naming action as the GUI hit owner")
 		return false
-	action_card.mouse_exited.emit()
+	if not _pointer_activate_without_settle(action_card):
+		_fail("the previewed card-naming action cannot be activated through its pointer hit")
+		return false
+	await process_frame
+	return await _wait_for_web_shooter_draft(
+		"the pointer activation from the visible preview did not prepare Play Web-Shooter")
+
+
+func _dismiss_action_card_preview(inspector: Control) -> bool:
+	var exit_motion := InputEventMouseMotion.new()
+	var outside_viewport := _viewport_size() + Vector2(8, 8)
+	exit_motion.position = outside_viewport
+	exit_motion.global_position = outside_viewport
+	render_viewport.push_input(exit_motion)
 	await main.get_tree().create_timer(0.35).timeout
 	if inspector.visible:
-		_fail("the temporary action-card preview remained after hover ended")
+		_fail("the temporary action-card preview remained after a real pointer exit")
+		return false
+	return true
+
+
+func _web_shooter_action() -> Button:
+	for candidate in _visible_buttons(_decision()):
+		if _logical_action_text(candidate.text) == WEB_SHOOTER_ACTION:
+			return candidate
+	return null
+
+
+func _logical_action_text(text: String) -> String:
+	return text.trim_prefix("✓").strip_edges()
+
+
+func _web_shooter_draft_is_prepared() -> bool:
+	var summary := _decision().find_child("ActionSummary", true, false) as Control
+	if summary == null or not summary.is_visible_in_tree():
+		return false
+	for line in _visible_text(summary).split("\n", false):
+		if line.strip_edges() == WEB_SHOOTER_ACTION:
+			return true
+	return false
+
+
+func _wait_for_web_shooter_draft(failure: String) -> bool:
+	if await _wait_for(func() -> bool: return _web_shooter_draft_is_prepared()):
+		return true
+	_fail("%s; summary=%s" % [failure, _visible_text(_decision())])
+	return false
+
+
+func _restore_unselected_action_prompt() -> bool:
+	var synchronize := main.find_child("Synchronize", true, false) as Button
+	if synchronize == null or synchronize.disabled or not await _pointer_activate(synchronize):
+		_fail("the preview probe cannot restore its authoritative action prompt")
+		return false
+	if await _wait_for(func() -> bool:
+		return not _web_shooter_draft_is_prepared() and _web_shooter_action() != null):
+		return true
+	_fail("synchronizing after the preview probe retained its Web-Shooter draft")
+	return false
+
+
+func _pinned_inspector_mouse_filter_is_safe(hand_card: Control) -> bool:
+	if not await _pointer_activate(hand_card):
+		return false
+	await process_frame
+	var inspector := main.get_node("CardInspector") as Control
+	if inspector == null or not inspector.visible:
+		_fail("the pointer probe could not open a pinned card inspector")
+		return false
+	var backdrop := inspector.get_node("Backdrop") as Control
+	if backdrop.mouse_filter != Control.MOUSE_FILTER_STOP:
+		_fail("the pinned inspector backdrop is not modal")
+		return false
+	var cancel := InputEventAction.new()
+	cancel.action = &"ui_cancel"
+	cancel.pressed = true
+	render_viewport.push_input(cancel)
+	await process_frame
+	if inspector.visible:
+		_fail("the pinned inspector did not close after the pointer probe")
 		return false
 	return true
 

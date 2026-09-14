@@ -31,6 +31,8 @@ func _run() -> void:
 	invitation = ""
 	if not guest_opened:
 		return
+	if not _restricted_guest_surface_is_safe():
+		return
 	if not await _initial_hosted_checkpoint():
 		return
 	var journey := await _play_hosted_journey()
@@ -68,6 +70,29 @@ func _open_host(packed: PackedScene) -> bool:
 	if not await _wait_for(func() -> bool:
 		return _play(host).visible and _button(host, "Copy invitation") != null):
 		_fail("the host did not open a two-seat table with an invitation")
+		return false
+	return true
+
+
+func _restricted_guest_surface_is_safe() -> bool:
+	var host_hand := _node(host, "Play/Board/HandShelf") as Control
+	var guest_hand := _node(guest, "Play/Board/HandShelf") as Control
+	if host_hand == null or guest_hand == null:
+		_fail("the restricted clients do not expose their distinct hand shelves")
+		return false
+	var host_cards := host_hand.find_children("ProceduralCard", "PanelContainer", true, false)
+	if host_cards.is_empty():
+		_fail("the prompt owner has no rendered private hand to protect")
+		return false
+	var guest_text := _visible_text(guest)
+	for node in host_cards:
+		var title := (node as Control).find_child("Title", true, false) as Label
+		if title != null and not title.text.is_empty() and title.text in guest_text:
+			_fail("the restricted guest rendered the prompt owner's private card face: %s" % title.text)
+			return false
+	if not guest_hand.find_children("MulliganDiscard*", "Button", true, false).is_empty() \
+			or guest.find_child("CompleteChoiceSheet", true, false) != null:
+		_fail("the restricted guest rendered private opening-hand controls for another seat")
 		return false
 	return true
 

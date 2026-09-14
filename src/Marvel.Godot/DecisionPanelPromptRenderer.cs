@@ -32,7 +32,10 @@ internal static class DecisionPanelPromptRenderer
                     : GodotThemeVariations.DangerText,
                 wrap: true));
             panel.AddChild(summary);
-            panel.AddChild(new HSeparator());
+            if (!MulliganPrompt.IsOpening(composer.Prompt))
+            {
+                panel.AddChild(new HSeparator());
+            }
         }
 
         var scroll = new ScrollContainer
@@ -70,6 +73,10 @@ internal static class DecisionPanelPromptRenderer
 
     internal static void AddAffordances(DecisionPanel panel, PromptPresentation prompt, int generation)
     {
+        if (MulliganPrompt.IsOpening(panel.composer?.Prompt))
+        {
+            return;
+        }
         var basic = new HashSet<int>();
         foreach (AffordancePresentation view in prompt.Affordances)
         {

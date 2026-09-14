@@ -95,8 +95,10 @@ public sealed class DesktopDataRootTests
     [Fact]
     public void NativeMulliganSmokeWaitsForPlayerActionsInsteadOfPromptProse()
     {
-        string smoke = File.ReadAllText(Path.Combine(RepositoryPaths.Root, "src",
-            "Marvel.Godot", "smoke", "local_game_smoke_decision_checks.gd"));
+        string smoke = string.Join(Environment.NewLine, Directory.EnumerateFiles(Path.Combine(
+            RepositoryPaths.Root, "src", "Marvel.Godot", "smoke"), "local_game_smoke*.gd")
+            .OrderBy(path => path, StringComparer.Ordinal)
+            .Select(File.ReadAllText));
 
         Assert.Contains("Change Form", smoke, StringComparison.Ordinal);
         Assert.Contains("Play Web-Shooter", smoke, StringComparison.Ordinal);

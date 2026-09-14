@@ -55,6 +55,8 @@ func _open_setup(packed: PackedScene) -> bool:
 
 func _configure_seeded_game() -> void:
 	_select_named_option(_node("Setup/Selections/Fields/Grid/Hero"), "Spider-Man")
+	if OS.get_environment("MARVEL_SMOKE_TWO_PLAYER") == "true":
+		_select_named_option(_node("Setup/Selections/Fields/Grid/SecondHero"), "Captain Marvel")
 	_select_named_option(_node("Setup/Selections/Fields/Grid/Scenario"), "Rhino")
 	_select_named_option(_node("Setup/Selections/Fields/Grid/Mode"), "Standard")
 	var seed := _node("Setup/Selections/Fields/Grid/Seed") as LineEdit
@@ -76,6 +78,9 @@ func _open_and_validate_table() -> bool:
 	if not await _wait_for(func() -> bool: return _play().visible and _decision() != null):
 		_fail("the opened table never became visible")
 		return false
+	if OS.get_environment("MARVEL_SMOKE_TWO_PLAYER") == "true" \
+			and not await _cooperative_seat_switch_is_safe():
+		return false
 	if not await _live_scale_rebuilds_the_decision():
 		return false
 	if not await _procedural_cards_are_safe():
@@ -90,11 +95,32 @@ func _open_and_validate_table() -> bool:
 
 
 func _table_interactions_are_safe() -> bool:
+	if main.find_child("VillainTable", true, false) != null:
+		if not await _focused_board_area_is_visible():
+			return false
+		return await _mulligan_dock_is_safe()
+	if main.find_child("CompleteChoiceSheet", true, false) != null:
+		return await _fallback_mulligan_sheet_is_focus_safe()
 	if not await _keyboard_selection_is_operable():
 		return false
 	if not await _interaction_lifecycle_is_safe():
 		return false
 	if not await _event_presentation_is_nonblocking():
+		return false
+	return await _synchronization_preserves_history(false)
+
+
+func _mulligan_dock_is_safe() -> bool:
+	var dock := _node("Play/Prompt") as Control
+	var sheet := main.find_child("CompleteChoiceSheet", true, false) as Button
+	var submit := _submit_button()
+	if dock == null or sheet == null or submit == null or submit.disabled:
+		_fail("the opening table has no operable compact decision dock")
+		return false
+	if not await _prepare_activation(sheet) or not await _prepare_activation(submit):
+		return false
+	if not _control_is_fully_visible(sheet) or not _control_is_fully_visible(submit):
+		_fail("the opening decision dock has a clipped required control")
 		return false
 	return await _synchronization_preserves_history(false)
 

@@ -42,6 +42,7 @@ else {
     @("50", "60", "70", "80", "90", "100", "110", "120", "130", "140", "150")
 }
 
+Remove-Item Env:MARVEL_SMOKE_TWO_PLAYER -ErrorAction SilentlyContinue
 foreach ($viewport in $viewports) {
     foreach ($scale in $scales) {
         $env:MARVEL_UI_SCALE = $scale
@@ -54,4 +55,12 @@ $env:MARVEL_UI_SCALE = "100"
 $env:MARVEL_SMOKE_VIEWPORT = "1280x720"
 $env:MARVEL_SMOKE_MOTION = "disabled"
 Invoke-LocalSmoke
+$env:MARVEL_SMOKE_VIEWPORT = "1920x1080"
+$env:MARVEL_SMOKE_MOTION = "enabled"
+foreach ($scale in @("100", "120", "150")) {
+    $env:MARVEL_UI_SCALE = $scale
+    $env:MARVEL_SMOKE_TWO_PLAYER = "true"
+    Invoke-LocalSmoke
+}
+Remove-Item Env:MARVEL_SMOKE_TWO_PLAYER -ErrorAction SilentlyContinue
 exit 0

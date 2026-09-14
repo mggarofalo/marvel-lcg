@@ -1,6 +1,10 @@
 extends "res://smoke/local_game_smoke_card_inspector.gd"
 
 func _procedural_cards_are_safe() -> bool:
+	if main.find_child("VillainTable", true, false) != null:
+		return await _mulligan_cards_are_safe()
+	if _fallback_mulligan_is_safe():
+		return true
 	var cards := main.find_children("ProceduralCard", "PanelContainer", true, false)
 	if cards.is_empty():
 		_fail("the opened table has no procedural card controls")
@@ -28,6 +32,67 @@ func _procedural_cards_are_safe() -> bool:
 		_fail("the pinned hand has no readable card to inspect")
 		return false
 	return await _card_inspector_is_safe(hand_card)
+
+
+func _fallback_mulligan_is_safe() -> bool:
+	var sheet := main.find_child("CompleteChoiceSheet", true, false) as Button
+	if sheet == null:
+		return false
+	var header := _node("Play/Prompt/Margin/Stack/PromptHeader") as Control
+	var history := _node("Play/Prompt/Margin/Stack/Workbench/History") as Control
+	var workbench := _node("Play/Prompt/Margin/Stack/Workbench") as TabContainer
+	var scale := _node("Toolbar/ScaleValue") as Label
+	if header == null or history == null or workbench == null or scale == null \
+			or not header.visible or history.get_parent() != workbench or not workbench.tabs_visible \
+			or workbench.get_tab_title(1) != "History" \
+			or scale.text != "Scale %s%%" % _scale_percentage():
+		_fail("the compact opening-table chrome leaked into the generic mulligan fallback: header=%s history=%s tabs=%s scale=%s" % [
+			header.visible if header != null else false,
+			history.get_parent() == workbench if history != null and workbench != null else false,
+			workbench.tabs_visible if workbench != null else false,
+			scale.text if scale != null else "missing",
+		])
+		return false
+	var hand := _node("Play/Board/HandShelf") as Control
+	var card := hand.find_child("ProceduralCard", true, false) as Control
+	if card == null or card.custom_minimum_size.x < _scaled_metric(172):
+		_fail("the generic mulligan fallback did not retain the selected card scale")
+		return false
+	return true
+
+
+func _mulligan_cards_are_safe() -> bool:
+	var hand := _node("Play/Board/HandShelf") as Control
+	var cards := hand.find_children("ProceduralCard", "PanelContainer", true, false)
+	var toggles := hand.find_children("MulliganDiscard*", "Button", true, false)
+	if cards.size() != 6 or toggles.size() != 6:
+		_fail("the opening hand does not expose six readable cards and six discard checkboxes")
+		return false
+	for toggle_node in toggles:
+		var toggle := toggle_node as Button
+		if not toggle.toggle_mode or toggle.text != "□ DISCARD" \
+				or toggle.custom_minimum_size.y < _scaled_metric(44):
+			_fail("a mulligan checkbox is not explicit, keyboard-operable, and generously sized")
+			return false
+		if not await _prepare_activation(toggle):
+			return false
+	return _tabletop_essentials_are_safe()
+
+
+func _tabletop_essentials_are_safe() -> bool:
+	for title in ["Rhino", "Peter Parker", "The Break-In!"]:
+		var card := _tabletop_card_named(title)
+		if card == null or card.custom_minimum_size.x < _scaled_metric(210):
+			_fail("the tabletop essential '%s' did not retain its selected board scale" % title)
+			return false
+	var villain_text := _visible_text(_tabletop_card_named("Rhino"))
+	var identity_text := _visible_text(_tabletop_card_named("Peter Parker"))
+	var scheme_text := _visible_text(_tabletop_card_named("The Break-In!"))
+	if "HP" not in villain_text or "HP" not in identity_text \
+			or "THREAT" not in scheme_text:
+		_fail("the tabletop omitted a current villain, identity, or scheme value")
+		return false
+	return true
 
 
 func _card_controls_are_safe(cards: Array[Node], observed: Dictionary) -> bool:
