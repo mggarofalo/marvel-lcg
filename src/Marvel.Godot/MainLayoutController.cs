@@ -159,7 +159,7 @@ internal sealed class MainLayoutController
         Vector2 viewport = main.GetViewportRect().Size;
         bool desktopGameplay = gameplay && DesktopTabletop.Uses(viewport);
         ConfigurePageScrolling(gameplay, desktopGameplay);
-        ConfigureTableScrolling(fixedTabletop, mulligan);
+        ConfigureTableScrolling(fixedTabletop);
     }
 
     private void ConfigurePageScrolling(bool gameplay, bool desktopGameplay)
@@ -184,18 +184,15 @@ internal sealed class MainLayoutController
         }
     }
 
-    private void ConfigureTableScrolling(bool fixedTabletop, bool mulligan)
+    private void ConfigureTableScrolling(bool fixedTabletop)
     {
         ScrollContainer table = main.GetNode<ScrollContainer>(
             "Margin/Shell/Content/Play/Board/TableScroll");
         table.HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled;
         table.VerticalScrollMode = fixedTabletop
-            && mulligan
             && main.interfaceScale <= InterfaceScale.Standard
-                ? main.interfaceScale <= InterfaceScale.Standard
                 ? ScrollContainer.ScrollMode.Disabled
-                : ScrollContainer.ScrollMode.Auto
-            : ScrollContainer.ScrollMode.Auto;
+                : ScrollContainer.ScrollMode.Auto;
         if (table.HorizontalScrollMode == ScrollContainer.ScrollMode.Disabled)
         {
             table.ScrollHorizontal = 0;
