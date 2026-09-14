@@ -12,5 +12,5 @@ internal static class MulliganPrompt
         && string.Equals(prompt.Affordances[0].Verb, Game.ResolveMulligans, StringComparison.Ordinal);
 
     internal static bool UsesDesktopTable(Prompt? prompt, Vector2 viewport) =>
-        IsOpening(prompt) && viewport.X >= 1800 && viewport.Y >= 900;
+        IsOpening(prompt) && DesktopTabletop.Uses(viewport);
 }

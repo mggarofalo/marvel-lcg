@@ -267,7 +267,7 @@ public sealed partial class Main : Control
         lastResultDismiss.Pressed += DismissLastResult;
         decisions.Submitted += OnDecisionSubmitted;
         decisions.DraftStarted += DismissLastResult;
-        decisions.AnchorFocused += ids => boardRender?.Highlight(ids);
+        decisions.AnchorFocused += boardController.FocusAnchors;
         decisions.CardHovered += PreviewHandCard;
         decisions.DraftChanged += (draft, prompt) => boardRender?.PresentInteraction(draft, prompt);
         decisions.ProgressChanged += RenderDecisionProgress;

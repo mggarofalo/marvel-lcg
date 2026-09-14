@@ -52,7 +52,7 @@ public static class BoardRenderer
         return result;
     }
 
-    private static VBoxContainer Lane(
+    internal static VBoxContainer Lane(
         BoardLanePresentation lane,
         BoardRenderResult result,
         InterfaceScale scale,
@@ -304,16 +304,16 @@ public static class BoardRenderer
         }
     }
 
-    private static void RenderHand(
+    internal static void RenderHand(
         BoardPresentation board,
         HBoxContainer destination,
         Label heading,
         BoardRenderResult result,
         InterfaceScale scale,
-        ICardArtProvider? art)
+        ICardArtProvider? art, int? seat = null)
     {
         BoardAreaPresentation? handArea = board.Areas
-            .Where(area => area.Zone == "HandsArea")
+            .Where(area => area.Zone == "HandsArea" && (seat is null || area.Seat == seat))
             .FirstOrDefault(area => area.Cards.Any(card => !card.Concealed));
         IReadOnlyList<BoardCardPresentation> cards = handArea?.Cards ?? [];
         heading.Text = $"HAND  ·  {cards.Sum(card => card.Count)}";

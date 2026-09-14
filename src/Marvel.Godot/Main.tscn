@@ -393,11 +393,12 @@ theme_type_variation = &"Body"
 text = "—"
 autowrap_mode = 2
 
-[node name="Play" type="VBoxContainer" parent="Margin/Shell/Content" unique_id=1000000064]
+[node name="Play" type="HBoxContainer" parent="Margin/Shell/Content" unique_id=1000000064]
 visible = false
 custom_minimum_size = Vector2(0, 260)
 layout_mode = 2
 size_flags_vertical = 3
+theme_type_variation = &"WideRow"
 
 [node name="Board" type="VBoxContainer" parent="Margin/Shell/Content/Play" unique_id=1000000065]
 layout_mode = 2
@@ -458,7 +459,8 @@ theme_type_variation = &"CompactRow"
 [node name="Prompt" type="PanelContainer" parent="Margin/Shell/Content/Play" unique_id=1000000075]
 custom_minimum_size = Vector2(0, 260)
 layout_mode = 2
-size_flags_horizontal = 3
+size_flags_horizontal = 0
+size_flags_vertical = 3
 theme_type_variation = &"SurfacePanel"
 
 [node name="Margin" type="MarginContainer" parent="Margin/Shell/Content/Play/Prompt" unique_id=1000000076]

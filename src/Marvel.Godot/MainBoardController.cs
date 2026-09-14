@@ -14,13 +14,14 @@ internal sealed class MainBoardController : IDisposable
     private readonly CardInspectorFocus inspector;
     private readonly BoardRelationshipOverlayController relationships;
     private readonly InteractionGeneration renderGeneration = new();
-    private int? displayedSeat;
+    private readonly MainTabletopController tabletop;
 
     internal MainBoardController(Main main)
     {
         this.main = main;
         inspector = new CardInspectorFocus(main);
         relationships = new BoardRelationshipOverlayController(main);
+        tabletop = new MainTabletopController(main);
     }
 
     internal void RenderGame(
@@ -37,7 +38,7 @@ internal sealed class MainBoardController : IDisposable
             .ToHashSet() ?? [];
         if (!string.Equals(main.CurrentGame?.GameId, response.GameId, StringComparison.Ordinal))
         {
-            displayedSeat = null;
+            tabletop.ResetForGame();
         }
         main.CurrentGame = response;
         WorldDescriptor world = response.World!;
@@ -109,10 +110,9 @@ internal sealed class MainBoardController : IDisposable
         // newly shown Control can still be waiting for its container layout.
         // Choose the opening surface from that settled canvas, not its
         // transient child size.
-        BoardRenderResult rendered = MulliganPrompt.UsesDesktopTable(
-            prompt, main.GetViewportRect().Size)
-            ? RenderMulliganTable(prompt!)
-            : BoardRenderer.Render(
+        Vector2 viewport = main.GetViewportRect().Size;
+        BoardRenderResult rendered = tabletop.Render(prompt, viewport)
+            ?? BoardRenderer.Render(
                 main.boardAreas, main.boardPresentation, main.handRail, main.handHeading,
                 main.interfaceScale, main.expandedAreas, main.art);
         main.boardRender = rendered;
@@ -124,25 +124,7 @@ internal sealed class MainBoardController : IDisposable
         inspector.Hide();
     }
 
-    private BoardRenderResult RenderMulliganTable(Prompt prompt) =>
-        MulliganTablePresentation.Render(main, prompt, displayedSeat ?? prompt.Player, SwitchSeat);
-
-    private void SwitchSeat(int seat)
-    {
-        if (main.boardPresentation?.Lanes.Any(lane => lane.Seat == seat) != true
-            || displayedSeat == seat)
-        {
-            return;
-        }
-
-        // This changes only the expanded public workspace. The pending prompt
-        // and its composer remain owned by the server-provided prompt player.
-        displayedSeat = seat;
-        if (main.CurrentGame?.World is { } world)
-        {
-            RenderBoard(world, main.CurrentGame.Prompt);
-        }
-    }
+    internal void FocusAnchors(IReadOnlyList<int> ids) => tabletop.FocusAnchors(ids);
 
     internal void PreviewHandCard(int? id)
     {
