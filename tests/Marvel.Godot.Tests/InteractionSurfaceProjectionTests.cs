@@ -84,6 +84,61 @@ public sealed class InteractionSurfaceProjectionTests
     }
 
     [Fact]
+    public void GroupedTargetsKeepTheirCuesForTheOrderedFallbackWithoutAttachedToggles()
+    {
+        var target = new TargetRequest([1, 2, 3, 4], 2, 2, Groups: [[1, 2], [3, 4]]);
+        var composer = Composer(new Affordance(3, "Play", 19, 0, "Visible", target));
+        composer.SelectAffordance(3);
+        PromptPresentation prompt = Prompt(composer.Prompt, [Visible(3, 19)], target: target);
+
+        Assert.DoesNotContain(BoardInteractionControlProjection.From(composer, prompt),
+            control => control.Intent == CardInteractionIntent.Target);
+        IReadOnlyDictionary<int, CardInteractionCue> cues =
+            BoardInteractionCueProjection.From(composer, prompt);
+        Assert.All(target.Legal, id => Assert.Equal(CardInteractionCue.LegalTarget, cues[id]));
+    }
+
+    [Fact]
+    public void RepeatedTargetsKeepTheirCuesForTheOrderedFallbackWithoutAttachedToggles()
+    {
+        var target = new TargetRequest([1, 2], 1, 3, AllowRepeated: true,
+            MaximumOccurrences: new Dictionary<int, int> { [1] = 2, [2] = 1 });
+        var composer = Composer(new Affordance(3, "Play", 19, 0, "Visible", target));
+        composer.SelectAffordance(3);
+        PromptPresentation prompt = Prompt(composer.Prompt, [Visible(3, 19)], target: target);
+
+        Assert.DoesNotContain(BoardInteractionControlProjection.From(composer, prompt),
+            control => control.Intent == CardInteractionIntent.Target);
+        IReadOnlyDictionary<int, CardInteractionCue> cues =
+            BoardInteractionCueProjection.From(composer, prompt);
+        Assert.All(target.Legal, id => Assert.Equal(CardInteractionCue.LegalTarget, cues[id]));
+    }
+
+    [Fact]
+    public void TargetScopedGeneratorsAppearOnlyAfterTheirSelectedTargetMakesTheCostApply()
+    {
+        var target = new TargetRequest([11, 12], 1, 1);
+        var cost = new CostOption(11, "1", Sources: [new ResourceSource(41, "Y")]);
+        var composer = Composer(new Affordance(3, "Play", 19, 0, "Visible", target, [cost]));
+        composer.SelectAffordance(3);
+        PromptPresentation prompt = Prompt(composer.Prompt, [Visible(3, 19)], target, [cost]);
+
+        Assert.False(composer.CostApplies(cost));
+        Assert.DoesNotContain(BoardInteractionControlProjection.From(composer, prompt),
+            control => control.Intent == CardInteractionIntent.Generator);
+        Assert.Equal(CardInteractionCue.LegalGenerator,
+            BoardInteractionCueProjection.From(composer, prompt)[41]);
+
+        composer.SelectTargets([11]);
+
+        Assert.True(composer.CostApplies(cost));
+        CardInteractionControlDescriptor generator = Assert.Single(
+            BoardInteractionControlProjection.From(composer, prompt),
+            control => control.Intent == CardInteractionIntent.Generator);
+        Assert.Equal(41, generator.CardId);
+    }
+
+    [Fact]
     public void RelationshipPlannerUsesDirectPathOrOmitsBlockedRoute()
     {
         Rect2 source = new(0, 0, 20, 20);

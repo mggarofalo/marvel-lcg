@@ -1,4 +1,5 @@
 using Marvel.Decisions;
+using Marvel.Rules.Prompts;
 using Marvel.View;
 
 namespace Marvel.Godot;
@@ -26,7 +27,9 @@ internal static class BoardInteractionControlProjection
     {
         if (MulliganPrompt.IsOpening(composer.Prompt)
             || composer.UsesAutomaticTargetSelection
-            || composer.Selected?.Targets is not { } request)
+            || composer.Selected?.Targets is not { } request
+            || request.IsGrouped
+            || request.AllowRepeated)
         {
             return;
         }
@@ -67,7 +70,13 @@ internal static class BoardInteractionControlProjection
             return;
         }
 
-        foreach (int generator in selected.CostOptions[composer.SelectedCost].Generators
+        CostOption cost = selected.CostOptions[composer.SelectedCost];
+        if (!composer.CostApplies(cost))
+        {
+            return;
+        }
+
+        foreach (int generator in cost.Generators
                      .Select(source => source.Effect).Distinct().OrderBy(id => id))
         {
             bool selectedGenerator = composer.Resources.Contains(generator);
