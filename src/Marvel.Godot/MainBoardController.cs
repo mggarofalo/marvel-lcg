@@ -146,13 +146,25 @@ internal sealed class MainBoardController : IDisposable
             .Where(area => area.Zone == "HandsArea")
             .SelectMany(area => area.Cards)
             .FirstOrDefault(candidate => candidate.TargetId == id);
-        Control? source = main.boardRender?.ControlFor(id.Value);
+        Control? source = HandSource(id.Value, card);
         if (card is null || source is null)
         {
             return;
         }
 
         ShowCardInspector(card, source, pinned: false);
+    }
+
+    private Control? HandSource(int id, BoardCardPresentation? card)
+    {
+        Control? source = main.boardRender?.ControlFor(id);
+        if (card is not null && source is null)
+        {
+            tabletop.FocusAnchors([id]);
+            source = main.boardRender?.ControlFor(id);
+        }
+
+        return source;
     }
 
     internal void ToggleCardInspector(BoardCardPresentation card, Control? source)

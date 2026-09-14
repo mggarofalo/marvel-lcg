@@ -192,7 +192,9 @@ internal sealed class MainLayoutController
         table.VerticalScrollMode = fixedTabletop
             && mulligan
             && main.interfaceScale <= InterfaceScale.Standard
+                ? main.interfaceScale <= InterfaceScale.Standard
                 ? ScrollContainer.ScrollMode.Disabled
+                : ScrollContainer.ScrollMode.Auto
             : ScrollContainer.ScrollMode.Auto;
         if (table.HorizontalScrollMode == ScrollContainer.ScrollMode.Disabled)
         {

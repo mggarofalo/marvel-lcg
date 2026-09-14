@@ -9,6 +9,7 @@ internal sealed class DisplayedSeatState
 {
     private string? sessionKey;
     private int? selectedSeat;
+    private int? focusedSeat;
 
     /// <summary>Reconciles a new authoritative snapshot without treating a revision as a new session.</summary>
     internal DisplayedSeatSelection Update(DisplayedSeatSnapshot snapshot)
@@ -22,7 +23,9 @@ internal sealed class DisplayedSeatState
             selectedSeat = null;
         }
 
-        return Choose(seats, snapshot.Roles);
+        int? focus = Contains(seats, focusedSeat) ? focusedSeat : null;
+        focusedSeat = null;
+        return Choose(seats, snapshot.Roles, focus);
     }
 
     /// <summary>Records a user workspace choice when that seat is present in this snapshot.</summary>
@@ -33,7 +36,18 @@ internal sealed class DisplayedSeatState
         int[] seats = OrderedSeats(snapshot.Seats);
         ResetForSessionChange(snapshot.SessionKey);
         selectedSeat = Contains(seats, seat) ? seat : null;
+        focusedSeat = null;
         return Choose(seats, snapshot.Roles);
+    }
+
+    /// <summary>Places a prompt or event anchor in view for the next board render only.</summary>
+    internal void Focus(int seat, DisplayedSeatSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        ArgumentException.ThrowIfNullOrWhiteSpace(snapshot.SessionKey);
+        int[] seats = OrderedSeats(snapshot.Seats);
+        ResetForSessionChange(snapshot.SessionKey);
+        focusedSeat = Contains(seats, seat) ? seat : null;
     }
 
     private void ResetForSessionChange(string nextSessionKey)
@@ -42,30 +56,34 @@ internal sealed class DisplayedSeatState
             && !string.Equals(sessionKey, nextSessionKey, StringComparison.Ordinal))
         {
             selectedSeat = null;
+            focusedSeat = null;
         }
 
         sessionKey = nextSessionKey;
     }
 
     private DisplayedSeatSelection Choose(
-        int[] seats, DisplayedSeatRoles? roles)
+        int[] seats,
+        DisplayedSeatRoles? roles,
+        int? focus = null)
     {
         DisplayedSeatRoles known = KnownRoles(roles, seats);
         return new DisplayedSeatSelection(
-            ExpandedSeat(known, seats),
+            ExpandedSeat(known, seats, focus),
             known.ActivePlayer,
             known.PromptOwner,
             known.ViewedPrivateSeat,
             known.PublicFocusSeat);
     }
 
-    private int ExpandedSeat(DisplayedSeatRoles roles, int[] seats)
+    private int ExpandedSeat(DisplayedSeatRoles roles, int[] seats, int? focus)
     {
-        // This is a desktop layout choice, not a rule: a deliberate local choice
-        // remains visible while its seat exists. Before the player chooses, a
-        // seat-bound prompt opens its owner, followed by the host's public focus,
-        // the active seat, and stable seat order.
-        return selectedSeat
+        // This is a desktop layout choice, not a rule: an anchor is shown for
+        // one render, while a deliberate local choice remains visible while its
+        // seat exists. Otherwise a seat-bound prompt opens its owner, followed
+        // by the host's public focus, the active seat, and stable seat order.
+        return focus
+            ?? selectedSeat
             ?? roles.PromptOwner
             ?? roles.PublicFocusSeat
             ?? roles.ActivePlayer

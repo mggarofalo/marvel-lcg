@@ -35,6 +35,19 @@ public sealed class DisplayedSeatStateTests
     }
 
     [Fact]
+    public void AnchorFocusIsTransientAndReturnsToThePromptOwnersWorkspace()
+    {
+        var state = new DisplayedSeatState();
+        DisplayedSeatSnapshot prompt = Snapshot("game-a", [0, 1], promptOwner: 0,
+            activePlayer: 0, viewedPrivateSeat: 0, publicFocusSeat: 0);
+
+        state.Focus(1, prompt);
+
+        Assert.Equal(1, state.Update(prompt).ExpandedSeat);
+        Assert.Equal(0, state.Update(prompt).ExpandedSeat);
+    }
+
+    [Fact]
     public void StableRevisionAndResizeSnapshotsPreserveTheSelectedWorkspace()
     {
         var state = new DisplayedSeatState();

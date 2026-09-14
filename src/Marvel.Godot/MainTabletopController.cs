@@ -50,9 +50,9 @@ internal sealed class MainTabletopController
     internal void FocusAnchors(IReadOnlyList<int> ids)
     {
         int? seat = TabletopAnchorSeat.For(main.boardPresentation, ids);
-        if (ShouldSwitchTo(seat))
+        if (seat is not null && DesktopTabletop.Uses(main.GetViewportRect().Size))
         {
-            SwitchSeat(seat!.Value);
+            FocusSeat(seat!.Value);
         }
 
         main.boardRender?.Highlight(ids);
@@ -65,10 +65,6 @@ internal sealed class MainTabletopController
     private BoardRenderResult RenderDesktop(Prompt? prompt) =>
         DesktopTabletopPresentation.Render(main, Selection(prompt), SwitchSeat);
 
-    private bool ShouldSwitchTo(int? seat) => seat is not null
-        && DesktopTabletop.Uses(main.GetViewportRect().Size)
-        && seat != Selection(main.CurrentGame?.Prompt).ExpandedSeat;
-
     private void SwitchSeat(int seat)
     {
         if (main.boardPresentation?.Lanes.Any(lane => lane.Seat == seat) != true)
@@ -79,6 +75,20 @@ internal sealed class MainTabletopController
         // This changes only the expanded public workspace. The pending prompt
         // and its composer remain owned by the server-provided prompt player.
         displayedSeats.Select(seat, Snapshot(main.CurrentGame?.Prompt));
+        if (main.CurrentGame?.World is { } world)
+        {
+            main.RenderBoard(world);
+        }
+    }
+
+    private void FocusSeat(int seat)
+    {
+        if (main.boardPresentation?.Lanes.Any(lane => lane.Seat == seat) != true)
+        {
+            return;
+        }
+
+        displayedSeats.Focus(seat, Snapshot(main.CurrentGame?.Prompt));
         if (main.CurrentGame?.World is { } world)
         {
             main.RenderBoard(world);
