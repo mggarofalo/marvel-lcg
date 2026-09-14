@@ -8,7 +8,7 @@ func _relationship_path_tracks_table_scrolling(card: Control) -> bool:
 	var table := _node("Play/Board/TableScroll") as ScrollContainer
 	var identity_action := _attached(_attached_name(RELATIONSHIP_IDENTITY, "Action"))
 	var target := _card_for(identity_action) if identity_action != null else null
-	if overlay == null or table == null or target == null:
+	if not _relationship_probe_is_available(overlay, table, target):
 		_fail("the selected relationship has no overlay or table target")
 		return false
 	var original_scroll := table.scroll_vertical
@@ -19,11 +19,13 @@ func _relationship_path_tracks_table_scrolling(card: Control) -> bool:
 		await process_frame
 	var original_target := target.get_global_rect().get_center()
 	if not await _wait_for(func() -> bool:
-			return _relationship_endpoint_for(overlay, card) != Vector2.INF):
+			return _relationship_endpoint_for(overlay, card) != Vector2.INF \
+				or not _relationship_endpoints_are_visible(card, target)):
 		_fail("the selected Web-Shooter relationship has no visible path before scrolling")
 		return false
+	var source_endpoint := _relationship_endpoint_for(overlay, card)
 	var scroll_limit := int(table.get_v_scroll_bar().max_value - table.get_v_scroll_bar().page)
-	if scroll_limit < original_scroll + 50:
+	if source_endpoint == Vector2.INF or scroll_limit < original_scroll + 50:
 		table.follow_focus = original_follow_focus
 		return true
 	table.scroll_vertical = original_scroll + 50
@@ -51,6 +53,15 @@ func _relationship_path_tracks_table_scrolling(card: Control) -> bool:
 	await process_frame
 	await process_frame
 	return true
+
+
+func _relationship_endpoints_are_visible(source: Control, target: Control) -> bool:
+	return _visible_control_rect(source).has_point(source.get_global_rect().get_center()) \
+		and _visible_control_rect(target).has_point(target.get_global_rect().get_center())
+
+
+func _relationship_probe_is_available(overlay: Control, table: Control, target: Control) -> bool:
+	return overlay != null and table != null and target != null
 
 
 func _relationship_line_at(overlay: Control, point: Vector2) -> Line2D:
