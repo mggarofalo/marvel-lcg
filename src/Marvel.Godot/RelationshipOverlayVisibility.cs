@@ -15,20 +15,8 @@ internal static class RelationshipOverlayVisibility
         endpoint.IsVisibleInTree() && EndpointIsVisible(
             VisualBounds(endpoint).GetCenter(), viewport, ClippingRects(endpoint));
 
-    /// <summary>Returns the on-screen bounds after every enclosing scroll offset.</summary>
-    internal static Rect2 VisualBounds(Control control)
-    {
-        Rect2 bounds = control.GetGlobalRect();
-        for (Node? node = control.GetParent(); node is not null; node = node.GetParent())
-        {
-            if (node is ScrollContainer scroll)
-            {
-                bounds.Position -= new Vector2(scroll.ScrollHorizontal, scroll.ScrollVertical);
-            }
-        }
-
-        return bounds;
-    }
+    /// <summary>Returns settled on-screen bounds; Godot applies ancestor scroll offsets to them.</summary>
+    internal static Rect2 VisualBounds(Control control) => control.GetGlobalRect();
 
     internal static Rect2? VisibleBounds(Control control, Rect2 viewport)
     {
