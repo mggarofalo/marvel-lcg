@@ -3,6 +3,8 @@ extends "res://smoke/local_game_smoke_support.gd"
 func _board_layout_is_resolved() -> bool:
 	if main.find_child("VillainTable", true, false) != null:
 		return await _mulligan_table_layout_is_resolved()
+	if main.find_child("CompleteChoiceSheet", true, false) != null:
+		return await _fallback_mulligan_layout_is_resolved()
 	var lanes := _board_lanes()
 	if lanes.is_empty():
 		return false
@@ -19,6 +21,19 @@ func _board_layout_is_resolved() -> bool:
 	if not _responsive_layout_is_safe():
 		return false
 	return _hand_is_pinned()
+
+
+func _fallback_mulligan_layout_is_resolved() -> bool:
+	var page := main.get_node("Margin") as ScrollContainer
+	var table := _node("Play/Board/TableScroll") as ScrollContainer
+	var hand := _node("Play/Board/HandShelf") as Control
+	var prompt := _node("Play/Prompt") as Control
+	if page == null or table == null or hand == null or prompt == null \
+			or table.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED \
+			or hand.get_global_rect().intersects(prompt.get_global_rect()):
+		_fail("the generic mulligan fallback lost its bounded board or decision layout")
+		return false
+	return true
 
 
 func _mulligan_table_layout_is_resolved() -> bool:

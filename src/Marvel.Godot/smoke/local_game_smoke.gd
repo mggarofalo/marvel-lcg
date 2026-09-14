@@ -25,6 +25,12 @@ func _run() -> void:
 	await _configure_seeded_game()
 	if not await _open_and_validate_table():
 		return
+	if OS.get_environment("MARVEL_SMOKE_TWO_PLAYER") == "true":
+		print("LOCAL_GAME_SMOKE_OK two-player-seat-switch")
+		main.queue_free()
+		await process_frame
+		quit(0)
+		return
 	var journey := await _play_seeded_journey()
 	if journey.is_empty():
 		return
@@ -55,6 +61,8 @@ func _open_setup(packed: PackedScene) -> bool:
 
 func _configure_seeded_game() -> void:
 	_select_named_option(_node("Setup/Selections/Fields/Grid/Hero"), "Spider-Man")
+	if OS.get_environment("MARVEL_SMOKE_TWO_PLAYER") == "true":
+		_select_named_option(_node("Setup/Selections/Fields/Grid/SecondHero"), "Captain Marvel")
 	_select_named_option(_node("Setup/Selections/Fields/Grid/Scenario"), "Rhino")
 	_select_named_option(_node("Setup/Selections/Fields/Grid/Mode"), "Standard")
 	var seed := _node("Setup/Selections/Fields/Grid/Seed") as LineEdit
@@ -76,6 +84,8 @@ func _open_and_validate_table() -> bool:
 	if not await _wait_for(func() -> bool: return _play().visible and _decision() != null):
 		_fail("the opened table never became visible")
 		return false
+	if OS.get_environment("MARVEL_SMOKE_TWO_PLAYER") == "true":
+		return await _cooperative_seat_switch_is_safe()
 	if not await _live_scale_rebuilds_the_decision():
 		return false
 	if not await _procedural_cards_are_safe():
@@ -91,7 +101,11 @@ func _open_and_validate_table() -> bool:
 
 func _table_interactions_are_safe() -> bool:
 	if main.find_child("VillainTable", true, false) != null:
+		if not await _focused_board_area_is_visible():
+			return false
 		return await _mulligan_dock_is_safe()
+	if main.find_child("CompleteChoiceSheet", true, false) != null:
+		return await _fallback_mulligan_sheet_is_focus_safe()
 	if not await _keyboard_selection_is_operable():
 		return false
 	if not await _interaction_lifecycle_is_safe():

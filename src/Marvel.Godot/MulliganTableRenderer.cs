@@ -99,7 +99,7 @@ internal static class MulliganTableRenderer
     {
         var panel = new PanelContainer
         {
-            Name = "MulliganDiscardPile",
+            Name = "ExpandedDiscardPile",
             CustomMinimumSize = new Vector2(VisualSystem.Card(CardDisplaySize.Board, scale).Width + 28, 0),
             ThemeTypeVariation = GodotThemeVariations.BoardArea,
             TooltipText = "Discard pile. Drop an opening-hand card here to select it for replacement.",
@@ -125,16 +125,13 @@ internal static class MulliganTableRenderer
         var stack = new VBoxContainer { ThemeTypeVariation = GodotThemeVariations.TightStack };
         stack.AddChild(Label(area.Title, GodotThemeVariations.Caption, wrap: true));
         var cards = new HBoxContainer { ThemeTypeVariation = GodotThemeVariations.CompactRow };
-        if (area.Zone is "HeroArea" or "VillainArea")
+        if (area.Zone is "HeroArea" or "VillainArea" or "MainSchemesArea")
         {
             BoardCardPresentation? current = area.Cards.FirstOrDefault(card =>
                 card.StageRole != BoardStageRole.Upcoming);
             if (current is not null)
             {
-                CardDisplaySize display = (int)scale > (int)InterfaceScale.Percent120
-                    ? CardDisplaySize.Hand
-                    : CardDisplaySize.Board;
-                AddCard(cards, current, result, display, scale, art);
+                AddCard(cards, current, result, CardDisplaySize.Board, scale, art);
             }
         }
         else
@@ -149,11 +146,6 @@ internal static class MulliganTableRenderer
 
         stack.AddChild(cards);
         panel.AddChild(stack);
-        if (area.Zone == "DiscardPile")
-        {
-            result.RegisterMulliganDiscard(panel);
-        }
-
         return panel;
     }
 
@@ -180,6 +172,16 @@ internal static class MulliganTableRenderer
         InterfaceScale scale,
         ICardArtProvider? art)
     {
+        var destination = new PanelContainer
+        {
+            Name = "MulliganDiscardPile",
+            CustomMinimumSize = new Vector2(124, 0),
+            ThemeTypeVariation = GodotThemeVariations.BoardArea,
+            TooltipText = $"Player {player + 1} discard destination for this pending opening-hand decision.",
+        };
+        destination.AddChild(Label($"PLAYER {player + 1}\nDISCARD", GodotThemeVariations.Caption, wrap: true));
+        result.RegisterMulliganDiscard(destination);
+        hand.AddChild(destination);
         BoardAreaPresentation? handArea = areas.FirstOrDefault(area => area.Seat == player
             && area.Zone == "HandsArea");
         IReadOnlyList<BoardCardPresentation> cards = handArea?.Cards ?? [];
@@ -232,10 +234,11 @@ internal static class MulliganTableRenderer
         InterfaceScale scale,
         ICardArtProvider? art)
     {
-        // The opening table reserves its extra-large scale for card width and
-        // hit targets. A fixed compact face keeps the six-card shelf and the
-        // fixed decision dock in one 1080px desktop viewport.
-        InterfaceScale faceScale = (int)scale > (int)InterfaceScale.Standard
+        // Only the choice shelf compacts card faces at desktop scales. The
+        // villain, identity, and scheme cards keep their selected scale so
+        // essential current values remain readable.
+        InterfaceScale faceScale = size == CardDisplaySize.Mulligan
+            && (int)scale > (int)InterfaceScale.Standard
             ? InterfaceScale.Standard
             : scale;
         CardControl control = CardControl.Create(card, size, faceScale, art);

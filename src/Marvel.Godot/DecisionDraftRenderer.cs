@@ -164,6 +164,11 @@ internal sealed class DecisionDraftRenderer
         choose.Pressed += () =>
         {
             if (!panel.IsCurrentDraft(composer, generation)) return;
+            if (MulliganPrompt.IsOpening(composer.Prompt))
+            {
+                panel.ToggleMulliganTarget(target, composer, generation);
+                return;
+            }
             if (composer.Targets.Contains(target))
             {
                 composer.RemoveTarget(target);

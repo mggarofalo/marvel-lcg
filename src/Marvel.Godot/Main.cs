@@ -405,14 +405,14 @@ public sealed partial class Main : Control
         BoardCardPresentation card,
         InterfaceScale requested,
         float viewportHeight) =>
-        MainBoardController.FittedInspectionScale(card, requested, viewportHeight);
-    internal static bool IsInsideCard(Node? node) => MainBoardController.IsInsideCard(node);
+        CardInspectorFocus.FittedScale(card, requested, viewportHeight);
+    internal static bool IsInsideCard(Node? node) => CardInspectorFocus.IsInsideCard(node);
     internal void ScheduleCardInspectorHide() => boardController.ScheduleCardInspectorHide();
     internal void BindCardInspectorFocus(Control control) => boardController.BindCardInspectorFocus(control);
     internal bool CardInspectorHasFocus() => boardController.CardInspectorHasFocus();
     internal void HideCardInspector() => boardController.HideCardInspector();
     internal static void IgnoreMouseRecursively(Node node) =>
-        MainBoardController.IgnoreMouseRecursively(node);
+        CardInspectorFocus.IgnoreMouseRecursively(node);
     internal void RevealOutcome() => eventController.RevealOutcome();
     internal void RenderPromptSummary(Prompt? prompt, WorldDescriptor world) =>
         eventController.RenderPromptSummary(prompt, world);

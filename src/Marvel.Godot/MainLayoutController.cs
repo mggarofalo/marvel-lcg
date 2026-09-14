@@ -96,7 +96,8 @@ internal sealed class MainLayoutController
         bool mulligan = MulliganPrompt.IsOpening(main.CurrentGame?.Prompt);
         bool fixedTabletop = gameplay && mulligan && main.Size.X >= 1800 && main.Size.Y >= 900;
         bool compactTableChrome = fixedTabletop && mulligan;
-        ConfigureDecisionDock(mulligan, compactTableChrome, layout);
+        main.decisions.SetCompactMulliganChrome(compactTableChrome);
+        ConfigureDecisionDock(mulligan && compactTableChrome, compactTableChrome, layout);
         ConfigureStackChrome(compactHeight, compactTableChrome);
         ConfigurePlayScrolling(gameplay, fixedTabletop);
     }
@@ -110,11 +111,10 @@ internal sealed class MainLayoutController
         main.promptPanel.CustomMinimumSize = new Vector2(
             0,
             mulligan
-                ? Math.Max(240, VisualSystem.Controls(dockScale).MinimumPointerTarget * 4 + 32)
+                ? Math.Max(208, VisualSystem.Controls(dockScale).MinimumPointerTarget * 4 + 16)
                 : layout.DecisionMinimumHeight);
         main.decisions.CustomMinimumSize = new Vector2(
-            0,
-            mulligan ? 240 : layout.DecisionMinimumHeight);
+            0, mulligan ? 208 : layout.DecisionMinimumHeight);
         SetMulliganDockChrome(mulligan);
     }
 

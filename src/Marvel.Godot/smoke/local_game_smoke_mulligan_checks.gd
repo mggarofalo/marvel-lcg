@@ -12,33 +12,113 @@ func _mulligan_result_and_payment_are_operable() -> bool:
 	return await _payment_is_keyboard_operable()
 
 
+func _fallback_mulligan_sheet_is_focus_safe() -> bool:
+	var review := main.find_child("CompleteChoiceSheet", true, false) as Button
+	if review == null or not await _keyboard_activate(review):
+		_fail("the generic opening-choice sheet cannot receive keyboard focus")
+		return false
+	var target := _first_enabled_choice()
+	if target == null or not target.name.begins_with("Target") \
+			or render_viewport.gui_get_focus_owner() != target:
+		_fail("opening the complete choice sheet did not focus its first canonical target")
+		return false
+	var close := main.find_child("CloseChoiceSheet", true, false) as Button
+	if close == null or not await _keyboard_activate(close):
+		_fail("the complete choice sheet cannot return by keyboard")
+		return false
+	if not await _wait_for(func() -> bool:
+		var restored := main.find_child("CompleteChoiceSheet", true, false) as Button
+		return restored != null and render_viewport.gui_get_focus_owner() == restored):
+		_fail("closing the complete choice sheet did not restore the opening-hand focus")
+		return false
+	return true
+
+
+func _cooperative_seat_switch_is_safe() -> bool:
+	var strip := main.find_child("SeatStrip", true, false) as Control
+	var switch_two := main.find_child("SeatSwitch1", true, false) as Button
+	var switch_one := main.find_child("SeatSwitch0", true, false) as Button
+	if strip == null or switch_two == null or switch_one == null \
+			or "CAPTAIN MARVEL" not in _visible_text(strip).to_upper():
+		_fail("the cooperative opening table has no public second-seat summary")
+		return false
+	if not await _pointer_activate(switch_two):
+		return false
+	var expanded := main.find_child("PlayerTable", true, false) as Control
+	var heading := _node("Play/Board/HandShelf/Margin/Stack/Heading") as Label
+	var destination := main.find_child("MulliganDiscardPile", true, false) as Control
+	var cards := (_node("Play/Board/HandShelf") as Control).find_children(
+		"ProceduralCard", "PanelContainer", true, false)
+	if expanded == null or heading == null or destination == null \
+			or "PLAYER 2" not in _visible_text(expanded).to_upper() \
+			or not heading.text.begins_with("PLAYER 1 OPENING HAND") \
+			or "PLAYER 1" not in _visible_text(destination).to_upper() \
+			or cards.size() != 6 or main.find_child("CompleteChoiceSheet", true, false) == null:
+		_fail("switching public workspaces changed or ambiguously labeled the prompt owner's hand")
+		return false
+	switch_one = main.find_child("SeatSwitch0", true, false) as Button
+	if switch_one == null or not await _pointer_activate(switch_one):
+		return false
+	return main.find_child("SeatSwitch0", true, false) is Button \
+		and main.find_child("CompleteChoiceSheet", true, false) != null
+
+
 func _select_mulligan_cards() -> bool:
 	if main.find_child("VillainTable", true, false) == null:
 		return await _select_mulligan_cards_from_fallback()
 	var mansion := _mulligan_discard("Avengers Mansion")
 	var aunt := _mulligan_card("Aunt May")
-	var kick := _mulligan_discard("Swinging Web Kick")
+	var kick := _mulligan_card("Swinging Web Kick")
 	if mansion == null or aunt == null or kick == null:
 		_fail("the opening hand has no explicit discard controls for the seeded cards")
 		return false
 	if not await _pointer_activate(mansion):
 		return false
-	if not await _drag_mulligan_to_discard(aunt):
+	if not await _sheet_selection_stays_bound("Aunt May", true):
 		return false
-	if not await _keyboard_activate(kick):
+	if not await _drag_mulligan_to_discard(kick):
 		return false
-	return mansion.text == "✓ DISCARD" and kick.text == "✓ DISCARD"
+	if not await _sheet_selection_stays_bound("Swinging Web Kick", false):
+		return false
+	if not await _keyboard_activate(_mulligan_discard("Swinging Web Kick")):
+		return false
+	return mansion.text == "✓ DISCARD" and _mulligan_discard("Swinging Web Kick").text == "✓ DISCARD"
+
+
+func _sheet_selection_stays_bound(title: String, select: bool) -> bool:
+	var sheet := main.find_child("CompleteChoiceSheet", true, false) as Button
+	if sheet == null or not await _pointer_activate(sheet):
+		_fail("the complete opening-choice sheet could not open")
+		return false
+	var target := _mulligan_target(title)
+	if target == null or not await _pointer_activate(target):
+		_fail("the complete opening-choice sheet has no target for %s" % title)
+		return false
+	var close := main.find_child("CloseChoiceSheet", true, false) as Button
+	if close == null or not await _pointer_activate(close):
+		_fail("the complete opening-choice sheet cannot return to the table")
+		return false
+	var tabletop := _mulligan_discard(title)
+	if tabletop == null or tabletop.button_pressed != select:
+		_fail("the complete opening-choice sheet and tabletop toggles diverged for %s" % title)
+		return false
+	return true
 
 
 func _select_mulligan_cards_from_fallback() -> bool:
-	var mulligan := _visible_button_beginning(_decision(), "Choose cards to discard and redraw")
-	if mulligan == null:
-		mulligan = _visible_button_beginning(_decision(), "✓ Choose cards to discard and redraw")
-	if mulligan == null or mulligan.disabled:
-		_fail("the seeded opening hand has no operable mulligan action")
-		return false
-	if not mulligan.text.begins_with("✓") and not await _pointer_activate(mulligan):
-		return false
+	var sheet := main.find_child("CompleteChoiceSheet", true, false) as Button
+	if sheet != null:
+		if not await _pointer_activate(sheet):
+			return false
+	else:
+		var mulligan := _visible_button_beginning(_decision(), "Choose cards to discard and redraw")
+		if mulligan == null:
+			mulligan = _visible_button_beginning(_decision(), "✓ Choose cards to discard and redraw")
+		if mulligan == null or mulligan.disabled:
+			_fail("the seeded opening hand has no operable mulligan action")
+			return false
+		if not mulligan.text.begins_with("✓") and not await _pointer_activate(mulligan):
+			return false
 	await process_frame
 	for title in ["Avengers Mansion", "Aunt May", "Swinging Web Kick"]:
 		var target := _mulligan_target(title)
@@ -98,7 +178,7 @@ func _drag_mulligan_to_discard(card: Control) -> bool:
 
 func _mulligan_target(title: String) -> Button:
 	for candidate in _visible_buttons(_decision()):
-		if candidate.text.begins_with("◇ DISCARD AND REDRAW") and title in candidate.text:
+		if "DISCARD AND REDRAW" in candidate.text and title in candidate.text:
 			return candidate
 	return null
 
@@ -197,6 +277,3 @@ func _payment_is_keyboard_operable() -> bool:
 		_fail("Peter Parker's post-mulligan resource cannot complete Web-Shooter's payment")
 		return false
 	return await _capture_checkpoint("post-mulligan-payment")
-
-
-

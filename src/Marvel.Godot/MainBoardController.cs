@@ -20,6 +20,7 @@ internal sealed class MainBoardController
         this.main = main;
         inspector = new CardInspectorFocus(main);
     }
+
     internal void RenderGame(
         EngineResponse response,
         bool resetEvents = false,
@@ -32,6 +33,10 @@ internal sealed class MainBoardController
         HashSet<int> priorHistory = main.CurrentGame?.History?.Entries
             .Select(entry => entry.Cursor)
             .ToHashSet() ?? [];
+        if (!string.Equals(main.CurrentGame?.GameId, response.GameId, StringComparison.Ordinal))
+        {
+            displayedSeat = null;
+        }
         main.CurrentGame = response;
         WorldDescriptor world = response.World!;
         RenderCurrentResponse(response, world, renderGeneration);
@@ -111,28 +116,8 @@ internal sealed class MainBoardController
         inspector.Hide();
     }
 
-    private BoardRenderResult RenderMulliganTable(Prompt prompt)
-    {
-        BoardRenderCleanup.Clear(main.boardAreas);
-        BoardRenderCleanup.Clear(main.handRail);
-        int cards = main.boardPresentation!.Areas.FirstOrDefault(area =>
-            area.Zone == "HandsArea" && area.Seat == prompt.Player)?.Cards.Sum(card => card.Count) ?? 0;
-        main.handHeading.Text = $"OPENING HAND  ·  {cards}  ·  SELECT REPLACEMENTS";
-        var rendered = new BoardRenderResult();
-        int focusSeat = displayedSeat ?? prompt.Player;
-        MulliganTableRenderer.Render(main.boardAreas, new MulliganTableContext
-        {
-            Board = main.boardPresentation,
-            Hand = main.handRail,
-            Result = rendered,
-            Scale = main.interfaceScale,
-            Art = main.art,
-            Player = focusSeat,
-            PromptOwner = prompt.Player,
-            SwitchSeat = SwitchSeat,
-        });
-        return rendered;
-    }
+    private BoardRenderResult RenderMulliganTable(Prompt prompt) =>
+        MulliganTablePresentation.Render(main, prompt, displayedSeat ?? prompt.Player, SwitchSeat);
 
     private void SwitchSeat(int seat)
     {
@@ -298,11 +283,6 @@ internal sealed class MainBoardController
     internal void BindCardInspectorFocus(Control control) => inspector.BindFocus(control);
     internal bool CardInspectorHasFocus() => inspector.HasFocus();
     internal void HideCardInspector() => inspector.Hide();
-    internal static InterfaceScale FittedInspectionScale(BoardCardPresentation card, InterfaceScale requested,
-        float viewportHeight) => CardInspectorFocus.FittedScale(card, requested, viewportHeight);
-    internal static bool IsInsideCard(Node? node) => CardInspectorFocus.IsInsideCard(node);
-    internal static void IgnoreMouseRecursively(Node node) => CardInspectorFocus.IgnoreMouseRecursively(node);
-
     private bool IsCurrentRender(int generation) => main.IsInsideTree()
         && generation == renderGeneration.Current;
 }

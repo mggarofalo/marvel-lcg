@@ -10,6 +10,7 @@ public sealed class BoardRenderResult
     private readonly Dictionary<Control, Action> areaExpanders = [];
     private readonly Dictionary<int, Button> mulliganToggles = [];
     private readonly Dictionary<int, CardControl> mulliganCards = [];
+    private readonly HashSet<int> legalMulliganTargets = [];
     private readonly BoardControlReveal reveal;
     private Control? mulliganDiscard;
 
@@ -59,13 +60,24 @@ public sealed class BoardRenderResult
 
     private bool TryDrag(BoardCardPresentation card, Vector2 finish, Vector2 start)
     {
-        if (!IsCurrentRender() || start.DistanceTo(finish) < 10 || card.TargetId is not { } id
+        if (!IsCandidateDrag(card, start, finish, out int id)
             || !mulliganCards.TryGetValue(id, out CardControl? dragged)
-            || !InteractionControl.IsUsable(dragged) || !InteractionControl.IsUsable(mulliganDiscard)
-            || !mulliganDiscard!.GetGlobalRect().HasPoint(finish)) return false;
+            || !DragControlsAreUsable(dragged, finish)) return false;
         MulliganTargetRequested?.Invoke(id);
         return true;
     }
+
+    private bool IsCandidateDrag(
+        BoardCardPresentation card, Vector2 start, Vector2 finish, out int id)
+    {
+        id = card.TargetId ?? -1;
+        return IsCurrentRender() && start.DistanceTo(finish) >= 10
+            && card.TargetId is not null && legalMulliganTargets.Contains(id);
+    }
+
+    private bool DragControlsAreUsable(CardControl dragged, Vector2 finish) =>
+        InteractionControl.IsUsable(dragged) && InteractionControl.IsUsable(mulliganDiscard)
+        && mulliganDiscard!.GetGlobalRect().HasPoint(finish);
 
     private void Activate(Control control, BoardCardPresentation card)
     {
@@ -88,6 +100,8 @@ public sealed class BoardRenderResult
     internal void BindMulliganTargets(
         IReadOnlyCollection<int> legal, IReadOnlyCollection<int> selected, Action<int> choose)
     {
+        legalMulliganTargets.Clear();
+        legalMulliganTargets.UnionWith(legal);
         MulliganTargetRequested = choose;
         foreach ((int id, Button toggle) in mulliganToggles)
         {
@@ -98,7 +112,13 @@ public sealed class BoardRenderResult
         }
     }
 
-    internal void RequestMulliganTarget(int id) => MulliganTargetRequested?.Invoke(id);
+    internal void RequestMulliganTarget(int id)
+    {
+        if (legalMulliganTargets.Contains(id))
+        {
+            MulliganTargetRequested?.Invoke(id);
+        }
+    }
 
     internal void SetMulliganTargets(IReadOnlyCollection<int> selected)
     {

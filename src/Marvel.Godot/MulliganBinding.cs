@@ -24,18 +24,7 @@ internal static class MulliganBinding
                 return;
             }
 
-            if (draft.Targets.Contains(target))
-            {
-                draft.RemoveTarget(target);
-            }
-            else
-            {
-                draft.AddTarget(target);
-            }
-
-            board.SetMulliganTargets(draft.Targets);
-            panel.NotifyAnchorFocused([target]);
-            panel.Rebuild();
+            panel.ToggleMulliganTarget(target, draft, generation);
         });
     }
 }

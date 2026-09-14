@@ -18,6 +18,8 @@ public sealed partial class DecisionPanel : VBoxContainer
     private VBoxContainer? commit;
     internal bool submitting;
     internal bool mulliganChoiceSheetOpen;
+    private bool compactMulliganChrome;
+    private BoardRenderResult? mulliganBoard;
     private readonly DecisionPanelLifecycle lifecycle;
     internal WorldDescriptor? world;
     public DecisionPanel() => lifecycle = new DecisionPanelLifecycle(this);
@@ -37,7 +39,7 @@ public sealed partial class DecisionPanel : VBoxContainer
         requestedScale = scale;
         // The tabletop owns the full desktop height. Its dock deliberately
         // keeps one compact metric so a scale preference never moves Commit.
-        InterfaceScale effectiveScale = MulliganPrompt.IsOpening(composer?.Prompt)
+        InterfaceScale effectiveScale = compactMulliganChrome && MulliganPrompt.IsOpening(composer?.Prompt)
             ? InterfaceScale.Standard
             : scale;
         if (interfaceScale == effectiveScale)
@@ -58,8 +60,21 @@ public sealed partial class DecisionPanel : VBoxContainer
     /// <summary>Discards the old draft and renders the response's current prompt.</summary>
     public void Render(Prompt? prompt, WorldDescriptor currentWorld, long revision)
     {
-        interfaceScale = MulliganPrompt.IsOpening(prompt) ? InterfaceScale.Standard : requestedScale;
+        interfaceScale = compactMulliganChrome && MulliganPrompt.IsOpening(prompt)
+            ? InterfaceScale.Standard
+            : requestedScale;
         lifecycle.Render(prompt, currentWorld, revision);
+    }
+
+    internal void SetCompactMulliganChrome(bool value)
+    {
+        if (compactMulliganChrome == value)
+        {
+            return;
+        }
+
+        compactMulliganChrome = value;
+        SetInterfaceScale(requestedScale);
     }
     /// <summary>Reopens a prompt only after the client proved its request was not sent.</summary>
     public void AllowRetry(long revision) => lifecycle.AllowRetry(revision);
@@ -83,7 +98,25 @@ public sealed partial class DecisionPanel : VBoxContainer
 
     internal void SelectAffordance(int id, int generation) => lifecycle.SelectAffordance(id, generation);
 
-    internal void BindMulliganTargets(BoardRenderResult? board) => MulliganBinding.Bind(this, board);
+    internal void BindMulliganTargets(BoardRenderResult? board)
+    {
+        mulliganBoard = board;
+        MulliganBinding.Bind(this, board);
+    }
+
+    internal void ToggleMulliganTarget(int target, DecisionComposer draft, int generation)
+    {
+        if (!IsCurrentDraft(draft, generation)
+            || draft.Selected?.Targets is not { } request
+            || !request.Legal.Contains(target))
+        {
+            return;
+        }
+        if (draft.Targets.Contains(target)) draft.RemoveTarget(target); else draft.AddTarget(target);
+        mulliganBoard?.SetMulliganTargets(draft.Targets);
+        NotifyAnchorFocused([target]);
+        Rebuild();
+    }
     internal bool IsCurrentDraft(DecisionComposer expected, int generation) =>
         ReferenceEquals(composer, expected) && lifecycle.CanMutate(generation);
 
@@ -151,7 +184,7 @@ public sealed partial class DecisionPanel : VBoxContainer
         DecisionProgressPresentation progress = composer.Progress();
         if (MulliganPrompt.IsOpening(composer.Prompt))
         {
-            AddMulliganDraft(selected, progress);
+            MulliganDecisionSurface.AddDraft(this, selected, progress);
             return;
         }
         AddContent(new HSeparator());
@@ -162,40 +195,6 @@ public sealed partial class DecisionPanel : VBoxContainer
         var payment = new DecisionPaymentRenderer(this, composer, world!, submitting, generation);
         payment.AddCosts(selected);
         payment.AddSubmit(composer.Progress());
-    }
-
-    private void AddMulliganDraft(Affordance selected, DecisionProgressPresentation progress)
-    {
-        AddContent(Text(
-            $"OPENING HAND  ·  {composer!.Targets.Count} SELECTED  ·  "
-            + (progress.IsReady ? "READY" : "INCOMPLETE"),
-            progress.IsReady ? GodotThemeVariations.StatusText : GodotThemeVariations.DangerText));
-        if (mulliganChoiceSheetOpen)
-        {
-            new DecisionDraftRenderer(this, composer, world!, submitting, lifecycle.RenderGeneration)
-                .AddTargets(selected, progress.Targets);
-        }
-        else
-        {
-            var review = new Button
-            {
-                Name = "CompleteChoiceSheet",
-                Text = "Review all opening choices",
-                TooltipText = "Open the complete ordered choice list. Table selection and this list share one draft.",
-                Disabled = submitting,
-            };
-            StyleButton(review, submitting ? InteractiveVisualState.Unavailable : InteractiveVisualState.Resting);
-            int generation = lifecycle.RenderGeneration;
-            review.Pressed += () =>
-            {
-                if (!lifecycle.CanMutate(generation)) return;
-                mulliganChoiceSheetOpen = true;
-                Rebuild(focusFirst: true);
-            };
-            AddContent(review);
-        }
-        new DecisionPaymentRenderer(this, composer, world!, submitting, lifecycle.RenderGeneration)
-            .AddSubmit(progress);
     }
 
     private void AddDecline()
@@ -241,36 +240,9 @@ public sealed partial class DecisionPanel : VBoxContainer
 
     private string? FocusKey(Control focused) => DecisionFocus.Key(this, focused);
 
-    internal void BindAnchors(Control control, params int[] ids)
-    {
-        if (ids.Length == 0)
-        {
-            return;
-        }
+    internal void BindAnchors(Control control, params int[] ids) => DecisionAnchorBinding.Bind(this, control, ids);
 
-        bool pointerInside = false;
-        control.MouseEntered += () =>
-        {
-            pointerInside = true;
-            CardHovered?.Invoke(ids[0]);
-        };
-        control.MouseExited += () =>
-        {
-            pointerInside = false;
-            if (!control.HasFocus())
-            {
-                CardHovered?.Invoke(null);
-            }
-        };
-        control.FocusEntered += () => AnchorFocused?.Invoke(ids);
-        control.FocusExited += () =>
-        {
-            if (!pointerInside)
-            {
-                CardHovered?.Invoke(null);
-            }
-        };
-    }
+    internal void NotifyCardHovered(int? id) => CardHovered?.Invoke(id);
 
     internal static string NodeKey(string value) => new(
         value.Select(character => char.IsLetterOrDigit(character) ? character : '_').ToArray());
