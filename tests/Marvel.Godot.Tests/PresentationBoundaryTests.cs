@@ -65,6 +65,7 @@ public sealed class PresentationBoundaryTests
             "Marvel.Server.SeatInvitation",
             "Marvel.Server.SetupChoices",
             "Marvel.View.AffordancePresentation",
+            "Marvel.View.AffordanceSourceDescriptor",
             "Marvel.View.BoardAreaPresentation",
             "Marvel.View.BoardAreaProminence",
             "Marvel.View.BoardCardPresentation",

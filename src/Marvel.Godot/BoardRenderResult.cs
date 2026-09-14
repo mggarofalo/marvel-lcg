@@ -11,8 +11,11 @@ public sealed class BoardRenderResult
     private readonly Dictionary<int, Button> mulliganToggles = [];
     private readonly Dictionary<int, CardControl> mulliganCards = [];
     private readonly HashSet<int> legalMulliganTargets = [];
+    private readonly List<BoardDropTarget> dropTargets = [];
     private readonly BoardControlReveal reveal;
     private Control? mulliganDiscard;
+    private Func<CardPointerGesture, bool>? directActivation;
+    private Func<CardPointerGesture, bool>? directDrag;
 
     public BoardRenderResult()
     {
@@ -39,27 +42,36 @@ public sealed class BoardRenderResult
     internal void RegisterArea(Control body, Action expand) =>
         areaExpanders.Add(body, expand);
 
-    internal void TrackCard(Control control, BoardCardPresentation card)
+    internal void RegisterDropTarget(int seat, Control control) =>
+        dropTargets.Add(new BoardDropTarget(seat, control));
+
+    internal void TrackCard(Control control, BoardCardPresentation card, bool isHandCard = false)
     {
         Vector2? pressedAt = null;
         control.GuiInput += input =>
         {
-            if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left } mouse) pressedAt = RouteMouse(control, card, mouse, pressedAt);
-            else if (input is InputEventKey { Echo: false } && input.IsActionPressed("ui_accept")) Activate(control, card);
+            if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left } mouse) pressedAt = RouteMouse(control, card, isHandCard, mouse, pressedAt);
+            else if (input is InputEventKey { Echo: false } && input.IsActionPressed("ui_accept")) Activate(control, card, isHandCard, Vector2.Zero);
         };
     }
 
-    private Vector2? RouteMouse(Control control, BoardCardPresentation card, InputEventMouseButton mouse, Vector2? pressedAt)
+    private Vector2? RouteMouse(Control control, BoardCardPresentation card, bool isHandCard, InputEventMouseButton mouse, Vector2? pressedAt)
     {
         if (mouse.Pressed) return mouse.GlobalPosition;
         if (pressedAt is not { } start) return null;
-        if (TryDrag(card, mouse.GlobalPosition, start)) { control.AcceptEvent(); return null; }
-        if (start.DistanceTo(mouse.GlobalPosition) < 10) Activate(control, card);
+        if (TryDrag(control, card, isHandCard, mouse.GlobalPosition, start)) { control.AcceptEvent(); return null; }
+        if (!CardPointerGestureRouter.IsDrag(start, mouse.GlobalPosition)) Activate(control, card, isHandCard, mouse.GlobalPosition);
         return null;
     }
 
-    private bool TryDrag(BoardCardPresentation card, Vector2 finish, Vector2 start)
+    private bool TryDrag(Control control, BoardCardPresentation card, bool isHandCard, Vector2 finish, Vector2 start)
     {
+        if (IsCurrentRender() && CardPointerGestureRouter.IsDrag(start, finish)
+            && directDrag?.Invoke(new CardPointerGesture(card, control, isHandCard, finish)) == true)
+        {
+            return true;
+        }
+
         if (!IsCandidateDrag(card, start, finish, out int id)
             || !mulliganCards.TryGetValue(id, out CardControl? dragged)
             || !DragControlsAreUsable(dragged, finish)) return false;
@@ -71,7 +83,7 @@ public sealed class BoardRenderResult
         BoardCardPresentation card, Vector2 start, Vector2 finish, out int id)
     {
         id = card.TargetId ?? -1;
-        return IsCurrentRender() && start.DistanceTo(finish) >= 10
+        return IsCurrentRender() && CardPointerGestureRouter.IsDrag(start, finish)
             && card.TargetId is not null && legalMulliganTargets.Contains(id);
     }
 
@@ -79,9 +91,14 @@ public sealed class BoardRenderResult
         InteractionControl.IsUsable(dragged) && InteractionControl.IsUsable(mulliganDiscard)
         && mulliganDiscard!.GetGlobalRect().HasPoint(finish);
 
-    private void Activate(Control control, BoardCardPresentation card)
+    private void Activate(Control control, BoardCardPresentation card, bool isHandCard, Vector2 position)
     {
         if (!IsCurrentRender() || !InteractionControl.IsUsable(control)) return;
+        if (directActivation?.Invoke(new CardPointerGesture(card, control, isHandCard, position)) == true)
+        {
+            control.AcceptEvent();
+            return;
+        }
         CardActivated?.Invoke(card, control);
         control.AcceptEvent();
     }
@@ -90,6 +107,19 @@ public sealed class BoardRenderResult
 
     /// <summary>Raised when a tabletop mulligan checkbox or discard drag names a visible hand card.</summary>
     internal event Action<int>? MulliganTargetRequested;
+
+    internal void BindDirectInteractions(
+        Func<CardPointerGesture, bool> activate,
+        Func<CardPointerGesture, bool> drag)
+    {
+        directActivation = activate ?? throw new ArgumentNullException(nameof(activate));
+        directDrag = drag ?? throw new ArgumentNullException(nameof(drag));
+    }
+
+    internal bool IsDroppedOnLivePlayerLane(int seat, Vector2 position) =>
+        dropTargets.Any(target => target.Seat == seat
+            && InteractionControl.IsUsable(target.Control)
+            && target.Control.GetGlobalRect().HasPoint(position));
 
     internal void RegisterMulliganToggle(int id, Button toggle) => mulliganToggles[id] = toggle;
 

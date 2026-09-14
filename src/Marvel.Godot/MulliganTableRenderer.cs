@@ -260,7 +260,7 @@ internal static class MulliganTableRenderer
             }
         }
 
-        result.TrackCard(control, card);
+        result.TrackCard(control, card, isHandCard: size == CardDisplaySize.Mulligan);
     }
 
     private static Label Label(string text, string variation, bool wrap = false) => new()

@@ -102,6 +102,7 @@ public sealed partial class DecisionPanel : VBoxContainer
     {
         mulliganBoard = board;
         MulliganBinding.Bind(this, board);
+        BoardInteractionBinder.Bind(this, board);
     }
 
     internal TableDraftBinding BindTableDraft(DecisionComposer draft, int generation) =>
