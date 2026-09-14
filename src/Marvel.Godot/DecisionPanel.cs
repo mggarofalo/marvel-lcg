@@ -41,7 +41,8 @@ public sealed partial class DecisionPanel : VBoxContainer
         requestedScale = scale;
         // The tabletop owns the full desktop height. Its dock deliberately
         // keeps one compact metric so a scale preference never moves Commit.
-        InterfaceScale effectiveScale = EffectiveScale(scale, compactMulliganChrome);
+        InterfaceScale effectiveScale = EffectiveScale(
+            scale, compactMulliganChrome, MulliganPrompt.IsOpening(composer?.Prompt));
         if (interfaceScale == effectiveScale)
         {
             if (composer is not null)
@@ -60,12 +61,16 @@ public sealed partial class DecisionPanel : VBoxContainer
     /// <summary>Discards the old draft and renders the response's current prompt.</summary>
     public void Render(Prompt? prompt, WorldDescriptor currentWorld, long revision)
     {
-        interfaceScale = EffectiveScale(requestedScale, compactMulliganChrome);
+        interfaceScale = EffectiveScale(
+            requestedScale, compactMulliganChrome, MulliganPrompt.IsOpening(prompt));
         lifecycle.Render(prompt, currentWorld, revision);
     }
 
-    internal static InterfaceScale EffectiveScale(InterfaceScale requested, bool compactTableChrome) =>
-        compactTableChrome ? InterfaceScale.Standard : requested;
+    internal static InterfaceScale EffectiveScale(
+        InterfaceScale requested, bool compactTableChrome, bool opening) =>
+        compactTableChrome && (opening || requested < InterfaceScale.Standard)
+            ? InterfaceScale.Standard
+            : requested;
 
     internal void SetCompactMulliganChrome(bool value)
     {
