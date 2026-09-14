@@ -348,6 +348,9 @@ func _active_resolution_is_safe(state: Dictionary) -> bool:
 	if not active.visible:
 		return true
 	var text := _visible_text(active).to_lower()
+	if text.strip_edges() == "current resolution":
+		_fail("the empty current-resolution panel is visible")
+		return false
 	if "enemy attack" not in text or "interrupt window" not in text:
 		return true
 	state.saw_attack_resolution = true

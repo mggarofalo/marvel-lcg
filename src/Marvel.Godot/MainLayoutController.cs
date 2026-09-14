@@ -222,13 +222,15 @@ internal sealed class MainLayoutController
         foreach (string path in new[]
                  {
                      "Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader",
-                     "Margin/Shell/Content/Play/Prompt/Margin/Stack/ActiveResolution",
                      "Margin/Shell/Content/Play/Prompt/Margin/Stack/HeaderRule",
                      "Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History",
                  })
         {
             main.GetNode<Control>(path).Visible = !mulligan;
         }
+
+        main.activeResolution.Visible = !mulligan
+            && !string.IsNullOrWhiteSpace(main.activeResolutionSummary.Text);
 
         TabContainer workbench = main.GetNode<TabContainer>(
             "Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench");

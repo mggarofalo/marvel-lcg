@@ -217,6 +217,8 @@ func _commit_once(expected: String) -> bool:
 func _drag_to_prompt_owner_lane(card: Control) -> bool:
 	var areas := _node("Play/Board/TableScroll/Margin/Areas") as Control
 	var lane := areas.find_child("PlayerLane0", true, false) as Control
+	if lane == null:
+		lane = areas.find_child("PlayerTable", true, false) as Control
 	if card == null or lane == null:
 		_fail("the prompt owner's live lane is not available as a hand-card drop target")
 		return false
