@@ -1,4 +1,4 @@
-extends "res://smoke/local_game_smoke_card_checks.gd"
+extends "res://smoke/local_game_smoke_relationship_checks.gd"
 
 const IDENTITY := 1
 const BLACK_CAT := 8
@@ -26,7 +26,9 @@ func _direct_table_journey_is_operable() -> bool:
 
 func _direct_web_shooter_is_played() -> bool:
 	var card := await _draft_web_shooter()
-	if card == null or not await _relationship_path_tracks_hand_scrolling(card):
+	var current_action := _attached(_attached_name(WEB_SHOOTER, "Action"))
+	card = _card_for(current_action) if current_action != null else null
+	if card == null or not await _relationship_path_tracks_table_scrolling(card):
 		return false
 	return await _complete_web_shooter_play()
 
@@ -61,61 +63,6 @@ func _complete_web_shooter_play() -> bool:
 		_fail("the unplayed duplicate Web-Shooter left the visible hand")
 		return false
 	return true
-
-
-func _relationship_path_tracks_hand_scrolling(card: Control) -> bool:
-	var overlay := main.get_node_or_null("RelationshipOverlay") as Control
-	var hand := _node("Play/Board/HandShelf/Margin/Stack/Scroll") as ScrollContainer
-	var rail := _node("Play/Board/HandShelf/Margin/Stack/Scroll/Rail") as Control
-	if overlay == null or hand == null or rail == null:
-		_fail("the selected relationship has no overlay or hand scrolling surface")
-		return false
-	var original_minimum := rail.custom_minimum_size
-	var original_scroll := hand.scroll_horizontal
-	rail.custom_minimum_size.x = rail.size.x + 800.0
-	await process_frame
-	await process_frame
-	if hand.get_h_scroll_bar().max_value < 50.0:
-		_fail("the relationship probe could not make the linked hand card scrollable")
-		return false
-	var original_source := card.get_global_rect().get_center()
-	if not await _wait_for(func() -> bool:
-			return _relationship_line_from(overlay, original_source) != null):
-		_fail("the selected Web-Shooter relationship has no visible path before scrolling")
-		return false
-	hand.scroll_horizontal = 50
-	if not await _wait_for(func() -> bool:
-			return card.get_global_rect().get_center().x < original_source.x - 49.0):
-		_fail("the linked hand card did not move in global geometry when scrolled")
-		return false
-	var moved_source := card.get_global_rect().get_center()
-	if not await _wait_for(func() -> bool:
-			return _relationship_line_from(overlay, moved_source) != null):
-		_fail("hand scrolling left the relationship path at its old endpoint")
-		return false
-	hand.scroll_horizontal = hand.get_h_scroll_bar().max_value
-	if not await _wait_for(func() -> bool:
-			return not hand.get_global_rect().has_point(card.get_global_rect().get_center())):
-		_fail("the relationship probe did not clip its linked hand card")
-		return false
-	if not await _wait_for(func() -> bool:
-			return _relationship_line_from(overlay, card.get_global_rect().get_center()) == null):
-		_fail("a clipped relationship endpoint remained drawn")
-		return false
-	hand.scroll_horizontal = original_scroll
-	rail.custom_minimum_size = original_minimum
-	await process_frame
-	await process_frame
-	return true
-
-
-func _relationship_line_from(overlay: Control, source: Vector2) -> Line2D:
-	var local_source := source - overlay.get_global_rect().position
-	for child in overlay.get_children():
-		if child is Line2D and child.points.size() > 0 \
-				and child.points[0].distance_to(local_source) < 1.0:
-			return child
-	return null
 
 
 func _direct_change_form_is_played() -> bool:
@@ -308,16 +255,3 @@ func _body_click_inspects_without_drafting(card: Control) -> bool:
 func _selected_action_is(text: String) -> bool:
 	var summary := _decision().find_child("ActionSummary", true, false) as Control
 	return summary != null and text.to_lower() in _visible_text(summary).to_lower()
-
-
-func _attached(name: String) -> Button:
-	var control := main.find_child(name, true, false) as Button
-	return control if control != null and control.is_visible_in_tree() else null
-
-
-func _attached_name(anchor: int, intent: String) -> String:
-	return "Card%d%s" % [anchor, intent]
-
-
-func _card_for(control: Control) -> Control:
-	return control.get_parent().get_parent() as Control
