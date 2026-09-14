@@ -56,7 +56,10 @@ public sealed class BoardRenderResult
         {
             if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true } mouse)
             {
-                BeginPointerCapture(control, card, isHandCard, mouse.GlobalPosition);
+                if (!InteractiveDescendantOwnsPointer(control))
+                {
+                    BeginPointerCapture(control, card, isHandCard, mouse.GlobalPosition);
+                }
             }
             else if (input is InputEventKey { Echo: false } && input.IsActionPressed("ui_accept")) Activate(control, card, isHandCard, Vector2.Zero);
         };
@@ -131,6 +134,10 @@ public sealed class BoardRenderResult
             pointerCapture = (control, new CardPointerCapture(card, isHandCard, start));
         }
     }
+
+    private static bool InteractiveDescendantOwnsPointer(Control card) =>
+        card.GetViewport().GuiGetHoveredControl() is BaseButton hovered
+        && hovered != card && card.IsAncestorOf(hovered);
 
     private bool TryDrag(Control control, BoardCardPresentation card, bool isHandCard, Vector2 finish, Vector2 start)
     {

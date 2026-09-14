@@ -134,6 +134,7 @@ func _play_seeded_journey() -> Dictionary:
 		"tested_active_motion_toggle": false,
 		"captured_villain_phase": false,
 		"changed_form": false,
+		"form_before_change": "",
 		"tested_undo": false,
 		"saw_attack_resolution": false,
 		"decisions": 0,
@@ -183,6 +184,8 @@ func _advance_visible_decision(state: Dictionary) -> bool:
 	var change_form := _visible_button_beginning(_decision(), "Change Form")
 	var pass_button := _visible_button(_decision(), "Pass / decline")
 	if not state.changed_form and change_form != null and not change_form.disabled:
+		state.form_before_change = "Peter Parker" \
+			if "Peter Parker\nREC" in _visible_text(_play()) else "Spider-Man"
 		if not await _mixed_submit_is_single_shot():
 			return false
 		state.changed_form = true
@@ -243,8 +246,8 @@ func _undo_first_form_change(state: Dictionary) -> bool:
 			.text.begins_with("UNDOING")):
 		_fail("undoing the form change did not settle")
 		return false
-	if "Peter Parker" not in _visible_text(_play()):
-		_fail("undoing the form change did not restore alter-ego form")
+	if state.form_before_change not in _visible_text(_play()):
+		_fail("undoing the form change did not restore %s" % state.form_before_change)
 		return false
 	if not await _show_action_tab():
 		return false

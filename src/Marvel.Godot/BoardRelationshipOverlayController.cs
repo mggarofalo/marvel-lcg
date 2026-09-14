@@ -59,11 +59,13 @@ internal sealed class BoardRelationshipOverlayController : IDisposable
         Present(Paths());
     }
 
-    private IReadOnlyList<Vector2[]> Paths()
+    private List<Vector2[]> Paths()
     {
         var paths = new List<Vector2[]>();
         Rect2 viewport = overlay.GetGlobalRect();
-        IReadOnlyList<Rect2> obstacles = board.VisibleCardControls()
+        BoardRenderResult current = board ?? throw new InvalidOperationException(
+            "a relationship path requires a rendered board");
+        IReadOnlyList<Rect2> obstacles = current.VisibleCardControls()
             .Where(control => control.IsVisibleInTree())
             .Select(control => control.GetGlobalRect())
             .Where(rect => rect.Intersects(viewport))

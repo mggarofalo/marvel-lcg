@@ -45,8 +45,10 @@ func _mulligan_table_layout_is_resolved() -> bool:
 	if villain == null or player == null or villain.get_global_rect().position.y >= player.get_global_rect().position.y:
 		_fail("the mulligan table does not keep the villain far from the near player area")
 		return false
-	if page.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED \
-			or table.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED:
+	var table_scroll_is_bounded := table.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED \
+		if int(OS.get_environment("MARVEL_UI_SCALE")) <= 100 \
+		else table.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_AUTO
+	if page.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED or not table_scroll_is_bounded:
 		_fail("the opening desktop table introduced gameplay scrolling")
 		return false
 	if OS.get_environment("MARVEL_SMOKE_VIEWPORT") == "1920x1080" \

@@ -28,13 +28,15 @@ internal static class BoardInteractionBinder
             return false;
         }
 
+        int generation = panel.GetRenderGeneration();
         var interaction = new BoardDraftInteraction(
             composer, CurrentOperations(panel, composer), Affordances(panel, composer));
         BoardDraftMutation mutation = gesture.Intent switch
         {
             CardInteractionIntent.Target => interaction.TryToggleTarget(cardId),
             CardInteractionIntent.Generator => interaction.TryToggleGenerator(cardId),
-            CardInteractionIntent.Action => SelectAction(panel, composer, gesture, interaction, cardId),
+            CardInteractionIntent.Action => SelectAction(
+                panel, composer, generation, gesture, interaction, cardId),
             _ => BoardDraftMutation.None,
         };
         if (mutation == BoardDraftMutation.None)
@@ -48,13 +50,14 @@ internal static class BoardInteractionBinder
         {
             panel.RaiseDraftStarted();
         }
-        RefreshDraft(panel, cardId);
+        RefreshDraft(panel, composer, generation, cardId);
         return true;
     }
 
     private static BoardDraftMutation SelectAction(
         DecisionPanel panel,
         DecisionComposer composer,
+        int generation,
         CardPointerGesture gesture,
         BoardDraftInteraction interaction,
         int cardId)
@@ -72,7 +75,7 @@ internal static class BoardInteractionBinder
                 if (interaction.TrySelectAction(id, cardId) == BoardDraftMutation.Affordance)
                 {
                     panel.RaiseDraftStarted();
-                    RefreshDraft(panel, cardId);
+                    RefreshDraft(panel, composer, generation, cardId);
                 }
             });
         }
@@ -95,7 +98,7 @@ internal static class BoardInteractionBinder
         }
 
         panel.RaiseDraftStarted();
-        RefreshDraft(panel, gesture.Card.TargetId!.Value);
+        RefreshDraft(panel, composer, panel.GetRenderGeneration(), gesture.Card.TargetId!.Value);
         return true;
     }
 
@@ -107,9 +110,17 @@ internal static class BoardInteractionBinder
         DecisionPanel panel, DecisionComposer composer) =>
         Marvel.View.PromptPresentation.From(composer.Prompt, panel.world!).Affordances;
 
-    private static void RefreshDraft(DecisionPanel panel, int focused) 
+    private static void RefreshDraft(
+        DecisionPanel panel, DecisionComposer composer, int generation, int focused)
     {
-        panel.NotifyAnchorFocused([focused]);
-        panel.Rebuild();
+        Callable.From(() =>
+        {
+            if (!panel.IsCurrentDraft(composer, generation))
+            {
+                return;
+            }
+            panel.NotifyAnchorFocused([focused]);
+            panel.Rebuild();
+        }).CallDeferred();
     }
 }

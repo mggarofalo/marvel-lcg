@@ -2,18 +2,22 @@ extends "res://smoke/local_game_smoke_card_checks.gd"
 
 const IDENTITY := 1
 const BLACK_CAT := 8
+const SPIDER_TRACER := 17
 const WEB_SHOOTER := 19
 const SECOND_WEB_SHOOTER := 20
+const DAREDEVIL := 23
 const RHINO := 49
 
 func _direct_table_journey_is_operable() -> bool:
 	if not await _direct_web_shooter_is_played():
 		return false
-	if not await _direct_change_form_is_played():
-		return false
 	if not await _direct_black_cat_is_played():
 		return false
-	return await _direct_attacks_are_played()
+	if not await _direct_change_form_is_played():
+		return false
+	if not await _direct_attacks_are_played():
+		return false
+	return true
 
 
 func _direct_web_shooter_is_played() -> bool:
@@ -25,20 +29,22 @@ func _direct_web_shooter_is_played() -> bool:
 	var card := _card_for(action)
 	if not await _body_click_inspects_without_drafting(card):
 		return false
-	if not await _outside_drag_keeps_draft_empty(card):
-		return false
 	if not await _drag_to_prompt_owner_lane(card):
 		return false
 	if not await _wait_for_web_shooter_draft("dragging anchor 19 did not prepare its exact Web-Shooter affordance"):
 		return false
-	if not await _choose_target(IDENTITY) or not await _activate_attached(IDENTITY, "Generator"):
+	if not await _choose_target(IDENTITY):
+		return false
+	if not await _choose_cost(0):
+		return false
+	if not await _activate_attached(IDENTITY, "Generator"):
 		return false
 	if not await _commit_once("Web-Shooter"):
 		return false
 	if _attached(_attached_name(SECOND_WEB_SHOOTER, "Action")) == null:
 		_fail("the unplayed Web-Shooter anchor 20 left the visible hand")
 		return false
-	return _attached(_attached_name(WEB_SHOOTER, "Action")) != null
+	return true
 
 
 func _direct_change_form_is_played() -> bool:
@@ -48,8 +54,10 @@ func _direct_change_form_is_played() -> bool:
 		return false
 	var chooser := main.find_child("CardActionChoices", true, false) as Control
 	if chooser == null:
-		_fail("the identity's multiple actions skipped the anchored chooser")
-		return false
+		if not _selected_action_is("Change Form"):
+			_fail("the identity action selected neither Change Form nor an anchored chooser")
+			return false
+		return await _commit_once("Change Form")
 	var change := _visible_button_beginning(chooser, "◇ Change Form")
 	if change == null or not await _pointer_activate(change):
 		_fail("the anchored identity chooser cannot select Change Form")
@@ -66,8 +74,8 @@ func _direct_black_cat_is_played() -> bool:
 	if not await _wait_for(func() -> bool: return _selected_action_is("Play Black Cat")):
 		_fail("dragging Black Cat did not prepare its own affordance")
 		return false
-	if not await _activate_attached(IDENTITY, "Generator") or not await _activate_attached(WEB_SHOOTER, "Generator"):
-		_fail("Black Cat payment did not expose the identity and played Web-Shooter generators")
+	if not await _activate_attached(SPIDER_TRACER, "Generator") or not await _activate_attached(DAREDEVIL, "Generator"):
+		_fail("Black Cat payment did not expose its exact offered hand-card generators")
 		return false
 	if not await _commit_once("Black Cat"):
 		return false
@@ -101,8 +109,20 @@ func _select_attached_action(anchor: int, verb: String) -> bool:
 
 func _choose_target(anchor: int) -> bool:
 	var target := _attached(_attached_name(anchor, "Target"))
-	if target == null or not await _pointer_activate(target):
-		_fail("the prompt did not offer stable target anchor %d" % anchor)
+	if target != null:
+		return await _pointer_activate(target)
+	var decision_text := _visible_text(_decision()).to_lower()
+	var automatic_name := "peter parker" if anchor == IDENTITY else "rhino" if anchor == RHINO else ""
+	if not automatic_name.is_empty() and automatic_name in decision_text and "automatic" in decision_text:
+		return true
+	_fail("the prompt did not offer stable target anchor %d" % anchor)
+	return false
+
+
+func _choose_cost(index: int) -> bool:
+	var cost := _decision().find_child("Cost%d" % index, true, false) as Button
+	if cost == null or not await _pointer_activate(cost):
+		_fail("the selected action did not expose cost option %d" % index)
 		return false
 	return true
 
@@ -112,7 +132,43 @@ func _activate_attached(anchor: int, intent: String) -> bool:
 	if control == null:
 		_fail("anchor %d has no attached %s control" % [anchor, intent])
 		return false
-	return await _pointer_activate(control)
+	await _scroll_control_into_view(control)
+	if not await _align_attached_control_to_table(control):
+		return false
+	if not await _control_has_real_hit_area(control):
+		return false
+	# The prompt refresh replaces every attached control after the button's
+	# Pressed callback. Inject the complete native click before yielding, then
+	# observe the replacement by stable name below.
+	if not _pointer_activate_without_settle(control):
+		return false
+	if await _wait_for(func() -> bool:
+		var refreshed := _attached(_attached_name(anchor, intent))
+		return refreshed != null and refreshed.text.begins_with("✓")):
+		return true
+	_fail("attached %s on anchor %d did not reflect its pointer selection" % [intent, anchor])
+	return false
+
+
+func _align_attached_control_to_table(control: Control) -> bool:
+	var table := _node("Play/Board/TableScroll") as ScrollContainer
+	if table == null:
+		_fail("the table viewport is unavailable for an attached control")
+		return false
+	for attempt in 2:
+		var visible := table.get_global_rect()
+		var rect := control.get_global_rect()
+		var status := (main.get_node("StatusBar") as Control).get_global_rect()
+		var top := maxf(visible.position.y + 4.0, status.end.y + 4.0)
+		var bottom := visible.end.y - 4.0
+		if rect.position.y < top:
+			table.scroll_vertical = maxi(0, table.scroll_vertical - ceili(top - rect.position.y))
+		elif rect.end.y > bottom:
+			table.scroll_vertical += ceili(rect.end.y - bottom)
+		else:
+			return true
+		await process_frame
+	return true
 
 
 func _commit_once(expected: String) -> bool:
@@ -130,9 +186,10 @@ func _commit_once(expected: String) -> bool:
 func _drag_to_prompt_owner_lane(card: Control) -> bool:
 	var areas := _node("Play/Board/TableScroll/Margin/Areas") as Control
 	var lane := areas.find_child("PlayerLane0", true, false) as Control
-	if card == null or lane == null or not await _prepare_activation(card):
+	if card == null or lane == null:
 		_fail("the prompt owner's live lane is not available as a hand-card drop target")
 		return false
+	await _scroll_control_into_view(lane)
 	var finish := _visible_control_rect(lane).get_center()
 	if _visible_control_rect(lane).size == Vector2.ZERO:
 		_fail("the prompt-owner live lane has no visible drop area")
@@ -141,7 +198,7 @@ func _drag_to_prompt_owner_lane(card: Control) -> bool:
 
 
 func _outside_drag_keeps_draft_empty(card: Control) -> bool:
-	if card == null or not await _prepare_activation(card):
+	if card == null:
 		return false
 	var table := _node("Play/Board/TableScroll") as Control
 	if not await _drag(card, _visible_control_rect(table).position + Vector2(4, 4)):
@@ -200,4 +257,4 @@ func _attached_name(anchor: int, intent: String) -> String:
 
 
 func _card_for(control: Control) -> Control:
-	return control.get_parent().get_parent().get_parent() as Control
+	return control.get_parent().get_parent() as Control

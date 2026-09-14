@@ -11,7 +11,8 @@ public sealed partial class CardControl : PanelContainer
     private bool presented;
     private CardInteractionCue interactionCue;
     private Label? interactionLabel;
-    private VBoxContainer? interactionControls;
+    private Control? interactionControls;
+    private float interactionWidth;
 
     private CardControl()
     {
@@ -49,6 +50,7 @@ public sealed partial class CardControl : PanelContainer
                 : CursorShape.PointingHand,
             baseVariation = variation,
             ThemeTypeVariation = variation,
+            interactionWidth = layout.Width - 24,
         };
         var content = new VBoxContainer
         {
@@ -65,19 +67,19 @@ public sealed partial class CardControl : PanelContainer
             Name = "InteractionCue",
             HorizontalAlignment = HorizontalAlignment.Right,
             VerticalAlignment = VerticalAlignment.Bottom,
-            MouseFilter = MouseFilterEnum.Ignore,
+            MouseFilter = MouseFilterEnum.Pass,
             ThemeTypeVariation = GodotThemeVariations.Eyebrow,
             Visible = false,
         };
         content.AddChild(control.interactionLabel);
-        control.interactionControls = new VBoxContainer
+        control.interactionControls = new Control
         {
             Name = "DirectControls",
-            ThemeTypeVariation = GodotThemeVariations.TightStack,
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            MouseFilter = MouseFilterEnum.Ignore,
         };
-        content.AddChild(control.interactionControls);
         control.AddChild(content);
+        control.AddChild(control.interactionControls);
+        control.interactionControls.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         return control;
     }
 
@@ -156,8 +158,11 @@ public sealed partial class CardControl : PanelContainer
     internal void AddInteractionControl(Button control)
     {
         ArgumentNullException.ThrowIfNull(control);
-        control.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        int index = interactionControls?.GetChildCount() ?? 0;
+        Rect2 layout = CardInteractionLayout.Control(index, interactionWidth);
         control.CustomMinimumSize = new Vector2(0, 44);
+        control.Position = layout.Position;
+        control.Size = layout.Size;
         (interactionControls ?? throw new InvalidOperationException(
             "card interaction controls are unavailable")).AddChild(control);
     }

@@ -9,14 +9,12 @@ public sealed class CardControlTests
     [Fact]
     public void AttachedInteractionStaysInsideTheCardsFixedWidthSurface()
     {
-        CardControl card = CardControl.Create(Card("EVENT"), CardDisplaySize.Hand);
-        var action = new Button { Name = "Card19Action" };
+        Rect2 first = CardInteractionLayout.Control(0, 148);
+        Rect2 second = CardInteractionLayout.Control(1, 148);
 
-        card.AddInteractionControl(action);
-
-        Assert.Same(card.GetNode("CardContent/DirectControls"), action.GetParent());
-        Assert.Equal(44, action.CustomMinimumSize.Y);
-        Assert.Equal(Control.SizeFlags.ExpandFill, action.SizeFlagsHorizontal);
+        Assert.Equal(new Rect2(12, 16, 148, 44), first);
+        Assert.Equal(new Rect2(12, 64, 148, 44), second);
+        Assert.Equal(160, first.End.X);
     }
 
     [Fact]

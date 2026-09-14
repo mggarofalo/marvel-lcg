@@ -68,6 +68,22 @@ public sealed class InteractionSurfaceProjectionTests
     }
 
     [Fact]
+    public void AutomaticTargetKeepsItsCueWithoutARedundantAttachedControl()
+    {
+        var composer = Composer(new Affordance(3, "Play", 19, 0, "Visible",
+            new TargetRequest([1], 1, 1)));
+        composer.SelectAffordance(3);
+        PromptPresentation prompt = Prompt(composer.Prompt, [Visible(3, 19)],
+            target: new TargetRequest([1], 1, 1));
+
+        Assert.True(composer.UsesAutomaticTargetSelection);
+        Assert.DoesNotContain(BoardInteractionControlProjection.From(composer, prompt),
+            control => control.Intent == CardInteractionIntent.Target);
+        Assert.Equal(CardInteractionCue.LegalTarget | CardInteractionCue.SelectedTarget,
+            BoardInteractionCueProjection.From(composer, prompt)[1]);
+    }
+
+    [Fact]
     public void RelationshipPlannerUsesDirectPathOrOmitsBlockedRoute()
     {
         Rect2 source = new(0, 0, 20, 20);

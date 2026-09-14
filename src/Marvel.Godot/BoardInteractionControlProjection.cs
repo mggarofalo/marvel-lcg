@@ -24,7 +24,9 @@ internal static class BoardInteractionControlProjection
     private static void AddTargetControls(
         List<CardInteractionControlDescriptor> controls, DecisionComposer composer)
     {
-        if (composer.Selected?.Targets is not { } request)
+        if (MulliganPrompt.IsOpening(composer.Prompt)
+            || composer.UsesAutomaticTargetSelection
+            || composer.Selected?.Targets is not { } request)
         {
             return;
         }
