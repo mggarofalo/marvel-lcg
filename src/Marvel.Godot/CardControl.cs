@@ -11,10 +11,8 @@ public sealed partial class CardControl : PanelContainer
     private bool presented;
     private CardInteractionCue interactionCue;
     private Label? interactionLabel;
-    private Control? interactionControls;
-    private float interactionCardWidth;
+    private GridContainer? interactionControls;
     private InterfaceScale interactionScale;
-    private float interactionBaseMinimumHeight;
 
     private CardControl()
     {
@@ -47,24 +45,24 @@ public sealed partial class CardControl : PanelContainer
             SizeFlagsHorizontal = SizeFlags.ShrinkBegin,
             TooltipText = card.Title,
             FocusMode = card.Concealed ? FocusModeEnum.None : FocusModeEnum.All,
+            MouseFilter = MouseFilterEnum.Pass,
             MouseDefaultCursorShape = card.Concealed
                 ? CursorShape.Arrow
                 : CursorShape.PointingHand,
             baseVariation = variation,
             ThemeTypeVariation = variation,
-            interactionCardWidth = layout.Width,
             interactionScale = scale,
         };
-        control.interactionBaseMinimumHeight = control.CustomMinimumSize.Y;
         var content = new VBoxContainer
         {
             Name = "CardContent",
             ThemeTypeVariation = GodotThemeVariations.TightStack,
+            MouseFilter = MouseFilterEnum.Ignore,
         };
         Control body = CardFaceRendering.CreateBody(card, size, layout, scale, art);
         body.CustomMinimumSize = new Vector2(
             Math.Max(1, layout.Width - 32),
-            Math.Max(1, layout.MinimumHeight - 32));
+            Math.Max(1, control.CustomMinimumSize.Y - 32));
         content.AddChild(body);
         control.interactionLabel = new Label
         {
@@ -76,14 +74,23 @@ public sealed partial class CardControl : PanelContainer
             Visible = false,
         };
         content.AddChild(control.interactionLabel);
-        control.interactionControls = new Control
+        control.interactionControls = new GridContainer
         {
             Name = "DirectControls",
-            MouseFilter = MouseFilterEnum.Ignore,
+            Columns = 2,
+            MouseFilter = MouseFilterEnum.Pass,
+            ThemeTypeVariation = GodotThemeVariations.TightStack,
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
         };
-        control.AddChild(content);
-        control.AddChild(control.interactionControls);
-        control.interactionControls.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        var surface = new VBoxContainer
+        {
+            Name = "CardSurface",
+            MouseFilter = MouseFilterEnum.Pass,
+            ThemeTypeVariation = GodotThemeVariations.TightStack,
+        };
+        control.AddChild(surface);
+        surface.AddChild(content);
+        surface.AddChild(control.interactionControls);
         return control;
     }
 
@@ -158,24 +165,17 @@ public sealed partial class CardControl : PanelContainer
         RefreshTreatment();
     }
 
-    /// <summary>Adds a prompt-authorized control inside this card's fixed-width surface.</summary>
+    /// <summary>Adds a prompt-authorized control in this card's reserved action strip.</summary>
     internal void AddInteractionControl(Button control)
     {
         ArgumentNullException.ThrowIfNull(control);
-        int index = interactionControls?.GetChildCount() ?? 0;
-        StyleBox surface = GetThemeStylebox("panel");
-        float width = CardInteractionLayout.ControlWidth(
-            interactionCardWidth,
-            surface.GetContentMargin(Side.Left),
-            surface.GetContentMargin(Side.Right),
-            interactionScale);
-        Rect2 layout = CardInteractionLayout.Control(index, width, interactionScale);
-        control.CustomMinimumSize = new Vector2(0, layout.Size.Y);
-        control.Position = layout.Position;
-        control.Size = layout.Size;
-        CustomMinimumSize = new Vector2(CustomMinimumSize.X,
-            CardInteractionLayout.SurfaceHeight(
-                interactionBaseMinimumHeight, index + 1, interactionScale));
+        control.CustomMinimumSize = new Vector2(
+            0, VisualSystem.Controls(interactionScale).MinimumPointerTarget);
+        control.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        if (GetParent() is Container parent)
+        {
+            parent.QueueSort();
+        }
         (interactionControls ?? throw new InvalidOperationException(
             "card interaction controls are unavailable")).AddChild(control);
     }
@@ -192,7 +192,10 @@ public sealed partial class CardControl : PanelContainer
             }
         }
 
-        CustomMinimumSize = new Vector2(CustomMinimumSize.X, interactionBaseMinimumHeight);
+        if (GetParent() is Container parent)
+        {
+            parent.QueueSort();
+        }
     }
 
     private void RefreshTreatment() =>

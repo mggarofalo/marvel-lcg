@@ -8,7 +8,9 @@ func _mulligan_result_and_payment_are_operable() -> bool:
 	if not await _mulligan_result_is_operable():
 		return false
 	if OS.get_environment("MARVEL_SMOKE_TWO_PLAYER") == "true":
-		if not await _dismiss_mulligan_result() or not await _complete_second_opening_hand():
+		if not await _dismiss_mulligan_result() \
+				or not await _complete_second_opening_hand() \
+				or not await _post_mulligan_desktop_resize_is_safe():
 			return false
 	var hand_card := (_node("Play/Board/HandShelf") as Control).find_child(
 		"ProceduralCard", true, false) as Control
@@ -101,14 +103,19 @@ func _select_mulligan_cards() -> bool:
 		return false
 	if not await _sheet_selection_stays_bound("Aunt May", true):
 		return false
-	if not await _drag_capture_is_safe(kick):
+	if not await _drag_capture_is_safe():
 		return false
 	if not await _keyboard_activate(_mulligan_discard("Swinging Web Kick")):
 		return false
-	return mansion.text == "✓ DISCARD" and _mulligan_discard("Swinging Web Kick").text == "✓ DISCARD"
+	return _mulligan_discard("Avengers Mansion").text == "✓ DISCARD" \
+		and _mulligan_discard("Swinging Web Kick").text == "✓ DISCARD"
 
 
-func _drag_capture_is_safe(card: Control) -> bool:
+func _drag_capture_is_safe() -> bool:
+	var card := _mulligan_card("Swinging Web Kick")
+	if card == null:
+		_fail("the opening hand lost Swinging Web Kick before its drag probe")
+		return false
 	if not await _drag_mulligan_to_discard(card):
 		return false
 	# The source card owns this press while the pointer enters the destination.
@@ -118,6 +125,10 @@ func _drag_capture_is_safe(card: Control) -> bool:
 		_fail("a source-card drag released over discard did not select exactly once")
 		return false
 	if not await _sheet_selection_stays_bound("Swinging Web Kick", false):
+		return false
+	card = _mulligan_card("Swinging Web Kick")
+	if card == null:
+		_fail("the opening hand lost Swinging Web Kick after its choice-sheet probe")
 		return false
 	if not await _drag_mulligan_outside_discard(card):
 		return false
@@ -186,14 +197,19 @@ func _mulligan_card(title: String) -> Control:
 
 
 func _drag_mulligan_to_discard(card: Control) -> bool:
-	var discard := main.find_child("MulliganDiscardPile", true, false) as Control
+	# Use the fixed discard destination in the near player area. The compact
+	# duplicate inside the horizontally scrolling hand is a click/tap cue, not
+	# a reliable cross-scroll drag destination.
+	var discard := main.find_child("ExpandedDiscardPile", true, false) as Control
 	if discard == null:
-		# A populated pile retains its normal area identity.
+		# A projected pile retains its normal area identity even while empty.
 		for area_node in main.find_children("Area*", "PanelContainer", true, false):
 			var area := area_node as Control
 			if "DISCARD PILE" in _visible_text(area):
 				discard = area
 				break
+	if discard == null:
+		discard = main.find_child("MulliganDiscardPile", true, false) as Control
 	if discard == null or not await _prepare_activation(discard):
 		_fail("the player discard place is not a reachable mulligan drop destination")
 		return false

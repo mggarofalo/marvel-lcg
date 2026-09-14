@@ -9,6 +9,9 @@ func _initialize() -> void:
 		fixed_viewport.size = Vector2i(int(viewport[0]), int(viewport[1]))
 		fixed_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 		root.add_child(fixed_viewport)
+		# A standalone SubViewport does not receive this notification from a
+		# SubViewportContainer, but native pointer injection still needs it.
+		fixed_viewport.notify_mouse_entered()
 		render_viewport = fixed_viewport
 	else:
 		render_viewport = root
@@ -345,6 +348,9 @@ func _active_resolution_is_safe(state: Dictionary) -> bool:
 	if not active.visible:
 		return true
 	var text := _visible_text(active).to_lower()
+	if text.strip_edges() == "current resolution":
+		_fail("the empty current-resolution panel is visible")
+		return false
 	if "enemy attack" not in text or "interrupt window" not in text:
 		return true
 	state.saw_attack_resolution = true

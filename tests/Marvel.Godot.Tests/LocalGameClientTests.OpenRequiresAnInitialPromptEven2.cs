@@ -25,6 +25,8 @@ public sealed class LocalGameClientOpenRequiresAnInitialPromptEvenTests : LocalG
         Assert.Equal(Game.ResolveMulligans, offered.Verb);
         Assert.True(MulliganPrompt.IsOpening(prompt));
         Assert.True(MulliganPrompt.UsesDesktopTable(prompt, new Vector2(1920, 1080)));
+        Assert.False(MulliganPrompt.UsesDesktopTable(prompt, new Vector2(1919, 1080)));
+        Assert.False(MulliganPrompt.UsesDesktopTable(prompt, new Vector2(1920, 1079)));
         Assert.False(MulliganPrompt.UsesDesktopTable(prompt, new Vector2(1280, 720)));
         int[] candidates = Assert.IsType<TargetRequest>(offered.Targets).Legal.ToArray();
         Assert.Equal(6, candidates.Length);

@@ -29,7 +29,7 @@ internal sealed class MainEventController
     {
         if (prompt is null)
         {
-            main.activeResolution.Visible = false;
+            (main.activeResolution.Visible, main.activeResolutionSummary.Text) = (false, string.Empty);
             (main.promptEyebrow.Text, main.promptHeading.Text, main.promptContext.Text) =
                 world.Outcome switch
                 {
@@ -264,7 +264,7 @@ internal sealed class MainEventController
 
         main.eventCueKind.Text = entry.Motion.ToString().ToUpperInvariant();
         main.eventCue.Visible = true;
-        main.eventCueSummary.Text = entry.Summary;
+        EventCueBoardFocus.Present(main, entry);
         main.eventCueKind.ThemeTypeVariation = entry.Motion switch
         {
             EventMotionKind.Damage or EventMotionKind.Defeat or EventMotionKind.Terminal =>

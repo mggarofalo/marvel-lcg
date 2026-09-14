@@ -13,14 +13,15 @@ internal sealed class MainBoardController : IDisposable
     private readonly Main main;
     private readonly CardInspectorFocus inspector;
     private readonly BoardRelationshipOverlayController relationships;
-    private readonly InteractionGeneration renderGeneration = new();
-    private int? displayedSeat;
+    private readonly BoardRenderLifetime renderLifetime = new();
+    private readonly MainTabletopController tabletop;
 
     internal MainBoardController(Main main)
     {
         this.main = main;
         inspector = new CardInspectorFocus(main);
         relationships = new BoardRelationshipOverlayController(main);
+        tabletop = new MainTabletopController(main);
     }
 
     internal void RenderGame(
@@ -30,14 +31,14 @@ internal sealed class MainBoardController : IDisposable
         GameProgressPresentation? priorProgress = null,
         string operation = EngineProtocol.Resolve)
     {
-        int renderGeneration = this.renderGeneration.Advance();
+        int renderGeneration = renderLifetime.Advance();
         Outcome previousOutcome = main.CurrentGame?.World?.Outcome ?? Outcome.Unfinished;
         HashSet<int> priorHistory = main.CurrentGame?.History?.Entries
             .Select(entry => entry.Cursor)
             .ToHashSet() ?? [];
         if (!string.Equals(main.CurrentGame?.GameId, response.GameId, StringComparison.Ordinal))
         {
-            displayedSeat = null;
+            tabletop.ResetForGame();
         }
         main.CurrentGame = response;
         WorldDescriptor world = response.World!;
@@ -109,40 +110,25 @@ internal sealed class MainBoardController : IDisposable
         // newly shown Control can still be waiting for its container layout.
         // Choose the opening surface from that settled canvas, not its
         // transient child size.
-        BoardRenderResult rendered = MulliganPrompt.UsesDesktopTable(
-            prompt, main.GetViewportRect().Size)
-            ? RenderMulliganTable(prompt!)
-            : BoardRenderer.Render(
+        Vector2 viewport = main.GetViewportRect().Size;
+        main.GetNode<PanelContainer>("Margin/Shell/Content/Play/Board/HandShelf").Visible = true;
+        BoardRenderResult rendered = tabletop.Render(prompt, viewport)
+            ?? BoardRenderer.Render(
                 main.boardAreas, main.boardPresentation, main.handRail, main.handHeading,
                 main.interfaceScale, main.expandedAreas, main.art);
         main.boardRender = rendered;
         rendered.CardActivated += (card, control) => ToggleCardInspector(card, control);
         rendered.IsCurrent = () => ReferenceEquals(main.boardRender, rendered)
-            && IsCurrentRender(renderGeneration ?? this.renderGeneration.Current);
+            && IsCurrentRender(renderGeneration ?? renderLifetime.Current);
         relationships.Bind(rendered, main.boardPresentation.Relationships);
         main.decisions.BindMulliganTargets(rendered);
         inspector.Hide();
     }
 
-    private BoardRenderResult RenderMulliganTable(Prompt prompt) =>
-        MulliganTablePresentation.Render(main, prompt, displayedSeat ?? prompt.Player, SwitchSeat);
+    internal void FocusAnchors(IReadOnlyList<int> ids) => tabletop.FocusAnchors(ids);
 
-    private void SwitchSeat(int seat)
-    {
-        if (main.boardPresentation?.Lanes.Any(lane => lane.Seat == seat) != true
-            || displayedSeat == seat)
-        {
-            return;
-        }
-
-        // This changes only the expanded public workspace. The pending prompt
-        // and its composer remain owned by the server-provided prompt player.
-        displayedSeat = seat;
-        if (main.CurrentGame?.World is { } world)
-        {
-            RenderBoard(world, main.CurrentGame.Prompt);
-        }
-    }
+    internal void FocusEventAnchors(IReadOnlyList<int> ids) => tabletop.FocusAnchors(ids);
+    internal void RerenderForViewport(Vector2 viewport) => tabletop.RerenderForViewport(viewport);
 
     internal void PreviewHandCard(int? id)
     {
@@ -161,13 +147,25 @@ internal sealed class MainBoardController : IDisposable
             .Where(area => area.Zone == "HandsArea")
             .SelectMany(area => area.Cards)
             .FirstOrDefault(candidate => candidate.TargetId == id);
-        Control? source = main.boardRender?.ControlFor(id.Value);
+        Control? source = HandSource(id.Value, card);
         if (card is null || source is null)
         {
             return;
         }
 
         ShowCardInspector(card, source, pinned: false);
+    }
+
+    private Control? HandSource(int id, BoardCardPresentation? card)
+    {
+        Control? source = main.boardRender?.ControlFor(id);
+        if (card is not null && source is null)
+        {
+            tabletop.FocusAnchors([id]);
+            source = main.boardRender?.ControlFor(id);
+        }
+
+        return source;
     }
 
     internal void ToggleCardInspector(BoardCardPresentation card, Control? source)
@@ -297,7 +295,12 @@ internal sealed class MainBoardController : IDisposable
     internal void BindCardInspectorFocus(Control control) => inspector.BindFocus(control);
     internal bool CardInspectorHasFocus() => inspector.HasFocus();
     internal void HideCardInspector() => inspector.Hide();
-    public void Dispose() => relationships.Dispose();
-    private bool IsCurrentRender(int generation) => main.IsInsideTree()
-        && generation == renderGeneration.Current;
+    public void Dispose()
+    {
+        renderLifetime.Dispose(main.boardRender);
+        relationships.Dispose();
+    }
+
+    private bool IsCurrentRender(int generation) => renderLifetime.IsCurrent(generation)
+        && main.IsInsideTree();
 }

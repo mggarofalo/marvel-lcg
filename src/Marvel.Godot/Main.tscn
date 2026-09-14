@@ -393,11 +393,12 @@ theme_type_variation = &"Body"
 text = "—"
 autowrap_mode = 2
 
-[node name="Play" type="VBoxContainer" parent="Margin/Shell/Content" unique_id=1000000064]
+[node name="Play" type="GridContainer" parent="Margin/Shell/Content" unique_id=1000000064]
 visible = false
 custom_minimum_size = Vector2(0, 260)
 layout_mode = 2
 size_flags_vertical = 3
+theme_type_variation = &"PlayGrid"
 
 [node name="Board" type="VBoxContainer" parent="Margin/Shell/Content/Play" unique_id=1000000065]
 layout_mode = 2
@@ -713,10 +714,12 @@ text = "No events yet."
 [node name="Status" type="PanelContainer" parent="Margin/Shell/Content" unique_id=1000000105]
 layout_mode = 2
 size_flags_horizontal = 0
+mouse_filter = 2
 theme_type_variation = &"StatusPanel"
 
 [node name="Text" type="Label" parent="Margin/Shell/Content/Status" unique_id=1000000106]
 layout_mode = 2
+mouse_filter = 2
 theme_type_variation = &"StatusText"
 text = "LOADING ASSIGNMENTS"
 

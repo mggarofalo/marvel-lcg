@@ -84,9 +84,10 @@ internal sealed class MainLayoutController
 
     internal void ApplyResponsivePlayLayout()
     {
-        // This is a presentation choice. Gameplay is a full-width table whose
-        // decision dock remains below the hand; neither the page nor the table
-        // can scroll the current decision away.
+        // This is a presentation choice. The desktop table owns the canvas,
+        // with a stable decision dock beside the flexible table column. Only
+        // bounded, task-local surfaces such as the hand and decision body may
+        // scroll; the page can never move Commit away.
         Vector2 viewport = main.GetViewportRect().Size;
         DesktopPlayMetrics layout = VisualSystem.DesktopPlay(
             Math.Max(1, Mathf.RoundToInt(viewport.X)),
@@ -95,8 +96,16 @@ internal sealed class MainLayoutController
         bool compactHeight = viewport.Y < 800;
         bool gameplay = main.board.Visible;
         bool mulligan = MulliganPrompt.IsOpening(main.CurrentGame?.Prompt);
-        bool fixedTabletop = gameplay && viewport.X >= 1800 && viewport.Y >= 900;
+        bool fixedTabletop = gameplay && DesktopTabletop.Uses(viewport);
         bool compactTableChrome = fixedTabletop;
+        main.playLayout.Columns = fixedTabletop ? 2 : 1;
+        main.playLayout.ThemeTypeVariation = GodotThemeVariations.PlayGrid;
+        main.promptPanel.SizeFlagsHorizontal = fixedTabletop
+            ? Control.SizeFlags.Fill
+            : Control.SizeFlags.ExpandFill;
+        main.promptPanel.SizeFlagsVertical = fixedTabletop
+            ? Control.SizeFlags.ExpandFill
+            : Control.SizeFlags.Fill;
         main.GetNode<ScrollContainer>(
             "Margin/Shell/Content/Play/Board/TableScroll").CustomMinimumSize = new Vector2(
                 0,
@@ -109,7 +118,8 @@ internal sealed class MainLayoutController
         main.decisions.SetCompactMulliganChrome(compactTableChrome);
         ConfigureDecisionDock(mulligan && compactTableChrome, compactTableChrome, layout);
         ConfigureStackChrome(compactHeight, compactTableChrome);
-        ConfigurePlayScrolling(gameplay, fixedTabletop);
+        ConfigurePlayScrolling(gameplay, fixedTabletop, mulligan);
+        main.boardController.RerenderForViewport(viewport);
     }
 
     private void ConfigureDecisionDock(
@@ -122,11 +132,18 @@ internal sealed class MainLayoutController
             ? Math.Max(172, VisualSystem.Controls(dockScale).MinimumPointerTarget * 3 + 16)
             : compactTableChrome ? 220 : layout.DecisionMinimumHeight;
         main.promptPanel.CustomMinimumSize = new Vector2(
-            0,
+            compactTableChrome ? layout.DecisionWidth : 0,
             decisionHeight);
         main.decisions.CustomMinimumSize = new Vector2(
             0, mulligan ? 172 : decisionHeight);
         SetMulliganDockChrome(mulligan);
+        main.decisions.ResetSize();
+        main.promptPanel.ResetSize();
+        main.playLayout.ResetSize();
+        main.contentStack.ResetSize();
+        main.GetNode<PanelContainer>("Margin/Shell").ResetSize();
+        main.playLayout.QueueSort();
+        main.contentStack.QueueSort();
     }
 
     private void ConfigureStackChrome(bool compactHeight, bool compactTableChrome)
@@ -144,16 +161,15 @@ internal sealed class MainLayoutController
         main.eventLog.CustomMinimumSize = new Vector2(0, compactHeight ? 180 : 300);
     }
 
-    private void ConfigurePlayScrolling(bool gameplay, bool fixedTabletop)
+    private void ConfigurePlayScrolling(bool gameplay, bool fixedTabletop, bool mulligan)
     {
         Vector2 viewport = main.GetViewportRect().Size;
-        bool desktopGameplay = gameplay && viewport.X >= 1800 && viewport.Y >= 900;
-        bool openingTabletop = fixedTabletop && MulliganPrompt.IsOpening(main.CurrentGame?.Prompt);
-        ConfigurePageScrolling(gameplay, desktopGameplay, openingTabletop);
+        bool desktopGameplay = gameplay && DesktopTabletop.Uses(viewport);
+        ConfigurePageScrolling(gameplay, desktopGameplay);
         ConfigureTableScrolling(fixedTabletop);
     }
 
-    private void ConfigurePageScrolling(bool gameplay, bool desktopGameplay, bool openingTabletop)
+    private void ConfigurePageScrolling(bool gameplay, bool desktopGameplay)
     {
         main.pageScroll.HorizontalScrollMode = gameplay
             ? ScrollContainer.ScrollMode.Disabled
@@ -167,13 +183,7 @@ internal sealed class MainLayoutController
         if (desktopGameplay)
         {
             main.pageScroll.ScrollVertical = 0;
-            // The opening table is the desktop's tabletop, so it owns the
-            // remaining canvas rather than leaving the lower surface unused.
-            // Later decision workspaces keep their measured height so their
-            // fixed commit controls remain inside this non-scrolling page.
-            main.playLayout.SizeFlagsVertical = openingTabletop
-                ? Control.SizeFlags.ExpandFill
-                : Control.SizeFlags.Fill;
+            main.playLayout.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
         }
         else
         {
@@ -183,12 +193,21 @@ internal sealed class MainLayoutController
 
     private void ConfigureTableScrolling(bool fixedTabletop)
     {
-        main.GetNode<ScrollContainer>(
-            "Margin/Shell/Content/Play/Board/TableScroll").VerticalScrollMode = fixedTabletop
-                && MulliganPrompt.IsOpening(main.CurrentGame?.Prompt)
-                && main.interfaceScale <= InterfaceScale.Standard
-                    ? ScrollContainer.ScrollMode.Disabled
-                    : ScrollContainer.ScrollMode.Auto;
+        ScrollContainer table = main.GetNode<ScrollContainer>(
+            "Margin/Shell/Content/Play/Board/TableScroll");
+        table.HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled;
+        table.VerticalScrollMode = fixedTabletop
+            && main.interfaceScale <= InterfaceScale.Standard
+                ? ScrollContainer.ScrollMode.Disabled
+                : ScrollContainer.ScrollMode.Auto;
+        if (table.HorizontalScrollMode == ScrollContainer.ScrollMode.Disabled)
+        {
+            table.ScrollHorizontal = 0;
+        }
+        if (table.VerticalScrollMode == ScrollContainer.ScrollMode.Disabled)
+        {
+            table.ScrollVertical = 0;
+        }
     }
 
     internal static ScrollContainer.ScrollMode PageVerticalScrollMode(
@@ -203,13 +222,15 @@ internal sealed class MainLayoutController
         foreach (string path in new[]
                  {
                      "Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader",
-                     "Margin/Shell/Content/Play/Prompt/Margin/Stack/ActiveResolution",
                      "Margin/Shell/Content/Play/Prompt/Margin/Stack/HeaderRule",
                      "Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History",
                  })
         {
             main.GetNode<Control>(path).Visible = !mulligan;
         }
+
+        main.activeResolution.Visible = !mulligan
+            && !string.IsNullOrWhiteSpace(main.activeResolutionSummary.Text);
 
         TabContainer workbench = main.GetNode<TabContainer>(
             "Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench");

@@ -17,27 +17,6 @@ internal static class DecisionPanelPromptRenderer
         AffordancePresentation? selected = composer.Selected is { } option
             ? prompt.Affordances.Single(view => view.Id == option.Id)
             : null;
-        if (selected is not null)
-        {
-            var summary = new VBoxContainer
-            {
-                Name = "ActionSummary",
-                ThemeTypeVariation = GodotThemeVariations.TightStack,
-            };
-            summary.AddChild(DecisionPanel.Text("Preparing", GodotThemeVariations.Eyebrow));
-            summary.AddChild(DecisionPanel.Text(
-                DecisionCopy.ActionSummary(selected),
-                selected.Consequence is null
-                    ? GodotThemeVariations.StatusText
-                    : GodotThemeVariations.DangerText,
-                wrap: true));
-            panel.AddChild(summary);
-            if (!MulliganPrompt.IsOpening(composer.Prompt))
-            {
-                panel.AddChild(new HSeparator());
-            }
-        }
-
         var scroll = new ScrollContainer
         {
             Name = "DecisionBodyScroll",
@@ -54,6 +33,7 @@ internal static class DecisionPanelPromptRenderer
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             ThemeTypeVariation = GodotThemeVariations.TightStack,
         };
+        AddActionSummary(body, selected, composer);
         scroll.AddChild(body);
         panel.AddChild(scroll);
 
@@ -66,6 +46,35 @@ internal static class DecisionPanelPromptRenderer
         panel.AddChild(new HSeparator());
         panel.AddChild(commit);
         panel.InstallLayout(body, commit);
+    }
+
+    private static void AddActionSummary(
+        VBoxContainer body,
+        AffordancePresentation? selected,
+        DecisionComposer composer)
+    {
+        if (selected is null)
+        {
+            return;
+        }
+
+        var summary = new VBoxContainer
+        {
+            Name = "ActionSummary",
+            ThemeTypeVariation = GodotThemeVariations.TightStack,
+        };
+        summary.AddChild(DecisionPanel.Text("Preparing", GodotThemeVariations.Eyebrow));
+        summary.AddChild(DecisionPanel.Text(
+            DecisionCopy.ActionSummary(selected),
+            selected.Consequence is null
+                ? GodotThemeVariations.StatusText
+                : GodotThemeVariations.DangerText,
+            wrap: true));
+        body.AddChild(summary);
+        if (!MulliganPrompt.IsOpening(composer.Prompt))
+        {
+            body.AddChild(new HSeparator());
+        }
     }
 
     internal static void AddAffordances(DecisionPanel panel, PromptPresentation prompt, int generation)

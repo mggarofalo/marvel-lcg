@@ -223,7 +223,9 @@ func _mulligan_scale_rebuilds_the_dock() -> bool:
 		_fail("changing scale did not replace the tabletop decision dock")
 		return false
 	var dock := _node("Play/Prompt") as Control
-	if dock == null or absf(submit.get_global_rect().end.y - dock.get_global_rect().end.y) > _scaled_metric(20):
+	if dock == null or not await _wait_for(func() -> bool:
+			return absf(submit.get_global_rect().end.y - dock.get_global_rect().end.y) \
+				<= SmokeScale.metric(20, str(slider.value))):
 		_fail("changing scale detached the tabletop commit from its fixed dock")
 		return false
 	if not await _prepare_activation(sheet) or not await _prepare_activation(submit):

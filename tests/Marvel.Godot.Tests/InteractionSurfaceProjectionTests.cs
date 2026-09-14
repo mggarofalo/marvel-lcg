@@ -139,7 +139,7 @@ public sealed class InteractionSurfaceProjectionTests
     }
 
     [Fact]
-    public void RelationshipPlannerUsesDirectPathOrOmitsBlockedRoute()
+    public void RelationshipPlannerUsesDirectPathOrRoutesAroundBlockedCards()
     {
         Rect2 source = new(0, 0, 20, 20);
         Rect2 target = new(100, 0, 20, 20);
@@ -147,9 +147,26 @@ public sealed class InteractionSurfaceProjectionTests
         Vector2[]? direct = RelationshipRoutePlanner.Route(source, target, []);
         Assert.NotNull(direct);
         Assert.Equal(2, direct.Length);
+        Assert.Equal(new Vector2(20, 10), direct[0]);
+        Assert.Equal(new Vector2(100, 10), direct[1]);
 
         Rect2[] blockers = [new Rect2(45, -10, 30, 40), new Rect2(45, 10, 30, 40)];
-        Assert.Null(RelationshipRoutePlanner.Route(source, target, blockers));
+        Vector2[] detour = Assert.IsType<Vector2[]>(
+            RelationshipRoutePlanner.Route(source, target, blockers));
+        Assert.Equal(4, detour.Length);
+        Assert.All(detour.Skip(1).SkipLast(1), point =>
+            Assert.DoesNotContain(blockers, blocker => blocker.Grow(2).HasPoint(point)));
+    }
+
+    [Fact]
+    public void RelationshipPlannerLeavesCardContentFromTheFacingEdges()
+    {
+        Rect2 source = new(0, 0, 20, 20);
+        Rect2 target = new(0, 100, 20, 20);
+
+        Vector2[] direct = Assert.IsType<Vector2[]>(RelationshipRoutePlanner.Route(source, target, []));
+
+        Assert.Equal([new Vector2(10, 20), new Vector2(10, 100)], direct);
     }
 
     [Fact]
@@ -174,6 +191,46 @@ public sealed class InteractionSurfaceProjectionTests
         PromptPresentation prompt = Prompt(composer.Prompt, [Visible(3, 19)]);
 
         Assert.Empty(BoardInteractionRelationshipProjection.From(composer, prompt));
+    }
+
+    [Fact]
+    public void OpeningMulliganHasNoAttachedTargetControlsOrRelationshipFan()
+    {
+        var targets = new TargetRequest([1, 2], 0, 2);
+        var composer = new DecisionComposer(new Prompt(0, Question.TurnOption,
+            TimingPriority.Untimed, "test", "Choose", false,
+            [new Affordance(3, Game.ResolveMulligans, 19, 0, "Mulligan", targets)]));
+        composer.SelectAffordance(3);
+        PromptPresentation prompt = Prompt(composer.Prompt,
+            [Visible(3, 19) with
+            {
+                TargetRequest = targets,
+                Relationships =
+                [
+                    new TableRelationshipDescriptor(RelationshipKind.OfferedTarget, 19, 1),
+                    new TableRelationshipDescriptor(RelationshipKind.OfferedTarget, 19, 2),
+                ],
+            }], targets);
+
+        Assert.DoesNotContain(BoardInteractionControlProjection.From(composer, prompt),
+            control => control.Intent == CardInteractionIntent.Target);
+        Assert.Empty(BoardInteractionRelationshipProjection.From(composer, prompt));
+    }
+
+    [Fact]
+    public void UnfocusedRelationshipFansAreSuppressedWhileOneToOneLinksRemain()
+    {
+        TableRelationshipDescriptor[] relationships =
+        [
+            new(RelationshipKind.Attachment, 1, 2),
+            new(RelationshipKind.Attachment, 1, 3),
+            new(RelationshipKind.Attachment, 4, 5),
+        ];
+
+        IReadOnlyList<TableRelationshipDescriptor> visible =
+            RelationshipPresentationPolicy.SparseUnfocused(relationships);
+
+        Assert.Equal([new TableRelationshipDescriptor(RelationshipKind.Attachment, 4, 5)], visible);
     }
 
     private static DecisionComposer Composer(params Affordance[] offers) => new(new Prompt(

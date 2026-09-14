@@ -45,29 +45,21 @@ func _tabletop_board_area_is_visible() -> bool:
 
 
 func _align_attached_control_to_table(control: Control) -> bool:
+	await _scroll_control_into_view(control)
 	var table := _node("Play/Board/TableScroll") as ScrollContainer
 	if table == null:
 		_fail("the table viewport is unavailable for an attached control")
 		return false
-	if not table.is_ancestor_of(control):
-		return true
-	for attempt in 8:
-		var visible := table.get_global_rect()
-		var rect := control.get_global_rect()
-		var status := (main.get_node("StatusBar") as Control).get_global_rect()
-		# A compact viewport can fit the control exactly between these edges.
-		# Those pixels remain fully visible and pointer-operable without padding.
-		var top := maxf(visible.position.y, status.end.y)
-		var bottom := visible.end.y
-		if rect.position.y < top:
-			table.scroll_vertical = maxi(0, table.scroll_vertical - ceili(top - rect.position.y))
-		elif rect.end.y > bottom:
-			table.scroll_vertical += ceili(rect.end.y - bottom)
-		else:
-			return true
+	var status := main.get_node("StatusBar") as Control
+	var page := main.get_node("Margin") as ScrollContainer
+	var rect := control.get_global_rect()
+	if status != null and page != null and rect.position.y < status.get_global_rect().end.y:
+		page.scroll_vertical = maxi(
+			0,
+			page.scroll_vertical - ceili(status.get_global_rect().end.y - rect.position.y + 4.0))
 		await process_frame
-	_fail("the table could not reveal attached control '%s'" % control.name)
-	return false
+		await process_frame
+	return true
 
 
 func _pointer_activate_card_body(card: Control) -> bool:
@@ -75,6 +67,9 @@ func _pointer_activate_card_body(card: Control) -> bool:
 	var point := _card_body_point(card)
 	if not await _control_owns_point(card, point):
 		_fail("card '%s' has no inspection-only body hit area" % card.name)
+		return false
+	if render_viewport.gui_get_hovered_control() is BaseButton:
+		_fail("card '%s' body probe landed on an attached control" % card.name)
 		return false
 	var press := InputEventMouseButton.new()
 	press.button_index = MOUSE_BUTTON_LEFT
@@ -95,4 +90,4 @@ func _card_body_point(card: Control) -> Vector2:
 	var rect := _visible_control_rect(card)
 	return Vector2(
 		rect.position.x + minf(24.0, rect.size.x * 0.2),
-		rect.end.y - minf(24.0, rect.size.y * 0.15))
+		rect.position.y + minf(24.0, rect.size.y * 0.15))

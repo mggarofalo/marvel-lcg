@@ -39,7 +39,7 @@ func _run() -> void:
 	if journey.is_empty() or not _hosted_terminal_is_safe(journey):
 		return
 	print("HOSTED_MULTIPLAYER_SMOKE_OK decisions=%d" % journey.decisions)
-	get_tree().quit(0)
+	_finish(0)
 
 
 func _open_host(packed: PackedScene) -> bool:

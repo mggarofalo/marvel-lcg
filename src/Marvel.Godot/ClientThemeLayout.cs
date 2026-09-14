@@ -15,6 +15,9 @@ internal static class ClientThemeLayout
         theme.SetConstant("separation", GodotThemeVariations.WideRow, spacing.Large);
         theme.SetTypeVariation(GodotThemeVariations.CompactRow, "HBoxContainer");
         theme.SetConstant("separation", GodotThemeVariations.CompactRow, spacing.ExtraSmall);
+        theme.SetTypeVariation(GodotThemeVariations.PlayGrid, "GridContainer");
+        theme.SetConstant("h_separation", GodotThemeVariations.PlayGrid, spacing.Large);
+        theme.SetConstant("v_separation", GodotThemeVariations.PlayGrid, spacing.Medium);
         theme.SetTypeVariation(GodotThemeVariations.DataGrid, "GridContainer");
         theme.SetConstant("h_separation", GodotThemeVariations.DataGrid, spacing.Large);
         theme.SetConstant("v_separation", GodotThemeVariations.DataGrid, spacing.Small);

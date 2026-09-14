@@ -44,6 +44,7 @@ internal static class MulliganTableRenderer
     {
         return areas.Where(area => area.Seat == seat)
             .Where(area => area.Zone != "HandsArea")
+            .Where(area => area.Prominence != BoardAreaProminence.Empty)
             .OrderBy(area => OrderOf(area.Zone, order))
             .ThenBy(area => area.Id)
             .ToArray();
@@ -124,6 +125,10 @@ internal static class MulliganTableRenderer
             ThemeTypeVariation = GodotThemeVariations.BoardArea,
             TooltipText = area.Context,
         };
+        if (area.Zone == "DiscardPile")
+        {
+            result.RegisterMulliganDiscard(panel);
+        }
         var stack = new VBoxContainer { ThemeTypeVariation = GodotThemeVariations.TightStack };
         stack.AddChild(Label(area.Title, GodotThemeVariations.Caption, wrap: true));
         var cards = new HBoxContainer { ThemeTypeVariation = GodotThemeVariations.CompactRow };
@@ -179,24 +184,19 @@ internal static class MulliganTableRenderer
             Name = "MulliganDiscardPile",
             CustomMinimumSize = new Vector2(124, 0),
             ThemeTypeVariation = GodotThemeVariations.BoardArea,
-            TooltipText = $"Player {player + 1} discard destination for this pending opening-hand decision.",
+            TooltipText = $"Player {player + 1} opening-hand discard cue. Drag cards to the discard pile in the near player area.",
         };
         destination.AddChild(Label($"PLAYER {player + 1}\nDISCARD", GodotThemeVariations.Caption, wrap: true));
-        result.RegisterMulliganDiscard(destination);
         hand.AddChild(destination);
         BoardAreaPresentation? handArea = areas.FirstOrDefault(area => area.Seat == player
             && area.Zone == "HandsArea");
         IReadOnlyList<BoardCardPresentation> cards = handArea?.Cards ?? [];
         if (hand.GetParent() is ScrollContainer scroll)
         {
-            int required = cards.Count * VisualSystem.Card(CardDisplaySize.Mulligan, scale).Width
-                + Math.Max(0, cards.Count - 1) * 8;
-            int available = Mathf.RoundToInt(hand.GetViewportRect().Size.X) - 24;
-            // The 1920 desktop profile fits every opening choice at once. A
-            // smaller diagnostic viewport keeps overflow local to this hand.
-            scroll.HorizontalScrollMode = available >= required
-                ? ScrollContainer.ScrollMode.Disabled
-                : ScrollContainer.ScrollMode.Auto;
+            // The decision dock shares the desktop width with the table. Keep
+            // any opening-hand overflow inside this shelf; Auto still hides
+            // the scrollbar whenever every choice fits its actual allocation.
+            scroll.HorizontalScrollMode = ScrollContainer.ScrollMode.Auto;
         }
 
         foreach (BoardCardPresentation card in cards)

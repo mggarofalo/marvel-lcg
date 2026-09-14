@@ -9,6 +9,12 @@ internal static class MulliganSeatStripRenderer
     internal static PanelContainer Create(
         BoardPresentation board,
         int expandedPlayer,
+        Action<int> switchSeat) => Create(board, new DisplayedSeatSelection(
+            expandedPlayer, null, null, null, null), switchSeat);
+
+    internal static PanelContainer Create(
+        BoardPresentation board,
+        DisplayedSeatSelection selection,
         Action<int> switchSeat)
     {
         var strip = new PanelContainer
@@ -35,11 +41,12 @@ internal static class MulliganSeatStripRenderer
             seat.AddThemeConstantOverride("separation", 0);
             seat.AddChild(Label(lane?.Title ?? $"PLAYER {summary.Seat + 1}", GodotThemeVariations.Eyebrow));
             seat.AddChild(Label(Summary(board, summary), GodotThemeVariations.Caption, wrap: true));
+            seat.AddChild(Label(RoleMarkers(summary.Seat, selection), GodotThemeVariations.StatusText));
             var select = new Button
             {
                 Name = $"SeatSwitch{summary.Seat}",
-                Text = summary.Seat == expandedPlayer ? "✓ EXPANDED" : "View public area",
-                Disabled = summary.Seat == expandedPlayer,
+                Text = summary.Seat == selection.ExpandedSeat ? "✓ EXPANDED" : "View public area",
+                Disabled = summary.Seat == selection.ExpandedSeat,
                 TooltipText = "Expand this public player workspace without changing the pending decision.",
             };
             select.Pressed += () => switchSeat(summary.Seat);
@@ -60,6 +67,18 @@ internal static class MulliganSeatStripRenderer
         string defenders = Named(board, seat.OfferedDefenders, "no offered defenders");
         return $"{identity} · {form} · {health} · STATUS {statuses}"
             + $" · ENGAGED {enemies} · DEFENDERS {defenders}";
+    }
+
+    internal static string RoleMarkers(int seat, DisplayedSeatSelection selection)
+    {
+        string[] roles =
+        [
+            selection.ActivePlayer == seat ? "TURN" : string.Empty,
+            selection.PromptOwner == seat ? "DECISION" : string.Empty,
+            selection.ViewedPrivateSeat == seat ? "PRIVATE VIEW" : string.Empty,
+            selection.PublicFocusSeat == seat ? "PUBLIC FOCUS" : string.Empty,
+        ];
+        return string.Join("  ·  ", roles.Where(role => role.Length > 0).DefaultIfEmpty("OBSERVING"));
     }
 
     private static string Named(BoardPresentation board, IReadOnlyList<int> ids, string empty) => ids.Count == 0

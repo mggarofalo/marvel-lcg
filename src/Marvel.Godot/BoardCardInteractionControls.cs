@@ -13,6 +13,7 @@ internal sealed class BoardCardInteractionControls
     private readonly Func<bool> isCurrent;
     private Func<CardPointerGesture, bool>? activate;
     private int focusGeneration;
+    private BoardInteractionFocusKey? requestedFocus;
 
     internal BoardCardInteractionControls(Func<bool> isCurrent) => this.isCurrent = isCurrent;
 
@@ -33,7 +34,8 @@ internal sealed class BoardCardInteractionControls
         }
 
         int generation = checked(++focusGeneration);
-        BoardInteractionFocusKey? focused = FocusedKey();
+        BoardInteractionFocusKey? focused = requestedFocus ?? FocusedKey();
+        requestedFocus = null;
         IReadOnlyDictionary<int, CardInteractionCue> cues =
             BoardInteractionCueProjection.From(composer, prompt);
         foreach ((int id, List<CardControl> cards) in visible)
@@ -73,26 +75,32 @@ internal sealed class BoardCardInteractionControls
         {
             return;
         }
-        foreach (CardControl card in cards.Where(InteractionControl.IsUsable))
+        CardControl? card = cards.LastOrDefault(InteractionControl.IsUsable);
+        if (card is null)
         {
-            var button = new Button
-            {
-                Name = $"Card{descriptor.CardId}{descriptor.Intent}",
-                Text = descriptor.Text,
-                TooltipText = Tooltip(descriptor.Intent),
-                FocusMode = Control.FocusModeEnum.All,
-            };
-            focusKeys.Add(button, new BoardInteractionFocusKey(
-                descriptor.CardId, descriptor.Intent));
-            button.Pressed += () => Activate(card, descriptor.Intent);
-            card.AddInteractionControl(button);
-            if (!controls.TryGetValue(card, out List<Button>? buttons))
-            {
-                buttons = [];
-                controls.Add(card, buttons);
-            }
-            buttons.Add(button);
+            return;
         }
+        var button = new Button
+        {
+            Name = $"Card{descriptor.CardId}{descriptor.Intent}",
+            Text = descriptor.Text,
+            TooltipText = Tooltip(descriptor.Intent),
+            FocusMode = Control.FocusModeEnum.All,
+        };
+        var key = new BoardInteractionFocusKey(descriptor.CardId, descriptor.Intent);
+        focusKeys.Add(button, key);
+        button.Pressed += () =>
+        {
+            requestedFocus = key;
+            Activate(card, descriptor.Intent);
+        };
+        card.AddInteractionControl(button);
+        if (!controls.TryGetValue(card, out List<Button>? buttons))
+        {
+            buttons = [];
+            controls.Add(card, buttons);
+        }
+        buttons.Add(button);
     }
 
     private BoardInteractionFocusKey? FocusedKey()

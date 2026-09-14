@@ -71,9 +71,8 @@ func _mulligan_table_layout_is_resolved() -> bool:
 	if page.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED or not table_scroll_is_bounded:
 		_fail("the opening desktop table introduced gameplay scrolling")
 		return false
-	if OS.get_environment("MARVEL_SMOKE_VIEWPORT") == "1920x1080" \
-			and hand_scroll.horizontal_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED:
-		_fail("the 1920 opening hand cannot show all six choices without scrolling")
+	if hand_scroll.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED:
+		_fail("the opening hand overflow escaped its horizontal shelf")
 		return false
 	return _hand_is_pinned()
 
@@ -232,6 +231,74 @@ func _hand_is_pinned() -> bool:
 	return false
 
 
+func _post_mulligan_desktop_resize_is_safe() -> bool:
+	if OS.get_environment("MARVEL_SMOKE_VIEWPORT") != "1920x1080":
+		return true
+	var viewport := render_viewport as SubViewport
+	if viewport == null or not await _desktop_route_is_safe(true):
+		_fail("the completed mulligan did not enter the persistent desktop route")
+		return false
+	var first_desktop := main.find_child("VillainTable", true, false) as Control
+	viewport.size = Vector2i(1919, 1080)
+	if not await _desktop_route_is_safe(false, true) or is_instance_valid(first_desktop) \
+			and first_desktop.is_inside_tree():
+		_fail("resizing below the 1920px boundary retained desktop children or scrolling")
+		return false
+	viewport.size = Vector2i(1920, 1080)
+	if not await _desktop_route_is_safe(true, true):
+		_fail("restoring the 1920px boundary did not rebuild the desktop table")
+		return false
+	viewport.size = Vector2i(1920, 1079)
+	if not await _desktop_route_is_safe(false, true):
+		_fail("resizing below the 1080px boundary retained the desktop table")
+		return false
+	viewport.size = Vector2i(1920, 1080)
+	if not await _desktop_route_is_safe(true, true):
+		_fail("restoring the 1080px boundary did not rebuild the desktop table")
+		return false
+	var decision_seat := main.find_child("SeatSwitch0", true, false) as Button
+	if decision_seat == null or not decision_seat.disabled \
+			and not await _pointer_activate(decision_seat):
+		_fail("the rebuilt desktop seat strip could not restore the decision workspace")
+		return false
+	if not await _wait_for(func() -> bool:
+		var expanded := main.find_child("PlayerTable", true, false) as Control
+		return expanded != null and "PETER PARKER" in _visible_text(expanded).to_upper()
+	):
+		_fail("the rebuilt desktop table did not restore the decision player's public area")
+		return false
+	return _responsive_layout_is_safe()
+
+
+func _desktop_route_is_safe(desktop: bool, reset_scroll := false) -> bool:
+	return await _wait_for(func() -> bool:
+		var play := _node("Play") as GridContainer
+		var page := main.get_node("Margin") as ScrollContainer
+		var table := _node("Play/Board/TableScroll") as ScrollContainer
+		var seats := main.find_children("PlayerLane*", "VBoxContainer", true, false)
+		var far := main.find_child("VillainTable", true, false)
+		var near := main.find_child("PlayerTable", true, false)
+		var strip := main.find_child("SeatStrip", true, false)
+		if play == null or page == null or table == null:
+			return false
+		if desktop:
+			var expected_vertical := ScrollContainer.SCROLL_MODE_AUTO \
+				if _scale_percentage() > 100 else ScrollContainer.SCROLL_MODE_DISABLED
+			return play.columns == 2 and seats.is_empty() and far != null and near != null \
+					and strip != null \
+					and page.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED \
+					and table.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED \
+					and table.vertical_scroll_mode == expected_vertical \
+					and (not reset_scroll \
+						or table.scroll_horizontal == 0 and table.scroll_vertical == 0)
+		return play.columns == 1 and seats.size() == 2 and far == null and near == null \
+				and strip == null \
+				and page.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_AUTO \
+				and table.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED \
+				and table.scroll_horizontal == 0 \
+				and (not reset_scroll or table.scroll_vertical == 0))
+
+
 func _keyboard_selection_is_operable() -> bool:
 	var decision_scroll := main.find_child("DecisionBodyScroll", true, false) as ScrollContainer
 	if not _prompt_header_is_safe(decision_scroll):
@@ -264,7 +331,7 @@ func _attached_control_focus_is_safe(state: Dictionary) -> bool:
 	if not await _align_attached_control_to_table(control) \
 			or not await _control_has_real_hit_area(control):
 		return false
-	var card := control.get_parent().get_parent() as Control
+	var card := _attached_card(control)
 	if card == null or not card.get_global_rect().encloses(control.get_global_rect()):
 		_fail("an attached action control escaped its card surface")
 		return false
@@ -296,6 +363,15 @@ func _first_attached_action_control() -> Button:
 			if fallback == null:
 				fallback = control
 	return fallback
+
+
+func _attached_card(control: Control) -> Control:
+	var candidate: Node = control
+	while candidate != null:
+		if candidate is PanelContainer:
+			return candidate as Control
+		candidate = candidate.get_parent()
+	return null
 
 
 func _has_named_ancestor(control: Control, expected: StringName) -> bool:
