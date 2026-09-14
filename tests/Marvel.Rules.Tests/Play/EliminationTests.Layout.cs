@@ -8,6 +8,40 @@ namespace Marvel.Rules.Tests.Play;
 
 public sealed partial class EliminationTests
 {
+    [Rule("rr:villain-phase.step.5")]
+    [Rule("rr:in-player-order.2")]
+    [Rule("rr:player-elimination.6")]
+    [Theory]
+    [InlineData(0, 1, 2)]
+    [InlineData(2, 0, 1)]
+    [InlineData(0, 1, 0, 2)]
+    public void VillainPhaseTokenPassSkipsAnEliminatedClockwiseSeat(
+        int firstPlayer, int eliminated, int expected, int? secondEliminated = null)
+    {
+        // "Pass the first player token to the next clockwise player." The
+        // phrase "next player" is clockwise in player order, and effects that
+        // refer to players ignore eliminated players.
+        var facts = Cards();
+        var world = Board(facts, players: 3);
+        world.FirstPlayer = firstPlayer;
+        world.Seats[eliminated].Eliminated = true;
+        if (secondEliminated is { } second)
+        {
+            world.Seats[second].Eliminated = true;
+        }
+
+        Assert.Null(AgendaProcedures.Apply(
+            world,
+            facts,
+            new NoCardAbilities(),
+            new PhaseStep(Steps.PassFirstPlayerToken, 1, 5),
+            []));
+
+        Assert.Equal(expected, world.FirstPlayer);
+        Assert.Equal(expected, world.PlayerOrder.First());
+        Assert.False(world.Seats[world.FirstPlayer].Eliminated);
+    }
+
     [Rule("rr:player-elimination.step.1")]
     [Rule("rr:player-elimination.6")]
     [Theory]
