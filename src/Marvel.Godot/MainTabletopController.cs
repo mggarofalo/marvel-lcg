@@ -51,7 +51,8 @@ internal sealed class MainTabletopController
             .FirstOrDefault();
 
     private bool ShouldSwitchTo(int? seat) => seat is not null
-        && DesktopTabletop.Uses(main.GetViewportRect().Size);
+        && DesktopTabletop.Uses(main.GetViewportRect().Size)
+        && seat != Selection(main.CurrentGame?.Prompt).ExpandedSeat;
 
     private void SwitchSeat(int seat)
     {

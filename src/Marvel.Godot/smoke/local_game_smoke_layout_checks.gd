@@ -71,9 +71,8 @@ func _mulligan_table_layout_is_resolved() -> bool:
 	if page.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED or not table_scroll_is_bounded:
 		_fail("the opening desktop table introduced gameplay scrolling")
 		return false
-	if OS.get_environment("MARVEL_SMOKE_VIEWPORT") == "1920x1080" \
-			and hand_scroll.horizontal_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED:
-		_fail("the 1920 opening hand cannot show all six choices without scrolling")
+	if hand_scroll.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED:
+		_fail("the opening hand overflow escaped its horizontal shelf")
 		return false
 	return _hand_is_pinned()
 

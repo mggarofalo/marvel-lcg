@@ -186,14 +186,19 @@ func _mulligan_card(title: String) -> Control:
 
 
 func _drag_mulligan_to_discard(card: Control) -> bool:
-	var discard := main.find_child("MulliganDiscardPile", true, false) as Control
+	# Use the fixed discard destination in the near player area. The compact
+	# duplicate inside the horizontally scrolling hand is a click/tap cue, not
+	# a reliable cross-scroll drag destination.
+	var discard := main.find_child("ExpandedDiscardPile", true, false) as Control
 	if discard == null:
-		# A populated pile retains its normal area identity.
+		# A projected pile retains its normal area identity even while empty.
 		for area_node in main.find_children("Area*", "PanelContainer", true, false):
 			var area := area_node as Control
 			if "DISCARD PILE" in _visible_text(area):
 				discard = area
 				break
+	if discard == null:
+		discard = main.find_child("MulliganDiscardPile", true, false) as Control
 	if discard == null or not await _prepare_activation(discard):
 		_fail("the player discard place is not a reachable mulligan drop destination")
 		return false

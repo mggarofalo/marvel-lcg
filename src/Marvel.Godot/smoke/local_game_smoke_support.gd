@@ -63,7 +63,8 @@ func _scroll_control_into_view(control: Control) -> void:
 			scrolls.append(ancestor)
 		ancestor = ancestor.get_parent()
 	for scroll in scrolls:
-		if scroll.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED:
+		if scroll.horizontal_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED \
+				or scroll.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED:
 			scroll.ensure_control_visible(control)
 		await process_frame
 	await process_frame

@@ -98,6 +98,16 @@ internal sealed class MainLayoutController
         bool mulligan = MulliganPrompt.IsOpening(main.CurrentGame?.Prompt);
         bool fixedTabletop = gameplay && DesktopTabletop.Uses(viewport);
         bool compactTableChrome = fixedTabletop;
+        main.playLayout.Columns = fixedTabletop ? 2 : 1;
+        main.playLayout.ThemeTypeVariation = fixedTabletop
+            ? GodotThemeVariations.WideRow
+            : GodotThemeVariations.Stack;
+        main.promptPanel.SizeFlagsHorizontal = fixedTabletop
+            ? Control.SizeFlags.Fill
+            : Control.SizeFlags.ExpandFill;
+        main.promptPanel.SizeFlagsVertical = fixedTabletop
+            ? Control.SizeFlags.ExpandFill
+            : Control.SizeFlags.Fill;
         main.GetNode<ScrollContainer>(
             "Margin/Shell/Content/Play/Board/TableScroll").CustomMinimumSize = new Vector2(
                 0,
@@ -177,10 +187,16 @@ internal sealed class MainLayoutController
 
     private void ConfigureTableScrolling(bool fixedTabletop)
     {
-        main.GetNode<ScrollContainer>(
-            "Margin/Shell/Content/Play/Board/TableScroll").VerticalScrollMode = fixedTabletop
+        ScrollContainer table = main.GetNode<ScrollContainer>(
+            "Margin/Shell/Content/Play/Board/TableScroll");
+        table.HorizontalScrollMode = fixedTabletop
+            ? ScrollContainer.ScrollMode.Auto
+            : ScrollContainer.ScrollMode.Disabled;
+        table.VerticalScrollMode = fixedTabletop
+            ? main.interfaceScale <= InterfaceScale.Standard
                 ? ScrollContainer.ScrollMode.Disabled
-                : ScrollContainer.ScrollMode.Auto;
+                : ScrollContainer.ScrollMode.Auto
+            : ScrollContainer.ScrollMode.Auto;
     }
 
     internal static ScrollContainer.ScrollMode PageVerticalScrollMode(
