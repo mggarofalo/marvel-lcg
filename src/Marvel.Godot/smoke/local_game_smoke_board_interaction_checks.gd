@@ -81,12 +81,12 @@ func _pointer_activate_card_body(card: Control) -> bool:
 	press.pressed = true
 	press.position = point
 	press.global_position = point
-	render_viewport.push_input(press)
+	render_viewport.push_input(press, true)
 	var release := InputEventMouseButton.new()
 	release.button_index = MOUSE_BUTTON_LEFT
 	release.position = point
 	release.global_position = point
-	render_viewport.push_input(release)
+	render_viewport.push_input(release, true)
 	await process_frame
 	return true
 

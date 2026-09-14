@@ -1,6 +1,7 @@
 extends "res://smoke/local_game_smoke_input_support.gd"
 
 const POINTER_OWNERSHIP_ATTEMPTS := 3
+const POINTER_ACTIVATION_ATTEMPTS := 3
 
 var render_viewport: Viewport
 
@@ -35,14 +36,12 @@ func _control_owns_point(control: Control, point: Vector2) -> bool:
 
 
 func _position_pointer_without_settle(point: Vector2) -> void:
-	# Keep the native pointer and the injected viewport event on one coordinate.
-	# Otherwise a display-server motion delivered on the following frame can
-	# replace both the synthetic hover owner and the position it describes.
-	render_viewport.warp_mouse(point)
+	# Smoke geometry is already expressed in this fixed viewport's coordinates.
+	# Local input avoids applying the unrelated embedder/window transform.
 	var move := InputEventMouseMotion.new()
 	move.position = point
 	move.global_position = point
-	render_viewport.push_input(move)
+	render_viewport.push_input(move, true)
 
 
 func _hovered_control_owns(control: Control, hovered: Control) -> bool:

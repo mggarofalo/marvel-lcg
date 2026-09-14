@@ -217,16 +217,16 @@ func _drag_mulligan(card: Control, finish: Vector2) -> bool:
 	press.pressed = true
 	press.position = start
 	press.global_position = start
-	render_viewport.push_input(press)
+	render_viewport.push_input(press, true)
 	var move := InputEventMouseMotion.new()
 	move.position = finish
 	move.global_position = finish
-	render_viewport.push_input(move)
+	render_viewport.push_input(move, true)
 	var release := InputEventMouseButton.new()
 	release.button_index = MOUSE_BUTTON_LEFT
 	release.position = finish
 	release.global_position = finish
-	render_viewport.push_input(release)
+	render_viewport.push_input(release, true)
 	await process_frame
 	return true
 
