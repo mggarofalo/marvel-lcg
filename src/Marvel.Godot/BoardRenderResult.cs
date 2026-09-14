@@ -1,4 +1,5 @@
 using Godot;
+using Marvel.Decisions;
 using Marvel.View;
 
 namespace Marvel.Godot;
@@ -12,6 +13,7 @@ public sealed class BoardRenderResult
     private readonly Dictionary<int, CardControl> mulliganCards = [];
     private readonly HashSet<int> legalMulliganTargets = [];
     private readonly List<BoardDropTarget> dropTargets = [];
+    private readonly BoardCardInteractionControls interactionControls;
     private readonly BoardControlReveal reveal;
     private Control? mulliganDiscard;
     private Func<CardPointerGesture, bool>? directActivation;
@@ -20,6 +22,7 @@ public sealed class BoardRenderResult
     public BoardRenderResult()
     {
         reveal = new BoardControlReveal(this);
+        interactionControls = new BoardCardInteractionControls(IsCurrentRender);
     }
 
     /// <summary>Identifies whether this render remains the board currently shown by its owner.</summary>
@@ -47,6 +50,7 @@ public sealed class BoardRenderResult
 
     internal void TrackCard(Control control, BoardCardPresentation card, bool isHandCard = false)
     {
+        if (control is CardControl rendered) interactionControls.Track(rendered, card, isHandCard);
         Vector2? pressedAt = null;
         control.GuiInput += input =>
         {
@@ -54,6 +58,17 @@ public sealed class BoardRenderResult
             else if (input is InputEventKey { Echo: false } && input.IsActionPressed("ui_accept")) Activate(control, card, isHandCard, Vector2.Zero);
         };
     }
+
+    /// <summary>Replaces card-attached controls and cues from the current authorized draft.</summary>
+    internal void PresentInteraction(DecisionComposer? composer, PromptPresentation? prompt)
+    {
+        interactionControls.Present(controls, composer, prompt);
+        InteractionRelationshipsChanged?.Invoke(
+            BoardInteractionRelationshipProjection.From(composer, prompt));
+    }
+
+    internal event Action<IReadOnlyList<TableRelationshipDescriptor>>? InteractionRelationshipsChanged;
+
 
     private Vector2? RouteMouse(Control control, BoardCardPresentation card, bool isHandCard, InputEventMouseButton mouse, Vector2? pressedAt)
     {
@@ -116,6 +131,9 @@ public sealed class BoardRenderResult
         directDrag = drag ?? throw new ArgumentNullException(nameof(drag));
     }
 
+    internal void BindExplicitInteraction(Func<CardPointerGesture, bool> activate) =>
+        interactionControls.Bind(activate);
+
     internal bool IsDroppedOnLivePlayerLane(int seat, Vector2 position) =>
         dropTargets.Any(target => target.Seat == seat
             && InteractionControl.IsUsable(target.Control)
@@ -172,6 +190,9 @@ public sealed class BoardRenderResult
         controls.TryGetValue(id, out List<CardControl>? matches)
             ? matches.LastOrDefault(InteractionControl.IsUsable)
             : null;
+
+    internal IReadOnlyList<CardControl> VisibleCardControls() =>
+        [.. controls.Values.SelectMany(matches => matches).Where(InteractionControl.IsUsable)];
 
     /// <summary>Highlights every visible control matching server-provided ids.</summary>
     public void Highlight(IEnumerable<int> ids)

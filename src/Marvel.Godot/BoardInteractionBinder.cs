@@ -13,8 +13,9 @@ internal static class BoardInteractionBinder
         }
 
         board.BindDirectInteractions(
-            gesture => Activate(panel, composer, gesture),
+            _ => false,
             gesture => Drag(panel, composer, board, gesture));
+        board.BindExplicitInteraction(gesture => Activate(panel, composer, gesture));
     }
 
     private static bool Activate(
@@ -22,16 +23,19 @@ internal static class BoardInteractionBinder
         DecisionComposer composer,
         CardPointerGesture gesture)
     {
-        if (gesture.IsHandCard)
+        if (gesture.Card.TargetId is not { } cardId)
         {
-            // A hand-card body is always the inspection surface. Playing it
-            // requires the deliberate lane drag below.
             return false;
         }
 
-        BoardDraftMutation mutation = new BoardDraftInteraction(
-            composer, CurrentOperations(panel, composer), Affordances(panel, composer)).TryActivate(
-                gesture.Card.TargetId, gesture.IsHandCard);
+        var interaction = new BoardDraftInteraction(
+            composer, CurrentOperations(panel, composer), Affordances(panel, composer));
+        BoardDraftMutation mutation = gesture.Intent switch
+        {
+            CardInteractionIntent.Generator => interaction.TryToggleGenerator(cardId),
+            CardInteractionIntent.Action => SelectAction(panel, gesture, interaction, cardId),
+            _ => BoardDraftMutation.None,
+        };
         if (mutation == BoardDraftMutation.None)
         {
             // More than one action is intentionally left to the explicit
@@ -43,8 +47,33 @@ internal static class BoardInteractionBinder
         {
             panel.RaiseDraftStarted();
         }
-        RefreshDraft(panel, gesture.Card.TargetId!.Value);
+        RefreshDraft(panel, cardId);
         return true;
+    }
+
+    private static BoardDraftMutation SelectAction(
+        DecisionPanel panel,
+        CardPointerGesture gesture,
+        BoardDraftInteraction interaction,
+        int cardId)
+    {
+        IReadOnlyList<Marvel.View.AffordancePresentation> actions = interaction.VisibleActions(cardId);
+        if (actions.Count == 1)
+        {
+            return interaction.TrySelectAction(actions[0].Id, cardId);
+        }
+        if (actions.Count > 1)
+        {
+            BoardActionChoiceSurface.Show(gesture.Source, actions, id =>
+            {
+                if (interaction.TrySelectAction(id, cardId) == BoardDraftMutation.Affordance)
+                {
+                    panel.RaiseDraftStarted();
+                    RefreshDraft(panel, cardId);
+                }
+            });
+        }
+        return BoardDraftMutation.None;
     }
 
     private static bool Drag(

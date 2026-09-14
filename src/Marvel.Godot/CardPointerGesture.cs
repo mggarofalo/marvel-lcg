@@ -8,4 +8,5 @@ internal sealed record CardPointerGesture(
     BoardCardPresentation Card,
     Control Source,
     bool IsHandCard,
-    Vector2 Position);
+    Vector2 Position,
+    CardInteractionIntent? Intent = null);

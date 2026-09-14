@@ -33,6 +33,8 @@ public sealed partial class DecisionPanel : VBoxContainer
     public event Action<DecisionProgressPresentation?>? ProgressChanged;
     /// <summary>Raised when a player opens one action's target and payment editor.</summary>
     public event Action? DraftStarted;
+    /// <summary>Raised when prompt-authorized card cues need to reflect the current draft.</summary>
+    internal event Action<DecisionComposer?, PromptPresentation?>? DraftChanged;
     /// <summary>Applies the current presentation-only desktop scale.</summary>
     public void SetInterfaceScale(InterfaceScale scale)
     {
@@ -103,6 +105,8 @@ public sealed partial class DecisionPanel : VBoxContainer
         mulliganBoard = board;
         MulliganBinding.Bind(this, board);
         BoardInteractionBinder.Bind(this, board);
+        board?.PresentInteraction(composer,
+            composer is null || world is null ? null : PromptPresentation.From(composer.Prompt, world));
     }
 
     internal TableDraftBinding BindTableDraft(DecisionComposer draft, int generation) =>
@@ -131,19 +135,29 @@ public sealed partial class DecisionPanel : VBoxContainer
             ? FocusKey(focused)
             : null;
         ClearPanel();
-        if (composer is null || world is null)
+        if (!RenderPrompt())
         {
+            DraftChanged?.Invoke(null, null);
             RenderNoDecision();
             return;
         }
+        Callable.From(() => lifecycle.RestoreFocus(focusName, focusFirst, generation)).CallDeferred();
+    }
 
+    private bool RenderPrompt()
+    {
+        if (composer is null || world is null)
+        {
+            return false;
+        }
         PromptPresentation prompt = PromptPresentation.From(composer.Prompt, world);
+        DraftChanged?.Invoke(composer, prompt);
         DecisionPanelPromptRenderer.CreateLayout(this, composer, prompt);
         DecisionPanelPromptRenderer.AddAffordances(this, prompt, lifecycle.RenderGeneration);
         AddSelectedDraft();
         AddDecline();
         ProgressChanged?.Invoke(composer.Progress());
-        Callable.From(() => lifecycle.RestoreFocus(focusName, focusFirst, generation)).CallDeferred();
+        return true;
     }
 
     private void ClearPanel()

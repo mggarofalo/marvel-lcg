@@ -9,6 +9,8 @@ public sealed partial class CardControl : PanelContainer
     private string baseVariation = GodotThemeVariations.BoardCard;
     private bool highlighted;
     private bool presented;
+    private CardInteractionCue interactionCue;
+    private Label? interactionLabel;
 
     private CardControl()
     {
@@ -52,6 +54,16 @@ public sealed partial class CardControl : PanelContainer
             Math.Max(1, layout.Width - 32),
             Math.Max(1, layout.MinimumHeight - 32));
         control.AddChild(body);
+        control.interactionLabel = new Label
+        {
+            Name = "InteractionCue",
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Bottom,
+            MouseFilter = MouseFilterEnum.Ignore,
+            ThemeTypeVariation = GodotThemeVariations.Eyebrow,
+            Visible = false,
+        };
+        control.AddChild(control.interactionLabel);
         return control;
     }
 
@@ -114,10 +126,34 @@ public sealed partial class CardControl : PanelContainer
         RefreshTreatment();
     }
 
+    /// <summary>Shows prompt-authorized interaction state with a readable marker as well as color.</summary>
+    internal void SetInteractionCue(CardInteractionCue value)
+    {
+        interactionCue = value;
+        if (interactionLabel is not null)
+        {
+            interactionLabel.Text = CueText(value);
+            interactionLabel.Visible = value != CardInteractionCue.None;
+        }
+        RefreshTreatment();
+    }
+
     private void RefreshTreatment() =>
-        ThemeTypeVariation = highlighted || presented
+        ThemeTypeVariation = highlighted || presented || interactionCue != CardInteractionCue.None
             ? GodotThemeVariations.FocusedCard
             : baseVariation;
+
+    private static string CueText(CardInteractionCue cue)
+    {
+        var labels = new List<string>();
+        if (cue.HasFlag(CardInteractionCue.Unavailable)) labels.Add("— UNAVAILABLE");
+        if (cue.HasFlag(CardInteractionCue.OfferedAction)) labels.Add("◇ ACTION");
+        if (cue.HasFlag(CardInteractionCue.SelectedTarget)) labels.Add("✓ TARGET");
+        else if (cue.HasFlag(CardInteractionCue.LegalTarget)) labels.Add("◇ TARGET");
+        if (cue.HasFlag(CardInteractionCue.SelectedGenerator)) labels.Add("✓ RESOURCE");
+        else if (cue.HasFlag(CardInteractionCue.LegalGenerator)) labels.Add("◇ RESOURCE");
+        return string.Join("  ", labels);
+    }
 
 
     internal static IReadOnlyList<BoardFieldPresentation> CompactValues(

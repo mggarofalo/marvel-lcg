@@ -123,10 +123,8 @@ public sealed partial class Main : Control
     internal bool setupLoading;
     internal bool synchronizing;
     internal ClientStartupError? uncertainMutationError;
-
     /// <summary>The latest complete visibility-safe response accepted as authoritative.</summary>
     public EngineResponse? CurrentGame { get; internal set; }
-
     /// <inheritdoc />
     public override void _Ready()
     {
@@ -186,6 +184,7 @@ public sealed partial class Main : Control
     public override void _ExitTree()
     {
         eventController?.ReleaseEventTween();
+        boardController?.Dispose();
         ClientComposition.Flush(TimeSpan.FromSeconds(3));
     }
 
@@ -270,6 +269,7 @@ public sealed partial class Main : Control
         decisions.DraftStarted += DismissLastResult;
         decisions.AnchorFocused += ids => boardRender?.Highlight(ids);
         decisions.CardHovered += PreviewHandCard;
+        decisions.DraftChanged += (draft, prompt) => boardRender?.PresentInteraction(draft, prompt);
         decisions.ProgressChanged += RenderDecisionProgress;
         cardInspector = GetNode<Control>("CardInspector");
         cardInspectorBackdrop = GetNode<ColorRect>("CardInspector/Backdrop");

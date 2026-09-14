@@ -76,11 +76,22 @@ public sealed class BoardDraftInteractionTests
         Assert.Equal(BoardDraftMutation.Target,
             Interaction(keyboard).TryActivate(10, false));
         Assert.Equal(BoardDraftMutation.Generator,
-            Interaction(pointer).TryActivate(1, false));
+            Interaction(pointer).TryToggleGenerator(1));
         Assert.Equal(BoardDraftMutation.Generator,
-            Interaction(keyboard).TryActivate(1, false));
+            Interaction(keyboard).TryToggleGenerator(1));
         Assert.Equal(pointer.Targets, keyboard.Targets);
         Assert.Equal(pointer.Resources, keyboard.Resources);
+    }
+
+    [Fact]
+    public void ExplicitHandGeneratorControlCanPayWithoutMakingHandBodyClickPlay()
+    {
+        DecisionComposer composer = TargetAndGeneratorComposer();
+        var interaction = Interaction(composer);
+
+        Assert.Equal(BoardDraftMutation.None, interaction.TryActivate(1, true));
+        Assert.Equal(BoardDraftMutation.Generator, interaction.TryToggleGenerator(1));
+        Assert.Equal([1], composer.Resources);
     }
 
     [Theory]
