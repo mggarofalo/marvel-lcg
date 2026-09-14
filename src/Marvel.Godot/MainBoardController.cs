@@ -13,7 +13,7 @@ internal sealed class MainBoardController : IDisposable
     private readonly Main main;
     private readonly CardInspectorFocus inspector;
     private readonly BoardRelationshipOverlayController relationships;
-    private readonly InteractionGeneration renderGeneration = new();
+    private readonly BoardRenderLifetime renderLifetime = new();
     private readonly MainTabletopController tabletop;
 
     internal MainBoardController(Main main)
@@ -31,7 +31,7 @@ internal sealed class MainBoardController : IDisposable
         GameProgressPresentation? priorProgress = null,
         string operation = EngineProtocol.Resolve)
     {
-        int renderGeneration = this.renderGeneration.Advance();
+        int renderGeneration = renderLifetime.Advance();
         Outcome previousOutcome = main.CurrentGame?.World?.Outcome ?? Outcome.Unfinished;
         HashSet<int> priorHistory = main.CurrentGame?.History?.Entries
             .Select(entry => entry.Cursor)
@@ -119,7 +119,7 @@ internal sealed class MainBoardController : IDisposable
         main.boardRender = rendered;
         rendered.CardActivated += (card, control) => ToggleCardInspector(card, control);
         rendered.IsCurrent = () => ReferenceEquals(main.boardRender, rendered)
-            && IsCurrentRender(renderGeneration ?? this.renderGeneration.Current);
+            && IsCurrentRender(renderGeneration ?? renderLifetime.Current);
         relationships.Bind(rendered, main.boardPresentation.Relationships);
         main.decisions.BindMulliganTargets(rendered);
         inspector.Hide();
@@ -295,7 +295,12 @@ internal sealed class MainBoardController : IDisposable
     internal void BindCardInspectorFocus(Control control) => inspector.BindFocus(control);
     internal bool CardInspectorHasFocus() => inspector.HasFocus();
     internal void HideCardInspector() => inspector.Hide();
-    public void Dispose() => relationships.Dispose();
-    private bool IsCurrentRender(int generation) => main.IsInsideTree()
-        && generation == renderGeneration.Current;
+    public void Dispose()
+    {
+        renderLifetime.Dispose(main.boardRender);
+        relationships.Dispose();
+    }
+
+    private bool IsCurrentRender(int generation) => renderLifetime.IsCurrent(generation)
+        && main.IsInsideTree();
 }

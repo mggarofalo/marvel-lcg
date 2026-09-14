@@ -18,6 +18,19 @@ public sealed class InteractionLifecycleTests
     }
 
     [Fact]
+    public void DisposingABoardInvalidatesItsGenerationAndCallback()
+    {
+        var lifetime = new BoardRenderLifetime();
+        var rendered = new BoardRenderResult { IsCurrent = static () => true };
+        int generation = lifetime.Advance();
+
+        lifetime.Dispose(rendered);
+
+        Assert.False(lifetime.IsCurrent(generation));
+        Assert.False(rendered.IsCurrent());
+    }
+
+    [Fact]
     public void OnePromptRevisionAcceptsOnlyOneMixedSubmission()
     {
         var latch = new PromptSubmissionLatch();
