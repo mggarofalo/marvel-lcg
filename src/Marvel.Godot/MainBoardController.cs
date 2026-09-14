@@ -268,6 +268,12 @@ internal sealed class MainBoardController
         main.cardInspector.MouseFilter = pinned
             ? Control.MouseFilterEnum.Stop
             : Control.MouseFilterEnum.Ignore;
+        // The backdrop shares the inspector's full viewport bounds. Keep it
+        // transparent while previewing so a hover cannot replace the decision
+        // control that opened the preview as the pointer's GUI owner.
+        main.cardInspectorBackdrop.MouseFilter = pinned
+            ? Control.MouseFilterEnum.Stop
+            : Control.MouseFilterEnum.Ignore;
         main.cardInspectorBackdrop.Visible = pinned;
         main.cardInspectorClose.Visible = false;
         main.cardInspector.Visible = true;
