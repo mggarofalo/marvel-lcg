@@ -7,9 +7,9 @@ namespace Marvel.Godot.Tests;
 public sealed class CardControlTests
 {
     [Theory]
-    [InlineData(InterfaceScale.Standard, 172, 12, 16, 148, 44, 64, 172)]
-    [InlineData(InterfaceScale.Large, 207, 15, 20, 177, 53, 78, 209)]
-    [InlineData(InterfaceScale.ExtraLarge, 258, 18, 24, 222, 66, 96, 258)]
+    [InlineData(InterfaceScale.Standard, 172, 12, 16, 126, 44, 64, 172)]
+    [InlineData(InterfaceScale.Large, 207, 15, 20, 155, 53, 78, 209)]
+    [InlineData(InterfaceScale.ExtraLarge, 258, 18, 24, 200, 66, 96, 258)]
     public void AttachedInteractionScalesInsideTheCardsFixedWidthSurface(
         InterfaceScale scale,
         int cardWidth,
@@ -20,12 +20,15 @@ public sealed class CardControlTests
         int secondTop,
         int requiredHeight)
     {
-        Rect2 first = CardInteractionLayout.Control(0, controlWidth, scale);
-        Rect2 second = CardInteractionLayout.Control(1, controlWidth, scale);
+        const int contentMargin = 11;
+        float width = CardInteractionLayout.ControlWidth(
+            cardWidth, contentMargin, contentMargin, scale);
+        Rect2 first = CardInteractionLayout.Control(0, width, scale);
+        Rect2 second = CardInteractionLayout.Control(1, width, scale);
 
         Assert.Equal(new Rect2(inset, top, controlWidth, controlHeight), first);
         Assert.Equal(new Rect2(inset, secondTop, controlWidth, controlHeight), second);
-        Assert.Equal(cardWidth - inset, first.End.X);
+        Assert.Equal(cardWidth - 2 * contentMargin - inset, first.End.X);
         Assert.Equal(requiredHeight, CardInteractionLayout.RequiredHeight(3, scale));
         Assert.Equal(requiredHeight, CardInteractionLayout.SurfaceHeight(72, 3, scale));
         Assert.Equal(72, CardInteractionLayout.SurfaceHeight(72, 0, scale));

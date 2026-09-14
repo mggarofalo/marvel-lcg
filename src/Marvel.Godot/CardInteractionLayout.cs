@@ -5,6 +5,19 @@ namespace Marvel.Godot;
 /// <summary>Places scaled direct controls inside a card's visible surface.</summary>
 internal static class CardInteractionLayout
 {
+    internal static float ControlWidth(
+        float cardWidth,
+        float contentMarginLeft,
+        float contentMarginRight,
+        InterfaceScale scale)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(cardWidth);
+        ArgumentOutOfRangeException.ThrowIfNegative(contentMarginLeft);
+        ArgumentOutOfRangeException.ThrowIfNegative(contentMarginRight);
+        float inset = VisualSystem.Spacing(scale).Medium;
+        return Math.Max(0, cardWidth - contentMarginLeft - contentMarginRight - 2 * inset);
+    }
+
     internal static Rect2 Control(int index, float width, InterfaceScale scale)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(index);

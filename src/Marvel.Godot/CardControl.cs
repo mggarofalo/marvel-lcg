@@ -12,7 +12,7 @@ public sealed partial class CardControl : PanelContainer
     private CardInteractionCue interactionCue;
     private Label? interactionLabel;
     private Control? interactionControls;
-    private float interactionWidth;
+    private float interactionCardWidth;
     private InterfaceScale interactionScale;
     private float interactionBaseMinimumHeight;
 
@@ -52,7 +52,7 @@ public sealed partial class CardControl : PanelContainer
                 : CursorShape.PointingHand,
             baseVariation = variation,
             ThemeTypeVariation = variation,
-            interactionWidth = layout.Width - 2 * VisualSystem.Spacing(scale).Medium,
+            interactionCardWidth = layout.Width,
             interactionScale = scale,
         };
         control.interactionBaseMinimumHeight = control.CustomMinimumSize.Y;
@@ -163,7 +163,13 @@ public sealed partial class CardControl : PanelContainer
     {
         ArgumentNullException.ThrowIfNull(control);
         int index = interactionControls?.GetChildCount() ?? 0;
-        Rect2 layout = CardInteractionLayout.Control(index, interactionWidth, interactionScale);
+        StyleBox surface = GetThemeStylebox("panel");
+        float width = CardInteractionLayout.ControlWidth(
+            interactionCardWidth,
+            surface.GetContentMargin(Side.Left),
+            surface.GetContentMargin(Side.Right),
+            interactionScale);
+        Rect2 layout = CardInteractionLayout.Control(index, width, interactionScale);
         control.CustomMinimumSize = new Vector2(0, layout.Size.Y);
         control.Position = layout.Position;
         control.Size = layout.Size;
