@@ -233,6 +233,43 @@ func _keyboard_selection_is_operable() -> bool:
 	return await _capture_checkpoint("action-composition")
 
 
+func _attached_control_focus_is_safe(state: Dictionary) -> bool:
+	var control := _first_attached_action_control()
+	if control == null:
+		return true
+	state.tested_attached_focus = true
+	if not await _prepare_activation(control):
+		return false
+	var card := control.get_parent().get_parent() as Control
+	if card == null or not card.get_global_rect().encloses(control.get_global_rect()):
+		_fail("an attached action control escaped its card surface")
+		return false
+	var issued_name := String(control.name)
+	var issued_id := control.get_instance_id()
+	if not await _keyboard_activate_without_settle(control):
+		return false
+	if not await _wait_for(func() -> bool:
+		var replacement := main.find_child(issued_name, true, false) as Button
+		return replacement != null and replacement.get_instance_id() != issued_id \
+			and replacement.has_focus()):
+		_fail("keyboard focus was lost when an attached action control rebuilt")
+		return false
+	var replacement := main.find_child(issued_name, true, false) as Button
+	if replacement == null or not await _control_has_real_hit_area(replacement):
+		_fail("the rebuilt attached action control has no scaled pointer target")
+		return false
+	return true
+
+
+func _first_attached_action_control() -> Button:
+	for candidate in main.find_children("Card*Action", "Button", true, false):
+		var control := candidate as Button
+		if control != null and not control.disabled \
+			and control.get_parent() != null and control.get_parent().name == &"DirectControls":
+			return control
+	return null
+
+
 func _prompt_header_is_safe(decision_scroll: ScrollContainer) -> bool:
 	var header := _node("Play/Prompt/Margin/Stack/PromptHeader") as Control
 	if header == null or decision_scroll == null or decision_scroll.is_ancestor_of(header):

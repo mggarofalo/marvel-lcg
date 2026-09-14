@@ -13,6 +13,8 @@ public sealed partial class CardControl : PanelContainer
     private Label? interactionLabel;
     private Control? interactionControls;
     private float interactionWidth;
+    private InterfaceScale interactionScale;
+    private float interactionBaseMinimumHeight;
 
     private CardControl()
     {
@@ -50,8 +52,10 @@ public sealed partial class CardControl : PanelContainer
                 : CursorShape.PointingHand,
             baseVariation = variation,
             ThemeTypeVariation = variation,
-            interactionWidth = layout.Width - 24,
+            interactionWidth = layout.Width - 2 * VisualSystem.Spacing(scale).Medium,
+            interactionScale = scale,
         };
+        control.interactionBaseMinimumHeight = control.CustomMinimumSize.Y;
         var content = new VBoxContainer
         {
             Name = "CardContent",
@@ -159,12 +163,30 @@ public sealed partial class CardControl : PanelContainer
     {
         ArgumentNullException.ThrowIfNull(control);
         int index = interactionControls?.GetChildCount() ?? 0;
-        Rect2 layout = CardInteractionLayout.Control(index, interactionWidth);
-        control.CustomMinimumSize = new Vector2(0, 44);
+        Rect2 layout = CardInteractionLayout.Control(index, interactionWidth, interactionScale);
+        control.CustomMinimumSize = new Vector2(0, layout.Size.Y);
         control.Position = layout.Position;
         control.Size = layout.Size;
+        CustomMinimumSize = new Vector2(CustomMinimumSize.X,
+            CardInteractionLayout.SurfaceHeight(
+                interactionBaseMinimumHeight, index + 1, interactionScale));
         (interactionControls ?? throw new InvalidOperationException(
             "card interaction controls are unavailable")).AddChild(control);
+    }
+
+    /// <summary>Removes a prior prompt's controls and restores this card's base surface height.</summary>
+    internal void ClearInteractionControls()
+    {
+        if (interactionControls is not null)
+        {
+            foreach (Node child in interactionControls.GetChildren())
+            {
+                interactionControls.RemoveChild(child);
+                child.QueueFree();
+            }
+        }
+
+        CustomMinimumSize = new Vector2(CustomMinimumSize.X, interactionBaseMinimumHeight);
     }
 
     private void RefreshTreatment() =>

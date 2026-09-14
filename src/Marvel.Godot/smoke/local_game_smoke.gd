@@ -136,6 +136,7 @@ func _play_seeded_journey() -> Dictionary:
 		"changed_form": false,
 		"form_before_change": "",
 		"tested_undo": false,
+		"tested_attached_focus": false,
 		"saw_attack_resolution": false,
 		"decisions": 0,
 	}
@@ -149,7 +150,7 @@ func _play_one_decision(state: Dictionary) -> bool:
 	if state.decisions >= MAX_DECISIONS:
 		_fail("the visible-control journey exceeded %d decisions" % MAX_DECISIONS)
 		return false
-	if not _visible_buttons_meet_pointer_floor():
+	if not await _decision_controls_are_safe(state):
 		return false
 	var ending_player_phase := _observe_decision(state)
 	if ending_player_phase and not await _capture_checkpoint("player-phase"):
@@ -170,6 +171,18 @@ func _play_one_decision(state: Dictionary) -> bool:
 	if not await _active_resolution_is_safe(state):
 		return false
 	return await _villain_history_checkpoint_is_safe(state)
+
+
+func _attached_controls_are_safe(state: Dictionary) -> bool:
+	if state.tested_attached_focus:
+		return true
+	return await _attached_control_focus_is_safe(state)
+
+
+func _decision_controls_are_safe(state: Dictionary) -> bool:
+	if not _visible_buttons_meet_pointer_floor():
+		return false
+	return await _attached_controls_are_safe(state)
 
 
 func _observe_decision(state: Dictionary) -> bool:
@@ -376,6 +389,9 @@ func _terminal_table_is_safe(state: Dictionary) -> bool:
 func _required_journey_paths_were_seen(state: Dictionary) -> bool:
 	if not state.saw_mulligan or not state.saw_pass or not state.saw_end_phase:
 		_fail("the journey missed a required visible decision path")
+		return false
+	if not state.tested_attached_focus:
+		_fail("the journey never reached an attached action control")
 		return false
 	if not state.changed_form or not state.tested_undo:
 		_fail("the journey did not change form again after proving undo")

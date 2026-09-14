@@ -9,8 +9,10 @@ internal sealed class BoardCardInteractionControls
 {
     private readonly Dictionary<CardControl, List<Button>> controls = [];
     private readonly Dictionary<CardControl, (BoardCardPresentation Card, bool IsHand)> presentations = [];
+    private readonly Dictionary<Button, BoardInteractionFocusKey> focusKeys = [];
     private readonly Func<bool> isCurrent;
     private Func<CardPointerGesture, bool>? activate;
+    private int focusGeneration;
 
     internal BoardCardInteractionControls(Func<bool> isCurrent) => this.isCurrent = isCurrent;
 
@@ -25,6 +27,13 @@ internal sealed class BoardCardInteractionControls
         DecisionComposer? composer,
         PromptPresentation? prompt)
     {
+        if (!isCurrent())
+        {
+            return;
+        }
+
+        int generation = checked(++focusGeneration);
+        BoardInteractionFocusKey? focused = FocusedKey();
         IReadOnlyDictionary<int, CardInteractionCue> cues =
             BoardInteractionCueProjection.From(composer, prompt);
         foreach ((int id, List<CardControl> cards) in visible)
@@ -40,19 +49,20 @@ internal sealed class BoardCardInteractionControls
         {
             Add(visible, descriptor);
         }
+        RestoreFocus(focused, generation);
     }
 
     private void Clear()
     {
-        foreach (List<Button> buttons in controls.Values)
+        foreach (CardControl card in controls.Keys)
         {
-            foreach (Button button in buttons)
+            if (InteractionControl.IsUsable(card))
             {
-                button.GetParent()?.RemoveChild(button);
-                button.QueueFree();
+                card.ClearInteractionControls();
             }
         }
         controls.Clear();
+        focusKeys.Clear();
     }
 
     private void Add(
@@ -72,6 +82,8 @@ internal sealed class BoardCardInteractionControls
                 TooltipText = Tooltip(descriptor.Intent),
                 FocusMode = Control.FocusModeEnum.All,
             };
+            focusKeys.Add(button, new BoardInteractionFocusKey(
+                descriptor.CardId, descriptor.Intent));
             button.Pressed += () => Activate(card, descriptor.Intent);
             card.AddInteractionControl(button);
             if (!controls.TryGetValue(card, out List<Button>? buttons))
@@ -81,6 +93,51 @@ internal sealed class BoardCardInteractionControls
             }
             buttons.Add(button);
         }
+    }
+
+    private BoardInteractionFocusKey? FocusedKey()
+    {
+        foreach (KeyValuePair<Button, BoardInteractionFocusKey> entry in focusKeys)
+        {
+            if (InteractionControl.IsUsable(entry.Key) && entry.Key.HasFocus())
+            {
+                return entry.Value;
+            }
+        }
+
+        return null;
+    }
+
+    private void RestoreFocus(BoardInteractionFocusKey? requested, int generation)
+    {
+        if (requested is not { } prior)
+        {
+            return;
+        }
+
+        BoardInteractionFocusKey? key = BoardInteractionFocus.Restore(prior, focusKeys.Values);
+        if (key is not { } next)
+        {
+            return;
+        }
+
+        // Keep only the stable value key across this boundary. The old button
+        // is queued for deletion by Clear and must never receive deferred work.
+        Callable.From(() => FocusWhenLayoutSettles(next, generation)).CallDeferred();
+    }
+
+    private void FocusWhenLayoutSettles(BoardInteractionFocusKey key, int generation)
+    {
+        if (!isCurrent() || generation != focusGeneration)
+        {
+            return;
+        }
+
+        Button? candidate = focusKeys
+            .Where(entry => entry.Value == key && InteractionControl.IsUsable(entry.Key))
+            .Select(entry => entry.Key)
+            .FirstOrDefault();
+        candidate?.GrabFocus();
     }
 
     private static string Tooltip(CardInteractionIntent intent) => intent switch
