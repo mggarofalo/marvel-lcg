@@ -33,20 +33,58 @@ func _action_card_preview_is_safe(hand_card: Control) -> bool:
 	if action_card == null:
 		_fail("the mulligan action has no card-naming option to preview")
 		return false
-	action_card.mouse_entered.emit()
+	var inspector := await _show_action_card_preview(action_card, hand_card)
+	if inspector == null:
+		return false
+	if not await _preview_keeps_action_operable(action_card, inspector):
+		return false
+	return await _dismiss_action_card_preview(inspector)
+
+
+func _show_action_card_preview(action_card: Button, hand_card: Control) -> Control:
+	if not await _prepare_activation(action_card):
+		return null
+	var preview_point := _visible_control_rect(action_card).get_center()
+	var motion := InputEventMouseMotion.new()
+	motion.position = preview_point
+	motion.global_position = preview_point
+	render_viewport.push_input(motion)
 	await process_frame
 	var inspector := main.get_node("CardInspector") as Control
 	if inspector == null or not inspector.visible:
-		_fail("hovering a card-naming action did not preview its hand card")
-		return false
+		_fail("a real pointer hover over a card-naming action did not preview its hand card")
+		return null
 	var frame := inspector.get_node("Frame") as PanelContainer
 	if frame.get_global_rect().end.y > hand_card.get_global_rect().position.y + 1.0:
 		_fail("the action-card preview was not placed above the hand card")
+		return null
+	return inspector
+
+
+func _preview_keeps_action_operable(action_card: Button, inspector: Control) -> bool:
+	var preview_point := _visible_control_rect(action_card).get_center()
+	if not await _control_owns_point(action_card, preview_point):
+		_fail("the preview backdrop replaced its card-naming action as the GUI hit owner")
 		return false
-	action_card.mouse_exited.emit()
+	if not _pointer_activate_without_settle(action_card):
+		_fail("the previewed card-naming action cannot be activated through its pointer hit")
+		return false
+	await process_frame
+	var selected := _decision().find_child(action_card.name, true, false) as Button
+	if selected == null or not selected.text.begins_with("✓") or not inspector.visible:
+		_fail("the previewed card-naming action did not change draft state while previewed")
+		return false
+	return await _pointer_activate(selected)
+
+
+func _dismiss_action_card_preview(inspector: Control) -> bool:
+	var exit_motion := InputEventMouseMotion.new()
+	exit_motion.position = Vector2.ZERO
+	exit_motion.global_position = Vector2.ZERO
+	render_viewport.push_input(exit_motion)
 	await main.get_tree().create_timer(0.35).timeout
 	if inspector.visible:
-		_fail("the temporary action-card preview remained after hover ended")
+		_fail("the temporary action-card preview remained after a real pointer exit")
 		return false
 	return true
 
