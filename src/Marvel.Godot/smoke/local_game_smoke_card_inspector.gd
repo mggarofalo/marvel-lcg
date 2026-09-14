@@ -5,6 +5,12 @@ const WEB_SHOOTER_ACTION := "Play Web-Shooter"
 func _card_inspector_is_safe(hand_card: Control) -> bool:
 	if not await _action_card_preview_is_safe():
 		return false
+	# Selecting and then synchronizing the action prompt rebuilds the board. The
+	# inspector probe must exercise the replacement card actually on that board.
+	hand_card = _current_hand_card()
+	if hand_card == null:
+		_fail("the restored action prompt has no current hand card for inspection")
+		return false
 	var inspector := await _open_card_inspector(hand_card)
 	if inspector == null:
 		return false
@@ -17,6 +23,11 @@ func _card_inspector_is_safe(hand_card: Control) -> bool:
 	if not await _inspector_backdrop_is_safe(inspector):
 		return false
 	return await _keyboard_inspector_is_safe(hand_card, inspector)
+
+
+func _current_hand_card() -> Control:
+	return (_node("Play/Board/HandShelf") as Control).find_child(
+		"ProceduralCard", true, false) as Control
 
 
 func _action_card_preview_is_safe() -> bool:

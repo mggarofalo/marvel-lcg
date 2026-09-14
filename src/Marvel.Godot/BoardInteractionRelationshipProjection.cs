@@ -9,7 +9,8 @@ internal static class BoardInteractionRelationshipProjection
     internal static IReadOnlyList<TableRelationshipDescriptor> From(
         DecisionComposer? composer, PromptPresentation? prompt)
     {
-        if (composer?.Selected is not { } selected || prompt is null)
+        if (composer?.Selected is not { } selected || prompt is null
+            || MulliganPrompt.IsOpening(composer.Prompt))
         {
             return [];
         }

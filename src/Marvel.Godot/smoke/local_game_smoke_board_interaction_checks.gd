@@ -76,6 +76,9 @@ func _pointer_activate_card_body(card: Control) -> bool:
 	if not await _control_owns_point(card, point):
 		_fail("card '%s' has no inspection-only body hit area" % card.name)
 		return false
+	if render_viewport.gui_get_hovered_control() is BaseButton:
+		_fail("card '%s' body probe landed on an attached control" % card.name)
+		return false
 	var press := InputEventMouseButton.new()
 	press.button_index = MOUSE_BUTTON_LEFT
 	press.pressed = true
@@ -95,4 +98,4 @@ func _card_body_point(card: Control) -> Vector2:
 	var rect := _visible_control_rect(card)
 	return Vector2(
 		rect.position.x + minf(24.0, rect.size.x * 0.2),
-		rect.end.y - minf(24.0, rect.size.y * 0.15))
+		rect.position.y + minf(24.0, rect.size.y * 0.15))

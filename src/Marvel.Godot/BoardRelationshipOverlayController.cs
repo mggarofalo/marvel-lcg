@@ -31,7 +31,7 @@ internal sealed class BoardRelationshipOverlayController : IDisposable
     {
         Unbind();
         board = next;
-        snapshotRelationships = snapshot;
+        snapshotRelationships = RelationshipPresentationPolicy.SparseUnfocused(snapshot);
         promptRelationships = [];
         interactionRelationshipsChanged = relationships =>
         {
@@ -62,8 +62,11 @@ internal sealed class BoardRelationshipOverlayController : IDisposable
 
     private void RefreshAfterLayout() => Callable.From(() =>
     {
-        layoutRefreshQueued = false;
+        // Keep the coalescing guard through the settled render. Adding or
+        // removing lines may notify an observed ancestor's layout, but it
+        // cannot change the card geometry this pass has just measured.
         Refresh();
+        layoutRefreshQueued = false;
     }).CallDeferred();
 
     private void Refresh()
@@ -82,14 +85,9 @@ internal sealed class BoardRelationshipOverlayController : IDisposable
         Rect2 viewport = overlay.GetGlobalRect();
         BoardRenderResult current = board ?? throw new InvalidOperationException(
             "a relationship path requires a rendered board");
-        IReadOnlyList<Rect2> obstacles = current.VisibleCardControls()
-            .Where(control => control.IsVisibleInTree())
-            .Select(control => RelationshipOverlayVisibility.VisibleBounds(control, viewport))
-            .OfType<Rect2>()
-            .ToArray();
         foreach (TableRelationshipDescriptor relationship in snapshotRelationships.Concat(promptRelationships))
         {
-            if (PathFor(relationship, obstacles, viewport) is { } path)
+            if (PathFor(relationship, current.VisibleCardControls(), viewport) is { } path)
             {
                 paths.Add(path);
             }
@@ -99,7 +97,7 @@ internal sealed class BoardRelationshipOverlayController : IDisposable
 
     private Vector2[]? PathFor(
         TableRelationshipDescriptor relationship,
-        IReadOnlyList<Rect2> obstacles,
+        IReadOnlyList<CardControl> cards,
         Rect2 viewport)
     {
         if (relationship.Related is not { } related
@@ -115,7 +113,12 @@ internal sealed class BoardRelationshipOverlayController : IDisposable
         {
             return null;
         }
-        Rect2[] blockers = obstacles.Where(rect => rect != sourceRect && rect != targetRect).ToArray();
+        Rect2[] blockers = cards
+            .Where(card => !ReferenceEquals(card, source) && !ReferenceEquals(card, target))
+            .Where(control => control.IsVisibleInTree())
+            .Select(control => RelationshipOverlayVisibility.VisibleBounds(control, viewport))
+            .OfType<Rect2>()
+            .ToArray();
         Vector2[]? path = RelationshipRoutePlanner.Route(sourceRect, targetRect, blockers);
         return path is null ? null : [.. path.Select(point => point - viewport.Position)];
     }
@@ -143,13 +146,22 @@ internal sealed class BoardRelationshipOverlayController : IDisposable
         var observed = new HashSet<Control>();
         foreach (CardControl card in current.VisibleCardControls())
         {
-            for (Node? node = card; node is Control control; node = node.GetParent())
+            ObserveOnce(card, observed);
+            for (Node? node = card.GetParent(); node is not null; node = node.GetParent())
             {
-                if (observed.Add(control))
+                if (node is ScrollContainer scroll)
                 {
-                    Observe(control);
+                    ObserveOnce(scroll, observed);
                 }
             }
+        }
+    }
+
+    private void ObserveOnce(Control control, HashSet<Control> observed)
+    {
+        if (observed.Add(control))
+        {
+            Observe(control);
         }
     }
 

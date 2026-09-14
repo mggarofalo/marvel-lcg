@@ -325,7 +325,7 @@ func _attached_control_focus_is_safe(state: Dictionary) -> bool:
 	if not await _align_attached_control_to_table(control) \
 			or not await _control_has_real_hit_area(control):
 		return false
-	var card := control.get_parent().get_parent() as Control
+	var card := _attached_card(control)
 	if card == null or not card.get_global_rect().encloses(control.get_global_rect()):
 		_fail("an attached action control escaped its card surface")
 		return false
@@ -357,6 +357,15 @@ func _first_attached_action_control() -> Button:
 			if fallback == null:
 				fallback = control
 	return fallback
+
+
+func _attached_card(control: Control) -> Control:
+	var candidate: Node = control
+	while candidate != null:
+		if candidate is PanelContainer:
+			return candidate as Control
+		candidate = candidate.get_parent()
+	return null
 
 
 func _has_named_ancestor(control: Control, expected: StringName) -> bool:

@@ -14,21 +14,30 @@ func _direct_table_journey_is_operable() -> bool:
 	if OS.get_environment("MARVEL_SMOKE_TWO_PLAYER") == "true":
 		return true
 	if not await _direct_web_shooter_is_played():
+		_fail("the direct Web-Shooter journey ended without a reported interaction failure")
 		return false
 	if not await _direct_black_cat_is_played():
+		_fail("the direct Black Cat journey ended without a reported interaction failure")
 		return false
 	if not await _direct_change_form_is_played():
+		_fail("the direct change-form journey ended without a reported interaction failure")
 		return false
 	if not await _direct_attacks_are_played():
+		_fail("the direct attack journey ended without a reported interaction failure")
 		return false
 	return true
 
 
 func _direct_web_shooter_is_played() -> bool:
-	var card := await _draft_web_shooter()
-	var current_action := _attached(_attached_name(WEB_SHOOTER, "Action"))
-	card = _card_for(current_action) if current_action != null else null
-	if card == null or not await _relationship_path_tracks_table_scrolling(card):
+	var draft := await _draft_web_shooter()
+	if draft == null:
+		_fail("the Web-Shooter draft did not reach its selected-action relationship probe")
+		return false
+	var card := _card_for_anchor(WEB_SHOOTER)
+	if card == null:
+		_fail("the drafted Web-Shooter has no canonical card surface for relationship inspection")
+		return false
+	if not await _relationship_path_tracks_table_scrolling(card):
 		return false
 	return await _complete_web_shooter_play()
 
@@ -40,14 +49,28 @@ func _draft_web_shooter() -> Control:
 		_fail("seed 1 did not expose both stable Web-Shooter action anchors")
 		return null
 	var card := _card_for(action)
+	if card == null:
+		_fail("the visible Web-Shooter action has no card surface")
+		return null
 	if not await _body_click_inspects_without_drafting(card):
+		_fail("the Web-Shooter body did not support inspection before drafting")
 		return null
 	if not await _drag_to_prompt_owner_lane(card):
+		_fail("the Web-Shooter did not support a pointer drag to its prompt-owner lane")
 		return null
 	if not await _wait_for_web_shooter_draft(
 			"dragging anchor 19 did not prepare its exact Web-Shooter affordance"):
 		return null
 	return card
+
+
+func _card_for_anchor(anchor: int) -> Control:
+	for candidate in main.find_children("Card%d*" % anchor, "Button", true, false):
+		var control := candidate as Button
+		if control != null and control.is_visible_in_tree() \
+				and control.get_parent() != null and control.get_parent().name == "DirectControls":
+			return _card_for(control)
+	return null
 
 
 func _complete_web_shooter_play() -> bool:
@@ -173,6 +196,7 @@ func _pointer_activate_attached(control: Control) -> bool:
 	if not await _align_attached_control_to_table(control) \
 			or not await _control_has_real_hit_area(control) \
 			or not _pointer_activate_without_settle(control):
+		_fail("attached control '%s' has no operable native pointer path" % control.name)
 		return false
 	await process_frame
 	return true
@@ -214,10 +238,7 @@ func _outside_drag_keeps_draft_empty(card: Control) -> bool:
 
 
 func _drag(card: Control, finish: Vector2) -> bool:
-	var rect := _visible_control_rect(card)
-	var start := Vector2(
-		rect.position.x + minf(24.0, rect.size.x * 0.2),
-		rect.end.y - minf(24.0, rect.size.y * 0.15))
+	var start := _card_body_point(card)
 	var press := InputEventMouseButton.new()
 	press.button_index = MOUSE_BUTTON_LEFT
 	press.pressed = true

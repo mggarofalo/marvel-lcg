@@ -17,12 +17,12 @@ func _relationship_path_tracks_table_scrolling(card: Control) -> bool:
 	render_viewport.gui_release_focus()
 	for frame in 5:
 		await process_frame
-	var original_source := card.get_global_rect().get_center()
 	var original_target := target.get_global_rect().get_center()
 	if not await _wait_for(func() -> bool:
-			return _relationship_line_at(overlay, original_source) != null):
+			return _relationship_endpoint_for(overlay, card) != Vector2.INF):
 		_fail("the selected Web-Shooter relationship has no visible path before scrolling")
 		return false
+	var original_source := _relationship_endpoint_for(overlay, card)
 	var original_line := _relationship_line_at(overlay, original_source)
 	var original_endpoint := _other_endpoint(original_line, overlay, original_source)
 	var scroll_limit := int(table.get_v_scroll_bar().max_value - table.get_v_scroll_bar().page)
@@ -48,7 +48,7 @@ func _relationship_path_tracks_table_scrolling(card: Control) -> bool:
 		_fail("the relationship probe did not clip its linked table target")
 		return false
 	if not await _wait_for(func() -> bool:
-			return _relationship_line_at(overlay, target.get_global_rect().get_center()) == null):
+			return _relationship_endpoint_for(overlay, target) == Vector2.INF):
 		_fail("a clipped relationship endpoint remained drawn")
 		return false
 	table.scroll_vertical = original_scroll
@@ -65,6 +65,17 @@ func _relationship_line_at(overlay: Control, point: Vector2) -> Line2D:
 	return null
 
 
+func _relationship_endpoint_for(overlay: Control, card: Control) -> Vector2:
+	var rect := card.get_global_rect()
+	for child in overlay.get_children():
+		if not child is Line2D:
+			continue
+		var line := child as Line2D
+		for endpoint in [line.points[0], line.points[line.points.size() - 1]]:
+			var point: Vector2 = endpoint + overlay.get_global_rect().position
+			if rect.grow(1.0).has_point(point) and not rect.grow(-1.0).has_point(point):
+				return point
+	return Vector2.INF
 func _line_has_endpoint(line: Line2D, overlay: Control, point: Vector2) -> bool:
 	var local := point - overlay.get_global_rect().position
 	return line.points.size() > 0 and (line.points[0].distance_to(local) < 1.0 \
@@ -79,8 +90,12 @@ func _other_endpoint(line: Line2D, overlay: Control, source: Vector2) -> Vector2
 
 
 func _attached(name: String) -> Button:
-	var control := main.find_child(name, true, false) as Button
-	return control if control != null and control.is_visible_in_tree() else null
+	for candidate in main.find_children(name, "Button", true, false):
+		var control := candidate as Button
+		if control != null and control.is_visible_in_tree() \
+				and control.get_parent() != null and control.get_parent().name == "DirectControls":
+			return control
+	return null
 
 
 func _attached_name(anchor: int, intent: String) -> String:
@@ -88,4 +103,9 @@ func _attached_name(anchor: int, intent: String) -> String:
 
 
 func _card_for(control: Control) -> Control:
-	return control.get_parent().get_parent() as Control
+	var candidate: Node = control
+	while candidate != null:
+		if candidate is PanelContainer:
+			return candidate as Control
+		candidate = candidate.get_parent()
+	return null
