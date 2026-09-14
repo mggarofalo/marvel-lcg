@@ -39,8 +39,8 @@ public sealed partial class DecisionPanel : VBoxContainer
     public void SetInterfaceScale(InterfaceScale scale)
     {
         requestedScale = scale;
-        // The tabletop owns the full desktop height. Its dock deliberately
-        // keeps one compact metric so a scale preference never moves Commit.
+        // The fixed tabletop dock keeps Standard as its pointer-size floor,
+        // while its opening prompt stays Standard to keep Commit in view.
         InterfaceScale effectiveScale = EffectiveScale(
             scale, compactMulliganChrome, MulliganPrompt.IsOpening(composer?.Prompt));
         if (interfaceScale == effectiveScale)
