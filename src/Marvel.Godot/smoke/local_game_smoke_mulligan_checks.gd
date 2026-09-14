@@ -8,7 +8,9 @@ func _mulligan_result_and_payment_are_operable() -> bool:
 	if not await _mulligan_result_is_operable():
 		return false
 	if OS.get_environment("MARVEL_SMOKE_TWO_PLAYER") == "true":
-		if not await _dismiss_mulligan_result() or not await _complete_second_opening_hand():
+		if not await _dismiss_mulligan_result() \
+				or not await _complete_second_opening_hand() \
+				or not await _post_mulligan_desktop_resize_is_safe():
 			return false
 	var hand_card := (_node("Play/Board/HandShelf") as Control).find_child(
 		"ProceduralCard", true, false) as Control

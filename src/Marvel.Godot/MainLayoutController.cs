@@ -99,9 +99,7 @@ internal sealed class MainLayoutController
         bool fixedTabletop = gameplay && DesktopTabletop.Uses(viewport);
         bool compactTableChrome = fixedTabletop;
         main.playLayout.Columns = fixedTabletop ? 2 : 1;
-        main.playLayout.ThemeTypeVariation = fixedTabletop
-            ? GodotThemeVariations.WideRow
-            : GodotThemeVariations.Stack;
+        main.playLayout.ThemeTypeVariation = GodotThemeVariations.PlayGrid;
         main.promptPanel.SizeFlagsHorizontal = fixedTabletop
             ? Control.SizeFlags.Fill
             : Control.SizeFlags.ExpandFill;
@@ -120,7 +118,8 @@ internal sealed class MainLayoutController
         main.decisions.SetCompactMulliganChrome(compactTableChrome);
         ConfigureDecisionDock(mulligan && compactTableChrome, compactTableChrome, layout);
         ConfigureStackChrome(compactHeight, compactTableChrome);
-        ConfigurePlayScrolling(gameplay, fixedTabletop);
+        ConfigurePlayScrolling(gameplay, fixedTabletop, mulligan);
+        main.boardController.RerenderForViewport(viewport);
     }
 
     private void ConfigureDecisionDock(
@@ -155,12 +154,12 @@ internal sealed class MainLayoutController
         main.eventLog.CustomMinimumSize = new Vector2(0, compactHeight ? 180 : 300);
     }
 
-    private void ConfigurePlayScrolling(bool gameplay, bool fixedTabletop)
+    private void ConfigurePlayScrolling(bool gameplay, bool fixedTabletop, bool mulligan)
     {
         Vector2 viewport = main.GetViewportRect().Size;
         bool desktopGameplay = gameplay && DesktopTabletop.Uses(viewport);
         ConfigurePageScrolling(gameplay, desktopGameplay);
-        ConfigureTableScrolling(fixedTabletop);
+        ConfigureTableScrolling(fixedTabletop, mulligan);
     }
 
     private void ConfigurePageScrolling(bool gameplay, bool desktopGameplay)
@@ -185,14 +184,24 @@ internal sealed class MainLayoutController
         }
     }
 
-    private void ConfigureTableScrolling(bool fixedTabletop)
+    private void ConfigureTableScrolling(bool fixedTabletop, bool mulligan)
     {
         ScrollContainer table = main.GetNode<ScrollContainer>(
             "Margin/Shell/Content/Play/Board/TableScroll");
         table.HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled;
         table.VerticalScrollMode = fixedTabletop
-            ? ScrollContainer.ScrollMode.Disabled
+            && mulligan
+            && main.interfaceScale <= InterfaceScale.Standard
+                ? ScrollContainer.ScrollMode.Disabled
             : ScrollContainer.ScrollMode.Auto;
+        if (table.HorizontalScrollMode == ScrollContainer.ScrollMode.Disabled)
+        {
+            table.ScrollHorizontal = 0;
+        }
+        if (table.VerticalScrollMode == ScrollContainer.ScrollMode.Disabled)
+        {
+            table.ScrollVertical = 0;
+        }
     }
 
     internal static ScrollContainer.ScrollMode PageVerticalScrollMode(

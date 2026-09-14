@@ -8,22 +8,43 @@ internal sealed class MainTabletopController
 {
     private readonly Main main;
     private DisplayedSeatState displayedSeats = new();
+    private bool? renderedDesktopTabletop;
 
     internal MainTabletopController(Main main)
     {
         this.main = main;
     }
 
-    internal void ResetForGame() => displayedSeats = new DisplayedSeatState();
+    internal void ResetForGame()
+    {
+        displayedSeats = new DisplayedSeatState();
+        renderedDesktopTabletop = null;
+    }
 
     internal BoardRenderResult? Render(Prompt? prompt, Vector2 viewport)
     {
-        if (prompt is { } opening && MulliganPrompt.UsesDesktopTable(opening, viewport))
+        bool desktop = DesktopTabletop.Uses(viewport);
+        renderedDesktopTabletop = desktop;
+        if (desktop && prompt is { } opening && MulliganPrompt.IsOpening(opening))
         {
             return RenderMulligan(opening);
         }
 
-        return DesktopTabletop.Uses(viewport) ? RenderDesktop(prompt) : null;
+        return desktop ? RenderDesktop(prompt) : null;
+    }
+
+    internal void RerenderForViewport(Vector2 viewport)
+    {
+        if (main.board.Visible
+            && DesktopTabletop.RouteChanged(renderedDesktopTabletop, viewport)
+            && main.CurrentGame?.World is { } world)
+        {
+            ScrollContainer table = main.GetNode<ScrollContainer>(
+                "Margin/Shell/Content/Play/Board/TableScroll");
+            table.ScrollHorizontal = 0;
+            table.ScrollVertical = 0;
+            main.RenderBoard(world);
+        }
     }
 
     internal void FocusAnchors(IReadOnlyList<int> ids)

@@ -25,6 +25,7 @@ public static class GodotThemeVariations
     public const string Stack = nameof(Stack);
     public const string WideRow = nameof(WideRow);
     public const string CompactRow = nameof(CompactRow);
+    public const string PlayGrid = nameof(PlayGrid);
     public const string DataGrid = nameof(DataGrid);
     public const string MultiSelectButton = nameof(MultiSelectButton);
     public const string BoardArea = nameof(BoardArea);

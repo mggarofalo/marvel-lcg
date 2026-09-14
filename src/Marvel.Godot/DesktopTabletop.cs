@@ -6,4 +6,7 @@ namespace Marvel.Godot;
 internal static class DesktopTabletop
 {
     internal static bool Uses(Vector2 viewport) => viewport.X >= 1920 && viewport.Y >= 1080;
+
+    internal static bool RouteChanged(bool? renderedDesktopTabletop, Vector2 viewport) =>
+        renderedDesktopTabletop is { } rendered && rendered != Uses(viewport);
 }

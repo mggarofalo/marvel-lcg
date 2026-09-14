@@ -329,6 +329,7 @@ public sealed class VisualSystemTests
             GodotThemeVariations.Stack,
             GodotThemeVariations.WideRow,
             GodotThemeVariations.CompactRow,
+            GodotThemeVariations.PlayGrid,
             GodotThemeVariations.DataGrid,
             GodotThemeVariations.MultiSelectButton,
             GodotThemeVariations.BoardArea,
