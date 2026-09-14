@@ -1,6 +1,9 @@
 extends "res://smoke/local_game_smoke_input_support.gd"
 
 const POINTER_OWNERSHIP_ATTEMPTS := 3
+# Native graphical runners can need several frames to settle control geometry
+# after a decision rebuild. Twelve attempts remains a short bounded window.
+const CONTROL_HIT_AREA_ATTEMPTS := 12
 const POINTER_ACTIVATION_ATTEMPTS := 3
 
 var render_viewport: Viewport

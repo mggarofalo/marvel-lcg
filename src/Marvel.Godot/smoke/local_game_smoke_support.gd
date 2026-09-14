@@ -20,23 +20,32 @@ func _control_text_is_visible(control: Control) -> bool:
 
 
 func _control_has_real_hit_area(control: Control) -> bool:
-	var rect := _visible_control_rect(control)
-	if not _control_is_fully_visible(control) or rect.size.x < 4.0 or rect.size.y < 4.0:
-		_fail("control '%s' is clipped or has no unclipped hit area: visible %s of %s" % [control.name, rect, control.get_global_rect()])
-		return false
-	var inset := minf(2.0, minf(rect.size.x, rect.size.y) / 4.0)
-	var points := [
-		rect.get_center(),
-		rect.position + Vector2(inset, inset),
-		Vector2(rect.end.x - inset, rect.position.y + inset),
-		Vector2(rect.position.x + inset, rect.end.y - inset),
-		rect.end - Vector2(inset, inset),
-	]
-	for point in points:
-		if not await _control_owns_point(control, point):
-			_fail("control '%s' loses a center or interior-edge hit to clipping or occlusion" % control.name)
+	for _attempt in CONTROL_HIT_AREA_ATTEMPTS:
+		var rect := _visible_control_rect(control)
+		var global_rect := control.get_global_rect()
+		if not _control_is_fully_visible(control) or rect.size.x < 4.0 or rect.size.y < 4.0:
+			_fail("control '%s' is clipped or has no unclipped hit area: visible %s of %s" % [control.name, rect, global_rect])
 			return false
-	return true
+		var inset := minf(2.0, minf(rect.size.x, rect.size.y) / 4.0)
+		var points := [
+			rect.get_center(),
+			rect.position + Vector2(inset, inset),
+			Vector2(rect.end.x - inset, rect.position.y + inset),
+			Vector2(rect.position.x + inset, rect.end.y - inset),
+			rect.end - Vector2(inset, inset),
+		]
+		var proof_is_stable := true
+		for point in points:
+			if not control.get_global_rect().is_equal_approx(global_rect) \
+					or not _visible_control_rect(control).is_equal_approx(rect) \
+					or not await _control_owns_point(control, point):
+				proof_is_stable = false
+				break
+		if proof_is_stable and control.get_global_rect().is_equal_approx(global_rect) \
+				and _visible_control_rect(control).is_equal_approx(rect):
+			return true
+	_fail("control '%s' loses a center or interior-edge hit to clipping or occlusion" % control.name)
+	return false
 
 
 func _scroll_control_into_view(control: Control) -> void:
