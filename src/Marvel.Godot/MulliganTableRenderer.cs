@@ -24,19 +24,17 @@ internal static class MulliganTableRenderer
     {
         destination.AddChild(Row(
             "VillainTable", "VILLAIN TABLE  ·  FAR SIDE", Ordered(context.Board.Areas, -1, ScenarioOrder),
-            context.Result, context.Scale, context.Art));
-        if (context.Board.PlayerSummaries.Count > 1)
-        {
-            destination.AddChild(MulliganSeatStripRenderer.Create(
-                context.Board, context.Player, context.SwitchSeat));
-        }
+            context.Result, context.Scale, context.Art, new MulliganTableRowOptions(false, null)));
+        PanelContainer? seatStrip = context.Board.PlayerSummaries.Count > 1
+            ? MulliganSeatStripRenderer.Create(context.Board, context.Player, context.SwitchSeat)
+            : null;
         BoardAreaPresentation[] own = Ordered(context.Board.Areas, context.Player, PlayerOrder)
             .Where(area => PlayerOrder.Contains(area.Zone, StringComparer.Ordinal))
             .ToArray();
         destination.AddChild(Row(
             "PlayerTable", $"PLAYER {context.Player + 1}  ·  NEAR SIDE", own,
             context.Result, context.Scale, context.Art,
-            addEmptyDiscard: own.All(area => area.Zone != "DiscardPile")));
+            new MulliganTableRowOptions(own.All(area => area.Zone != "DiscardPile"), seatStrip)));
         RenderHand(context.Hand, context.Board.Areas, context.PromptOwner,
             context.Result, context.Scale, context.Art);
     }
@@ -71,7 +69,7 @@ internal static class MulliganTableRenderer
         BoardRenderResult result,
         InterfaceScale scale,
         ICardArtProvider? art,
-        bool addEmptyDiscard = false)
+        MulliganTableRowOptions options)
     {
         var panel = new PanelContainer
         {
@@ -85,9 +83,13 @@ internal static class MulliganTableRenderer
         {
             rail.AddChild(Area(area, result, scale, art));
         }
-        if (addEmptyDiscard)
+        if (options.AddEmptyDiscard)
         {
             rail.AddChild(EmptyDiscard(result, scale));
+        }
+        if (options.Companion is not null)
+        {
+            rail.AddChild(options.Companion);
         }
 
         stack.AddChild(rail);

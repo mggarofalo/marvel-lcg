@@ -55,6 +55,8 @@ else
   scales=(50 60 70 80 90 100 110 120 130 140 150)
 fi
 
+unset MARVEL_SMOKE_TWO_PLAYER
+
 for viewport in "${viewports[@]}"; do
   for scale in "${scales[@]}"; do
     MARVEL_UI_SCALE="$scale" MARVEL_SMOKE_VIEWPORT="$viewport" MARVEL_SMOKE_MOTION=enabled \
@@ -65,5 +67,8 @@ done
 MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1280x720 MARVEL_SMOKE_MOTION=disabled \
   run_local_smoke
 
-MARVEL_UI_SCALE=100 MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
-  MARVEL_SMOKE_TWO_PLAYER=true run_local_smoke
+for scale in 100 120 150; do
+  MARVEL_UI_SCALE="$scale" MARVEL_SMOKE_VIEWPORT=1920x1080 MARVEL_SMOKE_MOTION=enabled \
+    MARVEL_SMOKE_TWO_PLAYER=true run_local_smoke
+done
+unset MARVEL_SMOKE_TWO_PLAYER

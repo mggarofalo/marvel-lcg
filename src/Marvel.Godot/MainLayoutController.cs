@@ -186,6 +186,29 @@ internal sealed class MainLayoutController
             : null;
         main.board.Theme = compact ? ClientTheme.Create(InterfaceScale.Standard) : null;
         main.promptPanel.Theme = compact ? ClientTheme.Create(InterfaceScale.Standard) : null;
+        main.promptPanel.ThemeTypeVariation = compact
+            ? GodotThemeVariations.TabletopDock
+            : GodotThemeVariations.SurfacePanel;
+        if (compact)
+        {
+            main.boardAreas.AddThemeConstantOverride("separation", 0);
+            main.GetNode<MarginContainer>("Margin/Shell/Content/Play/Board/TableScroll/Margin")
+                .AddThemeConstantOverride("margin_bottom", 0);
+            main.GetNode<MarginContainer>("Margin/Shell/Content/Play/Board/HandShelf/Margin")
+                .AddThemeConstantOverride("margin_top", 4);
+            main.GetNode<MarginContainer>("Margin/Shell/Content/Play/Board/HandShelf/Margin")
+                .AddThemeConstantOverride("margin_bottom", 0);
+        }
+        else
+        {
+            main.boardAreas.RemoveThemeConstantOverride("separation");
+            main.GetNode<MarginContainer>("Margin/Shell/Content/Play/Board/TableScroll/Margin")
+                .RemoveThemeConstantOverride("margin_bottom");
+            main.GetNode<MarginContainer>("Margin/Shell/Content/Play/Board/HandShelf/Margin")
+                .RemoveThemeConstantOverride("margin_top");
+            main.GetNode<MarginContainer>("Margin/Shell/Content/Play/Board/HandShelf/Margin")
+                .RemoveThemeConstantOverride("margin_bottom");
+        }
         main.GetNode<PanelContainer>("Margin/Shell/Content/Play/Board/HandShelf").ThemeTypeVariation = compact
             ? GodotThemeVariations.TabletopShelf
             : GodotThemeVariations.SurfacePanel;

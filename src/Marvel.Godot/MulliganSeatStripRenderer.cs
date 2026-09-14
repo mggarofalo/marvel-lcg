@@ -15,6 +15,7 @@ internal static class MulliganSeatStripRenderer
         {
             Name = "SeatStrip",
             ThemeTypeVariation = GodotThemeVariations.TabletopSeatStrip,
+            CustomMinimumSize = new Vector2(300, 0),
         };
         var rail = new HBoxContainer
         {
@@ -57,8 +58,8 @@ internal static class MulliganSeatStripRenderer
         string statuses = seat.Statuses.Count == 0 ? "no statuses" : string.Join(", ", seat.Statuses);
         string enemies = Named(board, seat.EngagedEnemies, "no engaged enemies");
         string defenders = Named(board, seat.OfferedDefenders, "no offered defenders");
-        return $"{identity}  ·  {form}  ·  {health}  ·  STATUS {statuses}"
-            + $"  ·  ENGAGED {enemies}  ·  DEFENDERS {defenders}";
+        return $"{identity} · {form} · {health} · STATUS {statuses}"
+            + $" · ENGAGED {enemies} · DEFENDERS {defenders}";
     }
 
     private static string Named(BoardPresentation board, IReadOnlyList<int> ids, string empty) => ids.Count == 0

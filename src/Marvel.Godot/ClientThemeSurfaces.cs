@@ -10,6 +10,7 @@ internal static class ClientThemeSurfaces
     {
         Panel(theme, GodotThemeVariations.ShellPanel, Flat(surface, Alpha(outline, 0.46f), 1, 18, M(22, 18, 22, 18)));
         Panel(theme, GodotThemeVariations.SurfacePanel, Flat(raised, Alpha(outline, 0.38f), 1, 12, M(16, 14, 16, 14)));
+        Panel(theme, GodotThemeVariations.TabletopDock, Flat(raised, Alpha(outline, 0.38f), 1, 12, M(16, 12, 16, 12)));
         Panel(theme, GodotThemeVariations.TabletopShelf, Flat(raised, Alpha(outline, 0.38f), 1, 12, M(16, 8, 16, 8)));
         Panel(theme, GodotThemeVariations.TabletopSeatStrip, Flat(raised, Alpha(outline, 0.5f), 1, 10, M(16, 0, 16, 0)));
         Panel(theme, GodotThemeVariations.StatusPanel, Flat(Alpha(amber, 0.14f), Alpha(amber, 0.62f), 1, 8, M(14, 9, 14, 9), borderLeft: 5));
