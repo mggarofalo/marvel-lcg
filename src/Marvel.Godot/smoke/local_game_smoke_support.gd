@@ -3,6 +3,7 @@ extends "res://smoke/local_game_smoke_input_support.gd"
 const SmokeScale = preload("res://smoke/local_game_smoke_scale.gd")
 const TIMEOUT_MILLISECONDS := 15000
 const MAX_DECISIONS := 80
+const POINTER_OWNERSHIP_ATTEMPTS := 3
 
 var main: Control
 var failed := false
@@ -37,12 +38,21 @@ func _control_owns_point(control: Control, point: Vector2) -> bool:
 	# operable hit target even if its painted rectangle is visible.
 	if control.mouse_filter == Control.MOUSE_FILTER_IGNORE or control is BaseButton and control.disabled:
 		return false
-	var move := InputEventMouseMotion.new()
-	move.position = point
-	move.global_position = point
-	render_viewport.push_input(move)
-	await process_frame
-	var hovered := render_viewport.gui_get_hovered_control()
+	# A native display server can deliver physical pointer motion between the
+	# injected move and the next frame. Resample the same exact point; a clipped
+	# or persistently occluded control still cannot satisfy this ownership check.
+	for _attempt in POINTER_OWNERSHIP_ATTEMPTS:
+		var move := InputEventMouseMotion.new()
+		move.position = point
+		move.global_position = point
+		render_viewport.push_input(move)
+		await process_frame
+		if _hovered_control_owns(control, render_viewport.gui_get_hovered_control()):
+			return true
+	return false
+
+
+func _hovered_control_owns(control: Control, hovered: Control) -> bool:
 	if hovered == control or (hovered != null and control.is_ancestor_of(hovered)):
 		return true
 	# Containers using Pass may be reported as the hovered owner while delivering
