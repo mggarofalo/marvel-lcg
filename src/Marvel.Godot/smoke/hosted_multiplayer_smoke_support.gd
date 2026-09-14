@@ -5,6 +5,7 @@ var guest: Control
 var host_viewport: SubViewport
 var guest_viewport: SubViewport
 var failed := false
+var finishing := false
 
 
 func _new_client_viewport() -> SubViewport:
@@ -135,4 +136,23 @@ func _fail(message: String) -> void:
 		return
 	failed = true
 	push_error(message)
-	get_tree().quit(1)
+	_finish(1)
+
+
+func _finish(exit_code: int) -> void:
+	if finishing:
+		return
+	finishing = true
+	if is_instance_valid(host_viewport):
+		host_viewport.queue_free()
+	if is_instance_valid(guest_viewport):
+		guest_viewport.queue_free()
+	_quit_after_client_cleanup.call_deferred(exit_code)
+
+
+func _quit_after_client_cleanup(exit_code: int) -> void:
+	# SubViewports own rendering resources outside this driver's scene. Give
+	# queued client trees a frame to release those resources before SceneTree
+	# shutdown so successful native runs finish without false leak diagnostics.
+	await get_tree().process_frame
+	get_tree().quit(exit_code)
