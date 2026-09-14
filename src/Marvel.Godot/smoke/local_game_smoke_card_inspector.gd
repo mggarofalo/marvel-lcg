@@ -44,7 +44,7 @@ func _show_action_card_preview(action_card: Button) -> Control:
 	var motion := InputEventMouseMotion.new()
 	motion.position = preview_point
 	motion.global_position = preview_point
-	render_viewport.push_input(motion)
+	render_viewport.push_input(motion, true)
 	await process_frame
 	var inspector := main.get_node("CardInspector") as Control
 	if inspector == null or not inspector.visible:
@@ -80,7 +80,7 @@ func _dismiss_action_card_preview(inspector: Control) -> bool:
 	var outside_viewport := _viewport_size() + Vector2(8, 8)
 	exit_motion.position = outside_viewport
 	exit_motion.global_position = outside_viewport
-	render_viewport.push_input(exit_motion)
+	render_viewport.push_input(exit_motion, true)
 	await main.get_tree().create_timer(0.35).timeout
 	if inspector.visible:
 		_fail("the temporary action-card preview remained after a real pointer exit")
@@ -275,7 +275,7 @@ func _inspector_backdrop_is_safe(inspector: Control) -> bool:
 	click.button_index = MOUSE_BUTTON_LEFT
 	click.pressed = true
 	click.position = background_action.get_global_rect().get_center()
-	render_viewport.push_input(click)
+	render_viewport.push_input(click, true)
 	await process_frame
 	if inspector.visible:
 		_fail("clicking outside the inspected card did not close the inspector")

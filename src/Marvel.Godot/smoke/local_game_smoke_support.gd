@@ -1,4 +1,4 @@
-extends "res://smoke/local_game_smoke_input_support.gd"
+extends "res://smoke/local_game_smoke_pointer_support.gd"
 
 const SmokeScale = preload("res://smoke/local_game_smoke_scale.gd")
 const TIMEOUT_MILLISECONDS := 15000
@@ -7,7 +7,6 @@ const MAX_DECISIONS := 80
 var main: Control
 var failed := false
 var motion_enabled := true
-var render_viewport: Viewport
 func _focused_control_is_visible(control: Control) -> bool:
 	var visible_rect := _visible_control_rect(control)
 	var expected := _scaled_metric(44)
@@ -20,62 +19,40 @@ func _control_text_is_visible(control: Control) -> bool:
 		and visible_rect.size.y >= control.size.y - 1.0
 
 
-func _visible_control_rect(control: Control) -> Rect2:
-	var visible_rect := control.get_global_rect().intersection(Rect2(Vector2.ZERO, _viewport_size()))
-	var ancestor := control.get_parent()
-	while ancestor != null:
-		if ancestor is ScrollContainer or (ancestor is Control and ancestor.clip_contents):
-			visible_rect = visible_rect.intersection(ancestor.get_global_rect())
-		ancestor = ancestor.get_parent()
-	return visible_rect
-
-
-func _control_owns_point(control: Control, point: Vector2) -> bool:
-	if not _visible_control_rect(control).has_point(point):
-		return false
-	# A disabled control intentionally does not claim pointer input. It is not an
-	# operable hit target even if its painted rectangle is visible.
-	if control.mouse_filter == Control.MOUSE_FILTER_IGNORE or control is BaseButton and control.disabled:
-		return false
-	var move := InputEventMouseMotion.new()
-	move.position = point
-	move.global_position = point
-	render_viewport.push_input(move)
-	await process_frame
-	var hovered := render_viewport.gui_get_hovered_control()
-	if hovered == control or (hovered != null and control.is_ancestor_of(hovered)):
-		return true
-	# Containers using Pass may be reported as the hovered owner while delivering
-	# the event to an eligible descendant. Follow that actual mouse-filter path;
-	# a Stop ancestor is an occluder and must still fail this probe.
-	if hovered != null and hovered.is_ancestor_of(control):
-		var current: Control = control
-		while current != hovered:
-			if current.mouse_filter == Control.MOUSE_FILTER_STOP:
-				return false
-			current = current.get_parent() as Control
-		return hovered.mouse_filter == Control.MOUSE_FILTER_PASS
-	return false
-
-
 func _control_has_real_hit_area(control: Control) -> bool:
-	var rect := _visible_control_rect(control)
-	if not _control_is_fully_visible(control) or rect.size.x < 4.0 or rect.size.y < 4.0:
-		_fail("control '%s' is clipped or has no unclipped hit area: visible %s of %s" % [control.name, rect, control.get_global_rect()])
-		return false
-	var inset := minf(2.0, minf(rect.size.x, rect.size.y) / 4.0)
-	var points := [
-		rect.get_center(),
-		rect.position + Vector2(inset, inset),
-		Vector2(rect.end.x - inset, rect.position.y + inset),
-		Vector2(rect.position.x + inset, rect.end.y - inset),
-		rect.end - Vector2(inset, inset),
-	]
-	for point in points:
-		if not await _control_owns_point(control, point):
-			_fail("control '%s' loses a center or interior-edge hit to clipping or occlusion" % control.name)
-			return false
-	return true
+	for _attempt in CONTROL_HIT_AREA_ATTEMPTS:
+		var rect := _visible_control_rect(control)
+		var global_rect := control.get_global_rect()
+		if not _control_is_fully_visible(control) or rect.size.x < 4.0 or rect.size.y < 4.0:
+			# A decision rebuild can change a scroll range after the caller's first
+			# reveal. Reapply that same reveal before resnapshotting the geometry.
+			await _scroll_control_into_view(control)
+			continue
+		var inset := minf(2.0, minf(rect.size.x, rect.size.y) / 4.0)
+		var points := [
+			rect.get_center(),
+			rect.position + Vector2(inset, inset),
+			Vector2(rect.end.x - inset, rect.position.y + inset),
+			Vector2(rect.position.x + inset, rect.end.y - inset),
+			rect.end - Vector2(inset, inset),
+		]
+		var proof_is_stable := true
+		for point in points:
+			if not control.get_global_rect().is_equal_approx(global_rect) \
+					or not _visible_control_rect(control).is_equal_approx(rect) \
+					or not await _control_owns_point(control, point):
+				proof_is_stable = false
+				break
+		if proof_is_stable and control.get_global_rect().is_equal_approx(global_rect) \
+				and _visible_control_rect(control).is_equal_approx(rect):
+			return true
+		await process_frame
+	_fail("control '%s' has no stable unclipped and unobscured hit area: visible %s of %s" % [
+		control.name,
+		_visible_control_rect(control),
+		control.get_global_rect(),
+	])
+	return false
 
 
 func _scroll_control_into_view(control: Control) -> void:
@@ -110,18 +87,35 @@ func _pointer_activate(control: Control) -> bool:
 
 func _pointer_activate_without_settle(control: Control) -> bool:
 	var point := _visible_control_rect(control).get_center()
+	if not control is BaseButton:
+		_inject_pointer_click(point)
+		return true
+	var button := control as BaseButton
+	for _attempt in POINTER_ACTIVATION_ATTEMPTS:
+		var observed := [false]
+		var observe := func() -> void: observed[0] = true
+		button.pressed.connect(observe)
+		_inject_pointer_click(point)
+		if button.pressed.is_connected(observe):
+			button.pressed.disconnect(observe)
+		if observed[0]:
+			return true
+	return false
+
+
+func _inject_pointer_click(point: Vector2) -> void:
+	_position_pointer_without_settle(point)
 	var press := InputEventMouseButton.new()
 	press.button_index = MOUSE_BUTTON_LEFT
 	press.pressed = true
 	press.position = point
 	press.global_position = point
-	render_viewport.push_input(press)
+	render_viewport.push_input(press, true)
 	var release := InputEventMouseButton.new()
 	release.button_index = MOUSE_BUTTON_LEFT
 	release.position = point
 	release.global_position = point
-	render_viewport.push_input(release)
-	return true
+	render_viewport.push_input(release, true)
 
 
 func _keyboard_activate(control: Control, repeats := 1) -> bool:
@@ -153,10 +147,6 @@ func _accept_repeats_without_settle(repeats := 1) -> void:
 		var release := InputEventKey.new()
 		release.keycode = KEY_ENTER
 		render_viewport.push_input(release)
-
-
-func _viewport_size() -> Vector2:
-	return Vector2(render_viewport.size)
 
 
 func _standard_board_area_is_visible() -> bool:
