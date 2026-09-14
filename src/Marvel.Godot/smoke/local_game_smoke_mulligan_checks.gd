@@ -304,8 +304,12 @@ func _start_web_shooter_draft() -> bool:
 	if web_shooter == null or web_shooter.disabled:
 		_fail("Web-Shooter is not playable after the mulligan")
 		return false
-	if not await _pointer_activate(web_shooter):
-		return false
+	var summary := _decision().find_child("ActionSummary", true, false) as Control
+	if summary == null or "Play Web-Shooter" not in _visible_text(summary):
+		if not await _pointer_activate(web_shooter):
+			return false
+	else:
+		print("WEB_SHOOTER_PREVIEW_DRAFT_REUSED")
 	await process_frame
 	await process_frame
 	var result := _node("Play/Prompt/Margin/Stack/Workbench/Action/LastResult") as Control

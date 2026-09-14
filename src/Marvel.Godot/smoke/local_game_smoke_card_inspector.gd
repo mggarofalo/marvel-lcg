@@ -72,7 +72,7 @@ func _preview_keeps_action_operable(action_card: Button, inspector: Control) -> 
 	if selected == null or not selected.text.begins_with("✓"):
 		_fail("the pointer activation from the visible preview did not change draft state")
 		return false
-	return await _pointer_activate(selected)
+	return true
 
 
 func _dismiss_action_card_preview(inspector: Control) -> bool:
