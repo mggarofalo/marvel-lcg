@@ -47,7 +47,8 @@ func _control_owns_point(control: Control, point: Vector2) -> bool:
 		move.global_position = point
 		render_viewport.push_input(move)
 		await process_frame
-		if _hovered_control_owns(control, render_viewport.gui_get_hovered_control()):
+		if render_viewport.get_mouse_position().is_equal_approx(point) \
+				and _hovered_control_owns(control, render_viewport.gui_get_hovered_control()):
 			return true
 	return false
 
@@ -66,6 +67,35 @@ func _hovered_control_owns(control: Control, hovered: Control) -> bool:
 			current = current.get_parent() as Control
 		return hovered.mouse_filter == Control.MOUSE_FILTER_PASS
 	return false
+
+
+func _pointer_ownership_probe_is_strict() -> bool:
+	var target := Button.new()
+	target.name = &"PointerProbeTarget"
+	target.position = Vector2(24, 24)
+	target.size = Vector2(120, 60)
+	target.mouse_filter = Control.MOUSE_FILTER_STOP
+	var blocker := Control.new()
+	blocker.name = &"PointerProbeBlocker"
+	blocker.position = Vector2(74, 24)
+	blocker.size = Vector2(20, 60)
+	blocker.mouse_filter = Control.MOUSE_FILTER_STOP
+	render_viewport.add_child(target)
+	render_viewport.add_child(blocker)
+	await process_frame
+	var covered_point := Vector2(84, 54)
+	var exposed_point := Vector2(44, 54)
+	var rejects_covered := not await _control_owns_point(target, covered_point)
+	var accepts_exposed := await _control_owns_point(target, exposed_point)
+	render_viewport.remove_child(blocker)
+	render_viewport.remove_child(target)
+	blocker.queue_free()
+	target.queue_free()
+	await process_frame
+	if not rejects_covered or not accepts_exposed:
+		_fail("the pointer ownership probe did not distinguish persistent partial occlusion")
+		return false
+	return true
 
 
 func _control_has_real_hit_area(control: Control) -> bool:
