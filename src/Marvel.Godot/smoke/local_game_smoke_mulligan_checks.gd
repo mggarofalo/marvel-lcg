@@ -304,11 +304,11 @@ func _start_web_shooter_draft() -> bool:
 	if web_shooter == null or web_shooter.disabled:
 		_fail("Web-Shooter is not playable after the mulligan")
 		return false
-	if not _web_shooter_draft_is_prepared():
-		if not await _pointer_activate(web_shooter):
-			return false
-	else:
-		print("WEB_SHOOTER_PREVIEW_DRAFT_REUSED")
+	if _web_shooter_draft_is_prepared():
+		_fail("the isolated preview probe leaked its Web-Shooter draft into payment")
+		return false
+	if not await _pointer_activate(web_shooter):
+		return false
 	if not await _wait_for_web_shooter_draft(
 		"the post-mulligan action draft is not Play Web-Shooter"):
 		return false

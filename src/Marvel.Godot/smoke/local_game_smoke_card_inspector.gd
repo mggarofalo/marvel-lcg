@@ -31,6 +31,8 @@ func _action_card_preview_is_safe() -> bool:
 		return false
 	if not await _dismiss_action_card_preview(inspector):
 		return false
+	if not await _restore_unselected_action_prompt():
+		return false
 	print("CARD_PREVIEW_POINTER_PROBE_OK")
 	return true
 
@@ -111,6 +113,18 @@ func _wait_for_web_shooter_draft(failure: String) -> bool:
 	if await _wait_for(func() -> bool: return _web_shooter_draft_is_prepared()):
 		return true
 	_fail("%s; summary=%s" % [failure, _visible_text(_decision())])
+	return false
+
+
+func _restore_unselected_action_prompt() -> bool:
+	var synchronize := main.find_child("Synchronize", true, false) as Button
+	if synchronize == null or synchronize.disabled or not await _pointer_activate(synchronize):
+		_fail("the preview probe cannot restore its authoritative action prompt")
+		return false
+	if await _wait_for(func() -> bool:
+		return not _web_shooter_draft_is_prepared() and _web_shooter_action() != null):
+		return true
+	_fail("synchronizing after the preview probe retained its Web-Shooter draft")
 	return false
 
 
