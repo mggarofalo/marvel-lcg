@@ -111,6 +111,23 @@ public sealed class BoardDraftInteractionTests
     public void PointerThresholdSeparatesClickFromDrag(float distance, bool expectedDrag) =>
         Assert.Equal(expectedDrag, CardPointerGestureRouter.IsDrag(Vector2.Zero, new Vector2(distance, 0)));
 
+    [Fact]
+    public void CapturedPointerKeepsTheSourceCardAndUsesTheGlobalReleasePoint()
+    {
+        BoardCardPresentation card = new(19, 1, false, "Visible", string.Empty, "EVENT", string.Empty, []);
+        var capture = new CardPointerCapture(card, true, new Vector2(8, 12));
+
+        Assert.Same(card, capture.Card);
+        Assert.True(capture.IsHandCard);
+        Assert.True(capture.TryReleaseAt(new Vector2(17.99f, 12), out bool click));
+        Assert.False(click);
+        Assert.False(capture.TryReleaseAt(new Vector2(18, 12), out _));
+
+        var drag = new CardPointerCapture(card, true, new Vector2(8, 12));
+        Assert.True(drag.TryReleaseAt(new Vector2(18, 12), out bool isDrag));
+        Assert.True(isDrag);
+    }
+
     private static DecisionComposer TargetAndGeneratorComposer()
     {
         var composer = Composer(new Affordance(3, "Play", 19, 0, "Visible",

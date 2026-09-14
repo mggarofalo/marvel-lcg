@@ -16,6 +16,7 @@ public sealed class BoardRenderResult
     private readonly BoardCardInteractionControls interactionControls;
     private readonly BoardControlReveal reveal;
     private Control? mulliganDiscard;
+    private (Control Source, CardPointerCapture Gesture)? pointerCapture;
     private Func<CardPointerGesture, bool>? directActivation;
     private Func<CardPointerGesture, bool>? directDrag;
 
@@ -51,12 +52,66 @@ public sealed class BoardRenderResult
     internal void TrackCard(Control control, BoardCardPresentation card, bool isHandCard = false)
     {
         if (control is CardControl rendered) interactionControls.Track(rendered, card, isHandCard);
-        Vector2? pressedAt = null;
         control.GuiInput += input =>
         {
-            if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left } mouse) pressedAt = RouteMouse(control, card, isHandCard, mouse, pressedAt);
+            if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true } mouse)
+            {
+                BeginPointerCapture(control, card, isHandCard, mouse.GlobalPosition);
+            }
             else if (input is InputEventKey { Echo: false } && input.IsActionPressed("ui_accept")) Activate(control, card, isHandCard, Vector2.Zero);
         };
+    }
+
+    /// <summary>Routes a captured card gesture from the root input path.</summary>
+    internal bool RoutePointer(InputEvent input)
+    {
+        if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true })
+        {
+            pointerCapture = null;
+            return false;
+        }
+
+        if (pointerCapture is not { } captured)
+        {
+            return false;
+        }
+
+        if (!IsCurrentRender() || !InteractionControl.IsUsable(captured.Source))
+        {
+            pointerCapture = null;
+            return false;
+        }
+
+        if (input is InputEventMouseMotion)
+        {
+            return true;
+        }
+
+        if (input is not InputEventMouseButton
+            { ButtonIndex: MouseButton.Left, Pressed: false } release)
+        {
+            return false;
+        }
+
+        // Clear first: an adapter can synchronously rebuild the board, and a
+        // release must name at most one prompt-bound operation.
+        pointerCapture = null;
+        if (!captured.Gesture.TryReleaseAt(release.GlobalPosition, out bool isDrag))
+        {
+            return true;
+        }
+
+        if (isDrag)
+        {
+            TryDrag(captured.Source, captured.Gesture.Card, captured.Gesture.IsHandCard,
+                release.GlobalPosition, captured.Gesture.Start);
+        }
+        else
+        {
+            Activate(captured.Source, captured.Gesture.Card, captured.Gesture.IsHandCard,
+                release.GlobalPosition);
+        }
+        return true;
     }
 
     /// <summary>Replaces card-attached controls and cues from the current authorized draft.</summary>
@@ -68,15 +123,13 @@ public sealed class BoardRenderResult
     }
 
     internal event Action<IReadOnlyList<TableRelationshipDescriptor>>? InteractionRelationshipsChanged;
-
-
-    private Vector2? RouteMouse(Control control, BoardCardPresentation card, bool isHandCard, InputEventMouseButton mouse, Vector2? pressedAt)
+    private void BeginPointerCapture(
+        Control control, BoardCardPresentation card, bool isHandCard, Vector2 start)
     {
-        if (mouse.Pressed) return mouse.GlobalPosition;
-        if (pressedAt is not { } start) return null;
-        if (TryDrag(control, card, isHandCard, mouse.GlobalPosition, start)) { control.AcceptEvent(); return null; }
-        if (!CardPointerGestureRouter.IsDrag(start, mouse.GlobalPosition)) Activate(control, card, isHandCard, mouse.GlobalPosition);
-        return null;
+        if (IsCurrentRender() && InteractionControl.IsUsable(control))
+        {
+            pointerCapture = (control, new CardPointerCapture(card, isHandCard, start));
+        }
     }
 
     private bool TryDrag(Control control, BoardCardPresentation card, bool isHandCard, Vector2 finish, Vector2 start)

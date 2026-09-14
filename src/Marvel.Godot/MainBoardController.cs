@@ -287,7 +287,7 @@ internal sealed class MainBoardController : IDisposable
         }
     }
 
-    internal void Input(InputEvent input) => inspector.Input(input);
+    internal void Input(InputEvent input) => MainBoardInputRouter.Route(main, inspector, input);
     internal void ScheduleCardInspectorHide() => inspector.ScheduleHide();
     internal void BindCardInspectorFocus(Control control) => inspector.BindFocus(control);
     internal bool CardInspectorHasFocus() => inspector.HasFocus();
