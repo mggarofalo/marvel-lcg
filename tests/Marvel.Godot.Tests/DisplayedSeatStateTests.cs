@@ -6,7 +6,7 @@ namespace Marvel.Godot.Tests;
 public sealed class DisplayedSeatStateTests
 {
     [Fact]
-    public void SeatBoundPromptExpandsItsOwnerWithoutDiscardingTheUserWorkspaceChoice()
+    public void UserWorkspaceChoiceRemainsExpandedWhilePromptOwnershipStaysDistinct()
     {
         var state = new DisplayedSeatState();
         DisplayedSeatSnapshot waiting = Snapshot("game-a", [0, 1], promptOwner: null,
@@ -17,9 +17,21 @@ public sealed class DisplayedSeatStateTests
             promptOwner: 0, activePlayer: 0, viewedPrivateSeat: 0, publicFocusSeat: 0));
         DisplayedSeatSelection released = state.Update(waiting);
 
-        Assert.Equal(0, prompted.ExpandedSeat);
+        Assert.Equal(1, prompted.ExpandedSeat);
         Assert.Equal(0, prompted.PromptOwner);
         Assert.Equal(1, released.ExpandedSeat);
+    }
+
+    [Fact]
+    public void SeatBoundPromptChoosesItsOwnerBeforeTheUserSelectsAWorkspace()
+    {
+        var state = new DisplayedSeatState();
+
+        DisplayedSeatSelection prompted = state.Update(Snapshot("game-a", [0, 1],
+            promptOwner: 1, activePlayer: 0, viewedPrivateSeat: 0, publicFocusSeat: 0));
+
+        Assert.Equal(1, prompted.ExpandedSeat);
+        Assert.Equal(1, prompted.PromptOwner);
     }
 
     [Fact]

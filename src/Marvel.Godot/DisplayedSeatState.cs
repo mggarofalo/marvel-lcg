@@ -61,11 +61,12 @@ internal sealed class DisplayedSeatState
 
     private int ExpandedSeat(DisplayedSeatRoles roles, int[] seats)
     {
-        // This is a desktop layout choice, not a rule: a seat-bound prompt takes the
-        // workspace; otherwise a deliberate local choice takes precedence over the
-        // host's public focus, then the active seat, then stable seat order.
-        return roles.PromptOwner
-            ?? selectedSeat
+        // This is a desktop layout choice, not a rule: a deliberate local choice
+        // remains visible while its seat exists. Before the player chooses, a
+        // seat-bound prompt opens its owner, followed by the host's public focus,
+        // the active seat, and stable seat order.
+        return selectedSeat
+            ?? roles.PromptOwner
             ?? roles.PublicFocusSeat
             ?? roles.ActivePlayer
             ?? seats[0];
