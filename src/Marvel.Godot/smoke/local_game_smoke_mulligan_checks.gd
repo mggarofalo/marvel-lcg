@@ -1,4 +1,4 @@
-extends "res://smoke/local_game_smoke_card_checks.gd"
+extends "res://smoke/local_game_smoke_direct_journey.gd"
 
 func _mulligan_result_and_payment_are_operable() -> bool:
 	if not await _select_mulligan_cards():
@@ -19,9 +19,7 @@ func _mulligan_result_and_payment_are_operable() -> bool:
 		return false
 	if not await _action_card_preview_is_safe():
 		return false
-	if not await _start_web_shooter_draft():
-		return false
-	return await _payment_is_keyboard_operable()
+	return await _direct_table_journey_is_operable()
 
 
 func _fallback_mulligan_sheet_is_focus_safe() -> bool:
@@ -103,13 +101,30 @@ func _select_mulligan_cards() -> bool:
 		return false
 	if not await _sheet_selection_stays_bound("Aunt May", true):
 		return false
-	if not await _drag_mulligan_to_discard(kick):
-		return false
-	if not await _sheet_selection_stays_bound("Swinging Web Kick", false):
+	if not await _drag_capture_is_safe(kick):
 		return false
 	if not await _keyboard_activate(_mulligan_discard("Swinging Web Kick")):
 		return false
 	return mansion.text == "✓ DISCARD" and _mulligan_discard("Swinging Web Kick").text == "✓ DISCARD"
+
+
+func _drag_capture_is_safe(card: Control) -> bool:
+	if not await _drag_mulligan_to_discard(card):
+		return false
+	# The source card owns this press while the pointer enters the destination.
+	# One callback changes the unchecked toggle once; two callbacks would return
+	# it to unchecked.
+	if not _mulligan_discard("Swinging Web Kick").button_pressed:
+		_fail("a source-card drag released over discard did not select exactly once")
+		return false
+	if not await _sheet_selection_stays_bound("Swinging Web Kick", false):
+		return false
+	if not await _drag_mulligan_outside_discard(card):
+		return false
+	if _mulligan_discard("Swinging Web Kick").button_pressed:
+		_fail("a source-card drag released outside discard changed the opening-hand draft")
+		return false
+	return true
 
 
 func _sheet_selection_stays_bound(title: String, select: bool) -> bool:
@@ -179,11 +194,24 @@ func _drag_mulligan_to_discard(card: Control) -> bool:
 			if "DISCARD PILE" in _visible_text(area):
 				discard = area
 				break
-	if discard == null or not await _prepare_activation(card) or not await _prepare_activation(discard):
+	if discard == null or not await _prepare_activation(discard):
 		_fail("the player discard place is not a reachable mulligan drop destination")
 		return false
+	return await _drag_mulligan(card, _visible_control_rect(discard).get_center())
+
+
+func _drag_mulligan_outside_discard(card: Control) -> bool:
+	if card == null:
+		return false
+	# This remains on the source card while travelling farther than the drag
+	# threshold, so it is outside every registered drop destination.
+	return await _drag_mulligan(card, _visible_control_rect(card).get_center() + Vector2(12, 0))
+
+
+func _drag_mulligan(card: Control, finish: Vector2) -> bool:
+	if card == null or not await _prepare_activation(card):
+		return false
 	var start := _visible_control_rect(card).get_center()
-	var finish := _visible_control_rect(discard).get_center()
 	var press := InputEventMouseButton.new()
 	press.button_index = MOUSE_BUTTON_LEFT
 	press.pressed = true

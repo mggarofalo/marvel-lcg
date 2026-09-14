@@ -34,10 +34,10 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 20.0
-offset_top = 20.0
-offset_right = -20.0
-offset_bottom = -20.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = -16.0
 grow_horizontal = 2
 grow_vertical = 2
 follow_focus = true
@@ -115,7 +115,7 @@ text = "Motion"
 tooltip_text = "Show short visual cues for new game events."
 
 [node name="StatusBarClearance" type="Control" parent="Margin/Shell/Content" unique_id=1000000015]
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 
 [node name="Eyebrow" type="Label" parent="Margin/Shell/Content" unique_id=1000000016]
@@ -405,6 +405,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="TableScroll" type="ScrollContainer" parent="Margin/Shell/Content/Play/Board" unique_id=1000000066]
+custom_minimum_size = Vector2(0, 96)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3

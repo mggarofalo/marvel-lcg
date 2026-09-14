@@ -23,7 +23,6 @@ public sealed class PresentationBoundaryTests
             "Marvel.Rules.Prompts.Affordance",
             "Marvel.Rules.Prompts.CostOption",
             "Marvel.Rules.Prompts.Prompt",
-            "Marvel.Rules.Prompts.Question",
             "Marvel.Rules.Prompts.ResourceCost",
             "Marvel.Rules.Prompts.ResourceSource",
             "Marvel.Rules.Prompts.TargetRequest",
@@ -52,6 +51,7 @@ public sealed class PresentationBoundaryTests
             "Marvel.Decisions.EngineDecision",
             "Marvel.Decisions.PaymentProgress",
             "Marvel.Decisions.ResourceIconAssignment",
+            "Marvel.Decisions.TableDraftOperations",
             "Marvel.Decisions.TargetSelectionMode",
             "Marvel.Decisions.TargetSelectionProgress",
             "Marvel.Server.EngineBuildIdentity",
@@ -65,6 +65,7 @@ public sealed class PresentationBoundaryTests
             "Marvel.Server.SeatInvitation",
             "Marvel.Server.SetupChoices",
             "Marvel.View.AffordancePresentation",
+            "Marvel.View.AffordanceSourceDescriptor",
             "Marvel.View.BoardAreaPresentation",
             "Marvel.View.BoardAreaProminence",
             "Marvel.View.BoardCardPresentation",
@@ -81,6 +82,7 @@ public sealed class PresentationBoundaryTests
             "Marvel.View.EventPresentation",
             "Marvel.View.PromptPresentation",
             "Marvel.View.PlayerSummaryDescriptor",
+            "Marvel.View.TableRelationshipDescriptor",
             "Marvel.View.WorldDescriptor");
     }
 }

@@ -70,9 +70,13 @@ public static class BoardRenderer
 
         var areas = new HFlowContainer
         {
-            Name = "LiveAreaFlow",
+            Name = "LiveAreaFlow", CustomMinimumSize = new Vector2(0, 44),
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
+        if (lane.Seat is { } dropSeat)
+        {
+            result.RegisterDropTarget(dropSeat, section);
+        }
         foreach (BoardAreaPresentation area in lane.Areas.Where(area =>
                      area.Prominence == BoardAreaProminence.Live))
         {
@@ -233,7 +237,7 @@ public static class BoardRenderer
         BoardCardPresentation[] upcomingStages =
             [.. area.Cards.Where(card => card.StageRole == BoardStageRole.Upcoming)];
         AddCards(body, primaryCards, "CARDS", area.Zone, result, scale, art);
-        AddUpcomingStages(
+        BoardUpcomingStagesRenderer.Add(
             body, upcomingStages, area.Id, result, scale, expandedAreas, art);
         if (area.Removed.Count > 0)
         {
@@ -242,67 +246,6 @@ public static class BoardRenderer
         }
 
         return panel;
-    }
-
-    private static void AddUpcomingStages(
-        VBoxContainer destination,
-        BoardCardPresentation[] cards,
-        int areaId,
-        BoardRenderResult result,
-        InterfaceScale scale,
-        IDictionary<int, bool> expandedAreas,
-        ICardArtProvider? art)
-    {
-        if (cards.Length == 0)
-        {
-            return;
-        }
-
-        int count = cards.Sum(card => card.Count);
-        int stateKey = UpcomingStagesStateKey(areaId);
-        bool expanded = expandedAreas.TryGetValue(stateKey, out bool remembered)
-            && remembered;
-        var section = new VBoxContainer
-        {
-            Name = "UpcomingStages",
-            ThemeTypeVariation = GodotThemeVariations.TightStack,
-        };
-        var disclosure = new Button
-        {
-            Name = "UpcomingStagesDisclosure",
-            Text = $"{(expanded ? "▾" : "▸")}  Upcoming stages  ·  {count}",
-            Alignment = HorizontalAlignment.Left,
-            ToggleMode = true,
-            ButtonPressed = expanded,
-            TooltipText = "Show or hide the stages that follow the current stage.",
-        };
-        var list = new VBoxContainer
-        {
-            Name = "UpcomingStagesList",
-            Visible = expanded,
-            ThemeTypeVariation = GodotThemeVariations.TightStack,
-        };
-        disclosure.Pressed += () =>
-        {
-            expandedAreas[stateKey] = disclosure.ButtonPressed;
-            list.Visible = disclosure.ButtonPressed;
-            disclosure.Text = $"{(disclosure.ButtonPressed ? "▾" : "▸")}  Upcoming stages  ·  {count}";
-        };
-        section.AddChild(disclosure);
-        section.AddChild(list);
-        destination.AddChild(section);
-
-        foreach (BoardCardPresentation card in cards)
-        {
-            CardControl control = CardControl.Create(card, CardDisplaySize.Board, scale, art);
-            control.SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin;
-            list.AddChild(control);
-            if (card.TargetId is { } target)
-            {
-                result.Register(target, control);
-            }
-            result.TrackCard(control, card);
-        }
     }
 
     internal static int UpcomingStagesStateKey(int areaId) =>
@@ -389,7 +332,7 @@ public static class BoardRenderer
             {
                 result.Register(target, control);
             }
-            result.TrackCard(control, card);
+            result.TrackCard(control, card, isHandCard: true);
         }
     }
 

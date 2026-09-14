@@ -41,10 +41,7 @@ internal static class DecisionPanelPromptRenderer
         var scroll = new ScrollContainer
         {
             Name = "DecisionBodyScroll",
-            CustomMinimumSize = composer.Selected?.CostOptions.Any(cost =>
-                cost.Generators.Count > 0) == true
-                    ? new Vector2(0, panel.ControlMetrics.MinimumPointerTarget)
-                    : Vector2.Zero,
+            CustomMinimumSize = new Vector2(0, panel.ControlMetrics.MinimumPointerTarget),
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             SizeFlagsVertical = Control.SizeFlags.ExpandFill,
             FollowFocus = true,

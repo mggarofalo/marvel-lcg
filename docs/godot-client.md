@@ -319,6 +319,16 @@ effect observes which resource type was paid, and payments with simultaneous
 components retain explicit destination controls. The prompt carries that
 observability; the client does not infer it from card text.
 
+Visible cards carry prompt-authorized `ACTION`, `TARGET`, and `RESOURCE`
+controls beside their non-color cues. A hand card may be dragged only to the
+prompt owner's live lane to prepare its offered play; a body click still opens
+the card inspector and a drop outside that lane changes no draft. When a card
+has several offered actions, its attached control opens an anchored chooser
+rather than selecting by list order. Keyboard activation of an attached control
+and the decision-rail fallback compose the same engine decision. The player
+selects targets and payment generators before pressing the fixed, explicit
+Commit control; the submission latch accepts that prompt revision once.
+
 Each authorized snapshot includes a host revision. The client echoes that
 revision with its next decision, so a draft made for an earlier prompt is
 rejected and synchronized instead of being applied to a later prompt whose
@@ -341,9 +351,10 @@ transport and protocol evidence; it does not infer whether a server restarted.
 The native smoke loads the real scene at each supported UI scale, selects
 Spider-Man and Rhino, enters seed `1`, opens the table, mulligans three cards,
 proves the consolidated result can collapse and clear without hiding
-Web-Shooter's payment generators, changes to hero form and
+Web-Shooter's payment generators, drags the exact duplicate Web-Shooter anchor
+through target, resource and explicit Commit, changes to hero form and
 activates only visible buttons until the UI reports the seeded loss. It exercises
-submit, target-selection and pass paths, verifies the enemy-attack interrupt
+attached action choice, target-selection, resource payment, submit and pass paths, verifies the enemy-attack interrupt
 context, checks that history and the primary result remain populated, and prints
 `LOCAL_GAME_SMOKE_OK` on success. The full
 matrix runs with event motion enabled; a representative desktop profile also

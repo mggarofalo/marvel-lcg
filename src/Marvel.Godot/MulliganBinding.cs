@@ -19,12 +19,13 @@ internal static class MulliganBinding
         board.BindMulliganTargets(request.Legal, panel.composer.Targets, target =>
         {
             int generation = panel.GetRenderGeneration();
-            if (!panel.IsCurrentDraft(draft, generation))
+            TableDraftBinding operations = panel.BindTableDraft(draft, generation);
+            if (!operations.TryToggleTarget(target))
             {
                 return;
             }
 
-            panel.ToggleMulliganTarget(target, draft, generation);
+            panel.RefreshMulliganTargets(draft, target);
         });
     }
 }

@@ -1,7 +1,8 @@
 extends "res://smoke/local_game_smoke_input_support.gd"
 
+const SmokeScale = preload("res://smoke/local_game_smoke_scale.gd")
 const TIMEOUT_MILLISECONDS := 15000
-const MAX_DECISIONS := 20
+const MAX_DECISIONS := 80
 
 var main: Control
 var failed := false
@@ -85,7 +86,8 @@ func _scroll_control_into_view(control: Control) -> void:
 			scrolls.append(ancestor)
 		ancestor = ancestor.get_parent()
 	for scroll in scrolls:
-		scroll.ensure_control_visible(control)
+		if scroll.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED:
+			scroll.ensure_control_visible(control)
 		await process_frame
 	await process_frame
 
@@ -155,42 +157,6 @@ func _accept_repeats_without_settle(repeats := 1) -> void:
 
 func _viewport_size() -> Vector2:
 	return Vector2(render_viewport.size)
-
-
-func _focused_board_area_is_visible() -> bool:
-	if main.find_child("VillainTable", true, false) != null:
-		return await _tabletop_board_area_is_visible()
-	return await _standard_board_area_is_visible()
-
-
-func _tabletop_board_area_is_visible() -> bool:
-	var villain := main.find_child("VillainTable", true, false) as Control
-	var player := main.find_child("PlayerTable", true, false) as Control
-	var board := _node("Play/Board/TableScroll") as ScrollContainer
-	var scheme := _tabletop_card_named("The Break-In!")
-	if villain == null or player == null or board == null or scheme == null \
-			or not _control_is_fully_visible(villain) \
-			or not _control_is_fully_visible(player) \
-			or board.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED:
-		_fail("the tabletop did not keep its far and near board areas visibly focusable")
-		return false
-	scheme.grab_focus()
-	await process_frame
-	if render_viewport.gui_get_focus_owner() != scheme or not await _control_has_real_hit_area(scheme):
-		_fail("the tabletop main scheme cannot receive visible body focus")
-		return false
-	if not await _pointer_activate(scheme):
-		return false
-	var inspector := main.get_node("CardInspector") as Control
-	if inspector == null or not inspector.visible or inspector.find_child("CardFace", true, false) == null:
-		_fail("clicking the tabletop main scheme did not inspect its current card")
-		return false
-	var escape := InputEventKey.new()
-	escape.keycode = KEY_ESCAPE
-	escape.pressed = true
-	render_viewport.push_input(escape)
-	await process_frame
-	return not inspector.visible
 
 
 func _standard_board_area_is_visible() -> bool:
@@ -404,21 +370,11 @@ func _select_named_option(option: OptionButton, wanted: String) -> void:
 
 
 func _scale_percentage() -> int:
-	var configured := OS.get_environment("MARVEL_UI_SCALE").strip_edges().to_lower()
-	match configured:
-		"compact", "":
-			return 80
-		"standard":
-			return 100
-		"large":
-			return 120
-		"extra-large":
-			return 150
-	return int(configured.trim_suffix("%"))
+	return SmokeScale.percentage(OS.get_environment("MARVEL_UI_SCALE"))
 
 
 func _scaled_metric(base: int) -> int:
-	return ceili(base * _scale_percentage() / 100.0)
+	return SmokeScale.metric(base, OS.get_environment("MARVEL_UI_SCALE"))
 
 
 func _button_named(wanted: String) -> Button:

@@ -15,6 +15,7 @@ internal sealed class DecisionDraftRenderer
     private readonly WorldDescriptor world;
     private readonly bool submitting;
     private readonly int generation;
+    private readonly TableDraftBinding operations;
 
     internal DecisionDraftRenderer(
         DecisionPanel panel,
@@ -28,6 +29,7 @@ internal sealed class DecisionDraftRenderer
         this.world = world;
         this.submitting = submitting;
         this.generation = generation;
+        operations = panel.BindTableDraft(composer, generation);
     }
     internal void AddTargets(Affordance selected, TargetSelectionProgress progress)
     {
@@ -104,9 +106,7 @@ internal sealed class DecisionDraftRenderer
                 : InteractiveVisualState.Legal);
             choose.Pressed += () =>
             {
-                if (!panel.IsCurrentDraft(composer, generation)) return;
-                composer.SelectTargets(group);
-                panel.Rebuild();
+                if (operations.TrySelectGroup(group)) panel.Rebuild();
             };
             panel.BindAnchors(choose, [.. group]);
             panel.AddContent(choose);
@@ -163,22 +163,19 @@ internal sealed class DecisionDraftRenderer
                 : InteractiveVisualState.Legal);
         choose.Pressed += () =>
         {
-            if (!panel.IsCurrentDraft(composer, generation)) return;
             if (MulliganPrompt.IsOpening(composer.Prompt))
             {
-                panel.ToggleMulliganTarget(target, composer, generation);
+                if (operations.TryToggleTarget(target))
+                {
+                    panel.RefreshMulliganTargets(composer, target);
+                }
                 return;
             }
-            if (composer.Targets.Contains(target))
+            if (operations.TryToggleTarget(target))
             {
-                composer.RemoveTarget(target);
+                panel.NotifyAnchorFocused([target]);
+                panel.Rebuild();
             }
-            else
-            {
-                composer.AddTarget(target);
-            }
-            panel.NotifyAnchorFocused([target]);
-            panel.Rebuild();
         };
         panel.BindAnchors(choose, target);
         panel.AddContent(choose);
@@ -206,9 +203,7 @@ internal sealed class DecisionDraftRenderer
             compact: true);
         remove.Pressed += () =>
         {
-            if (!panel.IsCurrentDraft(composer, generation)) return;
-            composer.RemoveTarget(target);
-            panel.Rebuild();
+            if (operations.TryRemoveTarget(target)) panel.Rebuild();
         };
         panel.BindAnchors(remove, target);
         row.AddChild(remove);
@@ -231,10 +226,11 @@ internal sealed class DecisionDraftRenderer
             compact: true);
         add.Pressed += () =>
         {
-            if (!panel.IsCurrentDraft(composer, generation)) return;
-            composer.AddTarget(target);
-            panel.NotifyAnchorFocused([target]);
-            panel.Rebuild();
+            if (operations.TryAddTarget(target))
+            {
+                panel.NotifyAnchorFocused([target]);
+                panel.Rebuild();
+            }
         };
         panel.BindAnchors(add, target);
         row.AddChild(add);

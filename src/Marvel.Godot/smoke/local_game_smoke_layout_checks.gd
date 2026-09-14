@@ -1,8 +1,11 @@
-extends "res://smoke/local_game_smoke_support.gd"
+extends "res://smoke/local_game_smoke_board_interaction_checks.gd"
 
 func _board_layout_is_resolved() -> bool:
 	if main.find_child("VillainTable", true, false) != null:
 		return await _mulligan_table_layout_is_resolved()
+	if OS.get_environment("MARVEL_SMOKE_VIEWPORT") == "1920x1080":
+		_fail("the 1920 desktop opening prompt did not render the tabletop surface")
+		return false
 	if main.find_child("CompleteChoiceSheet", true, false) != null:
 		return await _fallback_mulligan_layout_is_resolved()
 	var lanes := _board_lanes()
@@ -45,8 +48,27 @@ func _mulligan_table_layout_is_resolved() -> bool:
 	if villain == null or player == null or villain.get_global_rect().position.y >= player.get_global_rect().position.y:
 		_fail("the mulligan table does not keep the villain far from the near player area")
 		return false
-	if page.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED \
-			or table.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED:
+	if OS.get_environment("MARVEL_SMOKE_VIEWPORT") == "1920x1080":
+		var board := _node("Play/Board") as Control
+		var table_rect := table.get_global_rect()
+		var villain_rect := villain.get_global_rect()
+		var player_rect := player.get_global_rect()
+		# A full desktop canvas must produce a real tabletop, rather than the
+		# compact strip that happens to contain the right node names.
+		if board == null or table_rect.size.y < 360.0 \
+				or villain_rect.size.y < 120.0 or player_rect.size.y < 120.0 \
+				or player_rect.position.y - villain_rect.position.y < 120.0:
+			_fail("the 1920 tabletop did not settle into meaningful far/near geometry: board=%s table=%s villain=%s player=%s" % [
+				board.get_global_rect() if board != null else "missing",
+				table_rect,
+				villain_rect,
+				player_rect,
+			])
+			return false
+	var table_scroll_is_bounded := table.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED \
+		if int(OS.get_environment("MARVEL_UI_SCALE")) <= 100 \
+		else table.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_AUTO
+	if page.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED or not table_scroll_is_bounded:
 		_fail("the opening desktop table introduced gameplay scrolling")
 		return false
 	if OS.get_environment("MARVEL_SMOKE_VIEWPORT") == "1920x1080" \
@@ -229,6 +251,60 @@ func _keyboard_selection_is_operable() -> bool:
 	if not await _focused_board_area_is_visible():
 		return false
 	return await _capture_checkpoint("action-composition")
+
+
+func _attached_control_focus_is_safe(state: Dictionary) -> bool:
+	var control := _first_attached_action_control()
+	if control == null:
+		return true
+	state.tested_attached_focus = true
+	render_viewport.gui_release_focus()
+	for frame in 5:
+		await process_frame
+	if not await _align_attached_control_to_table(control) \
+			or not await _control_has_real_hit_area(control):
+		return false
+	var card := control.get_parent().get_parent() as Control
+	if card == null or not card.get_global_rect().encloses(control.get_global_rect()):
+		_fail("an attached action control escaped its card surface")
+		return false
+	var issued_name := String(control.name)
+	var issued_id := control.get_instance_id()
+	if not await _keyboard_activate_without_settle(control):
+		return false
+	if not await _wait_for(func() -> bool:
+		var replacement := main.find_child(issued_name, true, false) as Button
+		return replacement != null and replacement.get_instance_id() != issued_id \
+			and replacement.has_focus()):
+		_fail("keyboard focus was lost when an attached action control rebuilt")
+		return false
+	var replacement := main.find_child(issued_name, true, false) as Button
+	if replacement == null or not await _control_has_real_hit_area(replacement):
+		_fail("the rebuilt attached action control has no scaled pointer target")
+		return false
+	return true
+
+
+func _first_attached_action_control() -> Button:
+	var fallback: Button = null
+	for candidate in main.find_children("Card*Action", "Button", true, false):
+		var control := candidate as Button
+		if control != null and not control.disabled \
+				and control.get_parent() != null and control.get_parent().name == &"DirectControls":
+			if _has_named_ancestor(control, &"HandShelf"):
+				return control
+			if fallback == null:
+				fallback = control
+	return fallback
+
+
+func _has_named_ancestor(control: Control, expected: StringName) -> bool:
+	var ancestor := control.get_parent()
+	while ancestor != null:
+		if ancestor.name == expected:
+			return true
+		ancestor = ancestor.get_parent()
+	return false
 
 
 func _prompt_header_is_safe(decision_scroll: ScrollContainer) -> bool:

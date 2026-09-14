@@ -99,6 +99,9 @@ func _table_interactions_are_safe() -> bool:
 		if not await _focused_board_area_is_visible():
 			return false
 		return await _mulligan_dock_is_safe()
+	if OS.get_environment("MARVEL_SMOKE_VIEWPORT") == "1920x1080":
+		_fail("the 1920 desktop opening prompt fell back instead of rendering VillainTable")
+		return false
 	if main.find_child("CompleteChoiceSheet", true, false) != null:
 		return await _fallback_mulligan_sheet_is_focus_safe()
 	if not await _keyboard_selection_is_operable():
@@ -134,7 +137,9 @@ func _play_seeded_journey() -> Dictionary:
 		"tested_active_motion_toggle": false,
 		"captured_villain_phase": false,
 		"changed_form": false,
+		"form_before_change": "",
 		"tested_undo": false,
+		"tested_attached_focus": false,
 		"saw_attack_resolution": false,
 		"decisions": 0,
 	}
@@ -148,7 +153,7 @@ func _play_one_decision(state: Dictionary) -> bool:
 	if state.decisions >= MAX_DECISIONS:
 		_fail("the visible-control journey exceeded %d decisions" % MAX_DECISIONS)
 		return false
-	if not _visible_buttons_meet_pointer_floor():
+	if not await _decision_controls_are_safe(state):
 		return false
 	var ending_player_phase := _observe_decision(state)
 	if ending_player_phase and not await _capture_checkpoint("player-phase"):
@@ -171,6 +176,18 @@ func _play_one_decision(state: Dictionary) -> bool:
 	return await _villain_history_checkpoint_is_safe(state)
 
 
+func _attached_controls_are_safe(state: Dictionary) -> bool:
+	if state.tested_attached_focus:
+		return true
+	return await _attached_control_focus_is_safe(state)
+
+
+func _decision_controls_are_safe(state: Dictionary) -> bool:
+	if not _visible_buttons_meet_pointer_floor():
+		return false
+	return await _attached_controls_are_safe(state)
+
+
 func _observe_decision(state: Dictionary) -> bool:
 	var text := _visible_text(_decision())
 	state.saw_mulligan = state.saw_mulligan or "discard and redraw" in text.to_lower()
@@ -183,6 +200,8 @@ func _advance_visible_decision(state: Dictionary) -> bool:
 	var change_form := _visible_button_beginning(_decision(), "Change Form")
 	var pass_button := _visible_button(_decision(), "Pass / decline")
 	if not state.changed_form and change_form != null and not change_form.disabled:
+		state.form_before_change = "Peter Parker" \
+			if "Peter Parker\nREC" in _visible_text(_play()) else "Spider-Man"
 		if not await _mixed_submit_is_single_shot():
 			return false
 		state.changed_form = true
@@ -243,8 +262,8 @@ func _undo_first_form_change(state: Dictionary) -> bool:
 			.text.begins_with("UNDOING")):
 		_fail("undoing the form change did not settle")
 		return false
-	if "Peter Parker" not in _visible_text(_play()):
-		_fail("undoing the form change did not restore alter-ego form")
+	if state.form_before_change not in _visible_text(_play()):
+		_fail("undoing the form change did not restore %s" % state.form_before_change)
 		return false
 	if not await _show_action_tab():
 		return false
@@ -373,6 +392,9 @@ func _terminal_table_is_safe(state: Dictionary) -> bool:
 func _required_journey_paths_were_seen(state: Dictionary) -> bool:
 	if not state.saw_mulligan or not state.saw_pass or not state.saw_end_phase:
 		_fail("the journey missed a required visible decision path")
+		return false
+	if not state.tested_attached_focus:
+		_fail("the journey never reached an attached action control")
 		return false
 	if not state.changed_form or not state.tested_undo:
 		_fail("the journey did not change form again after proving undo")

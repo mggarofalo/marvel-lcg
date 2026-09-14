@@ -33,15 +33,16 @@ public sealed partial class DecisionPanel : VBoxContainer
     public event Action<DecisionProgressPresentation?>? ProgressChanged;
     /// <summary>Raised when a player opens one action's target and payment editor.</summary>
     public event Action? DraftStarted;
+    /// <summary>Raised when prompt-authorized card cues need to reflect the current draft.</summary>
+    internal event Action<DecisionComposer?, PromptPresentation?>? DraftChanged;
     /// <summary>Applies the current presentation-only desktop scale.</summary>
     public void SetInterfaceScale(InterfaceScale scale)
     {
         requestedScale = scale;
-        // The tabletop owns the full desktop height. Its dock deliberately
-        // keeps one compact metric so a scale preference never moves Commit.
-        InterfaceScale effectiveScale = compactMulliganChrome && MulliganPrompt.IsOpening(composer?.Prompt)
-            ? InterfaceScale.Standard
-            : scale;
+        // The fixed tabletop dock keeps Standard as its pointer-size floor,
+        // while its opening prompt stays Standard to keep Commit in view.
+        InterfaceScale effectiveScale = EffectiveScale(
+            scale, compactMulliganChrome, MulliganPrompt.IsOpening(composer?.Prompt));
         if (interfaceScale == effectiveScale)
         {
             if (composer is not null)
@@ -60,11 +61,16 @@ public sealed partial class DecisionPanel : VBoxContainer
     /// <summary>Discards the old draft and renders the response's current prompt.</summary>
     public void Render(Prompt? prompt, WorldDescriptor currentWorld, long revision)
     {
-        interfaceScale = compactMulliganChrome && MulliganPrompt.IsOpening(prompt)
-            ? InterfaceScale.Standard
-            : requestedScale;
+        interfaceScale = EffectiveScale(
+            requestedScale, compactMulliganChrome, MulliganPrompt.IsOpening(prompt));
         lifecycle.Render(prompt, currentWorld, revision);
     }
+
+    internal static InterfaceScale EffectiveScale(
+        InterfaceScale requested, bool compactTableChrome, bool opening) =>
+        compactTableChrome && (opening || requested < InterfaceScale.Standard)
+            ? InterfaceScale.Standard
+            : requested;
 
     internal void SetCompactMulliganChrome(bool value)
     {
@@ -102,23 +108,24 @@ public sealed partial class DecisionPanel : VBoxContainer
     {
         mulliganBoard = board;
         MulliganBinding.Bind(this, board);
+        BoardInteractionBinder.Bind(this, board);
+        board?.PresentInteraction(composer,
+            composer is null || world is null ? null : PromptPresentation.From(composer.Prompt, world));
     }
 
-    internal void ToggleMulliganTarget(int target, DecisionComposer draft, int generation)
+    internal TableDraftBinding BindTableDraft(DecisionComposer draft, int generation) =>
+        lifecycle.Bind(draft, generation);
+
+    internal void RefreshMulliganTargets(DecisionComposer draft, int target)
     {
-        if (!IsCurrentDraft(draft, generation)
-            || draft.Selected?.Targets is not { } request
-            || !request.Legal.Contains(target))
-        {
-            return;
-        }
-        if (draft.Targets.Contains(target)) draft.RemoveTarget(target); else draft.AddTarget(target);
         mulliganBoard?.SetMulliganTargets(draft.Targets);
         NotifyAnchorFocused([target]);
         Rebuild();
     }
+
     internal bool IsCurrentDraft(DecisionComposer expected, int generation) =>
-        ReferenceEquals(composer, expected) && lifecycle.CanMutate(generation);
+        ReferenceEquals(composer, expected)
+        && lifecycle.CanMutate(generation, lifecycle.Revision);
 
     internal void RaiseSubmitted(EngineDecision decision) => Submitted?.Invoke(decision);
 
@@ -126,25 +133,36 @@ public sealed partial class DecisionPanel : VBoxContainer
 
     internal void Rebuild(bool focusFirst = false)
     {
+        BoardActionChoiceSurface.Close();
         int generation = lifecycle.NextRenderGeneration();
         Control? focused = GetViewport()?.GuiGetFocusOwner();
         string? focusName = focused is not null && IsAncestorOf(focused)
             ? FocusKey(focused)
             : null;
         ClearPanel();
-        if (composer is null || world is null)
+        if (!RenderPrompt())
         {
+            DraftChanged?.Invoke(null, null);
             RenderNoDecision();
             return;
         }
+        Callable.From(() => lifecycle.RestoreFocus(focusName, focusFirst, generation)).CallDeferred();
+    }
 
+    private bool RenderPrompt()
+    {
+        if (composer is null || world is null)
+        {
+            return false;
+        }
         PromptPresentation prompt = PromptPresentation.From(composer.Prompt, world);
+        DraftChanged?.Invoke(composer, prompt);
         DecisionPanelPromptRenderer.CreateLayout(this, composer, prompt);
         DecisionPanelPromptRenderer.AddAffordances(this, prompt, lifecycle.RenderGeneration);
         AddSelectedDraft();
         AddDecline();
         ProgressChanged?.Invoke(composer.Progress());
-        Callable.From(() => lifecycle.RestoreFocus(focusName, focusFirst, generation)).CallDeferred();
+        return true;
     }
 
     private void ClearPanel()
@@ -215,7 +233,7 @@ public sealed partial class DecisionPanel : VBoxContainer
         int generation = lifecycle.RenderGeneration;
         pass.Pressed += () =>
         {
-            if (lifecycle.CanMutate(generation)
+            if (lifecycle.CanMutate(generation, lifecycle.Revision)
                 && composer!.TryDecline(out EngineDecision? decision, out _))
             {
                 NotifySubmitted(decision!, generation);

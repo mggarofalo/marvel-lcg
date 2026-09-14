@@ -13,10 +13,10 @@ config/features=PackedStringArray("4.7", "C#", "GL Compatibility")
 
 [display]
 
-window/size/viewport_width=1280
-window/size/viewport_height=720
-window/size/window_width_override=1920
-window/size/window_height_override=1080
+; The desktop canvas is the primary tabletop. Smaller windows are handled by
+; the responsive layout rather than by shrinking this logical board first.
+window/size/viewport_width=1920
+window/size/viewport_height=1080
 window/stretch/mode="canvas_items"
 
 [dotnet]

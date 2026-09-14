@@ -21,6 +21,9 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
     /// <summary>Host-selected table roles; this never contains private card detail.</summary>
     public TableContextDescriptor? Table { get; init; }
 
+    /// <summary>Explicit visibility-reviewed connections supplied by the snapshot.</summary>
+    public IReadOnlyList<TableRelationshipDescriptor> Relationships { get; init; } = [];
+
     /// <summary>Builds a fresh presentation without retaining or enriching engine state.</summary>
     public static BoardPresentation From(WorldDescriptor world)
     {
@@ -44,6 +47,7 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
             Lanes = BoardLayout.Arrange(areas, seats),
             PlayerSummaries = world.PlayerSummaries,
             Table = world.Table,
+            Relationships = [.. world.Relationships],
         };
     }
 

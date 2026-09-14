@@ -87,15 +87,25 @@ internal sealed class MainLayoutController
         // This is a presentation choice. Gameplay is a full-width table whose
         // decision dock remains below the hand; neither the page nor the table
         // can scroll the current decision away.
+        Vector2 viewport = main.GetViewportRect().Size;
         DesktopPlayMetrics layout = VisualSystem.DesktopPlay(
-            Math.Max(1, Mathf.RoundToInt(main.Size.X)),
-            Math.Max(1, Mathf.RoundToInt(main.Size.Y)),
+            Math.Max(1, Mathf.RoundToInt(viewport.X)),
+            Math.Max(1, Mathf.RoundToInt(viewport.Y)),
             main.interfaceScale);
-        bool compactHeight = main.Size.Y < 800;
+        bool compactHeight = viewport.Y < 800;
         bool gameplay = main.board.Visible;
         bool mulligan = MulliganPrompt.IsOpening(main.CurrentGame?.Prompt);
-        bool fixedTabletop = gameplay && mulligan && main.Size.X >= 1800 && main.Size.Y >= 900;
-        bool compactTableChrome = fixedTabletop && mulligan;
+        bool fixedTabletop = gameplay && viewport.X >= 1800 && viewport.Y >= 900;
+        bool compactTableChrome = fixedTabletop;
+        main.GetNode<ScrollContainer>(
+            "Margin/Shell/Content/Play/Board/TableScroll").CustomMinimumSize = new Vector2(
+                0,
+                fixedTabletop
+                    ? Math.Min(
+                        VisualSystem.Card(CardDisplaySize.Board, main.interfaceScale).MinimumHeight,
+                        VisualSystem.Controls(main.interfaceScale).MinimumPointerTarget * 2
+                        + VisualSystem.Spacing(main.interfaceScale).Small)
+                    : 96);
         main.decisions.SetCompactMulliganChrome(compactTableChrome);
         ConfigureDecisionDock(mulligan && compactTableChrome, compactTableChrome, layout);
         ConfigureStackChrome(compactHeight, compactTableChrome);
@@ -108,20 +118,22 @@ internal sealed class MainLayoutController
         DesktopPlayMetrics layout)
     {
         InterfaceScale dockScale = compactTableChrome ? InterfaceScale.Standard : main.interfaceScale;
+        float decisionHeight = mulligan
+            ? Math.Max(172, VisualSystem.Controls(dockScale).MinimumPointerTarget * 3 + 16)
+            : compactTableChrome ? 220 : layout.DecisionMinimumHeight;
         main.promptPanel.CustomMinimumSize = new Vector2(
             0,
-            mulligan
-                ? Math.Max(172, VisualSystem.Controls(dockScale).MinimumPointerTarget * 3 + 16)
-                : layout.DecisionMinimumHeight);
+            decisionHeight);
         main.decisions.CustomMinimumSize = new Vector2(
-            0, mulligan ? 172 : layout.DecisionMinimumHeight);
+            0, mulligan ? 172 : decisionHeight);
         SetMulliganDockChrome(mulligan);
     }
 
     private void ConfigureStackChrome(bool compactHeight, bool compactTableChrome)
     {
-        main.setupGrid.Columns = main.Size.X >= 1500 ? 4 : 2;
-        main.contentStack.ThemeTypeVariation = main.board.Visible && compactHeight
+        main.setupGrid.Columns = main.GetViewportRect().Size.X >= 1500 ? 4 : 2;
+        main.contentStack.ThemeTypeVariation = main.board.Visible
+            && (compactHeight || compactTableChrome)
             ? GodotThemeVariations.TightStack
             : GodotThemeVariations.Stack;
         main.promptStack.ThemeTypeVariation = compactHeight
@@ -134,19 +146,49 @@ internal sealed class MainLayoutController
 
     private void ConfigurePlayScrolling(bool gameplay, bool fixedTabletop)
     {
+        Vector2 viewport = main.GetViewportRect().Size;
+        bool desktopGameplay = gameplay && viewport.X >= 1800 && viewport.Y >= 900;
+        bool openingTabletop = fixedTabletop && MulliganPrompt.IsOpening(main.CurrentGame?.Prompt);
+        ConfigurePageScrolling(gameplay, desktopGameplay, openingTabletop);
+        ConfigureTableScrolling(fixedTabletop);
+    }
+
+    private void ConfigurePageScrolling(bool gameplay, bool desktopGameplay, bool openingTabletop)
+    {
         main.pageScroll.HorizontalScrollMode = gameplay
             ? ScrollContainer.ScrollMode.Disabled
             : ScrollContainer.ScrollMode.Auto;
         main.pageScroll.FollowFocus = !gameplay || main.invitationOffer.Visible;
-        main.pageScroll.VerticalScrollMode = fixedTabletop
+        main.pageScroll.VerticalScrollMode = desktopGameplay
             ? ScrollContainer.ScrollMode.Disabled
             : gameplay
                 ? ScrollContainer.ScrollMode.Auto
                 : PageVerticalScrollMode(false, main.invitationOffer.Visible, main.interfaceScale);
+        if (desktopGameplay)
+        {
+            main.pageScroll.ScrollVertical = 0;
+            // The opening table is the desktop's tabletop, so it owns the
+            // remaining canvas rather than leaving the lower surface unused.
+            // Later decision workspaces keep their measured height so their
+            // fixed commit controls remain inside this non-scrolling page.
+            main.playLayout.SizeFlagsVertical = openingTabletop
+                ? Control.SizeFlags.ExpandFill
+                : Control.SizeFlags.Fill;
+        }
+        else
+        {
+            main.playLayout.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+        }
+    }
+
+    private void ConfigureTableScrolling(bool fixedTabletop)
+    {
         main.GetNode<ScrollContainer>(
             "Margin/Shell/Content/Play/Board/TableScroll").VerticalScrollMode = fixedTabletop
-                ? ScrollContainer.ScrollMode.Disabled
-                : ScrollContainer.ScrollMode.Auto;
+                && MulliganPrompt.IsOpening(main.CurrentGame?.Prompt)
+                && main.interfaceScale <= InterfaceScale.Standard
+                    ? ScrollContainer.ScrollMode.Disabled
+                    : ScrollContainer.ScrollMode.Auto;
     }
 
     internal static ScrollContainer.ScrollMode PageVerticalScrollMode(

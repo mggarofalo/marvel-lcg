@@ -9,6 +9,12 @@ public sealed partial class CardControl : PanelContainer
     private string baseVariation = GodotThemeVariations.BoardCard;
     private bool highlighted;
     private bool presented;
+    private CardInteractionCue interactionCue;
+    private Label? interactionLabel;
+    private Control? interactionControls;
+    private float interactionCardWidth;
+    private InterfaceScale interactionScale;
+    private float interactionBaseMinimumHeight;
 
     private CardControl()
     {
@@ -46,12 +52,38 @@ public sealed partial class CardControl : PanelContainer
                 : CursorShape.PointingHand,
             baseVariation = variation,
             ThemeTypeVariation = variation,
+            interactionCardWidth = layout.Width,
+            interactionScale = scale,
+        };
+        control.interactionBaseMinimumHeight = control.CustomMinimumSize.Y;
+        var content = new VBoxContainer
+        {
+            Name = "CardContent",
+            ThemeTypeVariation = GodotThemeVariations.TightStack,
         };
         Control body = CardFaceRendering.CreateBody(card, size, layout, scale, art);
         body.CustomMinimumSize = new Vector2(
             Math.Max(1, layout.Width - 32),
             Math.Max(1, layout.MinimumHeight - 32));
-        control.AddChild(body);
+        content.AddChild(body);
+        control.interactionLabel = new Label
+        {
+            Name = "InteractionCue",
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Bottom,
+            MouseFilter = MouseFilterEnum.Pass,
+            ThemeTypeVariation = GodotThemeVariations.Eyebrow,
+            Visible = false,
+        };
+        content.AddChild(control.interactionLabel);
+        control.interactionControls = new Control
+        {
+            Name = "DirectControls",
+            MouseFilter = MouseFilterEnum.Ignore,
+        };
+        control.AddChild(content);
+        control.AddChild(control.interactionControls);
+        control.interactionControls.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         return control;
     }
 
@@ -114,10 +146,71 @@ public sealed partial class CardControl : PanelContainer
         RefreshTreatment();
     }
 
+    /// <summary>Shows prompt-authorized interaction state with a readable marker as well as color.</summary>
+    internal void SetInteractionCue(CardInteractionCue value)
+    {
+        interactionCue = value;
+        if (interactionLabel is not null)
+        {
+            interactionLabel.Text = CueText(value);
+            interactionLabel.Visible = value != CardInteractionCue.None;
+        }
+        RefreshTreatment();
+    }
+
+    /// <summary>Adds a prompt-authorized control inside this card's fixed-width surface.</summary>
+    internal void AddInteractionControl(Button control)
+    {
+        ArgumentNullException.ThrowIfNull(control);
+        int index = interactionControls?.GetChildCount() ?? 0;
+        StyleBox surface = GetThemeStylebox("panel");
+        float width = CardInteractionLayout.ControlWidth(
+            interactionCardWidth,
+            surface.GetContentMargin(Side.Left),
+            surface.GetContentMargin(Side.Right),
+            interactionScale);
+        Rect2 layout = CardInteractionLayout.Control(index, width, interactionScale);
+        control.CustomMinimumSize = new Vector2(0, layout.Size.Y);
+        control.Position = layout.Position;
+        control.Size = layout.Size;
+        CustomMinimumSize = new Vector2(CustomMinimumSize.X,
+            CardInteractionLayout.SurfaceHeight(
+                interactionBaseMinimumHeight, index + 1, interactionScale));
+        (interactionControls ?? throw new InvalidOperationException(
+            "card interaction controls are unavailable")).AddChild(control);
+    }
+
+    /// <summary>Removes a prior prompt's controls and restores this card's base surface height.</summary>
+    internal void ClearInteractionControls()
+    {
+        if (interactionControls is not null)
+        {
+            foreach (Node child in interactionControls.GetChildren())
+            {
+                interactionControls.RemoveChild(child);
+                child.QueueFree();
+            }
+        }
+
+        CustomMinimumSize = new Vector2(CustomMinimumSize.X, interactionBaseMinimumHeight);
+    }
+
     private void RefreshTreatment() =>
-        ThemeTypeVariation = highlighted || presented
+        ThemeTypeVariation = highlighted || presented || interactionCue != CardInteractionCue.None
             ? GodotThemeVariations.FocusedCard
             : baseVariation;
+
+    private static string CueText(CardInteractionCue cue)
+    {
+        var labels = new List<string>();
+        if (cue.HasFlag(CardInteractionCue.Unavailable)) labels.Add("— UNAVAILABLE");
+        if (cue.HasFlag(CardInteractionCue.OfferedAction)) labels.Add("◇ ACTION");
+        if (cue.HasFlag(CardInteractionCue.SelectedTarget)) labels.Add("✓ TARGET");
+        else if (cue.HasFlag(CardInteractionCue.LegalTarget)) labels.Add("◇ TARGET");
+        if (cue.HasFlag(CardInteractionCue.SelectedGenerator)) labels.Add("✓ RESOURCE");
+        else if (cue.HasFlag(CardInteractionCue.LegalGenerator)) labels.Add("◇ RESOURCE");
+        return string.Join("  ", labels);
+    }
 
 
     internal static IReadOnlyList<BoardFieldPresentation> CompactValues(

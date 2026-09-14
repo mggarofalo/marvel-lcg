@@ -1,4 +1,5 @@
 using Godot;
+using Marvel.Decisions;
 using Marvel.View;
 
 namespace Marvel.Godot;
@@ -11,12 +12,18 @@ public sealed class BoardRenderResult
     private readonly Dictionary<int, Button> mulliganToggles = [];
     private readonly Dictionary<int, CardControl> mulliganCards = [];
     private readonly HashSet<int> legalMulliganTargets = [];
+    private readonly List<BoardDropTarget> dropTargets = [];
+    private readonly BoardCardInteractionControls interactionControls;
     private readonly BoardControlReveal reveal;
     private Control? mulliganDiscard;
+    private (Control Source, CardPointerCapture Gesture)? pointerCapture;
+    private Func<CardPointerGesture, bool>? directActivation;
+    private Func<CardPointerGesture, bool>? directDrag;
 
     public BoardRenderResult()
     {
         reveal = new BoardControlReveal(this);
+        interactionControls = new BoardCardInteractionControls(IsCurrentRender);
     }
 
     /// <summary>Identifies whether this render remains the board currently shown by its owner.</summary>
@@ -39,27 +46,107 @@ public sealed class BoardRenderResult
     internal void RegisterArea(Control body, Action expand) =>
         areaExpanders.Add(body, expand);
 
-    internal void TrackCard(Control control, BoardCardPresentation card)
+    internal void RegisterDropTarget(int seat, Control control) =>
+        dropTargets.Add(new BoardDropTarget(seat, control));
+
+    internal void TrackCard(Control control, BoardCardPresentation card, bool isHandCard = false)
     {
-        Vector2? pressedAt = null;
+        if (control is CardControl rendered) interactionControls.Track(rendered, card, isHandCard);
         control.GuiInput += input =>
         {
-            if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left } mouse) pressedAt = RouteMouse(control, card, mouse, pressedAt);
-            else if (input is InputEventKey { Echo: false } && input.IsActionPressed("ui_accept")) Activate(control, card);
+            if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true } mouse)
+            {
+                if (!InteractiveDescendantOwnsPointer(control))
+                {
+                    BeginPointerCapture(control, card, isHandCard, mouse.GlobalPosition);
+                }
+            }
+            else if (input is InputEventKey { Echo: false } && input.IsActionPressed("ui_accept")) Activate(control, card, isHandCard, Vector2.Zero);
         };
     }
 
-    private Vector2? RouteMouse(Control control, BoardCardPresentation card, InputEventMouseButton mouse, Vector2? pressedAt)
+    /// <summary>Routes a captured card gesture from the root input path.</summary>
+    internal bool RoutePointer(InputEvent input)
     {
-        if (mouse.Pressed) return mouse.GlobalPosition;
-        if (pressedAt is not { } start) return null;
-        if (TryDrag(card, mouse.GlobalPosition, start)) { control.AcceptEvent(); return null; }
-        if (start.DistanceTo(mouse.GlobalPosition) < 10) Activate(control, card);
-        return null;
+        if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true })
+        {
+            pointerCapture = null;
+            return false;
+        }
+
+        if (pointerCapture is not { } captured)
+        {
+            return false;
+        }
+
+        if (!IsCurrentRender() || !InteractionControl.IsUsable(captured.Source))
+        {
+            pointerCapture = null;
+            return false;
+        }
+
+        if (input is InputEventMouseMotion)
+        {
+            return true;
+        }
+
+        if (input is not InputEventMouseButton
+            { ButtonIndex: MouseButton.Left, Pressed: false } release)
+        {
+            return false;
+        }
+
+        // Clear first: an adapter can synchronously rebuild the board, and a
+        // release must name at most one prompt-bound operation.
+        pointerCapture = null;
+        if (!captured.Gesture.TryReleaseAt(release.GlobalPosition, out bool isDrag))
+        {
+            return true;
+        }
+
+        if (isDrag)
+        {
+            TryDrag(captured.Source, captured.Gesture.Card, captured.Gesture.IsHandCard,
+                release.GlobalPosition, captured.Gesture.Start);
+        }
+        else
+        {
+            Activate(captured.Source, captured.Gesture.Card, captured.Gesture.IsHandCard,
+                release.GlobalPosition);
+        }
+        return true;
     }
 
-    private bool TryDrag(BoardCardPresentation card, Vector2 finish, Vector2 start)
+    /// <summary>Replaces card-attached controls and cues from the current authorized draft.</summary>
+    internal void PresentInteraction(DecisionComposer? composer, PromptPresentation? prompt)
     {
+        interactionControls.Present(controls, composer, prompt);
+        InteractionRelationshipsChanged?.Invoke(
+            BoardInteractionRelationshipProjection.From(composer, prompt));
+    }
+
+    internal event Action<IReadOnlyList<TableRelationshipDescriptor>>? InteractionRelationshipsChanged;
+    private void BeginPointerCapture(
+        Control control, BoardCardPresentation card, bool isHandCard, Vector2 start)
+    {
+        if (IsCurrentRender() && InteractionControl.IsUsable(control))
+        {
+            pointerCapture = (control, new CardPointerCapture(card, isHandCard, start));
+        }
+    }
+
+    private static bool InteractiveDescendantOwnsPointer(Control card) =>
+        card.GetViewport().GuiGetHoveredControl() is BaseButton hovered
+        && hovered != card && card.IsAncestorOf(hovered);
+
+    private bool TryDrag(Control control, BoardCardPresentation card, bool isHandCard, Vector2 finish, Vector2 start)
+    {
+        if (IsCurrentRender() && CardPointerGestureRouter.IsDrag(start, finish)
+            && directDrag?.Invoke(new CardPointerGesture(card, control, isHandCard, finish)) == true)
+        {
+            return true;
+        }
+
         if (!IsCandidateDrag(card, start, finish, out int id)
             || !mulliganCards.TryGetValue(id, out CardControl? dragged)
             || !DragControlsAreUsable(dragged, finish)) return false;
@@ -71,7 +158,7 @@ public sealed class BoardRenderResult
         BoardCardPresentation card, Vector2 start, Vector2 finish, out int id)
     {
         id = card.TargetId ?? -1;
-        return IsCurrentRender() && start.DistanceTo(finish) >= 10
+        return IsCurrentRender() && CardPointerGestureRouter.IsDrag(start, finish)
             && card.TargetId is not null && legalMulliganTargets.Contains(id);
     }
 
@@ -79,9 +166,14 @@ public sealed class BoardRenderResult
         InteractionControl.IsUsable(dragged) && InteractionControl.IsUsable(mulliganDiscard)
         && mulliganDiscard!.GetGlobalRect().HasPoint(finish);
 
-    private void Activate(Control control, BoardCardPresentation card)
+    private void Activate(Control control, BoardCardPresentation card, bool isHandCard, Vector2 position)
     {
         if (!IsCurrentRender() || !InteractionControl.IsUsable(control)) return;
+        if (directActivation?.Invoke(new CardPointerGesture(card, control, isHandCard, position)) == true)
+        {
+            control.AcceptEvent();
+            return;
+        }
         CardActivated?.Invoke(card, control);
         control.AcceptEvent();
     }
@@ -90,6 +182,22 @@ public sealed class BoardRenderResult
 
     /// <summary>Raised when a tabletop mulligan checkbox or discard drag names a visible hand card.</summary>
     internal event Action<int>? MulliganTargetRequested;
+
+    internal void BindDirectInteractions(
+        Func<CardPointerGesture, bool> activate,
+        Func<CardPointerGesture, bool> drag)
+    {
+        directActivation = activate ?? throw new ArgumentNullException(nameof(activate));
+        directDrag = drag ?? throw new ArgumentNullException(nameof(drag));
+    }
+
+    internal void BindExplicitInteraction(Func<CardPointerGesture, bool> activate) =>
+        interactionControls.Bind(activate);
+
+    internal bool IsDroppedOnLivePlayerLane(int seat, Vector2 position) =>
+        dropTargets.Any(target => target.Seat == seat
+            && InteractionControl.IsUsable(target.Control)
+            && target.Control.GetGlobalRect().HasPoint(position));
 
     internal void RegisterMulliganToggle(int id, Button toggle) => mulliganToggles[id] = toggle;
 
@@ -142,6 +250,9 @@ public sealed class BoardRenderResult
         controls.TryGetValue(id, out List<CardControl>? matches)
             ? matches.LastOrDefault(InteractionControl.IsUsable)
             : null;
+
+    internal IReadOnlyList<CardControl> VisibleCardControls() =>
+        [.. controls.Values.SelectMany(matches => matches).Where(InteractionControl.IsUsable)];
 
     /// <summary>Highlights every visible control matching server-provided ids.</summary>
     public void Highlight(IEnumerable<int> ids)

@@ -8,10 +8,11 @@ using Marvel.View;
 namespace Marvel.Godot;
 
 /// <summary>Owns board rendering and the card-inspection interaction.</summary>
-internal sealed class MainBoardController
+internal sealed class MainBoardController : IDisposable
 {
     private readonly Main main;
     private readonly CardInspectorFocus inspector;
+    private readonly BoardRelationshipOverlayController relationships;
     private readonly InteractionGeneration renderGeneration = new();
     private int? displayedSeat;
 
@@ -19,6 +20,7 @@ internal sealed class MainBoardController
     {
         this.main = main;
         inspector = new CardInspectorFocus(main);
+        relationships = new BoardRelationshipOverlayController(main);
     }
 
     internal void RenderGame(
@@ -103,7 +105,12 @@ internal sealed class MainBoardController
     {
         prompt ??= main.CurrentGame?.Prompt;
         main.boardPresentation = BoardPresentation.From(world);
-        BoardRenderResult rendered = MulliganPrompt.UsesDesktopTable(prompt, main.Size)
+        // The render target is already sized when a response arrives, while a
+        // newly shown Control can still be waiting for its container layout.
+        // Choose the opening surface from that settled canvas, not its
+        // transient child size.
+        BoardRenderResult rendered = MulliganPrompt.UsesDesktopTable(
+            prompt, main.GetViewportRect().Size)
             ? RenderMulliganTable(prompt!)
             : BoardRenderer.Render(
                 main.boardAreas, main.boardPresentation, main.handRail, main.handHeading,
@@ -112,6 +119,7 @@ internal sealed class MainBoardController
         rendered.CardActivated += (card, control) => ToggleCardInspector(card, control);
         rendered.IsCurrent = () => ReferenceEquals(main.boardRender, rendered)
             && IsCurrentRender(renderGeneration ?? this.renderGeneration.Current);
+        relationships.Bind(rendered, main.boardPresentation.Relationships);
         main.decisions.BindMulliganTargets(rendered);
         inspector.Hide();
     }
@@ -284,11 +292,12 @@ internal sealed class MainBoardController
         }
     }
 
-    internal void Input(InputEvent input) => inspector.Input(input);
+    internal void Input(InputEvent input) => MainBoardInputRouter.Route(main, inspector, input);
     internal void ScheduleCardInspectorHide() => inspector.ScheduleHide();
     internal void BindCardInspectorFocus(Control control) => inspector.BindFocus(control);
     internal bool CardInspectorHasFocus() => inspector.HasFocus();
     internal void HideCardInspector() => inspector.Hide();
+    public void Dispose() => relationships.Dispose();
     private bool IsCurrentRender(int generation) => main.IsInsideTree()
         && generation == renderGeneration.Current;
 }

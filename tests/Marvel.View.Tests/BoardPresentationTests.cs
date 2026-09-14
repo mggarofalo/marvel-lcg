@@ -352,6 +352,37 @@ public sealed class BoardPresentationTests
     }
 
     [Fact]
+    public void ExplicitRelationshipsAreCopiedInSnapshotOrder()
+    {
+        TableRelationshipDescriptor[] relationships =
+        [
+            new(RelationshipKind.Result, 23, 17),
+            new(RelationshipKind.Attachment, 17, 23),
+            new(RelationshipKind.Engagement, 29, null, 1),
+        ];
+        WorldDescriptor world = World(
+            areas: [Area(1, "VillainArea", -1, [Readable(17, "Host")])]) with
+        {
+            Relationships = relationships,
+        };
+
+        BoardPresentation board = BoardPresentation.From(world);
+
+        Assert.Equal(relationships, board.Relationships);
+    }
+
+    [Fact]
+    public void MissingRelationshipsAreNotSynthesizedFromVisibleCards()
+    {
+        WorldDescriptor world = World(
+            areas: [Area(1, "UpgradesArea", 0, [Readable(17, "Attachment", host: 23)])]);
+
+        BoardPresentation board = BoardPresentation.From(world);
+
+        Assert.Empty(board.Relationships);
+    }
+
+    [Fact]
     public void ScenarioAndTwoPlayerLanesFollowSeatOrderWithoutReorderingTheirAreas()
     {
         WorldDescriptor world = World(
@@ -438,13 +469,13 @@ public sealed class BoardPresentationTests
         int host = -1) =>
         new(id, zone, owner, host, cards ?? [], removed ?? []);
 
-    private static CardDescriptor Readable(int id, string title) =>
+    private static CardDescriptor Readable(int id, string title, int host = -1) =>
         new(
             id,
             CardBack.Encounter,
             FaceUp: true,
             Ready: true,
-            Host: -1,
+            Host: host,
             new CardFaceDescriptor(
                 $"face-{id}", title, "", CardKind.Minion,
                 new Dictionary<string, long>(StringComparer.Ordinal)));
