@@ -1,14 +1,12 @@
-extends "res://smoke/local_game_smoke_input_support.gd"
+extends "res://smoke/local_game_smoke_pointer_support.gd"
 
 const SmokeScale = preload("res://smoke/local_game_smoke_scale.gd")
 const TIMEOUT_MILLISECONDS := 15000
 const MAX_DECISIONS := 80
-const POINTER_OWNERSHIP_ATTEMPTS := 3
 
 var main: Control
 var failed := false
 var motion_enabled := true
-var render_viewport: Viewport
 func _focused_control_is_visible(control: Control) -> bool:
 	var visible_rect := _visible_control_rect(control)
 	var expected := _scaled_metric(44)
@@ -19,83 +17,6 @@ func _control_text_is_visible(control: Control) -> bool:
 	var visible_rect := _visible_control_rect(control)
 	return visible_rect.size.x >= minf(100.0, control.size.x) \
 		and visible_rect.size.y >= control.size.y - 1.0
-
-
-func _visible_control_rect(control: Control) -> Rect2:
-	var visible_rect := control.get_global_rect().intersection(Rect2(Vector2.ZERO, _viewport_size()))
-	var ancestor := control.get_parent()
-	while ancestor != null:
-		if ancestor is ScrollContainer or (ancestor is Control and ancestor.clip_contents):
-			visible_rect = visible_rect.intersection(ancestor.get_global_rect())
-		ancestor = ancestor.get_parent()
-	return visible_rect
-
-
-func _control_owns_point(control: Control, point: Vector2) -> bool:
-	if not _visible_control_rect(control).has_point(point):
-		return false
-	# A disabled control intentionally does not claim pointer input. It is not an
-	# operable hit target even if its painted rectangle is visible.
-	if control.mouse_filter == Control.MOUSE_FILTER_IGNORE or control is BaseButton and control.disabled:
-		return false
-	# A native display server can deliver physical pointer motion between the
-	# injected move and the next frame. Resample the same exact point; a clipped
-	# or persistently occluded control still cannot satisfy this ownership check.
-	for _attempt in POINTER_OWNERSHIP_ATTEMPTS:
-		var move := InputEventMouseMotion.new()
-		move.position = point
-		move.global_position = point
-		render_viewport.push_input(move)
-		await process_frame
-		if render_viewport.get_mouse_position().is_equal_approx(point) \
-				and _hovered_control_owns(control, render_viewport.gui_get_hovered_control()):
-			return true
-	return false
-
-
-func _hovered_control_owns(control: Control, hovered: Control) -> bool:
-	if hovered == control or (hovered != null and control.is_ancestor_of(hovered)):
-		return true
-	# Containers using Pass may be reported as the hovered owner while delivering
-	# the event to an eligible descendant. Follow that actual mouse-filter path;
-	# a Stop ancestor is an occluder and must still fail this probe.
-	if hovered != null and hovered.is_ancestor_of(control):
-		var current: Control = control
-		while current != hovered:
-			if current.mouse_filter == Control.MOUSE_FILTER_STOP:
-				return false
-			current = current.get_parent() as Control
-		return hovered.mouse_filter == Control.MOUSE_FILTER_PASS
-	return false
-
-
-func _pointer_ownership_probe_is_strict() -> bool:
-	var target := Button.new()
-	target.name = &"PointerProbeTarget"
-	target.position = Vector2(24, 24)
-	target.size = Vector2(120, 60)
-	target.mouse_filter = Control.MOUSE_FILTER_STOP
-	var blocker := Control.new()
-	blocker.name = &"PointerProbeBlocker"
-	blocker.position = Vector2(74, 24)
-	blocker.size = Vector2(20, 60)
-	blocker.mouse_filter = Control.MOUSE_FILTER_STOP
-	render_viewport.add_child(target)
-	render_viewport.add_child(blocker)
-	await process_frame
-	var covered_point := Vector2(84, 54)
-	var exposed_point := Vector2(44, 54)
-	var rejects_covered := not await _control_owns_point(target, covered_point)
-	var accepts_exposed := await _control_owns_point(target, exposed_point)
-	render_viewport.remove_child(blocker)
-	render_viewport.remove_child(target)
-	blocker.queue_free()
-	target.queue_free()
-	await process_frame
-	if not rejects_covered or not accepts_exposed:
-		_fail("the pointer ownership probe did not distinguish persistent partial occlusion")
-		return false
-	return true
 
 
 func _control_has_real_hit_area(control: Control) -> bool:
@@ -150,6 +71,7 @@ func _pointer_activate(control: Control) -> bool:
 
 func _pointer_activate_without_settle(control: Control) -> bool:
 	var point := _visible_control_rect(control).get_center()
+	_position_pointer_without_settle(point)
 	var press := InputEventMouseButton.new()
 	press.button_index = MOUSE_BUTTON_LEFT
 	press.pressed = true
@@ -193,10 +115,6 @@ func _accept_repeats_without_settle(repeats := 1) -> void:
 		var release := InputEventKey.new()
 		release.keycode = KEY_ENTER
 		render_viewport.push_input(release)
-
-
-func _viewport_size() -> Vector2:
-	return Vector2(render_viewport.size)
 
 
 func _standard_board_area_is_visible() -> bool:

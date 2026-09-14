@@ -23,6 +23,7 @@ func _run() -> void:
 	if not await _open_setup(packed):
 		return
 	if not await _pointer_ownership_probe_is_strict():
+		_fail("the pointer ownership probe did not distinguish persistent partial occlusion")
 		return
 	await _configure_seeded_game()
 	if not await _open_and_validate_table():
