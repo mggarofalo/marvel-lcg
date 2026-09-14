@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
+using Godot;
 using Marvel.Decisions;
 using Marvel.Rules.Events;
 using Marvel.Rules.Play;
@@ -23,6 +24,8 @@ public sealed class LocalGameClientOpenRequiresAnInitialPromptEvenTests : LocalG
         Affordance offered = Assert.Single(prompt.Affordances);
         Assert.Equal(Game.ResolveMulligans, offered.Verb);
         Assert.True(MulliganPrompt.IsOpening(prompt));
+        Assert.True(MulliganPrompt.UsesDesktopTable(prompt, new Vector2(1920, 1080)));
+        Assert.False(MulliganPrompt.UsesDesktopTable(prompt, new Vector2(1280, 720)));
         int[] candidates = Assert.IsType<TargetRequest>(offered.Targets).Legal.ToArray();
         Assert.Equal(6, candidates.Length);
 

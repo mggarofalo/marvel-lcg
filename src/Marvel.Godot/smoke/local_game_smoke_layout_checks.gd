@@ -3,6 +3,9 @@ extends "res://smoke/local_game_smoke_board_interaction_checks.gd"
 func _board_layout_is_resolved() -> bool:
 	if main.find_child("VillainTable", true, false) != null:
 		return await _mulligan_table_layout_is_resolved()
+	if OS.get_environment("MARVEL_SMOKE_VIEWPORT") == "1920x1080":
+		_fail("the 1920 desktop opening prompt did not render the tabletop surface")
+		return false
 	if main.find_child("CompleteChoiceSheet", true, false) != null:
 		return await _fallback_mulligan_layout_is_resolved()
 	var lanes := _board_lanes()
@@ -45,6 +48,23 @@ func _mulligan_table_layout_is_resolved() -> bool:
 	if villain == null or player == null or villain.get_global_rect().position.y >= player.get_global_rect().position.y:
 		_fail("the mulligan table does not keep the villain far from the near player area")
 		return false
+	if OS.get_environment("MARVEL_SMOKE_VIEWPORT") == "1920x1080":
+		var board := _node("Play/Board") as Control
+		var table_rect := table.get_global_rect()
+		var villain_rect := villain.get_global_rect()
+		var player_rect := player.get_global_rect()
+		# A full desktop canvas must produce a real tabletop, rather than the
+		# compact strip that happens to contain the right node names.
+		if board == null or table_rect.size.y < 360.0 \
+				or villain_rect.size.y < 120.0 or player_rect.size.y < 120.0 \
+				or player_rect.position.y - villain_rect.position.y < 120.0:
+			_fail("the 1920 tabletop did not settle into meaningful far/near geometry: board=%s table=%s villain=%s player=%s" % [
+				board.get_global_rect() if board != null else "missing",
+				table_rect,
+				villain_rect,
+				player_rect,
+			])
+			return false
 	var table_scroll_is_bounded := table.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED \
 		if int(OS.get_environment("MARVEL_UI_SCALE")) <= 100 \
 		else table.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_AUTO

@@ -99,6 +99,9 @@ func _table_interactions_are_safe() -> bool:
 		if not await _focused_board_area_is_visible():
 			return false
 		return await _mulligan_dock_is_safe()
+	if OS.get_environment("MARVEL_SMOKE_VIEWPORT") == "1920x1080":
+		_fail("the 1920 desktop opening prompt fell back instead of rendering VillainTable")
+		return false
 	if main.find_child("CompleteChoiceSheet", true, false) != null:
 		return await _fallback_mulligan_sheet_is_focus_safe()
 	if not await _keyboard_selection_is_operable():

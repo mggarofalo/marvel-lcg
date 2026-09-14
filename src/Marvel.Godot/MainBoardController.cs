@@ -105,7 +105,12 @@ internal sealed class MainBoardController : IDisposable
     {
         prompt ??= main.CurrentGame?.Prompt;
         main.boardPresentation = BoardPresentation.From(world);
-        BoardRenderResult rendered = MulliganPrompt.UsesDesktopTable(prompt, main.Size)
+        // The render target is already sized when a response arrives, while a
+        // newly shown Control can still be waiting for its container layout.
+        // Choose the opening surface from that settled canvas, not its
+        // transient child size.
+        BoardRenderResult rendered = MulliganPrompt.UsesDesktopTable(
+            prompt, main.GetViewportRect().Size)
             ? RenderMulliganTable(prompt!)
             : BoardRenderer.Render(
                 main.boardAreas, main.boardPresentation, main.handRail, main.handHeading,
