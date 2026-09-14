@@ -153,6 +153,20 @@ public sealed class InteractionSurfaceProjectionTests
     }
 
     [Fact]
+    public void RelationshipEndpointMustRemainInsideEveryClippingAncestor()
+    {
+        var viewport = new Rect2(0, 0, 320, 180);
+        Vector2 center = new(110, 90);
+
+        Assert.True(RelationshipOverlayVisibility.EndpointIsVisible(center, viewport,
+            [new Rect2(0, 0, 200, 180), new Rect2(100, 0, 220, 180)]));
+        Assert.False(RelationshipOverlayVisibility.EndpointIsVisible(center, viewport,
+            [new Rect2(0, 0, 100, 180)]));
+        Assert.False(RelationshipOverlayVisibility.EndpointIsVisible(center, viewport,
+            [new Rect2(100, 0, 220, 80)]));
+    }
+
+    [Fact]
     public void HiddenRelationshipEndpointHasNoPromptRelationshipToDraw()
     {
         var composer = Composer(new Affordance(3, "Play", 19, 0, "Visible"));

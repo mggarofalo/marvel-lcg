@@ -9,10 +9,14 @@ internal sealed class BoardRelationshipOverlayController : IDisposable
     private readonly Main main;
     private readonly Control overlay = new()
     {
+        Name = "RelationshipOverlay",
         MouseFilter = Control.MouseFilterEnum.Ignore,
         ZIndex = 10,
     };
+    private readonly List<Action> geometryUnsubscribers = [];
     private BoardRenderResult? board;
+    private Action<IReadOnlyList<TableRelationshipDescriptor>>? interactionRelationshipsChanged;
+    private bool layoutRefreshQueued;
     private IReadOnlyList<TableRelationshipDescriptor> snapshotRelationships = [];
     private IReadOnlyList<TableRelationshipDescriptor> promptRelationships = [];
 
@@ -25,10 +29,11 @@ internal sealed class BoardRelationshipOverlayController : IDisposable
 
     internal void Bind(BoardRenderResult next, IReadOnlyList<TableRelationshipDescriptor> snapshot)
     {
+        Unbind();
         board = next;
         snapshotRelationships = snapshot;
         promptRelationships = [];
-        next.InteractionRelationshipsChanged += relationships =>
+        interactionRelationshipsChanged = relationships =>
         {
             if (ReferenceEquals(board, next))
             {
@@ -36,18 +41,30 @@ internal sealed class BoardRelationshipOverlayController : IDisposable
                 ScheduleRefresh();
             }
         };
+        next.InteractionRelationshipsChanged += interactionRelationshipsChanged;
+        ObserveGeometry(next);
         ScheduleRefresh();
     }
 
     private void ScheduleRefresh()
     {
+        if (layoutRefreshQueued)
+        {
+            return;
+        }
+
+        layoutRefreshQueued = true;
         Refresh();
         // The board's containers settle after the prompt rebuild. A second
         // deferred pass measures the final card rectangles, not a stale rail.
         Callable.From(RefreshAfterLayout).CallDeferred();
     }
 
-    private void RefreshAfterLayout() => Callable.From(Refresh).CallDeferred();
+    private void RefreshAfterLayout() => Callable.From(() =>
+    {
+        layoutRefreshQueued = false;
+        Refresh();
+    }).CallDeferred();
 
     private void Refresh()
     {
@@ -67,8 +84,8 @@ internal sealed class BoardRelationshipOverlayController : IDisposable
             "a relationship path requires a rendered board");
         IReadOnlyList<Rect2> obstacles = current.VisibleCardControls()
             .Where(control => control.IsVisibleInTree())
-            .Select(control => control.GetGlobalRect())
-            .Where(rect => rect.Intersects(viewport))
+            .Select(control => RelationshipOverlayVisibility.VisibleBounds(control, viewport))
+            .OfType<Rect2>()
             .ToArray();
         foreach (TableRelationshipDescriptor relationship in snapshotRelationships.Concat(promptRelationships))
         {
@@ -91,10 +108,10 @@ internal sealed class BoardRelationshipOverlayController : IDisposable
         {
             return null;
         }
-        Rect2 sourceRect = source.GetGlobalRect();
-        Rect2 targetRect = target.GetGlobalRect();
-        if (!viewport.HasPoint(sourceRect.GetCenter())
-            || !viewport.HasPoint(targetRect.GetCenter()))
+        Rect2 sourceRect = RelationshipOverlayVisibility.VisualBounds(source);
+        Rect2 targetRect = RelationshipOverlayVisibility.VisualBounds(target);
+        if (!RelationshipOverlayVisibility.EndpointIsVisible(source, viewport)
+            || !RelationshipOverlayVisibility.EndpointIsVisible(target, viewport))
         {
             return null;
         }
@@ -121,8 +138,73 @@ internal sealed class BoardRelationshipOverlayController : IDisposable
         }
     }
 
+    private void ObserveGeometry(BoardRenderResult current)
+    {
+        var observed = new HashSet<Control>();
+        foreach (CardControl card in current.VisibleCardControls())
+        {
+            for (Node? node = card; node is Control control; node = node.GetParent())
+            {
+                if (observed.Add(control))
+                {
+                    Observe(control);
+                }
+            }
+        }
+    }
+
+    private void Observe(Control control)
+    {
+        Action moved = ScheduleRefresh;
+        control.ItemRectChanged += moved;
+        geometryUnsubscribers.Add(() =>
+        {
+            if (GodotObject.IsInstanceValid(control))
+            {
+                control.ItemRectChanged -= moved;
+            }
+        });
+
+        if (control is not ScrollContainer scroll)
+        {
+            return;
+        }
+
+        ObserveScrollBar(scroll.GetHScrollBar());
+        ObserveScrollBar(scroll.GetVScrollBar());
+    }
+
+    private void ObserveScrollBar(global::Godot.Range scrollBar)
+    {
+        global::Godot.Range.ValueChangedEventHandler scrolled = _ => ScheduleRefresh();
+        scrollBar.ValueChanged += scrolled;
+        geometryUnsubscribers.Add(() =>
+        {
+            if (GodotObject.IsInstanceValid(scrollBar))
+            {
+                scrollBar.ValueChanged -= scrolled;
+            }
+        });
+    }
+
+    private void Unbind()
+    {
+        if (board is not null && interactionRelationshipsChanged is not null)
+        {
+            board.InteractionRelationshipsChanged -= interactionRelationshipsChanged;
+        }
+
+        interactionRelationshipsChanged = null;
+        foreach (Action unsubscribe in geometryUnsubscribers)
+        {
+            unsubscribe();
+        }
+        geometryUnsubscribers.Clear();
+    }
+
     public void Dispose()
     {
+        Unbind();
         overlay.GetParent()?.RemoveChild(overlay);
         overlay.QueueFree();
     }
