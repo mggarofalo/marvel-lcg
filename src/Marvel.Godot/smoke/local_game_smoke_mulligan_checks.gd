@@ -10,6 +10,15 @@ func _mulligan_result_and_payment_are_operable() -> bool:
 	if OS.get_environment("MARVEL_SMOKE_TWO_PLAYER") == "true":
 		if not await _dismiss_mulligan_result() or not await _complete_second_opening_hand():
 			return false
+	var hand_card := (_node("Play/Board/HandShelf") as Control).find_child(
+		"ProceduralCard", true, false) as Control
+	if hand_card == null:
+		_fail("the post-mulligan hand has no card for the pinned-inspector probe")
+		return false
+	if not await _pinned_inspector_mouse_filter_is_safe(hand_card):
+		return false
+	if not await _action_card_preview_is_safe():
+		return false
 	if not await _start_web_shooter_draft():
 		return false
 	return await _payment_is_keyboard_operable()
