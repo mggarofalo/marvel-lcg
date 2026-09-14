@@ -3,56 +3,47 @@ using Marvel.View;
 
 namespace Marvel.Godot;
 
-/// <summary>Renders the persistent desktop table around one expanded player workspace.</summary>
+/// <summary>Renders the persistent desktop table as stable far-side and near-side rails.</summary>
 /// <remarks>
-/// This is a presentation-only selection of already-projected lanes. A seat switch
-/// never changes the prompt or draft; it only chooses which public workspace is open.
+/// This is a presentation-only arrangement of visibility-safe areas. Changing the
+/// expanded seat never changes the prompt or its shared decision draft.
 /// </remarks>
 internal static class DesktopTabletopPresentation
 {
     internal static BoardRenderResult Render(
         Main main,
-        int expandedSeat,
+        DisplayedSeatSelection selection,
         Action<int> switchSeat)
     {
         BoardRenderCleanup.Clear(main.boardAreas);
         BoardRenderCleanup.Clear(main.handRail);
         BoardPresentation board = main.boardPresentation!;
         var result = new BoardRenderResult();
-        IReadOnlyList<BoardLanePresentation> lanes = board.Lanes;
-
-        AddLane("scenario");
-        AddLane("other");
+        TabletopRailPlan plan = TabletopRailPlan.Create(board.Lanes, selection.ExpandedSeat);
+        main.boardAreas.AddChild(TabletopRailRenderer.Rail(
+            "VillainTable", "VILLAIN TABLE  ·  FAR SIDE", plan.FarLive,
+            result, main.interfaceScale, main.art));
+        AddShelf("ScenarioShelf", "SCENARIO SUPPORT", plan.FarShelf);
         if (board.PlayerSummaries.Count > 1)
         {
-            main.boardAreas.AddChild(MulliganSeatStripRenderer.Create(
-                board, expandedSeat, switchSeat));
+            main.boardAreas.AddChild(MulliganSeatStripRenderer.Create(board, selection, switchSeat));
         }
-
-        BoardLanePresentation? expanded = lanes.FirstOrDefault(lane => lane.Seat == expandedSeat);
-        if (expanded is not null)
-        {
-            main.boardAreas.AddChild(BoardRenderer.Lane(
-                WithoutHand(expanded), result, main.interfaceScale, main.expandedAreas, main.art));
-        }
-
-        BoardRenderer.RenderHand(
-            board, main.handRail, main.handHeading, result, main.interfaceScale, main.art, expandedSeat);
+        main.boardAreas.AddChild(TabletopRailRenderer.Rail(
+            "PlayerTable", $"PLAYER {selection.ExpandedSeat + 1}  ·  NEAR SIDE", plan.NearLive,
+            result, main.interfaceScale, main.art, selection.ExpandedSeat));
+        AddShelf("PlayerShelf", "PLAYER SUPPORT", plan.NearShelf);
+        TabletopHandShelfRenderer.Render(
+            board, selection.ExpandedSeat, main.handRail, main.handHeading,
+            result, main.interfaceScale, main.art);
         return result;
 
-        void AddLane(string key)
+        void AddShelf(string name, string title, IReadOnlyList<BoardAreaPresentation> areas)
         {
-            BoardLanePresentation? lane = lanes.FirstOrDefault(item => item.Key == key);
-            if (lane is not null)
+            if (areas.Count > 0)
             {
-                main.boardAreas.AddChild(BoardRenderer.Lane(
-                    WithoutHand(lane), result, main.interfaceScale, main.expandedAreas, main.art));
+                main.boardAreas.AddChild(TabletopRailRenderer.Shelf(
+                    name, title, areas, result, main.interfaceScale, main.art));
             }
         }
     }
-
-    private static BoardLanePresentation WithoutHand(BoardLanePresentation lane) => lane with
-    {
-        Areas = [.. lane.Areas.Where(area => area.Zone != "HandsArea")],
-    };
 }

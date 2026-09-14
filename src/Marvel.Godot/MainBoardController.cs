@@ -126,6 +126,8 @@ internal sealed class MainBoardController : IDisposable
 
     internal void FocusAnchors(IReadOnlyList<int> ids) => tabletop.FocusAnchors(ids);
 
+    internal void FocusEventAnchors(IReadOnlyList<int> ids) => tabletop.FocusAnchors(ids);
+
     internal void PreviewHandCard(int? id)
     {
         if (main.cardInspectorPinned)

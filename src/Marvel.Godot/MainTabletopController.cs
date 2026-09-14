@@ -28,7 +28,7 @@ internal sealed class MainTabletopController
 
     internal void FocusAnchors(IReadOnlyList<int> ids)
     {
-        int? seat = AnchorSeat(ids);
+        int? seat = TabletopAnchorSeat.For(main.boardPresentation, ids);
         if (ShouldSwitchTo(seat))
         {
             SwitchSeat(seat!.Value);
@@ -42,13 +42,7 @@ internal sealed class MainTabletopController
             main, prompt, Selection(prompt).ExpandedSeat, SwitchSeat);
 
     private BoardRenderResult RenderDesktop(Prompt? prompt) =>
-        DesktopTabletopPresentation.Render(main, Selection(prompt).ExpandedSeat, SwitchSeat);
-
-    private int? AnchorSeat(IReadOnlyList<int> ids) => main.boardPresentation?.Areas
-            .Where(area => area.Seat >= 0 && area.Cards.Concat(area.Removed)
-                .Any(card => card.TargetId is { } id && ids.Contains(id)))
-            .Select(area => (int?)area.Seat)
-            .FirstOrDefault();
+        DesktopTabletopPresentation.Render(main, Selection(prompt), SwitchSeat);
 
     private bool ShouldSwitchTo(int? seat) => seat is not null
         && DesktopTabletop.Uses(main.GetViewportRect().Size)

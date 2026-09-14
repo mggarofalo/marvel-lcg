@@ -189,13 +189,9 @@ internal sealed class MainLayoutController
     {
         ScrollContainer table = main.GetNode<ScrollContainer>(
             "Margin/Shell/Content/Play/Board/TableScroll");
-        table.HorizontalScrollMode = fixedTabletop
-            ? ScrollContainer.ScrollMode.Auto
-            : ScrollContainer.ScrollMode.Disabled;
+        table.HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled;
         table.VerticalScrollMode = fixedTabletop
-            ? main.interfaceScale <= InterfaceScale.Standard
-                ? ScrollContainer.ScrollMode.Disabled
-                : ScrollContainer.ScrollMode.Auto
+            ? ScrollContainer.ScrollMode.Disabled
             : ScrollContainer.ScrollMode.Auto;
     }
 
