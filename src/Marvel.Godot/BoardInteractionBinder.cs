@@ -32,8 +32,9 @@ internal static class BoardInteractionBinder
             composer, CurrentOperations(panel, composer), Affordances(panel, composer));
         BoardDraftMutation mutation = gesture.Intent switch
         {
+            CardInteractionIntent.Target => interaction.TryToggleTarget(cardId),
             CardInteractionIntent.Generator => interaction.TryToggleGenerator(cardId),
-            CardInteractionIntent.Action => SelectAction(panel, gesture, interaction, cardId),
+            CardInteractionIntent.Action => SelectAction(panel, composer, gesture, interaction, cardId),
             _ => BoardDraftMutation.None,
         };
         if (mutation == BoardDraftMutation.None)
@@ -53,6 +54,7 @@ internal static class BoardInteractionBinder
 
     private static BoardDraftMutation SelectAction(
         DecisionPanel panel,
+        DecisionComposer composer,
         CardPointerGesture gesture,
         BoardDraftInteraction interaction,
         int cardId)
@@ -64,7 +66,8 @@ internal static class BoardInteractionBinder
         }
         if (actions.Count > 1)
         {
-            BoardActionChoiceSurface.Show(gesture.Source, actions, id =>
+            BoardActionChoiceSurface.Show(gesture.Source, actions,
+                () => panel.IsCurrentDraft(composer, panel.GetRenderGeneration()), id =>
             {
                 if (interaction.TrySelectAction(id, cardId) == BoardDraftMutation.Affordance)
                 {

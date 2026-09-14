@@ -1,3 +1,4 @@
+using Godot;
 using Marvel.View;
 using Xunit;
 
@@ -5,6 +6,19 @@ namespace Marvel.Godot.Tests;
 
 public sealed class CardControlTests
 {
+    [Fact]
+    public void AttachedInteractionStaysInsideTheCardsFixedWidthSurface()
+    {
+        CardControl card = CardControl.Create(Card("EVENT"), CardDisplaySize.Hand);
+        var action = new Button { Name = "Card19Action" };
+
+        card.AddInteractionControl(action);
+
+        Assert.Same(card.GetNode("CardContent/DirectControls"), action.GetParent());
+        Assert.Equal(44, action.CustomMinimumSize.Y);
+        Assert.Equal(Control.SizeFlags.ExpandFill, action.SizeFlagsHorizontal);
+    }
+
     [Fact]
     public void HandSummaryRetainsCostAndResourceWithoutBoardState()
     {

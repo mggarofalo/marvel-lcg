@@ -16,8 +16,27 @@ internal static class BoardInteractionControlProjection
 
         var controls = new List<CardInteractionControlDescriptor>();
         AddActionControls(controls, prompt);
+        AddTargetControls(controls, composer);
         AddGeneratorControls(controls, composer);
         return controls;
+    }
+
+    private static void AddTargetControls(
+        List<CardInteractionControlDescriptor> controls, DecisionComposer composer)
+    {
+        if (composer.Selected?.Targets is not { } request)
+        {
+            return;
+        }
+        foreach (int target in request.Legal.Distinct().OrderBy(id => id))
+        {
+            bool selected = composer.Targets.Contains(target);
+            controls.Add(new CardInteractionControlDescriptor(
+                target,
+                CardInteractionIntent.Target,
+                selected ? "✓ TARGET" : "◇ TARGET",
+                selected ? CardInteractionCue.SelectedTarget : CardInteractionCue.LegalTarget));
+        }
     }
 
     private static void AddActionControls(

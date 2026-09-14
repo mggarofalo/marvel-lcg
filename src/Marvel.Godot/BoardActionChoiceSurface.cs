@@ -6,11 +6,15 @@ namespace Marvel.Godot;
 /// <summary>Owns the explicit, keyboard-contained choice among actions sharing one card.</summary>
 internal static class BoardActionChoiceSurface
 {
+    private static PopupPanel? active;
+
     internal static void Show(
         Control source,
         IReadOnlyList<AffordancePresentation> actions,
+        Func<bool> isCurrent,
         Action<int> choose)
     {
+        Close();
         if (actions.Count < 2 || source.GetTree().Root is not { } root)
         {
             return;
@@ -22,6 +26,8 @@ internal static class BoardActionChoiceSurface
             MinSize = new Vector2I(260, 0),
             ThemeTypeVariation = GodotThemeVariations.SurfacePanel,
         };
+        active = popup;
+        popup.PopupHide += () => Release(popup);
         var stack = new VBoxContainer { ThemeTypeVariation = GodotThemeVariations.TightStack };
         stack.AddChild(new Label
         {
@@ -39,9 +45,8 @@ internal static class BoardActionChoiceSurface
             };
             button.Pressed += () =>
             {
-                choose(action.Id);
-                popup.Hide();
-                popup.QueueFree();
+                if (isCurrent()) choose(action.Id);
+                Close();
             };
             stack.AddChild(button);
             first ??= button;
@@ -56,5 +61,23 @@ internal static class BoardActionChoiceSurface
         {
             Callable.From(first.GrabFocus).CallDeferred();
         }
+    }
+
+    internal static void Close()
+    {
+        if (active is not { } popup || !GodotObject.IsInstanceValid(popup))
+        {
+            active = null;
+            return;
+        }
+        active = null;
+        popup.Hide();
+        Release(popup);
+    }
+
+    private static void Release(PopupPanel popup)
+    {
+        if (ReferenceEquals(active, popup)) active = null;
+        if (!popup.IsQueuedForDeletion()) popup.QueueFree();
     }
 }

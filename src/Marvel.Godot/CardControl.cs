@@ -11,6 +11,7 @@ public sealed partial class CardControl : PanelContainer
     private bool presented;
     private CardInteractionCue interactionCue;
     private Label? interactionLabel;
+    private VBoxContainer? interactionControls;
 
     private CardControl()
     {
@@ -49,11 +50,16 @@ public sealed partial class CardControl : PanelContainer
             baseVariation = variation,
             ThemeTypeVariation = variation,
         };
+        var content = new VBoxContainer
+        {
+            Name = "CardContent",
+            ThemeTypeVariation = GodotThemeVariations.TightStack,
+        };
         Control body = CardFaceRendering.CreateBody(card, size, layout, scale, art);
         body.CustomMinimumSize = new Vector2(
             Math.Max(1, layout.Width - 32),
             Math.Max(1, layout.MinimumHeight - 32));
-        control.AddChild(body);
+        content.AddChild(body);
         control.interactionLabel = new Label
         {
             Name = "InteractionCue",
@@ -63,7 +69,15 @@ public sealed partial class CardControl : PanelContainer
             ThemeTypeVariation = GodotThemeVariations.Eyebrow,
             Visible = false,
         };
-        control.AddChild(control.interactionLabel);
+        content.AddChild(control.interactionLabel);
+        control.interactionControls = new VBoxContainer
+        {
+            Name = "DirectControls",
+            ThemeTypeVariation = GodotThemeVariations.TightStack,
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+        };
+        content.AddChild(control.interactionControls);
+        control.AddChild(content);
         return control;
     }
 
@@ -136,6 +150,16 @@ public sealed partial class CardControl : PanelContainer
             interactionLabel.Visible = value != CardInteractionCue.None;
         }
         RefreshTreatment();
+    }
+
+    /// <summary>Adds a prompt-authorized control inside this card's fixed-width surface.</summary>
+    internal void AddInteractionControl(Button control)
+    {
+        ArgumentNullException.ThrowIfNull(control);
+        control.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        control.CustomMinimumSize = new Vector2(0, 44);
+        (interactionControls ?? throw new InvalidOperationException(
+            "card interaction controls are unavailable")).AddChild(control);
     }
 
     private void RefreshTreatment() =>

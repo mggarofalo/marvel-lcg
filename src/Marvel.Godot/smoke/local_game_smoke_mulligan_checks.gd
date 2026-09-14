@@ -1,4 +1,4 @@
-extends "res://smoke/local_game_smoke_card_checks.gd"
+extends "res://smoke/local_game_smoke_direct_journey.gd"
 
 func _mulligan_result_and_payment_are_operable() -> bool:
 	if not await _select_mulligan_cards():
@@ -19,9 +19,7 @@ func _mulligan_result_and_payment_are_operable() -> bool:
 		return false
 	if not await _action_card_preview_is_safe():
 		return false
-	if not await _start_web_shooter_draft():
-		return false
-	return await _payment_is_keyboard_operable()
+	return await _direct_table_journey_is_operable()
 
 
 func _fallback_mulligan_sheet_is_focus_safe() -> bool:

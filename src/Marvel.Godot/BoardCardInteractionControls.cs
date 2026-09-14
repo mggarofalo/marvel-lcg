@@ -65,22 +65,15 @@ internal sealed class BoardCardInteractionControls
         }
         foreach (CardControl card in cards.Where(InteractionControl.IsUsable))
         {
-            if (card.GetParent() is not BoxContainer parent)
-            {
-                continue;
-            }
             var button = new Button
             {
                 Name = $"Card{descriptor.CardId}{descriptor.Intent}",
                 Text = descriptor.Text,
-                TooltipText = descriptor.Intent == CardInteractionIntent.Generator
-                    ? "Use this offered resource generator."
-                    : "Choose this card's offered action.",
+                TooltipText = Tooltip(descriptor.Intent),
                 FocusMode = Control.FocusModeEnum.All,
             };
             button.Pressed += () => Activate(card, descriptor.Intent);
-            parent.AddChild(button);
-            parent.MoveChild(button, Math.Min(parent.GetChildCount() - 1, card.GetIndex() + 1));
+            card.AddInteractionControl(button);
             if (!controls.TryGetValue(card, out List<Button>? buttons))
             {
                 buttons = [];
@@ -89,6 +82,13 @@ internal sealed class BoardCardInteractionControls
             buttons.Add(button);
         }
     }
+
+    private static string Tooltip(CardInteractionIntent intent) => intent switch
+    {
+        CardInteractionIntent.Target => "Choose this offered target.",
+        CardInteractionIntent.Generator => "Use this offered resource generator.",
+        _ => "Choose this card's offered action.",
+    };
 
     private void Activate(CardControl card, CardInteractionIntent intent)
     {

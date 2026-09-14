@@ -94,6 +94,17 @@ public sealed class BoardDraftInteractionTests
         Assert.Equal([1], composer.Resources);
     }
 
+    [Fact]
+    public void AttachedTargetAndDecisionFallbackUseTheSamePromptBoundOperation()
+    {
+        DecisionComposer attached = TargetAndGeneratorComposer();
+        DecisionComposer fallback = TargetAndGeneratorComposer();
+
+        Assert.Equal(BoardDraftMutation.Target, Interaction(attached).TryToggleTarget(10));
+        Assert.Equal(BoardDraftMutation.Target, Interaction(fallback).TryActivate(10, false));
+        Assert.Equal(attached.Targets, fallback.Targets);
+    }
+
     [Theory]
     [InlineData(9.99f, false)]
     [InlineData(10f, true)]

@@ -57,6 +57,18 @@ internal sealed class BoardDraftInteraction
             : BoardDraftMutation.None;
     }
 
+    internal BoardDraftMutation TryToggleTarget(int? id)
+    {
+        if (id is null || composer.Selected?.Targets is not { } request
+            || !request.Legal.Contains(id.Value))
+        {
+            return BoardDraftMutation.None;
+        }
+        return operations.TryToggleTarget(id.Value)
+            ? BoardDraftMutation.Target
+            : BoardDraftMutation.None;
+    }
+
     internal IReadOnlyList<AffordancePresentation> VisibleActions(int cardId) =>
         [.. affordances.Where(affordance => affordance.Illegal is null
             && affordance.Source?.CardId == cardId)];

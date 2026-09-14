@@ -52,6 +52,22 @@ public sealed class InteractionSurfaceProjectionTests
     }
 
     [Fact]
+    public void SelectedPromptTargetsReceiveAttachedControlsFromTheEngineOffer()
+    {
+        var composer = Composer(new Affordance(3, "Play", 19, 0, "Visible",
+            new TargetRequest([1, 49], 1, 1)));
+        composer.SelectAffordance(3);
+        PromptPresentation prompt = Prompt(composer.Prompt, [Visible(3, 19)],
+            target: new TargetRequest([1, 49], 1, 1));
+
+        CardInteractionControlDescriptor[] targets = [.. BoardInteractionControlProjection
+            .From(composer, prompt).Where(control => control.Intent == CardInteractionIntent.Target)];
+
+        Assert.Equal([1, 49], targets.Select(control => control.CardId));
+        Assert.All(targets, control => Assert.Equal("◇ TARGET", control.Text));
+    }
+
+    [Fact]
     public void RelationshipPlannerUsesDirectPathOrOmitsBlockedRoute()
     {
         Rect2 source = new(0, 0, 20, 20);

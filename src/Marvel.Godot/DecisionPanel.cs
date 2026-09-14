@@ -129,6 +129,7 @@ public sealed partial class DecisionPanel : VBoxContainer
 
     internal void Rebuild(bool focusFirst = false)
     {
+        BoardActionChoiceSurface.Close();
         int generation = lifecycle.NextRenderGeneration();
         Control? focused = GetViewport()?.GuiGetFocusOwner();
         string? focusName = focused is not null && IsAncestorOf(focused)

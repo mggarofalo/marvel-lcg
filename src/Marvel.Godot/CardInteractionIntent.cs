@@ -4,5 +4,6 @@ namespace Marvel.Godot;
 internal enum CardInteractionIntent
 {
     Action,
+    Target,
     Generator,
 }

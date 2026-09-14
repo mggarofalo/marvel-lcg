@@ -70,12 +70,12 @@ public static class BoardRenderer
 
         var areas = new HFlowContainer
         {
-            Name = "LiveAreaFlow",
+            Name = "LiveAreaFlow", CustomMinimumSize = new Vector2(0, 44),
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
         if (lane.Seat is { } dropSeat)
         {
-            result.RegisterDropTarget(dropSeat, areas);
+            result.RegisterDropTarget(dropSeat, section);
         }
         foreach (BoardAreaPresentation area in lane.Areas.Where(area =>
                      area.Prominence == BoardAreaProminence.Live))

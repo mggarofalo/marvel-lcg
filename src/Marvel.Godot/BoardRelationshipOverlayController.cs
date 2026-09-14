@@ -33,13 +33,21 @@ internal sealed class BoardRelationshipOverlayController : IDisposable
             if (ReferenceEquals(board, next))
             {
                 promptRelationships = relationships;
-                Refresh();
-                Callable.From(Refresh).CallDeferred();
+                ScheduleRefresh();
             }
         };
-        Refresh();
-        Callable.From(Refresh).CallDeferred();
+        ScheduleRefresh();
     }
+
+    private void ScheduleRefresh()
+    {
+        Refresh();
+        // The board's containers settle after the prompt rebuild. A second
+        // deferred pass measures the final card rectangles, not a stale rail.
+        Callable.From(RefreshAfterLayout).CallDeferred();
+    }
+
+    private void RefreshAfterLayout() => Callable.From(Refresh).CallDeferred();
 
     private void Refresh()
     {
@@ -48,27 +56,49 @@ internal sealed class BoardRelationshipOverlayController : IDisposable
             Present([]);
             return;
         }
+        Present(Paths());
+    }
+
+    private IReadOnlyList<Vector2[]> Paths()
+    {
         var paths = new List<Vector2[]>();
+        Rect2 viewport = overlay.GetGlobalRect();
         IReadOnlyList<Rect2> obstacles = board.VisibleCardControls()
-            .Select(control => control.GetGlobalRect()).ToArray();
+            .Where(control => control.IsVisibleInTree())
+            .Select(control => control.GetGlobalRect())
+            .Where(rect => rect.Intersects(viewport))
+            .ToArray();
         foreach (TableRelationshipDescriptor relationship in snapshotRelationships.Concat(promptRelationships))
         {
-            if (relationship.Related is not { } related
-                || board.ControlFor(relationship.Subject) is not { } source
-                || board.ControlFor(related) is not { } target)
-            {
-                continue;
-            }
-            Rect2 sourceRect = source.GetGlobalRect();
-            Rect2 targetRect = target.GetGlobalRect();
-            Rect2[] blockers = obstacles.Where(rect => rect != sourceRect && rect != targetRect).ToArray();
-            Vector2[]? path = RelationshipRoutePlanner.Route(sourceRect, targetRect, blockers);
-            if (path is not null)
+            if (PathFor(relationship, obstacles, viewport) is { } path)
             {
                 paths.Add(path);
             }
         }
-        Present(paths);
+        return paths;
+    }
+
+    private Vector2[]? PathFor(
+        TableRelationshipDescriptor relationship,
+        IReadOnlyList<Rect2> obstacles,
+        Rect2 viewport)
+    {
+        if (relationship.Related is not { } related
+            || board?.ControlFor(relationship.Subject) is not { } source
+            || board.ControlFor(related) is not { } target)
+        {
+            return null;
+        }
+        Rect2 sourceRect = source.GetGlobalRect();
+        Rect2 targetRect = target.GetGlobalRect();
+        if (!viewport.HasPoint(sourceRect.GetCenter())
+            || !viewport.HasPoint(targetRect.GetCenter()))
+        {
+            return null;
+        }
+        Rect2[] blockers = obstacles.Where(rect => rect != sourceRect && rect != targetRect).ToArray();
+        Vector2[]? path = RelationshipRoutePlanner.Route(sourceRect, targetRect, blockers);
+        return path is null ? null : [.. path.Select(point => point - viewport.Position)];
     }
 
     private void Present(IReadOnlyList<Vector2[]> paths)
