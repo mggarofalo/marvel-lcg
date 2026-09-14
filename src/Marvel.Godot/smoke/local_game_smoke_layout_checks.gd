@@ -1,4 +1,4 @@
-extends "res://smoke/local_game_smoke_support.gd"
+extends "res://smoke/local_game_smoke_board_interaction_checks.gd"
 
 func _board_layout_is_resolved() -> bool:
 	if main.find_child("VillainTable", true, false) != null:
@@ -238,7 +238,11 @@ func _attached_control_focus_is_safe(state: Dictionary) -> bool:
 	if control == null:
 		return true
 	state.tested_attached_focus = true
-	if not await _prepare_activation(control):
+	render_viewport.gui_release_focus()
+	for frame in 5:
+		await process_frame
+	if not await _align_attached_control_to_table(control) \
+			or not await _control_has_real_hit_area(control):
 		return false
 	var card := control.get_parent().get_parent() as Control
 	if card == null or not card.get_global_rect().encloses(control.get_global_rect()):
@@ -262,12 +266,25 @@ func _attached_control_focus_is_safe(state: Dictionary) -> bool:
 
 
 func _first_attached_action_control() -> Button:
+	var fallback: Button = null
 	for candidate in main.find_children("Card*Action", "Button", true, false):
 		var control := candidate as Button
 		if control != null and not control.disabled \
-			and control.get_parent() != null and control.get_parent().name == &"DirectControls":
-			return control
-	return null
+				and control.get_parent() != null and control.get_parent().name == &"DirectControls":
+			if _has_named_ancestor(control, &"HandShelf"):
+				return control
+			if fallback == null:
+				fallback = control
+	return fallback
+
+
+func _has_named_ancestor(control: Control, expected: StringName) -> bool:
+	var ancestor := control.get_parent()
+	while ancestor != null:
+		if ancestor.name == expected:
+			return true
+		ancestor = ancestor.get_parent()
+	return false
 
 
 func _prompt_header_is_safe(decision_scroll: ScrollContainer) -> bool:

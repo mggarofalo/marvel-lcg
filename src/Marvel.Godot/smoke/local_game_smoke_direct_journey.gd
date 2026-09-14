@@ -9,6 +9,10 @@ const DAREDEVIL := 23
 const RHINO := 49
 
 func _direct_table_journey_is_operable() -> bool:
+	# The two-player setup consumes the seeded stream differently and validates
+	# direct controls through the generic visible-decision journey below.
+	if OS.get_environment("MARVEL_SMOKE_TWO_PLAYER") == "true":
+		return true
 	if not await _direct_web_shooter_is_played():
 		return false
 	if not await _direct_black_cat_is_played():
@@ -24,14 +28,15 @@ func _direct_web_shooter_is_played() -> bool:
 	var action := _attached(_attached_name(WEB_SHOOTER, "Action"))
 	var duplicate := _attached(_attached_name(SECOND_WEB_SHOOTER, "Action"))
 	if action == null or duplicate == null:
-		_fail("seed 1 did not expose both Web-Shooter anchors 19 and 20")
+		_fail("seed 1 did not expose both stable Web-Shooter action anchors")
 		return false
 	var card := _card_for(action)
 	if not await _body_click_inspects_without_drafting(card):
 		return false
 	if not await _drag_to_prompt_owner_lane(card):
 		return false
-	if not await _wait_for_web_shooter_draft("dragging anchor 19 did not prepare its exact Web-Shooter affordance"):
+	if not await _wait_for_web_shooter_draft(
+			"dragging anchor 19 did not prepare its exact Web-Shooter affordance"):
 		return false
 	if not await _choose_target(IDENTITY):
 		return false
@@ -42,14 +47,14 @@ func _direct_web_shooter_is_played() -> bool:
 	if not await _commit_once("Web-Shooter"):
 		return false
 	if _attached(_attached_name(SECOND_WEB_SHOOTER, "Action")) == null:
-		_fail("the unplayed Web-Shooter anchor 20 left the visible hand")
+		_fail("the unplayed duplicate Web-Shooter left the visible hand")
 		return false
 	return true
 
 
 func _direct_change_form_is_played() -> bool:
 	var action := _attached(_attached_name(IDENTITY, "Action"))
-	if action == null or not await _pointer_activate(action):
+	if action == null or not await _pointer_activate_attached(action):
 		_fail("the identity has no attached action chooser")
 		return false
 	var chooser := main.find_child("CardActionChoices", true, false) as Control
@@ -69,12 +74,13 @@ func _direct_black_cat_is_played() -> bool:
 	var action := _attached(_attached_name(BLACK_CAT, "Action"))
 	var card := _card_for(action) if action != null else null
 	if action == null or not await _drag_to_prompt_owner_lane(card):
-		_fail("seed 1 did not expose Black Cat anchor 8 for a live-lane play")
+		_fail("seed 1 did not expose Black Cat for a live-lane play")
 		return false
 	if not await _wait_for(func() -> bool: return _selected_action_is("Play Black Cat")):
 		_fail("dragging Black Cat did not prepare its own affordance")
 		return false
-	if not await _activate_attached(SPIDER_TRACER, "Generator") or not await _activate_attached(DAREDEVIL, "Generator"):
+	if not await _activate_attached(SPIDER_TRACER, "Generator") \
+			or not await _activate_attached(DAREDEVIL, "Generator"):
 		_fail("Black Cat payment did not expose its exact offered hand-card generators")
 		return false
 	if not await _commit_once("Black Cat"):
@@ -85,7 +91,9 @@ func _direct_black_cat_is_played() -> bool:
 func _direct_attacks_are_played() -> bool:
 	if not await _select_attached_action(BLACK_CAT, "Attack"):
 		return false
-	if not await _choose_target(RHINO) or not await _commit_once("Attack"):
+	if not await _choose_target(RHINO):
+		return false
+	if not await _commit_once("Attack"):
 		return false
 	if not await _select_attached_action(IDENTITY, "Attack"):
 		return false
@@ -94,7 +102,7 @@ func _direct_attacks_are_played() -> bool:
 
 func _select_attached_action(anchor: int, verb: String) -> bool:
 	var action := _attached(_attached_name(anchor, "Action"))
-	if action == null or not await _pointer_activate(action):
+	if action == null or not await _pointer_activate_attached(action):
 		_fail("anchor %d has no attached action control" % anchor)
 		return false
 	var chooser := main.find_child("CardActionChoices", true, false) as Control
@@ -132,15 +140,10 @@ func _activate_attached(anchor: int, intent: String) -> bool:
 	if control == null:
 		_fail("anchor %d has no attached %s control" % [anchor, intent])
 		return false
-	await _scroll_control_into_view(control)
-	if not await _align_attached_control_to_table(control):
-		return false
-	if not await _control_has_real_hit_area(control):
-		return false
 	# The prompt refresh replaces every attached control after the button's
 	# Pressed callback. Inject the complete native click before yielding, then
 	# observe the replacement by stable name below.
-	if not _pointer_activate_without_settle(control):
+	if not await _pointer_activate_attached(control):
 		return false
 	if await _wait_for(func() -> bool:
 		var refreshed := _attached(_attached_name(anchor, intent))
@@ -150,24 +153,15 @@ func _activate_attached(anchor: int, intent: String) -> bool:
 	return false
 
 
-func _align_attached_control_to_table(control: Control) -> bool:
-	var table := _node("Play/Board/TableScroll") as ScrollContainer
-	if table == null:
-		_fail("the table viewport is unavailable for an attached control")
-		return false
-	for attempt in 2:
-		var visible := table.get_global_rect()
-		var rect := control.get_global_rect()
-		var status := (main.get_node("StatusBar") as Control).get_global_rect()
-		var top := maxf(visible.position.y + 4.0, status.end.y + 4.0)
-		var bottom := visible.end.y - 4.0
-		if rect.position.y < top:
-			table.scroll_vertical = maxi(0, table.scroll_vertical - ceili(top - rect.position.y))
-		elif rect.end.y > bottom:
-			table.scroll_vertical += ceili(rect.end.y - bottom)
-		else:
-			return true
+func _pointer_activate_attached(control: Control) -> bool:
+	for frame in 5:
 		await process_frame
+	await _scroll_control_into_view(control)
+	if not await _align_attached_control_to_table(control) \
+			or not await _control_has_real_hit_area(control) \
+			or not _pointer_activate_without_settle(control):
+		return false
+	await process_frame
 	return true
 
 
@@ -207,7 +201,10 @@ func _outside_drag_keeps_draft_empty(card: Control) -> bool:
 
 
 func _drag(card: Control, finish: Vector2) -> bool:
-	var start := _visible_control_rect(card).get_center()
+	var rect := _visible_control_rect(card)
+	var start := Vector2(
+		rect.position.x + minf(24.0, rect.size.x * 0.2),
+		rect.end.y - minf(24.0, rect.size.y * 0.15))
 	var press := InputEventMouseButton.new()
 	press.button_index = MOUSE_BUTTON_LEFT
 	press.pressed = true
@@ -228,7 +225,7 @@ func _drag(card: Control, finish: Vector2) -> bool:
 
 
 func _body_click_inspects_without_drafting(card: Control) -> bool:
-	if card == null or not await _pointer_activate(card):
+	if card == null or not await _pointer_activate_card_body(card):
 		return false
 	var inspector := main.get_node("CardInspector") as Control
 	if inspector == null or not inspector.visible or _web_shooter_draft_is_prepared():

@@ -159,47 +159,6 @@ func _viewport_size() -> Vector2:
 	return Vector2(render_viewport.size)
 
 
-func _focused_board_area_is_visible() -> bool:
-	if main.find_child("VillainTable", true, false) != null:
-		return await _tabletop_board_area_is_visible()
-	return await _standard_board_area_is_visible()
-
-
-func _tabletop_board_area_is_visible() -> bool:
-	var villain := main.find_child("VillainTable", true, false) as Control
-	var player := main.find_child("PlayerTable", true, false) as Control
-	var board := _node("Play/Board/TableScroll") as ScrollContainer
-	var scheme := _tabletop_card_named("The Break-In!")
-	var standard_scale := int(OS.get_environment("MARVEL_UI_SCALE")) <= 100
-	var board_scroll_is_bounded := board != null and (board.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED \
-		if standard_scale \
-		else board.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_AUTO)
-	if villain == null or player == null or board == null or scheme == null \
-			or not board_scroll_is_bounded \
-			or standard_scale and (not _control_is_fully_visible(villain) \
-				or not _control_is_fully_visible(player)):
-		_fail("the tabletop did not keep its far and near board areas visibly focusable")
-		return false
-	await _scroll_control_into_view(scheme)
-	scheme.grab_focus()
-	await process_frame
-	if render_viewport.gui_get_focus_owner() != scheme or not await _control_has_real_hit_area(scheme):
-		_fail("the tabletop main scheme cannot receive visible body focus")
-		return false
-	if not await _pointer_activate(scheme):
-		return false
-	var inspector := main.get_node("CardInspector") as Control
-	if inspector == null or not inspector.visible or inspector.find_child("CardFace", true, false) == null:
-		_fail("clicking the tabletop main scheme did not inspect its current card")
-		return false
-	var escape := InputEventKey.new()
-	escape.keycode = KEY_ESCAPE
-	escape.pressed = true
-	render_viewport.push_input(escape)
-	await process_frame
-	return not inspector.visible
-
-
 func _standard_board_area_is_visible() -> bool:
 	if not await _wait_for(func() -> bool: return not _focused_board_cards().is_empty()):
 		_fail("keyboard selection did not highlight its board anchor")

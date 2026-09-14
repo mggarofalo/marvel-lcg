@@ -96,6 +96,15 @@ internal sealed class MainLayoutController
         bool mulligan = MulliganPrompt.IsOpening(main.CurrentGame?.Prompt);
         bool fixedTabletop = gameplay && main.Size.X >= 1800 && main.Size.Y >= 900;
         bool compactTableChrome = fixedTabletop;
+        main.GetNode<ScrollContainer>(
+            "Margin/Shell/Content/Play/Board/TableScroll").CustomMinimumSize = new Vector2(
+                0,
+                fixedTabletop
+                    ? Math.Min(
+                        VisualSystem.Card(CardDisplaySize.Board, main.interfaceScale).MinimumHeight,
+                        VisualSystem.Controls(main.interfaceScale).MinimumPointerTarget * 2
+                        + VisualSystem.Spacing(main.interfaceScale).Small)
+                    : 96);
         main.decisions.SetCompactMulliganChrome(compactTableChrome);
         ConfigureDecisionDock(mulligan && compactTableChrome, compactTableChrome, layout);
         ConfigureStackChrome(compactHeight, compactTableChrome);
@@ -122,7 +131,8 @@ internal sealed class MainLayoutController
     private void ConfigureStackChrome(bool compactHeight, bool compactTableChrome)
     {
         main.setupGrid.Columns = main.Size.X >= 1500 ? 4 : 2;
-        main.contentStack.ThemeTypeVariation = main.board.Visible && compactHeight
+        main.contentStack.ThemeTypeVariation = main.board.Visible
+            && (compactHeight || compactTableChrome)
             ? GodotThemeVariations.TightStack
             : GodotThemeVariations.Stack;
         main.promptStack.ThemeTypeVariation = compactHeight

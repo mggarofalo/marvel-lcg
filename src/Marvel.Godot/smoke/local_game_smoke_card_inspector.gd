@@ -129,7 +129,7 @@ func _restore_unselected_action_prompt() -> bool:
 
 
 func _pinned_inspector_mouse_filter_is_safe(hand_card: Control) -> bool:
-	if not await _pointer_activate(hand_card):
+	if not await _pointer_activate_card_body(hand_card):
 		return false
 	await process_frame
 	var inspector := main.get_node("CardInspector") as Control
@@ -152,7 +152,7 @@ func _pinned_inspector_mouse_filter_is_safe(hand_card: Control) -> bool:
 
 
 func _open_card_inspector(hand_card: Control) -> Control:
-	if not await _pointer_activate(hand_card):
+	if not await _pointer_activate_card_body(hand_card):
 		return null
 	await process_frame
 	var inspector := main.get_node("CardInspector") as Control
@@ -376,7 +376,7 @@ func _capture_named_card(title: String, checkpoint: String) -> bool:
 	if card == null:
 		_fail("the table has no readable '%s' card for visual inspection" % title)
 		return false
-	if not await _pointer_activate(card):
+	if not await _pointer_activate_card_body(card):
 		return false
 	await process_frame
 	var inspector := main.get_node("CardInspector") as Control
