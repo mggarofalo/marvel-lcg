@@ -1,5 +1,7 @@
 extends "res://smoke/local_game_smoke_card_summary.gd"
 
+const WEB_SHOOTER_ACTION := "Play Web-Shooter"
+
 func _card_inspector_is_safe(hand_card: Control) -> bool:
 	if not await _action_card_preview_is_safe():
 		return false
@@ -18,7 +20,7 @@ func _card_inspector_is_safe(hand_card: Control) -> bool:
 
 
 func _action_card_preview_is_safe() -> bool:
-	var action_card := _visible_button_beginning(_decision(), "Play Web-Shooter")
+	var action_card := _web_shooter_action()
 	if action_card == null:
 		_fail("the post-mulligan decision has no card-naming Web-Shooter action")
 		return false
@@ -59,7 +61,6 @@ func _show_action_card_preview(action_card: Button) -> Control:
 
 
 func _preview_keeps_action_operable(action_card: Button, inspector: Control) -> bool:
-	var target_name := action_card.name
 	var preview_point := _visible_control_rect(action_card).get_center()
 	if not await _control_owns_point(action_card, preview_point):
 		_fail("the preview backdrop replaced its card-naming action as the GUI hit owner")
@@ -68,23 +69,49 @@ func _preview_keeps_action_operable(action_card: Button, inspector: Control) -> 
 		_fail("the previewed card-naming action cannot be activated through its pointer hit")
 		return false
 	await process_frame
-	var selected := _decision().find_child(target_name, true, false) as Button
-	if selected == null or not selected.text.begins_with("✓"):
-		_fail("the pointer activation from the visible preview did not change draft state")
-		return false
-	return true
+	return await _wait_for_web_shooter_draft(
+		"the pointer activation from the visible preview did not prepare Play Web-Shooter")
 
 
 func _dismiss_action_card_preview(inspector: Control) -> bool:
 	var exit_motion := InputEventMouseMotion.new()
-	exit_motion.position = Vector2.ZERO
-	exit_motion.global_position = Vector2.ZERO
+	var outside_viewport := _viewport_size() + Vector2(8, 8)
+	exit_motion.position = outside_viewport
+	exit_motion.global_position = outside_viewport
 	render_viewport.push_input(exit_motion)
 	await main.get_tree().create_timer(0.35).timeout
 	if inspector.visible:
 		_fail("the temporary action-card preview remained after a real pointer exit")
 		return false
 	return true
+
+
+func _web_shooter_action() -> Button:
+	for candidate in _visible_buttons(_decision()):
+		if _logical_action_text(candidate.text) == WEB_SHOOTER_ACTION:
+			return candidate
+	return null
+
+
+func _logical_action_text(text: String) -> String:
+	return text.trim_prefix("✓").strip_edges()
+
+
+func _web_shooter_draft_is_prepared() -> bool:
+	var summary := _decision().find_child("ActionSummary", true, false) as Control
+	if summary == null or not summary.is_visible_in_tree():
+		return false
+	for line in _visible_text(summary).split("\n", false):
+		if line.strip_edges() == WEB_SHOOTER_ACTION:
+			return true
+	return false
+
+
+func _wait_for_web_shooter_draft(failure: String) -> bool:
+	if await _wait_for(func() -> bool: return _web_shooter_draft_is_prepared()):
+		return true
+	_fail("%s; summary=%s" % [failure, _visible_text(_decision())])
+	return false
 
 
 func _pinned_inspector_mouse_filter_is_safe(hand_card: Control) -> bool:

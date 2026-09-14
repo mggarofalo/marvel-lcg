@@ -300,18 +300,23 @@ func _result_toggle_is_operable(summary: Label) -> bool:
 
 
 func _start_web_shooter_draft() -> bool:
-	var web_shooter := _visible_button_beginning(_decision(), "Play Web-Shooter")
+	var web_shooter := _web_shooter_action()
 	if web_shooter == null or web_shooter.disabled:
 		_fail("Web-Shooter is not playable after the mulligan")
 		return false
-	var summary := _decision().find_child("ActionSummary", true, false) as Control
-	if summary == null or "Play Web-Shooter" not in _visible_text(summary):
+	if not _web_shooter_draft_is_prepared():
 		if not await _pointer_activate(web_shooter):
 			return false
 	else:
 		print("WEB_SHOOTER_PREVIEW_DRAFT_REUSED")
+	if not await _wait_for_web_shooter_draft(
+		"the post-mulligan action draft is not Play Web-Shooter"):
+		return false
 	await process_frame
 	await process_frame
+	if not _web_shooter_draft_is_prepared():
+		_fail("the post-mulligan action draft changed before Web-Shooter payment")
+		return false
 	var result := _node("Play/Prompt/Margin/Stack/Workbench/Action/LastResult") as Control
 	if result.visible:
 		_fail("opening a new draft did not clear the transient result")
@@ -320,6 +325,9 @@ func _start_web_shooter_draft() -> bool:
 
 
 func _payment_is_keyboard_operable() -> bool:
+	if not _web_shooter_draft_is_prepared():
+		_fail("the payment controls are not bound to the prepared Play Web-Shooter draft")
+		return false
 	var generators := _decision().find_children("Resource*", "Button", true, false)
 	if generators.is_empty():
 		_fail("Web-Shooter exposes no post-mulligan payment generators")
@@ -328,6 +336,9 @@ func _payment_is_keyboard_operable() -> bool:
 	generator.grab_focus()
 	await process_frame
 	await process_frame
+	if not _web_shooter_draft_is_prepared():
+		_fail("the prepared Play Web-Shooter draft changed while payment focus settled")
+		return false
 	if render_viewport.gui_get_focus_owner() != generator:
 		_fail("Web-Shooter's post-mulligan resource control cannot receive focus")
 		return false
@@ -343,6 +354,9 @@ func _payment_is_keyboard_operable() -> bool:
 	render_viewport.push_input(press)
 	await process_frame
 	await process_frame
+	if not _web_shooter_draft_is_prepared():
+		_fail("the prepared Play Web-Shooter draft changed while payment was entered")
+		return false
 	var progress := _node("Play/Prompt/Margin/Stack/PromptHeader/Progress") as Label
 	if "PAYMENT 1/1 ICONS" not in progress.text or "READY" not in progress.text:
 		_fail("Peter Parker's post-mulligan resource cannot complete Web-Shooter's payment")
