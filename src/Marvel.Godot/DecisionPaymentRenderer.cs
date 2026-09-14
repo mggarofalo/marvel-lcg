@@ -15,6 +15,7 @@ internal sealed class DecisionPaymentRenderer
     private readonly WorldDescriptor world;
     private readonly bool submitting;
     private readonly int generation;
+    private readonly TableDraftBinding operations;
 
     internal DecisionPaymentRenderer(
         DecisionPanel panel,
@@ -28,6 +29,7 @@ internal sealed class DecisionPaymentRenderer
         this.world = world;
         this.submitting = submitting;
         this.generation = generation;
+        operations = panel.BindTableDraft(composer, generation);
     }
     internal void AddCosts(Affordance selected)
     {
@@ -82,13 +84,10 @@ internal sealed class DecisionPaymentRenderer
                         : InteractiveVisualState.Legal);
             choose.Pressed += () =>
             {
-                if (!panel.IsCurrentDraft(composer, generation)) return;
-                composer.SelectCost(costIndex);
-                foreach (VariableRequest variable in cost.VariableRequests)
+                if (operations.TrySelectCost(costIndex))
                 {
-                    composer.Define(variable.Name, variable.Min);
+                    panel.Rebuild();
                 }
-                panel.Rebuild();
             };
             if (cost.Target != 0)
             {
@@ -168,9 +167,7 @@ internal sealed class DecisionPaymentRenderer
                     : InteractiveVisualState.Legal);
             choose.Pressed += () =>
             {
-                if (!panel.IsCurrentDraft(composer, generation)) return;
-                composer.ToggleResource(source.Effect);
-                panel.Rebuild();
+                if (operations.TryToggleGenerator(source.Effect)) panel.Rebuild();
             };
             panel.BindAnchors(choose, source.Effect);
             panel.AddContent(choose);

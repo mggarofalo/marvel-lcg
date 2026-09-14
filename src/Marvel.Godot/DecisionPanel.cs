@@ -104,21 +104,19 @@ public sealed partial class DecisionPanel : VBoxContainer
         MulliganBinding.Bind(this, board);
     }
 
-    internal void ToggleMulliganTarget(int target, DecisionComposer draft, int generation)
+    internal TableDraftBinding BindTableDraft(DecisionComposer draft, int generation) =>
+        lifecycle.Bind(draft, generation);
+
+    internal void RefreshMulliganTargets(DecisionComposer draft, int target)
     {
-        if (!IsCurrentDraft(draft, generation)
-            || draft.Selected?.Targets is not { } request
-            || !request.Legal.Contains(target))
-        {
-            return;
-        }
-        if (draft.Targets.Contains(target)) draft.RemoveTarget(target); else draft.AddTarget(target);
         mulliganBoard?.SetMulliganTargets(draft.Targets);
         NotifyAnchorFocused([target]);
         Rebuild();
     }
+
     internal bool IsCurrentDraft(DecisionComposer expected, int generation) =>
-        ReferenceEquals(composer, expected) && lifecycle.CanMutate(generation);
+        ReferenceEquals(composer, expected)
+        && lifecycle.CanMutate(generation, lifecycle.Revision);
 
     internal void RaiseSubmitted(EngineDecision decision) => Submitted?.Invoke(decision);
 
@@ -215,7 +213,7 @@ public sealed partial class DecisionPanel : VBoxContainer
         int generation = lifecycle.RenderGeneration;
         pass.Pressed += () =>
         {
-            if (lifecycle.CanMutate(generation)
+            if (lifecycle.CanMutate(generation, lifecycle.Revision)
                 && composer!.TryDecline(out EngineDecision? decision, out _))
             {
                 NotifySubmitted(decision!, generation);

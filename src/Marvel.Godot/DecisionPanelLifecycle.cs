@@ -19,6 +19,8 @@ internal sealed class DecisionPanelLifecycle
 
     internal int RenderGeneration => renderGeneration;
 
+    internal long Revision => revision;
+
     internal void Render(Prompt? prompt, WorldDescriptor world, long currentRevision)
     {
         panel.world = world ?? throw new ArgumentNullException(nameof(world));
@@ -63,12 +65,16 @@ internal sealed class DecisionPanelLifecycle
         return true;
     }
 
-    internal bool CanMutate(int generation) => generation == renderGeneration
+    internal bool CanMutate(int generation, long expectedRevision) => expectedRevision == revision
+        && generation == renderGeneration
         && !panel.submitting && !submission.IsSubmitted && panel.composer is not null;
+
+    internal TableDraftBinding Bind(DecisionComposer composer, int generation) =>
+        new(composer, generation, revision, CanMutate);
 
     internal void NotifySubmitted(EngineDecision decision, int generation)
     {
-        if (CanMutate(generation) && TrySubmit())
+        if (CanMutate(generation, revision) && TrySubmit())
         {
             panel.RaiseSubmitted(decision);
         }
@@ -76,24 +82,15 @@ internal sealed class DecisionPanelLifecycle
 
     internal void SelectAffordance(int affordanceId, int generation)
     {
-        if (panel.composer is null || !CanMutate(generation))
+        DecisionComposer? composer = panel.composer;
+        if (composer is null || !Bind(composer, generation).TrySelectAffordance(affordanceId))
         {
             return;
         }
 
-        Affordance option = panel.composer.Prompt.Affordances.Single(candidate =>
-            candidate.Id == affordanceId);
-        panel.composer.SelectAffordance(option.Id);
+        Affordance option = composer.Selected!;
         panel.RaiseDraftStarted();
         panel.NotifyAnchorFocused([option.AnchorId]);
-        if (panel.composer.Prompt.Asking == Question.Element
-            && panel.composer.Prompt.Affordances.Count == 1
-            && panel.composer.TryBuild(out EngineDecision? automatic, out _))
-        {
-            NotifySubmitted(automatic!, generation);
-            return;
-        }
-
         panel.Rebuild();
     }
 
