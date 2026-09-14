@@ -1,4 +1,5 @@
 using Godot;
+using Marvel.Rules.Play;
 using Marvel.View;
 
 namespace Marvel.Godot;
@@ -34,6 +35,8 @@ internal static class DesktopTabletopPresentation
         TabletopHandShelfRenderer.Render(
             board, selection.ExpandedSeat, main.handRail, main.handHeading,
             result, main.interfaceScale, main.art);
+        main.GetNode<PanelContainer>("Margin/Shell/Content/Play/Board/HandShelf").Visible =
+            main.CurrentGame?.World?.Outcome is not { } outcome || outcome == Outcome.Unfinished;
         return result;
     }
 }

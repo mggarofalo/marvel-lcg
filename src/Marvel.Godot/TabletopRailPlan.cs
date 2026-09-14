@@ -17,14 +17,17 @@ internal sealed record TabletopRailPlan(
         BoardLanePresentation? scenario = lanes.FirstOrDefault(lane => lane.Key == "scenario");
         BoardLanePresentation? player = lanes.FirstOrDefault(lane => lane.Seat == expandedSeat);
         BoardAreaPresentation[] far = [.. (scenario?.Areas ?? [])
-            .Where(area => area.Zone != "HandsArea")];
+            .Where(IsOccupiedNonHandArea)];
         BoardAreaPresentation[] other = [.. lanes.Where(lane => lane.Key == "other")
-            .SelectMany(lane => lane.Areas).Where(area => area.Zone != "HandsArea")];
+            .SelectMany(lane => lane.Areas).Where(IsOccupiedNonHandArea)];
         BoardAreaPresentation[] near = [.. (player?.Areas ?? [])
-            .Where(area => area.Zone != "HandsArea")];
+            .Where(IsOccupiedNonHandArea)];
         return new TabletopRailPlan(
             Live(far), [.. Shelf(far).Concat(other)], Live(near), Shelf(near));
     }
+
+    private static bool IsOccupiedNonHandArea(BoardAreaPresentation area) =>
+        area.Zone != "HandsArea" && area.Prominence != BoardAreaProminence.Empty;
 
     private static BoardAreaPresentation[] Live(IEnumerable<BoardAreaPresentation> areas) => [.. areas
         .Where(area => area.Prominence == BoardAreaProminence.Live)];

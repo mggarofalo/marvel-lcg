@@ -44,6 +44,7 @@ internal static class MulliganTableRenderer
     {
         return areas.Where(area => area.Seat == seat)
             .Where(area => area.Zone != "HandsArea")
+            .Where(area => area.Prominence != BoardAreaProminence.Empty)
             .OrderBy(area => OrderOf(area.Zone, order))
             .ThenBy(area => area.Id)
             .ToArray();

@@ -111,6 +111,7 @@ internal sealed class MainBoardController : IDisposable
         // Choose the opening surface from that settled canvas, not its
         // transient child size.
         Vector2 viewport = main.GetViewportRect().Size;
+        main.GetNode<PanelContainer>("Margin/Shell/Content/Play/Board/HandShelf").Visible = true;
         BoardRenderResult rendered = tabletop.Render(prompt, viewport)
             ?? BoardRenderer.Render(
                 main.boardAreas, main.boardPresentation, main.handRail, main.handHeading,

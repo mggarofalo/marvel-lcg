@@ -29,7 +29,7 @@ internal sealed class MainEventController
     {
         if (prompt is null)
         {
-            main.activeResolution.Visible = false;
+            (main.activeResolution.Visible, main.activeResolutionSummary.Text) = (false, string.Empty);
             (main.promptEyebrow.Text, main.promptHeading.Text, main.promptContext.Text) =
                 world.Outcome switch
                 {

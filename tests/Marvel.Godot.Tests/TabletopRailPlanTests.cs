@@ -39,6 +39,26 @@ public sealed class TabletopRailPlanTests
     }
 
     [Fact]
+    public void EmptyAreasAreImplicitInsteadOfConsumingTabletopRailWidth()
+    {
+        BoardAreaPresentation villain = Area(1, -1, "VillainArea", BoardAreaProminence.Live);
+        BoardAreaPresentation removed = Area(2, -1, "RemovedArea", BoardAreaProminence.Empty);
+        BoardAreaPresentation identity = Area(3, 0, "HeroArea", BoardAreaProminence.Live);
+        BoardAreaPresentation setAside = Area(4, 0, "AsideDeck", BoardAreaProminence.Empty);
+
+        TabletopRailPlan plan = TabletopRailPlan.Create(
+        [
+            new BoardLanePresentation("scenario", "SCENARIO", null, [villain, removed]),
+            new BoardLanePresentation("player-0", "PLAYER 1", 0, [identity, setAside]),
+        ], 0);
+
+        Assert.Equal([1], plan.FarLive.Select(area => area.Id));
+        Assert.Empty(plan.FarShelf);
+        Assert.Equal([3], plan.NearLive.Select(area => area.Id));
+        Assert.Empty(plan.NearShelf);
+    }
+
+    [Fact]
     public void SeatMarkersKeepEachAuthoritativeRoleSeparate()
     {
         var selection = new DisplayedSeatSelection(
