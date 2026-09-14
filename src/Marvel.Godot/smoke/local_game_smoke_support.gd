@@ -70,31 +70,36 @@ func _pointer_activate(control: Control) -> bool:
 
 
 func _pointer_activate_without_settle(control: Control) -> bool:
-	if not control is BaseButton:
-		return false
 	var point := _visible_control_rect(control).get_center()
+	if not control is BaseButton:
+		_inject_pointer_click(point)
+		return true
 	var button := control as BaseButton
 	for _attempt in POINTER_ACTIVATION_ATTEMPTS:
 		var observed := [false]
 		var observe := func() -> void: observed[0] = true
 		button.pressed.connect(observe)
-		_position_pointer_without_settle(point)
-		var press := InputEventMouseButton.new()
-		press.button_index = MOUSE_BUTTON_LEFT
-		press.pressed = true
-		press.position = point
-		press.global_position = point
-		render_viewport.push_input(press, true)
-		var release := InputEventMouseButton.new()
-		release.button_index = MOUSE_BUTTON_LEFT
-		release.position = point
-		release.global_position = point
-		render_viewport.push_input(release, true)
+		_inject_pointer_click(point)
 		if button.pressed.is_connected(observe):
 			button.pressed.disconnect(observe)
 		if observed[0]:
 			return true
 	return false
+
+
+func _inject_pointer_click(point: Vector2) -> void:
+	_position_pointer_without_settle(point)
+	var press := InputEventMouseButton.new()
+	press.button_index = MOUSE_BUTTON_LEFT
+	press.pressed = true
+	press.position = point
+	press.global_position = point
+	render_viewport.push_input(press, true)
+	var release := InputEventMouseButton.new()
+	release.button_index = MOUSE_BUTTON_LEFT
+	release.position = point
+	release.global_position = point
+	render_viewport.push_input(release, true)
 
 
 func _keyboard_activate(control: Control, repeats := 1) -> bool:
