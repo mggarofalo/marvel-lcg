@@ -19,7 +19,7 @@ internal static class CardInteractionLayout
         ArgumentOutOfRangeException.ThrowIfNegative(width);
         SpacingMetrics spacing = VisualSystem.Spacing(scale);
         ControlMetrics controls = VisualSystem.Controls(scale);
-        const int columns = 1;
+        const int columns = 2;
         float controlWidth = (width - spacing.ExtraSmall * (columns - 1)) / columns;
         int row = index / columns;
         int column = index % columns;

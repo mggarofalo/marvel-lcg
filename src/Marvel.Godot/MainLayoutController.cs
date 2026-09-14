@@ -137,6 +137,13 @@ internal sealed class MainLayoutController
         main.decisions.CustomMinimumSize = new Vector2(
             0, mulligan ? 172 : decisionHeight);
         SetMulliganDockChrome(mulligan);
+        main.decisions.ResetSize();
+        main.promptPanel.ResetSize();
+        main.playLayout.ResetSize();
+        main.contentStack.ResetSize();
+        main.GetNode<PanelContainer>("Margin/Shell").ResetSize();
+        main.playLayout.QueueSort();
+        main.contentStack.QueueSort();
     }
 
     private void ConfigureStackChrome(bool compactHeight, bool compactTableChrome)

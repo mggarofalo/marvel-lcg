@@ -13,6 +13,7 @@ internal sealed class BoardCardInteractionControls
     private readonly Func<bool> isCurrent;
     private Func<CardPointerGesture, bool>? activate;
     private int focusGeneration;
+    private BoardInteractionFocusKey? requestedFocus;
 
     internal BoardCardInteractionControls(Func<bool> isCurrent) => this.isCurrent = isCurrent;
 
@@ -33,7 +34,8 @@ internal sealed class BoardCardInteractionControls
         }
 
         int generation = checked(++focusGeneration);
-        BoardInteractionFocusKey? focused = FocusedKey();
+        BoardInteractionFocusKey? focused = requestedFocus ?? FocusedKey();
+        requestedFocus = null;
         IReadOnlyDictionary<int, CardInteractionCue> cues =
             BoardInteractionCueProjection.From(composer, prompt);
         foreach ((int id, List<CardControl> cards) in visible)
@@ -85,9 +87,13 @@ internal sealed class BoardCardInteractionControls
             TooltipText = Tooltip(descriptor.Intent),
             FocusMode = Control.FocusModeEnum.All,
         };
-        focusKeys.Add(button, new BoardInteractionFocusKey(
-            descriptor.CardId, descriptor.Intent));
-        button.Pressed += () => Activate(card, descriptor.Intent);
+        var key = new BoardInteractionFocusKey(descriptor.CardId, descriptor.Intent);
+        focusKeys.Add(button, key);
+        button.Pressed += () =>
+        {
+            requestedFocus = key;
+            Activate(card, descriptor.Intent);
+        };
         card.AddInteractionControl(button);
         if (!controls.TryGetValue(card, out List<Button>? buttons))
         {

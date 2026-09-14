@@ -7,9 +7,9 @@ namespace Marvel.Godot.Tests;
 public sealed class CardControlTests
 {
     [Theory]
-    [InlineData(InterfaceScale.Standard, 172, 12, 88, 44, 136, 184, 244)]
-    [InlineData(InterfaceScale.Large, 207, 15, 92, 53, 150, 208, 281)]
-    [InlineData(InterfaceScale.ExtraLarge, 258, 18, 96, 66, 168, 240, 330)]
+    [InlineData(InterfaceScale.Standard, 172, 12, 88, 44, 88, 136, 196)]
+    [InlineData(InterfaceScale.Large, 207, 15, 92, 53, 92, 150, 223)]
+    [InlineData(InterfaceScale.ExtraLarge, 258, 18, 96, 66, 96, 168, 258)]
     public void AttachedInteractionUsesAReservedStripBelowTheCardsReadableSurface(
         InterfaceScale scale,
         int cardWidth,
@@ -32,7 +32,7 @@ public sealed class CardControlTests
         Assert.True(first.Position.Y >= baseHeight);
         Assert.Equal(secondTop, second.Position.Y);
         Assert.Equal(thirdTop, third.Position.Y);
-        Assert.InRange(first.End.X, cardWidth - inset - 0.01f, cardWidth - inset + 0.01f);
+        Assert.InRange(second.End.X, cardWidth - inset - 0.01f, cardWidth - inset + 0.01f);
         Assert.Equal(requiredHeight, CardInteractionLayout.RequiredHeight(baseHeight, 3, width, scale));
         Assert.Equal(requiredHeight, CardInteractionLayout.SurfaceHeight(baseHeight, 3, width, scale));
         Assert.Equal(baseHeight, CardInteractionLayout.SurfaceHeight(baseHeight, 0, width, scale));

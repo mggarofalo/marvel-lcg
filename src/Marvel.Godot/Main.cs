@@ -266,7 +266,7 @@ public sealed partial class Main : Control
         lastResultToggle.Pressed += ToggleLastResult;
         lastResultDismiss.Pressed += DismissLastResult;
         decisions.Submitted += OnDecisionSubmitted;
-        decisions.DraftStarted += DismissLastResult;
+        decisions.DraftStarted += () => DraftWorkspaceFocus.Show(this);
         decisions.AnchorFocused += boardController.FocusAnchors;
         decisions.CardHovered += PreviewHandCard;
         decisions.DraftChanged += (draft, prompt) => boardRender?.PresentInteraction(draft, prompt);

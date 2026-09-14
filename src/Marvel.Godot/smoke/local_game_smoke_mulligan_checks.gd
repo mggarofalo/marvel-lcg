@@ -103,14 +103,19 @@ func _select_mulligan_cards() -> bool:
 		return false
 	if not await _sheet_selection_stays_bound("Aunt May", true):
 		return false
-	if not await _drag_capture_is_safe(kick):
+	if not await _drag_capture_is_safe():
 		return false
 	if not await _keyboard_activate(_mulligan_discard("Swinging Web Kick")):
 		return false
-	return mansion.text == "✓ DISCARD" and _mulligan_discard("Swinging Web Kick").text == "✓ DISCARD"
+	return _mulligan_discard("Avengers Mansion").text == "✓ DISCARD" \
+		and _mulligan_discard("Swinging Web Kick").text == "✓ DISCARD"
 
 
-func _drag_capture_is_safe(card: Control) -> bool:
+func _drag_capture_is_safe() -> bool:
+	var card := _mulligan_card("Swinging Web Kick")
+	if card == null:
+		_fail("the opening hand lost Swinging Web Kick before its drag probe")
+		return false
 	if not await _drag_mulligan_to_discard(card):
 		return false
 	# The source card owns this press while the pointer enters the destination.
@@ -120,6 +125,10 @@ func _drag_capture_is_safe(card: Control) -> bool:
 		_fail("a source-card drag released over discard did not select exactly once")
 		return false
 	if not await _sheet_selection_stays_bound("Swinging Web Kick", false):
+		return false
+	card = _mulligan_card("Swinging Web Kick")
+	if card == null:
+		_fail("the opening hand lost Swinging Web Kick after its choice-sheet probe")
 		return false
 	if not await _drag_mulligan_outside_discard(card):
 		return false

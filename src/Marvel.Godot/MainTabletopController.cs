@@ -83,7 +83,8 @@ internal sealed class MainTabletopController
 
     private void FocusSeat(int seat)
     {
-        if (main.boardPresentation?.Lanes.Any(lane => lane.Seat == seat) != true)
+        if (main.boardPresentation?.Lanes.Any(lane => lane.Seat == seat) != true
+            || seat == Selection(main.CurrentGame?.Prompt).ExpandedSeat)
         {
             return;
         }

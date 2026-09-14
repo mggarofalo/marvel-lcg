@@ -11,7 +11,7 @@ public sealed partial class CardControl : PanelContainer
     private bool presented;
     private CardInteractionCue interactionCue;
     private Label? interactionLabel;
-    private VBoxContainer? interactionControls;
+    private GridContainer? interactionControls;
     private InterfaceScale interactionScale;
 
     private CardControl()
@@ -62,7 +62,7 @@ public sealed partial class CardControl : PanelContainer
         Control body = CardFaceRendering.CreateBody(card, size, layout, scale, art);
         body.CustomMinimumSize = new Vector2(
             Math.Max(1, layout.Width - 32),
-            Math.Max(1, layout.MinimumHeight - 32));
+            Math.Max(1, control.CustomMinimumSize.Y - 32));
         content.AddChild(body);
         control.interactionLabel = new Label
         {
@@ -74,9 +74,10 @@ public sealed partial class CardControl : PanelContainer
             Visible = false,
         };
         content.AddChild(control.interactionLabel);
-        control.interactionControls = new VBoxContainer
+        control.interactionControls = new GridContainer
         {
             Name = "DirectControls",
+            Columns = 2,
             MouseFilter = MouseFilterEnum.Pass,
             ThemeTypeVariation = GodotThemeVariations.TightStack,
             SizeFlagsHorizontal = SizeFlags.ExpandFill,

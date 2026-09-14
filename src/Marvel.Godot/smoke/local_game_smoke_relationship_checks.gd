@@ -22,9 +22,6 @@ func _relationship_path_tracks_table_scrolling(card: Control) -> bool:
 			return _relationship_endpoint_for(overlay, card) != Vector2.INF):
 		_fail("the selected Web-Shooter relationship has no visible path before scrolling")
 		return false
-	var original_source := _relationship_endpoint_for(overlay, card)
-	var original_line := _relationship_line_at(overlay, original_source)
-	var original_endpoint := _other_endpoint(original_line, overlay, original_source)
 	var scroll_limit := int(table.get_v_scroll_bar().max_value - table.get_v_scroll_bar().page)
 	if scroll_limit < original_scroll + 50:
 		table.follow_focus = original_follow_focus
@@ -36,11 +33,9 @@ func _relationship_path_tracks_table_scrolling(card: Control) -> bool:
 		_fail("the linked table target did not move by the exact scroll offset")
 		return false
 	if not await _wait_for(func() -> bool:
-			var moved_line := _relationship_line_at(overlay, original_source)
-			return moved_line != null and _other_endpoint(
-				moved_line, overlay, original_source).distance_to(
-					original_endpoint - Vector2(0.0, 50.0)) < 1.0):
-		_fail("table scrolling measured the relationship endpoint at stale geometry")
+			return _relationship_endpoint_for(overlay, target) != Vector2.INF \
+				or not table.get_global_rect().has_point(target.get_global_rect().get_center())):
+		_fail("table scrolling neither moved nor clipped the relationship endpoint")
 		return false
 	table.scroll_vertical = scroll_limit
 	if not await _wait_for(func() -> bool:

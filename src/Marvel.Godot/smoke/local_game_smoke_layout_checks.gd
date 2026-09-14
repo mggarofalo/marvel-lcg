@@ -238,7 +238,7 @@ func _post_mulligan_desktop_resize_is_safe() -> bool:
 	if viewport == null or not await _desktop_route_is_safe(true):
 		_fail("the completed mulligan did not enter the persistent desktop route")
 		return false
-	var first_desktop := main.find_child("ScenarioLane", true, false) as Control
+	var first_desktop := main.find_child("VillainTable", true, false) as Control
 	viewport.size = Vector2i(1919, 1080)
 	if not await _desktop_route_is_safe(false, true) or is_instance_valid(first_desktop) \
 			and first_desktop.is_inside_tree():
@@ -262,8 +262,8 @@ func _post_mulligan_desktop_resize_is_safe() -> bool:
 		_fail("the rebuilt desktop seat strip could not restore the decision workspace")
 		return false
 	if not await _wait_for(func() -> bool:
-		var expanded := main.find_child("PlayerLane0", true, false) as Control
-		return expanded != null and "SPIDER-MAN" in _visible_text(expanded).to_upper()
+		var expanded := main.find_child("PlayerTable", true, false) as Control
+		return expanded != null and "PETER PARKER" in _visible_text(expanded).to_upper()
 	):
 		_fail("the rebuilt desktop table did not restore the decision player's public area")
 		return false
@@ -276,17 +276,23 @@ func _desktop_route_is_safe(desktop: bool, reset_scroll := false) -> bool:
 		var page := main.get_node("Margin") as ScrollContainer
 		var table := _node("Play/Board/TableScroll") as ScrollContainer
 		var seats := main.find_children("PlayerLane*", "VBoxContainer", true, false)
+		var far := main.find_child("VillainTable", true, false)
+		var near := main.find_child("PlayerTable", true, false)
 		var strip := main.find_child("SeatStrip", true, false)
 		if play == null or page == null or table == null:
 			return false
 		if desktop:
-			return play.columns == 2 and seats.size() == 1 and strip != null \
+			var expected_vertical := ScrollContainer.SCROLL_MODE_AUTO \
+				if _scale_percentage() > 100 else ScrollContainer.SCROLL_MODE_DISABLED
+			return play.columns == 2 and seats.is_empty() and far != null and near != null \
+					and strip != null \
 					and page.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED \
-					and table.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_AUTO \
-					and table.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_AUTO \
+					and table.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED \
+					and table.vertical_scroll_mode == expected_vertical \
 					and (not reset_scroll \
 						or table.scroll_horizontal == 0 and table.scroll_vertical == 0)
-		return play.columns == 1 and seats.size() == 2 and strip == null \
+		return play.columns == 1 and seats.size() == 2 and far == null and near == null \
+				and strip == null \
 				and page.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_AUTO \
 				and table.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED \
 				and table.scroll_horizontal == 0 \
