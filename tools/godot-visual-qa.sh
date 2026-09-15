@@ -54,7 +54,7 @@ run_visual_smoke() {
     exit 1
   fi
 }
-for viewport in 1280x720 1920x1080; do
+for viewport in 1920x1080; do
   for motion in enabled disabled; do
     MARVEL_UI_SCALE=compact MARVEL_SMOKE_VIEWPORT="$viewport" \
       MARVEL_SMOKE_MOTION="$motion" MARVEL_SMOKE_CAPTURE_DIR="$capture_dir" \

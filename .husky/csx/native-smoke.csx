@@ -14,7 +14,6 @@ static int RunNativeSmoke()
     start.ArgumentList.Add(System.IO.Path.Combine(root, "tools", "godot-smoke.ps1"));
     start.ArgumentList.Add("-GodotBin");
     start.ArgumentList.Add(godot);
-    start.ArgumentList.Add("-Representative");
 
     using var process = System.Diagnostics.Process.Start(start)
         ?? throw new InvalidOperationException("Could not start native Godot smoke");

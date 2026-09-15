@@ -19,10 +19,10 @@ runner and do not execute the corpus as a side effect.
 The local pre-commit gate is deliberately broader than this fast lane. It builds
 the complete solution in Release before running every managed test project with
 `--no-build`, so neither a project nor a slower managed test lane can be omitted
-before Git accepts a commit. It then runs the representative native Godot
-journey in both motion modes and at the two-player desktop scales. CI remains
-authoritative for the second operating system, packaging and exhaustive native
-matrices.
+before Git accepts a commit. It then runs the native Godot journey at every
+supported UI scale, with the reduced-motion checkpoint and
+two-player desktop scale variants. CI remains authoritative for the second
+operating system and packaging.
 
 ## Integration
 

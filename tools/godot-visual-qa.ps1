@@ -33,7 +33,7 @@ function Invoke-VisualSmoke {
         throw "Godot visual smoke reported an unexpected failure diagnostic."
     }
 }
-foreach ($viewport in @("1280x720", "1920x1080")) {
+foreach ($viewport in @("1920x1080")) {
     foreach ($motion in @("enabled", "disabled")) {
         $env:MARVEL_UI_SCALE = "compact"
         $env:MARVEL_SMOKE_VIEWPORT = $viewport

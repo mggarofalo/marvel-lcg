@@ -28,7 +28,8 @@ public sealed class CommitGatePolicyTests
         Assert.Contains("start.ArgumentList.Add(\"Marvel.slnx\");", Script("all-tests"));
         Assert.Contains("start.ArgumentList.Add(\"--no-build\");", Script("all-tests"));
         Assert.Contains("godot-smoke.ps1", Script("native-smoke"));
-        Assert.Contains("start.ArgumentList.Add(\"-Representative\");", Script("native-smoke"));
+        Assert.DoesNotContain("Representative", Script("native-smoke"),
+            StringComparison.Ordinal);
     }
 
     private static string Name(JsonElement task) => task.GetProperty("name").GetString()!;

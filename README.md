@@ -51,7 +51,7 @@ Lizard across every nonignored C# and GDScript file with a maximum CCN of 10,
 rejects nonignored C#, C# script, GDScript, PowerShell and shell files over 500
 physical lines, builds the complete solution in Release with warnings as errors,
 runs every managed test project against that exact build, and completes the
-representative native Godot journey. Set `GODOT_BIN` to the Godot 4.7 .NET
+full native Godot scale matrix at the supported 1920x1080 desktop viewport. Set `GODOT_BIN` to the Godot 4.7 .NET
 executable when it is not installed at the documented Windows path. Set
 `HUSKY=0` only when diagnosing the hook itself; it is not a way to merge code
 that fails a gate.
