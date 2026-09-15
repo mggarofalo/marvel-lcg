@@ -229,7 +229,7 @@ public sealed class ProgramTests
         using var error = new StringWriter();
         var listening = new TaskCompletionSource<IPEndPoint>(
             TaskCreationOptions.RunContinuationsAsynchronously);
-        Task<int> running = Task.Run(
+        Task<int> running = Task.Factory.StartNew(
             () => Program.Run(
                 new Program.ServerOptions(
                     IPAddress.Loopback,
@@ -240,7 +240,9 @@ public sealed class ProgramTests
                 error,
                 listening.SetResult,
                 stopping.Token),
-            TestContext.Current.CancellationToken);
+            TestContext.Current.CancellationToken,
+            TaskCreationOptions.LongRunning,
+            TaskScheduler.Default);
 
         try
         {
