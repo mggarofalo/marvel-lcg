@@ -70,12 +70,28 @@ public sealed class NativeSmokeDiagnosticsTests
     {
         Assert.Equal(
             ScrollContainer.ScrollMode.Auto,
-            MainLayoutController.PageVerticalScrollMode(
+            PlayScrollingPolicy.PageVerticalScrollMode(
                 boardVisible: true, invitationVisible: true, scale: InterfaceScale.Percent80));
         Assert.Equal(
             ScrollContainer.ScrollMode.Disabled,
-            MainLayoutController.PageVerticalScrollMode(
+            PlayScrollingPolicy.PageVerticalScrollMode(
                 boardVisible: true, invitationVisible: false, scale: InterfaceScale.Percent80));
+    }
+
+    [Theory]
+    [InlineData(false, false, InterfaceScale.Percent80, ScrollContainer.ScrollMode.Auto)]
+    [InlineData(true, false, InterfaceScale.Percent100, ScrollContainer.ScrollMode.Disabled)]
+    [InlineData(true, false, InterfaceScale.Percent110, ScrollContainer.ScrollMode.Auto)]
+    public void PlayPageScrollingReflectsBoardVisibilityAndScale(
+        bool boardVisible,
+        bool invitationVisible,
+        InterfaceScale scale,
+        ScrollContainer.ScrollMode expected)
+    {
+        Assert.Equal(
+            expected,
+            PlayScrollingPolicy.PageVerticalScrollMode(
+                boardVisible, invitationVisible, scale));
     }
 
     [Fact]
