@@ -16,6 +16,7 @@ internal sealed class BoardRelationshipOverlayController : IDisposable
     private readonly List<Action> geometryUnsubscribers = [];
     private BoardRenderResult? board;
     private Action<IReadOnlyList<TableRelationshipDescriptor>>? interactionRelationshipsChanged;
+    private bool disposed;
     private bool layoutRefreshQueued;
     private IReadOnlyList<TableRelationshipDescriptor> promptRelationships = [];
 
@@ -46,7 +47,7 @@ internal sealed class BoardRelationshipOverlayController : IDisposable
 
     private void ScheduleRefresh()
     {
-        if (layoutRefreshQueued)
+        if (disposed || layoutRefreshQueued)
         {
             return;
         }
@@ -58,17 +59,32 @@ internal sealed class BoardRelationshipOverlayController : IDisposable
         Callable.From(RefreshAfterLayout).CallDeferred();
     }
 
-    private void RefreshAfterLayout() => Callable.From(() =>
+    private void RefreshAfterLayout()
     {
-        // Keep the coalescing guard through the settled render. Adding or
-        // removing lines may notify an observed ancestor's layout, but it
-        // cannot change the card geometry this pass has just measured.
-        Refresh();
-        layoutRefreshQueued = false;
-    }).CallDeferred();
+        if (disposed)
+        {
+            return;
+        }
+        Callable.From(() =>
+        {
+            if (disposed)
+            {
+                return;
+            }
+            // Keep the coalescing guard through the settled render. Adding or
+            // removing lines may notify an observed ancestor's layout, but it
+            // cannot change the card geometry this pass has just measured.
+            Refresh();
+            layoutRefreshQueued = false;
+        }).CallDeferred();
+    }
 
     private void Refresh()
     {
+        if (disposed)
+        {
+            return;
+        }
         if (board is null || board.IsCurrent?.Invoke() != true)
         {
             Present([]);
@@ -214,8 +230,13 @@ internal sealed class BoardRelationshipOverlayController : IDisposable
 
     public void Dispose()
     {
+        disposed = true;
+        layoutRefreshQueued = false;
         Unbind();
-        overlay.GetParent()?.RemoveChild(overlay);
-        overlay.QueueFree();
+        if (GodotObject.IsInstanceValid(overlay))
+        {
+            overlay.GetParent()?.RemoveChild(overlay);
+            overlay.QueueFree();
+        }
     }
 }
