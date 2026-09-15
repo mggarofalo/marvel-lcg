@@ -204,10 +204,10 @@ chooses one before setup and displays it throughout play, so the resulting deal
 can be replayed. All subsequent decisions are made in the right-hand decision
 rail; no console or debug action is part of play.
 
-The project opens at 1920x1080 by default. Its compact layout remains supported
-down to 1040x680, but the large desktop canvas is the intended play profile: it
-keeps setup controls and the decision rail visible while leaving the table room
-for complete card names, printed text, traits, statistics and live values.
+The supported desktop viewport is 1920x1080 or larger. It keeps setup controls
+and the decision rail visible while leaving the table room for complete card
+names, printed text, traits, statistics and live values. Smaller viewports are
+not a product or release acceptance boundary.
 
 Leave the endpoint blank to start against the embedded engine. Enter a trusted
 private-network endpoint to host through a standalone engine. A 2-hero game on
@@ -402,7 +402,7 @@ additionally check and retain rendered viewport images at
 setup, open-table/prompt, player-phase, villain-phase and terminal checkpoints.
 The open-table checkpoint includes the dense horizontal rails and both visible
 player cards and concealed deck cards. They run both motion preferences at the
-default 1920x1080 profile and the compact 1280x720 regression profile:
+supported 1920x1080 profile:
 
 ```bash
 GODOT_BIN="/path/to/Godot" bash tools/godot-visual-qa.sh

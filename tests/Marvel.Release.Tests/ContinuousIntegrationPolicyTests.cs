@@ -48,9 +48,28 @@ public sealed class ContinuousIntegrationPolicyTests
         string powershell = Read("tools", "godot-smoke.ps1");
 
         Assert.Contains("profile=${2:---exhaustive}", bash, StringComparison.Ordinal);
-        Assert.Contains("viewports=(1280x720)", bash, StringComparison.Ordinal);
+        Assert.Contains("viewports=(1920x1080)", bash, StringComparison.Ordinal);
+        Assert.DoesNotContain("1040x680", bash, StringComparison.Ordinal);
+        Assert.DoesNotContain("1280x720", bash, StringComparison.Ordinal);
+        Assert.DoesNotContain("1600x900", bash, StringComparison.Ordinal);
         Assert.Contains("[switch]$Representative", powershell, StringComparison.Ordinal);
-        Assert.Contains("@(\"1280x720\")", powershell, StringComparison.Ordinal);
+        Assert.Contains("@(\"1920x1080\")", powershell, StringComparison.Ordinal);
+        Assert.DoesNotContain("1040x680", powershell, StringComparison.Ordinal);
+        Assert.DoesNotContain("1280x720", powershell, StringComparison.Ordinal);
+        Assert.DoesNotContain("1600x900", powershell, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void VisualQaCertifiesOnlyTheSupportedDesktopViewport()
+    {
+        string bash = Read("tools", "godot-visual-qa.sh");
+        string powershell = Read("tools", "godot-visual-qa.ps1");
+
+        Assert.Contains("for viewport in 1920x1080", bash, StringComparison.Ordinal);
+        Assert.DoesNotContain("1280x720", bash, StringComparison.Ordinal);
+        Assert.Contains("foreach ($viewport in @(\"1920x1080\"))", powershell,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("1280x720", powershell, StringComparison.Ordinal);
     }
 
     private static string Read(params string[] path) =>
