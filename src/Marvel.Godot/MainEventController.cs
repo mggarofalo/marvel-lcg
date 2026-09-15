@@ -1,5 +1,3 @@
-using System.Globalization;
-using System.Text;
 using Godot;
 using Marvel.Client;
 using Marvel.Decisions;
@@ -14,13 +12,19 @@ namespace Marvel.Godot;
 internal sealed class MainEventController
 {
     private readonly Main main;
+    private readonly MainEventMotionController motion;
 
     internal MainEventController(Main main)
     {
         this.main = main;
+        motion = new MainEventMotionController(main);
     }
     internal void RevealOutcome()
     {
+        main.GetNode<TabContainer>(
+            "Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench").CurrentTab = 0;
+        main.GetViewport().GuiReleaseFocus();
+        main.pageScroll.FollowFocus = false;
         main.pageScroll.ScrollVertical = 0;
         main.pageScroll.SetDeferred("scroll_vertical", 0);
     }
@@ -57,6 +61,11 @@ internal sealed class MainEventController
             main.promptRequirement.ThemeTypeVariation = GodotThemeVariations.StatusText;
             main.promptProgress.Text = "NO INPUT PENDING";
             main.promptDiagnostic.Text = "No prompt is pending.";
+            if (world.Outcome != Outcome.Unfinished)
+            {
+                main.title.Text = world.Outcome == Outcome.PlayersWin ? "Victory" : "Defeat";
+                main.description.Text = main.promptContext.Text;
+            }
             return;
         }
 
@@ -86,16 +95,25 @@ internal sealed class MainEventController
         }
 
         int generation = ++main.lastResultGeneration;
+        bool terminal = highlights.Any(entry => entry.Motion == EventMotionKind.Terminal);
         main.lastResult.Visible = true;
         main.lastResultSummary.Text = string.Join(" ", highlights.Select(entry => entry.Summary));
         main.lastResult.ThemeTypeVariation = highlights.Any(entry => entry.Motion is
             EventMotionKind.Defeat or EventMotionKind.Terminal)
                 ? GodotThemeVariations.DangerStatusPanel
                 : GodotThemeVariations.StatusPanel;
-        SetLastResultExpanded(true);
+        // Recent history remains discoverable without permanently displacing
+        // the current decision. A terminal result stays open because it is the
+        // table's final explanation, while ordinary results expand on demand.
+        SetLastResultExpanded(terminal);
+        if (terminal)
+        {
+            return;
+        }
         main.GetTree().CreateTimer(Main.LastResultLifetimeSeconds).Timeout += () =>
         {
-            if (generation == main.lastResultGeneration && main.IsInsideTree())
+            if (InteractionControl.IsUsable(main)
+                && generation == main.lastResultGeneration)
             {
                 DismissLastResult();
             }
@@ -181,139 +199,35 @@ internal sealed class MainEventController
     private void RenderActionHistory(IReadOnlyList<HistoryEntryDescriptor> actions)
     {
         string accent = ClientTheme.ToGodot(VisualSystem.Palette.Accent).ToHtml(false);
-        var text = new StringBuilder();
         IReadOnlyList<int> undo = main.CurrentGame!.History!.Undo;
-        foreach (HistoryEntryDescriptor entry in actions)
-        {
-            AppendAction(text, entry, accent, undo.Contains(entry.Cursor));
-        }
-        main.eventLog.Text = text.Length == 0 ? "Action in progress." : text.ToString();
+        main.eventLog.Text = EventLogFormatter.FormatActions(actions, undo, accent);
         main.eventLog.ScrollToLine(main.eventLog.GetLineCount());
-    }
-
-    private static void AppendAction(
-        StringBuilder text,
-        HistoryEntryDescriptor entry,
-        string accent,
-        bool canUndo)
-    {
-        text.Append("[color=#").Append(accent).Append(']')
-            .Append((entry.Cursor + 1).ToString("000", CultureInfo.InvariantCulture))
-            .Append("[/color]  ").AppendLine(entry.Summary);
-        foreach (string detail in entry.Details)
-        {
-            text.Append("     ").AppendLine(detail);
-        }
-        if (canUndo)
-        {
-            text.Append("     [url=undo:")
-                .Append(entry.Cursor.ToString(CultureInfo.InvariantCulture))
-                .AppendLine("]Undo to before this action[/url]");
-        }
     }
 
     private void RenderEventChronology()
     {
         string accent = ClientTheme.ToGodot(VisualSystem.Palette.Accent).ToHtml(false);
-        var text = new StringBuilder();
-        for (int index = 0; index < main.events.Entries.Count; index++)
-        {
-            EventPresentation entry = main.events.Entries[index];
-            text.Append("[color=#")
-                .Append(accent)
-                .Append(']')
-                .Append((index + 1).ToString("000", CultureInfo.InvariantCulture))
-                .Append("[/color]  ")
-                .AppendLine(entry.Summary);
-        }
-
-        main.eventLog.Text = text.ToString();
+        main.eventLog.Text = EventLogFormatter.FormatChronology(main.events.Entries, accent);
         main.eventLog.ScrollToLine(main.eventLog.GetLineCount());
     }
 
     internal void PresentEvents(IReadOnlyList<EventPresentation> presented)
-    {
-        SkipEventPresentation();
-        if (!main.eventMotion.ButtonPressed || presented.Count == 0)
-        {
-            return;
-        }
-
-        main.eventSkip.Disabled = false;
-        int generation = main.eventGeneration;
-        main.eventTween = main.CreateTween();
-        foreach (EventPresentation entry in presented)
-        {
-            main.eventTween.TweenCallback(
-                Callable.From(() => BeginEventCue(entry, generation))).Dispose();
-            main.eventTween.TweenProperty(main.eventCue, "modulate:a", 1.0f, 0.10).Dispose();
-            main.eventTween.TweenInterval(0.30).Dispose();
-            main.eventTween.TweenProperty(main.eventCue, "modulate:a", 0.35f, 0.10).Dispose();
-        }
-
-        main.eventTween.TweenCallback(
-            Callable.From(() => FinishEventPresentation(generation))).Dispose();
-    }
+        => motion.Present(presented);
 
     internal void BeginEventCue(EventPresentation entry, int generation)
-    {
-        if (generation != main.eventGeneration)
-        {
-            return;
-        }
-
-        main.eventCueKind.Text = entry.Motion.ToString().ToUpperInvariant();
-        main.eventCue.Visible = true;
-        EventCueBoardFocus.Present(main, entry);
-        main.eventCueKind.ThemeTypeVariation = entry.Motion switch
-        {
-            EventMotionKind.Damage or EventMotionKind.Defeat or EventMotionKind.Terminal =>
-                GodotThemeVariations.DangerText,
-            EventMotionKind.Create or EventMotionKind.Heal =>
-                GodotThemeVariations.StatusText,
-            _ => GodotThemeVariations.Eyebrow,
-        };
-        main.eventCue.Modulate = new Color(1f, 1f, 1f, 0.20f);
-        main.boardRender?.Present(entry.Anchors);
-    }
+        => motion.BeginCue(entry, generation);
 
     internal void SkipEventPresentation()
-    {
-        main.eventGeneration++;
-        ReleaseEventTween();
-        SetEventPresentationSettled();
-    }
+        => motion.Skip();
 
     internal void ReleaseEventTween()
-    {
-        Tween? tween = main.eventTween;
-        main.eventTween = null;
-        if (tween is null)
-        {
-            return;
-        }
-
-        tween.Kill();
-        tween.Dispose();
-    }
+        => motion.ReleaseTween();
 
     internal void FinishEventPresentation(int generation)
-    {
-        if (generation != main.eventGeneration)
-        {
-            return;
-        }
-
-        SetEventPresentationSettled();
-    }
+        => motion.Finish(generation);
 
     internal void SetEventPresentationSettled()
-    {
-        main.eventCue.Visible = false;
-        main.eventCue.Modulate = Colors.White;
-        main.eventSkip.Disabled = true;
-        main.boardRender?.Present([]);
-    }
+        => motion.SetSettled();
 
     internal void ApplyProgress(GameProgressPresentation progress)
     {

@@ -9,6 +9,7 @@ internal sealed class MainTabletopController
     private readonly Main main;
     private DisplayedSeatState displayedSeats = new();
     private bool? renderedDesktopTabletop;
+    private int? renderedExpandedSeat;
 
     internal MainTabletopController(Main main)
     {
@@ -19,6 +20,7 @@ internal sealed class MainTabletopController
     {
         displayedSeats = new DisplayedSeatState();
         renderedDesktopTabletop = null;
+        renderedExpandedSeat = null;
     }
 
     internal BoardRenderResult? Render(Prompt? prompt, Vector2 viewport)
@@ -62,8 +64,12 @@ internal sealed class MainTabletopController
         MulliganTablePresentation.Render(
             main, prompt, Selection(prompt).ExpandedSeat, SwitchSeat);
 
-    private BoardRenderResult RenderDesktop(Prompt? prompt) =>
-        DesktopTabletopPresentation.Render(main, Selection(prompt), SwitchSeat);
+    private BoardRenderResult RenderDesktop(Prompt? prompt)
+    {
+        DisplayedSeatSelection selection = Selection(prompt);
+        renderedExpandedSeat = selection.ExpandedSeat;
+        return DesktopTabletopPresentation.Render(main, selection, SwitchSeat);
+    }
 
     private void SwitchSeat(int seat)
     {
@@ -84,7 +90,7 @@ internal sealed class MainTabletopController
     private void FocusSeat(int seat)
     {
         if (main.boardPresentation?.Lanes.Any(lane => lane.Seat == seat) != true
-            || seat == Selection(main.CurrentGame?.Prompt).ExpandedSeat)
+            || seat == renderedExpandedSeat)
         {
             return;
         }

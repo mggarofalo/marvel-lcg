@@ -212,8 +212,10 @@ public sealed class CardControlTests
         Assert.DoesNotContain(values, value => value.Name is "HP" or "HEALTH");
     }
 
-    [Fact]
-    public void SideSchemeNeedsLiveThreatBeforeItShowsProgress()
+    [Theory]
+    [InlineData("0")]
+    [InlineData("3")]
+    public void SideSchemeNeedsLiveThreatBeforeItShowsProgress(string threat)
     {
         BoardCardPresentation stored = Card("ENCOUNTER SIDE SCHEME") with
         {
@@ -227,7 +229,7 @@ public sealed class CardControlTests
         {
             Fields =
             [
-                new BoardFieldPresentation("THREAT", "3"),
+                new BoardFieldPresentation("THREAT", threat),
                 new BoardFieldPresentation("CRISIS", "1"),
                 new BoardFieldPresentation("HAZARD", "0"),
             ],
@@ -239,10 +241,14 @@ public sealed class CardControlTests
             CardControl.CompactValues(active, CardDisplaySize.Board);
 
         Assert.Equal(["Boost"], storedValues.Select(value => value.Name));
-        Assert.Contains(activeValues, value => value.Name == "THREAT" && value.Value == "3");
+        Assert.Contains(activeValues, value => value.Name == "THREAT" && value.Value == threat);
         Assert.Contains(activeValues, value => value.Name == "CRISIS" && value.Value == "1");
         Assert.DoesNotContain(activeValues, value => value.Name == "HAZARD");
         Assert.DoesNotContain(activeValues, value => value.Name == "Stage");
+        Assert.Equal(
+            $"THREAT  ◆ {threat}",
+            SchemeThreatBadge.LabelText(
+                Assert.Single(activeValues, value => value.Name == "THREAT")));
     }
 
     [Fact]
@@ -253,7 +259,8 @@ public sealed class CardControlTests
         BoardCardPresentation shortTitle = Card("EVENT");
         BoardCardPresentation longTitle = shortTitle with
         {
-            Title = "A Very Long Opening Hand Card Title That Must Wrap",
+            Title = "A Very Long Opening Hand Card Title That Must Wrap Without Truncation "
+                + "Across Enough Lines To Exceed Even The Reserved Portrait Card Height",
         };
 
         Assert.True(

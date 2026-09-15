@@ -98,7 +98,6 @@ src/Marvel.Godot/BoardRenderer.cs:7: SL003: BoardRenderer=344
 src/Marvel.Godot/CardFaceRendering.cs:9: SL003: CardFaceRendering=343
 src/Marvel.Godot/CardValueRendering.cs:7: SL003: CardValueRendering=382
 src/Marvel.Godot/Main.cs:14: SL003: Main=472
-src/Marvel.Godot/MainEventController.cs:14: SL003: MainEventController=348
 src/Marvel.Godot/MainSetupController.cs:10: SL003: MainSetupController=480
 src/Marvel.Godot/VisualSystem.cs:55: SL005: PlaceFloatingPanel=8
 src/Marvel.Rules/Play/Agenda.cs:29: SL003: Agenda=327

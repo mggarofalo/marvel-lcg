@@ -6,10 +6,12 @@ namespace Marvel.Godot;
 internal sealed class MainLayoutController
 {
     private readonly Main main;
+    private readonly MainTabletopChromeController tabletopChrome;
 
     internal MainLayoutController(Main main)
     {
         this.main = main;
+        tabletopChrome = new MainTabletopChromeController(main);
     }
     internal void ApplyInterfaceScale(InterfaceScale scale)
     {
@@ -117,7 +119,7 @@ internal sealed class MainLayoutController
                     : 96);
         main.decisions.SetCompactMulliganChrome(compactTableChrome);
         ConfigureDecisionDock(mulligan && compactTableChrome, compactTableChrome, layout);
-        ConfigureStackChrome(compactHeight, compactTableChrome);
+        tabletopChrome.Configure(compactHeight, compactTableChrome);
         ConfigurePlayScrolling(gameplay, fixedTabletop, mulligan);
         main.boardController.RerenderForViewport(viewport);
     }
@@ -136,7 +138,7 @@ internal sealed class MainLayoutController
             decisionHeight);
         main.decisions.CustomMinimumSize = new Vector2(
             0, mulligan ? 172 : decisionHeight);
-        SetMulliganDockChrome(mulligan);
+        tabletopChrome.SetMulligan(mulligan);
         main.decisions.ResetSize();
         main.promptPanel.ResetSize();
         main.playLayout.ResetSize();
@@ -144,21 +146,6 @@ internal sealed class MainLayoutController
         main.GetNode<PanelContainer>("Margin/Shell").ResetSize();
         main.playLayout.QueueSort();
         main.contentStack.QueueSort();
-    }
-
-    private void ConfigureStackChrome(bool compactHeight, bool compactTableChrome)
-    {
-        main.setupGrid.Columns = main.GetViewportRect().Size.X >= 1500 ? 4 : 2;
-        main.contentStack.ThemeTypeVariation = main.board.Visible
-            && (compactHeight || compactTableChrome)
-            ? GodotThemeVariations.TightStack
-            : GodotThemeVariations.Stack;
-        main.promptStack.ThemeTypeVariation = compactHeight
-            ? GodotThemeVariations.TightStack
-            : GodotThemeVariations.Stack;
-        SetTableChrome(compactTableChrome);
-        main.eventCue.CustomMinimumSize = new Vector2(0, 68);
-        main.eventLog.CustomMinimumSize = new Vector2(0, compactHeight ? 180 : 300);
     }
 
     private void ConfigurePlayScrolling(bool gameplay, bool fixedTabletop, bool mulligan)
@@ -172,9 +159,11 @@ internal sealed class MainLayoutController
     private void ConfigurePageScrolling(bool gameplay, bool desktopGameplay)
     {
         PanelContainer shell = main.GetNode<PanelContainer>("Margin/Shell");
+        main.pageScroll.OffsetTop = desktopGameplay ? 4 : 16;
+        main.pageScroll.OffsetBottom = desktopGameplay ? 0 : -16;
         shell.CustomMinimumSize = new Vector2(
-            desktopGameplay && main.interfaceScale > InterfaceScale.Standard
-                ? main.pageScroll.Size.X
+            desktopGameplay
+                ? Math.Max(0, main.GetViewportRect().Size.X - 32)
                 : 0,
             shell.CustomMinimumSize.Y);
         main.pageScroll.HorizontalScrollMode = gameplay
@@ -185,7 +174,8 @@ internal sealed class MainLayoutController
             ? ScrollContainer.ScrollMode.Disabled
             : gameplay
                 ? ScrollContainer.ScrollMode.Auto
-                : PageVerticalScrollMode(false, main.invitationOffer.Visible, main.interfaceScale);
+                : PlayScrollingPolicy.PageVerticalScrollMode(
+                    false, main.invitationOffer.Visible, main.interfaceScale);
         if (desktopGameplay)
         {
             main.pageScroll.ScrollVertical = 0;
@@ -203,9 +193,18 @@ internal sealed class MainLayoutController
             "Margin/Shell/Content/Play/Board/TableScroll");
         table.HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled;
         table.VerticalScrollMode = fixedTabletop
-            && main.interfaceScale <= InterfaceScale.Standard
-                ? ScrollContainer.ScrollMode.Disabled
+            ? ScrollContainer.ScrollMode.Disabled
+            : ScrollContainer.ScrollMode.Auto;
+        if (main.handRail.GetParent() is ScrollContainer hand)
+        {
+            hand.HorizontalScrollMode = fixedTabletop
+                ? ScrollContainer.ScrollMode.ShowNever
                 : ScrollContainer.ScrollMode.Auto;
+            if (fixedTabletop)
+            {
+                hand.ScrollHorizontal = 0;
+            }
+        }
         if (table.HorizontalScrollMode == ScrollContainer.ScrollMode.Disabled)
         {
             table.ScrollHorizontal = 0;
@@ -216,70 +215,4 @@ internal sealed class MainLayoutController
         }
     }
 
-    internal static ScrollContainer.ScrollMode PageVerticalScrollMode(
-        bool boardVisible,
-        bool invitationVisible,
-        InterfaceScale scale) => !boardVisible || invitationVisible || (int)scale > 100
-            ? ScrollContainer.ScrollMode.Auto
-            : ScrollContainer.ScrollMode.Disabled;
-
-    private void SetMulliganDockChrome(bool mulligan)
-    {
-        foreach (string path in new[]
-                 {
-                     "Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader",
-                     "Margin/Shell/Content/Play/Prompt/Margin/Stack/HeaderRule",
-                     "Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History",
-                 })
-        {
-            main.GetNode<Control>(path).Visible = !mulligan;
-        }
-
-        main.activeResolution.Visible = !mulligan
-            && !string.IsNullOrWhiteSpace(main.activeResolutionSummary.Text);
-
-        TabContainer workbench = main.GetNode<TabContainer>(
-            "Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench");
-        workbench.TabsVisible = !mulligan;
-        workbench.CurrentTab = 0;
-    }
-
-    private void SetTableChrome(bool compact)
-    {
-        main.eyebrow.Visible = !compact;
-        main.title.Visible = !compact;
-        main.description.Visible = !compact;
-        main.statusPanel.Visible = !compact;
-        main.GetNode<Control>("Margin/Shell").Theme = compact
-            ? ClientTheme.Create(InterfaceScale.Standard)
-            : null;
-        main.board.Theme = compact ? ClientTheme.Create(InterfaceScale.Standard) : null;
-        main.promptPanel.Theme = compact ? ClientTheme.Create(InterfaceScale.Standard) : null;
-        main.promptPanel.ThemeTypeVariation = compact
-            ? GodotThemeVariations.TabletopDock
-            : GodotThemeVariations.SurfacePanel;
-        if (compact)
-        {
-            main.boardAreas.AddThemeConstantOverride("separation", 0);
-            main.GetNode<MarginContainer>("Margin/Shell/Content/Play/Board/TableScroll/Margin")
-                .AddThemeConstantOverride("margin_bottom", 0);
-            main.GetNode<MarginContainer>("Margin/Shell/Content/Play/Board/HandShelf/Margin")
-                .AddThemeConstantOverride("margin_top", 4);
-            main.GetNode<MarginContainer>("Margin/Shell/Content/Play/Board/HandShelf/Margin")
-                .AddThemeConstantOverride("margin_bottom", 0);
-        }
-        else
-        {
-            main.boardAreas.RemoveThemeConstantOverride("separation");
-            main.GetNode<MarginContainer>("Margin/Shell/Content/Play/Board/TableScroll/Margin")
-                .RemoveThemeConstantOverride("margin_bottom");
-            main.GetNode<MarginContainer>("Margin/Shell/Content/Play/Board/HandShelf/Margin")
-                .RemoveThemeConstantOverride("margin_top");
-            main.GetNode<MarginContainer>("Margin/Shell/Content/Play/Board/HandShelf/Margin")
-                .RemoveThemeConstantOverride("margin_bottom");
-        }
-        main.GetNode<PanelContainer>("Margin/Shell/Content/Play/Board/HandShelf").ThemeTypeVariation = compact
-            ? GodotThemeVariations.TabletopShelf
-            : GodotThemeVariations.SurfacePanel;
-    }
 }

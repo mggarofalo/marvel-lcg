@@ -20,9 +20,15 @@ public sealed partial class DecisionPanel : VBoxContainer
     internal bool mulliganChoiceSheetOpen;
     private bool compactMulliganChrome;
     private BoardRenderResult? mulliganBoard;
+    private readonly CardPreviewOwnership cardPreview = new();
+    internal CardPreviewOwnership CardPreview => cardPreview;
     private readonly DecisionPanelLifecycle lifecycle;
     internal WorldDescriptor? world;
-    public DecisionPanel() => lifecycle = new DecisionPanelLifecycle(this);
+    public DecisionPanel()
+    {
+        lifecycle = new DecisionPanelLifecycle(this);
+        cardPreview.Changed += id => CardHovered?.Invoke(id);
+    }
     /// <summary>Raised with one answer built from the current prompt.</summary>
     public event Action<EngineDecision>? Submitted;
     /// <summary>Raised when an affordance or target points at a board object.</summary>
@@ -39,8 +45,9 @@ public sealed partial class DecisionPanel : VBoxContainer
     public void SetInterfaceScale(InterfaceScale scale)
     {
         requestedScale = scale;
-        // The fixed tabletop dock keeps Standard as its pointer-size floor,
-        // while its opening prompt stays Standard to keep Commit in view.
+        // The fixed tabletop dock uses one stable control geometry. Display
+        // scaling enlarges inspection surfaces without consuming the finite
+        // play canvas or moving its commit affordances out of view.
         InterfaceScale effectiveScale = EffectiveScale(
             scale, compactMulliganChrome, MulliganPrompt.IsOpening(composer?.Prompt));
         if (interfaceScale == effectiveScale)
@@ -68,9 +75,7 @@ public sealed partial class DecisionPanel : VBoxContainer
 
     internal static InterfaceScale EffectiveScale(
         InterfaceScale requested, bool compactTableChrome, bool opening) =>
-        compactTableChrome && (opening || requested < InterfaceScale.Standard)
-            ? InterfaceScale.Standard
-            : requested;
+        compactTableChrome ? InterfaceScale.Standard : requested;
 
     internal void SetCompactMulliganChrome(bool value)
     {
@@ -167,6 +172,8 @@ public sealed partial class DecisionPanel : VBoxContainer
 
     private void ClearPanel()
     {
+        cardPreview.Clear();
+
         foreach (Node child in GetChildren())
         {
             RemoveChild(child);
@@ -239,7 +246,14 @@ public sealed partial class DecisionPanel : VBoxContainer
                 NotifySubmitted(decision!, generation);
             }
         };
-        AddCommit(pass);
+        if (composer.Selected is null)
+        {
+            AddCommit(pass);
+        }
+        else
+        {
+            AddContent(pass);
+        }
     }
 
     internal void InstallLayout(VBoxContainer body, VBoxContainer commitBar)
@@ -259,8 +273,6 @@ public sealed partial class DecisionPanel : VBoxContainer
     private string? FocusKey(Control focused) => DecisionFocus.Key(this, focused);
 
     internal void BindAnchors(Control control, params int[] ids) => DecisionAnchorBinding.Bind(this, control, ids);
-
-    internal void NotifyCardHovered(int? id) => CardHovered?.Invoke(id);
 
     internal static string NodeKey(string value) => new(
         value.Select(character => char.IsLetterOrDigit(character) ? character : '_').ToArray());

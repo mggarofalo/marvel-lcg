@@ -12,6 +12,8 @@ func _mulligan_result_and_payment_are_operable() -> bool:
 				or not await _complete_second_opening_hand() \
 				or not await _post_mulligan_desktop_resize_is_safe():
 			return false
+	if not await _post_mulligan_table_is_safe():
+		return false
 	var hand_card := (_node("Play/Board/HandShelf") as Control).find_child(
 		"ProceduralCard", true, false) as Control
 	if hand_card == null:
@@ -22,6 +24,12 @@ func _mulligan_result_and_payment_are_operable() -> bool:
 	if not await _action_card_preview_is_safe():
 		return false
 	return await _direct_table_journey_is_operable()
+
+
+func _post_mulligan_table_is_safe() -> bool:
+	if not await _redesign_gate_post_mulligan_is_safe():
+		return false
+	return await _upcoming_stages_are_safe()
 
 
 func _fallback_mulligan_sheet_is_focus_safe() -> bool:
@@ -73,13 +81,13 @@ func _cooperative_seat_switch_is_safe() -> bool:
 		return false
 	var expanded := main.find_child("PlayerTable", true, false) as Control
 	var heading := _node("Play/Board/HandShelf/Margin/Stack/Heading") as Label
-	var destination := main.find_child("MulliganDiscardPile", true, false) as Control
+	var destination := main.find_child("ExpandedDiscardPile", true, false) as Control
 	var cards := (_node("Play/Board/HandShelf") as Control).find_children(
 		"ProceduralCard", "PanelContainer", true, false)
 	if expanded == null or heading == null or destination == null \
 			or "PLAYER 2" not in _visible_text(expanded).to_upper() \
 			or not heading.text.begins_with("PLAYER 1 OPENING HAND") \
-			or "PLAYER 1" not in _visible_text(destination).to_upper() \
+			or not expanded.is_ancestor_of(destination) \
 			or cards.size() != 6 or main.find_child("CompleteChoiceSheet", true, false) == null:
 		_fail("switching public workspaces changed or ambiguously labeled the prompt owner's hand")
 		return false
@@ -272,7 +280,7 @@ func _submit_mulligan() -> bool:
 		return true
 	if not await _wait_for(func() -> bool:
 		return _visible_button_beginning(_decision(), "Change Form") != null \
-			and _visible_button_beginning(_decision(), "Play Web-Shooter") != null):
+			and _decision().find_child("CardPlayMenu", true, false) != null):
 		_fail("the seeded mulligan did not reach the player-action affordances")
 		return false
 	return true
@@ -293,7 +301,7 @@ func _complete_second_opening_hand() -> bool:
 		return false
 	if not await _wait_for(func() -> bool:
 		return _visible_button_beginning(_decision(), "Change Form") != null \
-			and _visible_button_beginning(_decision(), "Play Web-Shooter") != null):
+			and _decision().find_child("CardPlayMenu", true, false) != null):
 		_fail("the completed cooperative mulligan did not return to player one's actions")
 		return false
 	return true
@@ -330,21 +338,27 @@ func _mulligan_result_is_operable() -> bool:
 func _result_toggle_is_operable(summary: Label) -> bool:
 	var toggle := _node(
 		"Play/Prompt/Margin/Stack/Workbench/Action/LastResult/Margin/Copy/Header/Toggle") as Button
-	if not await _pointer_activate(toggle):
-		return false
 	if summary.visible or toggle.text != "Expand":
-		_fail("the transient result cannot be collapsed")
+		_fail("the transient result does not begin compact and inspectable")
 		return false
 	if not await _pointer_activate(toggle):
 		return false
 	if not summary.visible or toggle.text != "Collapse":
 		_fail("the transient result cannot be expanded")
 		return false
+	if not await _pointer_activate(toggle):
+		return false
+	if summary.visible or toggle.text != "Expand":
+		_fail("the transient result cannot be collapsed")
+		return false
 	return true
 
 
 func _start_web_shooter_draft() -> bool:
 	var web_shooter := _web_shooter_action()
+	if web_shooter == null and not await _open_card_play_menu():
+		return false
+	web_shooter = _web_shooter_action()
 	if web_shooter == null or web_shooter.disabled:
 		_fail("Web-Shooter is not playable after the mulligan")
 		return false

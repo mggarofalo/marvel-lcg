@@ -1,4 +1,4 @@
-extends "res://smoke/local_game_smoke_lifecycle_checks.gd"
+extends "res://smoke/local_game_smoke_terminal_checks.gd"
 
 func _initialize() -> void:
 	_prepare_art_pack()
@@ -93,7 +93,7 @@ func _open_and_validate_table() -> bool:
 		return false
 	if not await _board_layout_is_resolved():
 		return false
-	if not await _table_interactions_are_safe():
+	if not await _redesign_gate_table_interactions_are_safe(_table_interactions_are_safe):
 		return false
 	if not await _capture_checkpoint("open-table-prompt-dense-concealed"):
 		return false
@@ -101,7 +101,8 @@ func _open_and_validate_table() -> bool:
 
 
 func _table_interactions_are_safe() -> bool:
-	if main.find_child("VillainTable", true, false) != null:
+	if (_node("Play/Board") as Control).is_visible_in_tree() \
+			and main.find_child("VillainTable", true, false) != null:
 		if not await _focused_board_area_is_visible():
 			return false
 		return await _mulligan_dock_is_safe()
@@ -175,7 +176,7 @@ func _play_one_decision(state: Dictionary) -> bool:
 		return false
 	if not had_tested_undo and state.tested_undo:
 		return true
-	if not await _motion_state_is_safe(state):
+	if not await _redesign_gate_motion_state_is_safe(_motion_state_is_safe, state):
 		return false
 	if not await _active_resolution_is_safe(state):
 		return false
@@ -377,121 +378,4 @@ func _villain_history_checkpoint_is_safe(state: Dictionary) -> bool:
 	if not await _capture_checkpoint("villain-phase"):
 		return false
 	state.captured_villain_phase = true
-	return true
-
-
-func _terminal_table_is_safe(state: Dictionary) -> bool:
-	if not _required_journey_paths_were_seen(state):
-		return false
-	if not await _synchronization_preserves_history(true):
-		return false
-	if not _terminal_decision_is_safe():
-		return false
-	if not _terminal_history_is_safe():
-		return false
-	if not _terminal_result_is_safe():
-		return false
-	if not await _terminal_page_is_visible():
-		return false
-	if not await _capture_checkpoint("terminal"):
-		return false
-	return await _dismiss_terminal_result()
-
-
-func _required_journey_paths_were_seen(state: Dictionary) -> bool:
-	if not state.saw_mulligan or not state.saw_pass or not state.saw_end_phase:
-		_fail("the journey missed a required visible decision path")
-		return false
-	if not state.tested_attached_focus:
-		_fail("the journey never reached an attached action control")
-		return false
-	if not state.changed_form or not state.tested_undo:
-		_fail("the journey did not change form again after proving undo")
-		return false
-	if not state.saw_attack_resolution or not state.captured_villain_phase:
-		_fail("the journey did not expose its attack and villain-phase checkpoints")
-		return false
-	if motion_enabled and not state.saw_nonblocking_motion:
-		_fail("the journey never exposed an operable prompt during event motion")
-		return false
-	if motion_enabled and not state.tested_active_motion_toggle:
-		_fail("the journey never disabled event motion during active playback")
-		return false
-	if not motion_enabled and state.saw_nonblocking_motion:
-		_fail("the motion-disabled journey exposed active event playback")
-		return false
-	return true
-
-
-func _terminal_decision_is_safe() -> bool:
-	if "VILLAIN WINS" not in _status().text and "PLAYERS LOSE" not in _status().text:
-		_fail("the terminal UI did not report the seeded loss")
-		return false
-	var decision := _visible_text(_decision()).to_upper()
-	var prompt := _visible_text(_node("Play/Prompt/Margin/Stack/PromptHeader")).to_upper()
-	if "DEFEAT" not in decision:
-		_fail("the null-prompt terminal decision copy does not identify defeat")
-		return false
-	if "VILLAIN WON" not in decision and "PLAYERS LOST" not in decision:
-		_fail("the null-prompt terminal decision copy does not identify the loss")
-		return false
-	if "VILLAIN WON" not in prompt and "PLAYERS LOST" not in prompt:
-		_fail("the terminal prompt header does not identify the loss")
-		return false
-	if _node("Status").theme_type_variation != &"DangerStatusPanel":
-		_fail("the loss did not receive the semantic danger treatment")
-		return false
-	return true
-
-
-func _terminal_history_is_safe() -> bool:
-	var event_log := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel
-	var text := event_log.get_parsed_text().strip_edges()
-	if text.is_empty() or text == "No events yet.":
-		_fail("the visible event log is empty")
-		return false
-	if "villain won the game" not in text.to_lower() \
-			and "players lost the game" not in text.to_lower():
-		_fail("the terminal outcome did not remain in recent history")
-		return false
-	return true
-
-
-func _terminal_result_is_safe() -> bool:
-	var result := _node("Play/Prompt/Margin/Stack/Workbench/Action/LastResult") as Control
-	var text := _visible_text(result).to_lower()
-	if result.visible and ("villain won the game" in text or "players lost the game" in text):
-		return true
-	_fail("the terminal outcome did not remain in the primary action pane")
-	return false
-
-
-func _terminal_page_is_visible() -> bool:
-	if await _wait_for(func() -> bool:
-		return _control_text_is_visible(_node("Title") as Control) \
-			and _control_text_is_visible(_node("Description") as Control)):
-		return true
-	var title := _node("Title") as Control
-	var description := _node("Description") as Control
-	var page := main.get_node("Margin") as ScrollContainer
-	_fail("the terminal page did not reveal its outcome and explanation" \
-		+ "\nPage rect: %s scroll: %d" % [page.get_global_rect(), page.scroll_vertical] \
-		+ "\nTitle rect: %s visible: %s" % [title.get_global_rect(), _visible_control_rect(title)] \
-		+ "\nDescription rect: %s visible: %s" % [
-			description.get_global_rect(),
-			_visible_control_rect(description),
-		])
-	return false
-
-
-func _dismiss_terminal_result() -> bool:
-	var result := _node("Play/Prompt/Margin/Stack/Workbench/Action/LastResult") as Control
-	var dismiss := _node(
-		"Play/Prompt/Margin/Stack/Workbench/Action/LastResult/Margin/Copy/Header/Dismiss") as Button
-	if not await _pointer_activate(dismiss):
-		return false
-	await process_frame
-	if result.visible:
-		_fail("the latest result cannot be dismissed")
-		return false
 	return true

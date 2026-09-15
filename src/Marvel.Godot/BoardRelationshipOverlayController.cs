@@ -17,7 +17,6 @@ internal sealed class BoardRelationshipOverlayController : IDisposable
     private BoardRenderResult? board;
     private Action<IReadOnlyList<TableRelationshipDescriptor>>? interactionRelationshipsChanged;
     private bool layoutRefreshQueued;
-    private IReadOnlyList<TableRelationshipDescriptor> snapshotRelationships = [];
     private IReadOnlyList<TableRelationshipDescriptor> promptRelationships = [];
 
     internal BoardRelationshipOverlayController(Main main)
@@ -27,11 +26,10 @@ internal sealed class BoardRelationshipOverlayController : IDisposable
         overlay.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
     }
 
-    internal void Bind(BoardRenderResult next, IReadOnlyList<TableRelationshipDescriptor> snapshot)
+    internal void Bind(BoardRenderResult next)
     {
         Unbind();
         board = next;
-        snapshotRelationships = RelationshipPresentationPolicy.SparseUnfocused(snapshot);
         promptRelationships = [];
         interactionRelationshipsChanged = relationships =>
         {
@@ -85,7 +83,7 @@ internal sealed class BoardRelationshipOverlayController : IDisposable
         Rect2 viewport = overlay.GetGlobalRect();
         BoardRenderResult current = board ?? throw new InvalidOperationException(
             "a relationship path requires a rendered board");
-        foreach (TableRelationshipDescriptor relationship in snapshotRelationships.Concat(promptRelationships))
+        foreach (TableRelationshipDescriptor relationship in promptRelationships)
         {
             if (PathFor(relationship, current.VisibleCardControls(), viewport) is { } path)
             {

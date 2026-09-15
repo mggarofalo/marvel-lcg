@@ -13,9 +13,8 @@ func _tabletop_board_area_is_visible() -> bool:
 	var board := _node("Play/Board/TableScroll") as ScrollContainer
 	var scheme := _tabletop_card_named("The Break-In!")
 	var standard_scale := int(OS.get_environment("MARVEL_UI_SCALE")) <= 100
-	var board_scroll_is_bounded := board != null and (board.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED \
-		if standard_scale \
-		else board.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_AUTO)
+	var board_scroll_is_bounded := board != null \
+		and board.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED
 	if villain == null or player == null or board == null or scheme == null \
 			or not board_scroll_is_bounded \
 			or standard_scale and (not _control_is_fully_visible(villain) \

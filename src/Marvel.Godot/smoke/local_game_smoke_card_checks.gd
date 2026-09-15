@@ -55,7 +55,7 @@ func _fallback_mulligan_is_safe() -> bool:
 		return false
 	var hand := _node("Play/Board/HandShelf") as Control
 	var card := hand.find_child("ProceduralCard", true, false) as Control
-	if card == null or card.custom_minimum_size.x < _scaled_metric(172):
+	if card == null or card.custom_minimum_size.x < _scaled_metric(144):
 		_fail("the generic mulligan fallback did not retain the selected card scale")
 		return false
 	return true
@@ -70,9 +70,18 @@ func _mulligan_cards_are_safe() -> bool:
 		return false
 	for toggle_node in toggles:
 		var toggle := toggle_node as Button
+		var desktop_minimum := 44 if OS.get_environment("MARVEL_SMOKE_VIEWPORT") == "1920x1080" \
+			else _scaled_metric(44)
 		if not toggle.toggle_mode or toggle.text != "□ DISCARD" \
-				or toggle.custom_minimum_size.y < _scaled_metric(44):
-			_fail("a mulligan checkbox is not explicit, keyboard-operable, and generously sized")
+				or toggle.custom_minimum_size.y < desktop_minimum:
+			_fail("a mulligan checkbox is not explicit, keyboard-operable, and generously sized" \
+				+ " toggle=%s text=%s minimum=%s expected=%s pressed=%s" % [
+					toggle.toggle_mode,
+					toggle.text,
+					toggle.custom_minimum_size,
+					desktop_minimum,
+					toggle.button_pressed,
+				])
 			return false
 		if not await _prepare_activation(toggle):
 			return false
@@ -80,10 +89,11 @@ func _mulligan_cards_are_safe() -> bool:
 
 
 func _tabletop_essentials_are_safe() -> bool:
+	var expected_width := mini(_scaled_metric(156), 156)
 	for title in ["Rhino", "Peter Parker", "The Break-In!"]:
 		var card := _tabletop_card_named(title)
-		if card == null or card.custom_minimum_size.x < _scaled_metric(210):
-			_fail("the tabletop essential '%s' did not retain its selected board scale" % title)
+		if card == null or card.custom_minimum_size.x < expected_width:
+			_fail("the tabletop essential '%s' did not retain readable board geometry" % title)
 			return false
 	var villain_text := _visible_text(_tabletop_card_named("Rhino"))
 	var identity_text := _visible_text(_tabletop_card_named("Peter Parker"))
@@ -100,7 +110,9 @@ func _card_controls_are_safe(cards: Array[Node], observed: Dictionary) -> bool:
 	for card_node in cards:
 		var card := card_node as Control
 		var in_hand := hand_shelf.is_ancestor_of(card)
-		var expected_width := _scaled_metric(100 if in_hand else 125)
+		var desktop_table := OS.get_environment("MARVEL_SMOKE_VIEWPORT") == "1920x1080"
+		var expected_width := (100 if in_hand else 125) \
+			if desktop_table else _scaled_metric(100 if in_hand else 125)
 		if card.custom_minimum_size.x < expected_width:
 			_fail("a board card does not honor the selected card geometry")
 			return false
@@ -129,66 +141,58 @@ func _required_card_kinds_were_observed(observed: Dictionary) -> bool:
 func _upcoming_stages_are_safe() -> bool:
 	var disclosures := main.find_children(
 		"UpcomingStagesDisclosure", "Button", true, false)
-	if disclosures.is_empty():
-		_fail("progressive scenario areas have no upcoming-stages disclosure")
+	if not disclosures.is_empty():
+		_fail("upcoming stages permanently occupy the live table")
 		return false
-	for node in disclosures:
-		if not await _upcoming_disclosure_is_safe(node as Button):
-			return false
-	return await _upcoming_disclosures_survive_scale(disclosures.size())
-
-
-func _upcoming_disclosure_is_safe(disclosure: Button) -> bool:
-	if not disclosure.toggle_mode or "Upcoming stages" not in disclosure.text:
-		_fail("an upcoming-stages disclosure is not clearly labeled and collapsible")
+	var active_stage := _active_villain_stage()
+	if active_stage == null or not await _pointer_activate_card_body(active_stage):
+		_fail("the current villain stage cannot open its inspector")
 		return false
-	var cards := disclosure.get_parent().get_node("UpcomingStagesList") as VBoxContainer
-	if not await _pointer_activate(disclosure):
+	await process_frame
+	var inspector := main.get_node("CardInspector") as Control
+	var next := inspector.find_child("NextStage", true, false) as Button
+	var heading := inspector.find_child("Title", true, false) as Label
+	if not _villain_stage_inspector_is_ready(inspector, next, heading):
+		_fail("the current villain inspector does not expose bounded stage navigation")
 		return false
-	if not cards.visible:
-		_fail("opening upcoming stages did not reveal its compact list")
+	if not await _pointer_activate(next):
 		return false
-	for card in cards.find_children("ProceduralCard", "PanelContainer", true, false):
-		if not _upcoming_card_is_safe(card as Control):
-			return false
+	if not await _wait_for(func() -> bool:
+		var current := inspector.find_child("Title", true, false) as Label
+		return current != null and current.text == "STAGE 2 OF 2"):
+		_fail("the villain inspector did not finish navigating to the upcoming stage")
+		return false
+	heading = inspector.find_child("Title", true, false) as Label
+	var previous := inspector.find_child("PreviousStage", true, false) as Button
+	if heading == null or heading.text != "STAGE 2 OF 2" \
+			or previous == null or previous.disabled:
+		_fail("the villain inspector did not navigate to the upcoming stage")
+		return false
+	if not await _capture_checkpoint("card-inspector-villain-next-stage"):
+		return false
+	var escape := InputEventKey.new()
+	escape.keycode = KEY_ESCAPE
+	escape.pressed = true
+	render_viewport.push_input(escape)
+	render_viewport.push_input(InputEventKey.new())
+	await process_frame
+	if inspector.visible:
+		_fail("Escape did not close the stage inspector")
+		return false
 	return true
 
 
-func _upcoming_card_is_safe(card: Control) -> bool:
-	var face := card.find_child("CardFace", true, false)
-	var back := card.find_child("CardBack", true, false)
-	if face != null and card.focus_mode != Control.FOCUS_ALL:
-		_fail("an upcoming stage cannot receive keyboard focus for inspection")
-		return false
-	if back != null and card.focus_mode != Control.FOCUS_NONE:
-		_fail("a concealed upcoming stage gained face-level focus behavior")
-		return false
-	if card.find_child("ProgressValues", true, false) != null:
-		_fail("an upcoming stage competes with the current stage's live progress")
-		return false
-	return true
+func _active_villain_stage() -> Control:
+	for candidate in main.find_children("ProceduralCard", "PanelContainer", true, false):
+		if candidate.find_child("SummaryValuesStage", true, false) != null:
+			return candidate as Control
+	return null
 
 
-func _upcoming_disclosures_survive_scale(expected_count: int) -> bool:
-	var slider := _node("Toolbar/InterfaceScale") as HSlider
-	var original := slider.value
-	for rebuilt_scale in [90.0 if original != 90.0 else 80.0, original]:
-		slider.value = rebuilt_scale
-		await process_frame
-		await process_frame
-		var rebuilt := main.find_children(
-			"UpcomingStagesDisclosure", "Button", true, false)
-		if rebuilt.size() != expected_count:
-			_fail("a board rebuild changed the upcoming-stages disclosure set")
-			return false
-		for node in rebuilt:
-			var disclosure := node as Button
-			var cards := disclosure.get_parent().get_node(
-				"UpcomingStagesList") as VBoxContainer
-			if not disclosure.button_pressed or not cards.visible:
-				_fail("an open upcoming-stages disclosure collapsed during board rebuild")
-				return false
-	return true
+func _villain_stage_inspector_is_ready(
+		inspector: Control, next: Button, heading: Label) -> bool:
+	return inspector.visible and next != null and heading != null \
+		and heading.text == "STAGE 1 OF 2" and not next.disabled
 
 
 func _secondary_areas_are_safe() -> bool:

@@ -58,6 +58,89 @@ public sealed class TabletopRailPlanTests
         Assert.Empty(plan.NearShelf);
     }
 
+    [Theory]
+    [InlineData("DiscardPile")]
+    [InlineData("EncounterDiscardPile")]
+    [InlineData("AsideDeck")]
+    [InlineData("PlayerDeck")]
+    [InlineData("EncounterDeck")]
+    [InlineData("RemovedArea")]
+    public void StoredCardsBecomeOneTopFirstInspectablePile(string zone)
+    {
+        BoardAreaPresentation area = Area(12, 0, zone, BoardAreaProminence.Supporting) with
+        {
+            Cards = [Card(120) with { Title = "Bottom" }, Card(121) with { Title = "Top" }],
+        };
+
+        TabletopAreaObject pile = TabletopAreaObject.From(area);
+
+        Assert.True(pile.IsPile);
+        Assert.Equal(2, pile.Count);
+        Assert.Equal(["Top", "Bottom"], pile.InspectionOrder.Select(card => card.Title));
+        Assert.Equal("Top", pile.Top!.Title);
+    }
+
+    [Fact]
+    public void ConcealedPileRetainsItsCountWithoutOfferingReadableCards()
+    {
+        BoardAreaPresentation area = Area(
+            13, -1, "AsideDeck", BoardAreaProminence.Supporting) with
+        {
+            Cards = [Card(130) with
+            {
+                TargetId = null, Count = 5, Concealed = true, Back = "PLAYER",
+            }],
+        };
+
+        TabletopAreaObject pile = TabletopAreaObject.From(area);
+
+        Assert.Equal(5, pile.Count);
+        Assert.Empty(pile.InspectionOrder);
+        Assert.Null(pile.Top);
+        Assert.Equal("PLAYER back · order hidden", pile.Detail);
+    }
+
+    [Fact]
+    public void LiveTableauAreaDoesNotBecomeAPile()
+    {
+        TabletopAreaObject area = TabletopAreaObject.From(
+            Area(14, -1, "SideSchemesArea", BoardAreaProminence.Live) with
+            {
+                Cards = [Card(140)],
+            });
+
+        Assert.False(area.IsPile);
+    }
+
+    [Fact]
+    public void SettledRemovedTableauBecomesOneInspectablePile()
+    {
+        TabletopAreaObject area = TabletopAreaObject.From(
+            Area(15, 0, "HeroArea", BoardAreaProminence.Supporting) with
+            {
+                Removed = [Card(150), Card(151)],
+            });
+
+        Assert.True(area.IsPile);
+        Assert.True(area.ContainsOnlyRemovedCards);
+        Assert.Equal(2, area.Count);
+        Assert.Equal([151, 150], area.InspectionOrder.Select(card => card.TargetId));
+    }
+
+    [Fact]
+    public void ProgressiveStageSequenceIsAvailableWithoutRegisteringFutureCardControls()
+    {
+        BoardCardPresentation current = Card(140) with { StageRole = BoardStageRole.Current };
+        BoardCardPresentation future = Card(141) with { StageRole = BoardStageRole.Upcoming };
+        var result = new BoardRenderResult();
+
+        result.Inspector.Register([current, future]);
+
+        Assert.Equal([current, future], result.Inspector.For(current.TargetId));
+        Assert.Equal([current, future], result.Inspector.For(future.TargetId));
+        Assert.Null(result.ControlFor(future.TargetId!.Value));
+    }
+
     [Fact]
     public void SeatMarkersKeepEachAuthoritativeRoleSeparate()
     {

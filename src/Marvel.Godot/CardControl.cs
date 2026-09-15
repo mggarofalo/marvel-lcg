@@ -127,7 +127,7 @@ public sealed partial class CardControl : PanelContainer
         int resourcesRows = values.Count(value => value.Name == "RES");
         int badgeCount = values.Count - progressRows - values.Count(value => value.Name == "RES");
         int valueRows = (badgeCount + 2) / 3 + progressRows + resourcesRows;
-        int titleCharactersPerLine = size is CardDisplaySize.Hand or CardDisplaySize.Mulligan ? 18 : 24;
+        int titleCharactersPerLine = size is CardDisplaySize.Hand or CardDisplaySize.Mulligan ? 14 : 18;
         int titleRows = Math.Max(
             1,
             (int)Math.Ceiling(card.Title.Length / (double)titleCharactersPerLine));
@@ -135,7 +135,7 @@ public sealed partial class CardControl : PanelContainer
             + titleRows
             + (CompactState(card, size) is null ? 0 : 1)
             + valueRows;
-        float scale = layout.Width / (size is CardDisplaySize.Hand or CardDisplaySize.Mulligan ? 172.0f : 210.0f);
+        float scale = layout.Width / (size is CardDisplaySize.Hand or CardDisplaySize.Mulligan ? 144.0f : 156.0f);
         return Math.Max(layout.MinimumHeight, textRows * 22 * scale + 20 * scale);
     }
 
@@ -156,19 +156,39 @@ public sealed partial class CardControl : PanelContainer
     /// <summary>Shows prompt-authorized interaction state with a readable marker as well as color.</summary>
     internal void SetInteractionCue(CardInteractionCue value)
     {
-        interactionCue = value;
-        if (interactionLabel is not null)
+        Label? cue = interactionLabel;
+        if (cue is null
+            || !InteractionControl.IsUsable(this)
+            || !InteractionControl.IsUsable(cue))
         {
-            interactionLabel.Text = CueText(value);
-            interactionLabel.Visible = value != CardInteractionCue.None;
+            return;
         }
+
+        interactionCue = value;
+        cue.Text = CueText(value);
+        cue.Visible = value != CardInteractionCue.None;
         RefreshTreatment();
     }
 
     /// <summary>Adds a prompt-authorized control in this card's reserved action strip.</summary>
-    internal void AddInteractionControl(Button control)
+    internal bool AddInteractionControl(Button control)
     {
         ArgumentNullException.ThrowIfNull(control);
+        Label? cue = interactionLabel;
+        GridContainer? directControls = interactionControls;
+        if (cue is null
+            || directControls is null
+            || !InteractionControl.IsUsable(this)
+            || !InteractionControl.IsUsable(cue)
+            || !InteractionControl.IsUsable(directControls))
+        {
+            control.QueueFree();
+            return false;
+        }
+
+        interactionCue &= ~CardInteractionCue.OfferedAction;
+        cue.Text = CueText(interactionCue);
+        cue.Visible = interactionCue != CardInteractionCue.None;
         control.CustomMinimumSize = new Vector2(
             0, VisualSystem.Controls(interactionScale).MinimumPointerTarget);
         control.SizeFlagsHorizontal = SizeFlags.ExpandFill;
@@ -176,8 +196,8 @@ public sealed partial class CardControl : PanelContainer
         {
             parent.QueueSort();
         }
-        (interactionControls ?? throw new InvalidOperationException(
-            "card interaction controls are unavailable")).AddChild(control);
+        directControls.AddChild(control);
+        return true;
     }
 
     /// <summary>Removes a prior prompt's controls and restores this card's base surface height.</summary>

@@ -47,10 +47,7 @@ internal static class BoardCardPresentationFactory
         bool inPlay = IsInPlay(zone);
         return new BoardCardPresentation(card.Id, 1, false, card.Face.Title, card.Face.Subtitle,
             Humanize(card.Face.Kind.ToString(), false).ToUpperInvariant(), Status(card, zone, card.Face.Kind),
-            card.Face.Fields.Where(field => VisibleField(field, inPlay, card.Face.Kind))
-                .OrderBy(field => field.Key, StringComparer.Ordinal)
-                .Select(field => new BoardFieldPresentation(FieldName(field.Key), FieldValue(field, card.Face.Damage)))
-                .ToArray())
+            VisibleFields(card, inPlay).ToArray())
         {
             Back = card.Back.ToString().ToUpperInvariant(), FaceId = card.Face.ArtFaceId, StageRole = StageRole(zone),
             Traits = card.Face.Traits, Cost = card.Face.Cost,
@@ -59,10 +56,33 @@ internal static class BoardCardPresentationFactory
             Classification = card.Face.PrintedStats.GetValueOrDefault("Class", string.Empty),
             Keywords = card.Face.Keywords, RulesText = card.Face.RulesText, RulesMarkup = card.Face.RulesMarkup,
             Damage = card.Face.Damage,
+            Statuses = card.State?.Statuses ?? [],
             Counters = card.Face.Counters.OrderBy(counter => counter.Key, StringComparer.Ordinal)
                 .Select(counter => new BoardFieldPresentation(Humanize(counter.Key, false).ToUpperInvariant(),
                     counter.Value.ToString(CultureInfo.InvariantCulture))).ToArray(),
         };
+    }
+
+    private static IEnumerable<BoardFieldPresentation> VisibleFields(
+        CardDescriptor card,
+        bool inPlay)
+    {
+        IEnumerable<BoardFieldPresentation> fields = card.Face!.Fields
+            .Where(field => VisibleField(field, inPlay, card.Face.Kind))
+            .OrderBy(field => field.Key, StringComparer.Ordinal)
+            .Select(field => new BoardFieldPresentation(
+                FieldName(field.Key), FieldValue(field, card.Face.Damage)));
+        foreach (BoardFieldPresentation field in fields)
+        {
+            yield return field;
+        }
+        if (card.State?.Threat is { } threat
+            && card.Face.Kind is CardKind.MainScheme or CardKind.EncounterSideScheme
+            && !card.Face.Fields.ContainsKey("k_threat"))
+        {
+            yield return new BoardFieldPresentation(
+                "THREAT", threat.ToString(CultureInfo.InvariantCulture));
+        }
     }
 
     private static bool VisibleField(KeyValuePair<string, long> field, bool inPlay, CardKind kind)

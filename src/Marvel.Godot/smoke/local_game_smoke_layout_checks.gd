@@ -74,9 +74,7 @@ func _mulligan_table_layout_is_resolved() -> bool:
 				shell_rect,
 			])
 			return false
-	var table_scroll_is_bounded := table.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED \
-		if int(OS.get_environment("MARVEL_UI_SCALE")) <= 100 \
-		else table.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_AUTO
+	var table_scroll_is_bounded := table.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED
 	if page.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED or not table_scroll_is_bounded:
 		_fail("the opening desktop table introduced gameplay scrolling")
 		return false
@@ -291,13 +289,11 @@ func _desktop_route_is_safe(desktop: bool, reset_scroll := false) -> bool:
 		if play == null or page == null or table == null:
 			return false
 		if desktop:
-			var expected_vertical := ScrollContainer.SCROLL_MODE_AUTO \
-				if _scale_percentage() > 100 else ScrollContainer.SCROLL_MODE_DISABLED
 			return play.columns == 2 and seats.is_empty() and far != null and near != null \
 					and strip != null \
 					and page.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED \
 					and table.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED \
-					and table.vertical_scroll_mode == expected_vertical \
+					and table.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED \
 					and (not reset_scroll \
 						or table.scroll_horizontal == 0 and table.scroll_vertical == 0)
 		return play.columns == 1 and seats.size() == 2 and far == null and near == null \
@@ -454,9 +450,8 @@ func _focused_decision_is_visible(restored: Button, decision_scroll: ScrollConta
 
 func _prompt_context_is_visible() -> bool:
 	for path in [
-		"Play/Prompt/Margin/Stack/PromptHeader/Eyebrow",
 		"Play/Prompt/Margin/Stack/PromptHeader/Heading",
-		"Play/Prompt/Margin/Stack/PromptHeader/Context",
+		"Play/Prompt/Margin/Stack/PromptHeader/Progress",
 	]:
 		if not _control_text_is_visible(_node(path) as Control):
 			_fail("keyboard focus hid active prompt context: %s" % path)

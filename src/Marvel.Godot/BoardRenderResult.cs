@@ -8,6 +8,7 @@ namespace Marvel.Godot;
 public sealed class BoardRenderResult
 {
     private readonly Dictionary<int, List<CardControl>> controls = [];
+    internal readonly BoardInspectorSequences Inspector = new();
     private readonly Dictionary<Control, Action> areaExpanders = [];
     private readonly Dictionary<int, Button> mulliganToggles = [];
     private readonly Dictionary<int, CardControl> mulliganCards = [];
@@ -19,7 +20,6 @@ public sealed class BoardRenderResult
     private (Control Source, CardPointerCapture Gesture)? pointerCapture;
     private Func<CardPointerGesture, bool>? directActivation;
     private Func<CardPointerGesture, bool>? directDrag;
-
     public BoardRenderResult()
     {
         reveal = new BoardControlReveal(this);

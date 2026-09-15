@@ -227,7 +227,7 @@ public sealed class VisualSystemTests
             Assert.True(full.MinimumHeight > board.MinimumHeight);
             Assert.True(board.Width > hand.Width);
             Assert.True(board.MinimumHeight > hand.MinimumHeight);
-            Assert.True(board.MinimumHeight < board.Width);
+            Assert.True(board.MinimumHeight > board.Width);
             Assert.True(board.MinimumHeight * 2 < full.MinimumHeight);
             Assert.False(board.ShowSubtitle);
             Assert.False(board.ShowTraits);
@@ -257,12 +257,22 @@ public sealed class VisualSystemTests
         CardLayoutMetrics large = VisualSystem.Card(
             CardDisplaySize.Mulligan, InterfaceScale.Percent150);
 
-        Assert.Equal(195, standard.Width);
-        Assert.Equal(229, large.Width);
-        Assert.True(large.Width > standard.Width);
-        // 1920 less the fixed 360px composition rail leaves 1560px: six
-        // opening cards and their ordinary 8px gaps stay in the table.
-        Assert.True(6 * large.Width + 5 * 8 <= 1920 - 360);
+        Assert.Equal(168, standard.Width);
+        Assert.Equal(168, large.Width);
+        // The fixed desktop gives the table column at least 1120px beside the
+        // decision dock. All six choices remain simultaneously reachable.
+        Assert.True(6 * large.Width + 5 * 8 <= 1120);
+    }
+
+    [Theory]
+    [InlineData(InterfaceScale.Percent50)]
+    [InlineData(InterfaceScale.Percent80)]
+    [InlineData(InterfaceScale.Standard)]
+    [InlineData(InterfaceScale.Percent120)]
+    [InlineData(InterfaceScale.Percent150)]
+    public void MulliganToggleRetainsTheDesktopPointerTargetFloor(InterfaceScale scale)
+    {
+        Assert.Equal(44, MulliganTableRenderer.ToggleMinimumHeight(scale));
     }
 
     [Theory]
@@ -297,7 +307,7 @@ public sealed class VisualSystemTests
 
         Assert.InRange(compact.DecisionWidth, 390, 440);
         Assert.InRange(laptop.DecisionWidth, 450, 500);
-        Assert.InRange(desktop.DecisionWidth, 680, 720);
+        Assert.InRange(desktop.DecisionWidth, 480, 520);
         Assert.True(desktop.DecisionWidth > laptop.DecisionWidth);
         Assert.True(laptop.DecisionWidth > compact.DecisionWidth);
         Assert.True(compact.DecisionMinimumHeight >= 270);

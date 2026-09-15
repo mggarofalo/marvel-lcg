@@ -218,19 +218,30 @@ public sealed class InteractionSurfaceProjectionTests
     }
 
     [Fact]
-    public void UnfocusedRelationshipFansAreSuppressedWhileOneToOneLinksRemain()
+    public void SelectedPromptDrawsOnlyActionableTargetAndGeneratorLinks()
     {
-        TableRelationshipDescriptor[] relationships =
+        var composer = Composer(new Affordance(3, "Play", 19, 0, "Visible"));
+        composer.SelectAffordance(3);
+        PromptPresentation prompt = Prompt(composer.Prompt,
         [
-            new(RelationshipKind.Attachment, 1, 2),
-            new(RelationshipKind.Attachment, 1, 3),
-            new(RelationshipKind.Attachment, 4, 5),
-        ];
+            Visible(3, 19) with
+            {
+                Relationships =
+                [
+                    new TableRelationshipDescriptor(RelationshipKind.Attachment, 19, 20),
+                    new TableRelationshipDescriptor(RelationshipKind.Result, 19, 21),
+                    new TableRelationshipDescriptor(RelationshipKind.OfferedTarget, 19, 22),
+                    new TableRelationshipDescriptor(RelationshipKind.OfferedGenerator, 19, 23),
+                    new TableRelationshipDescriptor(RelationshipKind.Engagement, 19, null, 0),
+                ],
+            },
+        ]);
 
-        IReadOnlyList<TableRelationshipDescriptor> visible =
-            RelationshipPresentationPolicy.SparseUnfocused(relationships);
-
-        Assert.Equal([new TableRelationshipDescriptor(RelationshipKind.Attachment, 4, 5)], visible);
+        Assert.Equal(
+        [
+            new TableRelationshipDescriptor(RelationshipKind.OfferedTarget, 19, 22),
+            new TableRelationshipDescriptor(RelationshipKind.OfferedGenerator, 19, 23),
+        ], BoardInteractionRelationshipProjection.From(composer, prompt));
     }
 
     private static DecisionComposer Composer(params Affordance[] offers) => new(new Prompt(
