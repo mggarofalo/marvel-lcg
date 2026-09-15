@@ -105,6 +105,53 @@ public sealed class TableContractTests
     }
 
     [Fact]
+    public void VisibleOccurrenceCardStaysWithItsInterruptPrompt()
+    {
+        World world = Board(out _, out _, out _);
+        Card treachery = world.CreateCard("treachery", world.AreaOf(DeckType.RevealingArea));
+        var prompt = new Prompt(
+            0, Question.Opportunity, TimingPriority.Interrupt, Steps.CardRevealed,
+            "Interrupt to WhenCardRevealed", true,
+            [new Affordance(4, "Enhanced Spider-Sense", 4, 0, "Enhanced Spider-Sense",
+                Description: "Cancel the revealed treachery's When Revealed effects")])
+        {
+            ContextCardIds = [treachery.ObjectId],
+        };
+        ViewScope scope = new PermissiveVisibilityPolicy().Authorize(null, world.Players);
+
+        VisibleResult visible = WorldProjection.For(world, prompt, [], scope);
+        Prompt authorized = Assert.IsType<Prompt>(visible.Prompt);
+        PromptPresentation presentation = PromptPresentation.From(authorized, visible.World);
+
+        Assert.Equal([treachery.ObjectId], authorized.ContextCardIds);
+        BoardCardPresentation context = Assert.Single(presentation.ContextCards);
+        Assert.Equal(treachery.ObjectId, context.TargetId);
+        Assert.Equal("Caught Off Guard", context.Title);
+        Assert.Equal("Caught Off Guard was revealed — interrupt?", presentation.Heading);
+        Assert.Contains("Resolving Caught Off Guard", presentation.Context);
+    }
+
+    [Fact]
+    public void UnreadableOccurrenceCardIsRemovedFromTheAuthorizedPrompt()
+    {
+        World world = Board(out _, out _, out _);
+        Card secret = world.CreateCard("treachery", world.Seats[1].Hand);
+        var prompt = new Prompt(
+            0, Question.Opportunity, TimingPriority.Interrupt, Steps.CardRevealed,
+            "hidden occurrence", true, [])
+        {
+            ContextCardIds = [secret.ObjectId],
+        };
+
+        VisibleResult visible = WorldProjection.For(
+            world, prompt, [], new RestrictedVisibilityPolicy(0).Authorize(null, world.Players));
+
+        Prompt authorized = Assert.IsType<Prompt>(visible.Prompt);
+        Assert.Empty(authorized.ContextCardIds);
+        Assert.Empty(PromptPresentation.From(authorized, visible.World).ContextCards);
+    }
+
+    [Fact]
     public void CardControllerComesFromTheCardWhenScenarioCardsSitOnAPlayerSide()
     {
         World world = Board(out Card host, out _, out _);
@@ -212,6 +259,7 @@ public sealed class TableContractTests
             "villain" => CardKind.EncounterVillain,
             "minion" => CardKind.Minion,
             "attachment" => CardKind.Upgrade,
+            "treachery" => CardKind.Treachery,
             _ => CardKind.Event,
         };
 
@@ -220,6 +268,7 @@ public sealed class TableContractTests
             "duplicate" => "Duplicate",
             "hero0" => "Hero Zero",
             "hero1" => "Hero One",
+            "treachery" => "Caught Off Guard",
             _ => faceId,
         };
 

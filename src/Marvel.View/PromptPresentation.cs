@@ -13,21 +13,54 @@ public sealed record PromptPresentation(
     string Diagnostic,
     IReadOnlyList<AffordancePresentation> Affordances)
 {
+    /// <summary>Readable cards whose occurrence caused the pending decision.</summary>
+    public IReadOnlyList<BoardCardPresentation> ContextCards { get; init; } = [];
+
+    /// <summary>Readable timing tier for resolution-stage treatment.</summary>
+    public string ResolutionKind { get; init; } = string.Empty;
+
     /// <summary>Builds one prompt view from its response's authorized snapshot.</summary>
     public static PromptPresentation From(Prompt prompt, WorldDescriptor world)
     {
         ArgumentNullException.ThrowIfNull(prompt);
         ArgumentNullException.ThrowIfNull(world);
+        IReadOnlyList<BoardCardPresentation> contextCards = PresentContextCards(prompt, world);
         return new PromptPresentation(
-            BuildHeading(prompt),
-            BuildContext(prompt, world),
+            BuildHeading(prompt, contextCards),
+            BuildContext(prompt, world, contextCards),
             prompt.Description?.Trim() ?? string.Empty,
             prompt.Cancellable ? "You may pass." : "Choose to continue.",
             $"Player {prompt.Player + 1} · {Words(prompt.Asking.ToString())}"
                 + $" · {Words(prompt.When.ToString())} · {Words(prompt.Trigger)}"
                 + $"\nWire label: {prompt.Label.Trim()}",
-            prompt.Affordances.Select(option => Present(option, world)).ToArray());
+            prompt.Affordances.Select(option => Present(option, world)).ToArray())
+        {
+            ContextCards = contextCards,
+            ResolutionKind = Words(prompt.When.ToString()),
+        };
     }
+
+    private static List<BoardCardPresentation> PresentContextCards(
+        Prompt prompt, WorldDescriptor world)
+    {
+        var locations = world.Areas
+            .SelectMany(area => area.Cards.Concat(area.Removed)
+                .Select(card => (Card: card, area.Zone)))
+            .Where(entry => entry.Card.Id is not null && entry.Card.Face is not null)
+            .ToDictionary(entry => entry.Card.Id!.Value);
+        var presented = new List<BoardCardPresentation>();
+        foreach (int id in prompt.ContextCardIds.Distinct())
+        {
+            if (locations.TryGetValue(id, out var entry))
+            {
+                presented.Add(PresentContext(entry.Card, entry.Zone));
+            }
+        }
+        return presented;
+    }
+
+    private static BoardCardPresentation PresentContext(CardDescriptor card, string zone) =>
+        BoardCardPresentationFactory.Present([card], zone)[0];
 
     private static AffordancePresentation Present(Affordance option, WorldDescriptor world)
     {
@@ -52,10 +85,28 @@ public sealed record PromptPresentation(
         };
     }
 
-    private static string BuildHeading(Prompt prompt) =>
+    private static string BuildHeading(
+        Prompt prompt, IReadOnlyList<BoardCardPresentation> contextCards) =>
         string.IsNullOrWhiteSpace(prompt.DisplayQuestion)
-            ? GenericHeading(prompt)
+            ? ContextHeading(prompt, contextCards) ?? GenericHeading(prompt)
             : prompt.DisplayQuestion.Trim();
+
+    private static string? ContextHeading(
+        Prompt prompt, IReadOnlyList<BoardCardPresentation> contextCards)
+    {
+        string? title = contextCards.Count > 0 ? contextCards[0].Title : null;
+        if (title is null)
+        {
+            return null;
+        }
+        return (prompt.Asking, prompt.When) switch
+        {
+            (Question.Opportunity, TimingPriority.Interrupt) =>
+                $"{title} was revealed — interrupt?",
+            (Question.Opportunity, TimingPriority.Response) => $"Respond to {title}",
+            _ => null,
+        };
+    }
 
     private static string GenericHeading(Prompt prompt) => prompt.Asking switch
     {
@@ -71,11 +122,16 @@ public sealed record PromptPresentation(
         _ => "Choose what happens next",
     };
 
-    private static string BuildContext(Prompt prompt, WorldDescriptor world)
+    private static string BuildContext(
+        Prompt prompt, WorldDescriptor world,
+        IReadOnlyList<BoardCardPresentation> contextCards)
     {
         string player = world.Players.FirstOrDefault(candidate => candidate.Seat == prompt.Player)
             ?.Name ?? $"Player {prompt.Player + 1}";
-        return $"Decision for {player}";
+        string subject = contextCards.Count > 0
+            ? $" · Resolving {contextCards[0].Title}"
+            : string.Empty;
+        return $"Decision for {player}{subject}";
     }
 
     private static AffordanceSourceDescriptor? Source(Affordance option, WorldDescriptor world)

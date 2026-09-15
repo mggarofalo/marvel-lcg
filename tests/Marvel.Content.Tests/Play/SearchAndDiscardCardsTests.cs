@@ -38,8 +38,8 @@ public sealed class SearchAndDiscardCardsTests
     /// <summary>Spider-Man's "Web-Shooter" upgrade.</summary>
     private const string WebShooter = "01008";
 
-    /// <summary>Spider-Man's "Aunt May" support.</summary>
-    private const string AuntMay = "01006";
+    /// <summary>The Core Set basic support "Avengers Mansion".</summary>
+    private const string AvengersMansion = "01091";
 
     private static readonly SetupCatalog Setup =
         SetupCatalog.Parse(File.ReadAllText(RepositoryPaths.Dataset("setup", "setup.json")));
@@ -58,7 +58,7 @@ public sealed class SearchAndDiscardCardsTests
         var upgrade = world.CreateCard(
             WebShooter, world.AreaOf(DeckType.UpgradesArea, PlayArea.Of(0)));
         var support = world.CreateCard(
-            AuntMay, world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
+            AvengersMansion, world.AreaOf(DeckType.SupportsArea, PlayArea.Of(0), cardOwner: 0));
         var runner = AuthoredCards.Runner();
 
         var card = world.CreateCard(
@@ -70,6 +70,12 @@ public sealed class SearchAndDiscardCardsTests
         Assert.Equal(
             [upgrade.ObjectId, support.ObjectId],
             asked.Affordances.Select(option => option.Id));
+        Assert.Equal(
+            "Caught Off Guard: choose an upgrade or support to discard",
+            asked.DisplayQuestion);
+        Assert.Equal("Choose an upgrade or support to discard", asked.Description);
+        Assert.Equal([card.ObjectId], asked.ContextCardIds);
+        Assert.Equal("Discard Avengers Mansion", asked.Affordances[1].Description);
 
         runner.Chose(world, card, 0, 1, Decision.Take(support.ObjectId));
 

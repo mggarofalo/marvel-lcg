@@ -10,6 +10,8 @@ internal static class AbilityEffectDescription
     {
         AbilityEffect.ChooseCard choice when Action(choice.Effect) is { } action =>
             $"Choose {Article(Noun(choice.From))} to {action}",
+        AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.CancelWhenRevealed } =>
+            "Cancel the revealed treachery's When Revealed effects",
         AbilityEffect.GiveStatus status => StatusAction(status.Status),
         AbilityEffect.Power power => Summary(power.Effect),
         AbilityEffect.Sequence sequence when sequence.Effects.Length == 1 =>
@@ -31,6 +33,11 @@ internal static class AbilityEffectDescription
 
     private static string? Action(AbilityEffect effect) => effect switch
     {
+        AbilityEffect.CardAction { Instruction: AbilityCardInstruction.Discard } => "discard",
+        AbilityEffect.CardAction { Instruction: AbilityCardInstruction.Exhaust } => "exhaust",
+        AbilityEffect.CardAction { Instruction: AbilityCardInstruction.Ready } => "ready",
+        AbilityEffect.Fixed { Instruction: AbilityFixedInstruction.CancelWhenRevealed } =>
+            "cancel the revealed treachery's When Revealed effects",
         AbilityEffect.GiveStatus status => StatusAction(status.Status),
         AbilityEffect.Power power => Action(power.Effect),
         AbilityEffect.Sequence sequence when sequence.Effects.Length == 1 =>
@@ -48,6 +55,11 @@ internal static class AbilityEffectDescription
 
     private static string Noun(AbilityCardSelection selection) => selection switch
     {
+        AbilityCardSelection.Discardable discardable => Noun(discardable.Cards),
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.UpgradesAndSupportsYouControl } =>
+            "upgrade or support",
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.UpgradesYouControl } => "upgrade",
+        AbilityCardSelection.Query { Kind: AbilityCardQuery.SupportsYouControl } => "support",
         AbilityCardSelection.Query { Kind: AbilityCardQuery.Enemies
             or AbilityCardQuery.AttackableEnemies
             or AbilityCardQuery.Minions

@@ -53,8 +53,8 @@ internal static class AbilityStructuralQueries
             context.Player, cards ? Question.Element : Question.Option,
             TimingPriority.Untimed, Steps.CardRevealed,
             $"{context.SourceFace}: choose {(cards ? "a card" : "an option")}",
-            Cancellable: false, offered)
-        {
+            Cancellable: false, offered) {
+            ContextCardIds = [context.Expressions.Source.ObjectId],
             DisplayQuestion = choice is AbilityEffect.ChooseCard cardChoice ? AbilityEffectDescription.Question(
                 context.Expressions.World, context.SourceFace, cardChoice) : null,
             Description = choice is AbilityEffect.ChooseCard describedChoice

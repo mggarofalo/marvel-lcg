@@ -26,8 +26,7 @@ internal static class BoardInteractionCueProjection
         foreach (AffordancePresentation affordance in prompt.Affordances.Where(
                      affordance => affordance.Source?.CardId is not null))
         {
-            Add(cues, affordance.Source!.CardId!.Value, affordance.Illegal is null
-                ? CardInteractionCue.OfferedAction : CardInteractionCue.Unavailable);
+            Add(cues, affordance.Source!.CardId!.Value, CueFor(affordance));
         }
     }
 
@@ -42,6 +41,7 @@ internal static class BoardInteractionCueProjection
         {
             return;
         }
+        AddSelectedDestructiveCue(cues, selected);
         Add(cues, selected.TargetRequest?.Legal ?? [], CardInteractionCue.LegalTarget);
         Add(cues, composer.Targets, CardInteractionCue.SelectedTarget);
         if (composer.SelectedCost >= 0 && composer.SelectedCost < selected.CostOptions.Count)
@@ -50,6 +50,25 @@ internal static class BoardInteractionCueProjection
                 .Select(source => source.Effect), CardInteractionCue.LegalGenerator);
         }
         Add(cues, composer.Resources, CardInteractionCue.SelectedGenerator);
+    }
+
+    private static bool IsDestructive(AffordancePresentation affordance) =>
+        affordance.Description?.StartsWith("Discard ", StringComparison.Ordinal) == true;
+
+    private static CardInteractionCue CueFor(AffordancePresentation affordance) =>
+        affordance.Illegal is not null
+            ? CardInteractionCue.Unavailable
+            : IsDestructive(affordance)
+                ? CardInteractionCue.DestructiveChoice
+                : CardInteractionCue.OfferedAction;
+
+    private static void AddSelectedDestructiveCue(
+        Dictionary<int, CardInteractionCue> cues, AffordancePresentation selected)
+    {
+        if (selected.Source?.CardId is { } id && IsDestructive(selected))
+        {
+            Add(cues, id, CardInteractionCue.SelectedDestructiveChoice);
+        }
     }
 
     private static void Add(

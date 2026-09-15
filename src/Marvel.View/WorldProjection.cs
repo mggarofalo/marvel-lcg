@@ -34,7 +34,12 @@ public static class WorldProjection
             .Select(card => card.Id!.Value)
             .ToHashSet();
 
-        Prompt? authorizedPrompt = promptVisible ? prompt : null;
+        Prompt? authorizedPrompt = promptVisible
+            ? prompt! with
+            {
+                ContextCardIds = [.. prompt!.ContextCardIds.Where(readableIds.Contains)],
+            }
+            : null;
         int active = activePlayer ?? world.FirstPlayer;
         visible = TableDescriptorProjection.WithContext(visible, authorizedPrompt, scope, active, world.FirstPlayer);
         return new VisibleResult(visible, authorizedPrompt, VisibilityEventFilter.Filter(events, addressableIds, readableIds));

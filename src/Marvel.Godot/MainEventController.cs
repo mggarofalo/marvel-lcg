@@ -13,11 +13,13 @@ internal sealed class MainEventController
 {
     private readonly Main main;
     private readonly MainEventMotionController motion;
+    private readonly MainResolutionStageController resolutionStage;
 
     internal MainEventController(Main main)
     {
         this.main = main;
         motion = new MainEventMotionController(main);
+        resolutionStage = new MainResolutionStageController(main);
     }
     internal void RevealOutcome()
     {
@@ -33,7 +35,7 @@ internal sealed class MainEventController
     {
         if (prompt is null)
         {
-            (main.activeResolution.Visible, main.activeResolutionSummary.Text) = (false, string.Empty);
+            resolutionStage.Clear();
             (main.promptEyebrow.Text, main.promptHeading.Text, main.promptContext.Text) =
                 world.Outcome switch
                 {
@@ -73,8 +75,7 @@ internal sealed class MainEventController
         main.promptEyebrow.Text = "CURRENT DECISION";
         main.promptHeading.Text = view.Heading;
         main.promptContext.Text = view.Context;
-        main.activeResolution.Visible = !string.IsNullOrWhiteSpace(view.Resolution);
-        main.activeResolutionSummary.Text = view.Resolution;
+        resolutionStage.Render(view);
         main.promptRequirement.Text = view.Requirement;
         main.promptDiagnostic.Text = view.Diagnostic;
         main.promptRequirement.ThemeTypeVariation = prompt.Cancellable

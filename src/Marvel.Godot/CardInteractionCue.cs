@@ -11,4 +11,6 @@ internal enum CardInteractionCue
     LegalGenerator = 8,
     SelectedGenerator = 16,
     Unavailable = 32,
+    DestructiveChoice = 64,
+    SelectedDestructiveChoice = 128,
 }

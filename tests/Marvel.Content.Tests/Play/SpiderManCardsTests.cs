@@ -281,6 +281,10 @@ public sealed class SpiderManCardsTests
             runner.Waiting(world, occurrence, WindowKind.Interrupt),
             pending => pending.Card == sense.ObjectId);
 
+        Assert.Equal(
+            "Cancel the revealed treachery's When Revealed effects",
+            runner.Describe(world, ability).Description);
+
         runner.Resolve(world, occurrence, ability, [payment.ObjectId], []);
         runner.WhenRevealed(world, treachery, 0);
 

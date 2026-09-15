@@ -55,6 +55,14 @@ public sealed record Prompt(
     bool Cancellable,
     IReadOnlyList<Affordance> Affordances)
 {
+    /// <summary>Visible game objects whose occurrence caused this decision.</summary>
+    /// <remarks>
+    /// This is an engine-authored presentation relation, not a legality input.
+    /// The view boundary removes identifiers whose faces are not readable to
+    /// the receiving scope.
+    /// </remarks>
+    public IReadOnlyList<int> ContextCardIds { get; init; } = [];
+
     /// <summary>Readable engine-authored context for the pending decision.</summary>
     public string? Description { get; init; }
 

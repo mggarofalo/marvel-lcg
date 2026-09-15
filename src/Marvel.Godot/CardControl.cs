@@ -227,6 +227,8 @@ public sealed partial class CardControl : PanelContainer
     {
         var labels = new List<string>();
         if (cue.HasFlag(CardInteractionCue.Unavailable)) labels.Add("— UNAVAILABLE");
+        if (cue.HasFlag(CardInteractionCue.SelectedDestructiveChoice)) labels.Add("✓ DISCARD");
+        else if (cue.HasFlag(CardInteractionCue.DestructiveChoice)) labels.Add("◇ DISCARD");
         if (cue.HasFlag(CardInteractionCue.OfferedAction)) labels.Add("◇ ACTION");
         if (cue.HasFlag(CardInteractionCue.SelectedTarget)) labels.Add("✓ TARGET");
         else if (cue.HasFlag(CardInteractionCue.LegalTarget)) labels.Add("◇ TARGET");
