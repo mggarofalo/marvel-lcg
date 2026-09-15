@@ -43,26 +43,27 @@ internal static class AbilityStructuralQueries
             throw new InvalidOperationException(
                 $"'{context.SourceFace}' does not contain a generic choice");
         }
-
         var offered = affordances.ToList();
         if (offered.Count == 0)
         {
             throw new RulesNotImplementedException(
                 $"'{context.SourceFace}' requires a choice and has no legal option");
         }
-
         var prompt = new Prompt(
             context.Player, cards ? Question.Element : Question.Option,
             TimingPriority.Untimed, Steps.CardRevealed,
             $"{context.SourceFace}: choose {(cards ? "a card" : "an option")}",
             Cancellable: false, offered)
         {
-            ExposesConcealedCandidates = choice is AbilityEffect.ChooseCard cardChoice
-                && InspectsConcealedPile(cardChoice.From),
+            DisplayQuestion = choice is AbilityEffect.ChooseCard cardChoice ? AbilityEffectDescription.Question(
+                context.Expressions.World, context.SourceFace, cardChoice) : null,
+            Description = choice is AbilityEffect.ChooseCard describedChoice
+                ? AbilityEffectDescription.Summary(describedChoice) : null,
+            ExposesConcealedCandidates = choice is AbilityEffect.ChooseCard exposureChoice
+                && InspectsConcealedPile(exposureChoice.From),
         };
         return new AbilityStructuralPrompt(prompt, Admission(evidence));
     }
-
     internal static AbilityStructuralTransition AnswerChoice(
         AbilityStructuralContext context, AbilityEffect choice,
         AbilityContinuationFacts continuation, Decision answer)
@@ -70,7 +71,6 @@ internal static class AbilityStructuralQueries
         var evidence = NewEvidence();
         if (choice is AbilityEffect.ChooseCard chooseCard)
             return AnswerCardChoice(context, chooseCard, continuation, answer, evidence);
-
         var options = (AbilityEffect.Choose)choice;
         if (answer.IsDecline || answer.Affordance < 0
             || answer.Affordance >= options.Options.Length)
@@ -350,7 +350,7 @@ internal static class AbilityStructuralQueries
                 ? $"{title} · {current}/{threshold} → {result}/{threshold} threat"
                 : $"{title} · {current} → {result} threat";
         }
-        return title;
+        return AbilityEffectDescription.Choice(choice.Effect, title) ?? title;
     }
 
     private static (AbilityNumber Amount, bool IsAttack, bool Overkill)? ProjectedDamage(

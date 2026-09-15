@@ -95,7 +95,8 @@ The record can carry:
 - an alternative cost and its resource requirements;
 - the generators available on the current board;
 - values the player must define, such as X; and
-- several simultaneous resource components that share one payment.
+- several simultaneous resource components that share one payment; and
+- engine-projected resource types whose declaration has a proven numeric benefit.
 
 The engine must not choose generators for the player. The selected subset is
 part of the answer and is validated against the offered cost. When a generated
@@ -110,6 +111,11 @@ any type” has 2 legal readings, and their resource restrictions differ.
 Printed-resource requirements remain distinct from generated resource types. A
 wild icon can pay a typed cost but cannot be declared as a physical icon printed
 on a card.
+
+`PreferredResourceTypes` is empty unless the checked ability proves that one
+declared type improves a numeric result. A decision composer may pre-fill that
+single useful declaration as a reversible draft. Several preferences, or an
+observable effect the engine cannot rank, remain an explicit player choice.
 
 ## Legality
 

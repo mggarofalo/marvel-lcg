@@ -105,6 +105,48 @@ internal static class AbilityEffectStructure
         _ => [],
     };
 
+    /// <summary>
+    /// Resource declarations that provably increase a numeric result.
+    /// </summary>
+    /// <remarks>
+    /// This deliberately recognizes only a positive, constant numeric branch.
+    /// Other observable declarations remain player choices because the engine
+    /// cannot rank their consequences without inventing a gameplay preference.
+    /// </remarks>
+    internal static IEnumerable<char> PreferredPaidResourceTypes(AbilityEffect effect) =>
+        EffectNumbers(effect).SelectMany(PreferredPaidResourceTypes)
+            .Concat(AllEffectChildren(effect).SelectMany(PreferredPaidResourceTypes));
+
+    private static IEnumerable<char> PreferredPaidResourceTypes(AbilityNumber number)
+    {
+        if (number is AbilityNumber.Conditional
+            {
+                Test: AbilityCondition.PaidWithResource paid,
+                Then: AbilityNumber.Constant then,
+                Else: AbilityNumber.Constant otherwise,
+            }
+            && then.Value > otherwise.Value)
+        {
+            yield return paid.Resource;
+        }
+
+        IEnumerable<AbilityNumber> children = number switch
+        {
+            AbilityNumber.Conditional conditional => [conditional.Then, conditional.Else],
+            AbilityNumber.Sum sum => sum.Operands,
+            AbilityNumber.Product product => product.Operands,
+            AbilityNumber.Minimum minimum => minimum.Operands,
+            _ => [],
+        };
+        foreach (AbilityNumber child in children)
+        {
+            foreach (char resource in PreferredPaidResourceTypes(child))
+            {
+                yield return resource;
+            }
+        }
+    }
+
     internal static ImmutableArray<AbilityEffect> OrderedEffects(AbilityEffect effect) => effect switch
     {
         AbilityEffect.Sequence sequence => sequence.Effects,

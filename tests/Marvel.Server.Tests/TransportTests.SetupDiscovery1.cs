@@ -207,6 +207,17 @@ public sealed class TransportSetupDiscoveryTests : TransportTestBase
     }
 
     [Fact]
+    public void PreferredResourceDeclarationsHaveAPinnedWireField()
+    {
+        var response = new EngineResponse(EngineProtocol.Version, "preferred-declaration", "game", Capability: null, Prompt: new Prompt(0, Question.Element, TimingPriority.Untimed, "PlayCard", "Pay", Cancellable: false, [new Affordance(7, "Play", 20, World.Scenario, "Play card", Costs: [new CostOption(20, "2", Sources: [new ResourceSource(40, "GG")], DeclarationSensitive: true, PreferredResourceTypes: "B")])]), Events: []);
+        using JsonDocument document = JsonDocument.Parse(EngineJson.Write(response));
+        JsonElement cost = document.RootElement.GetProperty("prompt").GetProperty("affordances")[0].GetProperty("costs")[0];
+        Assert.Equal("B", cost.GetProperty("preferred_resource_types").GetString());
+        EngineResponse restored = EngineJson.ReadResponse(EngineJson.Write(response));
+        Assert.Equal("B", restored.Prompt!.Affordances[0].CostOptions[0].PreferredResourceTypes);
+    }
+
+    [Fact]
     public void FramingPinsTheLengthAndRejectsOversizedPayloads()
     {
         using var frame = new MemoryStream();

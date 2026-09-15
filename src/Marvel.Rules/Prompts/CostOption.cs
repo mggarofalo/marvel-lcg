@@ -34,6 +34,11 @@ namespace Marvel.Rules.Prompts;
 /// was declared as. False lets a client choose an equivalent declaration
 /// without asking the player; it does not remove the declaration from the answer.
 /// </param>
+/// <param name="PreferredResourceTypes">
+/// Resource types whose declaration has an engine-projected benefit for this
+/// action. Empty when no single preference is proven. This is a draft hint, not
+/// payment authority; the submitted allocation is still validated normally.
+/// </param>
 /// <remarks>
 /// <para>
 /// <b>Generation and payment are two things, and this record only describes the
@@ -70,7 +75,8 @@ public sealed record CostOption(
     IReadOnlyList<ResourceSource>? Sources = null,
     IReadOnlyList<VariableRequest>? Variables = null,
     IReadOnlyList<ResourceCost>? Components = null,
-    bool DeclarationSensitive = false)
+    bool DeclarationSensitive = false,
+    string PreferredResourceTypes = "")
 {
     /// <summary>Whether the cost has a second legal reading.</summary>
     public bool HasAlternative => OrCost.Length > 0;

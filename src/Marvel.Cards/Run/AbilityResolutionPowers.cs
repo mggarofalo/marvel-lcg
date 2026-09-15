@@ -198,7 +198,7 @@ internal static class AbilityResolutionPowers
             AnchorPlayer: ability.Player,
             Label: found.Name,
             Targets: AbilityCostSelection.Ask(world, ability.Player, found.Cost),
-            Costs: price is null ? null : [price]);
+            Costs: price is null ? null : [price], Description: AbilityEffectDescription.Summary(found.Effect));
     }
 
     /// <inheritdoc/>
