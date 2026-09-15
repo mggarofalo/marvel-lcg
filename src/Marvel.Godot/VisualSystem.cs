@@ -210,10 +210,10 @@ public static class VisualSystem
             Scale(400, scale), Scale(560, scale),
             ShowSubtitle: true, ShowTraits: true, ShowPrintedStats: true),
         CardDisplaySize.Board => new(
-            Scale(156, scale), Scale(175, scale),
+            Scale(176, scale), Scale(208, scale),
             ShowSubtitle: false, ShowTraits: false, ShowPrintedStats: true),
         CardDisplaySize.Hand => new(
-            Scale(144, scale), Scale(162, scale),
+            Scale(156, scale), Scale(184, scale),
             ShowSubtitle: false, ShowTraits: false, ShowPrintedStats: false),
         // The opening hand is the one supported six-card decision. Its scale is
         // deliberately capped so 150% preserves six independently reachable

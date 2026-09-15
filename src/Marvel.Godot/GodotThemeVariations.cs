@@ -19,6 +19,10 @@ public static class GodotThemeVariations
     public const string TabletopDock = nameof(TabletopDock);
     public const string TabletopShelf = nameof(TabletopShelf);
     public const string TabletopSeatStrip = nameof(TabletopSeatStrip);
+    public const string TabletopEncounterRail = nameof(TabletopEncounterRail);
+    public const string TabletopPlayerRail = nameof(TabletopPlayerRail);
+    public const string TabletopZone = nameof(TabletopZone);
+    public const string TabletopPile = nameof(TabletopPile);
     public const string StatusPanel = nameof(StatusPanel);
     public const string DangerStatusPanel = nameof(DangerStatusPanel);
     public const string TightStack = nameof(TightStack);
