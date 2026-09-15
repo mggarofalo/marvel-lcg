@@ -20,10 +20,15 @@ public sealed partial class DecisionPanel : VBoxContainer
     internal bool mulliganChoiceSheetOpen;
     private bool compactMulliganChrome;
     private BoardRenderResult? mulliganBoard;
-    private Control? cardHoverOwner;
+    private readonly CardPreviewOwnership cardPreview = new();
+    internal CardPreviewOwnership CardPreview => cardPreview;
     private readonly DecisionPanelLifecycle lifecycle;
     internal WorldDescriptor? world;
-    public DecisionPanel() => lifecycle = new DecisionPanelLifecycle(this);
+    public DecisionPanel()
+    {
+        lifecycle = new DecisionPanelLifecycle(this);
+        cardPreview.Changed += id => CardHovered?.Invoke(id);
+    }
     /// <summary>Raised with one answer built from the current prompt.</summary>
     public event Action<EngineDecision>? Submitted;
     /// <summary>Raised when an affordance or target points at a board object.</summary>
@@ -167,11 +172,7 @@ public sealed partial class DecisionPanel : VBoxContainer
 
     private void ClearPanel()
     {
-        if (cardHoverOwner is not null)
-        {
-            cardHoverOwner = null;
-            CardHovered?.Invoke(null);
-        }
+        cardPreview.Clear();
 
         foreach (Node child in GetChildren())
         {
@@ -272,23 +273,6 @@ public sealed partial class DecisionPanel : VBoxContainer
     private string? FocusKey(Control focused) => DecisionFocus.Key(this, focused);
 
     internal void BindAnchors(Control control, params int[] ids) => DecisionAnchorBinding.Bind(this, control, ids);
-
-    internal void NotifyCardHovered(Control owner, int id)
-    {
-        cardHoverOwner = owner;
-        CardHovered?.Invoke(id);
-    }
-
-    internal void NotifyCardExited(Control owner)
-    {
-        if (!ReferenceEquals(cardHoverOwner, owner))
-        {
-            return;
-        }
-
-        cardHoverOwner = null;
-        CardHovered?.Invoke(null);
-    }
 
     internal static string NodeKey(string value) => new(
         value.Select(character => char.IsLetterOrDigit(character) ? character : '_').ToArray());
