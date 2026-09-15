@@ -104,6 +104,12 @@ internal static class TabletopRailRenderer
         ICardArtProvider? art,
         bool compact)
     {
+        TabletopAreaObject presentation = TabletopAreaObject.From(area);
+        if (presentation.IsPile)
+        {
+            return Pile(presentation, result, scale, art);
+        }
+
         CardDisplaySize size = compact ? CardDisplaySize.Hand : CardDisplaySize.Board;
         int count = area.Cards.Sum(card => card.Count) + area.Removed.Sum(card => card.Count);
         var panel = new PanelContainer
@@ -131,6 +137,39 @@ internal static class TabletopRailRenderer
             cards.AddChild(Label("Empty", GodotThemeVariations.MutedText));
         }
         stack.AddChild(cards);
+        panel.AddChild(stack);
+        return panel;
+    }
+
+    private static PanelContainer Pile(
+        TabletopAreaObject pile,
+        BoardRenderResult result,
+        InterfaceScale scale,
+        ICardArtProvider? art)
+    {
+        CardLayoutMetrics card = VisualSystem.Card(CardDisplaySize.Hand, scale);
+        var panel = new PanelContainer
+        {
+            Name = $"Pile{pile.Area.Id}",
+            CustomMinimumSize = new Vector2(card.Width, card.MinimumHeight + 46),
+            SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin,
+            ThemeTypeVariation = GodotThemeVariations.TabletopShelf,
+            TooltipText = $"{pile.Area.Title}. {pile.Area.Context}",
+        };
+        var stack = new VBoxContainer { ThemeTypeVariation = GodotThemeVariations.TightStack };
+        stack.AddChild(Label(pile.Area.Title, GodotThemeVariations.Caption, wrap: true));
+        var inspect = new Button
+        {
+            Name = $"InspectPile{pile.Area.Id}",
+            Text = $"▰  {pile.Count} CARDS\n{pile.Detail}",
+            Alignment = HorizontalAlignment.Left,
+            Disabled = pile.InspectionOrder.Count == 0,
+            TooltipText = pile.InspectionOrder.Count == 0
+                ? $"{pile.Count} concealed cards"
+                : $"Inspect {pile.Area.Title.ToLowerInvariant()}, top card first.",
+        };
+        inspect.Pressed += () => TabletopPileInspector.Show(inspect, pile, result, scale, art);
+        stack.AddChild(inspect);
         panel.AddChild(stack);
         return panel;
     }

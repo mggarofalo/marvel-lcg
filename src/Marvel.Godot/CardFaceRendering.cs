@@ -280,6 +280,7 @@ internal static class CardFaceRendering
         content.AddChild(Label(card.Title, GodotThemeVariations.CardTitle, "Title", wrap: true));
 
         IReadOnlyList<BoardFieldPresentation> values = CompactValues(card, size);
+        BoardFieldPresentation? schemeThreat = SchemeThreatBadge.Add(content, card, values);
         BoardFieldPresentation[] summary = [.. values.Where(value =>
             !IsCompactProgressValue(value) && value.Name != "RES")];
         if (summary.Length > 0)
@@ -295,7 +296,7 @@ internal static class CardFaceRendering
         {
             content.AddChild(ResourceValue(resource, scale));
         }
-        BoardFieldPresentation[] progress = [.. values.Where(IsCompactProgressValue)];
+        BoardFieldPresentation[] progress = [.. values.Where(value => IsCompactProgressValue(value) && value != schemeThreat)];
         if (progress.Length > 0)
         {
             content.AddChild(ValueStrip(
@@ -311,7 +312,6 @@ internal static class CardFaceRendering
         }
         return content;
     }
-
     private static HFlowContainer ResourceValue(
         BoardFieldPresentation resource,
         InterfaceScale scale)

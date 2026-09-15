@@ -58,6 +58,57 @@ public sealed class TabletopRailPlanTests
         Assert.Empty(plan.NearShelf);
     }
 
+    [Theory]
+    [InlineData("DiscardPile")]
+    [InlineData("EncounterDiscardPile")]
+    [InlineData("AsideDeck")]
+    public void StoredCardsBecomeOneTopFirstInspectablePile(string zone)
+    {
+        BoardAreaPresentation area = Area(12, 0, zone, BoardAreaProminence.Supporting) with
+        {
+            Cards = [Card(120) with { Title = "Bottom" }, Card(121) with { Title = "Top" }],
+        };
+
+        TabletopAreaObject pile = TabletopAreaObject.From(area);
+
+        Assert.True(pile.IsPile);
+        Assert.Equal(2, pile.Count);
+        Assert.Equal(["Top", "Bottom"], pile.InspectionOrder.Select(card => card.Title));
+        Assert.Equal("Top", pile.Top!.Title);
+    }
+
+    [Fact]
+    public void ConcealedPileRetainsItsCountWithoutOfferingReadableCards()
+    {
+        BoardAreaPresentation area = Area(
+            13, -1, "AsideDeck", BoardAreaProminence.Supporting) with
+        {
+            Cards = [Card(130) with
+            {
+                TargetId = null, Count = 5, Concealed = true, Back = "PLAYER",
+            }],
+        };
+
+        TabletopAreaObject pile = TabletopAreaObject.From(area);
+
+        Assert.Equal(5, pile.Count);
+        Assert.Empty(pile.InspectionOrder);
+        Assert.Null(pile.Top);
+        Assert.Equal("PLAYER back · order hidden", pile.Detail);
+    }
+
+    [Fact]
+    public void LiveTableauAreaDoesNotBecomeAPile()
+    {
+        TabletopAreaObject area = TabletopAreaObject.From(
+            Area(14, -1, "SideSchemesArea", BoardAreaProminence.Live) with
+            {
+                Cards = [Card(140)],
+            });
+
+        Assert.False(area.IsPile);
+    }
+
     [Fact]
     public void SeatMarkersKeepEachAuthoritativeRoleSeparate()
     {

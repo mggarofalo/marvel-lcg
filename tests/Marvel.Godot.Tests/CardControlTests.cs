@@ -243,6 +243,10 @@ public sealed class CardControlTests
         Assert.Contains(activeValues, value => value.Name == "CRISIS" && value.Value == "1");
         Assert.DoesNotContain(activeValues, value => value.Name == "HAZARD");
         Assert.DoesNotContain(activeValues, value => value.Name == "Stage");
+        Assert.Equal(
+            "THREAT  ◆ 3",
+            SchemeThreatBadge.LabelText(
+                Assert.Single(activeValues, value => value.Name == "THREAT")));
     }
 
     [Fact]
