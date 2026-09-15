@@ -14,7 +14,6 @@ public sealed class DecisionComposer
     private readonly List<int> targets = [];
     private readonly Dictionary<string, long> values = new(StringComparer.Ordinal);
     private int selectedCost = -1;
-
     /// <summary>Creates an empty draft for the current authorized prompt.</summary>
     public DecisionComposer(Prompt prompt) =>
         Prompt = prompt ?? throw new ArgumentNullException(nameof(prompt));
@@ -201,12 +200,13 @@ public sealed class DecisionComposer
         }
 
         bool isAutomatic = UsesAutomaticResourceAllocation;
-        if (wasAutomatic || isAutomatic)
+        bool usesSuggestion = ResourcePaymentDraft.CanSuggest(SelectedCostOption(), resources);
+        if (wasAutomatic || isAutomatic || usesSuggestion)
         {
             assignments.Clear();
         }
 
-        if (isAutomatic)
+        if (isAutomatic || usesSuggestion)
         {
             ApplyAutomaticResourceAllocation();
         }
@@ -276,7 +276,7 @@ public sealed class DecisionComposer
     public void Define(string name, long value)
     {
         values[name] = value;
-        if (UsesAutomaticResourceAllocation)
+        if (UsesAutomaticResourceAllocation || ResourcePaymentDraft.CanSuggest(SelectedCostOption(), resources))
         {
             assignments.Clear();
             ApplyAutomaticResourceAllocation();
@@ -429,7 +429,7 @@ public sealed class DecisionComposer
     {
         CostOption cost = SelectedCostOption()!;
         IReadOnlyList<ResourceAllocation>? allocation =
-            ResourcePayment.Allocate(cost, resources, values);
+            ResourcePaymentDraft.Allocate(cost, resources, values);
         if (allocation is null)
         {
             return;

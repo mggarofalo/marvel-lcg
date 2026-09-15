@@ -10,7 +10,6 @@ namespace Marvel.Cards.Run;
 
 internal static class AbilityPaymentPricing
 {
-
     /// <summary>What an action's cost looks like on a prompt, or null.</summary>
     /// <remarks>
     /// Resource generation travels in CostOption. Card-valued payments use a
@@ -169,7 +168,8 @@ internal static class AbilityPaymentPricing
                 ? [required]
                 : null,
             Sources: EventGenerators(world, card, player, effect, resourceAbilities),
-            DeclarationSensitive: PaidResourceQueries(effect).Any());
+            DeclarationSensitive: PaidResourceQueries(effect).Any(),
+            PreferredResourceTypes: string.Concat(PreferredPaidResourceTypes(effect).Distinct()));
     }
 
     internal static List<ResourceSource> EventGenerators(
