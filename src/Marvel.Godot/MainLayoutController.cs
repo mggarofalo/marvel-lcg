@@ -171,6 +171,12 @@ internal sealed class MainLayoutController
 
     private void ConfigurePageScrolling(bool gameplay, bool desktopGameplay)
     {
+        PanelContainer shell = main.GetNode<PanelContainer>("Margin/Shell");
+        shell.CustomMinimumSize = new Vector2(
+            desktopGameplay && main.interfaceScale > InterfaceScale.Standard
+                ? main.pageScroll.Size.X
+                : 0,
+            shell.CustomMinimumSize.Y);
         main.pageScroll.HorizontalScrollMode = gameplay
             ? ScrollContainer.ScrollMode.Disabled
             : ScrollContainer.ScrollMode.Auto;

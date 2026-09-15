@@ -50,6 +50,9 @@ func _mulligan_table_layout_is_resolved() -> bool:
 		return false
 	if OS.get_environment("MARVEL_SMOKE_VIEWPORT") == "1920x1080":
 		var board := _node("Play/Board") as Control
+		var shell := main.get_node("Margin/Shell") as Control
+		var page_rect := page.get_global_rect()
+		var shell_rect := shell.get_global_rect()
 		var table_rect := table.get_global_rect()
 		var villain_rect := villain.get_global_rect()
 		var player_rect := player.get_global_rect()
@@ -63,6 +66,12 @@ func _mulligan_table_layout_is_resolved() -> bool:
 				table_rect,
 				villain_rect,
 				player_rect,
+			])
+			return false
+		if shell_rect.size.x < page_rect.size.x - 2.0:
+			_fail("the desktop shell collapsed inside its viewport: page=%s shell=%s" % [
+				page_rect,
+				shell_rect,
 			])
 			return false
 	var table_scroll_is_bounded := table.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED \
