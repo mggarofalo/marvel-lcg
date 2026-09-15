@@ -1,28 +1,46 @@
-return RunTests();
+return RunNativeSmoke();
 
-static int RunTests()
+static int RunNativeSmoke()
 {
     string root = RepositoryRoot();
-    var start = new System.Diagnostics.ProcessStartInfo("dotnet")
+    string godot = ResolveGodot();
+    var start = new System.Diagnostics.ProcessStartInfo("pwsh")
     {
         UseShellExecute = false,
         WorkingDirectory = root,
     };
-    start.ArgumentList.Add("test");
-    start.ArgumentList.Add("tests/Marvel.UnitTests.slnx");
-    start.ArgumentList.Add("--configuration");
-    start.ArgumentList.Add("Release");
-    start.ArgumentList.Add("--nologo");
-    start.ArgumentList.Add("--no-build");
+    start.ArgumentList.Add("-NoProfile");
+    start.ArgumentList.Add("-File");
+    start.ArgumentList.Add(System.IO.Path.Combine(root, "tools", "godot-smoke.ps1"));
+    start.ArgumentList.Add("-GodotBin");
+    start.ArgumentList.Add(godot);
+    start.ArgumentList.Add("-Representative");
 
     using var process = System.Diagnostics.Process.Start(start)
-        ?? throw new InvalidOperationException("Could not start dotnet");
-    if (!process.WaitForExit(TimeSpan.FromMinutes(15)))
+        ?? throw new InvalidOperationException("Could not start native Godot smoke");
+    if (!process.WaitForExit(TimeSpan.FromMinutes(10)))
     {
         process.Kill(true);
-        throw new TimeoutException("Unit tests did not finish within fifteen minutes");
+        throw new TimeoutException("Native Godot smoke did not finish within ten minutes");
     }
     return process.ExitCode;
+}
+
+static string ResolveGodot()
+{
+    var configured = Environment.GetEnvironmentVariable("GODOT_BIN");
+    if (!string.IsNullOrWhiteSpace(configured) && File.Exists(configured))
+    {
+        return configured;
+    }
+    const string windowsDefault =
+        @"C:\Tools\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64_console.exe";
+    if (OperatingSystem.IsWindows() && File.Exists(windowsDefault))
+    {
+        return windowsDefault;
+    }
+    throw new InvalidOperationException(
+        "Set GODOT_BIN to the Godot 4.7 .NET executable before committing.");
 }
 
 static string RepositoryRoot()

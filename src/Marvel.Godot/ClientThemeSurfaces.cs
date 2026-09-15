@@ -13,6 +13,14 @@ internal static class ClientThemeSurfaces
         Panel(theme, GodotThemeVariations.TabletopDock, Flat(raised, Alpha(outline, 0.38f), 1, 12, M(16, 12, 16, 12)));
         Panel(theme, GodotThemeVariations.TabletopShelf, Flat(raised, Alpha(outline, 0.38f), 1, 12, M(16, 8, 16, 8)));
         Panel(theme, GodotThemeVariations.TabletopSeatStrip, Flat(raised, Alpha(outline, 0.5f), 1, 10, M(16, 0, 16, 0)));
+        Panel(theme, GodotThemeVariations.TabletopEncounterRail, FlatEdges(
+            Alpha(encounter, 0.035f), encounter, 0, M(12, 10, 12, 16), M(0, 0, 0, 2)));
+        Panel(theme, GodotThemeVariations.TabletopPlayerRail, FlatEdges(
+            Alpha(hero, 0.035f), hero, 0, M(12, 16, 12, 10), M(0, 2, 0, 0)));
+        Panel(theme, GodotThemeVariations.TabletopZone, Flat(
+            Alpha(raised, 0.16f), Alpha(outline, 0.18f), 0, 8, M(8, 6, 8, 8)));
+        Panel(theme, GodotThemeVariations.TabletopPile, FlatEdges(
+            raised.Darkened(0.04f), Alpha(outline, 0.62f), 7, M(10, 8, 12, 10), M(1, 1, 5, 5)));
         Panel(theme, GodotThemeVariations.StatusPanel, Flat(Alpha(amber, 0.14f), Alpha(amber, 0.62f), 1, 8, M(14, 9, 14, 9), borderLeft: 5));
         Panel(theme, GodotThemeVariations.DangerStatusPanel, Flat(Alpha(encounter, 0.2f), encounter, 2, 8, M(14, 9, 14, 9), borderLeft: 7));
         Panel(theme, GodotThemeVariations.BoardArea, Flat(raised, Alpha(outline, 0.5f), 1, 10, M(16, 14, 16, 14)));
@@ -36,14 +44,19 @@ internal static class ClientThemeSurfaces
 
     private static StyleBoxFlat Flat(
         Color background, Color border, int width, int radius,
-        Vector4 margins, int? borderLeft = null, int? borderBottom = null) => new()
+        Vector4 margins, int? borderLeft = null, int? borderBottom = null) =>
+        FlatEdges(background, border, radius, margins, new Vector4(
+            borderLeft ?? width, width, width, borderBottom ?? width));
+
+    private static StyleBoxFlat FlatEdges(
+        Color background, Color border, int radius, Vector4 margins, Vector4 borders) => new()
         {
             BgColor = background,
             BorderColor = border,
-            BorderWidthLeft = borderLeft ?? width,
-            BorderWidthTop = width,
-            BorderWidthRight = width,
-            BorderWidthBottom = borderBottom ?? width,
+            BorderWidthLeft = (int)borders.X,
+            BorderWidthTop = (int)borders.Y,
+            BorderWidthRight = (int)borders.Z,
+            BorderWidthBottom = (int)borders.W,
             CornerRadiusTopLeft = radius,
             CornerRadiusTopRight = radius,
             CornerRadiusBottomLeft = radius,

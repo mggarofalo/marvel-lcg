@@ -18,7 +18,9 @@ internal static class TabletopRailRenderer
         var panel = new PanelContainer
         {
             Name = name,
-            ThemeTypeVariation = GodotThemeVariations.BoardArea,
+            ThemeTypeVariation = dropSeat is null
+                ? GodotThemeVariations.TabletopEncounterRail
+                : GodotThemeVariations.TabletopPlayerRail,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
         var stack = new VBoxContainer { ThemeTypeVariation = GodotThemeVariations.TightStack };
@@ -120,7 +122,8 @@ internal static class TabletopRailRenderer
             SizeFlagsHorizontal = compact
                 ? Control.SizeFlags.ShrinkBegin
                 : Control.SizeFlags.ExpandFill,
-            ThemeTypeVariation = GodotThemeVariations.BoardArea,
+            SizeFlagsVertical = Control.SizeFlags.ShrinkBegin,
+            ThemeTypeVariation = GodotThemeVariations.TabletopZone,
             TooltipText = $"{area.Title}. {area.Context}",
         };
         var stack = new VBoxContainer { ThemeTypeVariation = GodotThemeVariations.TightStack };
@@ -136,9 +139,11 @@ internal static class TabletopRailRenderer
             .Where(card => card.StageRole == BoardStageRole.Upcoming)];
         int renderedCards = current.Length + area.Removed.Count;
         int columns = Math.Clamp(renderedCards, 1, 3);
-        float cardWidth = VisualSystem.Card(size, scale).Width;
+        float rowWidth = current.Concat(area.Removed)
+            .Take(columns)
+            .Sum(card => CardControl.LayoutFor(card, size, scale).Width);
         panel.CustomMinimumSize = new Vector2(
-            cardWidth * columns + Math.Max(0, columns - 1) * 8 + 32,
+            rowWidth + Math.Max(0, columns - 1) * 8 + 32,
             panel.CustomMinimumSize.Y);
         panel.SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin;
         result.Inspector.Register([.. current.Concat(upcoming)]);
@@ -167,7 +172,8 @@ internal static class TabletopRailRenderer
             Name = $"Pile{pile.Area.Id}",
             CustomMinimumSize = new Vector2(Math.Min(120, card.Width), 72),
             SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin,
-            ThemeTypeVariation = GodotThemeVariations.TabletopShelf,
+            SizeFlagsVertical = Control.SizeFlags.ShrinkBegin,
+            ThemeTypeVariation = GodotThemeVariations.TabletopPile,
             TooltipText = $"{pile.Area.Title}. {pile.Area.Context}",
         };
         var stack = new VBoxContainer { ThemeTypeVariation = GodotThemeVariations.TightStack };

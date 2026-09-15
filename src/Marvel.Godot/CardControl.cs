@@ -94,13 +94,13 @@ public sealed partial class CardControl : PanelContainer
         return control;
     }
 
-    private static CardLayoutMetrics LayoutFor(
+    internal static CardLayoutMetrics LayoutFor(
         BoardCardPresentation card,
         CardDisplaySize size,
         InterfaceScale scale)
     {
         CardLayoutMetrics layout = VisualSystem.Card(size, scale);
-        return size == CardDisplaySize.Full
+        return size is CardDisplaySize.Full or CardDisplaySize.Board
             && VisualSystem.CardFrame(card.Kind).Family == CardFrameFamily.Scheme
                 ? layout with
                 {
@@ -110,12 +110,10 @@ public sealed partial class CardControl : PanelContainer
                 : layout;
     }
 
-    private static string VariationFor(BoardCardPresentation card, CardDisplaySize size) =>
+    internal static string VariationFor(BoardCardPresentation card, CardDisplaySize size) =>
         card.Concealed
             ? GodotThemeVariations.ConcealedCard
-            : size == CardDisplaySize.Full
-                ? VisualSystem.CardFrame(card.Kind).ThemeVariation
-                : GodotThemeVariations.BoardCard;
+            : VisualSystem.CardFrame(card.Kind).ThemeVariation;
 
     internal static float CompactHeight(
         BoardCardPresentation card,
