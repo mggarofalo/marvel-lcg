@@ -16,10 +16,10 @@ dotnet test tests/Marvel.UnitTests.slnx -c Release --no-build
 assembly. Tests that exercise a particular transcript call the single-scenario
 runner and do not execute the corpus as a side effect.
 
-This lane is the useful local pre-push check. It is intentionally not installed
-as a Git hook: hooks are local, bypassable and awkward to keep identical on
-Windows and Linux. A developer who wants a hook can have `pre-push` invoke the
-second command after a Release build, but CI remains authoritative.
+This lane is also the local pre-commit gate. The hook builds the complete
+solution in Release before running the focused tests with `--no-build`, so a
+project omitted from the fast test graph cannot escape warnings-as-errors.
+CI remains authoritative across Windows, Linux and the native boundaries.
 
 ## Integration
 

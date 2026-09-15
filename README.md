@@ -49,7 +49,8 @@ python -m pip install -r requirements-dev.txt
 Each commit rejects non-framework partial types in application source, runs
 Lizard across every nonignored C# and GDScript file with a maximum CCN of 10,
 rejects nonignored C#, C# script, GDScript, PowerShell and shell files over 500
-physical lines, and runs the fast unit-test solution. Set
+physical lines, builds the complete solution in Release with warnings as errors,
+and runs the fast unit-test solution against that exact build. Set
 `HUSKY=0` only when diagnosing the hook itself; it is not a way to merge code
 that fails a gate.
 
