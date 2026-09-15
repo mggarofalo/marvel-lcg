@@ -156,25 +156,39 @@ public sealed partial class CardControl : PanelContainer
     /// <summary>Shows prompt-authorized interaction state with a readable marker as well as color.</summary>
     internal void SetInteractionCue(CardInteractionCue value)
     {
-        interactionCue = value;
-        if (interactionLabel is not null)
+        Label? cue = interactionLabel;
+        if (cue is null
+            || !InteractionControl.IsUsable(this)
+            || !InteractionControl.IsUsable(cue))
         {
-            interactionLabel.Text = CueText(value);
-            interactionLabel.Visible = value != CardInteractionCue.None;
+            return;
         }
+
+        interactionCue = value;
+        cue.Text = CueText(value);
+        cue.Visible = value != CardInteractionCue.None;
         RefreshTreatment();
     }
 
     /// <summary>Adds a prompt-authorized control in this card's reserved action strip.</summary>
-    internal void AddInteractionControl(Button control)
+    internal bool AddInteractionControl(Button control)
     {
         ArgumentNullException.ThrowIfNull(control);
-        interactionCue &= ~CardInteractionCue.OfferedAction;
-        if (interactionLabel is not null)
+        Label? cue = interactionLabel;
+        GridContainer? directControls = interactionControls;
+        if (cue is null
+            || directControls is null
+            || !InteractionControl.IsUsable(this)
+            || !InteractionControl.IsUsable(cue)
+            || !InteractionControl.IsUsable(directControls))
         {
-            interactionLabel.Text = CueText(interactionCue);
-            interactionLabel.Visible = interactionCue != CardInteractionCue.None;
+            control.QueueFree();
+            return false;
         }
+
+        interactionCue &= ~CardInteractionCue.OfferedAction;
+        cue.Text = CueText(interactionCue);
+        cue.Visible = interactionCue != CardInteractionCue.None;
         control.CustomMinimumSize = new Vector2(
             0, VisualSystem.Controls(interactionScale).MinimumPointerTarget);
         control.SizeFlagsHorizontal = SizeFlags.ExpandFill;
@@ -182,8 +196,8 @@ public sealed partial class CardControl : PanelContainer
         {
             parent.QueueSort();
         }
-        (interactionControls ?? throw new InvalidOperationException(
-            "card interaction controls are unavailable")).AddChild(control);
+        directControls.AddChild(control);
+        return true;
     }
 
     /// <summary>Removes a prior prompt's controls and restores this card's base surface height.</summary>

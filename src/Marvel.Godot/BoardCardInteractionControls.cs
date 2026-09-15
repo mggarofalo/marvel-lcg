@@ -40,7 +40,7 @@ internal sealed class BoardCardInteractionControls
             BoardInteractionCueProjection.From(composer, prompt);
         foreach ((int id, List<CardControl> cards) in visible)
         {
-            foreach (CardControl card in cards)
+            foreach (CardControl card in cards.Where(InteractionControl.IsUsable))
             {
                 card.SetInteractionCue(cues.GetValueOrDefault(id));
             }
@@ -102,7 +102,11 @@ internal sealed class BoardCardInteractionControls
             requestedFocus = key;
             Activate(card, descriptor.Intent);
         };
-        card.AddInteractionControl(button);
+        if (!card.AddInteractionControl(button))
+        {
+            focusKeys.Remove(button);
+            return;
+        }
         if (!controls.TryGetValue(card, out List<Button>? buttons))
         {
             buttons = [];
