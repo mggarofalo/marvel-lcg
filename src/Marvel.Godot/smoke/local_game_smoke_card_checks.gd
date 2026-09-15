@@ -89,9 +89,10 @@ func _mulligan_cards_are_safe() -> bool:
 
 
 func _tabletop_essentials_are_safe() -> bool:
+	var expected_width := mini(_scaled_metric(156), 156)
 	for title in ["Rhino", "Peter Parker", "The Break-In!"]:
 		var card := _tabletop_card_named(title)
-		if card == null or card.custom_minimum_size.x < 156:
+		if card == null or card.custom_minimum_size.x < expected_width:
 			_fail("the tabletop essential '%s' did not retain readable board geometry" % title)
 			return false
 	var villain_text := _visible_text(_tabletop_card_named("Rhino"))

@@ -265,6 +265,17 @@ public sealed class VisualSystemTests
     }
 
     [Theory]
+    [InlineData(InterfaceScale.Percent50)]
+    [InlineData(InterfaceScale.Percent80)]
+    [InlineData(InterfaceScale.Standard)]
+    [InlineData(InterfaceScale.Percent120)]
+    [InlineData(InterfaceScale.Percent150)]
+    public void MulliganToggleRetainsTheDesktopPointerTargetFloor(InterfaceScale scale)
+    {
+        Assert.Equal(44, MulliganTableRenderer.ToggleMinimumHeight(scale));
+    }
+
+    [Theory]
     [InlineData("HERO", CardFrameFamily.Identity, GodotThemeVariations.IdentityCard)]
     [InlineData("UPGRADE", CardFrameFamily.Player, GodotThemeVariations.PlayerCard)]
     [InlineData("MINION", CardFrameFamily.Enemy, GodotThemeVariations.EnemyCard)]

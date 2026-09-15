@@ -205,12 +205,9 @@ internal static class MulliganTableRenderer
                     ToggleMode = true,
                     TooltipText = "Select this card for replacement. Space toggles this checkbox.",
                 };
-                InterfaceScale controlScale = scale > InterfaceScale.Standard
-                    ? InterfaceScale.Standard
-                    : scale;
                 discard.CustomMinimumSize = new Vector2(
                     0,
-                    VisualSystem.Controls(controlScale).MinimumPointerTarget);
+                    ToggleMinimumHeight(scale));
                 discard.Pressed += () => result.RequestMulliganTarget(id);
                 choice.AddChild(discard);
                 result.RegisterMulliganToggle(id, discard);
@@ -218,6 +215,13 @@ internal static class MulliganTableRenderer
 
             hand.AddChild(choice);
         }
+    }
+
+    internal static int ToggleMinimumHeight(InterfaceScale _)
+    {
+        // Card faces may compact, but desktop pointer targets retain their
+        // accessible physical size at every supported interface scale.
+        return VisualSystem.Controls(InterfaceScale.Standard).MinimumPointerTarget;
     }
 
     private static void AddCard(
