@@ -35,7 +35,9 @@ public sealed record BoardPresentation(IReadOnlyList<BoardAreaPresentation> Area
             .SelectMany(group => group.Select((area, ordinal) => (area.Id, ordinal)))
             .ToDictionary(pair => pair.Id, pair => pair.ordinal);
         BoardAreaPresentation[] areas = CombineProgressiveAreas(
-            [.. world.Areas.Select(area => Present(
+            [.. world.Areas
+                .Where(area => area.Zone != nameof(DeckType.StatusArea))
+                .Select(area => Present(
                 area,
                 players,
                 asideOrdinals.GetValueOrDefault(area.Id, -1)))]);

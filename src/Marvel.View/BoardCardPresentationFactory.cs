@@ -59,6 +59,7 @@ internal static class BoardCardPresentationFactory
             Classification = card.Face.PrintedStats.GetValueOrDefault("Class", string.Empty),
             Keywords = card.Face.Keywords, RulesText = card.Face.RulesText, RulesMarkup = card.Face.RulesMarkup,
             Damage = card.Face.Damage,
+            Statuses = card.State?.Statuses ?? [],
             Counters = card.Face.Counters.OrderBy(counter => counter.Key, StringComparer.Ordinal)
                 .Select(counter => new BoardFieldPresentation(Humanize(counter.Key, false).ToUpperInvariant(),
                     counter.Value.ToString(CultureInfo.InvariantCulture))).ToArray(),

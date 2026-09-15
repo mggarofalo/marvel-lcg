@@ -133,65 +133,45 @@ func _required_card_kinds_were_observed(observed: Dictionary) -> bool:
 func _upcoming_stages_are_safe() -> bool:
 	var disclosures := main.find_children(
 		"UpcomingStagesDisclosure", "Button", true, false)
-	if disclosures.is_empty():
-		_fail("progressive scenario areas have no upcoming-stages disclosure")
+	if not disclosures.is_empty():
+		_fail("upcoming stages permanently occupy the live table")
 		return false
-	for node in disclosures:
-		if not await _upcoming_disclosure_is_safe(node as Button):
-			return false
-	return await _upcoming_disclosures_survive_scale(disclosures.size())
-
-
-func _upcoming_disclosure_is_safe(disclosure: Button) -> bool:
-	if not disclosure.toggle_mode or "Upcoming stages" not in disclosure.text:
-		_fail("an upcoming-stages disclosure is not clearly labeled and collapsible")
+	var active_stage: Control = null
+	for candidate in main.find_children("ProceduralCard", "PanelContainer", true, false):
+		if candidate.find_child("SummaryValuesStage", true, false) != null:
+			active_stage = candidate as Control
+			break
+	if active_stage == null or not await _pointer_activate_card_body(active_stage):
+		_fail("the current villain stage cannot open its inspector")
 		return false
-	var cards := disclosure.get_parent().get_node("UpcomingStagesList") as VBoxContainer
-	if not await _pointer_activate(disclosure):
+	await process_frame
+	var inspector := main.get_node("CardInspector") as Control
+	var next := inspector.find_child("NextStage", true, false) as Button
+	var heading := inspector.find_child("Title", true, false) as Label
+	if not inspector.visible or next == null or heading == null \
+			or heading.text != "STAGE 1 OF 2" or next.disabled:
+		_fail("the current villain inspector does not expose bounded stage navigation")
 		return false
-	if not cards.visible:
-		_fail("opening upcoming stages did not reveal its compact list")
+	if not await _pointer_activate(next):
 		return false
-	for card in cards.find_children("ProceduralCard", "PanelContainer", true, false):
-		if not _upcoming_card_is_safe(card as Control):
-			return false
-	return true
-
-
-func _upcoming_card_is_safe(card: Control) -> bool:
-	var face := card.find_child("CardFace", true, false)
-	var back := card.find_child("CardBack", true, false)
-	if face != null and card.focus_mode != Control.FOCUS_ALL:
-		_fail("an upcoming stage cannot receive keyboard focus for inspection")
+	await process_frame
+	heading = inspector.find_child("Title", true, false) as Label
+	var previous := inspector.find_child("PreviousStage", true, false) as Button
+	if heading == null or heading.text != "STAGE 2 OF 2" \
+			or previous == null or previous.disabled:
+		_fail("the villain inspector did not navigate to the upcoming stage")
 		return false
-	if back != null and card.focus_mode != Control.FOCUS_NONE:
-		_fail("a concealed upcoming stage gained face-level focus behavior")
+	if not await _capture_checkpoint("card-inspector-villain-next-stage"):
 		return false
-	if card.find_child("ProgressValues", true, false) != null:
-		_fail("an upcoming stage competes with the current stage's live progress")
+	var escape := InputEventKey.new()
+	escape.keycode = KEY_ESCAPE
+	escape.pressed = true
+	render_viewport.push_input(escape)
+	render_viewport.push_input(InputEventKey.new())
+	await process_frame
+	if inspector.visible:
+		_fail("Escape did not close the stage inspector")
 		return false
-	return true
-
-
-func _upcoming_disclosures_survive_scale(expected_count: int) -> bool:
-	var slider := _node("Toolbar/InterfaceScale") as HSlider
-	var original := slider.value
-	for rebuilt_scale in [90.0 if original != 90.0 else 80.0, original]:
-		slider.value = rebuilt_scale
-		await process_frame
-		await process_frame
-		var rebuilt := main.find_children(
-			"UpcomingStagesDisclosure", "Button", true, false)
-		if rebuilt.size() != expected_count:
-			_fail("a board rebuild changed the upcoming-stages disclosure set")
-			return false
-		for node in rebuilt:
-			var disclosure := node as Button
-			var cards := disclosure.get_parent().get_node(
-				"UpcomingStagesList") as VBoxContainer
-			if not disclosure.button_pressed or not cards.visible:
-				_fail("an open upcoming-stages disclosure collapsed during board rebuild")
-				return false
 	return true
 
 

@@ -15,7 +15,10 @@ internal static class BoardInteractionRelationshipProjection
             return [];
         }
 
-        return prompt.Affordances.SingleOrDefault(affordance => affordance.Id == selected.Id)
-            ?.Relationships ?? [];
+        return [.. (prompt.Affordances.SingleOrDefault(affordance => affordance.Id == selected.Id)
+            ?.Relationships ?? [])
+            .Where(relationship => relationship.Related is not null
+                && relationship.Kind is RelationshipKind.OfferedTarget
+                    or RelationshipKind.OfferedGenerator)];
     }
 }

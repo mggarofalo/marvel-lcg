@@ -51,4 +51,7 @@ public sealed record BoardCardPresentation(
 
     /// <summary>Live counters currently on the card.</summary>
     public IReadOnlyList<BoardFieldPresentation> Counters { get; init; } = [];
+
+    /// <summary>Visible status cards hosted by this card, rendered on its face.</summary>
+    public IReadOnlyList<string> Statuses { get; init; } = [];
 }

@@ -92,7 +92,10 @@ internal static class TabletopRailRenderer
         }
 
         CardDisplaySize size = compact ? CardDisplaySize.Hand : CardDisplaySize.Board;
-        int count = area.Cards.Sum(card => card.Count) + area.Removed.Sum(card => card.Count);
+        int count = area.Cards
+            .Where(card => card.StageRole != BoardStageRole.Upcoming)
+            .Sum(card => card.Count)
+            + area.Removed.Sum(card => card.Count);
         var panel = new PanelContainer
         {
             Name = $"Area{area.Id}",
@@ -112,7 +115,12 @@ internal static class TabletopRailRenderer
             Name = "Cards",
             ThemeTypeVariation = GodotThemeVariations.CompactRow,
         };
-        AddCards(cards, area.Cards.Concat(area.Removed), result, size, scale, art);
+        BoardCardPresentation[] current = [.. area.Cards
+            .Where(card => card.StageRole != BoardStageRole.Upcoming)];
+        BoardCardPresentation[] upcoming = [.. area.Cards
+            .Where(card => card.StageRole == BoardStageRole.Upcoming)];
+        result.Inspector.Register([.. current.Concat(upcoming)]);
+        AddCards(cards, current.Concat(area.Removed), result, size, scale, art);
         if (cards.GetChildCount() == 0)
         {
             cards.AddChild(Label("Empty", GodotThemeVariations.MutedText));

@@ -46,7 +46,6 @@ public static class BoardRenderer
                     lane with { Areas = visibleAreas }, result, scale, expandedAreas, art));
             }
         }
-
         RenderHand(board, hand, handHeading, result, scale, art);
 
         return result;
@@ -176,7 +175,9 @@ public static class BoardRenderer
             Math.Max(1, DisplayServer.ScreenGetSize().X),
             Math.Max(1, DisplayServer.ScreenGetSize().Y),
             scale);
-        int cardCount = area.Cards.Sum(card => card.Count)
+        int cardCount = area.Cards
+            .Where(card => card.StageRole != BoardStageRole.Upcoming)
+            .Sum(card => card.Count)
             + area.Removed.Sum(card => card.Count);
         bool expanded = expandedAreas.TryGetValue(area.Id, out bool remembered)
             ? remembered
@@ -236,9 +237,8 @@ public static class BoardRenderer
             [.. area.Cards.Where(card => card.StageRole != BoardStageRole.Upcoming)];
         BoardCardPresentation[] upcomingStages =
             [.. area.Cards.Where(card => card.StageRole == BoardStageRole.Upcoming)];
+        result.Inspector.Register([.. primaryCards.Concat(upcomingStages)]);
         AddCards(body, primaryCards, "CARDS", area.Zone, result, scale, art);
-        BoardUpcomingStagesRenderer.Add(
-            body, upcomingStages, area.Id, result, scale, expandedAreas, art);
         if (area.Removed.Count > 0)
         {
             body.AddChild(new HSeparator());

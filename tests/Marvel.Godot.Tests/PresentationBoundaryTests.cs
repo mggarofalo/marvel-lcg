@@ -82,6 +82,7 @@ public sealed class PresentationBoundaryTests
             "Marvel.View.EventPresentation",
             "Marvel.View.PromptPresentation",
             "Marvel.View.PlayerSummaryDescriptor",
+            "Marvel.View.RelationshipKind",
             "Marvel.View.TableContextDescriptor",
             "Marvel.View.TableRelationshipDescriptor",
             "Marvel.View.WorldDescriptor");

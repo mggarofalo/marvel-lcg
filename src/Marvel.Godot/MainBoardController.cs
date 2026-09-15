@@ -15,6 +15,7 @@ internal sealed class MainBoardController : IDisposable
     private readonly BoardRelationshipOverlayController relationships;
     private readonly BoardRenderLifetime renderLifetime = new();
     private readonly MainTabletopController tabletop;
+    private readonly CardInspectorStageNavigation stageNavigation;
 
     internal MainBoardController(Main main)
     {
@@ -22,6 +23,7 @@ internal sealed class MainBoardController : IDisposable
         inspector = new CardInspectorFocus(main);
         relationships = new BoardRelationshipOverlayController(main);
         tabletop = new MainTabletopController(main);
+        stageNavigation = new CardInspectorStageNavigation(main);
     }
 
     internal void RenderGame(
@@ -48,7 +50,6 @@ internal sealed class MainBoardController : IDisposable
             response, previousOutcome, priorHistory, resetEvents, preserveEvents, operation);
         FinishRender(response, world, priorProgress, operation, reportNarrative, renderGeneration);
     }
-
     private void RenderCurrentResponse(
         EngineResponse response,
         WorldDescriptor world,
@@ -63,7 +64,6 @@ internal sealed class MainBoardController : IDisposable
         main.decisions.BindMulliganTargets(main.boardRender);
         main.layoutController.ApplyResponsivePlayLayout();
     }
-
     private void FinishRender(
         EngineResponse response,
         WorldDescriptor world,
@@ -92,7 +92,6 @@ internal sealed class MainBoardController : IDisposable
             }).CallDeferred();
         }
     }
-
     private void ResetPageScroll(int renderGeneration)
     {
         if (IsCurrentRender(renderGeneration) && InteractionControl.IsUsable(main.pageScroll))
@@ -100,7 +99,6 @@ internal sealed class MainBoardController : IDisposable
             main.pageScroll.ScrollVertical = 0;
         }
     }
-
     internal void RenderBoard(
         WorldDescriptor world, Prompt? prompt = null, int? renderGeneration = null)
     {
@@ -120,11 +118,10 @@ internal sealed class MainBoardController : IDisposable
         rendered.CardActivated += (card, control) => ToggleCardInspector(card, control);
         rendered.IsCurrent = () => ReferenceEquals(main.boardRender, rendered)
             && IsCurrentRender(renderGeneration ?? renderLifetime.Current);
-        relationships.Bind(rendered, main.boardPresentation.Relationships);
+        relationships.Bind(rendered);
         main.decisions.BindMulliganTargets(rendered);
         inspector.Hide();
     }
-
     internal void FocusAnchors(IReadOnlyList<int> ids) => tabletop.FocusAnchors(ids);
 
     internal void FocusEventAnchors(IReadOnlyList<int> ids) => tabletop.FocusAnchors(ids);
@@ -200,6 +197,9 @@ internal sealed class MainBoardController : IDisposable
         detail.FocusMode = Control.FocusModeEnum.All;
         CardInspectorFocus.IgnoreMouseRecursively(detail);
         main.cardInspectorContent.AddChild(detail);
+        stageNavigation.Configure(card, source, pinned
+            ? main.boardRender?.Inspector.For(card.TargetId) ?? []
+            : []);
         ConfigureInspectorFrame();
         PositionInspector(card, source, pinned);
         ShowInspector(detail, sourceId, pinned, inspectorGeneration);
@@ -281,7 +281,10 @@ internal sealed class MainBoardController : IDisposable
             ? Control.MouseFilterEnum.Stop
             : Control.MouseFilterEnum.Ignore;
         main.cardInspectorBackdrop.Visible = pinned;
-        main.cardInspectorClose.Visible = false;
+        if (!stageNavigation.IsVisible)
+        {
+            main.cardInspectorClose.Visible = false;
+        }
         main.cardInspector.Visible = true;
         if (pinned)
         {
@@ -290,7 +293,8 @@ internal sealed class MainBoardController : IDisposable
         }
     }
 
-    internal void Input(InputEvent input) => MainBoardInputRouter.Route(main, inspector, input);
+    internal void Input(InputEvent input) =>
+        MainBoardInputRouter.Route(main, inspector, stageNavigation, input);
     internal void ScheduleCardInspectorHide() => inspector.ScheduleHide();
     internal void BindCardInspectorFocus(Control control) => inspector.BindFocus(control);
     internal bool CardInspectorHasFocus() => inspector.HasFocus();

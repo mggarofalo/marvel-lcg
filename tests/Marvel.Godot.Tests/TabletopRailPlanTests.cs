@@ -110,6 +110,20 @@ public sealed class TabletopRailPlanTests
     }
 
     [Fact]
+    public void ProgressiveStageSequenceIsAvailableWithoutRegisteringFutureCardControls()
+    {
+        BoardCardPresentation current = Card(140) with { StageRole = BoardStageRole.Current };
+        BoardCardPresentation future = Card(141) with { StageRole = BoardStageRole.Upcoming };
+        var result = new BoardRenderResult();
+
+        result.Inspector.Register([current, future]);
+
+        Assert.Equal([current, future], result.Inspector.For(current.TargetId));
+        Assert.Equal([current, future], result.Inspector.For(future.TargetId));
+        Assert.Null(result.ControlFor(future.TargetId!.Value));
+    }
+
+    [Fact]
     public void SeatMarkersKeepEachAuthoritativeRoleSeparate()
     {
         var selection = new DisplayedSeatSelection(

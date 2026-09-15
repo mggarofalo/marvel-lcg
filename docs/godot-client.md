@@ -258,7 +258,9 @@ diagnostic chronology remains in the adjacent History tab. At wide desktop
 sizes the rail grows to 680–720 logical pixels. Board areas use fixed shelves so
 multiple areas wrap into each lane instead of stretching one area across the
 whole remaining table. Occupied villain, scheme, identity and other live-play
-areas begin open; draw piles, discard piles and empty engine areas sit behind a
+areas begin open; only the current villain and main-scheme stages occupy the
+table, while the remaining stage sequence is browsed forward and back with the
+current card's inspector arrows. Draw piles, discard piles and empty engine areas sit behind a
 single More areas disclosure in each scenario or player lane. A prompt target
 opens either disclosure automatically when needed. A player's visible hand is
 pinned below the table scroll so it does not disappear while inspecting another
@@ -285,6 +287,10 @@ health is one current/maximum value rather than separate hit-point and damage
 values. Printed resources use only their canonical icon row everywhere,
 including the full inspector, matching the printed card rather than adding
 resource names or tooltips.
+Hosted status cards do not become separate table objects: strong named badges
+on their host card show stunned, confused and tough state. Snapshot attachment
+and ownership relationships remain implicit; connecting paths are reserved for
+the selected prompt's actionable target and resource choices.
 Settled synchronization uses the toolbar indicator rather than reserving a
 large event-cue box, and the History tab gives its log a readable minimum height.
 Completed history units appear there as one player action rather than as their

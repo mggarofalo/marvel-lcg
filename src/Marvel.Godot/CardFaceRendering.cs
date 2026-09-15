@@ -49,6 +49,7 @@ internal static class CardFaceRendering
         content.Name = "CardFace";
         BoardFieldPresentation? primary = PrimaryValue(card, profile.Family);
         content.AddChild(Header(card, profile.Family, primary));
+        CardStatusOverlay.AddTo(content, card);
         content.AddChild(ArtRegion(card, profile.Family, layout, art));
         AddTraits(content, card);
 
@@ -61,7 +62,6 @@ internal static class CardFaceRendering
         AddResourceIcons(content, card, scale);
         return content;
     }
-
     private static HBoxContainer Header(
         BoardCardPresentation card,
         CardFrameFamily family,
@@ -88,7 +88,6 @@ internal static class CardFaceRendering
         }
         return header;
     }
-
     private static VBoxContainer Identity(BoardCardPresentation card)
     {
         var identity = Stack();
@@ -270,6 +269,7 @@ internal static class CardFaceRendering
     {
         var content = Stack();
         content.Name = "CardFace";
+        CardStatusOverlay.AddTo(content, card);
         if (size is CardDisplaySize.Hand or CardDisplaySize.Mulligan)
         {
             string identity = string.IsNullOrWhiteSpace(card.Classification)
