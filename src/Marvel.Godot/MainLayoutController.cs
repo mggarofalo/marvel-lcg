@@ -173,7 +173,9 @@ internal sealed class MainLayoutController
     {
         PanelContainer shell = main.GetNode<PanelContainer>("Margin/Shell");
         shell.CustomMinimumSize = new Vector2(
-            gameplay ? main.pageScroll.Size.X : 0,
+            desktopGameplay && main.interfaceScale > InterfaceScale.Standard
+                ? main.pageScroll.Size.X
+                : 0,
             shell.CustomMinimumSize.Y);
         main.pageScroll.HorizontalScrollMode = gameplay
             ? ScrollContainer.ScrollMode.Disabled
