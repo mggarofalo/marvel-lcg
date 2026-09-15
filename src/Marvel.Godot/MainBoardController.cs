@@ -7,23 +7,21 @@ using Marvel.View;
 
 namespace Marvel.Godot;
 
-/// <summary>Owns board rendering and the card-inspection interaction.</summary>
+/// <summary>Owns board rendering and response presentation.</summary>
 internal sealed class MainBoardController : IDisposable
 {
     private readonly Main main;
-    private readonly CardInspectorFocus inspector;
+    private readonly BoardCardInspectorController cardInspector;
     private readonly BoardRelationshipOverlayController relationships;
     private readonly BoardRenderLifetime renderLifetime = new();
     private readonly MainTabletopController tabletop;
-    private readonly CardInspectorStageNavigation stageNavigation;
 
     internal MainBoardController(Main main)
     {
         this.main = main;
-        inspector = new CardInspectorFocus(main);
         relationships = new BoardRelationshipOverlayController(main);
         tabletop = new MainTabletopController(main);
-        stageNavigation = new CardInspectorStageNavigation(main);
+        cardInspector = new BoardCardInspectorController(main, tabletop);
     }
 
     internal void RenderGame(
@@ -116,7 +114,7 @@ internal sealed class MainBoardController : IDisposable
                 main.boardAreas, main.boardPresentation, main.handRail, main.handHeading,
                 main.interfaceScale, main.expandedAreas, main.art);
         main.boardRender = rendered;
-        rendered.CardActivated += (card, control) => ToggleCardInspector(card, control);
+        rendered.CardActivated += cardInspector.Toggle;
         rendered.IsCurrent = () => ReferenceEquals(main.boardRender, rendered)
             && IsCurrentRender(renderGeneration ?? renderLifetime.Current);
         relationships.Bind(rendered);
@@ -125,7 +123,7 @@ internal sealed class MainBoardController : IDisposable
             && (main.inspectedCardId is not { } inspected
                 || rendered.ControlFor(inspected) is null))
         {
-            inspector.Hide();
+            cardInspector.Hide();
         }
     }
     internal void FocusAnchors(IReadOnlyList<int> ids) => tabletop.FocusAnchors(ids);
@@ -133,178 +131,16 @@ internal sealed class MainBoardController : IDisposable
     internal void FocusEventAnchors(IReadOnlyList<int> ids) => tabletop.FocusAnchors(ids);
     internal void RerenderForViewport(Vector2 viewport) => tabletop.RerenderForViewport(viewport);
 
-    internal void PreviewHandCard(int? id)
-    {
-        if (main.cardInspectorPinned)
-        {
-            return;
-        }
-
-        if (id is null)
-        {
-            inspector.ScheduleHide();
-            return;
-        }
-
-        BoardCardPresentation? card = main.boardPresentation?.Areas
-            .Where(area => area.Zone == "HandsArea")
-            .SelectMany(area => area.Cards)
-            .FirstOrDefault(candidate => candidate.TargetId == id);
-        Control? source = HandSource(id.Value, card);
-        if (card is null || source is null)
-        {
-            return;
-        }
-
-        ShowCardInspector(card, source, pinned: false);
-    }
-
-    private Control? HandSource(int id, BoardCardPresentation? card)
-    {
-        Control? source = main.boardRender?.ControlFor(id);
-        if (card is not null && source is null)
-        {
-            tabletop.FocusAnchors([id]);
-            source = main.boardRender?.ControlFor(id);
-        }
-
-        return source;
-    }
-
-    internal void ToggleCardInspector(BoardCardPresentation card, Control? source)
-    {
-        if (card.Concealed)
-        {
-            return;
-        }
-
-        if (main.cardInspector.Visible && main.inspectedCardId == card.TargetId)
-        {
-            inspector.Hide();
-            return;
-        }
-
-        ShowCardInspector(card, source, pinned: true);
-    }
-
-    internal void ShowCardInspector(
-        BoardCardPresentation card, Control? source, bool pinned)
-    {
-        int inspectorGeneration = checked(++main.cardInspectorGeneration);
-        main.inspectedCardId = card.TargetId;
-        int? sourceId = source is CardControl sourceCard
-            ? sourceCard.TargetId
-            : card.TargetId;
-        ClearInspectorContent();
-        InterfaceScale inspectionScale = CardInspectorFocus.FittedScale(
-            card, main.interfaceScale, main.Size.Y);
-        CardControl detail = CardControl.Create(
-            card, CardDisplaySize.Full, inspectionScale, main.art);
-        detail.FocusMode = Control.FocusModeEnum.All;
-        CardInspectorFocus.IgnoreMouseRecursively(detail);
-        main.cardInspectorContent.AddChild(detail);
-        stageNavigation.Configure(card, source, pinned
-            ? main.boardRender?.Inspector.For(card.TargetId) ?? []
-            : []);
-        ConfigureInspectorFrame();
-        PositionInspector(card, source, pinned);
-        ShowInspector(detail, sourceId, pinned, inspectorGeneration);
-    }
-
-    private void ClearInspectorContent()
-    {
-        foreach (Node child in main.cardInspectorContent.GetChildren())
-        {
-            main.cardInspectorContent.RemoveChild(child);
-            child.QueueFree();
-        }
-    }
-
-    private void ConfigureInspectorFrame()
-    {
-        main.cardInspectorScroll.HorizontalScrollMode = ScrollContainer.ScrollMode.ShowNever;
-        main.cardInspectorScroll.VerticalScrollMode = ScrollContainer.ScrollMode.ShowNever;
-        main.cardInspectorFrame.AddThemeStyleboxOverride("panel", new StyleBoxEmpty());
-    }
-
-    private void PositionInspector(BoardCardPresentation card, Control? source, bool pinned)
-    {
-        Control detail = (Control)main.cardInspectorContent.GetChild(0);
-        Vector2 detailSize = detail.GetCombinedMinimumSize();
-        float width = detailSize.X;
-        float height = Math.Min(main.Size.Y - 48, detailSize.Y);
-        Control? currentSource = InteractionControl.IsUsable(source)
-            ? source
-            : card.TargetId is { } target ? main.boardRender?.ControlFor(target) : null;
-        Rect2 sourceRect = currentSource?.GetGlobalRect() ?? new Rect2(
-            main.GetViewport().GetMousePosition(), Vector2.Zero);
-        if (!pinned)
-        {
-            height = Math.Min(height, Math.Max(160, sourceRect.Position.Y - 24));
-        }
-        main.cardInspectorFrame.CustomMinimumSize = Vector2.Zero;
-        main.cardInspectorFrame.Size = new Vector2(width, Math.Max(pinned ? 240 : 160, height));
-        Vector2 anchor = sourceRect.Position + sourceRect.Size / 2;
-        FloatingPanelPosition position = pinned
-            ? VisualSystem.PlaceFloatingPanel(
-                Mathf.RoundToInt(main.Size.X),
-                Mathf.RoundToInt(main.Size.Y),
-                Mathf.RoundToInt(anchor.X),
-                Mathf.RoundToInt(anchor.Y),
-                Mathf.RoundToInt(width),
-                Mathf.RoundToInt(height))
-            : new FloatingPanelPosition(
-                Mathf.RoundToInt(Mathf.Clamp(
-                    anchor.X - width / 2, 12, Math.Max(12, main.Size.X - width - 12))),
-                Mathf.RoundToInt(Mathf.Max(12, sourceRect.Position.Y - height - 12)));
-        main.cardInspectorFrame.Position = new Vector2(position.X, position.Y);
-    }
-
-    private void ShowInspector(
-        Control detail,
-        int? sourceId,
-        bool pinned,
-        int inspectorGeneration)
-    {
-        main.cardInspectorPinned = pinned;
-        if (pinned)
-        {
-            CardInspectorFocus.RestoreMouseRecursively(main.cardInspectorFrame);
-        }
-        else
-        {
-            // A hover preview is informational only; it must never cover a
-            // decision target that the pointer is travelling toward.
-            CardInspectorFocus.IgnoreMouseRecursively(main.cardInspectorFrame, interactiveRules: false);
-        }
-        main.cardInspector.MouseFilter = pinned
-            ? Control.MouseFilterEnum.Stop
-            : Control.MouseFilterEnum.Ignore;
-        // The backdrop shares the inspector's full viewport bounds. Keep it
-        // transparent while previewing so a hover cannot replace the decision
-        // control that opened the preview as the pointer's GUI owner.
-        main.cardInspectorBackdrop.MouseFilter = pinned
-            ? Control.MouseFilterEnum.Stop
-            : Control.MouseFilterEnum.Ignore;
-        main.cardInspectorBackdrop.Visible = pinned;
-        if (!stageNavigation.IsVisible)
-        {
-            main.cardInspectorClose.Visible = false;
-        }
-        main.cardInspector.Visible = true;
-        if (pinned)
-        {
-            inspector.RememberSource(sourceId);
-            Callable.From(() => inspector.FocusDetail(inspectorGeneration)).CallDeferred();
-        }
-    }
-
-    internal void Input(InputEvent input) =>
-        MainBoardInputRouter.Route(main, inspector, stageNavigation, input);
-    internal void ScheduleCardInspectorHide() => inspector.ScheduleHide();
-    internal void BindCardInspectorFocus(Control control) => inspector.BindFocus(control);
-    internal bool CardInspectorHasFocus() => inspector.HasFocus();
-    internal void HideCardInspector() => inspector.Hide();
+    internal void PreviewHandCard(int? id) => cardInspector.PreviewHandCard(id);
+    internal void ToggleCardInspector(BoardCardPresentation card, Control? source) =>
+        cardInspector.Toggle(card, source);
+    internal void ShowCardInspector(BoardCardPresentation card, Control? source, bool pinned) =>
+        cardInspector.Show(card, source, pinned);
+    internal void Input(InputEvent input) => cardInspector.Input(input);
+    internal void ScheduleCardInspectorHide() => cardInspector.ScheduleHide();
+    internal void BindCardInspectorFocus(Control control) => cardInspector.BindFocus(control);
+    internal bool CardInspectorHasFocus() => cardInspector.HasFocus();
+    internal void HideCardInspector() => cardInspector.Hide();
     public void Dispose()
     {
         renderLifetime.Dispose(main.boardRender);
