@@ -115,8 +115,8 @@ internal static class TabletopRailRenderer
         {
             Name = $"Area{area.Id}",
             CustomMinimumSize = new Vector2(
-                VisualSystem.Card(size, scale).Width + 16,
-                VisualSystem.Card(size, scale).MinimumHeight + 24),
+                VisualSystem.Card(size, scale).Width + 8,
+                VisualSystem.Card(size, scale).MinimumHeight + 20),
             SizeFlagsHorizontal = compact
                 ? Control.SizeFlags.ShrinkBegin
                 : Control.SizeFlags.ExpandFill,
@@ -134,6 +134,13 @@ internal static class TabletopRailRenderer
             .Where(card => card.StageRole != BoardStageRole.Upcoming)];
         BoardCardPresentation[] upcoming = [.. area.Cards
             .Where(card => card.StageRole == BoardStageRole.Upcoming)];
+        int renderedCards = current.Length + area.Removed.Count;
+        int columns = Math.Clamp(renderedCards, 1, 3);
+        float cardWidth = VisualSystem.Card(size, scale).Width;
+        panel.CustomMinimumSize = new Vector2(
+            cardWidth * columns + Math.Max(0, columns - 1) * 8 + 32,
+            panel.CustomMinimumSize.Y);
+        panel.SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin;
         result.Inspector.Register([.. current.Concat(upcoming)]);
         AddCards(cards, current.Concat(area.Removed), result, size, scale, art);
         if (cards.GetChildCount() == 0)
@@ -152,11 +159,13 @@ internal static class TabletopRailRenderer
         ICardArtProvider? art)
     {
         CardLayoutMetrics card = VisualSystem.Card(CardDisplaySize.Hand, scale);
-        string title = pile.Area.Zone == "AsideDeck" ? "SET-ASIDE" : pile.Area.Title;
+        string title = pile.ContainsOnlyRemovedCards
+            ? "REMOVED"
+            : pile.Area.Zone == "AsideDeck" ? "SET-ASIDE" : pile.Area.Title;
         var panel = new PanelContainer
         {
             Name = $"Pile{pile.Area.Id}",
-            CustomMinimumSize = new Vector2(Math.Min(150, card.Width), 78),
+            CustomMinimumSize = new Vector2(Math.Min(120, card.Width), 72),
             SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin,
             ThemeTypeVariation = GodotThemeVariations.TabletopShelf,
             TooltipText = $"{pile.Area.Title}. {pile.Area.Context}",

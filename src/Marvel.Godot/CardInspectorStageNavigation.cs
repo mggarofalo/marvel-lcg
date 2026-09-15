@@ -7,11 +7,18 @@ namespace Marvel.Godot;
 internal sealed class CardInspectorStageNavigation
 {
     private readonly Main main;
+    private readonly Action<BoardCardPresentation, Control?, IReadOnlyList<BoardCardPresentation>> show;
     private IReadOnlyList<BoardCardPresentation> sequence = [];
     private int index = -1;
     private Control? source;
 
-    internal CardInspectorStageNavigation(Main main) => this.main = main;
+    internal CardInspectorStageNavigation(
+        Main main,
+        Action<BoardCardPresentation, Control?, IReadOnlyList<BoardCardPresentation>> show)
+    {
+        this.main = main;
+        this.show = show;
+    }
 
     internal bool IsVisible => sequence.Count > 1 && index >= 0;
 
@@ -72,7 +79,7 @@ internal sealed class CardInspectorStageNavigation
         int next = index + offset;
         if (next >= 0 && next < sequence.Count)
         {
-            main.ShowCardInspector(sequence[next], source, pinned: true);
+            show(sequence[next], source, sequence);
         }
     }
 

@@ -121,10 +121,10 @@ func _redesign_gate_required_mulligan_controls_are_visible() -> bool:
 
 func _redesign_gate_required_action_controls_are_visible() -> bool:
 	var change_form := _visible_button_beginning(_decision(), "Change Form")
-	var play_card := _visible_button_beginning(_decision(), "Play Web-Shooter")
+	var play_card := _visible_button_beginning(_decision(), "▸ Play a card")
 	var prompt_header := _node("Play/Prompt/Margin/Stack/PromptHeader") as Control
 	if change_form == null or play_card == null:
-		_fail("the post-mulligan desktop does not expose its seeded action choices")
+		_fail("the post-mulligan desktop does not expose its direct and grouped action choices")
 		return false
 	for control in [prompt_header, change_form, play_card]:
 		if control == null or not _control_is_fully_visible(control):

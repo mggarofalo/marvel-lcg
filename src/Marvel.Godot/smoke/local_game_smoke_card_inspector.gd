@@ -32,6 +32,9 @@ func _current_hand_card() -> Control:
 
 func _action_card_preview_is_safe() -> bool:
 	var action_card := _web_shooter_action()
+	if action_card == null and not await _open_card_play_menu():
+		return false
+	action_card = _web_shooter_action()
 	if action_card == null:
 		_fail("the post-mulligan decision has no card-naming Web-Shooter action")
 		return false
@@ -130,6 +133,14 @@ func _web_shooter_action() -> Button:
 	return null
 
 
+func _open_card_play_menu() -> bool:
+	var menu := _decision().find_child("CardPlayMenu", true, false) as Button
+	if menu == null or not menu.is_visible_in_tree() or not await _pointer_activate(menu):
+		_fail("the action dock has no operable card-play menu")
+		return false
+	return await _wait_for(func() -> bool: return _web_shooter_action() != null)
+
+
 func _logical_action_text(text: String) -> String:
 	return text.trim_prefix("✓").strip_edges()
 
@@ -156,8 +167,12 @@ func _restore_unselected_action_prompt() -> bool:
 	if synchronize == null or synchronize.disabled or not await _pointer_activate(synchronize):
 		_fail("the preview probe cannot restore its authoritative action prompt")
 		return false
-	if await _wait_for(func() -> bool:
-		return not _web_shooter_draft_is_prepared() and _web_shooter_action() != null):
+	if not await _wait_for(func() -> bool:
+		return not _web_shooter_draft_is_prepared() \
+			and _decision().find_child("CardPlayMenu", true, false) != null):
+		_fail("synchronizing after the preview probe retained its Web-Shooter draft")
+		return false
+	if await _open_card_play_menu():
 		return true
 	_fail("synchronizing after the preview probe retained its Web-Shooter draft")
 	return false

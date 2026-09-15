@@ -53,7 +53,9 @@ internal sealed class MainBoardController : IDisposable
         WorldDescriptor world,
         int renderGeneration)
     {
-        main.board.Visible = world.Outcome == Outcome.Unfinished;
+        // The settled table remains the primary record of how the game ended.
+        // A null terminal prompt disables actions without hiding inspection or history.
+        main.board.Visible = true;
         RenderBoard(world, response.Prompt, renderGeneration);
         main.syncStatus.Visible = true;
         main.syncStatus.Text = $"✓ Synced · r{response.Revision}";

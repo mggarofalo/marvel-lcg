@@ -55,7 +55,7 @@ func _fallback_mulligan_is_safe() -> bool:
 		return false
 	var hand := _node("Play/Board/HandShelf") as Control
 	var card := hand.find_child("ProceduralCard", true, false) as Control
-	if card == null or card.custom_minimum_size.x < _scaled_metric(172):
+	if card == null or card.custom_minimum_size.x < _scaled_metric(144):
 		_fail("the generic mulligan fallback did not retain the selected card scale")
 		return false
 	return true
@@ -91,7 +91,7 @@ func _mulligan_cards_are_safe() -> bool:
 func _tabletop_essentials_are_safe() -> bool:
 	for title in ["Rhino", "Peter Parker", "The Break-In!"]:
 		var card := _tabletop_card_named(title)
-		if card == null or card.custom_minimum_size.x < 210:
+		if card == null or card.custom_minimum_size.x < 156:
 			_fail("the tabletop essential '%s' did not retain readable board geometry" % title)
 			return false
 	var villain_text := _visible_text(_tabletop_card_named("Rhino"))
@@ -143,11 +143,7 @@ func _upcoming_stages_are_safe() -> bool:
 	if not disclosures.is_empty():
 		_fail("upcoming stages permanently occupy the live table")
 		return false
-	var active_stage: Control = null
-	for candidate in main.find_children("ProceduralCard", "PanelContainer", true, false):
-		if candidate.find_child("SummaryValuesStage", true, false) != null:
-			active_stage = candidate as Control
-			break
+	var active_stage := _active_villain_stage()
 	if active_stage == null or not await _pointer_activate_card_body(active_stage):
 		_fail("the current villain stage cannot open its inspector")
 		return false
@@ -155,8 +151,7 @@ func _upcoming_stages_are_safe() -> bool:
 	var inspector := main.get_node("CardInspector") as Control
 	var next := inspector.find_child("NextStage", true, false) as Button
 	var heading := inspector.find_child("Title", true, false) as Label
-	if not inspector.visible or next == null or heading == null \
-			or heading.text != "STAGE 1 OF 2" or next.disabled:
+	if not _villain_stage_inspector_is_ready(inspector, next, heading):
 		_fail("the current villain inspector does not expose bounded stage navigation")
 		return false
 	if not await _pointer_activate(next):
@@ -184,6 +179,19 @@ func _upcoming_stages_are_safe() -> bool:
 		_fail("Escape did not close the stage inspector")
 		return false
 	return true
+
+
+func _active_villain_stage() -> Control:
+	for candidate in main.find_children("ProceduralCard", "PanelContainer", true, false):
+		if candidate.find_child("SummaryValuesStage", true, false) != null:
+			return candidate as Control
+	return null
+
+
+func _villain_stage_inspector_is_ready(
+		inspector: Control, next: Button, heading: Label) -> bool:
+	return inspector.visible and next != null and heading != null \
+		and heading.text == "STAGE 1 OF 2" and not next.disabled
 
 
 func _secondary_areas_are_safe() -> bool:

@@ -110,6 +110,9 @@ func _direct_change_form_is_played() -> bool:
 
 func _direct_black_cat_is_played() -> bool:
 	var action := _visible_button_beginning(_decision(), "Play Black Cat")
+	if action == null and not await _open_card_play_menu():
+		return false
+	action = _visible_button_beginning(_decision(), "Play Black Cat")
 	if action == null or not await _pointer_activate(action):
 		_fail("seed 1 did not expose Black Cat in the decision dock")
 		return false

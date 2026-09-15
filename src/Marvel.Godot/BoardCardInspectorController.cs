@@ -16,7 +16,8 @@ internal sealed class BoardCardInspectorController
         this.main = main;
         this.tabletop = tabletop;
         inspector = new CardInspectorFocus(main);
-        stageNavigation = new CardInspectorStageNavigation(main);
+        stageNavigation = new CardInspectorStageNavigation(
+            main, (card, source, stages) => Show(card, source, pinned: true, stages: stages));
     }
 
     internal void PreviewHandCard(int? id)
@@ -61,7 +62,11 @@ internal sealed class BoardCardInspectorController
         Show(card, source, pinned: true);
     }
 
-    internal void Show(BoardCardPresentation card, Control? source, bool pinned)
+    internal void Show(
+        BoardCardPresentation card,
+        Control? source,
+        bool pinned,
+        IReadOnlyList<BoardCardPresentation>? stages = null)
     {
         int inspectorGeneration = checked(++main.cardInspectorGeneration);
         main.inspectedCardId = card.TargetId;
@@ -77,7 +82,7 @@ internal sealed class BoardCardInspectorController
         CardInspectorFocus.IgnoreMouseRecursively(detail);
         main.cardInspectorContent.AddChild(detail);
         stageNavigation.Configure(card, source, pinned
-            ? main.boardRender?.Inspector.For(card.TargetId) ?? []
+            ? stages ?? main.boardRender?.Inspector.For(card.TargetId) ?? []
             : []);
         ConfigureFrame();
         Position(card, source, pinned);

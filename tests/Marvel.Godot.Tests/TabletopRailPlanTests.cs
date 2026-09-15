@@ -64,6 +64,7 @@ public sealed class TabletopRailPlanTests
     [InlineData("AsideDeck")]
     [InlineData("PlayerDeck")]
     [InlineData("EncounterDeck")]
+    [InlineData("RemovedArea")]
     public void StoredCardsBecomeOneTopFirstInspectablePile(string zone)
     {
         BoardAreaPresentation area = Area(12, 0, zone, BoardAreaProminence.Supporting) with
@@ -109,6 +110,21 @@ public sealed class TabletopRailPlanTests
             });
 
         Assert.False(area.IsPile);
+    }
+
+    [Fact]
+    public void SettledRemovedTableauBecomesOneInspectablePile()
+    {
+        TabletopAreaObject area = TabletopAreaObject.From(
+            Area(15, 0, "HeroArea", BoardAreaProminence.Supporting) with
+            {
+                Removed = [Card(150), Card(151)],
+            });
+
+        Assert.True(area.IsPile);
+        Assert.True(area.ContainsOnlyRemovedCards);
+        Assert.Equal(2, area.Count);
+        Assert.Equal([151, 150], area.InspectionOrder.Select(card => card.TargetId));
     }
 
     [Fact]

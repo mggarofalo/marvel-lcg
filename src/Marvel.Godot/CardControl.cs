@@ -127,7 +127,7 @@ public sealed partial class CardControl : PanelContainer
         int resourcesRows = values.Count(value => value.Name == "RES");
         int badgeCount = values.Count - progressRows - values.Count(value => value.Name == "RES");
         int valueRows = (badgeCount + 2) / 3 + progressRows + resourcesRows;
-        int titleCharactersPerLine = size is CardDisplaySize.Hand or CardDisplaySize.Mulligan ? 18 : 24;
+        int titleCharactersPerLine = size is CardDisplaySize.Hand or CardDisplaySize.Mulligan ? 14 : 18;
         int titleRows = Math.Max(
             1,
             (int)Math.Ceiling(card.Title.Length / (double)titleCharactersPerLine));
@@ -135,7 +135,7 @@ public sealed partial class CardControl : PanelContainer
             + titleRows
             + (CompactState(card, size) is null ? 0 : 1)
             + valueRows;
-        float scale = layout.Width / (size is CardDisplaySize.Hand or CardDisplaySize.Mulligan ? 172.0f : 210.0f);
+        float scale = layout.Width / (size is CardDisplaySize.Hand or CardDisplaySize.Mulligan ? 144.0f : 156.0f);
         return Math.Max(layout.MinimumHeight, textRows * 22 * scale + 20 * scale);
     }
 
@@ -169,6 +169,12 @@ public sealed partial class CardControl : PanelContainer
     internal void AddInteractionControl(Button control)
     {
         ArgumentNullException.ThrowIfNull(control);
+        interactionCue &= ~CardInteractionCue.OfferedAction;
+        if (interactionLabel is not null)
+        {
+            interactionLabel.Text = CueText(interactionCue);
+            interactionLabel.Visible = interactionCue != CardInteractionCue.None;
+        }
         control.CustomMinimumSize = new Vector2(
             0, VisualSystem.Controls(interactionScale).MinimumPointerTarget);
         control.SizeFlagsHorizontal = SizeFlags.ExpandFill;

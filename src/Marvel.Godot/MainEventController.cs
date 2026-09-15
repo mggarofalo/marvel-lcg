@@ -95,13 +95,21 @@ internal sealed class MainEventController
         }
 
         int generation = ++main.lastResultGeneration;
+        bool terminal = highlights.Any(entry => entry.Motion == EventMotionKind.Terminal);
         main.lastResult.Visible = true;
         main.lastResultSummary.Text = string.Join(" ", highlights.Select(entry => entry.Summary));
         main.lastResult.ThemeTypeVariation = highlights.Any(entry => entry.Motion is
             EventMotionKind.Defeat or EventMotionKind.Terminal)
                 ? GodotThemeVariations.DangerStatusPanel
                 : GodotThemeVariations.StatusPanel;
-        SetLastResultExpanded(true);
+        // Recent history remains discoverable without permanently displacing
+        // the current decision. A terminal result stays open because it is the
+        // table's final explanation, while ordinary results expand on demand.
+        SetLastResultExpanded(terminal);
+        if (terminal)
+        {
+            return;
+        }
         main.GetTree().CreateTimer(Main.LastResultLifetimeSeconds).Timeout += () =>
         {
             if (generation == main.lastResultGeneration && main.IsInsideTree())

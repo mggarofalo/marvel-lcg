@@ -227,7 +227,7 @@ public sealed class VisualSystemTests
             Assert.True(full.MinimumHeight > board.MinimumHeight);
             Assert.True(board.Width > hand.Width);
             Assert.True(board.MinimumHeight > hand.MinimumHeight);
-            Assert.True(board.MinimumHeight < board.Width);
+            Assert.True(board.MinimumHeight > board.Width);
             Assert.True(board.MinimumHeight * 2 < full.MinimumHeight);
             Assert.False(board.ShowSubtitle);
             Assert.False(board.ShowTraits);
@@ -296,7 +296,7 @@ public sealed class VisualSystemTests
 
         Assert.InRange(compact.DecisionWidth, 390, 440);
         Assert.InRange(laptop.DecisionWidth, 450, 500);
-        Assert.InRange(desktop.DecisionWidth, 680, 720);
+        Assert.InRange(desktop.DecisionWidth, 480, 520);
         Assert.True(desktop.DecisionWidth > laptop.DecisionWidth);
         Assert.True(laptop.DecisionWidth > compact.DecisionWidth);
         Assert.True(compact.DecisionMinimumHeight >= 270);

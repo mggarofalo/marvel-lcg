@@ -189,7 +189,7 @@ public static class VisualSystem
 
         int decisionWidth = viewportWidth switch
         {
-            >= 1800 => Math.Clamp((int)Math.Ceiling(viewportWidth * 0.37), 680, 720),
+            >= 1800 => Math.Clamp((int)Math.Ceiling(viewportWidth * 0.26), 480, 520),
             >= 1500 => 600,
             >= 1200 => Math.Clamp((int)Math.Ceiling(viewportWidth * 0.36), 450, 500),
             _ => Math.Clamp((int)Math.Ceiling(viewportWidth * 0.39), 390, 440),
@@ -210,10 +210,10 @@ public static class VisualSystem
             Scale(400, scale), Scale(560, scale),
             ShowSubtitle: true, ShowTraits: true, ShowPrintedStats: true),
         CardDisplaySize.Board => new(
-            Scale(210, scale), Scale(112, scale),
+            Scale(156, scale), Scale(175, scale),
             ShowSubtitle: false, ShowTraits: false, ShowPrintedStats: true),
         CardDisplaySize.Hand => new(
-            Scale(172, scale), Scale(72, scale),
+            Scale(144, scale), Scale(162, scale),
             ShowSubtitle: false, ShowTraits: false, ShowPrintedStats: false),
         // The opening hand is the one supported six-card decision. Its scale is
         // deliberately capped so 150% preserves six independently reachable

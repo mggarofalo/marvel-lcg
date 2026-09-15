@@ -280,7 +280,7 @@ func _submit_mulligan() -> bool:
 		return true
 	if not await _wait_for(func() -> bool:
 		return _visible_button_beginning(_decision(), "Change Form") != null \
-			and _visible_button_beginning(_decision(), "Play Web-Shooter") != null):
+			and _decision().find_child("CardPlayMenu", true, false) != null):
 		_fail("the seeded mulligan did not reach the player-action affordances")
 		return false
 	return true
@@ -301,7 +301,7 @@ func _complete_second_opening_hand() -> bool:
 		return false
 	if not await _wait_for(func() -> bool:
 		return _visible_button_beginning(_decision(), "Change Form") != null \
-			and _visible_button_beginning(_decision(), "Play Web-Shooter") != null):
+			and _decision().find_child("CardPlayMenu", true, false) != null):
 		_fail("the completed cooperative mulligan did not return to player one's actions")
 		return false
 	return true
@@ -338,21 +338,27 @@ func _mulligan_result_is_operable() -> bool:
 func _result_toggle_is_operable(summary: Label) -> bool:
 	var toggle := _node(
 		"Play/Prompt/Margin/Stack/Workbench/Action/LastResult/Margin/Copy/Header/Toggle") as Button
-	if not await _pointer_activate(toggle):
-		return false
 	if summary.visible or toggle.text != "Expand":
-		_fail("the transient result cannot be collapsed")
+		_fail("the transient result does not begin compact and inspectable")
 		return false
 	if not await _pointer_activate(toggle):
 		return false
 	if not summary.visible or toggle.text != "Collapse":
 		_fail("the transient result cannot be expanded")
 		return false
+	if not await _pointer_activate(toggle):
+		return false
+	if summary.visible or toggle.text != "Expand":
+		_fail("the transient result cannot be collapsed")
+		return false
 	return true
 
 
 func _start_web_shooter_draft() -> bool:
 	var web_shooter := _web_shooter_action()
+	if web_shooter == null and not await _open_card_play_menu():
+		return false
+	web_shooter = _web_shooter_action()
 	if web_shooter == null or web_shooter.disabled:
 		_fail("Web-Shooter is not playable after the mulligan")
 		return false

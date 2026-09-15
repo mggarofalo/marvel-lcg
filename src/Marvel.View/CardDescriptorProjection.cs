@@ -47,14 +47,14 @@ internal static class CardDescriptorProjection
             State = new CardStateDescriptor(
                 card.Ready,
                 face.Damage,
-                Threat(face.Fields),
+                Threat(card),
                 face.Counters,
                 face.Fields,
                 Statuses(world, card)),
         };
 
-    private static long? Threat(IReadOnlyDictionary<string, long> fields) =>
-        fields.TryGetValue("k_threat", out long threat) ? threat : null;
+    private static long? Threat(Card card) =>
+        card.Tokens.TryGetValue("k_threat", out long threat) ? threat : null;
 
     private static IReadOnlyList<string> Statuses(World world, Card card) =>
         [.. world.Areas

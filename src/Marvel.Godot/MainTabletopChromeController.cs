@@ -51,7 +51,7 @@ internal sealed class MainTabletopChromeController
     private void SetTableChrome(bool compact)
     {
         main.GetNode<Control>("Margin/Shell/Content/StatusBarClearance").CustomMinimumSize =
-            new Vector2(0, compact ? 32 : 38);
+            new Vector2(0, compact ? 16 : 38);
         foreach (string path in new[]
                  {
                      "Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader/Eyebrow",
