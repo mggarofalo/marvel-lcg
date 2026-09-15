@@ -16,7 +16,9 @@ internal sealed class CardInspectorFocus
 
     internal void FocusDetail(int generation)
     {
-        if (generation != main.cardInspectorGeneration || !InteractionControl.IsUsable(main.cardInspector)
+        if (!InteractionControl.IsUsable(main)
+            || generation != main.cardInspectorGeneration
+            || !InteractionControl.IsUsable(main.cardInspector)
             || !main.cardInspector.Visible || main.cardInspectorContent.GetChildCount() != 1
             || main.cardInspectorContent.GetChild(0) is not Control detail
             || !InteractionControl.IsUsable(detail) || !main.cardInspector.IsAncestorOf(detail))
@@ -66,7 +68,8 @@ internal sealed class CardInspectorFocus
         int generation = ++main.cardInspectorGeneration;
         main.GetTree().CreateTimer(0.3).Timeout += () =>
         {
-            if (generation == main.cardInspectorGeneration && main.IsInsideTree()
+            if (InteractionControl.IsUsable(main)
+                && generation == main.cardInspectorGeneration
                 && InteractionControl.IsUsable(main.cardInspector) && !main.cardInspectorPinned
                 && !main.cardInspectorHovered && !HasFocus())
             {
@@ -170,7 +173,8 @@ internal sealed class CardInspectorFocus
 
     private void RestoreSource(int targetId, int generation)
     {
-        if (generation == main.cardInspectorGeneration && !main.cardInspector.Visible
+        if (InteractionControl.IsUsable(main)
+            && generation == main.cardInspectorGeneration && !main.cardInspector.Visible
             && main.boardRender?.ControlFor(targetId) is Control source
             && InteractionControl.IsUsable(source))
         {

@@ -112,7 +112,8 @@ internal sealed class MainEventController
         }
         main.GetTree().CreateTimer(Main.LastResultLifetimeSeconds).Timeout += () =>
         {
-            if (generation == main.lastResultGeneration && main.IsInsideTree())
+            if (InteractionControl.IsUsable(main)
+                && generation == main.lastResultGeneration)
             {
                 DismissLastResult();
             }
