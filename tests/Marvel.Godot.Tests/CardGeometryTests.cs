@@ -10,7 +10,7 @@ public sealed class CardGeometryTests
     [InlineData("ALLY", GodotThemeVariations.PlayerCard)]
     [InlineData("MINION", GodotThemeVariations.EnemyCard)]
     [InlineData("MAIN SCHEME", GodotThemeVariations.SchemeCard)]
-    [InlineData("SIDE SCHEME", GodotThemeVariations.SchemeCard)]
+    [InlineData("ENCOUNTER SIDE SCHEME", GodotThemeVariations.SchemeCard)]
     public void CompactCardsRetainTheirSemanticFrame(string kind, string expected)
     {
         BoardCardPresentation card = Card(kind);

@@ -9,7 +9,7 @@ static int RunTests()
         WorkingDirectory = root,
     };
     start.ArgumentList.Add("test");
-    start.ArgumentList.Add("tests/Marvel.UnitTests.slnx");
+    start.ArgumentList.Add("Marvel.slnx");
     start.ArgumentList.Add("--configuration");
     start.ArgumentList.Add("Release");
     start.ArgumentList.Add("--nologo");
@@ -17,10 +17,10 @@ static int RunTests()
 
     using var process = System.Diagnostics.Process.Start(start)
         ?? throw new InvalidOperationException("Could not start dotnet");
-    if (!process.WaitForExit(TimeSpan.FromMinutes(15)))
+    if (!process.WaitForExit(TimeSpan.FromMinutes(20)))
     {
         process.Kill(true);
-        throw new TimeoutException("Unit tests did not finish within fifteen minutes");
+        throw new TimeoutException("Test suite did not finish within twenty minutes");
     }
     return process.ExitCode;
 }

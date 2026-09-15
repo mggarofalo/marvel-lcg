@@ -14,7 +14,7 @@ public sealed class CommitGatePolicyTests
         JsonElement[] tasks = configuration.RootElement.GetProperty("tasks")
             .EnumerateArray().ToArray();
         int build = Array.FindIndex(tasks, task => Name(task) == "release-build");
-        int tests = Array.FindIndex(tasks, task => Name(task) == "unit-tests");
+        int tests = Array.FindIndex(tasks, task => Name(task) == "all-tests");
 
         Assert.True(build >= 0 && tests > build,
             "The complete Release build must run before pre-commit tests.");
@@ -24,7 +24,8 @@ public sealed class CommitGatePolicyTests
         Assert.Contains("start.ArgumentList.Add(\"Marvel.slnx\");", Script("release-build"));
         Assert.Contains("start.ArgumentList.Add(\"Release\");", Script("release-build"));
         Assert.Contains("start.ArgumentList.Add(\"--warnaserror\");", Script("release-build"));
-        Assert.Contains("start.ArgumentList.Add(\"--no-build\");", Script("unit-tests"));
+        Assert.Contains("start.ArgumentList.Add(\"Marvel.slnx\");", Script("all-tests"));
+        Assert.Contains("start.ArgumentList.Add(\"--no-build\");", Script("all-tests"));
     }
 
     private static string Name(JsonElement task) => task.GetProperty("name").GetString()!;
