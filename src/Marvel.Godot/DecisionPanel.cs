@@ -246,14 +246,10 @@ public sealed partial class DecisionPanel : VBoxContainer
                 NotifySubmitted(decision!, generation);
             }
         };
-        if (composer.Selected is null)
-        {
-            AddCommit(pass);
-        }
-        else
-        {
-            AddContent(pass);
-        }
+        // Cancellation is a commit-level choice. Keeping it outside the
+        // scrolling draft body leaves the escape action reachable even when
+        // target and payment editors are taller than the viewport.
+        AddCommit(pass);
     }
 
     internal void InstallLayout(VBoxContainer body, VBoxContainer commitBar)

@@ -60,6 +60,16 @@
         "exec",
         ".husky/csx/all-tests.csx"
       ]
+    },
+    {
+      "name": "native-smoke",
+      "group": "pre-commit",
+      "command": "dotnet",
+      "args": [
+        "husky",
+        "exec",
+        ".husky/csx/native-smoke.csx"
+      ]
     }
   ]
 }

@@ -15,9 +15,10 @@ public sealed class CommitGatePolicyTests
             .EnumerateArray().ToArray();
         int build = Array.FindIndex(tasks, task => Name(task) == "release-build");
         int tests = Array.FindIndex(tasks, task => Name(task) == "all-tests");
+        int native = Array.FindIndex(tasks, task => Name(task) == "native-smoke");
 
-        Assert.True(build >= 0 && tests > build,
-            "The complete Release build must run before pre-commit tests.");
+        Assert.True(build >= 0 && tests > build && native > tests,
+            "The complete Release build, managed tests and native smoke must run in order.");
         Assert.Equal(
             ["husky", "exec", ".husky/csx/release-build.csx"], Args(tasks[build]));
         Assert.Contains("start.ArgumentList.Add(\"build\");", Script("release-build"));
@@ -26,6 +27,8 @@ public sealed class CommitGatePolicyTests
         Assert.Contains("start.ArgumentList.Add(\"--warnaserror\");", Script("release-build"));
         Assert.Contains("start.ArgumentList.Add(\"Marvel.slnx\");", Script("all-tests"));
         Assert.Contains("start.ArgumentList.Add(\"--no-build\");", Script("all-tests"));
+        Assert.Contains("godot-smoke.ps1", Script("native-smoke"));
+        Assert.Contains("start.ArgumentList.Add(\"-Representative\");", Script("native-smoke"));
     }
 
     private static string Name(JsonElement task) => task.GetProperty("name").GetString()!;
