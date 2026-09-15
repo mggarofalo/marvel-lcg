@@ -406,6 +406,22 @@ GODOT_BIN="/path/to/Godot" bash tools/godot-visual-qa.sh
 tools/godot-visual-qa.ps1 -GodotBin "C:\path\to\Godot.exe"
 ```
 
+The opt-in redesign gate runs the complete native journey at the desktop
+contract only: 1920x1080 at 100% and 150%, for both one- and two-player games.
+It retains rendered checkpoints and requires all opening-hand choices and
+post-mulligan actions to remain visible, the shell to retain the viewport width
+after ending the turn, scrollbar chrome to remain hidden, discard piles to stay
+compact, and repeated outside clicks to dismiss the inspector without activating
+the control beneath it:
+
+```bash
+GODOT_BIN="/path/to/Godot" bash tools/godot-redesign-gate.sh
+```
+
+```powershell
+tools/godot-redesign-gate.ps1 -GodotBin "C:\path\to\Godot.exe"
+```
+
 Set `MARVEL_SMOKE_CAPTURE_DIR` to retain the PNGs at a chosen absolute path;
 otherwise the tools create a temporary directory and print it. No capture is
 written into the repository.

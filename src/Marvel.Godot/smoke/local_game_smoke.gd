@@ -1,4 +1,4 @@
-extends "res://smoke/local_game_smoke_lifecycle_checks.gd"
+extends "res://smoke/local_game_smoke_redesign_gate.gd"
 
 func _initialize() -> void:
 	_prepare_art_pack()
@@ -93,7 +93,7 @@ func _open_and_validate_table() -> bool:
 		return false
 	if not await _board_layout_is_resolved():
 		return false
-	if not await _table_interactions_are_safe():
+	if not await _redesign_gate_table_interactions_are_safe(_table_interactions_are_safe):
 		return false
 	if not await _capture_checkpoint("open-table-prompt-dense-concealed"):
 		return false
@@ -175,7 +175,7 @@ func _play_one_decision(state: Dictionary) -> bool:
 		return false
 	if not had_tested_undo and state.tested_undo:
 		return true
-	if not await _motion_state_is_safe(state):
+	if not await _redesign_gate_motion_state_is_safe(_motion_state_is_safe, state):
 		return false
 	if not await _active_resolution_is_safe(state):
 		return false

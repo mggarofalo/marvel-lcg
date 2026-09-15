@@ -12,6 +12,8 @@ func _mulligan_result_and_payment_are_operable() -> bool:
 				or not await _complete_second_opening_hand() \
 				or not await _post_mulligan_desktop_resize_is_safe():
 			return false
+	if not await _redesign_gate_post_mulligan_is_safe():
+		return false
 	var hand_card := (_node("Play/Board/HandShelf") as Control).find_child(
 		"ProceduralCard", true, false) as Control
 	if hand_card == null:

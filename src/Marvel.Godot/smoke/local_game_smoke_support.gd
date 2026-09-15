@@ -7,6 +7,12 @@ const MAX_DECISIONS := 80
 var main: Control
 var failed := false
 var motion_enabled := true
+
+
+func _redesign_gate_post_mulligan_is_safe() -> bool:
+	return true
+
+
 func _focused_control_is_visible(control: Control) -> bool:
 	var visible_rect := _visible_control_rect(control)
 	var expected := _scaled_metric(44)
