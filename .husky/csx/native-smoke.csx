@@ -28,7 +28,7 @@ static int RunNativeSmoke()
 
 static string ResolveGodot()
 {
-    string? configured = Environment.GetEnvironmentVariable("GODOT_BIN");
+    var configured = Environment.GetEnvironmentVariable("GODOT_BIN");
     if (!string.IsNullOrWhiteSpace(configured) && File.Exists(configured))
     {
         return configured;
