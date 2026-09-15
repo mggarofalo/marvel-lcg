@@ -213,6 +213,11 @@ the printed and live face facts used by procedural cards. Protocol 5 added per-t
 maximum occurrences to repeated target allocations, allowing clients to render
 indirect-damage capacities without deriving remaining hit points.
 
+Protocol 16 adds engine-authored preferred resource declarations when the
+typed ability can prove that one declared type improves a numeric result. The
+hint pre-fills a reversible draft; it does not weaken authoritative payment
+validation or choose among several beneficial outcomes.
+
 The protocol supports discovering setup choices, opening, attaching,
 synchronizing, resolving and closing a game. Setup discovery is a read-only,
 session-free query over the same transport as play. Its scenario records carry

@@ -14,7 +14,6 @@ public sealed class DecisionComposer
     private readonly List<int> targets = [];
     private readonly Dictionary<string, long> values = new(StringComparer.Ordinal);
     private int selectedCost = -1;
-
     /// <summary>Creates an empty draft for the current authorized prompt.</summary>
     public DecisionComposer(Prompt prompt) =>
         Prompt = prompt ?? throw new ArgumentNullException(nameof(prompt));
@@ -83,7 +82,8 @@ public sealed class DecisionComposer
                     Marvel.Rules.Play.Resources.Wild);
                 return true;
             });
-            return valid && (!hasWild || !cost.DeclarationSensitive);
+            return valid && (!hasWild || !cost.DeclarationSensitive
+                || cost.PreferredResourceTypes.Distinct().Take(2).Count() == 1);
         }
     }
 
@@ -429,7 +429,7 @@ public sealed class DecisionComposer
     {
         CostOption cost = SelectedCostOption()!;
         IReadOnlyList<ResourceAllocation>? allocation =
-            ResourcePayment.Allocate(cost, resources, values);
+            ResourcePaymentDraft.Allocate(cost, resources, values);
         if (allocation is null)
         {
             return;
