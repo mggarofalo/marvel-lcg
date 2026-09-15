@@ -141,7 +141,7 @@ func _redesign_gate_has_no_scrollbar_chrome(checkpoint: String) -> bool:
 
 func _redesign_gate_piles_are_compact() -> bool:
 	var saw_discard := false
-	for node in main.find_children("Area*", "PanelContainer", true, false):
+	for node in main.find_children("Pile*", "PanelContainer", true, false):
 		var area := node as Control
 		if area == null or "DISCARD" not in _visible_text(area).to_upper():
 			continue
@@ -155,6 +155,10 @@ func _redesign_gate_piles_are_compact() -> bool:
 				area.name,
 				visible_cards,
 			])
+			return false
+		var inspector_action := area.find_child("InspectPile*", true, false) as Button
+		if inspector_action == null or inspector_action.disabled:
+			_fail("discard pile %s has no explicit collection-inspector action" % area.name)
 			return false
 	if not saw_discard:
 		_fail("the post-mulligan table has no recognizable discard pile surface")

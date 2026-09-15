@@ -172,6 +172,8 @@ internal sealed class MainLayoutController
     private void ConfigurePageScrolling(bool gameplay, bool desktopGameplay)
     {
         PanelContainer shell = main.GetNode<PanelContainer>("Margin/Shell");
+        main.pageScroll.OffsetTop = desktopGameplay ? 6 : 16;
+        main.pageScroll.OffsetBottom = desktopGameplay ? 0 : -16;
         shell.CustomMinimumSize = new Vector2(
             desktopGameplay && main.interfaceScale > InterfaceScale.Standard
                 ? main.pageScroll.Size.X
@@ -203,9 +205,18 @@ internal sealed class MainLayoutController
             "Margin/Shell/Content/Play/Board/TableScroll");
         table.HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled;
         table.VerticalScrollMode = fixedTabletop
-            && main.interfaceScale <= InterfaceScale.Standard
-                ? ScrollContainer.ScrollMode.Disabled
+            ? ScrollContainer.ScrollMode.Disabled
+            : ScrollContainer.ScrollMode.Auto;
+        if (main.handRail.GetParent() is ScrollContainer hand)
+        {
+            hand.HorizontalScrollMode = fixedTabletop
+                ? ScrollContainer.ScrollMode.ShowNever
                 : ScrollContainer.ScrollMode.Auto;
+            if (fixedTabletop)
+            {
+                hand.ScrollHorizontal = 0;
+            }
+        }
         if (table.HorizontalScrollMode == ScrollContainer.ScrollMode.Disabled)
         {
             table.ScrollHorizontal = 0;
@@ -246,6 +257,10 @@ internal sealed class MainLayoutController
 
     private void SetTableChrome(bool compact)
     {
+        main.GetNode<Control>("Margin/Shell/Content/StatusBarClearance").CustomMinimumSize =
+            new Vector2(0, compact ? 32 : 38);
+        main.GetNode<Control>(
+            "Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader/Context").Visible = !compact;
         main.eyebrow.Visible = !compact;
         main.title.Visible = !compact;
         main.description.Visible = !compact;

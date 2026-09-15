@@ -80,6 +80,13 @@ internal sealed class BoardCardInteractionControls
         {
             return;
         }
+        // Hand cards remain inspection surfaces. Their Play actions already
+        // live in the decision dock and direct manipulation uses a drag, so a
+        // second button inside every card only expands the fixed hand shelf.
+        if (descriptor.Intent == CardInteractionIntent.Action && IsInHand(card))
+        {
+            return;
+        }
         var button = new Button
         {
             Name = $"Card{descriptor.CardId}{descriptor.Intent}",
@@ -101,6 +108,19 @@ internal sealed class BoardCardInteractionControls
             controls.Add(card, buttons);
         }
         buttons.Add(button);
+    }
+
+    private static bool IsInHand(Node node)
+    {
+        for (Node? ancestor = node.GetParent(); ancestor is not null; ancestor = ancestor.GetParent())
+        {
+            if (ancestor.Name == "HandShelf")
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private BoardInteractionFocusKey? FocusedKey()

@@ -32,41 +32,34 @@ internal static class MulliganSeatStripRenderer
         foreach (PlayerSummaryDescriptor summary in board.PlayerSummaries.OrderBy(item => item.Seat))
         {
             BoardLanePresentation? lane = board.Lanes.FirstOrDefault(item => item.Seat == summary.Seat);
-            var seat = new VBoxContainer
-            {
-                Name = $"SeatSummary{summary.Seat}",
-                ThemeTypeVariation = GodotThemeVariations.TightStack,
-                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            };
-            seat.AddThemeConstantOverride("separation", 0);
-            seat.AddChild(Label(lane?.Title ?? $"PLAYER {summary.Seat + 1}", GodotThemeVariations.Eyebrow));
-            seat.AddChild(Label(Summary(board, summary), GodotThemeVariations.Caption, wrap: true));
-            seat.AddChild(Label(RoleMarkers(summary.Seat, selection), GodotThemeVariations.StatusText));
             var select = new Button
             {
                 Name = $"SeatSwitch{summary.Seat}",
-                Text = summary.Seat == selection.ExpandedSeat ? "✓ EXPANDED" : "View public area",
+                Text = SeatLabel(lane, summary, summary.Seat == selection.ExpandedSeat),
                 Disabled = summary.Seat == selection.ExpandedSeat,
-                TooltipText = "Expand this public player workspace without changing the pending decision.",
+                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+                TooltipText = $"{RoleMarkers(summary.Seat, selection)}. "
+                    + "Show this public player workspace without changing the pending decision.",
             };
             select.Pressed += () => switchSeat(summary.Seat);
-            seat.AddChild(select);
-            rail.AddChild(seat);
+            rail.AddChild(select);
         }
 
         return strip;
     }
 
-    private static string Summary(BoardPresentation board, PlayerSummaryDescriptor seat)
+    private static string SeatLabel(
+        BoardLanePresentation? lane,
+        PlayerSummaryDescriptor seat,
+        bool expanded)
     {
-        string identity = CardTitle(board, seat.Identity) ?? "Identity not visible";
-        string form = string.IsNullOrWhiteSpace(seat.Form) ? "form unavailable" : seat.Form.ToUpperInvariant();
-        string health = seat.Health is { } current ? $"HP {current}" : "HP unavailable";
-        string statuses = seat.Statuses.Count == 0 ? "no statuses" : string.Join(", ", seat.Statuses);
-        string enemies = Named(board, seat.EngagedEnemies, "no engaged enemies");
-        string defenders = Named(board, seat.OfferedDefenders, "no offered defenders");
-        return $"{identity} · {form} · {health} · STATUS {statuses}"
-            + $" · ENGAGED {enemies} · DEFENDERS {defenders}";
+        string title = lane?.Title ?? $"PLAYER {seat.Seat + 1}";
+        string health = seat.Health is { } current ? $"HP {current}" : "HP —";
+        string form = string.IsNullOrWhiteSpace(seat.Form) ? string.Empty : $" · {seat.Form.ToUpperInvariant()}";
+        string statuses = seat.Statuses.Count == 0
+            ? string.Empty
+            : $" · {string.Join(" / ", seat.Statuses).ToUpperInvariant()}";
+        return $"{(expanded ? "✓ " : string.Empty)}{title} · {health}{form}{statuses}";
     }
 
     internal static string RoleMarkers(int seat, DisplayedSeatSelection selection)
@@ -81,18 +74,4 @@ internal static class MulliganSeatStripRenderer
         return string.Join("  ·  ", roles.Where(role => role.Length > 0).DefaultIfEmpty("OBSERVING"));
     }
 
-    private static string Named(BoardPresentation board, IReadOnlyList<int> ids, string empty) => ids.Count == 0
-        ? empty
-        : string.Join(", ", ids.Select(id => CardTitle(board, id) ?? $"CARD {id}"));
-
-    private static string? CardTitle(BoardPresentation board, int? id) => id is null ? null
-        : board.Areas.SelectMany(area => area.Cards.Concat(area.Removed))
-            .FirstOrDefault(card => card.TargetId == id)?.Title;
-
-    private static Label Label(string text, string variation, bool wrap = false) => new()
-    {
-        Text = text,
-        ThemeTypeVariation = variation,
-        AutowrapMode = wrap ? TextServer.AutowrapMode.WordSmart : TextServer.AutowrapMode.Off,
-    };
 }

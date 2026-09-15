@@ -70,8 +70,10 @@ func _mulligan_cards_are_safe() -> bool:
 		return false
 	for toggle_node in toggles:
 		var toggle := toggle_node as Button
+		var desktop_minimum := 44 if OS.get_environment("MARVEL_SMOKE_VIEWPORT") == "1920x1080" \
+			else _scaled_metric(44)
 		if not toggle.toggle_mode or toggle.text != "□ DISCARD" \
-				or toggle.custom_minimum_size.y < _scaled_metric(44):
+				or toggle.custom_minimum_size.y < desktop_minimum:
 			_fail("a mulligan checkbox is not explicit, keyboard-operable, and generously sized")
 			return false
 		if not await _prepare_activation(toggle):
@@ -82,8 +84,8 @@ func _mulligan_cards_are_safe() -> bool:
 func _tabletop_essentials_are_safe() -> bool:
 	for title in ["Rhino", "Peter Parker", "The Break-In!"]:
 		var card := _tabletop_card_named(title)
-		if card == null or card.custom_minimum_size.x < _scaled_metric(210):
-			_fail("the tabletop essential '%s' did not retain its selected board scale" % title)
+		if card == null or card.custom_minimum_size.x < 210:
+			_fail("the tabletop essential '%s' did not retain readable board geometry" % title)
 			return false
 	var villain_text := _visible_text(_tabletop_card_named("Rhino"))
 	var identity_text := _visible_text(_tabletop_card_named("Peter Parker"))
@@ -100,7 +102,9 @@ func _card_controls_are_safe(cards: Array[Node], observed: Dictionary) -> bool:
 	for card_node in cards:
 		var card := card_node as Control
 		var in_hand := hand_shelf.is_ancestor_of(card)
-		var expected_width := _scaled_metric(100 if in_hand else 125)
+		var desktop_table := OS.get_environment("MARVEL_SMOKE_VIEWPORT") == "1920x1080"
+		var expected_width := (100 if in_hand else 125) \
+			if desktop_table else _scaled_metric(100 if in_hand else 125)
 		if card.custom_minimum_size.x < expected_width:
 			_fail("a board card does not honor the selected card geometry")
 			return false

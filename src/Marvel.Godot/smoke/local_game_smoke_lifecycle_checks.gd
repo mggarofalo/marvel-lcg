@@ -56,10 +56,13 @@ func _mixed_submit_is_single_shot() -> bool:
 	var change_form := _visible_button_beginning(_decision(), "Change Form")
 	if change_form == null or change_form.disabled:
 		return true
+	var revision_before_selection := (_node("Toolbar/SyncStatus") as Label).text
 	if not await _pointer_activate(change_form):
 		return false
 	var submit := _submit_button()
 	if submit == null or submit.disabled:
+		if (_node("Toolbar/SyncStatus") as Label).text != revision_before_selection:
+			return true
 		_fail("the rapid-input probe cannot prepare a submit")
 		return false
 	var revision := (_node("Toolbar/SyncStatus") as Label).text

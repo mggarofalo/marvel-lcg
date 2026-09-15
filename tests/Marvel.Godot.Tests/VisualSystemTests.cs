@@ -257,12 +257,11 @@ public sealed class VisualSystemTests
         CardLayoutMetrics large = VisualSystem.Card(
             CardDisplaySize.Mulligan, InterfaceScale.Percent150);
 
-        Assert.Equal(195, standard.Width);
-        Assert.Equal(229, large.Width);
-        Assert.True(large.Width > standard.Width);
-        // 1920 less the fixed 360px composition rail leaves 1560px: six
-        // opening cards and their ordinary 8px gaps stay in the table.
-        Assert.True(6 * large.Width + 5 * 8 <= 1920 - 360);
+        Assert.Equal(168, standard.Width);
+        Assert.Equal(168, large.Width);
+        // The fixed desktop gives the table column at least 1120px beside the
+        // decision dock. All six choices remain simultaneously reachable.
+        Assert.True(6 * large.Width + 5 * 8 <= 1120);
     }
 
     [Theory]

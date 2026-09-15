@@ -179,24 +179,13 @@ internal static class MulliganTableRenderer
         InterfaceScale scale,
         ICardArtProvider? art)
     {
-        var destination = new PanelContainer
-        {
-            Name = "MulliganDiscardPile",
-            CustomMinimumSize = new Vector2(124, 0),
-            ThemeTypeVariation = GodotThemeVariations.BoardArea,
-            TooltipText = $"Player {player + 1} opening-hand discard cue. Drag cards to the discard pile in the near player area.",
-        };
-        destination.AddChild(Label($"PLAYER {player + 1}\nDISCARD", GodotThemeVariations.Caption, wrap: true));
-        hand.AddChild(destination);
         BoardAreaPresentation? handArea = areas.FirstOrDefault(area => area.Seat == player
             && area.Zone == "HandsArea");
         IReadOnlyList<BoardCardPresentation> cards = handArea?.Cards ?? [];
         if (hand.GetParent() is ScrollContainer scroll)
         {
-            // The decision dock shares the desktop width with the table. Keep
-            // any opening-hand overflow inside this shelf; Auto still hides
-            // the scrollbar whenever every choice fits its actual allocation.
-            scroll.HorizontalScrollMode = ScrollContainer.ScrollMode.Auto;
+            scroll.HorizontalScrollMode = ScrollContainer.ScrollMode.ShowNever;
+            scroll.ScrollHorizontal = 0;
         }
 
         foreach (BoardCardPresentation card in cards)
@@ -216,9 +205,12 @@ internal static class MulliganTableRenderer
                     ToggleMode = true,
                     TooltipText = "Select this card for replacement. Space toggles this checkbox.",
                 };
+                InterfaceScale controlScale = scale > InterfaceScale.Standard
+                    ? InterfaceScale.Standard
+                    : scale;
                 discard.CustomMinimumSize = new Vector2(
                     0,
-                    VisualSystem.Controls(scale).MinimumPointerTarget);
+                    VisualSystem.Controls(controlScale).MinimumPointerTarget);
                 discard.Pressed += () => result.RequestMulliganTarget(id);
                 choice.AddChild(discard);
                 result.RegisterMulliganToggle(id, discard);
@@ -236,11 +228,9 @@ internal static class MulliganTableRenderer
         InterfaceScale scale,
         ICardArtProvider? art)
     {
-        // Only the choice shelf compacts card faces at desktop scales. The
-        // villain, identity, and scheme cards keep their selected scale so
-        // essential current values remain readable.
-        InterfaceScale faceScale = size == CardDisplaySize.Mulligan
-            && (int)scale > (int)InterfaceScale.Standard
+        // The fixed desktop treats cards as table objects, not scalable UI
+        // containers. Larger text remains available in the card inspector.
+        InterfaceScale faceScale = (int)scale > (int)InterfaceScale.Standard
             ? InterfaceScale.Standard
             : scale;
         CardControl control = CardControl.Create(card, size, faceScale, art);

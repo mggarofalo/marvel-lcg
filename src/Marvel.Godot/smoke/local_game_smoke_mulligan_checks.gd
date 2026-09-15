@@ -75,13 +75,13 @@ func _cooperative_seat_switch_is_safe() -> bool:
 		return false
 	var expanded := main.find_child("PlayerTable", true, false) as Control
 	var heading := _node("Play/Board/HandShelf/Margin/Stack/Heading") as Label
-	var destination := main.find_child("MulliganDiscardPile", true, false) as Control
+	var destination := main.find_child("ExpandedDiscardPile", true, false) as Control
 	var cards := (_node("Play/Board/HandShelf") as Control).find_children(
 		"ProceduralCard", "PanelContainer", true, false)
 	if expanded == null or heading == null or destination == null \
 			or "PLAYER 2" not in _visible_text(expanded).to_upper() \
 			or not heading.text.begins_with("PLAYER 1 OPENING HAND") \
-			or "PLAYER 1" not in _visible_text(destination).to_upper() \
+			or not expanded.is_ancestor_of(destination) \
 			or cards.size() != 6 or main.find_child("CompleteChoiceSheet", true, false) == null:
 		_fail("switching public workspaces changed or ambiguously labeled the prompt owner's hand")
 		return false

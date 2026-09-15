@@ -23,22 +23,13 @@ internal static class TabletopRailRenderer
         };
         var stack = new VBoxContainer { ThemeTypeVariation = GodotThemeVariations.TightStack };
         stack.AddChild(Label(title, GodotThemeVariations.Eyebrow));
-        var scroll = new ScrollContainer
-        {
-            Name = "RailScroll",
-            HorizontalScrollMode = ScrollContainer.ScrollMode.Auto,
-            VerticalScrollMode = ScrollContainer.ScrollMode.Disabled,
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            FollowFocus = true,
-        };
-        var row = new HBoxContainer
+        var row = new HFlowContainer
         {
             Name = "Rail",
             ThemeTypeVariation = GodotThemeVariations.CompactRow,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
-        scroll.AddChild(row);
-        stack.AddChild(scroll);
+        stack.AddChild(row);
         panel.AddChild(stack);
         if (dropSeat is { } seat)
         {
@@ -72,23 +63,13 @@ internal static class TabletopRailRenderer
         };
         var stack = new VBoxContainer { ThemeTypeVariation = GodotThemeVariations.TightStack };
         stack.AddChild(Label($"{title}  ·  {areas.Count}", GodotThemeVariations.Caption));
-        var scroll = new ScrollContainer
-        {
-            Name = "ShelfScroll",
-            CustomMinimumSize = new Vector2(0, VisualSystem.Card(CardDisplaySize.Hand, scale).MinimumHeight + 22),
-            HorizontalScrollMode = ScrollContainer.ScrollMode.Auto,
-            VerticalScrollMode = ScrollContainer.ScrollMode.Disabled,
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            FollowFocus = true,
-        };
-        var row = new HBoxContainer
+        var row = new HFlowContainer
         {
             Name = "Shelf",
             ThemeTypeVariation = GodotThemeVariations.CompactRow,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
-        scroll.AddChild(row);
-        stack.AddChild(scroll);
+        stack.AddChild(row);
         panel.AddChild(stack);
         foreach (BoardAreaPresentation area in areas)
         {
@@ -126,7 +107,7 @@ internal static class TabletopRailRenderer
         };
         var stack = new VBoxContainer { ThemeTypeVariation = GodotThemeVariations.TightStack };
         stack.AddChild(Label($"{area.Title}  ·  {count}", GodotThemeVariations.Caption, wrap: true));
-        var cards = new HBoxContainer
+        var cards = new HFlowContainer
         {
             Name = "Cards",
             ThemeTypeVariation = GodotThemeVariations.CompactRow,

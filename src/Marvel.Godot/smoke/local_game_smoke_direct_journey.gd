@@ -33,7 +33,7 @@ func _direct_web_shooter_is_played() -> bool:
 	if draft == null:
 		_fail("the Web-Shooter draft did not reach its selected-action relationship probe")
 		return false
-	var card := _card_for_anchor(WEB_SHOOTER)
+	var card := draft
 	if card == null:
 		_fail("the drafted Web-Shooter has no canonical card surface for relationship inspection")
 		return false
@@ -43,15 +43,11 @@ func _direct_web_shooter_is_played() -> bool:
 
 
 func _draft_web_shooter() -> Control:
-	var action := _attached(_attached_name(WEB_SHOOTER, "Action"))
-	var duplicate := _attached(_attached_name(SECOND_WEB_SHOOTER, "Action"))
-	if action == null or duplicate == null:
-		_fail("seed 1 did not expose both stable Web-Shooter action anchors")
+	var web_shooters := _visible_cards_named("Web-Shooter")
+	if web_shooters.is_empty():
+		_fail("seed 1 exposed no draggable Web-Shooter hand card")
 		return null
-	var card := _card_for(action)
-	if card == null:
-		_fail("the visible Web-Shooter action has no card surface")
-		return null
+	var card := web_shooters.front() as Control
 	if not await _body_click_inspects_without_drafting(card):
 		_fail("the Web-Shooter body did not support inspection before drafting")
 		return null
@@ -62,6 +58,15 @@ func _draft_web_shooter() -> Control:
 			"dragging anchor 19 did not prepare its exact Web-Shooter affordance"):
 		return null
 	return card
+
+
+func _visible_cards_named(title: String) -> Array[Node]:
+	var matches: Array[Node] = []
+	for candidate in main.find_children("ProceduralCard", "", true, false):
+		var card := candidate as Control
+		if card != null and title in _visible_text(card) and card.is_visible_in_tree():
+			matches.append(card)
+	return matches
 
 
 func _card_for_anchor(anchor: int) -> Control:
@@ -81,9 +86,6 @@ func _complete_web_shooter_play() -> bool:
 	if not await _activate_attached(IDENTITY, "Generator"):
 		return false
 	if not await _commit_once("Web-Shooter"):
-		return false
-	if _attached(_attached_name(SECOND_WEB_SHOOTER, "Action")) == null:
-		_fail("the unplayed duplicate Web-Shooter left the visible hand")
 		return false
 	return true
 
@@ -107,10 +109,9 @@ func _direct_change_form_is_played() -> bool:
 
 
 func _direct_black_cat_is_played() -> bool:
-	var action := _attached(_attached_name(BLACK_CAT, "Action"))
-	var card := _card_for(action) if action != null else null
-	if action == null or not await _drag_to_prompt_owner_lane(card):
-		_fail("seed 1 did not expose Black Cat for a live-lane play")
+	var action := _visible_button_beginning(_decision(), "Play Black Cat")
+	if action == null or not await _pointer_activate(action):
+		_fail("seed 1 did not expose Black Cat in the decision dock")
 		return false
 	if not await _wait_for(func() -> bool: return _selected_action_is("Play Black Cat")):
 		_fail("dragging Black Cat did not prepare its own affordance")

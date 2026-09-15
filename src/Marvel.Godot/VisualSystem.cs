@@ -259,9 +259,8 @@ public static class VisualSystem
     private static int Scale(int value, InterfaceScale scale) =>
         (int)Math.Ceiling(value * ScaleFactor(scale));
 
-    private static int MulliganWidth(InterfaceScale scale) => (int)scale <= 100
-        ? Scale(195, scale)
-        : 195 + (int)Math.Ceiling(((int)scale - 100) * 34 / 50.0);
+    private static int MulliganWidth(InterfaceScale scale) =>
+        (int)scale <= 100 ? Scale(168, scale) : 168;
 
     private static double ScaleFactor(InterfaceScale scale)
     {
