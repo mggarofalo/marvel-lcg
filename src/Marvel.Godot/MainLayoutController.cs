@@ -51,6 +51,7 @@ internal sealed class MainLayoutController
         if (main.CurrentGame?.World is { } world)
         {
             main.RenderBoard(world);
+            main.RenderPromptSummary(main.CurrentGame.Prompt, world);
         }
         ApplyResponsivePlayLayout();
     }

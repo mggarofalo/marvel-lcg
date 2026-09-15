@@ -69,7 +69,7 @@ theme_type_variation = &"CompactRow"
 layout_mode = 2
 size_flags_vertical = 3
 theme_type_variation = &"Caption"
-text = "v0.1.0-dev.0 · engine engine-replay-v2 · protocol 16 · save 4"
+text = "v0.1.0-dev.0 · engine engine-replay-v2 · protocol 17 · save 4"
 
 [node name="Spacer" type="Control" parent="StatusBar" unique_id=1000000009]
 layout_mode = 2
@@ -558,9 +558,29 @@ layout_mode = 2
 theme_type_variation = &"Eyebrow"
 text = "CURRENT RESOLUTION"
 
-[node name="Summary" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/ActiveResolution/Margin/Copy"]
+[node name="Focus" type="HBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/ActiveResolution/Margin/Copy"]
 layout_mode = 2
+theme_type_variation = &"WideRow"
+
+[node name="Cards" type="HBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/ActiveResolution/Margin/Copy/Focus"]
+layout_mode = 2
+theme_type_variation = &"CompactRow"
+
+[node name="Narrative" type="VBoxContainer" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/ActiveResolution/Margin/Copy/Focus"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"TightStack"
+
+[node name="Summary" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/ActiveResolution/Margin/Copy/Focus/Narrative"]
+layout_mode = 2
+size_flags_horizontal = 3
 theme_type_variation = &"Body"
+autowrap_mode = 2
+
+[node name="Hint" type="Label" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack/ActiveResolution/Margin/Copy/Focus/Narrative"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"Caption"
 autowrap_mode = 2
 
 [node name="HeaderRule" type="HSeparator" parent="Margin/Shell/Content/Play/Prompt/Margin/Stack" unique_id=1000000089]

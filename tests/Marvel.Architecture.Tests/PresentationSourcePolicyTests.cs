@@ -101,6 +101,7 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.Prompts.Prompt.Affordances",
             "Marvel.Rules.Prompts.Prompt.Asking",
             "Marvel.Rules.Prompts.Prompt.Cancellable",
+            "Marvel.Rules.Prompts.Prompt.ContextCardIds",
             "Marvel.Rules.Prompts.Prompt.Description",
             "Marvel.Rules.Prompts.Prompt.DisplayQuestion",
             "Marvel.Rules.Prompts.Prompt.ExposesConcealedCandidates",

@@ -52,6 +52,26 @@ public sealed class InteractionSurfaceProjectionTests
     }
 
     [Fact]
+    public void ForcedDiscardChoicesUseExplicitDestructiveCues()
+    {
+        var composer = Composer(new Affordance(
+            3, "Choose", 55, 0, "support", Description: "Discard Avengers Mansion"));
+        PromptPresentation prompt = Prompt(
+            composer.Prompt, [Visible(3, 55) with { Description = "Discard Avengers Mansion" }]);
+
+        Assert.Equal(
+            CardInteractionCue.DestructiveChoice,
+            BoardInteractionCueProjection.From(composer, prompt)[55]);
+
+        composer.SelectAffordance(3);
+
+        Assert.Equal(
+            CardInteractionCue.DestructiveChoice
+                | CardInteractionCue.SelectedDestructiveChoice,
+            BoardInteractionCueProjection.From(composer, prompt)[55]);
+    }
+
+    [Fact]
     public void SelectedPromptTargetsReceiveAttachedControlsFromTheEngineOffer()
     {
         var composer = Composer(new Affordance(3, "Play", 19, 0, "Visible",

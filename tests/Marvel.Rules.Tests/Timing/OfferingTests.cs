@@ -226,6 +226,7 @@ public sealed class OfferingTests
 
         Assert.NotNull(prompt);
         Assert.Equal(0, prompt.Player);
+        Assert.Equal([card.ObjectId], prompt.ContextCardIds);
     }
 
     [Rule("rr:peril.1")]

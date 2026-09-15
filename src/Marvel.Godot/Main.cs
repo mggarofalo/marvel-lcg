@@ -217,7 +217,7 @@ public sealed partial class Main : Control
         activeResolution = GetNode<PanelContainer>(
             $"{content}/Play/Prompt/Margin/Stack/ActiveResolution");
         activeResolutionSummary = GetNode<Label>(
-            $"{content}/Play/Prompt/Margin/Stack/ActiveResolution/Margin/Copy/Summary");
+            $"{content}/Play/Prompt/Margin/Stack/ActiveResolution/Margin/Copy/Focus/Narrative/Summary");
         promptDiagnostic = GetNode<Label>(
             $"{content}/Play/Prompt/Margin/Stack/Workbench/History/PromptDiagnostic");
         boardAreas = GetNode<VBoxContainer>($"{content}/Play/Board/TableScroll/Margin/Areas");

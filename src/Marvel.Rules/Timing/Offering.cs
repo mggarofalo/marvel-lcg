@@ -259,7 +259,10 @@ public static class Offering
                     // rr:ability.11 -- declining is the other answer, which is
                     // what makes an offer of one ability a real choice.
                     Cancellable: true,
-                    Affordances: [.. eligible.Select(ability => abilities.Describe(world, ability))]);
+                    Affordances: [.. eligible.Select(ability => abilities.Describe(world, ability))])
+                {
+                    ContextCardIds = occurrence.Subject >= 0 ? [occurrence.Subject] : [],
+                };
             }
 
             if (world.Windows.Pass())

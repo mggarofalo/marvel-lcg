@@ -352,6 +352,12 @@ func _active_resolution_is_safe(state: Dictionary) -> bool:
 	if text.strip_edges() == "current resolution":
 		_fail("the empty current-resolution panel is visible")
 		return false
+	if "resolving card" in text:
+		var context_cards := active.find_children("ProceduralCard", "", true, false)
+		if context_cards.is_empty() or "click the card to inspect" not in text:
+			_fail("the card resolution does not keep an inspectable causal card visible")
+			return false
+		return await _capture_checkpoint("card-interrupt")
 	if "enemy attack" not in text or "interrupt window" not in text:
 		return true
 	state.saw_attack_resolution = true
