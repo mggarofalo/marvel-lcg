@@ -1,6 +1,6 @@
-return RunTests();
+return BuildSolution();
 
-static int RunTests()
+static int BuildSolution()
 {
     string root = RepositoryRoot();
     var start = new System.Diagnostics.ProcessStartInfo("dotnet")
@@ -8,19 +8,19 @@ static int RunTests()
         UseShellExecute = false,
         WorkingDirectory = root,
     };
-    start.ArgumentList.Add("test");
-    start.ArgumentList.Add("tests/Marvel.UnitTests.slnx");
+    start.ArgumentList.Add("build");
+    start.ArgumentList.Add("Marvel.slnx");
     start.ArgumentList.Add("--configuration");
     start.ArgumentList.Add("Release");
     start.ArgumentList.Add("--nologo");
-    start.ArgumentList.Add("--no-build");
+    start.ArgumentList.Add("--warnaserror");
 
     using var process = System.Diagnostics.Process.Start(start)
         ?? throw new InvalidOperationException("Could not start dotnet");
     if (!process.WaitForExit(TimeSpan.FromMinutes(15)))
     {
         process.Kill(true);
-        throw new TimeoutException("Unit tests did not finish within fifteen minutes");
+        throw new TimeoutException("Release build did not finish within fifteen minutes");
     }
     return process.ExitCode;
 }
