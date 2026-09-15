@@ -43,6 +43,8 @@ func _redesign_gate_opening_table_is_safe() -> bool:
 func _redesign_gate_post_mulligan_is_safe() -> bool:
 	if not _redesign_gate_enabled():
 		return true
+	if not await _redesign_gate_shell_settles("post-mulligan actions"):
+		return false
 	if not await _capture_checkpoint("redesign-post-mulligan-actions"):
 		return false
 	if not _redesign_gate_shell_uses_desktop_width("post-mulligan actions"):
@@ -59,6 +61,8 @@ func _redesign_gate_post_mulligan_is_safe() -> bool:
 
 
 func _redesign_gate_after_decision_is_safe() -> bool:
+	if not await _redesign_gate_shell_settles("after end turn"):
+		return false
 	if not await _capture_checkpoint("redesign-after-end-turn"):
 		return false
 	if not _redesign_gate_shell_uses_desktop_width("after end turn"):
@@ -70,6 +74,17 @@ func _redesign_gate_after_decision_is_safe() -> bool:
 	return true
 
 
+func _redesign_gate_shell_settles(checkpoint: String) -> bool:
+	if await _wait_for(func() -> bool:
+		var page := main.get_node("Margin") as ScrollContainer
+		var shell := main.get_node("Margin/Shell") as Control
+		return shell.size.x >= page.size.x - 2.0
+	):
+		return true
+	_fail("the %s shell did not settle to the desktop width" % checkpoint)
+	return false
+
+
 func _redesign_gate_shell_uses_desktop_width(checkpoint: String) -> bool:
 	var page := main.get_node("Margin") as ScrollContainer
 	var shell := main.get_node("Margin/Shell") as Control
@@ -77,10 +92,11 @@ func _redesign_gate_shell_uses_desktop_width(checkpoint: String) -> bool:
 	var shell_rect := shell.get_global_rect().intersection(Rect2(Vector2.ZERO, _viewport_size()))
 	if shell_rect.size.x >= page_rect.size.x - 2.0:
 		return true
-	_fail("the %s shell collapsed below the desktop width: shell=%s page=%s" % [
+	_fail("the %s shell collapsed below the desktop width: shell=%s page=%s minimum=%s" % [
 		checkpoint,
 		shell_rect,
 		page_rect,
+		shell.custom_minimum_size,
 	])
 	return false
 

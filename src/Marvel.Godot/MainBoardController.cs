@@ -55,6 +55,7 @@ internal sealed class MainBoardController : IDisposable
         WorldDescriptor world,
         int renderGeneration)
     {
+        main.board.Visible = world.Outcome == Outcome.Unfinished;
         RenderBoard(world, response.Prompt, renderGeneration);
         main.syncStatus.Visible = true;
         main.syncStatus.Text = $"✓ Synced · r{response.Revision}";
@@ -120,7 +121,12 @@ internal sealed class MainBoardController : IDisposable
             && IsCurrentRender(renderGeneration ?? renderLifetime.Current);
         relationships.Bind(rendered);
         main.decisions.BindMulliganTargets(rendered);
-        inspector.Hide();
+        if (main.cardInspectorPinned
+            && (main.inspectedCardId is not { } inspected
+                || rendered.ControlFor(inspected) is null))
+        {
+            inspector.Hide();
+        }
     }
     internal void FocusAnchors(IReadOnlyList<int> ids) => tabletop.FocusAnchors(ids);
 
@@ -136,7 +142,7 @@ internal sealed class MainBoardController : IDisposable
 
         if (id is null)
         {
-            inspector.Hide();
+            inspector.ScheduleHide();
             return;
         }
 

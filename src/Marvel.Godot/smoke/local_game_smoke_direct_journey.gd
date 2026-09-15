@@ -83,7 +83,7 @@ func _complete_web_shooter_play() -> bool:
 		return false
 	if not await _choose_cost(0):
 		return false
-	if not await _activate_attached(IDENTITY, "Generator"):
+	if not await _activate_decision_resource(IDENTITY):
 		return false
 	if not await _commit_once("Web-Shooter"):
 		return false
@@ -116,8 +116,8 @@ func _direct_black_cat_is_played() -> bool:
 	if not await _wait_for(func() -> bool: return _selected_action_is("Play Black Cat")):
 		_fail("dragging Black Cat did not prepare its own affordance")
 		return false
-	if not await _activate_attached(SPIDER_TRACER, "Generator") \
-			or not await _activate_attached(DAREDEVIL, "Generator"):
+	if not await _activate_decision_resource(SPIDER_TRACER) \
+			or not await _activate_decision_resource(DAREDEVIL):
 		_fail("Black Cat payment did not expose its exact offered hand-card generators")
 		return false
 	if not await _commit_once("Black Cat"):
@@ -152,10 +152,21 @@ func _select_attached_action(anchor: int, verb: String) -> bool:
 	return true
 
 
+func _activate_decision_resource(anchor: int) -> bool:
+	var resource := _decision().find_child("Resource%d" % anchor, true, false) as Button
+	if resource == null:
+		_fail("the decision dock has no resource choice for anchor %d" % anchor)
+		return false
+	return await _pointer_activate(resource)
+
+
 func _choose_target(anchor: int) -> bool:
 	var target := _attached(_attached_name(anchor, "Target"))
 	if target != null:
 		return await _pointer_activate(target)
+	var dock_target := _decision().find_child("Target%d" % anchor, true, false) as Button
+	if dock_target != null:
+		return await _pointer_activate(dock_target)
 	var decision_text := _visible_text(_decision()).to_lower()
 	var automatic_name := "peter parker" if anchor == IDENTITY else "rhino" if anchor == RHINO else ""
 	if not automatic_name.is_empty() and automatic_name in decision_text and "automatic" in decision_text:

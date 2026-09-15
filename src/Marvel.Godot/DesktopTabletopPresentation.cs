@@ -16,6 +16,10 @@ internal static class DesktopTabletopPresentation
         DisplayedSeatSelection selection,
         Action<int> switchSeat)
     {
+        PanelContainer shell = main.GetNode<PanelContainer>("Margin/Shell");
+        shell.CustomMinimumSize = new Vector2(
+            Math.Max(0, main.GetViewportRect().Size.X - 32),
+            shell.CustomMinimumSize.Y);
         BoardRenderCleanup.Clear(main.boardAreas);
         BoardRenderCleanup.Clear(main.handRail);
         BoardPresentation board = main.boardPresentation!;
@@ -27,14 +31,16 @@ internal static class DesktopTabletopPresentation
         main.boardAreas.AddChild(TabletopRailRenderer.Rail(
             "VillainTable", "VILLAIN TABLE  ·  FAR SIDE", [.. plan.FarLive, .. plan.FarShelf],
             result, tableScale, main.art));
-        if (board.PlayerSummaries.Count > 1)
-        {
-            main.boardAreas.AddChild(MulliganSeatStripRenderer.Create(board, selection, switchSeat));
-        }
-        main.boardAreas.AddChild(TabletopRailRenderer.Rail(
+        PanelContainer playerTable = TabletopRailRenderer.Rail(
             "PlayerTable", $"PLAYER {selection.ExpandedSeat + 1}  ·  NEAR SIDE",
             [.. plan.NearLive, .. plan.NearShelf],
-            result, tableScale, main.art, selection.ExpandedSeat));
+            result, tableScale, main.art, selection.ExpandedSeat);
+        if (board.PlayerSummaries.Count > 1)
+        {
+            TabletopRailRenderer.ReplaceHeading(
+                playerTable, MulliganSeatStripRenderer.Create(board, selection, switchSeat));
+        }
+        main.boardAreas.AddChild(playerTable);
         TabletopHandShelfRenderer.Render(
             board, selection.ExpandedSeat, main.handRail, main.handHeading,
             result, tableScale, main.art);

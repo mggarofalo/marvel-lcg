@@ -12,14 +12,26 @@ internal static class DecisionAnchorBinding
         control.MouseEntered += () =>
         {
             pointerInside = true;
-            panel.NotifyCardHovered(ids[0]);
+            panel.NotifyCardHovered(control, ids[0]);
         };
         control.MouseExited += () =>
         {
             pointerInside = false;
-            if (!control.HasFocus()) panel.NotifyCardHovered(null);
+            if (!control.HasFocus()) panel.NotifyCardExited(control);
         };
-        control.FocusEntered += () => panel.NotifyAnchorFocused(ids);
-        control.FocusExited += () => { if (!pointerInside) panel.NotifyCardHovered(null); };
+        control.GuiInput += input =>
+        {
+            if (input is InputEventMouseMotion)
+            {
+                pointerInside = true;
+                panel.NotifyCardHovered(control, ids[0]);
+            }
+        };
+        control.FocusEntered += () =>
+        {
+            panel.NotifyAnchorFocused(ids);
+            panel.NotifyCardHovered(control, ids[0]);
+        };
+        control.FocusExited += () => { if (!pointerInside) panel.NotifyCardExited(control); };
     }
 }

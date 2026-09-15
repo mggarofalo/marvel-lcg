@@ -101,7 +101,8 @@ func _open_and_validate_table() -> bool:
 
 
 func _table_interactions_are_safe() -> bool:
-	if main.find_child("VillainTable", true, false) != null:
+	if (_node("Play/Board") as Control).is_visible_in_tree() \
+			and main.find_child("VillainTable", true, false) != null:
 		if not await _focused_board_area_is_visible():
 			return false
 		return await _mulligan_dock_is_safe()
@@ -385,7 +386,7 @@ func _terminal_table_is_safe(state: Dictionary) -> bool:
 		return false
 	if not await _synchronization_preserves_history(true):
 		return false
-	if not _terminal_decision_is_safe():
+	if not await _terminal_decision_is_safe():
 		return false
 	if not _terminal_history_is_safe():
 		return false
@@ -427,6 +428,18 @@ func _terminal_decision_is_safe() -> bool:
 	if "VILLAIN WINS" not in _status().text and "PLAYERS LOSE" not in _status().text:
 		_fail("the terminal UI did not report the seeded loss")
 		return false
+	if not (_node("Play/Board") as Control).is_visible_in_tree():
+		var title := (_node("Title") as Label).text.to_upper()
+		var description := (_node("Description") as Label).text.to_upper()
+		if "DEFEAT" not in title or "FINAL MAIN SCHEME" not in description:
+			_fail("the dedicated terminal surface does not explain the defeat" \
+				+ " title=%s description=%s" % [title, description])
+			return false
+		return true
+	if not await _wait_for(func() -> bool:
+		return "DEFEAT" in _visible_text(_decision()).to_upper()):
+		_fail("the null-prompt terminal decision copy does not identify defeat")
+		return false
 	var decision := _visible_text(_decision()).to_upper()
 	var prompt := _visible_text(_node("Play/Prompt/Margin/Stack/PromptHeader")).to_upper()
 	if "DEFEAT" not in decision:
@@ -458,6 +471,8 @@ func _terminal_history_is_safe() -> bool:
 
 
 func _terminal_result_is_safe() -> bool:
+	if not (_node("Play/Board") as Control).is_visible_in_tree():
+		return true
 	var result := _node("Play/Prompt/Margin/Stack/Workbench/Action/LastResult") as Control
 	var text := _visible_text(result).to_lower()
 	if result.visible and ("villain won the game" in text or "players lost the game" in text):
@@ -467,6 +482,27 @@ func _terminal_result_is_safe() -> bool:
 
 
 func _terminal_page_is_visible() -> bool:
+	if (_node("Play/Board") as Control).is_visible_in_tree() \
+			and main.find_child("VillainTable", true, false) != null:
+		var fixed_page := main.get_node("Margin") as ScrollContainer
+		fixed_page.scroll_vertical = 0
+		fixed_page.set_deferred("scroll_vertical", 0)
+		for _frame in 3:
+			await process_frame
+		if await _wait_for(func() -> bool:
+			return _control_text_is_visible(_node(
+				"Play/Prompt/Margin/Stack/PromptHeader/Heading") as Control) \
+				and _control_text_is_visible(_node(
+					"Play/Prompt/Margin/Stack/PromptHeader/Progress") as Control)):
+			return true
+		var heading := _node("Play/Prompt/Margin/Stack/PromptHeader/Heading") as Control
+		var progress := _node("Play/Prompt/Margin/Stack/PromptHeader/Progress") as Control
+		_fail("the fixed tabletop did not reveal its terminal outcome in the decision dock" \
+			+ " heading=%s/%s progress=%s/%s" % [
+				heading.get_global_rect(), _visible_control_rect(heading),
+				progress.get_global_rect(), _visible_control_rect(progress),
+			])
+		return false
 	if await _wait_for(func() -> bool:
 		return _control_text_is_visible(_node("Title") as Control) \
 			and _control_text_is_visible(_node("Description") as Control)):
@@ -485,6 +521,8 @@ func _terminal_page_is_visible() -> bool:
 
 
 func _dismiss_terminal_result() -> bool:
+	if not (_node("Play/Board") as Control).is_visible_in_tree():
+		return true
 	var result := _node("Play/Prompt/Margin/Stack/Workbench/Action/LastResult") as Control
 	var dismiss := _node(
 		"Play/Prompt/Margin/Stack/Workbench/Action/LastResult/Margin/Copy/Header/Dismiss") as Button

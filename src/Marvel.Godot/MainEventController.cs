@@ -21,6 +21,10 @@ internal sealed class MainEventController
     }
     internal void RevealOutcome()
     {
+        main.GetNode<TabContainer>(
+            "Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench").CurrentTab = 0;
+        main.GetViewport().GuiReleaseFocus();
+        main.pageScroll.FollowFocus = false;
         main.pageScroll.ScrollVertical = 0;
         main.pageScroll.SetDeferred("scroll_vertical", 0);
     }
@@ -57,6 +61,11 @@ internal sealed class MainEventController
             main.promptRequirement.ThemeTypeVariation = GodotThemeVariations.StatusText;
             main.promptProgress.Text = "NO INPUT PENDING";
             main.promptDiagnostic.Text = "No prompt is pending.";
+            if (world.Outcome != Outcome.Unfinished)
+            {
+                main.title.Text = world.Outcome == Outcome.PlayersWin ? "Victory" : "Defeat";
+                main.description.Text = main.promptContext.Text;
+            }
             return;
         }
 

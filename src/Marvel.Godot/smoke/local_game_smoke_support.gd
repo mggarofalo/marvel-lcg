@@ -53,6 +53,8 @@ func _control_has_real_hit_area(control: Control) -> bool:
 				and _visible_control_rect(control).is_equal_approx(rect):
 			return true
 		await process_frame
+	if OS.get_environment("MARVEL_REDESIGN_GATE") == "true":
+		await _capture_checkpoint("redesign-hit-area-failure-%s" % control.name)
 	_fail("control '%s' has no stable unclipped and unobscured hit area: visible %s of %s" % [
 		control.name,
 		_visible_control_rect(control),

@@ -52,15 +52,38 @@ func _show_action_card_preview(action_card: Button) -> Control:
 	if not await _prepare_activation(action_card):
 		return null
 	var preview_point := _visible_control_rect(action_card).get_center()
-	var motion := InputEventMouseMotion.new()
-	motion.position = preview_point
-	motion.global_position = preview_point
-	render_viewport.push_input(motion, true)
+	var leave := InputEventMouseMotion.new()
+	leave.position = Vector2(4, 4)
+	leave.global_position = leave.position
+	render_viewport.push_input(leave, true)
 	await process_frame
+	action_card.grab_focus()
+	await process_frame
+	var motion := InputEventMouseMotion.new()
 	var inspector := main.get_node("CardInspector") as Control
+	for attempt in 4:
+		motion.position = preview_point + Vector2(attempt % 2, 0)
+		motion.global_position = motion.position
+		render_viewport.push_input(motion, true)
+		await process_frame
+		if inspector != null and inspector.visible:
+			break
 	if inspector == null or not inspector.visible:
-		_fail("a real pointer hover over a card-naming action did not preview its hand card")
+		var backdrop := inspector.get_node("Backdrop") as Control if inspector != null else null
+		_fail("a real pointer hover over a card-naming action did not preview its hand card" \
+			+ " backdrop=%s focus=%s hovered=%s action=%s rect=%s" % [
+				backdrop.visible if backdrop != null else "missing",
+				render_viewport.gui_get_focus_owner(),
+				render_viewport.gui_get_hovered_control(),
+				action_card,
+				_visible_control_rect(action_card),
+			])
 		return null
+	# The focus event proves keyboard preview, while the pointer remains the
+	# owner of this hover probe. Release keyboard focus so leaving the action
+	# exercises hover dismissal instead of intentionally retaining its preview.
+	action_card.release_focus()
+	await process_frame
 	var frame := inspector.get_node("Frame") as PanelContainer
 	var visible := frame.get_global_rect().intersection(Rect2(Vector2.ZERO, _viewport_size()))
 	if visible.size != frame.size:
@@ -88,13 +111,14 @@ func _preview_keeps_action_operable(action_card: Button, inspector: Control) -> 
 
 func _dismiss_action_card_preview(inspector: Control) -> bool:
 	var exit_motion := InputEventMouseMotion.new()
-	var outside_viewport := _viewport_size() + Vector2(8, 8)
-	exit_motion.position = outside_viewport
-	exit_motion.global_position = outside_viewport
+	var outside_action := Vector2(4, 4)
+	exit_motion.position = outside_action
+	exit_motion.global_position = outside_action
 	render_viewport.push_input(exit_motion, true)
+	_inject_pointer_click(outside_action)
 	await main.get_tree().create_timer(0.35).timeout
 	if inspector.visible:
-		_fail("the temporary action-card preview remained after a real pointer exit")
+		_fail("the temporary action-card preview remained after a real outside click")
 		return false
 	return true
 
@@ -140,6 +164,16 @@ func _restore_unselected_action_prompt() -> bool:
 
 
 func _pinned_inspector_mouse_filter_is_safe(hand_card: Control) -> bool:
+	# Closing stage navigation restores focus through a deferred callback. Let
+	# that callback settle, then address the card from the current board render.
+	for _attempt in 4:
+		hand_card = _current_hand_card()
+		await process_frame
+		if is_instance_valid(hand_card) and hand_card == _current_hand_card():
+			break
+	if hand_card == null:
+		_fail("the settled tabletop has no hand card for pinned inspection")
+		return false
 	if not await _pointer_activate_card_body(hand_card):
 		return false
 	await process_frame

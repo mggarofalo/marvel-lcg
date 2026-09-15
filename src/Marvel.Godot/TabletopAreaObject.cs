@@ -10,7 +10,7 @@ internal sealed record TabletopAreaObject(
     IReadOnlyList<BoardCardPresentation> InspectionOrder)
 {
     private static readonly HashSet<string> PileZones = new(
-        ["DiscardPile", "EncounterDiscardPile", "AsideDeck"],
+        ["PlayerDeck", "EncounterDeck", "DiscardPile", "EncounterDiscardPile", "AsideDeck"],
         StringComparer.Ordinal);
 
     internal static TabletopAreaObject From(BoardAreaPresentation area)

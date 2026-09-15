@@ -450,9 +450,8 @@ func _focused_decision_is_visible(restored: Button, decision_scroll: ScrollConta
 
 func _prompt_context_is_visible() -> bool:
 	for path in [
-		"Play/Prompt/Margin/Stack/PromptHeader/Eyebrow",
 		"Play/Prompt/Margin/Stack/PromptHeader/Heading",
-		"Play/Prompt/Margin/Stack/PromptHeader/Context",
+		"Play/Prompt/Margin/Stack/PromptHeader/Progress",
 	]:
 		if not _control_text_is_visible(_node(path) as Control):
 			_fail("keyboard focus hid active prompt context: %s" % path)

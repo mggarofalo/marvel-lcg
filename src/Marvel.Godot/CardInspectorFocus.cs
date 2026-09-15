@@ -52,8 +52,12 @@ internal sealed class CardInspectorFocus
 
         if (OutsideClick(input))
         {
+            bool consume = main.cardInspectorPinned;
             Hide();
-            main.GetViewport().SetInputAsHandled();
+            if (consume)
+            {
+                main.GetViewport().SetInputAsHandled();
+            }
         }
     }
 
@@ -160,7 +164,7 @@ internal sealed class CardInspectorFocus
         }
     }
 
-    private bool OutsideClick(InputEvent input) => main.cardInspector.Visible && main.cardInspectorPinned
+    private bool OutsideClick(InputEvent input) => main.cardInspector.Visible
         && input is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true } click
         && !main.cardInspectorFrame.GetGlobalRect().HasPoint(click.Position);
 

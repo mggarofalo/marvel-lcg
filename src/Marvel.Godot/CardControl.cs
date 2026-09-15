@@ -13,7 +13,6 @@ public sealed partial class CardControl : PanelContainer
     private Label? interactionLabel;
     private GridContainer? interactionControls;
     private InterfaceScale interactionScale;
-    private float baseMinimumHeight;
 
     private CardControl()
     {
@@ -54,7 +53,6 @@ public sealed partial class CardControl : PanelContainer
             ThemeTypeVariation = variation,
             interactionScale = scale,
         };
-        control.baseMinimumHeight = control.CustomMinimumSize.Y;
         var content = new VBoxContainer
         {
             Name = "CardContent",
@@ -180,7 +178,6 @@ public sealed partial class CardControl : PanelContainer
         }
         (interactionControls ?? throw new InvalidOperationException(
             "card interaction controls are unavailable")).AddChild(control);
-        ResizeForInteractionControls();
     }
 
     /// <summary>Removes a prior prompt's controls and restores this card's base surface height.</summary>
@@ -199,20 +196,6 @@ public sealed partial class CardControl : PanelContainer
         {
             parent.QueueSort();
         }
-        ResizeForInteractionControls();
-    }
-
-    private void ResizeForInteractionControls()
-    {
-        int count = interactionControls?.GetChildCount() ?? 0;
-        int rows = (count + 1) / 2;
-        SpacingMetrics spacing = VisualSystem.Spacing(interactionScale);
-        float controlsHeight = rows == 0
-            ? 0
-            : rows * VisualSystem.Controls(interactionScale).MinimumPointerTarget
-                + rows * spacing.ExtraSmall;
-        CustomMinimumSize = new Vector2(CustomMinimumSize.X, baseMinimumHeight + controlsHeight);
-        ResetSize();
     }
 
     private void RefreshTreatment() =>

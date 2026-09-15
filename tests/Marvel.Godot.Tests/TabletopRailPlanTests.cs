@@ -62,6 +62,8 @@ public sealed class TabletopRailPlanTests
     [InlineData("DiscardPile")]
     [InlineData("EncounterDiscardPile")]
     [InlineData("AsideDeck")]
+    [InlineData("PlayerDeck")]
+    [InlineData("EncounterDeck")]
     public void StoredCardsBecomeOneTopFirstInspectablePile(string zone)
     {
         BoardAreaPresentation area = Area(12, 0, zone, BoardAreaProminence.Supporting) with

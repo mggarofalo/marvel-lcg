@@ -20,6 +20,7 @@ public sealed partial class DecisionPanel : VBoxContainer
     internal bool mulliganChoiceSheetOpen;
     private bool compactMulliganChrome;
     private BoardRenderResult? mulliganBoard;
+    private Control? cardHoverOwner;
     private readonly DecisionPanelLifecycle lifecycle;
     internal WorldDescriptor? world;
     public DecisionPanel() => lifecycle = new DecisionPanelLifecycle(this);
@@ -166,6 +167,12 @@ public sealed partial class DecisionPanel : VBoxContainer
 
     private void ClearPanel()
     {
+        if (cardHoverOwner is not null)
+        {
+            cardHoverOwner = null;
+            CardHovered?.Invoke(null);
+        }
+
         foreach (Node child in GetChildren())
         {
             RemoveChild(child);
@@ -266,7 +273,22 @@ public sealed partial class DecisionPanel : VBoxContainer
 
     internal void BindAnchors(Control control, params int[] ids) => DecisionAnchorBinding.Bind(this, control, ids);
 
-    internal void NotifyCardHovered(int? id) => CardHovered?.Invoke(id);
+    internal void NotifyCardHovered(Control owner, int id)
+    {
+        cardHoverOwner = owner;
+        CardHovered?.Invoke(id);
+    }
+
+    internal void NotifyCardExited(Control owner)
+    {
+        if (!ReferenceEquals(cardHoverOwner, owner))
+        {
+            return;
+        }
+
+        cardHoverOwner = null;
+        CardHovered?.Invoke(null);
+    }
 
     internal static string NodeKey(string value) => new(
         value.Select(character => char.IsLetterOrDigit(character) ? character : '_').ToArray());

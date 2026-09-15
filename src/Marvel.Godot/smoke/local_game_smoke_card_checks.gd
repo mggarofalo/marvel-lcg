@@ -74,7 +74,14 @@ func _mulligan_cards_are_safe() -> bool:
 			else _scaled_metric(44)
 		if not toggle.toggle_mode or toggle.text != "□ DISCARD" \
 				or toggle.custom_minimum_size.y < desktop_minimum:
-			_fail("a mulligan checkbox is not explicit, keyboard-operable, and generously sized")
+			_fail("a mulligan checkbox is not explicit, keyboard-operable, and generously sized" \
+				+ " toggle=%s text=%s minimum=%s expected=%s pressed=%s" % [
+					toggle.toggle_mode,
+					toggle.text,
+					toggle.custom_minimum_size,
+					desktop_minimum,
+					toggle.button_pressed,
+				])
 			return false
 		if not await _prepare_activation(toggle):
 			return false
@@ -154,7 +161,11 @@ func _upcoming_stages_are_safe() -> bool:
 		return false
 	if not await _pointer_activate(next):
 		return false
-	await process_frame
+	if not await _wait_for(func() -> bool:
+		var current := inspector.find_child("Title", true, false) as Label
+		return current != null and current.text == "STAGE 2 OF 2"):
+		_fail("the villain inspector did not finish navigating to the upcoming stage")
+		return false
 	heading = inspector.find_child("Title", true, false) as Label
 	var previous := inspector.find_child("PreviousStage", true, false) as Button
 	if heading == null or heading.text != "STAGE 2 OF 2" \

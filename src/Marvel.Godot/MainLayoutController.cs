@@ -172,11 +172,11 @@ internal sealed class MainLayoutController
     private void ConfigurePageScrolling(bool gameplay, bool desktopGameplay)
     {
         PanelContainer shell = main.GetNode<PanelContainer>("Margin/Shell");
-        main.pageScroll.OffsetTop = desktopGameplay ? 6 : 16;
+        main.pageScroll.OffsetTop = desktopGameplay ? 4 : 16;
         main.pageScroll.OffsetBottom = desktopGameplay ? 0 : -16;
         shell.CustomMinimumSize = new Vector2(
-            desktopGameplay && main.interfaceScale > InterfaceScale.Standard
-                ? main.pageScroll.Size.X
+            desktopGameplay
+                ? Math.Max(0, main.GetViewportRect().Size.X - 32)
                 : 0,
             shell.CustomMinimumSize.Y);
         main.pageScroll.HorizontalScrollMode = gameplay
@@ -259,8 +259,15 @@ internal sealed class MainLayoutController
     {
         main.GetNode<Control>("Margin/Shell/Content/StatusBarClearance").CustomMinimumSize =
             new Vector2(0, compact ? 32 : 38);
-        main.GetNode<Control>(
-            "Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader/Context").Visible = !compact;
+        foreach (string path in new[]
+                 {
+                     "Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader/Eyebrow",
+                     "Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader/Context",
+                     "Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader/Requirement",
+                 })
+        {
+            main.GetNode<Control>(path).Visible = !compact;
+        }
         main.eyebrow.Visible = !compact;
         main.title.Visible = !compact;
         main.description.Visible = !compact;
@@ -279,7 +286,7 @@ internal sealed class MainLayoutController
             main.GetNode<MarginContainer>("Margin/Shell/Content/Play/Board/TableScroll/Margin")
                 .AddThemeConstantOverride("margin_bottom", 0);
             main.GetNode<MarginContainer>("Margin/Shell/Content/Play/Board/HandShelf/Margin")
-                .AddThemeConstantOverride("margin_top", 4);
+                .AddThemeConstantOverride("margin_top", 0);
             main.GetNode<MarginContainer>("Margin/Shell/Content/Play/Board/HandShelf/Margin")
                 .AddThemeConstantOverride("margin_bottom", 0);
         }

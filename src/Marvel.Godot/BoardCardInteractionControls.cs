@@ -80,10 +80,11 @@ internal sealed class BoardCardInteractionControls
         {
             return;
         }
-        // Hand cards remain inspection surfaces. Their Play actions already
-        // live in the decision dock and direct manipulation uses a drag, so a
-        // second button inside every card only expands the fixed hand shelf.
-        if (descriptor.Intent == CardInteractionIntent.Action && IsInHand(card))
+        // Cards remain semantic inspection/drag surfaces. The decision dock
+        // owns explicit target and resource toggles; only a standing board
+        // action earns a card-local button. Prompt refreshes therefore do not
+        // change table geometry merely because a draft asks for inputs.
+        if (IsInHand(card) || descriptor.Intent != CardInteractionIntent.Action)
         {
             return;
         }

@@ -36,11 +36,14 @@ internal static class TabletopRailRenderer
             result.RegisterDropTarget(seat, panel);
         }
 
-        foreach (BoardAreaPresentation area in areas)
+        // The set-aside/nemesis collection is setup context, not a live play
+        // area. Its cards enter the table through engine events when relevant.
+        BoardAreaPresentation[] visibleAreas = [.. areas.Where(area => area.Zone != "AsideDeck")];
+        foreach (BoardAreaPresentation area in visibleAreas)
         {
             row.AddChild(Area(area, result, scale, art, compact: false));
         }
-        if (areas.Count == 0)
+        if (visibleAreas.Length == 0)
         {
             row.AddChild(Label("No live areas.", GodotThemeVariations.MutedText));
         }
@@ -78,6 +81,18 @@ internal static class TabletopRailRenderer
         return panel;
     }
 
+    internal static void ReplaceHeading(PanelContainer rail, Control heading)
+    {
+        ArgumentNullException.ThrowIfNull(rail);
+        ArgumentNullException.ThrowIfNull(heading);
+        var stack = (VBoxContainer)rail.GetChild(0);
+        Node prior = stack.GetChild(0);
+        stack.RemoveChild(prior);
+        prior.QueueFree();
+        stack.AddChild(heading);
+        stack.MoveChild(heading, 0);
+    }
+
     private static PanelContainer Area(
         BoardAreaPresentation area,
         BoardRenderResult result,
@@ -100,8 +115,8 @@ internal static class TabletopRailRenderer
         {
             Name = $"Area{area.Id}",
             CustomMinimumSize = new Vector2(
-                VisualSystem.Card(size, scale).Width + 28,
-                VisualSystem.Card(size, scale).MinimumHeight + 42),
+                VisualSystem.Card(size, scale).Width + 16,
+                VisualSystem.Card(size, scale).MinimumHeight + 24),
             SizeFlagsHorizontal = compact
                 ? Control.SizeFlags.ShrinkBegin
                 : Control.SizeFlags.ExpandFill,
@@ -137,22 +152,24 @@ internal static class TabletopRailRenderer
         ICardArtProvider? art)
     {
         CardLayoutMetrics card = VisualSystem.Card(CardDisplaySize.Hand, scale);
+        string title = pile.Area.Zone == "AsideDeck" ? "SET-ASIDE" : pile.Area.Title;
         var panel = new PanelContainer
         {
             Name = $"Pile{pile.Area.Id}",
-            CustomMinimumSize = new Vector2(card.Width, card.MinimumHeight + 46),
+            CustomMinimumSize = new Vector2(Math.Min(150, card.Width), 78),
             SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin,
             ThemeTypeVariation = GodotThemeVariations.TabletopShelf,
             TooltipText = $"{pile.Area.Title}. {pile.Area.Context}",
         };
         var stack = new VBoxContainer { ThemeTypeVariation = GodotThemeVariations.TightStack };
-        stack.AddChild(Label(pile.Area.Title, GodotThemeVariations.Caption, wrap: true));
+        stack.AddChild(Label(title, GodotThemeVariations.Caption, wrap: true));
         var inspect = new Button
         {
             Name = $"InspectPile{pile.Area.Id}",
-            Text = $"▰  {pile.Count} CARDS\n{pile.Detail}",
+            Text = $"▰  {pile.Count}",
             Alignment = HorizontalAlignment.Left,
             Disabled = pile.InspectionOrder.Count == 0,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
             TooltipText = pile.InspectionOrder.Count == 0
                 ? $"{pile.Count} concealed cards"
                 : $"Inspect {pile.Area.Title.ToLowerInvariant()}, top card first.",
