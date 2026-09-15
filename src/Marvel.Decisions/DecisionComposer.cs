@@ -82,8 +82,7 @@ public sealed class DecisionComposer
                     Marvel.Rules.Play.Resources.Wild);
                 return true;
             });
-            return valid && (!hasWild || !cost.DeclarationSensitive
-                || cost.PreferredResourceTypes.Distinct().Take(2).Count() == 1);
+            return valid && (!hasWild || !cost.DeclarationSensitive);
         }
     }
 
@@ -201,12 +200,13 @@ public sealed class DecisionComposer
         }
 
         bool isAutomatic = UsesAutomaticResourceAllocation;
-        if (wasAutomatic || isAutomatic)
+        bool usesSuggestion = ResourcePaymentDraft.CanSuggest(SelectedCostOption(), resources);
+        if (wasAutomatic || isAutomatic || usesSuggestion)
         {
             assignments.Clear();
         }
 
-        if (isAutomatic)
+        if (isAutomatic || usesSuggestion)
         {
             ApplyAutomaticResourceAllocation();
         }
@@ -276,7 +276,7 @@ public sealed class DecisionComposer
     public void Define(string name, long value)
     {
         values[name] = value;
-        if (UsesAutomaticResourceAllocation)
+        if (UsesAutomaticResourceAllocation || ResourcePaymentDraft.CanSuggest(SelectedCostOption(), resources))
         {
             assignments.Clear();
             ApplyAutomaticResourceAllocation();

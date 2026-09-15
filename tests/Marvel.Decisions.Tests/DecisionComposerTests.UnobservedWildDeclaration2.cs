@@ -103,10 +103,35 @@ public sealed class DecisionComposerUnobservedWildDeclarationTests : DecisionCom
         composer.SelectAffordance(9);
         composer.ToggleResource(40);
 
-        Assert.True(composer.UsesAutomaticResourceAllocation);
+        Assert.False(composer.UsesAutomaticResourceAllocation);
         Assert.True(composer.TryBuild(
             out EngineDecision? decision, out string? error), error);
         Assert.Equal([new ResourceAllocation(40, 0, "BG")], decision!.Allocations);
+
+        composer.AssignResource(40, 0, 0, Resources.Physical);
+        composer.AssignResource(40, 1, 0, Resources.Physical);
+
+        Assert.True(composer.TryBuild(
+            out EngineDecision? overridden, out string? overrideError), overrideError);
+        Assert.Equal([new ResourceAllocation(40, 0, "RR")], overridden!.Allocations);
+    }
+
+    [Fact]
+    public void APreferredDeclarationDoesNotRejectPhysicalPayment()
+    {
+        var composer = new DecisionComposer(Prompt(cancellable: false,
+            new Affordance(9, "Play", 20, 0, "For Justice!",
+                Costs: [new CostOption(20, "2",
+                    Sources: [new ResourceSource(40, "RR")],
+                    DeclarationSensitive: true,
+                    PreferredResourceTypes: "B")])));
+
+        composer.SelectAffordance(9);
+        composer.ToggleResource(40);
+
+        Assert.True(composer.TryBuild(
+            out EngineDecision? decision, out string? error), error);
+        Assert.Equal([new ResourceAllocation(40, 0, "RR")], decision!.Allocations);
     }
 
     [Fact]

@@ -6,6 +6,19 @@ namespace Marvel.Decisions;
 /// <summary>Builds reversible payment drafts from engine-authored preferences.</summary>
 internal static class ResourcePaymentDraft
 {
+    internal static bool CanSuggest(
+        CostOption? option,
+        IReadOnlyList<int> paying) =>
+        option is { DeclarationSensitive: true }
+        && option.ResourceCosts.Count == 1
+        && option.PreferredResourceTypes.Distinct().Take(2).Count() == 1
+        && paying.Count > 0
+        && paying.All(effect => option.Generators.Count(source =>
+            source.Effect == effect) == 1)
+        && paying.Select(effect => option.Generators.Single(source =>
+                source.Effect == effect))
+            .Any(source => source.Generates.Contains(Resources.Wild));
+
     internal static IReadOnlyList<ResourceAllocation>? Allocate(
         CostOption option,
         IReadOnlyList<int> paying,
@@ -32,7 +45,8 @@ internal static class ResourcePaymentDraft
             {
                 Components = [component with { Rule = [required + preferred[0]] }],
             };
-        return ResourcePayment.Allocate(suggested, paying, values);
+        return ResourcePayment.Allocate(suggested, paying, values)
+            ?? ResourcePayment.Allocate(option, paying, values);
     }
 
     private static bool RequiredHasRoom(
