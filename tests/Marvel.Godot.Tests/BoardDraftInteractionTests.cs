@@ -39,6 +39,23 @@ public sealed class BoardDraftInteractionTests
     }
 
     [Fact]
+    public void DragPreviewAppearsOnlyForOneExactLegalPlayAffordance()
+    {
+        var one = Interaction(Composer(new Affordance(3, "Play", 19, 0, "Visible")));
+        var duplicate = Interaction(Composer(
+            new Affordance(3, "Play", 19, 0, "First"),
+            new Affordance(4, "Play", 19, 0, "Second")));
+        var illegal = Interaction(Composer(
+            new Affordance(3, "Play", 19, 0, "Blocked", Illegal: "Cannot play")));
+
+        Assert.True(one.CanPlay(19, true));
+        Assert.False(one.CanPlay(19, false));
+        Assert.False(one.CanPlay(20, true));
+        Assert.False(duplicate.CanPlay(19, true));
+        Assert.False(illegal.CanPlay(19, true));
+    }
+
+    [Fact]
     public void OnlyOneLegalAnchoredActionCanBePreparedDirectly()
     {
         var one = Composer(new Affordance(3, "Use", 55, 0, "One action"));

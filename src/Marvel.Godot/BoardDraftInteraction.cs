@@ -71,7 +71,7 @@ internal sealed class BoardDraftInteraction
 
     internal IReadOnlyList<AffordancePresentation> VisibleActions(int cardId) =>
         [.. affordances.Where(affordance => affordance.Illegal is null
-            && affordance.Source?.CardId == cardId)];
+            && affordance.CardAnchorId == cardId)];
 
     internal BoardDraftMutation TrySelectAction(int affordanceId, int cardId) =>
         VisibleActions(cardId).Any(affordance => affordance.Id == affordanceId)
@@ -97,9 +97,20 @@ internal sealed class BoardDraftInteraction
             : BoardDraftMutation.None;
     }
 
+    internal bool CanPlay(int? id, bool isHandCard)
+    {
+        if (!isHandCard || id is null)
+        {
+            return false;
+        }
+        return composer.Prompt.Affordances.Count(option => option.IsLegal
+            && IsVisibleCardAnchor(option.Id, id.Value)
+            && string.Equals(option.Verb, "Play", StringComparison.Ordinal)) == 1;
+    }
+
     private bool IsVisibleCardAnchor(int affordanceId, int cardId) =>
-        affordances.SingleOrDefault(affordance => affordance.Id == affordanceId)
-            ?.Source?.CardId == cardId;
+        affordances.SingleOrDefault(affordance => affordance.Id == affordanceId) is { } affordance
+            && affordance.CardAnchorId == cardId;
 
     private bool VisibleGenerator(int id) => composer.SelectedCost >= 0
         && composer.Selected is { } selected

@@ -52,7 +52,9 @@ func _align_attached_control_to_table(control: Control) -> bool:
 	var status := main.get_node("StatusBar") as Control
 	var page := main.get_node("Margin") as ScrollContainer
 	var rect := control.get_global_rect()
-	if status != null and page != null and rect.position.y < status.get_global_rect().end.y:
+	if status != null and page != null \
+			and page.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED \
+			and rect.position.y < status.get_global_rect().end.y:
 		page.scroll_vertical = maxi(
 			0,
 			page.scroll_vertical - ceili(status.get_global_rect().end.y - rect.position.y + 4.0))
@@ -62,10 +64,19 @@ func _align_attached_control_to_table(control: Control) -> bool:
 
 
 func _pointer_activate_card_body(card: Control) -> bool:
+	var card_name := card.name
 	await _scroll_control_into_view(card)
-	var point := _card_body_point(card)
-	if not await _control_owns_point(card, point):
-		_fail("card '%s' has no inspection-only body hit area" % card.name)
+	if not is_instance_valid(card):
+		card = main.find_child(card_name, true, false) as Control
+	if card == null or card.is_queued_for_deletion():
+		_fail("card '%s' was not available after a presentation rebuild" % card_name)
+		return false
+	var point := await _exposed_card_body_point(card)
+	if point == Vector2.INF:
+		var hovered := render_viewport.gui_get_hovered_control()
+		_fail("card '%s' has no inspection-only body hit area rect=%s hovered=%s" % [
+			card.name, card.get_global_rect(),
+			hovered.get_path() if hovered != null else "none"])
 		return false
 	if render_viewport.gui_get_hovered_control() is BaseButton:
 		_fail("card '%s' body probe landed on an attached control" % card.name)
@@ -85,8 +96,26 @@ func _pointer_activate_card_body(card: Control) -> bool:
 	return true
 
 
-func _card_body_point(card: Control) -> Vector2:
+func _exposed_card_body_point(card: Control) -> Vector2:
+	var card_name := card.name
 	var rect := _visible_control_rect(card)
-	return Vector2(
-		rect.position.x + minf(24.0, rect.size.x * 0.2),
-		rect.position.y + minf(24.0, rect.size.y * 0.15))
+	for y_fraction in [0.1, 0.25, 0.45, 0.65]:
+		for x_fraction in [0.1, 0.3, 0.5, 0.7, 0.9]:
+			if not is_instance_valid(card):
+				card = main.find_child(card_name, true, false) as Control
+				if card == null or card.is_queued_for_deletion():
+					return Vector2.INF
+				rect = _visible_control_rect(card)
+			var point := rect.position + Vector2(
+				rect.size.x * x_fraction, rect.size.y * y_fraction)
+			if await _control_owns_point(card, point) \
+					and not render_viewport.gui_get_hovered_control() is BaseButton:
+				return point
+	return Vector2.INF
+
+
+func _card_body_point(card: Control) -> Vector2:
+	var local := Vector2(
+		minf(24.0, card.size.x * 0.2),
+		minf(24.0, card.size.y * 0.15))
+	return card.get_global_transform() * local

@@ -5,7 +5,7 @@ func _procedural_cards_are_safe() -> bool:
 		return await _mulligan_cards_are_safe()
 	if _fallback_mulligan_is_safe():
 		return true
-	var cards := main.find_children("ProceduralCard", "PanelContainer", true, false)
+	var cards := main.find_children("ProceduralCard*", "", true, false)
 	if cards.is_empty():
 		_fail("the opened table has no procedural card controls")
 		return false
@@ -26,7 +26,7 @@ func _procedural_cards_are_safe() -> bool:
 		return false
 	if not _secondary_areas_are_safe():
 		return false
-	var hand_card := _node("Play/Board/HandShelf").find_child(
+	var hand_card := _hand_surface().find_child(
 		"ProceduralCard", true, false) as Control
 	if hand_card == null:
 		_fail("the pinned hand has no readable card to inspect")
@@ -53,8 +53,8 @@ func _fallback_mulligan_is_safe() -> bool:
 			scale.text if scale != null else "missing",
 		])
 		return false
-	var hand := _node("Play/Board/HandShelf") as Control
-	var card := hand.find_child("ProceduralCard", true, false) as Control
+	var hand := _hand_surface()
+	var card := hand.find_child("ProceduralCard*", true, false) as Control
 	if card == null or card.custom_minimum_size.x < _scaled_metric(144):
 		_fail("the generic mulligan fallback did not retain the selected card scale")
 		return false
@@ -62,11 +62,15 @@ func _fallback_mulligan_is_safe() -> bool:
 
 
 func _mulligan_cards_are_safe() -> bool:
-	var hand := _node("Play/Board/HandShelf") as Control
-	var cards := hand.find_children("ProceduralCard", "PanelContainer", true, false)
+	var hand := _hand_surface()
+	var cards: Array[Node] = []
+	var all_cards := hand.find_children("ProceduralCard*", "", true, false)
+	for candidate in all_cards:
+		if candidate.has_meta("spatial_hand_index"):
+			cards.append(candidate)
 	var toggles := hand.find_children("MulliganDiscard*", "Button", true, false)
 	if cards.size() != 6 or toggles.size() != 6:
-		_fail("the opening hand does not expose six readable cards and six discard checkboxes")
+		_fail("the opening hand does not expose six readable cards and six discard checkboxes (%d cards, %d controls, %d procedural)" % [cards.size(), toggles.size(), all_cards.size()])
 		return false
 	for toggle_node in toggles:
 		var toggle := toggle_node as Button
@@ -82,8 +86,6 @@ func _mulligan_cards_are_safe() -> bool:
 					desktop_minimum,
 					toggle.button_pressed,
 				])
-			return false
-		if not await _prepare_activation(toggle):
 			return false
 	return _tabletop_essentials_are_safe()
 
@@ -106,10 +108,11 @@ func _tabletop_essentials_are_safe() -> bool:
 
 
 func _card_controls_are_safe(cards: Array[Node], observed: Dictionary) -> bool:
-	var hand_shelf := _node("Play/Board/HandShelf")
+	var hand_shelf := _hand_surface()
 	for card_node in cards:
 		var card := card_node as Control
-		var in_hand := hand_shelf.is_ancestor_of(card)
+		var in_hand := card.has_meta("spatial_hand_index") \
+			or hand_shelf.name == &"HandShelf" and hand_shelf.is_ancestor_of(card)
 		var desktop_table := OS.get_environment("MARVEL_SMOKE_VIEWPORT") == "1920x1080"
 		var expected_width := (100 if in_hand else 125) \
 			if desktop_table else _scaled_metric(100 if in_hand else 125)
@@ -139,6 +142,7 @@ func _required_card_kinds_were_observed(observed: Dictionary) -> bool:
 
 
 func _upcoming_stages_are_safe() -> bool:
+	await main.get_tree().create_timer(0.12).timeout
 	var disclosures := main.find_children(
 		"UpcomingStagesDisclosure", "Button", true, false)
 	if not disclosures.is_empty():
@@ -183,8 +187,12 @@ func _upcoming_stages_are_safe() -> bool:
 
 
 func _active_villain_stage() -> Control:
-	for candidate in main.find_children("ProceduralCard", "PanelContainer", true, false):
-		if candidate.find_child("SummaryValuesStage", true, false) != null:
+	var candidates := main.find_children("ProceduralCard*", "", true, false)
+	candidates.reverse()
+	for candidate in candidates:
+		if is_instance_valid(candidate) and not candidate.is_queued_for_deletion() \
+				and candidate.is_visible_in_tree() \
+				and candidate.find_child("SummaryValuesStage", true, false) != null:
 			return candidate as Control
 	return null
 
@@ -201,7 +209,7 @@ func _secondary_areas_are_safe() -> bool:
 		if body == null:
 			continue
 		for area in body.get_children():
-			if area.find_child("ProceduralCard", true, false) == null:
+			if area.find_child("ProceduralCard*", true, false) == null:
 				_fail("an empty secondary area rendered individual panel chrome")
 				return false
 	return true

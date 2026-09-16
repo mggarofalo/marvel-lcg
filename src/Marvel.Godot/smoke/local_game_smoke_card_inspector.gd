@@ -1,4 +1,4 @@
-extends "res://smoke/local_game_smoke_card_summary.gd"
+extends "res://smoke/local_game_smoke_inspector_support.gd"
 
 const WEB_SHOOTER_ACTION := "Play Web-Shooter"
 
@@ -26,28 +26,106 @@ func _card_inspector_is_safe(hand_card: Control) -> bool:
 
 
 func _current_hand_card() -> Control:
-	return (_node("Play/Board/HandShelf") as Control).find_child(
-		"ProceduralCard", true, false) as Control
+	var card: Control = null
+	for candidate in _hand_surface().find_children("ProceduralCard*", "", true, false):
+		if candidate.has_meta("spatial_hand_index"):
+			if card == null or int(candidate.get_meta("spatial_hand_index")) \
+					> int(card.get_meta("spatial_hand_index")):
+				card = candidate as Control
+	return card
 
 
 func _action_card_preview_is_safe() -> bool:
-	var action_card := _web_shooter_action()
-	if action_card == null and not await _open_card_play_menu():
+	# Seat switching and resize rebuilds are deferred; inspect only the settled live surface.
+	await main.get_tree().create_timer(0.12).timeout
+	var card := _current_hand_card()
+	if card == null:
+		_fail("the post-mulligan table has no readable hand card")
 		return false
-	action_card = _web_shooter_action()
-	if action_card == null:
-		_fail("the post-mulligan decision has no card-naming Web-Shooter action")
+	var inspector := main.get_node("CardInspector") as Control
+	if not await _open_delayed_preview(card, inspector): return false
+	if not await _bridge_and_dismiss_preview(inspector): return false
+	return await _hover_preview_pins_on_click(card, inspector)
+
+
+func _open_delayed_preview(card: Control, inspector: Control) -> bool:
+	var leave := InputEventMouseMotion.new()
+	leave.position = Vector2(4, 4)
+	leave.global_position = leave.position
+	render_viewport.push_input(leave, true)
+	await process_frame
+	var resting_z := card.z_index
+	var resting_y := card.position.y
+	var body_point := await _exposed_card_body_point(card)
+	if body_point == Vector2.INF:
+		_fail("the hovered hand card has no exposed inspection body")
 		return false
-	var inspector := await _show_action_card_preview(action_card)
-	if inspector == null:
+	var motion := InputEventMouseMotion.new()
+	motion.position = body_point
+	motion.global_position = motion.position
+	render_viewport.push_input(motion, true)
+	await process_frame
+	if card.z_index <= resting_z or card.position.y >= resting_y:
+		_fail("hovering a hand card did not lift it forward in the fan")
 		return false
-	if not await _preview_keeps_action_operable(action_card, inspector):
+	if inspector.visible:
+		_fail("the table-card hover preview ignored its short opening delay")
 		return false
-	if not await _dismiss_action_card_preview(inspector):
+	await main.get_tree().create_timer(0.38).timeout
+	if not inspector.visible or (inspector.get_node("Backdrop") as Control).mouse_filter \
+			!= Control.MOUSE_FILTER_IGNORE:
+		var hovered := render_viewport.gui_get_hovered_control()
+		_fail("hovering readable card %s at %s did not open preview; hovered=%s" % [
+			card.name, body_point, hovered.get_path() if hovered != null else "none"])
 		return false
-	if not await _restore_unselected_action_prompt():
+	return true
+
+
+func _bridge_and_dismiss_preview(inspector: Control) -> bool:
+	var frame := inspector.get_node("Frame") as Control
+	var motion := InputEventMouseMotion.new()
+	motion.position = frame.get_global_rect().get_center()
+	motion.global_position = motion.position
+	render_viewport.push_input(motion, true)
+	await main.get_tree().create_timer(0.38).timeout
+	if not inspector.visible:
+		_fail("moving from the source card into its preview caused flicker")
 		return false
-	print("CARD_PREVIEW_POINTER_PROBE_OK")
+	motion.position = Vector2(4, 4)
+	motion.global_position = motion.position
+	render_viewport.push_input(motion, true)
+	await main.get_tree().create_timer(0.38).timeout
+	if inspector.visible:
+		_fail("leaving both source and preview did not dismiss the temporary preview")
+		return false
+	return true
+
+
+func _hover_preview_pins_on_click(card: Control, inspector: Control) -> bool:
+	var body_point := _card_body_point(card)
+	var motion := InputEventMouseMotion.new()
+	motion.position = body_point
+	motion.global_position = body_point
+	render_viewport.push_input(motion, true)
+	await main.get_tree().create_timer(0.38).timeout
+	if not inspector.visible:
+		_fail("the hover-to-pin probe did not reopen the delayed preview")
+		return false
+	if not await _pointer_activate_card_body(card):
+		return false
+	await process_frame
+	var backdrop := inspector.get_node("Backdrop") as Control
+	if not inspector.visible or backdrop.mouse_filter != Control.MOUSE_FILTER_STOP:
+		_fail("clicking the card behind its hover preview did not pin the inspector")
+		return false
+	var cancel := InputEventAction.new()
+	cancel.action = &"ui_cancel"
+	cancel.pressed = true
+	render_viewport.push_input(cancel)
+	await process_frame
+	if inspector.visible:
+		_fail("the hover-pinned inspector did not close with Escape")
+		return false
 	return true
 
 
@@ -127,10 +205,7 @@ func _dismiss_action_card_preview(inspector: Control) -> bool:
 
 
 func _web_shooter_action() -> Button:
-	for candidate in _visible_buttons(_decision()):
-		if _logical_action_text(candidate.text) == WEB_SHOOTER_ACTION:
-			return candidate
-	return null
+	return _table_card_control("Card19Action")
 
 
 func _open_card_play_menu() -> bool:
@@ -146,19 +221,27 @@ func _logical_action_text(text: String) -> String:
 
 
 func _web_shooter_draft_is_prepared() -> bool:
-	var summary := _decision().find_child("ActionSummary", true, false) as Control
-	if summary == null or not summary.is_visible_in_tree():
-		return false
-	for line in _visible_text(summary).split("\n", false):
-		if line.strip_edges() == WEB_SHOOTER_ACTION:
-			return true
-	return false
+	return _table_card_control("Card*Target") != null \
+		or _table_card_control("Card*Generator") != null \
+		or _table_card_control("Card*Cost") != null \
+		or _table_card_control("Card*Submit") != null
+
+
+func _table_card_control(name: String) -> Button:
+	for candidate in main.find_children(name, "Button", true, false):
+		var button := candidate as Button
+		if button != null and not button.is_queued_for_deletion() \
+				and button.is_visible_in_tree() \
+				and ((button.get_parent() != null and button.get_parent().name == "DirectControls") \
+					or button.has_meta("spatial_card_anchor")):
+			return button
+	return null
 
 
 func _wait_for_web_shooter_draft(failure: String) -> bool:
 	if await _wait_for(func() -> bool: return _web_shooter_draft_is_prepared()):
 		return true
-	_fail("%s; summary=%s" % [failure, _visible_text(_decision())])
+	_fail("%s; table=%s" % [failure, _visible_text(_play())])
 	return false
 
 
@@ -313,13 +396,21 @@ func _inspector_copy_is_safe(inspector: Control, detail: Control) -> bool:
 
 
 func _pinned_inspector_is_safe(inspector: Control) -> bool:
-	var hand_card := _node("Play/Board/HandShelf").find_child(
+	var hand_card := _hand_surface().find_child(
 		"ProceduralCard", true, false) as Control
 	hand_card.mouse_exited.emit()
 	await main.get_tree().create_timer(0.35).timeout
 	if not inspector.visible:
 		_fail("the clicked card inspector did not remain pinned")
 		return false
+	for mounted in main.find_children("Card*", "Button", true, false):
+		var button := mounted as Button
+		if button != null and button.is_visible_in_tree() \
+				and button.get_parent() != null \
+				and button.get_parent().name == &"SpatialControls" \
+				and button.get_effective_z_index() >= inspector.get_effective_z_index():
+			_fail("a mounted card control renders above the pinned inspector")
+			return false
 	inspector.mouse_entered.emit()
 	await main.get_tree().create_timer(0.4).timeout
 	if not inspector.visible:
@@ -393,85 +484,14 @@ func _inspector_traps_tab(inspector: Control) -> bool:
 	tab.pressed = true
 	render_viewport.push_input(tab)
 	await process_frame
-	if render_viewport.gui_get_focus_owner() != detail:
-		_fail("Tab escaped the pinned card inspector")
+	var close := inspector.get_node("Frame/Stack/Header/Close") as Button
+	if not close.visible or render_viewport.gui_get_focus_owner() != close:
+		_fail("Tab did not reach the pinned inspector Close control")
 		return false
 	tab.echo = true
 	render_viewport.push_input(tab)
 	await process_frame
 	if render_viewport.gui_get_focus_owner() != detail:
-		_fail("a repeated Tab event escaped the pinned card inspector")
+		_fail("the pinned inspector focus cycle did not wrap to its detail")
 		return false
 	return true
-
-
-func _close_inspector_with_keyboard(hand_card: Control, inspector: Control) -> bool:
-	var escape := InputEventKey.new()
-	escape.keycode = KEY_ESCAPE
-	escape.pressed = true
-	render_viewport.push_input(escape)
-	var release := InputEventKey.new()
-	release.keycode = KEY_ESCAPE
-	render_viewport.push_input(release)
-	await process_frame
-	if inspector.visible:
-		_fail("Escape did not close the card inspector")
-		return false
-	if render_viewport.gui_get_focus_owner() != hand_card:
-		_fail("closing the card inspector did not restore card focus")
-		return false
-	return true
-
-
-func _capture_named_card(title: String, checkpoint: String) -> bool:
-	var card: Control = null
-	for candidate in main.find_children("*", "", true, false):
-		var face := candidate.find_child("CardFace", false, false)
-		if face == null:
-			continue
-		var title_label := face.find_child("Title", false, false) as Label
-		if title_label != null and title_label.text == title:
-			card = candidate as Control
-			break
-	if card == null:
-		_fail("the table has no readable '%s' card for visual inspection" % title)
-		return false
-	if not await _pointer_activate_card_body(card):
-		return false
-	await process_frame
-	var inspector := main.get_node("CardInspector") as Control
-	if not inspector.visible:
-		_fail("'%s' did not open for visual inspection" % title)
-		return false
-	if not await _capture_checkpoint(checkpoint):
-		return false
-	return await _close_inspector_with_keyboard(card, inspector)
-
-
-func _prepare_art_pack() -> void:
-	var root_path := ProjectSettings.globalize_path("user://smoke-art-pack")
-	DirAccess.make_dir_recursive_absolute(root_path)
-	var illustration := Image.create(4, 4, false, Image.FORMAT_RGBA8)
-	illustration.fill(Color(0.2, 0.55, 0.75, 1.0))
-	illustration.save_png(root_path.path_join("peter-parker.png"))
-	var invalid := FileAccess.open(root_path.path_join("rhino.png"), FileAccess.WRITE)
-	invalid.store_string("not an image")
-	invalid.close()
-	var manifest := FileAccess.open(root_path.path_join("manifest.json"), FileAccess.WRITE)
-	manifest.store_string(JSON.stringify({
-		"version": 1,
-		"entries": {
-			"01001b": {
-				"file": "peter-parker.png",
-				"authorized": true,
-				"rights": "Generated by the native smoke test for local verification."
-			},
-			"01094": {
-				"file": "rhino.png",
-				"authorized": true,
-				"rights": "Invalid fixture generated by the native smoke test."
-			}
-		}
-	}))
-	manifest.close()
-	OS.set_environment("MARVEL_ART_PACK", root_path)

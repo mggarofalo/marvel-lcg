@@ -55,7 +55,7 @@ internal sealed class BoardRelationshipOverlayController : IDisposable
         layoutRefreshQueued = true;
         Refresh();
         // The board's containers settle after the prompt rebuild. A second
-        // deferred pass measures the final card rectangles, not a stale rail.
+        // The deferred pass measures the final spatial card rectangles.
         Callable.From(RefreshAfterLayout).CallDeferred();
     }
 
@@ -93,9 +93,9 @@ internal sealed class BoardRelationshipOverlayController : IDisposable
         Present(Paths());
     }
 
-    private List<Vector2[]> Paths()
+    private List<RelationshipPath> Paths()
     {
-        var paths = new List<Vector2[]>();
+        var paths = new List<RelationshipPath>();
         Rect2 viewport = overlay.GetGlobalRect();
         BoardRenderResult current = board ?? throw new InvalidOperationException(
             "a relationship path requires a rendered board");
@@ -103,7 +103,7 @@ internal sealed class BoardRelationshipOverlayController : IDisposable
         {
             if (PathFor(relationship, current.VisibleCardControls(), viewport) is { } path)
             {
-                paths.Add(path);
+                paths.Add(new RelationshipPath(relationship.Kind, path));
             }
         }
         return paths;
@@ -114,46 +114,75 @@ internal sealed class BoardRelationshipOverlayController : IDisposable
         IReadOnlyList<CardControl> cards,
         Rect2 viewport)
     {
-        if (relationship.Related is not { } related
-            || board?.ControlFor(relationship.Subject) is not { } source
-            || board.ControlFor(related) is not { } target)
+        if (!TryEndpoints(relationship, out Control? source, out Control? target))
         {
             return null;
         }
-        Rect2 sourceRect = RelationshipOverlayVisibility.VisualBounds(source);
-        Rect2 targetRect = RelationshipOverlayVisibility.VisualBounds(target);
-        if (!RelationshipOverlayVisibility.EndpointIsVisible(source, viewport)
-            || !RelationshipOverlayVisibility.EndpointIsVisible(target, viewport))
+        if (!RelationshipOverlayVisibility.EndpointIsVisible(source!, viewport)
+            || !RelationshipOverlayVisibility.EndpointIsVisible(target!, viewport))
         {
             return null;
         }
-        Rect2[] blockers = cards
+        Rect2 sourceRect = RelationshipOverlayVisibility.VisualBounds(source!);
+        Rect2 targetRect = RelationshipOverlayVisibility.VisualBounds(target!);
+        Vector2[]? path = RelationshipRoutePlanner.Route(
+            sourceRect, targetRect, Blockers(cards, source!, target!, viewport, sourceRect, targetRect));
+        return path is null ? null : [.. path.Select(point => point - viewport.Position)];
+    }
+
+    private bool TryEndpoints(
+        TableRelationshipDescriptor relationship, out Control? source, out Control? target)
+    {
+        source = board?.ControlFor(relationship.Subject);
+        target = relationship.Related is { } related ? board?.ControlFor(related) : null;
+        return source is not null && target is not null;
+    }
+
+    private static Rect2[] Blockers(
+        IReadOnlyList<CardControl> cards,
+        Control source,
+        Control target,
+        Rect2 viewport,
+        Rect2 sourceRect,
+        Rect2 targetRect) => [.. cards
             .Where(card => !ReferenceEquals(card, source) && !ReferenceEquals(card, target))
             .Where(control => control.IsVisibleInTree())
             .Select(control => RelationshipOverlayVisibility.VisibleBounds(control, viewport))
             .OfType<Rect2>()
-            .ToArray();
-        Vector2[]? path = RelationshipRoutePlanner.Route(sourceRect, targetRect, blockers);
-        return path is null ? null : [.. path.Select(point => point - viewport.Position)];
-    }
+            // Hand cards deliberately overlap. A neighbour touching an
+            // endpoint must not trap the connector inside the fan; farther
+            // unrelated cards still participate in route avoidance.
+            .Where(bounds => !bounds.Intersects(sourceRect)
+                && !bounds.Intersects(targetRect))];
 
-    private void Present(IReadOnlyList<Vector2[]> paths)
+    private void Present(IReadOnlyList<RelationshipPath> paths)
     {
         foreach (Node child in overlay.GetChildren())
         {
             overlay.RemoveChild(child);
             child.QueueFree();
         }
-        foreach (Vector2[] path in paths)
+        foreach (RelationshipPath path in paths)
         {
-            overlay.AddChild(new Line2D
+            var line = new Line2D
             {
-                Points = path,
-                Width = 2,
-                DefaultColor = ClientTheme.ToGodot(VisualSystem.Palette.Legal),
-            });
+                Name = $"{path.Kind}Connector",
+                Points = path.Points,
+                Width = path.Kind == RelationshipKind.OfferedTarget ? 3 : 2,
+                DefaultColor = ConnectorColor(path.Kind),
+            };
+            line.SetMeta("relationship_kind", path.Kind.ToString());
+            overlay.AddChild(line);
         }
     }
+
+    private static Color ConnectorColor(RelationshipKind kind) => ClientTheme.ToGodot(kind switch
+    {
+        RelationshipKind.OfferedGenerator => VisualSystem.Palette.Accent,
+        RelationshipKind.Result => VisualSystem.Palette.Danger,
+        RelationshipKind.Attachment => VisualSystem.Palette.Outline,
+        _ => VisualSystem.Palette.Legal,
+    });
 
     private void ObserveGeometry(BoardRenderResult current)
     {
@@ -239,4 +268,6 @@ internal sealed class BoardRelationshipOverlayController : IDisposable
             overlay.QueueFree();
         }
     }
+
+    private sealed record RelationshipPath(RelationshipKind Kind, Vector2[] Points);
 }

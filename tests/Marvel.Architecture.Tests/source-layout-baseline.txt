@@ -95,7 +95,6 @@ src/Marvel.Content/CardCatalog.cs:24: SL003: CardCatalog=318
 src/Marvel.Content/CardCatalogJson.cs:7: SL003: CardCatalogJson=327
 src/Marvel.Decisions/DecisionComposer.cs:10: SL003: DecisionComposer=455
 src/Marvel.Godot/BoardRenderer.cs:7: SL003: BoardRenderer=344
-src/Marvel.Godot/CardFaceRendering.cs:9: SL003: CardFaceRendering=343
 src/Marvel.Godot/CardValueRendering.cs:7: SL003: CardValueRendering=382
 src/Marvel.Godot/Main.cs:14: SL003: Main=472
 src/Marvel.Godot/MainSetupController.cs:10: SL003: MainSetupController=480

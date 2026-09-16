@@ -69,11 +69,15 @@ public sealed partial class CardControl : PanelContainer
             Name = "InteractionCue",
             HorizontalAlignment = HorizontalAlignment.Right,
             VerticalAlignment = VerticalAlignment.Bottom,
-            MouseFilter = MouseFilterEnum.Pass,
+            MouseFilter = MouseFilterEnum.Ignore,
             ThemeTypeVariation = GodotThemeVariations.Eyebrow,
             Visible = false,
+            ZIndex = 2,
+            ClipText = true,
+            TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
+            CustomMinimumSize = Vector2.Zero,
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
         };
-        content.AddChild(control.interactionLabel);
         control.interactionControls = new GridContainer
         {
             Name = "DirectControls",
@@ -91,6 +95,11 @@ public sealed partial class CardControl : PanelContainer
         control.AddChild(surface);
         surface.AddChild(content);
         surface.AddChild(control.interactionControls);
+        // State belongs on the card, but it is an overlay rather than another
+        // content row. Keeping it outside the VBox prevents target/resource
+        // cues from changing the physical object's authored dimensions.
+        control.AddChild(control.interactionLabel);
+        control.Size = control.CustomMinimumSize;
         return control;
     }
 
@@ -168,6 +177,16 @@ public sealed partial class CardControl : PanelContainer
         RefreshTreatment();
     }
 
+    /// <summary>Keeps the local highlight while an adjacent control carries the same text.</summary>
+    internal void HideRedundantActionCueLabel()
+    {
+        if (interactionCue == CardInteractionCue.OfferedAction
+            && InteractionControl.IsUsable(interactionLabel))
+        {
+            interactionLabel!.Visible = false;
+        }
+    }
+
     /// <summary>Adds a prompt-authorized control in this card's reserved action strip.</summary>
     internal bool AddInteractionControl(Button control)
     {
@@ -230,8 +249,8 @@ public sealed partial class CardControl : PanelContainer
         if (cue.HasFlag(CardInteractionCue.OfferedAction)) labels.Add("◇ ACTION");
         if (cue.HasFlag(CardInteractionCue.SelectedTarget)) labels.Add("✓ TARGET");
         else if (cue.HasFlag(CardInteractionCue.LegalTarget)) labels.Add("◇ TARGET");
-        if (cue.HasFlag(CardInteractionCue.SelectedGenerator)) labels.Add("✓ RESOURCE");
-        else if (cue.HasFlag(CardInteractionCue.LegalGenerator)) labels.Add("◇ RESOURCE");
+        if (cue.HasFlag(CardInteractionCue.SelectedGenerator)) labels.Add("✓ PAY");
+        else if (cue.HasFlag(CardInteractionCue.LegalGenerator)) labels.Add("◇ PAY");
         return string.Join("  ", labels);
     }
 

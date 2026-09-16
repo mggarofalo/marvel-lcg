@@ -51,6 +51,8 @@ func _redesign_gate_post_mulligan_is_safe() -> bool:
 		return false
 	if not _redesign_gate_required_action_controls_are_visible():
 		return false
+	if not _redesign_gate_cards_are_locally_bounded("post-mulligan actions"):
+		return false
 	if not _redesign_gate_piles_are_compact():
 		return false
 	if not _redesign_gate_has_no_scrollbar_chrome("post-mulligan actions"):
@@ -69,8 +71,40 @@ func _redesign_gate_after_decision_is_safe() -> bool:
 		return false
 	if not _redesign_gate_has_no_scrollbar_chrome("after end turn"):
 		return false
+	if not _redesign_gate_cards_are_locally_bounded("after end turn"):
+		return false
 	if not await _redesign_gate_inspector_dismissal_is_repeatable(2, false):
 		return false
+	return true
+
+
+func _redesign_gate_cards_are_locally_bounded(checkpoint: String) -> bool:
+	var surface := main.find_child("AstraTableSurface", true, false) as Control
+	if surface == null:
+		_fail("the %s checkpoint has no Astra table surface" % checkpoint)
+		return false
+	for node in surface.find_children("ProceduralCard*", "PanelContainer", true, false):
+		var card := node as Control
+		if card == null or not card.is_visible_in_tree():
+			continue
+		var maximum_height: float = maxf(300.0, card.custom_minimum_size.y + 4.0)
+		if card.size.y > maximum_height:
+			var descendants: Array[String] = []
+			for child in card.find_children("*", "Control", true, false):
+				var control := child as Control
+				if control != null and control.get_combined_minimum_size().y > 100.0:
+					descendants.append("%s=%s" % [
+						control.name,
+						control.get_combined_minimum_size(),
+					])
+			_fail("the %s card %s stretched beyond its local object bounds: size=%s minimum=%s combined=%s" % [
+				checkpoint,
+				card.name,
+				card.size,
+				card.custom_minimum_size,
+				card.get_combined_minimum_size(),
+			] + " descendants=%s" % [descendants])
+			return false
 	return true
 
 
@@ -102,31 +136,29 @@ func _redesign_gate_shell_uses_desktop_width(checkpoint: String) -> bool:
 
 
 func _redesign_gate_required_mulligan_controls_are_visible() -> bool:
-	var sheet := main.find_child("CompleteChoiceSheet", true, false) as Button
-	var submit := _submit_button()
-	var toggles := (_node("Play/Board/HandShelf") as Control).find_children(
+	var submit := _attached(_attached_name(IDENTITY, "Submit"))
+	var toggles := _hand_surface().find_children(
 		"MulliganDiscard*", "Button", true, false)
-	if sheet == null or submit == null or submit.disabled or toggles.size() != 6:
+	if submit == null or submit.disabled or toggles.size() != 6:
 		_fail("the opening tabletop does not expose all six mulligan choices and its commit action")
 		return false
 	for toggle in toggles:
 		if not _control_is_fully_visible(toggle as Control):
 			_fail("a mulligan choice is outside the fixed desktop viewport: %s" % toggle.name)
 			return false
-	if not _control_is_fully_visible(sheet) or not _control_is_fully_visible(submit):
-		_fail("the opening-hand review or commit action is outside the fixed desktop viewport")
+	if not _control_is_fully_visible(submit):
+		_fail("the opening-hand card-local execute action is outside the fixed desktop viewport")
 		return false
 	return true
 
 
 func _redesign_gate_required_action_controls_are_visible() -> bool:
-	var change_form := _visible_button_beginning(_decision(), "Change Form")
-	var play_card := _visible_button_beginning(_decision(), "▸ Play a card")
-	var prompt_header := _node("Play/Prompt/Margin/Stack/PromptHeader") as Control
-	if change_form == null or play_card == null:
-		_fail("the post-mulligan desktop does not expose its direct and grouped action choices")
+	var identity_action := _attached(_attached_name(IDENTITY, "Action"))
+	var hand_actions := main.find_children("Card*Action", "Button", true, false)
+	if identity_action == null or hand_actions.is_empty():
+		_fail("the post-mulligan desktop does not expose actions on its card objects")
 		return false
-	for control in [prompt_header, change_form, play_card]:
+	for control in [identity_action, hand_actions.front()]:
 		if control == null or not _control_is_fully_visible(control):
 			_fail("a required post-mulligan action affordance is outside the fixed desktop viewport")
 			return false
@@ -163,7 +195,7 @@ func _redesign_gate_piles_are_compact() -> bool:
 			continue
 		saw_discard = true
 		var visible_cards := 0
-		for candidate in area.find_children("ProceduralCard", "PanelContainer", true, false):
+		for candidate in area.find_children("ProceduralCard*", "", true, false):
 			if (candidate as Control).is_visible_in_tree():
 				visible_cards += 1
 		if visible_cards > 1:
@@ -173,6 +205,8 @@ func _redesign_gate_piles_are_compact() -> bool:
 			])
 			return false
 		var inspector_action := area.find_child("InspectPile*", true, false) as Button
+		if "EMPTY" in _visible_text(area).to_upper():
+			continue
 		if inspector_action == null or inspector_action.disabled:
 			_fail("discard pile %s has no explicit collection-inspector action" % area.name)
 			return false
@@ -185,34 +219,46 @@ func _redesign_gate_piles_are_compact() -> bool:
 func _redesign_gate_inspector_dismissal_is_repeatable(
 		attempts: int, require_change_form: bool) -> bool:
 	for attempt in attempts:
-		var hand_card := (_node("Play/Board/HandShelf") as Control).find_child(
-			"ProceduralCard", true, false) as Control
+		var hand_card := _current_hand_card()
 		if hand_card == null:
 			_fail("inspector dismissal attempt %d has no visible hand card" % (attempt + 1))
 			return false
 		var inspector := await _open_card_inspector(hand_card)
 		if inspector == null:
 			return false
-		var action := _visible_button_beginning(_decision(), "Change Form") \
-			if require_change_form else _first_enabled_choice()
+		var action := _attached(_attached_name(IDENTITY, "Action"))
+		if action == null:
+			for candidate in main.find_children("Card*Action", "Button", true, false):
+				if (candidate as Button).is_visible_in_tree() \
+						and not candidate.is_queued_for_deletion() \
+						and not inspector.is_ancestor_of(candidate):
+					action = candidate as Button
+					break
 		if action == null:
 			_fail("inspector dismissal attempt %d has no current background action" % (attempt + 1))
 			return false
-		var decision_before := _visible_text(_decision())
+		var action_id := action.get_instance_id()
+		var backdrop := inspector.get_node("Backdrop") as Control
 		var click := InputEventMouseButton.new()
 		click.button_index = MOUSE_BUTTON_LEFT
 		click.pressed = true
-		click.position = action.get_global_rect().get_center()
+		click.position = backdrop.get_global_rect().position + Vector2(20, 20)
 		render_viewport.push_input(click, true)
 		var release := InputEventMouseButton.new()
 		release.button_index = MOUSE_BUTTON_LEFT
 		release.position = click.position
 		render_viewport.push_input(release, true)
 		await process_frame
+		await process_frame
 		if inspector.visible:
 			_fail("outside click %d did not dismiss the pinned card inspector" % (attempt + 1))
 			return false
-		if _visible_text(_decision()) != decision_before:
-			_fail("inspector dismissal attempt %d activated its underlying action" % (attempt + 1))
+		var action_replaced := not is_instance_valid(action) \
+				or action.get_instance_id() != action_id
+		var choices_opened := main.find_child("CardActionChoices", true, false) != null
+		if action_replaced or choices_opened:
+			_fail(("inspector dismissal attempt %d activated its underlying action " \
+					+ "(replaced=%s choices=%s)") % [
+					attempt + 1, action_replaced, choices_opened])
 			return false
 	return true

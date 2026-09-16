@@ -32,4 +32,9 @@ public sealed record AffordancePresentation(
 
     /// <summary>Visible source-to-target and source-to-generator relationships in wire order.</summary>
     public IReadOnlyList<TableRelationshipDescriptor> Relationships { get; init; } = [];
+
+    /// <summary>The explicit card anchor when it is safe to bind the affordance to that card.</summary>
+    public int? CardAnchorId => Source?.CardId ?? (AnchorKind == AffordanceAnchorKind.Card
+        ? AnchorId
+        : null);
 }

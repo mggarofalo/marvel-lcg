@@ -55,4 +55,19 @@ public sealed class EventLogFormatterTests
             + Environment.NewLine,
             formatted);
     }
+
+    [Fact]
+    public void ChronologySectionKeepsCurrentEventsVisibleBesideActionHistory()
+    {
+        EventPresentation[] entries =
+        [
+            new("Spider-Man changed form.", "Test", [], EventMotionKind.State),
+        ];
+
+        string formatted = EventLogFormatter.FormatChronologySection(
+            entries, "f0a030");
+
+        Assert.Contains("EVENT CHRONOLOGY", formatted, StringComparison.Ordinal);
+        Assert.Contains("Spider-Man changed form.", formatted, StringComparison.Ordinal);
+    }
 }

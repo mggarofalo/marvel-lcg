@@ -16,10 +16,48 @@ internal static class BoardInteractionControlProjection
         }
 
         var controls = new List<CardInteractionControlDescriptor>();
-        AddActionControls(controls, prompt);
+        if (composer.Selected is null)
+        {
+            AddActionControls(controls, prompt);
+        }
+        AddCostControls(controls, composer);
         AddTargetControls(controls, composer);
         AddGeneratorControls(controls, composer);
+        AddSubmitControl(controls, composer);
         return controls;
+    }
+
+    private static void AddCostControls(
+        List<CardInteractionControlDescriptor> controls, DecisionComposer composer)
+    {
+        if (composer.Selected is not { CostOptions.Count: > 1 } selected)
+        {
+            return;
+        }
+        for (int index = 0; index < selected.CostOptions.Count; index++)
+        {
+            string marker = composer.SelectedCost == index ? "✓" : "◇";
+            controls.Add(new CardInteractionControlDescriptor(
+                selected.AnchorId,
+                CardInteractionIntent.Cost,
+                $"{marker} COST {index + 1}",
+                CardInteractionCue.OfferedAction,
+                index));
+        }
+    }
+
+    private static void AddSubmitControl(
+        List<CardInteractionControlDescriptor> controls, DecisionComposer composer)
+    {
+        if (composer.Selected is not { } selected || !composer.Progress().IsReady)
+        {
+            return;
+        }
+        controls.Add(new CardInteractionControlDescriptor(
+            selected.AnchorId,
+            CardInteractionIntent.Submit,
+            "EXECUTE",
+            CardInteractionCue.OfferedAction));
     }
 
     private static void AddTargetControls(
@@ -48,9 +86,9 @@ internal static class BoardInteractionControlProjection
         List<CardInteractionControlDescriptor> controls, PromptPresentation prompt)
     {
         foreach (IGrouping<int, AffordancePresentation> actions in prompt.Affordances
-                     .Where(affordance => affordance.Source?.CardId is not null
+                     .Where(affordance => affordance.CardAnchorId is not null
                          && affordance.Illegal is null)
-                     .GroupBy(affordance => affordance.Source!.CardId!.Value)
+                     .GroupBy(affordance => affordance.CardAnchorId!.Value)
                      .OrderBy(group => group.Key))
         {
             controls.Add(new CardInteractionControlDescriptor(
@@ -60,6 +98,7 @@ internal static class BoardInteractionControlProjection
                 CardInteractionCue.OfferedAction));
         }
     }
+
 
     private static void AddGeneratorControls(
         List<CardInteractionControlDescriptor> controls, DecisionComposer composer)
@@ -83,7 +122,7 @@ internal static class BoardInteractionControlProjection
             controls.Add(new CardInteractionControlDescriptor(
                 generator,
                 CardInteractionIntent.Generator,
-                selectedGenerator ? "✓ RESOURCE" : "◇ RESOURCE",
+                selectedGenerator ? "✓ PAY" : "◇ PAY",
                 selectedGenerator
                     ? CardInteractionCue.SelectedGenerator
                     : CardInteractionCue.LegalGenerator));
