@@ -1,9 +1,5 @@
-extends "res://smoke/hosted_multiplayer_smoke_support.gd"
+extends "res://smoke/hosted_multiplayer_smoke_client_support.gd"
 
-# The Windows CI runner falls back to software-rendered ANGLE. Socket decisions
-# must still complete there, but rendering two live Main scenes can take longer
-# than the headless local-game smoke's per-action budget.
-const TIMEOUT_MILLISECONDS := 60000
 const MAX_DECISIONS := 600
 const GAME_LABEL := "hosted-multiplayer-smoke"
 
@@ -75,12 +71,16 @@ func _open_host(packed: PackedScene) -> bool:
 
 
 func _restricted_guest_surface_is_safe() -> bool:
-	var host_hand := _node(host, "Play/Board/HandShelf") as Control
-	var guest_hand := _node(guest, "Play/Board/HandShelf") as Control
+	var host_hand := host.find_child("AstraTableSurface", true, false) as Control
+	var guest_hand := guest.find_child("AstraTableSurface", true, false) as Control
+	if host_hand == null:
+		host_hand = _node(host, "Play/Board/HandShelf") as Control
+	if guest_hand == null:
+		guest_hand = _node(guest, "Play/Board/HandShelf") as Control
 	if host_hand == null or guest_hand == null:
 		_fail("the restricted clients do not expose their distinct hand shelves")
 		return false
-	var host_cards := host_hand.find_children("ProceduralCard", "PanelContainer", true, false)
+	var host_cards := host_hand.find_children("ProceduralCard*", "", true, false)
 	if host_cards.is_empty():
 		_fail("the prompt owner has no rendered private hand to protect")
 		return false
@@ -156,7 +156,7 @@ func _initial_hosted_checkpoint() -> bool:
 
 
 func _play_hosted_journey() -> Dictionary:
-	var state := {"host_acted": false, "guest_acted": false, "decisions": 0}
+	var state := {"host_acted": false, "guest_acted": false, "decisions": 0, "recoveries": 0}
 	while not _complete(host) or not _complete(guest):
 		if not await _play_hosted_decision(state):
 			return {}
@@ -171,7 +171,12 @@ func _play_hosted_decision(state: Dictionary) -> bool:
 		return await _synchronize(guest if _complete(host) else host)
 	var active := _active_hosted_client()
 	if active == null:
+		state.recoveries += 1
+		if state.recoveries > 20:
+			_fail("the hosted clients did not recover an operable prompt")
+			return false
 		return await _recover_hosted_prompt()
+	state.recoveries = 0
 	state.host_acted = state.host_acted or active == host
 	state.guest_acted = state.guest_acted or active == guest
 	if not await _answer_visible_decision(active):
@@ -265,6 +270,21 @@ func _configure_connection(main: Control) -> void:
 
 
 func _answer_visible_decision(main: Control) -> bool:
+	var prior_status := _status(main).text
+	var attached_decline := _attached(main, "Card*Decline")
+	if attached_decline != null and not attached_decline.disabled:
+		if not await _pointer_activate(attached_decline):
+			return false
+	elif _has_table_decision(main):
+		if not await _compose_table_decision(main):
+			return false
+	else:
+		return await _answer_fallback_decision(main, prior_status)
+
+	return await _wait_for_hosted_settlement(main, prior_status)
+
+
+func _answer_fallback_decision(main: Control, prior_status: String) -> bool:
 	var decision := _decision(main)
 	var decline := _button(decision, "Pass / decline")
 	if decline != null and not decline.disabled:
@@ -285,7 +305,13 @@ func _answer_visible_decision(main: Control) -> bool:
 			return false
 		if not await _pointer_activate(submit):
 			return false
+	return await _wait_for_hosted_settlement(main, prior_status)
 
+
+func _wait_for_hosted_settlement(main: Control, prior_status: String) -> bool:
+	if not await _wait_for(func() -> bool: return _status(main).text != prior_status):
+		_fail("the hosted decision did not start: %s" % prior_status)
+		return false
 	if not await _wait_for(func() -> bool:
 		return not _status(main).text.begins_with("DECISION SENT")):
 		_fail("the hosted decision did not settle: %s" % _status(main).text)
@@ -295,6 +321,37 @@ func _answer_visible_decision(main: Control) -> bool:
 		_fail("the hosted decision was not accepted")
 		return false
 	return true
+
+
+func _compose_table_decision(main: Control) -> bool:
+	for selection in 10:
+		var submit := _attached(main, "Card*Submit")
+		if submit != null and not submit.disabled:
+			return await _pointer_activate(submit)
+		var chooser := main.find_child("CardActionChoices", true, false) as Control
+		if chooser != null and chooser.is_visible_in_tree():
+			var choice := _first_enabled_choice(chooser)
+			if choice == null or not await _pointer_activate(choice):
+				return false
+			await get_tree().process_frame
+			continue
+		var contextual := main.find_child("ContextAction*", true, false) as Button
+		if contextual != null and contextual.is_visible_in_tree() and not contextual.disabled:
+			if not await _pointer_activate(contextual):
+				return false
+			await get_tree().process_frame
+			continue
+		var control: Button = null
+		for pattern in ["Card*Target", "Card*Cost", "Card*Generator", "Card*Action"]:
+			control = _attached(main, pattern, true)
+			if control != null:
+				break
+		if control == null or not await _pointer_activate(control):
+			_fail("the active hosted client has no card-local control that can advance its prompt")
+			return false
+		await get_tree().process_frame
+	_fail("the active hosted client's card-local draft did not become executable")
+	return false
 
 
 func _synchronize(main: Control) -> bool:
@@ -317,100 +374,45 @@ func _synchronize(main: Control) -> bool:
 
 
 func _has_decision(main: Control) -> bool:
-	if not _play(main).visible or _complete(main):
+	if not _play(main).visible or _complete(main) \
+			or "WAITING FOR ANOTHER PLAYER" in _status(main).text:
 		return false
 	var decision := _decision(main)
 	var decline := _button(decision, "Pass / decline")
 	var submit := _submit_button(decision)
-	return decline != null and not decline.disabled \
+	return _has_table_decision(main) \
+		or decline != null and not decline.disabled \
 		or submit != null and not submit.disabled \
 		or _first_enabled_choice(decision) != null
 
 
 func _can_decline(main: Control) -> bool:
+	var attached := _attached(main, "Card*Decline")
+	if attached != null and not attached.disabled:
+		return true
 	var decline := _button(_decision(main), "Pass / decline")
 	return decline != null and not decline.disabled
 
 
-func _decision_is_terminal(main: Control) -> bool:
-	return not _has_decision(main) and "No further decision is waiting" in _visible_text(_decision(main))
-
-
-func _complete(main: Control) -> bool:
-	return _status(main).text.begins_with("GAME COMPLETE")
-
-
-func _select_option(node: Node, wanted: String) -> void:
-	var option := node as OptionButton
-	for index in option.item_count:
-		if option.get_item_text(index).begins_with(wanted):
-			option.select(index)
-			option.item_selected.emit(index)
-			return
-	_fail("hosted setup option '%s' is unavailable" % wanted)
-
-
-func _first_enabled_choice(decision: Control) -> Button:
-	for button in _visible_buttons(decision):
-		if not button.disabled \
-				and button.name != "Submit" \
-				and button.text != "Pass / decline":
-			return button
-	return null
-
-
-func _submit_button(decision: Control) -> Button:
-	var submit := decision.find_child("Submit", true, false) as Button
-	return submit if submit != null and submit.is_visible_in_tree() else null
-
-
-func _button(node: Node, wanted: String) -> Button:
-	for button in _visible_buttons(node):
-		if button.text == wanted:
-			return button
-	return null
-
-
-func _visible_buttons(node: Node) -> Array[Button]:
-	var found: Array[Button] = []
-	for child in node.get_children():
-		if child is Button and child.is_visible_in_tree():
-			found.append(child)
-		found.append_array(_visible_buttons(child))
-	return found
-
-
-func _visible_text(node: Node) -> String:
-	var text := ""
-	for child in node.get_children():
-		if child is Label and child.is_visible_in_tree():
-			text += child.text + "\n"
-		elif child is Button and child.is_visible_in_tree():
-			text += child.text + "\n"
-		text += _visible_text(child)
-	return text
-
-
-func _node(main: Control, relative: String) -> Node:
-	return main.get_node("Margin/Shell/Content/" + relative)
-
-
-func _play(main: Control) -> Control:
-	return _node(main, "Play") as Control
-
-
-func _decision(main: Control) -> Control:
-	return _node(main, "Play/Prompt/Margin/Stack/Workbench/Action/Decision") as Control
-
-
-func _status(main: Control) -> Label:
-	return _node(main, "Status/Text") as Label
-
-
-func _wait_for(condition: Callable) -> bool:
-	var started := Time.get_ticks_msec()
-	while Time.get_ticks_msec() - started < TIMEOUT_MILLISECONDS:
-		if condition.call():
+func _has_table_decision(main: Control) -> bool:
+	for pattern in ["Card*Decline", "Card*Submit", "Card*Target", "Card*Cost", \
+			"Card*Generator", "Card*Action"]:
+		if _attached(main, pattern) != null:
 			return true
-		await get_tree().process_frame
-	return false
+	var contextual := main.find_child("ContextAction*", true, false) as Button
+	return contextual != null and contextual.is_visible_in_tree() and not contextual.disabled
+
+
+func _attached(main: Control, pattern: String, skip_selected := false) -> Button:
+	for candidate in main.find_children(pattern, "Button", true, false):
+		var button := candidate as Button
+		if button != null and button.is_visible_in_tree() and not button.disabled \
+				and button.has_meta("spatial_card_anchor") \
+				and (not skip_selected or not button.text.begins_with("✓")):
+			return button
+	return null
+
+
+func _decision_is_terminal(main: Control) -> bool:
+	return not _has_decision(main) \
+		and "No further decision is waiting" in _visible_text(_decision(main))

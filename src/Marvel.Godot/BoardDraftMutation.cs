@@ -7,4 +7,7 @@ internal enum BoardDraftMutation
     Target,
     Generator,
     Affordance,
+    Cost,
+    Submit,
+    Decline,
 }

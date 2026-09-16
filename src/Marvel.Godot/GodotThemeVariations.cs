@@ -23,6 +23,11 @@ public static class GodotThemeVariations
     public const string TabletopPlayerRail = nameof(TabletopPlayerRail);
     public const string TabletopZone = nameof(TabletopZone);
     public const string TabletopPile = nameof(TabletopPile);
+    public const string SpatialVillainMat = nameof(SpatialVillainMat);
+    public const string SpatialPlayerMat = nameof(SpatialPlayerMat);
+    public const string SpatialPile = nameof(SpatialPile);
+    public const string SpatialDecision = nameof(SpatialDecision);
+    public const string SpatialDropTarget = nameof(SpatialDropTarget);
     public const string StatusPanel = nameof(StatusPanel);
     public const string DangerStatusPanel = nameof(DangerStatusPanel);
     public const string TightStack = nameof(TightStack);

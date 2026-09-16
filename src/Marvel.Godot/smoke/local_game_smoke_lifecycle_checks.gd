@@ -31,7 +31,7 @@ func _selection_and_sync_overlap(choice: Button, synchronize: Button) -> bool:
 
 
 func _inspector_and_sync_overlap() -> bool:
-	var hand_card := _node("Play/Board/HandShelf").find_child(
+	var hand_card := _hand_surface().find_child(
 		"ProceduralCard", true, false) as Control
 	var synchronize := main.find_child("Synchronize", true, false) as Button
 	if hand_card == null or synchronize == null:

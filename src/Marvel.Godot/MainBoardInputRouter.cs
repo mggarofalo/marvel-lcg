@@ -11,6 +11,18 @@ internal static class MainBoardInputRouter
         CardInspectorStageNavigation stages,
         InputEvent input)
     {
+        if (main.cardInspector.Visible && main.cardInspectorPinned)
+        {
+            if (stages.Route(input))
+            {
+                main.GetViewport().SetInputAsHandled();
+                return;
+            }
+
+            inspector.Input(input);
+            return;
+        }
+
         if (main.boardRender?.RoutePointer(input) == true)
         {
             main.GetViewport().SetInputAsHandled();

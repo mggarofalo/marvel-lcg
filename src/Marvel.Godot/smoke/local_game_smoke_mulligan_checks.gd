@@ -14,8 +14,8 @@ func _mulligan_result_and_payment_are_operable() -> bool:
 			return false
 	if not await _post_mulligan_table_is_safe():
 		return false
-	var hand_card := (_node("Play/Board/HandShelf") as Control).find_child(
-		"ProceduralCard", true, false) as Control
+	var hand_card := _hand_surface().find_child(
+		"ProceduralCard*", true, false) as Control
 	if hand_card == null:
 		_fail("the post-mulligan hand has no card for the pinned-inspector probe")
 		return false
@@ -70,7 +70,7 @@ func _fallback_mulligan_sheet_is_focus_safe() -> bool:
 
 
 func _cooperative_seat_switch_is_safe() -> bool:
-	var strip := main.find_child("SeatStrip", true, false) as Control
+	var strip := main.find_child("SpatialSeatSummaries", true, false) as Control
 	var switch_two := main.find_child("SeatSwitch1", true, false) as Button
 	var switch_one := main.find_child("SeatSwitch0", true, false) as Button
 	if strip == null or switch_two == null or switch_one == null \
@@ -79,23 +79,34 @@ func _cooperative_seat_switch_is_safe() -> bool:
 		return false
 	if not await _pointer_activate(switch_two):
 		return false
-	var expanded := main.find_child("PlayerTable", true, false) as Control
-	var heading := _node("Play/Board/HandShelf/Margin/Stack/Heading") as Label
-	var destination := main.find_child("ExpandedDiscardPile", true, false) as Control
-	var cards := (_node("Play/Board/HandShelf") as Control).find_children(
-		"ProceduralCard", "PanelContainer", true, false)
+	var expanded := main.find_child("PlayerTableCaption", true, false) as Control
+	var heading := _hand_heading()
+	var destination := main.find_child("PileEmptyPlayerDiscard", true, false) as Control
+	if destination == null:
+		destination = main.find_child("ExpandedDiscardPile", true, false) as Control
+	var cards: Array[Node] = []
+	for candidate in _hand_surface().find_children(
+			"ProceduralCard*", "PanelContainer", true, false):
+		if candidate.has_meta("spatial_hand_index"):
+			cards.append(candidate)
 	if expanded == null or heading == null or destination == null \
-			or "PLAYER 2" not in _visible_text(expanded).to_upper() \
+			or "PLAYER 2" not in (expanded as Label).text.to_upper() \
 			or not heading.text.begins_with("PLAYER 1 OPENING HAND") \
-			or not expanded.is_ancestor_of(destination) \
-			or cards.size() != 6 or main.find_child("CompleteChoiceSheet", true, false) == null:
-		_fail("switching public workspaces changed or ambiguously labeled the prompt owner's hand")
+			or not _hand_surface().is_ancestor_of(destination) \
+			or cards.size() != 6 or _attached(_attached_name(IDENTITY, "Submit")) == null:
+		_fail("switching public workspaces changed the prompt-owner surface: " \
+				+ "expanded=%s heading=%s destination=%s ancestor=%s hand_cards=%d submit=%s" % [
+				expanded != null and "PLAYER 2" in (expanded as Label).text.to_upper(),
+				heading != null and heading.text.begins_with("PLAYER 1 OPENING HAND"),
+				destination != null,
+				destination != null and _hand_surface().is_ancestor_of(destination),
+				cards.size(), _attached(_attached_name(IDENTITY, "Submit")) != null])
 		return false
 	switch_one = main.find_child("SeatSwitch0", true, false) as Button
 	if switch_one == null or not await _pointer_activate(switch_one):
 		return false
 	return main.find_child("SeatSwitch0", true, false) is Button \
-		and main.find_child("CompleteChoiceSheet", true, false) != null
+		and _attached(_attached_name(IDENTITY, "Submit")) != null
 
 
 func _select_mulligan_cards() -> bool:
@@ -107,9 +118,9 @@ func _select_mulligan_cards() -> bool:
 	if mansion == null or aunt == null or kick == null:
 		_fail("the opening hand has no explicit discard controls for the seeded cards")
 		return false
-	if not await _pointer_activate(mansion):
+	if not await _keyboard_activate(mansion):
 		return false
-	if not await _sheet_selection_stays_bound("Aunt May", true):
+	if not await _keyboard_activate(_mulligan_discard("Aunt May")):
 		return false
 	if not await _drag_capture_is_safe():
 		return false
@@ -132,7 +143,7 @@ func _drag_capture_is_safe() -> bool:
 	if not _mulligan_discard("Swinging Web Kick").button_pressed:
 		_fail("a source-card drag released over discard did not select exactly once")
 		return false
-	if not await _sheet_selection_stays_bound("Swinging Web Kick", false):
+	if not await _keyboard_activate(_mulligan_discard("Swinging Web Kick")):
 		return false
 	card = _mulligan_card("Swinging Web Kick")
 	if card == null:
@@ -192,11 +203,11 @@ func _select_mulligan_cards_from_fallback() -> bool:
 
 func _mulligan_discard(title: String) -> Button:
 	var card := _mulligan_card(title)
-	return card.get_parent().find_child("MulliganDiscard*", false, false) as Button if card != null else null
+	return card.find_child("MulliganDiscard*", true, false) as Button if card != null else null
 
 
 func _mulligan_card(title: String) -> Control:
-	for candidate in (_node("Play/Board/HandShelf") as Control).find_children("ProceduralCard", "PanelContainer", true, false):
+	for candidate in _hand_surface().find_children("ProceduralCard*", "", true, false):
 		var card := candidate as Control
 		var name := card.find_child("Title", true, false) as Label
 		if name != null and name.text == title:
@@ -208,7 +219,9 @@ func _drag_mulligan_to_discard(card: Control) -> bool:
 	# Use the fixed discard destination in the near player area. The compact
 	# duplicate inside the horizontally scrolling hand is a click/tap cue, not
 	# a reliable cross-scroll drag destination.
-	var discard := main.find_child("ExpandedDiscardPile", true, false) as Control
+	var discard := main.find_child("PileEmptyPlayerDiscard", true, false) as Control
+	if discard == null:
+		discard = main.find_child("ExpandedDiscardPile", true, false) as Control
 	if discard == null:
 		# A projected pile retains its normal area identity even while empty.
 		for area_node in main.find_children("Area*", "PanelContainer", true, false):
@@ -233,9 +246,12 @@ func _drag_mulligan_outside_discard(card: Control) -> bool:
 
 
 func _drag_mulligan(card: Control, finish: Vector2) -> bool:
-	if card == null or not await _prepare_activation(card):
+	if card == null or not card.is_visible_in_tree():
 		return false
-	var start := _visible_control_rect(card).get_center()
+	var start := await _exposed_card_body_point(card)
+	if start == Vector2.INF:
+		_fail("the mulligan card has no exposed body point for drag capture")
+		return false
 	var press := InputEventMouseButton.new()
 	press.button_index = MOUSE_BUTTON_LEFT
 	press.pressed = true
@@ -263,76 +279,116 @@ func _mulligan_target(title: String) -> Button:
 
 
 func _submit_mulligan() -> bool:
-	var submit := _submit_button()
-	if submit == null or submit.disabled or "Discard 3 and redraw" not in submit.text:
+	var submit := _attached("Card*Submit")
+	if submit == null or submit.disabled or submit.text != "EXECUTE":
 		_fail("the three-card mulligan cannot be submitted")
 		return false
 	if not await _pointer_activate(submit):
 		return false
 	if OS.get_environment("MARVEL_SMOKE_TWO_PLAYER") == "true":
 		if not await _wait_for(func() -> bool:
-			var heading := _node("Play/Board/HandShelf/Margin/Stack/Heading") as Label
+			var heading := _hand_heading()
 			return heading != null and heading.text.begins_with("PLAYER 2 OPENING HAND") \
-				and not (_node("Play/Board/HandShelf") as Control).find_children(
+				and not _hand_surface().find_children(
 					"MulliganDiscard*", "Button", true, false).is_empty()):
 			_fail("the first player's submission did not hand the opening decision to player 2")
 			return false
 		return true
 	if not await _wait_for(func() -> bool:
-		return _visible_button_beginning(_decision(), "Change Form") != null \
-			and _decision().find_child("CardPlayMenu", true, false) != null):
+		return _attached(_attached_name(IDENTITY, "Action")) != null):
 		_fail("the seeded mulligan did not reach the player-action affordances")
 		return false
 	return true
 
 
 func _complete_second_opening_hand() -> bool:
-	var toggles := (_node("Play/Board/HandShelf") as Control).find_children(
+	var toggles := _hand_surface().find_children(
 		"MulliganDiscard*", "Button", true, false)
 	var second_toggle := toggles[0] as Button if not toggles.is_empty() else null
-	if second_toggle == null or not await _pointer_activate(second_toggle):
+	if second_toggle == null or not await _activate_exposed_control_point(second_toggle):
 		_fail("the second player's opening hand has no operable discard target")
 		return false
-	var submit := _submit_button()
-	if submit == null or submit.disabled or "Discard 1 and redraw" not in submit.text:
+	var submit := _attached("Card*Submit")
+	if submit == null or submit.disabled or submit.text != "EXECUTE":
 		_fail("the second player's selected mulligan cannot be submitted once")
 		return false
 	if not await _pointer_activate(submit):
 		return false
 	if not await _wait_for(func() -> bool:
-		return _visible_button_beginning(_decision(), "Change Form") != null \
-			and _decision().find_child("CardPlayMenu", true, false) != null):
+		return _attached(_attached_name(IDENTITY, "Action")) != null):
 		_fail("the completed cooperative mulligan did not return to player one's actions")
+		return false
+	var player_one := _visible_seat_switch(0)
+	if player_one != null and not player_one.disabled and not await _pointer_activate(player_one):
+		_fail("the completed cooperative mulligan could not restore player one's tableau")
+		return false
+	if not await _wait_for(func() -> bool:
+		var caption := _visible_player_caption()
+		return caption != null and "PLAYER 1" in caption.text.to_upper()):
+		_fail("the action owner was not restored as the expanded tableau")
 		return false
 	return true
 
 
 func _dismiss_mulligan_result() -> bool:
-	var dismiss := _node(
-		"Play/Prompt/Margin/Stack/Workbench/Action/LastResult/Margin/Copy/Header/Dismiss") as Button
-	if dismiss == null or not await _pointer_activate(dismiss):
+	var drawer := main.find_child("ToggleHistory", true, false) as Button
+	if drawer == null or not await _activate_exposed_control_point(drawer):
+		_fail("the history drawer cannot expose the first player's mulligan result")
+		return false
+	if not await _wait_for(func() -> bool:
+		var candidate := main.find_child("DismissHistoryResult", true, false) as Button
+		return candidate != null and candidate.is_visible_in_tree()):
+		_fail("the expanded history drawer did not expose its result dismissal")
+		return false
+	var dismiss := main.find_child("DismissHistoryResult", true, false) as Button
+	if dismiss == null or not await _keyboard_activate(dismiss):
 		_fail("the first player's mulligan result cannot be dismissed before the next seat answers")
 		return false
-	return await _wait_for(func() -> bool:
-		return not (_node("Play/Prompt/Margin/Stack/Workbench/Action/LastResult") as Control).visible)
+	if not await _wait_for(func() -> bool:
+		var latest := main.find_child("LatestResult", true, false) as Label
+		return latest != null and latest.text.is_empty()):
+		return false
+	drawer = main.find_child("ToggleHistory", true, false) as Button
+	return drawer != null and await _activate_exposed_control_point(drawer)
 
 
 func _mulligan_result_is_operable() -> bool:
-	var result := _node("Play/Prompt/Margin/Stack/Workbench/Action/LastResult") as Control
-	var summary := _node(
-		"Play/Prompt/Margin/Stack/Workbench/Action/LastResult/Margin/Copy/Summary") as Label
-	if not result.visible:
-		_fail("the mulligan result is not visible")
+	var drawer := main.find_child("ToggleHistory", true, false) as Button
+	if drawer == null or not await _activate_exposed_control_point(drawer):
+		_fail("the compact history drawer cannot be expanded after mulligan")
 		return false
-	if "Spider-Man discarded Avengers Mansion, Aunt May, and Swinging Web Kick." not in summary.text:
-		_fail("the mulligan result omits the discarded cards: %s" % summary.text)
+	var history := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel
+	var latest := main.find_child("LatestResult", true, false) as Label
+	var summary := history.get_parsed_text() + " " + (latest.text if latest != null else "")
+	if "Avengers Mansion" not in summary or "Aunt May" not in summary \
+			or "Swinging Web Kick" not in summary:
+		_fail("the expanded history omits the discarded cards: %s" % summary)
 		return false
-	if "Spider-Man drew Daredevil, Black Cat, and Jessica Jones." not in summary.text:
-		_fail("the mulligan result omits the drawn cards: %s" % summary.text)
+	if "Daredevil" not in summary or "Black Cat" not in summary or "Jessica Jones" not in summary:
+		_fail("the expanded history omits the drawn cards: %s" % summary)
+		return false
+	await process_frame
+	await process_frame
+	var surface := main.find_child("AstraTableSurface", true, false) as Control
+	var prompt := _node("Play/Prompt") as Control
+	var viewport_rect := Rect2(Vector2.ZERO, main.size)
+	var surface_rect := surface.get_global_rect() if surface != null else Rect2()
+	var prompt_rect := prompt.get_global_rect() if prompt != null else Rect2()
+	if surface == null or prompt == null \
+			or surface_rect.position.x < viewport_rect.position.x - 0.5 \
+			or surface_rect.end.x > viewport_rect.end.x + 0.5 \
+			or prompt_rect.position.x < viewport_rect.position.x - 0.5 \
+			or prompt_rect.end.x > viewport_rect.end.x + 0.5:
+		_fail("expanded history displaced the table or drawer: table=%s history=%s viewport=%s" % [
+			surface_rect,
+			prompt_rect,
+			viewport_rect,
+		])
 		return false
 	if not await _capture_checkpoint("mulligan-result"):
 		return false
-	return await _result_toggle_is_operable(summary)
+	var collapsed := await _activate_exposed_control_point(drawer)
+	return collapsed
 
 
 func _result_toggle_is_operable(summary: Label) -> bool:
@@ -341,12 +397,12 @@ func _result_toggle_is_operable(summary: Label) -> bool:
 	if summary.visible or toggle.text != "Expand":
 		_fail("the transient result does not begin compact and inspectable")
 		return false
-	if not await _pointer_activate(toggle):
+	if not await _activate_exposed_control_point(toggle):
 		return false
 	if not summary.visible or toggle.text != "Collapse":
 		_fail("the transient result cannot be expanded")
 		return false
-	if not await _pointer_activate(toggle):
+	if not await _activate_exposed_control_point(toggle):
 		return false
 	if summary.visible or toggle.text != "Expand":
 		_fail("the transient result cannot be collapsed")

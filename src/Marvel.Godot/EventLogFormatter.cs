@@ -40,6 +40,12 @@ internal static class EventLogFormatter
         return text.ToString();
     }
 
+    internal static string FormatChronologySection(
+        IReadOnlyList<EventPresentation> entries,
+        string accent) => entries.Count == 0
+            ? string.Empty
+            : $"\n[color=#{accent}]EVENT CHRONOLOGY[/color]\n{FormatChronology(entries, accent)}";
+
     private static void AppendAction(
         StringBuilder text,
         HistoryEntryDescriptor entry,

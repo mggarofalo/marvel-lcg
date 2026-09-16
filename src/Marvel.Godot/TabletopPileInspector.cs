@@ -3,7 +3,7 @@ using Marvel.View;
 
 namespace Marvel.Godot;
 
-/// <summary>Presents one pile card at a time without growing the tabletop rail.</summary>
+/// <summary>Presents one pile card at a time without displacing the stable table.</summary>
 internal static class TabletopPileInspector
 {
     private static PopupPanel? active;
@@ -81,6 +81,7 @@ internal static class TabletopPileInspector
                 result.Register(target, control);
             }
             result.TrackCard(control, card);
+            result.RefreshInteraction();
             position.Text = $"{index + 1} / {pile.InspectionOrder.Count}  ·  TOP FIRST";
             previous.Disabled = index == 0;
             next.Disabled = index == pile.InspectionOrder.Count - 1;

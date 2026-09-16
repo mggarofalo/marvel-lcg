@@ -12,8 +12,15 @@ internal static class BoardInteractionFocus
             .Distinct()
             .OrderBy(key => key.CardId)
             .ThenBy(key => key.Intent)];
-        return ordered.Contains(requested)
-            ? requested
-            : ordered.Length > 0 ? ordered[0] : null;
+        if (ordered.Contains(requested))
+        {
+            return requested;
+        }
+
+        BoardInteractionFocusKey? sameCard = ordered
+            .Where(key => key.CardId == requested.CardId)
+            .Cast<BoardInteractionFocusKey?>()
+            .FirstOrDefault();
+        return sameCard ?? (ordered.Length > 0 ? ordered[0] : null);
     }
 }

@@ -32,6 +32,8 @@ func _control_owns_point(control: Control, point: Vector2) -> bool:
 	for _attempt in POINTER_OWNERSHIP_ATTEMPTS:
 		_position_pointer_without_settle(point)
 		await process_frame
+		if not is_instance_valid(control):
+			return false
 		if render_viewport.get_mouse_position().is_equal_approx(point) \
 				and _hovered_control_owns(control, render_viewport.gui_get_hovered_control()):
 			return true

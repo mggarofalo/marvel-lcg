@@ -24,9 +24,9 @@ internal static class BoardInteractionCueProjection
         Dictionary<int, CardInteractionCue> cues, PromptPresentation prompt)
     {
         foreach (AffordancePresentation affordance in prompt.Affordances.Where(
-                     affordance => affordance.Source?.CardId is not null))
+                     affordance => affordance.CardAnchorId is not null))
         {
-            Add(cues, affordance.Source!.CardId!.Value, CueFor(affordance));
+            Add(cues, affordance.CardAnchorId!.Value, CueFor(affordance));
         }
     }
 

@@ -10,6 +10,8 @@ internal sealed class MainTabletopController
     private DisplayedSeatState displayedSeats = new();
     private bool? renderedDesktopTabletop;
     private int? renderedExpandedSeat;
+    private bool? renderedHistoryExpanded;
+    private Vector2? renderedViewport;
 
     internal MainTabletopController(Main main)
     {
@@ -21,24 +23,29 @@ internal sealed class MainTabletopController
         displayedSeats = new DisplayedSeatState();
         renderedDesktopTabletop = null;
         renderedExpandedSeat = null;
+        renderedHistoryExpanded = null;
+        renderedViewport = null;
     }
 
     internal BoardRenderResult? Render(Prompt? prompt, Vector2 viewport)
     {
         bool desktop = DesktopTabletop.Uses(viewport);
         renderedDesktopTabletop = desktop;
-        if (desktop && prompt is { } opening && MulliganPrompt.IsOpening(opening))
-        {
-            return RenderMulligan(opening);
-        }
-
+        renderedHistoryExpanded = desktop && TableHistoryDrawer.IsExpanded(main);
+        renderedViewport = viewport;
         return desktop ? RenderDesktop(prompt) : null;
     }
 
     internal void RerenderForViewport(Vector2 viewport)
     {
+        bool desktop = DesktopTabletop.Uses(viewport);
+        bool geometryChanged = renderedViewport is not { } previous
+            || !previous.IsEqualApprox(viewport);
+        bool historyChanged = desktop
+            && renderedHistoryExpanded != TableHistoryDrawer.IsExpanded(main);
         if (main.board.Visible
-            && DesktopTabletop.RouteChanged(renderedDesktopTabletop, viewport)
+            && (geometryChanged || historyChanged
+                || DesktopTabletop.RouteChanged(renderedDesktopTabletop, viewport))
             && main.CurrentGame?.World is { } world)
         {
             ScrollContainer table = main.GetNode<ScrollContainer>(
@@ -59,10 +66,6 @@ internal sealed class MainTabletopController
 
         main.boardRender?.Highlight(ids);
     }
-
-    private BoardRenderResult RenderMulligan(Prompt prompt) =>
-        MulliganTablePresentation.Render(
-            main, prompt, Selection(prompt).ExpandedSeat, SwitchSeat);
 
     private BoardRenderResult RenderDesktop(Prompt? prompt)
     {
