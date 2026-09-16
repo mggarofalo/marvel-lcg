@@ -180,6 +180,26 @@ unsigned, so Windows may still show reputation warnings.
 
 ## Launch
 
+On Windows, the normal development launch builds the managed project, locates
+the installed Godot 4.7 .NET editor, and runs the game:
+
+```powershell
+pwsh ./tools/run-game.ps1
+```
+
+The launcher checks `GODOT_BIN`, applications on `PATH`, and the documented
+`C:\Tools\Godot_v4.7.1-stable_mono_win64` installation. A custom installation
+can be supplied for one invocation without exporting an environment variable:
+
+```powershell
+pwsh ./tools/run-game.ps1 -GodotBin "D:\Tools\Godot\Godot_v4.7.1-stable_mono_win64.exe"
+```
+
+Pass `-NoBuild` to reuse the current managed build or `-Editor` to open the
+project in the Godot editor instead of running the game. The normal launch
+stays attached to the terminal so runtime diagnostics remain visible; close the
+game window or press Ctrl+C there to stop it.
+
 On macOS, point at the executable inside the downloaded `.app` bundle:
 
 ```bash
@@ -187,8 +207,7 @@ GODOT_BIN="/Applications/Godot_mono.app/Contents/MacOS/Godot"
 "$GODOT_BIN" --path src/Marvel.Godot
 ```
 
-On Windows PowerShell, point at the .NET editor executable extracted from the
-official archive:
+The equivalent manual Windows PowerShell launch is:
 
 ```powershell
 $GodotBin = "C:\Tools\Godot_v4.7.1-stable_mono_win64\Godot_v4.7.1-stable_mono_win64.exe"
