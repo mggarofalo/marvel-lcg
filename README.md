@@ -26,6 +26,18 @@ plausible and wrong is worse than a board that stops.
 
 ## Running it
 
+On Windows, build and launch the Godot client with one command:
+
+```powershell
+pwsh ./tools/run-game.ps1
+```
+
+The launcher finds the Godot 4.7 .NET executable on `PATH` or in the standard
+local `C:\Tools` installation. `GODOT_BIN` and `-GodotBin` remain optional
+overrides for custom installations; neither is required for the documented
+local setup. Runtime diagnostics remain attached to that terminal; close the
+game window or press Ctrl+C there to stop it.
+
 ```bash
 dotnet build Marvel.slnx -c Release
 dotnet test tests/Marvel.UnitTests.slnx -c Release --no-build
