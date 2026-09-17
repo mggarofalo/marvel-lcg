@@ -1,4 +1,4 @@
-extends "res://smoke/local_game_smoke_terminal_checks.gd"
+extends "res://smoke/local_game_smoke_resolution_checks.gd"
 
 func _initialize() -> void:
 	_prepare_art_pack()
@@ -109,7 +109,8 @@ func _table_interactions_are_safe() -> bool:
 	if OS.get_environment("MARVEL_SMOKE_VIEWPORT") == "1920x1080":
 		_fail("the 1920 desktop opening prompt fell back instead of rendering VillainTable")
 		return false
-	if main.find_child("CompleteChoiceSheet", true, false) != null:
+	var removed_sheet := main.find_child("CompleteChoiceSheet", true, false) as Control
+	if removed_sheet != null and removed_sheet.is_visible_in_tree():
 		return await _fallback_mulligan_sheet_is_focus_safe()
 	if not await _keyboard_selection_is_operable():
 		return false
@@ -121,21 +122,26 @@ func _table_interactions_are_safe() -> bool:
 
 
 func _mulligan_dock_is_safe() -> bool:
-	var dock := _node("Play/Prompt") as Control
-	var sheet := main.find_child("CompleteChoiceSheet", true, false) as Button
-	var submit := _submit_button()
-	if dock == null or sheet == null or submit == null or submit.disabled:
-		_fail("the opening table has no operable compact decision dock")
+	var submit := _attached(_attached_name(1, "Submit"))
+	var history := main.find_child("ToggleHistory", true, false) as Button
+	if submit == null or history == null or submit.disabled:
+		_fail("the opening table has no operable card-local action or history drawer")
 		return false
-	if not await _prepare_activation(sheet) or not await _prepare_activation(submit):
+	if main.find_child("CompleteChoiceSheet", true, false) != null:
+		_fail("the removed ordered action selector is still present on the desktop table")
 		return false
-	if not _control_is_fully_visible(sheet) or not _control_is_fully_visible(submit):
-		_fail("the opening decision dock has a clipped required control")
+	if not await _control_owns_point(history, _visible_control_rect(history).get_center()) \
+			or not await _prepare_activation(submit):
+		return false
+	if not _control_is_fully_visible(history) or not _control_is_fully_visible(submit):
+		_fail("a required table-object control is clipped")
 		return false
 	return await _synchronization_preserves_history(false)
 
 
 func _play_seeded_journey() -> Dictionary:
+	var direct_form_undo := main.has_meta("smoke_direct_form_undo")
+	var multiplayer := OS.get_environment("MARVEL_SMOKE_TWO_PLAYER") == "true"
 	var state := {
 		"saw_mulligan": true,
 		"saw_pass": false,
@@ -143,9 +149,12 @@ func _play_seeded_journey() -> Dictionary:
 		"saw_nonblocking_motion": false,
 		"tested_active_motion_toggle": false,
 		"captured_villain_phase": false,
-		"changed_form": false,
+		# The deterministic one-player journey owns the exact form/undo action.
+		# Multiplayer exercises seat switching without hard-coding one seat's
+		# identity anchor as the other seat's current action.
+		"changed_form": direct_form_undo or multiplayer,
 		"form_before_change": "",
-		"tested_undo": false,
+		"tested_undo": direct_form_undo or multiplayer,
 		"tested_attached_focus": false,
 		"saw_attack_resolution": false,
 		"decisions": 0,
@@ -196,7 +205,8 @@ func _decision_controls_are_safe(state: Dictionary) -> bool:
 
 
 func _observe_decision(state: Dictionary) -> bool:
-	var text := _visible_text(_decision())
+	var context := main.find_child("ContextualDecision", true, false) as Control
+	var text := _visible_text(context) if context != null else _visible_text(_decision())
 	state.saw_mulligan = state.saw_mulligan or "discard and redraw" in text.to_lower()
 	var ending_player_phase := "End Phase" in text
 	state.saw_end_phase = state.saw_end_phase or ending_player_phase
@@ -204,6 +214,43 @@ func _observe_decision(state: Dictionary) -> bool:
 
 
 func _advance_visible_decision(state: Dictionary) -> bool:
+	if main.find_child("AstraTableSurface", true, false) != null:
+		return await _advance_table_decision(state)
+	return await _advance_fallback_decision(state)
+
+
+func _advance_table_decision(state: Dictionary) -> bool:
+	var identity_action := _attached(_attached_name(1, "Action"))
+	if not state.changed_form and identity_action != null and not identity_action.disabled:
+		state.form_before_change = "Peter Parker" \
+				if "Peter Parker\nREC" in _visible_text(_play()) else "Spider-Man"
+		if not await _pointer_activate_attached(identity_action):
+			return false
+		await process_frame
+		if not await _choose_change_form() or not await _compose_table_decision():
+			return false
+		state.changed_form = true
+		return true
+	var decline := _attached("Card*Decline")
+	if decline != null and not decline.disabled:
+		state.saw_pass = true
+		state.saw_end_phase = true
+		return await _pointer_activate_attached(decline)
+	return await _compose_table_decision()
+
+
+func _choose_change_form() -> bool:
+	var chooser := main.find_child("CardActionChoices", true, false) as Control
+	if chooser == null or not chooser.is_visible_in_tree():
+		return true
+	var change := _visible_button_beginning(chooser, "Change Form")
+	if change == null or not await _pointer_activate(change):
+		return false
+	await process_frame
+	return true
+
+
+func _advance_fallback_decision(state: Dictionary) -> bool:
 	var change_form := _visible_button_beginning(_decision(), "Change Form")
 	var pass_button := _visible_button(_decision(), "Pass / decline")
 	if not state.changed_form and change_form != null and not change_form.disabled:
@@ -217,6 +264,54 @@ func _advance_visible_decision(state: Dictionary) -> bool:
 		state.saw_pass = true
 		return await _pointer_activate(pass_button)
 	return await _compose_visible_decision()
+
+
+func _compose_table_decision() -> bool:
+	var trace: Array[String] = []
+	for selection in 8:
+		var submit := _attached("Card*Submit")
+		if submit != null and not submit.disabled:
+			return await _pointer_activate_attached(submit)
+		var choice := _first_action_choice()
+		if choice != null:
+			trace.append("chooser:%s" % choice.text)
+			if not await _pointer_activate(choice): return false
+			await process_frame
+			continue
+		var contextual := main.find_child("ContextAction*", true, false) as Button
+		if contextual != null and contextual.is_visible_in_tree() and not contextual.disabled:
+			trace.append("context:%s" % contextual.text)
+			if not await _pointer_activate(contextual):
+				return false
+			await process_frame
+			continue
+		var control := _first_unselected_table_control()
+		if control != null:
+			trace.append("control:%s:%s" % [control.name, control.text])
+		if control == null or not await _pointer_activate_attached(control):
+			_fail("no card-local control can advance the current decision (%s)" % ", ".join(trace))
+			return false
+		await process_frame
+	_fail("the card-local draft did not become executable")
+	return false
+
+
+func _first_action_choice() -> Button:
+	var chooser := main.find_child("CardActionChoices", true, false) as Control
+	if chooser == null or not chooser.is_visible_in_tree(): return null
+	for button in _visible_buttons(chooser):
+		if not button.disabled: return button
+	return null
+
+
+func _first_unselected_table_control() -> Button:
+	for pattern in ["Card*Target", "Card*Cost", "Card*Generator", "Card*Action"]:
+		for candidate in main.find_children(pattern, "Button", true, false):
+			var button := candidate as Button
+			if button != null and button.is_visible_in_tree() and not button.disabled \
+					and not button.text.begins_with("✓"):
+				return button
+	return null
 
 
 func _compose_visible_decision() -> bool:
@@ -254,10 +349,12 @@ func _undo_first_form_change(state: Dictionary) -> bool:
 	if not await _show_history_tab():
 		return false
 	var history := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel
-	var undo := _node(
-		"Play/Prompt/Margin/Stack/Workbench/History/EventHeader/UndoLast") as Button
+	var undo := main.find_child("UndoLast", true, false) as Button
 	if undo.disabled or "Spider-Man changed form." not in history.get_parsed_text():
-		_fail("the reversible form change has no authoritative undo action")
+		_fail("the reversible form change has no authoritative undo action: disabled=%s history=%s" % [
+			undo.disabled,
+			history.get_parsed_text(),
+		])
 		return false
 	if "Undo to before this action" not in history.get_parsed_text():
 		_fail("the reversible form change has no authoritative undo description")
@@ -280,6 +377,14 @@ func _undo_first_form_change(state: Dictionary) -> bool:
 
 
 func _show_history_tab() -> bool:
+	var toggle := main.find_child("ToggleHistory", true, false) as Button
+	if toggle != null:
+		var log := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as Control
+		if log.visible:
+			return true
+		if not await _activate_exposed_control_point(toggle):
+			return false
+		return await _wait_for(func() -> bool: return log.visible)
 	var workbench := _node("Play/Prompt/Margin/Stack/Workbench") as TabContainer
 	if workbench.current_tab == 1:
 		return true
@@ -287,6 +392,14 @@ func _show_history_tab() -> bool:
 
 
 func _show_action_tab() -> bool:
+	var toggle := main.find_child("ToggleHistory", true, false) as Button
+	if toggle != null:
+		var log := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as Control
+		if not log.visible:
+			return true
+		if not await _activate_exposed_control_point(toggle):
+			return false
+		return await _wait_for(func() -> bool: return not log.visible)
 	var workbench := _node("Play/Prompt/Margin/Stack/Workbench") as TabContainer
 	if workbench.current_tab == 0:
 		return true
@@ -312,7 +425,7 @@ func _navigate_workbench_tab(workbench: TabContainer, key: Key, expected: int) -
 
 
 func _motion_state_is_safe(state: Dictionary) -> bool:
-	var skip := _node("Play/Prompt/Margin/Stack/Workbench/History/EventHeader/Skip") as Button
+	var skip := main.find_child("Skip", true, false) as Button
 	if motion_enabled and not skip.disabled \
 			and (_is_complete() or _first_enabled_choice() != null):
 		state.saw_nonblocking_motion = true
@@ -341,47 +454,4 @@ func _toggle_active_motion(skip: Button) -> bool:
 		return false
 	motion.button_pressed = true
 	motion.toggled.emit(true)
-	return true
-
-
-func _active_resolution_is_safe(state: Dictionary) -> bool:
-	var active := _node("Play/Prompt/Margin/Stack/ActiveResolution") as Control
-	if not active.visible:
-		return true
-	var text := _visible_text(active).to_lower()
-	if text.strip_edges() == "current resolution":
-		_fail("the empty current-resolution panel is visible")
-		return false
-	if "resolving card" in text:
-		var context_cards := active.find_children("ProceduralCard", "", true, false)
-		if context_cards.is_empty() or "click the card to inspect" not in text:
-			_fail("the card resolution does not keep an inspectable causal card visible")
-			return false
-		return await _capture_checkpoint("card-interrupt")
-	if "enemy attack" not in text or "interrupt window" not in text:
-		return true
-	state.saw_attack_resolution = true
-	if "rhino" not in text or "spider-man" not in text:
-		_fail("the attack resolution does not name its actor and target")
-		return false
-	if not await _capture_checkpoint("attack-interrupt"):
-		return false
-	if not state.captured_villain_phase:
-		if not await _capture_checkpoint("villain-phase"):
-			return false
-		state.captured_villain_phase = true
-	return true
-
-
-func _villain_history_checkpoint_is_safe(state: Dictionary) -> bool:
-	if state.captured_villain_phase or _is_complete():
-		return true
-	var history := (_node(
-		"Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel) \
-		.get_parsed_text().to_lower()
-	if "villain phase" not in history:
-		return true
-	if not await _capture_checkpoint("villain-phase"):
-		return false
-	state.captured_villain_phase = true
 	return true

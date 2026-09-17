@@ -225,6 +225,44 @@ public sealed class TableContractTests
         Assert.Equal("Object 4", presented[1].Anchor);
     }
 
+    [Fact]
+    public void CardAnchorUsesTheVisibleLocatedSourceWhenAvailable()
+    {
+        var presentation = new AffordancePresentation(
+            1, "Act", null, "act", "Card", 9, 0, null, string.Empty, [])
+        {
+            AnchorKind = AffordanceAnchorKind.Card,
+            Source = new AffordanceSourceDescriptor(
+                AffordanceAnchorKind.Card, 4, null, 0),
+        };
+
+        Assert.Equal(4, presentation.CardAnchorId);
+    }
+
+    [Fact]
+    public void ExplicitCardAnchorRemainsUsableWithoutALocatedSource()
+    {
+        var presentation = new AffordancePresentation(
+            1, "Act", null, "act", "Card", 9, 0, null, string.Empty, [])
+        {
+            AnchorKind = AffordanceAnchorKind.Card,
+        };
+
+        Assert.Equal(9, presentation.CardAnchorId);
+    }
+
+    [Fact]
+    public void NonCardAnchorDoesNotBecomeACardInteraction()
+    {
+        var presentation = new AffordancePresentation(
+            1, "Act", null, "act", "Area", 9, 0, null, string.Empty, [])
+        {
+            AnchorKind = AffordanceAnchorKind.Area,
+        };
+
+        Assert.Null(presentation.CardAnchorId);
+    }
+
     private static World Board(out Card duplicateOne, out Card duplicateTwo, out Area future)
     {
         var world = new World(new Facts(), players: 2, seed: 3);

@@ -8,6 +8,7 @@ internal sealed class CardInspectorFocus
 {
     private readonly Main main;
     private int? returnTargetId;
+    private bool backdropDismissalPending;
 
     internal CardInspectorFocus(Main main)
     {
@@ -33,34 +34,55 @@ internal sealed class CardInspectorFocus
 
     internal void Input(InputEvent input)
     {
-        if (main.cardInspector.Visible && main.cardInspectorPinned
-            && input is InputEventKey { Keycode: Key.Tab, Pressed: true })
+        if (CompleteBackdropDismissal(input))
         {
-            if (main.cardInspectorContent.GetChildCount() > 0
-                && main.cardInspectorContent.GetChild(0) is Control detail)
-            {
-                detail.GrabFocus();
-            }
-            main.GetViewport().SetInputAsHandled();
             return;
         }
-
-        if (main.cardInspector.Visible && input.IsActionPressed("ui_cancel"))
+        if (CycleModalFocus(input) || DismissWithKeyboard(input))
         {
-            Hide();
-            main.GetViewport().SetInputAsHandled();
             return;
         }
-
-        if (OutsideClick(input))
+        if (OutsideClick(input) && main.cardInspectorPinned)
         {
-            bool consume = main.cardInspectorPinned;
-            Hide();
-            if (consume)
-            {
-                main.GetViewport().SetInputAsHandled();
-            }
+            backdropDismissalPending = true;
+            main.GetViewport().SetInputAsHandled();
         }
+    }
+
+    private bool CompleteBackdropDismissal(InputEvent input)
+    {
+        if (!backdropDismissalPending
+            || input is not InputEventMouseButton
+                { ButtonIndex: MouseButton.Left, Pressed: false }) return false;
+        backdropDismissalPending = false;
+        main.GetViewport().SetInputAsHandled();
+        int framesRemaining = 2;
+        void HideAfterInputFrame()
+        {
+            framesRemaining--;
+            if (framesRemaining > 0) return;
+            main.GetTree().ProcessFrame -= HideAfterInputFrame;
+            Hide();
+        }
+        main.GetTree().ProcessFrame += HideAfterInputFrame;
+        return true;
+    }
+
+    private bool CycleModalFocus(InputEvent input)
+    {
+        if (!main.cardInspector.Visible || !main.cardInspectorPinned
+            || input is not InputEventKey { Keycode: Key.Tab, Pressed: true } tab) return false;
+        CycleFocus(tab.ShiftPressed);
+        main.GetViewport().SetInputAsHandled();
+        return true;
+    }
+
+    private bool DismissWithKeyboard(InputEvent input)
+    {
+        if (!main.cardInspector.Visible || !input.IsActionPressed("ui_cancel")) return false;
+        Hide();
+        main.GetViewport().SetInputAsHandled();
+        return true;
     }
 
     internal void ScheduleHide()
@@ -99,6 +121,7 @@ internal sealed class CardInspectorFocus
         int? targetId = main.cardInspectorPinned ? returnTargetId : null;
         int generation = checked(++main.cardInspectorGeneration);
         main.cardInspectorPinned = false;
+        backdropDismissalPending = false;
         main.cardInspectorHovered = false;
         main.cardInspectorFrame.FocusMode = Control.FocusModeEnum.None;
         main.cardInspectorScroll.FocusMode = Control.FocusModeEnum.None;
@@ -171,6 +194,28 @@ internal sealed class CardInspectorFocus
         && input is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true } click
         && !main.cardInspectorFrame.GetGlobalRect().HasPoint(click.Position);
 
+    private void CycleFocus(bool reverse)
+    {
+        var candidates = new List<Control>();
+        if (main.cardInspectorContent.GetChildCount() > 0
+            && main.cardInspectorContent.GetChild(0) is Control detail)
+        {
+            candidates.Add(detail);
+        }
+        candidates.AddRange(main.cardInspectorFrame
+            .FindChildren("*", "Button", true, false)
+            .OfType<Button>()
+            .Where(button => button.Visible && !button.Disabled));
+        if (candidates.Count == 0) return;
+        Control? focused = main.GetViewport().GuiGetFocusOwner();
+        int current = candidates.IndexOf(focused!);
+        int offset = reverse ? -1 : 1;
+        int next = current < 0
+            ? 0
+            : (current + offset + candidates.Count) % candidates.Count;
+        candidates[next].GrabFocus();
+    }
+
     private void RestoreSource(int targetId, int generation)
     {
         if (InteractionControl.IsUsable(main)
@@ -179,6 +224,8 @@ internal sealed class CardInspectorFocus
             && InteractionControl.IsUsable(source))
         {
             source.GrabFocus();
+            InteractionControl.ResetDisabledScrollAncestors(source);
         }
     }
+
 }

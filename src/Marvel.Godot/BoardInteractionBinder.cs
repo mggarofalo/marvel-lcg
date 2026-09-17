@@ -13,9 +13,11 @@ internal static class BoardInteractionBinder
         }
 
         board.BindDirectInteractions(
-            _ => false,
+            gesture => CanDrag(panel, composer, gesture),
+            gesture => Activate(panel, composer, gesture),
             gesture => Drag(panel, composer, board, gesture));
         board.BindExplicitInteraction(gesture => Activate(panel, composer, gesture));
+        board.BindContextualInteraction(id => panel.SelectAffordance(id, panel.GetRenderGeneration()));
     }
 
     private static bool Activate(
@@ -35,14 +37,20 @@ internal static class BoardInteractionBinder
         {
             CardInteractionIntent.Target => interaction.TryToggleTarget(cardId),
             CardInteractionIntent.Generator => interaction.TryToggleGenerator(cardId),
+            CardInteractionIntent.Cost => gesture.Option is { } cost
+                && CurrentOperations(panel, composer).TrySelectCost(cost)
+                    ? BoardDraftMutation.Cost
+                    : BoardDraftMutation.None,
+            CardInteractionIntent.Submit => Submit(panel, composer, generation),
+            CardInteractionIntent.Decline => Decline(panel, composer, generation),
             CardInteractionIntent.Action => SelectAction(
                 panel, composer, generation, gesture, interaction, cardId),
             _ => BoardDraftMutation.None,
         };
         if (mutation == BoardDraftMutation.None)
         {
-            // More than one action is intentionally left to the explicit
-            // ordered affordance surface; list order is never a choice rule.
+            // More than one action opens the source-local choice surface;
+            // list order is never a choice rule.
             return false;
         }
 
@@ -52,6 +60,30 @@ internal static class BoardInteractionBinder
         }
         RefreshDraft(panel, composer, generation, cardId);
         return true;
+    }
+
+    private static BoardDraftMutation Submit(
+        DecisionPanel panel, DecisionComposer composer, int generation)
+    {
+        if (!panel.IsCurrentDraft(composer, generation)
+            || !composer.TryBuild(out EngineDecision? decision, out _))
+        {
+            return BoardDraftMutation.None;
+        }
+        panel.NotifySubmitted(decision!, generation);
+        return BoardDraftMutation.Submit;
+    }
+
+    private static BoardDraftMutation Decline(
+        DecisionPanel panel, DecisionComposer composer, int generation)
+    {
+        if (!panel.IsCurrentDraft(composer, generation)
+            || !composer.TryDecline(out EngineDecision? decision, out _))
+        {
+            return BoardDraftMutation.None;
+        }
+        panel.NotifySubmitted(decision!, generation);
+        return BoardDraftMutation.Decline;
     }
 
     private static BoardDraftMutation SelectAction(
@@ -102,6 +134,16 @@ internal static class BoardInteractionBinder
         return true;
     }
 
+    private static bool CanDrag(
+        DecisionPanel panel,
+        DecisionComposer composer,
+        CardPointerGesture gesture) => new BoardDraftInteraction(
+            composer,
+            CurrentOperations(panel, composer),
+            Affordances(panel, composer)).CanPlay(
+                gesture.Card.TargetId,
+                gesture.IsHandCard);
+
     private static TableDraftBinding CurrentOperations(
         DecisionPanel panel, DecisionComposer composer) =>
         panel.BindTableDraft(composer, panel.GetRenderGeneration());
@@ -121,6 +163,35 @@ internal static class BoardInteractionBinder
             }
             panel.NotifyAnchorFocused([focused]);
             panel.Rebuild();
+            int refreshedGeneration = panel.GetRenderGeneration();
+            Callable.From(() => RestoreCardFocus(
+                    panel, composer, refreshedGeneration, focused))
+                .CallDeferred();
         }).CallDeferred();
+    }
+
+    private static void RestoreCardFocus(
+        DecisionPanel panel,
+        DecisionComposer composer,
+        int generation,
+        int cardId)
+    {
+        if (!panel.IsCurrentDraft(composer, generation)) return;
+        Button[] sameCard = [.. panel.GetTree().Root
+            .FindChildren($"Card{cardId}*", "Button", true, false)
+            .OfType<Button>()
+            .Where(button => InteractionControl.IsUsable(button)
+                && button.IsVisibleInTree() && !button.Disabled)];
+        Button? candidate = sameCard.LastOrDefault() ?? panel.GetTree().Root
+            .FindChildren("Card*", "Button", true, false)
+            .OfType<Button>()
+            .LastOrDefault(button => InteractionControl.IsUsable(button)
+                && button.IsVisibleInTree() && !button.Disabled
+                && button.HasMeta("spatial_card_anchor"));
+        if (candidate is not null)
+        {
+            candidate.GrabFocus();
+            InteractionControl.ResetDisabledScrollAncestors(candidate);
+        }
     }
 }

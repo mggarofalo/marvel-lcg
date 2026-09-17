@@ -5,4 +5,5 @@ internal sealed record CardInteractionControlDescriptor(
     int CardId,
     CardInteractionIntent Intent,
     string Text,
-    CardInteractionCue Cue);
+    CardInteractionCue Cue,
+    int? Option = null);

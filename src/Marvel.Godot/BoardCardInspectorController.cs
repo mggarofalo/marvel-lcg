@@ -10,6 +10,7 @@ internal sealed class BoardCardInspectorController
     private readonly CardInspectorFocus inspector;
     private readonly CardInspectorStageNavigation stageNavigation;
     private readonly MainTabletopController tabletop;
+    private int previewGeneration;
 
     internal BoardCardInspectorController(Main main, MainTabletopController tabletop)
     {
@@ -46,14 +47,50 @@ internal sealed class BoardCardInspectorController
         Show(card, source, pinned: false);
     }
 
+    internal void PreviewCardAfterDelay(BoardCardPresentation card, Control source)
+    {
+        if (card.Concealed || main.cardInspectorPinned)
+        {
+            return;
+        }
+        int generation = checked(++previewGeneration);
+        main.GetTree().CreateTimer(0.32).Timeout += () =>
+        {
+            if (generation == previewGeneration
+                && !main.cardInspectorPinned
+                && InteractionControl.IsUsable(source)
+                && PointerIsWithin(source))
+            {
+                Show(card, source, pinned: false);
+            }
+        };
+    }
+
+    private bool PointerIsWithin(Control source)
+    {
+        Control? hovered = main.GetViewport().GuiGetHoveredControl();
+        return hovered == source || (hovered is not null && source.IsAncestorOf(hovered));
+    }
+
+    internal void LeaveCardPreview(Control _)
+    {
+        previewGeneration++;
+        if (!main.cardInspectorPinned)
+        {
+            inspector.ScheduleHide();
+        }
+    }
+
     internal void Toggle(BoardCardPresentation card, Control? source)
     {
+        previewGeneration++;
         if (card.Concealed)
         {
             return;
         }
 
-        if (main.cardInspector.Visible && main.inspectedCardId == card.TargetId)
+        if (main.cardInspector.Visible && main.cardInspectorPinned
+            && main.inspectedCardId == card.TargetId)
         {
             inspector.Hide();
             return;
@@ -78,15 +115,36 @@ internal sealed class BoardCardInspectorController
             card, main.interfaceScale, main.Size.Y);
         CardControl detail = CardControl.Create(
             card, CardDisplaySize.Full, inspectionScale, main.art);
+        if (!pinned)
+        {
+            PreparePreview(detail);
+        }
         detail.FocusMode = Control.FocusModeEnum.All;
         CardInspectorFocus.IgnoreMouseRecursively(detail);
         main.cardInspectorContent.AddChild(detail);
         stageNavigation.Configure(card, source, pinned
             ? stages ?? main.boardRender?.Inspector.For(card.TargetId) ?? []
             : []);
+        HBoxContainer inspectorHeader = main.cardInspectorTitle.GetParent<HBoxContainer>();
+        inspectorHeader.Visible = pinned;
+        main.cardInspectorTitle.Visible = pinned && stageNavigation.IsVisible;
+        main.cardInspectorClose.Visible = pinned;
         ConfigureFrame();
         Position(card, source, pinned);
         Present(detail, sourceId, pinned, inspectorGeneration);
+    }
+
+    private static void PreparePreview(CardControl detail)
+    {
+        if (detail.FindChild("IllustrationRegion", true, false) is not PanelContainer art)
+        {
+            return;
+        }
+
+        bool hasIllustration = art.FindChild("Illustration", true, false) is TextureRect;
+        art.Visible = hasIllustration;
+        art.CustomMinimumSize = hasIllustration ? new Vector2(0, 96) : Vector2.Zero;
+        art.SizeFlagsVertical = Control.SizeFlags.ShrinkBegin;
     }
 
     internal void Input(InputEvent input) =>
@@ -168,9 +226,11 @@ internal sealed class BoardCardInspectorController
         }
         else
         {
-            // A hover preview is informational only; it must never cover a
-            // decision target that the pointer is travelling toward.
+            // The preview itself is a stable hover bridge from the source.
+            // Its contents do not accept actions, while the frame keeps the
+            // preview alive until the pointer leaves both objects.
             CardInspectorFocus.IgnoreMouseRecursively(main.cardInspectorFrame, interactiveRules: false);
+            main.cardInspectorFrame.MouseFilter = Control.MouseFilterEnum.Stop;
         }
 
         main.cardInspector.MouseFilter = pinned
@@ -183,11 +243,6 @@ internal sealed class BoardCardInspectorController
             ? Control.MouseFilterEnum.Stop
             : Control.MouseFilterEnum.Ignore;
         main.cardInspectorBackdrop.Visible = pinned;
-        if (!stageNavigation.IsVisible)
-        {
-            main.cardInspectorClose.Visible = false;
-        }
-
         main.cardInspector.Visible = true;
         if (pinned)
         {

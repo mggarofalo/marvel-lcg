@@ -11,19 +11,22 @@ public sealed class BoardRenderResult
     internal readonly BoardInspectorSequences Inspector = new();
     private readonly Dictionary<Control, Action> areaExpanders = [];
     private readonly Dictionary<int, Button> mulliganToggles = [];
-    private readonly Dictionary<int, CardControl> mulliganCards = [];
-    private readonly HashSet<int> legalMulliganTargets = [];
-    private readonly List<BoardDropTarget> dropTargets = [];
     private readonly BoardCardInteractionControls interactionControls;
+    private readonly BoardPointerInteractions pointer;
     private readonly BoardControlReveal reveal;
-    private Control? mulliganDiscard;
-    private (Control Source, CardPointerCapture Gesture)? pointerCapture;
-    private Func<CardPointerGesture, bool>? directActivation;
-    private Func<CardPointerGesture, bool>? directDrag;
+    private DecisionComposer? currentComposer;
+    private PromptPresentation? currentPrompt;
+    private Label? contextualSummary;
+    private string contextualFallback = string.Empty;
     public BoardRenderResult()
     {
         reveal = new BoardControlReveal(this);
         interactionControls = new BoardCardInteractionControls(IsCurrentRender);
+        pointer = new BoardPointerInteractions(
+            IsCurrentRender,
+            (card, control) => CardActivated?.Invoke(card, control),
+            (card, control) => CardPreviewEntered?.Invoke(card, control),
+            control => CardPreviewExited?.Invoke(control));
     }
 
     /// <summary>Identifies whether this render remains the board currently shown by its owner.</summary>
@@ -31,6 +34,12 @@ public sealed class BoardRenderResult
 
     /// <summary>Raised with the card under the pointer, or null when it leaves.</summary>
     public event Action<BoardCardPresentation, Control>? CardActivated;
+
+    /// <summary>Raised after a readable card body becomes the pointer's preview source.</summary>
+    internal event Action<BoardCardPresentation, Control>? CardPreviewEntered;
+
+    /// <summary>Raised when the pointer leaves a readable card body.</summary>
+    internal event Action<Control>? CardPreviewExited;
 
     internal void Register(int id, CardControl control)
     {
@@ -47,170 +56,78 @@ public sealed class BoardRenderResult
         areaExpanders.Add(body, expand);
 
     internal void RegisterDropTarget(int seat, Control control) =>
-        dropTargets.Add(new BoardDropTarget(seat, control));
+        pointer.RegisterDropTarget(seat, control);
+
+    internal void RegisterContextualActions(Container host) =>
+        interactionControls.RegisterContextualHost(host);
+
+    internal void RegisterContextualSummary(Label label, string fallback)
+    {
+        contextualSummary = label;
+        contextualFallback = fallback;
+    }
 
     internal void TrackCard(Control control, BoardCardPresentation card, bool isHandCard = false)
     {
         if (control is CardControl rendered) interactionControls.Track(rendered, card, isHandCard);
-        control.GuiInput += input =>
-        {
-            if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true } mouse)
-            {
-                if (!InteractiveDescendantOwnsPointer(control))
-                {
-                    BeginPointerCapture(control, card, isHandCard, mouse.GlobalPosition);
-                }
-            }
-            else if (input is InputEventKey { Echo: false } && input.IsActionPressed("ui_accept")) Activate(control, card, isHandCard, Vector2.Zero);
-        };
+        pointer.Track(control, card, isHandCard);
     }
+
+    /// <summary>Records the authored table pose after spatial placement is complete.</summary>
+    internal void UpdateRestingPose(Control control) =>
+        pointer.UpdateRestingPose(control);
 
     /// <summary>Routes a captured card gesture from the root input path.</summary>
-    internal bool RoutePointer(InputEvent input)
-    {
-        if (input is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true })
-        {
-            pointerCapture = null;
-            return false;
-        }
-
-        if (pointerCapture is not { } captured)
-        {
-            return false;
-        }
-
-        if (!IsCurrentRender() || !InteractionControl.IsUsable(captured.Source))
-        {
-            pointerCapture = null;
-            return false;
-        }
-
-        if (input is InputEventMouseMotion)
-        {
-            return true;
-        }
-
-        if (input is not InputEventMouseButton
-            { ButtonIndex: MouseButton.Left, Pressed: false } release)
-        {
-            return false;
-        }
-
-        // Clear first: an adapter can synchronously rebuild the board, and a
-        // release must name at most one prompt-bound operation.
-        pointerCapture = null;
-        if (!captured.Gesture.TryReleaseAt(release.GlobalPosition, out bool isDrag))
-        {
-            return true;
-        }
-
-        if (isDrag)
-        {
-            TryDrag(captured.Source, captured.Gesture.Card, captured.Gesture.IsHandCard,
-                release.GlobalPosition, captured.Gesture.Start);
-        }
-        else
-        {
-            Activate(captured.Source, captured.Gesture.Card, captured.Gesture.IsHandCard,
-                release.GlobalPosition);
-        }
-        return true;
-    }
+    internal bool RoutePointer(InputEvent input) => pointer.Route(input);
 
     /// <summary>Replaces card-attached controls and cues from the current authorized draft.</summary>
     internal void PresentInteraction(DecisionComposer? composer, PromptPresentation? prompt)
     {
+        currentComposer = composer;
+        currentPrompt = prompt;
+        if (InteractionControl.IsUsable(contextualSummary))
+        {
+            string summary = TableDraftSummary.From(composer, prompt) ?? contextualFallback;
+            contextualSummary!.Text = summary;
+            contextualSummary.TooltipText = summary;
+        }
         interactionControls.Present(controls, composer, prompt);
         InteractionRelationshipsChanged?.Invoke(
             BoardInteractionRelationshipProjection.From(composer, prompt));
     }
 
+    internal void RefreshInteraction() => PresentInteraction(currentComposer, currentPrompt);
+
     internal event Action<IReadOnlyList<TableRelationshipDescriptor>>? InteractionRelationshipsChanged;
-    private void BeginPointerCapture(
-        Control control, BoardCardPresentation card, bool isHandCard, Vector2 start)
-    {
-        if (IsCurrentRender() && InteractionControl.IsUsable(control))
-        {
-            pointerCapture = (control, new CardPointerCapture(card, isHandCard, start));
-        }
-    }
-
-    private static bool InteractiveDescendantOwnsPointer(Control card) =>
-        card.GetViewport().GuiGetHoveredControl() is BaseButton hovered
-        && hovered != card && card.IsAncestorOf(hovered);
-
-    private bool TryDrag(Control control, BoardCardPresentation card, bool isHandCard, Vector2 finish, Vector2 start)
-    {
-        if (IsCurrentRender() && CardPointerGestureRouter.IsDrag(start, finish)
-            && directDrag?.Invoke(new CardPointerGesture(card, control, isHandCard, finish)) == true)
-        {
-            return true;
-        }
-
-        if (!IsCandidateDrag(card, start, finish, out int id)
-            || !mulliganCards.TryGetValue(id, out CardControl? dragged)
-            || !DragControlsAreUsable(dragged, finish)) return false;
-        MulliganTargetRequested?.Invoke(id);
-        return true;
-    }
-
-    private bool IsCandidateDrag(
-        BoardCardPresentation card, Vector2 start, Vector2 finish, out int id)
-    {
-        id = card.TargetId ?? -1;
-        return IsCurrentRender() && CardPointerGestureRouter.IsDrag(start, finish)
-            && card.TargetId is not null && legalMulliganTargets.Contains(id);
-    }
-
-    private bool DragControlsAreUsable(CardControl dragged, Vector2 finish) =>
-        InteractionControl.IsUsable(dragged) && InteractionControl.IsUsable(mulliganDiscard)
-        && mulliganDiscard!.GetGlobalRect().HasPoint(finish);
-
-    private void Activate(Control control, BoardCardPresentation card, bool isHandCard, Vector2 position)
-    {
-        if (!IsCurrentRender() || !InteractionControl.IsUsable(control)) return;
-        if (directActivation?.Invoke(new CardPointerGesture(card, control, isHandCard, position)) == true)
-        {
-            control.AcceptEvent();
-            return;
-        }
-        CardActivated?.Invoke(card, control);
-        control.AcceptEvent();
-    }
-
     private bool IsCurrentRender() => IsCurrent?.Invoke() == true;
 
-    /// <summary>Raised when a tabletop mulligan checkbox or discard drag names a visible hand card.</summary>
-    internal event Action<int>? MulliganTargetRequested;
-
     internal void BindDirectInteractions(
+        Func<CardPointerGesture, bool> dragAvailable,
         Func<CardPointerGesture, bool> activate,
         Func<CardPointerGesture, bool> drag)
-    {
-        directActivation = activate ?? throw new ArgumentNullException(nameof(activate));
-        directDrag = drag ?? throw new ArgumentNullException(nameof(drag));
-    }
+        => pointer.BindDirect(dragAvailable, activate, drag);
 
     internal void BindExplicitInteraction(Func<CardPointerGesture, bool> activate) =>
         interactionControls.Bind(activate);
 
+    internal void BindContextualInteraction(Action<int> activate) =>
+        interactionControls.BindContextual(activate);
+
     internal bool IsDroppedOnLivePlayerLane(int seat, Vector2 position) =>
-        dropTargets.Any(target => target.Seat == seat
-            && InteractionControl.IsUsable(target.Control)
-            && target.Control.GetGlobalRect().HasPoint(position));
+        pointer.IsDroppedOnLivePlayerLane(seat, position);
 
     internal void RegisterMulliganToggle(int id, Button toggle) => mulliganToggles[id] = toggle;
 
-    internal void RegisterMulliganCard(int id, CardControl card) => mulliganCards[id] = card;
+    internal void RegisterMulliganCard(int id, CardControl card) =>
+        pointer.RegisterMulliganCard(id, card);
 
-    internal void RegisterMulliganDiscard(Control discard) => mulliganDiscard = discard;
+    internal void RegisterMulliganDiscard(Control discard) =>
+        pointer.RegisterMulliganDiscard(discard);
 
     internal void BindMulliganTargets(
         IReadOnlyCollection<int> legal, IReadOnlyCollection<int> selected, Action<int> choose)
     {
-        legalMulliganTargets.Clear();
-        legalMulliganTargets.UnionWith(legal);
-        MulliganTargetRequested = choose;
+        pointer.BindMulliganTargets(legal, choose);
         foreach ((int id, Button toggle) in mulliganToggles)
         {
             bool available = legal.Contains(id);
@@ -222,10 +139,7 @@ public sealed class BoardRenderResult
 
     internal void RequestMulliganTarget(int id)
     {
-        if (legalMulliganTargets.Contains(id))
-        {
-            MulliganTargetRequested?.Invoke(id);
-        }
+        pointer.RequestMulliganTarget(id);
     }
 
     internal void SetMulliganTargets(IReadOnlyCollection<int> selected)

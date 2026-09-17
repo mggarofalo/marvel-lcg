@@ -21,7 +21,7 @@ public sealed class BoardInteractionFocusTests
     }
 
     [Fact]
-    public void MissingAttachedControlUsesTheFirstStableOfferedFallback()
+    public void MissingIntentKeepsFocusOnTheSameRepresentedCard()
     {
         BoardInteractionFocusKey? restored = BoardInteractionFocus.Restore(
             new BoardInteractionFocusKey(19, CardInteractionIntent.Target),
@@ -31,7 +31,7 @@ public sealed class BoardInteractionFocusTests
             new BoardInteractionFocusKey(10, CardInteractionIntent.Action),
         ]);
 
-        Assert.Equal(new BoardInteractionFocusKey(10, CardInteractionIntent.Action), restored);
+        Assert.Equal(new BoardInteractionFocusKey(19, CardInteractionIntent.Generator), restored);
     }
 
     [Fact]
@@ -41,5 +41,18 @@ public sealed class BoardInteractionFocusTests
             new BoardInteractionFocusKey(19, CardInteractionIntent.Action), []);
 
         Assert.Null(restored);
+    }
+
+    [Fact]
+    public void MissingSourceCardUsesTheFirstStableOfferedFallback()
+    {
+        BoardInteractionFocusKey? restored = BoardInteractionFocus.Restore(
+            new BoardInteractionFocusKey(19, CardInteractionIntent.Action),
+        [
+            new BoardInteractionFocusKey(20, CardInteractionIntent.Generator),
+            new BoardInteractionFocusKey(10, CardInteractionIntent.Target),
+        ]);
+
+        Assert.Equal(new BoardInteractionFocusKey(10, CardInteractionIntent.Target), restored);
     }
 }

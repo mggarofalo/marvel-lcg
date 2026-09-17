@@ -29,7 +29,12 @@ func _required_journey_paths_were_seen(state: Dictionary) -> bool:
 	if not state.changed_form or not state.tested_undo:
 		_fail("the journey did not change form again after proving undo")
 		return false
-	if not state.saw_attack_resolution or not state.captured_villain_phase:
+	var multiplayer := OS.get_environment("MARVEL_SMOKE_TWO_PLAYER") == "true"
+	# The exact attack/exhaustion journey is deterministic in the one-player
+	# profile. The multiplayer profile owns seat switching and still has to
+	# reach the villain phase without duplicating that seeded card sequence.
+	if (not multiplayer and not state.saw_attack_resolution) \
+			or not state.captured_villain_phase:
 		_fail("the journey did not expose its attack and villain-phase checkpoints")
 		return false
 	if motion_enabled and not state.saw_nonblocking_motion:
@@ -47,6 +52,13 @@ func _required_journey_paths_were_seen(state: Dictionary) -> bool:
 func _terminal_decision_is_safe() -> bool:
 	if "VILLAIN WINS" not in _status().text and "PLAYERS LOSE" not in _status().text:
 		_fail("the terminal UI did not report the seeded loss")
+		return false
+	if main.find_child("AstraTableSurface", true, false) != null:
+		var latest := main.find_child("LatestResult", true, false) as Label
+		if latest != null and ("villain won" in latest.text.to_lower() \
+				or "players lost" in latest.text.to_lower()):
+			return true
+		_fail("the history drawer does not identify the terminal result")
 		return false
 	if not await _wait_for(func() -> bool:
 		return "DEFEAT" in _visible_text(_decision()).to_upper()):
@@ -86,6 +98,10 @@ func _terminal_result_is_safe() -> bool:
 	if not (_node("Play/Board") as Control).is_visible_in_tree():
 		_fail("the terminal outcome hid the settled table")
 		return false
+	var latest := main.find_child("LatestResult", true, false) as Label
+	if latest != null:
+		var latest_text := latest.text.to_lower()
+		return "villain won the game" in latest_text or "players lost the game" in latest_text
 	var result := _node("Play/Prompt/Margin/Stack/Workbench/Action/LastResult") as Control
 	var text := _visible_text(result).to_lower()
 	if result.visible and ("villain won the game" in text or "players lost the game" in text):
@@ -114,6 +130,11 @@ func _fixed_terminal_dock_is_visible() -> bool:
 	fixed_page.set_deferred("scroll_vertical", 0)
 	for _frame in 3:
 		await process_frame
+	var toggle := main.find_child("ToggleHistory", true, false) as Button
+	if toggle != null:
+		var latest := main.find_child("LatestResult", true, false) as Label
+		return latest != null and not latest.text.is_empty() \
+			and _control_is_fully_visible(toggle)
 	if await _wait_for(func() -> bool:
 		return _control_text_is_visible(_node(
 			"Play/Prompt/Margin/Stack/PromptHeader/Heading") as Control) \
@@ -131,6 +152,9 @@ func _fixed_terminal_dock_is_visible() -> bool:
 
 
 func _dismiss_terminal_result() -> bool:
+	var latest := main.find_child("LatestResult", true, false) as Label
+	if latest != null:
+		return not latest.text.is_empty()
 	var result := _node("Play/Prompt/Margin/Stack/Workbench/Action/LastResult") as Control
 	var dismiss := _node(
 		"Play/Prompt/Margin/Stack/Workbench/Action/LastResult/Margin/Copy/Header/Dismiss") as Button

@@ -33,7 +33,6 @@ internal sealed class MainTabletopChromeController
                  {
                      "Margin/Shell/Content/Play/Prompt/Margin/Stack/PromptHeader",
                      "Margin/Shell/Content/Play/Prompt/Margin/Stack/HeaderRule",
-                     "Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History",
                  })
         {
             main.GetNode<Control>(path).Visible = !mulligan;
@@ -44,8 +43,8 @@ internal sealed class MainTabletopChromeController
 
         TabContainer workbench = main.GetNode<TabContainer>(
             "Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench");
-        workbench.TabsVisible = !mulligan;
-        workbench.CurrentTab = 0;
+        workbench.TabsVisible = false;
+        workbench.CurrentTab = workbench.GetNode<Control>("History").GetIndex();
     }
 
     private void SetTableChrome(bool compact)
@@ -66,10 +65,10 @@ internal sealed class MainTabletopChromeController
         main.description.Visible = !compact;
         main.statusPanel.Visible = !compact;
         main.GetNode<Control>("Margin/Shell").Theme = compact
-            ? ClientTheme.Create(InterfaceScale.Standard)
+            ? ClientTheme.Create(main.interfaceScale)
             : null;
-        main.board.Theme = compact ? ClientTheme.Create(InterfaceScale.Standard) : null;
-        main.promptPanel.Theme = compact ? ClientTheme.Create(InterfaceScale.Standard) : null;
+        main.board.Theme = compact ? ClientTheme.Create(main.interfaceScale) : null;
+        main.promptPanel.Theme = compact ? ClientTheme.Create(main.interfaceScale) : null;
         main.promptPanel.ThemeTypeVariation = compact
             ? GodotThemeVariations.TabletopDock
             : GodotThemeVariations.SurfacePanel;

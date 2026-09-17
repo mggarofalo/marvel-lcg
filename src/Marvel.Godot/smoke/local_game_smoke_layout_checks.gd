@@ -1,4 +1,4 @@
-extends "res://smoke/local_game_smoke_board_interaction_checks.gd"
+extends "res://smoke/local_game_smoke_decision_layout_checks.gd"
 
 func _board_layout_is_resolved() -> bool:
 	if main.find_child("VillainTable", true, false) != null:
@@ -44,6 +44,7 @@ func _mulligan_table_layout_is_resolved() -> bool:
 	var player := main.find_child("PlayerTable", true, false) as Control
 	var page := main.get_node("Margin") as ScrollContainer
 	var table := _node("Play/Board/TableScroll") as ScrollContainer
+	var spatial := main.find_child("AstraTableSurface", true, false) as Control
 	var hand_scroll := _node("Play/Board/HandShelf/Margin/Stack/Scroll") as ScrollContainer
 	if villain == null or player == null or villain.get_global_rect().position.y >= player.get_global_rect().position.y:
 		_fail("the mulligan table does not keep the villain far from the near player area")
@@ -78,10 +79,37 @@ func _mulligan_table_layout_is_resolved() -> bool:
 	if page.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED or not table_scroll_is_bounded:
 		_fail("the opening desktop table introduced gameplay scrolling")
 		return false
-	if hand_scroll.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED:
+	if spatial == null and hand_scroll.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED:
 		_fail("the opening hand overflow escaped its horizontal shelf")
 		return false
+	if spatial != null and not _spatial_table_geometry_is_safe(spatial, villain, player):
+		return false
 	return _hand_is_pinned()
+
+
+func _spatial_table_geometry_is_safe(spatial: Control, villain: Control, player: Control) -> bool:
+	var hand_cards := spatial.find_children("ProceduralCard*", "", true, false)
+	var identity := _tabletop_card_named("Peter Parker")
+	var scheme := _tabletop_card_named("The Break-In!")
+	if spatial.get_meta("spatial_table_grammar", "") != "astra-far-to-near-v1" \
+			or identity == null or scheme == null or hand_cards.size() < 6:
+		_fail("the desktop route is not the Astra spatial scene graph")
+		return false
+	if not villain.get_global_rect().end.y < player.get_global_rect().end.y \
+			or not scheme.get_global_rect().position.y < identity.get_global_rect().position.y:
+		_fail("the spatial table lost its far-side to near-side confrontation axis")
+		return false
+	var fanned := 0
+	for card in hand_cards:
+		if (card as Control).has_meta("spatial_hand_index"):
+			fanned += 1
+			if not (card as Control).get_meta("spatial_hand_overlap", false):
+				_fail("an opening hand card does not participate in overlap geometry")
+				return false
+	if fanned != 6:
+		_fail("the opening hand is not one six-card spatial fan")
+		return false
+	return true
 
 
 func _board_lanes() -> Dictionary:
@@ -189,7 +217,8 @@ func _responsive_layout_is_safe() -> bool:
 	var prompt := _node("Play/Prompt") as Control
 	if not _fixed_header_is_visible():
 		return false
-	if board.size.x < 480.0 or prompt.size.x < 330.0 or prompt.size.x > board.size.x:
+	var minimum_prompt := 140.0 if main.find_child("AstraTableSurface", true, false) != null else 330.0
+	if board.size.x < 480.0 or prompt.size.x < minimum_prompt or prompt.size.x > board.size.x:
 		_fail("the responsive table did not preserve usable board and prompt widths: %s/%s" % [
 			board.size.x,
 			prompt.size.x,
@@ -231,7 +260,7 @@ func _wide_prompt_has_expected_width(prompt: Control) -> bool:
 
 
 func _hand_is_pinned() -> bool:
-	var hand := _node("Play/Board/HandShelf") as Control
+	var hand := _hand_surface()
 	if hand != null and hand.visible and "HAND" in _visible_text(hand):
 		return true
 	_fail("the player's hand is not pinned to the bottom of the table viewport")
@@ -246,35 +275,69 @@ func _post_mulligan_desktop_resize_is_safe() -> bool:
 		_fail("the completed mulligan did not enter the persistent desktop route")
 		return false
 	var first_desktop := main.find_child("VillainTable", true, false) as Control
-	viewport.size = Vector2i(1919, 1080)
-	if not await _desktop_route_is_safe(false, true) or is_instance_valid(first_desktop) \
+	if not await _resize_desktop(viewport, Vector2i(1919, 1080), false) \
+			or is_instance_valid(first_desktop) \
 			and first_desktop.is_inside_tree():
 		_fail("resizing below the 1920px boundary retained desktop children or scrolling")
 		return false
-	viewport.size = Vector2i(1920, 1080)
-	if not await _desktop_route_is_safe(true, true):
+	if not await _resize_desktop(viewport, Vector2i(1920, 1080), true):
 		_fail("restoring the 1920px boundary did not rebuild the desktop table")
 		return false
-	viewport.size = Vector2i(1920, 1079)
-	if not await _desktop_route_is_safe(false, true):
+	if not await _resize_desktop(viewport, Vector2i(1920, 1079), false):
 		_fail("resizing below the 1080px boundary retained the desktop table")
 		return false
-	viewport.size = Vector2i(1920, 1080)
-	if not await _desktop_route_is_safe(true, true):
+	if not await _resize_desktop(viewport, Vector2i(1920, 1080), true):
 		_fail("restoring the 1080px boundary did not rebuild the desktop table")
 		return false
-	var decision_seat := main.find_child("SeatSwitch0", true, false) as Button
+	return await _restore_decision_tableau()
+
+
+func _resize_desktop(viewport: SubViewport, size: Vector2i, expected: bool) -> bool:
+	viewport.size = size
+	return await _desktop_route_is_safe(expected, true)
+
+
+func _restore_decision_tableau() -> bool:
+	var decision_seat := _visible_seat_switch(0)
 	if decision_seat == null or not decision_seat.disabled \
 			and not await _pointer_activate(decision_seat):
 		_fail("the rebuilt desktop seat strip could not restore the decision workspace")
 		return false
 	if not await _wait_for(func() -> bool:
-		var expanded := main.find_child("PlayerTable", true, false) as Control
-		return expanded != null and "PETER PARKER" in _visible_text(expanded).to_upper()
+		var expanded := _visible_player_caption()
+		var identity := main.find_child("ProceduralCard1", true, false) as Control
+		return expanded != null and "PLAYER 1" in expanded.text.to_upper() \
+				and identity != null and identity.is_visible_in_tree()
 	):
 		_fail("the rebuilt desktop table did not restore the decision player's public area")
 		return false
-	return _responsive_layout_is_safe()
+	if not _responsive_layout_is_safe():
+		return false
+	decision_seat = _visible_seat_switch(0)
+	if decision_seat != null and not decision_seat.disabled \
+			and not await _pointer_activate(decision_seat):
+		return false
+	return await _wait_for(func() -> bool:
+		var caption := _visible_player_caption()
+		return caption != null and "PLAYER 1" in caption.text.to_upper())
+
+
+func _visible_seat_switch(seat: int) -> Button:
+	var candidates := main.find_children("SeatSwitch%d" % seat, "Button", true, false)
+	candidates.reverse()
+	for candidate in candidates:
+		if candidate.is_visible_in_tree():
+			return candidate as Button
+	return null
+
+
+func _visible_player_caption() -> Label:
+	var candidates := main.find_children("PlayerTableCaption", "Label", true, false)
+	candidates.reverse()
+	for candidate in candidates:
+		if candidate.is_visible_in_tree():
+			return candidate as Label
+	return null
 
 
 func _desktop_route_is_safe(desktop: bool, reset_scroll := false) -> bool:
@@ -285,7 +348,7 @@ func _desktop_route_is_safe(desktop: bool, reset_scroll := false) -> bool:
 		var seats := main.find_children("PlayerLane*", "VBoxContainer", true, false)
 		var far := main.find_child("VillainTable", true, false)
 		var near := main.find_child("PlayerTable", true, false)
-		var strip := main.find_child("SeatStrip", true, false)
+		var strip := main.find_child("SpatialSeatSummaries", true, false)
 		if play == null or page == null or table == null:
 			return false
 		if desktop:
@@ -337,20 +400,27 @@ func _attached_control_focus_is_safe(state: Dictionary) -> bool:
 			or not await _control_has_real_hit_area(control):
 		return false
 	var card := _attached_card(control)
-	if card == null or not card.get_global_rect().encloses(control.get_global_rect()):
-		_fail("an attached action control escaped its card surface")
+	if card == null or not card.get_global_rect().grow(80.0).intersects(control.get_global_rect()):
+		_fail("a card-anchored action control escaped its represented object")
 		return false
 	var issued_name := String(control.name)
 	var issued_id := control.get_instance_id()
+	var issued_anchor: Variant = control.get_meta("spatial_card_anchor", -1)
 	if not await _keyboard_activate_without_settle(control):
 		return false
 	if not await _wait_for(func() -> bool:
-		var replacement := main.find_child(issued_name, true, false) as Button
+		var replacement := render_viewport.gui_get_focus_owner() as Button
 		return replacement != null and replacement.get_instance_id() != issued_id \
-			and replacement.has_focus()):
-		_fail("keyboard focus was lost when an attached action control rebuilt")
+				and replacement.has_meta("spatial_card_anchor")):
+		var focus := render_viewport.gui_get_focus_owner()
+		var replacements := main.find_children("Card%s*" % issued_anchor, "Button", true, false) \
+				.map(func(candidate: Button) -> String:
+					return "%s:%s:%s" % [candidate.name, candidate.is_visible_in_tree(), \
+						candidate.get_meta("spatial_card_anchor", -2)])
+		_fail("keyboard focus was lost when an attached action rebuilt for card %s; issued=%s name=%s focus=%s replacements=%s" \
+				% [issued_anchor, issued_id, issued_name, focus, replacements])
 		return false
-	var replacement := main.find_child(issued_name, true, false) as Button
+	var replacement := render_viewport.gui_get_focus_owner() as Button
 	if replacement == null or not await _control_has_real_hit_area(replacement):
 		_fail("the rebuilt attached action control has no scaled pointer target")
 		return false
@@ -362,8 +432,11 @@ func _first_attached_action_control() -> Button:
 	for candidate in main.find_children("Card*Action", "Button", true, false):
 		var control := candidate as Button
 		if control != null and not control.disabled \
-				and control.get_parent() != null and control.get_parent().name == &"DirectControls":
-			if _has_named_ancestor(control, &"HandShelf"):
+				and control.get_parent() != null \
+				and (control.get_parent().name == &"DirectControls" \
+					or control.has_meta("spatial_card_anchor")):
+			if _has_named_ancestor(control, &"HandShelf") \
+					or _has_named_ancestor(control, &"AstraTableSurface"):
 				return control
 			if fallback == null:
 				fallback = control
@@ -371,6 +444,14 @@ func _first_attached_action_control() -> Button:
 
 
 func _attached_card(control: Control) -> Control:
+	if control.has_meta("spatial_card_anchor"):
+		var name := "ProceduralCard%d" % int(control.get_meta("spatial_card_anchor"))
+		var cards := main.find_children(name, "Control", true, false)
+		cards.reverse()
+		for card in cards:
+			if is_instance_valid(card) and not card.is_queued_for_deletion() \
+					and card.is_visible_in_tree():
+				return card as Control
 	var candidate: Node = control
 	while candidate != null:
 		if candidate is PanelContainer:
@@ -386,105 +467,3 @@ func _has_named_ancestor(control: Control, expected: StringName) -> bool:
 			return true
 		ancestor = ancestor.get_parent()
 	return false
-
-
-func _prompt_header_is_safe(decision_scroll: ScrollContainer) -> bool:
-	var header := _node("Play/Prompt/Margin/Stack/PromptHeader") as Control
-	if header == null or decision_scroll == null or decision_scroll.is_ancestor_of(header):
-		_fail("the active seat and question are not pinned above the decision body")
-		return false
-	var readable := _visible_text(header).to_upper()
-	if "SPIDER-MAN" not in readable or "OPENING HAND" not in readable:
-		_fail("the pinned prompt summary omits its seat or question")
-		return false
-	if "CHOOSE TO CONTINUE" not in readable and "MAY PASS" not in readable:
-		_fail("the pinned prompt summary omits cancellability")
-		return false
-	return true
-
-
-func _activate_focused_decision() -> Button:
-	var expected := _first_enabled_choice()
-	if expected == null:
-		_fail("the current prompt has no keyboard-operable action")
-		return null
-	render_viewport.gui_release_focus()
-	await process_frame
-	expected.grab_focus()
-	await process_frame
-	await process_frame
-	var focused := render_viewport.gui_get_focus_owner() as Button
-	if focused == null or not _decision().is_ancestor_of(focused) or focused.disabled:
-		_fail("the current prompt could not focus its keyboard-operable action")
-		return null
-	var focus_name := focused.name
-	var issued_id := focused.get_instance_id()
-	_accept_repeats_without_settle()
-	if not await _wait_for(func() -> bool:
-		var replacement := _decision().find_child(focus_name, true, false) as Button
-		return replacement != null and replacement.get_instance_id() != issued_id \
-			and replacement.has_focus() and replacement.text.begins_with("✓")):
-		_fail("keyboard focus was lost when the selected decision control rebuilt")
-		return null
-	return _decision().find_child(focus_name, true, false) as Button
-
-
-func _focused_decision_is_visible(restored: Button, decision_scroll: ScrollContainer) -> bool:
-	if not await _wait_for(func() -> bool: return _focused_control_is_visible(restored)):
-		var page := main.get_node("Margin") as ScrollContainer
-		_fail("keyboard focus moved outside the visible viewport: control=%s decision=%s page=%s root=%s scroll=%d/%d" % [
-			restored.get_global_rect(),
-			decision_scroll.get_global_rect(),
-			page.get_global_rect(),
-			_viewport_size(),
-			decision_scroll.scroll_vertical,
-			page.scroll_vertical,
-		])
-		return false
-	decision_scroll = main.find_child("DecisionBodyScroll", true, false) as ScrollContainer
-	if decision_scroll.scroll_horizontal != 0:
-		_fail("keyboard focus horizontally clipped the selected decision label")
-		return false
-	return true
-
-
-func _prompt_context_is_visible() -> bool:
-	for path in [
-		"Play/Prompt/Margin/Stack/PromptHeader/Heading",
-		"Play/Prompt/Margin/Stack/PromptHeader/Progress",
-	]:
-		if not _control_text_is_visible(_node(path) as Control):
-			_fail("keyboard focus hid active prompt context: %s" % path)
-			return false
-	return true
-
-
-func _commit_controls_are_safe(decision_scroll: ScrollContainer) -> bool:
-	var summary := main.find_child("ActionSummary", true, false) as Control
-	var commit_bar := main.find_child("CommitBar", true, false) as Control
-	var submit := main.find_child("Submit", true, false) as Button
-	if summary == null or commit_bar == null or submit == null:
-		_fail("the selected action has no summary or commitment controls")
-		return false
-	if decision_scroll.is_ancestor_of(summary) or decision_scroll.is_ancestor_of(commit_bar):
-		_fail("the selected action or its commitment moved into the scrolling editor")
-		return false
-	if not _control_is_fully_visible(submit):
-		_fail("the selected action's submit control is clipped or outside the viewport")
-		return false
-	return true
-
-
-func _prompt_progress_is_safe() -> bool:
-	var progress := _node("Play/Prompt/Margin/Stack/PromptHeader/Progress") as Label
-	if progress == null:
-		_fail("the pinned prompt has no progress summary")
-		return false
-	if "READY" not in progress.text and "INCOMPLETE" not in progress.text:
-		_fail("the pinned prompt summary omitted readiness progress")
-		return false
-	if "TARGETS" not in progress.text and "GROUP" not in progress.text \
-			and "NO TARGETS" not in progress.text:
-		_fail("the pinned prompt summary omitted target progress")
-		return false
-	return true

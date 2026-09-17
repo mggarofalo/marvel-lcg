@@ -107,7 +107,9 @@ internal sealed class MainLayoutController
             ? Control.SizeFlags.Fill
             : Control.SizeFlags.ExpandFill;
         main.promptPanel.SizeFlagsVertical = fixedTabletop
-            ? Control.SizeFlags.ExpandFill
+            ? TableHistoryDrawer.IsExpanded(main)
+                ? Control.SizeFlags.ExpandFill
+                : Control.SizeFlags.ShrinkBegin
             : Control.SizeFlags.Fill;
         main.GetNode<ScrollContainer>(
             "Margin/Shell/Content/Play/Board/TableScroll").CustomMinimumSize = new Vector2(
@@ -119,10 +121,13 @@ internal sealed class MainLayoutController
                         + VisualSystem.Spacing(main.interfaceScale).Small)
                     : 96);
         main.decisions.SetCompactMulliganChrome(compactTableChrome);
+        TableHistoryDrawer.Configure(main, fixedTabletop);
         ConfigureDecisionDock(mulligan && compactTableChrome, compactTableChrome, layout);
         tabletopChrome.Configure(compactHeight, compactTableChrome);
         ConfigurePlayScrolling(gameplay, fixedTabletop, mulligan);
         main.boardController.RerenderForViewport(viewport);
+        TableHistoryDrawer.Configure(main, fixedTabletop);
+        ResetPlayContainers();
     }
 
     private void ConfigureDecisionDock(
@@ -131,17 +136,25 @@ internal sealed class MainLayoutController
         DesktopPlayMetrics layout)
     {
         InterfaceScale dockScale = compactTableChrome ? InterfaceScale.Standard : main.interfaceScale;
-        float decisionHeight = mulligan
-            ? Math.Max(172, VisualSystem.Controls(dockScale).MinimumPointerTarget * 3 + 16)
-            : compactTableChrome ? 220 : layout.DecisionMinimumHeight;
+        bool historyExpanded = compactTableChrome && TableHistoryDrawer.IsExpanded(main);
+        float decisionHeight = compactTableChrome
+            ? (historyExpanded ? layout.DecisionMinimumHeight : 56)
+            : layout.DecisionMinimumHeight;
         main.promptPanel.CustomMinimumSize = new Vector2(
-            compactTableChrome ? layout.DecisionWidth : 0,
+            compactTableChrome
+                ? (historyExpanded ? TableHistoryDrawer.ExpandedWidth(main) : 172)
+                : 0,
             decisionHeight);
         main.decisions.CustomMinimumSize = new Vector2(
-            0, mulligan ? 172 : decisionHeight);
+            0, decisionHeight);
         tabletopChrome.SetMulligan(mulligan);
         main.decisions.ResetSize();
         main.promptPanel.ResetSize();
+        ResetPlayContainers();
+    }
+
+    private void ResetPlayContainers()
+    {
         main.playLayout.ResetSize();
         main.contentStack.ResetSize();
         main.GetNode<PanelContainer>("Margin/Shell").ResetSize();
@@ -160,39 +173,55 @@ internal sealed class MainLayoutController
     private void ConfigurePageScrolling(bool gameplay, bool desktopGameplay)
     {
         PanelContainer shell = main.GetNode<PanelContainer>("Margin/Shell");
+        shell.SizeFlagsVertical = desktopGameplay
+            ? Control.SizeFlags.ShrinkBegin
+            : Control.SizeFlags.ExpandFill;
         main.pageScroll.OffsetTop = desktopGameplay ? 4 : 16;
         main.pageScroll.OffsetBottom = desktopGameplay ? 0 : -16;
-        shell.CustomMinimumSize = new Vector2(
-            desktopGameplay
-                ? Math.Max(0, main.GetViewportRect().Size.X - 32)
-                : 0,
-            shell.CustomMinimumSize.Y);
+        float shellWidth = desktopGameplay
+            ? Math.Max(0, main.GetViewportRect().Size.X - 32)
+            : 0;
+        shell.CustomMinimumSize = new Vector2(shellWidth, shell.CustomMinimumSize.Y);
         main.pageScroll.HorizontalScrollMode = gameplay
             ? ScrollContainer.ScrollMode.Disabled
             : ScrollContainer.ScrollMode.Auto;
         main.pageScroll.FollowFocus = !gameplay || main.invitationOffer.Visible;
-        main.pageScroll.VerticalScrollMode = desktopGameplay
-            ? ScrollContainer.ScrollMode.Disabled
-            : gameplay
-                ? ScrollContainer.ScrollMode.Auto
-                : PlayScrollingPolicy.PageVerticalScrollMode(
-                    false, main.invitationOffer.Visible, main.interfaceScale);
         if (desktopGameplay)
         {
+            main.pageScroll.ScrollHorizontal = 0;
+            // Reset the live offset while the scrolling mode can still apply
+            // it to the child transform; disabling a Godot scroll container
+            // can otherwise preserve its former visual translation.
             main.pageScroll.ScrollVertical = 0;
-            main.playLayout.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
         }
-        else
+        main.pageScroll.VerticalScrollMode = PageVerticalMode(gameplay, desktopGameplay);
+        if (desktopGameplay)
         {
-            main.playLayout.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+            main.pageScroll.SetDeferred("scroll_vertical", 0);
+            main.pageScroll.SetDeferred("scroll_horizontal", 0);
         }
+        main.playLayout.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+    }
+
+    private ScrollContainer.ScrollMode PageVerticalMode(bool gameplay, bool desktopGameplay)
+    {
+        if (desktopGameplay) return ScrollContainer.ScrollMode.Disabled;
+        return gameplay
+            ? ScrollContainer.ScrollMode.Auto
+            : PlayScrollingPolicy.PageVerticalScrollMode(
+                false, main.invitationOffer.Visible, main.interfaceScale);
     }
 
     private void ConfigureTableScrolling(bool fixedTabletop)
     {
         ScrollContainer table = main.GetNode<ScrollContainer>(
             "Margin/Shell/Content/Play/Board/TableScroll");
+        table.FollowFocus = !fixedTabletop;
         table.HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled;
+        if (fixedTabletop)
+        {
+            table.ScrollVertical = 0;
+        }
         table.VerticalScrollMode = fixedTabletop
             ? ScrollContainer.ScrollMode.Disabled
             : ScrollContainer.ScrollMode.Auto;
@@ -213,6 +242,7 @@ internal sealed class MainLayoutController
         if (table.VerticalScrollMode == ScrollContainer.ScrollMode.Disabled)
         {
             table.ScrollVertical = 0;
+            table.SetDeferred("scroll_vertical", 0);
         }
     }
 

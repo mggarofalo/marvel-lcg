@@ -6,8 +6,10 @@ const RELATIONSHIP_IDENTITY := 1
 func _relationship_path_tracks_table_scrolling(card: Control) -> bool:
 	var overlay := main.get_node_or_null("RelationshipOverlay") as Control
 	var table := _node("Play/Board/TableScroll") as ScrollContainer
-	var identity_action := _attached(_attached_name(RELATIONSHIP_IDENTITY, "Action"))
-	var target := _card_for(identity_action) if identity_action != null else null
+	var targets := main.find_children(
+			"ProceduralCard%d" % RELATIONSHIP_IDENTITY, "Control", true, false)
+	targets.reverse()
+	var target := targets.front() as Control if not targets.is_empty() else null
 	if not _relationship_probe_is_available(overlay, table, target):
 		_fail("the selected relationship has no overlay or table target")
 		return false
@@ -24,10 +26,35 @@ func _relationship_path_tracks_table_scrolling(card: Control) -> bool:
 		_fail("the selected Web-Shooter relationship has no visible path before scrolling")
 		return false
 	var source_endpoint := _relationship_endpoint_for(overlay, card)
+	if table.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED:
+		return _finish_fixed_relationship_probe(table, original_follow_focus, source_endpoint)
 	var scroll_limit := int(table.get_v_scroll_bar().max_value - table.get_v_scroll_bar().page)
 	if source_endpoint == Vector2.INF or scroll_limit < original_scroll + 50:
 		table.follow_focus = original_follow_focus
 		return true
+	var safe := await _scroll_relationship_path(
+		overlay, table, target, original_target, original_scroll, scroll_limit)
+	table.scroll_vertical = original_scroll
+	table.follow_focus = original_follow_focus
+	await process_frame
+	await process_frame
+	return safe
+
+
+func _finish_fixed_relationship_probe(
+		table: ScrollContainer, original_follow_focus: bool, source_endpoint: Vector2) -> bool:
+	table.scroll_vertical = 0
+	table.follow_focus = original_follow_focus
+	return source_endpoint != Vector2.INF
+
+
+func _scroll_relationship_path(
+		overlay: Control,
+		table: ScrollContainer,
+		target: Control,
+		original_target: Vector2,
+		original_scroll: int,
+		scroll_limit: int) -> bool:
 	table.scroll_vertical = original_scroll + 50
 	if not await _wait_for(func() -> bool:
 			return target.get_global_rect().get_center().distance_to(
@@ -45,13 +72,9 @@ func _relationship_path_tracks_table_scrolling(card: Control) -> bool:
 		_fail("the relationship probe did not clip its linked table target")
 		return false
 	if not await _wait_for(func() -> bool:
-			return _relationship_endpoint_for(overlay, target) == Vector2.INF):
+		return _relationship_endpoint_for(overlay, target) == Vector2.INF):
 		_fail("a clipped relationship endpoint remained drawn")
 		return false
-	table.scroll_vertical = original_scroll
-	table.follow_focus = original_follow_focus
-	await process_frame
-	await process_frame
 	return true
 
 
@@ -96,10 +119,15 @@ func _other_endpoint(line: Line2D, overlay: Control, source: Vector2) -> Vector2
 
 
 func _attached(name: String) -> Button:
-	for candidate in main.find_children(name, "Button", true, false):
+	var candidates := main.find_children(name, "Button", true, false)
+	candidates.reverse()
+	for candidate in candidates:
 		var control := candidate as Button
-		if control != null and control.is_visible_in_tree() \
-				and control.get_parent() != null and control.get_parent().name == "DirectControls":
+		if control != null and not control.is_queued_for_deletion() \
+				and control.is_visible_in_tree() \
+				and control.get_parent() != null \
+				and (control.get_parent().name == "DirectControls" \
+					or control.has_meta("spatial_upright_control")):
 			return control
 	return null
 

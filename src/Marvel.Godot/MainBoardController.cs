@@ -46,6 +46,7 @@ internal sealed class MainBoardController : IDisposable
         IReadOnlyList<EventPresentation> reportNarrative = BoardResponsePresentation.Update(
             main,
             response, previousOutcome, priorHistory, resetEvents, preserveEvents, operation);
+        main.layoutController.ApplyResponsivePlayLayout();
         FinishRender(response, world, priorProgress, operation, reportNarrative, renderGeneration);
     }
     private void RenderCurrentResponse(
@@ -63,7 +64,6 @@ internal sealed class MainBoardController : IDisposable
         main.RenderPromptSummary(response.Prompt, world);
         main.decisions.Render(response.Prompt, world, response.Revision);
         main.decisions.BindMulliganTargets(main.boardRender);
-        main.layoutController.ApplyResponsivePlayLayout();
     }
     private void FinishRender(
         EngineResponse response,
@@ -117,6 +117,8 @@ internal sealed class MainBoardController : IDisposable
                 main.interfaceScale, main.expandedAreas, main.art);
         main.boardRender = rendered;
         rendered.CardActivated += cardInspector.Toggle;
+        rendered.CardPreviewEntered += cardInspector.PreviewCardAfterDelay;
+        rendered.CardPreviewExited += cardInspector.LeaveCardPreview;
         rendered.IsCurrent = () => ReferenceEquals(main.boardRender, rendered)
             && IsCurrentRender(renderGeneration ?? renderLifetime.Current);
         relationships.Bind(rendered);

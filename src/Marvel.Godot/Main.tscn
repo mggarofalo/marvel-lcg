@@ -745,7 +745,7 @@ text = "LOADING ASSIGNMENTS"
 
 [node name="CardInspector" type="Control" parent="." unique_id=1000000107]
 visible = false
-z_index = 20
+z_index = 3000
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
