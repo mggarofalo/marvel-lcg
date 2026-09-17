@@ -43,6 +43,35 @@ draft is accepted; it must not reproduce that rule from card text, counters or
 the visible board. Read [presentation-layer.md](docs/presentation-layer.md)
 before changing any of these five projects.
 
+## Player intent and comprehension
+
+The player expresses a game intention; the interface explains and helps carry
+it out; the engine determines what is allowed and what happens. A working
+engine decision path is necessary but does not establish a usable interface.
+At each decision, the player must understand the situation, who must act, the
+available choices, their known costs and consequences, and the next commitment.
+These are product requirements, not optional copy or styling improvements.
+
+Use engine-offered actions and visibility-safe semantic facts. If a required
+explanation or interaction lacks those facts, extend the owning contract and
+its tests; never recreate rules in the renderer. Do not claim product readiness
+from passing tests, screenshots, or a coached sequence of clicks alone.
+
+Read the applicable scoped guidance before implementing or reviewing a change,
+including when the work is in tests, tools, or docs outside that scope:
+
+| Concern | Guidance |
+|---|---|
+| Engine offers, cross-layer contracts, protocol and client lifecycle | [src/AGENTS.md](src/AGENTS.md) |
+| Visibility-safe meaning and consequence descriptions | [src/Marvel.View/AGENTS.md](src/Marvel.View/AGENTS.md) |
+| Prompt-bound draft composition | [src/Marvel.Decisions/AGENTS.md](src/Marvel.Decisions/AGENTS.md) |
+| Game interaction, information hierarchy and table behavior | [src/Marvel.Godot/AGENTS.md](src/Marvel.Godot/AGENTS.md) |
+| Behavioral evidence and independent product review | [tests/AGENTS.md](tests/AGENTS.md) |
+
+These files prescribe acceptance standards; their presence does not certify
+that the current implementation meets them. Documentation-only changes do not
+constitute implementation or approval of the product behaviors they describe.
+
 ## Non-negotiables
 
 These are the rules that cost a day when broken. Nothing else in this file is
