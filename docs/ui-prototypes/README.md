@@ -73,7 +73,7 @@ them unsuitable as acceptance evidence:
   contract remains an explicit design decision.
 
 The prototypes therefore remain comparative studies. The recommended merge
-sequence starts from `master`: first lifecycle and native-input evidence,
+sequence starts from `main`: first lifecycle and native-input evidence,
 second authorized presentation contracts and real fixtures, third a vertical
 slice of the adaptive workspace, and only then optional spatial shortcuts and
 anchored inspectors.

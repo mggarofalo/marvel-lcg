@@ -63,7 +63,7 @@ The next iteration must address these findings:
   statuses, unknown/runtime-created areas, and a larger hand all need a bounded
   overflow algorithm.
 
-The reviewers recommend a narrow first implementation slice from `master`:
+The reviewers recommend a narrow first implementation slice from `main`:
 land lifecycle/error-detection gates, then an engine-backed opening mulligan on
 the physical table. The slice auto-enters the single mulligan affordance, uses
 the authorized hand candidates as toggles, preserves compact public player

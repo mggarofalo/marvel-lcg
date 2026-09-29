@@ -453,7 +453,7 @@ written into the repository.
 
 CI downloads the official Godot 4.7.1 .NET archives and verifies their SHA-256
 digests. Pull requests run the representative native game on Windows and Linux;
-`master`, manual and protected release runs execute the complete viewport and
+`main`, manual and protected release runs execute the complete viewport and
 scale matrix on both. The hosted and rendered-state paths always run on both
 operating systems. macOS uses the same checked-in scripts as a local release
 check because the ordinary CI matrix has no macOS runner.
