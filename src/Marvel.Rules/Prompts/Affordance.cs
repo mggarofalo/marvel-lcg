@@ -95,6 +95,10 @@ public sealed record Affordance(
     /// </remarks>
     public AffordanceAnchorKind AnchorKind { get; init; } = AffordanceAnchorKind.Card;
 
+    /// <summary>Whether taking this offer initiates playing its source card.</summary>
+    /// <remarks>The engine chooses this presentation marker so clients need not infer event plays from names or card text.</remarks>
+    public bool PlaysCard { get; init; } = Verb == Play.CardPlay.Verb;
+
     /// <summary>Whether the player can actually take this.</summary>
     /// <remarks>
     /// <para>

@@ -62,6 +62,7 @@ public sealed class SpiderManCardsTests
         var energy = world.CreateCard("01088", world.Seats[0].Hand);
         var villain = world.TheCardIn(DeckType.VillainArea)!;
         var action = Assert.Single(runner.Actions(world, 0));
+        Assert.True(runner.Describe(world, action).PlaysCard);
 
         var events = runner.Act(world, action, [genius.ObjectId, energy.ObjectId], []).ToList();
         Assert.Equal(DeckType.RevealingArea, kick.Area.Type);

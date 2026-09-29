@@ -1,4 +1,4 @@
-extends "res://smoke/local_game_smoke_relationship_checks.gd"
+extends "res://smoke/local_game_smoke_payment.gd"
 
 const IDENTITY := 1
 const BLACK_CAT := 8
@@ -16,11 +16,11 @@ func _direct_table_journey_is_operable() -> bool:
 	if not await _direct_web_shooter_is_played():
 		_fail("the direct Web-Shooter journey ended without a reported interaction failure")
 		return false
-	if not await _direct_black_cat_is_played():
-		_fail("the direct Black Cat journey ended without a reported interaction failure")
-		return false
 	if not await _direct_change_form_is_played():
 		_fail("the direct change-form journey ended without a reported interaction failure")
+		return false
+	if not await _direct_black_cat_is_played():
+		_fail("the direct Black Cat journey ended without a reported interaction failure")
 		return false
 	if not await _direct_attacks_are_played():
 		_fail("the direct attack journey ended without a reported interaction failure")
@@ -33,14 +33,10 @@ func _direct_web_shooter_is_played() -> bool:
 	if draft == null:
 		_fail("the Web-Shooter draft did not reach its selected-action relationship probe")
 		return false
-	# Selecting the exact play affordance rebuilds the board. Probe the current
-	# card object, not the pre-draft node that is leaving the scene tree.
-	var card := _card_for_anchor(WEB_SHOOTER)
-	if card == null:
-		_fail("the drafted Web-Shooter has no canonical card surface for relationship inspection")
-		return false
-	if not await _relationship_path_tracks_table_scrolling(card):
-		return false
+	if not await _payment_cancel_is_safe(): return false
+	if await _draft_web_shooter() == null: return false
+	if not await _payment_recovery_surface_is_safe(): return false
+	if not await _payment_modal_is_safe(): return false
 	return await _complete_web_shooter_play()
 
 
@@ -162,13 +158,13 @@ func _direct_black_cat_is_played() -> bool:
 		_fail("seed 1 did not expose Black Cat as a draggable table object")
 		return false
 	if not await _wait_for(func() -> bool:
-		return _attached(_attached_name(SPIDER_TRACER, "Generator")) != null \
-				and _attached(_attached_name(DAREDEVIL, "Generator")) != null):
+		return _payment_button("Resource%d" % SPIDER_TRACER) != null \
+				and _payment_button("Resource%d" % WEB_SHOOTER) != null):
 		_fail("dragging Black Cat did not prepare its own affordance")
 		return false
 	if not await _activate_decision_resource(SPIDER_TRACER) \
-			or not await _activate_decision_resource_keyboard(DAREDEVIL):
-		_fail("Black Cat payment did not expose its exact offered hand-card generators")
+			or not await _activate_decision_resource_keyboard(WEB_SHOOTER):
+		_fail("Black Cat payment did not expose its offered hand discard and Web-Shooter ability")
 		return false
 	if not await _commit_once("Black Cat"):
 		return false
@@ -243,6 +239,8 @@ func _select_attached_action(anchor: int, verb: String) -> bool:
 
 
 func _activate_decision_resource(anchor: int) -> bool:
+	if _payment_modal() != null:
+		return await _payment_source(anchor, false)
 	var resource := _attached(_attached_name(anchor, "Generator"))
 	if resource == null:
 		_fail("the represented card has no resource choice for anchor %d" % anchor)
@@ -251,6 +249,8 @@ func _activate_decision_resource(anchor: int) -> bool:
 
 
 func _activate_decision_resource_keyboard(anchor: int) -> bool:
+	if _payment_modal() != null:
+		return await _payment_source(anchor, true)
 	var resource := _attached(_attached_name(anchor, "Generator"))
 	if resource == null or not await _keyboard_activate(resource):
 		_fail("the represented card has no keyboard-operable resource choice for anchor %d" % anchor)
@@ -261,6 +261,10 @@ func _activate_decision_resource_keyboard(anchor: int) -> bool:
 
 
 func _choose_target(anchor: int) -> bool:
+	if _payment_modal() != null:
+		var target := _payment_button("Target%d" % anchor)
+		if target != null: return await _pointer_activate(target)
+		return "automatic" in _visible_text(_payment_modal())
 	var target := _attached(_attached_name(anchor, "Target"))
 	if target != null:
 		return await _pointer_activate(target)
@@ -272,6 +276,9 @@ func _choose_target(anchor: int) -> bool:
 
 
 func _choose_cost(index: int) -> bool:
+	if _payment_modal() != null:
+		var cost := _payment_button("Cost%d" % index)
+		return await _pointer_activate(cost) if cost != null else _payment_button("Resource*") != null
 	var cost := _attached("Card*Cost")
 	if cost == null:
 		return _attached("Card*Generator") != null or _attached("Card*Submit") != null
@@ -360,7 +367,7 @@ func _activate_exposed_control_point(control: Control) -> bool:
 
 
 func _commit_once(expected: String) -> bool:
-	var submit := _attached("Card*Submit")
+	var submit := _payment_button("Submit") if _payment_modal() != null else _attached("Card*Submit")
 	if submit == null or submit.disabled:
 		_fail("%s has no ready card-local execute control" % expected)
 		return false

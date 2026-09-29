@@ -89,7 +89,7 @@ internal sealed class BoardDraftInteraction
         int[] plays = composer.Prompt.Affordances
             .Where(option => option.IsLegal
                 && IsVisibleCardAnchor(option.Id, id.Value)
-                && string.Equals(option.Verb, "Play", StringComparison.Ordinal))
+                && option.PlaysCard)
             .Select(option => option.Id)
             .ToArray();
         return plays.Length == 1 && operations.TrySelectAffordance(plays[0])
@@ -105,7 +105,7 @@ internal sealed class BoardDraftInteraction
         }
         return composer.Prompt.Affordances.Count(option => option.IsLegal
             && IsVisibleCardAnchor(option.Id, id.Value)
-            && string.Equals(option.Verb, "Play", StringComparison.Ordinal)) == 1;
+            && option.PlaysCard) == 1;
     }
 
     private bool IsVisibleCardAnchor(int affordanceId, int cardId) =>

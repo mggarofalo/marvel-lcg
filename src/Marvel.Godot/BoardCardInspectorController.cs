@@ -105,6 +105,7 @@ internal sealed class BoardCardInspectorController
         bool pinned,
         IReadOnlyList<BoardCardPresentation>? stages = null)
     {
+        if (main.decisions.PaymentModalOpen) return;
         int inspectorGeneration = checked(++main.cardInspectorGeneration);
         main.inspectedCardId = card.TargetId;
         int? sourceId = source is CardControl sourceCard

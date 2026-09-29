@@ -57,14 +57,15 @@ internal static class CardInteractionControlPlacement
         {
             Name = "SpatialControls",
             MouseFilter = Control.MouseFilterEnum.Ignore,
-            ZIndex = 600,
+            ZIndex = 0,
         };
         if (overlay.GetParent() is null)
         {
             card.AddChild(overlay);
         }
         button.Reparent(overlay);
-        button.ZAsRelative = false;
+        button.ZAsRelative = true;
+        button.ZIndex = 0;
         return new Vector2(8,
             card.CustomMinimumSize.Y + 4 - ordinal * (button.Size.Y + 8));
     }

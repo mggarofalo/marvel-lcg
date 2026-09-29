@@ -18,6 +18,7 @@ public static class EngineProtocol
     /// completed action summaries at their undo cursor boundaries. Version 11
     /// exposes the product, replay, save and runtime-dataset identities during
     /// setup discovery.
+    /// The affordance carries whether its source card is being played, including events.
     /// Version 17 adds visibility-reviewed cards that caused the current prompt.
     /// Version 16 adds engine-authored preferred resource declarations for
     /// reversible payment drafts. Version 15 adds structured table context, compact public player summaries,
@@ -25,7 +26,7 @@ public static class EngineProtocol
     /// Version 10 also tells clients
     /// when a wild-resource declaration is observable by the resolving effect.
     /// </summary>
-    public const int Version = 17;
+    public const int Version = 18;
 
     /// <summary>The largest request or game id accepted or echoed.</summary>
     public const int MaximumIdentifierLength = 256;

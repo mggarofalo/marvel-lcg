@@ -161,3 +161,12 @@ state.
 Affordances expose only actions the supported Core Set can reach. The types are
 general enough for later card patterns already considered during DSL design, but
 that does not make later products playable. See [scope.md](scope.md).
+
+## Card-play initiation
+
+`Affordance.PlaysCard` is an engine-owned presentation marker. It identifies
+ordinary plays and event abilities that initiate a card play, independently
+of their action or timing-window verb. Clients use it to stage the source and
+open payment, while all targets, costs and legality remain in the offered
+contract. Later effect choices do not inherit this marker. Protocol 18 carries
+this distinction; labels and printed text are not a substitute for it.

@@ -11,6 +11,11 @@ internal static class MainBoardInputRouter
         CardInspectorStageNavigation stages,
         InputEvent input)
     {
+        if (main.decisions.PaymentModalOpen)
+        {
+            main.decisions.RoutePaymentInput(input);
+            return;
+        }
         if (main.cardInspector.Visible && main.cardInspectorPinned)
         {
             if (stages.Route(input))

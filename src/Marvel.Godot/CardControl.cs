@@ -72,7 +72,7 @@ public sealed partial class CardControl : PanelContainer
             MouseFilter = MouseFilterEnum.Ignore,
             ThemeTypeVariation = GodotThemeVariations.Eyebrow,
             Visible = false,
-            ZIndex = 2,
+            ZIndex = 0,
             ClipText = true,
             TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
             CustomMinimumSize = Vector2.Zero,

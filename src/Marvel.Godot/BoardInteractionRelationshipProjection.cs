@@ -10,7 +10,8 @@ internal static class BoardInteractionRelationshipProjection
         DecisionComposer? composer, PromptPresentation? prompt)
     {
         if (composer?.Selected is not { } selected || prompt is null
-            || MulliganPrompt.IsOpening(composer.Prompt))
+            || MulliganPrompt.IsOpening(composer.Prompt)
+            || CardPaymentPresentation.UsesModal(composer))
         {
             return [];
         }

@@ -27,6 +27,23 @@ public sealed class BoardDraftInteractionTests
         Assert.Equal([1], composer.Resources);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void HandEventDragUsesEnginePlayMarkerRatherThanAbilityName(bool playsCard)
+    {
+        var composer = Composer(new Affordance(3, "Action", 19, 0, "Synthetic event")
+        {
+            PlaysCard = playsCard,
+        });
+        var interaction = Interaction(composer);
+
+        Assert.Equal(playsCard, interaction.CanPlay(19, true));
+        Assert.Equal(playsCard ? BoardDraftMutation.Affordance : BoardDraftMutation.None,
+            interaction.TryPlay(19, true, true));
+        Assert.Equal(playsCard, CardPaymentPresentation.UsesModal(composer));
+    }
+
     [Fact]
     public void HandClickAndOutsideDropLeaveTheDraftUntouched()
     {

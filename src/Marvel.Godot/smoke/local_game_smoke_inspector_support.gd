@@ -71,3 +71,30 @@ func _prepare_art_pack() -> void:
 	}))
 	manifest.close()
 	OS.set_environment("MARVEL_ART_PACK", root_path)
+
+
+func _web_shooter_draft_is_prepared() -> bool:
+	var modal := main.find_child("PaymentModal", true, false) as Control
+	if modal != null and modal.is_visible_in_tree(): return true
+	return _table_card_control("Card*Target") != null \
+		or _table_card_control("Card*Generator") != null \
+		or _table_card_control("Card*Cost") != null \
+		or _table_card_control("Card*Submit") != null
+
+
+func _table_card_control(name: String) -> Button:
+	for candidate in main.find_children(name, "Button", true, false):
+		var button := candidate as Button
+		if button != null and not button.is_queued_for_deletion() \
+				and button.is_visible_in_tree() \
+				and ((button.get_parent() != null and button.get_parent().name == "DirectControls") \
+					or button.has_meta("spatial_card_anchor")):
+			return button
+	return null
+
+
+func _wait_for_web_shooter_draft(failure: String) -> bool:
+	if await _wait_for(func() -> bool: return _web_shooter_draft_is_prepared()):
+		return true
+	_fail("%s; table=%s" % [failure, _visible_text(_play())])
+	return false

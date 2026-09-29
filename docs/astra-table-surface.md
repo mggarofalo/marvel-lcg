@@ -18,7 +18,8 @@ with the corresponding `table-geometry` scenes.
 | Opening mulligan | Uses the same far-side/near-side table grammar as play. The opening hand is fanned at the near edge and each discard choice is attached to its card. |
 | Ordinary player phase | Encounter piles, schemes, villain, engagement axis, identity, allies, assets, player piles, and private hand retain stable regions. |
 | Action selection | Legal actions are controls on the represented card. Multiple actions open a local chooser without using prompt order as a legality rule. |
-| Target and payment | Engine-offered targets and generators are selected on their table objects; temporary target and payment relationships are projected from structured descriptors. |
+| Card play and payment | Dragging an offered hand card stages it and opens one payment modal. Hand discards and resource abilities compose the same reversible payment; Pay and play commits it. Card play draws no table connectors. |
+| Other targets and costs | Engine-offered selections remain on their table objects, with temporary relationships from structured descriptors. |
 | Defense | The defending identity and enemy remain on the confrontation axis while the prompt uses the same local control grammar. |
 | Encounter reveal and attachment | Revealed cards use the context region. Hosted cards tuck beside their host and carry an `ATTACHED` relationship tab. |
 | Result presentation | Event motion and local result cues do not replace or reflow the table. History records the authoritative result in its drawer. |
@@ -28,6 +29,11 @@ with the corresponding `table-geometry` scenes.
 
 ## Physical interaction invariants
 
+- Resource contributions, restrictions, declarations and printed ability references
+  use canonical resource icons. Names remain available in accessible tooltips.
+- Pass belongs to the shared current-decision area, independent of any card.
+- Card faces, cues and hand controls share their card’s stacking layer, so a
+  foreground card covers every element of a lower card.
 - Hand cards overlap, fan, and preserve their authored resting rotation after
   hover. Hover lifts a card forward; drag lifts it above the hover layer and
   follows the pointer.
@@ -38,8 +44,9 @@ with the corresponding `table-geometry` scenes.
 - Status, counters, threat, health, selection, and attachment state stay local
   to the affected object. Ambient ownership lines are not rendered.
 - Relationship routing avoids unrelated card rectangles. Source, target, and
-  payment relationships are transient and come only from visibility-safe
-  prompt descriptors.
+  cost relationships for other actions are transient and come only from
+  visibility-safe prompt descriptors. Card-play composition suppresses table
+  connectors and competing controls.
 - Piles and dense/unknown areas open bounded local inspection surfaces. The
   private hand and active decision remain present.
 - History is collapsed by default, expands as a dedicated drawer, and does not
@@ -54,4 +61,6 @@ terminal presentation. The smoke additionally asserts fan overlap, hover and
 drag z-order, an intermediate pointer-following drag frame, valid and invalid
 drops, quarter-turn exhaustion, local host layering, preview timing, pinned
 focus, relationship routing, overflow reachability, repeated input, stale
-render fencing, and the absence of the retired desktop choice sheet.
+render fencing, and the absence of the retired desktop choice sheet. Payment
+checks include reversible cancellation, focus containment, and playing Black
+Cat with a hand discard plus Web-Shooter after changing to hero form.

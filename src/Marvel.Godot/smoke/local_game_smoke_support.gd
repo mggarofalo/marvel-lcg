@@ -91,7 +91,7 @@ func _control_has_real_hit_area(control: Control) -> bool:
 func _scroll_control_into_view(control: Control) -> void:
 	var scrolls: Array[ScrollContainer] = []
 	var ancestor := control.get_parent()
-	while ancestor != null:
+	while ancestor != null and not ancestor is CanvasLayer:
 		if ancestor is ScrollContainer:
 			scrolls.append(ancestor)
 		ancestor = ancestor.get_parent()
@@ -100,6 +100,7 @@ func _scroll_control_into_view(control: Control) -> void:
 				or scroll.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED:
 			scroll.ensure_control_visible(control)
 		await process_frame
+	if ancestor is CanvasLayer: return
 	var page := main.get_node_or_null("Margin") as ScrollContainer
 	var status := main.get_node_or_null("StatusBar") as Control
 	if page != null and page.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED:

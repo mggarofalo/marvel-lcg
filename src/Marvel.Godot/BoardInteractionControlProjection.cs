@@ -10,7 +10,7 @@ internal static class BoardInteractionControlProjection
     internal static IReadOnlyList<CardInteractionControlDescriptor> From(
         DecisionComposer? composer, PromptPresentation? prompt)
     {
-        if (composer is null || prompt is null)
+        if (composer is null || prompt is null || CardPaymentPresentation.UsesModal(composer))
         {
             return [];
         }

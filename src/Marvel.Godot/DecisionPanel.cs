@@ -14,6 +14,16 @@ public sealed partial class DecisionPanel : VBoxContainer
     private InterfaceScale requestedScale = ClientTheme.ConfiguredScale();
     internal ControlMetrics ControlMetrics => VisualSystem.Controls(interfaceScale);
     internal DecisionComposer? composer;
+    private CardPaymentModal? paymentModal;
+    internal bool PaymentModalOpen => paymentModal is not null;
+    internal Node LayoutHost => paymentModal?.Content ?? (Node)this;
+    internal void RoutePaymentInput(InputEvent input) => paymentModal?.Input(input);
+    internal void ClearDecision()
+    {
+        composer = null;
+        world = null;
+        Rebuild();
+    }
     private VBoxContainer? content;
     private VBoxContainer? commit;
     internal bool submitting;
@@ -151,7 +161,7 @@ public sealed partial class DecisionPanel : VBoxContainer
             RenderNoDecision();
             return;
         }
-        Callable.From(() => lifecycle.RestoreFocus(focusName, focusFirst, generation)).CallDeferred();
+        Callable.From(() => lifecycle.RestoreFocus(focusName, focusFirst || PaymentModalOpen, generation)).CallDeferred();
     }
 
     private bool RenderPrompt()
@@ -161,11 +171,16 @@ public sealed partial class DecisionPanel : VBoxContainer
             return false;
         }
         PromptPresentation prompt = PromptPresentation.From(composer.Prompt, world);
+        BoardInteractionBinder.Bind(this, mulliganBoard);
         DraftChanged?.Invoke(composer, prompt);
+        if (CardPaymentPresentation.UsesModal(composer, submitting))
+            paymentModal = new CardPaymentModal(this, prompt);
         DecisionPanelPromptRenderer.CreateLayout(this, composer, prompt);
-        DecisionPanelPromptRenderer.AddAffordances(this, prompt, lifecycle.RenderGeneration);
-        AddSelectedDraft();
-        AddDecline();
+        if (paymentModal is null)
+            DecisionPanelPromptRenderer.AddAffordances(this, prompt, lifecycle.RenderGeneration);
+        DecisionPanelSurface.AddSelectedDraft(this);
+        if (paymentModal is not null) paymentModal.AddCancel();
+        else DecisionPanelSurface.AddDecline(this);
         ProgressChanged?.Invoke(composer.Progress());
         return true;
     }
@@ -173,6 +188,8 @@ public sealed partial class DecisionPanel : VBoxContainer
     private void ClearPanel()
     {
         cardPreview.Clear();
+        paymentModal?.Dispose();
+        paymentModal = null;
 
         foreach (Node child in GetChildren())
         {
@@ -200,58 +217,6 @@ public sealed partial class DecisionPanel : VBoxContainer
     }
 
 
-    private void AddSelectedDraft()
-    {
-        if (composer!.Selected is not { } selected)
-        {
-            return;
-        }
-        DecisionProgressPresentation progress = composer.Progress();
-        if (MulliganPrompt.IsOpening(composer.Prompt))
-        {
-            MulliganDecisionSurface.AddDraft(this, selected, progress);
-            return;
-        }
-        AddContent(new HSeparator());
-        AddContent(Text(DecisionPanelCopy.TargetProgress(composer, progress.Targets), GodotThemeVariations.Eyebrow));
-        int generation = lifecycle.RenderGeneration;
-        new DecisionDraftRenderer(this, composer, world!, submitting, generation)
-            .AddTargets(selected, progress.Targets);
-        var payment = new DecisionPaymentRenderer(this, composer, world!, submitting, generation);
-        payment.AddCosts(selected);
-        payment.AddSubmit(composer.Progress());
-    }
-
-    private void AddDecline()
-    {
-        if (!composer!.Prompt.Cancellable)
-        {
-            return;
-        }
-        var pass = new Button
-        {
-            Name = "Decline",
-            Text = submitting ? "— UNAVAILABLE  ·  Pass / decline" : "Pass / decline",
-            Disabled = submitting,
-        };
-        StyleButton(pass, submitting
-            ? InteractiveVisualState.Unavailable
-            : InteractiveVisualState.Resting);
-        int generation = lifecycle.RenderGeneration;
-        pass.Pressed += () =>
-        {
-            if (lifecycle.CanMutate(generation, lifecycle.Revision)
-                && composer!.TryDecline(out EngineDecision? decision, out _))
-            {
-                NotifySubmitted(decision!, generation);
-            }
-        };
-        // Cancellation is a commit-level choice. Keeping it outside the
-        // scrolling draft body leaves the escape action reachable even when
-        // target and payment editors are taller than the viewport.
-        AddCommit(pass);
-    }
-
     internal void InstallLayout(VBoxContainer body, VBoxContainer commitBar)
     {
         content = body;
@@ -268,7 +233,10 @@ public sealed partial class DecisionPanel : VBoxContainer
 
     private string? FocusKey(Control focused) => DecisionFocus.Key(this, focused);
 
-    internal void BindAnchors(Control control, params int[] ids) => DecisionAnchorBinding.Bind(this, control, ids);
+    internal void BindAnchors(Control control, params int[] ids)
+    {
+        if (!PaymentModalOpen) DecisionAnchorBinding.Bind(this, control, ids);
+    }
 
     internal static string NodeKey(string value) => new(
         value.Select(character => char.IsLetterOrDigit(character) ? character : '_').ToArray());

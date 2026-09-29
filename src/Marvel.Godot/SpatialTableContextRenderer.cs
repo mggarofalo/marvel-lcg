@@ -48,14 +48,14 @@ internal static class SpatialTableContextRenderer
             ? "Select an action on a card."
             : WrapResolution(presentation.Resolution);
         Label summary = AddLabel(copy, fallback, GodotThemeVariations.Caption,
-            new Rect2(12, 128, rect.Size.X - 24, 88), 3, trim: false);
+            new Rect2(12, 128, rect.Size.X - 24, Math.Max(20, rect.Size.Y - 212)), 3, trim: false);
         var actions = new HBoxContainer
         {
             Name = "ContextualActionObjects",
             ThemeTypeVariation = GodotThemeVariations.TightStack,
             MouseFilter = Control.MouseFilterEnum.Pass,
-            Position = new Vector2(12, rect.Size.Y - 44),
-            Size = new Vector2(rect.Size.X - 24, 40),
+            Position = new Vector2(12, rect.Size.Y - 80),
+            Size = new Vector2(rect.Size.X - 24, 44),
         };
         copy.AddChild(actions);
         panel.AddChild(copy);
