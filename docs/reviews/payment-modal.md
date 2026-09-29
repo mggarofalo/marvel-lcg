@@ -61,3 +61,13 @@ verified the fix and reported no remaining concrete defects in scope.
 The engine explicitly marks event and ordinary card-play offers. Protocol 18
 carries that live contract. Saved prompt records do not contain this marker;
 state fingerprints and saved replay comparisons are unchanged.
+
+## Resource icon follow-up
+
+Resource types now use the pinned card-face glyphs in source buttons, cost
+restrictions, alternatives, assignments and ability references. Names remain
+in accessible descriptions. A second real-client pass at 80% found a cost row
+wrapping into a narrow column. Giving the row a usable label width and omitting
+the modal's redundant target title fixed it; the reviewer confirmed readable
+cost and source rows, recognizable matching icons and no visible type names.
+Native smoke checks cover nonempty source icons and bounded cost-row height.

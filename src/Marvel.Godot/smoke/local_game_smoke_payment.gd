@@ -33,6 +33,7 @@ func _payment_modal_is_safe() -> bool:
 	if modal == null:
 		_fail("card play did not open its payment modal")
 		return false
+	if not _payment_symbols_are_readable(modal): return false
 	var copy := _visible_text(modal)
 	if "Discard cards from hand" not in copy or "Resource abilities" not in copy \
 			or "Nothing is spent until you confirm" not in copy:
@@ -61,6 +62,18 @@ func _payment_modal_is_safe() -> bool:
 			_fail("keyboard focus escaped the payment modal")
 			return false
 	return await _capture_checkpoint("card-payment-modal")
+
+
+func _payment_symbols_are_readable(modal: Control) -> bool:
+	for source in modal.find_children("Resource*", "Button", true, false):
+		if source.icon == null or source.icon.get_image().get_used_rect().has_area() == false:
+			_fail("a payment source has no visible resource icons")
+			return false
+	var cost := modal.find_child("PaymentCost", true, false) as Control
+	if cost == null or cost.size.y > 100:
+		_fail("the payment cost is missing or wraps into an unreadable column")
+		return false
+	return true
 
 
 func _payment_cancel_is_safe() -> bool:

@@ -35,17 +35,17 @@ internal sealed class DecisionPaymentSources
         {
             bool selected = composer.Resources.Contains(source.Id);
             string verb = source.DiscardsCard ? "Discard" : "Use";
-            string resources = string.Join(" + ", source.Resources.Select(DecisionResourceName.For));
             var button = new Button
             {
                 Name = $"Resource{source.Id}",
-                Text = $"{(selected ? "✓ " : "")}{verb} {source.Name}   ·   {resources}",
+                Text = $"{(selected ? "✓ " : "")}{verb} {source.Name}",
                 Alignment = HorizontalAlignment.Left,
                 ToggleMode = true,
                 ButtonPressed = selected,
                 Disabled = panel.submitting,
                 TooltipText = selected ? "Remove this source from the payment." : "Add this source to the payment.",
             };
+            ResourceIconRendering.Apply(button, source.Resources);
             panel.StyleButton(button, selected ? InteractiveVisualState.Selected : InteractiveVisualState.Resting);
             button.Pressed += () =>
             {
@@ -54,7 +54,13 @@ internal sealed class DecisionPaymentSources
             panel.AddContent(button);
             if (!source.DiscardsCard && !string.IsNullOrWhiteSpace(source.Reference))
             {
-                panel.AddContent(DecisionPanel.Text(source.Reference, GodotThemeVariations.Caption, wrap: true));
+                CardRulesMarkup.ResourceFont();
+                panel.AddContent(new RichTextLabel
+                {
+                    Name = "ResourceAbilityReference", BbcodeEnabled = true, FitContent = true,
+                    ScrollActive = false, MouseFilter = Control.MouseFilterEnum.Ignore,
+                    Text = CardRulesMarkup.ToBbCode(source.ReferenceMarkup, source.Reference),
+                });
             }
         }
     }

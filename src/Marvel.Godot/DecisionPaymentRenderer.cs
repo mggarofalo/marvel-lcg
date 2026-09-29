@@ -58,8 +58,7 @@ internal sealed class DecisionPaymentRenderer
     {
         if (panel.PaymentModalOpen && selected.CostOptions.Count == 1)
         {
-            panel.AddContent(DecisionPanel.Text(DecisionCostLabel.For(selected.CostOptions[0], world),
-                GodotThemeVariations.Heading, wrap: true));
+            panel.AddContent(DecisionCostLabel.Create(selected.CostOptions[0], world, showTarget: false));
             return;
         }
         for (int index = 0; index < selected.CostOptions.Count; index++)
@@ -74,11 +73,6 @@ internal sealed class DecisionPaymentRenderer
         var choose = new Button
         {
             Name = $"Cost{costIndex}",
-            Text = unavailable
-                ? $"— UNAVAILABLE  ·  {DecisionCostLabel.For(cost, world)}"
-                : isSelected
-                ? $"✓ SELECTED  ·  {DecisionCostLabel.For(cost, world)}"
-                : $"◇ CHOOSE  ·  {DecisionCostLabel.For(cost, world)}",
             Alignment = HorizontalAlignment.Left,
             ToggleMode = true,
             ButtonPressed = isSelected,
@@ -91,6 +85,9 @@ internal sealed class DecisionPaymentRenderer
                 : choose.ButtonPressed
                     ? InteractiveVisualState.Selected
                     : InteractiveVisualState.Legal);
+        ResourceIconRendering.ButtonContent(choose, DecisionCostLabel.Create(cost, world,
+            unavailable ? "— Unavailable · " : isSelected ? "✓ Selected · " : "Choose · "),
+            DecisionCostLabel.Accessible(cost));
         choose.Pressed += () =>
         {
             if (operations.TrySelectCost(costIndex))
@@ -159,13 +156,13 @@ internal sealed class DecisionPaymentRenderer
                 Text = (composer.Resources.Contains(source.Effect)
                         ? "✓ SELECTED  ·  "
                         : "◇ RESOURCE  ·  ")
-                    + $"{PromptPresentation.Describe(source.Effect, world!)}"
-                    + $"  ·  {source.Generates}",
+                    + $"{PromptPresentation.Describe(source.Effect, world!)}",
                 Alignment = HorizontalAlignment.Left,
                 ToggleMode = true,
                 ButtonPressed = composer.Resources.Contains(source.Effect),
                 Disabled = submitting,
             };
+            ResourceIconRendering.Apply(choose, source.Generates);
             panel.StyleButton(
                 choose,
                 choose.ButtonPressed

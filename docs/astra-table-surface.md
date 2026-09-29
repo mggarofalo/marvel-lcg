@@ -29,6 +29,8 @@ with the corresponding `table-geometry` scenes.
 
 ## Physical interaction invariants
 
+- Resource contributions, restrictions, declarations and printed ability references
+  use canonical resource icons. Names remain available in accessible tooltips.
 - Pass belongs to the shared current-decision area, independent of any card.
 - Card faces, cues and hand controls share their card’s stacking layer, so a
   foreground card covers every element of a lower card.

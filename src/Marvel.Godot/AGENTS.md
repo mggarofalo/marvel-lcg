@@ -108,6 +108,11 @@ of one operation across table and alternative paths.
 
 ## Costs, staging and commitment
 
+Render resource types with their canonical icons throughout the application,
+including payments, choices, allocations and card references. Do not substitute
+spelled-out type names or engine letter codes. Keep accessible names in
+tooltips or accessibility text, and reuse the same symbols as the card faces.
+
 Payment shows what is required, what each selected source contributes, the
 associated exhaustion/discard or other costs, and what remains unresolved.
 Distinguish playing a hand card from discarding it for resources and from using

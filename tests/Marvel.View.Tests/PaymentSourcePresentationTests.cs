@@ -15,7 +15,7 @@ public sealed class PaymentSourcePresentationTests
     public void OfferedSourceUsesItsVisibleLocationAndEngineOutput(string zone, bool discards)
     {
         var face = new CardFaceDescriptor("visible", "Visible source", "", CardKind.Upgrade,
-            new Dictionary<string, long>()) { RulesText = "Resource: follow the printed cost." };
+            new Dictionary<string, long>()) { RulesText = "Resource: follow the printed cost.", RulesMarkup = "Resource: Generate [wild]." };
         var card = new CardDescriptor(7, CardBack.Player, true, true, -1, face);
         var world = new WorldDescriptor([], [new(1, zone, 0, -1, [card], [])], [], Outcome.Unfinished);
 
@@ -25,6 +25,7 @@ public sealed class PaymentSourcePresentationTests
         Assert.Equal("Visible source", source.Name);
         Assert.Equal("GG", source.Resources);
         Assert.Equal(face.RulesText, source.Reference);
+        Assert.Equal(face.RulesMarkup, source.ReferenceMarkup);
     }
 
     [Fact]
@@ -37,6 +38,7 @@ public sealed class PaymentSourcePresentationTests
 
         Assert.Equal("Resource ability", source.Name);
         Assert.Empty(source.Reference);
+        Assert.Empty(source.ReferenceMarkup);
         Assert.False(source.DiscardsCard);
         Assert.Equal("G", source.Resources);
     }
