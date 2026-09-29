@@ -29,10 +29,10 @@ public sealed class SpatialInteractionProjectionTests
     }
 
     [Fact]
-    public void AlternativeCostsAreChosenOnTheSourceCard()
+    public void AbilityAlternativeCostsAreChosenOnTheSourceCard()
     {
         CostOption[] costs = [new(19, "first"), new(19, "second")];
-        var composer = Composer(new Affordance(3, "Play", 19, 0, "Visible", Costs: costs));
+        var composer = Composer(new Affordance(3, "Use", 19, 0, "Visible", Costs: costs));
         composer.SelectAffordance(3);
         PromptPresentation prompt = Prompt([Visible(3, 19)], costs);
 
@@ -58,7 +58,7 @@ public sealed class SpatialInteractionProjectionTests
     }
 
     [Fact]
-    public void SelectedDraftReplacesCompetingActionsWithLocalCompositionControls()
+    public void SelectedCardPlayRemovesCompetingActionsAndLocalCompositionControls()
     {
         var composer = Composer(
             new Affordance(3, "Play", 19, 0, "Web-Shooter"),
@@ -70,7 +70,7 @@ public sealed class SpatialInteractionProjectionTests
                 composer, Prompt([Visible(3, 19), Visible(4, 20)]));
 
         Assert.DoesNotContain(controls, control => control.Intent == CardInteractionIntent.Action);
-        Assert.Contains(controls, control => control.Intent == CardInteractionIntent.Submit);
+        Assert.Empty(controls);
     }
 
     [Fact]

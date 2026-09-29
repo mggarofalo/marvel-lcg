@@ -10,7 +10,7 @@ internal static class BoardInteractionCueProjection
         DecisionComposer? composer, PromptPresentation? prompt)
     {
         var cues = new Dictionary<int, CardInteractionCue>();
-        if (composer is null || prompt is null)
+        if (composer is null || prompt is null || CardPaymentPresentation.UsesModal(composer))
         {
             return cues;
         }

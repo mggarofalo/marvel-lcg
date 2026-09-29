@@ -12,7 +12,7 @@ var render_viewport: Viewport
 func _visible_control_rect(control: Control) -> Rect2:
 	var visible_rect := control.get_global_rect().intersection(Rect2(Vector2.ZERO, _viewport_size()))
 	var ancestor := control.get_parent()
-	while ancestor != null:
+	while ancestor != null and not ancestor is CanvasLayer:
 		if ancestor is ScrollContainer or (ancestor is Control and ancestor.clip_contents):
 			visible_rect = visible_rect.intersection(ancestor.get_global_rect())
 		ancestor = ancestor.get_parent()

@@ -103,12 +103,22 @@ func _spatial_table_geometry_is_safe(spatial: Control, villain: Control, player:
 	for card in hand_cards:
 		if (card as Control).has_meta("spatial_hand_index"):
 			fanned += 1
+			if not _card_contents_share_the_fan_layer(card): return false
 			if not (card as Control).get_meta("spatial_hand_overlap", false):
 				_fail("an opening hand card does not participate in overlap geometry")
 				return false
 	if fanned != 6:
 		_fail("the opening hand is not one six-card spatial fan")
 		return false
+	return true
+
+
+func _card_contents_share_the_fan_layer(card: Node) -> bool:
+	for child in card.get_children():
+		if child is CanvasItem and (child.z_index != 0 or not child.z_as_relative):
+			_fail("a hand-card element can draw above an overlapping card: %s" % child.name)
+			return false
+		if not _card_contents_share_the_fan_layer(child): return false
 	return true
 
 
@@ -411,7 +421,9 @@ func _attached_control_focus_is_safe(state: Dictionary) -> bool:
 	if not await _wait_for(func() -> bool:
 		var replacement := render_viewport.gui_get_focus_owner() as Button
 		return replacement != null and replacement.get_instance_id() != issued_id \
-				and replacement.has_meta("spatial_card_anchor")):
+				and (replacement.has_meta("spatial_card_anchor") \
+					or (main.find_child("PaymentModal", true, false) != null \
+						and main.find_child("PaymentModal", true, false).is_ancestor_of(replacement)))):
 		var focus := render_viewport.gui_get_focus_owner()
 		var replacements := main.find_children("Card%s*" % issued_anchor, "Button", true, false) \
 				.map(func(candidate: Button) -> String:

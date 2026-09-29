@@ -231,11 +231,14 @@ func _advance_table_decision(state: Dictionary) -> bool:
 			return false
 		state.changed_form = true
 		return true
-	var decline := _attached("Card*Decline")
+	var decline := main.find_child("ContextualDecline", true, false) as Button
 	if decline != null and not decline.disabled:
+		if decline.get_parent().name != "ContextualActionObjects":
+			_fail("Pass is not in the shared decision area")
+			return false
 		state.saw_pass = true
 		state.saw_end_phase = true
-		return await _pointer_activate_attached(decline)
+		return await _pointer_activate(decline)
 	return await _compose_table_decision()
 
 
@@ -269,6 +272,7 @@ func _advance_fallback_decision(state: Dictionary) -> bool:
 func _compose_table_decision() -> bool:
 	var trace: Array[String] = []
 	for selection in 8:
+		if _payment_modal() != null: return await _compose_payment()
 		var submit := _attached("Card*Submit")
 		if submit != null and not submit.disabled:
 			return await _pointer_activate_attached(submit)

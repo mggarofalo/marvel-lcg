@@ -271,7 +271,7 @@ func _configure_connection(main: Control) -> void:
 
 func _answer_visible_decision(main: Control) -> bool:
 	var prior_status := _status(main).text
-	var attached_decline := _attached(main, "Card*Decline")
+	var attached_decline := _contextual_decline(main)
 	if attached_decline != null and not attached_decline.disabled:
 		if not await _pointer_activate(attached_decline):
 			return false
@@ -387,15 +387,21 @@ func _has_decision(main: Control) -> bool:
 
 
 func _can_decline(main: Control) -> bool:
-	var attached := _attached(main, "Card*Decline")
+	var attached := _contextual_decline(main)
 	if attached != null and not attached.disabled:
 		return true
 	var decline := _button(_decision(main), "Pass / decline")
 	return decline != null and not decline.disabled
 
 
+func _contextual_decline(main: Control) -> Button:
+	var decline := main.find_child("ContextualDecline", true, false) as Button
+	return decline if decline != null and decline.is_visible_in_tree() else null
+
+
 func _has_table_decision(main: Control) -> bool:
-	for pattern in ["Card*Decline", "Card*Submit", "Card*Target", "Card*Cost", \
+	if _contextual_decline(main) != null: return true
+	for pattern in ["Card*Submit", "Card*Target", "Card*Cost", \
 			"Card*Generator", "Card*Action"]:
 		if _attached(main, pattern) != null:
 			return true

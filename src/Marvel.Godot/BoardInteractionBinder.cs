@@ -17,7 +17,9 @@ internal static class BoardInteractionBinder
             gesture => Activate(panel, composer, gesture),
             gesture => Drag(panel, composer, board, gesture));
         board.BindExplicitInteraction(gesture => Activate(panel, composer, gesture));
-        board.BindContextualInteraction(id => panel.SelectAffordance(id, panel.GetRenderGeneration()));
+        board.BindContextualInteraction(
+            id => panel.SelectAffordance(id, panel.GetRenderGeneration()),
+            () => Decline(panel, composer, panel.GetRenderGeneration()));
     }
 
     private static bool Activate(
@@ -170,28 +172,28 @@ internal static class BoardInteractionBinder
         }).CallDeferred();
     }
 
-    private static void RestoreCardFocus(
+    internal static void RestoreCardFocus(
         DecisionPanel panel,
         DecisionComposer composer,
         int generation,
         int cardId)
     {
-        if (!panel.IsCurrentDraft(composer, generation)) return;
+        if (panel.PaymentModalOpen || !panel.IsCurrentDraft(composer, generation)) return;
         Button[] sameCard = [.. panel.GetTree().Root
             .FindChildren($"Card{cardId}*", "Button", true, false)
             .OfType<Button>()
-            .Where(button => InteractionControl.IsUsable(button)
-                && button.IsVisibleInTree() && !button.Disabled)];
+            .Where(CanFocus)];
         Button? candidate = sameCard.LastOrDefault() ?? panel.GetTree().Root
             .FindChildren("Card*", "Button", true, false)
             .OfType<Button>()
-            .LastOrDefault(button => InteractionControl.IsUsable(button)
-                && button.IsVisibleInTree() && !button.Disabled
-                && button.HasMeta("spatial_card_anchor"));
+            .LastOrDefault(button => CanFocus(button) && button.HasMeta("spatial_card_anchor"));
         if (candidate is not null)
         {
             candidate.GrabFocus();
             InteractionControl.ResetDisabledScrollAncestors(candidate);
         }
     }
+    private static bool CanFocus(Button button) =>
+        InteractionControl.IsUsable(button) && button.IsVisibleInTree() && !button.Disabled;
+
 }

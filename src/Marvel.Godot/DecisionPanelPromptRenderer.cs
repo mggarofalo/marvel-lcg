@@ -33,9 +33,9 @@ internal static class DecisionPanelPromptRenderer
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             ThemeTypeVariation = GodotThemeVariations.TightStack,
         };
-        AddActionSummary(body, selected, composer);
+        if (!panel.PaymentModalOpen) AddActionSummary(body, selected, composer);
         scroll.AddChild(body);
-        panel.AddChild(scroll);
+        panel.LayoutHost.AddChild(scroll);
 
         var commit = new VBoxContainer
         {
@@ -43,8 +43,8 @@ internal static class DecisionPanelPromptRenderer
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             ThemeTypeVariation = GodotThemeVariations.TightStack,
         };
-        panel.AddChild(new HSeparator());
-        panel.AddChild(commit);
+        panel.LayoutHost.AddChild(new HSeparator());
+        panel.LayoutHost.AddChild(commit);
         panel.InstallLayout(body, commit);
     }
 
@@ -85,7 +85,7 @@ internal static class DecisionPanelPromptRenderer
         }
         var basic = new HashSet<int>();
         AffordancePresentation[] plays = [.. prompt.Affordances
-            .Where(view => view.Verb == CardPlay.Verb)];
+            .Where(view => panel.composer!.Prompt.Affordances.Single(option => option.Id == view.Id).PlaysCard)];
         foreach (AffordancePresentation view in prompt.Affordances.Except(plays))
         {
             if (view.Verb is "Attack" or "Thwart" or "Recover" && basic.Add(view.AnchorId))

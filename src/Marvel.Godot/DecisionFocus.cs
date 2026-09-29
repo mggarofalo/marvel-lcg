@@ -102,6 +102,7 @@ internal static class DecisionFocus
     {
         for (Node? ancestor = control.GetParent(); ancestor is not null; ancestor = ancestor.GetParent())
         {
+            if (ancestor is CanvasLayer) return;
             if (ancestor is ScrollContainer scroll)
             {
                 if (!InteractionControl.IsUsable(scroll) || !scroll.IsAncestorOf(control))

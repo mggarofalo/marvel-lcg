@@ -35,10 +35,10 @@ internal sealed class DecisionPaymentRenderer
     {
         if (selected.CostOptions.Count == 0)
         {
-            panel.AddContent(DecisionPanel.Text("PAYMENT  ·  FREE  ·  READY", GodotThemeVariations.StatusText));
+            panel.AddContent(DecisionPanel.Text("No resource cost", GodotThemeVariations.StatusText));
             return;
         }
-        panel.AddContent(DecisionPanel.Text("COST", GodotThemeVariations.Caption));
+        if (!panel.PaymentModalOpen) panel.AddContent(DecisionPanel.Text("COST", GodotThemeVariations.Caption));
         AddCostOptions(selected);
         if (composer.SelectedCost < 0)
         {
@@ -47,7 +47,8 @@ internal sealed class DecisionPaymentRenderer
         }
         CostOption selectedCost = selected.CostOptions[composer.SelectedCost];
         AddVariables(selectedCost);
-        AddGenerators(selectedCost);
+        if (panel.PaymentModalOpen) new DecisionPaymentSources(panel, composer, generation).Add(selectedCost);
+        else AddGenerators(selectedCost);
         new DecisionPaymentResourceAssignmentRenderer(
             panel, composer, world, submitting, generation).Add(selectedCost);
         AddComponents(selectedCost);
@@ -55,53 +56,58 @@ internal sealed class DecisionPaymentRenderer
     }
     private void AddCostOptions(Affordance selected)
     {
-        for (int index = 0; index < selected.CostOptions.Count; index++)
+        if (panel.PaymentModalOpen && selected.CostOptions.Count == 1)
         {
-            int costIndex = index;
-            CostOption cost = selected.CostOptions[index];
-            bool targetMatches = composer!.CostApplies(cost);
-            bool unavailable = submitting || !targetMatches;
-            bool isSelected = composer.SelectedCost == index;
-            var choose = new Button
-            {
-                Name = $"Cost{costIndex}",
-                Text = unavailable
-                    ? $"— UNAVAILABLE  ·  {DecisionCostLabel.For(cost, world)}"
-                    : isSelected
-                    ? $"✓ SELECTED  ·  {DecisionCostLabel.For(cost, world)}"
-                    : $"◇ CHOOSE  ·  {DecisionCostLabel.For(cost, world)}",
-                Alignment = HorizontalAlignment.Left,
-                ToggleMode = true,
-                ButtonPressed = isSelected,
-                Disabled = unavailable,
-            };
-            panel.StyleButton(
-                choose,
-                choose.Disabled
-                    ? InteractiveVisualState.Unavailable
-                    : choose.ButtonPressed
-                        ? InteractiveVisualState.Selected
-                        : InteractiveVisualState.Legal);
-            choose.Pressed += () =>
-            {
-                if (operations.TrySelectCost(costIndex))
-                {
-                    panel.Rebuild();
-                }
-            };
-            if (cost.Target != 0)
-            {
-                panel.BindAnchors(choose, cost.Target);
-            }
-            panel.AddContent(choose);
+            panel.AddContent(DecisionPanel.Text(DecisionCostLabel.For(selected.CostOptions[0], world),
+                GodotThemeVariations.Heading, wrap: true));
+            return;
         }
+        for (int index = 0; index < selected.CostOptions.Count; index++)
+            AddCostOption(selected.CostOptions[index], index);
     }
+
+    private void AddCostOption(CostOption cost, int costIndex)
+    {
+        bool targetMatches = composer!.CostApplies(cost);
+        bool unavailable = submitting || !targetMatches;
+        bool isSelected = composer.SelectedCost == costIndex;
+        var choose = new Button
+        {
+            Name = $"Cost{costIndex}",
+            Text = unavailable
+                ? $"— UNAVAILABLE  ·  {DecisionCostLabel.For(cost, world)}"
+                : isSelected
+                ? $"✓ SELECTED  ·  {DecisionCostLabel.For(cost, world)}"
+                : $"◇ CHOOSE  ·  {DecisionCostLabel.For(cost, world)}",
+            Alignment = HorizontalAlignment.Left,
+            ToggleMode = true,
+            ButtonPressed = isSelected,
+            Disabled = unavailable,
+        };
+        panel.StyleButton(
+            choose,
+            choose.Disabled
+                ? InteractiveVisualState.Unavailable
+                : choose.ButtonPressed
+                    ? InteractiveVisualState.Selected
+                    : InteractiveVisualState.Legal);
+        choose.Pressed += () =>
+        {
+            if (operations.TrySelectCost(costIndex))
+            {
+                panel.Rebuild();
+            }
+        };
+        if (cost.Target != 0)
+        {
+            panel.BindAnchors(choose, cost.Target);
+        }
+        panel.AddContent(choose);
+    }
+
     private void AddPendingCostChoice()
     {
-        PaymentProgress pending = composer.Progress().Payment;
-        panel.AddContent(DecisionPanel.Text(
-            $"PAYMENT  ·  CHOOSE 1 OF {pending.CostOptions} COSTS",
-            GodotThemeVariations.Caption));
+        panel.AddContent(DecisionPanel.Text("Choose a cost option to continue.", GodotThemeVariations.Caption));
     }
 
     private void AddVariables(CostOption cost)
@@ -188,6 +194,12 @@ internal sealed class DecisionPaymentRenderer
     private void AddPaymentProgress()
     {
         PaymentProgress progress = composer.Progress().Payment;
+        if (panel.PaymentModalOpen)
+        {
+            panel.AddCommit(DecisionPanel.Text(CardPaymentPresentation.Progress(progress),
+                GodotThemeVariations.StatusText, wrap: true));
+            return;
+        }
         panel.AddContent(DecisionPanel.Text(
             $"PAYMENT  ·  {progress.SelectedGenerators} GENERATORS"
             + $"  ·  {progress.AssignedIcons}/{progress.GeneratedIcons} ICONS"
@@ -208,7 +220,8 @@ internal sealed class DecisionPaymentRenderer
 
     internal void AddSubmit(DecisionProgressPresentation progress)
     {
-        if (!progress.IsReady && progress.Error is not null)
+        if (!progress.IsReady && progress.Error is not null
+            && (!panel.PaymentModalOpen || progress.Payment.IsSatisfied))
         {
             Label validation = DecisionPanel.Text(
                 $"! {progress.Error}",
@@ -228,14 +241,12 @@ internal sealed class DecisionPaymentRenderer
 
         string action = DecisionCopy.WithPaymentConsequence(
             DecisionPanelCopy.SubmitAction(composer, world), progress.Payment);
+        if (panel.PaymentModalOpen)
+            action = $"Pay and play {PromptPresentation.Describe(composer.Selected!.AnchorId, world)}";
         var submit = new Button
         {
             Name = "Submit",
-            Text = submitting
-                ? "— UNAVAILABLE  ·  Waiting for engine…"
-                : progress.IsReady
-                    ? action
-                    : $"— Unavailable  ·  {action}",
+            Text = submitting ? "Playing…" : action,
             Disabled = submitting || !progress.IsReady,
         };
         panel.StyleButton(

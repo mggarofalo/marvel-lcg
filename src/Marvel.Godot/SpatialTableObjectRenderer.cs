@@ -282,8 +282,8 @@ internal sealed class SpatialTableObjectRenderer
             Position = new Vector2(20, cardSize.Y - 48),
             Size = new Vector2(Math.Max(92, cardSize.X - 40), 44),
             CustomMinimumSize = new Vector2(Math.Max(92, cardSize.X - 40), 44),
-            ZIndex = 50,
-            ZAsRelative = false,
+            ZIndex = 0,
+            ZAsRelative = true,
             TooltipText = "Select this card for replacement. The card body remains inspection.",
         };
         toggle.Pressed += () => result.RequestMulliganTarget(id);

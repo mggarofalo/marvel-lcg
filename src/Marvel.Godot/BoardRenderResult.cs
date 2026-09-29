@@ -110,8 +110,8 @@ public sealed class BoardRenderResult
     internal void BindExplicitInteraction(Func<CardPointerGesture, bool> activate) =>
         interactionControls.Bind(activate);
 
-    internal void BindContextualInteraction(Action<int> activate) =>
-        interactionControls.BindContextual(activate);
+    internal void BindContextualInteraction(Action<int> activate, Action decline) =>
+        interactionControls.BindContextual(activate, decline);
 
     internal bool IsDroppedOnLivePlayerLane(int seat, Vector2 position) =>
         pointer.IsDroppedOnLivePlayerLane(seat, position);

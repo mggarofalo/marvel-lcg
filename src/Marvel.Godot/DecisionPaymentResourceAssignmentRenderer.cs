@@ -33,7 +33,7 @@ internal sealed class DecisionPaymentResourceAssignmentRenderer
     {
         if (composer.UsesAutomaticResourceAllocation)
         {
-            AddAutomaticAssignments(cost);
+            if (!panel.PaymentModalOpen) AddAutomaticAssignments(cost);
             return;
         }
 

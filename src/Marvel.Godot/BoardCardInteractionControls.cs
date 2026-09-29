@@ -13,6 +13,7 @@ internal sealed class BoardCardInteractionControls
     private readonly Func<bool> isCurrent;
     private Func<CardPointerGesture, bool>? activate;
     private Action<int>? activateContextual;
+    private Action? declineContextual;
     private Container? contextualHost;
     private int focusGeneration;
     private BoardInteractionFocusKey? requestedFocus;
@@ -25,8 +26,11 @@ internal sealed class BoardCardInteractionControls
     internal void Bind(Func<CardPointerGesture, bool> handler) =>
         activate = handler ?? throw new ArgumentNullException(nameof(handler));
 
-    internal void BindContextual(Action<int> handler) =>
+    internal void BindContextual(Action<int> handler, Action decline)
+    {
         activateContextual = handler ?? throw new ArgumentNullException(nameof(handler));
+        declineContextual = decline ?? throw new ArgumentNullException(nameof(decline));
+    }
 
     internal void RegisterContextualHost(Container host) => contextualHost = host;
 
@@ -53,13 +57,15 @@ internal sealed class BoardCardInteractionControls
         }
         Clear();
         ClearContextualActions();
+        if (CardPaymentPresentation.UsesModal(composer)) return;
         var descriptors = BoardInteractionControlProjection.From(composer, prompt).ToList();
-        AddDecline(descriptors, visible, composer, prompt);
+
         foreach (CardInteractionControlDescriptor descriptor in descriptors)
         {
             Add(visible, descriptor);
         }
         AddContextualActions(prompt);
+        AddDecline(composer);
         RestoreFocus(focused, generation);
     }
 
@@ -100,26 +106,21 @@ internal sealed class BoardCardInteractionControls
         }
     }
 
-    private static void AddDecline(
-        List<CardInteractionControlDescriptor> descriptors,
-        IReadOnlyDictionary<int, List<CardControl>> visible,
-        DecisionComposer? composer,
-        PromptPresentation? prompt)
+    private void AddDecline(DecisionComposer composer)
     {
-        if (composer?.Prompt.Cancellable != true || prompt is null)
+        if (!composer.Prompt.Cancellable || !InteractionControl.IsUsable(contextualHost)) return;
+        var pass = new Button
         {
-            return;
-        }
-        int? host = prompt.Affordances
-            .Where(affordance => affordance.Illegal is null)
-            .Select(affordance => affordance.Source?.CardId)
-            .FirstOrDefault(id => id is not null && visible.ContainsKey(id.Value))
-            ?? visible.Keys.OrderBy(id => id).Cast<int?>().FirstOrDefault();
-        if (host is { } cardId)
+            Name = "ContextualDecline", Text = "Pass", TooltipText = "Pass this optional decision.",
+            CustomMinimumSize = new Vector2(112, 44),
+            ThemeTypeVariation = GodotThemeVariations.LegalTargetButton,
+        };
+        int generation = focusGeneration;
+        pass.Pressed += () =>
         {
-            descriptors.Add(new CardInteractionControlDescriptor(
-                cardId, CardInteractionIntent.Decline, "PASS", CardInteractionCue.OfferedAction));
-        }
+            if (isCurrent() && generation == focusGeneration) declineContextual?.Invoke();
+        };
+        contextualHost!.AddChild(pass);
     }
 
     private void Clear()
@@ -169,7 +170,6 @@ internal sealed class BoardCardInteractionControls
             ZAsRelative = false,
         };
         var key = new BoardInteractionFocusKey(descriptor.CardId, descriptor.Intent);
-        button.SetMeta("spatial_control_z", button.ZIndex);
         focusKeys.Add(button, key);
         button.Pressed += () =>
         {
@@ -182,21 +182,27 @@ internal sealed class BoardCardInteractionControls
             button.QueueFree();
             return;
         }
+        button.SetMeta("spatial_control_z", button.ZIndex);
         card.HideRedundantActionCueLabel();
-        card.ZIndex = Math.Max(
-            card.ZIndex,
-            descriptor.Intent == CardInteractionIntent.Submit ? 120 : 100);
-        card.SetMeta("spatial_interaction_z", card.ZIndex);
-        if (descriptor.Intent == CardInteractionIntent.Submit)
-        {
-            card.MoveToFront();
-        }
+        PresentControlLayer(card, descriptor.Intent);
         if (!controls.TryGetValue(card, out List<Button>? buttons))
         {
             buttons = [];
             controls.Add(card, buttons);
         }
         buttons.Add(button);
+    }
+
+    private static void PresentControlLayer(CardControl card, CardInteractionIntent intent)
+    {
+        if (!card.HasMeta("spatial_hand_index"))
+            card.ZIndex = Math.Max(card.ZIndex,
+                intent == CardInteractionIntent.Submit ? 120 : 100);
+        card.SetMeta("spatial_interaction_z", card.ZIndex);
+        if (intent == CardInteractionIntent.Submit)
+        {
+            card.MoveToFront();
+        }
     }
 
     private BoardInteractionFocusKey? FocusedKey()
