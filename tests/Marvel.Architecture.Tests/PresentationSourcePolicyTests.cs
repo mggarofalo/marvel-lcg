@@ -115,6 +115,7 @@ public sealed class PresentationSourcePolicyTests
             "Marvel.Rules.Prompts.Question.Order",
             "Marvel.Rules.Prompts.Question.TurnOption",
             "Marvel.Rules.Prompts.ResourceSource.Effect",
+            "Marvel.Rules.Prompts.ResourceSource.Generates",
             "Marvel.Rules.Prompts.TargetRequest.AllowRepeated",
             "Marvel.Rules.Prompts.TargetRequest.Groups",
             "Marvel.Rules.Prompts.TargetRequest.IsGrouped",

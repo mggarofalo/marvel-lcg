@@ -45,7 +45,8 @@ internal sealed class MainEventMotionController
         }
 
         main.eventCueKind.Text = entry.Motion.ToString().ToUpperInvariant();
-        main.eventCue.Visible = true;
+        main.eventCue.Visible = !DesktopTabletop.Uses(main.GetViewportRect().Size)
+            || TableHistoryDrawer.IsExpanded(main);
         EventCueBoardFocus.Present(main, entry);
         main.eventCueKind.ThemeTypeVariation = entry.Motion switch
         {

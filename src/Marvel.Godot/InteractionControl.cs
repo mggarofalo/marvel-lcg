@@ -31,6 +31,7 @@ internal static class InteractionControl
 
         for (Node? node = control.GetParent(); node is not null; node = node.GetParent())
         {
+            if (node is CanvasLayer) return null;
             if (node is ScrollContainer scroll
                 && (name is null || scroll.Name == name)
                 && IsUsable(scroll)
@@ -41,5 +42,25 @@ internal static class InteractionControl
         }
 
         return null;
+    }
+
+    internal static void ResetDisabledScrollAncestors(Control control)
+    {
+        for (Node? node = control.GetParent(); node is not null; node = node.GetParent())
+        {
+            if (node is CanvasLayer) return;
+            if (node is not ScrollContainer scroll)
+            {
+                continue;
+            }
+            if (scroll.HorizontalScrollMode == ScrollContainer.ScrollMode.Disabled)
+            {
+                scroll.ScrollHorizontal = 0;
+            }
+            if (scroll.VerticalScrollMode == ScrollContainer.ScrollMode.Disabled)
+            {
+                scroll.ScrollVertical = 0;
+            }
+        }
     }
 }

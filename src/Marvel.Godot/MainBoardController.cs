@@ -46,6 +46,7 @@ internal sealed class MainBoardController : IDisposable
         IReadOnlyList<EventPresentation> reportNarrative = BoardResponsePresentation.Update(
             main,
             response, previousOutcome, priorHistory, resetEvents, preserveEvents, operation);
+        main.layoutController.ApplyResponsivePlayLayout();
         FinishRender(response, world, priorProgress, operation, reportNarrative, renderGeneration);
     }
     private void RenderCurrentResponse(
@@ -63,7 +64,6 @@ internal sealed class MainBoardController : IDisposable
         main.RenderPromptSummary(response.Prompt, world);
         main.decisions.Render(response.Prompt, world, response.Revision);
         main.decisions.BindMulliganTargets(main.boardRender);
-        main.layoutController.ApplyResponsivePlayLayout();
     }
     private void FinishRender(
         EngineResponse response,
@@ -112,11 +112,11 @@ internal sealed class MainBoardController : IDisposable
         Vector2 viewport = main.GetViewportRect().Size;
         main.GetNode<PanelContainer>("Margin/Shell/Content/Play/Board/HandShelf").Visible = true;
         BoardRenderResult rendered = tabletop.Render(prompt, viewport)
-            ?? BoardRenderer.Render(
-                main.boardAreas, main.boardPresentation, main.handRail, main.handHeading,
-                main.interfaceScale, main.expandedAreas, main.art);
+            ?? RenderCompactBoard();
         main.boardRender = rendered;
         rendered.CardActivated += cardInspector.Toggle;
+        rendered.CardPreviewEntered += cardInspector.PreviewCardAfterDelay;
+        rendered.CardPreviewExited += cardInspector.LeaveCardPreview;
         rendered.IsCurrent = () => ReferenceEquals(main.boardRender, rendered)
             && IsCurrentRender(renderGeneration ?? renderLifetime.Current);
         relationships.Bind(rendered);
@@ -128,6 +128,21 @@ internal sealed class MainBoardController : IDisposable
             cardInspector.Hide();
         }
     }
+    private BoardRenderResult RenderCompactBoard()
+    {
+        BoardRenderResult rendered = BoardRenderer.Render(
+            main.boardAreas, main.boardPresentation!, main.handRail, main.handHeading,
+            main.interfaceScale, main.expandedAreas, main.art);
+        var actions = new HFlowContainer
+        {
+            Name = "ContextualActionObjects", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+        };
+        main.boardAreas.AddChild(actions);
+        main.boardAreas.MoveChild(actions, 0);
+        rendered.RegisterContextualActions(actions);
+        return rendered;
+    }
+
     internal void FocusAnchors(IReadOnlyList<int> ids) => tabletop.FocusAnchors(ids);
 
     internal void FocusEventAnchors(IReadOnlyList<int> ids) => tabletop.FocusAnchors(ids);

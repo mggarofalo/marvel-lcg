@@ -14,6 +14,7 @@ internal sealed class MainSessionLossRecovery
 
     internal void ReturnToJoin(ClientStartupError error)
     {
+        main.decisions.ClearDecision();
         main.session = null;
         main.client = null;
         main.CurrentGame = null;

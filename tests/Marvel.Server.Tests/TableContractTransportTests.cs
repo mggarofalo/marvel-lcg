@@ -42,7 +42,7 @@ public sealed class TableContractTransportTests
         JsonElement table = document.RootElement.GetProperty("world").GetProperty("table");
         EngineResponse restored = EngineJson.ReadResponse(json);
 
-        Assert.Equal(17, response.Version);
+        Assert.Equal(18, response.Version);
         Assert.Equal(1, table.GetProperty("active_player").GetInt32());
         Assert.Equal([17, 23], restored.World!.Areas[0].Cards.Select(card => card.Id));
         Assert.Equal([17, 23], restored.World.Relationships.Select(relationship => relationship.Subject));
@@ -69,12 +69,29 @@ public sealed class TableContractTransportTests
         EngineResponse restored = EngineJson.ReadResponse(json);
         JsonElement encoded = document.RootElement.GetProperty("prompt");
 
-        Assert.Equal(17, response.Version);
+        Assert.Equal(18, response.Version);
         Assert.Equal("Opening hand", encoded.GetProperty("display_question").GetString());
         Assert.Equal((int)AffordanceAnchorKind.Area, encoded.GetProperty("affordances")[0]
             .GetProperty("anchor_kind").GetInt32());
         Assert.Equal("Opening hand", restored.Prompt?.DisplayQuestion);
         Assert.Equal(AffordanceAnchorKind.Area, restored.Prompt?.Affordances[0].AnchorKind);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void CardPlayIntentSurvivesTransportIndependentlyOfTheAbilityVerb(bool playsCard)
+    {
+        var offer = new Affordance(7, "Action", 4, 0, "Synthetic event") { PlaysCard = playsCard };
+        var prompt = new Prompt(0, Question.TurnOption, TimingPriority.Untimed,
+            "Turn", "Choose", false, [offer]);
+        var response = new EngineResponse(EngineProtocol.Version, "prompt", "game",
+            Capability: null, prompt, Events: []);
+
+        EngineResponse restored = EngineJson.ReadResponse(EngineJson.Write(response));
+
+        Assert.Equal(playsCard, restored.Prompt!.Affordances[0].PlaysCard);
+        Assert.Equal("Action", restored.Prompt.Affordances[0].Verb);
     }
 
     private static CardDescriptor Card(int id, string title) => new(

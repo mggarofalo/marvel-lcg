@@ -22,7 +22,13 @@ func _synchronization_preserves_history(expect_terminal: bool) -> bool:
 		if "VILLAIN WINS" not in _status().text and "PLAYERS LOSE" not in _status().text:
 			_fail("synchronizing the terminal table lost its authoritative outcome")
 			return false
-	elif _first_enabled_choice() == null \
+	elif main.find_child("VillainTable", true, false) != null \
+			and _attached(_attached_name(IDENTITY, "Action")) == null \
+			and _attached(_attached_name(IDENTITY, "Submit")) == null:
+		_fail("synchronizing an ordinary prompt left the table objects inoperable")
+		return false
+	elif main.find_child("VillainTable", true, false) == null \
+			and _first_enabled_choice() == null \
 			and _visible_button(_decision(), "Pass / decline") == null:
 		_fail("synchronizing an ordinary prompt left the decision inoperable")
 		return false
@@ -207,29 +213,24 @@ func _live_scale_rebuilds_the_decision() -> bool:
 
 func _mulligan_scale_rebuilds_the_dock() -> bool:
 	var slider := _node("Toolbar/InterfaceScale") as HSlider
-	var sheet := main.find_child("CompleteChoiceSheet", true, false) as Button
-	var submit := _submit_button()
-	if slider == null or sheet == null or submit == null:
-		_fail("the tabletop scale check has no dock controls")
+	var submit := _attached(_attached_name(1, "Submit"))
+	var history := main.find_child("ToggleHistory", true, false) as Button
+	if slider == null or submit == null or history == null:
+		_fail("the tabletop scale check has no card-local execute control or history drawer")
 		return false
 	var original_scale := slider.value
-	var original_sheet := sheet.get_instance_id()
+	var original_submit := submit.get_instance_id()
 	slider.value = 100.0 if original_scale != 100.0 else 120.0
 	await process_frame
 	await process_frame
-	sheet = main.find_child("CompleteChoiceSheet", true, false) as Button
-	submit = _submit_button()
-	if sheet == null or submit == null or sheet.get_instance_id() == original_sheet:
-		_fail("changing scale did not replace the tabletop decision dock")
+	submit = _attached(_attached_name(1, "Submit"))
+	history = main.find_child("ToggleHistory", true, false) as Button
+	if submit == null or history == null or submit.get_instance_id() == original_submit:
+		_fail("changing scale did not rebuild the card-local action surface")
 		return false
-	var dock := _node("Play/Prompt") as Control
-	if dock == null or not await _wait_for(func() -> bool:
-			return absf(submit.get_global_rect().end.y - dock.get_global_rect().end.y) \
-				<= SmokeScale.metric(20, str(slider.value))):
-		_fail("changing scale detached the tabletop commit from its fixed dock")
-		return false
-	if not await _prepare_activation(sheet) or not await _prepare_activation(submit):
-		_fail("changing scale left a tabletop dock control clipped or occluded")
+	if not await _control_owns_point(history, _visible_control_rect(history).get_center()) \
+			or not await _prepare_activation(submit):
+		_fail("changing scale left a table action or history control clipped or occluded")
 		return false
 	slider.value = original_scale
 	await process_frame

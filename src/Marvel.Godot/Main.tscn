@@ -69,7 +69,7 @@ theme_type_variation = &"CompactRow"
 layout_mode = 2
 size_flags_vertical = 3
 theme_type_variation = &"Caption"
-text = "v0.1.0-dev.0 · engine engine-replay-v2 · protocol 17 · save 4"
+text = "v0.1.0-dev.0 · engine engine-replay-v2 · protocol 18 · save 4"
 
 [node name="Spacer" type="Control" parent="StatusBar" unique_id=1000000009]
 layout_mode = 2
@@ -745,7 +745,7 @@ text = "LOADING ASSIGNMENTS"
 
 [node name="CardInspector" type="Control" parent="." unique_id=1000000107]
 visible = false
-z_index = 20
+z_index = 3000
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

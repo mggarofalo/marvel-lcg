@@ -12,7 +12,7 @@ var render_viewport: Viewport
 func _visible_control_rect(control: Control) -> Rect2:
 	var visible_rect := control.get_global_rect().intersection(Rect2(Vector2.ZERO, _viewport_size()))
 	var ancestor := control.get_parent()
-	while ancestor != null:
+	while ancestor != null and not ancestor is CanvasLayer:
 		if ancestor is ScrollContainer or (ancestor is Control and ancestor.clip_contents):
 			visible_rect = visible_rect.intersection(ancestor.get_global_rect())
 		ancestor = ancestor.get_parent()
@@ -32,6 +32,8 @@ func _control_owns_point(control: Control, point: Vector2) -> bool:
 	for _attempt in POINTER_OWNERSHIP_ATTEMPTS:
 		_position_pointer_without_settle(point)
 		await process_frame
+		if not is_instance_valid(control):
+			return false
 		if render_viewport.get_mouse_position().is_equal_approx(point) \
 				and _hovered_control_owns(control, render_viewport.gui_get_hovered_control()):
 			return true

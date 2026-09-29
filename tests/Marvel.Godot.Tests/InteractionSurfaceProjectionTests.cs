@@ -14,7 +14,7 @@ public sealed class InteractionSurfaceProjectionTests
     [Fact]
     public void CuesComeOnlyFromTheVisiblePromptAndCurrentDraft()
     {
-        var composer = Composer(new Affordance(7, "Play", 19, 0, "Visible",
+        var composer = Composer(new Affordance(7, "Use", 19, 0, "Visible",
             new TargetRequest([10], 1, 1),
             [new CostOption(19, "1", Sources: [new ResourceSource(1, "Y")])]),
             new Affordance(8, "Use", 20, 0, "Unavailable", Illegal: "Exhausted"));
@@ -74,7 +74,7 @@ public sealed class InteractionSurfaceProjectionTests
     [Fact]
     public void SelectedPromptTargetsReceiveAttachedControlsFromTheEngineOffer()
     {
-        var composer = Composer(new Affordance(3, "Play", 19, 0, "Visible",
+        var composer = Composer(new Affordance(3, "Use", 19, 0, "Visible",
             new TargetRequest([1, 49], 1, 1)));
         composer.SelectAffordance(3);
         PromptPresentation prompt = Prompt(composer.Prompt, [Visible(3, 19)],
@@ -90,7 +90,7 @@ public sealed class InteractionSurfaceProjectionTests
     [Fact]
     public void AutomaticTargetKeepsItsCueWithoutARedundantAttachedControl()
     {
-        var composer = Composer(new Affordance(3, "Play", 19, 0, "Visible",
+        var composer = Composer(new Affordance(3, "Use", 19, 0, "Visible",
             new TargetRequest([1], 1, 1)));
         composer.SelectAffordance(3);
         PromptPresentation prompt = Prompt(composer.Prompt, [Visible(3, 19)],
@@ -107,7 +107,7 @@ public sealed class InteractionSurfaceProjectionTests
     public void GroupedTargetsKeepTheirCuesForTheOrderedFallbackWithoutAttachedToggles()
     {
         var target = new TargetRequest([1, 2, 3, 4], 2, 2, Groups: [[1, 2], [3, 4]]);
-        var composer = Composer(new Affordance(3, "Play", 19, 0, "Visible", target));
+        var composer = Composer(new Affordance(3, "Use", 19, 0, "Visible", target));
         composer.SelectAffordance(3);
         PromptPresentation prompt = Prompt(composer.Prompt, [Visible(3, 19)], target: target);
 
@@ -123,7 +123,7 @@ public sealed class InteractionSurfaceProjectionTests
     {
         var target = new TargetRequest([1, 2], 1, 3, AllowRepeated: true,
             MaximumOccurrences: new Dictionary<int, int> { [1] = 2, [2] = 1 });
-        var composer = Composer(new Affordance(3, "Play", 19, 0, "Visible", target));
+        var composer = Composer(new Affordance(3, "Use", 19, 0, "Visible", target));
         composer.SelectAffordance(3);
         PromptPresentation prompt = Prompt(composer.Prompt, [Visible(3, 19)], target: target);
 
@@ -139,7 +139,7 @@ public sealed class InteractionSurfaceProjectionTests
     {
         var target = new TargetRequest([11, 12], 1, 1);
         var cost = new CostOption(11, "1", Sources: [new ResourceSource(41, "Y")]);
-        var composer = Composer(new Affordance(3, "Play", 19, 0, "Visible", target, [cost]));
+        var composer = Composer(new Affordance(3, "Use", 19, 0, "Visible", target, [cost]));
         composer.SelectAffordance(3);
         PromptPresentation prompt = Prompt(composer.Prompt, [Visible(3, 19)], target, [cost]);
 
@@ -206,7 +206,7 @@ public sealed class InteractionSurfaceProjectionTests
     [Fact]
     public void HiddenRelationshipEndpointHasNoPromptRelationshipToDraw()
     {
-        var composer = Composer(new Affordance(3, "Play", 19, 0, "Visible"));
+        var composer = Composer(new Affordance(3, "Use", 19, 0, "Visible"));
         composer.SelectAffordance(3);
         PromptPresentation prompt = Prompt(composer.Prompt, [Visible(3, 19)]);
 
@@ -240,7 +240,7 @@ public sealed class InteractionSurfaceProjectionTests
     [Fact]
     public void SelectedPromptDrawsOnlyActionableTargetAndGeneratorLinks()
     {
-        var composer = Composer(new Affordance(3, "Play", 19, 0, "Visible"));
+        var composer = Composer(new Affordance(3, "Use", 19, 0, "Visible"));
         composer.SelectAffordance(3);
         PromptPresentation prompt = Prompt(composer.Prompt,
         [
@@ -278,7 +278,7 @@ public sealed class InteractionSurfaceProjectionTests
         }).ToArray());
 
     private static AffordancePresentation Visible(int id, int card, string? illegal = null) => new(
-        id, "Visible", null, "Play", "Visible", card, 0, illegal, "", [])
+        id, "Visible", null, "Use", "Visible", card, 0, illegal, "", [])
     {
         Source = new AffordanceSourceDescriptor(AffordanceAnchorKind.Card, card, null, 0),
     };

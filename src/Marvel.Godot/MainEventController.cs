@@ -99,6 +99,12 @@ internal sealed class MainEventController
         bool terminal = highlights.Any(entry => entry.Motion == EventMotionKind.Terminal);
         main.lastResult.Visible = true;
         main.lastResultSummary.Text = string.Join(" ", highlights.Select(entry => entry.Summary));
+        if (main.GetNodeOrNull<Label>(
+                "Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench/History/LatestResult")
+            is { } historyResult)
+        {
+            historyResult.Text = main.lastResultSummary.Text;
+        }
         main.lastResult.ThemeTypeVariation = highlights.Any(entry => entry.Motion is
             EventMotionKind.Defeat or EventMotionKind.Terminal)
                 ? GodotThemeVariations.DangerStatusPanel
@@ -202,6 +208,11 @@ internal sealed class MainEventController
         string accent = ClientTheme.ToGodot(VisualSystem.Palette.Accent).ToHtml(false);
         IReadOnlyList<int> undo = main.CurrentGame!.History!.Undo;
         main.eventLog.Text = EventLogFormatter.FormatActions(actions, undo, accent);
+        if (main.events.Entries.Count > 0)
+        {
+            main.eventLog.Text += EventLogFormatter.FormatChronologySection(
+                main.events.Entries, accent);
+        }
         main.eventLog.ScrollToLine(main.eventLog.GetLineCount());
     }
 

@@ -10,7 +10,7 @@ internal static class BoardInteractionCueProjection
         DecisionComposer? composer, PromptPresentation? prompt)
     {
         var cues = new Dictionary<int, CardInteractionCue>();
-        if (composer is null || prompt is null)
+        if (composer is null || prompt is null || CardPaymentPresentation.UsesModal(composer))
         {
             return cues;
         }
@@ -24,9 +24,9 @@ internal static class BoardInteractionCueProjection
         Dictionary<int, CardInteractionCue> cues, PromptPresentation prompt)
     {
         foreach (AffordancePresentation affordance in prompt.Affordances.Where(
-                     affordance => affordance.Source?.CardId is not null))
+                     affordance => affordance.CardAnchorId is not null))
         {
-            Add(cues, affordance.Source!.CardId!.Value, CueFor(affordance));
+            Add(cues, affordance.CardAnchorId!.Value, CueFor(affordance));
         }
     }
 

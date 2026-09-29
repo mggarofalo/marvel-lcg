@@ -33,7 +33,7 @@ internal sealed class DecisionPaymentResourceAssignmentRenderer
     {
         if (composer.UsesAutomaticResourceAllocation)
         {
-            AddAutomaticAssignments(cost);
+            if (!panel.PaymentModalOpen) AddAutomaticAssignments(cost);
             return;
         }
 
@@ -51,9 +51,9 @@ internal sealed class DecisionPaymentResourceAssignmentRenderer
     {
         List<AllocationChoice> choices = Choices(printed, componentCount);
         var row = new HBoxContainer();
-        var label = DecisionPanel.Text(
-            $"Icon {iconIndex + 1} · {DecisionResourceName.For(printed)}",
-            GodotThemeVariations.Body);
+        var label = ResourceIconRendering.Row(
+            $"{PromptPresentation.Describe(source.Effect, world)} · {iconIndex + 1}",
+            printed.ToString(), GodotThemeVariations.Body);
         label.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         row.AddChild(label);
         var allocation = new OptionButton
@@ -66,7 +66,13 @@ internal sealed class DecisionPaymentResourceAssignmentRenderer
         };
         foreach (AllocationChoice choice in choices)
         {
-            allocation.AddItem(choice.Label);
+            if (choice.PaidAs is { } resource)
+            {
+                allocation.AddIconItem(ResourceIconRendering.Texture(resource.ToString()), choice.Label);
+                allocation.GetPopup().SetItemTooltip(allocation.ItemCount - 1,
+                    $"{choice.Label}: {CardRulesMarkup.ResourceNames(resource.ToString())}");
+            }
+            else allocation.AddItem(choice.Label);
         }
         allocation.Select(CurrentChoiceIndex(source.Effect, iconIndex, choices));
         allocation.ItemSelected += selected =>
@@ -104,14 +110,14 @@ internal sealed class DecisionPaymentResourceAssignmentRenderer
                 choices.AddRange(Resources.Types.Select(declared => new AllocationChoice(
                     component,
                     declared,
-                    $"Cost {component + 1} as {DecisionResourceName.For(declared)}")));
+                    $"Cost {component + 1}")));
             }
             else
             {
                 choices.Add(new AllocationChoice(
                     component,
                     printed,
-                    $"Cost {component + 1} as {DecisionResourceName.For(printed)}"));
+                    $"Cost {component + 1}"));
             }
         }
         return choices;
@@ -123,13 +129,12 @@ internal sealed class DecisionPaymentResourceAssignmentRenderer
                      composer.Resources.Contains(generator.Effect)))
         {
             int assigned = composer.Assignments.Count(assignment => assignment.Source == source.Effect);
-            panel.AddContent(DecisionPanel.Text(
+            panel.AddContent(ResourceIconRendering.Row(
                 $"{PromptPresentation.Describe(source.Effect, world)}"
-                + $"  ·  PRINTED {string.Join(" + ", source.Generates.Select(DecisionResourceName.For))}"
                 + $"  ·  {assigned} APPLIED"
                 + (source.Generates.Length > assigned
                     ? $"  ·  {source.Generates.Length - assigned} EXCESS" : string.Empty),
-                GodotThemeVariations.StatusText, wrap: true));
+                source.Generates, GodotThemeVariations.StatusText));
         }
     }
 

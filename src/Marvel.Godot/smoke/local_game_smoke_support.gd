@@ -1,12 +1,24 @@
-extends "res://smoke/local_game_smoke_pointer_support.gd"
+extends "res://smoke/local_game_smoke_core.gd"
 
-const SmokeScale = preload("res://smoke/local_game_smoke_scale.gd")
-const TIMEOUT_MILLISECONDS := 15000
-const MAX_DECISIONS := 80
 
-var main: Control
-var failed := false
-var motion_enabled := true
+func _hand_surface() -> Control:
+	var surfaces := main.find_children("AstraTableSurface", "Control", true, false)
+	surfaces.reverse()
+	for candidate in surfaces:
+		if is_instance_valid(candidate) and not candidate.is_queued_for_deletion() \
+				and candidate.is_visible_in_tree():
+			return candidate as Control
+	return _node("Play/Board/HandShelf") as Control
+
+
+func _hand_heading() -> Label:
+	var headings := main.find_children("SpatialHandHeading", "Label", true, false)
+	headings.reverse()
+	for candidate in headings:
+		if is_instance_valid(candidate) and not candidate.is_queued_for_deletion() \
+				and candidate.is_visible_in_tree():
+			return candidate as Label
+	return _node("Play/Board/HandShelf/Margin/Stack/Heading") as Label
 
 
 func _redesign_gate_post_mulligan_is_safe() -> bool:
@@ -26,7 +38,11 @@ func _control_text_is_visible(control: Control) -> bool:
 
 
 func _control_has_real_hit_area(control: Control) -> bool:
+	var control_name := control.name
 	for _attempt in CONTROL_HIT_AREA_ATTEMPTS:
+		if not is_instance_valid(control):
+			_fail("hit-area control was replaced: %s" % control_name)
+			return false
 		var rect := _visible_control_rect(control)
 		var global_rect := control.get_global_rect()
 		if not _control_is_fully_visible(control) or rect.size.x < 4.0 or rect.size.y < 4.0:
@@ -42,6 +58,12 @@ func _control_has_real_hit_area(control: Control) -> bool:
 			Vector2(rect.position.x + inset, rect.end.y - inset),
 			rect.end - Vector2(inset, inset),
 		]
+		# A control mounted on a fanned card inherits the card's intentional hover
+		# transform. Its full clipped size is proved above; repeatedly prove its
+		# central pointer target without forcing enter/exit oscillation at rotated
+		# bounding-box corners that are not part of the painted card.
+		if control.get_parent() != null and control.get_parent().name == &"SpatialControls":
+			points = [rect.get_center()]
 		var proof_is_stable := true
 		for point in points:
 			if not control.get_global_rect().is_equal_approx(global_rect) \
@@ -53,12 +75,26 @@ func _control_has_real_hit_area(control: Control) -> bool:
 				and _visible_control_rect(control).is_equal_approx(rect):
 			return true
 		await process_frame
+	return await _report_hit_area_failure(control, control_name)
+
+
+func _report_hit_area_failure(control: Variant, control_name: String) -> bool:
+	if not is_instance_valid(control):
+		_fail("hit-area control was replaced: %s" % control_name)
+		return false
 	if OS.get_environment("MARVEL_REDESIGN_GATE") == "true":
 		await _capture_checkpoint("redesign-hit-area-failure-%s" % control.name)
+	_position_pointer_without_settle(_visible_control_rect(control).get_center())
+	await process_frame
+	var hovered := render_viewport.gui_get_hovered_control()
 	_fail("control '%s' has no stable unclipped and unobscured hit area: visible %s of %s" % [
 		control.name,
 		_visible_control_rect(control),
-		control.get_global_rect(),
+		"%s z=%d; hovered=%s z=%d" % [
+			control.get_global_rect(), control.z_index,
+			hovered.get_path() if hovered != null else "none",
+			hovered.z_index if hovered != null else -999,
+		],
 	])
 	return false
 
@@ -66,7 +102,7 @@ func _control_has_real_hit_area(control: Control) -> bool:
 func _scroll_control_into_view(control: Control) -> void:
 	var scrolls: Array[ScrollContainer] = []
 	var ancestor := control.get_parent()
-	while ancestor != null:
+	while ancestor != null and not ancestor is CanvasLayer:
 		if ancestor is ScrollContainer:
 			scrolls.append(ancestor)
 		ancestor = ancestor.get_parent()
@@ -75,6 +111,7 @@ func _scroll_control_into_view(control: Control) -> void:
 				or scroll.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED:
 			scroll.ensure_control_visible(control)
 		await process_frame
+	if ancestor is CanvasLayer: return
 	var page := main.get_node_or_null("Margin") as ScrollContainer
 	var status := main.get_node_or_null("StatusBar") as Control
 	if page != null and page.vertical_scroll_mode != ScrollContainer.SCROLL_MODE_DISABLED:
@@ -93,9 +130,13 @@ func _scroll_control_into_view(control: Control) -> void:
 
 
 func _prepare_activation(control: Control) -> bool:
+	var control_name := control.name
 	# Setup actions can begin below the page fold. Move the real scroll viewport
 	# first, then prove that the control owns an unclipped input area.
 	await _scroll_control_into_view(control)
+	if not is_instance_valid(control):
+		_fail("activation control was replaced: %s" % control_name)
+		return false
 	return await _control_has_real_hit_area(control)
 
 
@@ -235,7 +276,7 @@ func _focused_card_title_is_visible(card: Control, board: ScrollContainer, board
 func _event_presentation_is_nonblocking() -> bool:
 	var cue := _node("Play/Prompt/Margin/Stack/Workbench/History/EventCue") as Control
 	var motion := _node("Toolbar/Motion") as CheckButton
-	var skip := _node("Play/Prompt/Margin/Stack/Workbench/History/EventHeader/Skip") as Button
+	var skip := main.find_child("Skip", true, false) as Button
 	var log := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel
 	var expected_height := _scaled_metric(44)
 	if cue == null:
@@ -381,88 +422,3 @@ func _select_named_option(option: OptionButton, wanted: String) -> void:
 			option.item_selected.emit(index)
 			return
 	_fail("visible option '%s' is unavailable" % wanted)
-
-
-func _scale_percentage() -> int:
-	return SmokeScale.percentage(OS.get_environment("MARVEL_UI_SCALE"))
-
-
-func _scaled_metric(base: int) -> int:
-	return SmokeScale.metric(base, OS.get_environment("MARVEL_UI_SCALE"))
-
-
-func _button_named(wanted: String) -> Button:
-	return _visible_button(main, wanted)
-
-
-func _visible_button(node: Node, wanted: String) -> Button:
-	for button in _visible_buttons(node):
-		if button.text == wanted:
-			return button
-	return null
-
-
-func _visible_button_beginning(node: Node, wanted: String) -> Button:
-	for button in _visible_buttons(node):
-		if button.text.begins_with(wanted):
-			return button
-	return null
-
-
-func _visible_buttons(node: Node) -> Array[Button]:
-	var found: Array[Button] = []
-	for child in node.get_children():
-		if child is Button and child.is_visible_in_tree():
-			found.append(child)
-		found.append_array(_visible_buttons(child))
-	return found
-
-
-func _visible_text(node: Node) -> String:
-	var text := ""
-	for child in node.get_children():
-		if child is Label and child.is_visible_in_tree():
-			text += child.text + "\n"
-		elif child is Button and child.is_visible_in_tree():
-			text += child.text + "\n"
-		text += _visible_text(child)
-	return text
-
-
-func _wait_for(condition: Callable) -> bool:
-	var started := Time.get_ticks_msec()
-	while Time.get_ticks_msec() - started < TIMEOUT_MILLISECONDS:
-		if condition.call():
-			return true
-		await process_frame
-	return false
-
-
-func _is_complete() -> bool:
-	return _status().text.begins_with("GAME COMPLETE")
-
-
-func _node(relative: String) -> Node:
-	if relative.begins_with("Toolbar/"):
-		return main.get_node("StatusBar/" + relative.trim_prefix("Toolbar/"))
-	return main.get_node("Margin/Shell/Content/" + relative)
-
-
-func _play() -> Control:
-	return _node("Play") as Control
-
-
-func _decision() -> Control:
-	return _node("Play/Prompt/Margin/Stack/Workbench/Action/Decision") as Control
-
-
-func _status() -> Label:
-	return _node("Status/Text") as Label
-
-
-func _fail(message: String) -> void:
-	if failed:
-		return
-	failed = true
-	push_error(message + "\nVisible UI:\n" + (_visible_text(main) if main != null else "<none>"))
-	quit(1)

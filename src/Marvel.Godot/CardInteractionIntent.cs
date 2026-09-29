@@ -6,4 +6,7 @@ internal enum CardInteractionIntent
     Action,
     Target,
     Generator,
+    Cost,
+    Submit,
+    Decline,
 }

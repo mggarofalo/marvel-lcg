@@ -330,7 +330,7 @@ internal static class CardValueRendering
                 $"{DisplayFieldName(value.Name)}  {displayed}",
                 variation,
                 $"{name}{value.Name}",
-                wrap: !horizontal);
+                wrap: false);
             field.SizeFlagsHorizontal = horizontal
                 ? Control.SizeFlags.ShrinkBegin
                 : Control.SizeFlags.ExpandFill;

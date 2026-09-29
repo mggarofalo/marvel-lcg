@@ -27,6 +27,23 @@ public sealed class BoardDraftInteractionTests
         Assert.Equal([1], composer.Resources);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void HandEventDragUsesEnginePlayMarkerRatherThanAbilityName(bool playsCard)
+    {
+        var composer = Composer(new Affordance(3, "Action", 19, 0, "Synthetic event")
+        {
+            PlaysCard = playsCard,
+        });
+        var interaction = Interaction(composer);
+
+        Assert.Equal(playsCard, interaction.CanPlay(19, true));
+        Assert.Equal(playsCard ? BoardDraftMutation.Affordance : BoardDraftMutation.None,
+            interaction.TryPlay(19, true, true));
+        Assert.Equal(playsCard, CardPaymentPresentation.UsesModal(composer));
+    }
+
     [Fact]
     public void HandClickAndOutsideDropLeaveTheDraftUntouched()
     {
@@ -36,6 +53,23 @@ public sealed class BoardDraftInteractionTests
         Assert.Equal(BoardDraftMutation.None, interaction.TryActivate(19, true));
         Assert.Equal(BoardDraftMutation.None, interaction.TryPlay(19, true, false));
         Assert.Null(composer.Selected);
+    }
+
+    [Fact]
+    public void DragPreviewAppearsOnlyForOneExactLegalPlayAffordance()
+    {
+        var one = Interaction(Composer(new Affordance(3, "Play", 19, 0, "Visible")));
+        var duplicate = Interaction(Composer(
+            new Affordance(3, "Play", 19, 0, "First"),
+            new Affordance(4, "Play", 19, 0, "Second")));
+        var illegal = Interaction(Composer(
+            new Affordance(3, "Play", 19, 0, "Blocked", Illegal: "Cannot play")));
+
+        Assert.True(one.CanPlay(19, true));
+        Assert.False(one.CanPlay(19, false));
+        Assert.False(one.CanPlay(20, true));
+        Assert.False(duplicate.CanPlay(19, true));
+        Assert.False(illegal.CanPlay(19, true));
     }
 
     [Fact]
