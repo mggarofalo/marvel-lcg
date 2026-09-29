@@ -270,6 +270,7 @@ func _configure_connection(main: Control) -> void:
 
 
 func _answer_visible_decision(main: Control) -> bool:
+	if not await _wait_for_hosted_motion(main): return false
 	var prior_status := _status(main).text
 	var attached_decline := _contextual_decline(main)
 	if attached_decline != null and not attached_decline.disabled:

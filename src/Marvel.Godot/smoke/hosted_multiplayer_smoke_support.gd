@@ -87,9 +87,35 @@ func _pointer_activate(control: Control) -> bool:
 	await _scroll_control_into_view(control)
 	if not await _control_has_real_hit_area(control):
 		return false
+	for _attempt in 3:
+		if _observed_pointer_click(control):
+			await get_tree().process_frame
+			return true
+	_fail("hosted control '%s' did not accept pointer activation" % control.name)
+	return false
+
+
+func _observed_pointer_click(control: Control) -> bool:
+	if not control is BaseButton:
+		_inject_hosted_click(control)
+		return true
+	var observed := [false]
+	var observe := func() -> void: observed[0] = true
+	control.pressed.connect(observe)
+	_inject_hosted_click(control)
+	if control.pressed.is_connected(observe):
+		control.pressed.disconnect(observe)
+	return observed[0]
+
+
+func _inject_hosted_click(control: Control) -> void:
 	var viewport := control.get_viewport()
 	var point := _visible_control_rect(control).get_center()
 	var input_point := _embedder_point(viewport, point)
+	var move := InputEventMouseMotion.new()
+	move.position = input_point
+	move.global_position = input_point
+	viewport.push_input(move)
 	var press := InputEventMouseButton.new()
 	press.button_index = MOUSE_BUTTON_LEFT
 	press.pressed = true
@@ -101,8 +127,6 @@ func _pointer_activate(control: Control) -> bool:
 	release.position = input_point
 	release.global_position = input_point
 	viewport.push_input(release)
-	await get_tree().process_frame
-	return true
 
 
 func _embedder_point(viewport: Viewport, local_point: Vector2) -> Vector2:

@@ -109,3 +109,15 @@ func _hosted_payment_choice(payment: Control) -> Button:
 			if candidate.is_visible_in_tree() and not candidate.disabled and not candidate.button_pressed:
 				return candidate as Button
 	return null
+
+
+func _wait_for_hosted_motion(main: Control) -> bool:
+	# Result playback can reveal cards by scrolling the compact table.
+	# Prove pointer geometry after that public playback state has settled.
+	if not await _wait_for(func() -> bool:
+		var skip := main.find_child("Skip", true, false) as Button
+		return skip != null and skip.disabled):
+		_fail("the hosted result animation did not finish")
+		return false
+	await get_tree().process_frame
+	return true

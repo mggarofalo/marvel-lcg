@@ -89,3 +89,11 @@ driver also composes payment through the modal and respects its CanvasLayer
 when checking clipping. Independent compact review could not discover the
 inherited opening-hand confirmation; a prepared post-mulligan game isolates
 the relocated Pass review. Compact opening-hand comprehension remains unapproved.
+
+The Windows hosted run also exposed playback moving the compact table during
+pointer proof. A graphical two-client run at `--max-fps 2` reproduced the failure
+at revision six; it completes all ten decisions after waiting for the public
+playback state, recentering immediately before injection, and observing the
+button's actual pressed signal. Unobserved clicks have three bounded attempts;
+an observed press is never repeated. This proves operation after playback
+settles, not usability while playback is actively moving the view.
