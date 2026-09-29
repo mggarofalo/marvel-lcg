@@ -71,3 +71,13 @@ wrapping into a narrow column. Giving the row a usable label width and omitting
 the modal's redundant target title fixed it; the reviewer confirmed readable
 cost and source rows, recognizable matching icons and no visible type names.
 Native smoke checks cover nonempty source icons and bounded cost-row height.
+
+## Merge-readiness checks
+
+The Linux two-player smoke exposed a stale Submit handle while result animation
+changed the expanded tableau. The smoke waits for the public playback control
+to settle before acquiring the next opening-hand controls or restoring player
+one's tableau. Invalidated activation handles now fail the probe rather than
+raising a script error and leaving the runner alive. A two-player 100% run with
+`--max-fps 20` reproduced the failure before the fix and passed afterward.
+Server container and upgrade-smoke version expectations use protocol 18.

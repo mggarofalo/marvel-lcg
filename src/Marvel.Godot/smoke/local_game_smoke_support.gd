@@ -38,7 +38,11 @@ func _control_text_is_visible(control: Control) -> bool:
 
 
 func _control_has_real_hit_area(control: Control) -> bool:
+	var control_name := control.name
 	for _attempt in CONTROL_HIT_AREA_ATTEMPTS:
+		if not is_instance_valid(control):
+			_fail("hit-area control was replaced: %s" % control_name)
+			return false
 		var rect := _visible_control_rect(control)
 		var global_rect := control.get_global_rect()
 		if not _control_is_fully_visible(control) or rect.size.x < 4.0 or rect.size.y < 4.0:
@@ -71,6 +75,13 @@ func _control_has_real_hit_area(control: Control) -> bool:
 				and _visible_control_rect(control).is_equal_approx(rect):
 			return true
 		await process_frame
+	return await _report_hit_area_failure(control, control_name)
+
+
+func _report_hit_area_failure(control: Variant, control_name: String) -> bool:
+	if not is_instance_valid(control):
+		_fail("hit-area control was replaced: %s" % control_name)
+		return false
 	if OS.get_environment("MARVEL_REDESIGN_GATE") == "true":
 		await _capture_checkpoint("redesign-hit-area-failure-%s" % control.name)
 	_position_pointer_without_settle(_visible_control_rect(control).get_center())
@@ -119,9 +130,13 @@ func _scroll_control_into_view(control: Control) -> void:
 
 
 func _prepare_activation(control: Control) -> bool:
+	var control_name := control.name
 	# Setup actions can begin below the page fold. Move the real scroll viewport
 	# first, then prove that the control owns an unclipped input area.
 	await _scroll_control_into_view(control)
+	if not is_instance_valid(control):
+		_fail("activation control was replaced: %s" % control_name)
+		return false
 	return await _control_has_real_hit_area(control)
 
 

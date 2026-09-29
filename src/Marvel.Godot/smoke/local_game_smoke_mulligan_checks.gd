@@ -302,6 +302,7 @@ func _submit_mulligan() -> bool:
 
 
 func _complete_second_opening_hand() -> bool:
+	if not await _wait_for_result_motion(): return false
 	var toggles := _hand_surface().find_children(
 		"MulliganDiscard*", "Button", true, false)
 	var second_toggle := toggles[0] as Button if not toggles.is_empty() else null
@@ -318,6 +319,7 @@ func _complete_second_opening_hand() -> bool:
 		return _attached(_attached_name(IDENTITY, "Action")) != null):
 		_fail("the completed cooperative mulligan did not return to player one's actions")
 		return false
+	if not await _wait_for_result_motion(): return false
 	var player_one := _visible_seat_switch(0)
 	if player_one != null and not player_one.disabled and not await _pointer_activate(player_one):
 		_fail("the completed cooperative mulligan could not restore player one's tableau")
@@ -327,6 +329,18 @@ func _complete_second_opening_hand() -> bool:
 		return caption != null and "PLAYER 1" in caption.text.to_upper()):
 		_fail("the action owner was not restored as the expanded tableau")
 		return false
+	return true
+
+
+func _wait_for_result_motion() -> bool:
+	# Result cues can focus either tableau. Acquire input controls only after
+	# the public playback state settles and its queued layout has run.
+	if not await _wait_for(func() -> bool:
+		var skip := main.find_child("Skip", true, false) as Button
+		return skip != null and skip.disabled):
+		_fail("the mulligan result animation did not finish")
+		return false
+	await process_frame
 	return true
 
 
