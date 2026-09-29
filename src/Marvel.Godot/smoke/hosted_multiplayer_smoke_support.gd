@@ -19,7 +19,7 @@ func _new_client_viewport() -> SubViewport:
 func _scroll_control_into_view(control: Control) -> void:
 	var scrolls: Array[ScrollContainer] = []
 	var ancestor := control.get_parent()
-	while ancestor != null:
+	while ancestor != null and not ancestor is CanvasLayer:
 		if ancestor is ScrollContainer:
 			scrolls.append(ancestor)
 		ancestor = ancestor.get_parent()
@@ -41,7 +41,7 @@ func _visible_control_rect(control: Control) -> Rect2:
 	var viewport := control.get_viewport()
 	var visible_rect := control.get_global_rect().intersection(Rect2(Vector2.ZERO, Vector2(viewport.size)))
 	var ancestor := control.get_parent()
-	while ancestor != null:
+	while ancestor != null and not ancestor is CanvasLayer:
 		if ancestor is ScrollContainer or (ancestor is Control and ancestor.clip_contents):
 			visible_rect = visible_rect.intersection(ancestor.get_global_rect())
 		ancestor = ancestor.get_parent()

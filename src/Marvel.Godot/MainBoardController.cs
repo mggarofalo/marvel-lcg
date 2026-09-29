@@ -112,9 +112,7 @@ internal sealed class MainBoardController : IDisposable
         Vector2 viewport = main.GetViewportRect().Size;
         main.GetNode<PanelContainer>("Margin/Shell/Content/Play/Board/HandShelf").Visible = true;
         BoardRenderResult rendered = tabletop.Render(prompt, viewport)
-            ?? BoardRenderer.Render(
-                main.boardAreas, main.boardPresentation, main.handRail, main.handHeading,
-                main.interfaceScale, main.expandedAreas, main.art);
+            ?? RenderCompactBoard();
         main.boardRender = rendered;
         rendered.CardActivated += cardInspector.Toggle;
         rendered.CardPreviewEntered += cardInspector.PreviewCardAfterDelay;
@@ -130,6 +128,21 @@ internal sealed class MainBoardController : IDisposable
             cardInspector.Hide();
         }
     }
+    private BoardRenderResult RenderCompactBoard()
+    {
+        BoardRenderResult rendered = BoardRenderer.Render(
+            main.boardAreas, main.boardPresentation!, main.handRail, main.handHeading,
+            main.interfaceScale, main.expandedAreas, main.art);
+        var actions = new HFlowContainer
+        {
+            Name = "ContextualActionObjects", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+        };
+        main.boardAreas.AddChild(actions);
+        main.boardAreas.MoveChild(actions, 0);
+        rendered.RegisterContextualActions(actions);
+        return rendered;
+    }
+
     internal void FocusAnchors(IReadOnlyList<int> ids) => tabletop.FocusAnchors(ids);
 
     internal void FocusEventAnchors(IReadOnlyList<int> ids) => tabletop.FocusAnchors(ids);

@@ -81,3 +81,11 @@ one's tableau. Invalidated activation handles now fail the probe rather than
 raising a script error and leaving the runner alive. A two-player 100% run with
 `--max-fps 20` reproduced the failure before the fix and passed afterward.
 Server container and upgrade-smoke version expectations use protocol 18.
+
+The hosted 1280×720 regression exposed a missing shared Pass control in the
+compact renderer. That renderer now registers a shared action row outside
+cards. The restricted two-client game passes (`decisions=10`). The hosted
+driver also composes payment through the modal and respects its CanvasLayer
+when checking clipping. Independent compact review could not discover the
+inherited opening-hand confirmation; a prepared post-mulligan game isolates
+the relocated Pass review. Compact opening-hand comprehension remains unapproved.

@@ -173,7 +173,7 @@ func _play_hosted_decision(state: Dictionary) -> bool:
 	if active == null:
 		state.recoveries += 1
 		if state.recoveries > 20:
-			_fail("the hosted clients did not recover an operable prompt")
+			_fail("the hosted clients did not recover an operable prompt\nHOST\n" + _visible_text(host) + "\nGUEST\n" + _visible_text(guest))
 			return false
 		return await _recover_hosted_prompt()
 	state.recoveries = 0
@@ -325,29 +325,15 @@ func _wait_for_hosted_settlement(main: Control, prior_status: String) -> bool:
 
 func _compose_table_decision(main: Control) -> bool:
 	for selection in 10:
+		var payment := main.find_child("PaymentModal", true, false) as Control
+		if payment != null and payment.is_visible_in_tree():
+			return await _compose_hosted_payment(main)
 		var submit := _attached(main, "Card*Submit")
 		if submit != null and not submit.disabled:
 			return await _pointer_activate(submit)
-		var chooser := main.find_child("CardActionChoices", true, false) as Control
-		if chooser != null and chooser.is_visible_in_tree():
-			var choice := _first_enabled_choice(chooser)
-			if choice == null or not await _pointer_activate(choice):
-				return false
-			await get_tree().process_frame
-			continue
-		var contextual := main.find_child("ContextAction*", true, false) as Button
-		if contextual != null and contextual.is_visible_in_tree() and not contextual.disabled:
-			if not await _pointer_activate(contextual):
-				return false
-			await get_tree().process_frame
-			continue
-		var control: Button = null
-		for pattern in ["Card*Target", "Card*Cost", "Card*Generator", "Card*Action"]:
-			control = _attached(main, pattern, true)
-			if control != null:
-				break
+		var control := _hosted_table_choice(main)
 		if control == null or not await _pointer_activate(control):
-			_fail("the active hosted client has no card-local control that can advance its prompt")
+			_fail("the active hosted client has no card-local control that can advance its prompt\n" + _visible_text(main))
 			return false
 		await get_tree().process_frame
 	_fail("the active hosted client's card-local draft did not become executable")
@@ -422,3 +408,16 @@ func _attached(main: Control, pattern: String, skip_selected := false) -> Button
 func _decision_is_terminal(main: Control) -> bool:
 	return not _has_decision(main) \
 		and "No further decision is waiting" in _visible_text(_decision(main))
+
+
+func _hosted_table_choice(main: Control) -> Button:
+	var chooser := main.find_child("CardActionChoices", true, false) as Control
+	if chooser != null and chooser.is_visible_in_tree():
+		return _first_enabled_choice(chooser)
+	var contextual := main.find_child("ContextAction*", true, false) as Button
+	if contextual != null and contextual.is_visible_in_tree() and not contextual.disabled:
+		return contextual
+	for pattern in ["Card*Target", "Card*Cost", "Card*Generator", "Card*Action"]:
+		var control := _attached(main, pattern, true)
+		if control != null: return control
+	return null

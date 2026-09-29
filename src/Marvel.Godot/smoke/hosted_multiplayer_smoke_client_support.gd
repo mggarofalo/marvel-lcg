@@ -84,3 +84,28 @@ func _wait_for(condition: Callable) -> bool:
 			return true
 		await get_tree().process_frame
 	return false
+
+
+func _compose_hosted_payment(main: Control) -> bool:
+	for _selection in 24:
+		var payment := main.find_child("PaymentModal", true, false) as Control
+		if payment == null or not payment.is_visible_in_tree():
+			_fail("the hosted card payment closed before confirmation")
+			return false
+		var submit := _submit_button(payment)
+		if submit != null and not submit.disabled:
+			return await _pointer_activate(submit)
+		var choice := _hosted_payment_choice(payment)
+		if choice == null or not await _pointer_activate(choice):
+			_fail("the hosted payment has no choice that advances its draft")
+			return false
+	_fail("the hosted payment did not become ready")
+	return false
+
+
+func _hosted_payment_choice(payment: Control) -> Button:
+	for pattern in ["Target*", "Cost*", "Resource*"]:
+		for candidate in payment.find_children(pattern, "Button", true, false):
+			if candidate.is_visible_in_tree() and not candidate.disabled and not candidate.button_pressed:
+				return candidate as Button
+	return null
