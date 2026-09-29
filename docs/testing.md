@@ -58,7 +58,7 @@ Windows and Linux; Linux also proves the supported server container. Windows
 desktop packaging remains an independent job.
 
 The pull-request native game uses one representative viewport at the default
-scale with both motion preferences. Pushes to `master`, manual runs and protected
+scale with both motion preferences. Pushes to `main`, manual runs and protected
 release calls replace it with the complete viewport and scale matrix and repeat
 the platform-neutral checks on both operating systems. A merged change therefore
 gets exhaustive cross-platform evidence, while a pull request gets an earlier

@@ -1,12 +1,12 @@
 name: CI
 
 # Pull requests run platform-neutral correctness once and platform boundaries on
-# both supported runners. Master and protected release calls repeat the complete
-# profile on Windows and Linux. A red master must mean "something broke".
+# both supported runners. Main and protected release calls repeat the complete
+# profile on Windows and Linux. A red main must mean "something broke".
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
   workflow_dispatch:
   workflow_call:
@@ -22,8 +22,8 @@ permissions:
 
 concurrency:
   group: ci-${{ github.ref }}
-  # Supersede a PR's own earlier runs, but never cancel a master run: the point
-  # of this workflow is that a red master is visible, and a cancelled run
+  # Supersede a PR's own earlier runs, but never cancel a main run: the point
+  # of this workflow is that a red main is visible, and a cancelled run
   # leaves the commit that broke it with no verdict at all.
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
