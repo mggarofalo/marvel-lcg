@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Marvel Champions · Interaction prototypes</title>
+    <link rel="stylesheet" href="prototype.css" />
+  </head>
+  <body>
+    <header>
+      <strong>MARVEL <span>CHAMPIONS</span></strong
+      ><span id="concept-name"></span>
+      <div class="session">
+        Rhino · Standard <span>Round 2 / Player phase</span>
+      </div>
+      <button id="history">History</button><button id="sync">Synced ✓</button>
+    </header>
+    <nav class="review-controls" aria-label="Prototype controls">
+      <label
+        >Concept
+        <select id="concept">
+          <option value="spatial">A · Spatial table</option>
+          <option value="atlas">B · Decision atlas</option>
+          <option value="guided">C · Guided intent</option>
+        </select></label
+      ><label
+        >State
+        <select id="state">
+          <option value="mulligan">Mulligan</option>
+          <option value="actions">12 action choices</option>
+          <option value="target">Target + payment</option>
+          <option value="result">Post-action result</option>
+        </select></label
+      ><label
+        >Interface
+        <select id="scale">
+          <option value="100">100%</option>
+          <option value="150">150%</option>
+        </select></label
+      ><span class="prototype-note"
+        >INTERACTIVE DESIGN STUDY · Illustrative state, no engine
+        connection</span
+      >
+    </nav>
+    <main id="app"></main>
+    <footer>
+      Decision owner: <strong>Spider-Man</strong
+      ><span>Viewing: <strong id="view-name">Spider-Man</strong></span
+      ><span
+        >Restricted information stays concealed · Displayed choices come from
+        the prompt</span
+      >
+    </footer>
+    <dialog id="inspector">
+      <div class="inspector-heading">
+        <span id="inspector-origin"></span
+        ><button id="close-inspector">Close ×</button>
+      </div>
+      <h1 id="inspector-title"></h1>
+      <p id="inspector-meta"></p>
+      <p id="inspector-text"></p>
+      <p class="muted">
+        Printed text from the committed card dataset. Live fields and available
+        actions remain separate.
+      </p>
+    </dialog>
+    <div id="connector" hidden></div>
+    <script src="prototype.js"></script>
+  </body>
+</html>
