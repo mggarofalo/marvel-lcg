@@ -1,0 +1,18 @@
+{
+  "native_approved_source_sha256": "1e2b9623667e01e86b2d5cb7c6e849e48b8845ad2dce45976861fac35113cb18",
+  "first_pr_head": "5329cf1802917cb4807653ccc7e5a58a37db81c2",
+  "ci_corrected_source_sha256": "62fa2aebc617df10ac455fe4e76068385fb3214f27a4b7434a75409711ef4a7a",
+  "changed_source_paths_since_native_approval": [
+    "src/Marvel.Godot/smoke/hosted_multiplayer_smoke.gd",
+    "src/Marvel.Godot/smoke/hosted_multiplayer_smoke_client_support.gd",
+    "src/Marvel.Godot/smoke/hosted_settlement_smoke_checks.gd",
+    "src/Marvel.Godot/smoke/local_game_smoke_direct_intent.gd",
+    "tests/Marvel.Godot.Tests/NativeSmokeDiagnosticsTests.cs"
+  ],
+  "production_source_byte_identical": true,
+  "native_approved_runtime_directory_sha256": "34b2eccef2fe3ba237d7d412994c030a16becbefa547fb6144539179c4602a9f",
+  "local_postcommit_runtime_directory_sha256": "5a14ae34b5a562b8519ab774df4423b7d93e8c6eee38ba27cdef7be0f5c207d2",
+  "local_runtime_source_revision": "5329cf1802917cb4807653ccc7e5a58a37db81c2",
+  "runtime_dlls_byte_identical_to_precommit_approval": false,
+  "dependency_assessment": "Only one managed fixture assertion and four smoke-only scripts differ from native approval. All application, engine, visibility, draft, client and transport source is byte-identical. Native observations retain original frozen source/runtime identities. Postcommit builds embed new source revision and source-link/debug identity; runtime byte equality is not claimed. Specifying old SourceRevisionId alone did not reproduce old DLLs, so that probe establishes no byte equivalence. New runtime identities and exact final-head CI remain separate evidence; no new product behavior is claimed from synthetic observer cases."
+}

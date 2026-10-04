@@ -121,3 +121,35 @@ func _wait_for_hosted_motion(main: Control) -> bool:
 		return false
 	await get_tree().process_frame
 	return true
+
+
+func _hosted_response_revision(main: Control) -> int:
+	var revision := main.get_node("StatusBar/SyncStatus") as Label
+	var value := revision.text.trim_prefix("Last synced · r")
+	return value.to_int() if value.is_valid_int() else -1
+
+
+func _hosted_decision_rejected(main: Control) -> bool:
+	return _status(main).text.begins_with("MUTATION NOT REPEATED") \
+		or _status(main).text.begins_with("DECISION REJECTED")
+
+
+func _wait_for_hosted_settlement(main: Control, prior_revision: int) -> bool:
+	# The accepted revision remains visible even when a fast response settles
+	# before the pointer helper yields back to the journey.
+	if not await _wait_for(func() -> bool:
+		return _hosted_response_revision(main) > prior_revision \
+			or _hosted_decision_rejected(main)):
+		_fail("the hosted decision did not advance revision %d: %s" % [prior_revision, _status(main).text])
+		return false
+	if not await _wait_for(func() -> bool:
+		return not _status(main).text.begins_with("DECISION SENT")):
+		_fail("the hosted decision did not settle: %s" % _status(main).text)
+		return false
+	if _hosted_decision_rejected(main):
+		_fail("the hosted decision was not accepted")
+		return false
+	if _hosted_response_revision(main) != prior_revision + 1:
+		_fail("one hosted commitment did not advance exactly one revision")
+		return false
+	return true

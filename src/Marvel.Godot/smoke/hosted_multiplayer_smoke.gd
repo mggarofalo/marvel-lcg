@@ -1,6 +1,7 @@
 extends "res://smoke/hosted_multiplayer_smoke_client_support.gd"
 
 const SurfaceChecks = preload("res://smoke/hosted_multiplayer_smoke_surface_checks.gd")
+const SettlementChecks = preload("res://smoke/hosted_settlement_smoke_checks.gd")
 
 const MAX_DECISIONS := 600
 const GAME_LABEL := "hosted-multiplayer-smoke"
@@ -15,6 +16,15 @@ func _ready() -> void:
 
 
 func _run() -> void:
+	var settlement_checks := SettlementChecks.new()
+	add_child(settlement_checks)
+	var observer_valid := await settlement_checks.verify()
+	var failed_case: String = settlement_checks.failed_case
+	settlement_checks.queue_free()
+	if not observer_valid:
+		_fail("the hosted settlement observer failed: " + failed_case)
+		return
+	print("HOSTED_SETTLEMENT_OBSERVER_OK cases=4")
 	checkpoint_directory = OS.get_environment("MARVEL_HOSTED_SMOKE_CHECKPOINT_DIR")
 	var packed := load("res://Main.tscn") as PackedScene
 	if packed == null:
@@ -249,7 +259,10 @@ func _configure_connection(main: Control) -> void:
 
 func _answer_visible_decision(main: Control) -> bool:
 	if not await _wait_for_hosted_motion(main): return false
-	var prior_status := _status(main).text
+	var prior_revision := _hosted_response_revision(main)
+	if prior_revision < 0:
+		_fail("the hosted client has no displayed authoritative revision")
+		return false
 	var attached_decline := _contextual_decline(main)
 	if attached_decline != null and not attached_decline.disabled:
 		if not await _pointer_activate(attached_decline):
@@ -258,12 +271,12 @@ func _answer_visible_decision(main: Control) -> bool:
 		if not await _compose_table_decision(main):
 			return false
 	else:
-		return await _answer_fallback_decision(main, prior_status)
+		return await _answer_fallback_decision(main, prior_revision)
 
-	return await _wait_for_hosted_settlement(main, prior_status)
+	return await _wait_for_hosted_settlement(main, prior_revision)
 
 
-func _answer_fallback_decision(main: Control, prior_status: String) -> bool:
+func _answer_fallback_decision(main: Control, prior_revision: int) -> bool:
 	var decision := _decision(main)
 	var decline := decision.find_child("Decline", true, false) as Button
 	if decline != null and not decline.disabled:
@@ -284,22 +297,9 @@ func _answer_fallback_decision(main: Control, prior_status: String) -> bool:
 			return false
 		if not await _pointer_activate(submit):
 			return false
-	return await _wait_for_hosted_settlement(main, prior_status)
+	return await _wait_for_hosted_settlement(main, prior_revision)
 
 
-func _wait_for_hosted_settlement(main: Control, prior_status: String) -> bool:
-	if not await _wait_for(func() -> bool: return _status(main).text != prior_status):
-		_fail("the hosted decision did not start: %s" % prior_status)
-		return false
-	if not await _wait_for(func() -> bool:
-		return not _status(main).text.begins_with("DECISION SENT")):
-		_fail("the hosted decision did not settle: %s" % _status(main).text)
-		return false
-	if _status(main).text.begins_with("MUTATION NOT REPEATED") \
-			or _status(main).text.begins_with("DECISION REJECTED"):
-		_fail("the hosted decision was not accepted")
-		return false
-	return true
 
 
 func _compose_table_decision(main: Control) -> bool:

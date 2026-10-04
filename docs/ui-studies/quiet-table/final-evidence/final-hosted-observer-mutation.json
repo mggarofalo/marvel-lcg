@@ -1,0 +1,9 @@
+{
+  "scope": "synthetic test-observer contract, separate from the14 product behavior/geometry kills",
+  "compiling_exercised_mutants": 1,
+  "intended_check_kills": 1,
+  "mutant": "exactly-one revision guard != changed to <",
+  "caught_by": "duplicate accepted response observer case",
+  "source_restored_sha256": "12765055a5d73cbaa01c1d777b1d4d47f9254126d3089a0e62bd41f13d77dbdc",
+  "restored_cases": 4
+}

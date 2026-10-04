@@ -54,24 +54,51 @@ func _source_chooser_restores_keyboard_focus() -> bool:
 	if chooser == null:
 		_fail("the ally's multiple actions did not open a local chooser")
 		return false
-	var escape := InputEventKey.new()
-	escape.keycode = KEY_ESCAPE
-	escape.pressed = true
-	render_viewport.push_input(escape)
-	await process_frame
-	await process_frame
-	if not entry.has_focus():
+	if not await _dismiss_source_chooser(chooser): return false
+	if not await _wait_for(func() -> bool:
+		var current := _attached(_attached_name(BLACK_CAT, "Action"))
+		return current != null and current.has_focus()):
 		_fail("dismissing the source chooser did not restore its action entry focus")
 		return false
+	entry = _attached(_attached_name(BLACK_CAT, "Action"))
 	if not await _keyboard_activate(entry):
 		return false
 	chooser = main.find_child("CardActionChoices", true, false) as Control
 	if chooser == null:
 		_fail("the restored source focus could not reopen its chooser with the keyboard")
 		return false
-	render_viewport.push_input(escape)
-	await process_frame
+	if not await _dismiss_source_chooser(chooser): return false
 	return _task_commit() == null
+
+
+func _dismiss_source_chooser(chooser: Control) -> bool:
+	var chooser_id := chooser.get_instance_id()
+	if not await _wait_for(func() -> bool:
+		var current := main.find_child("CardActionChoices", true, false) as Control
+		var focused := render_viewport.gui_get_focus_owner()
+		return current != null and current.get_instance_id() == chooser_id \
+			and focused != null and current.is_ancestor_of(focused)):
+		_fail("the source chooser did not receive keyboard focus")
+		return false
+	# Observe containment beyond the table's 50 ms deferred-focus confirmation.
+	var started := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - started < 100:
+		var focused := render_viewport.gui_get_focus_owner()
+		if focused == null or not chooser.is_ancestor_of(focused):
+			_fail("the source chooser lost keyboard focus while open")
+			return false
+		await process_frame
+	var escape := InputEventKey.new()
+	escape.keycode = KEY_ESCAPE
+	escape.pressed = true
+	render_viewport.push_input(escape)
+	if not await _wait_for(func() -> bool:
+		var current := main.find_child("CardActionChoices", true, false) as Control
+		return current == null or current.get_instance_id() != chooser_id \
+			or not current.is_visible_in_tree()):
+		_fail("Escape did not dismiss the focused source chooser")
+		return false
+	return true
 
 
 func _source_chooser_focus_when_offered() -> bool:
