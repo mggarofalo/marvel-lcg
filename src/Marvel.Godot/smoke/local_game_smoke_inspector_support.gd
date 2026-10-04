@@ -45,7 +45,8 @@ func _capture_named_card(title: String, checkpoint: String) -> bool:
 
 
 func _prepare_art_pack() -> void:
-	var root_path := ProjectSettings.globalize_path("user://smoke-art-pack")
+	var root_path := OS.get_environment("MARVEL_SMOKE_ART_PACK_DIR")
+	if root_path.is_empty(): root_path = ProjectSettings.globalize_path("user://smoke-art-pack")
 	DirAccess.make_dir_recursive_absolute(root_path)
 	var illustration := Image.create(4, 4, false, Image.FORMAT_RGBA8)
 	illustration.fill(Color(0.2, 0.55, 0.75, 1.0))
@@ -78,8 +79,8 @@ func _web_shooter_draft_is_prepared() -> bool:
 	if modal != null and modal.is_visible_in_tree(): return true
 	return _table_card_control("Card*Target") != null \
 		or _table_card_control("Card*Generator") != null \
-		or _table_card_control("Card*Cost") != null \
-		or _table_card_control("Card*Submit") != null
+		or main.find_child("ContextualCost*", true, false) != null \
+		or _task_commit() != null
 
 
 func _table_card_control(name: String) -> Button:

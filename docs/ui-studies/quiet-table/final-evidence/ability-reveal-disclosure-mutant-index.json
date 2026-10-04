@@ -1,0 +1,26 @@
+[
+  {
+    "name": "01-ability-disclosure-omitted",
+    "file": "src/Marvel.Cards/Run/AbilityDeckAndRevealExecution.cs",
+    "compiled": true,
+    "killed": true,
+    "baseline_sha256": "7ea0e8cb25ad26ff94cbaa7f5510cffe506c4ca1d3b3298daeae7bd70e92c9f8",
+    "log": "/Users/michael/Library/Logs/marvel-lcg/MARVEL-443/2026-10-04/ability-reveal-disclosure-mutant-01-ability-disclosure-omitted.log"
+  },
+  {
+    "name": "02-disclosure-after-implicit-flip",
+    "file": "src/Marvel.Cards/Run/AbilityDeckAndRevealExecution.cs",
+    "compiled": true,
+    "killed": true,
+    "baseline_sha256": "7ea0e8cb25ad26ff94cbaa7f5510cffe506c4ca1d3b3298daeae7bd70e92c9f8",
+    "log": "/Users/michael/Library/Logs/marvel-lcg/MARVEL-443/2026-10-04/ability-reveal-disclosure-mutant-02-disclosure-after-implicit-flip.log"
+  },
+  {
+    "name": "03-duplicate-public-disclosure",
+    "file": "src/Marvel.Rules/Play/EncounterRevealExposure.cs",
+    "compiled": true,
+    "killed": true,
+    "baseline_sha256": "e1f903c1415aefd4d15688e868b947dd3b93e525785f402ec49b4efc5633476c",
+    "log": "/Users/michael/Library/Logs/marvel-lcg/MARVEL-443/2026-10-04/ability-reveal-disclosure-mutant-03-duplicate-public-disclosure.log"
+  }
+]

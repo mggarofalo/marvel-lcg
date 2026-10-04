@@ -1,0 +1,9 @@
+{
+  "mutation": "reparent cue as full-card overlay",
+  "file": "src/Marvel.Godot/CardControl.cs",
+  "compiled": true,
+  "killed": true,
+  "exit": 1,
+  "log": "cue-overlap-mutant.log",
+  "restored_sha256": "80320a2a28a28b4ad92b376341ec04f978f0d8054f2674f2eb22405b718169b4"
+}

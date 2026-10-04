@@ -50,8 +50,8 @@ public class NoCardAbilities : ICardAbilities
         World world, Card card, int player) => [];
 
     /// <inheritdoc/>
-    public virtual bool CancelWhenRevealed(
-        World world, Card card, int player, Occurrence occurrence) => false;
+    public virtual WhenRevealedCanceled? CancelWhenRevealed(
+        World world, Card card, int player, Occurrence occurrence) => null;
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<GameEvent> Boost(World world, Card card, int player) => [];

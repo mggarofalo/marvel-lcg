@@ -1,0 +1,9 @@
+{
+  "approved_native_source_sha256": "1e2b9623667e01e86b2d5cb7c6e849e48b8845ad2dce45976861fac35113cb18",
+  "final_feature_source_sha256": "5e8fda314cbfee61478db43d1298980d3b6d14c37fae287b1a441b8c2a791441",
+  "postapproval_delta": [
+    "tests/Marvel.Godot.Tests/NativeSmokeDiagnosticsTests.cs"
+  ],
+  "reason": "Align stale hosted fixture viewport expectation with supported1920x1080; all Windows DPI coordinate/hit checks retained.",
+  "runtime_bytes_unchanged": true
+}

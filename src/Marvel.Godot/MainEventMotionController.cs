@@ -7,6 +7,7 @@ namespace Marvel.Godot;
 internal sealed class MainEventMotionController
 {
     private readonly Main main;
+    private bool cueActive;
 
     internal MainEventMotionController(Main main)
     {
@@ -44,9 +45,9 @@ internal sealed class MainEventMotionController
             return;
         }
 
-        main.eventCueKind.Text = entry.Motion.ToString().ToUpperInvariant();
-        main.eventCue.Visible = !DesktopTabletop.Uses(main.GetViewportRect().Size)
-            || TableHistoryDrawer.IsExpanded(main);
+        main.eventCueKind.Visible = false;
+        cueActive = true;
+        RefreshVisibility();
         EventCueBoardFocus.Present(main, entry);
         main.eventCueKind.ThemeTypeVariation = entry.Motion switch
         {
@@ -54,7 +55,7 @@ internal sealed class MainEventMotionController
                 GodotThemeVariations.DangerText,
             EventMotionKind.Create or EventMotionKind.Heal =>
                 GodotThemeVariations.StatusText,
-            _ => GodotThemeVariations.Eyebrow,
+            _ => GodotThemeVariations.Caption,
         };
         main.eventCue.Modulate = new Color(1f, 1f, 1f, 0.20f);
         main.boardRender?.Present(entry.Anchors);
@@ -92,9 +93,15 @@ internal sealed class MainEventMotionController
 
     internal void SetSettled()
     {
+        cueActive = false;
+        main.eventCueSummary.Text = string.Empty;
+        main.eventCueSummary.TooltipText = string.Empty;
         main.eventCue.Visible = false;
         main.eventCue.Modulate = Colors.White;
         main.eventSkip.Disabled = true;
         main.boardRender?.Present([]);
     }
+
+    internal void RefreshVisibility() => main.eventCue.Visible = cueActive
+        && (!DesktopTabletop.Uses(main.GetViewportRect().Size) || TableHistoryDrawer.IsExpanded(main));
 }

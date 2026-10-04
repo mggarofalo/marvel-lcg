@@ -283,7 +283,7 @@ public static class Damage
         if (taken is null) return $"Retaliate {retaliate} applies if the target remains in play";
         return Keywords.Has(world, attacker, Keywords.Ranged, facts)
             ? $"Ranged ignores Retaliate {retaliate}"
-            : $"Retaliate {retaliate} will hit {facts.Title(attacker.FaceId)}";
+            : $"Retaliate {retaliate} will hit {FacedownDrones.Title(attacker, facts)}";
     }
 
     private static string StageName(ICardFacts facts, Card card)

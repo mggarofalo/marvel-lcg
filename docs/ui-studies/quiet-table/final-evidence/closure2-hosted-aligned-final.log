@@ -1,0 +1,66 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Marvel.Core -> /Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Debug/net8.0/Marvel.Core.dll
+  Marvel.Rules -> /Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Rules.dll
+  Marvel.Decisions -> /Users/michael/Source/marvel-lcg/src/Marvel.Decisions/bin/Debug/net8.0/Marvel.Decisions.dll
+  Marvel.View -> /Users/michael/Source/marvel-lcg/src/Marvel.View/bin/Debug/net8.0/Marvel.View.dll
+  Marvel.Cards -> /Users/michael/Source/marvel-lcg/src/Marvel.Cards/bin/Debug/net8.0/Marvel.Cards.dll
+  Marvel.Session -> /Users/michael/Source/marvel-lcg/src/Marvel.Session/bin/Debug/net8.0/Marvel.Session.dll
+  Marvel.Content -> /Users/michael/Source/marvel-lcg/src/Marvel.Content/bin/Debug/net8.0/Marvel.Content.dll
+  Marvel.Core -> /Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Debug/net8.0/Marvel.Core.dll
+  Marvel.Rules -> /Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Rules.dll
+  Marvel.Server -> /Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Debug/net8.0/Marvel.Server.dll
+  Marvel.Client -> /Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.Client.dll
+  Marvel.Godot -> /Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Godot.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.82
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Marvel.Core -> /Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Debug/net8.0/Marvel.Core.dll
+  Marvel.Rules -> /Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Rules.dll
+  Marvel.Cards -> /Users/michael/Source/marvel-lcg/src/Marvel.Cards/bin/Debug/net8.0/Marvel.Cards.dll
+  Marvel.Content -> /Users/michael/Source/marvel-lcg/src/Marvel.Content/bin/Debug/net8.0/Marvel.Content.dll
+  Marvel.Decisions -> /Users/michael/Source/marvel-lcg/src/Marvel.Decisions/bin/Debug/net8.0/Marvel.Decisions.dll
+  Marvel.Session -> /Users/michael/Source/marvel-lcg/src/Marvel.Session/bin/Debug/net8.0/Marvel.Session.dll
+  Marvel.View -> /Users/michael/Source/marvel-lcg/src/Marvel.View/bin/Debug/net8.0/Marvel.View.dll
+  Marvel.Server -> /Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/Debug/net8.0/Marvel.Server.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.66
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M2 Pro
+
+HOSTED_MULTIPLAYER_SMOKE_RUNNER_READY
+SCRIPT ERROR: Parse Error: Cannot infer the type of "guest_text" variable because the value doesn't have a set type.
+          at: GDScript::reload (res://smoke/hosted_multiplayer_smoke_surface_checks.gd:21)
+          GDScript backtrace (most recent call first):
+              [0] _start (res://smoke/hosted_multiplayer_smoke_runner.gd:10)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://smoke/hosted_multiplayer_smoke.gd:0)
+          GDScript backtrace (most recent call first):
+              [0] _start (res://smoke/hosted_multiplayer_smoke_runner.gd:10)
+ERROR: Failed to load script "res://smoke/hosted_multiplayer_smoke.gd" with error "Compilation failed".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+   GDScript backtrace (most recent call first):
+       [0] _start (res://smoke/hosted_multiplayer_smoke_runner.gd:10)
+HOSTED_MULTIPLAYER_SMOKE_DRIVER_READY
+{"event_id":"transport.exchange.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T22:03:52.090812+00:00","process_id":3517,"duration_milliseconds":176,"disposition":"accepted","request_id":"f3c294edc1238e906de7e776bd2e8259","game_id":"e3b0c44298fc1c149afbf4c8996fb924","operation":"setup","product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"transport.exchange.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T22:03:52.17576+00:00","process_id":3517,"duration_milliseconds":0,"disposition":"accepted","request_id":"30d94c7e4fbc18332fa0c2f127b3cfba","game_id":"e3b0c44298fc1c149afbf4c8996fb924","operation":"setup","product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"transport.exchange.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T22:03:52.37115+00:00","process_id":3517,"duration_milliseconds":190,"disposition":"accepted","request_id":"f77c1b9f15ad371ae0cdbcc9f30af4c3","game_id":"3b401506fb65175f38f4b6edff3ad5f2","operation":"open","revision":0,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"transport.exchange.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T22:03:52.593324+00:00","process_id":3517,"duration_milliseconds":0,"disposition":"accepted","request_id":"db53309004f1d8dcacd0275bc7456c57","game_id":"e3b0c44298fc1c149afbf4c8996fb924","operation":"setup","product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"transport.exchange.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T22:03:52.718007+00:00","process_id":3517,"duration_milliseconds":0,"disposition":"accepted","request_id":"e1e0a4d9631a9430814b2110d7f93618","game_id":"e3b0c44298fc1c149afbf4c8996fb924","operation":"setup","product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"transport.exchange.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T22:03:52.783294+00:00","process_id":3517,"duration_milliseconds":52,"disposition":"accepted","request_id":"f2a8a1f81316bc2a6e2b189f188ab548","game_id":"3b401506fb65175f38f4b6edff3ad5f2","operation":"attach","revision":0,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+SCRIPT ERROR: Invalid call. Nonexistent function 'restricted_guest_is_safe' in base 'GDScript'.
+          at: _restricted_guest_surface_is_safe (res://smoke/hosted_multiplayer_smoke.gd:76)
+          GDScript backtrace (most recent call first):
+              [0] _restricted_guest_surface_is_safe (res://smoke/hosted_multiplayer_smoke.gd:76)
+              [1] _run (res://smoke/hosted_multiplayer_smoke.gd:32)
+              [2] _open_guest (res://smoke/hosted_multiplayer_smoke.gd:125)
+              [3] _wait_for (res://smoke/hosted_multiplayer_smoke_client_support.gd:84)

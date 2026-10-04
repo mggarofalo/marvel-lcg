@@ -1,0 +1,90 @@
+  Marvel.Core -> /Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Release/net8.0/Marvel.Core.dll
+  Marvel.Rules -> /Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Release/net8.0/Marvel.Rules.dll
+  Marvel.Content -> /Users/michael/Source/marvel-lcg/src/Marvel.Content/bin/Release/net8.0/Marvel.Content.dll
+  Marvel.Cards -> /Users/michael/Source/marvel-lcg/src/Marvel.Cards/bin/Release/net8.0/Marvel.Cards.dll
+  Marvel.Behavior.Run -> /Users/michael/Source/marvel-lcg/tools/Marvel.Behavior.Run/bin/Release/net8.0/Marvel.Behavior.Run.dll
+  Marvel.Content.Tests -> /Users/michael/Source/marvel-lcg/tests/Marvel.Content.Tests/bin/Release/net8.0/Marvel.Content.Tests.dll
+Test run for /Users/michael/Source/marvel-lcg/tests/Marvel.Content.Tests/bin/Release/net8.0/Marvel.Content.Tests.dll (.NETCoreApp,Version=v8.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:01.10]     Marvel.Content.Tests.Play.CoreTargetEffectDescriptionTests.WebKickNamesItsAttackAndSeparatesPrintedDamageFromTheLivePreview(modifier: 0, preview: "14/14 → 6/14 HP") [FAIL]
+[xUnit.net 00:00:01.10]     Marvel.Content.Tests.Play.SearchAndDiscardCardsTests.CaughtOffGuardAsksWhichCardAndDiscardsThatOne [FAIL]
+[xUnit.net 00:00:01.10]     Marvel.Content.Tests.Play.CoreHiddenChoiceMeaningTests.DroneTargetAndIncomingAttackUseItsPublicIdentity [FAIL]
+[xUnit.net 00:00:01.10]     Marvel.Content.Tests.Play.CoreTargetEffectDescriptionTests.WebKickNamesItsAttackAndSeparatesPrintedDamageFromTheLivePreview(modifier: 2, preview: "14/14 → 4/14 HP") [FAIL]
+[xUnit.net 00:00:01.11]     Marvel.Content.Tests.Play.CoreTargetEffectDescriptionTests.SurveillanceTeamNamesItsPrintedRemovalAndLiveSchemeResult [FAIL]
+[xUnit.net 00:00:01.12]     Marvel.Content.Tests.Play.CoreTargetEffectDescriptionTests.TacTeamNamesOrdinaryDamageWithoutCallingItAnAttack [FAIL]
+[xUnit.net 00:00:01.13]     Marvel.Content.Tests.Play.CoreTargetEffectDescriptionTests.ForJusticeNamesThreatRemovalWithoutInventingAConstantForItsPaidResourceBranch [FAIL]
+[xUnit.net 00:00:01.14]     Marvel.Content.Tests.Play.CoreTargetEffectDescriptionTests.ASingleStepSequenceRetainsTheSameSeparateChoiceBoundary [FAIL]
+  Failed Marvel.Content.Tests.Play.SearchAndDiscardCardsTests.CaughtOffGuardAsksWhichCardAndDiscardsThatOne [236 ms]
+  Error Message:
+   Assert.Equal() Failure: Strings differ
+Expected: "Discard Avengers Mansion"
+Actual:   null
+  Stack Trace:
+     at Marvel.Content.Tests.Play.SearchAndDiscardCardsTests.CaughtOffGuardAsksWhichCardAndDiscardsThatOne() in /Users/michael/Source/marvel-lcg/tests/Marvel.Content.Tests/Play/SearchAndDiscardCardsTests.cs:line 79
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+  Failed Marvel.Content.Tests.Play.CoreHiddenChoiceMeaningTests.DroneTargetAndIncomingAttackUseItsPublicIdentity [239 ms]
+  Error Message:
+   Assert.Equal() Failure: Strings differ
+Expected: "Attack Drone"
+Actual:   null
+  Stack Trace:
+     at Marvel.Content.Tests.Play.CoreHiddenChoiceMeaningTests.DroneTargetAndIncomingAttackUseItsPublicIdentity() in /Users/michael/Source/marvel-lcg/tests/Marvel.Content.Tests/Play/CoreHiddenChoiceMeaningTests.cs:line 39
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+  Failed Marvel.Content.Tests.Play.CoreTargetEffectDescriptionTests.WebKickNamesItsAttackAndSeparatesPrintedDamageFromTheLivePreview(modifier: 0, preview: "14/14 → 6/14 HP") [239 ms]
+  Error Message:
+   Assert.Equal() Failure: Strings differ
+Expected: "Attack Rhino"
+Actual:   null
+  Stack Trace:
+     at Marvel.Content.Tests.Play.CoreTargetEffectDescriptionTests.WebKickNamesItsAttackAndSeparatesPrintedDamageFromTheLivePreview(Int32 modifier, String preview) in /Users/michael/Source/marvel-lcg/tests/Marvel.Content.Tests/Play/CoreTargetEffectDescriptionTests.cs:line 49
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)
+  Failed Marvel.Content.Tests.Play.CoreTargetEffectDescriptionTests.WebKickNamesItsAttackAndSeparatesPrintedDamageFromTheLivePreview(modifier: 2, preview: "14/14 → 4/14 HP") [1 ms]
+  Error Message:
+   Assert.Equal() Failure: Strings differ
+Expected: "Attack Rhino"
+Actual:   null
+  Stack Trace:
+     at Marvel.Content.Tests.Play.CoreTargetEffectDescriptionTests.WebKickNamesItsAttackAndSeparatesPrintedDamageFromTheLivePreview(Int32 modifier, String preview) in /Users/michael/Source/marvel-lcg/tests/Marvel.Content.Tests/Play/CoreTargetEffectDescriptionTests.cs:line 49
+   at InvokeStub_CoreTargetEffectDescriptionTests.WebKickNamesItsAttackAndSeparatesPrintedDamageFromTheLivePreview(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Failed Marvel.Content.Tests.Play.CoreTargetEffectDescriptionTests.SurveillanceTeamNamesItsPrintedRemovalAndLiveSchemeResult [9 ms]
+  Error Message:
+   Assert.Equal() Failure: Strings differ
+Expected: "Remove threat from The Break-In!"
+Actual:   null
+  Stack Trace:
+     at Marvel.Content.Tests.Play.CoreTargetEffectDescriptionTests.SurveillanceTeamNamesItsPrintedRemovalAndLiveSchemeResult() in /Users/michael/Source/marvel-lcg/tests/Marvel.Content.Tests/Play/CoreTargetEffectDescriptionTests.cs:line 100
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+  Failed Marvel.Content.Tests.Play.CoreTargetEffectDescriptionTests.TacTeamNamesOrdinaryDamageWithoutCallingItAnAttack [4 ms]
+  Error Message:
+   Assert.Equal() Failure: Strings differ
+Expected: "Deal damage to Rhino"
+Actual:   null
+  Stack Trace:
+     at Marvel.Content.Tests.Play.CoreTargetEffectDescriptionTests.TacTeamNamesOrdinaryDamageWithoutCallingItAnAttack() in /Users/michael/Source/marvel-lcg/tests/Marvel.Content.Tests/Play/CoreTargetEffectDescriptionTests.cs:line 78
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+  Failed Marvel.Content.Tests.Play.CoreTargetEffectDescriptionTests.ForJusticeNamesThreatRemovalWithoutInventingAConstantForItsPaidResourceBranch [9 ms]
+  Error Message:
+   Assert.Equal() Failure: Strings differ
+Expected: "Remove threat from The Break-In!"
+Actual:   null
+  Stack Trace:
+     at Marvel.Content.Tests.Play.CoreTargetEffectDescriptionTests.ForJusticeNamesThreatRemovalWithoutInventingAConstantForItsPaidResourceBranch() in /Users/michael/Source/marvel-lcg/tests/Marvel.Content.Tests/Play/CoreTargetEffectDescriptionTests.cs:line 121
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+  Failed Marvel.Content.Tests.Play.CoreTargetEffectDescriptionTests.ASingleStepSequenceRetainsTheSameSeparateChoiceBoundary [4 ms]
+  Error Message:
+   Assert.Equal() Failure: Strings differ
+Expected: "Deal damage to Rhino"
+Actual:   null
+  Stack Trace:
+     at Marvel.Content.Tests.Play.CoreTargetEffectDescriptionTests.ASingleStepSequenceRetainsTheSameSeparateChoiceBoundary() in /Users/michael/Source/marvel-lcg/tests/Marvel.Content.Tests/Play/CoreTargetEffectDescriptionTests.cs:line 173
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+
+Failed!  - Failed:     8, Passed:     1, Skipped:     0, Total:     9, Duration: 293 ms - Marvel.Content.Tests.dll (net8.0)

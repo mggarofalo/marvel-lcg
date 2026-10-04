@@ -1,0 +1,26 @@
+[
+  {
+    "mutant": "engine-no-operation",
+    "file": "src/Marvel.Cards/Run/AbilityChoicePromptDescription.cs",
+    "killed": true,
+    "exit": 1,
+    "log": "commitment-mutant-engine-no-operation.log",
+    "restored_sha256": "c2d34e44dd2df49137aee11e5cefa6f77aacdbd5ca0a29b3bd0b6080bac9d68c"
+  },
+  {
+    "mutant": "view-no-operation",
+    "file": "src/Marvel.View/PromptPresentation.cs",
+    "killed": true,
+    "exit": 1,
+    "log": "commitment-mutant-view-no-operation.log",
+    "restored_sha256": "a61ca58fb8f12fca6e5ca3b34309b2ae0b9ff34b6b02446e61e22f763f4f0ea6"
+  },
+  {
+    "mutant": "ui-generic-acceptance",
+    "file": "src/Marvel.Godot/DecisionPanelCopy.cs",
+    "killed": true,
+    "exit": 1,
+    "log": "commitment-mutant-ui-generic-acceptance.log",
+    "restored_sha256": "014cbe09f35894ecea1a51dd4606ce89e2220c4fab0fe567958d1d71331f4af1"
+  }
+]

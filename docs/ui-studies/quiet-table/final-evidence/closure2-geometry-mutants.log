@@ -1,0 +1,7 @@
+{"name": "commitment-height", "compiled": true, "killed": false, "expected": "cannot fit a whole commitment", "exit_code": 1, "exercised": false, "source_restored": true}
+{"name": "sidebar-entry", "compiled": true, "killed": false, "expected": "sidebar extends beyond the window", "exit_code": 0, "exercised": false, "source_restored": true}
+Traceback (most recent call last):
+  File "/Users/michael/Library/Logs/marvel-lcg/MARVEL-443/2026-10-04/run-closure2-geometry-mutants.py", line 28, in <module>
+    assert len(results)==2 and all(r['compiled'] and r['killed'] and r['source_restored'] for r in results)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

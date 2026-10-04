@@ -1,0 +1,14 @@
+{
+  "journal_sha256": "c367f8694f6ae93c8e5810f0a676e198e6a1b4a61125839e900bea0174b93969",
+  "game_digest": "9cd71048c78ab00f419c87f9bcecbfe2c3782d8336ce24835bddd2e006c7e194",
+  "journal_decisions": 4,
+  "units": 4,
+  "last_unit_status": "open",
+  "initial_setup": "ordinary DatasetGameFactory; prefix accepted through EngineHost.Resolve",
+  "authority_only_change": "seat0 non-owner active bootstrap grant converted to unused invitation; same verifier and scope; no overlapping active seat grant",
+  "save_unchanged": true,
+  "invited_seats": [
+    0
+  ],
+  "owner_seats": []
+}

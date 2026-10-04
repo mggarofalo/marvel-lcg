@@ -1,0 +1,39 @@
+  Marvel.Core -> /Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Release/net8.0/Marvel.Core.dll
+  Marvel.Rules -> /Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Release/net8.0/Marvel.Rules.dll
+  Marvel.Decisions -> /Users/michael/Source/marvel-lcg/src/Marvel.Decisions/bin/Release/net8.0/Marvel.Decisions.dll
+  Marvel.Cards -> /Users/michael/Source/marvel-lcg/src/Marvel.Cards/bin/Release/net8.0/Marvel.Cards.dll
+  Marvel.Content -> /Users/michael/Source/marvel-lcg/src/Marvel.Content/bin/Release/net8.0/Marvel.Content.dll
+  Marvel.Session -> /Users/michael/Source/marvel-lcg/src/Marvel.Session/bin/Release/net8.0/Marvel.Session.dll
+  Marvel.View -> /Users/michael/Source/marvel-lcg/src/Marvel.View/bin/Release/net8.0/Marvel.View.dll
+  Marvel.Core -> /Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Release/net8.0/Marvel.Core.dll
+  Marvel.Rules -> /Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Release/net8.0/Marvel.Rules.dll
+  Marvel.Server -> /Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/Release/net8.0/Marvel.Server.dll
+  Marvel.Server -> /Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Release/net8.0/Marvel.Server.dll
+  Marvel.Client -> /Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Release/net8.0/Marvel.Client.dll
+  Marvel.Godot -> /Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Release/Marvel.Godot.dll
+  Marvel.Godot.Tests -> /Users/michael/Source/marvel-lcg/tests/Marvel.Godot.Tests/bin/Release/net8.0/Marvel.Godot.Tests.dll
+Test run for /Users/michael/Source/marvel-lcg/tests/Marvel.Godot.Tests/bin/Release/net8.0/Marvel.Godot.Tests.dll (.NETCoreApp,Version=v8.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.55]     Marvel.Godot.Tests.ContextualFallbackTests.EveryLegalOfferWithoutAnInstalledCardControlGetsAPrimaryEntry [FAIL]
+[xUnit.net 00:00:00.55]     Marvel.Godot.Tests.ContextualFallbackTests.InstallingOneCardControlDoesNotHideOffersForAnotherMissingAnchor [FAIL]
+  Failed Marvel.Godot.Tests.ContextualFallbackTests.EveryLegalOfferWithoutAnInstalledCardControlGetsAPrimaryEntry [10 ms]
+  Error Message:
+   Assert.Equal() Failure: Collections differ
+                                                            ↓ (pos 0)
+Expected: <generated>                                      [3, 4]
+Actual:   SelectIListIterator<AffordancePresentation, int> []
+  Stack Trace:
+     at Marvel.Godot.Tests.ContextualFallbackTests.EveryLegalOfferWithoutAnInstalledCardControlGetsAPrimaryEntry() in /Users/michael/Source/marvel-lcg/tests/Marvel.Godot.Tests/ContextualFallbackTests.cs:line 19
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+  Failed Marvel.Godot.Tests.ContextualFallbackTests.InstallingOneCardControlDoesNotHideOffersForAnotherMissingAnchor [2 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: 4
+Actual:   3
+  Stack Trace:
+     at Marvel.Godot.Tests.ContextualFallbackTests.InstallingOneCardControlDoesNotHideOffersForAnotherMissingAnchor() in /Users/michael/Source/marvel-lcg/tests/Marvel.Godot.Tests/ContextualFallbackTests.cs:line 28
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+
+Failed!  - Failed:     2, Passed:     2, Skipped:     0, Total:     4, Duration: 40 ms - Marvel.Godot.Tests.dll (net8.0)

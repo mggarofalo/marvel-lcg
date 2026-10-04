@@ -8,8 +8,8 @@ internal static class CardInteractionControlStyle
         CardInteractionIntent.Target => "Choose this offered target.",
         CardInteractionIntent.Generator => "Use this offered resource generator.",
         CardInteractionIntent.Cost => "Choose this engine-offered payment option.",
-        CardInteractionIntent.Submit => "Execute the composed engine-authorized action.",
-        CardInteractionIntent.Decline => "Pass this engine-authorized decision.",
+        CardInteractionIntent.Submit => "Confirm this composed action.",
+        CardInteractionIntent.Decline => "Pass this optional decision.",
         _ => "Choose this card's offered action.",
     };
 

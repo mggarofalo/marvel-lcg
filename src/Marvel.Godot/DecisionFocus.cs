@@ -133,6 +133,8 @@ internal static class DecisionFocus
         if (scroll.Name == "DecisionBodyScroll")
         {
             scroll.ScrollHorizontal = 0;
+            if (control.Name.ToString().StartsWith("Resource", StringComparison.Ordinal))
+                scroll.ScrollVertical = 0;
         }
     }
 

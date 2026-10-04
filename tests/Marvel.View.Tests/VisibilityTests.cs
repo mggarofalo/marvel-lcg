@@ -342,7 +342,8 @@ public sealed class VisibilityTests
             false,
             [new Affordance(
                 1, "Choose", 0, 1, "choose",
-                new TargetRequest([searched.ObjectId], 1, 1, IsSearch: true))]);
+                new TargetRequest([searched.ObjectId], 1, 1, IsSearch: true))
+                { DisplayLabel = "Authorized search result", CommitLabel = "Choose authorized search result" }]);
 
         VisibleResult forOne = WorldProjection.For(
             board,
@@ -356,6 +357,8 @@ public sealed class VisibilityTests
             new RestrictedVisibilityPolicy(0).Authorize(null, board.Players));
 
         Assert.NotNull(forOne.Prompt);
+        Assert.Equal("Authorized search result", Assert.Single(forOne.Prompt.Affordances).DisplayLabel);
+        Assert.Equal("Choose authorized search result", Assert.Single(forOne.Prompt.Affordances).CommitLabel);
         Assert.NotNull(Card(forOne.World, searched.ObjectId).Face);
         Assert.Null(forZero.Prompt);
         Assert.DoesNotContain(

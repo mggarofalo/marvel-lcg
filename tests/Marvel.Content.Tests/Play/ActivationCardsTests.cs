@@ -209,7 +209,7 @@ public sealed class ActivationCardsTests
         // A treachery whose last effect makes an enemy activate "is discarded
         // after all of those activations have resolved." Assault therefore
         // remains faceup while its attack is stopped on the defender question,
-        // and only reaches the discard pile after that attack completes.
+        // and remains the cause through an attack-end response.
         var world = Deal();
         world.Seats[0].IdentityCard.TurnTo(AuthoredCards.SpiderMan);
         var card = world.CreateCard(
@@ -222,20 +222,43 @@ public sealed class ActivationCardsTests
             Subject: card.ObjectId, Seat: 0));
         var events = new List<Marvel.Rules.Events.GameEvent>();
 
+        var counterPunch = world.CreateCard("01077", world.Seats[0].Hand);
         var defender = Sequence.Work(world, Cards, runner, events);
 
         Assert.NotNull(defender);
         Assert.Equal(DeckType.RevealingArea, card.Area.Type);
         Assert.True(card.FaceUp);
 
+        bool sawDefense = false;
+        bool sawEndResponse = false;
         var prompt = defender;
         for (int answered = 0; prompt is not null; answered++)
         {
             Assert.True(answered < 10, "the attack did not finish after ten declined prompts");
-            Sequence.Answer(world, Cards, runner, prompt, Decision.Decline, events);
+            if (prompt.Description?.StartsWith("Enemy attack", StringComparison.Ordinal) == true)
+                Assert.True(prompt.CauseCardIds.Contains(card.ObjectId),
+                    $"Missing cause at {prompt.Trigger}: {prompt.Description}");
+            Decision decision = Decision.Decline;
+            if (prompt.Asking == Marvel.Rules.Prompts.Question.Defender)
+            {
+                var ownDefense = Assert.Single(prompt.Affordances,
+                    offer => offer.AnchorId == world.Seats[0].IdentityCard.ObjectId);
+                decision = Decision.Take(ownDefense.Id);
+                sawDefense = true;
+            }
+            if (prompt.Affordances.Any(offer => offer.AnchorId == counterPunch.ObjectId))
+            {
+                Assert.Contains(card.ObjectId, prompt.CauseCardIds);
+                Assert.Null(world.Activation);
+                Assert.NotNull(world.FinishedActivation);
+                sawEndResponse = true;
+            }
+            Sequence.Answer(world, Cards, runner, prompt, decision, events);
             prompt = Sequence.Work(world, Cards, runner, events);
         }
 
+        Assert.True(sawDefense);
+        Assert.True(sawEndResponse);
         Assert.Equal(DeckType.EncounterDiscardPile, card.Area.Type);
     }
 

@@ -1,0 +1,69 @@
+  Marvel.Core -> /Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Release/net8.0/Marvel.Core.dll
+  Marvel.Rules -> /Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Release/net8.0/Marvel.Rules.dll
+  Marvel.Content -> /Users/michael/Source/marvel-lcg/src/Marvel.Content/bin/Release/net8.0/Marvel.Content.dll
+  Marvel.View -> /Users/michael/Source/marvel-lcg/src/Marvel.View/bin/Release/net8.0/Marvel.View.dll
+  Marvel.View.Tests -> /Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/bin/Release/net8.0/Marvel.View.Tests.dll
+Test run for /Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/bin/Release/net8.0/Marvel.View.Tests.dll (.NETCoreApp,Version=v8.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.46]     Marvel.View.Tests.EventResultMeaningTests.CounterResultsUseHumanNamesAndAuthoritativeQuantities(field: "c_web", before: 2, after: 1, expected: "Rhino web counters: 2 → 1 (1 removed).") [FAIL]
+[xUnit.net 00:00:00.46]     Marvel.View.Tests.EventResultMeaningTests.CounterResultsUseHumanNamesAndAuthoritativeQuantities(field: "c_web", before: null, after: 2, expected: "Rhino gained 2 web counters.") [FAIL]
+[xUnit.net 00:00:00.46]     Marvel.View.Tests.EventResultMeaningTests.CounterResultsUseHumanNamesAndAuthoritativeQuantities(field: "c_web", before: 2, after: null, expected: "Rhino lost 2 web counters.") [FAIL]
+[xUnit.net 00:00:00.46]     Marvel.View.Tests.EventResultMeaningTests.CounterResultsUseHumanNamesAndAuthoritativeQuantities(field: "c_energy", before: 1, after: 3, expected: "Rhino energy counters: 1 → 3 (2 added).") [FAIL]
+  Failed Marvel.View.Tests.EventResultMeaningTests.CounterResultsUseHumanNamesAndAuthoritativeQuantities(field: "c_web", before: 2, after: 1, expected: "Rhino web counters: 2 → 1 (1 removed).") [4 ms]
+  Error Message:
+   Assert.Equal() Failure: Strings differ
+                 ↓ (pos 6)
+Expected: "Rhino web counters: 2 → 1 (1 removed)."
+Actual:   "Rhino changed c web from 2 to 1."
+                 ↑ (pos 6)
+  Stack Trace:
+     at Marvel.View.Tests.EventResultMeaningTests.CounterResultsUseHumanNamesAndAuthoritativeQuantities(String field, Nullable`1 before, Nullable`1 after, String expected) in /Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/EventResultMeaningTests.cs:line 131
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)
+  Failed Marvel.View.Tests.EventResultMeaningTests.CounterResultsUseHumanNamesAndAuthoritativeQuantities(field: "c_web", before: null, after: 2, expected: "Rhino gained 2 web counters.") [< 1 ms]
+  Error Message:
+   Assert.Equal() Failure: Strings differ
+                        ↓ (pos 13)
+Expected: "Rhino gained 2 web counters."
+Actual:   "Rhino gained c web 2."
+                        ↑ (pos 13)
+  Stack Trace:
+     at Marvel.View.Tests.EventResultMeaningTests.CounterResultsUseHumanNamesAndAuthoritativeQuantities(String field, Nullable`1 before, Nullable`1 after, String expected) in /Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/EventResultMeaningTests.cs:line 131
+   at InvokeStub_EventResultMeaningTests.CounterResultsUseHumanNamesAndAuthoritativeQuantities(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Failed Marvel.View.Tests.EventResultMeaningTests.CounterResultsUseHumanNamesAndAuthoritativeQuantities(field: "c_web", before: 2, after: null, expected: "Rhino lost 2 web counters.") [< 1 ms]
+  Error Message:
+   Assert.Equal() Failure: Strings differ
+                      ↓ (pos 11)
+Expected: "Rhino lost 2 web counters."
+Actual:   "Rhino lost c web 2."
+                      ↑ (pos 11)
+  Stack Trace:
+     at Marvel.View.Tests.EventResultMeaningTests.CounterResultsUseHumanNamesAndAuthoritativeQuantities(String field, Nullable`1 before, Nullable`1 after, String expected) in /Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/EventResultMeaningTests.cs:line 131
+   at InvokeStub_EventResultMeaningTests.CounterResultsUseHumanNamesAndAuthoritativeQuantities(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Failed Marvel.View.Tests.EventResultMeaningTests.CounterResultsUseHumanNamesAndAuthoritativeQuantities(field: "c_energy", before: 1, after: 3, expected: "Rhino energy counters: 1 → 3 (2 added).") [< 1 ms]
+  Error Message:
+   Assert.Equal() Failure: Strings differ
+                 ↓ (pos 6)
+Expected: "Rhino energy counters: 1 → 3 (2 added)."
+Actual:   "Rhino changed c energy from 1 to 3."
+                 ↑ (pos 6)
+  Stack Trace:
+     at Marvel.View.Tests.EventResultMeaningTests.CounterResultsUseHumanNamesAndAuthoritativeQuantities(String field, Nullable`1 before, Nullable`1 after, String expected) in /Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/EventResultMeaningTests.cs:line 131
+   at InvokeStub_EventResultMeaningTests.CounterResultsUseHumanNamesAndAuthoritativeQuantities(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:00.49]     Marvel.View.Tests.EventResultMeaningTests.CounterRemovalRemainsInTheImmediateRecapAlongsideDamage [FAIL]
+  Failed Marvel.View.Tests.EventResultMeaningTests.CounterRemovalRemainsInTheImmediateRecapAlongsideDamage [< 1 ms]
+  Error Message:
+   Assert.Equal() Failure: Strings differ
+                 ↓ (pos 6)
+Expected: "Rhino web counters: 1 → 0 (1 removed)."
+Actual:   "Rhino changed c web from 1 to 0."
+                 ↑ (pos 6)
+  Stack Trace:
+     at Marvel.View.Tests.EventResultMeaningTests.CounterRemovalRemainsInTheImmediateRecapAlongsideDamage() in /Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/EventResultMeaningTests.cs:line 143
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+
+Failed!  - Failed:     5, Passed:     9, Skipped:     0, Total:    14, Duration: 49 ms - Marvel.View.Tests.dll (net8.0)

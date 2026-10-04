@@ -1,0 +1,20 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Marvel.Core -> /Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Debug/net8.0/Marvel.Core.dll
+  Marvel.Rules -> /Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Rules.dll
+  Marvel.Decisions -> /Users/michael/Source/marvel-lcg/src/Marvel.Decisions/bin/Debug/net8.0/Marvel.Decisions.dll
+  Marvel.View -> /Users/michael/Source/marvel-lcg/src/Marvel.View/bin/Debug/net8.0/Marvel.View.dll
+  Marvel.Cards -> /Users/michael/Source/marvel-lcg/src/Marvel.Cards/bin/Debug/net8.0/Marvel.Cards.dll
+  Marvel.Content -> /Users/michael/Source/marvel-lcg/src/Marvel.Content/bin/Debug/net8.0/Marvel.Content.dll
+  Marvel.Session -> /Users/michael/Source/marvel-lcg/src/Marvel.Session/bin/Debug/net8.0/Marvel.Session.dll
+  Marvel.Core -> /Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Debug/net8.0/Marvel.Core.dll
+  Marvel.Rules -> /Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Rules.dll
+  Marvel.Server -> /Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Debug/net8.0/Marvel.Server.dll
+  Marvel.Client -> /Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.Client.dll
+  Marvel.Godot -> /Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Godot.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:03.41

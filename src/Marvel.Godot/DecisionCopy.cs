@@ -9,45 +9,48 @@ internal static class DecisionCopy
     public static string Choice(AffordancePresentation view)
     {
         ArgumentNullException.ThrowIfNull(view);
-        if (!string.IsNullOrWhiteSpace(view.Description))
-        {
-            return view.Description;
-        }
-
-        string label = PromptPresentation.Words(view.Label);
+        string anchor = view.SourceName ?? view.Anchor;
+        if (view.PlaysCard) return $"Play {anchor}";
+        string label = PromptPresentation.Words(view.DisplayLabel ?? view.Label);
         if (string.Equals(label, view.Anchor, StringComparison.OrdinalIgnoreCase))
         {
-            return label;
+            return anchor;
         }
 
         if (!string.Equals(view.Verb, label, StringComparison.OrdinalIgnoreCase))
         {
-            return $"{label}  ·  {view.Anchor}";
+            return $"{label}  ·  {anchor}";
         }
 
         return view.Verb switch
         {
-            "Play" => $"Play {view.Anchor}",
-            "Attack" or "Thwart" or "Recover" => $"{view.Verb} with {view.Anchor}",
-            "Choose" => $"Choose {view.Anchor}",
+            "Play" => $"Play {anchor}",
+            "Attack" or "Thwart" or "Recover" => $"{view.Verb} with {anchor}",
+            "Choose" => $"Choose {anchor}",
+            "Action" => $"Use {anchor}",
             "Resolve Mulligans" => "Choose cards to discard and redraw",
-            _ => $"{view.Verb}  ·  {view.Anchor}",
+            _ => $"{view.Verb}  ·  {anchor}",
         };
     }
 
     public static string ActionSummary(AffordancePresentation view)
     {
         ArgumentNullException.ThrowIfNull(view);
-        string action = Choice(view);
-        return string.IsNullOrWhiteSpace(view.Consequence)
-            ? action
-            : $"{action}\n{view.Consequence}";
+        string?[] parts = [Choice(view), view.SourceState,
+            view.CostDescription is { Length: > 0 } cost ? $"Costs: {cost}." : null,
+            view.Description, view.Consequence];
+        return string.Join("\n", parts.Where(part => !string.IsNullOrWhiteSpace(part)).Distinct());
     }
 
     public static string GenericCommit(string verb, string label, string anchor)
     {
         string readableVerb = PromptPresentation.Words(verb);
         string readableLabel = PromptPresentation.Words(label);
+        if ((string.Equals(readableVerb, "Choose option", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(readableVerb, "Choose", StringComparison.OrdinalIgnoreCase))
+            && !string.IsNullOrWhiteSpace(readableLabel))
+            return readableLabel.StartsWith("Choose ", StringComparison.OrdinalIgnoreCase)
+                ? readableLabel : $"Choose {readableLabel}";
         return string.Equals(readableVerb, "Action", StringComparison.OrdinalIgnoreCase)
             ? $"Use {(string.IsNullOrWhiteSpace(readableLabel) ? anchor : readableLabel)}"
             : readableVerb;

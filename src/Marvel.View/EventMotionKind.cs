@@ -16,6 +16,9 @@ public enum EventMotionKind
     /// <summary>A card or area changed visible position.</summary>
     Move,
 
+    /// <summary>An effect added or returned a card to a player's hand.</summary>
+    HandGain,
+
     /// <summary>A card changed which physical face is visible.</summary>
     Flip,
 
@@ -24,6 +27,12 @@ public enum EventMotionKind
 
     /// <summary>A visible value changed in the restorative direction.</summary>
     Heal,
+
+    /// <summary>A scheme's visible threat changed.</summary>
+    Threat,
+
+    /// <summary>An enemy attack ended with its established defender outcome.</summary>
+    Attack,
 
     /// <summary>A named card was defeated and left play.</summary>
     Defeat,

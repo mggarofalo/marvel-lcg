@@ -36,16 +36,15 @@ internal sealed class DecisionDraftRenderer
         TargetRequest? request = selected.Targets;
         if (request is null)
         {
-            panel.AddContent(DecisionPanel.Text("No target selection", GodotThemeVariations.MutedText));
             return;
         }
 
         if (composer!.UsesAutomaticTargetSelection)
         {
             Label automatic = DecisionPanel.Text(
-                "TARGET  ·  " + string.Join(" → ", composer.Targets.Select(id =>
-                    PromptPresentation.Describe(id, world!))) + "  ·  automatic",
-                GodotThemeVariations.StatusText,
+                string.Join(" → ", composer.Targets.Select(id =>
+                    PromptPresentation.Describe(id, world!))),
+                GodotThemeVariations.Caption,
                 wrap: true);
             automatic.Name = "AutomaticTargets";
             panel.BindAnchors(automatic, [.. composer.Targets]);
@@ -53,8 +52,7 @@ internal sealed class DecisionDraftRenderer
             return;
         }
 
-        string badge = request.IsSearch ? "SEARCH RESULTS" : "TARGETS";
-        panel.AddContent(DecisionPanel.Text($"{badge}  ·  " + DecisionPanelCopy.TargetProgress(composer, progress),
+        panel.AddContent(DecisionPanel.Text(DecisionPanelCopy.TargetProgress(composer, progress),
             GodotThemeVariations.Caption, wrap: true));
         AddTargetInstructions(request);
 
@@ -70,11 +68,6 @@ internal sealed class DecisionDraftRenderer
 
     private void AddTargetInstructions(TargetRequest request)
     {
-        if (!string.IsNullOrWhiteSpace(request.Rule))
-        {
-            panel.AddContent(DecisionPanel.Text(request.Rule, GodotThemeVariations.Caption));
-        }
-
         if (request.MustIncludeTraits is { Count: > 0 })
         {
             panel.AddContent(DecisionPanel.Text(
@@ -133,9 +126,9 @@ internal sealed class DecisionDraftRenderer
         if (composer.Targets.Count > 0)
         {
             panel.AddContent(DecisionPanel.Text(
-                "ORDER  ·  " + string.Join(" → ", composer.Targets.Select(id =>
+                "Order: " + string.Join(" → ", composer.Targets.Select(id =>
                     PromptPresentation.Describe(id, world))),
-                GodotThemeVariations.Eyebrow, wrap: true));
+                GodotThemeVariations.Caption, wrap: true));
         }
     }
 

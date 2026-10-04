@@ -1,0 +1,50 @@
+[
+  {
+    "name": "Marvel.Content",
+    "server_sha256": "aad5063bacf3b6a317922cb0dd3b795563a27517e96960773e0d065c45c145b3",
+    "fixture_sha256": "aad5063bacf3b6a317922cb0dd3b795563a27517e96960773e0d065c45c145b3",
+    "identical": true
+  },
+  {
+    "name": "Marvel.Decisions",
+    "server_sha256": "665c0d15b34d3831ea7c10f34985e667b65134df95e845e8580a296ca4d98419",
+    "fixture_sha256": "665c0d15b34d3831ea7c10f34985e667b65134df95e845e8580a296ca4d98419",
+    "identical": true
+  },
+  {
+    "name": "Marvel.Session",
+    "server_sha256": "59eb45d7636c254fc7dbae7fb25236bfc5c3235e394ee25db4d4ed8fa490737a",
+    "fixture_sha256": "59eb45d7636c254fc7dbae7fb25236bfc5c3235e394ee25db4d4ed8fa490737a",
+    "identical": true
+  },
+  {
+    "name": "Marvel.Cards",
+    "server_sha256": "8fd236a356aaa93aec117121fa4ed6127baf75aa66d0086ca7b3f6a9a77d180a",
+    "fixture_sha256": "8fd236a356aaa93aec117121fa4ed6127baf75aa66d0086ca7b3f6a9a77d180a",
+    "identical": true
+  },
+  {
+    "name": "Marvel.Server",
+    "server_sha256": "9c127f08a8c9f10b78dc8babc8c4011f7744ce93cc135d5241f1fc0d50a56344",
+    "fixture_sha256": "9c127f08a8c9f10b78dc8babc8c4011f7744ce93cc135d5241f1fc0d50a56344",
+    "identical": true
+  },
+  {
+    "name": "Marvel.Core",
+    "server_sha256": "f176c34a751af5c5887ac0ea252a27c872a49e8cf39a95ca10a586ac92008617",
+    "fixture_sha256": "f176c34a751af5c5887ac0ea252a27c872a49e8cf39a95ca10a586ac92008617",
+    "identical": true
+  },
+  {
+    "name": "Marvel.Rules",
+    "server_sha256": "6fbe6618fb5eaab735d46e9d18ee97265fec9251da3d3028d0b2efbd49dd9ad9",
+    "fixture_sha256": "6fbe6618fb5eaab735d46e9d18ee97265fec9251da3d3028d0b2efbd49dd9ad9",
+    "identical": true
+  },
+  {
+    "name": "Marvel.View",
+    "server_sha256": "56d5b7bb910d41d4bfcd156b62e5b15b8410357566a5b5e6922128fa21da22ac",
+    "fixture_sha256": "56d5b7bb910d41d4bfcd156b62e5b15b8410357566a5b5e6922128fa21da22ac",
+    "identical": true
+  }
+]

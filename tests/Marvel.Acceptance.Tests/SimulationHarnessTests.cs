@@ -101,10 +101,10 @@ public abstract class SimulationHarnessTestBase
         }
     }
 
-    protected static List<string> SuccessfulLines()
+    protected static List<string> SuccessfulLines(uint seed = 265)
     {
         var record = new StringWriter(System.Globalization.CultureInfo.InvariantCulture);
-        SimulationRunHarness.Run(Config(games: 1, seeds: [265], selectionSeed: null), record, TextWriter.Null);
+        SimulationRunHarness.Run(Config(games: 1, seeds: [seed], selectionSeed: null), record, TextWriter.Null);
         return record.ToString().Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries).ToList();
     }
 

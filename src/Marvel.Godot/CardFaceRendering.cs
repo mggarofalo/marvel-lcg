@@ -24,9 +24,8 @@ internal static class CardFaceRendering
     {
         var content = Stack();
         content.Name = "CardBack";
-        content.AddChild(Label("Card back", GodotThemeVariations.Eyebrow, "BackKind"));
         content.AddChild(Label(
-            string.IsNullOrWhiteSpace(card.Back) ? "Concealed" : card.Back,
+            string.IsNullOrWhiteSpace(card.Back) ? "Concealed" : TabletopAreaNames.Title(card.Back),
             GodotThemeVariations.CardTitle,
             "BackIdentity",
             wrap: true));
@@ -84,7 +83,7 @@ internal static class CardFaceRendering
         if (!string.IsNullOrWhiteSpace(card.Status))
         {
             header.AddChild(Badge(
-                new BoardFieldPresentation("STATE", card.Status), "ReadyIndicator"));
+                new BoardFieldPresentation("", System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(card.Status.ToLowerInvariant())), "ReadyIndicator"));
         }
         return header;
     }
@@ -99,7 +98,7 @@ internal static class CardFaceRendering
             identity.AddChild(Label(
                 card.Subtitle, GodotThemeVariations.MutedText, "Subtitle", wrap: true));
         }
-        identity.AddChild(Label(card.Kind, GodotThemeVariations.Eyebrow, "Kind", wrap: true));
+        identity.AddChild(Label(System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(card.Kind.ToLowerInvariant()), GodotThemeVariations.Caption, "Kind", wrap: true));
         return identity;
     }
 
@@ -172,7 +171,7 @@ internal static class CardFaceRendering
         if (printed.Count > 0)
         {
             content.AddChild(ValueStrip(
-                family == CardFrameFamily.Scheme ? "" : "PRINTED",
+                family == CardFrameFamily.Scheme ? "" : "Printed values",
                 printed, GodotThemeVariations.CardPrintedValue, "PrintedValues",
                 horizontal: true));
         }
@@ -213,7 +212,7 @@ internal static class CardFaceRendering
         if (live.Count > 0)
         {
             content.AddChild(ValueStrip(
-                "CURRENT", live, GodotThemeVariations.CardLiveValue, "LiveValues",
+                "Current values", live, GodotThemeVariations.CardLiveValue, "LiveValues",
                 horizontal: true));
         }
     }

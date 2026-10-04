@@ -131,6 +131,30 @@ public sealed class EventPresentationOccurrenceSubjectsSurviveLaterIdentityChang
     }
 
     [Fact]
+    public void ThwartReceiptKeepsThreatRemovalAndConsequentialDamageInOrder()
+    {
+        GameEvent[] happened =
+        [
+            new FieldSet(7, "k_threat", 5, 3)
+            {
+                Subjects = new Dictionary<int, string> { [7] = "The Break-In!" },
+            },
+            new FieldSet(9, "k_damage", 0, 1)
+            {
+                Subjects = new Dictionary<int, string> { [9] = "Black Cat" },
+            },
+        ];
+        EventBatchPresentation batch = EventCuePlanner.Plan(happened, World(), Outcome.Unfinished);
+
+        Assert.Equal([EventMotionKind.Threat, EventMotionKind.Damage],
+            batch.Highlights.Select(entry => entry.Motion));
+        Assert.Equal("The Break-In! threat: 5 → 3 (2 removed).", batch.Highlights[0].Summary);
+        Assert.Contains("Black Cat", batch.Highlights[1].Summary);
+        Assert.Equal([7], batch.Highlights[0].Anchors);
+        Assert.Equal(batch.History, batch.Highlights);
+    }
+
+    [Fact]
     public void ChronologyKeepsOnlyTheMostRecentHundredEntries()
     {
         var chronology = new EventChronology();

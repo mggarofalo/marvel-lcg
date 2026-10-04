@@ -63,8 +63,9 @@ public static class EventCuePlanner
         IReadOnlyList<EventPresentation> cues)
     {
         var useful = cues.Where(cue => cue.Motion is
-            EventMotionKind.Damage or EventMotionKind.Heal or EventMotionKind.Status
-            or EventMotionKind.Defeat or EventMotionKind.Terminal).ToList();
+            EventMotionKind.Damage or EventMotionKind.Heal or EventMotionKind.Threat or EventMotionKind.Status
+            or EventMotionKind.Attack or EventMotionKind.Defeat or EventMotionKind.Terminal
+            or EventMotionKind.HandGain or EventMotionKind.Counter).ToList();
         if (useful.Count == 0)
         {
             // A completed action still deserves acknowledgement when it did
@@ -78,7 +79,7 @@ public static class EventCuePlanner
         }
 
         var essential = useful.Where(cue => cue.Motion is
-            EventMotionKind.Defeat or EventMotionKind.Terminal).ToHashSet();
+            EventMotionKind.Attack or EventMotionKind.Defeat or EventMotionKind.Terminal).ToHashSet();
         foreach (var cue in useful.AsEnumerable().Reverse())
         {
             if (essential.Count >= 4)

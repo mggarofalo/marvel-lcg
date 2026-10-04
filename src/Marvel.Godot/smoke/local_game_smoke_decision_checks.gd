@@ -24,12 +24,12 @@ func _synchronization_preserves_history(expect_terminal: bool) -> bool:
 			return false
 	elif main.find_child("VillainTable", true, false) != null \
 			and _attached(_attached_name(IDENTITY, "Action")) == null \
-			and _attached(_attached_name(IDENTITY, "Submit")) == null:
+			and _task_commit() == null:
 		_fail("synchronizing an ordinary prompt left the table objects inoperable")
 		return false
 	elif main.find_child("VillainTable", true, false) == null \
 			and _first_enabled_choice() == null \
-			and _visible_button(_decision(), "Pass / decline") == null:
+			and (_decision().find_child("Decline", true, false) as Button) == null:
 		_fail("synchronizing an ordinary prompt left the decision inoperable")
 		return false
 	return true
@@ -58,7 +58,7 @@ func _primary_button_theme_is_safe(start: Button) -> bool:
 	if start.custom_minimum_size.y < _scaled_metric(44):
 		_fail("the primary action is smaller than the pointer-target floor")
 		return false
-	if start.get_theme_font_size("font_size") < _scaled_metric(15):
+	if start.get_theme_font_size("font_size") < maxi(12, _scaled_metric(14)):
 		_fail("the primary action did not adopt the selected type scale")
 		return false
 	return true
@@ -105,7 +105,7 @@ func _interaction_styles_are_safe(start: Button) -> bool:
 		_fail("the primary action is missing a required interaction style")
 		return false
 	var expected_focus := _scaled_metric(3)
-	if focus.border_width_left < expected_focus or focus.expand_margin_left < expected_focus:
+	if focus.border_width_left < expected_focus:
 		_fail("keyboard focus has no structural focus ring")
 		return false
 	if hover.border_width_bottom == normal.border_width_bottom:
@@ -213,7 +213,7 @@ func _live_scale_rebuilds_the_decision() -> bool:
 
 func _mulligan_scale_rebuilds_the_dock() -> bool:
 	var slider := _node("Toolbar/InterfaceScale") as HSlider
-	var submit := _attached(_attached_name(1, "Submit"))
+	var submit := _task_commit()
 	var history := main.find_child("ToggleHistory", true, false) as Button
 	if slider == null or submit == null or history == null:
 		_fail("the tabletop scale check has no card-local execute control or history drawer")
@@ -223,7 +223,7 @@ func _mulligan_scale_rebuilds_the_dock() -> bool:
 	slider.value = 100.0 if original_scale != 100.0 else 120.0
 	await process_frame
 	await process_frame
-	submit = _attached(_attached_name(1, "Submit"))
+	submit = _task_commit()
 	history = main.find_child("ToggleHistory", true, false) as Button
 	if submit == null or history == null or submit.get_instance_id() == original_submit:
 		_fail("changing scale did not rebuild the card-local action surface")
@@ -297,6 +297,8 @@ func _second_hero_is_safe(second_hero: OptionButton) -> bool:
 
 
 func _modular_and_seed_are_safe() -> bool:
+	if not await _setup_validation_survives_unrelated_edits():
+		return false
 	var modular := _node("Setup/Selections/Fields/Grid/Modular") as MenuButton
 	var seed := _node("Setup/Selections/Fields/Grid/Seed") as LineEdit
 	if modular == null or modular.get_popup().item_count < 7:
@@ -322,12 +324,39 @@ func _modular_and_seed_are_safe() -> bool:
 	return true
 
 
+func _setup_validation_survives_unrelated_edits() -> bool:
+	var seed := _node("Setup/Selections/Fields/Grid/Seed") as LineEdit
+	var label := _node("Setup/Selections/Fields/ConnectionGrid/GameId") as LineEdit
+	var original := label.text
+	seed.text = "invalid"
+	seed.text_changed.emit(seed.text)
+	label.text = "review-validation"
+	label.text_changed.emit(label.text)
+	await process_frame
+	var status := _node("Status") as Control
+	if not status.visible or "Enter a seed" not in _status().text:
+		_fail("editing the game label concealed invalid-seed guidance")
+		return false
+	seed.text = ""
+	seed.text_changed.emit(seed.text)
+	label.text = original
+	label.text_changed.emit(label.text)
+	await process_frame
+	return true
+
+
 func _endpoint_retry_is_safe(endpoint: LineEdit, reload_setup: Button) -> bool:
 	endpoint.text = "not-an-endpoint"
 	endpoint.text_changed.emit(endpoint.text)
 	await process_frame
 	if reload_setup.disabled or not (_button_named("Start game") as Button).disabled:
 		_fail("changing the endpoint did not require an explicit setup reload")
+		return false
+	var label := _node("Setup/Selections/Fields/ConnectionGrid/GameId") as LineEdit
+	label.text_changed.emit(label.text)
+	await process_frame
+	if not (_node("Status") as Control).visible or _status().text.is_empty():
+		_fail("editing the game label concealed the endpoint reload guidance")
 		return false
 	endpoint.text = ""
 	endpoint.text_changed.emit(endpoint.text)

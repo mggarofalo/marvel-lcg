@@ -116,7 +116,7 @@ public static class Offering
 
             if (Ask(world, abilities, occurrence, kind, tiers) is { } prompt)
             {
-                return prompt;
+                return WindowPromptContext.Describe(world, occurrence, kind, prompt);
             }
 
             return null;

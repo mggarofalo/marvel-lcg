@@ -13,13 +13,37 @@ internal static class BoardInteractionBinder
         }
 
         board.BindDirectInteractions(
-            gesture => CanDrag(panel, composer, gesture),
+            gesture => BoardDragInteractionBinder.CanDrag(panel, composer, gesture),
             gesture => Activate(panel, composer, gesture),
-            gesture => Drag(panel, composer, board, gesture));
+            gesture => BoardDragInteractionBinder.Drag(panel, composer, board, gesture));
+        board.BindDragPreview(gesture => BoardDragInteractionBinder.PreviewDrag(panel, composer, board, gesture));
+        board.SetCompleteChoicesOpen(panel.CompleteChoicesOpen);
+        board.BindCompleteChoices(source => panel.ShowCompleteChoices(source));
         board.BindExplicitInteraction(gesture => Activate(panel, composer, gesture));
         board.BindContextualInteraction(
             id => panel.SelectAffordance(id, panel.GetRenderGeneration()),
-            () => Decline(panel, composer, panel.GetRenderGeneration()));
+            () => Decline(panel, composer, panel.GetRenderGeneration()),
+            () => Submit(panel, composer, panel.GetRenderGeneration()),
+            () => CancelDraft(panel, composer),
+            index => SelectCost(panel, composer, index),
+            () => DecisionPanelCopy.SubmitAction(composer, panel.world!));
+    }
+
+    private static void SelectCost(DecisionPanel panel, DecisionComposer composer, int index)
+    {
+        if (CurrentOperations(panel, composer).TrySelectCost(index)) panel.Rebuild();
+    }
+
+    private static void CancelDraft(DecisionPanel panel, DecisionComposer composer)
+    {
+        if (!panel.IsCurrentDraft(composer, panel.GetRenderGeneration())
+            || composer.Selected is not { } selected) return;
+        int anchor = selected.AnchorId;
+        var fresh = BoardDraftCancellation.Clear(composer);
+        panel.composer = fresh;
+        panel.Rebuild();
+        int generation = panel.GetRenderGeneration();
+        Callable.From(() => RestoreCardFocus(panel, fresh, generation, anchor)).CallDeferred();
     }
 
     private static bool Activate(
@@ -116,36 +140,6 @@ internal static class BoardInteractionBinder
         return BoardDraftMutation.None;
     }
 
-    private static bool Drag(
-        DecisionPanel panel,
-        DecisionComposer composer,
-        BoardRenderResult board,
-        CardPointerGesture gesture)
-    {
-        BoardDraftMutation mutation = new BoardDraftInteraction(
-            composer, CurrentOperations(panel, composer), Affordances(panel, composer)).TryPlay(
-                gesture.Card.TargetId, gesture.IsHandCard,
-                board.IsDroppedOnLivePlayerLane(composer.Prompt.Player, gesture.Position));
-        if (mutation != BoardDraftMutation.Affordance)
-        {
-            return false;
-        }
-
-        panel.RaiseDraftStarted();
-        RefreshDraft(panel, composer, panel.GetRenderGeneration(), gesture.Card.TargetId!.Value);
-        return true;
-    }
-
-    private static bool CanDrag(
-        DecisionPanel panel,
-        DecisionComposer composer,
-        CardPointerGesture gesture) => new BoardDraftInteraction(
-            composer,
-            CurrentOperations(panel, composer),
-            Affordances(panel, composer)).CanPlay(
-                gesture.Card.TargetId,
-                gesture.IsHandCard);
-
     private static TableDraftBinding CurrentOperations(
         DecisionPanel panel, DecisionComposer composer) =>
         panel.BindTableDraft(composer, panel.GetRenderGeneration());
@@ -154,7 +148,7 @@ internal static class BoardInteractionBinder
         DecisionPanel panel, DecisionComposer composer) =>
         Marvel.View.PromptPresentation.From(composer.Prompt, panel.world!).Affordances;
 
-    private static void RefreshDraft(
+    internal static void RefreshDraft(
         DecisionPanel panel, DecisionComposer composer, int generation, int focused)
     {
         Callable.From(() =>
@@ -186,7 +180,8 @@ internal static class BoardInteractionBinder
         Button? candidate = sameCard.LastOrDefault() ?? panel.GetTree().Root
             .FindChildren("Card*", "Button", true, false)
             .OfType<Button>()
-            .LastOrDefault(button => CanFocus(button) && button.HasMeta("spatial_card_anchor"));
+            .LastOrDefault(button => CanFocus(button) && button.HasMeta("spatial_card_anchor"))
+            ?? panel.GetTree().Root.FindChild("ContextualCommit", true, false) as Button;
         if (candidate is not null)
         {
             candidate.GrabFocus();

@@ -1,0 +1,28 @@
+  Marvel.Core -> /Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Release/net8.0/Marvel.Core.dll
+  Marvel.Rules -> /Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Release/net8.0/Marvel.Rules.dll
+  Marvel.Session -> /Users/michael/Source/marvel-lcg/src/Marvel.Session/bin/Release/net8.0/Marvel.Session.dll
+  Marvel.Content -> /Users/michael/Source/marvel-lcg/src/Marvel.Content/bin/Release/net8.0/Marvel.Content.dll
+  Marvel.Decisions -> /Users/michael/Source/marvel-lcg/src/Marvel.Decisions/bin/Release/net8.0/Marvel.Decisions.dll
+  Marvel.View -> /Users/michael/Source/marvel-lcg/src/Marvel.View/bin/Release/net8.0/Marvel.View.dll
+  Marvel.Cards -> /Users/michael/Source/marvel-lcg/src/Marvel.Cards/bin/Release/net8.0/Marvel.Cards.dll
+  Marvel.Core -> /Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Release/net8.0/Marvel.Core.dll
+  Marvel.Rules -> /Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Release/net8.0/Marvel.Rules.dll
+  Marvel.Server -> /Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/Release/net8.0/Marvel.Server.dll
+  Marvel.Server -> /Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Release/net8.0/Marvel.Server.dll
+  Marvel.Client -> /Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Release/net8.0/Marvel.Client.dll
+  Marvel.Godot -> /Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Release/Marvel.Godot.dll
+  Marvel.Godot.Tests -> /Users/michael/Source/marvel-lcg/tests/Marvel.Godot.Tests/bin/Release/net8.0/Marvel.Godot.Tests.dll
+Test run for /Users/michael/Source/marvel-lcg/tests/Marvel.Godot.Tests/bin/Release/net8.0/Marvel.Godot.Tests.dll (.NETCoreApp,Version=v8.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.54]     Marvel.Godot.Tests.ContextualFallbackTests.RecoveryExplanationRemainsAvailableWhenTheSheetIsClosedAndClearsOnNormalProgress [FAIL]
+  Failed Marvel.Godot.Tests.ContextualFallbackTests.RecoveryExplanationRemainsAvailableWhenTheSheetIsClosedAndClearsOnNormalProgress [15 ms]
+  Error Message:
+   Assert.Contains() Failure: Sub-string not found
+String:    ""
+Not found: "selection is preserved"
+  Stack Trace:
+     at Marvel.Godot.Tests.ContextualFallbackTests.RecoveryExplanationRemainsAvailableWhenTheSheetIsClosedAndClearsOnNormalProgress() in /Users/michael/Source/marvel-lcg/tests/Marvel.Godot.Tests/ContextualFallbackTests.cs:line 52
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 26 ms - Marvel.Godot.Tests.dll (net8.0)

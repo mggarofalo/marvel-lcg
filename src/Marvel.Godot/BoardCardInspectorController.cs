@@ -8,7 +8,7 @@ internal sealed class BoardCardInspectorController
 {
     private readonly Main main;
     private readonly CardInspectorFocus inspector;
-    private readonly CardInspectorStageNavigation stageNavigation;
+    private readonly CardInspectorCardNavigation cardNavigation;
     private readonly MainTabletopController tabletop;
     private int previewGeneration;
 
@@ -17,7 +17,7 @@ internal sealed class BoardCardInspectorController
         this.main = main;
         this.tabletop = tabletop;
         inspector = new CardInspectorFocus(main);
-        stageNavigation = new CardInspectorStageNavigation(
+        cardNavigation = new CardInspectorCardNavigation(
             main, (card, source, stages) => Show(card, source, pinned: true, stages: stages));
     }
 
@@ -123,12 +123,12 @@ internal sealed class BoardCardInspectorController
         detail.FocusMode = Control.FocusModeEnum.All;
         CardInspectorFocus.IgnoreMouseRecursively(detail);
         main.cardInspectorContent.AddChild(detail);
-        stageNavigation.Configure(card, source, pinned
+        cardNavigation.Configure(card, source, pinned
             ? stages ?? main.boardRender?.Inspector.For(card.TargetId) ?? []
             : []);
         HBoxContainer inspectorHeader = main.cardInspectorTitle.GetParent<HBoxContainer>();
         inspectorHeader.Visible = pinned;
-        main.cardInspectorTitle.Visible = pinned && stageNavigation.IsVisible;
+        main.cardInspectorTitle.Visible = pinned && cardNavigation.IsVisible;
         main.cardInspectorClose.Visible = pinned;
         ConfigureFrame();
         Position(card, source, pinned);
@@ -149,7 +149,7 @@ internal sealed class BoardCardInspectorController
     }
 
     internal void Input(InputEvent input) =>
-        MainBoardInputRouter.Route(main, inspector, stageNavigation, input);
+        MainBoardInputRouter.Route(main, inspector, cardNavigation, input);
 
     internal void ScheduleHide() => inspector.ScheduleHide();
     internal void BindFocus(Control control) => inspector.BindFocus(control);

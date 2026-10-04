@@ -24,7 +24,7 @@ func _first_enabled_choice(decision: Control) -> Button:
 	for button in _visible_buttons(decision):
 		if not button.disabled \
 				and button.name != "Submit" \
-				and button.text != "Pass / decline":
+				and button.name != &"Decline":
 			return button
 	return null
 
@@ -70,7 +70,7 @@ func _play(main: Control) -> Control:
 
 
 func _decision(main: Control) -> Control:
-	return _node(main, "Play/Prompt/Margin/Stack/Workbench/Action/Decision") as Control
+	return main.find_child("Decision", true, false) as Control
 
 
 func _status(main: Control) -> Label:

@@ -21,8 +21,9 @@ dotnet build "$repoRoot/src/Marvel.Godot/Marvel.Godot.csproj" --nologo
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 function Invoke-LocalSmoke {
+    param([string]$Script = "res://smoke/local_game_smoke.gd")
     $output = & $GodotBin --headless --audio-driver Dummy --path "$repoRoot/src/Marvel.Godot" `
-        --script res://smoke/local_game_smoke.gd 2>&1
+        --script $Script 2>&1
     $output | Write-Output
     if ($LASTEXITCODE -ne 0 -or (Test-GodotSmokeDiagnostics $output)) {
         throw "Godot local smoke reported an unexpected failure diagnostic."
@@ -38,6 +39,19 @@ else {
 }
 
 Remove-Item Env:MARVEL_SMOKE_TWO_PLAYER -ErrorAction SilentlyContinue
+$env:MARVEL_UI_SCALE = "100"
+$env:MARVEL_SMOKE_VIEWPORT = "1920x1080"
+$env:MARVEL_SMOKE_MOTION = "enabled"
+Invoke-LocalSmoke "res://smoke/deferred_event_smoke.gd"
+$env:MARVEL_UI_SCALE = "150"
+$env:MARVEL_SMOKE_MOTION = "disabled"
+Invoke-LocalSmoke "res://smoke/deferred_event_smoke.gd"
+$env:MARVEL_UI_SCALE = "100"
+$env:MARVEL_SMOKE_MOTION = "enabled"
+Invoke-LocalSmoke "res://smoke/repeated_commit_smoke.gd"
+$env:MARVEL_UI_SCALE = "150"
+$env:MARVEL_SMOKE_MOTION = "disabled"
+Invoke-LocalSmoke "res://smoke/repeated_commit_smoke.gd"
 foreach ($viewport in $viewports) {
     foreach ($scale in $scales) {
         $env:MARVEL_UI_SCALE = $scale

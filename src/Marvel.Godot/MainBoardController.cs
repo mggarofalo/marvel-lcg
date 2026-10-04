@@ -15,6 +15,7 @@ internal sealed class MainBoardController : IDisposable
     private readonly BoardRelationshipOverlayController relationships;
     private readonly BoardRenderLifetime renderLifetime = new();
     private readonly MainTabletopController tabletop;
+    private readonly TableInputGestureBoundary inputBoundary = new();
 
     internal MainBoardController(Main main)
     {
@@ -29,7 +30,8 @@ internal sealed class MainBoardController : IDisposable
         bool resetEvents = false,
         bool preserveEvents = false,
         GameProgressPresentation? priorProgress = null,
-        string operation = EngineProtocol.Resolve)
+        string operation = EngineProtocol.Resolve,
+        DecisionReceiptContext? acceptedReceipt = null)
     {
         int renderGeneration = renderLifetime.Advance();
         Outcome previousOutcome = main.CurrentGame?.World?.Outcome ?? Outcome.Unfinished;
@@ -45,7 +47,8 @@ internal sealed class MainBoardController : IDisposable
         RenderCurrentResponse(response, world, renderGeneration);
         IReadOnlyList<EventPresentation> reportNarrative = BoardResponsePresentation.Update(
             main,
-            response, previousOutcome, priorHistory, resetEvents, preserveEvents, operation);
+            response, previousOutcome, priorHistory,
+            new BoardResponsePresentation.Options(resetEvents, preserveEvents, operation, acceptedReceipt));
         main.layoutController.ApplyResponsivePlayLayout();
         FinishRender(response, world, priorProgress, operation, reportNarrative, renderGeneration);
     }
@@ -59,7 +62,7 @@ internal sealed class MainBoardController : IDisposable
         main.board.Visible = true;
         RenderBoard(world, response.Prompt, renderGeneration);
         main.syncStatus.Visible = true;
-        main.syncStatus.Text = $"✓ Synced · r{response.Revision}";
+        main.syncStatus.Text = $"Last synced · r{response.Revision}";
         main.synchronize.Visible = true;
         main.RenderPromptSummary(response.Prompt, world);
         main.decisions.Render(response.Prompt, world, response.Revision);
@@ -114,6 +117,9 @@ internal sealed class MainBoardController : IDisposable
         BoardRenderResult rendered = tabletop.Render(prompt, viewport)
             ?? RenderCompactBoard();
         main.boardRender = rendered;
+        rendered.BindMotion(() => main.eventMotion.ButtonPressed);
+        rendered.RegisterContextualWorld(world);
+        rendered.PresentLastResult(main.lastResultSummary.Text);
         rendered.CardActivated += cardInspector.Toggle;
         rendered.CardPreviewEntered += cardInspector.PreviewCardAfterDelay;
         rendered.CardPreviewExited += cardInspector.LeaveCardPreview;
@@ -153,7 +159,15 @@ internal sealed class MainBoardController : IDisposable
         cardInspector.Toggle(card, source);
     internal void ShowCardInspector(BoardCardPresentation card, Control? source, bool pinned) =>
         cardInspector.Show(card, source, pinned);
-    internal void Input(InputEvent input) => cardInspector.Input(input);
+    internal void Input(InputEvent input)
+    {
+        if (main.CurrentGame is not null && inputBoundary.Consume(input))
+        {
+            main.GetViewport().SetInputAsHandled();
+            return;
+        }
+        cardInspector.Input(input);
+    }
     internal void ScheduleCardInspectorHide() => cardInspector.ScheduleHide();
     internal void BindCardInspectorFocus(Control control) => cardInspector.BindFocus(control);
     internal bool CardInspectorHasFocus() => cardInspector.HasFocus();

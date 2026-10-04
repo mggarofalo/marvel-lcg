@@ -1,0 +1,44 @@
+Test run for /Users/michael/Source/marvel-lcg/tests/Marvel.Acceptance.Tests/bin/Release/net8.0/Marvel.Acceptance.Tests.dll (.NETCoreApp,Version=v8.0)
+Test run for /Users/michael/Source/marvel-lcg/tests/Marvel.Content.Tests/bin/Release/net8.0/Marvel.Content.Tests.dll (.NETCoreApp,Version=v8.0)
+Test run for /Users/michael/Source/marvel-lcg/tests/Marvel.Core.Tests/bin/Release/net8.0/Marvel.Core.Tests.dll (.NETCoreApp,Version=v8.0)
+Test run for /Users/michael/Source/marvel-lcg/tests/Marvel.Decisions.Tests/bin/Release/net8.0/Marvel.Decisions.Tests.dll (.NETCoreApp,Version=v8.0)
+Test run for /Users/michael/Source/marvel-lcg/tests/Marvel.Architecture.Tests/bin/Release/net8.0/Marvel.Architecture.Tests.dll (.NETCoreApp,Version=v8.0)
+Test run for /Users/michael/Source/marvel-lcg/tests/Marvel.Godot.Tests/bin/Release/net8.0/Marvel.Godot.Tests.dll (.NETCoreApp,Version=v8.0)
+Test run for /Users/michael/Source/marvel-lcg/tests/Marvel.Server.Tests/bin/Release/net8.0/Marvel.Server.Tests.dll (.NETCoreApp,Version=v8.0)
+Test run for /Users/michael/Source/marvel-lcg/tests/Marvel.Release.Tests/bin/Release/net8.0/Marvel.Release.Tests.dll (.NETCoreApp,Version=v8.0)
+A total of 1 test files matched the specified pattern.
+Test run for /Users/michael/Source/marvel-lcg/tests/Marvel.Session.Tests/bin/Release/net8.0/Marvel.Session.Tests.dll (.NETCoreApp,Version=v8.0)
+Test run for /Users/michael/Source/marvel-lcg/tests/Marvel.Rules.Tests/bin/Release/net8.0/Marvel.Rules.Tests.dll (.NETCoreApp,Version=v8.0)
+A total of 1 test files matched the specified pattern.
+A total of 1 test files matched the specified pattern.
+A total of 1 test files matched the specified pattern.
+A total of 1 test files matched the specified pattern.
+A total of 1 test files matched the specified pattern.
+A total of 1 test files matched the specified pattern.
+A total of 1 test files matched the specified pattern.
+A total of 1 test files matched the specified pattern.
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:    32, Skipped:     0, Total:    32, Duration: 139 ms - Marvel.Release.Tests.dll (net8.0)
+Test run for /Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/bin/Release/net8.0/Marvel.View.Tests.dll (.NETCoreApp,Version=v8.0)
+
+Passed!  - Failed:     0, Passed:    43, Skipped:     0, Total:    43, Duration: 519 ms - Marvel.Session.Tests.dll (net8.0)
+
+Passed!  - Failed:     0, Passed:    49, Skipped:     0, Total:    49, Duration: 472 ms - Marvel.Core.Tests.dll (net8.0)
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:    41, Skipped:     0, Total:    41, Duration: 836 ms - Marvel.Decisions.Tests.dll (net8.0)
+
+Passed!  - Failed:     0, Passed:   132, Skipped:     0, Total:   132, Duration: 678 ms - Marvel.View.Tests.dll (net8.0)
+
+Passed!  - Failed:     0, Passed:    26, Skipped:     0, Total:    26, Duration: 8 s - Marvel.Architecture.Tests.dll (net8.0)
+
+Passed!  - Failed:     0, Passed:   778, Skipped:     0, Total:   778, Duration: 10 s - Marvel.Rules.Tests.dll (net8.0)
+
+Passed!  - Failed:     0, Passed:   347, Skipped:     0, Total:   347, Duration: 18 s - Marvel.Godot.Tests.dll (net8.0)
+
+Passed!  - Failed:     0, Passed:   186, Skipped:     0, Total:   186, Duration: 23 s - Marvel.Server.Tests.dll (net8.0)
+
+Passed!  - Failed:     0, Passed:    80, Skipped:     0, Total:    80, Duration: 26 s - Marvel.Acceptance.Tests.dll (net8.0)
+
+Passed!  - Failed:     0, Passed:  1728, Skipped:     0, Total:  1728, Duration: 40 s - Marvel.Content.Tests.dll (net8.0)

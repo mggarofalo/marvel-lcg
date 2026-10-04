@@ -67,7 +67,7 @@ public sealed class EventLogFormatterTests
         string formatted = EventLogFormatter.FormatChronologySection(
             entries, "f0a030");
 
-        Assert.Contains("EVENT CHRONOLOGY", formatted, StringComparison.Ordinal);
+        Assert.DoesNotContain("EVENT CHRONOLOGY", formatted, StringComparison.Ordinal);
         Assert.Contains("Spider-Man changed form.", formatted, StringComparison.Ordinal);
     }
 }

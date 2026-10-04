@@ -20,44 +20,9 @@ internal static class BoardInteractionControlProjection
         {
             AddActionControls(controls, prompt);
         }
-        AddCostControls(controls, composer);
         AddTargetControls(controls, composer);
         AddGeneratorControls(controls, composer);
-        AddSubmitControl(controls, composer);
         return controls;
-    }
-
-    private static void AddCostControls(
-        List<CardInteractionControlDescriptor> controls, DecisionComposer composer)
-    {
-        if (composer.Selected is not { CostOptions.Count: > 1 } selected)
-        {
-            return;
-        }
-        for (int index = 0; index < selected.CostOptions.Count; index++)
-        {
-            string marker = composer.SelectedCost == index ? "✓" : "◇";
-            controls.Add(new CardInteractionControlDescriptor(
-                selected.AnchorId,
-                CardInteractionIntent.Cost,
-                $"{marker} COST {index + 1}",
-                CardInteractionCue.OfferedAction,
-                index));
-        }
-    }
-
-    private static void AddSubmitControl(
-        List<CardInteractionControlDescriptor> controls, DecisionComposer composer)
-    {
-        if (composer.Selected is not { } selected || !composer.Progress().IsReady)
-        {
-            return;
-        }
-        controls.Add(new CardInteractionControlDescriptor(
-            selected.AnchorId,
-            CardInteractionIntent.Submit,
-            "EXECUTE",
-            CardInteractionCue.OfferedAction));
     }
 
     private static void AddTargetControls(
@@ -77,10 +42,16 @@ internal static class BoardInteractionControlProjection
             controls.Add(new CardInteractionControlDescriptor(
                 target,
                 CardInteractionIntent.Target,
-                selected ? "✓ TARGET" : "◇ TARGET",
-                selected ? CardInteractionCue.SelectedTarget : CardInteractionCue.LegalTarget));
+                TargetLabel(composer, selected),
+                selected ? CardInteractionCue.SelectedTarget : CardInteractionCue.LegalTarget,
+                Description: request.Details?.GetValueOrDefault(target)));
         }
     }
+
+    private static string TargetLabel(DecisionComposer composer, bool selected) =>
+        composer.Selected?.Verb == Marvel.Rules.Play.Game.EndPhaseVerb
+            ? selected ? "✓ Discard staged" : "Stage discard"
+            : selected ? "✓ Chosen" : "Select target";
 
     private static void AddActionControls(
         List<CardInteractionControlDescriptor> controls, PromptPresentation prompt)
@@ -94,11 +65,20 @@ internal static class BoardInteractionControlProjection
             controls.Add(new CardInteractionControlDescriptor(
                 actions.Key,
                 CardInteractionIntent.Action,
-                actions.Count() == 1 ? "◇ ACTION" : $"◇ CHOOSE ACTION ({actions.Count()})",
-                CardInteractionCue.OfferedAction));
+                actions.Count() == 1
+                    ? ActionEntry(actions.Single())
+                    : $"Actions · {actions.Count()}",
+                CardInteractionCue.OfferedAction,
+                Description: actions.Count() == 1 ? DecisionCopy.ActionSummary(actions.Single()) : null));
         }
     }
 
+
+    private static string ActionEntry(AffordancePresentation action) => action.PlaysCard ? "Play" : action.Verb switch
+    {
+        "Attack" or "Thwart" or "Recover" or "Defend" or "Defense" or "Play" => action.Verb,
+        _ => PromptPresentation.Words(action.DisplayLabel ?? action.Label),
+    };
 
     private static void AddGeneratorControls(
         List<CardInteractionControlDescriptor> controls, DecisionComposer composer)
@@ -122,7 +102,7 @@ internal static class BoardInteractionControlProjection
             controls.Add(new CardInteractionControlDescriptor(
                 generator,
                 CardInteractionIntent.Generator,
-                selectedGenerator ? "✓ PAY" : "◇ PAY",
+                selectedGenerator ? "✓ Resource selected" : "Use resource",
                 selectedGenerator
                     ? CardInteractionCue.SelectedGenerator
                     : CardInteractionCue.LegalGenerator));

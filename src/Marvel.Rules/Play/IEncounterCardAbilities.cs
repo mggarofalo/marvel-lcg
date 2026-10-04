@@ -14,7 +14,7 @@ public interface IEncounterCardAbilities
     IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player);
     IReadOnlyList<GameEvent> WhenRevealed(World world, Card card, int player, Occurrence occurrence);
     IReadOnlyList<PendingAbility> WhenRevealedAbilities(World world, Card card, int player);
-    bool CancelWhenRevealed(World world, Card card, int player, Occurrence occurrence);
+    WhenRevealedCanceled? CancelWhenRevealed(World world, Card card, int player, Occurrence occurrence);
     IReadOnlyList<GameEvent> Boost(World world, Card card, int player);
 }
 #pragma warning restore CS1591

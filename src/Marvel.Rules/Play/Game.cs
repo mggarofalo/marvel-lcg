@@ -159,51 +159,7 @@ public sealed class Game
     /// at the root turn menu rather than inside a dependent question.
     /// </para>
     /// </remarks>
-    public Prompt? PromptFor(int player)
-    {
-        if (player < 0 || player >= world.Players)
-        {
-            throw new ArgumentOutOfRangeException(nameof(player));
-        }
-
-        if (Pending is not { } pending || world.Seats[player].Eliminated)
-        {
-            return null;
-        }
-
-        if (!IsRootTurn())
-        {
-            return pending.Player == player ? pending : null;
-        }
-
-        var options = pending.Affordances.Where(option => OfferedTo(option, pending, player)).ToList();
-        if (options.Count == 0 && pending.Player != player)
-        {
-            return null;
-        }
-
-        return pending with
-        {
-            Player = player,
-            Label = PromptLabel(pending, player),
-            // An off-turn menu is an invitation to act, not a sequential
-            // question. Declining it must not end the active player's turn.
-            Cancellable = pending.Player == player && pending.Cancellable,
-            Affordances = options,
-        };
-    }
-
-    private bool IsRootTurn() => Phase == GamePhase.PlayerTurn
-        && asking == Asker.Game && !endingPlayerPhase;
-
-    private static bool OfferedTo(Affordance option, Prompt pending, int player) =>
-        string.Equals(option.Verb, ActionVerb, StringComparison.Ordinal)
-            ? option.AnchorPlayer == player : pending.Player == player;
-
-    private string PromptLabel(Prompt pending, int player) => pending.Player == player
-        ? pending.Label
-        : $"{world.Seats[player].Name} may act during "
-            + $"{world.Seats[pending.Player].Name}'s turn";
+    public Prompt? PromptFor(int player) => GameSeatPrompts.For(this, player);
 
     /// <summary>Opens a dealt board and asks the first question.</summary>
     /// <param name="world">A world from <see cref="WorldSetup.Deal"/>.</param>

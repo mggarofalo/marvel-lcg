@@ -6,6 +6,15 @@ namespace Marvel.Godot.Tests;
 
 public sealed class DecisionCopyTests
 {
+    [Theory]
+    [InlineData("Choose option", "Choose Rhino", "Choose Rhino")]
+    [InlineData("Choose", "Choose Black Cat", "Choose Black Cat")]
+    [InlineData("Choose option", "Rhino", "Choose Rhino")]
+    [InlineData("Choose_Option", "Rhino", "Choose Rhino")]
+    [InlineData("Attack", "Do something else", "Attack")]
+    public void StructuredChoiceCommitUsesTheOfferedChoiceName(string verb, string label, string expected) =>
+        Assert.Equal(expected, DecisionCopy.GenericCommit(verb, label, "Other card"));
+
     [Fact]
     public void CardActionsUseOneReadableName()
     {
@@ -63,6 +72,32 @@ public sealed class DecisionCopyTests
         Assert.Equal(
             "Play Web-Shooter\nCurrent cost 0; printed cost 1.",
             DecisionCopy.ActionSummary(action));
+    }
+
+    [Fact]
+    public void NamedCopiesRemainDistinctWhileTheirCostsStateAndEffectStayReadable()
+    {
+        var action = new AffordancePresentation(1, "Action", "Remove 1 threat", "Action",
+            "Surveillance Team", 7, 0, null, "", [])
+        {
+            SourceName = "Surveillance Team (copy 2 of 2)",
+            SourceState = "Ready · 3 snoop counters",
+            CostDescription = "Exhaust Surveillance Team; Remove 1 snoop counter",
+        };
+
+        Assert.Equal("Use Surveillance Team (copy 2 of 2)", DecisionCopy.Choice(action));
+        Assert.Contains("3 snoop counters", DecisionCopy.ActionSummary(action));
+        Assert.Contains("Costs: Exhaust Surveillance Team; Remove 1 snoop counter", DecisionCopy.ActionSummary(action));
+        Assert.EndsWith("Remove 1 threat", DecisionCopy.ActionSummary(action));
+    }
+
+    [Fact]
+    public void PlayingAnActionEventUsesTheEnginePlayIntentRegardlessOfItsAbilityLabel()
+    {
+        var action = new AffordancePresentation(1, "Swinging Web Kick", "Attack an enemy", "Action",
+            "Swinging Web Kick", 7, 0, null, "", []) { PlaysCard = true };
+
+        Assert.Equal("Play Swinging Web Kick", DecisionCopy.Choice(action));
     }
 
     [Fact]

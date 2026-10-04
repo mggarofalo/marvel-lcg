@@ -1,0 +1,68 @@
+  Determining projects to restore...
+  Restored /Users/michael/Source/marvel-lcg/src/Marvel.Godot/Marvel.Godot.csproj (in 107 ms).
+  Restored /Users/michael/Source/marvel-lcg/tests/Marvel.Godot.Tests/Marvel.Godot.Tests.csproj (in 111 ms).
+  29 of 31 projects are up-to-date for restore.
+  Marvel.Core -> /Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Debug/net8.0/Marvel.Core.dll
+  Marvel.Behavior.Index -> /Users/michael/Source/marvel-lcg/tools/Marvel.Behavior.Index/bin/Debug/net8.0/Marvel.Behavior.Index.dll
+  Marvel.MarvelCdb.Harvest -> /Users/michael/Source/marvel-lcg/tools/Marvel.MarvelCdb.Harvest/bin/Debug/net8.0/Marvel.MarvelCdb.Harvest.dll
+  Marvel.Rules.Harvest -> /Users/michael/Source/marvel-lcg/tools/Marvel.Rules.Harvest/bin/Debug/net8.0/Marvel.Rules.Harvest.dll
+  Marvel.Cards.Extract -> /Users/michael/Source/marvel-lcg/tools/Marvel.Cards.Extract/bin/Debug/net8.0/Marvel.Cards.Extract.dll
+  Marvel.Rules.Packs.Harvest -> /Users/michael/Source/marvel-lcg/tools/Marvel.Rules.Packs.Harvest/bin/Debug/net8.0/Marvel.Rules.Packs.Harvest.dll
+  Marvel.Rules.Index -> /Users/michael/Source/marvel-lcg/tools/Marvel.Rules.Index/bin/Debug/net8.0/Marvel.Rules.Index.dll
+  Marvel.Rulings.Harvest -> /Users/michael/Source/marvel-lcg/tools/Marvel.Rulings.Harvest/bin/Debug/net8.0/Marvel.Rulings.Harvest.dll
+  Marvel.Core.Tests -> /Users/michael/Source/marvel-lcg/tests/Marvel.Core.Tests/bin/Debug/net8.0/Marvel.Core.Tests.dll
+  Marvel.Rules -> /Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Rules.dll
+  Marvel.Session -> /Users/michael/Source/marvel-lcg/src/Marvel.Session/bin/Debug/net8.0/Marvel.Session.dll
+  Marvel.Decisions -> /Users/michael/Source/marvel-lcg/src/Marvel.Decisions/bin/Debug/net8.0/Marvel.Decisions.dll
+  Marvel.View -> /Users/michael/Source/marvel-lcg/src/Marvel.View/bin/Debug/net8.0/Marvel.View.dll
+  Marvel.Content -> /Users/michael/Source/marvel-lcg/src/Marvel.Content/bin/Debug/net8.0/Marvel.Content.dll
+  Marvel.Session.Tests -> /Users/michael/Source/marvel-lcg/tests/Marvel.Session.Tests/bin/Debug/net8.0/Marvel.Session.Tests.dll
+  Marvel.Cards -> /Users/michael/Source/marvel-lcg/src/Marvel.Cards/bin/Debug/net8.0/Marvel.Cards.dll
+/usr/local/share/dotnet/sdk/10.0.400/Microsoft.Common.CurrentVersion.targets(5096,5): error MSB3030: Could not copy the file "/Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Debug/net8.0/Marvel.Core.dll" because it was not found. [/Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/Marvel.View.Tests.csproj]
+/usr/local/share/dotnet/sdk/10.0.400/Microsoft.Common.CurrentVersion.targets(5096,5): error MSB3030: Could not copy the file "/Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Debug/net8.0/Marvel.Core.pdb" because it was not found. [/Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/Marvel.View.Tests.csproj]
+/usr/local/share/dotnet/sdk/10.0.400/Microsoft.Common.CurrentVersion.targets(5096,5): error MSB3030: Could not copy the file "/Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Debug/net8.0/Marvel.Core.xml" because it was not found. [/Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/Marvel.View.Tests.csproj]
+/usr/local/share/dotnet/sdk/10.0.400/Microsoft.Common.CurrentVersion.targets(5096,5): error MSB3030: Could not copy the file "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Rules.pdb" because it was not found. [/Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/Marvel.View.Tests.csproj]
+/usr/local/share/dotnet/sdk/10.0.400/Microsoft.Common.CurrentVersion.targets(5096,5): error MSB3030: Could not copy the file "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Rules.xml" because it was not found. [/Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/Marvel.View.Tests.csproj]
+/usr/local/share/dotnet/sdk/10.0.400/Microsoft.Common.CurrentVersion.targets(5096,5): error MSB3030: Could not copy the file "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Rules.dll" because it was not found. [/Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/Marvel.View.Tests.csproj]
+/usr/local/share/dotnet/sdk/10.0.400/Microsoft.Common.CurrentVersion.targets(5096,5): error MSB3030: Could not copy the file "/Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Debug/net8.0/Marvel.Core.dll" because it was not found. [/Users/michael/Source/marvel-lcg/tests/Marvel.Rules.Tests/Marvel.Rules.Tests.csproj]
+/usr/local/share/dotnet/sdk/10.0.400/Microsoft.Common.CurrentVersion.targets(5096,5): error MSB3030: Could not copy the file "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Rules.dll" because it was not found. [/Users/michael/Source/marvel-lcg/tests/Marvel.Rules.Tests/Marvel.Rules.Tests.csproj]
+/usr/local/share/dotnet/sdk/10.0.400/Microsoft.Common.CurrentVersion.targets(5096,5): error MSB3030: Could not copy the file "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Rules.pdb" because it was not found. [/Users/michael/Source/marvel-lcg/tests/Marvel.Rules.Tests/Marvel.Rules.Tests.csproj]
+/usr/local/share/dotnet/sdk/10.0.400/Microsoft.Common.CurrentVersion.targets(5096,5): error MSB3030: Could not copy the file "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Rules.xml" because it was not found. [/Users/michael/Source/marvel-lcg/tests/Marvel.Rules.Tests/Marvel.Rules.Tests.csproj]
+/usr/local/share/dotnet/sdk/10.0.400/Microsoft.Common.CurrentVersion.targets(5096,5): error MSB3030: Could not copy the file "/Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Debug/net8.0/Marvel.Core.pdb" because it was not found. [/Users/michael/Source/marvel-lcg/tests/Marvel.Rules.Tests/Marvel.Rules.Tests.csproj]
+/usr/local/share/dotnet/sdk/10.0.400/Microsoft.Common.CurrentVersion.targets(5096,5): error MSB3030: Could not copy the file "/Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Debug/net8.0/Marvel.Core.xml" because it was not found. [/Users/michael/Source/marvel-lcg/tests/Marvel.Rules.Tests/Marvel.Rules.Tests.csproj]
+CSC : error CS0006: Metadata file '/Users/michael/Source/marvel-lcg/src/Marvel.Core/obj/Debug/net8.0/ref/Marvel.Core.dll' could not be found [/Users/michael/Source/marvel-lcg/tools/Marvel.Behavior.Run/Marvel.Behavior.Run.csproj]
+CSC : error CS0006: Metadata file '/Users/michael/Source/marvel-lcg/src/Marvel.Rules/obj/Debug/net8.0/ref/Marvel.Rules.dll' could not be found [/Users/michael/Source/marvel-lcg/tools/Marvel.Behavior.Run/Marvel.Behavior.Run.csproj]
+CSC : error CS0006: Metadata file '/Users/michael/Source/marvel-lcg/src/Marvel.Core/obj/Debug/net8.0/ref/Marvel.Core.dll' could not be found [/Users/michael/Source/marvel-lcg/src/Marvel.Sim/Marvel.Sim.csproj]
+CSC : error CS0006: Metadata file '/Users/michael/Source/marvel-lcg/src/Marvel.Rules/obj/Debug/net8.0/ref/Marvel.Rules.dll' could not be found [/Users/michael/Source/marvel-lcg/src/Marvel.Sim/Marvel.Sim.csproj]
+CSC : error CS0006: Metadata file '/Users/michael/Source/marvel-lcg/src/Marvel.Core/obj/Debug/net8.0/ref/Marvel.Core.dll' could not be found [/Users/michael/Source/marvel-lcg/src/Marvel.Server/Marvel.Server.csproj]
+CSC : error CS0006: Metadata file '/Users/michael/Source/marvel-lcg/src/Marvel.Rules/obj/Debug/net8.0/ref/Marvel.Rules.dll' could not be found [/Users/michael/Source/marvel-lcg/src/Marvel.Server/Marvel.Server.csproj]
+  Marvel.Core -> /Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Debug/net8.0/Marvel.Core.dll
+  Marvel.Rules -> /Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Rules.dll
+  Marvel.Server -> /Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Debug/net8.0/Marvel.Server.dll
+  Marvel.Client -> /Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.Client.dll
+  Marvel.Godot -> /Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Godot.dll
+
+Build FAILED.
+
+/usr/local/share/dotnet/sdk/10.0.400/Microsoft.Common.CurrentVersion.targets(5096,5): error MSB3030: Could not copy the file "/Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Debug/net8.0/Marvel.Core.dll" because it was not found. [/Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/Marvel.View.Tests.csproj]
+/usr/local/share/dotnet/sdk/10.0.400/Microsoft.Common.CurrentVersion.targets(5096,5): error MSB3030: Could not copy the file "/Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Debug/net8.0/Marvel.Core.pdb" because it was not found. [/Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/Marvel.View.Tests.csproj]
+/usr/local/share/dotnet/sdk/10.0.400/Microsoft.Common.CurrentVersion.targets(5096,5): error MSB3030: Could not copy the file "/Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Debug/net8.0/Marvel.Core.xml" because it was not found. [/Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/Marvel.View.Tests.csproj]
+/usr/local/share/dotnet/sdk/10.0.400/Microsoft.Common.CurrentVersion.targets(5096,5): error MSB3030: Could not copy the file "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Rules.pdb" because it was not found. [/Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/Marvel.View.Tests.csproj]
+/usr/local/share/dotnet/sdk/10.0.400/Microsoft.Common.CurrentVersion.targets(5096,5): error MSB3030: Could not copy the file "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Rules.xml" because it was not found. [/Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/Marvel.View.Tests.csproj]
+/usr/local/share/dotnet/sdk/10.0.400/Microsoft.Common.CurrentVersion.targets(5096,5): error MSB3030: Could not copy the file "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Rules.dll" because it was not found. [/Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/Marvel.View.Tests.csproj]
+/usr/local/share/dotnet/sdk/10.0.400/Microsoft.Common.CurrentVersion.targets(5096,5): error MSB3030: Could not copy the file "/Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Debug/net8.0/Marvel.Core.dll" because it was not found. [/Users/michael/Source/marvel-lcg/tests/Marvel.Rules.Tests/Marvel.Rules.Tests.csproj]
+/usr/local/share/dotnet/sdk/10.0.400/Microsoft.Common.CurrentVersion.targets(5096,5): error MSB3030: Could not copy the file "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Rules.dll" because it was not found. [/Users/michael/Source/marvel-lcg/tests/Marvel.Rules.Tests/Marvel.Rules.Tests.csproj]
+/usr/local/share/dotnet/sdk/10.0.400/Microsoft.Common.CurrentVersion.targets(5096,5): error MSB3030: Could not copy the file "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Rules.pdb" because it was not found. [/Users/michael/Source/marvel-lcg/tests/Marvel.Rules.Tests/Marvel.Rules.Tests.csproj]
+/usr/local/share/dotnet/sdk/10.0.400/Microsoft.Common.CurrentVersion.targets(5096,5): error MSB3030: Could not copy the file "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Rules.xml" because it was not found. [/Users/michael/Source/marvel-lcg/tests/Marvel.Rules.Tests/Marvel.Rules.Tests.csproj]
+/usr/local/share/dotnet/sdk/10.0.400/Microsoft.Common.CurrentVersion.targets(5096,5): error MSB3030: Could not copy the file "/Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Debug/net8.0/Marvel.Core.pdb" because it was not found. [/Users/michael/Source/marvel-lcg/tests/Marvel.Rules.Tests/Marvel.Rules.Tests.csproj]
+/usr/local/share/dotnet/sdk/10.0.400/Microsoft.Common.CurrentVersion.targets(5096,5): error MSB3030: Could not copy the file "/Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Debug/net8.0/Marvel.Core.xml" because it was not found. [/Users/michael/Source/marvel-lcg/tests/Marvel.Rules.Tests/Marvel.Rules.Tests.csproj]
+CSC : error CS0006: Metadata file '/Users/michael/Source/marvel-lcg/src/Marvel.Core/obj/Debug/net8.0/ref/Marvel.Core.dll' could not be found [/Users/michael/Source/marvel-lcg/tools/Marvel.Behavior.Run/Marvel.Behavior.Run.csproj]
+CSC : error CS0006: Metadata file '/Users/michael/Source/marvel-lcg/src/Marvel.Rules/obj/Debug/net8.0/ref/Marvel.Rules.dll' could not be found [/Users/michael/Source/marvel-lcg/tools/Marvel.Behavior.Run/Marvel.Behavior.Run.csproj]
+CSC : error CS0006: Metadata file '/Users/michael/Source/marvel-lcg/src/Marvel.Core/obj/Debug/net8.0/ref/Marvel.Core.dll' could not be found [/Users/michael/Source/marvel-lcg/src/Marvel.Sim/Marvel.Sim.csproj]
+CSC : error CS0006: Metadata file '/Users/michael/Source/marvel-lcg/src/Marvel.Rules/obj/Debug/net8.0/ref/Marvel.Rules.dll' could not be found [/Users/michael/Source/marvel-lcg/src/Marvel.Sim/Marvel.Sim.csproj]
+CSC : error CS0006: Metadata file '/Users/michael/Source/marvel-lcg/src/Marvel.Core/obj/Debug/net8.0/ref/Marvel.Core.dll' could not be found [/Users/michael/Source/marvel-lcg/src/Marvel.Server/Marvel.Server.csproj]
+CSC : error CS0006: Metadata file '/Users/michael/Source/marvel-lcg/src/Marvel.Rules/obj/Debug/net8.0/ref/Marvel.Rules.dll' could not be found [/Users/michael/Source/marvel-lcg/src/Marvel.Server/Marvel.Server.csproj]
+    0 Warning(s)
+    18 Error(s)
+
+Time Elapsed 00:00:05.55

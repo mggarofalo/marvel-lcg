@@ -123,16 +123,8 @@ public static class Attack
     /// attack, <c>.4.6</c> locks defense abilities to the player already
     /// defending, whether the defender is that player's identity or ally.
     /// </remarks>
-    public static bool CanUseDefenseAbility(World world, int player)
-    {
-        ArgumentNullException.ThrowIfNull(world);
-        if (world.Attack is not { Defender: >= 0 } attack)
-        {
-            return true;
-        }
-
-        return world.Cards[attack.Defender].Area.PlayArea == PlayArea.Of(player);
-    }
+    public static bool CanUseDefenseAbility(World world, int player) =>
+        AttackAbilityDefense.CanUseDefenseAbility(world, player);
 
     /// <summary>Establish the roles created by a defense-labeled ability.</summary>
     /// <remarks>
@@ -144,52 +136,8 @@ public static class Attack
         => BeginDefenseAbility(world, player, world.Seats[player].IdentityCard);
 
     /// <summary>Establish the roles for a defense performed by an attributed card.</summary>
-    public static void BeginDefenseAbility(World world, int player, Card performer)
-    {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(performer);
-        if (world.Attack is not { } attack)
-        {
-            // `rr:defend-defense.4.8`: the label may resolve outside an attack
-            // without making an identity the defender of anything.
-            return;
-        }
-
-        if (!CanUseDefenseAbility(world, player))
-        {
-            throw new RulesNotImplementedException(
-                $"player {player} cannot defend an attack already defended by another player");
-        }
-
-        if (attack.Defender >= 0)
-        {
-            // `rr:defend-defense.4.7`: a defense ability remains legal while
-            // this player's ally defends, but the identity does not replace it.
-            return;
-        }
-
-        bool character = FacedownDrones.Kind(performer, world.Facts) is
-            CardKind.Hero or CardKind.AlterEgo or CardKind.Ally;
-        if (!character)
-        {
-            // `rr:support.3` excludes support defenses from the identity. A
-            // support is not a character, so it performs the labeled effect
-            // without becoming the defending character of the attack.
-            return;
-        }
-
-        world.Attack = attack with
-        {
-            Defender = performer.ObjectId,
-            Target = performer.ObjectId,
-            Player = player,
-            BasicDefense = false,
-        };
-        if (world.Activation is { Attacking: true } activation)
-        {
-            world.Activation = activation with { Player = player };
-        }
-    }
+    public static void BeginDefenseAbility(World world, int player, Card performer) =>
+        AttackAbilityDefense.BeginDefenseAbility(world, player, performer);
 
     /// <summary>Whether a card instruction can declare this character the defender.</summary>
     /// <remarks>
@@ -201,25 +149,8 @@ public static class Attack
     /// declaration, so naming that same character remains legal.
     /// </remarks>
     public static bool CanDeclareByAbility(
-        World world, ICardFacts facts, Card defender, int replaceableDefender = -1)
-    {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(facts);
-        ArgumentNullException.ThrowIfNull(defender);
-
-        if (world.Attack is not { } attack
-            || !DeckTypes.IsInPlay(defender.Area.Type)
-            || defender.Area.PlayArea.Player < 0)
-        {
-            return false;
-        }
-
-        var kind = FacedownDrones.Kind(defender, facts);
-        return kind is CardKind.Hero or CardKind.Ally
-            && (attack.Defender < 0
-                || attack.Defender == defender.ObjectId
-                || attack.Defender == replaceableDefender);
-    }
+        World world, ICardFacts facts, Card defender, int replaceableDefender = -1) =>
+        AttackAbilityDefense.CanDeclareByAbility(world, facts, defender, replaceableDefender);
 
     /// <summary>Apply a card instruction that declares a hero or ally the defender.</summary>
     /// <remarks>
@@ -231,48 +162,8 @@ public static class Attack
     /// without exhausting even when the character is already exhausted.
     /// </remarks>
     public static void DeclareByAbility(
-        World world, ICardFacts facts, Card defender, int replaceableDefender = -1)
-    {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(facts);
-        ArgumentNullException.ThrowIfNull(defender);
-
-        if (!CanDeclareByAbility(world, facts, defender, replaceableDefender))
-        {
-            throw new RulesNotImplementedException(
-                $"card {defender.ObjectId} cannot be declared the defender of the current attack");
-        }
-
-        var attack = Current(world);
-        if (attack.Defender >= 0
-            && attack.Defender == replaceableDefender
-            && attack.Defender != defender.ObjectId)
-        {
-            // Mutant Protectors is the first printed shape: its defense label
-            // makes the identity the defender, then its text declares an ally.
-            // The official ruling retains that identity as the non-basic
-            // defender if the ally leaves before damage. A bounded effect keeps
-            // that provenance saveable without adding a second defender role.
-            world.Effects.Register(new ContinuousEffect(
-                EffectSource.LastingEffect,
-                Kind: DefenseFallback,
-                Amount: attack.Defender,
-                Affects: defender.ObjectId,
-                Lasts: Duration.UntilEndOf(TimingPoints.EndOfAttack)));
-        }
-        int player = defender.Area.PlayArea.Player;
-        world.Attack = attack with
-        {
-            Defender = defender.ObjectId,
-            Target = defender.ObjectId,
-            Player = player,
-            BasicDefense = FacedownDrones.Kind(defender, facts) == CardKind.Hero,
-        };
-        if (world.Activation is { Attacking: true } activation)
-        {
-            world.Activation = activation with { Player = player };
-        }
-    }
+        World world, ICardFacts facts, Card defender, int replaceableDefender = -1) =>
+        AttackAbilityDefense.DeclareByAbility(world, facts, defender, replaceableDefender);
 
     /// <summary>
     /// The attack initiates: it targets a player, and its steps go on the
@@ -289,75 +180,8 @@ public static class Attack
     /// <param name="step">The attack step, whose subject is the attacker.</param>
     /// <param name="events">Where to record what happened.</param>
     public static void Initiate(
-        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
-    {
-        ArgumentNullException.ThrowIfNull(world);
-        ArgumentNullException.ThrowIfNull(facts);
-        ArgumentNullException.ThrowIfNull(events);
-
-        // `rr:stun-stunned.1`: "**Forced Interrupt**: when this character would
-        // attack, remove each stunned status card from it instead." *Instead*
-        // -- so the attack does not happen at all, and none of its six steps is
-        // scheduled. No boost card is given and no defender is asked for.
-        if (BasicPowerStatus.Cancelled(
-            world, facts, world.Cards[step.Subject], Statuses.Stunned, events))
-        {
-            CancelPrepared(world, step.Subject);
-            world.PendingAdditionalAttackPlayers = [];
-            return;
-        }
-
-        // `rr:attack-enemy-activation.1` -- against both a player and a
-        // character, and `.1.1` -- "normally the attacked character
-        // is the player's hero, but abilities can instead cause an enemy to
-        // attack a player's alter-ego or an ally that player controls", and
-        // `rr:attacks-against-allies.1` keeps the player attacked either way,
-        // so the seat is unchanged and only the character moves.
-        Prepare(world, facts, step);
-        var additional = world.PendingAdditionalAttackPlayers;
-        world.PendingAdditionalAttackPlayers = [];
-        world.Attack = Current(world) with { AdditionalPlayers = additional };
-
-        // `rr:activation` -- "whenever an enemy attacks or schemes, it is
-        // considered to have activated". The umbrella, which a scheme sets too;
-        // `world.Attack` is the six steps below it.
-        world.Activation ??= new EnemyActivation(
-            step.Subject, step.Seat, Attacking: true, Id: step.ActivationId);
-
-        world.Agenda.Then(new PhaseStep(
-            Steps.GiveBoostCard, step.Round, 1, Index: step.Seat, Subject: step.Subject,
-            ActivationId: step.ActivationId));
-        world.Agenda.Then(new PhaseStep(
-            Steps.DeclareDefender, step.Round, 2, Index: step.Seat, Subject: step.Subject,
-            Seat: step.Seat, ActivationId: step.ActivationId));
-        world.Agenda.Then(new PhaseStep(
-            Steps.FlipBoostCards, step.Round, 3, Index: step.Seat, Subject: step.Subject,
-            ActivationId: step.ActivationId));
-        world.Agenda.Then(new PhaseStep(
-            Steps.CalculateAttackDamage, step.Round, 4, Index: step.Seat, Subject: step.Subject,
-            Seat: step.Seat, ActivationId: step.ActivationId));
-        world.Agenda.Then(new PhaseStep(
-            Steps.DealAttackDamage, step.Round, 5, Index: step.Seat, Subject: step.Subject,
-            Seat: step.Seat, ActivationId: step.ActivationId));
-        foreach (int player in additional)
-        {
-            world.Agenda.Then(new PhaseStep(
-                Steps.NextAttackTarget, step.Round, 5, Index: player, Subject: step.Subject,
-                Seat: player, Plan: true, ActivationId: step.ActivationId));
-            world.Agenda.Then(new PhaseStep(
-                Steps.DeclareDefender, step.Round, 2, Index: player, Subject: step.Subject,
-                Seat: player, ActivationId: step.ActivationId));
-            world.Agenda.Then(new PhaseStep(
-                Steps.CalculateAttackDamage, step.Round, 4, Index: player, Subject: step.Subject,
-                Seat: player, ActivationId: step.ActivationId));
-            world.Agenda.Then(new PhaseStep(
-                Steps.DealAttackDamage, step.Round, 5, Index: player, Subject: step.Subject,
-                Seat: player, ActivationId: step.ActivationId));
-        }
-        world.Agenda.Then(new PhaseStep(
-            Steps.EndAttack, step.Round, 6, Index: step.Seat, Subject: step.Subject,
-            Seat: step.Seat, ActivationId: step.ActivationId));
-    }
+        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events) =>
+        AttackInitiation.Initiate(world, facts, step, events);
 
     /// <summary>Move a multi-hero attack to its next printed hero target.</summary>
     public static void NextTarget(World world, int player)
@@ -397,10 +221,10 @@ public static class Attack
     public static void GiveBoostCard(World world, ICardFacts facts, List<GameEvent> events) => AttackBoost.GiveBoostCard(world, facts, events);
     /// <inheritdoc cref="AttackBoost.GiveAdditionalBoostCard"/>
     public static void GiveAdditionalBoostCard(World world, Card enemy, string trigger, List<GameEvent> events) => AttackBoost.GiveAdditionalBoostCard(world, enemy, trigger, events);
-    /// <inheritdoc cref="AttackBoost.DeclareDefender"/>
-    public static Prompt? DeclareDefender(World world, ICardFacts facts, IAttackCardAbilities abilities) => AttackBoost.DeclareDefender(world, facts, abilities);
-    /// <inheritdoc cref="AttackBoost.Defend"/>
-    public static void Defend(World world, ICardFacts facts, IAttackCardAbilities abilities, Decision input, List<GameEvent> events) => AttackBoost.Defend(world, facts, abilities, input, events);
+    /// <inheritdoc cref="AttackDefense.DeclareDefender"/>
+    public static Prompt? DeclareDefender(World world, ICardFacts facts, IAttackCardAbilities abilities) => AttackDefense.DeclareDefender(world, facts, abilities);
+    /// <inheritdoc cref="AttackDefense.Defend"/>
+    public static void Defend(World world, ICardFacts facts, IAttackCardAbilities abilities, Decision input, List<GameEvent> events) => AttackDefense.Defend(world, facts, abilities, input, events);
     /// <inheritdoc cref="AttackBoost.FlipBoostCards"/>
     public static void FlipBoostCards(World world, ICardFacts facts, IAttackCardAbilities abilities, List<GameEvent> events) => AttackBoost.FlipBoostCards(world, facts, abilities, events);
     /// <inheritdoc cref="AttackBoost.FinishBoostCard"/>

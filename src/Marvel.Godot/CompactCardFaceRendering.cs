@@ -17,23 +17,22 @@ internal static class CompactCardFaceRendering
         var content = Stack();
         content.Name = "CardFace";
         CardStatusOverlay.AddTo(content, card);
-        if (size is CardDisplaySize.Hand or CardDisplaySize.Mulligan)
-        {
-            string identity = string.IsNullOrWhiteSpace(card.Classification)
-                ? card.Kind
-                : $"{card.Kind}  /  {card.Classification.ToUpperInvariant()}";
-            content.AddChild(Label(identity, GodotThemeVariations.Eyebrow, "Kind"));
-        }
         Label title = Label(
             card.Title, GodotThemeVariations.CardTitle, "Title", wrap: true, maximumLines: 2);
         // Godot asks wrapped labels for their minimum height before their
         // parent has assigned a width. Supplying the authored card width keeps
         // a short title from measuring as one character per line and stretching
         // a physical card through the table.
-        title.CustomMinimumSize = new Vector2(Math.Max(1, layout.Width - 32), 60);
-        title.AddThemeFontSizeOverride("font_size", Mathf.RoundToInt(
-            20 * Math.Max(1, (int)scale) / 100f));
+        title.CustomMinimumSize = new Vector2(
+            Math.Max(1, layout.Width - 32), VisualSystem.Type(scale).Heading * 2 + 4);
         content.AddChild(title);
+        if (size is CardDisplaySize.Hand or CardDisplaySize.Mulligan)
+        {
+            string kind = System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(card.Kind.ToLowerInvariant());
+            string identity = string.IsNullOrWhiteSpace(card.Classification)
+                ? kind : $"{kind} · {card.Classification}";
+            content.AddChild(Label(identity, GodotThemeVariations.Caption, "Kind"));
+        }
 
         IReadOnlyList<BoardFieldPresentation> values = CompactValues(card, size);
         BoardFieldPresentation? schemeThreat = SchemeThreatBadge.Add(content, card, values);
@@ -78,7 +77,7 @@ internal static class CompactCardFaceRendering
         {
             Name = "SummaryValuesRES",
             ThemeTypeVariation = GodotThemeVariations.CompactRow,
-            SizeFlagsHorizontal = Control.SizeFlags.ShrinkBegin,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
         Font iconFont = CardRulesMarkup.ResourceFont();
         int index = 0;

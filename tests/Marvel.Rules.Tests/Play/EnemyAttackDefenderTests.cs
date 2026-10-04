@@ -167,12 +167,35 @@ public sealed class EnemyAttackDefenderTests
         Assert.Equal(hero.ObjectId, Assert.Single(asked!.Affordances).AnchorId);
         Assert.Contains("attacking", asked.Description, StringComparison.OrdinalIgnoreCase);
         Assert.Contains(villain.FaceId, asked.Description, StringComparison.Ordinal);
-        Assert.Contains("ATK 5 before facedown boost cards", asked.Description,
+        Assert.Contains("ATK 5 before defense and later effects", asked.Description,
             StringComparison.Ordinal);
         Attack.Defend(
             world, facts, new NoCardAbilities(), Decision.Take(hero.ObjectId), []);
         Assert.True(world.Attack!.BasicDefense);
         Assert.False(hero.Ready);
+    }
+
+    [Rule("rr:defend-defense.4.3")]
+    [Fact]
+    public void DecliningBasicDefensePreservesTheEstablishedDefenseAndSaysSo()
+    {
+        // A defense ability's hero "can still be declared the defender" using
+        // basic defense. Declining that extra power preserves the defense ability.
+        var (world, facts, villain) = Board(defense: 2);
+        Card hero = world.Seats[0].IdentityCard;
+        Begin(world, villain, hero);
+        Attack.BeginDefenseAbility(world, 0, hero);
+
+        Prompt asked = Assert.IsType<Prompt>(Attack.DeclareDefender(world, facts, new NoCardAbilities()));
+
+        Assert.Equal("Keep current defense", asked.DeclineLabel);
+        Assert.Contains("already defending", asked.Description);
+        Assert.DoesNotContain("undefended", asked.Description);
+        Attack.Defend(world, facts, new NoCardAbilities(), Decision.Decline, []);
+        Assert.Equal(hero.ObjectId, world.Attack!.Defender);
+        Assert.True(world.Attack.IsDefended);
+        Assert.False(world.Attack.BasicDefense);
+        Assert.True(hero.Ready);
     }
 
     [Rule("rr:defend-defense.4")]

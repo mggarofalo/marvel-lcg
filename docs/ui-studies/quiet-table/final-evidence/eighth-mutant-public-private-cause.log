@@ -1,0 +1,42 @@
+  Marvel.Core -> /Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Release/net8.0/Marvel.Core.dll
+  Marvel.Rules -> /Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Release/net8.0/Marvel.Rules.dll
+  Marvel.Content -> /Users/michael/Source/marvel-lcg/src/Marvel.Content/bin/Release/net8.0/Marvel.Content.dll
+  Marvel.View -> /Users/michael/Source/marvel-lcg/src/Marvel.View/bin/Release/net8.0/Marvel.View.dll
+  Marvel.View.Tests -> /Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/bin/Release/net8.0/Marvel.View.Tests.dll
+Test run for /Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/bin/Release/net8.0/Marvel.View.Tests.dll (.NETCoreApp,Version=v8.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.58]     Marvel.View.Tests.PublicPendingSituationTests.ActivationCauseHasItsOwnRoleAndCannotExposeAnotherSeatsHand(viewer: -1) [FAIL]
+[xUnit.net 00:00:00.59]     Marvel.View.Tests.PublicPendingSituationTests.ActivationCauseHasItsOwnRoleAndCannotExposeAnotherSeatsHand(viewer: 0) [FAIL]
+[xUnit.net 00:00:00.59]     Marvel.View.Tests.PublicPendingSituationTests.ActivationCauseHasItsOwnRoleAndCannotExposeAnotherSeatsHand(viewer: 1) [FAIL]
+  Failed Marvel.View.Tests.PublicPendingSituationTests.ActivationCauseHasItsOwnRoleAndCannotExposeAnotherSeatsHand(viewer: -1) [122 ms]
+  Error Message:
+   Assert.Equal() Failure: Collections differ
+Expected: <generated> [2]
+Actual:   <generated> [2, 3]
+                          ↑ (pos 1)
+  Stack Trace:
+     at Marvel.View.Tests.PublicPendingSituationTests.ActivationCauseHasItsOwnRoleAndCannotExposeAnotherSeatsHand(Int32 viewer) in /Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/PublicPendingSituationTests.cs:line 111
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)
+  Failed Marvel.View.Tests.PublicPendingSituationTests.ActivationCauseHasItsOwnRoleAndCannotExposeAnotherSeatsHand(viewer: 0) [1 ms]
+  Error Message:
+   Assert.Equal() Failure: Collections differ
+Expected: <generated> [2]
+Actual:   <generated> [2, 3]
+                          ↑ (pos 1)
+  Stack Trace:
+     at Marvel.View.Tests.PublicPendingSituationTests.ActivationCauseHasItsOwnRoleAndCannotExposeAnotherSeatsHand(Int32 viewer) in /Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/PublicPendingSituationTests.cs:line 111
+   at InvokeStub_PublicPendingSituationTests.ActivationCauseHasItsOwnRoleAndCannotExposeAnotherSeatsHand(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Failed Marvel.View.Tests.PublicPendingSituationTests.ActivationCauseHasItsOwnRoleAndCannotExposeAnotherSeatsHand(viewer: 1) [< 1 ms]
+  Error Message:
+   Assert.Equal() Failure: Collections differ
+Expected: <generated> [2]
+Actual:   <generated> [2, 3]
+                          ↑ (pos 1)
+  Stack Trace:
+     at Marvel.View.Tests.PublicPendingSituationTests.ActivationCauseHasItsOwnRoleAndCannotExposeAnotherSeatsHand(Int32 viewer) in /Users/michael/Source/marvel-lcg/tests/Marvel.View.Tests/PublicPendingSituationTests.cs:line 111
+   at InvokeStub_PublicPendingSituationTests.ActivationCauseHasItsOwnRoleAndCannotExposeAnotherSeatsHand(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+
+Failed!  - Failed:     3, Passed:     0, Skipped:     0, Total:     3, Duration: 139 ms - Marvel.View.Tests.dll (net8.0)

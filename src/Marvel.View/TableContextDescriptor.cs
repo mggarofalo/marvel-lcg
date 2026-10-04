@@ -11,4 +11,8 @@ public sealed record TableContextDescriptor(
     int? ViewedPrivateSeat,
     int ActivePlayer,
     int FirstPlayer,
-    int PublicFocusSeat);
+    int PublicFocusSeat)
+{
+    /// <summary>Public situation while the full actionable prompt remains seat-authorized.</summary>
+    public PendingSituationDescriptor? PendingSituation { get; init; }
+}

@@ -22,7 +22,12 @@ internal static class GamePrompts
             // on the wire.
             Label: $"\n--- {seat.Name}'s Turn ({game.Round}) ---",
             Cancellable: true,
-            Affordances: game.TurnOptions(seat));
+            Affordances: game.TurnOptions(seat))
+        {
+            DeclineLabel = "End turn",
+            Description = $"Player phase · Round {game.Round}. Take actions or end your turn. "
+                + "After every player finishes, choose hand discards, draw up to hand size and ready cards.",
+        };
     }
 
     /// <summary>The mandatory action gate before the player phase may end.</summary>
@@ -178,7 +183,11 @@ internal static class GamePrompts
         if (!Forms.In(game.world, seat, game.facts, Forms.Hero))
         {
             if (BasicPowers.CanRecover(game.world, game.facts, seat.Index))
-                options.Add(game.Anchored(BasicPowers.RecoverVerb, seat));
+                options.Add(game.Anchored(BasicPowers.RecoverVerb, seat) with
+                {
+                    Description = $"Exhaust {game.facts.Title(seat.IdentityCard.FaceId)} to recover "
+                        + $"{StateFields.Modified(game.world, seat.IdentityCard, "recover", game.facts, game.world.Players)} hit points (before later effects).",
+                });
             return;
         }
         if (BasicPowers.CanUsePower(game.facts, seat.IdentityCard, "ATK"))
@@ -245,148 +254,6 @@ internal static class GamePrompts
                 ? new TargetRequest(attachmentTargets, Min: 1, Max: 1)
                 : new TargetRequest([seat.IdentityCard.ObjectId], Min: 1, Max: 1),
             Costs: [price]);
-    }
-
-    /// <summary>Offers a basic power if it has a target or a status to clear.</summary>
-    /// <remarks>
-    /// Anchored to the character using it, which is the identity for a hero's
-    /// own power and the ally for <c>rr:player-turn.4</c>. Two allies attacking
-    /// are two options, because <c>rr:ally.2</c> permits "any number".
-    /// </remarks>
-    internal static void Offer(this Game game,
-        List<Affordance> options, Card character, string verb, IReadOnlyList<Card> targets)
-    {
-        string cancellingStatus = string.Equals(
-            verb, BasicPowers.AttackVerb, StringComparison.Ordinal)
-                ? Statuses.Stunned
-                : Statuses.Confused;
-        bool cancelledByStatus = Statuses.Afflicted(
-            game.world, game.facts, character, cancellingStatus);
-        bool targetlessStatusAttempt = targets.Count == 0 && cancelledByStatus;
-        if (targets.Count == 0 && !targetlessStatusAttempt)
-        {
-            return;
-        }
-
-        long power = StateFields.Modified(
-            game.world, character,
-            string.Equals(verb, BasicPowers.AttackVerb, StringComparison.Ordinal)
-                ? "attack"
-                : "thwart",
-            game.facts, game.world.Players);
-        bool ranged = StateFields.Modified(game.world, character, "ranged", game.facts, game.world.Players) > 0;
-        options.Add(game.Anchored(verb, character, game.world.Seats[game.Active]) with
-        {
-            Description = PowerDescription(game, character, verb, power, ranged,
-                cancelledByStatus, cancellingStatus),
-            // Exactly one target: `rr:attack-player-ability-type.1` and
-            // `rr:thwart.1` are each one enemy or one scheme. An ability that
-            // hits several is a different thing (`.5`) and is not a basic power.
-            Targets = new TargetRequest(
-                [.. targets.Select(target => target.ObjectId)],
-                Min: targetlessStatusAttempt ? 0 : 1,
-                Max: targetlessStatusAttempt ? 0 : 1)
-            {
-                Details = targets.ToDictionary(target => target.ObjectId,
-                    target => PowerTargetDetail(game, character, target, verb, power,
-                        cancelledByStatus, cancellingStatus)),
-            },
-        });
-    }
-
-    private static string PowerDescription(Game game, Card character, string verb,
-        long power, bool ranged, bool cancelled, string status) =>
-        $"{game.facts.Title(character.FaceId)} · {verb} for {power}"
-        + (ranged && verb == BasicPowers.AttackVerb ? " · Ranged" : string.Empty)
-        + (cancelled ? $" · {status} cancels this attempt and is discarded" : string.Empty);
-
-    private static string PowerTargetDetail(Game game, Card character, Card target,
-        string verb, long power, bool cancelled, string status)
-    {
-        if (!cancelled) return game.BasicPowerTargetDetail(character, target, verb, power);
-        string effect = verb == BasicPowers.AttackVerb
-            ? "damage will be dealt" : "threat will be removed";
-        return $"{status} cancels this attempt; no {effect}";
-    }
-
-    internal static string BasicPowerTargetDetail(this Game game,
-        Card character, Card target, string verb, long power)
-    {
-        if (string.Equals(verb, BasicPowers.ThwartVerb, StringComparison.Ordinal))
-        {
-            long current = target.Tokens.GetValueOrDefault("k_threat");
-            long result = Math.Max(0, current - power);
-            long threshold = game.facts.PrintedValue(target.FaceId, "TargetThreat", game.world.Players);
-            return threshold > 0
-                ? $"{current}/{threshold} → {result}/{threshold} threat"
-                : $"{current} → {result} threat";
-        }
-
-        return Damage.PreviewAttack(game.world, game.facts, character, character, target, power);
-    }
-
-    internal static Prompt EndPhasePrompt(this Game game)
-    {
-        var seat = game.world.Seats[game.Active];
-        return new Prompt(
-            Player: seat.Index,
-            Asking: Question.TurnOption,
-            When: Timing.TimingPriority.Untimed,
-            Trigger: EndPhaseTrigger,
-            Label: $"{seat.Name} End Phase",
-            Cancellable: false,
-            Affordances:
-            [
-                // `rr:end-of-player-phase.step.1` is two clauses, and the
-                // second is a floor: a player "**must** discard down to their
-                // hand size if they have more cards than their hand size". So
-                // an over-full hand cannot answer with nothing, and the
-                // affordance has to say so — `PhaseEnd.DiscardToHandSize`
-                // refuses an answer that leaves too many, and an engine that
-                // offers what it will refuse has told the client a lie.
-                game.HandChoice(
-                    seat,
-                    EndPhaseVerb,
-                    Math.Max(
-                        0,
-                        seat.Hand.Cards.Count - (int)PhaseEnd.HandSize(game.world, seat, game.facts))),
-            ]);
-    }
-
-    /// <summary>An affordance offering some number of the player's hand.</summary>
-    /// <remarks>
-    /// The mulligan and the end phase are nearly the same shape: choose between
-    /// <paramref name="least"/> and all of your hand. They differ only in the
-    /// floor — <c>rr:appendix-ii-setup.step.15</c> lets a player mulligan "any
-    /// number of cards", including none, while the end of the player phase has
-    /// a hand size to come down to.
-    /// <para>
-    /// The candidate list is the hand in its own order, not sorted — the
-    /// recorded offer is <c>[42, 45, 37, 9, 47, 46]</c>, which is the hand read
-    /// bottom to top, and sorting it would change which card a client
-    /// highlights first.
-    /// </para>
-    /// </remarks>
-    internal static Affordance HandChoice(this Game game, Seat seat, string verb, int least = 0)
-    {
-        var hand = new int[seat.Hand.Cards.Count];
-        for (int index = 0; index < hand.Length; index++)
-        {
-            hand[index] = seat.Hand.Cards[index].ObjectId;
-        }
-
-        return game.Anchored(verb, seat) with
-        {
-            Targets = new TargetRequest(
-                Legal: hand,
-                Min: least,
-                Max: hand.Length,
-                // This is a presentation marker for choosing from a card
-                // collection rather than clicking cards already laid out on
-                // the table. The cooperative product exposes player hands by
-                // default, so it is not itself an information boundary.
-                IsSearch: true),
-        };
     }
 
     internal static Affordance Anchored(this Game game, string verb, Seat seat) =>

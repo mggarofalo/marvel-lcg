@@ -1,0 +1,36 @@
+{
+  "open_revision": 0,
+  "next_revision": 1,
+  "decision": {
+    "Affordance": 36,
+    "Targets": [
+      1
+    ],
+    "Resources": [
+      19
+    ],
+    "Values": {},
+    "Allocations": [
+      {
+        "Source": 19,
+        "Cost": 0,
+        "PaidAs": "G"
+      }
+    ]
+  },
+  "history": {
+    "Cursor": 1,
+    "Undo": [
+      0
+    ],
+    "Redo": [],
+    "Entries": [
+      {
+        "Cursor": 0,
+        "Summary": "Spider-Man played Interrogation Room, generating resources from Web-Shooter.",
+        "Details": []
+      }
+    ],
+    "ActionOpen": false
+  }
+}

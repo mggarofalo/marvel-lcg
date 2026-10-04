@@ -133,6 +133,18 @@ track a card through a shuffle.
 Prompts and events pass through the same visibility scope as the snapshot. A
 hidden event cannot restore a face or object id removed from the descriptor.
 
+The table's passive pending situation names the primary answering seat and a
+typed public decision purpose. Its causal references are limited to already
+readable public, faceup cards. Private questions, options, costs, searched cards
+and candidate membership remain inside the separately authorized prompt. A seat
+with off-turn Actions may have its own prompt while another seat remains the
+primary turn owner. Public waiting metadata never supplies an answer contract.
+
+View names an offered source instance and describes its current authorized HP,
+readiness and counters. Mandatory nonresource costs come from the engine's
+typed cost description. These facts let the player assess an offer; View and
+Godot do not forecast defeat, reconstruct costs or infer legal choices from them.
+
 ## Visibility policies
 
 The server supports 2 explicit policies:
@@ -189,7 +201,11 @@ visibility configuration, durable sessions and shutdown behavior.
 
 The socket protocol uses source-generated JSON inside a 4-byte big-endian length
 frame. Frames are bounded. Unknown operations, unsupported protocol versions and
-unknown JSON members fail before they reach the engine. Protocol 13 adds
+unknown JSON members fail before they reach the engine. Protocol 19 adds
+engine-authored decline commitments to prompts (ending a turn, passing an
+opportunity, or leaving an attack undefended), readable card-choice names, and
+an explicit visibility-safe attack completion event. Both endpoints must use version
+19; replay and digest formats are unchanged. Protocol 13 adds
 display-only card markup and a separate art-safe face id so full card frames
 can preserve printed emphasis and symbols without requesting concealed art.
 Protocol 12 adds

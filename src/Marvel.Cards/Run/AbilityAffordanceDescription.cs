@@ -1,3 +1,4 @@
+using Marvel.Cards.Dsl;
 using Marvel.Rules.Prompts;
 using Marvel.Rules.State;
 using Marvel.Rules.Timing;
@@ -31,7 +32,21 @@ internal static class AbilityAffordanceDescription
             Costs: price is null ? null : [price], Description: AbilityEffectDescription.Summary(found.Effect))
         {
             PlaysCard = world.Facts.Kind(card.FaceId) == CardKind.Event,
+            DeferredTargetSelection = StartsWithTargetSelection(found.Effect),
+            CostDescription = AbilityCostDescription.Summary(world, card, ability.Player, found.Cost),
         };
     }
+
+    // Admission has already checked the effect's targets. This marker describes
+    // its choice boundary, not a future legal set: payment and intervening
+    // windows can still change whether the resolution reaches that choice.
+    // Do not descend into conditional, optional or power-cancellable branches.
+    private static bool StartsWithTargetSelection(AbilityEffect effect) => effect switch
+    {
+        AbilityEffect.ChooseCard => true,
+        AbilityEffect.Sequence { Effects.Length: 1 } sequence =>
+            StartsWithTargetSelection(sequence.Effects[0]),
+        _ => false,
+    };
 
 }

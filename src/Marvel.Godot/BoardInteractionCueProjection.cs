@@ -15,7 +15,7 @@ internal static class BoardInteractionCueProjection
             return cues;
         }
 
-        AddActionCues(cues, prompt);
+        if (!MulliganPrompt.IsOpening(composer.Prompt)) AddActionCues(cues, prompt);
         AddSelectedCues(cues, composer, prompt);
         return cues;
     }

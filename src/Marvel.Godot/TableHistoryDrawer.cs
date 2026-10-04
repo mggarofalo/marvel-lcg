@@ -34,7 +34,7 @@ internal static class TableHistoryDrawer
             "Margin/Shell/Content/Play/Prompt/Margin/Stack/Workbench");
         Control history = workbench.GetNode<Control>("History");
         history.Visible = true;
-        main.decisions.Visible = false;
+        main.decisions.Visible = main.decisions.CompleteChoicesOpen;
         main.lastResult.Visible = false;
         main.activeResolution.Visible = false;
         workbench.TabsVisible = false;
@@ -47,9 +47,9 @@ internal static class TableHistoryDrawer
 
         Button toggle = EnsureToggle(main, history);
         Label latest = EnsureLatestResult(main, history);
-        latest.AutowrapMode = TextServer.AutowrapMode.Off;
-        latest.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
-        latest.CustomMinimumSize = new Vector2(0, 44);
+        latest.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        latest.TextOverrunBehavior = TextServer.OverrunBehavior.NoTrimming;
+        latest.CustomMinimumSize = Vector2.Zero;
         latest.TooltipText = latest.Text;
         Button dismiss = EnsureDismiss(main, history, latest);
         HFlowContainer actions = EnsureActionFlow(history, dismiss);
@@ -65,13 +65,10 @@ internal static class TableHistoryDrawer
             : new Vector2(0, 44);
         main.eventCueSummary.TooltipText = main.eventCueSummary.Text;
         toggle.Text = expanded ? "Collapse history" : "History";
-        history.GetNode<Control>("EventHeader/Heading").Visible = expanded;
+        history.GetNode<Control>("EventHeader/Heading").Visible = false;
         foreach (Control control in new Control[]
                  {
-                     main.promptDiagnostic,
                      history.GetNode<Control>("Rule"),
-                     main.eventCue,
-                     latest,
                      main.eventLog,
                      dismiss,
                      actions,
@@ -79,6 +76,11 @@ internal static class TableHistoryDrawer
         {
             control.Visible = expanded;
         }
+        TableLatestResult.Configure(latest, expanded);
+        main.eventController.RefreshEventCueVisibility();
+        main.promptDiagnostic.Visible = false;
+        if (history.FindChild("Skip", recursive: true, owned: false) is Button skip)
+            skip.Text = "Finish animation";
         foreach (string name in new[] { "Skip", "UndoLast", "CopyReport", "SaveReport" })
         {
             if (history.FindChild(name, recursive: true, owned: false) is Control control)
@@ -141,25 +143,7 @@ internal static class TableHistoryDrawer
         return dismiss;
     }
 
-    private static Label EnsureLatestResult(Main main, Control history)
-    {
-        if (history.GetNodeOrNull<Label>("LatestResult") is { } existing)
-        {
-            return existing;
-        }
-        var latest = new Label
-        {
-            Name = "LatestResult",
-            Text = main.lastResultSummary.Text,
-            AutowrapMode = TextServer.AutowrapMode.Off,
-            TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis,
-            CustomMinimumSize = new Vector2(0, 44),
-            ThemeTypeVariation = GodotThemeVariations.Body,
-        };
-        history.AddChild(latest);
-        history.MoveChild(latest, Math.Max(0, main.eventLog.GetIndex()));
-        return latest;
-    }
+    internal static Label EnsureLatestResult(Main main, Control history) => TableLatestResult.Ensure(main, history);
 
     private static Button EnsureToggle(Main main, Control history)
     {

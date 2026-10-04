@@ -12,14 +12,24 @@ internal static class TableDescriptorProjection
         Prompt? prompt,
         ViewScope scope,
         int active,
-        int firstPlayer) => world with
+        int firstPlayer,
+        Prompt? publicPrompt,
+        IReadOnlySet<int> publicReadableIds) => world with
     {
         Table = new TableContextDescriptor(
-            PromptOwner: prompt?.Player,
+            PromptOwner: publicPrompt?.Player,
             ViewedPrivateSeat: scope.SoleSeat,
             ActivePlayer: active,
             FirstPlayer: firstPlayer,
-            PublicFocusSeat: active),
+            PublicFocusSeat: active)
+        {
+            PendingSituation = publicPrompt is null ? null : new PendingSituationDescriptor(
+                publicPrompt.PublicKind,
+                [.. publicPrompt.ContextCardIds.Where(publicReadableIds.Contains).Distinct()])
+            {
+                CauseCardIds = [.. publicPrompt.CauseCardIds.Where(publicReadableIds.Contains).Distinct()],
+            },
+        },
         PlayerSummaries = PlayerSummaries(world, prompt),
         Relationships = Relationships(world),
     };

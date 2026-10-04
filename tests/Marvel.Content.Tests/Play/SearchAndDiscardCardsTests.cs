@@ -76,6 +76,8 @@ public sealed class SearchAndDiscardCardsTests
         Assert.Equal("Choose an upgrade or support to discard", asked.Description);
         Assert.Equal([card.ObjectId], asked.ContextCardIds);
         Assert.Equal("Discard Avengers Mansion", asked.Affordances[1].Description);
+        Assert.Equal("Discard Avengers Mansion", asked.Affordances[1].CommitLabel);
+        Assert.Equal("Discard Web-Shooter", asked.Affordances[0].CommitLabel);
 
         runner.Chose(world, card, 0, 1, Decision.Take(support.ObjectId));
 

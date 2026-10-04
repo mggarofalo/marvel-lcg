@@ -1,0 +1,22 @@
+[
+  {
+    "name": "commitment-height",
+    "compiled": true,
+    "killed": false,
+    "expected": "cannot fit a whole commitment",
+    "exit_code": 1,
+    "exercised": false,
+    "source_restored": true,
+    "classification_note": "Not counted as a commitment-height kill: global padding regression failed receipt reading-space check first."
+  },
+  {
+    "name": "sidebar-entry",
+    "compiled": true,
+    "killed": false,
+    "expected": "sidebar extends beyond the window",
+    "exit_code": 0,
+    "exercised": true,
+    "source_restored": true,
+    "bounded_equivalence": "Removing compact style while retaining WordSmart: fresh restricted1920 invitation envelope/whole-word checks pass100/150 collapsed/expanded. Equivalent only to these geometry observations, not typography, other layouts or arbitrary captions."
+  }
+]

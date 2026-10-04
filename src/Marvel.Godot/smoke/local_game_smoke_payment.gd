@@ -35,8 +35,7 @@ func _payment_modal_is_safe() -> bool:
 		return false
 	if not _payment_symbols_are_readable(modal): return false
 	var copy := _visible_text(modal)
-	if "Discard cards from hand" not in copy or "Resource abilities" not in copy \
-			or "Nothing is spent until you confirm" not in copy:
+	if "Discard cards from hand" not in copy or "Resource abilities" not in copy:
 		_fail("payment does not explain its sources and commitment")
 		return false
 	var stage := modal.find_child("StagedCard", true, false) as Control

@@ -1,0 +1,78 @@
+{
+  "Specification": {
+    "Scenario": "rhino",
+    "Heroes": [
+      "spider_man"
+    ],
+    "ModularSets": null,
+    "Seed": 2
+  },
+  "Steps": [
+    {
+      "Prompt": "Spider-Man resolves mulligans",
+      "Question": "Opening hand",
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 0,
+        "Targets": [
+          23,
+          16,
+          30,
+          26,
+          19,
+          15
+        ],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "a1e95f02b12e00880fbf40a7a4e9e43c50587de39f1fef5ba8a390bf01d60312",
+      "After": "ddfc1701a042c4bd23347532dc5e072c306d8e4faae74c1e7fcdc367c5617636"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (1) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "ddfc1701a042c4bd23347532dc5e072c306d8e4faae74c1e7fcdc367c5617636",
+      "After": "562da5ffbae11de487c18d12c624889dfb92bb60190547e169c6c4bd83799c30"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (1) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": -1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "562da5ffbae11de487c18d12c624889dfb92bb60190547e169c6c4bd83799c30",
+      "After": "562da5ffbae11de487c18d12c624889dfb92bb60190547e169c6c4bd83799c30"
+    },
+    {
+      "Prompt": "Spider-Man End Phase",
+      "Question": "Choose end-of-phase discards",
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 5,
+        "Targets": [
+          39
+        ],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "562da5ffbae11de487c18d12c624889dfb92bb60190547e169c6c4bd83799c30",
+      "After": "9cd71048c78ab00f419c87f9bcecbfe2c3782d8336ce24835bddd2e006c7e194"
+    }
+  ],
+  "FinalDigest": "9cd71048c78ab00f419c87f9bcecbfe2c3782d8336ce24835bddd2e006c7e194"
+}

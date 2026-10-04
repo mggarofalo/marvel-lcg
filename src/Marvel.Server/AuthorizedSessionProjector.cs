@@ -39,7 +39,7 @@ internal sealed class AuthorizedSessionProjector(
             ? game.PromptFor(seat)
             : prompt;
         VisibleResult visible = WorldProjection.For(
-            game.State, scopedPrompt, safeEvents, scope, game.Active);
+            game.State, scopedPrompt, safeEvents, scope, game.Active, game.Pending);
         return new EngineResponse(
             EngineProtocol.Version, request.RequestId, request.GameId,
             capability,

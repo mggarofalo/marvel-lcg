@@ -46,11 +46,14 @@ internal static class MulliganSeatStripRenderer
             var select = new Button
             {
                 Name = $"SeatSwitch{summary.Seat}",
-                Text = SeatLabel(lane, summary, summary.Seat == selection.ExpandedSeat, compact),
+                Text = SeatLabel(lane, summary, compact)
+                    + $"\n{RoleMarkers(summary.Seat, selection)}"
+                    + (summary.Seat == selection.ExpandedSeat ? "\nInspecting this seat" : ""),
                 Disabled = summary.Seat == selection.ExpandedSeat,
                 SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
                 CustomMinimumSize = compact ? new Vector2(0, 100) : Vector2.Zero,
-                ClipText = compact,
+                ClipText = false,
+                AutowrapMode = TextServer.AutowrapMode.Word,
                 TooltipText = $"{RoleMarkers(summary.Seat, selection)}. "
                     + "Show this public player workspace without changing the pending decision.",
             };
@@ -68,7 +71,6 @@ internal static class MulliganSeatStripRenderer
     private static string SeatLabel(
         BoardLanePresentation? lane,
         PlayerSummaryDescriptor seat,
-        bool expanded,
         bool compact)
     {
         string title = lane?.Title ?? $"PLAYER {seat.Seat + 1}";
@@ -84,26 +86,25 @@ internal static class MulliganSeatStripRenderer
             (0, var defenders) => $"\nDEFENDERS {defenders}",
             (var enemies, var defenders) => $"\nENGAGED {enemies} · DEFENDERS {defenders}",
         };
-        string marker = expanded ? "✓ " : string.Empty;
         string[] titleParts = title.Split(" · ", StringSplitOptions.RemoveEmptyEntries);
         string compactTitle = titleParts.Length > 1
             ? $"P{seat.Seat + 1} · {titleParts[^1]}"
             : $"P{seat.Seat + 1} · {title}";
         return compact
-            ? $"{marker}{compactTitle}\n{health}{form}{statuses}{publicContext}"
-            : $"{marker}{title} · {health}{form}{statuses}";
+            ? $"{compactTitle}\n{health}{form}{statuses}{publicContext}"
+            : $"{title} · {health}{form}{statuses}";
     }
 
     internal static string RoleMarkers(int seat, DisplayedSeatSelection selection)
     {
         string[] roles =
         [
-            selection.ActivePlayer == seat ? "TURN" : string.Empty,
-            selection.PromptOwner == seat ? "DECISION" : string.Empty,
-            selection.ViewedPrivateSeat == seat ? "PRIVATE VIEW" : string.Empty,
-            selection.PublicFocusSeat == seat ? "PUBLIC FOCUS" : string.Empty,
+            selection.ActivePlayer == seat ? "Active" : string.Empty,
+            selection.PromptOwner == seat ? "Answering" : string.Empty,
+            selection.ViewedPrivateSeat == seat ? "Your seat" : string.Empty,
+            selection.PublicFocusSeat == seat ? "Public focus" : string.Empty,
         ];
-        return string.Join("  ·  ", roles.Where(role => role.Length > 0).DefaultIfEmpty("OBSERVING"));
+        return string.Join("  ·  ", roles.Where(role => role.Length > 0).DefaultIfEmpty("Observing"));
     }
 
 }

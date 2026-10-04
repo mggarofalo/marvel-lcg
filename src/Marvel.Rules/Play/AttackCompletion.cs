@@ -74,6 +74,11 @@ internal static class AttackCompletion
 
     internal static void Finish(World world, List<GameEvent> events)
     {
+        var attack = Current(world);
+        var subjects = new[] { attack.Enemy, attack.Target, attack.Defender }
+            .Where(id => id >= 0).Distinct().ToDictionary(id => id,
+                id => SubjectTitle(world, world.Facts, id));
+
         world.Effects.Expire(TimingPoints.EndOfAttack, events);
 
         // An attack is one of the two kinds of activation -- `rr:activation` --
@@ -90,6 +95,32 @@ internal static class AttackCompletion
         // would leave them nothing to read.
         world.FinishedAttack = world.Attack;
         world.Attack = null;
+
+        // rr:attack-enemy-activation.step.6: "The attack ends." Completion
+        // and its defender are established facts, even when no field changed.
+        // The emitted event shape and completion verb are engine choices
+        // outside digest v2; completion is separate from an attack effect.
+        events.Add(new AttackCompleted(attack.Enemy, attack.Target, attack.Defender)
+        {
+            DamageDealt = world.FinishedActivation?.DamageDealt,
+            Subjects = subjects,
+            Trigger = Steps.AttackEnds,
+            Verb = "Attack_Completed",
+        });
+    }
+
+    internal static string SubjectTitle(World world, ICardFacts facts, int id)
+    {
+        // Core player-owned minions are facedown Drones. Frozen kind and owner
+        // identify that attacker even after leaving play reveals its card face.
+        // This evidence names the occurrence; it does not reinstate card state.
+        if (world.Agenda.Current?.ProcedureOwnerOccurrence is
+            { Actor: var actor, ActorFacts: { Kind: CardKind.Minion, Owner: >= 0 } }
+            && actor == id)
+        {
+            return FacedownDrones.EffectiveTitle;
+        }
+        return FacedownDrones.Title(world.Cards[id], facts);
     }
 
     /// <summary>
@@ -151,88 +182,6 @@ internal static class AttackCompletion
     /// <summary>Where an enemy's facedown boost cards wait.</summary>
     internal static Area BoostCards(World world, int enemy) =>
         world.AreaOf(DeckType.BoostCardsDeck, world.Cards[enemy].Area.PlayArea, host: enemy);
-
-    /// <summary>The characters one player could exhaust to defend.</summary>
-    internal static List<Card> Defenders(World world, ICardFacts facts)
-    {
-        var candidates = new List<Card>();
-
-        // `rr:defend-defense.5` -- **every** player's characters, not just the
-        // attacked one's. "Only one player at a time can defend" (`.1`) is a
-        // limit on the answer, not on the offer, and the choice is one prompt
-        // whose affordances carry whose character each is.
-        foreach (int player in world.PlayerOrder)
-        {
-            candidates.AddRange(For(world, facts, player));
-        }
-
-        return candidates;
-    }
-
-    /// <summary>Applies card-specific defender constraints to the rules candidates.</summary>
-    internal static DefenderChoice Choice(
-        World world, ICardFacts facts, IAttackCardAbilities abilities, EnemyAttack attack)
-    {
-        List<Card> legal;
-        if (attack.IsDefended)
-        {
-            var current = world.Cards[attack.Defender];
-            legal = !attack.BasicDefense
-                && current.Ready
-                && FacedownDrones.Kind(current, facts) == CardKind.Hero
-                && BasicPowers.CanUsePower(facts, current, "DEF")
-                    ? [current]
-                    : [];
-        }
-        else
-        {
-            legal = Defenders(world, facts);
-        }
-        var choice = abilities.Defenders(world, attack, legal);
-        if (choice.Required && choice.Candidates.Count == 0)
-        {
-            throw new RulesNotImplementedException(
-                $"card {attack.Enemy} requires a defender but offers no legal candidate");
-        }
-
-        var legalIds = legal.Select(card => card.ObjectId).ToHashSet();
-        if (choice.Candidates.Any(card => !legalIds.Contains(card.ObjectId)))
-        {
-            throw new RulesNotImplementedException(
-                $"card {attack.Enemy} offered a character that cannot defend");
-        }
-
-        return choice;
-    }
-
-    /// <summary>One player's characters that could defend.</summary>
-    internal static List<Card> For(World world, ICardFacts facts, int player)
-    {
-        var seat = world.Seats[player];
-
-        var candidates = new List<Card>();
-        var identity = seat.IdentityCard;
-
-        // rr:defend-defense.2 -- the basic defense power belongs to a hero. An
-        // alter-ego has no DEF and cannot make one, and an exhausted hero has
-        // nothing left to exhaust.
-        if (identity.Ready
-            && facts.Kind(identity.FaceId) == CardKind.Hero
-            && BasicPowers.CanUsePower(facts, identity, "DEF"))
-        {
-            candidates.Add(identity);
-        }
-
-        // rr:defend-defense.3 -- "an ally can exhaust to defend against an
-        // enemy attack. Damage from the attack is dealt to that ally."
-        candidates.AddRange(world.Areas
-            .Where(area => area.Type == DeckType.AlliesArea
-                && area.PlayArea == PlayArea.Of(player))
-            .SelectMany(area => area.Cards)
-            .Where(ally => ally.Ready));
-
-        return candidates;
-    }
 
     internal static EnemyAttack Current(World world) =>
         world.Attack

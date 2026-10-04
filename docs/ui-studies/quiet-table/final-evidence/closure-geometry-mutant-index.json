@@ -1,0 +1,16 @@
+[
+  {
+    "name": "caption-font",
+    "compiled": true,
+    "killed": true,
+    "exit_code": 1,
+    "source_restored": true
+  },
+  {
+    "name": "caption-padding",
+    "compiled": true,
+    "killed": true,
+    "exit_code": 1,
+    "source_restored": true
+  }
+]

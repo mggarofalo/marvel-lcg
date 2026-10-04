@@ -1,0 +1,18 @@
+[
+  {
+    "check": "source-layout",
+    "exit_code": 0
+  },
+  {
+    "check": "complexity",
+    "exit_code": 0
+  },
+  {
+    "check": "no-partial-types",
+    "exit_code": 0
+  },
+  {
+    "check": "file-length",
+    "exit_code": 0
+  }
+]

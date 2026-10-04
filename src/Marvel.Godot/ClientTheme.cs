@@ -247,10 +247,12 @@ public static class ClientTheme
         CornerRadiusTopRight = controls.CornerRadius,
         CornerRadiusBottomLeft = controls.CornerRadius,
         CornerRadiusBottomRight = controls.CornerRadius,
-        ExpandMarginLeft = controls.FocusRingWidth,
-        ExpandMarginTop = controls.FocusRingWidth,
-        ExpandMarginRight = controls.FocusRingWidth,
-        ExpandMarginBottom = controls.FocusRingWidth,
+        // Bounded scroll surfaces clip outside a control's rectangle. Keep
+        // the focus border inside that rectangle so it remains fully visible.
+        ExpandMarginLeft = 0,
+        ExpandMarginTop = 0,
+        ExpandMarginRight = 0,
+        ExpandMarginBottom = 0,
     };
 
     private static StyleBoxFlat Flat(

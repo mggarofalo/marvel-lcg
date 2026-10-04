@@ -122,14 +122,20 @@ func _table_interactions_are_safe() -> bool:
 
 
 func _mulligan_dock_is_safe() -> bool:
-	var submit := _attached(_attached_name(1, "Submit"))
+	var submit := _task_commit()
 	var history := main.find_child("ToggleHistory", true, false) as Button
 	if submit == null or history == null or submit.disabled:
-		_fail("the opening table has no operable card-local action or history drawer")
+		_fail("the opening table has no operable named commitment or history drawer")
 		return false
-	if main.find_child("CompleteChoiceSheet", true, false) != null:
-		_fail("the removed ordered action selector is still present on the desktop table")
+	var complete := main.find_child("CompleteChoiceSheet", true, false) as Button
+	if complete == null or not complete.is_visible_in_tree():
+		_fail("the current decision has no complete keyboard choice path")
 		return false
+	if not await _fallback_mulligan_sheet_is_focus_safe() \
+			or not await _clearing_mulligan_replacements_preserves_task():
+		return false
+	submit = _task_commit()
+	if submit == null: return false
 	if not await _control_owns_point(history, _visible_control_rect(history).get_center()) \
 			or not await _prepare_activation(submit):
 		return false
@@ -199,6 +205,10 @@ func _attached_controls_are_safe(state: Dictionary) -> bool:
 
 
 func _decision_controls_are_safe(state: Dictionary) -> bool:
+	if not await _source_chooser_focus_when_offered():
+		return false
+	if not await _deferred_preview_when_offered():
+		return false
 	if not _visible_buttons_meet_pointer_floor():
 		return false
 	return await _attached_controls_are_safe(state)
@@ -255,7 +265,7 @@ func _choose_change_form() -> bool:
 
 func _advance_fallback_decision(state: Dictionary) -> bool:
 	var change_form := _visible_button_beginning(_decision(), "Change Form")
-	var pass_button := _visible_button(_decision(), "Pass / decline")
+	var pass_button := _decision().find_child("Decline", true, false) as Button
 	if not state.changed_form and change_form != null and not change_form.disabled:
 		state.form_before_change = "Peter Parker" \
 			if "Peter Parker\nREC" in _visible_text(_play()) else "Spider-Man"
@@ -273,9 +283,9 @@ func _compose_table_decision() -> bool:
 	var trace: Array[String] = []
 	for selection in 8:
 		if _payment_modal() != null: return await _compose_payment()
-		var submit := _attached("Card*Submit")
+		var submit := _task_commit()
 		if submit != null and not submit.disabled:
-			return await _pointer_activate_attached(submit)
+			return await _pointer_activate(submit)
 		var choice := _first_action_choice()
 		if choice != null:
 			trace.append("chooser:%s" % choice.text)
@@ -309,6 +319,10 @@ func _first_action_choice() -> Button:
 
 
 func _first_unselected_table_control() -> Button:
+	for candidate in main.find_children("ContextualCost*", "Button", true, false):
+		var button := candidate as Button
+		if button != null and button.is_visible_in_tree() and not button.disabled and not button.button_pressed:
+			return button
 	for pattern in ["Card*Target", "Card*Cost", "Card*Generator", "Card*Action"]:
 		for candidate in main.find_children(pattern, "Button", true, false):
 			var button := candidate as Button
@@ -431,7 +445,7 @@ func _navigate_workbench_tab(workbench: TabContainer, key: Key, expected: int) -
 func _motion_state_is_safe(state: Dictionary) -> bool:
 	var skip := main.find_child("Skip", true, false) as Button
 	if motion_enabled and not skip.disabled \
-			and (_is_complete() or _first_enabled_choice() != null):
+			and not _is_complete() and _current_table_prompt_is_operable():
 		state.saw_nonblocking_motion = true
 		if not state.tested_active_motion_toggle:
 			if not await _toggle_active_motion(skip):
@@ -440,6 +454,14 @@ func _motion_state_is_safe(state: Dictionary) -> bool:
 	if not motion_enabled and not _disabled_motion_is_settled(skip):
 		return false
 	return true
+
+
+func _current_table_prompt_is_operable() -> bool:
+	for pattern in ["ContextualCommit", "ContextualDecline", "Card*Action", "Card*Target", "Card*Generator", "CompleteChoiceSheet"]:
+		for candidate in main.find_children(pattern, "Button", true, false):
+			if candidate.is_visible_in_tree() and not candidate.disabled:
+				return true
+	return _first_enabled_choice() != null
 
 
 func _toggle_active_motion(skip: Button) -> bool:

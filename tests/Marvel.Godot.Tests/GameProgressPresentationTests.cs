@@ -230,6 +230,36 @@ public sealed class GameProgressPresentationTests
         Assert.True(recovered.LocksDecisions);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ExplicitRefreshExplainsDraftLossAndPreservesWaitingAuthority(bool localPrompt)
+    {
+        GameProgressPresentation refreshed = GameProgressPresentation.Refreshed(
+            Response(Outcome.Unfinished, localPrompt), draftCleared: true);
+
+        Assert.Contains("Uncommitted choices were cleared", refreshed.Description);
+        Assert.Contains("Accepted actions remain in play", refreshed.Description);
+        Assert.Equal(!localPrompt, refreshed.LocksDecisions);
+        Assert.DoesNotContain("table is current", GameProgressPresentation.FromResponse(
+            Response(Outcome.Unfinished, localPrompt)).Description);
+    }
+
+    [Theory]
+    [InlineData(Outcome.PlayersWin, GameProgressKind.PlayersWin, "Victory.")]
+    [InlineData(Outcome.VillainWins, GameProgressKind.VillainWins, "Defeat.")]
+    [InlineData(Outcome.PlayersLose, GameProgressKind.PlayersLose, "Defeat.")]
+    public void RefreshRetainsTheAuthoritativeEnding(Outcome outcome, GameProgressKind kind, string title)
+    {
+        GameProgressPresentation refreshed = GameProgressPresentation.Refreshed(
+            Response(outcome), draftCleared: true);
+
+        Assert.Equal(kind, refreshed.Kind);
+        Assert.Equal(title, refreshed.Title);
+        Assert.True(refreshed.LocksDecisions);
+        Assert.Contains("Uncommitted choices were cleared", refreshed.Description);
+    }
+
     private static EngineResponse Response(Outcome outcome, bool hasPrompt = true)
     {
         Prompt? prompt = outcome == Outcome.Unfinished && hasPrompt

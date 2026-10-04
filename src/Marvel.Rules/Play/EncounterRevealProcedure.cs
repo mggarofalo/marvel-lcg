@@ -5,7 +5,7 @@ using Marvel.Rules.Timing;
 
 namespace Marvel.Rules.Play;
 
-/// <summary>A read-only projection of a forced would-be-defeated interrupt.</summary>
+/// <summary>Deals encounter cards and runs their reveal procedure.</summary>
 
 internal static class EncounterRevealProcedure
 {
@@ -131,18 +131,7 @@ internal static class EncounterRevealProcedure
                 return;
         }
 
-        // Same reason as the boost card: the revealing area is where an
-        // encounter card registers its pools.
-        World.MoveToTop(
-            card,
-            world.AreaOf(DeckType.RevealingArea, PlayArea.Of(player)));
-        card.TurnFaceUp();
-        world.RecordInformation(InformationKind.Reveal);
-        events.Add(new CardsFlipped([card.ObjectId], true)
-        {
-            Trigger = "villain phase",
-            Verb = "Reveal",
-        });
+        EncounterRevealExposure.Prepare(world, card, player, events);
 
         bool uniqueBlocked = facts.Kind(card.FaceId) != CardKind.EncounterVillain
             && Uniqueness.IsBlocked(world, facts, card);
@@ -177,13 +166,14 @@ internal static class EncounterRevealProcedure
         Reveal.Resolve(world, facts, card, player, events, world.Agenda.Occurrence);
 
         FinishEncounterReveal(
-            world, facts, abilities, card, player, round, revealOccurrence, events);
+            world, abilities, card, player, round, revealOccurrence, events);
     }
 
     internal static void FinishEncounterReveal(
-        World world, ICardFacts facts, IRevealCardAbilities abilities, Card card, int player,
+        World world, IRevealCardAbilities abilities, Card card, int player,
         int round, Occurrence revealOccurrence, List<GameEvent> events)
     {
+        ICardFacts facts = world.Facts;
 
         // Step 3. "Resolve each **When Revealed** ability on that card
         // *(including those provided by keywords)*."
@@ -193,7 +183,9 @@ internal static class EncounterRevealProcedure
         // abilities initiate." Keyword-provided and printed When Revealed
         // abilities are therefore one ordering question.
         var occurrence = revealOccurrence;
-        if (!abilities.CancelWhenRevealed(world, card, player, occurrence))
+        WhenRevealedCanceled? canceled = abilities.CancelWhenRevealed(world, card, player, occurrence);
+        if (canceled is not null) events.Add(canceled);
+        else
         {
             var keyword = RevealKeywords.KeywordAbilities(world, facts, card, player);
             var printed = abilities.WhenRevealedAbilities(world, card, player);
@@ -226,14 +218,15 @@ internal static class EncounterRevealProcedure
         }
 
         FinishEncounterRevealTail(
-            world, facts, card, player, round, revealOccurrence, events);
+            world, card, player, round, revealOccurrence, events);
     }
 
     internal static void FinishEncounterRevealTail(
-        World world, ICardFacts facts, Card card, int player, int round,
+        World world, Card card, int player, int round,
         Occurrence revealOccurrence, List<GameEvent> events,
         bool beforeResponses = true)
     {
+        ICardFacts facts = world.Facts;
         // `rr:quickstrike.2` puts this after the card's own abilities, and it
         // is the one keyword that does something *after* them rather than
         // beside them.
@@ -259,64 +252,8 @@ internal static class EncounterRevealProcedure
         Reveal.Quickstrike(world, facts, card, player, round);
         Reveal.Teamwork(world, facts, card, player, round);
 
-        FinishEncounterRevealDiscard(
+        EncounterRevealDiscard.Schedule(
             world, facts, card, player, round, revealOccurrence, beforeResponses);
-    }
-
-    internal static void FinishEncounterRevealDiscard(
-        World world, ICardFacts facts, Card card, int player, int round,
-        Occurrence revealOccurrence, bool beforeResponses = true)
-    {
-
-        // Step 4. "If the card is a treachery, discard it." This is agenda
-        // work rather than an inline move because `rr:treachery.2.1` keeps a
-        // treachery whose last effect initiates activations faceup until all of
-        // them finish. `Then` places this behind any activations or choices the
-        // When Revealed text just scheduled.
-        if (facts.Kind(card.FaceId) == CardKind.Treachery)
-        {
-            world.Agenda.Then(new PhaseStep(
-                Steps.DiscardRevealedTreachery,
-                round,
-                4,
-                Subject: card.ObjectId,
-                Seat: player,
-                Plan: true));
-
-            // Reveal responses wait for all four reveal steps. Move both the
-            // work initiated by the final effect and this discard continuation
-            // ahead of that response window, preserving their scheduled order.
-            if (beforeResponses)
-            {
-                world.Agenda.BeforeResponses(revealOccurrence);
-            }
-        }
-    }
-
-    internal static void DiscardRevealedTreachery(
-        World world, ICardFacts facts, PhaseStep step, List<GameEvent> events)
-    {
-        var card = world.Cards[step.Subject];
-        // The area check keeps an ability that moved the treachery from being
-        // undone. The kind check makes a reconstructed agenda refuse stale or
-        // malformed continuation data rather than discarding another type.
-        if (facts.Kind(card.FaceId) != CardKind.Treachery
-            || card.Area.Type != DeckType.RevealingArea)
-        {
-            return;
-        }
-
-        var discard = world.AreaOf(DeckType.EncounterDiscardPile);
-        var from = card.Area;
-        World.MoveToTop(card, discard);
-        events.Add(new CardsMoved(
-            Places.Reference(from),
-            Places.Reference(discard),
-            [new Landing(card.ObjectId, discard.Cards.Count - 1)])
-        {
-            Trigger = "villain phase",
-            Verb = "Reveal",
-        });
     }
 
 }

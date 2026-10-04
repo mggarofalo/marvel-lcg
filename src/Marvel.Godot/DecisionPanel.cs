@@ -15,11 +15,23 @@ public sealed partial class DecisionPanel : VBoxContainer
     internal ControlMetrics ControlMetrics => VisualSystem.Controls(interfaceScale);
     internal DecisionComposer? composer;
     private CardPaymentModal? paymentModal;
+    private readonly CompleteDecisionSheetController choices;
+    internal bool CompleteChoicesOpen => choices.IsOpen;
+    internal void ShowCompleteChoices(Control source) => choices.Open(source);
+    internal void CompleteChoicesClosed() => choices.Closed();
+    internal void PresentOperationalNotice(Marvel.Client.GameProgressPresentation progress) =>
+        choices.PresentProgress(progress);
+    internal void SetCompleteChoicesVisibility(bool open) => mulliganBoard?.SetCompleteChoicesOpen(open);
     internal bool PaymentModalOpen => paymentModal is not null;
     internal Node LayoutHost => paymentModal?.Content ?? (Node)this;
-    internal void RoutePaymentInput(InputEvent input) => paymentModal?.Input(input);
+    internal void RouteDecisionSurfaceInput(InputEvent input)
+    {
+        paymentModal?.Input(input);
+        choices.Input(input);
+    }
     internal void ClearDecision()
     {
+        choices.Close();
         composer = null;
         world = null;
         Rebuild();
@@ -37,6 +49,7 @@ public sealed partial class DecisionPanel : VBoxContainer
     public DecisionPanel()
     {
         lifecycle = new DecisionPanelLifecycle(this);
+        choices = new CompleteDecisionSheetController(this);
         cardPreview.Changed += id => CardHovered?.Invoke(id);
     }
     /// <summary>Raised with one answer built from the current prompt.</summary>
@@ -55,9 +68,9 @@ public sealed partial class DecisionPanel : VBoxContainer
     public void SetInterfaceScale(InterfaceScale scale)
     {
         requestedScale = scale;
-        // The fixed tabletop dock uses one stable control geometry. Display
-        // scaling enlarges inspection surfaces without consuming the finite
-        // play canvas or moving its commit affordances out of view.
+        Theme = ClientTheme.Create(scale);
+        // The table's physical cards keep their own bounded geometry. The
+        // expanded editor uses the player's requested reading scale.
         InterfaceScale effectiveScale = EffectiveScale(
             scale, compactMulliganChrome, MulliganPrompt.IsOpening(composer?.Prompt));
         if (interfaceScale == effectiveScale)
@@ -80,12 +93,13 @@ public sealed partial class DecisionPanel : VBoxContainer
     {
         interfaceScale = EffectiveScale(
             requestedScale, compactMulliganChrome, MulliganPrompt.IsOpening(prompt));
+        choices.Close();
         lifecycle.Render(prompt, currentWorld, revision);
     }
 
     internal static InterfaceScale EffectiveScale(
         InterfaceScale requested, bool compactTableChrome, bool opening) =>
-        compactTableChrome ? InterfaceScale.Standard : requested;
+        requested;
 
     internal void SetCompactMulliganChrome(bool value)
     {
@@ -170,11 +184,16 @@ public sealed partial class DecisionPanel : VBoxContainer
         {
             return false;
         }
+        PresentAutomaticTarget(composer);
         PromptPresentation prompt = PromptPresentation.From(composer.Prompt, world);
+        MulliganBinding.Bind(this, mulliganBoard);
         BoardInteractionBinder.Bind(this, mulliganBoard);
         DraftChanged?.Invoke(composer, prompt);
         if (CardPaymentPresentation.UsesModal(composer, submitting))
+        {
+            choices.Close();
             paymentModal = new CardPaymentModal(this, prompt);
+        }
         DecisionPanelPromptRenderer.CreateLayout(this, composer, prompt);
         if (paymentModal is null)
             DecisionPanelPromptRenderer.AddAffordances(this, prompt, lifecycle.RenderGeneration);
@@ -183,6 +202,13 @@ public sealed partial class DecisionPanel : VBoxContainer
         else DecisionPanelSurface.AddDecline(this);
         ProgressChanged?.Invoke(composer.Progress());
         return true;
+    }
+
+    private void PresentAutomaticTarget(DecisionComposer draft)
+    {
+        SetMeta("automatic_target_selection", draft.UsesAutomaticTargetSelection);
+        SetMeta("automatic_target_id", draft.UsesAutomaticTargetSelection && draft.Targets.Count == 1
+            ? draft.Targets[0] : -1);
     }
 
     private void ClearPanel()
@@ -212,7 +238,7 @@ public sealed partial class DecisionPanel : VBoxContainer
             Outcome.PlayersLose => ("DEFEAT", "The players lost. No further decision is waiting."),
             _ => ("NO DECISION", "No decision is available."),
         };
-        AddChild(Text(heading, GodotThemeVariations.Eyebrow));
+        AddChild(Text(heading, GodotThemeVariations.Caption));
         AddChild(Text(detail, GodotThemeVariations.Body, wrap: true));
     }
 

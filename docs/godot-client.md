@@ -220,12 +220,14 @@ order. Spider-Man, standard Rhino, the recommended selection, no modular set,
 or one or more authored modular sets and an optional unsigned 32-bit seed open
 a local game. Leaving the seed blank
 chooses one before setup and displays it throughout play, so the resulting deal
-can be replayed. All subsequent decisions are made in the right-hand decision
-rail; no console or debug action is part of play.
+can be replayed. During play, source actions and offered targets are available
+on the table. One dock shows the current situation, editable draft, named
+commitment and latest result. Complete choices opens the full prompt editor
+using the same draft; payment uses a temporary chooser.
 
 The supported desktop viewport is 1920x1080 or larger. It keeps setup controls
-and the decision rail visible while leaving the table room for complete card
-names, printed text, traits, statistics and live values. Smaller viewports are
+and the current commitment visible while keeping local card values readable.
+Card inspection supplies full printed text and traits. Smaller viewports are
 not a product or release acceptance boundary.
 
 Leave the endpoint blank to start against the embedded engine. Enter a trusted
@@ -402,7 +404,8 @@ tools/godot-smoke.ps1 -GodotBin "C:\path\to\Godot_v4.7.1-stable_mono_win64_conso
 ```
 
 The hosted multiplayer smoke starts a real restricted server, loads two
-independent `Main.tscn` instances, and drives the visible Start, Copy
+independent `Main.tscn` instances at the supported 1920×1080 desktop viewport,
+and drives the visible Start, Copy
 invitation, Join, decision, synchronization and terminal controls. It requires
 a working system clipboard, so Linux runs it under Xvfb rather than Godot's
 clipboard-free headless display:
@@ -416,7 +419,13 @@ tools/godot-hosted-multiplayer-smoke.ps1 `
   -GodotBin "C:\path\to\Godot_v4.7.1-stable_mono_win64_console.exe"
 ```
 
-The smoke uses `--headless`; it does not use movie capture. The visual QA tools
+The hosted runner also has an invitation-layout profile: pass `--invitation-layout`
+to the shell runner or `-InvitationLayout` to PowerShell. It keeps a fresh normal
+restricted table’s invitation unused and checks sidebar containment and whole
+captions at 100/150 with collapsed/expanded history. Both profiles run on Windows
+and Linux.
+
+The local matrix uses `--headless`; it does not use movie capture. The visual QA tools
 additionally check and retain rendered viewport images at
 setup, open-table/prompt, player-phase, villain-phase and terminal checkpoints.
 The open-table checkpoint includes the dense horizontal rails and both visible

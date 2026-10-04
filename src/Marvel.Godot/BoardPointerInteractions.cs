@@ -11,16 +11,19 @@ internal sealed class BoardPointerInteractions
     private readonly Action<Control> previewExited;
     private readonly Dictionary<int, CardControl> mulliganCards = [];
     private readonly HashSet<int> legalMulliganTargets = [];
-    private readonly List<BoardDropTarget> dropTargets = [];
+    private readonly BoardPointerDropSurfaces drops = new();
     private readonly Dictionary<Control, (Vector2 Position, float Rotation, int Z)> resting = [];
-    private Control? mulliganDiscard;
-    private string mulliganDiscardVariation = string.Empty;
+
     private (Control Source, CardPointerCapture Gesture)? pointerCapture;
     private Func<CardPointerGesture, bool>? directActivation;
     private Func<CardPointerGesture, bool>? directDrag;
     private Func<CardPointerGesture, bool>? canDrag;
     private Action<int>? mulliganTargetRequested;
     private bool pointerLifted;
+    internal Func<bool>? MotionEnabled { get; set; }
+    internal Action<CardPointerGesture>? DragPreview { get; set; }
+    internal Action<bool>? DragFinished { get; set; }
+
     internal BoardPointerInteractions(
         Func<bool> isCurrent,
         Action<BoardCardPresentation, Control> activated,
@@ -103,20 +106,13 @@ internal sealed class BoardPointerInteractions
         directDrag = drag ?? throw new ArgumentNullException(nameof(drag));
     }
 
-    internal void RegisterDropTarget(int seat, Control control) =>
-        dropTargets.Add(new BoardDropTarget(seat, control));
+    internal void RegisterDropTarget(int seat, Control control) => drops.Register(seat, control);
 
-    internal bool IsDroppedOnLivePlayerLane(int seat, Vector2 position) =>
-        dropTargets.Any(target => target.Seat == seat
-            && InteractionControl.IsUsable(target.Control)
-            && target.Control.GetGlobalRect().HasPoint(position));
+    internal bool IsDroppedOnLivePlayerLane(int seat, Vector2 position) => drops.Contains(seat, position);
 
     internal void RegisterMulliganCard(int id, CardControl card) => mulliganCards[id] = card;
 
-    internal void RegisterMulliganDiscard(Control discard) {
-        mulliganDiscard = discard;
-        mulliganDiscardVariation = discard.ThemeTypeVariation;
-    }
+    internal void RegisterMulliganDiscard(Control discard) => drops.RegisterMulligan(discard);
 
     internal void BindMulliganTargets(IReadOnlyCollection<int> legal, Action<int> choose) {
         legalMulliganTargets.Clear();
@@ -186,8 +182,7 @@ internal sealed class BoardPointerInteractions
         && legalMulliganTargets.Contains(id)
         && mulliganCards.TryGetValue(id, out CardControl? source)
         && InteractionControl.IsUsable(source)
-        && InteractionControl.IsUsable(mulliganDiscard)
-        && mulliganDiscard!.GetGlobalRect().HasPoint(finish);
+        && drops.ContainsMulligan(finish);
 
     private void Activate(
         Control control, BoardCardPresentation card, bool isHandCard, Vector2 position)
@@ -212,6 +207,7 @@ internal sealed class BoardPointerInteractions
             SetDirectControlLayer(control, 400);
             control.Position = pose.Position + new Vector2(0, -12);
             if (!control.HasMeta("spatial_exhausted")) control.Rotation = 0;
+            if (control is CardControl hand) SpatialHandActionStrip.Refresh(hand);
             control.ZIndex = Math.Max(140, RestingZ(control, pose.Z) + 40);
         }
         previewEntered(card, control);
@@ -227,8 +223,7 @@ internal sealed class BoardPointerInteractions
     private void MoveCaptured(
         (Control Source, CardPointerCapture Gesture) captured, Vector2 pointer)
     {
-        if (!captured.Gesture.IsHandCard
-            || !CardPointerGestureRouter.IsDrag(captured.Gesture.Start, pointer)) return;
+        if (!CardPointerGestureRouter.IsDrag(captured.Gesture.Start, pointer)) return;
         if (!pointerLifted)
         {
             pointerLifted = true;
@@ -237,19 +232,29 @@ internal sealed class BoardPointerInteractions
             captured.Source.Modulate = Colors.White;
             bool playAvailable = canDrag?.Invoke(new CardPointerGesture(
                 captured.Gesture.Card, captured.Source, captured.Gesture.IsHandCard, pointer)) == true;
-            SetDropTargetsActive(playAvailable);
-            SetMulliganDiscardActive(captured.Gesture.Card.TargetId is { } id
+            drops.SetActive(playAvailable);
+            drops.SetMulliganActive(captured.Gesture.Card.TargetId is { } id
                 && legalMulliganTargets.Contains(id));
         }
         captured.Source.GlobalPosition = pointer - captured.Source.Size / 2;
+        if (captured.Source is CardControl hand) SpatialHandActionStrip.Refresh(hand);
+        DragPreview?.Invoke(new CardPointerGesture(captured.Gesture.Card, captured.Source,
+            captured.Gesture.IsHandCard, pointer));
     }
 
     private void ReturnCaptured(Control control, bool invalid)
     {
-        SetDropTargetsActive(false);
-        SetMulliganDiscardActive(false);
+        drops.SetActive(false);
+        drops.SetMulliganActive(false);
         pointerLifted = false;
+        DragFinished?.Invoke(invalid);
         if (!resting.TryGetValue(control, out var pose) || !InteractionControl.IsUsable(control)) return;
+        if (MotionEnabled?.Invoke() == false)
+        {
+            RestorePose(control);
+            control.Modulate = Colors.White;
+            return;
+        }
         if (invalid) control.Modulate = ClientTheme.ToGodot(VisualSystem.Palette.Danger);
         Tween tween = control.CreateTween().SetParallel();
         tween.SetTrans(Tween.TransitionType.Back).SetEase(Tween.EaseType.Out);
@@ -263,6 +268,7 @@ internal sealed class BoardPointerInteractions
         if (!resting.TryGetValue(control, out var pose) || !InteractionControl.IsUsable(control)) return;
         control.Position = pose.Position;
         control.Rotation = pose.Rotation;
+        if (control is CardControl hand) SpatialHandActionStrip.Refresh(hand);
         control.ZIndex = RestingZ(control, pose.Z);
     }
 
@@ -285,20 +291,5 @@ internal sealed class BoardPointerInteractions
         }
     }
 
-    private void SetDropTargetsActive(bool active) {
-        foreach (BoardDropTarget target in dropTargets.Where(target =>
-                     InteractionControl.IsUsable(target.Control)))
-        {
-            target.Control.ThemeTypeVariation = active
-                ? GodotThemeVariations.SpatialDropTarget : GodotThemeVariations.SpatialPlayerMat;
-            target.Control.SetMeta("spatial_drop_active", active);
-        }
-    }
 
-    private void SetMulliganDiscardActive(bool active) {
-        if (!InteractionControl.IsUsable(mulliganDiscard)) return;
-        mulliganDiscard!.ThemeTypeVariation = active
-            ? GodotThemeVariations.SpatialDropTarget : mulliganDiscardVariation;
-        mulliganDiscard.SetMeta("spatial_drop_active", active);
-    }
 }

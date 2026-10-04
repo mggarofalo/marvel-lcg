@@ -24,15 +24,8 @@ internal sealed class DecisionPanelLifecycle
     internal void Render(Prompt? prompt, WorldDescriptor world, long currentRevision)
     {
         panel.world = world ?? throw new ArgumentNullException(nameof(world));
-        panel.composer = prompt is null ? null : new DecisionComposer(prompt);
+        panel.composer = prompt is null ? null : InitialTableDraft.Create(prompt);
         panel.mulliganChoiceSheetOpen = false;
-        if (panel.composer is not null && MulliganPrompt.IsOpening(prompt))
-        {
-            // This is a client presentation choice. The engine offered exactly
-            // one mulligan affordance; selecting it starts the same typed draft
-            // the ordered renderer and final commit use.
-            panel.composer.SelectAffordance(prompt!.Affordances[0].Id);
-        }
         revision = currentRevision;
         submission.Render(currentRevision);
         panel.submitting = submission.IsSubmitted;

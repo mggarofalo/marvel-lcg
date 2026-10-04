@@ -1,0 +1,23 @@
+[
+  {
+    "name": "commitment-only-height",
+    "compiled": true,
+    "killed": true,
+    "expected": "cannot fit a whole commitment",
+    "exit_code": 1,
+    "exercised": true,
+    "source_restored": true,
+    "behavior_check": "Existing real-pointer whole-control visibility check",
+    "observed": "ContextualCommit160px tall has only74px unclipped hit area; expected complete commitment cannot fit. The first intended visibility check aborts before the additional viewport-height guard.",
+    "classification_note": "Original parser required the later guard message and underclassified the actual intended whole-control visibility failure. No setup/parse/build failure was counted."
+  },
+  {
+    "name": "sidebar-entry-minimum",
+    "compiled": true,
+    "killed": true,
+    "expected": "sidebar extends beyond the window",
+    "exit_code": 1,
+    "exercised": true,
+    "source_restored": true
+  }
+]

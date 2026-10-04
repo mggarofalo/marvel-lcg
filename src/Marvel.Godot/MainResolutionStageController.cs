@@ -42,6 +42,9 @@ internal sealed class MainResolutionStageController
 
     private void RenderCards(IReadOnlyList<BoardCardPresentation> contextCards)
     {
+        // The desktop table carries the cause beside its single composer.
+        // Hidden workbench cards must not become interaction anchors.
+        if (DesktopTabletop.Uses(main.GetViewportRect().Size)) return;
         foreach (BoardCardPresentation card in contextCards)
         {
             CardControl control = CardControl.Create(

@@ -1,0 +1,21 @@
+  Marvel.Core -> /Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Release/net8.0/Marvel.Core.dll
+  Marvel.MarvelCdb.Harvest -> /Users/michael/Source/marvel-lcg/tools/Marvel.MarvelCdb.Harvest/bin/Release/net8.0/Marvel.MarvelCdb.Harvest.dll
+  Marvel.Rulings.Harvest -> /Users/michael/Source/marvel-lcg/tools/Marvel.Rulings.Harvest/bin/Release/net8.0/Marvel.Rulings.Harvest.dll
+  Marvel.Rules.Packs.Harvest -> /Users/michael/Source/marvel-lcg/tools/Marvel.Rules.Packs.Harvest/bin/Release/net8.0/Marvel.Rules.Packs.Harvest.dll
+  Marvel.Rules.Harvest -> /Users/michael/Source/marvel-lcg/tools/Marvel.Rules.Harvest/bin/Release/net8.0/Marvel.Rules.Harvest.dll
+  Marvel.Rules -> /Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Release/net8.0/Marvel.Rules.dll
+  Marvel.Rules.Tests -> /Users/michael/Source/marvel-lcg/tests/Marvel.Rules.Tests/bin/Release/net8.0/Marvel.Rules.Tests.dll
+Test run for /Users/michael/Source/marvel-lcg/tests/Marvel.Rules.Tests/bin/Release/net8.0/Marvel.Rules.Tests.dll (.NETCoreApp,Version=v8.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.63]     Marvel.Rules.Tests.Play.VillainPhaseBoostIconsAddToTheSchemeValueTests.TheEngagedPlayerOrdersTheirMinionActivations [FAIL]
+  Failed Marvel.Rules.Tests.Play.VillainPhaseBoostIconsAddToTheSchemeValueTests.TheEngagedPlayerOrdersTheirMinionActivations [47 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: Area
+Actual:   Card
+  Stack Trace:
+     at Marvel.Rules.Tests.Play.VillainPhaseBoostIconsAddToTheSchemeValueTests.TheEngagedPlayerOrdersTheirMinionActivations() in /Users/michael/Source/marvel-lcg/tests/Marvel.Rules.Tests/Play/VillainPhaseTests.BoostIconsAddToTheSchemeValue1.cs:line 202
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 68 ms - Marvel.Rules.Tests.dll (net8.0)

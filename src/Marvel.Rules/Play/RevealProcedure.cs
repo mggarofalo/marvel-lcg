@@ -26,7 +26,7 @@ internal static class RevealProcedure
                     step.Seat, step.Round, events);
                 break;
             case Steps.DiscardRevealedTreachery:
-                EncounterRevealProcedure.DiscardRevealedTreachery(
+                EncounterRevealDiscard.Resolve(
                     world, facts, step, events);
                 break;
             case Steps.ChooseAttachmentTarget:
@@ -194,7 +194,7 @@ internal static class RevealProcedure
         }
 
         EncounterRevealProcedure.FinishEncounterRevealTail(
-            world, facts, world.Cards[step.Subject], step.Seat, step.Round,
+            world, world.Cards[step.Subject], step.Seat, step.Round,
             occurrence, events, beforeResponses: false);
     }
 
@@ -250,7 +250,7 @@ internal static class RevealProcedure
             Reveal.Quickstrike(world, facts, card, step.Seat, step.Round);
         }
 
-        EncounterRevealProcedure.FinishEncounterRevealDiscard(
+        EncounterRevealDiscard.Schedule(
             world, facts, card, step.Seat, step.Round,
             step.ProcedureOccurrence
                 ?? throw new InvalidOperationException("post-reveal order has no occurrence"));
@@ -274,7 +274,7 @@ internal static class RevealProcedure
         Reveal.Resolve(
             world, facts, card, step.Seat, events, occurrence, input.Affordance);
         EncounterRevealProcedure.FinishEncounterReveal(
-            world, facts, abilities, card, step.Seat, step.Round, occurrence, events);
+            world, abilities, card, step.Seat, step.Round, occurrence, events);
     }
 
     internal static void FinalizeAllyEntry(

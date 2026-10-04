@@ -126,9 +126,27 @@ internal static class ActivationProcedure
         return new Prompt(seat, Question.Order, TimingPriority.Untimed,
             Steps.EnemiesActivate,
             $"{world.Seats[seat].Name} orders engaged minion activations", false,
-            [new Affordance(villain.ObjectId, "Order", villain.ObjectId, seat,
+            [new Affordance(villain.ObjectId, "Order",
+                world.AreaOf(DeckType.EngagedEnemiesArea, PlayArea.Of(seat)).Id, seat,
                 "engaged minions", new TargetRequest(ids, ids.Count, ids.Count,
-                    Rule: "rr:minion.3"))]);
+                    Rule: "rr:minion.3"))
+            {
+                AnchorKind = AffordanceAnchorKind.Area,
+                DisplayLabel = "Order minion activations",
+                CommitLabel = "Confirm minion activation order",
+                Description = "Choose every engaged minion in the order you want it to activate.",
+            }])
+        {
+            PublicKind = PublicDecisionKind.MinionActivationOrder,
+            DisplayQuestion = "Choose minion activation order",
+            ContextCardIds = ids,
+            // rr:minion.3: "one minion at a time and in an order of the engaged
+            // player's choosing". rr:activation.1 makes each activation depend
+            // on the player's form when that enemy activates.
+            Description = $"{world.Facts.Title(villain.FaceId)} has finished activating against "
+                + $"{world.Seats[seat].Name}. Their engaged minions activate next, one at a time. "
+                + "Select each minion in order, then confirm. Each attacks in hero form or schemes in alter-ego form.",
+        };
     }
 
     private static int? NextEnemy(

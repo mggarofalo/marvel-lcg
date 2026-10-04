@@ -22,13 +22,13 @@ public sealed record GameProgressPresentation(
             Outcome.Unfinished when response.Prompt is null => new(
                 GameProgressKind.WaitingForOtherPlayer,
                 "Waiting for another player.",
-                $"The table is current · {response.Events.Count} new events",
+                $"Showing the last received table · {response.Events.Count} new events",
                 "GAME IN PROGRESS  ·  WAITING FOR ANOTHER PLAYER",
                 LocksDecisions: true),
             Outcome.Unfinished => new(
                 GameProgressKind.AwaitingDecision,
                 "Your move.",
-                $"The table is current · {response.Events.Count} new events",
+                $"Showing the last received table · {response.Events.Count} new events",
                 "READY FOR YOUR CHOICE",
                 LocksDecisions: false),
             Outcome.PlayersWin => new(
@@ -61,6 +61,23 @@ public sealed record GameProgressPresentation(
         prior?.OperationalLock is { } blocked
             ? Recovered(response, blocked)
             : FromResponse(response);
+
+    /// <summary>Explains replacement of a local draft after an explicit table refresh.</summary>
+    public static GameProgressPresentation Refreshed(EngineResponse response, bool draftCleared)
+    {
+        GameProgressPresentation current = FromResponse(response);
+        string explanation = draftCleared
+            ? "Uncommitted choices were cleared. Compose again from the current offers. Accepted actions remain in play."
+            : "Showing the latest received table.";
+        if (response.World!.Outcome != Outcome.Unfinished)
+            return current with { Description = current.Description + " " + explanation };
+        return current with
+        {
+            Kind = GameProgressKind.Recovered,
+            Title = "Table refreshed.",
+            Description = explanation,
+        };
+    }
 
     /// <summary>Shows that one mutation is in flight and cannot be repeated.</summary>
     public static GameProgressPresentation Resolving() => new(

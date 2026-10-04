@@ -1,0 +1,116 @@
+  Marvel.Core -> /Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Debug/net8.0/Marvel.Core.dll
+  Marvel.Rules -> /Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Rules.dll
+  Marvel.Decisions -> /Users/michael/Source/marvel-lcg/src/Marvel.Decisions/bin/Debug/net8.0/Marvel.Decisions.dll
+  Marvel.View -> /Users/michael/Source/marvel-lcg/src/Marvel.View/bin/Debug/net8.0/Marvel.View.dll
+  Marvel.Cards -> /Users/michael/Source/marvel-lcg/src/Marvel.Cards/bin/Debug/net8.0/Marvel.Cards.dll
+  Marvel.Session -> /Users/michael/Source/marvel-lcg/src/Marvel.Session/bin/Debug/net8.0/Marvel.Session.dll
+  Marvel.Content -> /Users/michael/Source/marvel-lcg/src/Marvel.Content/bin/Debug/net8.0/Marvel.Content.dll
+  Marvel.Core -> /Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Debug/net8.0/Marvel.Core.dll
+  Marvel.Rules -> /Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Rules.dll
+  Marvel.Server -> /Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/embedded/Debug/net8.0/Marvel.Server.dll
+  Marvel.Client -> /Users/michael/Source/marvel-lcg/src/Marvel.Client/bin/Debug/net8.0/Marvel.Client.dll
+  Marvel.Godot -> /Users/michael/Source/marvel-lcg/src/Marvel.Godot/.godot/mono/temp/bin/Debug/Marvel.Godot.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.29
+Godot Engine v4.7.1.stable.mono.official.a13da4feb - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M2 Pro
+
+{"event_id":"server.request.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T15:54:02.379572+00:00","process_id":47118,"duration_milliseconds":2,"disposition":"accepted","request_id":"f8c82d5fbcd5a88a8024566176e054e0","game_id":"e3b0c44298fc1c149afbf4c8996fb924","operation":"setup","save_committed":false,"replay_verified":false,"replay_diverged":false,"session_retired":false,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"server.request.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T15:54:02.922803+00:00","process_id":47118,"duration_milliseconds":0,"disposition":"accepted","request_id":"e101315b55df2f3bc46c8b8e515e5b39","game_id":"e3b0c44298fc1c149afbf4c8996fb924","operation":"setup","save_committed":false,"replay_verified":false,"replay_diverged":false,"session_retired":false,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"server.request.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T15:54:03.314844+00:00","process_id":47118,"duration_milliseconds":0,"disposition":"accepted","request_id":"35b266c82d14dfb4c43b6c5f46564b14","game_id":"e3b0c44298fc1c149afbf4c8996fb924","operation":"setup","save_committed":false,"replay_verified":false,"replay_diverged":false,"session_retired":false,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"session.persistence.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T15:54:03.451503+00:00","process_id":47118,"duration_milliseconds":18,"disposition":"accepted","request_id":"6b721b25fc53e79af573967380ce2f4d","game_id":"a3bd9e96df0cad85eabd015a206a1916","operation":"persistence","save_committed":true,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+{"event_id":"server.request.completed","process":"Marvel.Godot","timestamp_utc":"2026-10-04T15:54:03.451701+00:00","process_id":47118,"duration_milliseconds":135,"disposition":"accepted","request_id":"6b721b25fc53e79af573967380ce2f4d","game_id":"a3bd9e96df0cad85eabd015a206a1916","operation":"open","revision":0,"save_committed":true,"replay_verified":false,"replay_diverged":false,"session_retired":false,"product_version":"0.1.0-dev.0","commit":"local","runtime":"v0.1.0-dev.0 \u00B7 engine engine-replay-v3 \u00B7 protocol 19 \u00B7 save 4"}
+HIT_POINT_FAILURE control=MulliganDiscard45 point=(476.4769, 811.4244) mouse=(476.4769, 811.4244) rect=[P: (410.4769, 789.4244), S: (132.0, 44.0)] visible=[P: (410.4769, 789.4244), S: (132.0, 44.0)] hovered=CausalContext:<ScrollContainer#202282900732>
+ERROR: control 'MulliganDiscard45' has no stable unclipped and unobscured hit area: visible [P: (410.4769, 789.4244), S: (132.0, 44.0)] of [P: (410.4769, 789.4244), S: (132.0, 44.0)] z=0; hovered=/root/@SubViewport@2/Main/Margin/Shell/Content/Play/Board/TableScroll/Margin/Areas/AstraTableSurface/ContextualDecision/@Control@175/CausalContext z=0
+Visible UI:
+Engaged with player 1
+Discard
+Empty
+▰
+32
+Deck
+Rhino
+Stage  1
+SCH  1
+ATK  2
+HP  28/28
+
+Discard
+Empty
+▰
+34
+Deck
+Peter Parker
+REC  3
+HP  10/10
+
+Avengers Mansion
+Support · Basic
+COST  4
+M
+◇ Available target
+□ DISCARD
+Web-Shooter
+Upgrade · Hero
+COST  1
+P
+◇ Available target
+□ DISCARD
+Aunt May
+Support · Hero
+COST  1
+E
+◇ Available target
+□ DISCARD
+Spider-Tracer
+Upgrade · Hero
+COST  1
+E
+◇ Available target
+□ DISCARD
+Web-Shooter
+Upgrade · Hero
+COST  1
+P
+◇ Available target
+□ DISCARD
+Swinging Web Kick
+Event · Hero
+COST  3
+M
+◇ Available target
+□ DISCARD
+Other piles
+Player 1 opening hand · 6 cards
+Opening hand · Decision for Spider-Man
+
+0 cards staged for replacement (up to 6).  ·  Replacements are drawn after you confirm.
+Keep hand
+Clear replacements
+P1 ·  SPIDER-MAN
+HP 10 · ALTEREGO
+Active  ·  Answering  ·  Public focus · Inspecting
+P2 ·  CAPTAIN MARVEL
+HP 12 · ALTEREGO
+Observing
+The Break-In!
+THREAT  ◆ 0/14
+Escalation  2
+
+Complete choices
+Shared table view. Active player: Spider-Man. Inspecting: Spider-Man.
+Refresh to receive other players' latest actions.
+History
+Last synced · r0
+↻
+Scale 150%
+Motion
+
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _fail (res://smoke/local_game_smoke_core.gd:93)
+       [1] _report_hit_area_failure (res://smoke/local_game_smoke_support.gd:103)

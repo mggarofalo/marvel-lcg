@@ -1,0 +1,8 @@
+{
+  "mutant": "physical-hand-separation",
+  "compiled": true,
+  "killed": true,
+  "exit": 1,
+  "log": "seventh-mutant-physical-hand-separation.log",
+  "restored_sha256": "394b4a5e1a9271211f5ab736d7ef0c82f11538e0ddd41d193cd93a88314f5704"
+}

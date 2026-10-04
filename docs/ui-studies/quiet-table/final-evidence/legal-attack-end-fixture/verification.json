@@ -1,0 +1,31 @@
+{
+  "setup": {
+    "Scenario": "rhino",
+    "Heroes": [
+      "black_panther"
+    ],
+    "ModularSets": null,
+    "Seed": 17
+  },
+  "decisions": 7,
+  "final_digest": "48174c2ec5837ab645398cd008a6de1bf070fe42e193eedea57ef67d7e4591ea",
+  "joined_revision": 7,
+  "joined_seat": 0,
+  "prompt": null,
+  "description": "Enemy attack \u00B7 Step 6 of 6 \u00B7 End attack \u00B7 Response window\nRhino finished attacking Black Panther against Black Panther. Calculated attack damage: 2. The attack dealt damage. Black Panther is now at 7/11 HP.",
+  "accepted": {
+    "Affordance": 25,
+    "Targets": [],
+    "Resources": [],
+    "Values": {},
+    "Allocations": []
+  },
+  "accepted_revision": 8,
+  "accepted_followup": null,
+  "declined_followup": null,
+  "declined_question": 0,
+  "declined_label": "\n--- Black Panther\u0027s Turn (2) ---",
+  "declined_description": "Player phase \u00B7 Round 2. Take actions or end your turn. After every player finishes, choose hand discards, draw up to hand size and ready cards.",
+  "declined_phase": "PlayerTurn",
+  "note": "Fresh seeded DatasetGameFactory deal; only offered decisions; every pre/post and final digest verified. No card/state/agenda injection."
+}

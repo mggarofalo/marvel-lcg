@@ -1,0 +1,118 @@
+{
+  "Specification": {
+    "Scenario": "rhino",
+    "Heroes": [
+      "spider_man"
+    ],
+    "ModularSets": null,
+    "Seed": 3
+  },
+  "Steps": [
+    {
+      "Prompt": "Spider-Man resolves mulligans",
+      "Question": "Opening hand",
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 0,
+        "Targets": [
+          32,
+          16,
+          8,
+          29
+        ],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "c87f5cfadd7acec09215b33f6ec27cc1c37b0ccc42b6b8abb96257d052120692",
+      "After": "4478732cd42ea3eed12c4adc5a3772312b36884e75ca74cc35ff942667e87320"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (1) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "4478732cd42ea3eed12c4adc5a3772312b36884e75ca74cc35ff942667e87320",
+      "After": "9e0932a53951d141c2845b17b2f822e635953516f3111e0ba8bd45c1d43b3580"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (1) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": -1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "9e0932a53951d141c2845b17b2f822e635953516f3111e0ba8bd45c1d43b3580",
+      "After": "9e0932a53951d141c2845b17b2f822e635953516f3111e0ba8bd45c1d43b3580"
+    },
+    {
+      "Prompt": "Spider-Man End Phase",
+      "Question": "Choose end-of-phase discards",
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 5,
+        "Targets": [
+          18
+        ],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "9e0932a53951d141c2845b17b2f822e635953516f3111e0ba8bd45c1d43b3580",
+      "After": "752ab230eeae8ae2e012a9b5b17a688878348669c2e629318228acc5a4a7b964"
+    },
+    {
+      "Prompt": "Interrupt to WhenThreatWouldBePlaced",
+      "Question": "Interrupt 1 threat being placed on The Break-In!?",
+      "Seat": 0,
+      "Decision": {
+        "Affordance": -1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "752ab230eeae8ae2e012a9b5b17a688878348669c2e629318228acc5a4a7b964",
+      "After": "b74ed1d45ef7a6ae5bdc8fdb1e8bd34eefb3f8da4d82e558c5183f0b19ae7e4f"
+    },
+    {
+      "Prompt": "Interrupt to WhenEnemyActivates and WhenAttackInitiated",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": -1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "b74ed1d45ef7a6ae5bdc8fdb1e8bd34eefb3f8da4d82e558c5183f0b19ae7e4f",
+      "After": "60ff3b379f9bd42026844dafa4a1309060b7240d4312a2816e6116dc4db73789"
+    },
+    {
+      "Prompt": "Spider-Man declares a defender",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": -1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "60ff3b379f9bd42026844dafa4a1309060b7240d4312a2816e6116dc4db73789",
+      "After": "1cafd8fc28e9ac23420101e0979548726f5ff814257042ba7a6eeb99de91ffe1"
+    }
+  ],
+  "FinalDigest": "1cafd8fc28e9ac23420101e0979548726f5ff814257042ba7a6eeb99de91ffe1"
+}

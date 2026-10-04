@@ -1,5 +1,8 @@
 extends "res://smoke/local_game_smoke_payment.gd"
 
+const CardDrag = preload("res://smoke/local_game_smoke_card_drag.gd")
+const ReceiptNavigation = preload("res://smoke/local_game_smoke_receipt_navigation.gd")
+
 const IDENTITY := 1
 const BLACK_CAT := 8
 const SPIDER_TRACER := 17
@@ -13,6 +16,8 @@ func _direct_table_journey_is_operable() -> bool:
 	# direct controls through the generic visible-decision journey below.
 	if OS.get_environment("MARVEL_SMOKE_TWO_PLAYER") == "true":
 		return true
+	if not await ReceiptNavigation.read_previous_receipt(self):
+		return false
 	if not await _direct_web_shooter_is_played():
 		_fail("the direct Web-Shooter journey ended without a reported interaction failure")
 		return false
@@ -86,7 +91,7 @@ func _complete_web_shooter_play() -> bool:
 		return false
 	if not await _commit_once("Web-Shooter"):
 		return false
-	return true
+	return await ReceiptNavigation.replacement_receipt_starts_at_top(self)
 
 
 func _direct_change_form_is_played() -> bool:
@@ -96,13 +101,13 @@ func _direct_change_form_is_played() -> bool:
 		return false
 	var chooser := main.find_child("CardActionChoices", true, false) as Control
 	if chooser == null:
-		if _attached(_attached_name(IDENTITY, "Submit")) == null:
+		if _task_commit() == null:
 			_fail("the identity action selected neither Change Form nor an anchored chooser")
 			return false
 		if not await _commit_once("Change Form"):
 			return false
 		return await _undo_and_replay_change_form()
-	var change := _visible_button_beginning(chooser, "◇ Change Form")
+	var change := _offered_action_button(chooser, "Change Form")
 	if change == null or not await _pointer_activate(change):
 		_fail("the anchored identity chooser cannot select Change Form")
 		return false
@@ -124,6 +129,8 @@ func _undo_and_replay_change_form() -> bool:
 		return (_node("Toolbar/SyncStatus") as Label).text != revision):
 		_fail("the direct form-change undo did not reconcile")
 		return false
+	if not _reverted_event_presentation_is_clear():
+		return false
 	if not await _set_history_drawer(false):
 		return false
 	var action := _attached(_attached_name(IDENTITY, "Action"))
@@ -132,7 +139,7 @@ func _undo_and_replay_change_form() -> bool:
 		return false
 	var chooser := main.find_child("CardActionChoices", true, false) as Control
 	if chooser != null:
-		var change := _visible_button_beginning(chooser, "◇ Change Form")
+		var change := _offered_action_button(chooser, "Change Form")
 		if change == null or not await _pointer_activate(change):
 			return false
 	if not await _commit_once("Change Form replay"):
@@ -172,11 +179,17 @@ func _direct_black_cat_is_played() -> bool:
 
 
 func _direct_attacks_are_played() -> bool:
+	if not await ReceiptNavigation.read_previous_receipt(self):
+		return false
 	if not await _select_attached_action(BLACK_CAT, "Attack"):
 		return false
+	ReceiptNavigation.navigation_state(self, "Black Cat composition")
 	if not await _choose_target(RHINO):
 		return false
+	ReceiptNavigation.navigation_state(self, "before Black Cat commit")
 	if not await _commit_once("Attack"):
+		return false
+	if not await ReceiptNavigation.replacement_receipt_starts_at_top(self, "Black Cat attack"):
 		return false
 	if not await _exhausted_card_is_spatial(BLACK_CAT):
 		return false
@@ -196,7 +209,7 @@ func _exhausted_card_is_spatial(anchor: int) -> bool:
 		return card != null and card.has_meta("spatial_exhausted") \
 				and abs(abs(card.rotation) - PI / 2.0) < 0.01 \
 				and caption != null and caption.is_visible_in_tree() \
-				and abs(caption.rotation) < 0.01)
+				and abs(caption.get_global_transform().get_rotation()) < 0.01)
 	if found:
 		return true
 	var card := _card_for_anchor(anchor)
@@ -208,19 +221,17 @@ func _exhausted_card_is_spatial(anchor: int) -> bool:
 		str(card != null and card.has_meta("spatial_exhausted")),
 		str(card.rotation if card != null else -99.0),
 		str(caption != null),
-		str(caption.rotation if caption != null else -99.0),
+		str(caption.get_global_transform().get_rotation() if caption != null else -99.0),
 	])
 	return false
 
 
 func _visible_exhausted_caption(anchor: int) -> Label:
-	var captions := main.find_children("ExhaustedCaption%d" % anchor, "Label", true, false)
-	captions.reverse()
-	for candidate in captions:
-		if is_instance_valid(candidate) and not candidate.is_queued_for_deletion() \
-				and candidate.is_visible_in_tree():
-			return candidate as Label
-	return null
+	var card := _card_for_anchor(anchor)
+	if card == null:
+		return null
+	var caption := card.get_node_or_null("SpatialOverlay/SpatialControls/Contents/PhysicalCardCaption") as Label
+	return caption if caption != null and caption.is_visible_in_tree() else null
 
 
 func _select_attached_action(anchor: int, verb: String) -> bool:
@@ -230,8 +241,8 @@ func _select_attached_action(anchor: int, verb: String) -> bool:
 		return false
 	var chooser := main.find_child("CardActionChoices", true, false) as Control
 	if chooser == null:
-		return _attached("Card*Target") != null or _attached(_attached_name(anchor, "Submit")) != null
-	var choice := _visible_button_beginning(chooser, "◇ %s" % verb)
+		return _attached("Card*Target") != null or _task_commit() != null
+	var choice := _offered_action_button(chooser, verb)
 	if choice == null or not await _pointer_activate(choice):
 		_fail("the attached chooser has no %s action for anchor %d" % [verb, anchor])
 		return false
@@ -264,12 +275,13 @@ func _choose_target(anchor: int) -> bool:
 	if _payment_modal() != null:
 		var target := _payment_button("Target%d" % anchor)
 		if target != null: return await _pointer_activate(target)
-		return "automatic" in _visible_text(_payment_modal())
+		return _decision().get_meta("automatic_target_selection", false) \
+			and _decision().get_meta("automatic_target_id", -1) == anchor
 	var target := _attached(_attached_name(anchor, "Target"))
 	if target != null:
 		return await _pointer_activate(target)
 	var card := _card_for_anchor(anchor)
-	if card != null and "✓ TARGET" in _visible_text(card):
+	if card != null and "✓ Selected" in _visible_text(card):
 		return true
 	_fail("the prompt did not offer stable target anchor %d" % anchor)
 	return false
@@ -279,9 +291,9 @@ func _choose_cost(index: int) -> bool:
 	if _payment_modal() != null:
 		var cost := _payment_button("Cost%d" % index)
 		return await _pointer_activate(cost) if cost != null else _payment_button("Resource*") != null
-	var cost := _attached("Card*Cost")
+	var cost := main.find_child("ContextualCost%d" % index, true, false) as Button
 	if cost == null:
-		return _attached("Card*Generator") != null or _attached("Card*Submit") != null
+		return _attached("Card*Generator") != null or _task_commit() != null
 	if not await _pointer_activate(cost):
 		_fail("the selected action did not expose cost option %d" % index)
 		return false
@@ -307,6 +319,8 @@ func _activate_attached(anchor: int, intent: String) -> bool:
 
 
 func _pointer_activate_attached(control: Control) -> bool:
+	if control != null and String(control.name).begins_with("Contextual"):
+		return await _pointer_activate(control)
 	var control_name := String(control.name)
 	for frame in 5:
 		await process_frame
@@ -319,7 +333,7 @@ func _pointer_activate_attached(control: Control) -> bool:
 		await process_frame
 	await _scroll_control_into_view(control)
 	if not await _align_attached_control_to_table(control) \
-			or _visible_control_rect(control).size.y < 44.0 \
+			or _visible_control_rect(control).size.y < 32.0 \
 			or not await _activate_exposed_control_point(control):
 		_fail(("attached control '%s' has no operable native pointer path " \
 				+ "(parent=%s rect=%s visible=%s)") % [control.name,
@@ -367,9 +381,9 @@ func _activate_exposed_control_point(control: Control) -> bool:
 
 
 func _commit_once(expected: String) -> bool:
-	var submit := _payment_button("Submit") if _payment_modal() != null else _attached("Card*Submit")
+	var submit := _payment_button("Submit") if _payment_modal() != null else _task_commit()
 	if submit == null or submit.disabled:
-		_fail("%s has no ready card-local execute control" % expected)
+		_fail("%s has no ready named task commitment" % expected)
 		return false
 	var revision := (_node("Toolbar/SyncStatus") as Label).text
 	if not await _pointer_activate(submit):
@@ -387,11 +401,29 @@ func _drag_to_prompt_owner_lane(card: Control) -> bool:
 		_fail("the prompt owner's live lane is not available as a hand-card drop target")
 		return false
 	await _scroll_control_into_view(lane)
-	var finish := _visible_control_rect(lane).get_center()
-	if _visible_control_rect(lane).size == Vector2.ZERO:
+	var finish := _blank_lane_point(lane, card)
+	if finish.x < 0:
 		_fail("the prompt-owner live lane has no visible drop area")
 		return false
 	return await _drag(card, finish)
+
+
+func _blank_lane_point(lane: Control, source: Control) -> Vector2:
+	var bounds := _visible_control_rect(lane)
+	for y in [0.08, 0.25, 0.48, 0.75, 0.95]:
+		for x in [0.10, 0.50, 0.90]:
+			var point := bounds.position + bounds.size * Vector2(x, y)
+			if not _point_over_card(point, source):
+				return point
+	return Vector2(-1, -1)
+
+
+func _point_over_card(point: Vector2, source: Control) -> bool:
+	for candidate in main.find_children("ProceduralCard*", "Control", true, false):
+		var card := candidate as Control
+		if card != source and card.is_visible_in_tree() and card.get_global_rect().has_point(point):
+			return true
+	return false
 
 
 func _outside_drag_keeps_draft_empty(card: Control) -> bool:
@@ -411,40 +443,10 @@ func _outside_drag_keeps_draft_empty(card: Control) -> bool:
 
 
 func _drag(card: Control, finish: Vector2) -> bool:
-	var start := _card_body_point(card)
-	if not await _control_owns_point(card, start):
-		_fail("card '%s' has no exposed body from which to begin its drag" % card.name)
-		return false
-	var origin := card.global_position
-	var press := InputEventMouseButton.new()
-	press.button_index = MOUSE_BUTTON_LEFT
-	press.pressed = true
-	press.position = start
-	press.global_position = start
-	render_viewport.push_input(press, true)
-	await process_frame
-	var midpoint := start.lerp(finish, 0.55)
-	var move := InputEventMouseMotion.new()
-	move.position = midpoint
-	move.global_position = midpoint
-	render_viewport.push_input(move, true)
-	await process_frame
-	if card.get_global_rect().get_center().distance_to(midpoint) > 4.0 or card.z_index < 120:
-		_fail("dragging '%s' produced no lifted intermediate frame" % card.name)
-		return false
-	move = InputEventMouseMotion.new()
-	move.position = finish
-	move.global_position = finish
-	render_viewport.push_input(move, true)
-	await process_frame
-	var release := InputEventMouseButton.new()
-	release.button_index = MOUSE_BUTTON_LEFT
-	release.position = finish
-	release.global_position = finish
-	render_viewport.push_input(release, true)
-	await process_frame
-	if card.is_inside_tree() and card.global_position.distance_to(origin) > 2.0:
-		await main.get_tree().create_timer(0.25).timeout
+	return await CardDrag.perform(self, card, finish)
+
+
+func _drag_preview_is_meaningful(_card: Control) -> bool:
 	return true
 
 
@@ -461,3 +463,10 @@ func _body_click_inspects_without_drafting(card: Control) -> bool:
 	render_viewport.push_input(escape)
 	await process_frame
 	return not inspector.visible
+
+
+func _offered_action_button(surface: Control, verb: String) -> Button:
+	for candidate in surface.find_children("Affordance*", "Button", true, false):
+		if candidate.is_visible_in_tree() and candidate.get_meta("offered_verb", "") == verb:
+			return candidate as Button
+	return null

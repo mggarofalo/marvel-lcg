@@ -22,17 +22,17 @@ internal static class ClientThemeSurfaces
         Panel(theme, GodotThemeVariations.TabletopPile, FlatEdges(
             raised.Darkened(0.04f), Alpha(outline, 0.62f), 7, M(10, 8, 12, 10), M(1, 1, 5, 5)));
         Panel(theme, GodotThemeVariations.SpatialVillainMat, Flat(
-            Alpha(encounter.Darkened(0.45f), 0.72f), Alpha(encounter, 0.66f), 1, 44,
-            M(18, 14, 18, 14), borderBottom: 3));
+            Alpha(encounter, 0.045f), Alpha(outline, 0.20f), 1, 12,
+            M(18, 14, 18, 14)));
         Panel(theme, GodotThemeVariations.SpatialPlayerMat, Flat(
-            Alpha(hero.Darkened(0.55f), 0.74f), Alpha(hero, 0.5f), 1, 38,
-            M(18, 14, 18, 14), borderLeft: 3));
+            Alpha(hero, 0.035f), Alpha(outline, 0.20f), 1, 12,
+            M(18, 14, 18, 14)));
         Panel(theme, GodotThemeVariations.SpatialPile, FlatEdges(
             surface.Darkened(0.12f), Alpha(outline, 0.8f), 9,
             M(8, 8, 8, 8), M(2, 2, 7, 7)));
         Panel(theme, GodotThemeVariations.SpatialDecision, Flat(
-            Alpha(surface.Darkened(0.08f), 0.94f), Alpha(amber, 0.62f), 1, 9,
-            M(14, 12, 14, 12), borderLeft: 5));
+            Alpha(surface.Darkened(0.08f), 0.98f), Alpha(outline, 0.38f), 1, 6,
+            M(14, 12, 14, 12)));
         Panel(theme, GodotThemeVariations.SpatialDropTarget, Flat(
             Alpha(hero, 0.12f), amber, 3, 38, M(18, 14, 18, 14)));
         Panel(theme, GodotThemeVariations.StatusPanel, Flat(Alpha(amber, 0.14f), Alpha(amber, 0.62f), 1, 8, M(14, 9, 14, 9), borderLeft: 5));
@@ -41,10 +41,10 @@ internal static class ClientThemeSurfaces
         Panel(theme, GodotThemeVariations.BoardCard, Flat(raised.Lightened(0.06f), Alpha(amber, 0.58f), 1, 6, M(11, 9, 11, 9), borderLeft: 4));
         Panel(theme, GodotThemeVariations.ConcealedCard, Flat(surface.Darkened(0.2f), Alpha(outline, 0.55f), 1, 6, M(11, 9, 11, 9)));
         Panel(theme, GodotThemeVariations.FocusedCard, Flat(raised.Lightened(0.12f), amber, 3, 6, M(11, 9, 11, 9), borderLeft: 7));
-        Panel(theme, GodotThemeVariations.IdentityCard, Flat(raised.Lightened(0.06f), hero, 1, 12, M(16, 14, 16, 14), borderLeft: 8));
-        Panel(theme, GodotThemeVariations.PlayerCard, Flat(raised.Lightened(0.06f), amber, 1, 12, M(16, 14, 16, 14), borderLeft: 8));
-        Panel(theme, GodotThemeVariations.EnemyCard, Flat(raised.Lightened(0.02f), encounter, 2, 12, M(16, 14, 16, 14), borderLeft: 10));
-        Panel(theme, GodotThemeVariations.SchemeCard, Flat(surface.Lightened(0.08f), encounter, 2, 12, M(16, 14, 16, 14), borderBottom: 8));
+        Panel(theme, GodotThemeVariations.IdentityCard, Flat(raised.Lightened(0.06f), hero, 1, 6, M(16, 14, 16, 14), borderLeft: 3));
+        Panel(theme, GodotThemeVariations.PlayerCard, Flat(raised.Lightened(0.06f), amber, 1, 6, M(16, 14, 16, 14), borderLeft: 3));
+        Panel(theme, GodotThemeVariations.EnemyCard, Flat(raised.Lightened(0.02f), encounter, 1, 6, M(16, 14, 16, 14), borderLeft: 3));
+        Panel(theme, GodotThemeVariations.SchemeCard, Flat(surface.Lightened(0.08f), encounter, 1, 6, M(16, 14, 16, 14), borderBottom: 3));
         Panel(theme, GodotThemeVariations.EnvironmentCard, Flat(surface.Lightened(0.05f), outline, 2, 12, M(16, 14, 16, 14), borderLeft: 5));
         Panel(theme, GodotThemeVariations.CardArtWell, Flat(surface.Darkened(0.18f), Alpha(outline, 0.55f), 1, 7, M(8, 8, 8, 8)));
     }

@@ -1,0 +1,37 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Marvel.Core -> /Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Debug/net8.0/Marvel.Core.dll
+  Marvel.Rules -> /Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Debug/net8.0/Marvel.Rules.dll
+  Marvel.Cards -> /Users/michael/Source/marvel-lcg/src/Marvel.Cards/bin/Debug/net8.0/Marvel.Cards.dll
+CSC : error CS0006: Metadata file '/Users/michael/Source/marvel-lcg/src/Marvel.Rules/obj/Debug/net8.0/ref/Marvel.Rules.dll' could not be found [/Users/michael/Source/marvel-lcg/src/Marvel.Decisions/Marvel.Decisions.csproj]
+CSC : error CS0006: Metadata file '/Users/michael/Source/marvel-lcg/src/Marvel.Core/obj/Debug/net8.0/ref/Marvel.Core.dll' could not be found [/Users/michael/Source/marvel-lcg/src/Marvel.Content/Marvel.Content.csproj]
+CSC : error CS0006: Metadata file '/Users/michael/Source/marvel-lcg/src/Marvel.Rules/obj/Debug/net8.0/ref/Marvel.Rules.dll' could not be found [/Users/michael/Source/marvel-lcg/src/Marvel.Content/Marvel.Content.csproj]
+CSC : error CS0006: Metadata file '/Users/michael/Source/marvel-lcg/src/Marvel.Core/obj/Debug/net8.0/ref/Marvel.Core.dll' could not be found [/Users/michael/Source/marvel-lcg/src/Marvel.Session/Marvel.Session.csproj]
+CSC : error CS0006: Metadata file '/Users/michael/Source/marvel-lcg/src/Marvel.Rules/obj/Debug/net8.0/ref/Marvel.Rules.dll' could not be found [/Users/michael/Source/marvel-lcg/src/Marvel.Session/Marvel.Session.csproj]
+CSC : error CS0006: Metadata file '/Users/michael/Source/marvel-lcg/src/Marvel.Rules/obj/Debug/net8.0/ref/Marvel.Rules.dll' could not be found [/Users/michael/Source/marvel-lcg/src/Marvel.View/Marvel.View.csproj]
+CSC : error CS0006: Metadata file '/Users/michael/Source/marvel-lcg/src/Marvel.Core/obj/Debug/net8.0/ref/Marvel.Core.dll' could not be found [/Users/michael/Source/marvel-lcg/tests/Marvel.Core.Tests/Marvel.Core.Tests.csproj]
+  Marvel.Rules.Harvest -> /Users/michael/Source/marvel-lcg/tools/Marvel.Rules.Harvest/bin/Debug/net8.0/Marvel.Rules.Harvest.dll
+  Marvel.Rulings.Harvest -> /Users/michael/Source/marvel-lcg/tools/Marvel.Rulings.Harvest/bin/Debug/net8.0/Marvel.Rulings.Harvest.dll
+  Marvel.Rules.Packs.Harvest -> /Users/michael/Source/marvel-lcg/tools/Marvel.Rules.Packs.Harvest/bin/Debug/net8.0/Marvel.Rules.Packs.Harvest.dll
+  Marvel.MarvelCdb.Harvest -> /Users/michael/Source/marvel-lcg/tools/Marvel.MarvelCdb.Harvest/bin/Debug/net8.0/Marvel.MarvelCdb.Harvest.dll
+CSC : error CS0006: Metadata file '/Users/michael/Source/marvel-lcg/src/Marvel.Core/obj/Debug/net8.0/ref/Marvel.Core.dll' could not be found [/Users/michael/Source/marvel-lcg/tests/Marvel.Rules.Tests/Marvel.Rules.Tests.csproj]
+CSC : error CS0006: Metadata file '/Users/michael/Source/marvel-lcg/src/Marvel.Rules/obj/Debug/net8.0/ref/Marvel.Rules.dll' could not be found [/Users/michael/Source/marvel-lcg/tests/Marvel.Rules.Tests/Marvel.Rules.Tests.csproj]
+  Marvel.Behavior.Index -> /Users/michael/Source/marvel-lcg/tools/Marvel.Behavior.Index/bin/Debug/net8.0/Marvel.Behavior.Index.dll
+  Marvel.Cards.Extract -> /Users/michael/Source/marvel-lcg/tools/Marvel.Cards.Extract/bin/Debug/net8.0/Marvel.Cards.Extract.dll
+  Marvel.Rules.Index -> /Users/michael/Source/marvel-lcg/tools/Marvel.Rules.Index/bin/Debug/net8.0/Marvel.Rules.Index.dll
+
+Build FAILED.
+
+CSC : error CS0006: Metadata file '/Users/michael/Source/marvel-lcg/src/Marvel.Rules/obj/Debug/net8.0/ref/Marvel.Rules.dll' could not be found [/Users/michael/Source/marvel-lcg/src/Marvel.Decisions/Marvel.Decisions.csproj]
+CSC : error CS0006: Metadata file '/Users/michael/Source/marvel-lcg/src/Marvel.Core/obj/Debug/net8.0/ref/Marvel.Core.dll' could not be found [/Users/michael/Source/marvel-lcg/src/Marvel.Content/Marvel.Content.csproj]
+CSC : error CS0006: Metadata file '/Users/michael/Source/marvel-lcg/src/Marvel.Rules/obj/Debug/net8.0/ref/Marvel.Rules.dll' could not be found [/Users/michael/Source/marvel-lcg/src/Marvel.Content/Marvel.Content.csproj]
+CSC : error CS0006: Metadata file '/Users/michael/Source/marvel-lcg/src/Marvel.Core/obj/Debug/net8.0/ref/Marvel.Core.dll' could not be found [/Users/michael/Source/marvel-lcg/src/Marvel.Session/Marvel.Session.csproj]
+CSC : error CS0006: Metadata file '/Users/michael/Source/marvel-lcg/src/Marvel.Rules/obj/Debug/net8.0/ref/Marvel.Rules.dll' could not be found [/Users/michael/Source/marvel-lcg/src/Marvel.Session/Marvel.Session.csproj]
+CSC : error CS0006: Metadata file '/Users/michael/Source/marvel-lcg/src/Marvel.Rules/obj/Debug/net8.0/ref/Marvel.Rules.dll' could not be found [/Users/michael/Source/marvel-lcg/src/Marvel.View/Marvel.View.csproj]
+CSC : error CS0006: Metadata file '/Users/michael/Source/marvel-lcg/src/Marvel.Core/obj/Debug/net8.0/ref/Marvel.Core.dll' could not be found [/Users/michael/Source/marvel-lcg/tests/Marvel.Core.Tests/Marvel.Core.Tests.csproj]
+CSC : error CS0006: Metadata file '/Users/michael/Source/marvel-lcg/src/Marvel.Core/obj/Debug/net8.0/ref/Marvel.Core.dll' could not be found [/Users/michael/Source/marvel-lcg/tests/Marvel.Rules.Tests/Marvel.Rules.Tests.csproj]
+CSC : error CS0006: Metadata file '/Users/michael/Source/marvel-lcg/src/Marvel.Rules/obj/Debug/net8.0/ref/Marvel.Rules.dll' could not be found [/Users/michael/Source/marvel-lcg/tests/Marvel.Rules.Tests/Marvel.Rules.Tests.csproj]
+    0 Warning(s)
+    9 Error(s)
+
+Time Elapsed 00:00:05.28

@@ -70,8 +70,9 @@ internal static class AbilityResolutionRevelation
         }
 
         var events = new List<GameEvent>();
-        if (execution.CancelWhenRevealed(world, card, player, occurrence))
+        if (execution.CancelWhenRevealed(world, card, player, occurrence) is { } canceled)
         {
+            events.Add(canceled);
             return events;
         }
 
@@ -100,7 +101,7 @@ internal static class AbilityResolutionRevelation
     }
 
     /// <inheritdoc/>
-    internal static bool CancelWhenRevealed(this AbilityResolutionExecution execution,
+    internal static WhenRevealedCanceled? CancelWhenRevealed(this AbilityResolutionExecution execution,
         World world, Card card, int player, Occurrence occurrence)
     {
         ArgumentNullException.ThrowIfNull(world);
@@ -125,7 +126,7 @@ internal static class AbilityResolutionRevelation
         bool mayBeCanceled = !CardKinds.IsVillain(kind) && kind != CardKind.MainScheme;
         if (!mayBeCanceled || cancellation is null || !world.Effects.Use(cancellation))
         {
-            return false;
+            return null;
         }
 
         if (world.Facts.Kind(card.FaceId) == CardKind.Treachery)
@@ -136,7 +137,15 @@ internal static class AbilityResolutionRevelation
         {
             occurrence.Cancel(address);
         }
-        return true;
+        var subjects = new Dictionary<int, string> { [card.ObjectId] = world.Facts.Title(card.FaceId) };
+        if (cancellation.Card is { } source)
+            subjects[source] = world.Facts.Title(world.Cards[source].FaceId);
+        return new WhenRevealedCanceled(card.ObjectId, cancellation.Card)
+        {
+            Trigger = Steps.CardRevealed,
+            Verb = "Cancel_When_Revealed",
+            Subjects = subjects,
+        };
     }
 
     /// <inheritdoc/>

@@ -12,11 +12,10 @@ internal static class MulliganDecisionSurface
         Affordance selected,
         DecisionProgressPresentation progress)
     {
-        panel.AddContent(DecisionPanel.Text(
-            $"OPENING HAND  ·  {panel.composer!.Targets.Count} SELECTED  ·  "
-            + (progress.IsReady ? "READY" : "INCOMPLETE"),
-            progress.IsReady ? GodotThemeVariations.StatusText : GodotThemeVariations.DangerText));
-        new DecisionPaymentRenderer(panel, panel.composer, panel.world!, panel.submitting,
+        if (panel.CompleteChoicesOpen)
+            new DecisionDraftRenderer(panel, panel.composer!, panel.world!, panel.submitting,
+                panel.GetRenderGeneration()).AddTargets(selected, progress.Targets);
+        new DecisionPaymentRenderer(panel, panel.composer!, panel.world!, panel.submitting,
             panel.GetRenderGeneration()).AddSubmit(progress);
     }
 }

@@ -13,7 +13,8 @@ public static class WorldProjection
         Prompt? prompt,
         IReadOnlyList<GameEvent> events,
         ViewScope scope,
-        int? activePlayer = null)
+        int? activePlayer = null,
+        Prompt? publicPrompt = null)
     {
         ArgumentNullException.ThrowIfNull(world);
         ArgumentNullException.ThrowIfNull(events);
@@ -38,12 +39,21 @@ public static class WorldProjection
             ? prompt! with
             {
                 ContextCardIds = [.. prompt!.ContextCardIds.Where(readableIds.Contains)],
+                CauseCardIds = [.. prompt.CauseCardIds.Where(readableIds.Contains)],
             }
             : null;
         int active = activePlayer ?? world.FirstPlayer;
-        visible = TableDescriptorProjection.WithContext(visible, authorizedPrompt, scope, active, world.FirstPlayer);
+        visible = TableDescriptorProjection.WithContext(
+            visible, authorizedPrompt, scope, active, world.FirstPlayer,
+            publicPrompt ?? prompt, PublicReadableIds(complete, readableIds));
         return new VisibleResult(visible, authorizedPrompt, VisibilityEventFilter.Filter(events, addressableIds, readableIds));
     }
+
+    private static HashSet<int> PublicReadableIds(WorldDescriptor complete, HashSet<int> readableIds) =>
+        [.. complete.Areas.SelectMany(area => area.Cards.Concat(area.Removed))
+            .Where(card => card.Audience.Public && card.FaceUp
+                && card.Id is not null && readableIds.Contains(card.Id.Value))
+            .Select(card => card.Id!.Value)];
 
     private static WorldDescriptor Describe(
         World world, Prompt? prompt, IReadOnlySet<int> searchVisible)

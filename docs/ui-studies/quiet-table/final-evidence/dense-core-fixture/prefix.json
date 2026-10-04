@@ -1,0 +1,1219 @@
+{
+  "Specification": {
+    "Scenario": "rhino",
+    "Heroes": [
+      "spider_man"
+    ],
+    "ModularSets": null,
+    "Seed": 5
+  },
+  "Steps": [
+    {
+      "Prompt": "Spider-Man resolves mulligans",
+      "Question": "Opening hand",
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 0,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "cd864884de5a69fd1a9a9a5610a751d329a7c9fa7b5586a0d4e4f8f1f292e60a",
+      "After": "cd864884de5a69fd1a9a9a5610a751d329a7c9fa7b5586a0d4e4f8f1f292e60a"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (1) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 2,
+        "Targets": [
+          1
+        ],
+        "Resources": [
+          1
+        ],
+        "Values": {},
+        "Allocations": [
+          {
+            "Source": 1,
+            "Cost": 0,
+            "PaidAs": "B"
+          }
+        ]
+      },
+      "Before": "cd864884de5a69fd1a9a9a5610a751d329a7c9fa7b5586a0d4e4f8f1f292e60a",
+      "After": "3bac10e528cca7fc941726f87f7aecc93d1165aea7bea7d386090aadafe2ed89"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (1) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 3,
+        "Targets": [
+          1
+        ],
+        "Resources": [
+          43,
+          22
+        ],
+        "Values": {},
+        "Allocations": [
+          {
+            "Source": 43,
+            "Cost": 0,
+            "PaidAs": "BB"
+          },
+          {
+            "Source": 22,
+            "Cost": 0,
+            "PaidAs": "R"
+          }
+        ]
+      },
+      "Before": "3bac10e528cca7fc941726f87f7aecc93d1165aea7bea7d386090aadafe2ed89",
+      "After": "b590c3df632f5b13d0ec4df1346949c4c12d0bd58bd4cff05ffc62e33c3d7456"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (1) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "b590c3df632f5b13d0ec4df1346949c4c12d0bd58bd4cff05ffc62e33c3d7456",
+      "After": "fd569d30adaba9dc143dc7cf2b1b341c5749675b03e899887aeda29381ec731f"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (1) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": -1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "fd569d30adaba9dc143dc7cf2b1b341c5749675b03e899887aeda29381ec731f",
+      "After": "fd569d30adaba9dc143dc7cf2b1b341c5749675b03e899887aeda29381ec731f"
+    },
+    {
+      "Prompt": "Spider-Man End Phase",
+      "Question": "Choose end-of-phase discards",
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 7,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "fd569d30adaba9dc143dc7cf2b1b341c5749675b03e899887aeda29381ec731f",
+      "After": "b28aa1fa4373dd7c15cd8b66d70dfa51d92358adb5b04bae726567ccbf58522e"
+    },
+    {
+      "Prompt": "Interrupt to WhenEnemyActivates and WhenAttackInitiated",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "b28aa1fa4373dd7c15cd8b66d70dfa51d92358adb5b04bae726567ccbf58522e",
+      "After": "f0a4b73b0d53302a38e53a90d4e85c7cff0f4416605612ed008993d5851deb80"
+    },
+    {
+      "Prompt": "Spider-Man declares a defender",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "f0a4b73b0d53302a38e53a90d4e85c7cff0f4416605612ed008993d5851deb80",
+      "After": "835da017de255ce168dddc8ffa98afa27f1b5031ba2dc3963f0d066f6d6fea67"
+    },
+    {
+      "Prompt": "Interrupt to WhenEnemyActivates and WhenAttackInitiated",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "835da017de255ce168dddc8ffa98afa27f1b5031ba2dc3963f0d066f6d6fea67",
+      "After": "be8919b75441e9fe76dfcb4f3ba2d25efef4b544b9409219e492540de5ac79f0"
+    },
+    {
+      "Prompt": "Spider-Man declares a defender",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": -1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "be8919b75441e9fe76dfcb4f3ba2d25efef4b544b9409219e492540de5ac79f0",
+      "After": "624152396c324f9004036d318235bba5c0e1aa074cf51957d534fa063ad6561d"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (2) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 4,
+        "Targets": [
+          1
+        ],
+        "Resources": [
+          15,
+          17
+        ],
+        "Values": {},
+        "Allocations": [
+          {
+            "Source": 15,
+            "Cost": 0,
+            "PaidAs": "B"
+          },
+          {
+            "Source": 17,
+            "Cost": 0,
+            "PaidAs": "Y"
+          }
+        ]
+      },
+      "Before": "624152396c324f9004036d318235bba5c0e1aa074cf51957d534fa063ad6561d",
+      "After": "209cb11719e82e9ce2cb4f460eb1b441e78f19f3ad04a06893a6f9aecd91fa8f"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (2) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 8,
+        "Targets": [
+          1
+        ],
+        "Resources": [
+          45
+        ],
+        "Values": {},
+        "Allocations": [
+          {
+            "Source": 45,
+            "Cost": 0,
+            "PaidAs": "B"
+          }
+        ]
+      },
+      "Before": "209cb11719e82e9ce2cb4f460eb1b441e78f19f3ad04a06893a6f9aecd91fa8f",
+      "After": "f13bd8665773875e7720a66ccbd5509af0dd0e601a0805a2f8ccd8e84e658163"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (2) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "f13bd8665773875e7720a66ccbd5509af0dd0e601a0805a2f8ccd8e84e658163",
+      "After": "6550b880e2f3868fd189c1e947668c61e481adaaee77d834fcf6d82dda6b5c4e"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (2) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 14,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "6550b880e2f3868fd189c1e947668c61e481adaaee77d834fcf6d82dda6b5c4e",
+      "After": "576b8117932110f1de01cc10059c03111bc784adbd348b1c10d10b79f8488f81"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (2) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": -1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "576b8117932110f1de01cc10059c03111bc784adbd348b1c10d10b79f8488f81",
+      "After": "576b8117932110f1de01cc10059c03111bc784adbd348b1c10d10b79f8488f81"
+    },
+    {
+      "Prompt": "Spider-Man End Phase",
+      "Question": "Choose end-of-phase discards",
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 7,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "576b8117932110f1de01cc10059c03111bc784adbd348b1c10d10b79f8488f81",
+      "After": "5b352f096e9e72bb012c9f9af1347ffd320ce4abe62d173cdfb9bf4a1a98e74e"
+    },
+    {
+      "Prompt": "Interrupt to WhenThreatWouldBePlaced",
+      "Question": "Interrupt 1 threat being placed on The Break-In!?",
+      "Seat": 0,
+      "Decision": {
+        "Affordance": -1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "5b352f096e9e72bb012c9f9af1347ffd320ce4abe62d173cdfb9bf4a1a98e74e",
+      "After": "c70f9ab48a126ad6cdb99524087037d4804804ffaab17470e1af08fea5d2e71e"
+    },
+    {
+      "Prompt": "Interrupt to WhenThreatWouldBePlaced",
+      "Question": "Interrupt 2 threat being placed on The Break-In!?",
+      "Seat": 0,
+      "Decision": {
+        "Affordance": -1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "c70f9ab48a126ad6cdb99524087037d4804804ffaab17470e1af08fea5d2e71e",
+      "After": "eb99c3bfd6c38892382a2004e76afe58f2f65d39c63bbdadc9cf4fdf98560b07"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (3) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 9,
+        "Targets": [
+          1
+        ],
+        "Resources": [
+          1,
+          29,
+          25
+        ],
+        "Values": {},
+        "Allocations": [
+          {
+            "Source": 1,
+            "Cost": 0,
+            "PaidAs": "B"
+          },
+          {
+            "Source": 29,
+            "Cost": 0,
+            "PaidAs": "GG"
+          },
+          {
+            "Source": 25,
+            "Cost": 0,
+            "PaidAs": "Y"
+          }
+        ]
+      },
+      "Before": "eb99c3bfd6c38892382a2004e76afe58f2f65d39c63bbdadc9cf4fdf98560b07",
+      "After": "885e2794c3dee5f2b3ed1bbd19f5596876cb479518429268564a178e3a2e1fdc"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (3) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 12,
+        "Targets": [
+          48
+        ],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "885e2794c3dee5f2b3ed1bbd19f5596876cb479518429268564a178e3a2e1fdc",
+      "After": "6890eb6880b08f7c213be09c72eca1f85d9b753d2dae9eed00af67812e1cb2d2"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (3) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 16,
+        "Targets": [
+          48
+        ],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "6890eb6880b08f7c213be09c72eca1f85d9b753d2dae9eed00af67812e1cb2d2",
+      "After": "920ac57b12f5b651aa4da80e881c1fabc639515ee0905dcc701be75af8609f0c"
+    },
+    {
+      "Prompt": "Response to WhenCharacterThwarts",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": -1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "920ac57b12f5b651aa4da80e881c1fabc639515ee0905dcc701be75af8609f0c",
+      "After": "920ac57b12f5b651aa4da80e881c1fabc639515ee0905dcc701be75af8609f0c"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (3) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "920ac57b12f5b651aa4da80e881c1fabc639515ee0905dcc701be75af8609f0c",
+      "After": "9da31d085e33fb0954254630733dc1c0465bc54dec2b02ab5ac4683d1780f9d9"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (3) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 18,
+        "Targets": [
+          48
+        ],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "9da31d085e33fb0954254630733dc1c0465bc54dec2b02ab5ac4683d1780f9d9",
+      "After": "c921179a2c00efaddb7218d9e99d4715b731149be0bc2fb459fd523b0e5df2f5"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (3) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": -1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "c921179a2c00efaddb7218d9e99d4715b731149be0bc2fb459fd523b0e5df2f5",
+      "After": "c921179a2c00efaddb7218d9e99d4715b731149be0bc2fb459fd523b0e5df2f5"
+    },
+    {
+      "Prompt": "Spider-Man End Phase",
+      "Question": "Choose end-of-phase discards",
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 7,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "c921179a2c00efaddb7218d9e99d4715b731149be0bc2fb459fd523b0e5df2f5",
+      "After": "ae278a2c16dcae48ab147e4cd8adbbfb7e288af4ffaa79f2f3ac98447304ce1b"
+    },
+    {
+      "Prompt": "Interrupt to WhenEnemyActivates and WhenAttackInitiated",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "ae278a2c16dcae48ab147e4cd8adbbfb7e288af4ffaa79f2f3ac98447304ce1b",
+      "After": "cecd423988069712f7b830d19c16ea76b86723df02101bd3655903462dd5e011"
+    },
+    {
+      "Prompt": "Spider-Man declares a defender",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "cecd423988069712f7b830d19c16ea76b86723df02101bd3655903462dd5e011",
+      "After": "95ec9278de8d74f77a7809f3c85577a59768da8b91e99d2881ebe82e5d635592"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (4) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 10,
+        "Targets": [
+          1
+        ],
+        "Resources": [
+          20,
+          39,
+          40,
+          41
+        ],
+        "Values": {},
+        "Allocations": [
+          {
+            "Source": 20,
+            "Cost": 0,
+            "PaidAs": "G"
+          },
+          {
+            "Source": 39,
+            "Cost": 0,
+            "PaidAs": "Y"
+          },
+          {
+            "Source": 40,
+            "Cost": 0,
+            "PaidAs": "B"
+          },
+          {
+            "Source": 41,
+            "Cost": 0,
+            "PaidAs": "Y"
+          }
+        ]
+      },
+      "Before": "95ec9278de8d74f77a7809f3c85577a59768da8b91e99d2881ebe82e5d635592",
+      "After": "b7a9c59e9724c4fcb1a1987d84a8360121e20d09619d6691881b95d388d98e51"
+    },
+    {
+      "Prompt": "01084: choose an option",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 0,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "b7a9c59e9724c4fcb1a1987d84a8360121e20d09619d6691881b95d388d98e51",
+      "After": "b7a9c59e9724c4fcb1a1987d84a8360121e20d09619d6691881b95d388d98e51"
+    },
+    {
+      "Prompt": "01084: choose a card",
+      "Question": "Nick Fury: choose a scheme to remove threat from",
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 48,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "b7a9c59e9724c4fcb1a1987d84a8360121e20d09619d6691881b95d388d98e51",
+      "After": "e8e97a21e738a720e5c4b25cecd12ed805aa2747c16dd3401de3811e563c96f0"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (4) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 19,
+        "Targets": [
+          1
+        ],
+        "Resources": [
+          21
+        ],
+        "Values": {},
+        "Allocations": [
+          {
+            "Source": 21,
+            "Cost": 0,
+            "PaidAs": "R"
+          }
+        ]
+      },
+      "Before": "e8e97a21e738a720e5c4b25cecd12ed805aa2747c16dd3401de3811e563c96f0",
+      "After": "9646b245bff1e9258ded23cd585886b53781712ebb2c594fb6529b00acfe0551"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (4) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": -1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "9646b245bff1e9258ded23cd585886b53781712ebb2c594fb6529b00acfe0551",
+      "After": "9646b245bff1e9258ded23cd585886b53781712ebb2c594fb6529b00acfe0551"
+    },
+    {
+      "Prompt": "Spider-Man End Phase",
+      "Question": "Choose end-of-phase discards",
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 7,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "9646b245bff1e9258ded23cd585886b53781712ebb2c594fb6529b00acfe0551",
+      "After": "df74b1bb26c22392f57af3faba83382109c7f204545c81c0c7be1ae084fb0629"
+    },
+    {
+      "Prompt": "Interrupt to WhenEnemyActivates and WhenAttackInitiated",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "df74b1bb26c22392f57af3faba83382109c7f204545c81c0c7be1ae084fb0629",
+      "After": "8b2acec3e6456022891431b1f05d8b8076bb5d7d19598845958315c0dd485c6f"
+    },
+    {
+      "Prompt": "Spider-Man declares a defender",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "8b2acec3e6456022891431b1f05d8b8076bb5d7d19598845958315c0dd485c6f",
+      "After": "7ca7c5fb1a28b197d59e27a7600ae119efcaa9970bfe7246ab798b65e789803f"
+    },
+    {
+      "Prompt": "Interrupt to WhenDamageWouldBeDealt",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": -1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "7ca7c5fb1a28b197d59e27a7600ae119efcaa9970bfe7246ab798b65e789803f",
+      "After": "0e2d600c8f1dd40aaf619faa26d01f6227fee406be2f9a88683c4795fe3f94e3"
+    },
+    {
+      "Prompt": "Spider-Man declares a defender",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": -1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "0e2d600c8f1dd40aaf619faa26d01f6227fee406be2f9a88683c4795fe3f94e3",
+      "After": "0e2d600c8f1dd40aaf619faa26d01f6227fee406be2f9a88683c4795fe3f94e3"
+    },
+    {
+      "Prompt": "Interrupt to WhenDamageWouldBeDealt",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": -1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "0e2d600c8f1dd40aaf619faa26d01f6227fee406be2f9a88683c4795fe3f94e3",
+      "After": "9ab3232cf1e6a38172e35302d664f38d8ab00b6e33b155f577c33126751185c6"
+    },
+    {
+      "Prompt": "Interrupt to WhenEnemyActivates and WhenAttackInitiated",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "9ab3232cf1e6a38172e35302d664f38d8ab00b6e33b155f577c33126751185c6",
+      "After": "d851fd3eb9769cd4be48efc963167cfb8c0374afa7cae570d47513112dd55b35"
+    },
+    {
+      "Prompt": "Spider-Man declares a defender",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": -1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "d851fd3eb9769cd4be48efc963167cfb8c0374afa7cae570d47513112dd55b35",
+      "After": "53561188f4c31b26ab714430aca00dab25fa5b3b21411a4342c861f20344b640"
+    },
+    {
+      "Prompt": "Interrupt to WhenDamageWouldBeDealt",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": -1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "53561188f4c31b26ab714430aca00dab25fa5b3b21411a4342c861f20344b640",
+      "After": "cc76bc1f6fe15614b850dc61efdfb5f048c83136036c935d637fa08427f63e6c"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (5) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 23,
+        "Targets": [
+          55
+        ],
+        "Resources": [
+          20
+        ],
+        "Values": {},
+        "Allocations": [
+          {
+            "Source": 20,
+            "Cost": 0,
+            "PaidAs": "G"
+          }
+        ]
+      },
+      "Before": "cc76bc1f6fe15614b850dc61efdfb5f048c83136036c935d637fa08427f63e6c",
+      "After": "b9ebb758e50652937dee96df60983ed953ce2f708b6be50d1a99f66a55f67e14"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (5) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 24,
+        "Targets": [
+          1
+        ],
+        "Resources": [
+          44
+        ],
+        "Values": {},
+        "Allocations": [
+          {
+            "Source": 44,
+            "Cost": 0,
+            "PaidAs": "RR"
+          }
+        ]
+      },
+      "Before": "b9ebb758e50652937dee96df60983ed953ce2f708b6be50d1a99f66a55f67e14",
+      "After": "8423f5d0315aed519ee3402d68c46a43f24cdd533cf39c0aa48fd8032f097b3d"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (5) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 25,
+        "Targets": [
+          1
+        ],
+        "Resources": [
+          19,
+          9,
+          26
+        ],
+        "Values": {},
+        "Allocations": [
+          {
+            "Source": 19,
+            "Cost": 0,
+            "PaidAs": "G"
+          },
+          {
+            "Source": 9,
+            "Cost": 0,
+            "PaidAs": "R"
+          },
+          {
+            "Source": 26,
+            "Cost": 0,
+            "PaidAs": "Y"
+          }
+        ]
+      },
+      "Before": "8423f5d0315aed519ee3402d68c46a43f24cdd533cf39c0aa48fd8032f097b3d",
+      "After": "92e80bc8e3c3b3387163029517d3b304cdbfda6167ffc9a3aed286d37fec7317"
+    },
+    {
+      "Prompt": "Response to WhenCardPlayed and WhenCardEntersPlay",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": -1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "92e80bc8e3c3b3387163029517d3b304cdbfda6167ffc9a3aed286d37fec7317",
+      "After": "92e80bc8e3c3b3387163029517d3b304cdbfda6167ffc9a3aed286d37fec7317"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (5) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "92e80bc8e3c3b3387163029517d3b304cdbfda6167ffc9a3aed286d37fec7317",
+      "After": "1cfdca2098b48206210ea862f6bb358716f695b9dc53b8bb718c760255312c25"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (5) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 14,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "1cfdca2098b48206210ea862f6bb358716f695b9dc53b8bb718c760255312c25",
+      "After": "b2244341b75062ffecc3590cfe0cfa9667b5eb1c91a1a3c02ff5b40b09f880f7"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (5) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 27,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "b2244341b75062ffecc3590cfe0cfa9667b5eb1c91a1a3c02ff5b40b09f880f7",
+      "After": "8990933f17a302318de3be5197d8a6f721a82fe131b7929f413fbb6b15deae57"
+    },
+    {
+      "Prompt": "01064: choose a card",
+      "Question": "Surveillance Team: choose a scheme to remove threat from",
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 48,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "8990933f17a302318de3be5197d8a6f721a82fe131b7929f413fbb6b15deae57",
+      "After": "6439c0e0b19903a082d90fc9df1d8a31dcfd73a51ad65d2f34df639954194c72"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (5) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": -1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "6439c0e0b19903a082d90fc9df1d8a31dcfd73a51ad65d2f34df639954194c72",
+      "After": "6439c0e0b19903a082d90fc9df1d8a31dcfd73a51ad65d2f34df639954194c72"
+    },
+    {
+      "Prompt": "Spider-Man End Phase",
+      "Question": "Choose end-of-phase discards",
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 7,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "6439c0e0b19903a082d90fc9df1d8a31dcfd73a51ad65d2f34df639954194c72",
+      "After": "7b9a5ebaed126317444b3e5dbabb6805ac4249e7edb284fffbcfffc8bdba7c39"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (6) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 30,
+        "Targets": [
+          1
+        ],
+        "Resources": [
+          42
+        ],
+        "Values": {},
+        "Allocations": [
+          {
+            "Source": 42,
+            "Cost": 0,
+            "PaidAs": "YY"
+          }
+        ]
+      },
+      "Before": "7b9a5ebaed126317444b3e5dbabb6805ac4249e7edb284fffbcfffc8bdba7c39",
+      "After": "51aec02c18959b1ef9e5d3e93f64be6f459bed2fc27f7ae45943c7c0d90c13f9"
+    },
+    {
+      "Prompt": "Spider-Man chooses an ally to discard",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 8,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "51aec02c18959b1ef9e5d3e93f64be6f459bed2fc27f7ae45943c7c0d90c13f9",
+      "After": "da79d4174ef373ab6f62d0040c703ac451c1c5a9e52058f6ef2f1d68e503ccb8"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (6) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 31,
+        "Targets": [
+          1
+        ],
+        "Resources": [
+          1,
+          27
+        ],
+        "Values": {},
+        "Allocations": [
+          {
+            "Source": 1,
+            "Cost": 0,
+            "PaidAs": "B"
+          },
+          {
+            "Source": 27,
+            "Cost": 0,
+            "PaidAs": "B"
+          }
+        ]
+      },
+      "Before": "da79d4174ef373ab6f62d0040c703ac451c1c5a9e52058f6ef2f1d68e503ccb8",
+      "After": "7e38cdb704d215c70dde438027eeeb6fea20825cf3262f106271e48d35c569a2"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (6) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 12,
+        "Targets": [
+          48
+        ],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "7e38cdb704d215c70dde438027eeeb6fea20825cf3262f106271e48d35c569a2",
+      "After": "8fe974c95d77f2636094743157e8d4703b0a8b90f8bc4ed7c9c2e4d1e36b906d"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (6) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 16,
+        "Targets": [
+          48
+        ],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "8fe974c95d77f2636094743157e8d4703b0a8b90f8bc4ed7c9c2e4d1e36b906d",
+      "After": "d87c310c5d9cd990292db4a36c94e9e67a3501c93373854e96211ad903da03ef"
+    },
+    {
+      "Prompt": "Response to WhenCharacterThwarts",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": -1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "d87c310c5d9cd990292db4a36c94e9e67a3501c93373854e96211ad903da03ef",
+      "After": "d87c310c5d9cd990292db4a36c94e9e67a3501c93373854e96211ad903da03ef"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (6) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 27,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "d87c310c5d9cd990292db4a36c94e9e67a3501c93373854e96211ad903da03ef",
+      "After": "b151f9f731c66644b3adc9b7822455c225bc2719ff5284d1eb1d79bc6ef5833e"
+    },
+    {
+      "Prompt": "01064: choose a card",
+      "Question": "Surveillance Team: choose a scheme to remove threat from",
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 48,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "b151f9f731c66644b3adc9b7822455c225bc2719ff5284d1eb1d79bc6ef5833e",
+      "After": "9ff76a90985772b4dfb1788d038f087ea94a62d3d2b840af4546cebb4d2b2294"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (6) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "9ff76a90985772b4dfb1788d038f087ea94a62d3d2b840af4546cebb4d2b2294",
+      "After": "04c553718cf5bf7d84f86ac9b11273c768664e5e1b7bced973901e9c991b6096"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (6) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 32,
+        "Targets": [
+          1
+        ],
+        "Resources": [
+          20,
+          19,
+          10
+        ],
+        "Values": {},
+        "Allocations": [
+          {
+            "Source": 20,
+            "Cost": 0,
+            "PaidAs": "G"
+          },
+          {
+            "Source": 19,
+            "Cost": 0,
+            "PaidAs": "G"
+          },
+          {
+            "Source": 10,
+            "Cost": 0,
+            "PaidAs": "R"
+          }
+        ]
+      },
+      "Before": "04c553718cf5bf7d84f86ac9b11273c768664e5e1b7bced973901e9c991b6096",
+      "After": "f8de0725b8a1fb7011c98118c8d363c546334b028d778af35529548363669fef"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (6) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 35,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "f8de0725b8a1fb7011c98118c8d363c546334b028d778af35529548363669fef",
+      "After": "3ceffbe23f55f03f436296214fd352c40cee80c8073ec4e6e1d5637a4a9d3d82"
+    },
+    {
+      "Prompt": "01092: choose a card",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "3ceffbe23f55f03f436296214fd352c40cee80c8073ec4e6e1d5637a4a9d3d82",
+      "After": "3ceffbe23f55f03f436296214fd352c40cee80c8073ec4e6e1d5637a4a9d3d82"
+    },
+    {
+      "Prompt": "\n--- Spider-Man\u0027s Turn (6) ---",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": -1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "3ceffbe23f55f03f436296214fd352c40cee80c8073ec4e6e1d5637a4a9d3d82",
+      "After": "3ceffbe23f55f03f436296214fd352c40cee80c8073ec4e6e1d5637a4a9d3d82"
+    },
+    {
+      "Prompt": "Spider-Man End Phase",
+      "Question": "Choose end-of-phase discards",
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 7,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "3ceffbe23f55f03f436296214fd352c40cee80c8073ec4e6e1d5637a4a9d3d82",
+      "After": "a9699e6c37e6a9a094df2be79400354dfcc8a1b5c66f00c1f0b06bdb7a6a02a1"
+    },
+    {
+      "Prompt": "Interrupt to WhenEnemyActivates and WhenAttackInitiated",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "a9699e6c37e6a9a094df2be79400354dfcc8a1b5c66f00c1f0b06bdb7a6a02a1",
+      "After": "4c30ffba209bd6c7a4690836a5b69849e414f2ea8a5d0cc50c46758a0bc1dc82"
+    },
+    {
+      "Prompt": "Spider-Man declares a defender",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": 1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "4c30ffba209bd6c7a4690836a5b69849e414f2ea8a5d0cc50c46758a0bc1dc82",
+      "After": "d307fa97e5d9757abd3ef2b319bb54bad6501e8f87bc8229aba87407f7c371c0"
+    },
+    {
+      "Prompt": "Spider-Man declares a defender",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": -1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "d307fa97e5d9757abd3ef2b319bb54bad6501e8f87bc8229aba87407f7c371c0",
+      "After": "bd6b4d46d85ed60786ac672570a65c979ec2b39c1703990aae0e5014853213cc"
+    },
+    {
+      "Prompt": "Interrupt to WhenCardRevealed",
+      "Question": "Shadow of the Past was revealed \u2014 interrupt?",
+      "Seat": 0,
+      "Decision": {
+        "Affordance": -1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "bd6b4d46d85ed60786ac672570a65c979ec2b39c1703990aae0e5014853213cc",
+      "After": "a0f631f8a84d42bb48377f164ff85ba58b62056d0047d3914079fa605fdc62c6"
+    },
+    {
+      "Prompt": "Spider-Man declares a defender",
+      "Question": null,
+      "Seat": 0,
+      "Decision": {
+        "Affordance": -1,
+        "Targets": [],
+        "Resources": null,
+        "Values": null,
+        "Allocations": null
+      },
+      "Before": "a0f631f8a84d42bb48377f164ff85ba58b62056d0047d3914079fa605fdc62c6",
+      "After": "0dd42f535e137357e78cfa4fe87cfb07bf47729da324bab20db0b0c417f8a433"
+    }
+  ],
+  "FinalDigest": "0dd42f535e137357e78cfa4fe87cfb07bf47729da324bab20db0b0c417f8a433"
+}

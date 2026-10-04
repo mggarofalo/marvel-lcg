@@ -150,7 +150,8 @@ internal static class ClientResponseValidation
             return false;
         return world.Players.All(CompletePlayer)
             && world.GameAreas.All(CompleteGameArea)
-            && world.Areas.All(CompleteArea);
+            && world.Areas.All(CompleteArea)
+            && ClientTableValidation.Complete(world);
     }
 
     private static bool CompletePlayer(PlayerDescriptor player) =>
@@ -242,6 +243,9 @@ internal static class ClientResponseValidation
                 PlayAreaJoined => true,
                 PlayAreaDetached => true,
                 FieldSet set => set.Field is not null,
+                AttackCompleted => true,
+                WhenRevealedCanceled canceled => canceled.Card >= 0
+                    && (canceled.Source is null or >= 0),
                 _ => false,
             };
 
@@ -256,9 +260,14 @@ internal static class ClientResponseValidation
         // A cancellable turn prompt may have no legal actions left. Passing is
         // still a complete decision, so the empty option list is not a broken
         // response and must remain synchronizable after the last action.
+        && CompleteContext(prompt.ContextCardIds)
+        && CompleteContext(prompt.CauseCardIds)
         && prompt.Affordances is not null
         && (prompt.Cancellable || prompt.Affordances.Count > 0)
         && prompt.Affordances.All(CompleteAffordance);
+
+    private static bool CompleteContext(IReadOnlyList<int>? ids) =>
+        ids is not null && ids.All(id => id >= 0);
 
     private static bool CompleteAffordance(Affordance option) =>
         option is not null && option.Verb is not null && option.Label is not null

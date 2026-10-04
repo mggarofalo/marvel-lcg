@@ -45,6 +45,7 @@ internal sealed class MainLayoutController
                 control.CustomMinimumSize.X,
                 minimumHeight);
         }
+        TableSidebarContent.ConfigureInvitation(main);
         main.eventSkip.CustomMinimumSize = new Vector2(
             main.eventSkip.CustomMinimumSize.X,
             minimumHeight);
@@ -65,7 +66,7 @@ internal sealed class MainLayoutController
         main.seedHelp.Visible = !joinMode;
         main.start.Visible = !joinMode;
         main.joinFields.Visible = joinMode;
-        main.GetNode<Control>("Margin/Shell/Content/Setup/Briefing").Visible = !joinMode;
+        main.GetNode<Control>("Margin/Shell/Content/Setup/Briefing").Visible = false;
         main.startFlow.Disabled = false;
         main.joinFlow.Disabled = false;
         main.startFlow.ThemeTypeVariation = joinMode
