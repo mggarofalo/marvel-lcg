@@ -1,0 +1,9 @@
+{
+  "mutation": "remove same-viewport chooser root-input priority",
+  "compiled": true,
+  "exercised": "legal Core chooser with explicitly synthetic passive-preview visibility",
+  "intended_check_killed": true,
+  "check": "Escape did not dismiss the focused source chooser",
+  "unrelated_setup_failure_counted": false,
+  "source_restored_sha256": "596297960a2e0cd58a98906d4da256d77b99ac6703619c087371a17a24f86d1a"
+}

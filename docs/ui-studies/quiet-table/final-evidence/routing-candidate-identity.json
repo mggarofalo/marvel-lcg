@@ -1,0 +1,29 @@
+{
+  "affected_fixture_certification": "final-history-observation-matrix.log",
+  "approval": "pending affected independent native review; prior approval retains original identities",
+  "branch": "feat/marvel-443-contextual-table",
+  "delta_from_closure2": [
+    "docs/godot-client.md",
+    "docs/ui-studies/quiet-table/implementation.md",
+    "src/Marvel.Godot/BoardActionChoiceSurface.cs",
+    "src/Marvel.Godot/MainBoardInputRouter.cs",
+    "src/Marvel.Godot/smoke/hosted_multiplayer_smoke.gd",
+    "src/Marvel.Godot/smoke/hosted_multiplayer_smoke_client_support.gd",
+    "src/Marvel.Godot/smoke/hosted_settlement_smoke_checks.gd",
+    "src/Marvel.Godot/smoke/local_game_smoke_direct_intent.gd",
+    "src/Marvel.Godot/smoke/local_game_smoke_mulligan_checks.gd",
+    "tests/Marvel.Godot.Tests/NativeSmokeDiagnosticsTests.cs"
+  ],
+  "fixture_provenance": "final-routing-legal-fixture-provenance.json",
+  "git_head": "d52cb199cdf418cb237815aa552d4a2421174b7d",
+  "godot_dll_sha256": "1fd3fdf53dc283db5e4f7ed33ebc28984b0f0411f5853c840455b0e3621a0156",
+  "prior_certification": "final-routing-certification-index.json",
+  "runtime_dll_count": 12,
+  "runtime_manifest_file": "final-reviewed-routing-assemblies.json",
+  "runtime_manifest_sha256": "6d56d60e1430e9d2b88a5b1c37d6bfb5714a2dff408abdaa07120bbb78f397f1",
+  "runtime_metadata": "normal Debug build at d52cb19 with uncommitted bounded routing fix; not a byte-equivalence claim",
+  "source_file_count": 2818,
+  "source_manifest_file": "final-reviewed-routing-source-manifest.json",
+  "source_manifest_sha256": "23d270f4376bb2b9eb468d8dae40a7dcb50d10291606d5ca193460745cd2ce4c",
+  "verification": "all manifest entries computed from current bytes; source/runtime freeze applies through independent review"
+}

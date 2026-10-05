@@ -139,31 +139,29 @@ func _wait_for_result_motion() -> bool:
 
 
 func _dismiss_mulligan_result() -> bool:
-	var drawer := main.find_child("ToggleHistory", true, false) as Button
-	if drawer == null or not await _activate_exposed_control_point(drawer):
-		_fail("the history drawer cannot expose the first player's mulligan result")
-		return false
-	if not await _wait_for(func() -> bool:
-		var candidate := main.find_child("DismissHistoryResult", true, false) as Button
-		return candidate != null and candidate.is_visible_in_tree()):
-		_fail("the expanded history drawer did not expose its result dismissal")
+	if not await _set_mulligan_history_expanded(true):
 		return false
 	var dismiss := main.find_child("DismissHistoryResult", true, false) as Button
 	if dismiss == null or not await _keyboard_activate(dismiss):
+		var drawer := main.find_child("ToggleHistory", true, false) as Button
+		var focused := render_viewport.gui_get_focus_owner()
+		print("MULLIGAN_DISMISS_FOCUS_FAILURE toggle=%s visible=%s dismiss_id=%s focus=%s focus_id=%s" % [
+			drawer.text if drawer != null else "missing",
+			dismiss != null and dismiss.is_visible_in_tree(),
+			dismiss.get_instance_id() if dismiss != null else 0,
+			focused.name if focused != null else "none",
+			focused.get_instance_id() if focused != null else 0])
 		_fail("the first player's mulligan result cannot be dismissed before the next seat answers")
 		return false
 	if not await _wait_for(func() -> bool:
 		var latest := main.find_child("LatestResult", true, false) as Label
 		return latest != null and latest.text.is_empty()):
 		return false
-	drawer = main.find_child("ToggleHistory", true, false) as Button
-	return drawer != null and await _activate_exposed_control_point(drawer)
+	return await _set_mulligan_history_expanded(false)
 
 
 func _mulligan_result_is_operable() -> bool:
-	var drawer := main.find_child("ToggleHistory", true, false) as Button
-	if drawer == null or not await _activate_exposed_control_point(drawer):
-		_fail("the compact history drawer cannot be expanded after mulligan")
+	if not await _set_mulligan_history_expanded(true):
 		return false
 	var history := _node("Play/Prompt/Margin/Stack/Workbench/History/EventLog") as RichTextLabel
 	var latest := main.find_child("LatestResult", true, false) as Label
@@ -195,8 +193,38 @@ func _mulligan_result_is_operable() -> bool:
 		return false
 	if not await _capture_checkpoint("mulligan-result"):
 		return false
-	var collapsed := await _activate_exposed_control_point(drawer)
-	return collapsed
+	return await _set_mulligan_history_expanded(false)
+
+
+func _set_mulligan_history_expanded(expanded: bool) -> bool:
+	# Observe each public transition before sending another toggle. Visibility
+	# alone can still describe the previous deferred layout.
+	if not await _wait_for(func() -> bool:
+		return _mulligan_history_matches(not expanded)):
+		_fail("history did not settle before its mulligan toggle")
+		return false
+	var drawer := main.find_child("ToggleHistory", true, false) as Button
+	var pressed := [0]
+	var observe := func() -> void: pressed[0] += 1
+	drawer.pressed.connect(observe)
+	var activated := await _activate_exposed_control_point(drawer)
+	drawer.pressed.disconnect(observe)
+	if not activated or pressed[0] != 1:
+		_fail("the mulligan history toggle did not receive its pointer activation")
+		return false
+	if not await _wait_for(func() -> bool:
+		return _mulligan_history_matches(expanded)):
+		_fail("history did not reach its requested mulligan layout")
+		return false
+	return true
+
+
+func _mulligan_history_matches(expanded: bool) -> bool:
+	var drawer := main.find_child("ToggleHistory", true, false) as Button
+	var dismiss := main.find_child("DismissHistoryResult", true, false) as Button
+	return drawer != null and dismiss != null \
+		and drawer.text == ("Collapse history" if expanded else "History") \
+		and dismiss.is_visible_in_tree() == expanded
 
 
 func _result_toggle_is_operable(summary: Label) -> bool:

@@ -273,29 +273,16 @@ the frame was sent but its response was lost, the table stays locked until a
 sync succeeds. An expired or closed capability returns the client to Join and
 must be replaced with a new invitation.
 
-The rail is a desktop workbench rather than a summary card. Its Action tab owns
-the available height and shows several affordances at once; the complete
-diagnostic chronology remains in the adjacent History tab. At wide desktop
-sizes the rail grows to 680–720 logical pixels. Board areas use fixed shelves so
-multiple areas wrap into each lane instead of stretching one area across the
-whole remaining table. Occupied villain, scheme, identity and other live-play
-areas begin open; only the current villain and main-scheme stages occupy the
-table, while the remaining stage sequence is browsed forward and back with the
-current card's inspector arrows. Draw piles, discard piles and empty engine areas sit behind a
-single More areas disclosure in each scenario or player lane. A prompt target
-opens either disclosure automatically when needed. A player's visible hand is
-pinned below the table scroll so it does not disappear while inspecting another
-area, and its wider cards keep complete Core Set titles readable at the desktop
-profile.
+At the supported desktop profile, source and target controls sit beside their
+authorized table objects. Complete choices exposes all engine-offered alternatives
+and the same prompt-bound draft in a bounded sheet; History expands independently.
+Payment identifies known cards, resource abilities and costs before commitment.
+A mandatory later target remains a separate engine decision. The primary
+commitment names the intended action.
 
-The decision header asks a player-facing question and names its visible card
-source. Wire label, question-kind and timing metadata remain selectable in the
-History tab. After an action is selected, its summary stays above an independently
-scrolling target and payment editor, while validation, overpayment consequences
-and the final commitment stay fixed below it. A newly resolved action appears as
-a compact narrative result above the editor. It can be collapsed or dismissed,
-clears when the next action is opened, and expires after eight seconds; the full
-chronology remains in History.
+The latest accepted response remains readable while local choices and inspection
+continue. A new accepted response, explicit Dismiss result, authorized undo or
+session reset replaces or clears it. The full chronology remains in History.
 
 Compact is the default interface scale. The toolbar slider switches among the
 eleven supported scales immediately, including card geometry and the prompt rail,
@@ -317,8 +304,8 @@ large event-cue box, and the History tab gives its log a readable minimum height
 Completed history units appear there as one player action rather than as their
 individual card movements. A card play names its payment cards and resource
 abilities in the same sentence; genuine discard results remain subordinate
-narrative lines. An action with dependent decisions does not enter History or
-replace Last Resolved until it completes. The shareable interaction report uses
+narrative lines. The current receipt names the latest accepted response, including committed
+costs before a later mandatory target. History retains the action chronology. The shareable interaction report uses
 schema 2 of the distinct, non-authoritative report contract. It preserves each
 response boundary, the visibility-filtered semantic events in their explicit
 polymorphic wire form, and the response-scoped narrative selected by the client
@@ -355,6 +342,12 @@ rather than selecting by list order. Keyboard activation of an attached control
 and the decision-rail fallback compose the same engine decision. The player
 selects targets and payment generators before pressing the fixed, explicit
 Commit control; the submission latch accepts that prompt revision once.
+
+An open source chooser owns root input in its own viewport before background
+board gestures or passive card previews. Escape dismisses that chooser and
+restores its source action focus even while a hover preview is in its dismissal
+grace period. Decision dialogs and pinned inspection keep their higher priority;
+the chooser's other keys follow normal contained GUI focus handling.
 
 Each authorized snapshot includes a host revision. The client echoes that
 revision with its next decision, so a draft made for an earlier prompt is

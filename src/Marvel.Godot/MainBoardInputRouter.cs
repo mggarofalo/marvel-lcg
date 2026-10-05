@@ -28,6 +28,11 @@ internal static class MainBoardInputRouter
             return;
         }
 
+        if (BoardActionChoiceSurface.RouteInput(main.GetViewport(), input))
+        {
+            return;
+        }
+
         if (main.boardRender?.RoutePointer(input) == true)
         {
             main.GetViewport().SetInputAsHandled();

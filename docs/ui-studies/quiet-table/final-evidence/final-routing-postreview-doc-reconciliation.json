@@ -1,0 +1,15 @@
+{
+  "all_other_covered_source_bytes_unchanged": true,
+  "all_reviewed_runtime_dll_bytes_unchanged": true,
+  "classification": "documentation-only reconciliation of stale rail/current-receipt descriptions; no production behavior or tests changed",
+  "final_actual_head_reviews_and_ci_still_required": true,
+  "final_feature_source_manifest_sha256": "f2e0b7741a01e5df14ec208cdab04ddabcb81cb0db523e3f86c1392607ba0928",
+  "native_approval": "APPROVED R01-R65 with retained E/C/Q dependency/identity limits",
+  "native_approval_not_relabelled": true,
+  "native_runtime_manifest_sha256": "6d56d60e1430e9d2b88a5b1c37d6bfb5714a2dff408abdaa07120bbb78f397f1",
+  "native_source_manifest_sha256": "23d270f4376bb2b9eb468d8dae40a7dcb50d10291606d5ca193460745cd2ce4c",
+  "postcommit_build_byte_equivalence_claimed": false,
+  "postreview_source_delta": [
+    "docs/godot-client.md"
+  ]
+}

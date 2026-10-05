@@ -1,0 +1,62 @@
+[
+  {
+    "check": "release-build",
+    "exit_code": 0,
+    "log": "/Users/michael/Library/Logs/marvel-lcg/MARVEL-443/2026-10-04/final-routing-release-build.log"
+  },
+  {
+    "check": "managed-tests",
+    "exit_code": 0,
+    "log": "/Users/michael/Library/Logs/marvel-lcg/MARVEL-443/2026-10-04/final-routing-managed-tests.log"
+  },
+  {
+    "check": "source-layout",
+    "exit_code": 0,
+    "log": "/Users/michael/Library/Logs/marvel-lcg/MARVEL-443/2026-10-04/final-routing-source-layout.log"
+  },
+  {
+    "check": "no-partial-types",
+    "exit_code": 0,
+    "log": "/Users/michael/Library/Logs/marvel-lcg/MARVEL-443/2026-10-04/final-routing-no-partial-types.log"
+  },
+  {
+    "check": "complexity",
+    "exit_code": 0,
+    "log": "/Users/michael/Library/Logs/marvel-lcg/MARVEL-443/2026-10-04/final-routing-complexity.log"
+  },
+  {
+    "check": "file-length",
+    "exit_code": 0,
+    "log": "/Users/michael/Library/Logs/marvel-lcg/MARVEL-443/2026-10-04/final-routing-file-length.log"
+  },
+  {
+    "check": "godot-wall",
+    "exit_code": 0,
+    "log": "/Users/michael/Library/Logs/marvel-lcg/MARVEL-443/2026-10-04/final-routing-godot-wall.log"
+  },
+  {
+    "check": "presentation-wall",
+    "exit_code": 0,
+    "log": "/Users/michael/Library/Logs/marvel-lcg/MARVEL-443/2026-10-04/final-routing-presentation-wall.log"
+  },
+  {
+    "check": "native-matrix",
+    "exit_code": 0,
+    "log": "/Users/michael/Library/Logs/marvel-lcg/MARVEL-443/2026-10-04/final-routing-native-matrix.log"
+  },
+  {
+    "check": "hosted",
+    "exit_code": 0,
+    "log": "/Users/michael/Library/Logs/marvel-lcg/MARVEL-443/2026-10-04/final-routing-hosted.log"
+  },
+  {
+    "check": "hosted-invitation",
+    "exit_code": 0,
+    "log": "/Users/michael/Library/Logs/marvel-lcg/MARVEL-443/2026-10-04/final-routing-hosted-invitation.log"
+  },
+  {
+    "check": "rendered",
+    "exit_code": 0,
+    "log": "/Users/michael/Library/Logs/marvel-lcg/MARVEL-443/2026-10-04/final-routing-rendered.log"
+  }
+]

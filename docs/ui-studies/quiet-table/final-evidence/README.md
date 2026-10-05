@@ -1,4 +1,12 @@
-# Current final bounded correction
+# Current bounded input correction
+
+`routing-candidate-identity.json`, `final-reviewed-routing-source-manifest.json` and `final-reviewed-routing-assemblies.json` identify the fresh source/runtime frozen for affected independent native acceptance. Independent native verdict R01–R65 is APPROVED, with unchanged ending identities and retained E/C/Q limits. final-routing-feature-source-manifest.json and final-routing-postreview-doc-reconciliation.json separately record the subsequent one-path documentation correction; native review identity is not relabelled.
+
+`final-routing-certification-index.json` records passing Release,3,475 managed tests, four structural gates, both walls,19 native profiles, restricted hosted play, fresh invitation and four rendered profiles. `final-history-observation-matrix.log` records the four-profile rendered rerun after the history fixture correction; no keyboard assertion was relaxed. `final-preview-routing-mutation.json` records the compiling intended Escape-routing omission kill. Product mutation kills total15; hosted-observer fixture kill remains separate1. Fresh legal fixture provenance/copy verification are included without invitation/privateprefix/fullstate.
+
+Current closure requirements: [../final-closure-ledger.md](../final-closure-ledger.md). Historical manifests and outcomes below are not current acceptance or CI claims.
+
+# Historical closure2 bounded correction
 
 Current frozen source/runtime: final-reviewed-closure2-source-manifest.json and final-reviewed-closure2-assemblies.json, with closure2-candidate-identity.json. Stable gates are closure2-release-build.log, closure2-managed-tests.log, closure2-final-structural-index.json, closure2-godot-wall.log, closure2-presentation-wall.log, closure2-native-matrix.log, closure2-hosted-aligned-restored.log, closure2-hosted-invitation-final.log and closure2-rendered-matrix.log. Independent native acceptance Q01–Q48 is APPROVED for the supported desktop scope with explicit retained E/C limits. Automation remains separate evidence.
 

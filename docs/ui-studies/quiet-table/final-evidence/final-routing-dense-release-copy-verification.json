@@ -1,0 +1,42 @@
+[
+  {
+    "assembly": "Marvel.Cards.dll",
+    "sha256": "ffa50718f0f7413499d77142e1a13156d2786a1935bf540750feb5f1f461807b",
+    "source": "/Users/michael/Source/marvel-lcg/src/Marvel.Cards/bin/Release/net8.0/Marvel.Cards.dll"
+  },
+  {
+    "assembly": "Marvel.Content.dll",
+    "sha256": "69151db5d3fb0c0f043252c76c513907fe4e84f916920c54eb0fe8c28b4cba40",
+    "source": "/Users/michael/Source/marvel-lcg/src/Marvel.Content/bin/Release/net8.0/Marvel.Content.dll"
+  },
+  {
+    "assembly": "Marvel.Core.dll",
+    "sha256": "39b0671e0fa3ffd81179ce15712010eaf87e1a7e5ad09775d4ac1e2926241717",
+    "source": "/Users/michael/Source/marvel-lcg/src/Marvel.Core/bin/Release/net8.0/Marvel.Core.dll"
+  },
+  {
+    "assembly": "Marvel.Decisions.dll",
+    "sha256": "5a931ab227c046a5404c1e147d64018f9f244a9406a3a09614288620fdfe255e",
+    "source": "/Users/michael/Source/marvel-lcg/src/Marvel.Decisions/bin/Release/net8.0/Marvel.Decisions.dll"
+  },
+  {
+    "assembly": "Marvel.Rules.dll",
+    "sha256": "8921fd1517ef070d7f9c9a2499095b6dfdcf47ccfaa51bad1783160cebd1555b",
+    "source": "/Users/michael/Source/marvel-lcg/src/Marvel.Rules/bin/Release/net8.0/Marvel.Rules.dll"
+  },
+  {
+    "assembly": "Marvel.Server.dll",
+    "sha256": "111723560b2c3b099284d7df326dff7e6e273631a9e800a7c60fd0abd9e58e35",
+    "source": "/Users/michael/Source/marvel-lcg/src/Marvel.Server/bin/Release/net8.0/Marvel.Server.dll"
+  },
+  {
+    "assembly": "Marvel.Session.dll",
+    "sha256": "86972dd58838855a7a3ed3234cf7abd398f7e8eef124dc99ff8cf4bbcf71b781",
+    "source": "/Users/michael/Source/marvel-lcg/src/Marvel.Session/bin/Release/net8.0/Marvel.Session.dll"
+  },
+  {
+    "assembly": "Marvel.View.dll",
+    "sha256": "330eaeafefef26bad71b25464359f3aa3167edca3f0ef9cdd5ce0d7a92f1d49e",
+    "source": "/Users/michael/Source/marvel-lcg/src/Marvel.View/bin/Release/net8.0/Marvel.View.dll"
+  }
+]

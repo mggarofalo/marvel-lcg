@@ -123,13 +123,20 @@ internal static class BoardActionChoiceSurface
             Button button = buttons[index];
             button.FocusNext = buttons[(index + 1) % buttons.Length].GetPath();
             button.FocusPrevious = buttons[(index + buttons.Length - 1) % buttons.Length].GetPath();
-            button.GuiInput += input =>
-            {
-                if (!input.IsActionPressed("ui_cancel")) return;
-                source.GetViewport().SetInputAsHandled();
-                Dismiss();
-            };
+            button.GuiInput += input => RouteInput(source.GetViewport(), input);
         }
+    }
+
+    internal static bool RouteInput(Viewport viewport, InputEvent input)
+    {
+        if (active is not { } layer || !GodotObject.IsInstanceValid(layer)
+            || layer.IsQueuedForDeletion() || layer.GetViewport() != viewport) return false;
+        if (input.IsActionPressed("ui_cancel"))
+        {
+            viewport.SetInputAsHandled();
+            Dismiss();
+        }
+        return true;
     }
 
     private static void Dismiss()

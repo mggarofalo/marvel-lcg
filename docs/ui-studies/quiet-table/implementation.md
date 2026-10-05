@@ -176,3 +176,6 @@ affected retest; historical evidence cannot approve them. Broader presentation
 consolidation and smaller-window work remain separate.
 
 Source selectors, task commitments, the complete-choice entry and invitation controls share the bounded compact treatment. Actual rendered checks reject broken words, a commitment taller than its task viewport and an unused invitation that pushes the supported desktop sidebar outside the window. The separate hosted invitation-layout probe uses a fresh normal restricted game at 100/150 with collapsed/expanded history; the full hosted game fixture uses the documented 1920×1080 desktop boundary and selects actual hand cards for its privacy assertion.
+
+
+The source chooser owns same-viewport root input through BoardActionChoiceSurface.RouteInput. MainBoardInputRouter retains decision-dialog and pinned-inspector priority, then delegates to that chooser before background board gestures or passive previews. This prevents an unpinned hover preview from consuming the focused chooser's Escape during its dismissal grace; other keys continue through GUI focus handling. The targeted native check distinguishes legal Core gameplay from its synthetic passive-preview visibility case and restores that fixture visibility afterward.

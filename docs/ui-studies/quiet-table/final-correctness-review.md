@@ -1,4 +1,12 @@
-# Final independent correctness review
+# Current PR401 correctness closure
+
+At d52cb19, the Hunter confirmed a P2 input-routing defect: passive preview consumes Escape before the focused source chooser. The existing chooser owner now handles its active same-viewport route after decision-dialog/pinned-inspector priority and before background input. An exercised compiling omission mutant fails the intended Escape assertion; the restored route passes local certification.
+
+Windows receipt-dismiss failure currently establishes collapsed history at attempted focus, not a production focus defect. Independent source diagnosis found two fixture observation holes: no Pressed observation and visibility accepted before completed deferred layout. The corrected smoke waits each public state and observes exactly one press before the unchanged keyboard assertion. The original Windows event sequence remains unproven; fresh exact-head CI is mandatory.
+
+Both read-only adversarial reviewers must review the actual final pushed PR head after affected native approval and normal hooks. Their final outcome belongs in PR401/Plane; earlier no-finding snapshots do not supersede the verified P2. Product mutation kills total15; one hosted-observer fixture kill is counted separately. Historical correctness review follows.
+
+# Historical independent correctness review
 
 Two independent read-only reviewers inspected the complete candidate diff,
 its surrounding engine/client/UI code and the applicable scoped guidance.

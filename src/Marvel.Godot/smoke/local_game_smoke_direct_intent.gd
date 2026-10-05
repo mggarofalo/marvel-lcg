@@ -88,16 +88,26 @@ func _dismiss_source_chooser(chooser: Control) -> bool:
 			_fail("the source chooser lost keyboard focus while open")
 			return false
 		await process_frame
+	# Synthetic passive-preview visibility exercises overlay input priority;
+	# the surrounding chooser and gameplay still come from the legal Core game.
+	var preview := main.get_node("CardInspector") as Control
+	var preview_was_visible := preview.visible
+	preview.visible = true
+	print("SOURCE_CHOOSER_PASSIVE_PREVIEW_ESCAPE_CHECK")
 	var escape := InputEventKey.new()
 	escape.keycode = KEY_ESCAPE
 	escape.pressed = true
 	render_viewport.push_input(escape)
+	var release := InputEventKey.new()
+	release.keycode = KEY_ESCAPE
+	render_viewport.push_input(release)
 	if not await _wait_for(func() -> bool:
 		var current := main.find_child("CardActionChoices", true, false) as Control
 		return current == null or current.get_instance_id() != chooser_id \
 			or not current.is_visible_in_tree()):
 		_fail("Escape did not dismiss the focused source chooser")
 		return false
+	preview.visible = preview_was_visible
 	return true
 
 

@@ -1,4 +1,10 @@
-# MARVEL-443 final acceptance
+# MARVEL-443 current acceptance boundary
+
+Affected independent native review is **APPROVED**, R01–R65 on the fresh bounded input correction identified by [routing-candidate-identity.json](final-evidence/routing-candidate-identity.json). The source chooser now owns its same-viewport input ahead of passive preview/background handlers, retaining decision-dialog and pinned-inspector priority. The reviewer verified matching start/end identities and released the freeze. A subsequent documentation-only correction is separately assessed in final-evidence/final-routing-postreview-doc-reconciliation.json; native approval retains its actual reviewed source/runtime identity.
+
+Local stable certification passes Release,3,475 managed, four structural gates, both walls,19 native profiles, full restricted hosted play, fresh invitation and four rendered profiles. The history fixture correction passes a subsequent four-profile rendered matrix. The compiling intended routing omission raises the product kill total to15; one hosted-observer test kill remains separate. Exact final-head adversarial reviews/Windows/Linux CI, own merge and green main remain required. The [closure ledger](final-closure-ledger.md) owns remaining obligations; [the independent reviewer](native-review-final.md) owns the current verdict.
+
+# Historical closure2 native acceptance
 
 The Core Set contextual-table increment is **APPROVED for its supported 1920×1080 desktop scope** by independent native review Q01–Q48, combined with explicitly retained successful E/C evidence and its identity/dependency limits. Earlier rejected identities certify only their historical observations. The finite obligations and remaining evidence are in [the closure ledger](final-closure-ledger.md).
 
